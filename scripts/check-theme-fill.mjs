@@ -39,9 +39,13 @@ const DANGER_FILL = { light: [212, 28, 66], dark: [233, 90, 119] };
 const PAGE = { light: [255, 255, 255], dark: [0, 0, 0] };
 // The danger emotion's, which turn over with the theme: a default-variant
 // Button given another emotion takes that emotion's states, never the
-// themed ones the default variant's own rules name.
-const DANGER_PRESSED = { light: [140, 19, 43], dark: [243, 162, 179] };
-const DANGER_FOCUS = { light: [212, 28, 66], dark: [233, 90, 119] };
+// themed ones the default variant's own rules name, and the destructive
+// variant takes them too. Decision 60 (Olcay, 2026-10-08): hover one step
+// and pressed two along the danger ramp, away from the page, focus the
+// hover: danger 800 and 900 in each theme, where the ramp turns over. Until
+// then the light hover was danger 600, lighter than the fill.
+const DANGER_HOVER = { light: [140, 19, 43], dark: [243, 162, 179] };
+const DANGER_PRESSED = { light: [103, 14, 32], dark: [248, 198, 208] };
 
 /**
  * What to read: a part, the element inside its test id that draws it (a CSS
@@ -190,8 +194,11 @@ const STATE_READS = [
     [part, selector, "focus", "backgroundColor", "focus"],
     [part, selector, "focus", "boxShadow", "ring"],
   ]),
-  ["button-danger", "", "pressed", "backgroundColor", "danger-pressed"],
-  ["button-danger", "", "focus", "backgroundColor", "danger-focus"],
+  ...["button-danger", "button-destructive"].flatMap((part) => [
+    [part, "", "hover", "backgroundColor", "danger-hover"],
+    [part, "", "pressed", "backgroundColor", "danger-pressed"],
+    [part, "", "focus", "backgroundColor", "danger-focus"],
+  ]),
   // Hovered fills: the hover token, opaque, in both themes.
   ["chip", '[data-slot="chip"]', "hover", "backgroundColor", "hover"],
   ["tag", "", "hover", "backgroundColor", "hover"],
@@ -249,8 +256,9 @@ function expected(kind, theme) {
   if (kind === "page") return PAGE[theme];
   if (kind === "hover" || kind === "focus") return THEME_HOVER;
   if (kind === "pressed") return THEME_PRESSED;
+  if (kind === "danger-hover" || kind === "danger-focus")
+    return DANGER_HOVER[theme];
   if (kind === "danger-pressed") return DANGER_PRESSED[theme];
-  if (kind === "danger-focus") return DANGER_FOCUS[theme];
   throw new Error(`unknown expectation ${kind}`);
 }
 
@@ -263,8 +271,9 @@ const NAMES = {
   hover: "hover token (#1051E8)",
   focus: "focus token (#1051E8)",
   pressed: "pressed token (#0D44C2)",
-  "danger-pressed": "danger emotion's pressed token",
-  "danger-focus": "danger emotion's focus token",
+  "danger-hover": "danger emotion's hover token, danger 800",
+  "danger-pressed": "danger emotion's pressed token, danger 900",
+  "danger-focus": "danger emotion's focus token, its hover",
 };
 
 /** The WCAG contrast ratio of two opaque sRGB colours, 0–255 channels. */

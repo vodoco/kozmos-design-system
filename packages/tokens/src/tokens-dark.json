@@ -508,7 +508,8 @@
             },
             "500": {
               "$type": "color",
-              "$value": "#4134F1",
+              "$value": "#4135F1",
+              "$description": "Decision 63: lightened from #4134F1 just enough to read 3:1 as a shape on the dark page (3.00:1 on #000000; it read 2.99:1). White on it reads 6.99:1, and its hue is unchanged.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2441",
                 "com.figma.isOverride": true
@@ -3225,7 +3226,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#76E4AD",
+              "$value": "{Primitives.Colors.emotional.success.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2689",
                 "com.figma.isOverride": true
@@ -3241,7 +3242,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#4BDC93",
+              "$value": "{Primitives.Colors.emotional.success.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2690",
                 "com.figma.isOverride": true
@@ -3249,7 +3251,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#A0ECC6",
+              "$value": "{Primitives.Colors.emotional.success.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2691",
                 "com.figma.isOverride": true
@@ -3257,7 +3259,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#4BDC93",
+              "$value": "{Primitives.Colors.emotional.success.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2692",
                 "com.figma.isOverride": true
@@ -3361,7 +3363,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#FCD281",
+              "$value": "{Primitives.Colors.emotional.alert.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2704",
                 "com.figma.isOverride": true
@@ -3377,7 +3379,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#FBC459",
+              "$value": "{Primitives.Colors.emotional.alert.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2705",
                 "com.figma.isOverride": true
@@ -3385,7 +3388,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#FDE0A8",
+              "$value": "{Primitives.Colors.emotional.alert.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2706",
                 "com.figma.isOverride": true
@@ -3393,7 +3396,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#FBC459",
+              "$value": "{Primitives.Colors.emotional.alert.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2707",
                 "com.figma.isOverride": true
@@ -3497,7 +3500,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#EE7E95",
+              "$value": "{Primitives.Colors.emotional.danger.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2719",
                 "com.figma.isOverride": true
@@ -3513,7 +3516,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#E95A77",
+              "$value": "{Primitives.Colors.emotional.danger.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2720",
                 "com.figma.isOverride": true
@@ -3521,7 +3525,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#F3A2B3",
+              "$value": "{Primitives.Colors.emotional.danger.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2721",
                 "com.figma.isOverride": true
@@ -3529,7 +3533,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#E95A77",
+              "$value": "{Primitives.Colors.emotional.danger.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2722",
                 "com.figma.isOverride": true
@@ -3633,7 +3637,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#87C6E5",
+              "$value": "{Primitives.Colors.emotional.info.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2734",
                 "com.figma.isOverride": true
@@ -3649,7 +3653,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#65B6DE",
+              "$value": "{Primitives.Colors.emotional.info.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2735",
                 "com.figma.isOverride": true
@@ -3657,7 +3662,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#A9D6EC",
+              "$value": "{Primitives.Colors.emotional.info.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2736",
                 "com.figma.isOverride": true
@@ -3665,7 +3670,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#65B6DE",
+              "$value": "{Primitives.Colors.emotional.info.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2737",
                 "com.figma.isOverride": true
@@ -3769,7 +3774,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#464A53",
+              "$value": "{Primitives.Colors.background.300}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2749",
                 "com.figma.isOverride": true
@@ -3785,7 +3790,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#5C6069",
+              "$value": "{Primitives.Colors.background.200}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the background ramp. In dark the neutral keeps darkening, toward the page, because white, its ink, reads 3.72:1 on the lighter step (#8B8474). Focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2750",
                 "com.figma.isOverride": true
@@ -3793,7 +3799,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#2E3138",
+              "$value": "{Primitives.Colors.background.100}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2751",
                 "com.figma.isOverride": true
@@ -3801,7 +3807,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#5C6069",
+              "$value": "{Primitives.Colors.background.200}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2752",
                 "com.figma.isOverride": true

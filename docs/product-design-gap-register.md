@@ -373,6 +373,27 @@ camera control, branding/provider policy and product ranking in their host adapt
   foreground/1000; SwiftUI's `onEmphasis` tone becomes the theme foreground and a new `onDanger`
   keeps the danger fill's ink. Still open: the selected tab indicator's design and LocationPin
   `accent` parity.
+- **Emotion button states (decision 60, 2026-10-08):** a filled emotion Button's hover is one
+  step and its pressed two steps further along the emotion's own ramp, away from the page:
+  darker in light, lighter in dark. Its focus is its hover. Each state is a reference to its
+  ramp step, so a ramp's override carries it. The light danger hover had been danger 600,
+  lighter than the fill; it is now danger 800 (`#8C132B`), and pressed is 900 (`#670E20`).
+  - In the dark every emotion now steps lighter: danger `#EE7E95` → `#F3A2B3` → `#F8C6D0`,
+    and success, alert and informative 700 → 800 → 900, all under black.
+  - The light neutral is background 200 → 300 → 400 (`#9095A2` pressed, black 7.01:1). It
+    had pressed lighter, at `#E3E4E8`.
+  - Exceptions: the dark neutral keeps darkening, background 300 → 200 → 100 (`#464A53` →
+    `#2E3138` → `#17191C`), because white, its ink, reads 3.72:1 on the lighter step. Pressed
+    is the dark sheet's own colour, which the owner accepted: the white label reads 17.6:1.
+    The themed Button keeps decision 59's values.
+  - Informative's ramp already existed (`emotional.info`). Light success and alert already
+    followed the rule.
+  - `tokens:contrast:check` holds each state to its ramp step and its direction.
+- **Brand variant 1's 500 (decision 63, 2026-10-08):** `#4135F1`, lightened from `#4134F1`
+  just enough to read 3:1 as a shape on the dark page (3.00:1; it was 2.99:1). The hue is
+  kept, and white on it reads 6.99:1. On the dark sheet it reads 2.52:1, which is accepted as
+  the theme fill's 2.32:1 is; `#4947FB` would have reached 3:1 there too and was declined. The
+  contrast contract now holds variant 1's 500 to 3:1 on the page and white on it to 4.5:1.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

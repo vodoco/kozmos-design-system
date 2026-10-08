@@ -18,6 +18,12 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Added and changed
 
+- **Emotion states step away from the page (decision 60):** a filled emotion part's hover and focus are one step, and its pressed two steps, further along the emotion's own ramp: darker in light, lighter in dark. This covers `KozmosButton`, `KozmosIconButton` and every part drawn through `FillStates.kt`.
+  - Danger in light is `#B01736`, then `#8C132B`, then `#670E20` (the hover was `#D41C42`, lighter than the fill).
+  - In dark, danger, success, alert and informative step lighter, 700 → 800 → 900. Light neutral presses to `#9095A2`, where it went lighter (`#E3E4E8`).
+  - Dark neutral keeps darkening, `#464A53` → `#2E3138` → `#17191C`, because white reads 3.72:1 on its lighter step.
+  - The colours come from `KozmosThemeTokens`, which `pnpm tokens:native:copy` regenerated.
+- **Brand variant 1's 500 is `#4135F1` (decision 63):** `primitivesColorsThemeVariant1500`, the accent `KozmosLocationPin`'s fill, is lightened from `#4134F1` just enough to read 3:1 on the dark page (3.00:1). White on it reads 6.99:1.
 - **Result summaries and their language:** `KozmosPOIResultPresentation.summaryLanguage` names the language of `summary` when it differs from the interface's (GAP-125). `KozmosPOIResultCard` now draws `summary`, muted and two lines at most, after the location, as the web card does, and TalkBack hears it after the location, with a `LocaleSpan` when `summaryLanguage` is set, as `nameLanguage` gives the name one. The name and the summary take their direction from their own words (`TextDirection.Content`), so an Arabic summary in an English card runs right to left; their lines still start at the card's start.
 - **A result row's words are its text:** `KozmosPOIResultCard` gives TalkBack the row's words as its semantics text, never as a content description, whether or not a phrase carries a language (GAP-125). The words are the same; a tagged phrase keeps its `LocaleSpan`.
 - **POI details model:** `KozmosPOIDetailPanel` takes `details: KozmosPOIDetailsPresentation`, as SwiftUI and React do. It adds the travel estimate on Go and the supplementary actions (book, call) after the POI's own. Under the strip come the summary row (at most three facts), then the attribute groups, the opening hours, the description with Read more, and the tags. The new parameters follow the released ones.

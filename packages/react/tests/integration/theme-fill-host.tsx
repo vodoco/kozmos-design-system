@@ -49,6 +49,9 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <Button data-testid={id("button-danger")} emotion="danger">
         Stop
       </Button>
+      <Button data-testid={id("button-destructive")} variant="destructive">
+        Delete
+      </Button>
       {/* Unavailable, as RouteSummary's Previous and Next: it keeps focus
           but must not look as if it acts under the pointer or a press. */}
       <Button aria-disabled="true" data-testid={id("button-unavailable")}>

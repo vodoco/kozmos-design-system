@@ -580,7 +580,7 @@
       {
         "name": "Primitives/Colors/theme/variant/1/500",
         "type": "color",
-        "value": "#4134F1",
+        "value": "#4135F1",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4284,7 +4284,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/idle",
         "type": "color",
-        "value": "#B01736",
+        "value": "{Primitives.Colors.emotional.danger.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4308,7 +4308,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/hover",
         "type": "color",
-        "value": "#D41C42",
+        "value": "{Primitives.Colors.emotional.danger.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4320,7 +4320,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/pressed",
         "type": "color",
-        "value": "#8C132B",
+        "value": "{Primitives.Colors.emotional.danger.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4332,7 +4332,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/focus",
         "type": "color",
-        "value": "#D41C42",
+        "value": "{Primitives.Colors.emotional.danger.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4464,7 +4464,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/idle",
         "type": "color",
-        "value": "#2379A4",
+        "value": "{Primitives.Colors.emotional.info.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4500,7 +4500,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/pressed",
         "type": "color",
-        "value": "#1C6082",
+        "value": "{Primitives.Colors.emotional.info.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4644,7 +4644,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/idle",
         "type": "color",
-        "value": "#C7CAD1",
+        "value": "{Primitives.Colors.background.200}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4668,7 +4668,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/hover",
         "type": "color",
-        "value": "#ABAFBA",
+        "value": "{Primitives.Colors.background.300}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4680,7 +4680,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/pressed",
         "type": "color",
-        "value": "#E3E4E8",
+        "value": "{Primitives.Colors.background.400}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4692,7 +4692,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/focus",
         "type": "color",
-        "value": "#ABAFBA",
+        "value": "{Primitives.Colors.background.300}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -7654,7 +7654,7 @@
       {
         "name": "Primitives/Colors/theme/variant/1/500",
         "type": "color",
-        "value": "#4134F1",
+        "value": "#4135F1",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -10998,7 +10998,7 @@
       {
         "name": "Components/Primary Buttons/success/button/background/idle",
         "type": "color",
-        "value": "#76E4AD",
+        "value": "{Primitives.Colors.emotional.success.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11022,7 +11022,7 @@
       {
         "name": "Components/Primary Buttons/success/button/background/hover",
         "type": "color",
-        "value": "#4BDC93",
+        "value": "{Primitives.Colors.emotional.success.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11034,7 +11034,7 @@
       {
         "name": "Components/Primary Buttons/success/button/background/pressed",
         "type": "color",
-        "value": "#A0ECC6",
+        "value": "{Primitives.Colors.emotional.success.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11046,7 +11046,7 @@
       {
         "name": "Components/Primary Buttons/success/button/background/focus",
         "type": "color",
-        "value": "#4BDC93",
+        "value": "{Primitives.Colors.emotional.success.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11178,7 +11178,7 @@
       {
         "name": "Components/Primary Buttons/alert/button/background/idle",
         "type": "color",
-        "value": "#FCD281",
+        "value": "{Primitives.Colors.emotional.alert.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11202,7 +11202,7 @@
       {
         "name": "Components/Primary Buttons/alert/button/background/hover",
         "type": "color",
-        "value": "#FBC459",
+        "value": "{Primitives.Colors.emotional.alert.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11214,7 +11214,7 @@
       {
         "name": "Components/Primary Buttons/alert/button/background/pressed",
         "type": "color",
-        "value": "#FDE0A8",
+        "value": "{Primitives.Colors.emotional.alert.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11226,7 +11226,7 @@
       {
         "name": "Components/Primary Buttons/alert/button/background/focus",
         "type": "color",
-        "value": "#FBC459",
+        "value": "{Primitives.Colors.emotional.alert.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11358,7 +11358,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/idle",
         "type": "color",
-        "value": "#EE7E95",
+        "value": "{Primitives.Colors.emotional.danger.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11382,7 +11382,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/hover",
         "type": "color",
-        "value": "#E95A77",
+        "value": "{Primitives.Colors.emotional.danger.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11394,7 +11394,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/pressed",
         "type": "color",
-        "value": "#F3A2B3",
+        "value": "{Primitives.Colors.emotional.danger.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11406,7 +11406,7 @@
       {
         "name": "Components/Primary Buttons/danger/button/background/focus",
         "type": "color",
-        "value": "#E95A77",
+        "value": "{Primitives.Colors.emotional.danger.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11538,7 +11538,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/idle",
         "type": "color",
-        "value": "#87C6E5",
+        "value": "{Primitives.Colors.emotional.info.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11562,7 +11562,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/hover",
         "type": "color",
-        "value": "#65B6DE",
+        "value": "{Primitives.Colors.emotional.info.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11574,7 +11574,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/pressed",
         "type": "color",
-        "value": "#A9D6EC",
+        "value": "{Primitives.Colors.emotional.info.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11586,7 +11586,7 @@
       {
         "name": "Components/Primary Buttons/informative/button/background/focus",
         "type": "color",
-        "value": "#65B6DE",
+        "value": "{Primitives.Colors.emotional.info.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11718,7 +11718,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/idle",
         "type": "color",
-        "value": "#464A53",
+        "value": "{Primitives.Colors.background.300}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11742,7 +11742,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/hover",
         "type": "color",
-        "value": "#5C6069",
+        "value": "{Primitives.Colors.background.200}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11754,7 +11754,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/pressed",
         "type": "color",
-        "value": "#2E3138",
+        "value": "{Primitives.Colors.background.100}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11766,7 +11766,7 @@
       {
         "name": "Components/Primary Buttons/neutral/button/background/focus",
         "type": "color",
-        "value": "#5C6069",
+        "value": "{Primitives.Colors.background.200}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",

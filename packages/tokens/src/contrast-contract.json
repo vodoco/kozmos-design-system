@@ -130,6 +130,18 @@
       "value": "#ffffff"
     }
   ],
+  "stateSteps": {
+    "description": "Decision 60 (Olcay, 2026-10-08): a filled emotion Button's hover is one step and its pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and its focus is its hover. Each state is a reference to its ramp step, so the step follows the ramp. The themed Button keeps decision 59's fixed values, which the pins hold.",
+    "emotions": ["success", "alert", "danger", "informative", "neutral"],
+    "exceptions": [
+      {
+        "emotion": "neutral",
+        "theme": "dark",
+        "direction": "towardPage",
+        "why": "white, its ink, reads 3.72:1 on the lighter step it would take (background/500, #8B8474), so the dark neutral keeps darkening"
+      }
+    ]
+  },
   "pairs": [
     {
       "name": "user-location dot against its ring (non-text)",
@@ -268,6 +280,18 @@
       "background": "primitives-colors-background-100",
       "foreground": "components-primary-buttons-themed-button-background-idle",
       "minimum": 3
+    },
+    {
+      "name": "brand variant 1's 500 on the page (non-text, decision 63)",
+      "background": "primitives-colors-background-0",
+      "foreground": "primitives-colors-theme-variant-1-500",
+      "minimum": 3
+    },
+    {
+      "name": "the theme foreground on brand variant 1's 500, the accent pin's number (decision 63)",
+      "background": "primitives-colors-theme-variant-1-500",
+      "foreground": "components-primary-buttons-themed-button-foreground-content-idle",
+      "minimum": 4.5
     },
     {
       "name": "button destructive idle",

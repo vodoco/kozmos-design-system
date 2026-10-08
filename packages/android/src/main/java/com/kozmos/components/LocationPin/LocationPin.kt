@@ -76,9 +76,9 @@ fun KozmosLocationPin(
     // Filled, the primary pin is the theme fill, theme 500 in both themes,
     // with its number in the theme foreground, white in both (decision 59):
     // foreground/1000 turned the number black on it in the dark. The accent
-    // pin's fill is theme variant 1's 500, #4134F1 in both themes, and its
-    // number the theme foreground too: foreground/1000 is black in the dark,
-    // 2.99:1 on it, where white reads 7.03:1.
+    // pin's fill is theme variant 1's 500, #4135F1 in both themes (decision
+    // 63), and its number the theme foreground too: foreground/1000 is black
+    // in the dark, 3.00:1 on it, where white reads 6.99:1.
     val inkedInThemeForeground = !featured && tint == null &&
         (variant == KozmosLocationPinVariant.Primary || variant == KozmosLocationPinVariant.Accent)
     val markerColor: Color = when {

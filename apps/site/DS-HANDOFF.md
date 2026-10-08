@@ -306,14 +306,15 @@ border-primary-foreground/20`.
   is what the variants are for. The default ramp's dark 600 is 6.17:1,
   variant 2's 4.99:1; the light theme passes everywhere. A fill (a selected
   Chip, a default Button) is no longer the 600 under black ink: since
-  decision 59 it is the ramp's 500 under white, and variant 1's reads 7.03:1.
+  decision 59 it is the ramp's 500 under white, and variant 1's reads 6.99:1.
 - **Change:** a lighter dark 600 for variant 1 (the variant's own dark 700,
   `#867EF6`, reads 6.33:1), in the tokens and in Figma. Then add each
   variant's "brand tint surface / primary text" pair, and its theme-fill
   pairs (the 500 under the theme foreground, and on the page as a shape), to
   `packages/tokens/src/contrast-contract.json`, so every ramp a product may
-  choose is measured. The shape pair fails for variant 1 as it stands: its
-  500 reads 2.99:1 on the dark page, under 3:1.
+  choose is measured. Variant 1's shape pair is done (decision 63,
+  2026-10-08): its 500 is `#4135F1`, 3.00:1 on the dark page (`#4134F1` read
+  2.99:1), and the contract holds it there and white on it.
 - **Proof:** "GAP-45: the first brand variant's 600 reads 4.20:1 on the dark
   page" fails; flip it to the new ratio.
 

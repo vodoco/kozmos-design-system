@@ -326,15 +326,18 @@ class KozmosThemeFillInteractionPixelsTest {
     }
 
     // 6. Every filled emotion, and both SplitButton halves, press to their own
-    // token. Light and dark are written out: the emotions turn over.
+    // token. Light and dark are written out: the emotions turn over. Decision
+    // 60 (Olcay, 2026-10-08): pressed is two steps along the emotion's own
+    // ramp, away from the page, darker in light and lighter in dark; the dark
+    // neutral keeps darkening (white reads 3.72:1 on its lighter step).
 
     private val emotions: List<Triple<KozmosButtonEmotion, Pair<Int, Int>, Pair<Int, Int>>> = listOf(
         // emotion, (light idle, light pressed), (dark idle, dark pressed)
-        Triple(KozmosButtonEmotion.Danger, 0xFFB01736.toInt() to 0xFF8C132B.toInt(), 0xFFEE7E95.toInt() to 0xFFF3A2B3.toInt()),
-        Triple(KozmosButtonEmotion.Neutral, 0xFFC7CAD1.toInt() to 0xFFE3E4E8.toInt(), 0xFF464A53.toInt() to 0xFF2E3138.toInt()),
-        Triple(KozmosButtonEmotion.Success, 0xFF197F4C.toInt() to 0xFF0F4C2D.toInt(), 0xFF76E4AD.toInt() to 0xFFA0ECC6.toInt()),
-        Triple(KozmosButtonEmotion.Informative, 0xFF2379A4.toInt() to 0xFF1C6082.toInt(), 0xFF87C6E5.toInt() to 0xFFA9D6EC.toInt()),
-        Triple(KozmosButtonEmotion.Alert, 0xFFA06B04.toInt() to 0xFF472F02.toInt(), 0xFFFCD281.toInt() to 0xFFFDE0A8.toInt()),
+        Triple(KozmosButtonEmotion.Danger, 0xFFB01736.toInt() to 0xFF670E20.toInt(), 0xFFEE7E95.toInt() to 0xFFF8C6D0.toInt()),
+        Triple(KozmosButtonEmotion.Neutral, 0xFFC7CAD1.toInt() to 0xFF9095A2.toInt(), 0xFF464A53.toInt() to 0xFF17191C.toInt()),
+        Triple(KozmosButtonEmotion.Success, 0xFF197F4C.toInt() to 0xFF0F4C2D.toInt(), 0xFF76E4AD.toInt() to 0xFFCBF5E0.toInt()),
+        Triple(KozmosButtonEmotion.Informative, 0xFF2379A4.toInt() to 0xFF154761.toInt(), 0xFF87C6E5.toInt() to 0xFFCAE6F3.toInt()),
+        Triple(KozmosButtonEmotion.Alert, 0xFFA06B04.toInt() to 0xFF472F02.toInt(), 0xFFFCD281.toInt() to 0xFFFEEED0.toInt()),
     )
 
     @Test

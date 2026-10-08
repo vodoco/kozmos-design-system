@@ -130,9 +130,10 @@ public struct KozmosLocationPin: View {
     /// On the featured amber, #FAB735, it is the alert's on-fill, black, the
     /// dark words decision 55 gives Featured, whatever the tint: foreground/1000
     /// was white in light, 1.77:1. On the primary's theme fill and the
-    /// accent's theme variant 1, #4134F1, it is the theme foreground, white in
-    /// both themes (decision 59): foreground/1000 is black in the dark, 2.99:1
-    /// on the accent, where white reads 7.03:1. As Compose draws them.
+    /// accent's theme variant 1, #4135F1 (decision 63), it is the theme
+    /// foreground, white in both themes (decision 59): foreground/1000 is black
+    /// in the dark, 3.00:1 on the accent, where white reads 6.99:1. As Compose
+    /// draws them.
     private var numberColor: Color {
         if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }
         if isQuiet { return outlineColor }

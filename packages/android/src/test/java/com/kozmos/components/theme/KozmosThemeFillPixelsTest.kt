@@ -372,13 +372,14 @@ class KozmosThemeFillPixelsTest {
     }
 
     /**
-     * The accent pin is theme variant 1's 500, #4134F1 in both themes, and its
-     * number the theme foreground, white, on it in both: foreground/1000 is
-     * black in the dark, 2.99:1, where white reads 7.03:1.
+     * The accent pin is theme variant 1's 500, #4135F1 in both themes since
+     * decision 63 (it was #4134F1, 2.99:1 on the dark page), and its number
+     * the theme foreground, white, on it in both: foreground/1000 is black in
+     * the dark, 3.00:1, where white reads 6.99:1.
      */
     @Test
     fun anAccentPinsNumberIsWhiteInBothThemes() {
-        val accent = 0xFF4134F1.toInt()
+        val accent = 0xFF4135F1.toInt()
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
             val drawn = draw(dark, Color(0xFF808080)) {
@@ -386,7 +387,7 @@ class KozmosThemeFillPixelsTest {
             }
             val bounds = drawn.boundsOf(accent)
             if (bounds == null) {
-                wrong += "${mode(dark)}: the accent pin draws no #4134F1"
+                wrong += "${mode(dark)}: the accent pin draws no #4135F1"
                 continue
             }
             val marks = drawn.count(white, 12, bounds.first.middleHalf(), bounds.second.middleHalf())

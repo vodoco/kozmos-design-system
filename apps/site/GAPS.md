@@ -928,7 +928,11 @@ isolate` on the example canvases, as on the component pages' demo stages and
   pass in the light theme. A prominent fill (a selected `Chip`, a default
   `Button`) no longer draws the 600 under black ink: since decision 59 it is
   the ramp's 500 under white in both themes, and variant 1's 500 reads
-  7.03:1 under it. The contrast contract measures the default ramp only.
+  6.99:1 under it. Variant 1's 500 is `#4135F1` since decision 63 (it was
+  `#4134F1`), lightened just enough to read 3:1 as a shape on the dark page.
+  The contrast contract measures variant 1's 500 on the page and under the
+  theme foreground, and the default ramp's text pairs; not yet the
+  variants' 600 as text.
 - **Evidence:** axe on the ThemeProvider page in the dark theme (its token
   override re-pointed the theme's 600 to variant 1), until the demos moved to
   Storybook on 2026-09-28, and on the home page's "Make it yours" with variant
@@ -939,11 +943,11 @@ isolate` on the example canvases, as on the component pages' demo stages and
   dark; a test measures the ratio.
 - **Lane:** Core (tokens).
 - **Fix in Kozmos:** lighten variant 1's dark 600 until it passes, and add
-  both variants' primary-text pairs and theme-fill pairs (the 500 under the
-  theme foreground) to the contract, so every ramp a product may choose is
-  measured. One of them would fail as the ramp stands: the contract holds
-  the default fill to 3:1 as a shape on the page, and on the dark page
-  variant 1's 500 reads 2.99:1 (2.50:1 on the sheet).
+  both variants' primary-text pairs to the contract, so every ramp a product
+  may choose is measured. The 500's half is done (decision 63, 2026-10-08):
+  `#4135F1` reads 3.00:1 as a shape on the dark page, where `#4134F1` read
+  2.99:1, and 2.52:1 on the dark sheet, accepted as the theme fill's 2.32:1
+  is. The contract holds it to 3:1 on the page and white on it to 4.5:1.
 
 ## GAP-46 · `Stepper` has no narrow form
 
