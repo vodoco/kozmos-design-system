@@ -10,6 +10,12 @@ import { PlatformSnippets } from "../PlatformSnippets";
 Pairs a primary action with a separate dropdown of related actions.
 Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers.
 
+Both halves are the theme fill, and each draws the pressed token, `#0D44C2`, while it is held, on
+the web and in Compose. On iOS the menu half keeps SwiftUI's own press: it is a `Menu`, which does
+not run a custom button style's pressed state, and drawing the token there would mean replacing the
+system menu. This is a deliberate platform difference (decision 64); the action half draws the token
+on iOS too.
+
 <Canvas>
   <Story of={SplitButtonStories.Default} />
 </Canvas>
