@@ -93,7 +93,7 @@ struct KozmosToast: View {
         .padding()
         .background(KozmosColors.primitivesColorsBackground0)
         .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .kozmosElevation(KozmosShadows.semanticsElevationFloating)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
