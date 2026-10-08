@@ -5859,6 +5859,106 @@ section("The rest of the batch");
   );
 }
 
+// --- Tabs: React's raised segment (decision 65) ---------------------------------
+
+section("Decision 65: Tabs draw React's raised segment");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  // "<variable> <light>/<dark>": what a paint binds, and what it draws in
+  // each mode.
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+  const tabs = async (count, active, state) => {
+    const component = figma.createComponent();
+    await plugin.updateTabsVariant(component, {
+      count,
+      active,
+      state,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const raised = JSON.stringify([plugin.elevationEffect("raised")]);
+  const shadowOf = (node) => JSON.stringify((node && node.effects) || []);
+  // Every colour a variant binds, fills and strokes, on every node in it.
+  const boundColours = (component) =>
+    [component]
+      .concat(component.findAll(() => true))
+      .flatMap((node) =>
+        [].concat(node.fills || [], node.strokes || []).map(boundVariableName),
+      )
+      .filter(Boolean);
+
+  const two = await tabs("Two", "One", "Default");
+  ok(
+    reads(two.fills[0]) === "Colors/background/100 #E3E4E8/#17191C",
+    `the list is the background/100 track (${reads(two.fills[0])})`,
+  );
+  const first = named(two, "Tab 1 Trigger");
+  const second = named(two, "Tab 2 Trigger");
+  ok(
+    first && reads(first.fills[0]) === "Colors/background/0 #FFFFFF/#000000",
+    `the active tab is a background/0 segment (${first && reads(first.fills[0])})`,
+  );
+  ok(
+    shadowOf(first) === raised,
+    `and it is raised, as React's shadow-raised (${shadowOf(first)})`,
+  );
+  ok(
+    reads(named(two, "Tab 1 Text").fills[0]) ===
+      "Colors/foreground/0 #000000/#FFFFFF",
+    `its words are foreground/0 (${reads(named(two, "Tab 1 Text").fills[0])})`,
+  );
+  ok(
+    second && second.fills.length === 0 && shadowOf(second) === "[]",
+    `an inactive tab draws no segment and casts nothing (${second && second.fills.length} fills, ${shadowOf(second)})`,
+  );
+  ok(
+    reads(named(two, "Tab 2 Text").fills[0]) ===
+      "Colors/foreground/400 #5D626F/#A29D90",
+    `its words are foreground/400 (${reads(named(two, "Tab 2 Text").fills[0])})`,
+  );
+  ok(
+    boundColours(two).every((name) => !/^Colors\/theme\//.test(name)),
+    `nothing at rest is the theme's colour (${boundColours(two).join(", ")})`,
+  );
+
+  // Focused, the ring is theme 600 as React's ring, and the segment follows
+  // the active tab, not the first.
+  const focused = await tabs("Three", "Two", "Focus");
+  ok(
+    shadowOf(named(focused, "Tab 2 Trigger")) === raised &&
+      shadowOf(named(focused, "Tab 1 Trigger")) === "[]" &&
+      shadowOf(named(focused, "Tab 3 Trigger")) === "[]",
+    "focused, only the active tab is raised",
+  );
+  ok(
+    boundColours(focused).every(
+      (name) => !/^Colors\/theme\//.test(name) || name === "Colors/theme/600",
+    ) && boundColours(focused).indexOf("Colors/theme/500") === -1,
+    `focused, the only theme colour is the ring's 600 (${boundColours(focused).join(", ")})`,
+  );
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

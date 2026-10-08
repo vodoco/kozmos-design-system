@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6150c9ad6332";
+const PLUGIN_BUILD = "9d75fd64d9ca";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -61865,6 +61865,7 @@ async function syncTabsVariantChildren({
         ]
       : [];
     trigger.strokes = [];
+    trigger.effects = config.raised ? [elevationEffect("raised")] : [];
     trigger.setSharedPluginData(RUN_NAMESPACE, "kind", "tabs-trigger");
     trigger.setSharedPluginData(
       RUN_NAMESPACE,
@@ -75651,6 +75652,12 @@ function tabsVariantCombinations() {
   return combinations;
 }
 
+/**
+ * A tab's paint. The active tab is React's raised segment (decision 65,
+ * 2026-10-08): background/0, the raised elevation, foreground/0 words, in the
+ * list's background/100 track; the others' words are foreground/400. Nothing
+ * on tabs is the theme's colour, the focus ring's 600 aside.
+ */
 function tabsTriggerConfig(state, isActive) {
   if (state === "Disabled") {
     return {
@@ -75658,6 +75665,7 @@ function tabsTriggerConfig(state, isActive) {
       foreground: "Colors/foreground/500",
       backgroundFallback: "#C7CAD1",
       foregroundFallback: "#747B8B",
+      raised: false,
     };
   }
 
@@ -75666,6 +75674,7 @@ function tabsTriggerConfig(state, isActive) {
     foreground: isActive ? "Colors/foreground/0" : "Colors/foreground/400",
     backgroundFallback: "#FFFFFF",
     foregroundFallback: isActive ? "#000000" : "#5D626F",
+    raised: isActive,
   };
 }
 
