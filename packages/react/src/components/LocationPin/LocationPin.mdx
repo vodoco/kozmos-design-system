@@ -125,12 +125,25 @@ the number, and it grows, so selection is never told by colour alone. Its card's
   product numbers only the others), a pin showing `markerContent`, and a pin with no number.
 - **Other variants** keep their colours in the ring and number, as ink that reads 4.5:1 on the
   background in both themes: `secondary`, whose own colour on the web is a surface grey, takes the
-  muted foreground. On iOS and Compose, whose theme/500 reads 3.74:1 on the dark background,
-  `primary` takes the theme's text role and `accent` its theme variant's 700.
+  muted foreground. On every platform `primary` takes the theme's text role (theme/500 reads 3.74:1
+  on the dark background) and `accent` its theme variant's 700 (its 500 reads 3:1 there).
 - **Contrast:** the primary number reads 6.24:1 on the light background and 6.17:1 on the dark.
   Its ring reads at least 4.68:1 against Pointr's light map (background, rooms, retail and food)
   and 3.27:1 against the dark map's background, rooms, corridors and retail; dark food-and-drink
   rooms are the exception, at 2.76:1, as the filled pin is.
+
+## Featured and accent
+
+A `featured` pin is the SDK's Featured amber, alert 500 (`#FAB735` in both themes), with its number
+in the alert's on-fill colour, black (11.89:1), whatever its variant or tint. Its accessible name
+adds `featuredLabel` ("Featured" unless you pass it translated) to `label`, so the amber is never
+the only way to tell it. The `accent` pin is brand variant 1's 500, `#4135F1` in both themes, with
+a white number (6.99:1). Both are drawn the same way on the web, iOS, Compose and in Figma (decision
+62); the web drew a featured pin in its variant's colour with a star badge until then.
+
+<Canvas>
+  <Story of={LocationPinStories.FeaturedLogoAndPlain} />
+</Canvas>
 
 ## On another floor
 

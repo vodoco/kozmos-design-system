@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "9d75fd64d9ca";
+const PLUGIN_BUILD = "64aa564012f3";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -44938,14 +44938,17 @@ async function rebuildFloorSelectorComponent() {
 // A marker's fill and the ink on it. The theme's pin is a prominent fill
 // (decision 59): the theme fill, its number the theme foreground, white in
 // both themes. It was theme/700 under foreground/1000, which turns black in
-// the dark.
+// the dark. Featured is the SDK's amber, alert 500 (#FAB735) in both themes,
+// with the alert's on-fill, black in both, for its number (decision 55; Olcay
+// set the pins on every platform to the natives' on 2026-10-08, decision 62).
+// It was alert 900 under white.
 function locationPinPalette(state) {
   const onFill = { name: "Colors/foreground/1000", fallback: "#FFFFFF" };
   if (state === "Featured") {
     return {
-      fill: "Colors/emotional/alert/900",
-      fallback: "#744D03",
-      ink: onFill,
+      fill: "Colors/emotional/alert/500",
+      fallback: "#FAB735",
+      ink: { name: "Emotion/alert/onFill", fallback: "#000000" },
     };
   }
   if (state === "Disabled" || state === "OffFloor") {

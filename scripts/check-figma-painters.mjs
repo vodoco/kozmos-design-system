@@ -175,6 +175,8 @@ const variableByName = mockVariables([
   "Colors/theme/600",
   "Colors/theme/700",
   "Colors/emotional/alert/900",
+  "Colors/emotional/alert/500",
+  "Emotion/alert/onFill",
   "Colors/background/100",
   "Colors/background/200",
   "Primary Buttons/themed/button/background/idle",
@@ -576,13 +578,13 @@ section("LocationPin");
     const marker = named(component, "Pin Marker");
     ok(
       marker &&
-        boundVariableName(marker.fills[0]) === "Colors/emotional/alert/900",
-      "featured: keeps the alert colour under a tint",
+        boundVariableName(marker.fills[0]) === "Colors/emotional/alert/500",
+      "featured: the SDK's amber, alert 500, under a tint (decision 62)",
     );
     const number = named(component, "Number Text");
     ok(
-      number && boundVariableName(number.fills[0]) === "Colors/foreground/1000",
-      "featured: the number stays white",
+      number && boundVariableName(number.fills[0]) === "Emotion/alert/onFill",
+      "featured: the number is the alert's on-fill, black (decision 62)",
     );
   }
 
