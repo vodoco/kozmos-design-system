@@ -351,11 +351,19 @@ try {
             star: false,
             hidden: true,
           },
+          // Decision 59: selected, the number tab is the theme fill with the
+          // theme foreground on it, the same in both themes.
           "selected number": {
             kind: "number",
-            background: await token("--primitives-colors-theme-600"),
-            color: await token("--primitives-colors-foreground-1000"),
-            borderBottomColor: await token("--primitives-colors-theme-600"),
+            background: await token(
+              "--components-primary-buttons-themed-button-background-idle",
+            ),
+            color: await token(
+              "--components-primary-buttons-themed-button-foreground-content-idle",
+            ),
+            borderBottomColor: await token(
+              "--components-primary-buttons-themed-button-background-idle",
+            ),
             ...corner,
             star: false,
             hidden: true,
@@ -373,8 +381,12 @@ try {
           },
           "selected grouped row": {
             kind: "number",
-            background: await token("--primitives-colors-theme-600"),
-            color: await token("--primitives-colors-foreground-1000"),
+            background: await token(
+              "--components-primary-buttons-themed-button-background-idle",
+            ),
+            color: await token(
+              "--components-primary-buttons-themed-button-foreground-content-idle",
+            ),
             hidden: true,
           },
           "grouped row": {

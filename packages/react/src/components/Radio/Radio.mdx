@@ -96,12 +96,12 @@ public struct KozmosRadioGroupItem: View {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 ZStack {
                     Circle()
-                        .stroke(selection == value ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground400, lineWidth: 1)
+                        .stroke(selection == value ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground400, lineWidth: 1)
                         .frame(width: 20, height: 20)
                     
                     if selection == value {
                         Circle()
-                            .fill(KozmosColors.primitivesColorsTheme500)
+                            .fill(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
                             .frame(width: 10, height: 10)
                     }
                 }
@@ -121,25 +121,27 @@ public struct KozmosRadioGroupItem: View {
     kotlin={`
 package com.kozmos.components.radio
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
 @Composable
@@ -175,14 +177,17 @@ fun KozmosRadioGroupItem(
             .padding(vertical = KozmosDimensions.primitivesLayoutSpacing100),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(
-            selected = (value == selectedValue),
-            onClick = null,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = KozmosColors.primitivesColorsTheme500,
-                unselectedColor = KozmosColors.primitivesColorsForeground500
-            )
-        )
+        // Material's RadioButton draws its ring and its dot in one colour;
+        // Kozmos tells them apart (decision 59): the ring is a border, theme
+        // 600, and the dot a fill, the theme fill.
+        val selected = value == selectedValue
+        val ring = if (selected) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground500
+        val dot = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+        Canvas(Modifier.padding(2.dp).size(20.dp)) {
+            val stroke = 2.dp.toPx()
+            drawCircle(ring, radius = size.minDimension / 2 - stroke / 2, style = Stroke(stroke))
+            if (selected) drawCircle(dot, radius = 6.dp.toPx() - stroke / 2)
+        }
         if (label != null) {
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
             Text(

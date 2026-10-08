@@ -191,7 +191,13 @@
       "id": "components-badge",
       "title": "Core/Data display/Badge",
       "component": "Badge",
-      "exports": ["Default", "Outline", "WithCounter", "Icon"]
+      "exports": [
+        "Default",
+        "Outline",
+        "WithCounter",
+        "DefaultWithCounter",
+        "Icon"
+      ]
     },
     {
       "file": "packages/react/src/components/BottomNavigation/BottomNavigation.stories.tsx",
@@ -401,6 +407,7 @@
       "exports": [
         "VerticalList",
         "HorizontalList",
+        "ListWithResultCounts",
         "CompactStepper",
         "Collapsible",
         "CollapsibleCountsOffByDefault",
@@ -1051,7 +1058,7 @@
       "id": "components-switch",
       "title": "Core/Inputs/Switch",
       "component": "Switch",
-      "exports": ["Default", "Disabled", "Error"]
+      "exports": ["Default", "Checked", "Disabled", "Error"]
     },
     {
       "file": "packages/react/src/components/Table/Table.stories.tsx",
@@ -1121,7 +1128,7 @@
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default"]
+      "exports": ["Default", "On"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",

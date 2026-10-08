@@ -83,6 +83,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.providers.LocalKozmosAnalytics
 
 @Composable
@@ -138,7 +139,7 @@ modifier = Modifier.fillMaxWidth().padding(bottom = KozmosDimensions.primitivesL
 shape = androidx.compose.foundation.shape.RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100),
 singleLine = true,
 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-focusedBorderColor = KozmosColors.primitivesColorsTheme500,
+focusedBorderColor = KozmosThemeTokens.primitivesColorsTheme600,
 unfocusedBorderColor = KozmosColors.primitivesColorsForeground300
 )
 )
@@ -167,7 +168,7 @@ val trackEvent = LocalKozmosAnalytics.current
             shape = androidx.compose.foundation.shape.RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100),
             singleLine = true,
             colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = KozmosColors.primitivesColorsTheme500,
+                focusedBorderColor = KozmosThemeTokens.primitivesColorsTheme600,
                 unfocusedBorderColor = KozmosColors.primitivesColorsForeground300
             )
         )

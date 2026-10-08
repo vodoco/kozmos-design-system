@@ -52,19 +52,26 @@ public struct KozmosSwitch: View {
         .disabled(disabled)
     }
 
+    /// Decision 59: checked, the track is a prominent fill, the theme fill.
     private var trackColor: Color {
         if error && checked { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        if checked { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsTheme500 }
+        if checked { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle }
         return KozmosColors.primitivesColorsForeground500
     }
+
+    /// Whether the track is the theme fill, which the thumb then sits on.
+    private var isThemeFilled: Bool { checked && !error && !disabled }
 
     private var trackStrokeColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
         return trackColor
     }
 
+    /// On the theme fill the thumb is a mark on it: the theme foreground,
+    /// white in both themes, as React's (background/0 is black in the dark,
+    /// 3.74:1 on the fill). Elsewhere it is the surface, as it was.
     private var thumbColor: Color {
-        KozmosColors.primitivesColorsBackground0
+        isThemeFilled ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground0
     }
 
     private var labelColor: Color {

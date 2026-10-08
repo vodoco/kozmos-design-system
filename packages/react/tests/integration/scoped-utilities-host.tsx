@@ -10,7 +10,12 @@ import {
 function Samples({ id }: { id: string }) {
   return (
     <section style={{ width: 300, padding: 16 }}>
-      <Badge data-testid={`${id}-badge`}>Available</Badge>
+      {/* Secondary, not default: the default Badge is the theme fill, the
+          same #135BEC in both themes (decision 59), so it could no longer
+          tell a dark scope from a light one. */}
+      <Badge data-testid={`${id}-badge`} variant="secondary">
+        Available
+      </Badge>
       <Separator data-testid={`${id}-separator`} />
       <Button data-testid={`${id}-button`}>Continue</Button>
       <Input data-testid={`${id}-input`} aria-label={`${id} search`} />

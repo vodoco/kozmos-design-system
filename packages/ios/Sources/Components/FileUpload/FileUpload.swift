@@ -16,8 +16,9 @@ public struct KozmosFileUpload: View {
         VStack {
             if let fileName = fileName {
                 HStack {
+                    // A theme-coloured icon: theme 600 (decision 59).
                     Image(systemName: "doc.fill")
-                        .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
                     Text(fileName)
                         .lineLimit(1)
                         .truncationMode(.middle)

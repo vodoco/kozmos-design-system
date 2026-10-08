@@ -98,10 +98,15 @@ pnpm --filter @kozmos-ds/tokens build
 
 **Solutions:**
 
-1. **Re-sync from Figma:**
+1. **Find which side is stale before you sync.** The code can be ahead of Figma: until the owner
+   runs the importer plugin's Update, the Figma variables still hold the values from before
+   decision 59 (the theme fill is theme 500 and its foreground white, in both themes), and a sync
+   would write them back over `packages/tokens/src`. When Figma is the stale side, the fix is the
+   plugin's Update, not a sync. Only when Figma is ahead, re-sync from it and read the diff:
 
    ```bash
-   # Reads FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY from the environment
+   # Reads FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY from the environment.
+   # Overwrites tokens-light.json and tokens-dark.json from the live Figma variables.
    pnpm tokens:sync
    ```
 

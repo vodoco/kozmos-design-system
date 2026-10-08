@@ -65,7 +65,8 @@ fun KozmosFileUpload(
                 .padding(KozmosDimensions.primitivesLayoutSpacing150),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsTheme500)
+            // An icon on a surface: theme/600 (decision 59).
+            Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsTheme600)
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
                 text = fileName!!,

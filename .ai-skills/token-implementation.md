@@ -22,6 +22,14 @@ The tokens live in `packages/tokens/src`, in the W3C Design Tokens (DTCG) format
 `pnpm tokens:sync` (`scripts/sync-figma.ts`) fetches the Figma file's variables into `src/` as DTCG
 tokens. It reads `FIGMA_ACCESS_TOKEN` and `FIGMA_FILE_KEY` from the environment.
 
+> **Do not run `tokens:sync` as routine.** It overwrites `tokens-light.json` and `tokens-dark.json`
+> with the variables in the live Figma file, which can be behind the code. They are now: until the
+> owner runs the importer plugin's Update with the current payload, Figma still holds the values from
+> before decision 59 (2026-10-07: the theme fill is theme 500 and its foreground white, in both
+> themes), and a sync writes them back over the sources. Change a token in `packages/tokens/src`
+> and run `pnpm tokens:build`; if you do sync, read the diff and keep nothing that reverts a
+> decision.
+
 ## 2. The build
 
 ```bash

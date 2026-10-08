@@ -51,18 +51,20 @@ public struct KozmosCategoryTile<Icon: View>: View {
                 // the selection shows on it. The label sits under it.
                 icon
                     .frame(width: KozmosDimensions.primitivesLayoutSizing300, height: KozmosDimensions.primitivesLayoutSizing300)
-                    .foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme500)
+                    // With no tint the accent is the theme's 600, an icon and
+                    // a border on a surface (decision 59).
+                    .foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme600)
                     .frame(width: KozmosDimensions.primitivesLayoutSizing800, height: KozmosDimensions.primitivesLayoutSizing800)
                     .background(
                         category.selected
-                            ? (tint?.accent ?? KozmosColors.primitivesColorsTheme500).opacity(0.05)
+                            ? (tint?.accent ?? KozmosColors.primitivesColorsTheme600).opacity(0.05)
                             : KozmosColors.primitivesColorsBackground0
                     )
                     .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
                             .stroke(
-                                category.selected ? (tint?.accent ?? KozmosColors.primitivesColorsTheme500) : KozmosColors.semanticsBorderSubtle,
+                                category.selected ? (tint?.accent ?? KozmosColors.primitivesColorsTheme600) : KozmosColors.semanticsBorderSubtle,
                                 lineWidth: category.selected ? 2 : 1
                             )
                     )

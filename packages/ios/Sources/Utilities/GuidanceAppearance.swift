@@ -24,11 +24,15 @@ struct KozmosGuidanceSurface: ViewModifier {
     }
     func body(content: Content) -> some View {
         if appearance == .theme {
+            // Decision 59: the theme appearance is the brand card, a prominent
+            // fill — the theme fill, theme 500 in both themes — and on it the
+            // theme foreground, white in both. It was theme 600 under
+            // foreground/1000, which is black in the dark.
             content
-                .foregroundColor(KozmosColors.primitivesColorsForeground1000)
-                .environment(\.kozmosGuidanceForeground, KozmosColors.primitivesColorsForeground1000)
+                .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+                .environment(\.kozmosGuidanceForeground, KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
                 .environment(\.kozmosSurfaceStyle, .solid)
-                .background(shape.fill(KozmosColors.primitivesColorsTheme600))
+                .background(shape.fill(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle))
         } else {
             content.environment(\.kozmosGuidanceForeground, nil).kozmosSurface(shape, style: surface)
         }

@@ -58,7 +58,7 @@ struct KozmosSwitch: View {
     
     var body: some View {
         Toggle("", isOn: $isOn)
-            .toggleStyle(SwitchToggleStyle(tint: KozmosColors.componentSwitchBackgroundColorChecked))
+            .toggleStyle(SwitchToggleStyle(tint: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle))
             .labelsHidden()
     }
 }
@@ -70,11 +70,11 @@ struct KozmosSwitchStyle: ToggleStyle {
             configuration.label
             Spacer()
             RoundedRectangle(cornerRadius: 16)
-                .fill(configuration.isOn ? KozmosColors.componentSwitchBackgroundColorChecked : KozmosColors.componentSwitchBackgroundColorUnchecked)
+                .fill(configuration.isOn ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : KozmosColors.primitivesColorsForeground500)
                 .frame(width: 50, height: 30)
                 .overlay(
                     Circle()
-                        .fill(.white)
+                        .fill(configuration.isOn ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground0)
                         .padding(2)
                         .offset(x: configuration.isOn ? 10 : -10)
                 )
@@ -96,6 +96,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosSwitch(
@@ -114,8 +115,8 @@ fun KozmosSwitch(
         modifier = modifier,
         enabled = enabled,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = KozmosColors.primitivesColorsBackground0,
-            checkedTrackColor = KozmosColors.primitivesColorsTheme500,
+            checkedThumbColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+            checkedTrackColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
             uncheckedThumbColor = KozmosColors.primitivesColorsBackground300,
             uncheckedTrackColor = KozmosColors.primitivesColorsBackground100,
         )

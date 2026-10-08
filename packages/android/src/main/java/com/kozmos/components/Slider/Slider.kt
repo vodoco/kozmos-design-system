@@ -26,8 +26,10 @@ fun KozmosSlider(
         valueRange = valueRange,
         enabled = enabled,
         colors = SliderDefaults.colors(
-            thumbColor = KozmosThemeTokens.primitivesColorsTheme500,
-            activeTrackColor = KozmosThemeTokens.primitivesColorsTheme500,
+            // Theme/600, as React and Figma draw it (decision 59): the range
+            // against its track fails contrast at theme/500.
+            thumbColor = KozmosThemeTokens.primitivesColorsTheme600,
+            activeTrackColor = KozmosThemeTokens.primitivesColorsTheme600,
             inactiveTrackColor = KozmosThemeTokens.primitivesColorsBackground300,
         )
     )

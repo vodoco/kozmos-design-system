@@ -118,13 +118,16 @@ public struct KozmosRouteProgressRail: View {
                     .fill(KozmosColors.primitivesColorsBackground300)
                     .frame(width: max(width - dot * 2, 0), height: Self.track)
                     .offset(x: dot)
+                // The travelled part, its start dot and the disc are theme
+                // 600, as Progress and React's are (decision 59); the disc's
+                // glyph stays background/0, the ink 600 takes.
                 if showCompletedTrack && progress != nil && clamped > 0 {
-                    Capsule().fill(KozmosColors.primitivesColorsTheme500)
+                    Capsule().fill(KozmosColors.primitivesColorsTheme600)
                         .frame(width: disc / 2 + max(width - dot * 2 - disc, 0) * clamped, height: Self.track)
                         .offset(x: dot)
                 }
                 Circle()
-                    .fill(progress == nil ? KozmosColors.primitivesColorsBackground300 : KozmosColors.primitivesColorsTheme500)
+                    .fill(progress == nil ? KozmosColors.primitivesColorsBackground300 : KozmosColors.primitivesColorsTheme600)
                     .frame(width: dot, height: dot)
                 Circle()
                     .fill(KozmosColors.primitivesColorsBackground300)
@@ -139,7 +142,7 @@ public struct KozmosRouteProgressRail: View {
                         .offset(x: 15 + max(width - 54, 0) * point.position)
                 }
                 if progress != nil { Circle()
-                    .fill(KozmosColors.primitivesColorsTheme500)
+                    .fill(KozmosColors.primitivesColorsTheme600)
                     .frame(width: disc, height: disc)
                     .overlay(
                         KozmosDirectionGlyph(type: type, size: min(15, disc * 0.47))

@@ -38,17 +38,20 @@ public struct KozmosToggleButton: View {
             .font(size == .sm ? .caption : (size == .lg ? .headline : .subheadline))
             .padding(.horizontal, size == .sm ? KozmosDimensions.primitivesLayoutSpacing150 : (size == .lg ? KozmosDimensions.primitivesLayoutSpacing400 : KozmosDimensions.primitivesLayoutSpacing200))
             .padding(.vertical, size == .sm ? KozmosDimensions.primitivesLayoutSpacing100 : (size == .lg ? KozmosDimensions.primitivesLayoutSpacing200 : KozmosDimensions.primitivesLayoutSpacing150))
+            // Decision 59: on, the default variant is a prominent fill — the
+            // theme fill, with the theme foreground on it, white in both
+            // themes (background/0 turned black on it in the dark).
             .background(
                 Group {
                     if isOn {
-                        variant == .outline ? KozmosColors.primitivesColorsBackground200 : KozmosColors.primitivesColorsTheme500
+                        variant == .outline ? KozmosColors.primitivesColorsBackground200 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
                     } else {
                         variant == .outline ? Color.clear : KozmosColors.primitivesColorsBackground100
                     }
                 }
             )
             .foregroundColor(
-                isOn ? (variant == .outline ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsBackground0) : KozmosColors.primitivesColorsForeground100
+                isOn ? (variant == .outline ? KozmosColors.primitivesColorsForeground100 : KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle) : KozmosColors.primitivesColorsForeground100
             )
             .overlay(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)

@@ -61,7 +61,11 @@ function selectedChipClasses(variant: ChipProps["variant"]) {
     return "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90";
   }
 
-  return "border-primary bg-primary text-primary-foreground hover:bg-primary/90";
+  // A selected chip is a prominent fill: the theme fill and the theme
+  // foreground, the same in both themes (decision 59). Hovered, the themed
+  // Button's hover token, opaque: /90 of the fill let the page through,
+  // lighter in the light and darker in the dark, see-through on glass.
+  return "border-theme-fill bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]";
 }
 
 function chipLabel(children: React.ReactNode) {
@@ -185,11 +189,24 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
           </span>
         )}
         {onRemove && !isChoice ? (
+          // Focused from the keyboard it draws Button's offset ring: a band
+          // of the page's colour, then the theme's 600, so the mark reads
+          // 3:1 on a selected chip's fill (the band) and on the page (the
+          // ring). The bare 600 ring read 1.11:1 on the fill. Hovered on the
+          // fill, the theme foreground at a fifth, as ink at a tenth is
+          // hovered on a surface.
           <button
             aria-label={removeLabel ?? `Remove ${label}`}
             className={cn(
-              "kozmos-chip-remove ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              isSelected && "hover:bg-background/20",
+              "kozmos-chip-remove ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              // A selected destructive chip is the danger fill, not the
+              // theme's: its own foreground at a quarter, 1.40:1 on the light
+              // theme's red and 1.63:1 on the dark's (white at a fifth read
+              // 1.28:1 and 1.27:1).
+              isSelected &&
+                (variant === "destructive"
+                  ? "hover:bg-destructive-foreground/25"
+                  : "hover:bg-theme-fill-foreground/20"),
             )}
             disabled={disabled}
             onClick={(event) => {

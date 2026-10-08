@@ -17,7 +17,7 @@ From its `Default` story.
 import { Box, Grid, ThemeProvider } from "@kozmos-ds/react";
 
 const Item = ({ children }: { children: React.ReactNode }) => (
-  <Box className="p-4 bg-primary text-primary-foreground rounded flex items-center justify-center">
+  <Box className="p-4 bg-theme-fill text-theme-fill-foreground rounded flex items-center justify-center">
     {children}
   </Box>
 );

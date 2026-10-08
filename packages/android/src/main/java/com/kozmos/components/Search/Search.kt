@@ -30,9 +30,9 @@ fun KozmosSearch(
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
         singleLine = true,
         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme500,
+            focusedBorderColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
             unfocusedBorderColor = KozmosThemeTokens.semanticsBorderInput,
-            cursorColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme500,
+            cursorColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
             focusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground500,
             unfocusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground500
         )

@@ -89,7 +89,7 @@ fun KozmosOTPInput(
             enabled = enabled,
             readOnly = readOnly,
             singleLine = true,
-            cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+            cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { innerTextField ->
@@ -105,8 +105,9 @@ fun KozmosOTPInput(
                             val char = if (index < displayValue.length) displayValue[index] else null
                             val activeIndex = displayValue.length.coerceAtMost(cellCount - 1)
                             val isActive = index == activeIndex && enabled && !readOnly
+                            // The active cell's ring is a focus ring: theme/600 (decision 59).
                             val borderColor = if (isActive) {
-                                KozmosThemeTokens.primitivesColorsTheme500
+                                KozmosThemeTokens.primitivesColorsTheme600
                             } else {
                                 inactiveBorderColor
                             }

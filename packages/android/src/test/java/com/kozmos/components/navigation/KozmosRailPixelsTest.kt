@@ -116,7 +116,9 @@ class KozmosRailPixelsTest {
             return found
         }
         val ink = KozmosColors.primitivesColorsForeground100.toArgb()
-        val theme = KozmosColors.primitivesColorsTheme500.toArgb()
+        // The travelled part is a line, as Progress is: theme 600, as React
+        // and Figma draw it (decision 59). It was theme 500.
+        val theme = KozmosColors.primitivesColorsTheme600.toArgb()
         assertEquals(0, count(null, false, emptyList(), ink))
         assertTrue(count(null, false, listOf(KozmosRouteProgressWaypoint("gallery", 0.5f, DirectionType.Left, "Gallery")), ink) > 20)
         val plain = count(0.5f, false, emptyList(), theme)
@@ -150,7 +152,8 @@ class KozmosRailPixelsTest {
                 bounds = Rect(bounds.left * cameraScale, bounds.top * cameraScale,
                     bounds.right * cameraScale, bounds.bottom * cameraScale)
                 val scale = bounds.width / 300f
-                val theme = KozmosColors.primitivesColorsTheme500.toArgb()
+                // The current disc is theme 600, as the travelled part is (decision 59).
+                val theme = KozmosColors.primitivesColorsTheme600.toArgb()
                 var left = Int.MAX_VALUE
                 var right = -1
                 // Scan the complete camera height: its system-bar/crop origin

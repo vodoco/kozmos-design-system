@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
 enum class KozmosToggleButtonVariant {
@@ -111,13 +112,13 @@ KozmosToggleButtonSize.Large -> KozmosDimensions.primitivesLayoutSpacing300
     }
 
     val backgroundColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsBackground200 else KozmosColors.primitivesColorsTheme500
+        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsBackground200 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     } else {
         if (variant == KozmosToggleButtonVariant.Outline) Color.Transparent else KozmosColors.primitivesColorsBackground100
     }
 
     val contentColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsForeground100 else KozmosColors.primitivesColorsBackground0
+        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsForeground100 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     } else {
         KozmosColors.primitivesColorsForeground100
     }

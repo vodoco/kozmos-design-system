@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { resolvedTokens } from "./lib/token-css.mjs";
 
 const root = process.cwd();
 const require = createRequire(import.meta.url);
@@ -66,8 +67,10 @@ function readCssVariables(mode) {
   const css = fs.readFileSync(filePath, "utf8");
   const variables = {};
 
-  for (const match of css.matchAll(/--([\w-]+):\s*([^;]+);/g)) {
-    variables[match[1]] = match[2].trim();
+  // An alias is written as a reference (GAP-23); a pair is held to the colour
+  // it resolves to in this theme.
+  for (const [name, value] of resolvedTokens(css)) {
+    variables[name.slice(2)] = value;
   }
 
   return variables;
@@ -154,6 +157,24 @@ for (const mode of modes) {
       minimum: 4.5,
     });
   }
+  // Pins a contrast ratio cannot express: a token that must be another
+  // token's colour, or one colour, in this mode. Decision 59's theme fill is
+  // theme 500 in both themes and its foreground white in both; a ratio alone
+  // passed the old light-blue fill with black on it.
+  for (const pin of contract.pins ?? []) {
+    const actual = colorFor(variables, pin.token, mode, pin.name).toLowerCase();
+    const expected = (
+      pin.sameAs ? colorFor(variables, pin.sameAs, mode, pin.name) : pin.value
+    ).toLowerCase();
+    checked += 1;
+    if (actual !== expected) {
+      failures.push(
+        `${mode} ${pin.name}: --${pin.token} is ${actual}; expected ${expected}${
+          pin.sameAs ? ` (--${pin.sameAs})` : ""
+        }`,
+      );
+    }
+  }
   for (const pair of contract.pairs) {
     const background = colorFor(variables, pair.background, mode, pair.name);
     const foreground = colorFor(variables, pair.foreground, mode, pair.name);
@@ -174,4 +195,4 @@ if (failures.length) {
   throw new Error(`Token contrast check failed:\n- ${failures.join("\n- ")}`);
 }
 
-console.log(`Token contrast ok (${checked} pairs across light/dark)`);
+console.log(`Token contrast ok (${checked} pairs and pins across light/dark)`);

@@ -79,8 +79,8 @@ public struct KozmosCheckbox: View {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 ZStack {
                     RoundedRectangle(cornerRadius: KozmosDimensions.primitivesLayoutRadius50)
-                        .stroke(checked ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground400, lineWidth: 1)
-                        .background(checked ? KozmosColors.primitivesColorsTheme500 : Color.clear)
+                        .stroke(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : KozmosColors.primitivesColorsForeground400, lineWidth: 1)
+                        .background(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
                         .frame(width: 20, height: 20)
                         .cornerRadius(KozmosDimensions.primitivesLayoutRadius50)
                     
@@ -88,7 +88,7 @@ public struct KozmosCheckbox: View {
                         Image(systemName: "checkmark")
                             .font(.caption)
                             .bold()
-                            .foregroundColor(KozmosColors.primitivesColorsBackground0)
+                            .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
                     }
                 }
                 
@@ -123,6 +123,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosCheckbox(
@@ -147,8 +148,9 @@ fun KozmosCheckbox(
             onCheckedChange = null, // Handled by Row clickable for better touch target
             enabled = enabled,
             colors = CheckboxDefaults.colors(
-                checkedColor = KozmosColors.primitivesColorsTheme500,
-                uncheckedColor = KozmosColors.primitivesColorsForeground500
+                checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                uncheckedColor = KozmosColors.primitivesColorsForeground500,
+                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
             )
         )
         

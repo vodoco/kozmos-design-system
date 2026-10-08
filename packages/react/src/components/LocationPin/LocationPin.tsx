@@ -63,9 +63,12 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       lg: "w-10 h-10",
     };
 
+    // A filled primary pin is a prominent fill: the theme fill, theme 500 in
+    // both themes, with its number in the theme foreground, white in both
+    // (decision 59). `accent` is an open parity question and stays.
     const variantClasses = {
       default: "text-foreground",
-      primary: "text-primary",
+      primary: "text-theme-fill",
       secondary: "text-secondary",
       accent: "text-accent",
     };
@@ -76,7 +79,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     // to 1.01:1 (2026-09-21).
     const inkClasses = {
       default: "text-background",
-      primary: "text-primary-foreground",
+      primary: "text-theme-fill-foreground",
       secondary: "text-secondary-foreground",
       accent: "text-accent-foreground",
     };

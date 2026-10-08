@@ -183,6 +183,62 @@ describe("module-owned themes", () => {
     expect(write).not.toHaveBeenCalled();
   });
 
+  it("gives each nested provider the token set of its own theme", () => {
+    // A light app with a set per theme, and a provider inside it that forces
+    // dark, as DynamicIsland's island does: the inner root and its portal take
+    // the dark set, or a dark surface would draw the light set's 700 as ink.
+    const theme700 = "--primitives-colors-theme-700";
+    const { unmount } = render(
+      <ThemeProvider
+        theme="light"
+        tokens={{
+          light: { [theme700]: "#07513f" },
+          dark: { [theme700]: "#5cd0aa" },
+        }}
+      >
+        <ThemeProvider theme="dark">
+          <Reader />
+        </ThemeProvider>
+      </ThemeProvider>,
+    );
+    // Each root and portal, as its theme and the 700 it was given; portals
+    // mount inner first, so they are compared by theme, not by order.
+    const read = (selector: string) =>
+      Object.fromEntries(
+        [...document.querySelectorAll<HTMLElement>(selector)].map((element) => [
+          element.getAttribute("data-theme"),
+          element.style.getPropertyValue(theme700),
+        ]),
+      );
+    expect(read("[data-kozmos-root]")).toEqual({
+      light: "#07513f",
+      dark: "#5cd0aa",
+    });
+    expect(read("[data-kozmos-portal]")).toEqual({
+      light: "#07513f",
+      dark: "#5cd0aa",
+    });
+    unmount();
+  });
+
+  it("applies one set to both themes, nested providers included", () => {
+    const theme500 = "--primitives-colors-theme-500";
+    const { container } = render(
+      <ThemeProvider theme="light" tokens={{ [theme500]: "#0b7a5c" }}>
+        <ThemeProvider theme="dark" tokens={{ "--kozmos-test": "1" }}>
+          <Reader />
+        </ThemeProvider>
+      </ThemeProvider>,
+    );
+    const roots = [
+      ...container.querySelectorAll<HTMLElement>("[data-kozmos-root]"),
+    ];
+    expect(
+      roots.map((element) => element.style.getPropertyValue(theme500)),
+    ).toEqual(["#0b7a5c", "#0b7a5c"]);
+    expect(roots[1].style.getPropertyValue("--kozmos-test")).toBe("1");
+  });
+
   it("owns exactly one portal root under StrictMode and cleans it up", () => {
     const { unmount } = render(
       <StrictMode>

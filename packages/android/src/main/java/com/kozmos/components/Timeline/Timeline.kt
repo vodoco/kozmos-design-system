@@ -92,7 +92,8 @@ fun KozmosTimelineItem(
                 modifier = Modifier
                     .size(KozmosDimensions.primitivesLayoutSpacing150)
                     .clip(CircleShape)
-                    .background(KozmosThemeTokens.primitivesColorsTheme500)
+                    // A mark on a surface: theme/600 (decision 59).
+                    .background(KozmosThemeTokens.primitivesColorsTheme600)
             )
             if (!isLast) {
                 Box(

@@ -38,8 +38,9 @@ public struct KozmosTree: View {
         List(nodes, children: \.children) { node in
             HStack {
                 if node.children != nil {
+                   // A theme-coloured icon: theme 600 (decision 59).
                    Image(systemName: "folder")
-                        .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
                 } else {
                     Image(systemName: "doc")
                         .foregroundColor(.gray)

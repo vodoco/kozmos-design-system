@@ -29,7 +29,7 @@ const Switch = React.forwardRef<
         <SwitchPrimitive.Root
           id={inputId}
           className={cn(
-            "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill border-2 border-muted-foreground bg-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:bg-primary",
+            "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill border-2 border-muted-foreground bg-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-theme-fill data-[state=checked]:bg-theme-fill",
             hasError &&
               "border-destructive focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:bg-destructive",
             className,
@@ -45,7 +45,16 @@ const Switch = React.forwardRef<
         >
           <SwitchPrimitive.Thumb
             className={cn(
-              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+              // On, the thumb slides 20 toward the inline end: right, or left
+              // in a right-to-left box, read from --kozmos-rtl as every
+              // direction rule is (never :dir()). A bare translate-x-5 slid
+              // it right in both, out of a right-to-left track.
+              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-[calc(1.25rem_*_(1_-_2_*_var(--kozmos-rtl,0)))] data-[state=unchecked]:translate-x-0",
+              // The thumb on the checked track is a mark on the theme fill: the
+              // theme foreground, white in both themes (decision 59). On an
+              // error's track it stays the surface, as SwiftUI and Compose
+              // draw it.
+              !hasError && "data-[state=checked]:bg-theme-fill-foreground",
             )}
           />
         </SwitchPrimitive.Root>

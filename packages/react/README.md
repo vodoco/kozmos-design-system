@@ -148,6 +148,50 @@ CSS-variable overrides through `tokens={{ "--your-variable": "value" }}` so they
 follow overlays too. Unrelated ancestor inline styles/fonts are not copied into
 portals.
 
+## Brand colour
+
+Every prominent fill — a filled Button, IconButton, FloatingActionButton or
+SplitButton, a checked Checkbox or Switch, a selected Chip, a Tag — is theme
+500, the client's base colour. The stylesheet writes a token that aliases
+another as a reference (`var(--primitives-colors-theme-500)`), so one override
+on the provider re-brands them all. Pass a set per theme: every provider,
+including one that forces the other theme inside yours (DynamicIsland's island
+is always dark), applies the set for its own theme.
+
+```tsx
+import { ThemeProvider } from "@kozmos-ds/react";
+
+<ThemeProvider
+  tokens={{
+    light: {
+      "--primitives-colors-theme-500": "#0b7a5c",
+      "--primitives-colors-theme-600": "#096650",
+      "--primitives-colors-theme-700": "#07513f",
+    },
+    dark: {
+      "--primitives-colors-theme-300": "#07513f",
+      "--primitives-colors-theme-400": "#096650",
+      "--primitives-colors-theme-500": "#0b7a5c",
+      "--primitives-colors-theme-600": "#2fae86",
+      "--primitives-colors-theme-700": "#5cd0aa",
+    },
+  }}
+>
+  {app}
+</ThemeProvider>;
+```
+
+Set the steps around 500 too. The filled Button's hover and focus, and the
+hover of a selected Chip, a default Tag, a default Badge and an on ToggleButton,
+are theme 600 (400 in the dark theme); the Button's pressed is 700 (300 in the
+dark); the outline, ghost and link Buttons' ink is 700, and 600 hovered. Theme
+600 is also the theme as text, borders and rings, so set it at 4.5:1 on the
+page in each theme. A single flat set (`tokens={{ "--…": "…" }}`) applies to
+both themes. Override on the provider, not a descendant: a reference resolves
+where it is declared. SwiftUI and Compose take no overrides; their fill is
+Pointr's `#135BEC`. The theming guide in the repository's
+`.ai-skills/theming-guide.md` has the worked set.
+
 ## Runtime design configuration
 
 For the experimental glass controls, use `DesignConfigProvider`. It includes the

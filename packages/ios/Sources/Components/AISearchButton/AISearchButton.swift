@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// The AI search, beside the search field: a 48 circle whose thin ring is a
-/// gradient runs through the theme's own ramp — 300 to 600 and back, the
-/// first gradient the system draws, made of tokens — with a 16 icon. The
-/// button shows the icon alone and is named by its label.
+/// rainbow of the system's data colours and its success green, turning, with
+/// a 16 icon in the theme's 600. The button shows the icon alone and is named
+/// by its label.
 public struct KozmosAISearchButton: View {
     let label: String
     let action: () -> Void
@@ -50,9 +50,11 @@ public struct KozmosAISearchButton: View {
                 Circle()
                     .fill(KozmosColors.primitivesColorsBackground0)
                     .frame(width: Self.disc, height: Self.disc)
+                // A theme-coloured icon on the white disc: theme 600, as
+                // React's (decision 59).
                 Image(systemName: "sparkles")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                    .foregroundColor(KozmosColors.primitivesColorsTheme600)
                     .accessibilityHidden(true)
             }
             .frame(width: Self.footprint, height: Self.footprint)

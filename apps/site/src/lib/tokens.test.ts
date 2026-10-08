@@ -54,6 +54,41 @@ test("themes merge by name, the dark value falling back to light", () => {
   assert.equal(merged[2].description, "Interactive controls.");
 });
 
+test("a reference reads as the value it names, in its own theme", () => {
+  // The build writes an alias as a reference (GAP-23): the themed Button's
+  // fill is var(--primitives-colors-theme-500), and its hover names 600 in
+  // the light theme and 400 in the dark, where the ramp turns over.
+  const merged = mergeThemes(
+    `:root {
+  --primitives-colors-theme-400: #5887f3;
+  --primitives-colors-theme-600: #1051e8;
+  --hover: var(--primitives-colors-theme-600); /** Hovered. */
+  --twice: var(--hover);
+}`,
+    `[data-theme='dark'] {
+  --primitives-colors-theme-400: #1051e8;
+  --primitives-colors-theme-600: #5887f3;
+  --hover: var( --primitives-colors-theme-400 );
+  --twice: var(--hover);
+}`,
+  );
+  const hover = merged.find((entry) => entry.name === "--hover");
+  assert.deepEqual(hover, {
+    name: "--hover",
+    light: "#1051e8",
+    dark: "#1051e8",
+    description: "Hovered.",
+    references: {
+      light: "--primitives-colors-theme-600",
+      dark: "--primitives-colors-theme-400",
+    },
+  });
+  assert.equal(
+    merged.find((entry) => entry.name === "--twice")?.dark,
+    "#1051e8",
+  );
+});
+
 test("ramp steps come from the name", () => {
   assert.equal(stepOf("--primitives-colors-theme-600"), 600);
   assert.equal(stepOf("--primitives-colors-theme-0"), 0);

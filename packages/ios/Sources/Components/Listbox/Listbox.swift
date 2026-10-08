@@ -94,9 +94,10 @@ public struct KozmosListbox: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                             if selectedValues.contains(option.value) {
+                                // An icon on the row: theme 600 (decision 59).
                                 Image(systemName: "checkmark")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                                    .foregroundColor(KozmosColors.primitivesColorsTheme600)
                                     .frame(width: 20, height: 20)
                             }
                         }

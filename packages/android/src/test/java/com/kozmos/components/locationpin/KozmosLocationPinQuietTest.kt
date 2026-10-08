@@ -62,7 +62,8 @@ class KozmosLocationPinQuietTest {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
                 colors["surface"] = KozmosThemeTokens.primitivesColorsBackground0.argb()
                 colors["themeText"] = KozmosThemeTokens.semanticsEmotionThemedText.argb()
-                colors["theme500"] = KozmosThemeTokens.primitivesColorsTheme500.argb()
+                // The theme fill, theme 500 in both themes (decision 59).
+                colors["themeFill"] = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle.argb()
                 MaterialTheme {
                     Box(Modifier.fillMaxSize().background(KozmosThemeTokens.primitivesColorsBackground0).padding(16.dp)) {
                         pin()
@@ -106,7 +107,7 @@ class KozmosLocationPinQuietTest {
 
         // Selected: 48dp, from 16 to 64, its centre at 40; filled in the theme.
         val selected = draw { KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 2, selected = true) }
-        assertColour("inside the selected pin", selected.colors.getValue("theme500"), selected.at(40f - 12f, 40f))
+        assertColour("inside the selected pin", selected.colors.getValue("themeFill"), selected.at(40f - 12f, 40f))
     }
 
     @Test

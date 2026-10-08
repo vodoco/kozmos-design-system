@@ -18,8 +18,10 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -33,33 +35,40 @@ fun KozmosSwitch(
     error: Boolean = false
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
+    // Checked, the track is the theme fill and the thumb on it a mark in the
+    // theme foreground, the same in both themes (decision 59): background/0
+    // turned the thumb black on it in the dark. Disabled, it keeps those
+    // colours and the whole switch, label too, is drawn at half, as React's
+    // `disabled:opacity-50` draws it: it was foreground/500 with a
+    // background/0 thumb, a grey that was no longer the fill.
+    val themed = checked && !error
     val checkedTrackColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
-        KozmosThemeTokens.primitivesColorsTheme500
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     }
     val uncheckedTrackColor = KozmosThemeTokens.primitivesColorsForeground500
-    val disabledTrackColor = KozmosThemeTokens.primitivesColorsForeground500
-    val trackColor = when {
-        !enabled -> disabledTrackColor
-        checked -> checkedTrackColor
-        else -> uncheckedTrackColor
-    }
+    val trackColor = if (checked) checkedTrackColor else uncheckedTrackColor
     val trackBorderColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
         trackColor
     }
-    val thumbColor = KozmosThemeTokens.primitivesColorsBackground0
-    val labelColor = when {
-        error -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
-        !enabled -> KozmosThemeTokens.primitivesColorsForeground500
-        else -> MaterialTheme.colorScheme.onSurface
+    val thumbColor = if (themed) {
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+    } else {
+        KozmosThemeTokens.primitivesColorsBackground0
+    }
+    val labelColor = if (error) {
+        KozmosThemeTokens.primitivesColorsEmotionalDanger600
+    } else {
+        MaterialTheme.colorScheme.onSurface
     }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
             .toggleable(
                 value = checked,

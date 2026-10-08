@@ -48,14 +48,17 @@ fun KozmosTag(
     val emotionSurface = emotion?.surface
     val emotionOnSurface = emotion?.onSurface
     val emotionText = emotion?.text
+    // Default is the theme fill with the theme foreground on it, the same in
+    // both themes (decision 59): background/0 turned its words black on it in
+    // the dark.
     val backgroundColor = when (variant) {
-        KozmosTagVariant.Default -> KozmosThemeTokens.primitivesColorsTheme500
+        KozmosTagVariant.Default -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
         KozmosTagVariant.Secondary -> KozmosThemeTokens.primitivesColorsBackground100
         KozmosTagVariant.Destructive -> KozmosThemeTokens.semanticsDataRed
         KozmosTagVariant.Outline -> Color.Transparent
     }
     val foregroundColor = when (variant) {
-        KozmosTagVariant.Default,
+        KozmosTagVariant.Default -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         KozmosTagVariant.Destructive -> KozmosThemeTokens.primitivesColorsBackground0
         KozmosTagVariant.Secondary,
         KozmosTagVariant.Outline -> KozmosThemeTokens.primitivesColorsForeground900

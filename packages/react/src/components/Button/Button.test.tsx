@@ -76,6 +76,19 @@ describe("Button", () => {
       expect(button.className).toContain("kozmos-button-emotion-filled");
     });
 
+    // Pressed and focused, a filled emotion reads its own tokens, so the
+    // default variant's themed pressed and focus rules never show through.
+    it.each(BUTTON_EMOTIONS)("gives %s its pressed and focus", (emotion) => {
+      render(<Button emotion={emotion}>Save</Button>);
+      const button = screen.getByRole("button");
+      expect(button.style.getPropertyValue("--kz-button-bg-pressed")).toBe(
+        `var(--components-primary-buttons-${emotion}-button-background-pressed)`,
+      );
+      expect(button.style.getPropertyValue("--kz-button-bg-focus")).toBe(
+        `var(--components-primary-buttons-${emotion}-button-background-focus)`,
+      );
+    });
+
     it("reads the secondary tier for a bordered variant", () => {
       render(
         <Button variant="outline" emotion="success">

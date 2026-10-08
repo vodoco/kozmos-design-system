@@ -20,8 +20,12 @@ const tagVariants = cva(
   {
     variants: {
       variant: {
+        // The theme fill and the theme foreground, the same in both themes
+        // (decision 59). Hovered, the themed Button's hover token, opaque,
+        // 6.24:1 under its white text: /90 of the fill let the page
+        // through, lighter in the light and darker in the dark.
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
@@ -63,6 +67,7 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
         ? EMOTION_OUTLINE_CLASSES
         : EMOTION_FILLED_CLASSES
       : undefined;
+    const onThemeFill = !emotion && (variant ?? "default") === "default";
 
     return (
       <div
@@ -90,8 +95,15 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
             // No margin of its own: the row's gap spaces it. With both it
             // sat 8 from the label where the rest of the Tag spaces 4 — the
             // same compensating margin GAP-56 took off the Button's loader,
-            // reintroduced here the moment the gap arrived.
-            className="rounded-pill p-0.5 hover:bg-accent focus:outline-none"
+            // reintroduced here the moment the gap arrived. Focused from the
+            // keyboard it draws Button's offset ring, a band of the page's
+            // colour and then the theme's 600, 3:1 on the fill and on the
+            // page; it drew none. On the theme fill its hover is the theme
+            // foreground at a fifth: the 600 it took read 1.11:1 there.
+            className={cn(
+              "rounded-pill p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              onThemeFill && "hover:bg-theme-fill-foreground/20",
+            )}
           >
             <X className="h-3 w-3" />
             <span className="sr-only">Remove</span>

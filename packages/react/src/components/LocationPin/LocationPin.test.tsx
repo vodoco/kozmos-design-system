@@ -126,8 +126,10 @@ describe("LocationPin", () => {
       <LocationPin label="Result 1" number={1} selected variant="primary" />,
     );
     let marker = screen.getByRole("img").querySelector("svg") as SVGElement;
-    expect(marker).toHaveClass("text-primary", "fill-current");
-    expect(screen.getByText("1")).toHaveClass("text-primary-foreground");
+    // A filled pin is the theme fill, its number the theme foreground, the
+    // same in both themes (decision 59).
+    expect(marker).toHaveClass("text-theme-fill", "fill-current");
+    expect(screen.getByText("1")).toHaveClass("text-theme-fill-foreground");
     rerender(<LocationPin disabled label="Result 1" number={1} selected />);
     expect(screen.getByRole("img")).toHaveClass("opacity-50");
     marker = screen.getByRole("img").querySelector("svg") as SVGElement;
@@ -146,15 +148,15 @@ describe("LocationPin", () => {
     expect(marker).toHaveClass("fill-background", "text-primary");
     expect(marker).not.toHaveClass("fill-current");
     expect(screen.getByText("2")).toHaveClass("text-primary");
-    expect(screen.getByText("2")).not.toHaveClass("text-primary-foreground");
+    expect(screen.getByText("2")).not.toHaveClass("text-theme-fill-foreground");
     // A quiet pin is on this floor: its ring is solid.
     expect(marker.className.baseVal).not.toMatch(/stroke-dasharray/);
 
     rerender(<LocationPin label="Result 2" number={2} selected />);
     marker = screen.getByRole("img").querySelector("svg") as SVGElement;
-    expect(marker).toHaveClass("fill-current", "text-primary");
+    expect(marker).toHaveClass("fill-current", "text-theme-fill");
     expect(marker).not.toHaveClass("fill-background");
-    expect(screen.getByText("2")).toHaveClass("text-primary-foreground");
+    expect(screen.getByText("2")).toHaveClass("text-theme-fill-foreground");
     // Selection still grows the pin, so it is never told by colour alone.
     expect(screen.getByRole("img")).toHaveClass("scale-110");
   });

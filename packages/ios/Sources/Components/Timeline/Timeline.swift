@@ -82,12 +82,14 @@ public struct KozmosTimelineItem<Content: View>: View {
     public var body: some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
             VStack(spacing: KozmosDimensions.primitivesLayoutSpacing0) {
+                // The dot is a mark on the surface, theme 600 as React's, and
+                // its halo a quiet tint of the same base (decision 59).
                 Circle()
-                    .fill(KozmosColors.primitivesColorsTheme500)
+                    .fill(KozmosColors.primitivesColorsTheme600)
                     .frame(width: 12, height: 12)
                     .background(
                         Circle()
-                            .fill(KozmosColors.primitivesColorsTheme500.opacity(0.2))
+                            .fill(KozmosColors.primitivesColorsTheme600.opacity(0.2))
                             .frame(width: KozmosDimensions.primitivesLayoutSizing300, height: KozmosDimensions.primitivesLayoutSizing300)
                     )
                 

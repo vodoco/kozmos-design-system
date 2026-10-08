@@ -13,7 +13,9 @@ export const counterVariants = cva(
     variants: {
       tone: {
         neutral: "bg-secondary text-secondary-foreground",
-        brand: "bg-primary text-[var(--primitives-colors-foreground-1000)]",
+        // The theme fill and the theme foreground, white in both themes:
+        // foreground/1000 turned black on it in the dark (decision 59).
+        brand: "bg-theme-fill text-theme-fill-foreground",
         destructive:
           "bg-destructive text-[var(--primitives-colors-foreground-1000)]",
         inverse: "bg-background text-foreground",

@@ -130,7 +130,8 @@ fun KozmosListbox(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = KozmosThemeTokens.primitivesColorsTheme500
+                        // An icon on a surface: theme/600 (decision 59).
+                        tint = KozmosThemeTokens.primitivesColorsTheme600
                     )
                 }
             }

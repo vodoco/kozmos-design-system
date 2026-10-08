@@ -47,6 +47,13 @@ class KozmosFloorSwitcherPixelsTest {
     /** The light theme's primary, from the token rather than a copy of its hex. */
     private val primary = KozmosColors.primitivesColorsTheme600.toArgb()
 
+    /**
+     * The theme fill a result count is drawn in, theme 500 (decision 59): the
+     * dot stays the primary, so a count and a dot that ran into each other
+     * would make one shape of the two colours.
+     */
+    private val fill = KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle.toArgb()
+
     private fun drawn(content: @Composable () -> Unit): DrawnPixels = paparazzi.drawn(frames) {
         CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
             MaterialTheme {
@@ -56,12 +63,14 @@ class KozmosFloorSwitcherPixelsTest {
     }
 
     /**
-     * The primary's pixels, grouped into the shapes they make — four
-     * neighbours apart at most — and the size of each.
+     * The theme's pixels, the primary's and the fill's, grouped into the
+     * shapes they make — four neighbours apart at most — and the size of each.
      */
     private fun primaryShapes(pixels: DrawnPixels): List<Int> {
         val seen = BooleanArray(pixels.width * pixels.height)
-        fun isPrimary(x: Int, y: Int) = DrawnPixels.matches(pixels.argb(x, y), primary, tolerance = 6)
+        fun isPrimary(x: Int, y: Int) = pixels.argb(x, y).let {
+            DrawnPixels.matches(it, primary, tolerance = 6) || DrawnPixels.matches(it, fill, tolerance = 6)
+        }
         val shapes = mutableListOf<Int>()
         for (y in 0 until pixels.height) {
             for (x in 0 until pixels.width) {

@@ -30,12 +30,17 @@ class KozmosGuidanceAppearancePixelsTest {
     private val frames = KeptFrames()
     @get:Rule val paparazzi = pixelsPaparazzi(frames)
 
+    /**
+     * The theme appearance is the theme fill with the theme foreground on it,
+     * white in both themes (decision 59): foreground/1000 turned black on it
+     * in the dark. What the product puts in the card inherits it.
+     */
     @Test fun customContentInheritsContrastingForegroundAndBackgroundRetainsGlass() {
-        for (appearance in KozmosManoeuvreAppearance.values()) {
+        for (dark in listOf(false, true)) for (appearance in KozmosManoeuvreAppearance.values()) {
             var contentColor: Int? = null
             var effectiveSurface: KozmosSurfaceStyle? = null
             paparazzi.drawn(frames) {
-                CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
+                CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
                     MaterialTheme {
                         KozmosManoeuvreCard(DirectionType.Left, "Left", true, {}, appearance,
                             modifier = Modifier.width(320.dp), surface = KozmosSurfaceStyle.Glass) {
@@ -47,15 +52,22 @@ class KozmosGuidanceAppearancePixelsTest {
                 }
             }
             if (appearance == KozmosManoeuvreAppearance.Theme) {
-                assertEquals(KozmosColors.primitivesColorsForeground1000.toArgb(), contentColor)
+                val foreground = (if (dark) KozmosColorsDark.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+                    else KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle).toArgb()
+                assertEquals("dark=$dark: the theme card's content is not the theme foreground", foreground, contentColor)
                 assertEquals(KozmosSurfaceStyle.Solid, effectiveSurface)
             } else assertEquals(KozmosSurfaceStyle.Glass, effectiveSurface)
         }
     }
 
-    /** How many pixels of [pixels] are the theme fill, in the theme drawn. */
+    /**
+     * How many of [pixels] are the theme fill, in the theme drawn: theme 500,
+     * one colour in both themes, as every prominent fill is (decision 59). It
+     * was theme 600.
+     */
     private fun themeFill(pixels: DrawnPixels, dark: Boolean): Int {
-        val theme = (if (dark) KozmosColorsDark.primitivesColorsTheme600 else KozmosColors.primitivesColorsTheme600).toArgb()
+        val theme = (if (dark) KozmosColorsDark.componentsPrimaryButtonsThemedButtonBackgroundIdle
+            else KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle).toArgb()
         var filled = 0
         for (y in 0 until pixels.height) for (x in 0 until pixels.width) {
             if (DrawnPixels.matches(pixels.argb(x, y), theme, tolerance = 3)) filled++
@@ -101,7 +113,7 @@ class KozmosGuidanceAppearancePixelsTest {
             }
             assertEquals("$surface: the itinerary is not told its surface", surface, effectiveSurface)
             assertNotEquals("$surface: the itinerary takes the theme guidance colour",
-                KozmosColors.primitivesColorsForeground1000.toArgb(), contentColor)
+                KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle.toArgb(), contentColor)
             assertEquals("$surface: the card is theme-filled", 0, themeFill(pixels, dark = false))
         }
     }

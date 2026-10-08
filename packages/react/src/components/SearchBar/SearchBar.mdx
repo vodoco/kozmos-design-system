@@ -80,6 +80,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.providers.LocalKozmosAnalytics
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -132,7 +133,7 @@ val trackEvent = LocalKozmosAnalytics.current
             colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
                 unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                cursorColor = KozmosColors.primitivesColorsTheme500,
+                cursorColor = KozmosThemeTokens.primitivesColorsTheme600,
                 focusedLeadingIconColor = KozmosColors.primitivesColorsForeground500,
                 unfocusedLeadingIconColor = KozmosColors.primitivesColorsForeground500
             )

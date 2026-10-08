@@ -11,15 +11,25 @@ public struct KozmosSplitButton: View {
         self.menuItems = menuItems
     }
     
+    /// The action half's shape: rounded at the leading end only.
+    private var actionShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomTrailingRadius: KozmosDimensions.semanticsRadiusNone, topTrailingRadius: KozmosDimensions.semanticsRadiusNone)
+    }
+
     public var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing25) {
             Button(action: mainAction) {
-                Text(label)
-                    .padding()
-                    .background(KozmosColors.primitivesColorsTheme500)
-                    .foregroundColor(KozmosColors.primitivesColorsBackground0)
+                // Pressed and focused, the themed button's tokens. The menu
+                // half is a `Menu`, whose press SwiftUI draws.
+                KozmosButtonInteractionReader { isPressed, isFocused in
+                    Text(label)
+                        .padding()
+                        .background(KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused))
+                        .foregroundColor(KozmosFillStates.foreground(.themed, isPressed: isPressed, isFocused: isFocused))
+                }
             }
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomTrailingRadius: KozmosDimensions.semanticsRadiusNone, topTrailingRadius: KozmosDimensions.semanticsRadiusNone))
+            .buttonStyle(KozmosFillButtonStyle(hoverShape: actionShape))
+            .clipShape(actionShape)
             
             Menu {
                 ForEach(menuItems.indices, id: \.self) { index in
@@ -30,8 +40,8 @@ public struct KozmosSplitButton: View {
             } label: {
                 Image(systemName: "chevron.down")
                     .padding()
-                    .background(KozmosColors.primitivesColorsTheme500)
-                    .foregroundColor(KozmosColors.primitivesColorsBackground0)
+                    .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
+                    .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
             }
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusNone, bottomLeadingRadius: KozmosDimensions.semanticsRadiusNone, bottomTrailingRadius: KozmosDimensions.semanticsRadiusControl, topTrailingRadius: KozmosDimensions.semanticsRadiusControl))
         }

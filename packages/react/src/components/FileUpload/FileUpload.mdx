@@ -90,6 +90,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosFileUpload(
@@ -117,7 +118,7 @@ val context = LocalContext.current
                 .padding(KozmosDimensions.primitivesLayoutSpacing150),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosColors.primitivesColorsTheme500)
+            Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsTheme600)
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
                 text = fileName!!,

@@ -196,7 +196,9 @@ describe("Chip", () => {
       const terminal = screen.getByRole("radio", { name: "Terminal 2" });
       await user.click(terminal);
       expect(onValueChange).toHaveBeenCalledWith("t2");
-      expect(terminal.closest('[data-slot="chip"]')).toHaveClass("bg-primary");
+      expect(terminal.closest('[data-slot="chip"]')).toHaveClass(
+        "bg-theme-fill",
+      );
 
       onValueChange.mockClear();
       await user.click(terminal);

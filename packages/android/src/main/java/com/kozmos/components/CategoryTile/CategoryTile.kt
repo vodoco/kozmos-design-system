@@ -101,12 +101,14 @@ fun KozmosCategoryTile(
                         .size(KozmosDimensions.primitivesLayoutSizing800)
                         .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
                         .background(
-                            if (category.selected) (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme500).copy(alpha = 0.05f)
+                            // No tint: the theme's accent, theme/600, for the
+                            // wash, the edge and the icon (decision 59).
+                            if (category.selected) (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme600).copy(alpha = 0.05f)
                             else KozmosThemeTokens.primitivesColorsBackground0
                         )
                         .border(
                             width = if (category.selected) 2.dp else 1.dp,
-                            color = if (category.selected) (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme500) else KozmosThemeTokens.semanticsBorderSubtle,
+                            color = if (category.selected) (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme600) else KozmosThemeTokens.semanticsBorderSubtle,
                             shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
                         ),
                     contentAlignment = Alignment.Center
@@ -114,7 +116,7 @@ fun KozmosCategoryTile(
                     if (icon != null) {
                         // The icon in the theme colour, as on the other platforms;
                         // decorative, as there: the label names what it shows.
-                        CompositionLocalProvider(LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme500)) {
+                        CompositionLocalProvider(LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme600)) {
                             Box(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
                                 icon()
                             }

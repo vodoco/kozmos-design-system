@@ -48,7 +48,8 @@ class KozmosDirectionGlyphPixelsTest {
     private val frames = KeptFrames()
     @get:Rule val paparazzi = pixelsPaparazzi(frames)
 
-    private val tint = KozmosColors.primitivesColorsTheme500.toArgb()
+    // The parts draw their marks on a surface in theme 600 (decision 59).
+    private val tint = KozmosColors.primitivesColorsTheme600.toArgb()
 
     /** A mark as the parts draw it, an `Icon` in the tint, and where its 24 grid landed in the frame. */
     private class Mark(val pixels: DrawnPixels, val left: Float, val top: Float, val unit: Float) {

@@ -263,7 +263,7 @@ export function PlatformsTile() {
 }
 
 const featuredPairs = [
-  "primary action",
+  "theme fill / theme foreground (decision 59)",
   "muted foreground on app background",
   "selected navigation item",
   "button outline border idle",

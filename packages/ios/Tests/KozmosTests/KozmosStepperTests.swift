@@ -57,12 +57,14 @@ final class KozmosStepperTests: XCTestCase {
         XCTAssertEqual(pendingStep.ring, 1, accuracy: 0.75, "the pending step's ring is \(pendingStep.ring)")
     }
 
-    /// The accent is React's primary pair: theme/600 — #1051E8 on light,
-    /// #5887F3 on dark — with foreground/1000 on it. It was theme/500, the same
-    /// #135BEC in both themes, with background/0 on it: black on the saturated
-    /// blue in the dark.
-    @MainActor func testTheAccentIsReactsPrimaryPairInBothThemes() async throws {
-        for (scheme, want) in [(ColorScheme.light, (0x10, 0x51, 0xE8)), (.dark, (0x58, 0x87, 0xF3))] {
+    /// A completed step is a prominent fill (decision 59): the theme fill,
+    /// #135BEC in both themes, with the theme foreground's check, white in
+    /// both. The current step's ring is a border on the surface, theme 600 —
+    /// #1051E8 on light, #5887F3 on dark — as React's. Until decision 59 the
+    /// completed step was React's primary pair, theme/600 with
+    /// foreground/1000 on it, which is black in the dark.
+    @MainActor func testTheCompletedStepIsTheThemeFillAndTheCurrentRingTheme600() async throws {
+        for (scheme, ring) in [(ColorScheme.light, (0x10, 0x51, 0xE8)), (.dark, (0x58, 0x87, 0xF3))] {
             let size = CGSize(width: 320, height: 90)
             let view = ZStack(alignment: .topLeading) {
                 KozmosColors.semanticsSurface0
@@ -76,8 +78,20 @@ final class KozmosStepperTests: XCTestCase {
             let circle = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 0, y: 0, width: 70, height: 60), where: blue))
             // Inside the completed step's fill, clear of its check.
             let fill = pixels.color(at: CGPoint(x: circle.minX + 6, y: circle.midY))
-            for (channel, got, expected) in [("r", Int(fill.r), want.0), ("g", Int(fill.g), want.1), ("b", Int(fill.b), want.2)] {
+            for (channel, got, expected) in [("r", Int(fill.r), 0x13), ("g", Int(fill.g), 0x5B), ("b", Int(fill.b), 0xEC)] {
                 XCTAssertEqual(got, expected, accuracy: 3, "\(scheme): the completed step is \(fill) (\(channel))")
+            }
+            let white = { (r: UInt8, g: UInt8, b: UInt8) in r > 250 && g > 250 && b > 250 }
+            XCTAssertGreaterThan(pixels.count(in: circle.insetBy(dx: 8, dy: 8), where: white), 8,
+                                 "\(scheme): the completed step's check is not white")
+            // The middle of the current step's ring, at the top of its arc:
+            // the connectors run across the circles' middles.
+            let current = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 110, y: 0, width: 100, height: 60), where: blue))
+            let arc = try XCTUnwrap(pixels.boundingBox(
+                in: CGRect(x: current.minX, y: current.minY, width: current.width, height: 2), where: blue))
+            let edge = pixels.color(at: CGPoint(x: arc.midX, y: current.minY + 1))
+            for (channel, got, expected) in [("r", Int(edge.r), ring.0), ("g", Int(edge.g), ring.1), ("b", Int(edge.b), ring.2)] {
+                XCTAssertEqual(got, expected, accuracy: 3, "\(scheme): the current step's ring is \(edge) (\(channel))")
             }
         }
     }

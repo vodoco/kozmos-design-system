@@ -67,7 +67,10 @@ const RadioGroupItem = React.forwardRef<
         ref={ref}
         id={inputId}
         className={cn(
-          "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:text-primary",
+          // The ring is a border on the surface, theme 600; the dot is a fill,
+          // the theme fill, theme 500 in both themes (decision 59). The dot
+          // draws in currentColor, so the text colour is the dot's.
+          "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-theme-fill ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:text-theme-fill",
           error &&
             "border-destructive text-destructive-text focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:text-destructive-text",
           className,

@@ -74,6 +74,8 @@ function emotionCustomProperties(
   return {
     "--kz-button-bg": `var(${prefix}-button-background-idle)`,
     "--kz-button-bg-hover": `var(${prefix}-button-background-hover)`,
+    "--kz-button-bg-focus": `var(${prefix}-button-background-focus)`,
+    "--kz-button-bg-pressed": `var(${prefix}-button-background-pressed)`,
     "--kz-button-fg": `var(${prefix}-button-foreground-content-idle)`,
     "--kz-button-fg-hover": `var(${prefix}-button-foreground-content-hover)`,
   } as React.CSSProperties;

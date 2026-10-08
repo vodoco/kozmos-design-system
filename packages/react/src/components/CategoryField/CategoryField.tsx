@@ -58,8 +58,11 @@ const CategoryField = React.forwardRef<HTMLDivElement, CategoryFieldProps>(
       className,
       label,
       count,
+      // The accent is the icon and the edge on the surface, theme 600; the
+      // count pill is the theme fill with the theme foreground on it, the
+      // same in both themes (decision 59).
       tint = {
-        accent: "var(--primitives-colors-theme-500)",
+        accent: "var(--primitives-colors-theme-600)",
         fill: "var(--components-primary-buttons-themed-button-background-idle)",
         onFill:
           "var(--components-primary-buttons-themed-button-foreground-content-idle)",

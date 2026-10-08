@@ -21,7 +21,10 @@ import org.junit.Test
  * the API and had never been rendered — on a golden or, as far as anyone had
  * checked, a device. The button draws the system's own arc now: three quarters
  * of a circle from the top, round caps, stroke 2 in the icons' 24 box, at the
- * small size, in the button's own foreground.
+ * small size, in the button's own foreground. Loading, the button keeps its
+ * fill and its foreground and the whole of it draws at half, as React's
+ * `disabled:opacity-50` does (decision 59); it drew Material's grey until
+ * 2026-10-07.
  *
  * It sits apart from [KozmosButtonPaparazziTest] because of its tolerance, and
  * the tolerance is measured rather than assumed. That class holds 0.0 on

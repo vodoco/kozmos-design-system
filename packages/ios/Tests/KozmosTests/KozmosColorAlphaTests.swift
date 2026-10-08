@@ -35,10 +35,14 @@ final class KozmosColorAlphaTests: XCTestCase {
         }
     }
 
-    /// An opaque token is untouched by the conversion.
+    /// An opaque token is untouched by the conversion: the theme fill, theme
+    /// 500 in both themes since decision 59, and theme 600, which turns over
+    /// with the theme.
     func testAnOpaqueTokenIsUnchanged() {
-        XCTAssertEqual(rgba(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle), [0x0D, 0x44, 0xC2, 255])
-        XCTAssertEqual(rgba(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, .dark), [0x7E, 0xA2, 0xF6, 255])
+        XCTAssertEqual(rgba(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle), [0x13, 0x5B, 0xEC, 255])
+        XCTAssertEqual(rgba(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, .dark), [0x13, 0x5B, 0xEC, 255])
+        XCTAssertEqual(rgba(KozmosColors.primitivesColorsTheme600), [0x10, 0x51, 0xE8, 255])
+        XCTAssertEqual(rgba(KozmosColors.primitivesColorsTheme600, .dark), [0x58, 0x87, 0xF3, 255])
     }
     #endif
 }
