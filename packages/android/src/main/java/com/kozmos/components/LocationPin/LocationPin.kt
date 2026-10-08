@@ -6,17 +6,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,6 +68,10 @@ enum class KozmosLocationPinLabelPlacement {
  * disabled are independent flags rather than one state axis, matching React,
  * so a pin can be both featured and selected. Placement on the map and
  * collision handling stay with the renderer.
+ *
+ * A featured pin is filled with the accent and shows the place's logo,
+ * [markerContent], where a number would be, or a star when there is none; it
+ * never shows its number (decisions 55 and 68).
  */
 @Composable
 fun KozmosLocationPin(
@@ -70,8 +86,17 @@ fun KozmosLocationPin(
     offFloor: Boolean = false,
     enabled: Boolean = true,
     /** A category's colours for the marker — its fill, with its ink for the
-     *  number — over the variant's; a featured pin keeps the alert colour. */
-    tint: KozmosCategoryTint? = null
+     *  number — over the variant's; a featured pin keeps the accent. */
+    tint: KozmosCategoryTint? = null,
+    /** Said after [label] on a featured pin, so TalkBack hears what the accent
+     *  shows (decision 67): "Featured" until the product passes its own words. */
+    featuredLabel: String = "Featured",
+    /** What the marker shows in place of the number, as React's
+     *  `markerContent` does: a featured place's logo (decision 68). It takes
+     *  the number's colour ([LocalContentColor]) and text style, is clipped to
+     *  the disc inside the ring, and is not read: [label] names the pin.
+     *  Without it a featured pin shows a star. */
+    markerContent: (@Composable () -> Unit)? = null
 ) {
     // Filled, the primary pin is the theme fill, theme 500 in both themes,
     // with its number in the theme foreground, white in both (decision 59):
@@ -81,8 +106,12 @@ fun KozmosLocationPin(
     // in the dark, 3.00:1 on it, where white reads 6.99:1.
     val inkedInThemeForeground = !featured && tint == null &&
         (variant == KozmosLocationPinVariant.Primary || variant == KozmosLocationPinVariant.Accent)
+    // Decision 68 (Olcay, 2026-10-08): a featured pin is filled with the
+    // accent, the colour Pointr's API lets a client set beside its theme,
+    // #FAB735 unless it does, whatever the variant or tint. It was alert 500,
+    // the same amber by default, so Featured took the warning colour.
     val markerColor: Color = when {
-        featured -> KozmosThemeTokens.primitivesColorsEmotionalAlert500
+        featured -> KozmosThemeTokens.semanticsAccentFill
         tint != null -> tint.fill.fill
         variant == KozmosLocationPinVariant.Default -> KozmosThemeTokens.primitivesColorsForeground100
         variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
@@ -97,11 +126,16 @@ fun KozmosLocationPin(
     // Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
     // at rest — the surface, a ring and the number in its colour — and filled
     // only when selected, as the result card's number tab is. A featured pin
-    // (its logo on the map) and a pin with no number keep their fill. Quiet
-    // and off the floor both draw the outlined marker; off the floor its ring
-    // is dashed, so the two never read alike.
-    val quiet = number != null && !selected && !featured && !offFloor
+    // (its logo on the map), a pin showing markerContent and a pin with no
+    // number keep their fill, as on the web. Quiet and off the floor both draw
+    // the outlined marker; off the floor its ring is dashed, so the two never
+    // read alike.
+    val quiet = number != null && markerContent == null && !selected && !featured && !offFloor
     val outlined = quiet || offFloor
+    // The number, when the marker draws it. A featured pin never does
+    // (decision 55: its pin shows the logo, or a star without one), and
+    // markerContent takes its place on any pin.
+    val shownNumber = if (featured || markerContent != null) null else number
 
     // The marker's colour as a ring and a number on the surface, where it
     // must read at 4.5:1 in both themes. The theme's 500 is one blue in both,
@@ -109,7 +143,7 @@ fun KozmosLocationPin(
     // (theme/600), and the accent its 700 (theme variant 1's 600 reads 4.21:1
     // in the dark). The others are inks already.
     val outlineColor: Color = when {
-        featured -> KozmosThemeTokens.primitivesColorsEmotionalAlert500
+        featured -> KozmosThemeTokens.semanticsAccentFill
         tint != null -> tint.fill.fill
         variant == KozmosLocationPinVariant.Default -> KozmosThemeTokens.primitivesColorsForeground100
         variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.semanticsEmotionThemedText
@@ -117,24 +151,28 @@ fun KozmosLocationPin(
         else -> KozmosThemeTokens.primitivesColorsThemeVariant1700
     }
 
-    // The number: in the fill's ink when filled; in the ring's colour when
+    // The number, or what stands in its place (the featured star, or
+    // markerContent): in the fill's ink when filled; in the ring's colour when
     // quiet, except a tint's (six of the eight fills fail 4.5:1 as text on the
     // surface), which takes the foreground, as it does off the floor. On the
-    // featured amber it is the alert's onFill, the dark words decision 55
-    // gives Featured, whatever the tint: foreground/1000 is white in the
-    // light, 1.76:1 on #FAB735.
+    // featured accent it is the accent's own ink, black on the default #FAB735
+    // (11.89:1), the dark words decision 55 gives Featured, whatever the tint:
+    // foreground/1000 is white in the light, 1.76:1 on it.
     val numberColor: Color = when {
         offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0
         quiet -> outlineColor
-        featured -> KozmosThemeTokens.semanticsEmotionAlertOnfill
+        featured -> KozmosThemeTokens.semanticsAccentOnfill
         inkedInThemeForeground -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         else -> tint?.fill?.ink ?: KozmosThemeTokens.primitivesColorsForeground1000
     }
 
+    // What TalkBack says: the label, the number when the marker shows it, the
+    // product's word for Featured (decision 67), and the floor. A featured pin
+    // shows no number, so none is said.
     val description = listOfNotNull(
         label,
-        number?.toString(),
-        if (featured) "Featured" else null,
+        shownNumber?.toString(),
+        if (featured) featuredLabel else null,
         if (offFloor) "On another floor" else null
     ).joinToString(", ")
 
@@ -149,6 +187,10 @@ fun KozmosLocationPin(
     // Read in composition: the draw block below runs outside it.
     val hollowFill = KozmosThemeTokens.primitivesColorsBackground0
     val pinRing = KozmosThemeTokens.primitivesColorsForeground1000
+    val ringWidthDp = if (outlined) 3.dp else 2.dp
+    val numberSize = (diameter.value * 0.44f).sp
+    // The star is sized as the number's text is, font scale and all.
+    val starSize = with(LocalDensity.current) { numberSize.toDp() }
     val marker: @Composable () -> Unit = {
         Box(contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.size(diameter)) {
@@ -161,7 +203,7 @@ fun KozmosLocationPin(
                 // rest is never taken for one on another floor.
                 val fill = if (outlined) hollowFill else markerColor
                 val ring = if (outlined) outlineColor else pinRing
-                val ringWidth = (if (outlined) 3f else 2f) * density
+                val ringWidth = ringWidthDp.toPx()
                 val ringRadius = radius - ringWidth / 2f
                 // Eight dashes that close evenly at every diameter; round caps
                 // add half the width at each end of a dash.
@@ -186,13 +228,42 @@ fun KozmosLocationPin(
                 )
             }
 
-            number?.let {
-                Text(
-                    text = it.toString(),
-                    fontSize = (diameter.value * 0.44f).sp,
+            // Off the floor the number sits on the white disc in the
+            // foreground; the ring keeps the colour (Olcay, 2026-09-21). The
+            // star and markerContent stand where the number would, drawn as
+            // it is.
+            when {
+                markerContent != null -> Box(
+                    modifier = Modifier
+                        .size(diameter - ringWidthDp * 2)
+                        .clip(CircleShape)
+                        // Dimmed as a whole, once: a logo has no colour of
+                        // ours to fade, and the ink below is given whole.
+                        .alpha(alpha)
+                        // The label names the pin; a logo is not read twice.
+                        .clearAndSetSemantics { },
+                    contentAlignment = Alignment.Center
+                ) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides numberColor,
+                        LocalTextStyle provides LocalTextStyle.current.merge(
+                            TextStyle(color = numberColor, fontSize = numberSize, fontWeight = FontWeight.Bold)
+                        )
+                    ) { markerContent() }
+                }
+                // Decision 68: a featured pin with no logo shows a star where
+                // the number would be, the Rating's filled star, in the
+                // accent's ink.
+                featured -> Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = numberColor.copy(alpha = alpha),
+                    modifier = Modifier.size(starSize)
+                )
+                shownNumber != null -> Text(
+                    text = shownNumber.toString(),
+                    fontSize = numberSize,
                     fontWeight = FontWeight.Bold,
-                    // Off the floor the number sits on the white disc in the
-                    // foreground; the ring keeps the colour (Olcay, 2026-09-21).
                     color = numberColor.copy(alpha = alpha)
                 )
             }

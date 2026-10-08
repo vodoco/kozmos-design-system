@@ -55,7 +55,8 @@ class KozmosLocationPinPaparazziTest {
     /**
      * Decision 55: numbered pins are quiet at rest and filled when selected,
      * as the result card's number tab is; off the floor the outlined marker's
-     * ring is dashed, selected or not; a featured pin keeps its fill.
+     * ring is dashed, selected or not; a featured pin keeps its fill, the
+     * accent, and with no logo shows a star (decision 68).
      */
     @Test
     fun numberedPinsAreQuietAtRestAndFilledWhenSelected() {

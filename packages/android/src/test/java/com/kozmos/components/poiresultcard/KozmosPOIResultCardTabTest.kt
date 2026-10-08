@@ -217,7 +217,7 @@ class KozmosPOIResultCardTabTest {
                 val value = result(featured = featured, selected = !featured)
                 val label = if (featured) "Featured" else "2"
                 val fill = swatch(false) {
-                    if (featured) KozmosThemeTokens.semanticsEmotionAlertFill else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+                    if (featured) KozmosThemeTokens.semanticsAccentFill else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
                 }
                 val background = swatch(false) { KozmosThemeTokens.primitivesColorsBackground0 }
                 val read = paparazzi.readSemantics {
@@ -306,6 +306,19 @@ class KozmosPOIResultCardTabTest {
         return drawn.argb(drawn.width / 2, drawn.height / 2)
     }
 
+    /** The box round the scene's pixels that [match], as x and y ranges; null if there is none. */
+    private fun boundsWhere(drawn: DrawnPixels, match: (Int) -> Boolean): Pair<IntRange, IntRange>? {
+        var left = Int.MAX_VALUE
+        var top = Int.MAX_VALUE
+        var right = -1
+        var bottom = -1
+        for (y in 0 until drawn.height) for (x in 0 until drawn.width) if (match(drawn.argb(x, y))) {
+            left = minOf(left, x); right = maxOf(right, x)
+            top = minOf(top, y); bottom = maxOf(bottom, y)
+        }
+        return if (right < 0) null else (left..right) to (top..bottom)
+    }
+
     /** How many of the scene's pixels are [colour], give or take antialiasing. */
     private fun pixelsOf(drawn: DrawnPixels, colour: Int): Int {
         var count = 0
@@ -317,9 +330,10 @@ class KozmosPOIResultCardTabTest {
 
     /**
      * GAP-054, drawn, through the card's released parameters only: a badge's
-     * tab fills with the muted colour and nothing is painted in Featured's
-     * alert colour, light and dark. The card that painted a badge as Featured
-     * fails it.
+     * tab fills with the muted colour and nothing is painted in any colour
+     * Featured has had (the alert button's, the alert fill, and the accent
+     * since decision 68), light and dark. The card that painted a badge as
+     * Featured fails it.
      */
     @Test
     fun aBadgeIsDrawnQuietNotInFeaturedsColour() {
@@ -327,13 +341,15 @@ class KozmosPOIResultCardTabTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             val muted = swatch(dark) { KozmosThemeTokens.primitivesColorsBackground100 }
-            // Featured's colour as the released card drew it, and as it is now.
+            // Featured's colour as the released card drew it, as it was until
+            // decision 68, and as it is now.
             val alert = swatch(dark) { KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle }
             val amber = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
+            val accent = swatch(dark) { KozmosThemeTokens.semanticsAccentFill }
             val badge = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(badge = "Alternative"), onSelect = {}) }
             val badgeMuted = pixelsOf(badge, muted)
-            val badgeAlert = pixelsOf(badge, alert) + pixelsOf(badge, amber)
-            println("GAP-054 Android, $theme: the badge draws $badgeMuted muted pixels and $badgeAlert in Featured's ${DrawnPixels.hex(alert)} or ${DrawnPixels.hex(amber)}")
+            val badgeAlert = pixelsOf(badge, alert) + pixelsOf(badge, amber) + pixelsOf(badge, accent)
+            println("GAP-054 Android, $theme: the badge draws $badgeMuted muted pixels and $badgeAlert in Featured's ${DrawnPixels.hex(alert)}, ${DrawnPixels.hex(amber)} or ${DrawnPixels.hex(accent)}")
             if (badgeAlert > 0) wrong += "$theme: the badge paints $badgeAlert pixels in Featured's colour"
             if (badgeMuted < 50) wrong += "$theme: the badge's tab is not the muted fill ($badgeMuted pixels)"
         }
@@ -341,31 +357,60 @@ class KozmosPOIResultCardTabTest {
     }
 
     /**
-     * Featured is the SDK's bright amber (Olcay, 2026-09-29): its tab and, at
-     * rest, the card's edge. Selected, the edge is the theme's, as every
-     * selected card's is: a native card has no ring to say it with. An edge
-     * is theme 600, as React's border is (decision 59); it was theme 500.
+     * Decision 68 (Olcay, 2026-10-08): Featured is the accent, #FAB735 in both
+     * themes by default: its tab and, at rest, the card's edge, in the SDK
+     * presentation, the default, and the legacy one. Selected, the legacy
+     * card's edge is the theme's, as every selected legacy card's is: a
+     * native card has no ring to say it with. An edge is theme 600, as
+     * React's border is (decision 59); it was theme 500. The SDK card says
+     * selection with its surface and keeps the accent edge.
+     *
+     * The intent changed with decision 68: this test said Featured was the
+     * alert fill, read from its token. The accent is written out here, so a
+     * card drawn in the alert fill fails it: #F9A707 in the light and #FBC459
+     * in the dark draw no #FAB735, and the code before decision 68 fails in
+     * both themes and both presentations.
      */
     @Test
-    fun featuredIsTheAmberTabAndEdgeAndSelectionKeepsTheThemesEdge() {
+    fun featuredIsTheAccentTabAndEdgeAndSelectionKeepsTheThemesEdge() {
+        val accent = 0xFFFAB735.toInt()
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
-            val amber = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
-            val themed = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme600 }
-            val rest = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {}) }
-            val selected = scene(dark) {
-                KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true, selected = true), onSelect = {})
+            if (swatch(dark) { KozmosThemeTokens.semanticsAccentFill } != accent) {
+                wrong += "$theme: the accent fill is not #FAB735"
             }
-            val (restAmber, selectedAmber) = pixelsOf(rest, amber) to pixelsOf(selected, amber)
-            val selectedThemed = pixelsOf(selected, themed)
-            println("GAP-054 Android, $theme: amber pixels, featured at rest $restAmber, selected $selectedAmber; theme edge when selected $selectedThemed")
-            // The tab alone is a few hundred pixels; its edge adds a thousand more.
-            if (restAmber < selectedAmber + 300) wrong += "$theme: a featured card's edge is not its amber ($restAmber at rest, $selectedAmber selected)"
-            if (selectedAmber < 50) wrong += "$theme: the Featured tab is not the amber ($selectedAmber pixels)"
-            if (selectedThemed < 300) wrong += "$theme: a selected featured card lost the theme's edge ($selectedThemed pixels)"
+            val themed = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme600 }
+            val page = swatch(dark) { KozmosThemeTokens.primitivesColorsBackground0 }
+            for (style in listOf(KozmosPOIResultPresentationStyle.Sdk, KozmosPOIResultPresentationStyle.Legacy)) {
+                for (isSelected in listOf(false, true)) {
+                    val case = "$theme ${style.name}${if (isSelected) " selected" else ""}"
+                    val drawn = scene(dark) {
+                        KozmosPOIResultCard(presentationStyle = style, poi = poi, result = result(featured = true, selected = isSelected), onSelect = {})
+                    }
+                    val accentPixels = pixelsOf(drawn, accent)
+                    // The card: everything that is not the page. The accent
+                    // edge spans it top to bottom; the tab alone, 16 or 20 of
+                    // its height, does not.
+                    val card = boundsWhere(drawn) { distance(it, page) > 6 }
+                    val accentBox = boundsWhere(drawn) { distance(it, accent) <= 6 }
+                    val cardTall = card?.second?.count() ?: 0
+                    val accentTall = accentBox?.second?.count() ?: 0
+                    val themedPixels = pixelsOf(drawn, themed)
+                    println("Decision 68 Android, $case: $accentPixels #FAB735 pixels, $accentTall of the card's $cardTall rows; $themedPixels theme-edge pixels")
+                    if (accentPixels < 50) wrong += "$case: the Featured tab is not the accent ($accentPixels pixels)"
+                    // Selected, the legacy card's edge is the theme's; the
+                    // SDK card's stays the accent.
+                    val accentEdge = style == KozmosPOIResultPresentationStyle.Sdk || !isSelected
+                    if (accentEdge && accentTall < cardTall * 0.95f) {
+                        wrong += "$case: a featured card's edge is not the accent ($accentTall of $cardTall rows)"
+                    }
+                    if (!accentEdge && themedPixels < 300) wrong += "$case: a selected featured card lost the theme's edge ($themedPixels pixels)"
+                    if (!accentEdge && accentTall > cardTall / 2) wrong += "$case: a selected legacy card's edge is still the accent"
+                }
+            }
             val edges = listOf(
-                Triple("featured", false, true) to amber,
+                Triple("featured", false, true) to accent,
                 Triple("featured and selected", true, true) to themed,
                 Triple("plain", false, false) to swatch(dark) { KozmosThemeTokens.semanticsBorderSubtle }
             )
