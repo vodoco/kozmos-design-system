@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T17:41:33.771Z",
+  "generatedAt": "2026-10-08T17:50:36.037Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -7668,7 +7668,7 @@
         "ios": "semanticsAccentFill",
         "android": "semanticsAccentFill"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7692,7 +7692,7 @@
         "ios": "semanticsAccentOnfill",
         "android": "semanticsAccentOnfill"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "alias",

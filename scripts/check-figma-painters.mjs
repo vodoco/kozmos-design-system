@@ -177,6 +177,8 @@ const variableByName = mockVariables([
   "Colors/emotional/alert/900",
   "Colors/emotional/alert/500",
   "Emotion/alert/onFill",
+  "Accent/fill",
+  "Accent/onFill",
   "Colors/background/100",
   "Colors/background/200",
   "Primary Buttons/themed/button/background/idle",
@@ -578,13 +580,20 @@ section("LocationPin");
     const marker = named(component, "Pin Marker");
     ok(
       marker &&
-        boundVariableName(marker.fills[0]) === "Colors/emotional/alert/500",
-      "featured: the SDK's amber, alert 500, under a tint (decision 62)",
+        boundVariableName(marker.fills[0]) === "Accent/fill",
+      "featured: the accent, under a tint (decision 68)",
     );
     const number = named(component, "Number Text");
     ok(
-      number && boundVariableName(number.fills[0]) === "Emotion/alert/onFill",
-      "featured: the number is the alert's on-fill, black (decision 62)",
+      number && number.visible === false,
+      "featured: the number is hidden, never shown (decision 68)",
+    );
+    const star = named(component, "Featured Star");
+    ok(
+      star &&
+        star.type === "STAR" &&
+        boundVariableName(star.fills[0]) === "Accent/onFill",
+      "featured: a star in the accent's ink where the number would be (decision 68)",
     );
   }
 
@@ -2582,6 +2591,36 @@ section("Every binding is in its variable's scope");
 }
 
 // --- POIResultCard's action row ------------------------------------------------------
+
+// Decision 68 (Olcay, 2026-10-08): the Featured tag consumes the accent
+// everywhere: the featured card's Featured badge is the accent fill under the
+// accent's ink, and its edge is the accent, as the code draws the card's tab
+// and edge. It was a background/100 badge under alert 900, on a grey edge.
+section("POIResultCard Featured is the accent");
+{
+  const component = figma.createComponent();
+  const stats = freshStats();
+  await plugin.updatePOIResultCardVariant(component, {
+    value: "Featured",
+    variableByName,
+    fonts: FONTS,
+    stats,
+  });
+  const badge = named(component, "Featured Badge");
+  const words = named(component, "Featured Text");
+  ok(
+    badge && boundVariableName(badge.fills[0]) === "Accent/fill",
+    `the Featured badge is the accent fill (${badge && boundVariableName(badge.fills[0])})`,
+  );
+  ok(
+    words && boundVariableName(words.fills[0]) === "Accent/onFill",
+    `its words are the accent's ink (${words && boundVariableName(words.fills[0])})`,
+  );
+  ok(
+    boundVariableName(component.strokes[0]) === "Accent/fill",
+    `the featured card's edge is the accent (${boundVariableName(component.strokes[0])})`,
+  );
+}
 
 // A selected result offers what the product gave it, and the card has to have
 // somewhere to put that. The row is drawn on EVERY variant and hidden, because
