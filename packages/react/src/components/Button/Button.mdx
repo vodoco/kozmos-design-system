@@ -81,11 +81,14 @@ in the Pointr Cloud Dashboard (`#135BEC`), in both themes, with white text on it
 5.62:1 (decision 59). Hovered it is `#1051E8`; focused from the keyboard `#1051E8` inside the
 focus ring; and pressed, while the pointer holds it, `#0D44C2`, in both themes. Until
 2026-10-07 the pressed and focus tokens were read by no rule, so a pressed button showed its
-hover colour and a focused one its idle colour. Every filled emotion, and `destructive`, draws
-its own four states the same way, stepping along its own ramp away from the page (decision 60):
-hovered and focused one step, pressed two, darker in the light theme and lighter in the dark. The
-dark neutral is the exception and keeps darkening, because white reads 3.72:1 on its lighter
-step. Before decision 59 the fill was theme 700: in the dark
+hover colour and a focused one its idle colour. Every filled emotion, `destructive` and
+`secondary` draw their own four states the same way, stepping along their own ramp away from the
+page (decision 60): hovered and focused one step, pressed two, darker in the light theme and
+lighter in the dark. The dark neutral is the exception and keeps darkening, because white reads
+3.72:1 on its lighter step. `secondary` is the neutral fill with its ink on every platform
+(decision 61): `#C7CAD1` under black in light, hover and focus `#ABAFBA`, pressed `#9095A2`;
+`#464A53` under white in dark, hover and focus `#2E3138`, pressed `#17191C`. Before decision 59
+the fill was theme 700: in the dark
 theme light blue (`#7EA2F6`) under black text, 8.39:1. Black on the new 500 would read only
 3.74:1, which is why the text on it is white in both themes. `outline`, `ghost` and `link`
 stay on the `Secondary Buttons` token, theme 700, which turns over with the theme: text on a
@@ -138,9 +141,11 @@ surface, not a fill.
   </tbody>
 </table>
 
-Leave `emotion` unset and nothing changes: `secondary` is already `neutral` and
-`destructive` is already `danger`, by the values in the tokens. `glass` is an effect rather
-than a weight and takes no emotion.
+Leave `emotion` unset and the variant keeps its own colours: `secondary` draws the `neutral`
+tokens and `destructive` the `danger` ones, in every state. Until 2026-10-08 the web's
+`secondary` was background/200 with no hover, focus or pressed colour, `#2E3138` at rest in
+dark, and SwiftUI's words on it were foreground/100. `glass` is an effect rather than a weight
+and takes no emotion.
 
 <PlatformSnippets
     react={`

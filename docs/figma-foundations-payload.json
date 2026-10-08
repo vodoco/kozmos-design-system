@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T11:48:40.626Z",
+  "generatedAt": "2026-10-08T12:08:58.531Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -10452,7 +10452,7 @@
         "ios": "componentsPrimaryButtonsNeutralButtonForegroundContentIdle",
         "android": "componentsPrimaryButtonsNeutralButtonForegroundContentIdle"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -10476,7 +10476,7 @@
         "ios": "componentsPrimaryButtonsNeutralButtonForegroundContentDisabled",
         "android": "componentsPrimaryButtonsNeutralButtonForegroundContentDisabled"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",

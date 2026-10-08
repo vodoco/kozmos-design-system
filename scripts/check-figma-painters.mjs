@@ -2101,6 +2101,100 @@ section("Decision 59: the theme fill and what sits on it");
   );
 }
 
+// --- Decision 61: the secondary Button is the neutral fill -------------------------
+
+// Olcay, 2026-10-08: the secondary variant draws the neutral emotion's Primary
+// Buttons tokens with their ink on every platform. The painter bound
+// background/200 and foreground/0, which read the same in Light but are
+// #2E3138 under white in Dark, where the neutral fill is #464A53. Each state
+// binds its own tier token, as Default and Destructive do, and every part
+// that paints through buttonConfig (Button, IconButton, SplitButton and
+// FloatingActionButton) takes it. Read in Light and in Dark through the
+// payload's variables.
+section("Decision 61: the secondary Button is the neutral fill");
+{
+  const NEUTRAL = "Primary Buttons/neutral/button";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+  const fill = `${NEUTRAL}/background/idle #C7CAD1/#464A53`;
+  const ink = `${NEUTRAL}/foreground/content/idle #000000/#FFFFFF`;
+
+  for (const state of ["Default", "Loading", "Disabled"]) {
+    const tokenState = state === "Disabled" ? "disabled" : "idle";
+    const config = plugin.buttonConfig("Secondary", state);
+    ok(
+      config.background === `${NEUTRAL}/background/${tokenState}` &&
+        config.foreground === `${NEUTRAL}/foreground/content/${tokenState}` &&
+        !config.stroke,
+      `Button, Secondary, ${state}: the neutral Primary Buttons ${tokenState} tokens (${config.background}, ${config.foreground})`,
+    );
+  }
+  for (const [label, config] of [
+    ["SplitButton, Secondary", plugin.splitButtonConfig("Secondary", "Focus")],
+    [
+      "FloatingActionButton, Secondary",
+      plugin.floatingActionButtonConfig("Secondary", "Default"),
+    ],
+  ]) {
+    ok(
+      config.background === `${NEUTRAL}/background/idle` &&
+        config.foreground === `${NEUTRAL}/foreground/content/idle`,
+      `${label}: the neutral fill and its ink (${config.background}, ${config.foreground})`,
+    );
+  }
+
+  const button = await plugin.createButtonVariant({
+    variant: "Secondary",
+    size: "Default",
+    state: "Default",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    textStyle: null,
+    stats: freshStats(),
+  });
+  const label = named(button, "Label Text");
+  ok(
+    reads(button.fills[0]) === fill,
+    `Button, Secondary: the neutral fill, #C7CAD1 in Light and #464A53 in Dark (${reads(button.fills[0])})`,
+  );
+  ok(
+    label && reads(label.fills[0]) === ink,
+    `Button, Secondary: its words the neutral ink, black in Light and white in Dark (${label && reads(label.fills[0])})`,
+  );
+  const loading = await plugin.createButtonVariant({
+    variant: "Secondary",
+    size: "Default",
+    state: "Loading",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    textStyle: null,
+    stats: freshStats(),
+  });
+  const spinner = named(loading, "Loading Indicator");
+  ok(
+    spinner && reads(spinner.strokes[0]) === ink,
+    `Button, Secondary, Loading: the ring the neutral ink (${spinner && reads(spinner.strokes[0])})`,
+  );
+}
+
 // --- Every frame keeps the size it was drawn at -----------------------------------
 
 // The runtime grows an auto-layout frame its padding and stroke outgrow, and

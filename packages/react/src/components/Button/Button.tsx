@@ -113,10 +113,10 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   /**
-   * What the button means. Leave it unset and the variant renders exactly as
-   * it always has: `secondary` is `neutral` and `destructive` is `danger`
-   * already, by the values in the tokens. Set it and the emotion decides the
-   * colour, whatever the variant.
+   * What the button means. Leave it unset and the variant keeps its own
+   * colours: `secondary` draws the `neutral` Primary Buttons tokens and
+   * `destructive` the `danger` ones, in every state (decision 61). Set it
+   * and the emotion decides the colour, whatever the variant.
    *
    * `glass` takes no emotion.
    */

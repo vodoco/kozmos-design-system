@@ -93,10 +93,12 @@ public struct KozmosIconButton: View {
         return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
-    /// The fill's own ink in each state; the secondary variant keeps the
-    /// foreground/100 mark it has always drawn, which reads on every neutral step.
+    /// The fill's own ink in each state: the secondary variant is the
+    /// neutral fill and draws the neutral ink, black in light and white in
+    /// dark, as React and Compose do (decision 61; Olcay, 2026-10-08). It
+    /// drew foreground/100, #17191C and #E8E6E3.
     private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
-        guard let fillEmotion, variant != .secondary else { return foregroundColor }
+        guard let fillEmotion else { return foregroundColor }
         return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
@@ -123,7 +125,8 @@ public struct KozmosIconButton: View {
         switch variant {
         case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonForegroundContentIdle
-        case .secondary: return KozmosColors.primitivesColorsForeground100
+        // Decision 61: the neutral fill's own ink.
+        case .secondary: return KozmosColors.componentsPrimaryButtonsNeutralButtonForegroundContentIdle
         // Decision 59: the secondary tier's words, as React and Compose draw them.
         case .outline, .ghost, .link: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
         case .glass: return KozmosColors.primitivesColorsForeground100
