@@ -1107,10 +1107,13 @@
   .kozmos-button-outline {
     @apply border border-[var(--components-secondary-buttons-themed-button-foreground-content-idle)] bg-background text-[var(--components-secondary-buttons-themed-button-foreground-content-idle)] hover:border-[var(--components-secondary-buttons-themed-button-foreground-content-hover)] hover:text-[var(--components-secondary-buttons-themed-button-foreground-content-hover)];
   }
-  /* secondary/80 and accent/10 were inert token-alpha utilities. Their repair
-     remains the existing visual debt, not an unreviewed style change here. */
+  /* The secondary variant is the neutral fill: the neutral emotion's Primary
+     Buttons tokens in the same four states, with their ink, as iOS and
+     Compose draw it (decision 61; Olcay, 2026-10-08). It was background/200
+     under foreground/0 with no states, #2E3138 at rest in dark where the
+     token is #464A53. */
   .kozmos-button-secondary {
-    @apply bg-secondary text-secondary-foreground;
+    @apply bg-[var(--components-primary-buttons-neutral-button-background-idle)] text-[var(--components-primary-buttons-neutral-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-neutral-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-neutral-button-background-focus)] active:bg-[var(--components-primary-buttons-neutral-button-background-pressed)];
   }
   .kozmos-button-ghost {
     @apply text-[var(--components-secondary-buttons-themed-button-foreground-content-idle)] hover:text-[var(--components-secondary-buttons-themed-button-foreground-content-hover)];
@@ -1188,6 +1191,7 @@
      the release still eases back. */
   .kozmos-button-default:active,
   .kozmos-button-destructive:active,
+  .kozmos-button-secondary:active,
   .kozmos-button-emotion-filled:active {
     transition-duration: 0s;
   }
@@ -1202,6 +1206,11 @@
   .kozmos-button-destructive[aria-disabled="true"]:is(:hover, :active) {
     background-color: var(
       --components-primary-buttons-danger-button-background-idle
+    );
+  }
+  .kozmos-button-secondary[aria-disabled="true"]:is(:hover, :active) {
+    background-color: var(
+      --components-primary-buttons-neutral-button-background-idle
     );
   }
   .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {

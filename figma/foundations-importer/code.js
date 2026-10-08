@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "64aa564012f3";
+const PLUGIN_BUILD = "8ba3d3e10a98";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -75696,11 +75696,14 @@ function buttonConfig(variant, state) {
       backgroundFallback: state === "Disabled" ? "#2E3138" : "#B01736",
       foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
     },
+    // The neutral emotion's Primary Buttons tokens and their ink, as the
+    // code draws the secondary variant (decision 61): background/200 and
+    // foreground/0 read the same in light, but the dark fill is #464A53.
     Secondary: {
-      background: "Colors/background/200",
-      foreground: "Colors/foreground/0",
-      backgroundFallback: "#C7CAD1",
-      foregroundFallback: "#000000",
+      background: `Primary Buttons/neutral/button/background/${tokenState}`,
+      foreground: `Primary Buttons/neutral/button/foreground/content/${tokenState}`,
+      backgroundFallback: state === "Disabled" ? "#2E3138" : "#C7CAD1",
+      foregroundFallback: state === "Disabled" ? "#464A53" : "#000000",
     },
     Outline: {
       background: "Surface/0",

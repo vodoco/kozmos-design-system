@@ -57,10 +57,30 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <Button aria-disabled="true" data-testid={id("button-unavailable")}>
         Next
       </Button>
+      {/* Decision 61 (Olcay, 2026-10-08): the secondary variant, with no
+          emotion, is the neutral Primary Buttons fill in every state, with
+          the neutral ink; IconButton's secondary is the same Button. */}
+      <Button data-testid={id("button-secondary")} variant="secondary">
+        Later
+      </Button>
+      <Button
+        aria-disabled="true"
+        data-testid={id("button-secondary-unavailable")}
+        variant="secondary"
+      >
+        Later
+      </Button>
       <IconButton
         aria-label="Add"
         data-testid={id("icon-button")}
         variant="default"
+      >
+        <Plus />
+      </IconButton>
+      <IconButton
+        aria-label="Add"
+        data-testid={id("icon-button-secondary")}
+        variant="secondary"
       >
         <Plus />
       </IconButton>
