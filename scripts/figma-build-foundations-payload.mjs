@@ -178,6 +178,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/alert/900", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/success/900", ["TEXT_FILL", "STROKE_COLOR"]],
+  // The alert's on-fill is the number on the featured pin's amber
+  // (decision 62), as it is the words on Turn Back's.
+  ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
   // A halo or an edge in a surface colour: RouteProgressRail's location dot
   // and waypoints, the example map's markers.
   ["Primitives/Colors/background/0", ["STROKE_COLOR"]],
