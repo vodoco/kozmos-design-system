@@ -13,6 +13,10 @@ P01–P04 below are all in that release.
 React 0.9.0 (2026-10-06, `c7644af8`; tokens 0.5.0, icons 0.6.0, product-contracts 0.8.0) adds the
 navigation completion (#193): RouteSetupPanel, RouteLocationField, ArrivalPanel, RouteSummary hosted in the
 map shell's panel and RouteProgressRail's active leg. See [release evidence](release-process.md#090).
+React 0.10.0 (2026-10-09, `1ddc4d10`; tokens 0.6.0, product-contracts 0.9.0, icons unchanged) adds
+decisions 59–69 (the theme fill, re-branding, button states, the accent colour and the pins),
+ClientAppBanner, RouteSummary's actions and route preview (GAP-110, GAP-111), Itinerary's Change
+actions (GAP-104) and EmptyState progress (GAP-115). See [release evidence](release-process.md#0100).
 P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, released in 0.8.0:
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
 (named shell controls). Exact-main CI, selected workflows and deployed docs were verified;
@@ -62,7 +66,7 @@ interaction host (`navigation-journey`) and Android `KozmosJourneyCompositionTes
 Their passing simulator/semantic checks do not certify physical VoiceOver/TalkBack or native
 modal focus isolation. See [navigation integration](navigation-integration.md) for the file map,
 configuration, migration and reproducible checks. These compositions do not yet use RouteSummary's
-actions or its route preview (GAP-110, GAP-111: decision 57, fixed on main, not yet released), and
+actions or its route preview (GAP-110, GAP-111: decision 57, released in 0.10.0), and
 do not implement P11 renderer styling.
 
 Kozmos already has a substantial component foundation. The missing work is now a combination
@@ -164,7 +168,7 @@ same radius.
 | Exit building                 | Button primitives and host building state.                                                                                                                        | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
 | POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                                             | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
 | Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                                               | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
-| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep, ManoeuvreCard; instruction parts and languages (GAP-093/096, 0.8.0); step distance and duration (GAP-097, 0.9.0).    | Endpoint Change actions (GAP-104) are fixed on main, not yet released. SDK data adoption and physical speech acceptance remain.                                          |
+| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep, ManoeuvreCard; instruction parts and languages (GAP-093/096, 0.8.0); step distance and duration (GAP-097, 0.9.0).    | Endpoint Change actions (GAP-104) are released in 0.10.0. SDK data adoption and physical speech acceptance remain.                                                       |
 | Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                                         | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
 | Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                                           | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
 
@@ -213,7 +217,7 @@ visitor-floor dot. The full level name is available as an accessible label.
   User-floor/result-count wiring and real-device acceptance remain separate host requirements.
 - [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160) merged at
   `5792335ef8056749573e37b2b400dbaf4dee2dc7`; ordering/default-level and lifecycle source fixes
-  are complete on main, not part of a new npm publication. Do not repeat the old ascending-order finding.
+  were released in 0.8.0. Do not repeat the old ascending-order finding.
 - The React popover is portaled. In registered AdaptiveMapShell bottom corners it uses the
   shell's internal bounded region, including horizontal displacement beside a long panel;
   standalone selectors remain viewport-bounded. There is no separate public FloorSelector
@@ -510,7 +514,7 @@ Do not let the new chrome conceal already-recorded behavior gaps:
   result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks
   are released in 0.8.0 (#188); SDK data adoption and physical speech acceptance remain.
-  GAP-097 step metrics are released in 0.9.0 (#193); GAP-104's endpoint Change actions are fixed on main, not yet released. React GAP-094/GAP-100 are already fixed.
+  GAP-097 step metrics are released in 0.9.0 (#193); GAP-104's endpoint Change actions are released in 0.10.0. React GAP-094/GAP-100 are already fixed.
 - **Accessibility/layout:** P01, released in 0.8.0, raises result actions to a 44px/pt/dp minimum
   (GAP-056), retaining larger native targets and growth for large text. Actual
   keyboard/device acceptance remains. Wide shell content fitting and the
