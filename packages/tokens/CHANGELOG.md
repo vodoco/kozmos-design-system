@@ -1,5 +1,45 @@
 # @kozmos-ds/tokens
 
+## 0.6.0
+
+### Minor Changes
+
+- 2f12ee8: Decision 68: Kozmos has an accent colour, the one a client sets in the Pointr Cloud Dashboard beside the theme, background, foreground and emotional colours.
+  - `Primitives.Colors.accent` is a 0–1000 ramp like theme's, with 500 as the base: `#FAB735` in both themes by default, and the other steps the alert ramp's.
+  - `Semantics.Accent.fill` references accent 500, and `Semantics.Accent.onFill` is its ink, black in both themes by default.
+  - The CSS (`--primitives-colors-accent-*`, `--semantics-accent-fill`, `--semantics-accent-on-fill`), the JS module, Swift, Kotlin and the Figma variables all carry them.
+  - To use your own accent, override accent 500 and, if your colour is dark, the on-fill ink. On the web, set both on `ThemeProvider`'s `tokens`.
+
+- 7471bf0: Decision 60: a filled emotion button's hover is one step and its pressed two steps further along the emotion's own ramp, away from the page: darker in light, lighter in dark. Its focus is its hover. `Components.Primary Buttons.{success,alert,danger,informative,neutral}.button.background.{idle,hover,pressed,focus}` are now references to their ramp steps, so the CSS writes them as `var()` references (GAP-23), and the Swift, Kotlin and Figma outputs carry the same steps. `tokens:contrast:check` holds each state to its ramp step and its direction, and focus to hover.
+
+  **What you'll see:** hovered and pressed emotion buttons move away from the page in both themes.
+
+  | Emotion                     | Theme | Idle      | Hover and focus                                  | Pressed                                     |
+  | --------------------------- | ----- | --------- | ------------------------------------------------ | ------------------------------------------- |
+  | Danger                      | Light | `#B01736` | `#8C132B` (was `#D41C42`, lighter than the fill) | `#670E20` (was `#8C132B`)                   |
+  | Danger                      | Dark  | `#EE7E95` | `#F3A2B3` (was `#E95A77`)                        | `#F8C6D0` (was `#F3A2B3`)                   |
+  | Success, alert, informative | Dark  | 700       | 800 (was 600)                                    | 900 (was 800)                               |
+  | Informative                 | Light | 700       | 800                                              | 900, `#154761` (was 800, the same as hover) |
+  | Neutral                     | Light | `#C7CAD1` | `#ABAFBA`                                        | `#9095A2` (was `#E3E4E8`, lighter)          |
+  | Neutral                     | Dark  | `#464A53` | `#2E3138` (was `#5C6069`)                        | `#17191C` (was `#2E3138`)                   |
+  - Light success and alert already followed the rule and don't change.
+  - The dark neutral keeps darkening: white, its ink, reads 3.72:1 on the lighter step.
+  - The themed button keeps decision 59's values.
+  - The inks don't change. Each still reads at least 4.5:1, and black on the light neutral pressed reads 7.01:1.
+
+- 8186d4d: GAP-23: `css/light.css` and `css/dark.css` write a token whose source value is an alias as a reference to the token it names: `--components-primary-buttons-themed-button-background-idle` is `var(--primitives-colors-theme-500)`, `--semantics-border-subtle` is `var(--primitives-colors-background-200)`. Every token still computes the value it had. A value a transform changed stays literal, and so do the four elevation roles (`DesignConfigProvider` sets the shadow ramp they alias as legacy aliases). Declarations keep their order. The 28 themed button colours the sources held as hex copied from the theme ramp (primary dimmed content; secondary and tertiary themed) are now aliases of their steps; their values are unchanged, and Android's `colors.xml` names them as `@color` references. The JavaScript, Swift and Kotlin outputs are unchanged.
+
+  **What you'll see:** nothing, unless you override a token. Override `--primitives-colors-theme-500` and every token that names it follows, the themed primary Button's fill among them; override the ramp's other steps and the button's hover, focus and pressed (600 and 700 light, 400 and 300 dark) and the outline, ghost and link ink (700) follow. A tool that reads these files as text now meets `var(--…)` where it read a colour: resolve it in the same file. The other emotions' button colours follow their own ramps only in part: in the light file 30 of them are references (the success and alert fills and their states, informative's hover and focus, and every emotion's secondary ink), in the dark file only neutral's four inks; the rest are still values. An override now also moves what references the primitive it names: `background-200` moves `border-subtle` and the neutral emotion's surface, `foreground-500` moves `border-input`, `foreground-0` moves the neutral emotion's on-surface and the light alert's on-fill, the radius primitives move the semantic radii, the font family the brand font, and an emotional ramp its emotion's roles. On Android, overriding a `primitives_colors_theme_*` resource now moves the 28 button colours too.
+
+- 8186d4d: Decision 59: the theme fill is theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes, and the theme foreground on it is white in both. `Components.Primary Buttons.themed.button.background.idle` now aliases `Primitives.Colors.theme.500` (`#135BEC`) in light and dark; hover and focus are `#1051E8` in both (theme 600 in light, 400 in dark), pressed `#0D44C2` in both (700 and 300); `foreground.content.{idle,hover,pressed,focus}` is `#FFFFFF` in both, where the dark theme had black. The CSS, Swift, Kotlin and Figma outputs carry the same values. `tokens:contrast:check` now pins the fill to theme 500 and the foreground to white in each theme, as well as their contrast (5.62:1 at rest, 6.24:1 hovered, 8.01:1 pressed).
+
+  **What you'll see:** every primary button is brighter in the light theme, `#135BEC` where it was theme 700, `#0D44C2`. In the dark theme it changes most: from light blue (`#7EA2F6`) with black text to the same `#135BEC` with white text. Anything you paint with these two tokens moves with them. Text, icons, borders and focus rings in the theme's colour keep theme 600, which still turns over with the theme.
+
+### Patch Changes
+
+- 7471bf0: Decision 63: brand variant 1's 500 (`Primitives.Colors.theme.variant.1.500`) is `#4135F1` in both themes, lightened from `#4134F1` just enough to read 3:1 as a shape on the dark page (3.00:1; it read 2.99:1). Its hue is unchanged. White on it reads 6.99:1, and it reads 2.52:1 on the dark sheet. The CSS, Swift, Kotlin and Figma outputs carry the same value. `tokens:contrast:check` now holds it to 3:1 on the page and white on it to 4.5:1.
+- 2f12ee8: GAP-45 (decision 69): brand variant 1's dark 600 (`Primitives.Colors.theme.variant.1.600`) is `#716EFF`, lightened from `#6258F3` with the same hue. It now reads 4.5:1 as text on the dark page (5.38:1) and on the dark sheet (4.51:1); it read 4.21:1 and 3.53:1. The light value is unchanged.
+
 ## 0.5.0
 
 ### Minor Changes

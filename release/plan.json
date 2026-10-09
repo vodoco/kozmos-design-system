@@ -2,9 +2,8 @@
   "schemaVersion": 1,
   "tag": "latest",
   "packages": [
-    { "name": "@kozmos-ds/icons", "version": "0.6.0" },
-    { "name": "@kozmos-ds/product-contracts", "version": "0.8.0" },
-    { "name": "@kozmos-ds/react", "version": "0.9.0" },
-    { "name": "@kozmos-ds/tokens", "version": "0.5.0" }
+    { "name": "@kozmos-ds/product-contracts", "version": "0.9.0" },
+    { "name": "@kozmos-ds/react", "version": "0.10.0" },
+    { "name": "@kozmos-ds/tokens", "version": "0.6.0" }
   ]
 }

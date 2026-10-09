@@ -152,7 +152,17 @@ Automated codemods are not guaranteed; apply and verify the documented migration
 - c5ec97c: First public release: the curated Pointr icon set and the taxonomy's eight
   quick-access symbols as React components.
 
-## `@kozmos-ds/product-contracts` — current 0.8.0
+## `@kozmos-ds/product-contracts` — current 0.9.0
+
+### 0.9.0
+
+#### Minor Changes
+
+- 112fc78: Add optional `POIResultPresentation.summaryLanguage`, the BCP 47 tag for the language a result's summary is written in, when it differs from the interface language (GAP-125). The model writes the summary in the query's language, so a visitor who asks in Spanish on an English device gets a Spanish summary among English labels. POIResultCard sets it as the summary's `lang`, as it does `nameLanguage` on the name, in a card on its own, in POIResultList and in POIResultGroup, so a screen reader says the summary in its own language's voice (WCAG 3.1.2). With no tag the summary has no `lang` attribute, as before. Existing calls need no change.
+
+  The card's name and summary now take their direction from their own words (`dir="auto"`), tagged or not: an Arabic or Hebrew summary in an English card runs right to left, with its full stop and a clamped summary's ellipsis at its end, and a Latin brand name in an Arabic card runs left to right. Their lines still start at the card's start, so text in the card's own direction draws as before.
+
+  The SwiftUI and Compose contracts gain the same field, and their result cards give VoiceOver and TalkBack both languages. **Native migration:** the SwiftUI and Compose `KozmosPOIResultCard` now draw `result.summary`, muted and two lines at most, after the location, which they did not before: a native card for a result that already passes `summary` is taller, so review native screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card. On Compose the row gives TalkBack its words as semantics text, never as a content description, and the texts drawn inside it are no longer read a second time: a product UI test that found a row with `onNodeWithContentDescription(...)` now finds it with `onNodeWithText(...)`, `substring = true` for one phrase.
 
 ### 0.8.0
 
@@ -536,7 +546,97 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.9.0
+## `@kozmos-ds/react` — current 0.10.0
+
+### 0.10.0
+
+#### Minor Changes
+
+- aabf75c: `ClientAppBanner`, Express's Client App Banner (GAP-127), for `AdaptiveMapShell`'s `topBar`. It draws the five fields a customer sets in Pointr Cloud and one action, and it can be dismissed. SwiftUI's `KozmosClientAppBanner` and Compose's `KozmosClientAppBanner` draw the same.
+  - **Fields.** `promotionText` is the line above the name, `appName` the app's name, and `description` what the app is for, drawn on two lines at most but read in full. `appIconSrc` is the app's icon. `actionLabel` and `onAction` are the button. Every word is the customer's; nothing is invented when a field is left out.
+  - **The icon** is 48 square at every text size, as on SwiftUI and Compose, with the Control corner and the subtle edge; an image of any size is cropped to the square, never stretched. Without one, or until it loads, the app's initial stands in for it, as an Avatar's fallback does, and it is gone once the icon loads, so it never shows through a transparent icon. It is decoration beside the name; `appIconAlt` names it only when it says more.
+  - **Dismissing.** `onDismiss` adds a dismiss button named by `dismissLabel` ("Dismiss"), the 44 target at every text size. The banner never removes itself: the product does, decides for how long, and moves focus on, as the docs' example does. Left out, there is no dismiss button.
+  - **The surface** is its own, since the top bar draws none: the solid surface, the Container corner and map chrome's floating elevation. It is 16 inside and fills the top bar's width.
+  - **Narrow widths.** The words and the action share a line while the words keep 10rem beside the icon; past that, the action goes under the icon and the words and spans them both, so the words keep the width beside the icon. The layout, the icon and the targets are owned CSS in logical sides only, so they hold in a host without `@scope`, and right to left mirrors them.
+  - **Accessibility.** It is a region named by the app (`aria-label` names it otherwise). It reads the promotion, the name and the description, then the action, then dismiss. The action's name is its words. Every target keeps 44, and nothing moves focus or is announced.
+
+- 60944a9: EmptyState takes `progress`: a long wait it explains, such as a download, and how far it has got, drawn under the description and above the action with a label that names the bar and an optional value in words (`{ value: 40, label: "Downloading the assistant", valueText: "12 of 30 MB" }`, value from 0 to 100, clamped, and NaN as 0). The label is read once, as the bar's name. SwiftUI and Compose take the same, from 0 to 1 (GAP-115).
+- 8186d4d: GAP-23: the stylesheet's token variables carry the tokens package's references, declared on each `ThemeProvider` root, so one override of `--primitives-colors-theme-500` in `tokens` re-brands every prominent fill: the filled Button, IconButton, FloatingActionButton, SplitButton, a filled MapControlButton, FloorSelector's selected level and CategoryField's count now follow it, as the Checkbox, Chip and Tag already did. With the ramp's other steps set, the filled Button's hover, focus and pressed and the outline, ghost and link Buttons' ink follow too. Every token computes the value it had, and `DesignConfigProvider`'s `shadow` option still reaches only its legacy `--shadow-*` aliases, not the elevation roles. `ThemeProvider`'s `tokens` also takes a set per theme, `{ light, dark }`: every provider, a nested one that forces the other theme included (DynamicIsland's island is always dark), applies the set for its own resolved theme and inherits both. A flat set still applies to both themes.
+
+  **What you'll see:** nothing without an override. With one on the provider, the Buttons change with the ramp; set it on the provider, not a descendant, since a reference resolves where it is declared. Set the steps around 500 as well (600 and 700, 400 and 300 in the dark): the filled Button's hover, focus and pressed and the hover of a selected Chip, a default Tag, a default Badge and an on ToggleButton read them. With one flat set under a light app, a forced-dark island took the light set's 700 as its outline and link ink (2.26:1 on its black); pass `{ light, dark }`.
+
+- eda3fe0: Itinerary can end its From and To rows in a Change button, as the Web SDK's route card has Edit beside them (GAP-104). Pass `onEditOrigin`, `onEditDestination` or both; a row whose callback is left out draws nothing new, so existing lists, ManoeuvreCard's among them, are unchanged. The button shows `changeLabel` ("Change", RouteLocationField's verb) and is named for its endpoint with that verb first: `editOriginLabel` and `editDestinationLabel`, which, left out, are `changeLabel` and the row's caption (`originLabel`, `destinationLabel`), "Change From" and "Change To" by default. Those are words the product already translates, so a translated verb never sits beside an English noun. It is a ghost button, 44 tall, on the name's first line at the row's inline end, and takes the next line when the name would keep under 80px beside it. SwiftUI and Compose take the same parameters after their released ones.
+
+  The From and To rows' layout is now component-owned CSS, so it holds in a browser without `@scope`: a long unbroken endpoint name breaks rather than widen the page, and Change keeps its place at the row's end. With `@scope` the rows draw as before.
+
+- 65f4d19: `LocationPin` draws its featured, accent and secondary pins as SwiftUI, Compose and Figma do (decisions 62, 66 and 68).
+  - **Featured:** a featured pin is the accent, `--semantics-accent-fill` (`#FAB735` in both themes unless you set your own), whatever its variant or tint. It shows the place's logo, passed as `markerContent`, and without one a star in the accent's ink, `--semantics-accent-on-fill` (black), where the number would be. It never shows its number, and the star badge at its corner is gone. Its accessible name is `label` followed by the new `featuredLabel` prop ("Featured" by default; pass it translated), so the colour is never the only way to tell it.
+  - **Accent:** the `accent` variant is brand variant 1's 500 (`#4135F1`) with a white number (6.99:1). At rest, its ring and number are the variant's 700. The variant keeps its name: it is brand variant 1, not the new accent colour.
+  - **Secondary:** a filled `secondary` pin is foreground/400 under foreground/1000. It was background/200, 1.6:1 against the page.
+
+  **What you'll see:**
+  - A featured pin is amber with its logo, or a black star, where it was its variant's colour (blue for `primary`) with its number and a star badge.
+  - A filled accent pin is violet with a white number, where it was the theme blue with black in the dark. A quiet accent pin's ring is violet.
+  - A selected secondary pin is dark grey with a white number in light, and warm grey with a black number in dark.
+  - Screen readers hear "…, Featured" on a featured pin. If your `label` already says it, drop it from the label.
+  - To brand Featured, set your accent on `ThemeProvider`: `--primitives-colors-accent-500` and, for a dark accent, `--semantics-accent-on-fill`.
+
+- 112fc78: Add optional `POIResultPresentation.summaryLanguage`, the BCP 47 tag for the language a result's summary is written in, when it differs from the interface language (GAP-125). The model writes the summary in the query's language, so a visitor who asks in Spanish on an English device gets a Spanish summary among English labels. POIResultCard sets it as the summary's `lang`, as it does `nameLanguage` on the name, in a card on its own, in POIResultList and in POIResultGroup, so a screen reader says the summary in its own language's voice (WCAG 3.1.2). With no tag the summary has no `lang` attribute, as before. Existing calls need no change.
+
+  The card's name and summary now take their direction from their own words (`dir="auto"`), tagged or not: an Arabic or Hebrew summary in an English card runs right to left, with its full stop and a clamped summary's ellipsis at its end, and a Latin brand name in an Arabic card runs left to right. Their lines still start at the card's start, so text in the card's own direction draws as before.
+
+  The SwiftUI and Compose contracts gain the same field, and their result cards give VoiceOver and TalkBack both languages. **Native migration:** the SwiftUI and Compose `KozmosPOIResultCard` now draw `result.summary`, muted and two lines at most, after the location, which they did not before: a native card for a result that already passes `summary` is taller, so review native screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card. On Compose the row gives TalkBack its words as semantics text, never as a content description, and the texts drawn inside it are no longer read a second time: a product UI test that found a row with `onNodeWithContentDescription(...)` now finds it with `onNodeWithText(...)`, `substring = true` for one phrase.
+
+- f333b61: RouteSummary's navigation layout takes `actions` after its progress, for Previous and Next in static wayfinding, and draws them in equal columns in reading order, where a Kozmos Button wraps its label, keeps its 44px and reads `aria-disabled="true"` as unavailable. It can also draw the route preview: `onEndRoute` is optional in the navigation layout, End is drawn only when it is passed, and `locationText` adds the place's line under the destination. Every existing `<RouteSummary>` still compiles and draws as before; only code that reads the End handler from the props types needs one change:
+
+  **Types:** `onEndRoute` is now optional on `RouteSummaryNavigationProps`, and so on the `RouteSummaryProps` union; it stays required on `RouteSummaryEstimateProps`. Code that calls it through those types, such as a wrapper's `props.onEndRoute()` or a `RouteSummaryNavigationProps["onEndRoute"]` handler, no longer type-checks (TS2722, "possibly 'undefined'"). Call it as `props.onEndRoute?.()`, or narrow to `RouteSummaryEstimateProps` where End is always there.
+
+- 8186d4d: Decision 59: prominent filled parts draw the theme fill, theme 500 (the client's base colour), with the theme foreground, white, on it, in both themes. The filled primary Button, IconButton, FloatingActionButton and SplitButton (and every call to action drawn as a default Button) follow the token. A checked Checkbox, a checked Switch (its thumb white on the track), Radio's dot, a selected Chip, the default Tag and Badge, the brand Counter, FloorSelector's result-count badge, a filled primary LocationPin and its number, SaveLocationCard's saved disc, the Stepper's completed step, an on ToggleButton, ManoeuvreCard's `theme` appearance, the UserMessage bubble and POIResultCard's selected number tab move from theme 600 (black on it in the dark) to the new `theme-fill` role. Text, icons, borders and focus rings in the theme's colour stay theme 600: Radio's ring, the current step's ring, Slider, Progress, RouteProgressRail, the Menu, Select and Listbox highlight. On a list's selected level, itself the theme fill, FloorSelector's result count inverts: the theme foreground with its number in the fill, so it keeps an edge. CategoryField's default accent (its icon) moves from 500 to 600, and the MapSheet grip's focus ring from 500 to 600. Rating's chosen thumb is the theme's tint ringed in 600, as the other platforms draw it, instead of a 600 fill. No props change.
+
+  **What you'll see:** primary buttons are brighter (`#135BEC` where they were `#0D44C2`), and in the dark theme they change from light blue with black text to `#135BEC` with white text. Checked checkboxes and switches, selected chips, default tags, badges and counters, filled pins and the visitor's message bubble are `#135BEC` with white on them in both themes; in the dark they were a lighter blue (`#5887F3`) with black on it.
+
+  States on the fill (Olcay, 2026-10-07): the filled Button is its pressed token (`#0D44C2`) while the pointer holds it and its focus token (`#1051E8`) when focused from the keyboard, inside its focus ring; so are IconButton's default, FloatingActionButton, both halves of SplitButton (Firefox never applies `:active` to the menu half, because the menu opens on the press) and a filled MapControlButton. A press shows at once rather than fading in, and an unavailable filled Button (`aria-disabled`, as RouteSummary's Previous and Next) keeps its rest colour under the pointer and a press. Every filled emotion, and `destructive`, reads its own pressed and focus tokens. A hovered selected Chip, default Tag or default Badge is the hover token (`#1051E8`), opaque, where it was the fill at 90% (the Tag's at 80%), which let the page through; an on ToggleButton, which showed no hover, now does too. The default Badge's counter inverts: white with its number in the theme fill, in both themes; the destructive Badge's is unchanged. An on ToggleButton, a selected Chip's remove button and the default Tag's remove button draw Button's offset focus ring (the Tag's drew none), and the remove buttons hover in the theme foreground at 20% on the fill (a selected destructive chip's in its own foreground). Right to left, a checked Switch's thumb slides to the inline end instead of out of the track, and SplitButton's halves meet square on the right sides. No props change.
+
+  **What you'll see:** a pressed primary button darkens to `#0D44C2`, and a keyboard-focused one is `#1051E8` inside its ring. A default Badge's counter is white with a blue number. Right-to-left switches stay in their track.
+
+#### Patch Changes
+
+- 1d7ded1: AICompanionPanel's header joins the map shell panel's top inset. In a sheet with a grab handle its title and close button sat 8 lower than a panel header's search field; the header now tops its own 12 up to what the shell leaves rather than adding to it, so it sits where the search field does, and at 16 in a gripless sheet or side panel (GAP-121). Outside a shell it keeps its 12.
+- 46612ad: AdaptiveMapShell never clips the map credits into a scroll region (GAP-135, decision 58: the logo first, then the corners, and the credits never clip). When an opened top-bar card and the sheet leave the attribution less room than its full height, MapAttribution's Pointr logo gives way first and the credits keep their full height, so nothing is cut off and no scroll area that a keyboard can't reach is left behind. On a phone where the two bottom corners lift the attribution above them, that room counts the lift; credits that would still reach the card send the corners away, hidden and inert as when they don't fit, and return to the bottom row. The logo comes back once it fits again: MapAttribution keeps a brand that has given way laid out, unseen and out of reach, so the shell measures it whatever is drawn. The panel's sizing is unchanged: it still reserves the attribution's full height, so the logo giving way never moves the sheet.
+- a72c7cc: Right to left follows the reading direction, wherever the stylesheet goes.
+  - **Arrows and sides.** Right to left, Pagination's Previous and Next, the breadcrumb's separator, a submenu's arrow, a closed tree item's arrow and RoutePreviewPanel's Back now point to the start or the end edge rather than staying left or right, as SwiftUI's `.forward` and `.backward` symbols and Compose's AutoMirrored icons do. Their spacing (Pagination's link padding, Menu's inset, indicator and shortcut, Tree's text, actions and depth indent) follows the reading direction too, so nested tree rows indent from the start edge. Left-to-right layouts are unchanged.
+  - **Without `:dir()`.** The package's right-to-left rules, these and the ones it already had (POIMediaGallery's arrows, the gradient Progress track and its flow, the map overlay's and MapInfo's corners), read the nearest `dir` attribute through a `--kozmos-rtl` custom property instead of `:dir(rtl)`. Chrome and Edge match `:dir()` only from 120, below the package's declared 118, and a build that lowers CSS for those browsers (Vite 8's lightningcss) rewrites `:dir(rtl)` into `:lang()` guesses, which mirrored nothing on an English right-to-left page and everything on an Arabic left-to-right one. The only rules the stylesheet adds to elements it does not own set `--kozmos-rtl` on `[dir]` elements.
+
+- 2f12ee8: Decision 68: POIResultCard's Featured tab and a featured card's edge draw the accent, `--semantics-accent-fill` under `--semantics-accent-on-fill`, as a featured `LocationPin` does. They were the alert fill pair.
+
+  **What you'll see:** Featured tabs and edges are `#FAB735` in both themes. They were `#F9A707` in light and `#FBC459` in dark. To brand Featured, set your accent on `ThemeProvider`: `--primitives-colors-accent-500` and, for a dark accent, `--semantics-accent-on-fill`.
+
+- 3dae9d5: The opt-in host reset, `@kozmos-ds/react/reset.css`, sets the page's font. It was Tailwind's preflight copied as written, with eight `theme('…')` calls that only Tailwind resolves, so browsers dropped those declarations and a page with the reset kept the browser's serif. Each now takes the default it names: the system sans stack on `html`, the system monospace stack for code, `currentColor` borders and `#9ca3af` placeholders.
+- 3dae9d5: `NavigationItem`'s `asChild` works. It threw on every render ("React.Children.only expected to receive a single React element child"), so a router's link could not be the item. Now the one child, such as a router's link component, becomes the item: it takes the item's classes, `aria-current` and handlers, its own handler runs first, and the icon, the label (the child's own text) and the badge or trailing content are drawn inside it.
+- 1d7ded1: A navigation RouteSummary passed to AdaptiveMapShell's `panelHeader` is now hosted there, as it is in the panel's content: no card, padding, radius or shadow of its own, on the panel's one surface (decision 43). It drew its standalone card in the header. An explicit `presentation` still wins, and SwiftUI and Compose already hosted it in either slot.
+- c48e982: POIDetailPanel's summary tones show. A toned summary item (success, warning, danger, brand) set its colour on the item, but the value's own foreground won, and its mark inherited that, so every tone drew as plain foreground. The value and its mark now take the tone's text colour, as SwiftUI and Compose draw them; the detail line keeps its muted colour.
+- 56ecafc: MapAttribution's Pointr logo ships as a shorter data URL: the artwork's own bytes, with only the characters a URL can't carry raw percent-encoded (spaces, `=`, `/`, `:` and `,` stay as they are). It decodes to the official artwork exactly, draws pixel for pixel as before in Chromium, Firefox and WebKit, and costs the bundle 0.2 KB less gzipped.
+- a72c7cc: Progress fills from the inline start: right to left it now fills from the right, as SwiftUI's and Compose's bars do. Its indicator is as wide as the value instead of a full-width bar translated left. The native bars draw React's colours: SwiftUI theme 600 through `.tint` (it drew theme 500 through the deprecated `LinearProgressViewStyle(tint:)`), and Compose theme 600 on background 200 (theme 500 on background 300 read 2.56:1 against its track, 1.58:1 dark).
+- a4cafcc: Decision 61: the secondary Button draws the neutral emotion's Primary Buttons tokens in every state, with their ink, as SwiftUI and Compose do. The same goes for IconButton, FloatingActionButton and SplitButton, which render it. It was `bg-secondary text-secondary-foreground` (background/200 under foreground/0), with no hover, focus or pressed colour.
+
+  A press shows at once, and an `aria-disabled` secondary keeps its rest colour. The rules are owned, so they hold in a host without `@scope`. An explicit `emotion` still wins.
+
+  **What you'll see:**
+  - **In dark:** the secondary fill is `#464A53` (was `#2E3138`). Hovered and focused it is `#2E3138`, and pressed `#17191C`, under white.
+  - **In light:** it stays `#C7CAD1` under black, now `#ABAFBA` hovered and focused, and `#9095A2` pressed.
+
+- d35e14c: A disabled `SegmentedControl` is dimmed once. The group draws itself at 50%, and its segments no longer halve themselves again, so they are at 50%, not 25%. This is how SwiftUI and Compose draw a disabled control. A segment disabled on its own, in an enabled control, still dims itself.
+- 01f231d: AICompanionPanel fills a map shell's side panel. Beside the map the shell's panel hugs its content, so the assistant grew with the conversation and its title, close button and input scrolled away with the thread. It now takes the panel's whole height, as it does in the phone sheet, and only the thread scrolls (GAP-124). Other side-panel content still hugs.
+- 3dae9d5: `Toast` draws on the background, background/0 under the foreground ink, as SwiftUI and Compose do. It had a border and a shadow but no fill, so whatever was behind it showed through.
+- Updated dependencies [2f12ee8]
+- Updated dependencies [7471bf0]
+- Updated dependencies [8186d4d]
+- Updated dependencies [112fc78]
+- Updated dependencies [8186d4d]
+- Updated dependencies [7471bf0]
+- Updated dependencies [2f12ee8]
+  - @kozmos-ds/tokens@0.6.0
+  - @kozmos-ds/product-contracts@0.9.0
 
 ### 0.9.0
 
@@ -1709,7 +1809,47 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/tokens` — current 0.5.0
+## `@kozmos-ds/tokens` — current 0.6.0
+
+### 0.6.0
+
+#### Minor Changes
+
+- 2f12ee8: Decision 68: Kozmos has an accent colour, the one a client sets in the Pointr Cloud Dashboard beside the theme, background, foreground and emotional colours.
+  - `Primitives.Colors.accent` is a 0–1000 ramp like theme's, with 500 as the base: `#FAB735` in both themes by default, and the other steps the alert ramp's.
+  - `Semantics.Accent.fill` references accent 500, and `Semantics.Accent.onFill` is its ink, black in both themes by default.
+  - The CSS (`--primitives-colors-accent-*`, `--semantics-accent-fill`, `--semantics-accent-on-fill`), the JS module, Swift, Kotlin and the Figma variables all carry them.
+  - To use your own accent, override accent 500 and, if your colour is dark, the on-fill ink. On the web, set both on `ThemeProvider`'s `tokens`.
+
+- 7471bf0: Decision 60: a filled emotion button's hover is one step and its pressed two steps further along the emotion's own ramp, away from the page: darker in light, lighter in dark. Its focus is its hover. `Components.Primary Buttons.{success,alert,danger,informative,neutral}.button.background.{idle,hover,pressed,focus}` are now references to their ramp steps, so the CSS writes them as `var()` references (GAP-23), and the Swift, Kotlin and Figma outputs carry the same steps. `tokens:contrast:check` holds each state to its ramp step and its direction, and focus to hover.
+
+  **What you'll see:** hovered and pressed emotion buttons move away from the page in both themes.
+
+  | Emotion                     | Theme | Idle      | Hover and focus                                  | Pressed                                     |
+  | --------------------------- | ----- | --------- | ------------------------------------------------ | ------------------------------------------- |
+  | Danger                      | Light | `#B01736` | `#8C132B` (was `#D41C42`, lighter than the fill) | `#670E20` (was `#8C132B`)                   |
+  | Danger                      | Dark  | `#EE7E95` | `#F3A2B3` (was `#E95A77`)                        | `#F8C6D0` (was `#F3A2B3`)                   |
+  | Success, alert, informative | Dark  | 700       | 800 (was 600)                                    | 900 (was 800)                               |
+  | Informative                 | Light | 700       | 800                                              | 900, `#154761` (was 800, the same as hover) |
+  | Neutral                     | Light | `#C7CAD1` | `#ABAFBA`                                        | `#9095A2` (was `#E3E4E8`, lighter)          |
+  | Neutral                     | Dark  | `#464A53` | `#2E3138` (was `#5C6069`)                        | `#17191C` (was `#2E3138`)                   |
+  - Light success and alert already followed the rule and don't change.
+  - The dark neutral keeps darkening: white, its ink, reads 3.72:1 on the lighter step.
+  - The themed button keeps decision 59's values.
+  - The inks don't change. Each still reads at least 4.5:1, and black on the light neutral pressed reads 7.01:1.
+
+- 8186d4d: GAP-23: `css/light.css` and `css/dark.css` write a token whose source value is an alias as a reference to the token it names: `--components-primary-buttons-themed-button-background-idle` is `var(--primitives-colors-theme-500)`, `--semantics-border-subtle` is `var(--primitives-colors-background-200)`. Every token still computes the value it had. A value a transform changed stays literal, and so do the four elevation roles (`DesignConfigProvider` sets the shadow ramp they alias as legacy aliases). Declarations keep their order. The 28 themed button colours the sources held as hex copied from the theme ramp (primary dimmed content; secondary and tertiary themed) are now aliases of their steps; their values are unchanged, and Android's `colors.xml` names them as `@color` references. The JavaScript, Swift and Kotlin outputs are unchanged.
+
+  **What you'll see:** nothing, unless you override a token. Override `--primitives-colors-theme-500` and every token that names it follows, the themed primary Button's fill among them; override the ramp's other steps and the button's hover, focus and pressed (600 and 700 light, 400 and 300 dark) and the outline, ghost and link ink (700) follow. A tool that reads these files as text now meets `var(--…)` where it read a colour: resolve it in the same file. The other emotions' button colours follow their own ramps only in part: in the light file 30 of them are references (the success and alert fills and their states, informative's hover and focus, and every emotion's secondary ink), in the dark file only neutral's four inks; the rest are still values. An override now also moves what references the primitive it names: `background-200` moves `border-subtle` and the neutral emotion's surface, `foreground-500` moves `border-input`, `foreground-0` moves the neutral emotion's on-surface and the light alert's on-fill, the radius primitives move the semantic radii, the font family the brand font, and an emotional ramp its emotion's roles. On Android, overriding a `primitives_colors_theme_*` resource now moves the 28 button colours too.
+
+- 8186d4d: Decision 59: the theme fill is theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes, and the theme foreground on it is white in both. `Components.Primary Buttons.themed.button.background.idle` now aliases `Primitives.Colors.theme.500` (`#135BEC`) in light and dark; hover and focus are `#1051E8` in both (theme 600 in light, 400 in dark), pressed `#0D44C2` in both (700 and 300); `foreground.content.{idle,hover,pressed,focus}` is `#FFFFFF` in both, where the dark theme had black. The CSS, Swift, Kotlin and Figma outputs carry the same values. `tokens:contrast:check` now pins the fill to theme 500 and the foreground to white in each theme, as well as their contrast (5.62:1 at rest, 6.24:1 hovered, 8.01:1 pressed).
+
+  **What you'll see:** every primary button is brighter in the light theme, `#135BEC` where it was theme 700, `#0D44C2`. In the dark theme it changes most: from light blue (`#7EA2F6`) with black text to the same `#135BEC` with white text. Anything you paint with these two tokens moves with them. Text, icons, borders and focus rings in the theme's colour keep theme 600, which still turns over with the theme.
+
+#### Patch Changes
+
+- 7471bf0: Decision 63: brand variant 1's 500 (`Primitives.Colors.theme.variant.1.500`) is `#4135F1` in both themes, lightened from `#4134F1` just enough to read 3:1 as a shape on the dark page (3.00:1; it read 2.99:1). Its hue is unchanged. White on it reads 6.99:1, and it reads 2.52:1 on the dark sheet. The CSS, Swift, Kotlin and Figma outputs carry the same value. `tokens:contrast:check` now holds it to 3:1 on the page and white on it to 4.5:1.
+- 2f12ee8: GAP-45 (decision 69): brand variant 1's dark 600 (`Primitives.Colors.theme.variant.1.600`) is `#716EFF`, lightened from `#6258F3` with the same hue. It now reads 4.5:1 as text on the dark page (5.38:1) and on the dark sheet (4.51:1); it read 4.21:1 and 3.53:1. The light value is unchanged.
 
 ### 0.5.0
 
