@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/product-contracts",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Platform-neutral presentation contracts for Kozmos map, POI, floor, and routing components.",
   "keywords": [
     "kozmos",
