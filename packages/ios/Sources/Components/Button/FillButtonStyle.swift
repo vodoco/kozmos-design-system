@@ -114,6 +114,23 @@ struct KozmosFillButtonStyle<HoverShape: Shape>: ButtonStyle {
     }
 }
 
+/// The plain style's press and the pointer's hover, with no disabled look of
+/// its own: for a part that draws its own disabled opacity. SwiftUI's plain
+/// style draws a disabled button's label at half by itself (measured on
+/// iPhone 17 Pro, iOS 26.5, and on a Mac), so under it a part that also
+/// dims itself — a level at 0.4, an unavailable result at 0.6, a chip at
+/// half round its remove button — was dimmed twice. The disabled button
+/// stays disabled: it takes no touch and VoiceOver hears it dimmed.
+struct KozmosPlainPressButtonStyle<HoverShape: Shape>: ButtonStyle {
+    let hoverShape: HoverShape
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? KozmosFillButtonStyle<HoverShape>.plainPressedOpacity : 1)
+            .kozmosPointerHover(hoverShape)
+    }
+}
+
 extension View {
     /// The pointer's hover effect in `shape`, where there is a pointer to hover.
     @ViewBuilder

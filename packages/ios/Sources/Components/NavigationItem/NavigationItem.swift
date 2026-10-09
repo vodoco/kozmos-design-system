@@ -213,9 +213,10 @@ public struct KozmosNavigationItem: View {
                     .stroke(focusRingColor, lineWidth: isFocusVisible ? 2 : 0)
             )
         }
+        // The plain style draws a disabled item at half, as React's
+        // `opacity-50`; a second opacity here dimmed it twice, to a quarter.
         .buttonStyle(.plain)
         .disabled(isDisabled)
-        .opacity(isDisabled ? 0.5 : 1)
         .accessibilityLabel(label ?? "")
         .accessibilityValue(isSelected ? "Selected" : "")
     }

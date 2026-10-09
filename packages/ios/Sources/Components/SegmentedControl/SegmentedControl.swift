@@ -55,13 +55,16 @@ public struct KozmosSegmentedControl: View {
         .padding(4)
         .frame(maxWidth: fullWidth ? .infinity : nil)
         .frame(minHeight: metrics.containerHeight)
-        .background(KozmosColors.primitivesColorsBackground100)
+        // Disabled, each part of the control is drawn at half, as a disabled
+        // part is: the plain style draws each segment at half, and the track
+        // is drawn at half here. An opacity round the whole control dimmed
+        // the segments and their words twice, to a quarter.
+        .background(KozmosColors.primitivesColorsBackground100.opacity(trackOpacity))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
+                .stroke(KozmosColors.primitivesColorsBackground200.opacity(trackOpacity), lineWidth: 1)
         )
-        .opacity(disabled ? 0.5 : 1)
         .accessibilityElement(children: .contain)
     }
 
@@ -92,6 +95,10 @@ public struct KozmosSegmentedControl: View {
                 fontSize: 14
             )
         }
+    }
+
+    private var trackOpacity: Double {
+        disabled ? 0.5 : 1
     }
 
     private var selectedBackground: Color {

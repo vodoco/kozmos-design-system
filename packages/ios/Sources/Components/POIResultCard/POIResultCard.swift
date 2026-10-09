@@ -411,7 +411,10 @@ public struct KozmosPOIResultCard: View {
                 // between them swallow taps.
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            // An unavailable result is drawn at 0.6, as React's
+            // `disabled:opacity-60`, and only here: the plain style drew it
+            // at half again, to 0.3.
+            .buttonStyle(KozmosPlainPressButtonStyle(hoverShape: Rectangle()))
             .opacity(available ? 1 : 0.6)
             // The collapse belongs to the SELECT ROW, not the card.
             //
@@ -654,6 +657,9 @@ private struct KozmosPOIResultActionButton: View {
             isDisabled: !enabled,
             leadingIconName: showsNavigationIcon ? "navigation-pointer-01" : nil,
             action: action)
-            .buttonStyle(.plain)
+            // Each action its own target, in a list row too. Borderless, not
+            // plain: an outline Button draws itself at half while disabled,
+            // and the plain style drew it at half again, to a quarter.
+            .buttonStyle(.borderless)
     }
 }
