@@ -998,9 +998,10 @@ isolate` on the example canvases, as on the component pages' demo stages and
   (`SearchBar.tsx`), so a caller's own `onKeyDown` replaces the wrapper and
   the event is never sent. The caller's handler still runs, so nothing looks
   wrong.
-- **Now:** open. The site's search handles Enter and the arrow keys itself,
-  so its searches are not reported; the site has no analytics provider
-  anyway.
+- **Now:** fixed in 0.9.0 (#193). `SearchBar` takes `onKeyDown` as its own
+  prop and calls it first, then sends `search_initiated` on Enter unless the
+  caller prevented the default or an input method is composing. The site has
+  no analytics provider, so it reports nothing either way.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** spread the props first and compose the handlers, as the
   `onChange` beside it already is.

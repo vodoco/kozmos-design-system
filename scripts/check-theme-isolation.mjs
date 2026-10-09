@@ -153,14 +153,23 @@ try {
   assert.deepEqual(await hostStyles(), before);
   assert.deepEqual(errors, []);
   console.log("PASS system changes, provider cleanup and host preservation");
-  await page.addStyleTag({
-    content: readFileSync("packages/react/dist/reset.css", "utf8"),
-  });
+  const reset = readFileSync("packages/react/dist/reset.css", "utf8");
+  // Tailwind's preflight names theme values, `theme('fontFamily.sans', …)`,
+  // which only Tailwind resolves: a browser drops each such declaration, and
+  // the page kept the browser's serif.
+  assert.deepEqual(reset.match(/theme\([^)]*\)/g) ?? [], []);
+  await page.addStyleTag({ content: reset });
   assert.equal(
     await page
       .locator("#host-heading")
       .evaluate((node) => getComputedStyle(node).margin),
     "0px",
+  );
+  assert.match(
+    await page.evaluate(
+      () => getComputedStyle(document.documentElement).fontFamily,
+    ),
+    /system-ui/,
   );
   console.log("PASS explicit reset export applies only when imported");
 } finally {

@@ -164,7 +164,15 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
       (trailing ? "trailing" : badge ? "badge" : icon ? "icon-label" : "label");
     const isRail = placement === "rail";
     const isIconOnly = content === "icon-only";
-    const labelContent = label ?? children;
+    // With `asChild`, the one child (a router's link) becomes the item: it
+    // takes the item's props, and the icon, label and badge go inside it.
+    // Slot takes a single element, so they cannot be its siblings.
+    const slotChild =
+      asChild && React.isValidElement<{ children?: React.ReactNode }>(children)
+        ? children
+        : null;
+    const labelContent =
+      label ?? (slotChild ? slotChild.props.children : children);
     const shouldRenderIcon = content !== "label" && Boolean(icon);
     const shouldRenderBadge = content === "badge" && Boolean(badge);
     const shouldRenderTrailing = content === "trailing" && Boolean(trailing);
@@ -178,30 +186,8 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
       onClick?.(event);
     };
 
-    return (
-      <Comp
-        ref={ref}
-        aria-current={isSelected ? (ariaCurrent ?? "page") : ariaCurrent}
-        aria-disabled={isDisabled || undefined}
-        className={cn(
-          navigationItemVariants({
-            density,
-            placement,
-            state: visualState,
-          }),
-          className,
-        )}
-        data-disabled={isDisabled || undefined}
-        data-content={content}
-        data-placement={placement}
-        data-selected={isSelected || undefined}
-        disabled={!asChild && !href ? isDisabled : undefined}
-        href={href}
-        onClick={handleClick}
-        tabIndex={isDisabled ? -1 : tabIndex}
-        type={!asChild && !href ? "button" : undefined}
-        {...props}
-      >
+    const inner = (
+      <>
         {shouldRenderIcon ? (
           <span
             aria-hidden="true"
@@ -260,6 +246,34 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
             data-slot="navigation-item-indicator"
           />
         ) : null}
+      </>
+    );
+
+    return (
+      <Comp
+        ref={ref}
+        aria-current={isSelected ? (ariaCurrent ?? "page") : ariaCurrent}
+        aria-disabled={isDisabled || undefined}
+        className={cn(
+          navigationItemVariants({
+            density,
+            placement,
+            state: visualState,
+          }),
+          className,
+        )}
+        data-disabled={isDisabled || undefined}
+        data-content={content}
+        data-placement={placement}
+        data-selected={isSelected || undefined}
+        disabled={!asChild && !href ? isDisabled : undefined}
+        href={href}
+        onClick={handleClick}
+        tabIndex={isDisabled ? -1 : tabIndex}
+        type={!asChild && !href ? "button" : undefined}
+        {...props}
+      >
+        {slotChild ? React.cloneElement(slotChild, undefined, inner) : inner}
       </Comp>
     );
   },
