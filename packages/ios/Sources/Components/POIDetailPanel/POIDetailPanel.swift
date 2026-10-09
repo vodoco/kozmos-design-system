@@ -432,9 +432,10 @@ struct POIDetailActionButton: View {
             .overlay(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                 .strokeBorder(filled ? Color.clear : KozmosColors.semanticsBorderSubtle, lineWidth: 1))
         }
+        // The plain style draws a disabled or loading action at half; a
+        // second opacity here dimmed a disabled one twice, to a quarter.
         .buttonStyle(.plain)
         .disabled(state.disabled || state.loading)
-        .opacity(state.disabled ? 0.5 : 1)
         .accessibilityLabel(label)
         .accessibilityValue(state.loading ? Text(loadingLabel) : Text(estimate ?? ""))
         .accessibilityAddTraits(state.pressed ? [.isSelected] : [])

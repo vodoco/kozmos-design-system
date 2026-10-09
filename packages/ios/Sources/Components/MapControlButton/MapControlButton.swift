@@ -332,11 +332,18 @@ public struct KozmosMapControlButton<Icon: View>: View {
         // A filled control takes the fill's style on and off alike, so a
         // toggle never swaps its button under the finger or VoiceOver's
         // cursor: on, it draws the themed button's pressed token; off, on the
-        // page's surface, it dims as the plain style does. A tinted one keeps
-        // the plain style itself.
+        // page's surface, it dims as the plain style does. A tinted one takes
+        // the plain style's press.
         .modifier(KozmosMapControlButtonStyle(filled: emphasis == .filled, drawsFill: appearance.surface == .filled, shape: shape))
         .disabled(isDisabled || isLoading)
-        // Loading, it is disabled, and drawn at half as a disabled part is.
+        // Loading, it is disabled, and drawn at half as a disabled part is,
+        // as React's and Compose's are: once, and as one. Neither style dims
+        // a disabled control itself; the plain style did, and a tinted
+        // control was dimmed twice. And the surface is four copies, one over
+        // another (itself and the three that cast its shadows): an opacity
+        // spread over them drew it at 94%, so the control is drawn whole
+        // before it is dimmed.
+        .compositingGroup()
         .opacity(isDisabled || isLoading ? 0.5 : 1)
         // Reduce Motion stops the control growing, not the reveal: the new
         // state is still said, and still said for as long.
@@ -351,8 +358,9 @@ public struct KozmosMapControlButton<Icon: View>: View {
 }
 
 /// The map control's button style: the fill's for a filled control, which
-/// draws the fill only while it is on, and the plain style for a tinted one.
-/// Chosen from the emphasis, which does not change on screen.
+/// draws the fill only while it is on, and the plain style's press for a
+/// tinted one. Chosen from the emphasis, which does not change on screen.
+/// Neither dims a disabled control: the control does that itself.
 private struct KozmosMapControlButtonStyle: ViewModifier {
     let filled: Bool
     let drawsFill: Bool
@@ -363,7 +371,7 @@ private struct KozmosMapControlButtonStyle: ViewModifier {
         if filled {
             content.buttonStyle(KozmosFillButtonStyle(drawsFill: drawsFill, hoverShape: shape))
         } else {
-            content.buttonStyle(.plain)
+            content.buttonStyle(KozmosPlainPressButtonStyle(hoverShape: shape))
         }
     }
 }

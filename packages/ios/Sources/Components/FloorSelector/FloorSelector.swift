@@ -343,7 +343,11 @@ public struct KozmosFloorSelector: View {
                     )
                 )
         }
-        .buttonStyle(.plain)
+        // A disabled level is drawn at 0.4, as Compose's is, and only here:
+        // the plain style drew it at half again, to 0.2.
+        .buttonStyle(KozmosPlainPressButtonStyle(
+            hoverShape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous)
+        ))
         .disabled(floor.disabled)
         .opacity(floor.disabled ? 0.4 : 1)
         // The button shows the short label; assistive technology gets the full
@@ -684,7 +688,9 @@ public struct KozmosFloorSelector: View {
                 .foregroundColor(KozmosColors.primitivesColorsForeground500)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        // With nowhere to step, drawn at 0.4, as Compose's is, and only
+        // here: the plain style drew it at half again, to 0.2.
+        .buttonStyle(KozmosPlainPressButtonStyle(hoverShape: Rectangle()))
         .disabled(target == nil)
         .opacity(target == nil ? 0.4 : 1)
         .accessibilityLabel(stepperLabel(step: step))
