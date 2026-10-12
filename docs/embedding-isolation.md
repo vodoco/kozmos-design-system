@@ -108,7 +108,8 @@ and generic utility classes. This is not Shadow DOM: high-specificity host selec
 The integration fixture checks real computed host/component styles, not class presence.
 
 The default CSS contains a **local** component reset. The separate exported
-`@kozmos-ds/react/reset.css` is the optional global Tailwind preflight. It is never imported
+`@kozmos-ds/react/reset.css` is the optional global Tailwind preflight, with each `theme()` it names
+resolved to Tailwind's default (the system sans and mono stacks; 0.10.0). It is never imported
 by the JS entry or default stylesheet. Import it only when the application owns the
 whole page and wants that reset. Importing `@kozmos-ds/tokens/css/light.css` separately
 still applies the token package's documented global behavior; embedded React modules

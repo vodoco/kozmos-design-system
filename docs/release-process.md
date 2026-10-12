@@ -395,3 +395,50 @@ and the [generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from
 
 SwiftUI and Compose changes ship from the repository at this commit, not a native registry. Figma,
 Code Connect, external Claude Design artifacts and product deployments are separate.
+
+### 0.10.0
+
+Published on 2026-10-09 from `1ddc4d10e67616eaaa9d984ca0c3ec830c78087e`, the version merge
+[#267](https://github.com/vodoco/kozmos-design-system/pull/267). It carries decisions 59–69 (the theme fill,
+one-override re-branding, emotion and secondary button states, the accent colour, the pins), ClientAppBanner,
+the new props since 0.9.0 and the fixes up to #266. React, tokens and product-contracts move; icons stays at
+0.6.0 and was not planned. At Olcay's request Claude dispatched the release and approved the protected
+`npm-release` deployment, as `vodoco`, for this release only; earlier releases were dispatched and approved
+by Olcay.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.10.0, tokens 0.6.0 and product-contracts 0.9.0 on npm `latest`; React pins tokens 0.6.0, product-contracts 0.9.0 and icons 0.6.0 exactly.                                                                                                                                                                                                                         |
+| Exact main-push CI      | [37916254149](https://github.com/vodoco/kozmos-design-system/actions/runs/37916254149): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis on the merge ([37916254077](https://github.com/vodoco/kozmos-design-system/actions/runs/37916254077)): JS 81.34 / 88.00 KB, CSS 29.45 / 30.50 KB.                                |
+| Preflight / publication | `pnpm release:preflight` against that run passed (credential placement, request, evidence and plan; none of the versions on npm). [37933834467](https://github.com/vodoco/kozmos-design-system/actions/runs/37933834467) succeeded (guard, prepare, publish); its prepare job's install check passed before the `npm-release` approval.                                   |
+| Registry readback       | All three versions are on `latest`, each with SLSA v1 provenance. Their SHA-512 integrities equal the tarballs in the run's `npm-candidate-37933834467-1` artifact (compared 2026-10-09). React's tarball URL answered 404 for about five minutes after the publish while the registry's CDN caught up; the metadata and the job's own registry check were already right. |
+| Installed consumer      | A fresh npm installation of React 0.10.0 resolved tokens 0.6.0, icons 0.6.0 and contracts 0.9.0. With React 19 it exposed 270 exports and server-rendered ThemeProvider, Button, a featured LocationPin (named "…, Featured") and ClientAppBanner. With React 18, NavigationItem `asChild` rendered onto its link, and the installed `reset.css` has no `theme()`.        |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created the three tags and releases at `1ddc4d10`, and a second dry-run found them in place. React 0.10.0 is Latest.                                                                                                                                                                                                                     |
+| Website / Storybook     | [Pages 37916254384](https://github.com/vodoco/kozmos-design-system/actions/runs/37916254384) built and deployed this exact SHA at 10:17Z. The live site, Storybook, its `index.json` (with ClientAppBanner's stories) and `iframe.html` returned HTTP 200. This is not a fresh all-screen visual review.                                                                  |
+
+Change details: [React](../packages/react/CHANGELOG.md#0100), [tokens](../packages/tokens/CHANGELOG.md#060),
+[contracts](../packages/product-contracts/CHANGELOG.md#090) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.9.0:
+
+- **Prominent fills are theme 500 with white on them, in both themes** (decision 59). In the dark theme
+  the primary Button changes most: from light blue with black text to `#135BEC` with white. To keep your
+  brand, override `--primitives-colors-theme-500` on `ThemeProvider`'s `tokens`, with the steps around it
+  for hover, focus and pressed; `tokens` takes `{ light, dark }` sets.
+- **Token CSS writes aliases as `var()` references** (GAP-23). A tool that reads `css/light.css` or
+  `css/dark.css` as text meets `var(--…)` where it read a colour; resolve it in the same file.
+- **Featured is the new accent colour** (decision 68): a featured LocationPin and POIResultCard's Featured
+  tab and edge are `#FAB735` by default. A featured pin shows its logo (`markerContent`) or a star, never
+  its number, and its accessible name gains `featuredLabel` ("Featured"): drop the word from `label` if it
+  already says it. Set your accent on `ThemeProvider`: `--primitives-colors-accent-500`, and
+  `--semantics-accent-on-fill` for a dark accent.
+- **LocationPin's `accent` variant is brand variant 1** (`#4135F1`, white number), and a filled
+  `secondary` pin is foreground/400.
+- **The secondary Button and the emotion buttons** draw their own hover, focus and pressed tokens; the
+  dark secondary fill is `#464A53`.
+- **RouteSummary without `onEndRoute`** draws the route preview; existing navigation calls are unchanged.
+- **`reset.css` now sets the page's font** to the system sans stack; before, browsers dropped its
+  `theme()` declarations and the page kept the browser's serif.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry. Figma
+(the Update for decisions 59–69 is next), Code Connect, external Claude Design artifacts and product
+deployments are separate.

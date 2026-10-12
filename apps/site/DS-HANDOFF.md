@@ -92,38 +92,38 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 
 ## At a glance
 
-| Priority | Gap                            | Part                                                     | One line                                                                                         |
-| -------- | ------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| P0       | GAP-38                         | AdaptiveMapShell sheet                                   | The drag handle is 4 px tall and its grip 0 px wide: three rules use unitless tokens as lengths. |
-| P0       | GAP-40                         | MapView, MapOverlay, Navbar                              | Map overlays draw over the sticky header: equal z-index, and MapView does not isolate.           |
-| P1       | GAP-52                         | The provider's preflight                                 | A caller's `border` inside the provider never draws: one selector test in the CSS plugin.        |
-| P1       | GAP-56                         | Button                                                   | No gap between an icon and its label: every header's "Theme ⌄" touches.                          |
-| P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.           |
-| P1       | GAP-58                         | Toast                                                    | It draws no fill: over anything but a white page the words read through the toast.               |
-| P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
-| P1       | GAP-45 (fixed)                 | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page as text; fills are its 500 (decision 59).        |
-| P1       | GAP-82                         | Tokens (category fills)                                  | A category pill's fill is 2.52:1 on its own field: the count's shape is below WCAG 1.4.11's 3:1. |
-| P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
-| P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
-| P1       | GAP-03                         | ThemeProvider                                            | A dark-mode visitor sees a white page until the scripts run (1.9 s on fast 3G, 4× CPU).          |
-| P1       | GAP-41                         | Navbar                                                   | No narrow-screen pattern; two rows at 320px whatever the content.                                |
-| P1       | GAP-20, GAP-37 (fixed)         | SearchBar                                                | Owned field styling fixes WebKit (#193, unreleased); the browser's second clear is hidden.       |
-| P1       | GAP-42                         | CardTitle                                                | Line height 1.0: wrapped titles touch.                                                           |
-| P1       | GAP-43                         | Slider, Tabs, Rating, SearchBar, Chip, ToggleButton      | Targets under 44 px; the slider thumb is 20 × 20.                                                |
-| P1       | GAP-39                         | RouteSummary                                             | Its title is always an `h2`.                                                                     |
-| P1       | — (fixed)                      | The React package                                        | Tree-shaken since #57: `import { Button }` costs an app 9.3 kB gzipped, not the whole 175 kB.    |
-| P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.               |
-| P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.          |
-| P2       | GAP-61 (fixed)                 | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.    |
-| P2       | GAP-24, 29, 34, 36             | DynamicIsland, BottomNavigation, Backdrop, ToastViewport | Always fixed to the viewport.                                                                    |
-| P2       | GAP-17, 28, 30, 32             | AdaptiveMapShell, SearchBar, Sidebar, ChipGroup          | Landmarks and groups that cannot be named or placed.                                             |
-| P2       | GAP-53                         | AdaptiveMapShell, MapView                                | No edge-to-edge form: on a phone's rounded screen the sheet's bordered corners are cut.          |
-| P2       | GAP-46, 47, 48                 | Stepper, Sidebar, Tree                                   | No narrow form: they overflow or lose content on a phone.                                        |
-| P2       | GAP-50 (fixed), 51             | Spinner, Skeleton, Button; announcements                 | Motion rests under the preference now; no polite live region.                                    |
-| P2       | GAP-49 (fixed)                 | SearchBar                                                | A caller's `onKeyDown` silently drops the component's analytics.                                 |
-| P2       | GAP-44 and the rest            | see the table below                                      | API and structure.                                                                               |
-| P3       | GAP-05, 06, 07, 08, 10, 15, 33 | new parts, icons, tokens                                 | Additions.                                                                                       |
-| P3       | GAP-54                         | Tokens (effects, motion)                                 | No glow, gradient, blur scale or ambient duration: the cover's light is the site's own.          |
+| Priority | Gap                            | Part                                                     | One line                                                                                          |
+| -------- | ------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| P0       | GAP-38                         | AdaptiveMapShell sheet                                   | The drag handle is 4 px tall and its grip 0 px wide: three rules use unitless tokens as lengths.  |
+| P0       | GAP-40                         | MapView, MapOverlay, Navbar                              | Map overlays draw over the sticky header: equal z-index, and MapView does not isolate.            |
+| P1       | GAP-52                         | The provider's preflight                                 | A caller's `border` inside the provider never draws: one selector test in the CSS plugin.         |
+| P1       | GAP-56                         | Button                                                   | No gap between an icon and its label: every header's "Theme ⌄" touches.                           |
+| P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.            |
+| P1       | GAP-58                         | Toast                                                    | It draws no fill: over anything but a white page the words read through the toast.                |
+| P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.   |
+| P1       | GAP-45 (fixed)                 | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page as text; fills are its 500 (decision 59).         |
+| P1       | GAP-82                         | Tokens (category fills)                                  | A category pill's fill is 2.52:1 on its own field: the count's shape is below WCAG 1.4.11's 3:1.  |
+| P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                      |
+| P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                                |
+| P1       | GAP-03                         | ThemeProvider                                            | A dark-mode visitor sees a white page until the scripts run (1.9 s on fast 3G, 4× CPU).           |
+| P1       | GAP-41                         | Navbar                                                   | No narrow-screen pattern; two rows at 320px whatever the content.                                 |
+| P1       | GAP-20, GAP-37 (fixed)         | SearchBar                                                | Owned field styling fixes WebKit (#193, released in 0.9.0); the browser's second clear is hidden. |
+| P1       | GAP-42                         | CardTitle                                                | Line height 1.0: wrapped titles touch.                                                            |
+| P1       | GAP-43                         | Slider, Tabs, Rating, SearchBar, Chip, ToggleButton      | Targets under 44 px; the slider thumb is 20 × 20.                                                 |
+| P1       | GAP-39                         | RouteSummary                                             | Its title is always an `h2`.                                                                      |
+| P1       | — (fixed)                      | The React package                                        | Tree-shaken since #57: `import { Button }` costs an app 9.3 kB gzipped, not the whole 175 kB.     |
+| P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.                |
+| P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.           |
+| P2       | GAP-61 (fixed)                 | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.     |
+| P2       | GAP-24, 29, 34, 36             | DynamicIsland, BottomNavigation, Backdrop, ToastViewport | Always fixed to the viewport.                                                                     |
+| P2       | GAP-17, 28, 30, 32             | AdaptiveMapShell, SearchBar, Sidebar, ChipGroup          | Landmarks and groups that cannot be named or placed.                                              |
+| P2       | GAP-53                         | AdaptiveMapShell, MapView                                | No edge-to-edge form: on a phone's rounded screen the sheet's bordered corners are cut.           |
+| P2       | GAP-46, 47, 48                 | Stepper, Sidebar, Tree                                   | No narrow form: they overflow or lose content on a phone.                                         |
+| P2       | GAP-50 (fixed), 51             | Spinner, Skeleton, Button; announcements                 | Motion rests under the preference now; no polite live region.                                     |
+| P2       | GAP-49 (fixed)                 | SearchBar                                                | A caller's `onKeyDown` silently drops the component's analytics.                                  |
+| P2       | GAP-44 and the rest            | see the table below                                      | API and structure.                                                                                |
+| P3       | GAP-05, 06, 07, 08, 10, 15, 33 | new parts, icons, tokens                                 | Additions.                                                                                        |
+| P3       | GAP-54                         | Tokens (effects, motion)                                 | No glow, gradient, blur scale or ambient duration: the cover's light is the site's own.           |
 
 ## P0 — broken for people using it
 
@@ -403,7 +403,7 @@ border-primary-foreground/20`.
   `appearance: none` on `.kozmos-input` and `.kozmos-search-input`. The
   site's test now reads that rule out of the stylesheet, because reading the
   pseudo-element answers with the host's values and so could never fail.
-- **GAP-20 is fixed on main (#193), not yet released:** the field
+- **GAP-20 is fixed, released in 0.9.0 (#193):** the field
   uses an owned `.kozmos-searchbar-input` recipe (`2e602272`, isolated from
   Core `Search` in `99a55303`). The old WebKit `test.fail` reported an
   unexpected pass locally and in CI. "The search field is drawn as Kozmos

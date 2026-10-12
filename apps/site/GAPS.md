@@ -465,7 +465,7 @@ keep the table's four columns and its statuses as they are.
 - **Why it matters:** Safari and iOS web views are WebKit, and the Pointr
   SDK's iOS hosts are among them. Visible in the examples' search fields and
   in the components page's own.
-- **Now:** fixed on main (#193), not yet released. `SearchBar` owns
+- **Now:** fixed, released in 0.9.0 (#193). `SearchBar` owns
   its native input recipe (`2e602272`), isolated from Core `Search`'s shared
   clear-button marker (`99a55303`). The former expected-failure test produced
   an unexpected pass in WebKit; `tests/site.spec.ts` now positively requires
@@ -1480,7 +1480,7 @@ Text"])`) and the Get started page shows — touches it.
 
 ## GAP-69 · Lift, escalator and stairs share one arrow
 
-- **Now:** fixed on main (#193), not yet released: DirectionStep draws distinct
+- **Now:** fixed, released in 0.9.0 (#193): DirectionStep draws distinct
   lift, escalator and stairs up/down pairs, plus ramp and entry/exit, in Pointr
   Maps - Express wayfinding artwork (#199; walking since #201), on web, iOS,
   Android and Figma. The DirectionStep Glyph Atlas shows small/large sizes and

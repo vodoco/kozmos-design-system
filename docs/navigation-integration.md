@@ -220,9 +220,9 @@ package-registry delivery. Host acceptance still needs offline/reconnect, changi
 floors and locales, background/resume, location permission changes, long real venue names,
 screen readers and hardware keyboards. Retain existing map provider attribution.
 
-Itinerary's endpoint Change actions (GAP-104) are fixed on main, not yet released. The broader
+Itinerary's endpoint Change actions (GAP-104) were released in 0.10.0. The broader
 backlog still includes a Figma drawing of RouteSummary's navigation layout, its actions and its
 route preview, with Code Connect for them (what remains of GAP-110 and GAP-111), and renderer
 styling ownership. RouteSummary's `actions` and its route preview (no End, with `locationText`) are
-fixed on main, not yet released (decision 57); the examples still use the earlier preview and setup
+released in 0.10.0 (decision 57); the examples still use the earlier preview and setup
 components.
