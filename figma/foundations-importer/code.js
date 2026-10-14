@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "449a2de02ab9";
+const PLUGIN_BUILD = "4ddc8c57269c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -46076,10 +46076,12 @@ async function rebuildItineraryComponent() {
 // padding, 12 between its rows, the floating shadow. Closed, the instruction
 // row: a 24 mark in a 32 box, 12 from the instruction (20/25 semibold) and the
 // detail (14/20) 2 under it. Open, the itinerary in the instruction's place.
-// Under both, the grab bar: a 36 by 5 pill at the foot of a 44 row, 4 above
-// the card's edge (the card's bottom padding; decision 74, GAP-140). On the
-// theme fill the pill is at 62% (3.09:1 on #135BEC), set on the layer, as a
-// strength on an opaque token is; the background card's grey pill stays whole.
+// Under both, the grab bar: a 36 by 5 pill, 12 under the content (the card's
+// spacing) and 4 above its edge (its bottom padding), so the card ends 21 under
+// its content (decision 74, GAP-140); the code's 44 target reaches up over that
+// space invisibly. On the theme fill the pill is at 62% (3.09:1 on #135BEC),
+// set on the layer, as a strength on an opaque token is; the background card's
+// grey pill stays whole.
 //
 // Theme, the default, is the brand card, a prominent fill (decision 59): the
 // theme fill, theme 500 in both themes, with every word, mark and the grip in
@@ -46372,7 +46374,7 @@ async function updateManoeuvreCardVariant(
     primaryAlign: "CENTER",
     counterAlign: "MAX",
     width: MANOEUVRE_CARD_CONTENT_WIDTH,
-    height: 44,
+    height: 5,
   });
   const grip = figma.createRectangle();
   grip.name = "Grip";

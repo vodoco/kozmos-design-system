@@ -606,6 +606,23 @@
       scrollbar-color: var(--semantics-scrollbar-thumb) transparent;
     }
   }
+  /* The grab bar is laid out as its grip alone, 12 under the content and 4
+     above the card's edge, so the card ends 21 under its content (decision
+     74, GAP-140: about 50 of empty space sat above the grip). Its target
+     stays 44: from the card's edge up, over the grip, the gap and the foot of
+     the content. Closed, that foot is the instruction row, which opens the
+     card too; open, the itinerary keeps its last row clear of it. */
+  .kozmos-manoeuvre-disclosure::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-inline: 0;
+    bottom: calc(-1 * var(--primitives-layout-spacing-50) * 1px);
+    height: 44px;
+  }
+  .kozmos-manoeuvre-itinerary {
+    padding-bottom: 23px;
+  }
   .kozmos-manoeuvre-grip {
     background-color: var(
       --kozmos-guidance-foreground,

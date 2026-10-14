@@ -509,27 +509,37 @@ try {
   await page.addScriptTag({ content: code });
   await page.getByTestId("dark-rating").waitFor();
   await settleLayout(page);
-  // The drag indicator sits at the foot of its target, 4 above the card's
-  // edge (about 4, ±1), and the target stays 44 tall (decision 74, GAP-140).
+  // The drag indicator sits 4 above the card's edge and 12 under the content,
+  // so the card ends 21 under it; its target still reaches 44 up from the
+  // card's edge (decision 74, GAP-140).
   for (const theme of ["light", "dark"]) {
     const box = await page
       .getByTestId(`${theme}-manoeuvre`)
       .evaluate((root) => {
         const card = root.querySelector(".kozmos-manoeuvre-card");
         const grip = root.querySelector(".kozmos-manoeuvre-grip");
-        const target = root.querySelector(".kozmos-manoeuvre-disclosure");
-        if (!card || !grip || !target) return null;
+        const row = card?.firstElementChild;
+        if (!card || !grip || !row) return null;
+        // Into view: a point outside the window hits nothing.
+        card.scrollIntoView({ block: "center" });
         const c = card.getBoundingClientRect();
+        const x = c.left + c.width / 2;
+        const hit = document.elementFromPoint(x, c.bottom - 40);
         return {
           gap: c.bottom - grip.getBoundingClientRect().bottom,
-          target: target.getBoundingClientRect().height,
+          end: c.bottom - row.getBoundingClientRect().bottom,
+          reaches: Boolean(hit?.closest(".kozmos-manoeuvre-disclosure")),
         };
       });
     read += 1;
-    if (!box) failures.push(`${theme} manoeuvre: no card, grip or target`);
-    else if (Math.abs(box.gap - 4) > 1 || box.target < 44)
+    if (!box) failures.push(`${theme} manoeuvre: no card, grip or content`);
+    else if (
+      Math.abs(box.gap - 4) > 1 ||
+      Math.abs(box.end - 21) > 1 ||
+      !box.reaches
+    )
       failures.push(
-        `${theme} manoeuvre: the drag indicator sits ${box.gap.toFixed(1)} above the card's edge (want about 4) on a ${box.target.toFixed(1)}px target (want 44 or more)`,
+        `${theme} manoeuvre: the drag indicator sits ${box.gap.toFixed(1)} above the card's edge (want about 4), the card ends ${box.end.toFixed(1)} under its content (want about 21), and a press 40 above the edge ${box.reaches ? "reaches" : "misses"} it (want: reaches)`,
       );
   }
   for (const theme of ["light", "dark"]) {

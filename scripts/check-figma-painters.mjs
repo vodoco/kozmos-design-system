@@ -3149,7 +3149,7 @@ section("ManoeuvreCard");
       ok(
         component.children.length === 2 &&
           bar.name === "Grab Bar" &&
-          bar.height === 44 &&
+          bar.height === 5 &&
           bar.counterAxisAlignItems === "MAX" &&
           grip &&
           grip.width === 36 &&
@@ -3160,7 +3160,7 @@ section("ManoeuvreCard");
             (theme
               ? "Primary Buttons/themed/button/foreground/content/idle"
               : "Colors/background/300"),
-        `${label}: the grab bar, 44 high, holds a 36 by 5 pill at its foot in ${theme ? "the theme foreground at 62%" : "background/300"} (${grip && token(grip)}, ${bar && bar.counterAxisAlignItems}, opacity ${grip && grip.opacity})`,
+        `${label}: the grab bar, the pill's own 5 high, holds a 36 by 5 pill in ${theme ? "the theme foreground at 62%" : "background/300"} (${grip && token(grip)}, ${bar && bar.counterAxisAlignItems}, opacity ${grip && grip.opacity})`,
       );
       if (value === "Closed") {
         const mark = named(first, "Manoeuvre Mark");

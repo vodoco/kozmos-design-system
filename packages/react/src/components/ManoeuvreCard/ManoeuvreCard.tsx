@@ -247,16 +247,17 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
           </button>
         )}
         {/* The grab bar: the sign that the card opens, and the way to close
-            it. It sits at the foot of its 44px target, 4 above the card's
-            edge (the card's own padding; decision 74, GAP-140), and its
-            target grows upwards. Closed, the instruction row already offers the way in, so the
+            it. It is 4 above the card's edge (the card's own padding) and 12
+            under the content, laid out as the grip alone; its 44px target
+            reaches up from the card's edge over that space and the content's
+            foot, drawn in owned CSS (decision 74, GAP-140). Closed, the instruction row already offers the way in, so the
             bar is silent then — and a pointer pressing it leaves focus where
             it was, so focus never rests on something assistive technology
             cannot hear. */}
         <button
           ref={barRef}
           type="button"
-          className="kozmos-manoeuvre-disclosure flex min-h-11 w-full items-end justify-center bg-transparent"
+          className="kozmos-manoeuvre-disclosure relative flex h-[5px] w-full items-end justify-center bg-transparent"
           onClick={onToggle}
           onMouseDown={expanded ? undefined : (event) => event.preventDefault()}
           aria-label={expanded ? collapseLabel : expandLabel}
