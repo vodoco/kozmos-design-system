@@ -137,6 +137,21 @@ val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
 val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
 
 /**
+ * What the shell's panel leaves empty below its content (GAP-085): 16dp, in a
+ * side panel above its bottom edge and in a sheet above the navigation bar's
+ * inset, which the sheet keeps its content above as well. So a list the
+ * product lays out itself ends 16 above the panel's edge, as it starts 16
+ * below its top. A part with its own bottom padding and no surface of its own
+ * tops it up to what it needs rather than adding to it, as
+ * `KozmosPOIDetailPanel` does in its sheet presentation and
+ * `KozmosBrowseCategoriesPanel` and `KozmosRoutePreviewPanel` do; a part that
+ * draws its own bordered surface keeps its padding inside the border. 0
+ * outside a shell. It describes the panel's bottom: a product that puts such
+ * a part above a row of its own provides 0 for this to it.
+ */
+val LocalKozmosPanelInsetBottom = compositionLocalOf { 0.dp }
+
+/**
  * The surface of the shell's panel under what it hosts, a sheet's or a side
  * panel's, solid or glass; null outside a shell. The panel's surface is the
  * one surface (decision 43): a part that fills its own box standing alone,
@@ -181,7 +196,10 @@ private val HandleClearance = (MinimumTargetSpacing - SheetHandleRowHeight) / 2
  * [LocalKozmosPanelClearanceTop] — so a part with its own top padding and no
  * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation
  * and `KozmosBrowseCategoriesPanel` and `KozmosRoutePreviewPanel` are, tops it
- * up rather than adding to it (GAP-083, decision 14).
+ * up rather than adding to it (GAP-083, decision 14). The panel keeps 16 below
+ * its content too, above a side panel's edge and above a sheet's safe inset,
+ * and says so in [LocalKozmosPanelInsetBottom], which those parts top their
+ * own bottom padding up to (GAP-085).
  */
 @Composable
 fun KozmosAdaptiveMapShell(
@@ -519,12 +537,14 @@ fun KozmosAdaptiveMapShell(
                                 Box(modifier = Modifier.fillMaxWidth().padding(vertical = gap)) { panelHeader() }
                             }
                             Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
-                                .padding(top = if (panelHeader == null) gap else 0.dp)) {
+                                .padding(top = if (panelHeader == null) gap else 0.dp, bottom = PanelContentSpacing)) {
                                 // The shell supplied top padding or the header's
-                                // bottom gap. Hosted parts must not add it again.
+                                // bottom gap, and the 16 below the content
+                                // (GAP-085). Hosted parts must not add them again.
                                 CompositionLocalProvider(
                                     LocalKozmosPanelInsetTop provides gap,
                                     LocalKozmosPanelClearanceTop provides 0.dp,
+                                    LocalKozmosPanelInsetBottom provides PanelContentSpacing,
                                     content = panel
                                 )
                             }
@@ -778,13 +798,18 @@ private fun BottomSheet(
                             .layoutId(SheetPart.Content)
                             .fillMaxWidth()
                             // The sheet's surface reaches the bottom edge; what it
-                            // holds keeps above the navigation bar.
+                            // holds keeps above the navigation bar, and 16
+                            // above that (GAP-085).
                             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                            .padding(top = if (!showsHandle && panelHeader == null) PanelContentSpacing else 0.dp)
+                            .padding(
+                                top = if (!showsHandle && panelHeader == null) PanelContentSpacing else 0.dp,
+                                bottom = PanelContentSpacing
+                            )
                     ) {
                         CompositionLocalProvider(
                             LocalKozmosPanelInsetTop provides insetTop,
                             LocalKozmosPanelClearanceTop provides clearanceTop,
+                            LocalKozmosPanelInsetBottom provides PanelContentSpacing,
                             content = panel
                         )
                     }

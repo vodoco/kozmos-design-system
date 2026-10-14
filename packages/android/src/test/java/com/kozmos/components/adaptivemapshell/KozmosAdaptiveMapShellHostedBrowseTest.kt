@@ -60,7 +60,8 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
         val tree = read(detents = listOf(KozmosMapPanelDetent.Content), detent = KozmosMapPanelDetent.Content,
             panel = { Field("Content probe") })
         assertEquals(16f, tree.placed(tree.named("Content probe").bounds).down, 0.5f)
-        assertEquals(maxOf(60f, tree.merged.first().bounds.height / density * 0.2f), tree.named("Map details").bounds.height / density, 0.5f)
+        // 16 above the field, its 44 and 16 below it (GAP-085), or a fifth of the shell.
+        assertEquals(maxOf(76f, tree.merged.first().bounds.height / density * 0.2f), tree.named("Map details").bounds.height / density, 0.5f)
     }
 
     @Test fun genericSidePanelKeepsTopAndHeaderGapsInBothDirections() {
@@ -75,7 +76,8 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
                 val first = if (hasHeader) tree.named("Header probe").bounds else content
                 assertEquals(16f, (first.top - panel.top) / density, 0.5f)
                 if (hasHeader) assertEquals(16f, (content.top - first.bottom) / density, 0.5f)
-                assertEquals(if (hasHeader) 120f else 60f, panel.height / density, 0.5f)
+                // The content's 44 and the panel's 16 below it (GAP-085).
+                assertEquals(if (hasHeader) 136f else 76f, panel.height / density, 0.5f)
             }
         }
     }
