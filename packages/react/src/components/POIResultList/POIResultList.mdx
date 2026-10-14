@@ -214,6 +214,19 @@ fun ResultsWithActions(
 />
 
 
+## A double tap opens a result's details
+
+Pass `onOpen(poiId)` and a double tap, or a double click, on any result opens it (decision 72,
+GAP-143): selected or not, a group's member included. The first tap selects at once, with no delay;
+the second, within the platform's double-tap time, calls `onOpen` once and is not passed on as a
+second `onSelect`, so the selection stands and analytics records one selection and one
+`poi_result_opened`. A keyboard press always selects; the action row's details action is the
+keyboard's way in. On a mobile browser the result never zooms the page on a double tap
+(`touch-action: manipulation`, GAP-144). Without `onOpen`, every press selects, as before.
+
+On iOS and Android the result takes `onOpen` and `openLabel` ("Open details"): VoiceOver and
+TalkBack get an action of that name, since their own double tap is a single activation.
+
 ## The selected result comes into view
 
 When `selectedPoiId` changes, the list brings that result into view: a pin's

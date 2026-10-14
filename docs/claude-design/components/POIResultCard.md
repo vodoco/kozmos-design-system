@@ -58,6 +58,14 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultCardProps`, which 
 - `poi`: `POIPresentation`, **required**.
 - `result`: `POIResultPresentation`, **required**.
 - `onSelect`: `(poiId: string) => void`, **required**.
+- `onOpen`: `(poiId: string) => void`, optional.
+
+  Open the result's details: a double tap, or a double click, on the result,
+  selected or not (decision 72, GAP-143). It is called once, and the second
+  tap is not passed on as a second selection, so the first tap's selection
+  stands. Without it, every tap selects, as before. A keyboard press always
+  selects; the action row's details action is the keyboard's way in.
+
 - `onAction`: `(action: POIResultAction, poiId: string) => void`, optional.
 
   Run an action from the selected result. The card draws whatever

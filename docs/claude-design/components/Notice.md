@@ -65,7 +65,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `NoticeProps`, which exte
 - `tone`: `NoticeTone`, optional, default `"warning"`.
 - `icon`: `React.ReactNode`, optional.
 
-  Replaces the default tone icon.
+  Replaces the default tone icon. `null` or `false` draws none, and leaves
+  no empty column before the summary (GAP-118).
+
+- `iconAlign`: `"start" | "center"`, optional, default `"start"`.
+
+  Where the icon sits beside the summary. `start`, the default, puts it on
+  the first line of a summary that wraps. `center` centres it on a one-line
+  summary that holds a control, as "Not finding it? [Search with AI]" does
+  (GAP-118).
 
 - `defaultExpanded`: `boolean`, optional, default `false`.
 

@@ -21,6 +21,13 @@ The collapsed detail is hidden with the `hidden` **attribute**, not a class, so
 it stays hidden when the stylesheet does not and stays out of the accessibility
 tree either way.
 
+`icon` replaces the tone's mark; `icon={null}` draws none and leaves no empty column, so the
+summary, the detail and the action start at the notice's edge. `iconAlign="center"` centres the
+icon on a one-line summary that holds a control, as MAP-474's Search with AI suggestion does
+(GAP-118); the default `start` keeps it on the first line of a summary that wraps.
+
+<Canvas of={Stories.SearchWithAi} />
+
 Set `collapsible={false}` with a `critical` tone and an `action` for an
 emergency: help first, not a result list. Nobody in an emergency should have to
 find a "More" link before they can act.

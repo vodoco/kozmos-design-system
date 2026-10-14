@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 694,
-      "dark": 694
+      "light": 696,
+      "dark": 696
     },
     "light": [
       {
@@ -3296,6 +3296,30 @@
         "name": "Semantics/Accent/onFill",
         "type": "color",
         "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Scrollbar/thumb",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.500}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Scrollbar/thumbHover",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -10535,6 +10559,30 @@
         ]
       },
       {
+        "name": "Semantics/Scrollbar/thumb",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.500}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Scrollbar/thumbHover",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Semantics/Elevation/Raised",
         "type": "shadow",
         "value": "{shadow.sm}",
@@ -17227,6 +17275,7 @@
           "expanded",
           "expandLabel",
           "icon",
+          "iconAlign",
           "id",
           "live",
           "role",
