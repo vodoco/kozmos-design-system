@@ -19,6 +19,13 @@ struct KozmosSpokenPhrase: Equatable {
   var hasLanguage: Bool { !(lang ?? "").isEmpty }
 }
 
+/// A named action VoiceOver offers on an element besides its activation, as
+/// a result's "Open details" (decision 72).
+struct KozmosSpokenAction {
+  let name: String
+  let perform: () -> Void
+}
+
 /// The phrases as one label, ", " between them: what VoiceOver reads.
 func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
   phrases.map(\.text).joined(separator: ", ")
@@ -54,6 +61,8 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
     /// own no longer reaches the accessibility tree.
     let identifier: String?
     let activate: (() -> Void)?
+    /// The element's named actions, in VoiceOver's actions rotor.
+    var actions: [KozmosSpokenAction] = []
 
     final class Element: UIView {
       var activate: (() -> Void)?
@@ -84,6 +93,15 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
       view.accessibilityIdentifier = identifier
       view.accessibilityTraits = traits
       view.activate = activate
+      view.accessibilityCustomActions =
+        actions.isEmpty
+        ? nil
+        : actions.map { action in
+          UIAccessibilityCustomAction(name: action.name) { _ in
+            action.perform()
+            return true
+          }
+        }
     }
   }
 
@@ -92,13 +110,14 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
     /// over it, saying `words` with each range's speech language.
     func kozmosSpeechLanguageElement(
       _ words: NSAttributedString, traits: UIAccessibilityTraits, hint: String? = nil,
-      identifier: String? = nil, activate: (() -> Void)? = nil
+      identifier: String? = nil, activate: (() -> Void)? = nil,
+      actions: [KozmosSpokenAction] = []
     ) -> some View {
       self.accessibilityHidden(true)
         .overlay(
           KozmosSpeechLanguageElement(
             words: words, traits: traits, hint: hint, identifier: identifier,
-            activate: activate))
+            activate: activate, actions: actions))
     }
   }
 #endif

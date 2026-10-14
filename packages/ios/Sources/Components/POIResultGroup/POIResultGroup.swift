@@ -21,6 +21,9 @@ public struct KozmosPOIResultGroup: View {
     private let presentationStyle: KozmosPOIResultPresentationStyle
     private let onSelect: (String) -> Void
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
+    /// A double tap on a branch opens its details: the card's `onOpen` (decision 72).
+    private let onOpen: ((String) -> Void)?
+    private let openLabel: String
     @State private var uncontrolledExpanded: Bool
     @State private var hovered = false
 
@@ -33,7 +36,8 @@ public struct KozmosPOIResultGroup: View {
                 languageNotListedLabel: String = "Language not listed", actionsLabel: String = "Actions for this result",
                 currentFloorId: String? = nil, travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
                 presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
-                onSelect: @escaping (String) -> Void, onAction: ((KozmosPOIResultAction, String) -> Void)? = nil) {
+                onSelect: @escaping (String) -> Void, onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
+                onOpen: ((String) -> Void)? = nil, openLabel: String = "Open details") {
         self.items = items
         self.label = label
         self.collapsedCount = max(0, min(collapsedCount, items.count))
@@ -53,6 +57,8 @@ public struct KozmosPOIResultGroup: View {
         self.presentationStyle = presentationStyle
         self.onSelect = onSelect
         self.onAction = onAction
+        self.onOpen = onOpen
+        self.openLabel = openLabel
         self._uncontrolledExpanded = State(initialValue: defaultExpanded)
     }
 
@@ -64,7 +70,7 @@ public struct KozmosPOIResultGroup: View {
         KozmosPOIResultCard(poi: item.poi, result: item.result.selecting(selectedPoiId), featuredLabel: featuredLabel,
             currentFloorId: currentFloorId, actionsLabel: actionsLabel, travelTimeBandLabels: travelTimeBandLabels,
             numbered: numbered, onSelect: onSelect, onAction: onAction, languageNotListedLabel: languageNotListedLabel,
-            presentationStyle: presentationStyle, appearance: .row)
+            presentationStyle: presentationStyle, appearance: .row, onOpen: onOpen, openLabel: openLabel)
     }
 
     private func toggle() {
