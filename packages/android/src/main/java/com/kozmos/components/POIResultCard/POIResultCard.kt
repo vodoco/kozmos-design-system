@@ -43,8 +43,11 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
@@ -162,10 +165,42 @@ fun KozmosPOIResultCard(
     languageNotListedLabel: String = "Language not listed",
     presentationStyle: KozmosPOIResultPresentationStyle,
     appearance: KozmosPOIResultAppearance = KozmosPOIResultAppearance.Card,
+    /**
+     * Open the result's details: a second tap on the result within the
+     * double-tap time, selected or not (decision 72, GAP-143). The first tap
+     * selects at once, as without it; the second calls this once and is not
+     * passed on as a second [onSelect], so the first tap's selection stands,
+     * and a third quick tap does nothing. TalkBack's double tap is one
+     * activation, so the row offers it as a custom action named [openLabel].
+     * Without it every tap selects, as before, and there is no such action.
+     */
+    onOpen: ((String) -> Unit)? = null,
+    /** Names the open action TalkBack offers on the row when [onOpen] is set. */
+    openLabel: String = "Open details",
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val available = result.isAvailable
+    val doubleTapTimeout = LocalViewConfiguration.current.doubleTapTimeoutMillis
+    val tapGate = remember { KozmosResultTapGate() }
+    // Only an available result opens, as only an available one selects.
+    val open: (() -> Unit)? = if (onOpen != null && available) {
+        {
+            trackEvent(
+                KozmosAnalyticsEvent(
+                    component = "POIResultCard",
+                    eventName = "poi_result_opened",
+                    properties = mapOf(
+                        "poiId" to poi.id,
+                        "resultIndex" to result.resultIndex.toString()
+                    )
+                )
+            )
+            onOpen(poi.id)
+        }
+    } else {
+        null
+    }
     val sdk = presentationStyle == KozmosPOIResultPresentationStyle.Sdk
     val secondaryText = if (sdk) KozmosThemeTokens.primitivesColorsForeground400 else KozmosThemeTokens.primitivesColorsForeground500
     val interaction = remember { MutableInteractionSource() }
@@ -236,6 +271,15 @@ fun KozmosPOIResultCard(
         onClick = {
             // Disabled semantics actions must remain inert when invoked directly.
             if (!available) return@Surface
+            // With onOpen, a second quick tap on this result opens it and a
+            // third does nothing; the first is the selection, at once.
+            if (open != null) {
+                when (tapGate.tap(poi.id, doubleTapTimeout)) {
+                    KozmosResultTapGate.Tap.Open -> return@Surface open()
+                    KozmosResultTapGate.Tap.Ignore -> return@Surface
+                    KozmosResultTapGate.Tap.Select -> Unit
+                }
+            }
             trackEvent(
                 KozmosAnalyticsEvent(
                     component = "POIResultCard",
@@ -255,6 +299,11 @@ fun KozmosPOIResultCard(
             .semantics {
                 text = spokenText
                 selected = result.selected
+                // TalkBack's double tap is the row's one activation, a
+                // selection: opening is offered as an action of its own.
+                if (open != null) {
+                    customActions = listOf(CustomAccessibilityAction(openLabel) { open(); true })
+                }
             },
         enabled = available,
         shape = RoundedCornerShape(if (appearance == KozmosPOIResultAppearance.Card) KozmosDimensions.semanticsRadiusControl else 0.dp),
@@ -690,6 +739,33 @@ fun KozmosPOIResultCard(
 ) = KozmosPOIResultCard(
     poi, result, onSelect, modifier, featuredLabel, currentFloorId, selectionLabel,
     actionsLabel, travelTimeBandLabels, numbered, "Language not listed", onAction
+)
+
+/**
+ * The full card as 0.10.0 declared it, [onAction] fourteenth and last. onOpen
+ * and openLabel came after it in order but sit before it, so that [onAction]
+ * stays the trailing lambda; this overload keeps the positional call.
+ */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
+    appearance: KozmosPOIResultAppearance = KozmosPOIResultAppearance.Card,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultCard(
+    poi, result, onSelect, modifier, featuredLabel, currentFloorId, selectionLabel,
+    actionsLabel, travelTimeBandLabels, numbered, languageNotListedLabel, presentationStyle,
+    appearance, onOpen = null, onAction = onAction
 )
 
 /** The bands' words, and the only English the card holds for them. */

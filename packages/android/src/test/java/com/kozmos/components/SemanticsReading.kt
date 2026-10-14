@@ -122,7 +122,9 @@ data class ReadNode(
      * the group's collection when the group names none of its own
      * (`setCollectionInfo`).
      */
-    val selectableGroup: List<ReadNode>? = null
+    val selectableGroup: List<ReadNode>? = null,
+    /** The node's custom actions, by the label TalkBack offers each under. */
+    val customActions: Map<String, () -> Boolean> = emptyMap()
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -350,5 +352,7 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
         node.children.filter { it.config.contains(SemanticsProperties.Selected) }.map(::copyOf)
     } else {
         null
-    }
+    },
+    customActions = node.config.getOrNull(SemanticsActions.CustomActions)
+        ?.associate { it.label to it.action }.orEmpty()
 )
