@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import AxeBuilder from "@axe-core/playwright";
 import { expect } from "@playwright/test";
 import {
   buildReactFixture,
@@ -129,6 +130,84 @@ try {
           await page.close();
         }
       }
+  // A field's overlay popup is in a portal: a box that clips its overflow
+  // never cuts the list off (0.10.1). Its last place is reachable, and a
+  // press on it lands in the list, not on what the box hides it behind.
+  for (const name of ["Origin", "Tags"]) {
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 800 },
+    });
+    try {
+      await page.setContent(
+        '<div id="root" data-host="clip" data-layout="overlay"></div>',
+      );
+      await page.addStyleTag({ content: css });
+      await page.addScriptTag({ content: code });
+      await page.getByRole("combobox", { name }).click();
+      const list = page.getByRole("listbox", { name });
+      await list.waitFor();
+      const drawn = await list.evaluate((node) => {
+        const clip = document
+          .querySelector("[data-clip]")
+          .getBoundingClientRect();
+        const box = node.getBoundingClientRect();
+        const x = box.left + box.width / 2;
+        const y = Math.min(box.bottom - 8, clip.bottom + 60);
+        const hit = document.elementFromPoint(x, y);
+        return {
+          below: box.bottom - clip.bottom,
+          hitInList: Boolean(hit && node.contains(hit)),
+        };
+      });
+      assert.ok(
+        drawn.below > 40 && drawn.hitInList,
+        `${name}: the popup is cut off by a box that clips its overflow (${JSON.stringify(drawn)})`,
+      );
+      const last = page.getByRole("option", { name: "Place 10" });
+      await last.scrollIntoViewIfNeeded();
+      await last.click();
+      console.log(`PASS ${name}: the overlay popup is not clipped by its box`);
+      count++;
+    } finally {
+      await page.close();
+    }
+  }
+  // GAP-137: the list scrolls in the listbox the field controls, not in an
+  // unnamed wrapper axe can't reach (scrollable-region-focusable).
+  for (const layout of ["inline", "overlay"]) {
+    // axe reads a page that belongs to a context.
+    const context = await browser.newContext({
+      viewport: { width: 320, height: 800 },
+    });
+    const page = await context.newPage();
+    try {
+      await page.setContent(
+        `<div id="root" data-host="clip" data-layout="${layout}"></div>`,
+      );
+      await page.addStyleTag({ content: css });
+      await page.addScriptTag({ content: code });
+      await page.getByRole("combobox", { name: "Origin" }).click();
+      await page.getByRole("listbox", { name: "Origin" }).waitFor();
+      const scrolls = await page
+        .getByRole("listbox", { name: "Origin" })
+        .evaluate((node) => node.scrollHeight > node.clientHeight);
+      assert.ok(scrolls, `${layout}: the listbox itself scrolls`);
+      const axe = await new AxeBuilder({ page })
+        .withRules(["scrollable-region-focusable"])
+        .analyze();
+      assert.deepEqual(
+        axe.violations.map((v) => v.id),
+        [],
+        `${layout}: ${JSON.stringify(axe.violations.map((v) => v.nodes.map((n) => n.target)))}`,
+      );
+      console.log(
+        `PASS GAP-137 ${layout}: the listbox is the scroll region and axe finds no unreachable scroller`,
+      );
+      count++;
+    } finally {
+      await context.close();
+    }
+  }
 } finally {
   await browser.close();
 }
