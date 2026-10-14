@@ -112,6 +112,14 @@ fun KozmosPOIResultList(
     languageNotListedLabel: String = "Language not listed",
     presentationStyle: KozmosPOIResultPresentationStyle,
     /**
+     * A second quick tap on a result opens its details: the card's `onOpen`
+     * (decision 72, GAP-143), given to every card. The first tap selects, as
+     * without it.
+     */
+    onOpen: ((String) -> Unit)? = null,
+    /** Names each result's open action for TalkBack: the card's. */
+    openLabel: String = "Open details",
+    /**
      * Runs an action from the selected result's action row, told which
      * action and the POI's ID. Without it those actions are drawn disabled.
      */
@@ -167,9 +175,39 @@ fun KozmosPOIResultList(
                     travelTimeBandLabels = travelTimeBandLabels,
                     numbered = numbered,
                     presentationStyle = presentationStyle,
+                    onOpen = onOpen,
+                    openLabel = openLabel,
                     onAction = onAction
                 )
             }
         }
     }
 }
+
+/**
+ * The list as 0.10.0 declared it, [onAction] fifteenth and last. onOpen and
+ * openLabel came after it in order but sit before it, so that [onAction]
+ * stays the trailing lambda; this overload keeps the positional call.
+ */
+@Composable
+fun KozmosPOIResultList(
+    items: List<KozmosPOIResultListItem>,
+    resultCountLabel: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "Points of interest",
+    selectedPoiId: String? = null,
+    featuredLabel: String = "Featured",
+    emptyState: (@Composable () -> Unit)? = null,
+    currentFloorId: String? = null,
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    actionsLabel: String = "Actions for this result",
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultList(
+    items, resultCountLabel, onSelect, modifier, label, selectedPoiId, featuredLabel, emptyState,
+    currentFloorId, travelTimeBandLabels, numbered, actionsLabel, languageNotListedLabel,
+    presentationStyle, onOpen = null, onAction = onAction
+)

@@ -16,7 +16,10 @@ import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
 import com.kozmos.components.poidetailpanel.KozmosPOIActionState
 import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
 import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanelPresentation
+import com.kozmos.components.poiresultcard.KozmosPOIResultAppearance
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
+import com.kozmos.components.poiresultcard.KozmosPOIResultPresentationStyle
+import com.kozmos.components.poiresultgroup.KozmosPOIResultGroup
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
@@ -173,6 +176,47 @@ class ReleasedParameterOrderTest {
         actions.forEach { it.click!!.invoke() }
         assertEquals(listOf("positional navigate cafe", "trailing navigate gate"), pressed)
         tree.has("Aktionen")
+    }
+
+    /**
+     * Decision 72's onOpen and openLabel sit before onAction, not after it:
+     * 0.10.0's full card, list and group still take onAction by position,
+     * last, and as a trailing lambda.
+     */
+    @Test
+    fun theResultPartsKeepOnActionLastAfterOnOpen() {
+        val pressed = mutableListOf<String>()
+        val sdk = KozmosPOIResultPresentationStyle.Sdk
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                Column {
+                    KozmosPOIResultCard(
+                        cafe, selected, {}, Modifier, "Empfohlen", null, null, "Aktionen", emptyMap(), false,
+                        "Sprache nicht aufgeführt", sdk, KozmosPOIResultAppearance.Card,
+                        { action, id -> pressed += "card ${action.value} $id" }
+                    )
+                    KozmosPOIResultCard(
+                        poi = cafe.copy(id = "gate", name = "Gate 12"), result = selected.copy(poiId = "gate"),
+                        onSelect = {}, presentationStyle = sdk
+                    ) { action, id -> pressed += "trailing ${action.value} $id" }
+                    KozmosPOIResultList(
+                        listOf(KozmosPOIResultListItem(cafe.copy(id = "shop", name = "Shop"), selected.copy(poiId = "shop"))),
+                        "1 Ergebnis", {}, Modifier, "Orte", null, "Empfohlen", null, null, emptyMap(), false,
+                        "Aktionen", "Sprache nicht aufgeführt", sdk,
+                        { action, id -> pressed += "list ${action.value} $id" }
+                    )
+                    KozmosPOIResultGroup(
+                        items = listOf(KozmosPOIResultListItem(cafe.copy(id = "desk", name = "Desk"), selected.copy(poiId = "desk"))),
+                        onSelect = {}
+                    ) { action, id -> pressed += "group ${action.value} $id" }
+                }
+            }
+        }
+        tree.merged.filter { "Los" in it.texts }.forEach { it.click!!.invoke() }
+        assertEquals(
+            listOf("card navigate cafe", "trailing navigate gate", "list navigate shop", "group navigate desk"),
+            pressed
+        )
     }
 
     private val levels = listOf(

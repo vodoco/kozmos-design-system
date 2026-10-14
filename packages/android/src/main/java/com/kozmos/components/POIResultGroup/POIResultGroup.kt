@@ -43,6 +43,10 @@ fun KozmosPOIResultGroup(
     currentFloorId: String? = null,
     travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
     presentationStyle: KozmosPOIResultPresentationStyle = KozmosPOIResultPresentationStyle.Sdk,
+    /** A second quick tap on a member opens its details: the card's `onOpen` (decision 72). */
+    onOpen: ((String) -> Unit)? = null,
+    /** Names each member's open action for TalkBack: the card's. */
+    openLabel: String = "Open details",
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     var internalExpanded by remember { mutableStateOf(defaultExpanded) }
@@ -69,7 +73,7 @@ fun KozmosPOIResultGroup(
                         presentationStyle = presentationStyle, appearance = KozmosPOIResultAppearance.Row,
                         featuredLabel = featuredLabel, languageNotListedLabel = languageNotListedLabel,
                         actionsLabel = actionsLabel, currentFloorId = currentFloorId,
-                        travelTimeBandLabels = travelTimeBandLabels)
+                        travelTimeBandLabels = travelTimeBandLabels, onOpen = onOpen, openLabel = openLabel)
                 }
             }
             if (hidden > 0) {
@@ -93,3 +97,35 @@ fun KozmosPOIResultGroup(
         }
     }
 }
+
+/**
+ * The group as 0.10.0 declared it, [onAction] last. onOpen and openLabel came
+ * after it in order but sit before it, so that [onAction] stays the trailing
+ * lambda; this overload keeps the positional call.
+ */
+@Composable
+fun KozmosPOIResultGroup(
+    items: List<KozmosPOIResultListItem>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    collapsedCount: Int = 1,
+    defaultExpanded: Boolean = false,
+    expanded: Boolean? = null,
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    showMoreLabel: (Int) -> String = { "Show $it more" },
+    hideLabel: String = "Hide",
+    selectedPoiId: String? = null,
+    numbered: Boolean = false,
+    featuredLabel: String = "Featured",
+    languageNotListedLabel: String = "Language not listed",
+    actionsLabel: String = "Actions for this result",
+    currentFloorId: String? = null,
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    presentationStyle: KozmosPOIResultPresentationStyle = KozmosPOIResultPresentationStyle.Sdk,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultGroup(
+    items, onSelect, modifier, label, collapsedCount, defaultExpanded, expanded, onExpandedChange,
+    showMoreLabel, hideLabel, selectedPoiId, numbered, featuredLabel, languageNotListedLabel,
+    actionsLabel, currentFloorId, travelTimeBandLabels, presentationStyle, onOpen = null, onAction = onAction
+)
