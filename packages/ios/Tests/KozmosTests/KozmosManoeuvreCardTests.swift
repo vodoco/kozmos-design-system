@@ -284,5 +284,120 @@ final class KozmosManoeuvreCardTests: XCTestCase {
         XCTAssertTrue(row.accessibilityTraits.contains(.button))
         XCTAssertFalse(labels.contains("Gehen Sie geradeaus am Brunnenhof vorbei"), "the closed card shows its itinerary")
     }
+
+    // MARK: GAP-140, the grab bar (decision 74)
+
+    private typealias RGB = (r: UInt8, g: UInt8, b: UInt8)
+
+    private static func luminance(_ c: RGB) -> Double {
+        func channel(_ v: UInt8) -> Double {
+            let c = Double(v) / 255
+            return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b)
+    }
+
+    private static func contrast(_ a: RGB, _ b: RGB) -> Double {
+        let (la, lb) = (luminance(a), luminance(b))
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    }
+
+    private static func near(_ a: RGB, _ b: (r: UInt8, g: UInt8, b: UInt8, a: UInt8), _ tolerance: Int = 3) -> Bool {
+        abs(Int(a.r) - Int(b.r)) <= tolerance && abs(Int(a.g) - Int(b.g)) <= tolerance && abs(Int(a.b) - Int(b.b)) <= tolerance
+    }
+
+    /// The card drawn on a page, and where its edge and its grab bar are, in
+    /// points. On the theme appearance the card is the theme fill on white,
+    /// and the bar whatever in its bottom 40 is lighter than the fill; on the
+    /// background appearance the card is the solid surface on black, and the
+    /// bar is background/300. The instruction, or the itinerary, ends more
+    /// than 40 above the card's edge.
+    @MainActor private func grabBar(appearance: KozmosManoeuvreAppearance, expanded: Bool) async throws
+        -> (card: CGRect, bar: CGRect, barColour: RGB, fill: RGB) {
+        let themed = appearance == .theme
+        let size = CGSize(width: 360, height: 260)
+        let view = KozmosManoeuvreCard(type: .right, instruction: "Turn right", detail: "40 m",
+                                       isExpanded: expanded, onToggle: {}, appearance: appearance) {
+            Text("Continue to the gate")
+        }
+        .frame(width: 320)
+        .padding(20)
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .background(themed ? Color.white : Color.black)
+        .environment(\.colorScheme, .light)
+        let pixels = try await RenderedPixels.render(view, size: size)
+        let attachment = XCTAttachment(image: pixels.image)
+        attachment.name = "grab-bar-\(appearance)-\(expanded ? "open" : "closed")"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let whole = CGRect(origin: .zero, size: size)
+        let theme = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
+        let grey = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground300, in: .light)
+        let card = try XCTUnwrap(themed
+            ? pixels.boundingBox(in: whole) { r, g, b in Self.near((r, g, b), theme) }
+            : pixels.boundingBox(in: whole) { r, g, b in max(r, g, b) > 60 }, "no card drawn")
+        let bottom = CGRect(x: card.midX - 40, y: card.maxY - 40, width: 80, height: 40)
+        let bar = try XCTUnwrap(themed
+            ? pixels.boundingBox(in: bottom) { r, _, _ in Int(r) > Int(theme.r) + 60 }
+            : pixels.boundingBox(in: bottom) { r, g, b in Self.near((r, g, b), grey) }, "no grab bar drawn")
+        let fill = pixels.color(at: CGPoint(x: card.minX + 30, y: card.maxY - 2))
+        return (card, bar, pixels.color(at: CGPoint(x: bar.midX, y: bar.midY)), (fill.r, fill.g, fill.b))
+    }
+
+    /// The bar sits 4 above the card's bottom edge, as an iOS sheet's
+    /// grabber does, open and closed and on either appearance. It sat in the
+    /// middle of its 44-point target, about 23 above the edge.
+    @MainActor func testTheGrabBarSitsFourAboveTheCardsBottomEdge() async throws {
+        for appearance in [KozmosManoeuvreAppearance.theme, .background] {
+            for expanded in [false, true] {
+                let name = "\(appearance), \(expanded ? "open" : "closed")"
+                let (card, bar, _, _) = try await grabBar(appearance: appearance, expanded: expanded)
+                XCTAssertEqual(bar.width, 36, accuracy: 1, "\(name): not the 36 × 5 bar: \(bar)")
+                XCTAssertEqual(bar.height, 5, accuracy: 1, "\(name): not the 36 × 5 bar: \(bar)")
+                XCTAssertEqual(card.maxY - bar.maxY, 4, accuracy: 1,
+                               "\(name): the bar ends \(card.maxY - bar.maxY) above the card's bottom edge")
+                XCTAssertEqual(bar.midX, card.midX, accuracy: 1, "\(name): the bar is not centred")
+            }
+        }
+    }
+
+    /// On the theme fill the bar is the guidance foreground at 62%: quieter
+    /// than the instruction's white (5.6:1 on #135BEC) and still 3:1 on the
+    /// fill, WCAG 1.4.11's floor for a control's only visual. On the
+    /// background appearance it is background/300 at full strength, as it
+    /// was: already quiet, and dimming it would only lower its contrast.
+    @MainActor func testTheGrabBarIsQuieterOnTheThemeFillAndUnchangedOnTheBackground() async throws {
+        for expanded in [false, true] {
+            let themed = try await grabBar(appearance: .theme, expanded: expanded)
+            let ratio = Self.contrast(themed.barColour, themed.fill)
+            XCTAssertGreaterThanOrEqual(ratio, 3, "open \(expanded): the bar reads \(ratio):1 on the fill \(themed.fill)")
+            XCTAssertLessThan(ratio, 3.5, "open \(expanded): the bar is as loud as the instruction, \(ratio):1")
+            let background = try await grabBar(appearance: .background, expanded: expanded)
+            let grey = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground300, in: .light)
+            XCTAssertTrue(Self.near(background.barColour, grey, 2),
+                          "open \(expanded): the background bar is \(background.barColour), not background/300 \(grey)")
+        }
+    }
+
+    /// The bar's target stays 44 tall, grown upward from the bar: its bottom
+    /// edge is the bar's, 4 above the card's, and it keeps its name.
+    @MainActor func testTheGrabBarsTargetStaysFortyFourAndGrowsUpward() async throws {
+        try readAsVoiceOverDoes()
+        for appearance in [KozmosManoeuvreAppearance.theme, .background] {
+            let window = await host(
+                KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: true, onToggle: {},
+                                    collapseLabel: "Hide itinerary", appearance: appearance) { Text("Continue to the gate") }
+            )
+            defer { window.isHidden = true }
+            let elements = voiceOverElements(in: window)
+            let bar = try XCTUnwrap(elements.first { $0.accessibilityLabel == "Hide itinerary" },
+                                    "\(appearance): the open bar has lost its name")
+            XCTAssertGreaterThanOrEqual(bar.accessibilityFrame.height, 44, "\(appearance): \(bar.accessibilityFrame)")
+            let card = try XCTUnwrap(voiceOverTree(in: window).first { $0.accessibilityLabel == "Current manoeuvre" },
+                                     "\(appearance): the card is not named")
+            XCTAssertEqual(card.accessibilityFrame.maxY - bar.accessibilityFrame.maxY, 4, accuracy: 1,
+                           "\(appearance): the target does not end at the bar")
+        }
+    }
 }
 #endif
