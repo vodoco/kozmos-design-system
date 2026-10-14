@@ -445,9 +445,11 @@ try {
         await page.getByText("You've arrived", { exact: true }).count(),
         0,
       );
+      // Pressed at its top: the grab bar's 44px target reaches up over the
+      // closed instruction's foot and toggles the card there (decision 74).
       await page
         .getByRole("button", { name: /Take the elevator to Level 2/ })
-        .click();
+        .click({ position: { x: 16, y: 6 } });
       await page.getByRole("button", { name: "Hide itinerary" }).click();
       await checkAxe(page);
       await page

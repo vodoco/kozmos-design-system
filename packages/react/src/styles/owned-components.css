@@ -607,11 +607,15 @@
     }
   }
   /* The grab bar is laid out as its grip alone, 12 under the content and 4
-     above the card's edge, so the card ends 21 under its content (decision
-     74, GAP-140: about 50 of empty space sat above the grip). Its target
-     stays 44: from the card's edge up, over the grip, the gap and the foot of
-     the content. Closed, that foot is the instruction row, which opens the
-     card too; open, the itinerary keeps its last row clear of it. */
+     above the card's edge, so the closed card ends 21 under its instruction
+     (decision 74, GAP-140: about 50 of empty space sat above the grip). Its
+     target stays 44: from the card's edge up, over the grip, the gap and the
+     foot of the instruction row, which opens the card too. Owned, the
+     target's anchor too: without @scope a positioned ancestor further out
+     would take the band. */
+  .kozmos-manoeuvre-disclosure {
+    position: relative;
+  }
   .kozmos-manoeuvre-disclosure::before {
     content: "";
     position: absolute;
@@ -620,8 +624,21 @@
     bottom: calc(-1 * var(--primitives-layout-spacing-50) * 1px);
     height: 44px;
   }
+  /* Open, the itinerary stops 23 above the gap, outside what scrolls, so the
+     target covers none of it at any scroll position: a press or a drag low in
+     the list reaches the list. */
   .kozmos-manoeuvre-itinerary {
-    padding-bottom: 23px;
+    margin-bottom: 23px;
+  }
+  /* On the theme fill the scrollbar's thumb is the guidance foreground, as
+     the grip is: the neutral thumb reads about 1.4:1 there. */
+  .kozmos-manoeuvre-card[data-appearance="theme"] {
+    --semantics-scrollbar-thumb: color-mix(
+      in srgb,
+      var(--kozmos-guidance-foreground) 62%,
+      transparent
+    );
+    --semantics-scrollbar-thumb-hover: var(--kozmos-guidance-foreground);
   }
   .kozmos-manoeuvre-grip {
     background-color: var(
