@@ -16,6 +16,12 @@ import { WithoutGenericClick } from "../../utils/generic-click";
 
 /** Android's double-tap timeout, and about iOS's: a second tap within it opens. */
 const DOUBLE_TAP_MS = 300;
+/**
+ * The longest a counted double click (`detail` 2) may follow this result's
+ * own first press: past any OS's default double-click time, so a slow setting
+ * still opens, while a press from another gesture long ago does not.
+ */
+const DOUBLE_CLICK_LIMIT_MS = 2000;
 
 /**
  * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
@@ -270,20 +276,30 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     // A double tap is the second press within the platform's double-tap
     // time: the browser counts clicks in `detail` (by the OS's double-click
     // setting); a touch browser that reports every tap as 1 is timed here.
-    // Either way this result saw the first press: a browser counts by time
-    // and place, so a first press that moved the list can put another result
-    // under the second. `detail` 0 is a keyboard press, which always selects.
-    const lastPress = React.useRef<number | null>(null);
+    // Either way this result took the first press, and lately: a browser
+    // counts by time and place, so a first press that moved the list can put
+    // another result under the second. A quick tap after an open does
+    // nothing, as on SwiftUI and Compose. `detail` 0 is a keyboard press,
+    // which always selects.
+    const lastPress = React.useRef<{ at: number; opened: boolean } | null>(
+      null,
+    );
     const handleSelect = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (!available) return;
       if (onOpen && event.detail > 0) {
         if (event.detail > 2) return;
         const previous = lastPress.current;
+        const since = previous ? event.timeStamp - previous.at : Infinity;
         const second =
-          previous !== null &&
-          (event.detail === 2 || event.timeStamp - previous < DOUBLE_TAP_MS);
+          event.detail === 2
+            ? since < DOUBLE_CLICK_LIMIT_MS
+            : since < DOUBLE_TAP_MS;
+        if (second && previous?.opened) {
+          lastPress.current = { at: event.timeStamp, opened: true };
+          return;
+        }
         if (second) {
-          lastPress.current = null;
+          lastPress.current = { at: event.timeStamp, opened: true };
           trackEvent("POIResultCard", "poi_result_opened", {
             poiId: poi.id,
             resultIndex: result.resultIndex,
@@ -291,7 +307,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           onOpen(poi.id);
           return;
         }
-        lastPress.current = event.timeStamp;
+        lastPress.current = { at: event.timeStamp, opened: false };
       }
       trackEvent("POIResultCard", "poi_result_selected", {
         poiId: poi.id,

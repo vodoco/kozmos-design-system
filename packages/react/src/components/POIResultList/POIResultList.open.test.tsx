@@ -32,6 +32,16 @@ const items = [
     defaultExpanded: true,
   },
 ];
+// A click with its own count and time, as a browser stamps them.
+const pressAt = (detail: number, timeStamp: number) => {
+  const event = new MouseEvent("click", {
+    bubbles: true,
+    cancelable: true,
+    detail,
+  });
+  Object.defineProperty(event, "timeStamp", { value: timeStamp });
+  return event;
+};
 const setup = (withOpen = true) => {
   const onSelect = vi.fn();
   const onOpen = vi.fn();
@@ -85,6 +95,26 @@ describe("POIResultList onOpen", () => {
     fireEvent.click(button(/Bean & Leaf Café/), { detail: 2 });
     expect(onOpen).not.toHaveBeenCalled();
     expect(onSelect).toHaveBeenLastCalledWith("cafe");
+  });
+
+  it("selects, not opens, when this result's own first press is long past", () => {
+    // Select a result, then minutes later double-click something above it
+    // that moves it under the pointer: the second click arrives on it as
+    // detail 2, but its own press was another gesture.
+    const { onSelect, onOpen, button } = setup();
+    const cafe = button(/Bean & Leaf Café/);
+    fireEvent(cafe, pressAt(1, 1_000));
+    fireEvent(cafe, pressAt(2, 121_000));
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores a third quick tap on a touch browser, as SwiftUI and Compose do", () => {
+    const { onSelect, onOpen, button } = setup();
+    const cafe = button(/Bean & Leaf Café/);
+    for (const at of [1_000, 1_150, 1_300]) fireEvent(cafe, pressAt(1, at));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it("opens once on a triple click", () => {
