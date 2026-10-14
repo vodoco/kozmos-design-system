@@ -121,4 +121,23 @@ describe("CategoryTile", () => {
     expect(screen.getByText("Food and drink")).toHaveClass("line-clamp-2");
     expect(screen.getByRole("button")).toHaveClass("text-[11px]");
   });
+
+  // Decision 78 (GAP-010): a CJK name gets a third line; other scripts two.
+  it.each([
+    ["カスタマーサービス", "line-clamp-3"],
+    ["ヴィーガン・ベジタリアン", "line-clamp-3"],
+    ["고객 서비스", "line-clamp-3"],
+    ["客户服务", "line-clamp-3"],
+    ["Customer service", "line-clamp-2"],
+    ["خدمة العملاء", "line-clamp-2"],
+  ])("gives %s %s", (label, clamp) => {
+    render(
+      <CategoryTile
+        category={{ id: "c", label, selected: false }}
+        icon={<ShoppingBag />}
+        onSelect={() => undefined}
+      />,
+    );
+    expect(screen.getByText(label)).toHaveClass(clamp);
+  });
 });

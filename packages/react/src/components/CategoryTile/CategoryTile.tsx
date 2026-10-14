@@ -17,6 +17,14 @@ export interface CategoryTileProps extends Omit<
   tint?: CategoryTint;
 }
 
+/** Han, kana, Hangul and their punctuation: scripts that break between characters. */
+const CJK =
+  /[\u1100-\u11ff\u2e80-\u2fdf\u3000-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/;
+
+export function isCjk(label: string) {
+  return CJK.test(label);
+}
+
 const CategoryTile = React.forwardRef<HTMLButtonElement, CategoryTileProps>(
   (
     {
@@ -104,7 +112,15 @@ const CategoryTile = React.forwardRef<HTMLButtonElement, CategoryTileProps>(
             alone does to Japanese - "レストラン" split across two lines reads as
             two words that do not exist. Both, because a venue has categories
             in more than one script. */}
-        <span className="line-clamp-2 max-w-full break-words [word-break:keep-all] text-balance">
+        <span
+          className={cn(
+            "max-w-full break-words [word-break:keep-all] text-balance",
+            // A CJK name gets a third line, so a long word such as
+            // カスタマーサービス shows whole rather than cut (decision 78,
+            // GAP-010); other scripts keep two.
+            isCjk(category.label) ? "line-clamp-3" : "line-clamp-2",
+          )}
+        >
           {category.label}
         </span>
         {category.resultCountLabel && (
