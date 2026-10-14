@@ -74,6 +74,7 @@ public struct KozmosPOIDetailPanel: View {
     private let onClose: (() -> Void)?
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelInsetBottom) private var panelInsetBottom
     @Environment(\.kozmosSurfaceStyle) private var surfaceStyle
 
     /// The surface the card's text sits on: in the sheet presentation the
@@ -189,7 +190,8 @@ public struct KozmosPOIDetailPanel: View {
                     POIDetailExtendedContent(details: details, readMoreLabel: readMoreLabel,
                                              readLessLabel: readLessLabel, tagsLabel: tagsLabel)
                 }
-                .padding(16)
+                .padding([.horizontal, .top], 16)
+                .padding(.bottom, bottomPadding)
             }
         }
         // Reset scroll/disclosure state only when selecting a different place.
@@ -223,6 +225,17 @@ public struct KozmosPOIDetailPanel: View {
         let padding = KozmosDimensions.primitivesLayoutSpacing200
         guard presentation == .sheet else { return padding }
         return max(0, padding - panelInsetTop)
+    }
+
+    /// The card's bottom padding, the header's rule at the other end
+    /// (GAP-085): in the sheet presentation the space the shell's panel
+    /// leaves below it (`kozmosPanelInsetBottom`) is the card's own bottom,
+    /// so it tops 16 up to it rather than adding 16 to it. The panel and
+    /// inline presentations keep their 16 inside their border.
+    private var bottomPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        guard presentation == .sheet else { return padding }
+        return max(0, padding - panelInsetBottom)
     }
 
     /// How far from the middle of the header's first row its quick buttons

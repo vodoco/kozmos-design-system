@@ -397,14 +397,15 @@ final class KozmosMapShellContentDetentTests: XCTestCase {
     private static func isGreen(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { g > 150 && r < 120 && b < 140 }
     private static func isRed(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { r > 200 && g < 80 && b < 80 }
 
-    /// A 120-point panel: the sheet is the grab handle's row and the panel,
-    /// and the map keeps everything above it.
+    /// A 120-point panel: the sheet is the grab handle's row, the panel and
+    /// the 16 the shell leaves below it (GAP-085), and the map keeps
+    /// everything above it.
     @MainActor func testTheSheetIsAsTallAsItsContent() async throws {
         let pixels = try await render(panelHeight: 120)
         let whole = CGRect(x: 0, y: 0, width: 390, height: shellHeight)
         let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "no panel content drawn")
         XCTAssertEqual(content.height, 120, accuracy: 1.5)
-        XCTAssertEqual(content.maxY, shellHeight, accuracy: 1.5, "the panel does not sit on the shell's bottom edge")
+        XCTAssertEqual(content.maxY, shellHeight - 16, accuracy: 1.5, "the panel does not end 16 above the shell's bottom edge")
         // Above the content there is the handle's row and then the map: the
         // sheet's own colour 8 points up, the map's red 40 points up. (The
         // sheet's shadow darkens the red just above it, so the map is found
@@ -433,7 +434,7 @@ final class KozmosMapShellContentDetentTests: XCTestCase {
     @MainActor func testTheSheetCanBeGlass() async throws {
         let solid = try await render(panelHeight: 120)
         let glass = try await render(panelHeight: 120, surface: .glass)
-        let probe = CGPoint(x: 40, y: shellHeight - 120 - 8)
+        let probe = CGPoint(x: 40, y: shellHeight - 16 - 120 - 8)
         let onSolid = solid.color(at: probe)
         let onGlass = glass.color(at: probe)
         XCTAssertGreaterThan(onSolid.g, 250, "the solid sheet lets the red through: \(onSolid)")
@@ -597,14 +598,15 @@ final class KozmosMapShellEdgesTests: XCTestCase {
     private static func isGreen(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { g > 150 && r < 120 && b < 140 }
 
     /// The map's red at the very top; the sheet a fifth of the whole height,
-    /// its surface to the bottom edge, its plain content stopping 34 above it.
+    /// its surface to the bottom edge, its plain content stopping 16 above
+    /// the home indicator's 34 (GAP-085).
     @MainActor func testTheMapRunsUnderTheStatusBarAndTheSheetKeepsTheHomeIndicator() async throws {
         let pixels = try await render { Color.green }
         let top = pixels.color(at: CGPoint(x: 40, y: 5))
         XCTAssertGreaterThan(top.r, 150, "the map does not run under the status bar: \(top)")
         XCTAssertLessThan(top.g, 120, "the map does not run under the status bar: \(top)")
         let green = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 0, y: 0, width: 390, height: shellHeight), where: Self.isGreen), "no sheet content")
-        XCTAssertEqual(green.maxY, shellHeight - 34, accuracy: 1.5, "the sheet's content does not stop above the home indicator")
+        XCTAssertEqual(green.maxY, shellHeight - 34 - 16, accuracy: 1.5, "the sheet's content does not stop 16 above the home indicator")
         XCTAssertEqual(green.minY, shellHeight - 160 + 16, accuracy: 1.5, "the sheet is not a fifth of the whole height under its handle: \(green)")
         let edge = pixels.color(at: CGPoint(x: 40, y: shellHeight - 10))
         XCTAssertGreaterThan(edge.g, 240, "the sheet's surface does not reach the bottom edge: \(edge)")
@@ -800,8 +802,8 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
     }
 
     /// Fitted to its content, the sheet counts the header: the handle's row
-    /// and its clearance, the 80-point header, 16 gap and 300-point panel, 416,
-    /// with the map above.
+    /// and its clearance, the 80-point header, 16 gap, 300-point panel and
+    /// the 16 below it (GAP-085), 432, with the map above.
     @MainActor func testTheContentFittedSheetCountsTheHeader() async throws {
         let pixels = try await RenderedPixels.render(shell(detent: .constant(.content), detents: [.collapsed, .content, .large]) {
             Color.green.frame(height: 80)
@@ -809,10 +811,10 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
             Color.blue.frame(height: 300)
         }, size: size)
         let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
-        XCTAssertEqual(header.minY, size.height - 416 + 16 + 4, accuracy: 1.5, "the fitted sheet does not count the header and gap: \(header)")
+        XCTAssertEqual(header.minY, size.height - 432 + 16 + 4, accuracy: 1.5, "the fitted sheet does not count the header and gap: \(header)")
         let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "no content drawn")
         XCTAssertEqual(content.minY, header.maxY + 16, accuracy: 1.5, "the content does not keep the header gap: \(content)")
-        XCTAssertEqual(content.maxY, size.height, accuracy: 1.5, "the content is cut: \(content)")
+        XCTAssertEqual(content.maxY, size.height - 16, accuracy: 1.5, "the content is cut, or not 16 above the edge: \(content)")
         let map = pixels.color(at: CGPoint(x: 40, y: header.minY - 40))
         XCTAssertTrue(Self.isRed(map.r, map.g, map.b), "the map is not just above the fitted sheet: \(map)")
     }
@@ -877,7 +879,9 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
                            "\(direction): the header is not in the panel: \(header)")
             let content = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isBlue), "\(direction): no content drawn")
             XCTAssertEqual(content.minY, header.maxY + 16, accuracy: 1.5, "\(direction): the content does not keep the header gap: \(content)")
-            XCTAssertEqual(content.maxY, wide.height - 16, accuracy: 1.5, "\(direction): the content does not fill the panel under the header: \(content)")
+            // The panel ends 16 above the map's bottom, and the content 16
+            // above the panel's (GAP-085).
+            XCTAssertEqual(content.maxY, wide.height - 16 - 16, accuracy: 1.5, "\(direction): the content does not fill the panel under the header: \(content)")
         }
     }
     #endif
