@@ -458,11 +458,13 @@
      its own container under the shell (owned-poi-detail.css). */
   /* Below the content the shell leaves 16 too, --kozmos-panel-inset-bottom
      (GAP-085), so a short result list or a part with no padding of its own
-     ends 16 above the panel's edge. The details card and the route preview
-     end with padding of their own, and give the shell's back, so their ends
-     stay where they were. */
+     ends 16 above the panel's edge. The details card, the route preview and
+     the category browser end with padding of their own, and give the
+     shell's back, so their ends stay where they were, as SwiftUI's and
+     Compose's do. */
   .kozmos-poi-detail[data-presentation="sheet"],
-  .kozmos-route-preview {
+  .kozmos-route-preview,
+  .kozmos-browse-categories {
     margin-block-end: calc(-1 * var(--kozmos-panel-inset-bottom, 0px));
   }
   .kozmos-browse-categories-first-row,

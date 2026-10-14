@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import {
   AdaptiveMapShell,
   AICompanionPanel,
+  BrowseCategoriesPanel,
   POIDetailPanel,
   ThemeProvider,
 } from "@kozmos-ds/react";
@@ -18,6 +19,8 @@ type Config = {
   assistant?: boolean;
   /** The assistant alone, outside any shell. */
   standalone?: boolean;
+  /** The category browser, a part with an end padding of its own. */
+  browse?: boolean;
 };
 declare global {
   interface Window {
@@ -55,6 +58,15 @@ window.renderPanelSpacing = (config) =>
           panel={
             config.assistant ? (
               assistant
+            ) : config.browse ? (
+              <BrowseCategoriesPanel
+                categories={Array.from({ length: 8 }, (_, index) => ({
+                  id: `category-${index}`,
+                  label: `Category ${index + 1}`,
+                }))}
+                onSelect={() => {}}
+                renderIcon={() => <span style={{ width: 24, height: 24 }} />}
+              />
             ) : config.details ? (
               <POIDetailPanel
                 poi={{

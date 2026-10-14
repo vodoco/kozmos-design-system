@@ -151,6 +151,37 @@ try {
       "mounted fitted panel shrinks when content changes",
     );
   }
+  // GAP-085: a part that ends with padding of its own gives the shell's 16
+  // back, so the category browser's last row ends 16 above the panel's edge,
+  // as SwiftUI's and Compose's do, not 32.
+  for (const side of [false, true]) {
+    const config = {
+      side,
+      header: false,
+      grip: false,
+      long: false,
+      rtl: false,
+      details: false,
+      browse: true,
+    };
+    await page.evaluate((config) => window.renderPanelSpacing(config), config);
+    await page.getByRole("complementary").waitFor();
+    await settleLayout(page);
+    const end = await page.evaluate(() => {
+      const panel = document.querySelector("aside");
+      const tiles = panel.querySelectorAll(".kozmos-browse-categories li");
+      const last = tiles[tiles.length - 1];
+      return (
+        panel.getBoundingClientRect().bottom -
+        parseFloat(getComputedStyle(panel).borderBottomWidth) -
+        last.getBoundingClientRect().bottom
+      );
+    });
+    near(end, 16, `the category browser's end gap, ${side ? "side" : "sheet"}`);
+  }
+  console.log(
+    "PASS GAP-085 the category browser ends 16 above the panel's edge",
+  );
   // GAP-121: the assistant's header tops its own 12 up to what the shell
   // leaves, rather than adding to it, so its close button sits where a panel
   // header's search field does: under a grip (the grip's row and its 4px
