@@ -1,6 +1,6 @@
 import React from "react";
 import { IconButton } from "../IconButton/IconButton";
-import { Stars01, XClose } from "@kozmos-ds/icons";
+import { Stars01, X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { inertOutside } from "../../utils/modal-inert";
 import { Text } from "../Text";
@@ -337,16 +337,18 @@ const AICompanionPanel = React.forwardRef<
             {title}
           </Text>
           {onClose && (
+            // The details card's close (decision 73, GAP-145): an outline,
+            // neutral IconButton, 44 square, where it was a 36 bordered
+            // pill with an owned 44 target round it.
             <IconButton
               aria-label={closeLabel}
-              // The mark stays 36; `kozmos-ai-companion-close` carries the
-              // 44px target in the owned stylesheet.
+              className="shrink-0"
               emotion="neutral"
-              className="kozmos-ai-companion-close h-9 w-9 shrink-0 rounded-pill border border-border"
               onClick={onClose}
               type="button"
+              variant="outline"
             >
-              <XClose aria-hidden="true" className="h-4 w-4" />
+              <X aria-hidden="true" size={20} />
             </IconButton>
           )}
         </div>

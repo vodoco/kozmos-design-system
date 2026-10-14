@@ -1442,13 +1442,11 @@
      taking its clicks, which trades one 2.5.8 failure for a worse bug. Tall
      is free: it lands in the gap between wrapped rows, where nothing sits. */
   .kozmos-chip-remove,
-  .kozmos-notice-more,
-  .kozmos-ai-companion-close {
+  .kozmos-notice-more {
     position: relative;
   }
   .kozmos-chip-remove::after,
-  .kozmos-notice-more::after,
-  .kozmos-ai-companion-close::after {
+  .kozmos-notice-more::after {
     content: "";
     position: absolute;
     top: 50%;
@@ -1467,8 +1465,7 @@
      61px header. The header's 12px padding and the 8px gap before the close
      hold the 4px the target reaches past the mark on each side, and nothing
      beside it is a control. */
-  .kozmos-notice-more::after,
-  .kozmos-ai-companion-close::after {
+  .kozmos-notice-more::after {
     width: max(100%, 44px);
   }
 }

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { IconButton } from "../IconButton/IconButton";
 import { AICompanionPanel } from "./AICompanionPanel";
 
 /** A control outside the panel, as AISearchButton is in the SDK's sheet. */
@@ -800,12 +801,23 @@ describe("AICompanionPanel", () => {
     expect(ref.current).toBeNull();
   });
 
-  it("gives close a 44px target round the 36px mark the header is drawn for", () => {
-    // Row 60: close was 36px to hit. The mark stays 36 so the header keeps
-    // the prototype's height; an owned rule carries the 44px target.
+  it("draws its close as the details card's close, 44 square (decision 73)", () => {
+    // GAP-145: the assistant's close matches POIDetailPanel's, an outline,
+    // neutral IconButton, rather than a 36 bordered pill.
     render(<AICompanionPanel onClose={vi.fn()} />);
     const close = screen.getByRole("button", { name: "Close assistant" });
-    expect(close).toHaveClass("kozmos-ai-companion-close");
-    expect(close).toHaveClass("h-9", "w-9");
+    const reference = render(
+      <IconButton
+        aria-label="reference"
+        emotion="neutral"
+        type="button"
+        variant="outline"
+      />,
+    ).getByRole("button", { name: "reference" });
+    const classes = (node: HTMLElement) =>
+      [...node.classList].filter((name) => name !== "shrink-0").sort();
+    expect(classes(close)).toEqual(classes(reference));
+    expect(close).toHaveClass("h-11", "w-11");
+    expect(close).not.toHaveClass("rounded-pill");
   });
 });
