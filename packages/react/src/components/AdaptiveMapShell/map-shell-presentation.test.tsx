@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FloorSelector } from "../FloorSelector/FloorSelector";
 import { ManoeuvreCard } from "../ManoeuvreCard/ManoeuvreCard";
 import { MapShellPresentationContext } from "./map-shell-presentation";
@@ -46,16 +46,67 @@ describe("scroll regions draw their scrollbar by presentation", () => {
     expect(scrollbarOf(".kozmos-manoeuvre-itinerary")).toBe(want);
   });
 
-  it.each([
-    ["a phone sheet", "bottom", "hidden"],
-    ["beside the map", "side", "thin"],
-  ] as const)("the opened level list %s", (_, presentation, want) => {
-    render(
-      <MapShellPresentationContext.Provider value={presentation}>
-        {levels}
-      </MapShellPresentationContext.Provider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /Ground floor/ }));
-    expect(scrollbarOf(".kozmos-floor-selector-list")).toBe(want);
+  describe("the opened level list", () => {
+    // jsdom measures nothing: the list overflows here because these say so.
+    const overflow = (overflows: boolean) => {
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(
+            private readonly callback: (
+              entries: ResizeObserverEntry[],
+              observer: unknown,
+            ) => void,
+          ) {}
+          observe() {
+            this.callback([], this);
+          }
+          disconnect() {}
+        },
+      );
+      const list = (node: HTMLElement, value: number) =>
+        node.classList?.contains("kozmos-floor-selector-scroll") ? value : 0;
+      vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return list(this, overflows ? 500 : 100);
+        },
+      );
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return list(this, 200);
+        },
+      );
+    };
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it.each([
+      ["in a phone sheet", "bottom", "hidden"],
+      ["beside the map", "side", "thin"],
+    ] as const)("%s, while it scrolls", async (_, presentation, want) => {
+      overflow(true);
+      render(
+        <MapShellPresentationContext.Provider value={presentation}>
+          {levels}
+        </MapShellPresentationContext.Provider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Ground floor/ }));
+      await waitFor(() =>
+        expect(scrollbarOf(".kozmos-floor-selector-scroll")).toBe(want),
+      );
+    });
+
+    it("carries no mark while it fits, so its hints are not clipped", () => {
+      overflow(false);
+      render(
+        <MapShellPresentationContext.Provider value="side">
+          {levels}
+        </MapShellPresentationContext.Provider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Ground floor/ }));
+      expect(scrollbarOf(".kozmos-floor-selector-scroll")).toBeNull();
+    });
   });
 });

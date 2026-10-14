@@ -431,9 +431,6 @@ const CollapsibleFloorSelector = React.forwardRef<
               updatePositionStrategy="always"
               ref={setPopup}
               data-scrollable={scrollable ? "true" : undefined}
-              // No lasting scrollbar on a phone, the thin one beside the map
-              // (decision 75, GAP-138/139).
-              data-kozmos-scrollbar={scrollbarFor(presentation)}
               align="end"
               alignOffset={-COLUMN_INSET}
               aria-label={label}
@@ -472,7 +469,16 @@ const CollapsibleFloorSelector = React.forwardRef<
                 }
               }}
             >
-              <div ref={setContent} className="kozmos-floor-selector-scroll">
+              <div
+                ref={setContent}
+                className="kozmos-floor-selector-scroll"
+                // No lasting scrollbar on a phone, the thin one beside the
+                // map (decision 75, GAP-138/139). Only while it scrolls: the
+                // mark clips, and a list that fits paints its hints outside.
+                data-kozmos-scrollbar={
+                  scrollable ? scrollbarFor(presentation) : undefined
+                }
+              >
                 <WithoutGenericClick>
                   {options.map((floor) => {
                     const isCurrent = floor.id === selectedFloor;
