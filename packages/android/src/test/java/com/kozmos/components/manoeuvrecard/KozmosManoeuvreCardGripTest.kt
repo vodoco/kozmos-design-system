@@ -40,7 +40,8 @@ import org.junit.Test
  * GAP-140, decision 74: the card's grip sits near its bottom edge, its
  * bottom 4dp above the card's, as an iOS sheet's grabber does, where it sat
  * centred in its target about 25 above it; its target stays 48dp or more,
- * growing upward. On the theme appearance it is the guidance foreground at
+ * reaching up from the card's bottom edge (KozmosManoeuvreCardTargetTest has
+ * the rest of its geometry). On the theme appearance it is the guidance foreground at
  * 62%, quieter than the instruction and still 3:1 or more on the theme fill
  * (60% read 2.99:1); on the background appearance it keeps background/300.
  * Read off the drawing, open and closed, in both themes: the card's bounds
@@ -111,9 +112,10 @@ class KozmosManoeuvreCardGripTest {
         val start = (bottom - 2 * perDp).toInt()
         val fill = pixels.argb(x, start)
         fun diff(argb: Int) = listOf(16, 8, 0).sumOf { abs((argb shr it and 0xFF) - (fill shr it and 0xFF)) }
-        val rows = (start downTo (bottom - 40 * perDp).toInt()).toList()
+        // Up to 16dp: the content starts 21 above the edge, and is not read.
+        val rows = (start downTo (bottom - 16 * perDp).toInt()).toList()
         val most = rows.maxOf { diff(pixels.argb(x, it)) }
-        check(most > 30) { "no bar within 40dp of the card's bottom edge" }
+        check(most > 30) { "no bar within 16dp of the card's bottom edge" }
         // A row is the bar's when it is at least half way to the bar's colour:
         // an edge row drawn half covered counts once, at either end.
         val barRows = rows.filter { diff(pixels.argb(x, it)) * 2 >= most }.toSet()
