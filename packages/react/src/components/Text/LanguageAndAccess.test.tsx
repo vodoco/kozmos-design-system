@@ -102,8 +102,12 @@ describe("language and accessibility", () => {
         onSelect={vi.fn()}
       />,
     );
-    const label = container.querySelector(".line-clamp-2");
+    const label = [...container.querySelectorAll("span")].find(
+      (node) => node.textContent === "レストラン",
+    );
     expect(label?.className).toMatch(/keep-all/);
     expect(label?.className).toMatch(/break-words/);
+    // And a third line, so a longer word shows whole (decision 78).
+    expect(label).toHaveClass("line-clamp-3");
   });
 });
