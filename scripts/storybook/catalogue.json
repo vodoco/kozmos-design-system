@@ -699,7 +699,13 @@
       "id": "product-sdk-notice",
       "title": "Core/Feedback/Notice",
       "component": "Notice",
-      "exports": ["Collapsed", "Expanded", "Emergency", "SingleLine"]
+      "exports": [
+        "Collapsed",
+        "Expanded",
+        "Emergency",
+        "SingleLine",
+        "SearchWithAi"
+      ]
     },
     {
       "file": "packages/react/src/components/NumberInput/NumberInput.stories.tsx",

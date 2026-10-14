@@ -37,8 +37,18 @@ export interface NoticeProps extends Omit<
   /** The full wording, revealed on tap. */
   children?: React.ReactNode;
   tone?: NoticeTone;
-  /** Replaces the default tone icon. */
+  /**
+   * Replaces the default tone icon. `null` or `false` draws none, and leaves
+   * no empty column before the summary (GAP-118).
+   */
   icon?: React.ReactNode;
+  /**
+   * Where the icon sits beside the summary. `start`, the default, puts it on
+   * the first line of a summary that wraps. `center` centres it on a one-line
+   * summary that holds a control, as "Not finding it? [Search with AI]" does
+   * (GAP-118).
+   */
+  iconAlign?: "start" | "center";
   /** Uncontrolled starting state. */
   defaultExpanded?: boolean;
   /** Controlled state. Pass with `onExpandedChange`. */
@@ -101,6 +111,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       children,
       tone = "warning",
       icon,
+      iconAlign = "start",
       defaultExpanded = false,
       expanded,
       onExpandedChange,
@@ -128,6 +139,10 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       onExpandedChange?.(next);
     };
 
+    // No icon, no column: the detail and the action then start where the
+    // summary does.
+    const drawsIcon = icon !== null && icon !== false;
+
     return (
       <div
         className={cn(
@@ -142,10 +157,20 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
         role={role ?? LIVE_ROLE[live]}
         {...props}
       >
-        <div className="flex items-start gap-2">
-          <span aria-hidden="true" className="mt-0.5 shrink-0">
-            {icon ?? <AlertTriangle className="h-4 w-4" />}
-          </span>
+        <div
+          className={cn(
+            "flex gap-2",
+            iconAlign === "center" ? "items-center" : "items-start",
+          )}
+        >
+          {drawsIcon && (
+            <span
+              aria-hidden="true"
+              className={cn("shrink-0", iconAlign === "start" && "mt-0.5")}
+            >
+              {icon ?? <AlertTriangle className="h-4 w-4" />}
+            </span>
+          )}
           <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
             {summary}
           </p>
@@ -177,14 +202,20 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
           // appears when CSS fails is the 114px problem this exists to solve.
           // The attribute also takes it out of the accessibility tree.
           <div
-            className={cn("pl-6 pr-1", detailVisible && "mt-1.5")}
+            className={cn(
+              drawsIcon && "pl-6",
+              "pr-1",
+              detailVisible && "mt-1.5",
+            )}
             hidden={!detailVisible}
             id={detailId}
           >
             <p className="text-sm leading-snug">{children}</p>
           </div>
         )}
-        {action && <div className="mt-3 pl-6">{action}</div>}
+        {action && (
+          <div className={cn("mt-3", drawsIcon && "pl-6")}>{action}</div>
+        )}
       </div>
     );
   },
