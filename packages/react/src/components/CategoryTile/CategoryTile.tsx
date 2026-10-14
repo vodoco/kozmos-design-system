@@ -21,7 +21,7 @@ export interface CategoryTileProps extends Omit<
 const CJK =
   /[\u1100-\u11ff\u2e80-\u2fdf\u3000-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/;
 
-export function isCjk(label: string) {
+function isCjk(label: string) {
   return CJK.test(label);
 }
 
