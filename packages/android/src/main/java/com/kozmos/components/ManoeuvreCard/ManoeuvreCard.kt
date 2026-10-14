@@ -69,6 +69,9 @@ fun manoeuvreDescription(instruction: String, detail: String?): String =
  */
 internal fun manoeuvreInstructionLineLimit(lines: Int?): Int? = lines?.takeIf { it >= 1 }
 
+/** The grip's strength on the theme fill, a share of the guidance foreground (decision 74). */
+private const val GripForegroundAlpha = 0.62f
+
 /** The parts of the manoeuvre card that can hold focus. */
 internal enum class ManoeuvreCardPart { Instruction, Itinerary, Bar }
 
@@ -212,14 +215,15 @@ fun KozmosManoeuvreCard(
         ) {
         val instructionText = instructionAnnotatedText(instruction, surface)
         val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
+        // No bottom padding: the grip's target, last, reaches the card's
+        // bottom edge and keeps the card's 4 under the bar inside itself.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
                     start = KozmosDimensions.primitivesLayoutSpacing200,
                     top = KozmosDimensions.primitivesLayoutSpacing200,
-                    end = KozmosDimensions.primitivesLayoutSpacing200,
-                    bottom = KozmosDimensions.primitivesLayoutSpacing50
+                    end = KozmosDimensions.primitivesLayoutSpacing200
                 )
         ) {
             if (expanded) {
@@ -299,7 +303,12 @@ fun KozmosManoeuvreCard(
                 }
             }
             // The grab bar: the sign that the card opens, and the way to close
-            // it. Closed, the instruction row already offers the way in.
+            // it. Closed, the instruction row already offers the way in. It
+            // sits near the card's bottom edge, its bottom 4 above it, as an
+            // iOS sheet's grabber does (GAP-140, decision 74): it was centred
+            // in its 48dp target, about 25 above the edge. The target is
+            // 48 + the 4 under the bar, from the card's bottom edge up, so the
+            // card is as tall as it was.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -327,15 +336,23 @@ fun KozmosManoeuvreCard(
                     // focus there would be on something TalkBack cannot see.
                     .focusProperties { canFocus = expanded }
                     .clickable(onClick = onToggle, role = Role.Button)
-                    .heightIn(min = 48.dp)
-                    .padding(vertical = KozmosDimensions.primitivesLayoutSpacing50),
-                contentAlignment = Alignment.Center
+                    .heightIn(min = 48.dp + KozmosDimensions.primitivesLayoutSpacing50)
+                    .padding(bottom = KozmosDimensions.primitivesLayoutSpacing50),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Box(
                     modifier = Modifier
                         .width(36.dp)
                         .height(5.dp)
-                        .background(guidanceForeground ?: KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
+                        .background(
+                            // On the theme fill, the guidance foreground at
+                            // 62%: quieter than the instruction, and 3.09:1 on
+                            // #135BEC (60% read 2.99:1), the 3:1 a control's
+                            // only visual needs (WCAG 1.4.11). On the
+                            // background appearance background/300, as it was.
+                            guidanceForeground?.copy(alpha = GripForegroundAlpha) ?: KozmosThemeTokens.primitivesColorsBackground300,
+                            CircleShape
+                        )
                 )
             }
         }
