@@ -513,6 +513,24 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
     }
 
+    /// The grab bar's 44-point target reaches up from the card's bottom
+    /// edge over the bottom of the content (decision 74): a tap 40 above
+    /// the edge, at the card's middle, toggles the card, closed (where the
+    /// instruction row under it opens the card too) and open (where the
+    /// itinerary's last line is under it).
+    func testATapFortyAboveTheCardsBottomEdgeTogglesIt() {
+        launch("manoeuvre-closed")
+        let card = app.otherElements["Navigation en cours"]
+        XCTAssertTrue(card.waitForExistence(timeout: 3))
+        let fortyAboveTheEdge = { card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1)).withOffset(CGVector(dx: 0, dy: -40)) }
+        fortyAboveTheEdge().tap()
+        received("toggle")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].waitForExistence(timeout: 3), "the card did not open")
+        fortyAboveTheEdge().tap()
+        received("toggle|toggle")
+        XCTAssertFalse(card.staticTexts["Continue to the gate"].exists, "the card did not close")
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)
