@@ -3,6 +3,10 @@ import { MapPopupRegionContext } from "../AdaptiveMapShell/map-popup-region";
 import type { FloorPresentation } from "@kozmos-ds/product-contracts";
 import { ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  MapShellPresentationContext,
+  scrollbarFor,
+} from "../AdaptiveMapShell/map-shell-presentation";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
 import { MapControlButton } from "../MapControlButton";
@@ -246,6 +250,7 @@ const CollapsibleFloorSelector = React.forwardRef<
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const [open, setOpen] = React.useState(false);
+    const presentation = React.useContext(MapShellPresentationContext);
     const popupRegion = React.useContext(MapPopupRegionContext);
     const canExpand = (popupRegion?.available ?? true) && options.length > 0;
     const [hintOpen, setHintOpen] = React.useState(false);
@@ -426,6 +431,9 @@ const CollapsibleFloorSelector = React.forwardRef<
               updatePositionStrategy="always"
               ref={setPopup}
               data-scrollable={scrollable ? "true" : undefined}
+              // No lasting scrollbar on a phone, the thin one beside the map
+              // (decision 75, GAP-138/139).
+              data-kozmos-scrollbar={scrollbarFor(presentation)}
               align="end"
               alignOffset={-COLUMN_INSET}
               aria-label={label}

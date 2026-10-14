@@ -2,6 +2,10 @@ import React from "react";
 import type { Instruction } from "@kozmos-ds/product-contracts";
 import { InstructionText, instructionText } from "../../utils/instruction";
 import { cn } from "../../utils";
+import {
+  MapShellPresentationContext,
+  scrollbarFor,
+} from "../AdaptiveMapShell/map-shell-presentation";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import {
   DirectionIcon,
@@ -120,6 +124,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
       appearanceProp ?? (surfaceProp !== undefined ? "background" : "theme");
     const surface = surfaceProp ?? "solid";
     const instructionRef = React.useRef<HTMLButtonElement>(null);
+    const presentation = React.useContext(MapShellPresentationContext);
     const itineraryRef = React.useRef<HTMLDivElement>(null);
     const barRef = React.useRef<HTMLButtonElement>(null);
 
@@ -191,6 +196,9 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
             aria-label={itineraryLabel}
             tabIndex={0}
             className="kozmos-manoeuvre-itinerary overflow-y-auto"
+            // No lasting scrollbar on a phone, Kozmos's thin one beside the
+            // map or alone (decision 75, GAP-138/139).
+            data-kozmos-scrollbar={scrollbarFor(presentation)}
             style={{ maxHeight: maxItineraryHeight }}
           >
             {children}

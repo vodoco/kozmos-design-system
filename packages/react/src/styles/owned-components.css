@@ -456,6 +456,15 @@
      container queries, and its cqi and cqw units, in content hosted here
      read the product's own containers, not the panel. The details card is
      its own container under the shell (owned-poi-detail.css). */
+  /* Below the content the shell leaves 16 too, --kozmos-panel-inset-bottom
+     (GAP-085), so a short result list or a part with no padding of its own
+     ends 16 above the panel's edge. The details card and the route preview
+     end with padding of their own, and give the shell's back, so their ends
+     stay where they were. */
+  .kozmos-poi-detail[data-presentation="sheet"],
+  .kozmos-route-preview {
+    margin-block-end: calc(-1 * var(--kozmos-panel-inset-bottom, 0px));
+  }
   .kozmos-browse-categories-first-row,
   .kozmos-route-preview-first-row {
     padding-top: max(
@@ -547,6 +556,55 @@
       --kozmos-guidance-foreground,
       var(--primitives-colors-theme-600)
     );
+  }
+  /* Scrollbars, by presentation (decision 75, GAP-138/139). A scroll region
+     marks which it draws: `hidden` on a phone presentation, where touch
+     platforms show none at rest and a desktop browser drawing the phone's
+     frame drew its 15px track inside the card and the sheet; `thin` beside the
+     map and alone, Kozmos's thin thumb on a transparent track, kept inside a
+     rounded panel's corners. Both still scroll by touch, wheel and keys. */
+  /* These regions scroll down, never across. Saying so matters in WebKit:
+     with a styled scrollbar it adds a horizontal bar's height to an
+     overflow:auto box's own height even when nothing overflows, which put a
+     side panel's content end 26 above its edge rather than 16. */
+  [data-kozmos-scrollbar] {
+    overflow-x: hidden;
+  }
+  [data-kozmos-scrollbar="hidden"] {
+    scrollbar-width: none;
+  }
+  [data-kozmos-scrollbar="hidden"]::-webkit-scrollbar {
+    display: none;
+  }
+  /* Chromium and WebKit draw the thin one with their pseudo-elements, which
+     alone can keep the track off a rounded corner; a standard
+     scrollbar-width or scrollbar-color would switch them off there. */
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: calc(var(--semantics-radius-container) * 1px);
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-thumb {
+    background-color: var(--semantics-scrollbar-thumb);
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-thumb:hover {
+    background-color: var(--semantics-scrollbar-thumb-hover);
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Firefox has no such pseudo-elements: the standard pair. */
+  @supports not selector(::-webkit-scrollbar) {
+    [data-kozmos-scrollbar="thin"] {
+      scrollbar-width: thin;
+      scrollbar-color: var(--semantics-scrollbar-thumb) transparent;
+    }
   }
   .kozmos-manoeuvre-grip {
     background-color: var(

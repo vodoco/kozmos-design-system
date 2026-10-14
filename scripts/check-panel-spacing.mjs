@@ -43,7 +43,14 @@ try {
                   panel.querySelector("[data-spacing-content]") ??
                   panel.querySelector('button[aria-label="Close details"]');
                 if (!first) throw new Error("Missing first content target");
+                const style = getComputedStyle(scroller);
                 return {
+                  scrollbar: scroller.getAttribute("data-kozmos-scrollbar"),
+                  scrollbarWidth: style.scrollbarWidth,
+                  endGap:
+                    panel.getBoundingClientRect().bottom -
+                    parseFloat(getComputedStyle(panel).borderBottomWidth) -
+                    first.getBoundingClientRect().bottom,
                   first: first.getBoundingClientRect().top,
                   top: panel.getBoundingClientRect().top + panel.clientTop,
                   headerBottom: header?.getBoundingClientRect().bottom,
@@ -57,14 +64,31 @@ try {
                 16,
                 JSON.stringify(config),
               );
+              // Decision 75 (GAP-138/139): a sheet draws no lasting
+              // scrollbar; beside the map the thin Kozmos one.
+              assert.equal(
+                boxes.scrollbar,
+                side ? "thin" : "hidden",
+                `${JSON.stringify(config)}: the scroller's scrollbar`,
+              );
+              if (!side)
+                assert.equal(
+                  boxes.scrollbarWidth,
+                  "none",
+                  `${JSON.stringify(config)}: a sheet's scrollbar is drawn`,
+                );
               if (!details && !long) {
+                // GAP-085: the content ends 16 above the panel's edge, as it
+                // starts 16 below its top.
+                near(boxes.endGap, 16, `${JSON.stringify(config)}: end gap`);
                 const top = 16;
+                const bottom = 16;
                 const headerHeight = header
                   ? 44 + 16 + (grip && !side ? 4 : 0)
                   : 0;
                 near(
                   boxes.height,
-                  300 + top + headerHeight + 2,
+                  300 + top + bottom + headerHeight + 2,
                   "content-fit includes shell spacing",
                 );
                 near(
@@ -123,7 +147,7 @@ try {
       await page
         .locator("aside")
         .evaluate((node) => node.getBoundingClientRect().height),
-      header ? 382 : 318,
+      header ? 398 : 334,
       "mounted fitted panel shrinks when content changes",
     );
   }
