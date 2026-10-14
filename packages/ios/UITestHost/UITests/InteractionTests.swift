@@ -598,6 +598,31 @@ final class InteractionTests: XCTestCase {
         received("none")
     }
 
+    /// Decision 72 (GAP-143), with a real finger: a double tap on a result
+    /// selects it once, at the first tap, and opens it once, at the second;
+    /// a tap after a pause selects again. In a list, and on a group's branch.
+    func testADoubleTapOnAResultSelectsItOnceAndOpensItOnce() {
+        for scenario in ["list-open", "group-open"] {
+            launch(scenario)
+            let row = app.buttons["poi-result-gate%2F12"]
+            XCTAssertTrue(row.waitForExistence(timeout: 3), scenario)
+            row.doubleTap()
+            received("select gate/12|open gate/12")
+            // Past the double-tap time: a new tap, and a selection.
+            Thread.sleep(forTimeInterval: 0.6)
+            row.tap()
+            received("select gate/12|open gate/12|select gate/12")
+            app.terminate()
+        }
+    }
+
+    /// Without onOpen a double tap is two selections, as before.
+    func testWithoutOnOpenADoubleTapSelectsTwice() {
+        launch("list-short")
+        app.buttons["poi-result-gate%2F12"].doubleTap()
+        received("select gate/12|select gate/12")
+    }
+
     func testAnActionPressedInTheListReachesTheApp() {
         launch("list-full")
         app.buttons["Go"].tap()

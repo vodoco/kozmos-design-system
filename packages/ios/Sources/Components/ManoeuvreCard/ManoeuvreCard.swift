@@ -10,8 +10,10 @@ enum KozmosManoeuvreCardPart: Hashable {
 /// itinerary in its place. Theme-filled by default, with contrasting instruction
 /// and detail text. A `surface:` named with no `appearance:` is the neutral
 /// solid or glass surface it names, as a 0.5.0 call got (D6); an `appearance:`
-/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar has a
-/// minimum 44-point activation area.
+/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar sits
+/// 4 points above the card's bottom edge, at the bottom of its 44-point
+/// activation area, and on the theme fill it is drawn quieter than the
+/// instruction (decision 74).
 ///
 /// The card owns the toggle and what VoiceOver hears of it. The itinerary it
 /// opens into is the caller's — `KozmosItinerary`, in the products — so the
@@ -134,6 +136,18 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         }
     }
 
+    /// The grab bar's colour (decision 74, GAP-140). On the theme fill, the
+    /// guidance foreground at 62%: quieter than the instruction, whose white
+    /// reads 5.6:1 on `#135BEC`, and still 3.09:1, over WCAG 1.4.11's 3:1 for
+    /// a control's only visual (60% reads 2.99:1). On a surface,
+    /// background/300 at full strength, as before: already quiet, and dimming
+    /// it would only lower its contrast.
+    static func grabBarColor(_ appearance: KozmosManoeuvreAppearance) -> Color {
+        appearance == .theme
+            ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle.opacity(0.62)
+            : KozmosColors.primitivesColorsBackground300
+    }
+
     /// The card's own toggle: it decides where VoiceOver goes while VoiceOver
     /// is still on the part that was pressed, then asks the product to flip.
     private func toggle() {
@@ -200,12 +214,15 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 .kozmosVoiceOverFocus($voiceOverFocus, .instruction)
             }
             // The grab bar: the sign that the card opens, and the way to close it.
+            // It sits at the bottom of its 44-point target, so 4 above the
+            // card's bottom edge, as an iOS sheet's grabber sits, and the
+            // target grows upward from it (decision 74, GAP-140). It sat in
+            // the target's middle, about 23 above the edge.
             Button(action: toggle) {
                 Capsule()
-                    .fill(appearance == .theme ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground300)
+                    .fill(Self.grabBarColor(appearance))
                     .frame(width: 36, height: 5)
-                    .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .bottom)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

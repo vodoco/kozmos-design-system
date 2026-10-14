@@ -67,7 +67,8 @@ final class KozmosMapShellHostedBrowseTests: XCTestCase {
         let panel = try sheetPanel(in: pixels, size: phone)
         let content = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: phone), where: Self.isMagenta))
         XCTAssertEqual(content.minY - panel.minY, 16, accuracy: 1)
-        XCTAssertEqual(panel.height, 116, accuracy: 1)
+        // 16 above the content, 100 of it, and 16 below it (GAP-085).
+        XCTAssertEqual(panel.height, 132, accuracy: 1)
     }
 
     @MainActor func testGenericSidePanelKeepsTopAndHeaderGapsInBothDirections() async throws {

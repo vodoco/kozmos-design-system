@@ -163,7 +163,11 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// `KozmosRoutePreviewPanel` is, tops it up rather than adding to it
 /// (GAP-083, decision 14). The values describe the panel's top: a part a
 /// product places under its own row there is not at the top, and is told so
-/// by setting both to zero. The panel's surface is told too,
+/// by setting both to zero. The content ends 16 points above the panel's
+/// bottom edge, or in the sheet 16 above the bottom safe area, while a
+/// `KozmosPanelScrollView` scrolls under that space to the edge (GAP-085);
+/// the content is told it is there, `kozmosPanelInsetBottom`, so those parts
+/// top their own bottom padding up to it too. The panel's surface is told too,
 /// `kozmosPanelSurface`: it is the one surface, and a part that fills its own
 /// box standing alone paints no fill on it (decision 43).
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
@@ -471,12 +475,20 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         return drawsGrabber(isRegularWidth: isRegularWidth) ? Self.grabberClearance : Self.panelContentSpacing
     }
 
-    /// The panel's content, told what the panel leaves above it.
+    /// What the panel leaves below its content (GAP-085): 16 points, as
+    /// above it. In a side panel it is above the panel's bottom edge; in the
+    /// sheet, above the bottom safe area, which the sheet adds to it. Handed
+    /// to the content as `kozmosPanelInsetBottom`, so a part with its own
+    /// bottom padding tops it up rather than adding to it.
+    static var panelContentBottom: CGFloat { panelContentSpacing }
+
+    /// The panel's content, told what the panel leaves above and below it.
     private var hostedPanel: some View {
         let top = panelContentTop(isRegularWidth: isRegularWidth)
         return panel
             .environment(\.kozmosPanelInsetTop, top.inset)
             .environment(\.kozmosPanelClearanceTop, top.clearance)
+            .environment(\.kozmosPanelInsetBottom, Self.panelContentBottom)
             .padding(.top, !drawsGrabber(isRegularWidth: isRegularWidth) && panelHeader == nil ? Self.panelContentSpacing : 0)
     }
 
@@ -951,7 +963,11 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         panelHeader.fixedSize(horizontal: false, vertical: true)
                             .padding(.vertical, Self.panelContentSpacing)
                     }
+                    // 16 below the content, as above it: an inset, so a
+                    // `KozmosPanelScrollView` runs to the panel's edge while
+                    // it scrolls and its last row stops 16 above it.
                     hostedPanel
+                        .modifier(KozmosPanelBottomInset(height: Self.panelContentBottom))
                 }
             }
             .environment(\.kozmosPanelFitsContent, true)
@@ -992,8 +1008,9 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                                 // Fitted content never scrolls, so the safe
                                 // areas are plain padding here: a safe-area
                                 // inset would take the whole proposal and the
-                                // sheet would stop fitting.
-                                .padding(.bottom, safeArea.bottom)
+                                // sheet would stop fitting. The content ends
+                                // 16 above the bottom safe area (GAP-085).
+                                .padding(.bottom, safeArea.bottom + Self.panelContentBottom)
                                 .padding(.leading, safeArea.leading)
                                 .padding(.trailing, safeArea.trailing)
                                 .frame(maxWidth: .infinity, alignment: .top)
@@ -1014,7 +1031,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 
                         hostedPanel
                             .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true, safeArea: safeArea))
-                            .modifier(KozmosSheetSafeArea(safeArea: safeArea))
+                            .modifier(KozmosSheetSafeArea(safeArea: safeArea, contentBottom: Self.panelContentBottom))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     }
                     // An explicit height rather than a cap: the panel is laid
@@ -1373,16 +1390,29 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
 }
 
 /// The docked sheet's content keeps the bottom and side safe areas as its own,
-/// so a summary sits above the home indicator while a `KozmosPanelScrollView`
-/// runs under it with its content inset — the sheet's surface itself reaches
-/// the edge.
+/// and `contentBottom` above the bottom one (GAP-085), so a summary sits 16
+/// above the home indicator while a `KozmosPanelScrollView` runs under it with
+/// its content inset — the sheet's surface itself reaches the edge.
 private struct KozmosSheetSafeArea: ViewModifier {
     let safeArea: EdgeInsets
+    let contentBottom: CGFloat
 
     func body(content: Content) -> some View {
         content
-            .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: safeArea.bottom) }
+            .modifier(KozmosPanelBottomInset(height: safeArea.bottom + contentBottom))
             .safeAreaInset(edge: .leading, spacing: 0) { Color.clear.frame(width: safeArea.leading) }
             .safeAreaInset(edge: .trailing, spacing: 0) { Color.clear.frame(width: safeArea.trailing) }
+    }
+}
+
+/// Space below the panel's content that the content keeps clear but a
+/// `KozmosPanelScrollView` scrolls under (GAP-085): plain content stops above
+/// it, and a scrolling list runs to the panel's edge with its content inset
+/// so its last row stops above it, as the web's scroller pads its end.
+private struct KozmosPanelBottomInset: ViewModifier {
+    let height: CGFloat
+
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: height) }
     }
 }
