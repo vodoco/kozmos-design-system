@@ -1127,7 +1127,7 @@
       "id": "feedback-toast",
       "title": "Core/Feedback/Toast",
       "component": "Toast",
-      "exports": ["Default"]
+      "exports": ["Default", "Open"]
     },
     {
       "file": "packages/react/src/components/ToggleButton/ToggleButton.stories.tsx",

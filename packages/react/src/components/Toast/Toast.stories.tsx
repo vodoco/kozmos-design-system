@@ -39,3 +39,25 @@ export const Default: Story = {
     );
   },
 };
+
+/**
+ * The toast as it shows, so a drawing holds its surface: background/0 under
+ * the foreground ink, as SwiftUI and Compose draw it. It stays until it is
+ * closed, so the visual review sees it.
+ */
+export const Open: Story = {
+  render: () => (
+    <ToastProvider duration={Infinity}>
+      <Toast defaultOpen>
+        <div className="grid gap-1">
+          <ToastTitle>Scheduled: Catch up</ToastTitle>
+          <ToastDescription>
+            Friday, February 10, 2023 at 5:57 PM
+          </ToastDescription>
+        </div>
+        <ToastAction altText="Goto schedule">Undo</ToastAction>
+      </Toast>
+      <ToastViewport />
+    </ToastProvider>
+  ),
+};
