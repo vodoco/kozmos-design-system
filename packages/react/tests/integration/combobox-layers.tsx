@@ -80,7 +80,25 @@ function Fixture() {
         </div>
       </ThemeProvider>
     );
-  if (root.dataset.host === "dialog")
+  if (root.dataset.host === "dialog-multi")
+    // A MultiSelect in a modal dialog: the dialog turns pointer events off
+    // outside its layers, so the list in its portal must be a layer of its
+    // own, or a press on a place lands on the dialog's overlay.
+    content = (
+      <ThemeProvider>
+        <Dialog open={open} onOpenChange={change}>
+          <DialogTrigger asChild>
+            <Button>Open</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Choose tags</DialogTitle>
+            <DialogDescription>Choose places</DialogDescription>
+            <MultiSelect label="Tags" options={places} />
+          </DialogContent>
+        </Dialog>
+      </ThemeProvider>
+    );
+  else if (root.dataset.host === "dialog")
     content = (
       <Dialog open={open} onOpenChange={change}>
         <DialogTrigger asChild>

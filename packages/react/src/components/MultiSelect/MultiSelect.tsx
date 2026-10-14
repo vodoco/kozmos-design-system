@@ -1,4 +1,5 @@
 import React from "react";
+import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
@@ -437,47 +438,53 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             </FieldPopupAnchor>
             {open && (
               <FieldPopupContent>
-                <div
-                  ref={popupRef}
-                  data-kozmos-scrollbar={scrollbarFor(presentation)}
-                  id={listboxOpen ? listboxId : undefined}
-                  role={listboxOpen ? "listbox" : "status"}
-                  aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
-                  aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
-                  aria-multiselectable={listboxOpen ? true : undefined}
-                  className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
-                >
-                  {filteredOptions.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      {emptyText}
-                    </div>
-                  ) : (
-                    filteredOptions.map((option, index) => {
-                      const selected = selectedSet.has(option.value);
-                      const disabledOption =
-                        option.disabled || (!selected && atSelectionLimit);
-                      const active = index === activeIndex;
+                {/* A layer of Core's, as Combobox's list is: in its portal it
+                    is outside a modal dialog, which turns pointer events off
+                    everywhere but its layers. No onDismiss: the field closes
+                    it, as before. */}
+                <DismissableLayer asChild>
+                  <div
+                    ref={popupRef}
+                    data-kozmos-scrollbar={scrollbarFor(presentation)}
+                    id={listboxOpen ? listboxId : undefined}
+                    role={listboxOpen ? "listbox" : "status"}
+                    aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
+                    aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
+                    aria-multiselectable={listboxOpen ? true : undefined}
+                    className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
+                  >
+                    {filteredOptions.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        {emptyText}
+                      </div>
+                    ) : (
+                      filteredOptions.map((option, index) => {
+                        const selected = selectedSet.has(option.value);
+                        const disabledOption =
+                          option.disabled || (!selected && atSelectionLimit);
+                        const active = index === activeIndex;
 
-                      return (
-                        <OptionRow
-                          key={option.value}
-                          id={`${inputId}-option-${index}`}
-                          option={option}
-                          selected={selected}
-                          active={active}
-                          disabled={disabledOption}
-                          onMouseEnter={() => {
-                            if (!disabledOption) setActiveIndex(index);
-                          }}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() =>
-                            !disabledOption ? toggleOption(option) : undefined
-                          }
-                        />
-                      );
-                    })
-                  )}
-                </div>
+                        return (
+                          <OptionRow
+                            key={option.value}
+                            id={`${inputId}-option-${index}`}
+                            option={option}
+                            selected={selected}
+                            active={active}
+                            disabled={disabledOption}
+                            onMouseEnter={() => {
+                              if (!disabledOption) setActiveIndex(index);
+                            }}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() =>
+                              !disabledOption ? toggleOption(option) : undefined
+                            }
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+                </DismissableLayer>
               </FieldPopupContent>
             )}
           </div>

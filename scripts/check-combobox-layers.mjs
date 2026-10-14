@@ -172,6 +172,57 @@ try {
       await page.close();
     }
   }
+  // A MultiSelect in a modal dialog: its list is in a portal, outside the
+  // dialog, which turns pointer events off everywhere but its layers. A press
+  // on a place must choose it and leave the dialog open.
+  {
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 800 },
+      reducedMotion: "reduce",
+    });
+    try {
+      await page.setContent(
+        '<div id="root" data-host="dialog-multi" data-layout="overlay"></div>',
+      );
+      await page.addStyleTag({ content: css });
+      await page.addScriptTag({ content: code });
+      await page.getByRole("button", { name: "Open", exact: true }).click();
+      await page.getByRole("combobox", { name: "Tags" }).click();
+      const place = page.getByRole("option", { name: "Place 3" });
+      await place.waitFor();
+      // A real press at the option's centre, as a pointer makes it: the
+      // dialog's overlay takes it if the list is not a layer.
+      const at = await place.evaluate((node) => {
+        const r = node.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      await page.mouse.click(at.x, at.y);
+      await page.waitForTimeout(200);
+      assert.equal(
+        await page.locator("[data-close-count]").textContent(),
+        "0",
+        "MultiSelect in a dialog: a press on a place closed the dialog",
+      );
+      assert.equal(
+        await page.getByRole("dialog").count(),
+        1,
+        "MultiSelect in a dialog: the dialog is gone",
+      );
+      assert.equal(
+        await page
+          .getByRole("option", { name: "Place 3" })
+          .getAttribute("aria-selected"),
+        "true",
+        "MultiSelect in a dialog: a press on a place did not choose it",
+      );
+      console.log(
+        "PASS MultiSelect in a modal dialog: a press chooses a place",
+      );
+      count++;
+    } finally {
+      await page.close();
+    }
+  }
   // GAP-137: the list scrolls in the listbox the field controls, not in an
   // unnamed wrapper axe can't reach (scrollable-region-focusable).
   for (const layout of ["inline", "overlay"]) {
