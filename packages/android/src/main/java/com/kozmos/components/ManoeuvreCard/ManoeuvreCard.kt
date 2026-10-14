@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -80,8 +81,10 @@ private val GripHeight = 5.dp
 private val GripTarget = 48.dp
 
 /**
- * How far the grip's target reaches up over the content: its 48 less the 21
- * the card keeps under the content (the 12 gap, the grip and the 4 under it).
+ * How far the grip's target reaches above the 21 the card keeps under the
+ * content (the 12 gap, the grip and the 4 under it): its 48 less those 21.
+ * Closed, it reaches over the instruction row's foot; open, over a fixed
+ * space this tall under the itinerary, never over the itinerary itself.
  */
 internal val ManoeuvreGripOverlap: Dp =
     GripTarget - (KozmosDimensions.primitivesLayoutSpacing150 + GripHeight + KozmosDimensions.primitivesLayoutSpacing50)
@@ -245,7 +248,8 @@ fun KozmosManoeuvreCard(
         ) {
         val instructionText = instructionAnnotatedText(instruction, surface)
         val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
-        // Under the content: 12, the 5dp grip, and the card's 4 (decision 74).
+        // Under the content: 12, the 5dp grip, and the card's 4 (decision 74);
+        // open, the itinerary keeps the overlap's 27 above the 12 as well.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -267,13 +271,17 @@ fun KozmosManoeuvreCard(
                             else if (focused == ManoeuvreCardPart.Itinerary) focused = null
                         }
                         .verticalScroll(rememberScrollState())
-                        // Inside what scrolls: scrolled to its end, the last
-                        // row clears the grab bar's target, which reaches this
-                        // far up over the itinerary's foot.
-                        .padding(bottom = ManoeuvreGripOverlap)
                 ) {
                     itinerary()
                 }
+                // Outside what scrolls, between the itinerary and the grip's
+                // 12: the grab bar's target reaches this far up, and no
+                // further, so it never covers a row of the itinerary at any
+                // scroll position; the scroller ends 48 above the card's edge.
+                // Padding inside the scroll cleared the last row only at the
+                // end: mid-scroll the target took taps and drags meant for
+                // the rows under it.
+                Spacer(Modifier.height(ManoeuvreGripOverlap))
             } else {
                 // The instruction row is the button: a tap anywhere on it opens
                 // the itinerary, and TalkBack hears the manoeuvre with the action.
@@ -345,8 +353,8 @@ fun KozmosManoeuvreCard(
             // bottom edge over the grip, the gap and the content's foot,
             // never down onto the map. Drawn after the content, it is the
             // first thing a touch there finds: closed, the instruction row
-            // under it does the same; open, the itinerary keeps the overlap
-            // clear at its end.
+            // under it does the same; open, a fixed space of the overlap's
+            // height under the itinerary is all it covers.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

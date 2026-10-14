@@ -35,14 +35,16 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Decision 74, tightened on 14 Oct: under the content — the instruction row
- * closed, the itinerary open — the card keeps its 12, the 5dp grip and 4 to
- * its bottom edge, 21 in all; it kept a 52dp row there, the grip at its foot.
- * The grab bar's target is still 48 tall, reaching up from the card's bottom
- * edge over the grip, the gap and the content's foot, and a touch there finds
- * the bar first. Open, the itinerary keeps that overlap clear at its end, so
- * scrolled to the end its last row is not under the target. Laid out as a
- * device lays it out; touches are a finger's, dispatched to the view.
+ * Decision 74, tightened on 14 Oct: under the instruction row the closed
+ * card keeps its 12, the 5dp grip and 4 to its bottom edge, 21 in all; it
+ * kept a 52dp row there, the grip at its foot. The grab bar's target is still
+ * 48 tall, reaching up from the card's bottom edge over the grip, the gap and
+ * the row's foot, and a touch there finds the bar first. Open, a fixed 27
+ * under the itinerary's scroller takes the rest of the target, so the
+ * scroller ends 48 above the edge and the target covers none of its rows at
+ * any scroll position (the review of 15 Oct: padding inside the scroll
+ * cleared the last row only at the end). Laid out as a device lays it out;
+ * touches are a finger's, dispatched to the view.
  */
 class KozmosManoeuvreCardTargetTest {
     @get:Rule
@@ -107,17 +109,92 @@ class KozmosManoeuvreCardTargetTest {
         frames(3)
     }
 
+    /** In dp: from [bottom] up to the card's bottom edge. */
+    private fun above(card: androidx.compose.ui.geometry.Rect, bottom: Float) = (card.bottom - bottom) / density
+
     @Test
-    fun theContentEndsTwentyOneAboveTheCardsBottomEdge() {
-        for (appearance in KozmosManoeuvreAppearance.values()) for (expanded in listOf(false, true)) {
-            val tree = paparazzi.readSemantics { Card(appearance, expanded) }
-            val card = tree.named("Current manoeuvre").frame
-            // Closed, the instruction row; open, the itinerary's scroller.
-            val content = if (expanded) tree.merged.single { it.scrollBy != null }.frame else tree.named("Continue ahead").frame
-            val gap = (card.bottom - content.bottom) / density
-            val case = "$appearance, ${if (expanded) "open" else "closed"}"
-            println("Decision 74 Android, $case: the content ends ${"%.2f".format(gap)}dp above the card's bottom edge")
-            assertEquals("$case: the content ends ${gap}dp above the card's bottom edge", 21f, gap, 1f)
+    fun closedTheInstructionEndsTwentyOneAboveTheCardsBottomEdge() {
+        for (appearance in KozmosManoeuvreAppearance.values()) {
+            val tree = paparazzi.readSemantics { Card(appearance, expanded = false) }
+            val gap = above(tree.named("Current manoeuvre").frame, tree.named("Continue ahead").frame.bottom)
+            println("Decision 74 Android, $appearance, closed: the instruction ends ${"%.2f".format(gap)}dp above the card's bottom edge")
+            assertEquals("$appearance: the instruction ends ${gap}dp above the card's bottom edge", 21f, gap, 1f)
+        }
+    }
+
+    /** A short itinerary, which does not scroll. */
+    @Test
+    fun openTheItinerarysScrollerEndsFortyEightAboveTheCardsBottomEdge() {
+        for (appearance in KozmosManoeuvreAppearance.values()) {
+            val tree = paparazzi.readSemantics { Card(appearance, expanded = true) }
+            val gap = above(tree.named("Current manoeuvre").frame, tree.merged.single { it.scrollBy != null }.frame.bottom)
+            println("Decision 74 Android, $appearance, open: the itinerary's scroller ends ${"%.2f".format(gap)}dp above the card's bottom edge")
+            assertEquals("$appearance: the itinerary's scroller ends ${gap}dp above the card's bottom edge", 48f, gap, 1f)
+        }
+    }
+
+    /**
+     * Scrolls a long itinerary partway, 100dp of its 160 or so, leaving a row
+     * cut by the scroller's foot, and waits for it to come to rest: the
+     * scroll TalkBack asks for is animated, and a press while it runs only
+     * stops it, reaching no row. It runs on below a pixel after the rows
+     * look still: measured here, a tap at once reached nothing, and one 20
+     * frames later reached its row.
+     */
+    private suspend fun LiveSemantics.scrollToTheMiddle() {
+        fun top() = read().merged.single { it.description == "Step 1" }.frame.top
+        val start = top()
+        read().merged.single { it.scrollBy != null }.scrollBy!!.invoke(0f, 100 * density)
+        var previous = start
+        for (frame in 1..60) {
+            frames(1)
+            val now = top()
+            if (now != start && now == previous) break
+            previous = now
+        }
+        check(top() != start) { "the itinerary never scrolled" }
+        frames(20)
+    }
+
+    @Test
+    fun midScrollTheTargetCoversNoRowOfTheItinerary() {
+        for (appearance in KozmosManoeuvreAppearance.values()) {
+            paparazzi.live(durationMillis = 6000, content = { Card(appearance, expanded = true) { Steps(mutableListOf()) } }) {
+                frames(2)
+                scrollToTheMiddle()
+                val tree = read()
+                val card = tree.named("Current manoeuvre").frame
+                val scroller = tree.merged.single { it.scrollBy != null }.frame
+                val target = tree.named("Hide itinerary").frame
+                val gap = above(card, scroller.bottom)
+                println("Decision 74 Android, $appearance, open mid-scroll: the scroller ends ${"%.2f".format(gap)}dp above the card's edge, the target's top ${"%.2f".format(above(card, target.top))}")
+                assertTrue("$appearance: mid-scroll the scroller ends ${gap}dp above the card's edge, under the target", gap >= 48f - 0.5f)
+                assertTrue("$appearance: the target reaches ${(scroller.bottom - target.top) / density}dp over the scroller", target.top >= scroller.bottom - 0.5f * density)
+            }
+        }
+    }
+
+    /** The row at the scroller's foot, cut by it: a tap on what shows of it is that row's, not the bar's. */
+    @Test
+    fun midScrollATapOnTheLastVisibleRowReachesItsControl() {
+        for (appearance in KozmosManoeuvreAppearance.values()) {
+            val expanded = mutableStateOf(true)
+            val tapped = mutableListOf<Int>()
+            paparazzi.live(durationMillis = 6000, content = {
+                Card(appearance, expanded.value, onToggle = { expanded.value = !expanded.value }) { Steps(tapped) }
+            }) {
+                frames(2)
+                scrollToTheMiddle()
+                val tree = read()
+                val shown = tree.merged.filter { it.description?.startsWith("Step ") == true && it.bounds.height > 1f }
+                val last = shown.maxBy { it.bounds.bottom }
+                val step = last.description!!.removePrefix("Step ").toInt()
+                println("Decision 74 Android, $appearance: step $step is the last row shown, ${last.bounds.height / density}dp of it")
+                tap(last.bounds.center.x, last.bounds.center.y)
+                println("Decision 74 Android, $appearance: the tap on step $step reached steps $tapped; the card is ${if (expanded.value) "open" else "closed"}")
+                assertEquals("$appearance: the tap on step $step's visible part went elsewhere", listOf(step), tapped)
+                assertEquals("$appearance: the tap on step $step closed the card", true, expanded.value)
+            }
         }
     }
 
@@ -134,9 +211,8 @@ class KozmosManoeuvreCardTargetTest {
         }
     }
 
-    /** Open, the itinerary is under the target's top: the bar takes the tap, not the step drawn there. */
     @Test
-    fun aTapFortyAboveTheBottomEdgeClosesTheOpenCardNotTheStepUnderIt() {
+    fun aTapFortyAboveTheBottomEdgeClosesTheOpenCard() {
         for (appearance in KozmosManoeuvreAppearance.values()) {
             val expanded = mutableStateOf(true)
             val tapped = mutableListOf<Int>()
@@ -146,7 +222,7 @@ class KozmosManoeuvreCardTargetTest {
                 frames(2)
                 val card = read().named("Current manoeuvre").frame
                 tap(card.center.x, card.bottom - 40 * density)
-                assertEquals("$appearance: a step under the target took the tap", emptyList<Int>(), tapped)
+                assertEquals("$appearance: a step took the tap", emptyList<Int>(), tapped)
                 assertEquals("$appearance: a tap 40 above the open card's bottom edge did not close it", false, expanded.value)
             }
         }
