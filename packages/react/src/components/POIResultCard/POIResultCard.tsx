@@ -270,7 +270,9 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     // A double tap is the second press within the platform's double-tap
     // time: the browser counts clicks in `detail` (by the OS's double-click
     // setting); a touch browser that reports every tap as 1 is timed here.
-    // `detail` 0 is a keyboard press, which always selects.
+    // Either way this result saw the first press: a browser counts by time
+    // and place, so a first press that moved the list can put another result
+    // under the second. `detail` 0 is a keyboard press, which always selects.
     const lastPress = React.useRef<number | null>(null);
     const handleSelect = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (!available) return;
@@ -278,8 +280,8 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         if (event.detail > 2) return;
         const previous = lastPress.current;
         const second =
-          event.detail === 2 ||
-          (previous !== null && event.timeStamp - previous < DOUBLE_TAP_MS);
+          previous !== null &&
+          (event.detail === 2 || event.timeStamp - previous < DOUBLE_TAP_MS);
         if (second) {
           lastPress.current = null;
           trackEvent("POIResultCard", "poi_result_opened", {

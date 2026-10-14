@@ -68,6 +68,25 @@ describe("POIResultList onOpen", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  it("selects, not opens, when the first click of a double click landed elsewhere", () => {
+    // A browser counts clicks by time and place, not by element: a first
+    // click that moves the list (a group's "Show more") can put another
+    // result under the pointer for the second, which arrives as detail 2.
+    const { onSelect, onOpen, button } = setup();
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /^Tessel Shoes/ })[0],
+      {
+        detail: 1,
+      },
+    );
+    fireEvent.click(button(/Tessel Shoes Outlet/), { detail: 2 });
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenLastCalledWith("shoes-2");
+    fireEvent.click(button(/Bean & Leaf Café/), { detail: 2 });
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenLastCalledWith("cafe");
+  });
+
   it("opens once on a triple click", () => {
     const { onOpen, button } = setup();
     const cafe = button(/Bean & Leaf Café/);
