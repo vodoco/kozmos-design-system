@@ -32,8 +32,8 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
   - Analytics: an open is reported as `poi_result_opened` with `poiId` and `resultIndex`, as React reports it, and not as a selection.
   - Without `onOpen` every tap selects, as before. Both parameters come after the released ones, with defaults, so existing calls compile; on the list they come before the `emptyState` builder.
 - **ManoeuvreCard is tighter, its grab bar lower and quieter (decision 74, GAP-140):**
-  - Below the content (the instruction row closed, the itinerary open) come the card's 12pt, the 36 × 5 grip and 4pt to the card's bottom edge, 21pt in all, as an iOS sheet's grabber sits. The bar's row is the grip alone: it was a 44pt row with the grip in its middle, 60pt below the content, about 50pt of it empty. The card is 39pt shorter.
-  - The bar's activation area stays 44pt tall: it lies over the card and reaches up from its bottom edge over the 4pt, the grip, the 12pt and the content's bottom 23pt, and wins there. Closed, that is the foot of the instruction row, which opens the card too. Open, a scrolling itinerary keeps 23pt clear at its end, so scrolled to its end its last row is never under the bar.
+  - Below the instruction row come the card's 12pt, the 36 × 5 grip and 4pt to the card's bottom edge, 21pt in all, as an iOS sheet's grabber sits. The bar's row is the grip alone: it was a 44pt row with the grip in its middle, 60pt below the content, about 50pt of it empty. Open, a fixed 23pt more lies under the itinerary (below). The closed card is 39pt shorter, the open card 16pt shorter.
+  - The bar's activation area stays 44pt tall: it lies over the card and reaches up from its bottom edge over the 4pt, the grip, the 12pt and 23pt more, and wins there. Closed, those 23pt are the foot of the instruction row, which opens the card too. Open, they are a fixed space between the itinerary and the 12pt, outside its scroll view, scrolling or not: the itinerary's viewport ends 44pt above the card's edge, so the bar never covers a row at any scroll position, and a tap or a drag low in the list, a destination's Change button among it, reaches the itinerary.
   - On the theme appearance the grip is the guidance foreground at 62%, 3.09:1 on `#135BEC` (WCAG 1.4.11's 3:1 for a control's only visual), where it was full white, as loud as the instruction. On the background appearance it stays background/300 at full strength.
   - The bar's name, VoiceOver's order and focus, and what it does are unchanged.
 - **Featured is the accent (decisions 67, 68):**
@@ -76,7 +76,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Migration notes
 
-- **ManoeuvreCard (decision 74):** the card is 39pt shorter, and the bottom 23pt of an itinerary that fits without scrolling lies under the bar's activation area, which closes the card. Review screenshot baselines, and anything placed under the card by its height.
+- **ManoeuvreCard (decision 74):** the closed card is 39pt shorter and the open card 16pt shorter. Review screenshot baselines, and anything placed under the card by its height.
 - **Map shell (GAP-085):** panel content you host ends 16pt above the panel's bottom edge, or above the sheet's bottom safe area, and a fitted panel is 16pt taller. Remove a bottom padding of your own that stood in for it, and review screenshot baselines for panels and sheets. Content that drew a fill to the panel's edge now stops 16 short of it: let the panel's surface (`panelSurface`) draw it.
 - Toned summary values are darker in light and lighter in dark. Review screenshot baselines for details cards that set `tone`.
 - A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.

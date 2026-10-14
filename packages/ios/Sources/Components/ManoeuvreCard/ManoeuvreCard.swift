@@ -13,8 +13,9 @@ enum KozmosManoeuvreCardPart: Hashable {
 /// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar sits
 /// 12 points under the content and 4 above the card's bottom edge, a row no
 /// taller than itself; its 44-point activation area reaches up from the
-/// card's edge over the content's foot. On the theme fill it is drawn
-/// quieter than the instruction (decision 74).
+/// card's edge over the instruction row's foot, or, open, over a 23-point
+/// space under the itinerary. On the theme fill it is drawn quieter than the
+/// instruction (decision 74).
 ///
 /// The card owns the toggle and what VoiceOver hears of it. The itinerary it
 /// opens into is the caller's — `KozmosItinerary`, in the products — so the
@@ -139,18 +140,20 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
 
     /// The grab bar's grip, and all of its row: the card is laid out with
     /// the content, its 12, the grip and its 4 to the edge, 21 below the
-    /// content (decision 74, GAP-140). Its row was 44 tall, the content 60
-    /// above the edge with about 50 empty above the grip.
+    /// instruction row, and open 23 more below the itinerary (decision 74,
+    /// GAP-140). Its row was 44 tall, the content 60 above the edge with
+    /// about 50 empty above the grip.
     static var gripHeight: CGFloat { 5 }
 
     /// The bar's activation area, reaching up from the card's bottom edge.
     static var barTargetHeight: CGFloat { 44 }
 
-    /// How far the bar's activation area reaches up over the content: 44 less
-    /// the card's 4 below the grip, the grip and the 12 above it, 23. Closed,
+    /// How far the bar's activation area reaches above the 12 over the grip:
+    /// 44 less the card's 4 below the grip, the grip and the 12, 23. Closed,
     /// that is the foot of the instruction row, which opens the card too.
-    /// Open, it is the itinerary's foot, which a scrolling itinerary keeps
-    /// clear at its end.
+    /// Open, a fixed space this tall lies under the itinerary, outside its
+    /// scroll view, so the area never covers any of the itinerary at any
+    /// scroll position.
     static var barTargetOverlap: CGFloat {
         barTargetHeight - KozmosDimensions.primitivesLayoutSpacing50 - gripHeight
             - KozmosDimensions.primitivesLayoutSpacing150
@@ -192,10 +195,6 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                         ScrollView {
                             itinerary
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                // Scrolled to its end, the last row stops
-                                // above the bar's activation area, which
-                                // reaches this far up over the itinerary.
-                                .padding(.bottom, Self.barTargetOverlap)
                         }
                     }
                 }
@@ -203,6 +202,12 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 // one container around whatever the product put in it.
                 .accessibilityElement(children: .contain)
                 .kozmosVoiceOverFocus($voiceOverFocus, .itinerary)
+                // The bar's activation area reaches 23 above the 12 over the
+                // grip: a fixed space under the itinerary's viewport, outside
+                // its scroll view, so no row is ever under the area, at any
+                // scroll position, and a tap or a drag low in the list (a
+                // destination's Change button) reaches the itinerary.
+                .padding(.bottom, Self.barTargetOverlap)
             } else {
                 // The instruction row is the button: a tap anywhere on it opens
                 // the itinerary, and VoiceOver hears the manoeuvre with that hint.
@@ -271,9 +276,10 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
     /// The grab bar: the sign that the card opens, and the way to close it.
     /// The grip sits 4 above the card's bottom edge, as an iOS sheet's
     /// grabber does, at the foot of a 44-point activation area that reaches
-    /// up from the edge over the card's 4, the grip, the 12 above it and the
-    /// content's bottom 23 (decision 74, GAP-140). It lies over the card, so
-    /// it changes nothing of the layout.
+    /// up from the edge over the card's 4, the grip, the 12 above it and 23
+    /// more (decision 74, GAP-140): closed, the instruction row's foot; open,
+    /// the space under the itinerary. It lies over the card, so it changes
+    /// nothing of the layout.
     private var grabBar: some View {
         Button(action: toggle) {
             Capsule()

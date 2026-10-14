@@ -404,17 +404,21 @@ final class KozmosManoeuvreCardTests: XCTestCase {
         }
     }
 
-    /// Below the content, closed (the instruction row) and open (the
-    /// itinerary): the card's 12, the 5-point grip and 4 to the card's edge,
-    /// 21 in all, on either appearance. The bar's row is the grip alone; it
-    /// was 44 tall, and the content ended 60 above the edge with about 50
-    /// empty above the grip.
+    /// Closed, below the instruction row: the card's 12, the 5-point grip
+    /// and 4 to the card's edge, 21 in all; the bar's row is the grip alone.
+    /// It was 44 tall, and the content ended 60 above the edge with about 50
+    /// empty above the grip. Open, a fixed 23 lies between the itinerary and
+    /// the 12, outside its scroll view, so the itinerary ends 44 above the
+    /// edge, where the bar's activation area ends: the area never covers any
+    /// of it, a destination's Change button (`onEditDestination`) included.
+    /// On either appearance.
     ///
     /// The card's edge is its frame, as VoiceOver reads it. Closed, the
     /// content is the instruction row, VoiceOver's element; open, it is a
-    /// magenta itinerary, found where it is drawn in the same window (a
-    /// plain view inside the itinerary reaches no element in process).
-    @MainActor func testTheContentEndsTwentyOneAboveTheCardsBottomEdge() async throws {
+    /// short magenta itinerary, one that does not scroll, found where it is
+    /// drawn in the same window (a plain view inside the itinerary reaches
+    /// no element in process).
+    @MainActor func testTheInstructionEndsTwentyOneAboveTheCardsEdgeAndTheItineraryFortyFour() async throws {
         try readAsVoiceOverDoes()
         let magenta = Color(red: 1, green: 0, blue: 1)
         for appearance in [KozmosManoeuvreAppearance.theme, .background] {
@@ -441,47 +445,48 @@ final class KozmosManoeuvreCardTests: XCTestCase {
                     contentBottom = try XCTUnwrap(elements.first { $0.accessibilityLabel == "Turn right" },
                                                   "\(name): the instruction row is not found").accessibilityFrame.maxY
                 }
-                XCTAssertEqual(card.maxY - contentBottom, 21, accuracy: 1,
-                               "\(name): the content ends \(card.maxY - contentBottom) above the card's edge")
+                // Open, the itinerary clears the bar's 44-point activation area.
+                let expected: CGFloat = expanded ? 44 : 21
+                XCTAssertEqual(card.maxY - contentBottom, expected, accuracy: 1,
+                               "\(name): the content ends \(card.maxY - contentBottom) above the card's edge, not \(expected)")
             }
         }
     }
 
-    /// Open, a long itinerary scrolls; scrolled to its end, its last row ends
-    /// above the bar's target, which reaches 23 up over the itinerary, so
-    /// the row is never under it: the scroll content keeps that much clear
-    /// at its end.
-    @MainActor func testScrolledToItsEndTheItinerarysLastRowClearsTheBarsTarget() async throws {
-        let magenta = Color(red: 1, green: 0, blue: 1)
-        let window = await host(
-            KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: true, onToggle: {}) {
-                VStack(spacing: 0) {
-                    Color.green.frame(height: 600)
-                    magenta.frame(height: 30)
-                }
-            }
-            .environment(\.colorScheme, .light)
-        )
-        defer { window.isHidden = true }
-        let scroll = try XCTUnwrap(scrollView(in: window), "the itinerary past the cap does not scroll")
-        let end = scroll.contentSize.height + scroll.adjustedContentInset.bottom - scroll.bounds.height
-        scroll.setContentOffset(CGPoint(x: 0, y: max(end, 0)), animated: false)
-        await settle()
-        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
-        let pixels = try RenderedPixels(image, pointWidth: window.bounds.width)
-        let attachment = XCTAttachment(image: pixels.image)
-        attachment.name = "grab-bar-itinerary-scrolled"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        let whole = window.bounds
-        let theme = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
-        let card = try XCTUnwrap(pixels.boundingBox(in: whole) { r, g, b in Self.near((r, g, b), theme) }, "no card drawn")
-        let last = try XCTUnwrap(pixels.boundingBox(in: whole) { r, g, b in r > 200 && g < 80 && b > 200 },
-                                 "the itinerary's last row is not shown at its end")
-        XCTAssertEqual(last.height, 30, accuracy: 1, "the last row is cut: \(last)")
-        let targetTop = card.maxY - 44
-        XCTAssertLessThanOrEqual(last.maxY, targetTop + 1,
-                                 "the last row ends \(card.maxY - last.maxY) above the card's edge, under the bar's target from \(44)")
+    /// Open, a long itinerary scrolls in a viewport that ends 44 above the
+    /// card's edge, so the bar's activation area, 44 up from the edge, never
+    /// covers it: scrolled to its middle, every row in view, the lowest
+    /// included, takes its own taps and drags. Padding inside the scroll
+    /// content would clear the last row only at the end, and the viewport
+    /// ran to 21 above the edge. On either appearance.
+    @MainActor func testMidScrollTheItinerarysViewportEndsClearOfTheBarsTarget() async throws {
+        try readAsVoiceOverDoes()
+        for appearance in [KozmosManoeuvreAppearance.theme, .background] {
+            let window = await host(
+                KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: true, onToggle: {},
+                                    appearance: appearance) { Color.green.frame(height: 1200) }
+                .environment(\.colorScheme, .light)
+            )
+            defer { window.isHidden = true }
+            let card = try XCTUnwrap(voiceOverTree(in: window).first { $0.accessibilityLabel == "Current manoeuvre" },
+                                     "\(appearance): the card is not named").accessibilityFrame
+            let scroll = try XCTUnwrap(scrollView(in: window), "\(appearance): the itinerary past the cap does not scroll")
+            let end = scroll.contentSize.height + scroll.adjustedContentInset.bottom - scroll.bounds.height
+            scroll.setContentOffset(CGPoint(x: 0, y: (end / 2).rounded()), animated: false)
+            await settle()
+            XCTAssertGreaterThan(scroll.contentOffset.y, 100, "\(appearance): the itinerary did not scroll")
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
+            let pixels = try RenderedPixels(image, pointWidth: window.bounds.width)
+            let attachment = XCTAttachment(image: pixels.image)
+            attachment.name = "grab-bar-itinerary-mid-scroll-\(appearance)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            let viewport = try XCTUnwrap(pixels.boundingBox(in: window.bounds) { r, g, b in g > 150 && r < 120 && b < 140 },
+                                         "\(appearance): the itinerary is not drawn")
+            XCTAssertEqual(viewport.height, 320, accuracy: 1, "\(appearance): not the capped viewport: \(viewport)")
+            XCTAssertEqual(card.maxY - viewport.maxY, 44, accuracy: 1,
+                           "\(appearance): the viewport ends \(card.maxY - viewport.maxY) above the card's edge, under the bar's 44")
+        }
     }
 }
 #endif
