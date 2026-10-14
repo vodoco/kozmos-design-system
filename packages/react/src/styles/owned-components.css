@@ -554,6 +554,17 @@
       var(--primitives-colors-background-300)
     );
   }
+  /* On the theme fill the bar is quieter than the instruction: the guidance
+     foreground at 62%, 3.09:1 on #135BEC, where 60% would be 2.99:1
+     (decision 74, GAP-140). The background card's grey bar is already
+     quiet and stays as it was. */
+  .kozmos-manoeuvre-card[data-appearance="theme"] .kozmos-manoeuvre-grip {
+    background-color: color-mix(
+      in srgb,
+      var(--kozmos-guidance-foreground) 62%,
+      transparent
+    );
+  }
   .kozmos-manoeuvre-card button:focus-visible {
     outline: 2px solid
       var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));

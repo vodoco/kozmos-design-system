@@ -192,6 +192,9 @@ const READS = [
   ["toggle", "", "color", "ink"],
   ["manoeuvre", ".kozmos-manoeuvre-card", "backgroundColor", "fill"],
   ["manoeuvre", ".kozmos-manoeuvre-instruction", "color", "ink"],
+  // The drag indicator is quieter than the instruction and still 3:1 on the
+  // fill (decision 74, GAP-140).
+  ["manoeuvre", ".kozmos-manoeuvre-grip", "backgroundColor", "grip"],
   ["user-message", ".rounded-container", "backgroundColor", "fill"],
   ["user-message", ".rounded-container", "color", "ink"],
   [
@@ -506,6 +509,29 @@ try {
   await page.addScriptTag({ content: code });
   await page.getByTestId("dark-rating").waitFor();
   await settleLayout(page);
+  // The drag indicator sits at the foot of its target, 4 above the card's
+  // edge (about 4, ±1), and the target stays 44 tall (decision 74, GAP-140).
+  for (const theme of ["light", "dark"]) {
+    const box = await page
+      .getByTestId(`${theme}-manoeuvre`)
+      .evaluate((root) => {
+        const card = root.querySelector(".kozmos-manoeuvre-card");
+        const grip = root.querySelector(".kozmos-manoeuvre-grip");
+        const target = root.querySelector(".kozmos-manoeuvre-disclosure");
+        if (!card || !grip || !target) return null;
+        const c = card.getBoundingClientRect();
+        return {
+          gap: c.bottom - grip.getBoundingClientRect().bottom,
+          target: target.getBoundingClientRect().height,
+        };
+      });
+    read += 1;
+    if (!box) failures.push(`${theme} manoeuvre: no card, grip or target`);
+    else if (Math.abs(box.gap - 4) > 1 || box.target < 44)
+      failures.push(
+        `${theme} manoeuvre: the drag indicator sits ${box.gap.toFixed(1)} above the card's edge (want about 4) on a ${box.target.toFixed(1)}px target (want 44 or more)`,
+      );
+  }
   for (const theme of ["light", "dark"]) {
     for (const [part, selector, property, kind] of READS) {
       const testId = `${theme}-${part}`;
@@ -526,6 +552,20 @@ try {
         { selector, property },
       );
       read += 1;
+      if (kind === "grip") {
+        const alpha = actual.rgba[3] / 255;
+        const over = [0, 1, 2].map((index) =>
+          Math.round(
+            actual.rgba[index] * alpha + THEME_FILL[index] * (1 - alpha),
+          ),
+        );
+        const ratio = contrast(over, THEME_FILL);
+        if (actual.rgba[3] === 255 || ratio < RING_MIN)
+          failures.push(
+            `${theme} ${part} ${selector} ${property}: ${actual.css}; the drag indicator should be quieter than solid and at least ${RING_MIN}:1 on the fill, but reads ${ratio.toFixed(2)}:1 at alpha ${alpha.toFixed(2)}`,
+          );
+        continue;
+      }
       const want = expected(kind, theme);
       const where = `${theme} ${part}${selector ? ` ${selector}` : ""} ${property}`;
       if (actual.missing) {
