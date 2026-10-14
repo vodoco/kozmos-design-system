@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "4ddc8c57269c";
+const PLUGIN_BUILD = "83e94a8b8d52";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -46079,7 +46079,8 @@ async function rebuildItineraryComponent() {
 // Under both, the grab bar: a 36 by 5 pill, 12 under the content (the card's
 // spacing) and 4 above its edge (its bottom padding), so the card ends 21 under
 // its content (decision 74, GAP-140); the code's 44 target reaches up over that
-// space invisibly. On the theme fill the pill is at 62% (3.09:1 on #135BEC),
+// space invisibly. Open, the itinerary keeps 23 under its rows, so the card
+// ends 44 under them and the target covers none. On the theme fill the pill is at 62% (3.09:1 on #135BEC),
 // set on the layer, as a strength on an opaque token is; the background card's
 // grey pill stays whole.
 //
@@ -46253,11 +46254,14 @@ async function createManoeuvreItinerary({
   variableByName,
   stats,
 }) {
+  // 23 under the rows: with the card's 12, the grip's 5 and its 4, the open
+  // card ends 44 under them, so the code's 44 target never covers a row.
   const list = productSdkFrame("Itinerary", {
     direction: "vertical",
     primarySizing: "AUTO",
     counterSizing: "FIXED",
     spacing: 8,
+    paddingBottom: 23,
     width: MANOEUVRE_CARD_CONTENT_WIDTH,
     height: 200,
   });

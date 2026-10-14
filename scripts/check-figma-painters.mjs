@@ -3205,11 +3205,12 @@ section("ManoeuvreCard");
           first.name === "Itinerary" &&
             first.width === 346 &&
             first.itemSpacing === 8 &&
+            first.paddingBottom === 23 &&
             rows[0].name === "Origin Row" &&
             rows[rows.length - 1].name === "Destination Row" &&
             steps.length === 4 &&
             !component.findOne((node) => node.name === "Manoeuvre Instruction"),
-          `${label}: the itinerary in the instruction's place, 346 wide: From, four steps and To, 8 apart`,
+          `${label}: the itinerary in the instruction's place, 346 wide: From, four steps and To, 8 apart, 23 under them so the card ends 44 under its rows, clear of the grab bar's target (padding ${first.paddingBottom})`,
         );
         const texts = first.findAll((node) => node.type === "TEXT");
         const textTokens = [...new Set(texts.map(token))].sort();
