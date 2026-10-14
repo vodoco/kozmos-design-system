@@ -352,7 +352,16 @@ const AICompanionPanel = React.forwardRef<
             </IconButton>
           )}
         </div>
-        {banner && <div className="shrink-0 px-4 pt-4">{banner}</div>}
+        {/* Space and a divider under it, as under the header, so the thread
+            no longer scrolls up flush against a pinned notice (GAP-063). */}
+        {banner && (
+          <div
+            className="shrink-0 border-b border-border px-4 pb-3 pt-4"
+            data-slot="ai-companion-banner"
+          >
+            {banner}
+          </div>
+        )}
         {children}
       </div>
     );

@@ -820,4 +820,12 @@ describe("AICompanionPanel", () => {
     expect(close).toHaveClass("h-11", "w-11");
     expect(close).not.toHaveClass("rounded-pill");
   });
+
+  it("leaves space and a divider under its banner (GAP-063)", () => {
+    const { container } = render(
+      <AICompanionPanel banner={<p>AI results may be incomplete.</p>} />,
+    );
+    const banner = container.querySelector('[data-slot="ai-companion-banner"]');
+    expect(banner).toHaveClass("pb-3", "border-b", "border-border");
+  });
 });
