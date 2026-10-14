@@ -441,8 +441,16 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 {/* A layer of Core's, as Combobox's list is: in its portal it
                     is outside a modal dialog, which turns pointer events off
                     everywhere but its layers. No onDismiss: the field closes
-                    it, as before. */}
-                <DismissableLayer asChild>
+                    it, as before. Escape in the input is the input's own
+                    (after IME and host handling); on the field's buttons
+                    (a chip's remove, clear, the chevron) the layer closes
+                    the list, since it, the topmost, keeps the dialog's. */}
+                <DismissableLayer
+                  asChild
+                  onEscapeKeyDown={(event) => {
+                    if (event.target !== inputRef.current) setOpen(false);
+                  }}
+                >
                   <div
                     ref={popupRef}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}

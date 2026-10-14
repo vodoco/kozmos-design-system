@@ -215,8 +215,30 @@ try {
         "true",
         "MultiSelect in a dialog: a press on a place did not choose it",
       );
+      // Focus on one of the field's own buttons, the list still open: the
+      // first Escape closes the list, the second the dialog. The list's
+      // layer is the topmost, so the dialog does not take the first, and the
+      // field's handler is on its input.
+      await page
+        .getByRole("button", { name: "Clear selected options" })
+        .focus();
+      await expect(page.getByRole("listbox", { name: "Tags" })).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await expect(
+        page.getByRole("listbox", { name: "Tags" }),
+        "MultiSelect in a dialog: Escape on the clear button leaves the list open",
+      ).toHaveCount(0);
+      assert.equal(
+        await page.locator("[data-close-count]").textContent(),
+        "0",
+        "MultiSelect in a dialog: the first Escape closed the dialog",
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForFunction(
+        () => document.querySelector("[data-close-count]")?.textContent === "1",
+      );
       console.log(
-        "PASS MultiSelect in a modal dialog: a press chooses a place",
+        "PASS MultiSelect in a modal dialog: a press chooses a place; Escape closes the list, then the dialog",
       );
       count++;
     } finally {
