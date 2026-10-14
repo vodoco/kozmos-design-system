@@ -368,6 +368,18 @@
       "background": "primitives-colors-background-0",
       "foreground": "components-secondary-buttons-themed-button-foreground-content-hover",
       "minimum": 4.5
+    },
+    {
+      "name": "scrollbar thumb on the page and the panel (non-text)",
+      "background": "primitives-colors-background-0",
+      "foreground": "semantics-scrollbar-thumb",
+      "minimum": 3
+    },
+    {
+      "name": "scrollbar thumb under the pointer on the page (non-text)",
+      "background": "primitives-colors-background-0",
+      "foreground": "semantics-scrollbar-thumb-hover",
+      "minimum": 3
     }
   ]
 }

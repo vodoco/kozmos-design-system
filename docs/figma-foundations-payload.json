@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T17:50:36.037Z",
+  "generatedAt": "2026-10-14T19:15:11.577Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 694,
-    "variableTokens": 643,
+    "totalTokens": 696,
+    "variableTokens": 645,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 474,
+      "color": 476,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -7701,6 +7701,54 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/foreground/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Scrollbar/thumb",
+      "figmaName": "Scrollbar/thumb",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-scrollbar-thumb",
+      "syntax": {
+        "web": "var(--semantics-scrollbar-thumb)",
+        "ios": "semanticsScrollbarThumb",
+        "android": "semanticsScrollbarThumb"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Scrollbar/thumbHover",
+      "figmaName": "Scrollbar/thumbHover",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-scrollbar-thumb-hover",
+      "syntax": {
+        "web": "var(--semantics-scrollbar-thumb-hover)",
+        "ios": "semanticsScrollbarThumbhover",
+        "android": "semanticsScrollbarThumbhover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
         }
       }
     },

@@ -2680,6 +2680,18 @@
         "$description": "Ink on the accent fill: black in both files (foreground/0 in light, foreground/1000 in dark). 11.89:1 on the default #FAB735. A product that sets a dark accent sets this to white with it."
       }
     },
+    "Scrollbar": {
+      "thumb": {
+        "$value": "{Primitives.Colors.foreground.500}",
+        "$type": "color",
+        "$description": "A scroll region's thumb on desktop: thin, on a transparent track, inside the panel's corners (GAP-139). The input border's colour, 3:1 on the page and the panel. Phone presentations draw no lasting scrollbar (decision 75)."
+      },
+      "thumbHover": {
+        "$value": "{Primitives.Colors.foreground.400}",
+        "$type": "color",
+        "$description": "The thumb under the pointer: one step further from the page than thumb."
+      }
+    },
     "Elevation": {
       "Raised": {
         "$value": "{shadow.sm}",

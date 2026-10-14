@@ -2240,6 +2240,32 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsScrollbarThumb: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#8b8474") : UIColor(hex: "#747B8B")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#8b8474") : NSColor(hex: "#747B8B")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsScrollbarThumbhover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#a29d90") : UIColor(hex: "#5D626F")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#a29d90") : NSColor(hex: "#5D626F")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsDiffNew: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

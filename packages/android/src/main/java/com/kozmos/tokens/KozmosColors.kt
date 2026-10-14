@@ -172,6 +172,8 @@ object KozmosColors {
   val semanticsEmotionInformativeText = Color(0xff1c6082)
   val semanticsAccentFill = Color(0xfffab735)
   val semanticsAccentOnfill = Color(0xff000000)
+  val semanticsScrollbarThumb = Color(0xff747b8b)
+  val semanticsScrollbarThumbhover = Color(0xff5d626f)
   val semanticsDiffNew = Color(0xff2fbf71)
   val semanticsDiffUpdated = Color(0xff3b82f6)
   val semanticsDiffDeleted = Color(0xffef4444)
