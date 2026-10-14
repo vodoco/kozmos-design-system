@@ -864,6 +864,9 @@
     text-transform: none;
     -webkit-appearance: button;
     background-image: none;
+    /* A double tap opens the result's details (decision 72): it must never
+       zoom the page on a mobile browser instead (GAP-144). Pinch zoom stays. */
+    touch-action: manipulation;
   }
   .kozmos-poi-result-select:disabled {
     cursor: not-allowed;
