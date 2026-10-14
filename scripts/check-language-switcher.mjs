@@ -6,6 +6,25 @@ import {
 } from "./lib/built-react-fixture.mjs";
 const fixture = await buildReactFixture("language-switcher.fixture.tsx");
 const browser = await launchFixtureBrowser();
+// Decision 77 (GAP-122): the menu opens straight above its trigger, from its
+// start edge, over a side panel and anything else, as the Web SDK's does.
+// While the select is open, Radix hides everything outside it from the
+// accessibility tree, the trigger included: reach it by its role attribute.
+const openTrigger = (page) => page.locator('[role="combobox"]').first();
+function assertAbove(menu, trigger, dir, label) {
+  const json = JSON.stringify({ menu, trigger });
+  assert.ok(
+    Math.abs(menu.y + menu.height + 4 - trigger.y) <= 2,
+    `${label}: the menu opens straight above its trigger ${json}`,
+  );
+  assert.ok(
+    dir === "ltr"
+      ? Math.abs(menu.x - trigger.x) <= 2
+      : Math.abs(menu.x + menu.width - (trigger.x + trigger.width)) <= 2,
+    `${label}: the menu starts at its trigger's start edge ${json}`,
+  );
+  assert.ok(menu.y >= 0, `${label}: the menu stays in the window ${json}`);
+}
 try {
   const page = await browser.newPage({
     viewport: { width: 900, height: 900 },
@@ -34,16 +53,16 @@ try {
     const menu = page.getByRole("listbox");
     await menu.waitFor();
     await settleLayout(page);
-    const bounds = await menu.boundingBox();
-    assert.ok(
-      bounds.x >= map.x && bounds.x + bounds.width <= map.x + map.width,
-      "menu inside embedded map horizontally",
-    );
-    const top = await page.locator("[data-map-search]").boundingBox();
-    assert.ok(
-      bounds.y >= top.y + top.height &&
-        bounds.y + bounds.height <= map.y + map.height,
-      "menu clears search and map edge",
+    // The positioned box, not the menu inside it, which may still be
+    // mid-way through its opening zoom.
+    const placed = page.locator("[data-radix-popper-content-wrapper]");
+    // Against the trigger as it is with the menu open: opening the select
+    // locks the page's scroll, which can move it.
+    assertAbove(
+      await placed.boundingBox(),
+      await openTrigger(page).boundingBox(),
+      dir,
+      "short list",
     );
     assert.equal(
       await menu
@@ -174,14 +193,13 @@ try {
     await page.waitForFunction(
       () => document.activeElement?.getAttribute("role") === "option",
     );
-    const longBounds = await menu.boundingBox();
-    assert.ok(
-      longBounds.x >= map.x &&
-        longBounds.x + longBounds.width <= map.x + map.width &&
-        longBounds.y >= top.y + top.height &&
-        longBounds.y + longBounds.height <= map.y + map.height,
-      "long language menu stays inside the registered band",
+    assertAbove(
+      await placed.boundingBox(),
+      await openTrigger(page).boundingBox(),
+      dir,
+      "long list",
     );
+    const longBounds = await menu.boundingBox();
     const selectedBounds = await menu
       .getByRole("option", { name: "Language 20", exact: true })
       .boundingBox();
@@ -220,16 +238,12 @@ try {
       await trigger.click();
       await menu.waitFor();
       await settleLayout(page);
-      const side = await page
-        .locator('[data-slot="map-shell-panel"]')
-        .boundingBox();
       const popup = await menu.boundingBox();
-      assert.ok(
-        popup.y >= side.y + side.height ||
-          popup.x >= side.x + side.width ||
-          popup.x + popup.width <= side.x,
-        "language popup clears the side panel " +
-          JSON.stringify({ dir, panelHeight, side, popup }),
+      assertAbove(
+        await placed.boundingBox(),
+        await openTrigger(page).boundingBox(),
+        dir,
+        `beside a ${panelHeight}px side panel`,
       );
       assert.ok(
         popup.height >= 44,

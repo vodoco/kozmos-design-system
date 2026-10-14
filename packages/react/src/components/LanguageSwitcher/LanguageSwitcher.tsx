@@ -130,10 +130,14 @@ export const LanguageSwitcher = React.forwardRef<
             align="start"
             sideOffset={4}
             collisionPadding={0}
-            collisionBoundary={region?.boundary ?? undefined}
-            // A side panel can put the usable popup region beside the trigger.
-            // Honor that boundary fully rather than tethering into the panel.
-            sticky={region ? "always" : "partial"}
+            // Straight above the trigger, over the side panel and anything
+            // else, as the Web SDK opens it (decision 77, GAP-122). It used to
+            // keep to the map's popup region, which put it beside a side
+            // panel, half way up the map.
+            sticky="partial"
+            // Never flipped below: a long list stays above and scrolls in the
+            // room there (its maxHeight is the available height).
+            avoidCollisions={false}
             className="data-[side=top]:translate-y-0 data-[side=bottom]:translate-y-0"
             style={{
               maxHeight: "var(--radix-select-content-available-height)",
