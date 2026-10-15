@@ -1,5 +1,31 @@
 # @kozmos-ds/react
 
+## 0.11.0
+
+### Minor Changes
+
+- da7c7a7: `Notice` takes `iconAlign` (GAP-118): `start`, the default, keeps the icon on the first line of a summary that wraps; `center` centres it on a one-line summary that holds a control, such as "Not finding it? [Search with AI]". `icon={null}` or `icon={false}` now draws no icon and leaves no empty column: the summary, the detail and the action start at the notice's edge, where an 8px gap and a 24px indent were left before.
+- da7c7a7: The map shell's panel and the scroll regions inside it.
+  - **16 below the content's end** (GAP-085): AdaptiveMapShell's panel leaves 16px below its content, as it does above it, so a short result list ends 16px above the panel's edge, beside the map and in a sheet, where it sits above the device's safe area. It publishes `--kozmos-panel-inset-bottom`. The details card, the route preview and the category browser end with padding of their own and give it back, so they end where they did; a part that fills the panel (the assistant) gets none.
+  - **No lasting scrollbar on a phone** (decision 75, GAP-138): in a sheet, the panel's content, ManoeuvreCard's open itinerary and FloorSelector's level list draw no scrollbar at rest, as touch platforms don't. They still scroll by touch, wheel and keys.
+  - **Kozmos's thin scrollbar beside the map and alone** (GAP-139): the same regions draw a thin thumb in `--semantics-scrollbar-thumb` on a transparent track, kept off a rounded panel's corners in Chromium and Safari.
+
+  **What you'll see:** a fitted panel is 16px taller under a short list. If your panel content pads its own bottom to stand in for this space, remove that padding, or the space doubles (Kozmos's own examples did, and no longer do). A desktop panel's scrollbar is thin and grey instead of the browser's own. A phone layout drawn by a desktop browser shows no scrollbar in the sheet, the direction card or the level list.
+
+- da7c7a7: `POIResultList`, `POIResultGroup` and `POIResultCard` take `onOpen(poiId)` (decision 72, GAP-143). A double tap or double click on a result, selected or not, a group's member included, opens its details: `onOpen` is called once, and the second tap is not passed on as a second `onSelect`, so the first tap's selection stands. A second press counts when the same result took the first and the browser counts it as one (`detail` 2, which follows the OS's double-click setting), or, for a touch browser that reports each tap as 1, within 300 ms; a double click whose first press landed on another result (a group's "Show more" that moved the list), or whose first press on this result is more than 2 s old, selects. A quick tap after an open does nothing, as on SwiftUI and Compose. A keyboard press always selects; the action row's details action is the keyboard's way in. Without `onOpen`, every press selects, as before. It is reported as `poi_result_opened`.
+
+### Patch Changes
+
+- da7c7a7: AICompanionPanel's banner has 12px of space and a divider under it, as its header does (GAP-063), so the thread no longer scrolls up flush against a pinned notice.
+- da7c7a7: AICompanionPanel's close button is the details card's close (decision 73, GAP-145): an outline, neutral `IconButton`, 44px square with a 20px X, as POIDetailPanel draws it. It was a 36px bordered pill with a 44px target drawn round it, so the assistant's header is 8px taller.
+- da7c7a7: CategoryTile gives a name in Han, kana or Hangul a third line (decision 78, GAP-010), so a long word such as カスタマーサービス shows whole rather than cut at two lines; other scripts keep two. SwiftUI and Compose do the same.
+- da7c7a7: Combobox's overlay popup and MultiSelect's popup are drawn in the theme's portal under the field, so a panel, a sheet or a card that clips its overflow no longer cuts the list off. Focus stays in the field, which keeps its keyboard, Escape (IME and host vetoes included) and outside-press handling, and the popup is as wide as the field. In its portal it is fixed to the window, so it is as tall as the room the window leaves, 16rem at most: on a phone on its side it no longer runs out of view. MultiSelect's list is a layer, as Combobox's is, so a press on it works inside a modal Dialog or Drawer, and Escape on the field's own buttons closes the list before the dialog. The listbox itself is now the scroll region, in both layouts, rather than an unnamed wrapper around it (GAP-137), so axe's scrollable-region-focusable no longer fails on an open list that overflows. The scrollbar follows the presentation: none at rest in a map shell's sheet, Kozmos's thin one elsewhere. `@radix-ui/react-popper` and `@radix-ui/react-portal`, already installed with Popover and Select, become direct dependencies.
+- da7c7a7: LanguageSwitcher's menu opens straight above its trigger, from its start edge, over a side panel and anything else, as the Web SDK's does (decision 77, GAP-122). It kept to the map's popup region, which with a side panel open put it beside the panel, half way up the map. A long list stays above and scrolls in the room there rather than flipping below.
+- da7c7a7: ManoeuvreCard's drag indicator sits 4px above the card's bottom edge and 12px under its content, so the closed card ends 21px under its instruction where it ended 60px under it: about 50px of empty space sat around the grip (decision 74, GAP-140). Its 44px target reaches up from the card's edge, over that space and the instruction's foot, invisibly; a press there opens the card, as the instruction does. Open, the itinerary stops 44px above the card's edge, outside what scrolls, so the target covers no row at any scroll position and the open card is 16px shorter than before. On the theme fill the grip is the guidance foreground at 62%, quieter than the instruction and still 3.09:1 on `#135BEC`, and so is the itinerary's thin scrollbar thumb, where the neutral thumb read about 1.4:1; the background card's grey bar is unchanged.
+- da7c7a7: A result's button sets `touch-action: manipulation` (GAP-144), so a double tap on a result on a mobile browser never zooms the page instead of opening its details. Pinch zoom still works. The rule is owned, so it holds in a host without `@scope`.
+- Updated dependencies [da7c7a7]
+  - @kozmos-ds/tokens@0.7.0
+
 ## 0.10.0
 
 ### Minor Changes
