@@ -18,7 +18,7 @@ fun ResultPin(
     onOpen: () -> Unit
 ) {
     KozmosLocationPin(
-        label = name,
+        label = "$number, $name",
         number = number,
         selected = isSelected,
         onClick = onSelect,
