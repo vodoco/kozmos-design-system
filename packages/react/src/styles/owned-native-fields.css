@@ -15,7 +15,9 @@
     @apply relative flex items-center;
   }
   .kozmos-password-with-toggle {
-    @apply pe-12;
+    /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
+       44 in compact. */
+    padding-inline-end: calc(var(--density-field-height-md) + 0.25rem);
   }
   .kozmos-password-toggle {
     @apply absolute end-0 rounded-e-control bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:text-muted-foreground;

@@ -1,4 +1,15 @@
 @kozmos-owned {
+  /* Room for Combobox's buttons, each as tall as the field (decision 82): 48,
+     or 96 with the clear, in touch; 44 or 88 in compact. Owned and after
+     .kozmos-input on purpose: as a utility inside @scope, WebKit let
+     .kozmos-input's physical padding-right win over this logical end padding
+     once it reads a custom property, though the utility is more specific. */
+  .kozmos-combobox-input {
+    padding-inline-end: calc(var(--density-field-height-md) + 0.25rem);
+  }
+  .kozmos-combobox-input[data-clearable] {
+    padding-inline-end: calc(var(--density-field-height-md) * 2 + 0.5rem);
+  }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }

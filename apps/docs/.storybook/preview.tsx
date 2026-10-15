@@ -17,12 +17,27 @@ const preview: Preview = {
         ],
       },
     },
+    // Decision 82: compact is for pointer-first desktop tools such as Pointr
+    // Cloud; touch, the default, is what products and the SDK draw.
+    density: {
+      description: "Kozmos control sizes",
+      toolbar: {
+        title: "Density",
+        icon: "component",
+        dynamicTitle: true,
+        items: [
+          { value: "touch", title: "Touch" },
+          { value: "compact", title: "Compact" },
+        ],
+      },
+    },
   },
-  initialGlobals: { theme: "light" },
+  initialGlobals: { theme: "light", density: "touch" },
   decorators: [
     (Story, context) => (
       <DesignConfigProvider
         theme={context.globals.theme === "dark" ? "dark" : "light"}
+        density={context.globals.density === "compact" ? "compact" : "touch"}
       >
         <main
           className="kozmos-story-surface"

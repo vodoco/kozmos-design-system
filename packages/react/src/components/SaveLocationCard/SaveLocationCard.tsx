@@ -44,6 +44,8 @@ const SaveLocationCard = React.forwardRef<
 
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn(
           `${surfaceClass(surface)} shadow-overlay rounded-panel p-5 flex flex-col gap-4 transition-all duration-300`,

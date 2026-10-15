@@ -49,6 +49,12 @@ const EXPECTED = {
   "number-input action": { owned: true, height: [44, 40], width: [44, 40] },
   "password-input field": { owned: true, height: [44, 40] },
   "password-input action": { owned: true, height: [44, 40], width: [44, 40] },
+  // The room a field leaves for its actions follows them: 48 or 96, then 44
+  // or 88; a drawer's close is the icon button's size.
+  "combobox padding": { owned: true, padEnd: [96, 88] },
+  "password-input padding": { owned: true, padEnd: [48, 44] },
+  "drawer close": { height: [44, 32], width: [44, 32], drawer: true },
+  "drawer header": { padEnd: [48, 36], drawer: true },
 };
 const BOARDS = {
   touch: 0,
@@ -90,7 +96,11 @@ try {
       const size = (element) => {
         if (!element) return null;
         const box = element.getBoundingClientRect();
-        return { height: box.height, width: box.width };
+        return {
+          height: box.height,
+          width: box.width,
+          padEnd: Number.parseFloat(getComputedStyle(element).paddingInlineEnd),
+        };
       };
       const out = {};
       for (const board of document.querySelectorAll("[data-board]")) {
@@ -120,6 +130,17 @@ try {
         );
         parts["password-input action"] = size(
           within("password-input")?.querySelector(".kozmos-field-action"),
+        );
+        parts["combobox padding"] = parts["combobox field"];
+        parts["password-input padding"] = parts["password-input field"];
+        const drawer = document.querySelector(`[data-drawer="${name}"]`);
+        parts["drawer close"] = size(
+          [...(drawer?.querySelectorAll("button") ?? [])].find((button) =>
+            button.textContent?.includes("Close drawer"),
+          ),
+        );
+        parts["drawer header"] = size(
+          drawer?.querySelector("h2")?.parentElement,
         );
         parts["search clear"] = size(
           board.querySelector('button[aria-label="Clear search"]'),
@@ -190,12 +211,14 @@ try {
         );
       for (const [part, expected] of Object.entries(EXPECTED)) {
         if (mode === "without-scope" && !expected.owned) continue;
+        // The drawers open from the providers, not from inside the popover.
+        if (expected.drawer && board === "compact-portal") continue;
         const box = result.parts[part];
         if (!box) {
           failures.push(`${mode} ${board} ${part}: not found`);
           continue;
         }
-        for (const axis of ["height", "width"]) {
+        for (const axis of ["height", "width", "padEnd"]) {
           if (!expected[axis]) continue;
           reads += 1;
           const want = expected[axis][column];

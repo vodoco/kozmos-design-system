@@ -77,6 +77,8 @@ export const POICard = forwardRef<HTMLDivElement, POICardProps>(
 
     return (
       <Card
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn("flex flex-col overflow-hidden", className)}
         role="article"

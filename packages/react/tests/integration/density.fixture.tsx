@@ -3,6 +3,10 @@ import {
   AIInputBar,
   Button,
   Combobox,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
   IconButton,
   Input,
   MultiSelect,
@@ -77,6 +81,14 @@ function Board({ density, board }: { density?: ThemeDensity; board: string }) {
   return (
     <ThemeProvider density={density}>
       <Controls board={board} />
+      {/* A drawer's close is the icon button's size, its header leaves room. */}
+      <Drawer open modal={false}>
+        <DrawerContent data-drawer={board}>
+          <DrawerHeader>
+            <DrawerTitle>Drawer</DrawerTitle>
+          </DrawerHeader>
+        </DrawerContent>
+      </Drawer>
     </ThemeProvider>
   );
 }

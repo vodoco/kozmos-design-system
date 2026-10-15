@@ -136,6 +136,8 @@ export const RouteLocationField = React.forwardRef<
     );
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         {...props}
         ref={ref}
         className={cn("flex min-w-0 flex-col gap-2 text-foreground", className)}

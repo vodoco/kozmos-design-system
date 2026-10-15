@@ -74,6 +74,8 @@ const RoutingInputGroup = React.forwardRef<
 
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn(
           `flex items-start gap-3 w-full ${surfaceClass(surface)} p-4 rounded-panel shadow-overlay transition-all duration-300`,

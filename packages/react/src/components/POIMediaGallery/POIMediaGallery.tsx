@@ -203,6 +203,8 @@ const POIMediaGallery = React.forwardRef<HTMLElement, POIMediaGalleryProps>(
     if (!hasMedia) return null;
     return (
       <section
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         aria-label={label}
         className={cn("kozmos-reset kozmos-poi-gallery", className)}

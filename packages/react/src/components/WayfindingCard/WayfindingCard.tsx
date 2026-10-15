@@ -39,6 +39,8 @@ const WayfindingCard = React.forwardRef<HTMLDivElement, WayfindingCardProps>(
 
     return (
       <Card
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn("w-full max-w-sm shadow-floating", className)}
         {...props}
@@ -107,6 +109,8 @@ export const WayfindingInputRow = React.forwardRef<
 
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn("relative flex gap-3", className)}
         {...props}

@@ -336,6 +336,8 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
 
     return (
       <article
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn(
           "kozmos-poi-result-card relative bg-card text-card-foreground",

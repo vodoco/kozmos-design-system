@@ -1,6 +1,8 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ThemeProvider } from "./ThemeProvider";
+import { DesignConfigProvider } from "../../context/DesignConfigContext";
+import { KozmosTheme } from "../../theme/KozmosTheme";
 
 // Decision 82: a compact density for pointer-first desktop tools (Pointr
 // Cloud). The provider marks its root and its portal root, so every part
@@ -52,5 +54,30 @@ describe("ThemeProvider density", () => {
         ?.getAttribute("data-kozmos-density");
     expect(rootOf("inherits")).toBe("compact");
     expect(rootOf("overrides")).toBe("touch");
+  });
+});
+
+// DesignConfigProvider (and KozmosTheme, which forwards to it) take every
+// ThemeProvider prop; density must reach the provider they render, or a
+// typed, documented prop does nothing.
+describe("DesignConfigProvider and KozmosTheme density", () => {
+  it("passes density to the provider they render", () => {
+    render(
+      <>
+        <DesignConfigProvider density="compact">
+          <span data-testid="config" />
+        </DesignConfigProvider>
+        <KozmosTheme density="compact">
+          <span data-testid="kozmos" />
+        </KozmosTheme>
+      </>,
+    );
+    for (const id of ["config", "kozmos"])
+      expect(
+        document
+          .querySelector(`[data-testid="${id}"]`)
+          ?.closest("[data-kozmos-root]")
+          ?.getAttribute("data-kozmos-density"),
+      ).toBe("compact");
   });
 });

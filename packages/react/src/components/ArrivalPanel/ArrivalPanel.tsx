@@ -52,6 +52,8 @@ export const ArrivalPanel = React.forwardRef<HTMLDivElement, ArrivalPanelProps>(
     ref,
   ) => (
     <div
+      // The SDK's touch geometry under any density (decision 82).
+      data-kozmos-density="touch"
       ref={ref}
       {...props}
       data-presentation={presentation}

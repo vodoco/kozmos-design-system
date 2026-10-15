@@ -1075,6 +1075,8 @@ const AdaptiveMapShell = React.forwardRef<
     return (
       <MapShellPresentationContext.Provider value={layout.presentation}>
         <div
+          // The SDK's touch geometry under any density (decision 82).
+          data-kozmos-density="touch"
           ref={root}
           className={cn(
             "relative isolate h-full min-h-0 w-full overflow-hidden bg-muted",

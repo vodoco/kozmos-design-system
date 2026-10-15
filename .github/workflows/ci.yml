@@ -461,13 +461,13 @@ jobs:
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:poi-details
           - name: Map, Search & Navigation (chromium)
             port: 6110
-            run: pnpm -w test:map-sheet && pnpm -w test:search-sheet && pnpm -w test:navigation
+            run: pnpm -w test:map-sheet && pnpm -w test:search-sheet && pnpm -w test:navigation && pnpm -w test:sdk-density
           - name: Map, Search & Navigation (firefox)
             port: 6111
-            run: ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:navigation
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:navigation && ADAPTIVE_BROWSER=firefox pnpm -w test:sdk-density
           - name: Map, Search & Navigation (webkit)
             port: 6112
-            run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation && ADAPTIVE_BROWSER=webkit pnpm -w test:sdk-density
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4

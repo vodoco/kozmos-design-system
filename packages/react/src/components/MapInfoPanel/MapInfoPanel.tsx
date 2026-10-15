@@ -103,6 +103,8 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
     );
     return (
       <section
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn("kozmos-map-info-panel", className)}
         aria-labelledby={DialogTitle ? undefined : headingId}

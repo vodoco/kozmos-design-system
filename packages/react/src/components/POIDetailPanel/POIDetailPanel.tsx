@@ -157,6 +157,8 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
       );
     return (
       <article
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={root}
         aria-labelledby={titleId}
         className={cn("kozmos-reset kozmos-poi-detail", className)}

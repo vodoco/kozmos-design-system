@@ -108,6 +108,8 @@ const RouteSummaryNavigation = React.forwardRef<
     );
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn(
           presentation === "hosted"
@@ -188,6 +190,8 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
     } = props;
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         className={cn(surfaceClass(surface), LAYOUT, "gap-4", className)}
         {...rest}

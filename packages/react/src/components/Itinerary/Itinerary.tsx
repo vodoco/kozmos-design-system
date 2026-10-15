@@ -120,6 +120,8 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     );
     return (
       <section
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         aria-label={label}
         className={cn("kozmos-itinerary kozmos-guidance-text", className)}

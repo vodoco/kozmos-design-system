@@ -421,9 +421,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   autoComplete="off"
                   className={cn(
                     inputVariants({ status: resolvedStatus }),
-                    canClear ? "pe-24" : "pe-12",
+                    "kozmos-combobox-input",
                     className,
                   )}
+                  data-clearable={canClear ? "" : undefined}
                   disabled={disabled}
                   readOnly={readOnly}
                   placeholder={placeholder}

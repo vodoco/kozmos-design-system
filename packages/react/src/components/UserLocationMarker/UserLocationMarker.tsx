@@ -51,6 +51,8 @@ const UserLocationMarker = React.forwardRef<
     const gradientId = `kozmos-location-cone-${React.useId().replace(/:/g, "")}`;
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         role="img"
         aria-label={offFloor ? offFloorLabel : label}

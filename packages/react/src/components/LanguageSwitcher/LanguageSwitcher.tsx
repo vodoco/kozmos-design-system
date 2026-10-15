@@ -89,7 +89,12 @@ export const LanguageSwitcher = React.forwardRef<
     }, [canChange]);
 
     return (
-      <div className={cn("min-w-0 max-w-full", className)} dir={direction}>
+      <div
+        className={cn("min-w-0 max-w-full", className)}
+        dir={direction}
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
+      >
         <Select
           value={selectedLocale}
           dir={direction}

@@ -91,6 +91,8 @@ const ClientAppBanner = React.forwardRef<HTMLElement, ClientAppBannerProps>(
     const iconNamed = Boolean(appIconAlt);
     return (
       <section
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         {...props}
         // Named by the app, unless the product names it.

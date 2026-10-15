@@ -339,6 +339,8 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
 
     return (
       <section
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={setSection}
         aria-label={label}
         // `kozmos-poi-result-list` keeps the grip's clearance above the first

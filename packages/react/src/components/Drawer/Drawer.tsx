@@ -94,7 +94,7 @@ const DrawerContent = React.forwardRef<
       >
         {children}
         {showClose ? (
-          <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+          <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
             <X aria-hidden="true" className="h-4 w-4" />
             <span className="sr-only">Close drawer</span>
           </DialogPrimitive.Close>
@@ -110,7 +110,11 @@ const DrawerHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col gap-2 pr-12 text-left", className)}
+    className={cn(
+      // Room for the close, the icon button's size (decision 82).
+      "flex flex-col gap-2 pr-[calc(var(--density-icon-control-size-md)_+_0.25rem)] text-left",
+      className,
+    )}
     {...props}
   />
 );

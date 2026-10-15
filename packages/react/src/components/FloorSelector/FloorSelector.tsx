@@ -357,6 +357,8 @@ const CollapsibleFloorSelector = React.forwardRef<
     return (
       <TooltipProvider>
         <div
+          // The SDK's touch geometry under any density (decision 82).
+          data-kozmos-density="touch"
           ref={ref}
           aria-label={label}
           className={cn("w-fit", className)}
@@ -621,6 +623,8 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
     if (variant === "compact-stepper") {
       return (
         <div
+          // The SDK's touch geometry under any density (decision 82).
+          data-kozmos-density="touch"
           ref={ref}
           aria-label={
             selectedOption ? `${label}: ${selectedOption.label}` : label
@@ -672,6 +676,8 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
 
     return (
       <div
+        // The SDK's touch geometry under any density (decision 82).
+        data-kozmos-density="touch"
         ref={ref}
         aria-label={label}
         className={cn(
