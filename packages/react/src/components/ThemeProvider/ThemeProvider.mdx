@@ -16,6 +16,28 @@ It does not switch the host document's theme; persistence is opt-in through `sto
 
 <Controls />
 
+## Density
+
+`density` sets how large the controls are inside the provider and its portals; a nested provider inherits it unless it names its own (decision 82).
+
+- **`touch`**, the default, keeps every control at least 44 tall, as products and the SDK draw them.
+- **`compact`** is for pointer-first desktop tools such as Pointr Cloud. Buttons are 32, 40 and 48; icon buttons 28, 32 and 40; single-line fields 40, with the actions inside a field as tall as the field. It is web only; SwiftUI and Compose stay touch. Compact goes below 44, which suits a pointer, and keeps WCAG 2.2's 24 × 24 minimum target.
+- **SDK parts keep the SDK's touch geometry** under any density, so an SDK screen previewed in a compact page draws as the apps draw it.
+- **Any element marked `data-kozmos-density="touch"`** keeps touch sizes for everything inside it.
+- **For one region of a page at another density, nest `KozmosTheme density="…"`**, which keeps the outer theme. A nested `ThemeProvider` starts its own theme: system, unless you give it one.
+
+The Density toolbar above the canvas shows any story at either density.
+
+<Canvas>
+  <Story of={ThemeProviderStories.Density} />
+</Canvas>
+
+```tsx
+<ThemeProvider density="compact">
+  <Button>Publish</Button>
+</ThemeProvider>
+```
+
 ## Implementation
 
 <div className="subheading">Code</div>
