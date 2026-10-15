@@ -68,25 +68,28 @@ onOpen={onOpenDetails}
 import SwiftUI
 import Kozmos
 
-// A search result on the map, numbered as its card's tab: the pill fills
-// when the result is selected, and a double tap opens its details.
+// A result's marker, numbered as its card's tab: a theme-bordered pill at
+// rest, filled when the result is selected. Its label is its whole spoken
+// name, the number included. A double tap opens the place's details.
+// \`.position(point)\` puts the pointer's tip on the point.
 struct ResultPin: View {
-let name: String
-let number: Int
-let isSelected: Bool
-let onSelect: () -> Void
-let onOpenDetails: () -> Void
+    let name: String
+    let number: Int
+    let point: CGPoint
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
         KozmosLocationPin(
-            label: name,
+            label: "\(number), \(name)",
             number: number,
             selected: isSelected,
             onSelect: onSelect,
-            onOpen: onOpenDetails
+            onOpen: onOpen
         )
+        .position(point)
     }
-
 }
 `}
     kotlin={`
