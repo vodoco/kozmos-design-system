@@ -17,6 +17,10 @@ React 0.10.0 (2026-10-09, `1ddc4d10`; tokens 0.6.0, product-contracts 0.9.0, ico
 decisions 59–69 (the theme fill, re-branding, button states, the accent colour and the pins),
 ClientAppBanner, RouteSummary's actions and route preview (GAP-110, GAP-111), Itinerary's Change
 actions (GAP-104) and EmptyState progress (GAP-115). See [release evidence](release-process.md#0100).
+React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
+POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
+presentation (decision 75), the field popups in a portal and the panel's end inset (GAP-085). See
+[release evidence](release-process.md#0110).
 P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, released in 0.8.0:
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
 (named shell controls). Exact-main CI, selected workflows and deployed docs were verified;
