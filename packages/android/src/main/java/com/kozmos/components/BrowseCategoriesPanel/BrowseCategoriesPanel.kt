@@ -24,6 +24,7 @@ import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetBottom
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.components.adaptivemapshell.kozmosPanelScrollEndPadding
 import com.kozmos.components.categorytile.KozmosCategoryTile
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.surface.kozmosDashedEdge
@@ -139,6 +140,12 @@ fun KozmosBrowseCategoriesPanel(
                 }
             }
         } else {
+            // The grid scrolls, and ends the panel: it claims the panel's end
+            // and runs to its edge, the space as its own last padding, so
+            // its last row stops 16 above the edge only at the end of the
+            // scroll (GAP-085). Outside a shell, or told it is not at the
+            // end, it keeps its own 16, topped up.
+            val scrollEnd = kozmosPanelScrollEndPadding()
             LazyVerticalGrid(
                 // Four across, 8 apart, and rows 12 apart: the prototype's grid
                 // (row-gap 12px, column-gap 8px, measured on 2026-09-22). The
@@ -149,7 +156,7 @@ fun KozmosBrowseCategoriesPanel(
                     start = padding,
                     top = tilesTop,
                     end = padding,
-                    bottom = lastRowBottom
+                    bottom = if (scrollEnd > 0.dp) scrollEnd else lastRowBottom
                 ),
                 horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
                 verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
