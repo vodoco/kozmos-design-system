@@ -6,19 +6,22 @@ package com.kozmos.docsnippets
 import androidx.compose.runtime.Composable
 import com.kozmos.components.locationpin.KozmosLocationPin
 
-// A result's pin, numbered as its card's tab: quiet at rest, filled when the
-// result is selected, and dashed when the place is on another floor.
+// A result's marker, numbered as its card's tab and filled when the result is
+// selected; a second tap opens its details. Only results on the level in view
+// get a marker: the level switcher counts the rest.
 @Composable
 fun ResultPin(
     name: String,
     number: Int,
     isSelected: Boolean,
-    isOnAnotherFloor: Boolean
+    onSelect: () -> Unit,
+    onOpen: () -> Unit
 ) {
     KozmosLocationPin(
         label = name,
         number = number,
         selected = isSelected,
-        offFloor = isOnAnotherFloor
+        onClick = onSelect,
+        onOpen = onOpen
     )
 }
