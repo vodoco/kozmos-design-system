@@ -1,29 +1,6 @@
 import SwiftUI
 
-/// Colour role of a map marker, mirroring the React `LocationPin.variant` prop.
-public enum KozmosLocationPinVariant: String, CaseIterable, Sendable {
-    case `default`
-    case primary
-    case secondary
-    case accent
-}
-
-/// Marker footprint, mirroring the React `LocationPin.size` prop.
-public enum KozmosLocationPinSize: String, CaseIterable, Sendable {
-    case sm
-    case md
-    case lg
-
-    var diameter: CGFloat {
-        switch self {
-        case .sm: return 24
-        case .md: return 32
-        case .lg: return 40
-        }
-    }
-}
-
-/// Where the marker's label sits relative to the marker.
+/// Where the marker's `externalLabel` sits relative to the marker.
 public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
     case top
     case right
@@ -31,285 +8,509 @@ public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
     case left
 }
 
-/// A map marker for a point of interest.
+/// A map marker for a result or a place: the SDK's map result markers
+/// (decisions 79–81, GAP-120).
 ///
-/// Mirrors the React `LocationPin` API. Selection, featured, off-floor, and
-/// disabled are independent flags rather than one state axis, matching React,
-/// so a pin can be both featured and selected. Placement on the map and
-/// collision handling stay with the renderer.
+/// It draws one of three markers:
 ///
-/// A featured pin is filled with the accent and shows the place's logo,
-/// `markerContent`, where a number would be, or a star when there is none;
-/// it never shows its number (decisions 55 and 68).
+/// - **Result**, the default: a 32pt pill, at least 32 wide, with the result's
+///   `number` 8 in from each side, or an 8pt dot with no number, and a 12 × 7
+///   pointer whose tip is 6 below the pill. At rest it is background/0 inside
+///   a theme-600 border with the number in theme 600; `selected` fills it with
+///   theme 600 and draws the number in foreground/1000. It fills; it does not
+///   grow.
+/// - **Featured** (`featured`): the place's logo, `markerContent`, scaled to
+///   fit inside a 44pt tile (52 selected) with a 3pt foreground/0 rim, over a
+///   6pt dot 4 below. No number, no accent colour; with no logo the tile is
+///   empty.
+/// - **Place** (`place`): a place on its own, its details open — a 40pt green
+///   teardrop (emotional success 800) with a background/0 disc, over a 6pt dot
+///   6 below. It is the only marker shown, and it wins over `featured` and
+///   `number`; `selected` changes nothing.
+///
+/// Each casts the md shadow (`semanticsElevationFloating`) from its body —
+/// the pill and its pointer, the tile, the teardrop — and never from its dot.
+///
+/// **Production markers come from the map style.** In a product the map
+/// draws these markers itself, from the map style's sprite sheet, and a
+/// featured tile with its logo from a featured sprite Pointr's back end
+/// generates. Kozmos draws the same markers for prototypes and boards.
+///
+/// **Placing it.** The marker's anchor, the point it marks, is the pointer's
+/// tip on a result and the dot's centre on a featured tile or a place. The
+/// marker lays itself out with that anchor at the centre of its frame
+/// (`KozmosLocationPin.anchor`), so `.position(point)` in a map canvas puts
+/// the anchor on the point, and an annotation view that centres its content
+/// on a coordinate needs no offset. The frame is therefore taller than what is
+/// drawn: the space below the anchor balances the body above it.
+/// `externalLabel` is drawn outside the frame and never moves the anchor.
+///
+/// **Naming it.** `label` is the marker's whole spoken name, as the product
+/// writes it, its number included ("Result 3, Burger King"), and is never
+/// drawn. Kozmos adds nothing to it but `featuredLabel` on a featured tile.
+/// The words drawn beside the marker are `externalLabel`, at
+/// `labelPlacement`.
+///
+/// **Pressing it.** It is a button when it can be pressed — with `onSelect`
+/// or `onOpen`, and not disabled — and an image otherwise. Its target is at
+/// least 44pt square, centred on the body. A tap selects (`onSelect`). With
+/// `onOpen`, a second tap within the double-tap time opens the place's
+/// details instead of selecting again (decision 71), as a result card's does
+/// (`KozmosDoubleTapGate`), and VoiceOver offers an action named `openLabel`
+/// that opens them; VoiceOver's own double tap is one activation, which
+/// selects. A disabled marker is drawn at half and takes no touch.
 public struct KozmosLocationPin: View {
-    private let variant: KozmosLocationPinVariant
-    private let size: KozmosLocationPinSize
+    /// The point of the marker's frame that its anchor — the pointer's tip,
+    /// or the dot's centre — sits on: the centre. `.position(point)` puts the
+    /// anchor on `point`.
+    public static let anchor: UnitPoint = .center
+
     private let label: String?
     private let number: Int?
+    private let externalLabel: String?
     private let labelPlacement: KozmosLocationPinLabelPlacement
     private let selected: Bool
     private let featured: Bool
-    private let offFloor: Bool
+    private let place: Bool
     private let isDisabled: Bool
     private let onSelect: (() -> Void)?
-    /// A category's colours for the marker — its fill, with its ink for the
-    /// number — over the variant's; a featured pin keeps the accent.
-    private let tint: KozmosCategoryTint?
-    /// Said after the label for a featured pin, so VoiceOver hears what the
-    /// accent shows (decision 67). Pass it translated.
+    /// Said after the label on a featured tile (decision 67). Pass it
+    /// translated.
     private let featuredLabel: String
-    /// Drawn in the marker in place of the number, as React's `markerContent`
-    /// is: a featured place's logo (decision 68). It takes the number's
-    /// colour and font, so a template image or a word reads on the marker,
-    /// and it is clipped to the disc inside the ring.
+    /// The featured tile's logo (decision 68), normally a resizable image. It
+    /// is scaled to fit inside the rim, never cropped, and clipped to the
+    /// rim's inner corners. A word or a template image takes foreground/0.
+    /// Ignored on a result and a place.
     private let markerContent: AnyView?
+    /// Opens the place's details: the second of two quick taps on the marker
+    /// (decision 71), and VoiceOver's `openLabel` action.
+    let onOpen: (() -> Void)?
+    /// What VoiceOver calls the action that opens the place's details, as the
+    /// result card calls its own.
+    let openLabel: String
+    /// Tells the second of two quick taps from a new one.
+    @State private var doubleTap = KozmosDoubleTapGate()
 
     /// - Parameters:
-    ///   - featuredLabel: Said after `label` on a featured pin; "Featured"
+    ///   - label: What VoiceOver calls the marker: its whole name, as the
+    ///     product writes it, number included ("Result 3, Burger King").
+    ///     Never drawn.
+    ///   - number: The result's number, as its card's number tab shows it.
+    ///     Without one a result draws a dot. Not spoken: put it in `label`.
+    ///   - externalLabel: Words drawn beside the marker, at `labelPlacement`,
+    ///     4pt from it. Not spoken: `label` names the marker.
+    ///   - selected: Fills a result and grows a featured tile to 52.
+    ///   - featured: Draws the featured tile, with `markerContent` as its logo.
+    ///   - place: Draws the place's green pin, over `featured` and `number`.
+    ///   - featuredLabel: Said after `label` on a featured tile; "Featured"
     ///     until the product passes its own words.
-    ///   - markerContent: What the marker shows in place of the number: a
-    ///     featured place's logo. Without it a featured pin shows a star.
+    ///   - markerContent: The featured tile's logo.
+    ///   - onOpen: Opens the place's details, on a double tap or VoiceOver's
+    ///     `openLabel` action. Without it every tap selects.
+    ///   - openLabel: The name of VoiceOver's action that calls `onOpen`.
     public init(
-        variant: KozmosLocationPinVariant = .primary,
-        size: KozmosLocationPinSize = .md,
         label: String? = nil,
         number: Int? = nil,
+        externalLabel: String? = nil,
         labelPlacement: KozmosLocationPinLabelPlacement = .bottom,
         selected: Bool = false,
         featured: Bool = false,
-        offFloor: Bool = false,
+        place: Bool = false,
         isDisabled: Bool = false,
         onSelect: (() -> Void)? = nil,
-        tint: KozmosCategoryTint? = nil,
         featuredLabel: String = "Featured",
-        markerContent: AnyView? = nil
+        markerContent: AnyView? = nil,
+        onOpen: (() -> Void)? = nil,
+        openLabel: String = "Open details"
     ) {
-        self.variant = variant
-        self.size = size
         self.label = label
         self.number = number
+        self.externalLabel = externalLabel
         self.labelPlacement = labelPlacement
         self.selected = selected
         self.featured = featured
-        self.offFloor = offFloor
+        self.place = place
         self.isDisabled = isDisabled
         self.onSelect = onSelect
-        self.tint = tint
         self.featuredLabel = featuredLabel
         self.markerContent = markerContent
+        self.onOpen = onOpen
+        self.openLabel = openLabel
     }
 
-    /// Decision 68 (Olcay, 2026-10-08): a featured pin is filled with the
-    /// accent, the colour Pointr's API lets a client set beside its theme,
-    /// `#FAB735` unless it does, whatever the variant or tint. It was alert
-    /// 500, the same amber by default, so Featured took the warning colour.
-    private var markerColor: Color {
-        if featured { return KozmosColors.semanticsAccentFill }
-        if let tint { return tint.fill.fill }
-        switch variant {
-        case .default: return KozmosColors.primitivesColorsForeground100
-        // Decision 59: a filled primary pin is a prominent fill, the theme
-        // fill. `accent` is an open parity question and stays.
-        case .primary: return KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
-        case .secondary: return KozmosColors.primitivesColorsForeground400
-        case .accent: return KozmosColors.primitivesColorsThemeVariant1500
-        }
+    /// Which of the three markers is drawn. A place wins over featured, and
+    /// featured over a number.
+    enum Kind: Equatable {
+        case result
+        case featured
+        case place
     }
 
-    /// Selected pins grow as well as recolor, so selection is not colour-only.
-    private var diameter: CGFloat {
-        selected ? size.diameter + 8 : size.diameter
+    var kind: Kind {
+        if place { return .place }
+        return featured ? .featured : .result
     }
 
-    /// Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
-    /// at rest — the surface, a ring and the number in its colour — and filled
-    /// only when selected, as the result card's number tab is. A featured pin
-    /// (its logo on the map), a pin showing `markerContent` and a pin with no
-    /// number keep their fill, as on the web.
-    private var isQuiet: Bool {
-        number != nil && markerContent == nil && !selected && !featured && !offFloor
-    }
-
-    /// The number, when the marker draws it. A featured pin never does
-    /// (decision 55: its pin shows the logo, or a star without one), and
-    /// `markerContent` takes its place on any pin.
-    private var shownNumber: Int? {
-        featured || markerContent != nil ? nil : number
-    }
-
-    /// Quiet and off the floor both draw the outlined marker; off the floor
-    /// its ring is dashed, so the two never read alike.
-    private var isOutlined: Bool { isQuiet || offFloor }
-
-    /// The marker's colour as a ring and a number on the surface, where it
-    /// must read at 4.5:1 in both themes. The theme's 500 is one blue in
-    /// both, 3.74:1 on the dark surface, so the primary takes the theme's
-    /// text role (theme/600), and the accent its 700 (theme variant 1's 600
-    /// reads 4.21:1 in the dark). The others are inks already.
-    private var outlineColor: Color {
-        if featured { return KozmosColors.semanticsAccentFill }
-        if let tint { return tint.fill.fill }
-        switch variant {
-        case .default: return KozmosColors.primitivesColorsForeground100
-        case .primary: return KozmosColors.semanticsEmotionThemedText
-        case .secondary: return KozmosColors.primitivesColorsForeground400
-        case .accent: return KozmosColors.primitivesColorsThemeVariant1700
-        }
-    }
-
-    /// The number, or what stands in its place (the featured star, or
-    /// `markerContent`): in the fill's ink when filled; in the ring's colour
-    /// when quiet, except a tint's (six of the eight fills fail 4.5:1 as text
-    /// on the surface), which takes the foreground, as it does off the floor.
-    /// On the featured accent it is the accent's own ink, black on the default
-    /// #FAB735 (11.89:1), the dark words decision 55 gives Featured, whatever
-    /// the tint: foreground/1000 was white in light, 1.77:1. On the primary's
-    /// theme fill and the `accent` variant's theme variant 1, #4135F1
-    /// (decision 63), it is the theme foreground, white in both themes
-    /// (decision 59): foreground/1000 is black in the dark, 3.00:1 on it, where
-    /// white reads 6.99:1. As Compose draws them.
-    private var numberColor: Color {
-        if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }
-        if isQuiet { return outlineColor }
-        if featured { return KozmosColors.semanticsAccentOnfill }
-        if let tint { return tint.fill.ink }
-        if variant == .primary || variant == .accent { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
-        return KozmosColors.primitivesColorsForeground1000
-    }
-
-    /// Off the floor the ring is dashed: eight dashes, sized to close evenly
-    /// around the ring at every diameter.
-    private func ringStyle(width: CGFloat) -> StrokeStyle {
-        guard offFloor else { return StrokeStyle(lineWidth: width) }
-        let segment = CGFloat.pi * (diameter - width) / 8
-        // Round caps add half the width at each end of a dash.
-        return StrokeStyle(lineWidth: width, lineCap: .round, dash: [segment * 0.62 - width, segment * 0.38 + width])
-    }
-
-    /// What VoiceOver says: the label, the number when the marker shows it,
-    /// the product's word for Featured (decision 67), and the floor. A
-    /// featured pin shows no number, so none is said.
+    /// What VoiceOver says (Olcay, 15 Oct 2026): `label`, the product's whole
+    /// name for the marker, with nothing added, except on a featured tile,
+    /// which adds the product's word for Featured (decision 67). A place says
+    /// its label alone.
     var accessibilityDescription: String {
-        [
-            label,
-            shownNumber.map { "\($0)" },
-            featured ? featuredLabel : nil,
-            offFloor ? "On another floor" : nil
-        ]
-        .compactMap { $0 }
-        .joined(separator: ", ")
+        switch kind {
+        case .result, .place:
+            return label ?? ""
+        case .featured:
+            return [label, featuredLabel].compactMap { $0 }.joined(separator: ", ")
+        }
+    }
+
+    /// Whether a tap or VoiceOver can press the marker.
+    private var pressable: Bool { !isDisabled && (onSelect != nil || onOpen != nil) }
+
+    /// A button when it can be pressed, otherwise an image; selected when
+    /// selected, and a place always (its details are open).
+    private var accessibilityTraits: AccessibilityTraits {
+        let role: AccessibilityTraits = pressable ? .isButton : .isImage
+        return selected || place ? [role, .isSelected] : role
     }
 
     public var body: some View {
-        content
+        let plan = Plan(kind: kind, selected: selected)
+        return drawing
+            .frame(height: plan.height, alignment: .top)
+            .modifier(PlacedLabel(label: externalLabel, placement: labelPlacement, plan: plan))
+            // The target: at least 44 square, centred on the body. The
+            // drawing overflows it below, to its dot.
+            .offset(y: -plan.targetTop)
+            .frame(minWidth: Metrics.target)
+            .frame(height: plan.targetHeight, alignment: .top)
+            .contentShape(Rectangle())
+            // Dimmed once, as a whole, not part by part.
+            .compositingGroup()
             .opacity(isDisabled ? 0.5 : 1)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityDescription)
             .accessibilityAddTraits(accessibilityTraits)
-            .accessibilityAction { if !isDisabled { onSelect?() } }
+            .modifier(Actions(pressable: pressable, tap: handleTap, select: select,
+                              open: onOpen == nil ? nil : open, openLabel: openLabel))
+            // The anchor at the centre of the frame.
+            .padding(.top, plan.paddingTop)
+            .padding(.bottom, plan.paddingBottom)
     }
 
-    /// Selected whether or not the pin can be pressed, as React's
-    /// `aria-current` and Compose's `selected` say it: a pin drawn with no
-    /// `onSelect`, or a disabled one, still marks the selected place. A button
-    /// only when it can be pressed.
-    private var accessibilityTraits: AccessibilityTraits {
-        var traits: AccessibilityTraits = []
-        if !isDisabled, onSelect != nil { traits.insert(.isButton) }
-        if selected { traits.insert(.isSelected) }
-        return traits
-    }
+    // MARK: Pressing
 
-    @ViewBuilder
-    private var content: some View {
-        switch labelPlacement {
-        case .top:
-            VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                labelView
-                marker
-            }
-        case .bottom:
-            VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                marker
-                labelView
-            }
-        case .left:
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                labelView
-                marker
-            }
-        case .right:
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                marker
-                labelView
-            }
+    /// A tap. Without `onOpen` it selects, every time. With it, the first tap
+    /// selects at once and a second within the double-tap time opens the
+    /// place's details instead of selecting again; a third quick tap does
+    /// nothing (`KozmosDoubleTapGate`).
+    private func handleTap() {
+        guard pressable else { return }
+        guard onOpen != nil else { return select() }
+        switch doubleTap.press("pin", at: ProcessInfo.processInfo.systemUptime) {
+        case .select: select()
+        case .open: open()
+        case .ignore: break
         }
     }
 
-    private var marker: some View {
-        ZStack {
-            // Outlined — quiet at rest, or off the floor — the fill drops out
-            // and the marker colour moves to the ring. Off the floor the ring
-            // is dashed (eight long dashes, which read as a dashed ring, not
-            // the cogwheel short ones made), so shape carries the floor, never
-            // colour alone, and a quiet pin at rest is never taken for one on
-            // another floor.
-            Circle()
-                .fill(isOutlined ? KozmosColors.primitivesColorsBackground0 : markerColor)
-                .frame(width: diameter, height: diameter)
-
-            Circle()
-                .strokeBorder(
-                    isOutlined ? outlineColor : KozmosColors.primitivesColorsForeground1000,
-                    style: ringStyle(width: ringWidth)
-                )
-                .frame(width: diameter, height: diameter)
-
-            // Off the floor the number sits on the background in the
-            // foreground: the marker colour on white failed 4.5:1 for six
-            // tints (Olcay, 2026-09-21); the ring keeps the colour. The star
-            // and `markerContent` stand where the number would, drawn as it is.
-            if let markerContent {
-                markerContent
-                    .font(numberFont)
-                    .foregroundColor(numberColor)
-                    .frame(width: diameter - 2 * ringWidth, height: diameter - 2 * ringWidth)
-                    .clipShape(Circle())
-            } else if featured {
-                // Decision 68: a featured pin with no logo shows a star where
-                // the number would be, the Rating's filled star, in the
-                // accent's ink, as tall as the number's digits.
-                Image(systemName: "star.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: starSize, height: starSize)
-                    .foregroundColor(numberColor)
-            } else if let number {
-                Text("\(number)")
-                    .font(numberFont)
-                    .foregroundColor(numberColor)
-            }
-        }
-        .shadow(color: KozmosColors.primitivesColorsForeground900.opacity(0.24), radius: 4, y: 2)
+    private func select() {
+        guard pressable else { return }
+        onSelect?()
     }
 
-    private var ringWidth: CGFloat { isOutlined ? 3 : 2 }
+    private func open() {
+        guard pressable else { return }
+        onOpen?()
+    }
 
-    private var numberFont: Font { .system(size: diameter * 0.44, weight: .bold) }
-
-    /// The star stands as tall as the number's digits. At the number's font
-    /// an SF Symbol takes the font's whole height, half again the digits';
-    /// four-fifths of the number's size is the share Compose's Material star
-    /// fills of its box at that size, so the two platforms draw one star.
-    private var starSize: CGFloat { diameter * 0.44 * 0.8 }
+    // MARK: Drawing
 
     @ViewBuilder
-    private var labelView: some View {
-        if let label {
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                .lineLimit(1)
+    private var drawing: some View {
+        switch kind {
+        case .result: resultMarker
+        case .featured: featuredMarker
+        case .place: placeMarker
+        }
+    }
+
+    /// The number, or the dot standing for it: theme 600 at rest,
+    /// foreground/1000 on the selected fill.
+    private var ink: Color {
+        selected ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsTheme600
+    }
+
+    private var resultMarker: some View {
+        ZStack(alignment: .top) {
+            pill
+            // Its top 1 inside the pill's bottom border, its tip 6 below it.
+            Pointer()
+                .fill(KozmosColors.primitivesColorsTheme600)
+                .frame(width: Metrics.pointerWidth, height: Metrics.pointerHeight)
+                .offset(y: Metrics.pointerTop)
+        }
+        .frame(height: Metrics.pointerTop + Metrics.pointerHeight, alignment: .top)
+        .compositingGroup()
+        .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+    }
+
+    private var pill: some View {
+        Group {
+            if let number {
+                // Written as the result card's tab writes it, so the two match.
+                Text(verbatim: "\(number)")
+                    .font(.system(size: Metrics.numberSize, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(ink)
+                    .lineLimit(1)
+                    .fixedSize()
+            } else {
+                Circle()
+                    .fill(ink)
+                    .frame(width: Metrics.resultDot, height: Metrics.resultDot)
+            }
+        }
+        .padding(.horizontal, Metrics.pillPadding)
+        .frame(minWidth: Metrics.pillHeight, minHeight: Metrics.pillHeight, maxHeight: Metrics.pillHeight)
+        .background(
+            Capsule().fill(selected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsBackground0)
+        )
+        .overlay(Capsule().strokeBorder(KozmosColors.primitivesColorsTheme600, lineWidth: Metrics.pillBorder))
+    }
+
+    private var featuredMarker: some View {
+        let side = Metrics.tile(selected: selected)
+        let inner = side - 2 * Metrics.rim
+        return VStack(spacing: Metrics.featuredDotGap) {
+            ZStack {
+                RoundedRectangle(cornerRadius: Metrics.tileRadius)
+                    .fill(KozmosColors.primitivesColorsBackground0)
+                if let markerContent {
+                    markerContent
+                        .font(.system(size: Metrics.numberSize, weight: .semibold))
+                        .foregroundStyle(KozmosColors.primitivesColorsForeground0)
+                        .scaledToFit()
+                        .frame(width: inner, height: inner)
+                        .clipShape(RoundedRectangle(cornerRadius: Metrics.tileRadius - Metrics.rim))
+                        .accessibilityHidden(true)
+                }
+                RoundedRectangle(cornerRadius: Metrics.tileRadius)
+                    .strokeBorder(KozmosColors.primitivesColorsForeground0, lineWidth: Metrics.rim)
+            }
+            .frame(width: side, height: side)
+            .compositingGroup()
+            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+            Circle()
+                .fill(KozmosColors.primitivesColorsForeground0)
+                .frame(width: Metrics.anchorDot, height: Metrics.anchorDot)
+        }
+    }
+
+    private var placeMarker: some View {
+        let green = KozmosColors.primitivesColorsEmotionalSuccess800
+        return ZStack(alignment: .top) {
+            ZStack(alignment: .top) {
+                Teardrop().fill(green)
+                Circle()
+                    .fill(KozmosColors.primitivesColorsBackground0)
+                    .frame(width: Metrics.placeDisc, height: Metrics.placeDisc)
+                    .offset(y: (Metrics.placeCircle - Metrics.placeDisc) / 2)
+            }
+            .frame(width: Metrics.placeCircle, height: Metrics.placeTip, alignment: .top)
+            .compositingGroup()
+            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+            Circle()
+                .fill(green)
+                .frame(width: Metrics.anchorDot, height: Metrics.anchorDot)
+                .offset(y: Metrics.placeCircle + Metrics.placeDotGap)
+        }
+        .frame(width: Metrics.placeCircle, alignment: .top)
+    }
+
+    // MARK: The label
+
+    /// `externalLabel` beside the drawing, 4 from it: below the dot or the
+    /// tip, above the body, or level with the pill's, tile's or circle's
+    /// middle.
+    private struct PlacedLabel: ViewModifier {
+        let label: String?
+        let placement: KozmosLocationPinLabelPlacement
+        let plan: Plan
+
+        private var alignment: Alignment {
+            switch placement {
+            case .top: return .top
+            case .bottom: return .bottom
+            case .left: return .leading
+            case .right: return .trailing
+            }
+        }
+
+        func body(content: Content) -> some View {
+            if let label {
+                let gap = KozmosDimensions.primitivesLayoutSpacing50
+                let beside = placement == .left || placement == .right
+                // Every guide set, each for its own placement: an alignment
+                // guide set inside a conditional view is lost.
+                content.overlay(alignment: alignment) {
+                    Text(label)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KozmosColors.primitivesColorsForeground100)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .alignmentGuide(.top) { placement == .top ? $0[.bottom] + gap : $0[.top] }
+                        .alignmentGuide(.bottom) { placement == .bottom ? $0[.top] - gap : $0[.bottom] }
+                        .alignmentGuide(.leading) { placement == .left ? $0[.trailing] + gap : $0[.leading] }
+                        .alignmentGuide(.trailing) { placement == .right ? $0[.leading] - gap : $0[.trailing] }
+                        .offset(y: beside ? plan.shapeMiddle - plan.height / 2 : 0)
+                }
+            } else {
+                content
+            }
+        }
+    }
+}
+
+// MARK: - Geometry
+
+extension KozmosLocationPin {
+    /// The markers' measurements, from the boards' references (MAP-474).
+    enum Metrics {
+        /// The smallest target, each way.
+        static let target: CGFloat = 44
+
+        static let pillHeight: CGFloat = 32
+        static let pillPadding: CGFloat = 8
+        static let pillBorder: CGFloat = 2
+        static let pointerWidth: CGFloat = 12
+        static let pointerHeight: CGFloat = 7
+        /// The pointer's top: 1 inside the pill's 2 bottom border.
+        static let pointerTop: CGFloat = 31
+        static let numberSize: CGFloat = 14
+        static let resultDot: CGFloat = 8
+
+        static func tile(selected: Bool) -> CGFloat { selected ? 52 : 44 }
+        static let tileRadius: CGFloat = 16
+        static let rim: CGFloat = 3
+        static let featuredDotGap: CGFloat = 4
+
+        static let placeCircle: CGFloat = 40
+        static let placeDisc: CGFloat = 20
+        static let placeDotGap: CGFloat = 6
+        /// The teardrop's point below the circle's top: the corner of a
+        /// square drawn round the circle, turned 45°, r × (1 + √2).
+        static let placeTip: CGFloat = placeCircle / 2 * (1 + 2.squareRoot())
+
+        /// A featured tile's or a place's dot, whose centre is the anchor.
+        static let anchorDot: CGFloat = 6
+    }
+
+    /// One marker's layout top to bottom, in points from the top of its body.
+    struct Plan: Equatable {
+        /// The drawing's height, its dot included.
+        let height: CGFloat
+        /// The body's height: the pill and its pointer, the tile, the teardrop.
+        let bodyHeight: CGFloat
+        /// The anchor's depth: the pointer's tip, or the dot's centre.
+        let anchor: CGFloat
+        /// The middle of the pill, the tile or the circle, which a label
+        /// beside the marker is level with.
+        let shapeMiddle: CGFloat
+
+        init(kind: Kind, selected: Bool) {
+            switch kind {
+            case .result:
+                bodyHeight = Metrics.pointerTop + Metrics.pointerHeight
+                height = bodyHeight
+                anchor = bodyHeight
+                shapeMiddle = Metrics.pillHeight / 2
+            case .featured:
+                let side = Metrics.tile(selected: selected)
+                bodyHeight = side
+                height = side + Metrics.featuredDotGap + Metrics.anchorDot
+                anchor = side + Metrics.featuredDotGap + Metrics.anchorDot / 2
+                shapeMiddle = side / 2
+            case .place:
+                bodyHeight = Metrics.placeTip
+                height = Metrics.placeCircle + Metrics.placeDotGap + Metrics.anchorDot
+                anchor = Metrics.placeCircle + Metrics.placeDotGap + Metrics.anchorDot / 2
+                shapeMiddle = Metrics.placeCircle / 2
+            }
+        }
+
+        /// The target's height: the body's, and at least 44.
+        var targetHeight: CGFloat { max(Metrics.target, bodyHeight) }
+        /// The target's top, centred on the body: above the body's top when
+        /// the body is shorter than 44.
+        var targetTop: CGFloat { (bodyHeight - targetHeight) / 2 }
+
+        /// Half the frame's height: as far as the farther of the target's top
+        /// and the drawing's or the target's bottom lies from the anchor.
+        private var half: CGFloat {
+            max(anchor - targetTop, max(height, targetTop + targetHeight) - anchor)
+        }
+
+        /// Space above the target and below it that puts the anchor at the
+        /// centre of the frame.
+        var paddingTop: CGFloat { half - (anchor - targetTop) }
+        var paddingBottom: CGFloat { 2 * half - paddingTop - targetHeight }
+    }
+
+    /// The result's pointer: a triangle pointing down.
+    private struct Pointer: Shape {
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.closeSubpath()
+            return path
+        }
+    }
+
+    /// The place's teardrop: a circle as wide as the rect, coming to a point
+    /// below it where two tangents meet, as the reference's three quarter-arcs
+    /// and square corner turned −45° draw it.
+    private struct Teardrop: Shape {
+        func path(in rect: CGRect) -> Path {
+            let radius = rect.width / 2
+            let centre = CGPoint(x: rect.midX, y: rect.minY + radius)
+            let reach = radius / 2.squareRoot()
+            var path = Path()
+            path.move(to: CGPoint(x: centre.x, y: centre.y + radius * 2.squareRoot()))
+            path.addLine(to: CGPoint(x: centre.x - reach, y: centre.y + reach))
+            // From lower left, over the top, to lower right.
+            path.addRelativeArc(center: centre, radius: radius, startAngle: .degrees(135), delta: .degrees(270))
+            path.closeSubpath()
+            return path
+        }
+    }
+
+    /// What pressing does, only when the marker can be pressed: a static or
+    /// disabled marker takes no touch, so a map's gestures under it still
+    /// run, and VoiceOver is offered no action.
+    private struct Actions: ViewModifier {
+        let pressable: Bool
+        let tap: () -> Void
+        let select: () -> Void
+        let open: (() -> Void)?
+        let openLabel: String
+
+        func body(content: Content) -> some View {
+            if pressable {
+                content
+                    .onTapGesture(perform: tap)
+                    // VoiceOver's double tap is one activation: it selects.
+                    .accessibilityAction { select() }
+                    .accessibilityActions {
+                        if let open {
+                            Button(openLabel, action: open)
+                        }
+                    }
+            } else {
+                content.allowsHitTesting(false)
+            }
         }
     }
 }
