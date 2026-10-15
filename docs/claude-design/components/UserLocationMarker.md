@@ -75,9 +75,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `UserLocationMarkerProps`
 
   The visitor is on another level than the one in view.
 
-  Drawn the way LocationPin draws its own `offFloor`: the dot goes hollow
-  rather than merely dimming, so the state is carried by shape and not by
-  colour alone — and the halo and the heading cone go, because neither
+  The dot goes hollow rather than merely dimming, so the state is carried
+  by shape and not by colour alone — and the halo and the heading cone go, because neither
   means anything about a level you are not looking at.
 
   Without it the marker looked the same whatever level was in view, so the
