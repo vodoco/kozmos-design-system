@@ -442,3 +442,47 @@ Change details: [React](../packages/react/CHANGELOG.md#0100), [tokens](../packag
 SwiftUI and Compose changes ship from the repository at this commit, not a native registry. Figma
 (the Update for decisions 59–69 is next), Code Connect, external Claude Design artifacts and product
 deployments are separate.
+
+### 0.11.0
+
+Published on 2026-10-15 from `a315aabe7800ff5c3a35cbd58bdf0aae954bdf4c`, the version merge
+[#271](https://github.com/vodoco/kozmos-design-system/pull/271). It carries Track 1
+([#270](https://github.com/vodoco/kozmos-design-system/pull/270)) and decisions 72–78: POIResultList's
+`onOpen`, ManoeuvreCard's quieter grip, scrollbars by presentation and the scrollbar tokens, the field
+popups in a portal, the panel's end inset, Notice's `iconAlign`, the assistant's close button and banner,
+LanguageSwitcher's menu above its trigger, and CJK category names on three lines. React and tokens move;
+icons stays at 0.6.0 and product-contracts at 0.9.0, neither planned. At Olcay's request Claude dispatched the
+release and approved the protected `npm-release` deployment, as `vodoco`, for this release only.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.11.0 and tokens 0.7.0 on npm `latest`; React pins tokens 0.7.0, icons 0.6.0 and product-contracts 0.9.0 exactly, and the new `@radix-ui/react-popper` 1.2.8 and `@radix-ui/react-portal` 1.1.9.                                                     |
+| Exact main-push CI      | [38724371656](https://github.com/vodoco/kozmos-design-system/actions/runs/38724371656): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis, Visual Regression, Lighthouse CI and Site succeeded on the merge. |
+| Preflight / publication | `pnpm release:preflight` against that run passed (credential placement, request, evidence and plan; neither version on npm). [38729768654](https://github.com/vodoco/kozmos-design-system/actions/runs/38729768654) succeeded (guard, prepare, publish).    |
+| Registry readback       | Both versions are on `latest`, each with SLSA v1 provenance. Their SHA-512 integrities equal the tarballs in the run's `npm-candidate-38729768654-1` artifact (compared 2026-10-15).                                                                        |
+| Installed consumer      | A fresh npm installation of React 0.11.0 with React 19 resolved tokens 0.7.0, icons 0.6.0 and contracts 0.9.0, exposed 270 exports, and server-rendered ThemeProvider, Button and a Notice with `iconAlign="center"` and no icon, from CJS and ESM.         |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created the two tags and releases at `a315aabe`, and a second dry-run found them in place. React 0.11.0 is Latest.                                                                                                         |
+| Website / Storybook     | [Pages 38724371686](https://github.com/vodoco/kozmos-design-system/actions/runs/38724371686) built and deployed this exact SHA. The live Storybook's `index.json` lists the new Toast Open and Notice Search with AI stories.                               |
+
+Note: the version PR's iOS job failed once on a UI-query timeout in an interaction test unrelated to the
+change (the same test passed on #270 with identical iOS code) and passed on its re-run; main's run passed
+on its first attempt.
+
+Change details: [React](../packages/react/CHANGELOG.md#0110), [tokens](../packages/tokens/CHANGELOG.md#070)
+and the [generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.10.0:
+
+- **The map shell's panel leaves 16 below its content** (GAP-085). A fitted panel is 16px taller under a
+  short list. If your panel content pads its own bottom to stand in for this space, remove that padding, or
+  the space doubles. A part that ends with its own padding gives the shell's back with
+  `margin-block-end: calc(-1 * var(--kozmos-panel-inset-bottom, 0px))`.
+- **Scrollbars follow the presentation** (decision 75): none at rest in a sheet; Kozmos's thin one beside
+  the map and alone, in the new `--semantics-scrollbar-thumb` and `-thumb-hover`.
+- **Combobox's and MultiSelect's lists are drawn in a portal**, as tall as the window leaves (16rem at
+  most). A test that looked for the list inside the field's DOM finds it at the end of the theme's portal.
+- **`Notice icon={null}`** now draws no icon column; before, it drew the default icon.
+- **ManoeuvreCard is shorter**: 39 closed and 16 open. A layout that reserved its old height can shrink.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry; on Compose a
+scroller at the panel's end applies `kozmosPanelScrollEndPadding()` (see its CHANGELOG). Figma (the Update
+for ManoeuvreCard's painter is next), Code Connect, external Claude Design artifacts and product deployments
+are separate.
