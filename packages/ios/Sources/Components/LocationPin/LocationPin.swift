@@ -51,14 +51,15 @@ public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
 /// The words drawn beside the marker are `externalLabel`, at
 /// `labelPlacement`.
 ///
-/// **Pressing it.** It is a button when it can be pressed — with `onSelect`
-/// or `onOpen`, and not disabled — and an image otherwise. Its target is at
-/// least 44pt square, centred on the body. A tap selects (`onSelect`). With
-/// `onOpen`, a second tap within the double-tap time opens the place's
-/// details instead of selecting again (decision 71), as a result card's does
+/// **Pressing it.** It is a button when it has an action — `onSelect` or
+/// `onOpen` — and an image otherwise. Its target is at least 44pt square,
+/// centred on the body. A tap selects (`onSelect`). With `onOpen`, a second
+/// tap within the double-tap time opens the place's details instead of
+/// selecting again (decision 71), as a result card's does
 /// (`KozmosDoubleTapGate`), and VoiceOver offers an action named `openLabel`
 /// that opens them; VoiceOver's own double tap is one activation, which
-/// selects. A disabled marker is drawn at half and takes no touch.
+/// selects. A disabled marker is drawn at half and takes no touch; with an
+/// action, VoiceOver hears it as a dimmed button.
 public struct KozmosLocationPin: View {
     /// The point of the marker's frame that its anchor — the pointer's tip,
     /// or the dot's centre — sits on: the centre. `.position(point)` puts the
@@ -164,13 +165,17 @@ public struct KozmosLocationPin: View {
         }
     }
 
-    /// Whether a tap or VoiceOver can press the marker.
-    private var pressable: Bool { !isDisabled && (onSelect != nil || onOpen != nil) }
+    /// Whether the marker has something to do when pressed.
+    private var hasAction: Bool { onSelect != nil || onOpen != nil }
 
-    /// A button when it can be pressed, otherwise an image; selected when
-    /// selected, and a place always (its details are open).
+    /// Whether a tap or VoiceOver can press the marker now.
+    private var pressable: Bool { !isDisabled && hasAction }
+
+    /// A button when it has an action, disabled or not (a disabled one is
+    /// dimmed, below), otherwise an image; selected when selected, and a
+    /// place always (its details are open).
     private var accessibilityTraits: AccessibilityTraits {
-        let role: AccessibilityTraits = pressable ? .isButton : .isImage
+        let role: AccessibilityTraits = hasAction ? .isButton : .isImage
         return selected || place ? [role, .isSelected] : role
     }
 
@@ -191,7 +196,7 @@ public struct KozmosLocationPin: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityDescription)
             .accessibilityAddTraits(accessibilityTraits)
-            .modifier(Actions(pressable: pressable, tap: handleTap, select: select,
+            .modifier(Actions(pressable: pressable, dimmed: isDisabled && hasAction, tap: handleTap, select: select,
                               open: onOpen == nil ? nil : open, openLabel: openLabel))
             // The anchor at the centre of the frame.
             .padding(.top, plan.paddingTop)
@@ -489,9 +494,12 @@ extension KozmosLocationPin {
 
     /// What pressing does, only when the marker can be pressed: a static or
     /// disabled marker takes no touch, so a map's gestures under it still
-    /// run, and VoiceOver is offered no action.
+    /// run, and VoiceOver is offered no action. A disabled marker with an
+    /// action is a disabled button, which VoiceOver hears as dimmed, as
+    /// React's aria-disabled button and Compose's disabled Role.Button are.
     private struct Actions: ViewModifier {
         let pressable: Bool
+        let dimmed: Bool
         let tap: () -> Void
         let select: () -> Void
         let open: (() -> Void)?
@@ -509,7 +517,9 @@ extension KozmosLocationPin {
                         }
                     }
             } else {
-                content.allowsHitTesting(false)
+                content
+                    .allowsHitTesting(false)
+                    .disabled(dimmed)
             }
         }
     }
