@@ -135,7 +135,8 @@ export const HostedSteps: Story = {
       panelSizing="content"
       panelSurface="glass"
       panel={
-        <div className="flex flex-col gap-4 px-4 pb-4">
+        // The shell keeps 16 below the content (GAP-085): no padding here.
+        <div className="flex flex-col gap-4 px-4">
           <RouteSummary {...args} />
         </div>
       }

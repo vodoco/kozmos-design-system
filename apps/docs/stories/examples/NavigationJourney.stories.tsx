@@ -326,7 +326,8 @@ function NavigationJourney({
             tabIndex={-1}
             role="group"
             aria-label={`${state.phase} journey`}
-            className="flex min-w-0 flex-col gap-4 px-4 pb-4"
+            // The shell keeps 16 below the content (GAP-085).
+            className="flex min-w-0 flex-col gap-4 px-4"
           >
             {["setup", "calculating", "recovery"].includes(state.phase) &&
               setup}
