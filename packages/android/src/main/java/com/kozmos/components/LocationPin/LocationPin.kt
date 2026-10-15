@@ -164,13 +164,15 @@ fun Modifier.kozmosLocationPinAt(position: Density.() -> IntOffset): Modifier = 
  * rest (`showResultCounts`).
  *
  * It is a button when it can be pressed ([onClick] or [onOpen]), otherwise
- * an image. Its target is at least 48dp each way, centred on the body; it
- * never moves the anchor.
+ * an image, named by [label] alone (with [featuredLabel] on a featured
+ * tile). Its target is at least 48dp each way, centred on the body; it never
+ * moves the anchor.
  *
- * @param label The accessible name. A Result adds the number it shows
- *   ("Gate 12, 3"); a featured tile adds [featuredLabel].
+ * @param label The marker's whole accessible name, as the product composes
+ *   it, a Result's number included ("Result 3, Burger King"). Kozmos adds
+ *   nothing to it but [featuredLabel] on a featured tile.
  * @param number The result's number, as its card's number tab shows it.
- *   Drawn on a Result only.
+ *   Drawn on a Result only, and not read: put it in [label].
  * @param selected Fills a Result and grows a featured tile; TalkBack hears
  *   the selection. A place always reads as selected.
  * @param featured A featured place: the logo tile.
@@ -220,7 +222,7 @@ fun KozmosLocationPin(
     // The number, measured here: the pill grows with it. 14 semibold, in
     // tabular figures where the font has them, at a fixed size, as the map
     // style's sprite draws it, so the pill keeps the SDK's geometry at any
-    // font scale; TalkBack says the number.
+    // font scale; TalkBack hears it in the label.
     val shownNumber = if (kind == MarkerKind.Result) number else null
     val measurer = rememberTextMeasurer()
     val numberLayout = shownNumber?.let {
@@ -244,11 +246,12 @@ fun KozmosLocationPin(
         MarkerKind.Place -> MarkerGeometry.place()
     }
 
-    // What TalkBack hears: the label, the number a Result shows, the
-    // product's word for Featured on a featured tile.
+    // What TalkBack hears: the label, the whole name as the product composes
+    // it, its number included, since word order and translation are the
+    // product's (Olcay, 15 Oct); Kozmos adds only its word for Featured on a
+    // featured tile. An added number would be said twice ("3, Gate 12, 3").
     val description = listOfNotNull(
         label,
-        shownNumber?.toString(),
         if (kind == MarkerKind.Featured) featuredLabel else null
     ).joinToString(", ")
     val readsSelected = selected || kind == MarkerKind.Place

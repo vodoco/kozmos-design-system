@@ -28,7 +28,7 @@ fun ResultMarkersOnAMap(
         results.forEach { result ->
             KozmosLocationPin(
                 modifier = Modifier.kozmosLocationPinAt { result.screenPoint() },
-                label = result.name,
+                label = "${result.number}, ${result.name}",
                 number = result.number,
                 selected = result.id == selectedId,
                 onClick = { onSelect(result.id) },
