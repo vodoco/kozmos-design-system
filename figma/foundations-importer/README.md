@@ -119,15 +119,14 @@ convention that avoids variant explosion:
   From and To captions and the steps between them, each with DirectionStep's mark
   from the Icons page, the current one semibold in the theme's 600. No surface of
   its own. Run Curated Icons first.
-- **LocationPin** — `State` of Default, Selected, Featured, OffFloor, Disabled
-  crossed with `Size` of Sm, Md, Lg and `Tint` of Theme and the taxonomy's eight
-  category colours (135 variants); a tint's fill is the marker and its ink the
-  number, and a featured pin keeps the alert colour. Selected pins grow as well as
-  recolor and off-floor pins use a dashed outline, so state is never carried by
-  color alone. `variant` (colour role) and `labelPlacement` are deliberately not
-  variant axes: colour is a token override and label placement is renderer
-  layout. This is the one Product / SDK set that uses the two-axis matrix
-  builder rather than the single-axis one.
+- **LocationPin** — the SDK's map result markers (decision 71): `Kind` of Result,
+  Featured and Place by `State` of Default and Selected by `Content` of Number and
+  Dot (a Result only), 7 variants. A Result is its number in a pill on a pointer;
+  a Featured place its logo in a tile with a dark rim, on a dot; a Place the
+  green pin on a dot. Products take these markers from the map style's sprites;
+  Kozmos draws them for prototypes. `labelPlacement` is renderer layout, not an
+  axis. This is the one Product / SDK set that uses the two-axis matrix builder
+  rather than the single-axis one.
 - **ManoeuvreCard** — `State` Closed and Open by `Appearance` Theme and Background:
   the current manoeuvre (DirectionStep's mark from the Icons page, the
   instruction and the detail) or, open, the itinerary's rows, over the grab bar.

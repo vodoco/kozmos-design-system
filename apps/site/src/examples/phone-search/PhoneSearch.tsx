@@ -274,6 +274,9 @@ export default function PhoneSearch() {
       <Box className="ex-phone-layer">
         {pins.map((place) => {
           const index = results.indexOf(place);
+          // Its name is its whole label, the number in it (decision 79).
+          const number =
+            !browsing && !selected && index >= 0 ? index + 1 : undefined;
           return (
             <Box
               key={place.poi.id}
@@ -284,10 +287,8 @@ export default function PhoneSearch() {
               }}
             >
               <LocationPin
-                label={`${place.poi.name}, ${place.poi.floorLabel}`}
-                number={
-                  !browsing && !selected && index >= 0 ? index + 1 : undefined
-                }
+                label={`${number === undefined ? "" : `${number}, `}${place.poi.name}, ${place.poi.floorLabel}`}
+                number={number}
                 place={place.poi.id === selectedId}
                 onClick={() => select(place.poi.id)}
               />

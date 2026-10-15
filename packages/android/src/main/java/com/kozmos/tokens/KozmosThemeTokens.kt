@@ -1216,9 +1216,9 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The accent as a fill: the Featured tag, its card's edge and a featured
-     * pin, everywhere in the UI. Accent 500, the client's accent; it stays
-     * bright in both themes and carries onFill, not the page's ink.
+     * The accent as a fill: the Featured tag and its card's edge, everywhere
+     * in the UI. Accent 500, the client's accent; it stays bright in both
+     * themes and carries onFill, not the page's ink.
      */
     val semanticsAccentFill: Color
         @Composable @ReadOnlyComposable get() = themed(

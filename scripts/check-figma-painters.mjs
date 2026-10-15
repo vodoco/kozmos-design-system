@@ -729,7 +729,13 @@ section("LocationPin");
           pin.width === 40 &&
           drop &&
           drop.type === "VECTOR" &&
-          drop.vectorPaths[0].data === plugin.LOCATION_PIN_TEARDROP &&
+          // The SDK's teardrop, checked by hand against the boards' SVG: the
+          // tangents from the tip meet the circle at 45 degrees either side
+          // (5.858 and 34.142 at y 34.142), its three quarter-circle cubics
+          // have control length 11.046 (0.5523 of 20), and the tip is 48.284
+          // below the circle's top.
+          drop.vectorPaths[0].data ===
+            "M 34.142 34.142 C 41.953 26.331 41.953 13.669 34.142 5.858 C 26.331 -1.953 13.669 -1.953 5.858 5.858 C -1.953 13.669 -1.953 26.331 5.858 34.142 L 20 48.284 Z" &&
           boundVariableName(drop.fills[0]) === "Colors/emotional/success/800" &&
           floating(drop),
         "place: a teardrop of 40 in emotional success 800, with the md shadow",

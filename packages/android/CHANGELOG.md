@@ -87,6 +87,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
   - The number is no longer added to the marker's name: include it in `label`.
   - `markerContent` is now only the featured tile's logo; a Result and a place ignore it.
   - Positional calls past `modifier` must name their arguments, since the parameters moved.
+  - **Positioning:** the composable's bounds now include its 48dp target, so the anchor is no longer at its bottom centre: a Result's tip sits 43 down its 48dp height, and a featured tile's or a place's dot centre 53 down its 56. Drop any bottom-centre offset you placed the old pin with, and place it with `Modifier.kozmosLocationPinAt { … }`, which puts the anchor on the point.
   - Review screenshot baselines with pins.
 - A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.
 - A product UI test that finds a result row with `onNodeWithContentDescription(...)` no longer matches: use `onNodeWithText(...)` with the same words, `substring = true` for one phrase. One that finds the row by a single drawn word in the merged tree, `onNodeWithText("Pharmacy")`, needs `substring = true`, or `useUnmergedTree = true` to find the drawn text itself.

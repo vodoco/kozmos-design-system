@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "fe384b04e3fc";
+const PLUGIN_BUILD = "9d1bd83965c0";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -5456,18 +5456,6 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "FloorSelector/label/line-height",
     value: 20,
     scopes: ["LINE_HEIGHT"],
-  },
-  { name: "LocationPin/marker/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
-  {
-    name: "LocationPin/marker/size/selected",
-    value: 40,
-    scopes: ["WIDTH_HEIGHT"],
-  },
-  { name: "LocationPin/tip/height", value: 10, scopes: ["WIDTH_HEIGHT"] },
-  {
-    name: "LocationPin/stroke/width",
-    value: 2,
-    scopes: ["STROKE_FLOAT"],
   },
   { name: "LocationPin/label/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "LocationPin/label/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
