@@ -274,7 +274,6 @@ export default function PhoneSearch() {
       <Box className="ex-phone-layer">
         {pins.map((place) => {
           const index = results.indexOf(place);
-          const placeCategory = categoryFor(place.poi.categoryId);
           return (
             <Box
               key={place.poi.id}
@@ -289,8 +288,7 @@ export default function PhoneSearch() {
                 number={
                   !browsing && !selected && index >= 0 ? index + 1 : undefined
                 }
-                selected={place.poi.id === selectedId}
-                tint={placeCategory ? tint(placeCategory.tint) : undefined}
+                place={place.poi.id === selectedId}
                 onClick={() => select(place.poi.id)}
               />
             </Box>

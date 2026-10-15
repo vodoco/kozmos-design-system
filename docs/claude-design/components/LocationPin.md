@@ -2,7 +2,7 @@
 
 # LocationPin
 
-A map marker with optional result number, custom content, external label and category tint. Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
+The SDK's map result markers (decision 71): a result's number in a pill, a featured place's logo in a tile, and the green pin for a place whose details are open. In a product these markers come from the map style's sprite sheet, and a featured place's tile from the featured sprite Pointr's back end makes with its logo. LocationPin draws the same markers for prototypes and boards (decision 81). The SDK host owns geographic placement and selection state.
 
 - **Import:** `import { LocationPin } from "@kozmos-ds/react";`
 - **Group:** SDK
@@ -21,9 +21,9 @@ export function LocationPinExample() {
     <ThemeProvider defaultTheme="light">
       <LocationPin
         onClick={() => {}}
-        label="Selected place"
-        variant="primary"
-        size="md"
+        onOpen={() => {}}
+        label="Result 1, Harbour Coffee Co."
+        number={1}
       />
     </ThemeProvider>
   );
@@ -34,73 +34,50 @@ export function LocationPinExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
-- `variant`: `"default" | "primary" | "secondary" | "accent"`, optional, default `"primary"`.
-- `size`: `"sm" | "md" | "lg"`, optional, default `"md"`.
 - `label`: `string`, optional, default `"Location"`.
+
+  The marker's accessible name.
+
 - `number`: `number`, optional.
 
-  The result's number, as its card's number tab shows it. At rest the pin
-  is quiet — the outlined marker on the background, its ring and number in
-  its colour — and it fills only when `selected`, as the tab does.
+  The result's number, as its card's number tab shows it, in the pill.
+  Without one the pill shows a dot.
 
 - `markerContent`: `React.ReactNode`, optional.
+
+  A featured place's logo, normally an image: it fits inside the tile's
+  rim, never cropped. Only the featured tile shows it.
+
 - `selected`: `boolean`, optional, default `false`.
 
-  Grows the pin, and fills a numbered one.
+  Fills a result's pill, and grows a featured tile from 44 to 52.
 
 - `featured`: `boolean`, optional, default `false`.
 
-  A featured place: the accent colour (amber, `#FAB735`, unless the product
-  sets its own), with the accent's ink, whatever the variant or tint
-  (decision 68). It shows the place's logo, passed as `markerContent`, and
-  without one a star where the number would be: a featured pin never shows
-  its number. It is never quiet.
+  A featured place: its logo in a rounded tile with a dark rim, no number
+  and no accent colour (decision 81: a static sprite with the logo).
 
 - `featuredLabel`: `string`, optional, default `"Featured"`.
 
-  Added to `label` for a featured pin, so assistive technology hears what
-  the amber shows. Default "Featured"; pass it translated.
+  Added to `label` for a featured place, so assistive technology hears
+  what the tile shows. Default "Featured"; pass it translated.
+
+- `place`: `boolean`, optional, default `false`.
+
+  A place on its own, its details open: the green pin, the only marker
+  shown. It wins over `featured` and `number`.
 
 - `disabled`: `boolean`, optional, default `false`.
-- `offFloor`: `boolean`, optional, default `false`.
-
-  On another floor: the outlined marker with a dashed ring, on the
-  background, and the number in the foreground, so shape carries the
-  state, as on iOS and Compose. The dashes tell it from a quiet numbered
-  pin at rest, which is outlined too; it never fills, selected or not.
-
 - `externalLabel`: `string`, optional.
 - `labelPlacement`: `"top" | "right" | "bottom" | "left"`, optional, default `"bottom"`.
 - `resultId`: `string`, optional.
-- `tint`: `CategoryTint`, optional.
+- `onOpen`: `() => void`, optional.
 
-  A category's colours for the marker — its fill, solid, with its ink for
-  the number — over the variant's; a featured pin keeps the accent.
-  A numbered pin at rest and a pin off the floor are outlined in the fill,
-  with the number in the foreground.
+  A double tap on the marker opens the place's details (decision 71),
+  rather than zooming the map: the first tap is the ordinary press, the
+  second calls this once and is not passed on as another. A keyboard press
+  is always the ordinary press.
 
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
-
-## Types these props take
-
-### CategoryTint
-
-From `@kozmos-ds/react`.
-
-```ts
-/**
- * A category's colours, as its tile, its chip and its pin wear them: the
- * accent draws the icon, the strokes and the label; the fill fills a count
- * pill or counter, with the ink that reads on it. The taxonomy's eight
- * quick-access colours are the `--semantics-category-accent-*`, `-fill-*` and
- * `-on-fill-*` variables; `pnpm tokens:contrast:check` holds each fill's ink
- * to 4.5:1.
- */
-interface CategoryTint {
-  accent: string;
-  fill: string;
-  onFill: string;
-}
-```

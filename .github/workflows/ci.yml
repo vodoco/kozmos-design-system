@@ -342,6 +342,15 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:theme-fill
           ADAPTIVE_BROWSER=firefox pnpm test:theme-fill
 
+      # Decision 71: LocationPin draws the SDK's map result markers, measured
+      # against the boards' SVGs, light and dark, with and without @scope
+      # (scripts/check-location-pin.mjs).
+      - name: Verify LocationPin Markers
+        run: |
+          pnpm test:location-pin
+          ADAPTIVE_BROWSER=webkit pnpm test:location-pin
+          ADAPTIVE_BROWSER=firefox pnpm test:location-pin
+
       # GAP-23: the token stylesheets write an alias as a reference. Every
       # token computes the value it was written as before, in a light and a
       # dark root, and one override of theme 500 through ThemeProvider's

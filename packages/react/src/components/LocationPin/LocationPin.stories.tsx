@@ -1,7 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
 import type { ReactNode } from "react";
 import { fn } from "@storybook/test";
-import { Building01 } from "@kozmos-ds/icons";
 import { LocationPin, type LocationPinProps } from "./LocationPin";
 import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 
@@ -10,17 +9,24 @@ const meta: Meta<typeof LocationPin> = {
   title: "SDK/Map controls/LocationPin",
   component: LocationPin,
   parameters: { layout: "centered" },
-  args: { onClick: fn() },
+  args: { onClick: fn(), onOpen: fn() },
 };
 
 export default meta;
 type Story = StoryObj<typeof LocationPin>;
 
-const red = {
-  accent: "var(--semantics-category-accent-red)",
-  fill: "var(--semantics-category-fill-red)",
-  onFill: "var(--semantics-category-on-fill-red)",
-};
+/**
+ * A fictional café's logo, drawn inline: a featured tile shows the product's
+ * own image, and the visual review loads nothing from outside.
+ */
+const logo = (
+  <img
+    alt=""
+    src={`data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#C8102E"/><text x="20" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">HC</text></svg>',
+    )}`}
+  />
+);
 
 /**
  * A stretch of map for pins to stand on. A pin is placed by the point it
@@ -34,7 +40,7 @@ function MapStandIn({ children }: { children: ReactNode }) {
       style={{
         display: "flex",
         gap: 8,
-        padding: "56px 16px 32px",
+        padding: "72px 16px 24px",
         borderRadius: 16,
         background: "var(--primitives-colors-background-100)",
       }}
@@ -46,7 +52,7 @@ function MapStandIn({ children }: { children: ReactNode }) {
 
 function Spot({ children }: { children: ReactNode }) {
   return (
-    <div style={{ position: "relative", width: 56, height: 8 }}>
+    <div style={{ position: "relative", width: 64, height: 8 }}>
       <div style={{ position: "absolute", left: "50%", top: 0 }}>
         {children}
       </div>
@@ -75,85 +81,28 @@ const onTheMap: Decorator = (Story) => (
   </MapStandIn>
 );
 
+/**
+ * A result: its number in a pill on a pointer, anchored at the pointer's
+ * tip, as the SDK's map style draws it (decision 71). In a product the
+ * markers come from the map style's sprite sheet; LocationPin draws the same
+ * for prototypes and boards.
+ */
 export const Default: Story = {
-  args: {
-    label: "Selected place",
-    variant: "primary",
-    size: "md",
-  },
-  decorators: [onTheMap],
-};
-
-export const NumberedSelected: Story = {
-  args: {
-    label: "Result 2, Burger King, selected",
-    number: 2,
-    selected: true,
-    featured: true,
-  },
+  args: { label: "Result 1, Harbour Coffee Co.", number: 1 },
   decorators: [onTheMap],
 };
 
 /**
- * Numbered pins at rest are quiet: the surface inside, a ring and the number
- * in the pin's colour, as the result card's number tab is at rest.
+ * Results at rest: theme 600 on the background, the pill as wide as its
+ * number needs, 32 at least. Without a number, a dot.
  */
-export const NumberedAtRest: Story = {
+export const Results: Story = {
   render: (args) => (
     <OnTheMap
       pins={[
-        { ...args, label: "Result 1, Burger King", number: 1 },
-        { ...args, label: "Result 2, Harbour Coffee Co.", number: 2 },
-        { ...args, label: "Result 3, Baskin-Robbins", number: 3 },
-      ]}
-    />
-  ),
-};
-
-/**
- * Only the selected pin is filled, with its ink on the number, and it grows,
- * so selection is never told by colour alone. Its card's number tab fills
- * with it (decision 55).
- */
-export const NumberedOneSelected: Story = {
-  render: (args) => (
-    <OnTheMap
-      pins={[
-        { ...args, label: "Result 1, Burger King", number: 1 },
-        {
-          ...args,
-          label: "Result 2, Harbour Coffee Co.",
-          number: 2,
-          selected: true,
-        },
-        { ...args, label: "Result 3, Baskin-Robbins", number: 3 },
-      ]}
-    />
-  ),
-};
-
-/**
- * A featured pin, a pin with a logo in `markerContent` and a pin with no
- * number keep their fill at rest. A featured pin is the accent colour, amber
- * by default, on every platform (decision 68): it shows its logo, and without
- * one a star, never its number, and its name says "Featured" after the label.
- */
-export const FeaturedLogoAndPlain: Story = {
-  render: (args) => (
-    <OnTheMap
-      pins={[
-        { ...args, label: "Burger King", featured: true },
-        {
-          ...args,
-          label: "Kozmos Cafe",
-          featured: true,
-          markerContent: <Building01 aria-hidden="true" size={12} />,
-        },
-        {
-          ...args,
-          label: "Harbour Coffee Co.",
-          markerContent: <Building01 aria-hidden="true" size={12} />,
-        },
+        { ...args, label: "Result 1, Harbour Coffee Co.", number: 1 },
+        { ...args, label: "Result 12, Tessel Shoes", number: 12 },
+        { ...args, label: "Result 128, Gate B12", number: 128 },
         { ...args, label: "Baskin-Robbins" },
       ]}
     />
@@ -161,97 +110,92 @@ export const FeaturedLogoAndPlain: Story = {
 };
 
 /**
- * On another floor the marker is outlined with a dashed ring and the number
- * is in the foreground; selected, it grows and is never filled. The dashes
- * tell it from the quiet pin at rest on this floor, first here, which is
- * outlined too: in forced colours and to any colour vision.
+ * Selected, a result fills in theme 600 with its number in foreground/1000;
+ * it doesn't grow. Its card's number tab fills with it (decision 55).
  */
-export const OtherFloor: Story = {
+export const Selected: Story = {
   render: (args) => (
     <OnTheMap
       pins={[
-        { ...args, label: "Result 1, Burger King", number: 1 },
+        { ...args, label: "Result 1, Harbour Coffee Co.", number: 1 },
         {
           ...args,
-          label: "Result 4, Gates, on another floor",
-          number: 4,
-          offFloor: true,
-        },
-        {
-          ...args,
-          label: "Result 5, Lounge, on another floor",
-          number: 5,
-          offFloor: true,
+          label: "Result 2, Tessel Shoes, selected",
+          number: 2,
           selected: true,
         },
-        { ...args, label: "Pharmacy, on another floor", offFloor: true },
+        { ...args, label: "Result 3, Baskin-Robbins", number: 3 },
+        { ...args, label: "Gate B12, selected", selected: true },
       ]}
     />
   ),
 };
 
 /**
- * Other variants keep their colours in the ring and number at rest, as ink
- * that reads on the surface. Secondary's own colour is a surface grey, so
- * its ring and number take the muted foreground; the accent's 500 reads 3:1
- * on the dark page, so they take its ramp's 700. Filled, the accent is brand
- * variant 1's 500 with a white number, as on iOS and Compose (decision 62).
+ * A featured place: its logo in a tile with a dark rim, 44 square and 52
+ * when selected, standing on a dot. No number and no accent colour
+ * (decision 81): in a product it is the featured sprite Pointr's back end
+ * makes with the logo. Without a logo the tile is empty.
  */
-export const VariantsAtRest: Story = {
+export const Featured: Story = {
   render: (args) => (
     <OnTheMap
       pins={[
-        { ...args, label: "Result 1", number: 1, variant: "default" },
-        { ...args, label: "Result 2", number: 2, variant: "secondary" },
-        { ...args, label: "Result 3", number: 3, variant: "accent" },
         {
           ...args,
-          label: "Result 4",
-          number: 4,
-          variant: "secondary",
-          selected: true,
+          featured: true,
+          label: "Harbour Coffee Co.",
+          markerContent: logo,
         },
         {
           ...args,
-          label: "Result 5",
-          number: 5,
-          variant: "accent",
+          featured: true,
+          label: "Harbour Coffee Co., selected",
+          markerContent: logo,
           selected: true,
         },
+        { ...args, featured: true, label: "Tessel Shoes" },
       ]}
     />
   ),
 };
 
-/** The same pins in the dark theme: the ring and number in its primary. */
-export const InTheDark: Story = {
+/**
+ * A place on its own, its details open: the green pin, the only marker on
+ * the map, standing on its dot. It shows no number and no logo.
+ */
+export const Place: Story = {
+  args: { label: "Harbour Coffee Co.", place: true },
+  decorators: [onTheMap],
+};
+
+/** A search's results on the map, a featured place among them. */
+export const OnAMap: Story = {
   render: (args) => (
-    <ThemeProvider theme="dark">
-      <OnTheMap
-        pins={[
-          { ...args, label: "Result 1, Burger King", number: 1 },
-          {
-            ...args,
-            label: "Result 2, Harbour Coffee Co.",
-            number: 2,
-            selected: true,
-          },
-          { ...args, label: "Result 3, Dining", number: 3, tint: red },
-          {
-            ...args,
-            label: "Result 4, Gates, on another floor",
-            number: 4,
-            offFloor: true,
-          },
-        ]}
-      />
-    </ThemeProvider>
+    <OnTheMap
+      pins={[
+        { ...args, label: "Result 1, Tessel Shoes", number: 1 },
+        {
+          ...args,
+          featured: true,
+          label: "Harbour Coffee Co.",
+          markerContent: logo,
+        },
+        {
+          ...args,
+          label: "Result 3, Baskin-Robbins, selected",
+          number: 3,
+          selected: true,
+        },
+        { ...args, label: "Result 4, Gate B12", number: 4 },
+      ]}
+    />
   ),
 };
 
 /**
- * Right to left, each pin still stands on the point it marks (GAP-076) and
- * keeps its states; the numbers are the products', as its cards show them.
+ * Right to left the markers stand where they did: a pin is anchored by a
+ * physical point, as the renderer gives it.
  */
 export const RightToLeft: Story = {
   render: function RightToLeftStory(args, { globals }) {
@@ -271,9 +215,9 @@ export const RightToLeft: Story = {
             },
             {
               ...args,
-              label: "النتيجة 4، البوابات، في طابق آخر",
-              number: 4,
-              offFloor: true,
+              featured: true,
+              label: "مقهى هاربور",
+              markerContent: logo,
             },
           ]}
         />
@@ -284,49 +228,10 @@ export const RightToLeft: Story = {
 
 export const ExternalLabel: Story = {
   args: {
-    label: "Baskin-Robbins, second floor",
-    externalLabel: "Baskin-Robbins",
-    labelPlacement: "bottom",
-  },
-  decorators: [onTheMap],
-};
-
-/**
- * A pin in a category's colours. At rest it is outlined in the fill with the
- * number in the foreground (six of the eight fills fail 4.5:1 as text on the
- * surface).
- */
-export const Tinted: Story = {
-  args: {
-    label: "Dining",
-    number: 3,
-    tint: red,
-  },
-  decorators: [onTheMap],
-};
-
-/** Selected, the category's fill is the marker and its ink the number. */
-export const TintedSelected: Story = {
-  args: {
-    label: "Dining, selected",
-    number: 3,
-    selected: true,
-    tint: red,
-  },
-  decorators: [onTheMap],
-};
-
-/** Off the floor: the outlined marker with a dashed ring in the fill, the number in the foreground. */
-export const TintedOffFloor: Story = {
-  args: {
-    label: "Gates, on another floor",
-    number: 4,
-    offFloor: true,
-    tint: {
-      accent: "var(--semantics-category-accent-yellow)",
-      fill: "var(--semantics-category-fill-yellow)",
-      onFill: "var(--semantics-category-on-fill-yellow)",
-    },
+    label: "Result 2, Harbour Coffee Co.",
+    number: 2,
+    externalLabel: "Harbour Coffee Co.",
+    labelPlacement: "right",
   },
   decorators: [onTheMap],
 };

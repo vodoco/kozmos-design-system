@@ -228,7 +228,6 @@ export default function KioskDirectory() {
             ))}
             {pins.map((place) => {
               const index = results.indexOf(place);
-              const placeCategory = categoryFor(place.poi.categoryId);
               return (
                 <Box
                   key={place.poi.id}
@@ -239,11 +238,9 @@ export default function KioskDirectory() {
                   }}
                 >
                   <LocationPin
-                    size="lg"
                     label={`${place.poi.name}, ${place.poi.floorLabel}`}
                     number={!selected && index >= 0 ? index + 1 : undefined}
-                    selected={place.poi.id === selectedId}
-                    tint={placeCategory ? tint(placeCategory.tint) : undefined}
+                    place={place.poi.id === selectedId}
                     onClick={() => select(place.poi.id)}
                   />
                 </Box>

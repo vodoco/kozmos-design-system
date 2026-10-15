@@ -9,7 +9,6 @@ import {
   FloatingActionButton,
   FloorSelector,
   IconButton,
-  LocationPin,
   MapControlButton,
   POIResultCard,
   SplitButton,
@@ -133,9 +132,6 @@ function Hovers({ id }: { id: (part: string) => string }) {
 function Accents({ id }: { id: (part: string) => string }) {
   return (
     <div>
-      <div data-testid={id("featured-pin")}>
-        <LocationPin featured label="Burger King" number={2} />
-      </div>
       <POIResultCard
         data-testid={id("featured-card")}
         numbered
