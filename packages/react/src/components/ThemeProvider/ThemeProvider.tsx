@@ -11,6 +11,13 @@ export type Theme = "dark" | "light" | "system";
 export type ResolvedTheme = Exclude<Theme, "system">;
 export type ThemeTokens = Record<`--${string}`, string | number>;
 /**
+ * How large the controls are (decision 82). `touch`, the default, keeps every
+ * control at least 44 tall, as products and the SDK want. `compact` is for
+ * pointer-first desktop tools such as Pointr Cloud: 32, 40 and 48 buttons, 40
+ * fields, 32 table heads. It is web only; SwiftUI and Compose stay touch.
+ */
+export type ThemeDensity = "touch" | "compact";
+/**
  * Overrides per theme. Each provider applies the set for its own resolved
  * theme, so a provider that forces the other theme inside yours (DynamicIsland's
  * island is always dark) takes the matching set rather than yours.
@@ -31,6 +38,11 @@ export interface ThemeProviderProps {
   /** Deterministic system fallback for SSR and the first hydration render. */
   defaultSystemTheme?: ResolvedTheme;
   dir?: "ltr" | "rtl";
+  /**
+   * The control sizes inside this provider and its portals; a nested provider
+   * inherits it unless it names its own. Defaults to `touch`.
+   */
+  density?: ThemeDensity;
   /**
    * Explicit overrides, inherited by nested providers and owned portals: one
    * set for both themes, or `{ light, dark }`, of which every provider applies
@@ -58,6 +70,7 @@ export function ThemeProvider({
   storageKey,
   defaultSystemTheme = "light",
   dir,
+  density,
   tokens,
 }: ThemeProviderProps) {
   const parent = useContext(ThemeProviderContext);
@@ -72,6 +85,7 @@ export function ThemeProvider({
   const theme = controlledTheme ?? preference;
   const resolvedTheme = theme === "system" ? systemTheme : theme;
   const direction = dir ?? parent?.dir ?? "ltr";
+  const resolvedDensity = density ?? parent?.density ?? "touch";
   // Both themes' sets are inherited, so a nested provider that resolves to
   // the other theme applies that theme's set, not this one's.
   const tokenSets = useMemo(() => {
@@ -119,6 +133,7 @@ export function ThemeProvider({
     theme,
     resolvedTheme,
     dir: direction,
+    density: resolvedDensity,
     tokens: inheritedTokens,
     tokenSets,
     portalContainer,
@@ -143,6 +158,7 @@ export function ThemeProvider({
   const attributes = {
     "data-kozmos-root": "",
     "data-theme": resolvedTheme,
+    "data-kozmos-density": resolvedDensity,
     dir: direction,
     style: { ...inheritedTokens, display: "contents" } as React.CSSProperties,
   };
