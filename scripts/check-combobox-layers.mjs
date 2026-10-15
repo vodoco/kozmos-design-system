@@ -172,6 +172,38 @@ try {
       await page.close();
     }
   }
+  // A short window (a phone on its side, 568x320): the list in its portal is
+  // fixed, so the page cannot scroll it into view. It fits the room the
+  // window leaves, on whichever side has more, and its first place takes a
+  // press (CI's storybook-regressions found MultiSelect's out of view).
+  for (const name of ["Origin", "Tags"]) {
+    const page = await browser.newPage({
+      viewport: { width: 568, height: 320 },
+    });
+    try {
+      await page.setContent(
+        '<div id="root" data-host="clip" data-layout="overlay"></div>',
+      );
+      await page.addStyleTag({ content: css });
+      await page.addScriptTag({ content: code });
+      await page.getByRole("combobox", { name }).click();
+      const list = page.getByRole("listbox", { name });
+      await list.waitFor();
+      const room = await list.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return { top: box.top, bottom: box.bottom, height: innerHeight };
+      });
+      assert.ok(
+        room.top >= 0 && room.bottom <= room.height + 0.5,
+        `${name}: in a 568x320 window the list runs out of view (${JSON.stringify(room)})`,
+      );
+      await page.getByRole("option").first().click({ timeout: 5000 });
+      console.log(`PASS ${name}: the list fits a 568x320 window`);
+      count++;
+    } finally {
+      await page.close();
+    }
+  }
   // A MultiSelect in a modal dialog: its list is in a portal, outside the
   // dialog, which turns pointer events off everywhere but its layers. A press
   // on a place must choose it and leave the dialog open.

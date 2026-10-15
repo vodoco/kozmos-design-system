@@ -7,6 +7,7 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 import { Chip, ChipGroup } from "../Chip";
 import { FieldWrapper } from "../FieldWrapper";
 import {
+  FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
@@ -460,6 +461,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     aria-multiselectable={listboxOpen ? true : undefined}
                     className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
+                    style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
                     {filteredOptions.length === 0 ? (
                       <div className="px-3 py-2 text-sm text-muted-foreground">

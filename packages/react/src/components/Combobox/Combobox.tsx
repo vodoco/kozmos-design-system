@@ -1,6 +1,7 @@
 import React from "react";
 import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import {
+  FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
@@ -519,6 +520,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       // as an overlay the portal places it (FieldPopupContent).
                       popupLayout === "inline" && "mt-1 w-full",
                     )}
+                    style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
                     {filteredOptions.length === 0 &&
                       validActions.length > 0 &&

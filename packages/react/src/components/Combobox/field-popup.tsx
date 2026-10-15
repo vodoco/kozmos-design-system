@@ -14,6 +14,15 @@ const FieldPopupPortal = createThemePortal(Portal);
  * and host vetoes included) and its outside-press handling. Internal.
  */
 export const FieldPopupRoot = PopperPrimitive.Root;
+
+/**
+ * The list's height: 16rem, or the room the window leaves on the side it
+ * opens to. In its portal the list is fixed, so the page cannot scroll it
+ * into view: on a phone on its side (568 by 320) it ran off the window.
+ * Inline, outside the popper, the variable is unset and 16rem holds.
+ */
+export const FIELD_POPUP_MAX_HEIGHT =
+  "min(16rem, var(--radix-popper-available-height, 16rem))";
 export const FieldPopupAnchor = PopperPrimitive.Anchor;
 
 export const FieldPopupContent = React.forwardRef<
