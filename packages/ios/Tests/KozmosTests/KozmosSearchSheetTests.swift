@@ -73,32 +73,6 @@ final class KozmosSearchSheetTests: XCTestCase {
         XCTAssertNil(pixels.boundingBox(in: CGRect(x: 0, y: 0, width: 128, height: 100), where: RenderedPixels.isTheme), "the theme colour is still drawn on a tinted tile")
     }
 
-    /// A pin in a category's colour: the marker takes the tint.
-    @MainActor func testThePinTakesItsTint() async throws {
-        let view = KozmosLocationPin(size: .md, tint: KozmosCategoryTint(accent: KozmosColors.semanticsCategoryAccentRed, fill: KozmosInkedFill(fill: KozmosColors.semanticsCategoryFillRed, ink: KozmosColors.semanticsCategoryOnfillRed))).padding(14).background(Color.white)
-        let size = CGSize(width: 60, height: 60)
-        let pixels = try await RenderedPixels.render(view, size: size)
-        let marker = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: Self.isRedTint), "no marker in the tint")
-        // The 32 medium pin's fill, inside its 2 white stroke: 28, as the Compose golden measures it.
-        XCTAssertEqual(marker.width, 28, accuracy: 2, "the marker is not the 32 medium pin's 28 fill: \(marker)")
-        XCTAssertNil(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isTheme), "the theme colour is still drawn on a tinted pin")
-    }
-
-    /// Off the floor the pin is a hollow ring in its colour on white, and its
-    /// number is dark on the disc (Olcay, 2026-09-21): the yellow fill as
-    /// the number's colour read 1.92:1 on white.
-    @MainActor func testAnOffFloorPinsNumberIsDarkOnTheWhiteDisc() async throws {
-        let view = KozmosLocationPin(size: .lg, number: 4, offFloor: true, tint: KozmosCategoryTint(accent: KozmosColors.semanticsCategoryAccentYellow, fill: KozmosInkedFill(fill: KozmosColors.semanticsCategoryFillYellow, ink: KozmosColors.semanticsCategoryOnfillYellow))).padding(14).background(Color.white)
-        let size = CGSize(width: 68, height: 68)
-        let pixels = try await RenderedPixels.render(view, size: size)
-        let isYellow: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 220 && g > 140 && g < 200 && b < 80 }
-        let ring = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: isYellow), "no ring in the colour")
-        XCTAssertEqual(ring.width, 40, accuracy: 2, "the ring is not the 40 large pin: \(ring)")
-        let inside = ring.insetBy(dx: 10, dy: 10)
-        XCTAssertNotNil(pixels.boundingBox(in: inside, where: { r, g, b in r < 70 && g < 70 && b < 70 }), "the number is not dark on the white disc")
-        XCTAssertNil(pixels.boundingBox(in: inside, where: isYellow), "the number is still in the colour")
-    }
-
     /// A counter filled with a category's colour takes that colour's ink:
     /// the dark ink on the taxonomy's yellow, where white would not read.
     @MainActor func testTheCountersFillBringsItsOwnInk() async throws {

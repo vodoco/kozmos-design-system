@@ -281,6 +281,10 @@ private struct InteractionFixture: View {
             KozmosLocationPin(label: "Selected action", number: 2, selected: true, onSelect: {})
             KozmosLocationPin(label: "Rest action", number: 2, onSelect: {})
             KozmosLocationPin(label: "Rest static", number: 2)
+        case "pin-open":
+            KozmosLocationPin(label: "Gate 12", number: 12, selected: selected,
+                              onSelect: { selected = true; events.append("select") },
+                              onOpen: { events.append("open") })
         case "list-full":
             KozmosPOIResultList(items: items([go, .init(action: .details, label: "Details")]),
                                resultCountLabel: "2 results", selectedPoiId: "gate/12",
