@@ -19,7 +19,15 @@ const logo = (
 
 const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
   ["result-1", { label: "Result 1", number: 1, onOpen: () => {} }],
-  ["result-128", { label: "Result 128", number: 128 }],
+  [
+    "result-128",
+    {
+      label: "Result 128",
+      number: 128,
+      externalLabel: "Gate B12",
+      labelPlacement: "right",
+    },
+  ],
   ["result-selected", { label: "Result 2", number: 2, selected: true }],
   ["dot", { label: "Gate B12" }],
   ["dot-selected", { label: "Gate B12", selected: true }],
@@ -39,11 +47,19 @@ const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
       label: "Harbour Coffee",
       markerContent: logo,
       selected: true,
+      externalLabel: "Harbour Coffee",
+      labelPlacement: "left",
     },
   ],
   [
     "place",
-    { label: "Harbour Coffee", place: true, featured: true, number: 3 },
+    {
+      label: "Harbour Coffee",
+      place: true,
+      featured: true,
+      number: 3,
+      onClick: () => {},
+    },
   ],
 ];
 

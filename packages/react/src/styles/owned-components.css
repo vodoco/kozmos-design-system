@@ -1655,6 +1655,54 @@
   .kozmos-location-pin[data-interactive] {
     cursor: pointer;
   }
+  /* A marker nothing presses takes no pointer: a pan or a press that starts
+     on it reaches the map, as on iOS and Compose. */
+  .kozmos-location-pin:not([data-interactive]) {
+    pointer-events: none;
+  }
+  /* The words beside the marker (externalLabel), 4 from it. At its side
+     they are centred on its shape: the pill's centre, 16 down; the tile's,
+     22 (26 selected); the place's circle, 20. */
+  .kozmos-location-pin {
+    --kozmos-location-pin-centre: 16px;
+  }
+  .kozmos-location-pin[data-kind="featured"] {
+    --kozmos-location-pin-centre: 22px;
+  }
+  .kozmos-location-pin[data-kind="featured"][data-selected] {
+    --kozmos-location-pin-centre: 26px;
+  }
+  .kozmos-location-pin[data-kind="place"] {
+    --kozmos-location-pin-centre: 20px;
+  }
+  .kozmos-location-pin-label {
+    position: absolute;
+  }
+  .kozmos-location-pin-label[data-placement="top"] {
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 4px;
+    transform: translateX(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="bottom"] {
+    top: 100%;
+    left: 50%;
+    margin-top: 4px;
+    transform: translateX(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="left"],
+  .kozmos-location-pin-label[data-placement="right"] {
+    top: var(--kozmos-location-pin-centre);
+    transform: translateY(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="left"] {
+    right: 100%;
+    margin-right: 4px;
+  }
+  .kozmos-location-pin-label[data-placement="right"] {
+    left: 100%;
+    margin-left: 4px;
+  }
   /* The target is 44 square at least, round the body, and moves nothing. */
   .kozmos-location-pin[data-interactive]::before {
     content: "";

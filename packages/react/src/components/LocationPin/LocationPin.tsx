@@ -106,13 +106,6 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       onKeyDown?.(event);
     };
 
-    const externalLabelClasses = {
-      top: "bottom-full left-1/2 mb-1 -translate-x-1/2",
-      right: "left-full top-1/2 ml-1 -translate-y-1/2",
-      bottom: "left-1/2 top-full mt-1 -translate-x-1/2",
-      left: "right-full top-1/2 mr-1 -translate-y-1/2",
-    };
-
     return (
       <div
         ref={ref}
@@ -175,13 +168,14 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
             <span className="kozmos-location-pin-dot" />
           </span>
         )}
+        {/* The words beside the marker, 4 from it; at its side, centred on
+            its shape (the pill, the tile, the circle), as on iOS and
+            Compose. Owned CSS places it. */}
         {externalLabel && (
           <span
             aria-hidden="true"
-            className={cn(
-              "absolute max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-medium text-foreground shadow-floating ring-1 ring-border",
-              externalLabelClasses[labelPlacement],
-            )}
+            className="kozmos-location-pin-label max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-medium text-foreground shadow-floating ring-1 ring-border"
+            data-placement={labelPlacement}
           >
             {externalLabel}
           </span>

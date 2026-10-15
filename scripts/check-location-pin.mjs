@@ -140,6 +140,20 @@ try {
                   });
                 })()
               : null;
+          // A marker nothing presses passes a press at its body's centre to
+          // what lies under it, as on iOS and Compose.
+          const body = pin.querySelector(".kozmos-location-pin-body");
+          const passes =
+            pin.dataset.interactive === undefined && body
+              ? (() => {
+                  const r = body.getBoundingClientRect();
+                  const hit = document.elementFromPoint(
+                    r.left + r.width / 2,
+                    r.top + r.height / 2,
+                  );
+                  return !(hit && pin.contains(hit));
+                })()
+              : null;
           out[key].pins[id] = {
             kind: pin.dataset.kind,
             point: { x: p.left + 36, y: p.top },
@@ -158,6 +172,8 @@ try {
               pin.querySelector(".kozmos-location-pin-pill")?.textContent ??
               null,
             target,
+            passes,
+            label: box(".kozmos-location-pin-label"),
           };
         }
       }
@@ -166,6 +182,26 @@ try {
 
     for (const [board, { tokens, pins }] of Object.entries(measured)) {
       const at = (id, what) => `${mode} ${board} ${id}: ${what}`;
+      // The md shadow, as the boards draw it: black at 10% in light and 40% in
+      // dark, 4 down, 8 of blur, whether a box-shadow or a drop-shadow filter.
+      const alpha = board.startsWith("dark") ? 0.4 : 0.1;
+      const isMd = (value) => {
+        const colour = /rgba\(0, 0, 0, ([\d.]+)\)/.exec(value || "");
+        const lengths = (value || "")
+          .replace(/rgba?\([^)]*\)/g, "")
+          .match(/-?[\d.]+px/g);
+        return (
+          Boolean(colour) &&
+          Math.abs(parseFloat(colour[1]) - alpha) < 0.01 &&
+          Boolean(lengths) &&
+          parseFloat(lengths[0]) === 0 &&
+          parseFloat(lengths[1]) === 4 &&
+          parseFloat(lengths[2]) === 8
+        );
+      };
+      const noShadow = (m) =>
+        (m.filter === "none" || !m.filter) &&
+        (m.boxShadow === "none" || !m.boxShadow);
       // A result: the pill on its pointer, anchored at the pointer's tip.
       for (const id of [
         "result-1",
@@ -230,7 +266,7 @@ try {
           at(id, "anchor: the pointer's tip on the point (x)"),
         );
         reads += 1;
-        if (!/drop-shadow/.test(m.body.filter))
+        if (!/drop-shadow/.test(m.body.filter) || !isMd(m.body.filter))
           failures.push(
             at(id, `no md shadow on the body (filter ${m.body.filter})`),
           );
@@ -294,7 +330,7 @@ try {
           at(id, "anchor: the dot's centre on the point (x)"),
         );
         reads += 1;
-        if (!m.tile.boxShadow || m.tile.boxShadow === "none")
+        if (!isMd(m.tile.boxShadow))
           failures.push(at(id, "no md shadow on the tile"));
         same(m.number, null, at(id, "a featured tile shows no number"));
       }
@@ -340,12 +376,70 @@ try {
             at("place", "anchor: the dot's centre on the point (x)"),
           );
           reads += 1;
-          if (!/drop-shadow/.test(m.teardrop.filter))
+          if (
+            !/drop-shadow/.test(m.teardrop.filter) ||
+            !isMd(m.teardrop.filter)
+          )
             failures.push(at("place", "no md shadow on the teardrop"));
         }
       }
-      // A 44 target round a pressable marker.
-      for (const id of ["result-1", "featured"]) {
+      // The dots a tile and a place stand on carry no shadow.
+      for (const id of ["featured", "featured-selected", "place"]) {
+        reads += 1;
+        if (pins[id].dot && !noShadow(pins[id].dot))
+          failures.push(
+            at(
+              id,
+              `the dot carries a shadow (${pins[id].dot.filter}; ${pins[id].dot.boxShadow})`,
+            ),
+          );
+      }
+      // A marker nothing presses lets a press through to the map.
+      for (const id of ["dot", "featured-selected"]) {
+        reads += 1;
+        if (pins[id].passes !== true)
+          failures.push(
+            at(id, "a static marker takes the press at its centre"),
+          );
+      }
+      // The words beside a marker: 4 from it, centred on its shape.
+      {
+        const m = pins["result-128"];
+        if (!m.label) failures.push(at("result-128", "no label"));
+        else {
+          near(
+            m.label.top + m.label.height / 2,
+            m.pill.top + m.pill.height / 2,
+            at("result-128", "a label at the side is centred on the pill"),
+          );
+          near(
+            m.label.left - m.pin.right,
+            4,
+            at("result-128", "a label at the side is 4 from the marker"),
+          );
+        }
+        const f = pins["featured-selected"];
+        if (!f.label) failures.push(at("featured-selected", "no label"));
+        else {
+          near(
+            f.label.top + f.label.height / 2,
+            f.tile.top + f.tile.height / 2,
+            at(
+              "featured-selected",
+              "a label at the side is centred on the tile",
+            ),
+          );
+          near(
+            f.pin.left - f.label.right,
+            4,
+            at("featured-selected", "a label at the side is 4 from the marker"),
+          );
+        }
+      }
+      // A 44 target round a pressable marker: the pill on its pointer is 38
+      // tall and the teardrop 40 wide, so a press 21 off their centre lands
+      // outside the body and must still reach the marker.
+      for (const id of ["result-1", "place"]) {
         reads += 1;
         if (pins[id].target !== true)
           failures.push(at(id, "a press 21 off the marker's centre misses it"));
