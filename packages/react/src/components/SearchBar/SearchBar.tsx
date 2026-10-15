@@ -99,6 +99,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           trailing && "w-auto min-w-0 flex-1",
           containerClassName,
         )}
+        // The SDK's geometry under any density (decision 82), with or
+        // without a trailing slot.
+        data-kozmos-density="touch"
         role="search"
       >
         <Search
@@ -165,6 +168,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           "kozmos-search-row flex w-full min-w-0 items-center gap-2",
           rowClassName,
         )}
+        // The SDK's geometry under any density (decision 82): a compact
+        // ThemeProvider leaves this part, and what sits in it, touch.
+        data-kozmos-density="touch"
       >
         {field}
         {/* A row, not a box: the slot takes more than one control in the

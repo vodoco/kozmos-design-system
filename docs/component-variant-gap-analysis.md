@@ -148,8 +148,8 @@ Surface
   - figma: component/set absent
   - vue: component absent
 ThemeProvider
-  - ios missing axes -> dir (ltr, rtl)
-  - android missing axes -> dir (ltr, rtl)
+  - ios missing axes -> density (touch, compact); dir (ltr, rtl)
+  - android missing axes -> density (touch, compact); dir (ltr, rtl)
   - figma: component/set absent
 Tree
   - ios missing axes -> activationMode (select, toggle, select-toggle)

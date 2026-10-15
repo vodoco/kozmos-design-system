@@ -131,7 +131,7 @@
   /* A single Core footer recipe, not separate SDK button overrides. */
   .kozmos-dialog-footer[data-layout="stacked"] > .kozmos-button {
     height: auto;
-    min-height: 2.75rem;
+    min-height: var(--density-control-height-md);
     width: 100%;
     white-space: normal;
   }
@@ -288,7 +288,7 @@
     appearance: none;
   }
   .kozmos-input {
-    @apply flex h-11 w-full rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[color:var(--primitives-colors-foreground-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:placeholder:text-muted-foreground disabled:opacity-100;
+    @apply flex h-field w-full rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[color:var(--primitives-colors-foreground-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:placeholder:text-muted-foreground disabled:opacity-100;
   }
   .kozmos-input-warning {
     @apply border-warning text-warning-text focus-visible:ring-warning;
@@ -1278,17 +1278,19 @@
      while transparency is reduced; otherwise the token is the value. The
      element also carries kozmos-reset, or the scoped legacy preflight keeps
      its border reset over the edge. */
+  /* The density's sizes (decision 82): 44 in touch; 40, 32 and 48 in
+     compact, and the icon size 32. */
   .kozmos-button-size-default {
-    @apply h-11 px-4 py-2;
+    @apply h-control px-4 py-2;
   }
   .kozmos-button-size-sm {
-    @apply h-11 rounded-control px-3;
+    @apply h-control-sm rounded-control px-3;
   }
   .kozmos-button-size-lg {
-    @apply h-11 rounded-control px-8;
+    @apply h-control-lg rounded-control px-8;
   }
   .kozmos-button-size-icon {
-    @apply h-11 w-11;
+    @apply h-icon-control w-icon-control;
   }
   /* An emotion's filled Button takes the same four states, from its own
      tokens, and outweighs the default's by order in each of them. */

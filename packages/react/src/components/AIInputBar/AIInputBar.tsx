@@ -184,6 +184,9 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
           "flex items-center gap-2 border-t border-border px-4 py-3",
           className,
         )}
+        // The SDK's geometry under any density (decision 82): a compact
+        // ThemeProvider leaves the bar touch, its 44 send included.
+        data-kozmos-density="touch"
         onSubmit={(event) => {
           event.preventDefault();
           if (!canSend) return;

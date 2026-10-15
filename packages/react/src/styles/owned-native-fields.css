@@ -2,7 +2,7 @@
    elements carrying these classes are reset or styled. */
 @kozmos-owned {
   .kozmos-field-action {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed;
+    @apply inline-flex h-field w-field shrink-0 items-center justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed;
     cursor: pointer;
     text-transform: none;
     -webkit-appearance: button;

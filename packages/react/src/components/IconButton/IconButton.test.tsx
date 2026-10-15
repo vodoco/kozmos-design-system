@@ -21,8 +21,10 @@ describe("IconButton", () => {
     );
     const button = screen.getByLabelText("small search");
 
-    expect(button).toHaveClass("h-11");
-    expect(button).toHaveClass("w-11");
+    // The small size reads its density's token: 44 in touch, 28 in compact
+    // (decision 82; scripts/check-density.mjs measures both).
+    expect(button).toHaveClass("h-icon-control-sm");
+    expect(button).toHaveClass("w-icon-control-sm");
     expect(button).toHaveClass("px-0");
     expect(button).not.toHaveClass("rounded-pill");
     expect(button).toHaveClass("kozmos-button");
@@ -36,7 +38,8 @@ it("draws the large size at 48, the prototype's, beside a 44 field", () => {
     </IconButton>,
   );
   const button = screen.getByRole("button", { name: "Filters" });
-  expect(button).toHaveClass("h-12", "w-12");
+  // 48 in touch, 40 in compact (decision 82).
+  expect(button).toHaveClass("h-icon-control-lg", "w-icon-control-lg");
   // The icon is the button's child, where the large size draws it at 20.
   expect(button.querySelector(":scope > svg")).not.toBeNull();
 });

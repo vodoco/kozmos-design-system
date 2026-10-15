@@ -30,7 +30,10 @@
     @apply block mt-0.5 h-4 w-4 shrink-0;
   }
   .kozmos-multiselect-input {
-    @apply h-8 min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
+    @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
+    /* The field less its padding and border, so the field keeps its density's
+       height: 32 in touch (44), 28 in compact (40). */
+    height: calc(var(--density-field-height-md) - 0.75rem);
     width: 6rem;
     max-width: 100%;
   }

@@ -308,6 +308,9 @@ const AICompanionPanel = React.forwardRef<
           "flex h-full min-h-0 w-full flex-col bg-background text-foreground outline-none",
           className,
         )}
+        // The SDK's geometry under any density (decision 82): a compact
+        // ThemeProvider leaves the panel touch, its 44 close included.
+        data-kozmos-density="touch"
         onKeyDown={handleKeyDown}
         ref={root}
         role="region"

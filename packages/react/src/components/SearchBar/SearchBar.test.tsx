@@ -223,7 +223,10 @@ describe("SearchBar", () => {
     render(<SearchBar value="Station" onChange={() => {}} />);
     expect(screen.getByRole("search")).toHaveClass("h-11", "rounded-control");
     const clear = screen.getByRole("button", { name: "Clear search" });
-    expect(clear).toHaveClass("h-11", "w-11");
+    // The icon button's size, kept 44 under any density: the bar holds the
+    // SDK's touch geometry (decision 82).
+    expect(clear).toHaveClass("h-icon-control", "w-icon-control");
+    expect(clear.closest('[data-kozmos-density="touch"]')).not.toBeNull();
     expect(clear.firstElementChild).toHaveClass("h-6", "w-6", "rounded-pill");
   });
 

@@ -354,6 +354,16 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:token-references
           ADAPTIVE_BROWSER=firefox pnpm test:token-references
 
+      # Decision 82: ThemeProvider's density. Touch keeps every control at
+      # today's size; compact draws buttons 32, 40 and 48, icon buttons 28,
+      # 32 and 40, and fields 40, in a nested touch root and a portal too, with
+      # and without @scope (scripts/check-density.mjs).
+      - name: Verify Density
+        run: |
+          pnpm test:density
+          ADAPTIVE_BROWSER=webkit pnpm test:density
+          ADAPTIVE_BROWSER=firefox pnpm test:density
+
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
       - name: Verify Built Form Control Compatibility

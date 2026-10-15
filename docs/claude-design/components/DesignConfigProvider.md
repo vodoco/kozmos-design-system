@@ -37,6 +37,11 @@ Its props are `DesignConfigProviderProps`, which extends `Omit<ThemeProviderProp
 - `tokens`: `Record<string, string>`, optional.
 - `dir`: `"ltr" | "rtl"`, optional.
 - `children`: `React.ReactNode`, **required**.
+- `density`: `ThemeDensity`, optional.
+
+  The control sizes inside this provider and its portals; a nested provider
+  inherits it unless it names its own. Defaults to `touch`.
+
 - `defaultTheme`: `Theme`, optional.
 - `theme`: `Theme`, optional.
 
@@ -88,6 +93,20 @@ interface DesignConfig {
     reduceTransparency: boolean;
   };
 }
+```
+
+### ThemeDensity
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How large the controls are (decision 82). `touch`, the default, keeps every
+ * control at least 44 tall, as products and the SDK want. `compact` is for
+ * pointer-first desktop tools such as Pointr Cloud: 32, 40 and 48 buttons, 40
+ * fields, 32 table heads. It is web only; SwiftUI and Compose stay touch.
+ */
+type ThemeDensity = "touch" | "compact";
 ```
 
 ### Theme

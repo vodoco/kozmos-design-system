@@ -82,7 +82,10 @@ describe("CategoryField", () => {
     const clear = screen.getByRole("button", { name: "Clear category" });
     // The button is the target, 44; the circle inside it is what shows, 32,
     // while Core IconButton now owns one focus ring around the target.
-    expect(clear).toHaveClass("h-11", "w-11");
+    // The icon button's size, kept 44 under any density: the field holds the
+    // SDK's touch geometry (decision 82).
+    expect(clear).toHaveClass("h-icon-control", "w-icon-control");
+    expect(clear.closest('[data-kozmos-density="touch"]')).not.toBeNull();
     expect(clear).toHaveClass("kozmos-button");
     const circle = clear.firstElementChild as HTMLElement;
     expect(circle).toHaveClass("h-8", "w-8", "rounded-pill");

@@ -477,7 +477,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   {canClear && (
                     <button
                       type="button"
-                      className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       aria-label={clearLabel}
                       onClick={clearSelection}
                     >
@@ -486,7 +486,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   )}
                   <button
                     type="button"
-                    className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={open ? closeLabel : openLabel}
                     disabled={disabled || readOnly}
                     onClick={() => setOpen((current) => !current)}

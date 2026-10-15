@@ -4,6 +4,20 @@ const plugin = require("tailwindcss/plugin");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { withTokenAlpha } = require("./postcss/token-alpha.cjs");
 
+// The control sizes that follow ThemeProvider's density (decision 82): each
+// reads its token from @kozmos-ds/tokens/css/density.css, touch by default and
+// compact under [data-kozmos-density='compact']. src/utils.ts teaches the
+// same keys to tailwind-merge, so a caller's own size still wins.
+const DENSITY_SIZES = {
+  "control-sm": "var(--density-control-height-sm)",
+  control: "var(--density-control-height-md)",
+  "control-lg": "var(--density-control-height-lg)",
+  "icon-control-sm": "var(--density-icon-control-size-sm)",
+  "icon-control": "var(--density-icon-control-size-md)",
+  "icon-control-lg": "var(--density-icon-control-size-lg)",
+  field: "var(--density-field-height-md)",
+};
+
 module.exports = {
   // Keep utility overrides available during migration, including utilities
   // now consumed by @apply recipes instead of JSX class strings.
@@ -240,6 +254,7 @@ module.exports = {
         1000: "calc(1000ms * var(--semantics-motion-duration-scale, 1))",
       },
       width: {
+        ...DENSITY_SIZES,
         "touch-min": "var(--primitives-touch-min)",
         "touch-comfortable": "var(--primitives-touch-comfortable)",
         mobile: "375px",
@@ -248,6 +263,7 @@ module.exports = {
         desktop: "1440px",
       },
       height: {
+        ...DENSITY_SIZES,
         "touch-min": "var(--primitives-touch-min)",
         "touch-comfortable": "var(--primitives-touch-comfortable)",
         "grid-gutter": "var(--primitives-grid-gutter)", // 24px
@@ -261,6 +277,7 @@ module.exports = {
         "touch-comfortable": "var(--primitives-touch-comfortable)",
       },
       minHeight: {
+        ...DENSITY_SIZES,
         "touch-min": "var(--primitives-touch-min)",
         "touch-comfortable": "var(--primitives-touch-comfortable)",
       },
