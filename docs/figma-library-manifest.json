@@ -16658,15 +16658,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["LocationPin"],
-          "mappedProps": [
-            "disabled",
-            "featured",
-            "label",
-            "offFloor",
-            "selected",
-            "size",
-            "tint"
-          ],
+          "mappedProps": ["featured", "label", "number", "place", "selected"],
           "unmappedProps": []
         },
         "props": [
@@ -16683,15 +16675,12 @@
           "labelPlacement",
           "markerContent",
           "number",
-          "offFloor",
+          "place",
           "resultId",
           "role",
           "selected",
-          "size",
           "tabIndex",
-          "tint",
-          "title",
-          "variant"
+          "title"
         ],
         "variants": {}
       },

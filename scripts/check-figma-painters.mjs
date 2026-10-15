@@ -194,6 +194,7 @@ const variableByName = mockVariables([
   "Data/Red",
   "Data/Yellow",
   "Colors/emotional/success/500",
+  "Colors/emotional/success/800",
   "Data/Teal",
   "Data/Blue",
   "Data/Purple",
@@ -508,11 +509,12 @@ section("CategoryTile");
 
 section("LocationPin");
 {
-  const pin = contract.locationPin;
+  // The SDK's map result markers (decision 71), against the MAP-474 boards'
+  // SVGs (.notes/track2): seven variants, Kind by State by Content.
   ok(
     typeof plugin.locationPinVariantCombinations === "function" &&
-      plugin.locationPinVariantCombinations().length === 5 * 3 * 9,
-    "135 variants: five states by three sizes by nine tints",
+      plugin.locationPinVariantCombinations().length === 7,
+    "7 variants: a Result's two states by number or dot, a Featured tile's two, a Place",
   );
   ok(
     typeof plugin.expectedVariantAxesForComponentSetName === "function" &&
@@ -520,131 +522,239 @@ section("LocationPin");
         plugin.expectedVariantAxesForComponentSetName("LocationPin"),
       ) ===
         JSON.stringify({
-          State: plugin.LOCATION_PIN_STATES,
-          Size: plugin.LOCATION_PIN_SIZES,
-          Tint: plugin.CATEGORY_TINTS,
+          Kind: ["Result", "Featured", "Place"],
+          State: ["Default", "Selected"],
+          Content: ["Number", "Dot"],
         }),
-    "the set expects State, Size and Tint",
+    "the set expects Kind, State and Content",
   );
+  const parse = (name) =>
+    JSON.stringify(plugin.parseLocationPinVariantName(name));
   ok(
     typeof plugin.parseLocationPinVariantName === "function" &&
-      JSON.stringify(
-        plugin.parseLocationPinVariantName("State=Selected, Size=Lg"),
-      ) === JSON.stringify({ state: "Selected", size: "Lg", tint: "Theme" }),
-    "a pre-Tint variant name reads as the theme's",
+      parse("Kind=Result, State=Selected, Content=Dot") ===
+        JSON.stringify({ kind: "Result", state: "Selected", content: "Dot" }) &&
+      parse("Kind=Place, State=Default") ===
+        JSON.stringify({ kind: "Place", state: "Default", content: null }),
+    "the new variant names read back",
+  );
+  // The theme's medium pins become the new markers in place, keeping their
+  // node IDs; every other old pin is stale and goes once the new ones exist.
+  ok(
+    typeof plugin.parseLocationPinVariantName === "function" &&
+      parse("State=Default, Size=Md, Tint=Theme") ===
+        JSON.stringify({
+          kind: "Result",
+          state: "Default",
+          content: "Number",
+        }) &&
+      parse("State=Selected, Size=Md") ===
+        JSON.stringify({
+          kind: "Result",
+          state: "Selected",
+          content: "Number",
+        }) &&
+      parse("State=Featured, Size=Md, Tint=Theme") ===
+        JSON.stringify({ kind: "Featured", state: "Default", content: null }) &&
+      parse("State=OffFloor, Size=Md, Tint=Theme") ===
+        JSON.stringify({ stale: true }) &&
+      parse("State=Default, Size=Lg, Tint=Red") ===
+        JSON.stringify({ stale: true }),
+    "old pins: the theme's medium three are renamed in place, the rest stale",
+  );
+  const config =
+    typeof plugin.locationPinComponentConfig === "function" &&
+    plugin.locationPinComponentConfig();
+  ok(
+    config && config.removeUnexpectedVariants === true,
+    "Update removes the stale pins (after creating the new, so the set keeps its ID)",
   );
 
-  async function paint(state, size, tint) {
+  async function paint(props) {
     const component = figma.createComponent();
     const stats = freshStats();
     await plugin.updateLocationPinVariant(component, {
-      props: { state, size, tint },
+      props,
       variableByName,
       fonts: FONTS,
       stats,
     });
     return { component, stats };
   }
+  const floating = (node) =>
+    node &&
+    node.effects &&
+    node.effects.length === 1 &&
+    node.effects[0].type === "DROP_SHADOW" &&
+    node.effects[0].offset.y === 4 &&
+    node.effects[0].radius === 8 &&
+    node.effects[0].color.a === 0.1;
 
   if (typeof plugin.updateLocationPinVariant === "function") {
-    const { component, stats } = await paint("Default", "Md", "Red");
-    ok(
-      component.name === "State=Default, Size=Md, Tint=Red",
-      `variant named by three axes (got "${component.name}")`,
-    );
-    const marker = named(component, "Pin Marker");
-    ok(marker, "a Pin Marker");
-    if (marker) {
+    for (const selected of [false, true]) {
+      const state = selected ? "Selected" : "Default";
+      const { component, stats } = await paint({
+        kind: "Result",
+        state,
+        content: "Number",
+      });
       ok(
-        marker.width === pin.sizes.default.diameter,
-        `the md marker is ${pin.sizes.default.diameter} (got ${marker.width})`,
+        component.name === `Kind=Result, State=${state}, Content=Number`,
+        `result, ${state}: named by its three axes (got "${component.name}")`,
+      );
+      const marker = named(component, "Pin Marker");
+      const pill = named(component, "Pill");
+      const pointer = named(component, "Pointer");
+      const number = named(component, "Number Text");
+      ok(
+        pill &&
+          pill.height === 32 &&
+          pill.minWidth === 32 &&
+          pill.cornerRadius === 16 &&
+          pill.paddingLeft === 8 &&
+          pill.paddingRight === 8 &&
+          pill.strokeWeight === 2 &&
+          pill.strokeAlign === "INSIDE" &&
+          boundVariableName(pill.strokes[0]) === "Colors/theme/600" &&
+          boundVariableName(pill.fills[0]) ===
+            (selected ? "Colors/theme/600" : "Colors/background/0"),
+        `result, ${state}: a pill 32 tall, 32 wide at least, 8 from its number, a 2 border of theme 600 inside, ${selected ? "filled theme 600" : "on background/0"} (${pill && boundVariableName(pill.fills[0])})`,
       );
       ok(
-        boundVariableName(marker.fills[0]) === "Category/Fill/Red",
-        "tinted: the marker is the category's fill",
+        number &&
+          number.visible !== false &&
+          number.fontSize === 14 &&
+          boundVariableName(number.fills[0]) ===
+            (selected ? "Colors/foreground/1000" : "Colors/theme/600"),
+        `result, ${state}: the number 14 in ${selected ? "foreground/1000" : "theme 600"} (${number && boundVariableName(number.fills[0])})`,
+      );
+      ok(
+        pointer &&
+          pointer.type === "VECTOR" &&
+          pointer.vectorPaths &&
+          pointer.vectorPaths[0].data === "M 0 0 L 12 0 L 6 7 Z" &&
+          boundVariableName(pointer.fills[0]) === "Colors/theme/600" &&
+          marker &&
+          marker.itemSpacing === -1,
+        "result: a pointer 12 by 7 in theme 600, its top 1 inside the pill, so its tip is 6 below",
+      );
+      ok(floating(marker), "result: the md shadow on the pill and its pointer");
+      ok(
+        stats.warnings.length === 0,
+        `result, ${state}: no warnings (${stats.warnings.join(" | ")})`,
       );
     }
-    const number = named(component, "Number Text");
-    ok(
-      number && boundVariableName(number.fills[0]) === "Category/OnFill/Red",
-      "tinted: the number is the fill's ink",
-    );
-    ok(
-      stats.warnings.length === 0,
-      `no warnings (${stats.warnings.join(" | ")})`,
-    );
-  }
-
-  if (typeof plugin.updateLocationPinVariant === "function") {
-    const { component } = await paint("Featured", "Md", "Red");
-    const marker = named(component, "Pin Marker");
-    ok(
-      marker &&
-        boundVariableName(marker.fills[0]) === "Accent/fill",
-      "featured: the accent, under a tint (decision 68)",
-    );
-    const number = named(component, "Number Text");
-    ok(
-      number && number.visible === false,
-      "featured: the number is hidden, never shown (decision 68)",
-    );
-    const star = named(component, "Featured Star");
-    ok(
-      star &&
-        star.type === "STAR" &&
-        boundVariableName(star.fills[0]) === "Accent/onFill",
-      "featured: a star in the accent's ink where the number would be (decision 68)",
-    );
-  }
-
-  if (typeof plugin.updateLocationPinVariant === "function") {
-    const { component } = await paint("OffFloor", "Sm", "Blue");
-    const marker = named(component, "Pin Marker");
-    ok(
-      marker &&
-        boundVariableName(marker.fills[0]) === "Colors/background/0" &&
-        boundVariableName(marker.strokes[0]) === "Category/Fill/Blue",
-      "off the floor: a hollow ring stroked in the category's fill",
-    );
-    const number = named(component, "Number Text");
-    ok(
-      number && boundVariableName(number.fills[0]) === "Colors/foreground/0",
-      "off the floor: the number in the foreground on the white disc (Olcay, 2026-09-21)",
-    );
-  }
-
-  if (typeof plugin.updateLocationPinVariant === "function") {
-    const { component } = await paint("Disabled", "Lg", "Green");
-    const marker = named(component, "Pin Marker");
-    ok(
-      component.opacity === 0.5 &&
-        marker &&
-        boundVariableName(marker.fills[0]) === "Category/Fill/Green",
-      "disabled: the category's fill at 50 %",
-    );
-  }
-
-  // A filled pin is a prominent fill (decision 59): the theme fill, theme 500
-  // in both themes, with its number in the theme foreground, white in both.
-  // It was theme/700 under foreground/1000, which turns black in the dark.
-  if (typeof plugin.updateLocationPinVariant === "function") {
-    const { component } = await paint("Selected", "Md", "Theme");
-    const marker = named(component, "Pin Marker");
-    const number = named(component, "Number Text");
-    ok(
-      marker &&
-        boundVariableName(marker.fills[0]) ===
-          "Primary Buttons/themed/button/background/idle" &&
-        hexOf(marker.fills[0]) === "#135BEC" &&
-        marker.width === pin.sizes.default.diameter + 8,
-      `theme: the theme fill, and a selected pin grows by 8 (${marker && boundVariableName(marker.fills[0])})`,
-    );
-    ok(
-      number &&
-        boundVariableName(number.fills[0]) ===
-          "Primary Buttons/themed/button/foreground/content/idle",
-      `theme: the number in the theme foreground (${number && boundVariableName(number.fills[0])})`,
-    );
+    for (const selected of [false, true]) {
+      const state = selected ? "Selected" : "Default";
+      const { component } = await paint({
+        kind: "Result",
+        state,
+        content: "Dot",
+      });
+      const number = named(component, "Number Text");
+      const dot = named(component, "Pill Dot");
+      ok(
+        number &&
+          number.visible === false &&
+          dot &&
+          dot.width === 8 &&
+          boundVariableName(dot.fills[0]) ===
+            (selected ? "Colors/background/0" : "Colors/theme/600"),
+        `result, ${state}, no number: an 8 dot in ${selected ? "background/0 (foreground/1000's colours)" : "theme 600"}`,
+      );
+    }
+    for (const selected of [false, true]) {
+      const state = selected ? "Selected" : "Default";
+      const size = selected ? 52 : 44;
+      const { component, stats } = await paint({
+        kind: "Featured",
+        state,
+        content: null,
+      });
+      const tile = named(component, "Tile");
+      const dot = named(component, "Dot");
+      const marker = named(component, "Pin Marker");
+      const number = named(component, "Number Text");
+      ok(
+        component.name === `Kind=Featured, State=${state}`,
+        `featured, ${state}: named by two axes (got "${component.name}")`,
+      );
+      ok(
+        tile &&
+          tile.width === size &&
+          tile.height === size &&
+          tile.cornerRadius === 16 &&
+          tile.strokeWeight === 3 &&
+          tile.strokeAlign === "INSIDE" &&
+          tile.clipsContent === true &&
+          boundVariableName(tile.strokes[0]) === "Colors/foreground/0" &&
+          boundVariableName(tile.fills[0]) === "Colors/background/0" &&
+          floating(tile),
+        `featured, ${state}: a ${size} tile, corners of 16, a 3 rim of foreground/0 on background/0, the md shadow; no accent (decision 81)`,
+      );
+      ok(
+        named(component, "Logo") && number && number.visible === false,
+        `featured, ${state}: a Logo area inside the rim, and no number`,
+      );
+      ok(
+        dot &&
+          dot.width === 6 &&
+          boundVariableName(dot.fills[0]) === "Colors/foreground/0" &&
+          marker &&
+          marker.itemSpacing === 4,
+        `featured, ${state}: a 6 dot of foreground/0, 4 below the tile`,
+      );
+      ok(
+        stats.warnings.length === 0,
+        `featured, ${state}: no warnings (${stats.warnings.join(" | ")})`,
+      );
+    }
+    {
+      const { component, stats } = await paint({
+        kind: "Place",
+        state: "Default",
+        content: null,
+      });
+      const pin = named(component, "Teardrop");
+      const drop = named(component, "Drop");
+      const disc = named(component, "Disc");
+      const dot = named(component, "Dot");
+      const marker = named(component, "Pin Marker");
+      ok(
+        component.name === "Kind=Place, State=Default",
+        `place: named by two axes (got "${component.name}")`,
+      );
+      ok(
+        pin &&
+          pin.width === 40 &&
+          drop &&
+          drop.type === "VECTOR" &&
+          drop.vectorPaths[0].data === plugin.LOCATION_PIN_TEARDROP &&
+          boundVariableName(drop.fills[0]) === "Colors/emotional/success/800" &&
+          floating(drop),
+        "place: a teardrop of 40 in emotional success 800, with the md shadow",
+      );
+      ok(
+        disc &&
+          disc.width === 20 &&
+          disc.x === 10 &&
+          disc.y === 10 &&
+          boundVariableName(disc.fills[0]) === "Colors/background/0",
+        "place: a disc of 20 in background/0 at the circle's centre",
+      );
+      ok(
+        dot &&
+          dot.width === 6 &&
+          boundVariableName(dot.fills[0]) === "Colors/emotional/success/800" &&
+          marker &&
+          marker.itemSpacing === -3,
+        "place: a 6 dot in the green whose top is 6 below the circle (3 above the 49 teardrop)",
+      );
+      ok(
+        stats.warnings.length === 0,
+        `place: no warnings (${stats.warnings.join(" | ")})`,
+      );
+    }
   }
 }
 
@@ -1761,21 +1871,8 @@ section("Decision 59: the theme fill and what sits on it");
     );
   }
 
-  // The map and the floors.
-  for (const state of ["Default", "Selected"]) {
-    const pin = await painted("updateLocationPinVariant", {
-      props: { state, size: "Md", tint: "Theme" },
-    });
-    const marker = named(pin, "Pin Marker");
-    const number = named(pin, "Number Text");
-    ok(
-      marker &&
-        number &&
-        reads(marker.fills[0]) === fill &&
-        reads(number.fills[0]) === ink,
-      `LocationPin, ${state}: the theme fill, its number the theme foreground (${marker && reads(marker.fills[0])}; ${number && reads(number.fills[0])})`,
-    );
-  }
+  // The map and the floors. LocationPin's selected result is theme 600, as
+  // the SDK's sprite draws it (decision 71), not the theme fill.
   const floors = await painted("updateFloorSelectorVariant", {
     value: "VerticalList",
   });
@@ -4909,14 +5006,9 @@ section("The product sets audit clean");
       ],
       [
         "LocationPin",
-        plugin.LOCATION_PIN_STATES.flatMap((state) =>
-          plugin.LOCATION_PIN_SIZES.flatMap((size) =>
-            tints.map((tint) => [
-              "updateLocationPinVariant",
-              { props: { state, size, tint } },
-            ]),
-          ),
-        ),
+        plugin
+          .locationPinVariantCombinations()
+          .map((props) => ["updateLocationPinVariant", { props }]),
       ],
       [
         "CategoryTile",

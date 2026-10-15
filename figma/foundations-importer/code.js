@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "83e94a8b8d52";
+const PLUGIN_BUILD = "fe384b04e3fc";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -402,17 +402,12 @@ const FLOOR_SELECTOR_VARIANTS = [
   "HorizontalList",
   "CompactStepper",
 ];
-const LOCATION_PIN_STATES = [
-  "Default",
-  "Selected",
-  "Featured",
-  "OffFloor",
-  "Disabled",
-];
-// Marker footprint. Mirrors the React LocationPin size prop and the native
-// KozmosLocationPinSize enum, so all four platforms agree on sm/md/lg.
-const LOCATION_PIN_SIZES = ["Sm", "Md", "Lg"];
-const LOCATION_PIN_SIZE_DIAMETERS = { Sm: 24, Md: 32, Lg: 40 };
+// The SDK's map result markers (decision 71): Kind is the marker, State its
+// selection, Content whether a result shows its number or a dot. A featured
+// tile and a place have no Content; a place has no Selected.
+const LOCATION_PIN_KINDS = ["Result", "Featured", "Place"];
+const LOCATION_PIN_STATES = ["Default", "Selected"];
+const LOCATION_PIN_CONTENT = ["Number", "Dot"];
 const POI_CARD_CONTENT = ["Basic", "Media", "Full"];
 const WAYFINDING_CARD_CONTENT = ["Basic", "Titled"];
 // The React Itinerary's three stories: a current step, none, and steps with
@@ -534,11 +529,6 @@ const CATEGORY_FIELD_LABEL_FONT_SIZE = 15;
 const CATEGORY_FIELD_LABEL_LINE_HEIGHT = 20;
 // The field's text and its clear's cross: the foreground, not the category.
 const CATEGORY_FIELD_INK = { name: "Colors/foreground/0", fallback: "#000000" };
-// An off-floor pin's number, on the white disc.
-const LOCATION_PIN_OFF_FLOOR_INK = {
-  name: "Colors/foreground/0",
-  fallback: "#000000",
-};
 const CATEGORY_FIELD_WASH_OPACITY = 0.12;
 /** The symbol a fresh field carries, from the Pointr Icon Library. */
 const CATEGORY_FIELD_DEFAULT_ICON = "bus";
@@ -1913,25 +1903,27 @@ const COMPONENT_DOCS = [
     componentSetName: "LocationPin",
     category: "Product / SDK",
     summary:
-      "LocationPin marks a POI on the map and mirrors the selection state of its result row.",
+      "LocationPin draws the SDK's map result markers (decision 71): a result's number in a pill, a featured place's logo in a tile, a place on its own as the green pin. Products take them from the map style's sprites; Kozmos draws them for prototypes.",
     usage: [
       "Derive Selected from the same canonical POI ID used by POIResultList.",
-      "Use Featured for sponsored or promoted results.",
-      "Use OffFloor when the POI sits on a level other than the active one.",
+      "Use Featured for a featured place: its logo in the tile, no number.",
+      "Use Place for the place whose details are open, the only marker shown.",
+      "Mark only results on the level in view; the level switcher counts the rest.",
     ],
     api: [
-      "State maps to the selected, featured, offFloor, and disabled props.",
+      "Kind maps to featured and place; State maps to selected; Content to number.",
       "Label Text maps to LocationPin.label or externalLabel.",
       "Number Text maps to LocationPin.number.",
       "Placement and collision handling stay with the map renderer.",
     ],
     properties: [
-      "State: Default, Selected, Featured, OffFloor, Disabled",
+      "Kind: Result, Featured, Place",
+      "State: Default, Selected",
+      "Content: Number, Dot (Result)",
       "Label Text, Number Text",
     ],
     accessibility: [
-      "Off-floor pins render as a hollow ring so the state is not color-only.",
-      "Selected pins grow as well as recolor.",
+      "A selected result fills; a selected featured tile grows; a place is its own shape.",
       "Product code must keep pin and result-row selection announced together.",
     ],
   },
@@ -17330,9 +17322,9 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "LocationPin") {
     return {
+      Kind: LOCATION_PIN_KINDS,
       State: LOCATION_PIN_STATES,
-      Size: LOCATION_PIN_SIZES,
-      Tint: CATEGORY_TINTS,
+      Content: LOCATION_PIN_CONTENT,
     };
   }
 
@@ -44934,79 +44926,118 @@ async function rebuildFloorSelectorComponent() {
 }
 
 // --- LocationPin -----------------------------------------------------------
+//
+// The SDK's map result markers (decision 71, GAP-120), as the map style's
+// sprite draws them in a product and the React LocationPin draws them for
+// prototypes (decision 81), measured against the MAP-474 boards' SVGs:
+// - a Result is its number in a pill 32 tall, as wide as the number and 8 more
+//   each side (32 at least), a 2 border of theme 600 on background/0 (filled
+//   theme 600 under foreground/1000 when selected), on a pointer 12 by 7 whose
+//   top is 1 inside the pill's border, so its tip, the anchor, is 6 below it;
+//   without a number, an 8 dot;
+// - a Featured place is its logo in a 44 tile (52 selected) with a 3 rim of
+//   foreground/0 on background/0, corners of 16, on a 6 dot 4 below: no
+//   number and no accent colour (decision 81);
+// - a Place on its own is a 40 teardrop of emotional success 800 round a 20
+//   disc of background/0, on a 6 dot whose top is 6 below the circle.
+// The floating elevation, 0 4 8 at 10%, is the boards' md shadow, on the body.
 
-// A marker's fill and the ink on it. The theme's pin is a prominent fill
-// (decision 59): the theme fill, its number the theme foreground, white in
-// both themes. It was theme/700 under foreground/1000, which turns black in
-// the dark. Featured is the accent (decision 68, Olcay, 2026-10-08): the
-// accent fill, amber #FAB735 unless the product sets its accent, with the
-// accent's ink, black, on its star. It was alert 500 under the alert's
-// on-fill (decision 62), and alert 900 under white before that.
-function locationPinPalette(state) {
-  const onFill = { name: "Colors/foreground/1000", fallback: "#FFFFFF" };
-  if (state === "Featured") {
-    return {
-      fill: "Accent/fill",
-      fallback: "#FAB735",
-      ink: { name: "Accent/onFill", fallback: "#000000" },
-    };
-  }
-  if (state === "Disabled" || state === "OffFloor") {
-    return { fill: "Colors/foreground/400", fallback: "#5D626F", ink: onFill };
-  }
-  return {
-    fill: THEME_FILL.name,
-    fallback: THEME_FILL.fallback,
-    ink: THEME_FILL_FOREGROUND,
-  };
-}
+const LOCATION_PIN_THEME_600 = {
+  name: "Colors/theme/600",
+  fallback: "#1051E8",
+};
+const LOCATION_PIN_BACKGROUND = {
+  name: "Colors/background/0",
+  fallback: "#FFFFFF",
+};
+const LOCATION_PIN_FOREGROUND = {
+  name: "Colors/foreground/0",
+  fallback: "#000000",
+};
+const LOCATION_PIN_ON_THEME = {
+  name: "Colors/foreground/1000",
+  fallback: "#FFFFFF",
+};
+const LOCATION_PIN_GREEN = {
+  name: "Colors/emotional/success/800",
+  fallback: "#197F4C",
+};
+// The teardrop: a circle of 40 whose bottom comes to a point 48.28 below its
+// top, the tangents from the point meeting the circle at 45 degrees either
+// side of it. Figma's vector paths take no arcs, so the 270 degrees of circle
+// are three quarter-circle cubics (control length 0.5523 of the radius).
+const LOCATION_PIN_TEARDROP =
+  "M 34.142 34.142 C 41.953 26.331 41.953 13.669 34.142 5.858 " +
+  "C 26.331 -1.953 13.669 -1.953 5.858 5.858 " +
+  "C -1.953 13.669 -1.953 26.331 5.858 34.142 L 20 48.284 Z";
 
 function locationPinVariantCombinations() {
-  const combinations = [];
-  for (const state of LOCATION_PIN_STATES) {
-    for (const size of LOCATION_PIN_SIZES) {
-      for (const tint of CATEGORY_TINTS) {
-        combinations.push({ state, size, tint });
-      }
-    }
-  }
-  return combinations;
+  return [
+    { kind: "Result", state: "Default", content: "Number" },
+    { kind: "Result", state: "Selected", content: "Number" },
+    { kind: "Result", state: "Default", content: "Dot" },
+    { kind: "Result", state: "Selected", content: "Dot" },
+    { kind: "Featured", state: "Default", content: null },
+    { kind: "Featured", state: "Selected", content: null },
+    { kind: "Place", state: "Default", content: null },
+  ];
 }
 
 function locationPinVariantKey(props) {
-  return `${props.state}/${props.size}/${props.tint}`;
+  return `${props.kind}/${props.state}/${props.content || "-"}`;
+}
+
+function locationPinVariantName(props) {
+  return props.content
+    ? `Kind=${props.kind}, State=${props.state}, Content=${props.content}`
+    : `Kind=${props.kind}, State=${props.state}`;
 }
 
 function parseLocationPinVariantName(name) {
   const values = parseVariantValueMap(name);
-  if (
-    LOCATION_PIN_STATES.indexOf(values.State) === -1 ||
-    LOCATION_PIN_SIZES.indexOf(values.Size) === -1
-  ) {
-    return null;
+  if (values.Kind !== undefined) {
+    if (
+      LOCATION_PIN_KINDS.indexOf(values.Kind) === -1 ||
+      LOCATION_PIN_STATES.indexOf(values.State) === -1
+    ) {
+      return null;
+    }
+    const content = values.Kind === "Result" ? values.Content : null;
+    if (
+      values.Kind === "Result" &&
+      LOCATION_PIN_CONTENT.indexOf(content) === -1
+    )
+      return null;
+    if (values.Kind === "Place" && values.State !== "Default") return null;
+    return { kind: values.Kind, state: values.State, content };
   }
-  // A pin from before the Tint axis (2026-09-21) is named by state and size
-  // alone. It is the theme's, and Update renames it in place, so the fifteen
-  // original variants keep their node IDs.
+  // A pin from before decision 71 (State x Size x Tint). The theme's medium
+  // pins at rest, selected and featured become the new Result and Featured
+  // markers and Update renames them in place, so they keep their node IDs and
+  // every instance of them follows; the rest are removed once the new
+  // variants exist.
   const tint = values.Tint === undefined ? "Theme" : values.Tint;
-  if (CATEGORY_TINTS.indexOf(tint) === -1) return null;
-  return { state: values.State, size: values.Size, tint };
+  if (values.Size !== "Md" || tint !== "Theme") return { stale: true };
+  if (values.State === "Default")
+    return { kind: "Result", state: "Default", content: "Number" };
+  if (values.State === "Selected")
+    return { kind: "Result", state: "Selected", content: "Number" };
+  if (values.State === "Featured")
+    return { kind: "Featured", state: "Default", content: null };
+  return { stale: true };
 }
 
 function layoutLocationPinVariants(componentSet) {
   if (!componentSet || !componentSet.children) return;
-
+  const order = locationPinVariantCombinations().map(locationPinVariantKey);
   for (const child of componentSet.children) {
     if (child.type !== "COMPONENT") continue;
     const props = parseLocationPinVariantName(child.name);
-    if (!props) continue;
-    // One State × Size block per tint, stacked: the theme's first.
-    child.x = LOCATION_PIN_STATES.indexOf(props.state) * 160;
-    child.y =
-      CATEGORY_TINTS.indexOf(props.tint) * (LOCATION_PIN_SIZES.length * 110) +
-      LOCATION_PIN_SIZES.indexOf(props.size) * 110;
+    if (!props || props.stale) continue;
+    const index = order.indexOf(locationPinVariantKey(props));
+    child.x = 24 + index * 96;
+    child.y = 24;
   }
-
   resizeComponentSetToContainChildren(componentSet);
 }
 
@@ -45016,41 +45047,40 @@ async function createLocationPinVariant(args) {
   return component;
 }
 
+function locationPinPaint(colour, variableByName, stats) {
+  return paintFromVariable(colour.name, colour.fallback, variableByName, stats);
+}
+
+function locationPinDot(name, colour, size, variableByName, stats) {
+  const dot = figma.createEllipse();
+  dot.name = name;
+  dot.resize(size, size);
+  dot.fills = [locationPinPaint(colour, variableByName, stats)];
+  dot.strokes = [];
+  return dot;
+}
+
 async function updateLocationPinVariant(
   component,
   { props, variableByName, fonts, stats },
 ) {
   const selected = props.state === "Selected";
-  const base = LOCATION_PIN_SIZE_DIAMETERS[props.size] || 32;
-  // Selected pins grow as well as recolor, matching the native components so
-  // selection is never carried by colour alone.
-  const diameter = selected ? base + 8 : base;
-  const palette = locationPinPalette(props.state);
-  // A category's colours over the variant's: its fill is the marker (the
-  // ring's stroke off the floor), its ink the number; a featured pin keeps
-  // the alert colour.
-  const tint = categoryTintTokens(props.tint);
-  const marked = Boolean(tint.fill) && props.state !== "Featured";
-  const markerFill = marked
-    ? { fill: tint.fill.name, fallback: tint.fill.fallback }
-    : palette;
-  const ink = marked ? tint.onFill : palette.ink;
-
-  component.name = `State=${props.state}, Size=${props.size}, Tint=${props.tint}`;
+  component.name = locationPinVariantName(props);
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "AUTO";
-  component.primaryAxisAlignItems = "CENTER";
+  component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 4;
+  component.itemSpacing = 0;
   component.paddingLeft = 0;
   component.paddingRight = 0;
   component.paddingTop = 0;
   component.paddingBottom = 0;
   component.fills = [];
   component.strokes = [];
+  component.effects = [];
   component.clipsContent = false;
-  component.opacity = props.state === "Disabled" ? 0.5 : 1;
+  component.opacity = 1;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "LocationPin");
 
@@ -45058,92 +45088,186 @@ async function updateLocationPinVariant(
 
   const marker = figma.createFrame();
   marker.name = "Pin Marker";
-  marker.layoutMode = "HORIZONTAL";
-  marker.primaryAxisSizingMode = "FIXED";
-  marker.counterAxisSizingMode = "FIXED";
-  marker.primaryAxisAlignItems = "CENTER";
+  marker.layoutMode = "VERTICAL";
+  marker.primaryAxisSizingMode = "AUTO";
+  marker.counterAxisSizingMode = "AUTO";
+  marker.primaryAxisAlignItems = "MIN";
   marker.counterAxisAlignItems = "CENTER";
-  marker.resizeWithoutConstraints(diameter, diameter);
-  marker.cornerRadius = diameter / 2;
-  // Off-floor pins invert to a hollow ring: the fill drops out and the brand
-  // colour moves to the stroke. A dashed stroke on a circle this small renders
-  // as a cogwheel rather than a dashed ring, so shape carries the state
-  // instead — still not colour-only.
-  const offFloor = props.state === "OffFloor";
-  marker.fills = [
-    offFloor
-      ? paintFromVariable(
-          "Colors/background/0",
-          "#FFFFFF",
-          variableByName,
-          stats,
-        )
-      : paintFromVariable(
-          markerFill.fill,
-          markerFill.fallback,
-          variableByName,
-          stats,
-        ),
-  ];
-  marker.strokes = [
-    offFloor
-      ? paintFromVariable(
-          markerFill.fill,
-          markerFill.fallback,
-          variableByName,
-          stats,
-        )
-      : paintFromVariable(
-          "Colors/foreground/1000",
-          "#FFFFFF",
-          variableByName,
-          stats,
-        ),
-  ];
-  marker.strokeWeight = offFloor ? 3 : 2;
-  marker.dashPattern = [];
+  marker.paddingLeft = 0;
+  marker.paddingRight = 0;
+  marker.paddingTop = 0;
+  marker.paddingBottom = 0;
+  marker.fills = [];
+  marker.strokes = [];
+  marker.clipsContent = false;
 
+  // The number lives in every variant, hidden where the marker shows none, so
+  // the Number Text property reaches the whole set.
   const number = await productSdkText({
     name: "Number Text",
-    characters: "1",
+    characters: "12",
     styleKey: "badgeLabel",
     fonts,
     bold: true,
-    fontSize: Math.round(diameter * 0.44),
-    lineHeight: Math.round(diameter * 0.62),
-    // Off the floor the number sits on the white disc in the foreground; the
-    // ring keeps the marker colour, so the state stays shape and colour. The
-    // tint's fill on white failed 4.5:1 for six tints (Olcay, 2026-09-21).
-    colorToken: offFloor ? LOCATION_PIN_OFF_FLOOR_INK.name : ink.name,
-    colorFallback: offFloor
-      ? LOCATION_PIN_OFF_FLOOR_INK.fallback
-      : ink.fallback,
+    fontSize: 14,
+    lineHeight: 16,
+    colorToken: selected
+      ? LOCATION_PIN_ON_THEME.name
+      : LOCATION_PIN_THEME_600.name,
+    colorFallback: selected
+      ? LOCATION_PIN_ON_THEME.fallback
+      : LOCATION_PIN_THEME_600.fallback,
     variableByName,
     stats,
   });
   number.textAlignHorizontal = "CENTER";
   number.textAutoResize = "WIDTH_AND_HEIGHT";
-  // A featured pin never shows its number (decision 68): it shows the place's
-  // logo, and without one a star, which is what the library draws. The
-  // number stays, hidden, so the Number Text property reaches every variant.
-  const featured = props.state === "Featured";
-  number.visible = !featured;
-  marker.appendChild(number);
-  if (featured && typeof figma.createStar === "function") {
-    const star = figma.createStar();
-    star.name = "Featured Star";
-    star.pointCount = 5;
-    star.innerRadius = 0.45;
-    const starSize = Math.round(diameter * 0.44);
-    star.resizeWithoutConstraints(starSize, starSize);
-    star.fills = [
-      paintFromVariable(ink.name, ink.fallback, variableByName, stats),
-    ];
-    star.strokes = [];
-    marker.appendChild(star);
-  }
-  appendWithSizing(component, marker, "FIXED", "FIXED");
 
+  if (props.kind === "Result") {
+    // The pointer's top sits 1 inside the pill's border.
+    marker.itemSpacing = -1;
+    marker.effects = [elevationEffect("floating")];
+    const pill = figma.createFrame();
+    pill.name = "Pill";
+    pill.layoutMode = "HORIZONTAL";
+    pill.primaryAxisSizingMode = "AUTO";
+    pill.counterAxisSizingMode = "FIXED";
+    pill.primaryAxisAlignItems = "CENTER";
+    pill.counterAxisAlignItems = "CENTER";
+    // 8 from the number to the pill's outer edge; the border is drawn inside.
+    pill.paddingLeft = 8;
+    pill.paddingRight = 8;
+    pill.paddingTop = 0;
+    pill.paddingBottom = 0;
+    pill.itemSpacing = 0;
+    pill.resizeWithoutConstraints(32, 32);
+    pill.minWidth = 32;
+    pill.cornerRadius = 16;
+    pill.clipsContent = false;
+    pill.fills = [
+      locationPinPaint(
+        selected ? LOCATION_PIN_THEME_600 : LOCATION_PIN_BACKGROUND,
+        variableByName,
+        stats,
+      ),
+    ];
+    pill.strokes = [
+      locationPinPaint(LOCATION_PIN_THEME_600, variableByName, stats),
+    ];
+    pill.strokeWeight = 2;
+    pill.strokeAlign = "INSIDE";
+    const dotContent = props.content === "Dot";
+    number.visible = !dotContent;
+    pill.appendChild(number);
+    if (dotContent) {
+      // Selected, the dot is the number's ink, foreground/1000, drawn as
+      // background/0: the same white in light and black in dark, and a
+      // variable scoped to fill a shape, where foreground/1000 is text's.
+      pill.appendChild(
+        locationPinDot(
+          "Pill Dot",
+          selected ? LOCATION_PIN_BACKGROUND : LOCATION_PIN_THEME_600,
+          8,
+          variableByName,
+          stats,
+        ),
+      );
+    }
+    marker.appendChild(pill);
+    const pointer = figma.createVector();
+    pointer.name = "Pointer";
+    pointer.vectorPaths = [
+      { windingRule: "NONZERO", data: "M 0 0 L 12 0 L 6 7 Z" },
+    ];
+    pointer.fills = [
+      locationPinPaint(LOCATION_PIN_THEME_600, variableByName, stats),
+    ];
+    pointer.strokes = [];
+    marker.appendChild(pointer);
+  } else if (props.kind === "Featured") {
+    const size = selected ? 52 : 44;
+    marker.itemSpacing = 4;
+    marker.effects = [];
+    const tile = figma.createFrame();
+    tile.name = "Tile";
+    tile.layoutMode = "HORIZONTAL";
+    tile.primaryAxisSizingMode = "FIXED";
+    tile.counterAxisSizingMode = "FIXED";
+    tile.primaryAxisAlignItems = "CENTER";
+    tile.counterAxisAlignItems = "CENTER";
+    tile.paddingLeft = 3;
+    tile.paddingRight = 3;
+    tile.paddingTop = 3;
+    tile.paddingBottom = 3;
+    tile.resizeWithoutConstraints(size, size);
+    tile.cornerRadius = 16;
+    tile.clipsContent = true;
+    tile.fills = [
+      locationPinPaint(LOCATION_PIN_BACKGROUND, variableByName, stats),
+    ];
+    tile.strokes = [
+      locationPinPaint(LOCATION_PIN_FOREGROUND, variableByName, stats),
+    ];
+    tile.strokeWeight = 3;
+    tile.strokeAlign = "INSIDE";
+    tile.effects = [elevationEffect("floating")];
+    // Where the product's logo goes: the area inside the rim. A featured tile
+    // shows no number (decision 81).
+    const logo = figma.createFrame();
+    logo.name = "Logo";
+    logo.resizeWithoutConstraints(size - 6, size - 6);
+    logo.cornerRadius = 13;
+    logo.fills = [];
+    logo.strokes = [];
+    number.visible = false;
+    logo.appendChild(number);
+    appendWithSizing(tile, logo, "FILL", "FILL");
+    marker.appendChild(tile);
+    marker.appendChild(
+      locationPinDot("Dot", LOCATION_PIN_FOREGROUND, 6, variableByName, stats),
+    );
+  } else {
+    // The dot's top is 6 below the circle: 3 above the teardrop's 49.
+    marker.itemSpacing = -3;
+    marker.effects = [];
+    const pin = figma.createFrame();
+    pin.name = "Teardrop";
+    pin.resizeWithoutConstraints(40, 49);
+    pin.fills = [];
+    pin.strokes = [];
+    pin.clipsContent = false;
+    const drop = figma.createVector();
+    drop.name = "Drop";
+    drop.vectorPaths = [
+      { windingRule: "NONZERO", data: LOCATION_PIN_TEARDROP },
+    ];
+    drop.fills = [locationPinPaint(LOCATION_PIN_GREEN, variableByName, stats)];
+    drop.strokes = [];
+    drop.effects = [elevationEffect("floating")];
+    pin.appendChild(drop);
+    drop.x = 0;
+    drop.y = 0;
+    const disc = locationPinDot(
+      "Disc",
+      LOCATION_PIN_BACKGROUND,
+      20,
+      variableByName,
+      stats,
+    );
+    pin.appendChild(disc);
+    disc.x = 10;
+    disc.y = 10;
+    number.visible = false;
+    pin.appendChild(number);
+    marker.appendChild(pin);
+    marker.appendChild(
+      locationPinDot("Dot", LOCATION_PIN_GREEN, 6, variableByName, stats),
+    );
+  }
+  component.appendChild(marker);
+
+  // The external label (`externalLabel`), off by default: the SDK's sprites
+  // carry none. It keeps the Label Text property on the set.
   const label = await productSdkText({
     name: "Label Text",
     characters: "Gate 42",
@@ -45159,6 +45283,7 @@ async function updateLocationPinVariant(
   });
   label.textAlignHorizontal = "CENTER";
   label.textAutoResize = "WIDTH_AND_HEIGHT";
+  label.visible = false;
   bindFloatVariable(
     label,
     "fontSize",
@@ -45188,21 +45313,19 @@ function configureLocationPinProperties(componentSet, stats) {
     componentSet,
     "Number Text",
     "Number Text",
-    "1",
+    "12",
     stats,
   );
 }
 
 const LOCATION_PIN_DESCRIPTION = [
-  "Kozmos LocationPin generated from the React LocationPin API.",
-  "State maps to the selected, featured, offFloor, and disabled props.",
-  "Size maps to LocationPin.size (sm, md, lg).",
-  "Tint maps to tint: Theme is a pin without one; the eight are Semantics.Category, the taxonomy's quick-access colours. A tint's fill is the marker and its ink the number; a featured pin keeps the alert colour.",
-  "Label Text maps to LocationPin.label or externalLabel.",
-  "Number Text maps to LocationPin.number.",
-  "Off-floor pins use an outline treatment so state is not colour-only.",
-  "Selected pins grow as well as recolor, matching SwiftUI and Compose.",
-  "variant (colour role) is a token override; labelPlacement is renderer layout.",
+  "Kozmos LocationPin generated from the React LocationPin API: the SDK's map result markers (decision 71).",
+  "In a product these markers come from the map style's sprite sheet, and a featured place's tile from the featured sprite Pointr's back end makes with its logo; Kozmos draws them for prototypes and boards (decision 81).",
+  "Kind maps to featured and place: Result is neither, Featured is featured, Place is place (a place on its own, its details open).",
+  "State maps to selected: a Result fills, a Featured tile grows from 44 to 52.",
+  "Content maps to number: Number shows Number Text, Dot shows none.",
+  "Label Text maps to LocationPin.label or externalLabel; Number Text maps to LocationPin.number.",
+  "A Result's anchor is its pointer's tip; a Featured tile's and a Place's is their dot's centre.",
   "Marker placement and collision handling stay with the map renderer.",
 ];
 
@@ -45220,6 +45343,8 @@ function locationPinComponentConfig() {
     layoutVariants: layoutLocationPinVariants,
     configureProperties: configureLocationPinProperties,
     description: LOCATION_PIN_DESCRIPTION,
+    removeUnexpectedVariants: true,
+    removeDuplicateVariantKeys: true,
   };
 }
 
