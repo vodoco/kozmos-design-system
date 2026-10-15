@@ -5,8 +5,9 @@ import SwiftUI
 import Kozmos
 
 // A result's marker, numbered as its card's tab: a theme-bordered pill at
-// rest, filled when the result is selected. A double tap opens the place's
-// details. `.position(point)` puts the pointer's tip on the point.
+// rest, filled when the result is selected. Its label is its whole spoken
+// name, the number included. A double tap opens the place's details.
+// `.position(point)` puts the pointer's tip on the point.
 struct ResultPin: View {
     let name: String
     let number: Int
@@ -17,7 +18,7 @@ struct ResultPin: View {
 
     var body: some View {
         KozmosLocationPin(
-            label: name,
+            label: "\(number), \(name)",
             number: number,
             selected: isSelected,
             onSelect: onSelect,

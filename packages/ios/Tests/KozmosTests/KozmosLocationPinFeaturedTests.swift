@@ -146,8 +146,8 @@ final class KozmosLocationPinFeaturedTests: XCTestCase {
     }
 
     /// Hosted, as VoiceOver reads it: one element per marker, named by its
-    /// label and, on a tile, the product's word for Featured, with the number
-    /// only where it is drawn, and never a logo on its own.
+    /// label alone and, on a tile, the product's word for Featured; never a
+    /// number the label does not hold, nor a logo on its own.
     @MainActor func testVoiceOverHearsEachMarkerByItsLabelAndATilesFeaturedWord() async throws {
         try await withAutomation {
             let pins = VStack(spacing: 24) {
@@ -164,7 +164,7 @@ final class KozmosLocationPinFeaturedTests: XCTestCase {
             try await Task.sleep(nanoseconds: 300_000_000)
             let labels = elements(window).compactMap(\.accessibilityLabel)
             print("Decision 79 iOS: VoiceOver reads \(labels)")
-            XCTAssertEqual(labels, ["Burger King, Destacado", "Boots, 5", "Gate 12", "Pret, Featured"], "VoiceOver reads \(labels)")
+            XCTAssertEqual(labels, ["Burger King, Destacado", "Boots", "Gate 12", "Pret, Featured"], "VoiceOver reads \(labels)")
         }
     }
     #endif

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Where the marker's label sits relative to the marker.
+/// Where the marker's `externalLabel` sits relative to the marker.
 public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
     case top
     case right
@@ -42,8 +42,14 @@ public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
 /// (`KozmosLocationPin.anchor`), so `.position(point)` in a map canvas puts
 /// the anchor on the point, and an annotation view that centres its content
 /// on a coordinate needs no offset. The frame is therefore taller than what is
-/// drawn: the space below the anchor balances the body above it. The label
-/// is drawn outside the frame and never moves the anchor.
+/// drawn: the space below the anchor balances the body above it.
+/// `externalLabel` is drawn outside the frame and never moves the anchor.
+///
+/// **Naming it.** `label` is the marker's whole spoken name, as the product
+/// writes it, its number included ("Result 3, Burger King"), and is never
+/// drawn. Kozmos adds nothing to it but `featuredLabel` on a featured tile.
+/// The words drawn beside the marker are `externalLabel`, at
+/// `labelPlacement`.
 ///
 /// **Pressing it.** It is a button when it can be pressed — with `onSelect`
 /// or `onOpen`, and not disabled — and an image otherwise. Its target is at
@@ -61,6 +67,7 @@ public struct KozmosLocationPin: View {
 
     private let label: String?
     private let number: Int?
+    private let externalLabel: String?
     private let labelPlacement: KozmosLocationPinLabelPlacement
     private let selected: Bool
     private let featured: Bool
@@ -85,10 +92,13 @@ public struct KozmosLocationPin: View {
     @State private var doubleTap = KozmosDoubleTapGate()
 
     /// - Parameters:
-    ///   - label: What VoiceOver calls the marker, drawn beside it at
-    ///     `labelPlacement`.
+    ///   - label: What VoiceOver calls the marker: its whole name, as the
+    ///     product writes it, number included ("Result 3, Burger King").
+    ///     Never drawn.
     ///   - number: The result's number, as its card's number tab shows it.
-    ///     Without one a result draws a dot.
+    ///     Without one a result draws a dot. Not spoken: put it in `label`.
+    ///   - externalLabel: Words drawn beside the marker, at `labelPlacement`,
+    ///     4pt from it. Not spoken: `label` names the marker.
     ///   - selected: Fills a result and grows a featured tile to 52.
     ///   - featured: Draws the featured tile, with `markerContent` as its logo.
     ///   - place: Draws the place's green pin, over `featured` and `number`.
@@ -101,6 +111,7 @@ public struct KozmosLocationPin: View {
     public init(
         label: String? = nil,
         number: Int? = nil,
+        externalLabel: String? = nil,
         labelPlacement: KozmosLocationPinLabelPlacement = .bottom,
         selected: Bool = false,
         featured: Bool = false,
@@ -114,6 +125,7 @@ public struct KozmosLocationPin: View {
     ) {
         self.label = label
         self.number = number
+        self.externalLabel = externalLabel
         self.labelPlacement = labelPlacement
         self.selected = selected
         self.featured = featured
@@ -139,17 +151,16 @@ public struct KozmosLocationPin: View {
         return featured ? .featured : .result
     }
 
-    /// What VoiceOver says: the label, then the number a result draws; on a
-    /// featured tile the label and the product's word for Featured (decision
-    /// 67); on a place the label alone.
+    /// What VoiceOver says (Olcay, 15 Oct 2026): `label`, the product's whole
+    /// name for the marker, with nothing added, except on a featured tile,
+    /// which adds the product's word for Featured (decision 67). A place says
+    /// its label alone.
     var accessibilityDescription: String {
         switch kind {
-        case .result:
-            return [label, number.map { "\($0)" }].compactMap { $0 }.joined(separator: ", ")
+        case .result, .place:
+            return label ?? ""
         case .featured:
             return [label, featuredLabel].compactMap { $0 }.joined(separator: ", ")
-        case .place:
-            return label ?? ""
         }
     }
 
@@ -167,7 +178,7 @@ public struct KozmosLocationPin: View {
         let plan = Plan(kind: kind, selected: selected)
         return drawing
             .frame(height: plan.height, alignment: .top)
-            .modifier(PlacedLabel(label: label, placement: labelPlacement, plan: plan))
+            .modifier(PlacedLabel(label: externalLabel, placement: labelPlacement, plan: plan))
             // The target: at least 44 square, centred on the body. The
             // drawing overflows it below, to its dot.
             .offset(y: -plan.targetTop)
@@ -319,8 +330,9 @@ public struct KozmosLocationPin: View {
 
     // MARK: The label
 
-    /// The label beside the drawing, 4 from it: below the dot or the tip,
-    /// above the body, or level with the pill's, tile's or circle's middle.
+    /// `externalLabel` beside the drawing, 4 from it: below the dot or the
+    /// tip, above the body, or level with the pill's, tile's or circle's
+    /// middle.
     private struct PlacedLabel: ViewModifier {
         let label: String?
         let placement: KozmosLocationPinLabelPlacement

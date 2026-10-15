@@ -558,7 +558,8 @@ final class InteractionTests: XCTestCase {
             ("Selected static", true, false), ("Selected disabled", true, false),
             ("Selected action", true, true), ("Rest action", false, true), ("Rest static", false, false)
         ] {
-            let name = "\(label), 2"
+            // The label is the whole name (Olcay, 15 Oct 2026): no number is added.
+            let name = label
             let pin = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", name)).firstMatch
             XCTAssertTrue(pin.exists, name)
             XCTAssertEqual(pin.isSelected, selected, name)

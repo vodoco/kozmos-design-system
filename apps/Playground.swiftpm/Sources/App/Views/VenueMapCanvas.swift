@@ -273,7 +273,8 @@ struct VenueMapCanvas: View {
         let labelled = labelledPins
         return ForEach(pois) { poi in
             KozmosLocationPin(
-                label: labelled.contains(poi.id) ? poi.presentation.name : nil,
+                label: poi.presentation.name,
+                externalLabel: labelled.contains(poi.id) ? poi.presentation.name : nil,
                 labelPlacement: poi.position.y > PlanSpace.size.height * 0.75 ? .top : .bottom,
                 selected: poi.id == selectedPOIId,
                 featured: poi.featured,

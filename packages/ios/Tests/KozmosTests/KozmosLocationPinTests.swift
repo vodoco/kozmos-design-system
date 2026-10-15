@@ -211,11 +211,11 @@ final class KozmosLocationPinTests: XCTestCase {
         }
     }
 
-    /// The label sits 4 from the marker — below the tip or the dot, above
-    /// the body, or beside it level with the pill's middle — and never moves
-    /// the marker: drawn with a label at each placement, the marker's pixels
-    /// are where they are without one.
-    @MainActor func testALabelSitsBesideTheMarkerAndNeverMovesIt() throws {
+    /// `externalLabel`, the words drawn beside the marker, sits 4 from it —
+    /// below the tip or the dot, above the body, or beside it level with the
+    /// pill's middle — and never moves the marker: drawn with it at each
+    /// placement, the marker's pixels are where they are without it.
+    @MainActor func testTheExternalLabelSitsBesideTheMarkerAndNeverMovesIt() throws {
         let point = CGPoint(x: 100, y: 90)
         let frame = CGSize(width: 200, height: 180)
         let place: (KozmosLocationPin) throws -> DrawnPixels = { pin in
@@ -226,12 +226,13 @@ final class KozmosLocationPinTests: XCTestCase {
         let bare = try place(KozmosLocationPin(number: 3))
         let marker = try XCTUnwrap(bare.boundingBox(where: Self.opaque), "nothing drawn")
         for placement in KozmosLocationPinLabelPlacement.allCases {
-            let labelled = try place(KozmosLocationPin(label: "Gate", number: 3, labelPlacement: placement))
+            let labelled = try place(KozmosLocationPin(label: "3, Gate 12", number: 3, externalLabel: "Gate",
+                                                       labelPlacement: placement))
             guard let label = labelled.boundingBox(where: isLabel) else {
                 XCTFail("\(placement): no label drawn")
                 continue
             }
-            print("Decision 79 iOS, label \(placement): the marker is \(marker), the label's glyphs \(label)")
+            print("Decision 79 iOS, externalLabel \(placement): the marker is \(marker), the label's glyphs \(label)")
             switch placement {
             case .bottom:
                 XCTAssertGreaterThanOrEqual(label.minY, marker.maxY + 3.5, "the label below is not 4 below the tip")
@@ -263,6 +264,23 @@ final class KozmosLocationPinTests: XCTestCase {
                 y += 1 / bare.scale
             }
             XCTAssertLessThanOrEqual(largest, 8, "\(placement): the label moved the marker")
+        }
+    }
+
+    /// `label` is the spoken name only: a marker given one draws exactly
+    /// what a marker without one does, at every placement.
+    @MainActor func testTheLabelIsSpokenOnlyAndNeverDrawn() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            for placement in KozmosLocationPinLabelPlacement.allCases {
+                // Padded, so words drawn outside the marker's frame show.
+                let named = try draw(KozmosLocationPin(label: "Result 3, Burger King", number: 3, labelPlacement: placement)
+                    .padding(80), in: scheme)
+                let bare = try draw(KozmosLocationPin(number: 3, labelPlacement: placement).padding(80), in: scheme)
+                let difference = named.largestDifference(from: bare)
+                print("Olcay 15 Oct iOS, \(scheme), \(placement): a named marker differs from a bare one by \(difference.map(String.init) ?? "its size")")
+                XCTAssertNotNil(difference, "\(scheme), \(placement): the label changes the marker's size")
+                XCTAssertLessThanOrEqual(difference ?? .max, 8, "\(scheme), \(placement): the label is drawn")
+            }
         }
     }
 
@@ -389,15 +407,17 @@ final class KozmosLocationPinTests: XCTestCase {
                        "Gate 12", "a place says a featured word or a number")
     }
 
-    /// What VoiceOver is told: the label, then the number a result draws,
-    /// as before; on a featured tile the label and `featuredLabel`, and no
-    /// number, which the tile does not draw; on a place the label alone,
-    /// whatever else is passed, since a place wins.
-    func testTheNameIsTheLabelWithWhatTheMarkerDrawsAndAPlaceSaysOnlyItsLabel() {
+    /// What VoiceOver is told (Olcay, 15 Oct 2026): `label` is the marker's
+    /// whole name, as the product writes it, its number included ("Result
+    /// 3, Burger King"). Kozmos adds nothing to it but `featuredLabel` on a
+    /// featured tile; a place says its label alone, whatever else is passed.
+    /// Before, a result added its number ("Gate 12, 2").
+    func testTheNameIsTheLabelAloneAndOnAFeaturedTileTheFeaturedLabelToo() {
         let cases: [(String, KozmosLocationPin, String)] = [
-            ("numbered", KozmosLocationPin(label: "Gate 12", number: 2), "Gate 12, 2"),
+            ("numbered", KozmosLocationPin(label: "Result 3, Burger King", number: 3), "Result 3, Burger King"),
+            ("numbered, the number left out", KozmosLocationPin(label: "Gate 12", number: 2), "Gate 12"),
             ("dot", KozmosLocationPin(label: "Gate 12"), "Gate 12"),
-            ("no label", KozmosLocationPin(number: 2), "2"),
+            ("no label", KozmosLocationPin(number: 2), ""),
             ("featured", KozmosLocationPin(label: "Burger King", number: 3, featured: true, featuredLabel: "Destacado"),
              "Burger King, Destacado"),
             ("featured, default word", KozmosLocationPin(label: "Burger King", featured: true), "Burger King, Featured"),
