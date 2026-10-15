@@ -55,7 +55,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetBottom
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
+import com.kozmos.components.adaptivemapshell.kozmosPanelScrollEndPadding
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonEmotion
 import com.kozmos.components.button.KozmosButtonSize
@@ -184,6 +186,21 @@ fun KozmosPOIDetailPanel(
     // which also needs the card's width (sheetHeaderTop).
     val panelInsetTop = LocalKozmosPanelInsetTop.current
     val panelClearanceTop = LocalKozmosPanelClearanceTop.current
+    // And what it leaves below the card (GAP-085). In the sheet presentation
+    // the body, which scrolls and ends the panel, claims that space: the
+    // panel stops padding below the card, the body runs to the panel's edge
+    // and takes the space as its own last padding, so its last row stops 16
+    // above the edge only at the end of the scroll. Told it is not at the
+    // panel's end, it tops its 16 up instead. The other presentations keep
+    // their 16 inside their own border. Claimed here, not under
+    // BoxWithConstraints, so the claim holds from the first frame.
+    val scrollEnd = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) kozmosPanelScrollEndPadding() else 0.dp
+    val bodyBottom = when {
+        scrollEnd > 0.dp -> scrollEnd
+        presentation == KozmosPOIDetailPanelPresentation.Sheet ->
+            (KozmosDimensions.primitivesLayoutSpacing200 - LocalKozmosPanelInsetBottom.current).coerceAtLeast(0.dp)
+        else -> KozmosDimensions.primitivesLayoutSpacing200
+    }
 
     // The surface the card's text sits on: in the sheet presentation the one
     // under the card, the panel's, and in the others the card's own, a
@@ -271,7 +288,12 @@ fun KozmosPOIDetailPanel(
                             Modifier
                         }
                     )
-                    .padding(KozmosDimensions.primitivesLayoutSpacing200),
+                    .padding(
+                        start = KozmosDimensions.primitivesLayoutSpacing200,
+                        top = KozmosDimensions.primitivesLayoutSpacing200,
+                        end = KozmosDimensions.primitivesLayoutSpacing200,
+                        bottom = bodyBottom
+                    ),
                 verticalArrangement = Arrangement.spacedBy(
                     KozmosDimensions.primitivesLayoutSpacing200
                 )

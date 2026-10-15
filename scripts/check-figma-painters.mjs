@@ -3149,16 +3149,18 @@ section("ManoeuvreCard");
       ok(
         component.children.length === 2 &&
           bar.name === "Grab Bar" &&
-          bar.height === 44 &&
+          bar.height === 5 &&
+          bar.counterAxisAlignItems === "MAX" &&
           grip &&
           grip.width === 36 &&
           grip.height === 5 &&
           grip.cornerRadius === 9999 &&
+          grip.opacity === (theme ? 0.62 : 1) &&
           token(grip) ===
             (theme
               ? "Primary Buttons/themed/button/foreground/content/idle"
               : "Colors/background/300"),
-        `${label}: the grab bar, 44 high, holds a 36 by 5 pill in ${theme ? "the theme foreground" : "background/300"} (${grip && token(grip)})`,
+        `${label}: the grab bar, the pill's own 5 high, holds a 36 by 5 pill in ${theme ? "the theme foreground at 62%" : "background/300"} (${grip && token(grip)}, ${bar && bar.counterAxisAlignItems}, opacity ${grip && grip.opacity})`,
       );
       if (value === "Closed") {
         const mark = named(first, "Manoeuvre Mark");
@@ -3203,11 +3205,12 @@ section("ManoeuvreCard");
           first.name === "Itinerary" &&
             first.width === 346 &&
             first.itemSpacing === 8 &&
+            first.paddingBottom === 23 &&
             rows[0].name === "Origin Row" &&
             rows[rows.length - 1].name === "Destination Row" &&
             steps.length === 4 &&
             !component.findOne((node) => node.name === "Manoeuvre Instruction"),
-          `${label}: the itinerary in the instruction's place, 346 wide: From, four steps and To, 8 apart`,
+          `${label}: the itinerary in the instruction's place, 346 wide: From, four steps and To, 8 apart, 23 under them so the card ends 44 under its rows, clear of the grab bar's target (padding ${first.paddingBottom})`,
         );
         const texts = first.findAll((node) => node.type === "TEXT");
         const textTokens = [...new Set(texts.map(token))].sort();

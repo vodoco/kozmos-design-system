@@ -93,6 +93,12 @@ own top padding can top it up rather than add to it:
 - `--kozmos-panel-inset-top` is the space already supplied above the content: the grip's
   16px row, the 16px gap below a `panelHeader`, or the `1rem` top inset in a gripless
   sheet or side panel. Do not add another 16px spacer below `panelHeader`.
+- `--kozmos-panel-inset-bottom` is the space the panel leaves below the content's end, 16px (GAP-085),
+  above the device's safe area in a sheet, so a short list ends 16px above the panel's edge. A part
+  that ends with padding of its own gives it back; it is `0px` while a part fills the panel (the
+  assistant).
+- The content scrolls with no lasting scrollbar in a sheet, as a phone shows none at rest, and with
+  Kozmos's thin one beside the map (decision 75).
 - `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.

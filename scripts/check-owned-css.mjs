@@ -234,6 +234,21 @@ try {
         return result;
       }, token);
     for (const id of ["outer", "nested"]) {
+      // Decision 72 (GAP-144): a double tap on a result opens its details, so
+      // a mobile browser must never zoom the page on it instead. Owned, so it
+      // holds without @scope and under the host's rules too.
+      for (const [surface, card] of [
+        ["card", page.getByTestId(`${id}-travel-card`)],
+        ["grouped row", page.getByTestId(`${id}-travel-group`).locator("article").nth(1)],
+      ])
+        assert.equal(
+          await card
+            .locator("button.kozmos-poi-result-select")
+            .first()
+            .evaluate((node) => getComputedStyle(node).touchAction),
+          "manipulation",
+          `${mode}, ${id}: a double tap on a ${surface} can zoom the page`,
+        );
       // Decision 50 (GAP-088): a walk in the Nearby tone draws in the success
       // emotion's Text role on each of the result card's four surfaces, in
       // this root's theme (outer is dark, nested light), with or without

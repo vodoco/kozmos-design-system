@@ -121,7 +121,7 @@ function NavigationExample() {
           </ManoeuvreCard>
         }
         panel={
-          <div className="flex flex-col gap-4 px-4 pb-4">
+          <div className="flex flex-col gap-4 px-4">
             <RouteSummary
               data-navigation-summary
               destination={route.destination}
@@ -466,7 +466,7 @@ function PhoneNavigation({
           </ManoeuvreCard>
         }
         panel={
-          <div className="px-4 pb-4">
+          <div className="px-4">
             <RouteSummary
               data-navigation-summary
               destination={phone.destination}

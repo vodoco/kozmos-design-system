@@ -84,6 +84,15 @@ public struct KozmosPOIResultCard: View {
     /// Runs an action from the selected result's row, told which action and
     /// the POI's ID. Without it the row's actions are drawn disabled.
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
+    /// Opens the result's details, told the POI's ID: a double tap on the
+    /// result, selected or not (decision 72, GAP-143), and VoiceOver's
+    /// `openLabel` action. Without it every tap selects, as before.
+    let onOpen: ((String) -> Void)?
+    /// What VoiceOver calls the action that opens the result's details: a
+    /// VoiceOver double tap is one activation, which selects.
+    let openLabel: String
+    /// Tells the second of two quick taps from a new one.
+    @State private var doubleTap = KozmosDoubleTapGate()
 
     public init(
         poi: KozmosPOIPresentation,
@@ -98,7 +107,9 @@ public struct KozmosPOIResultCard: View {
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
         languageNotListedLabel: String = "Language not listed",
         presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
-        appearance: KozmosPOIResultAppearance = .card
+        appearance: KozmosPOIResultAppearance = .card,
+        onOpen: ((String) -> Void)? = nil,
+        openLabel: String = "Open details"
     ) {
         self.poi = poi
         self.result = result
@@ -113,6 +124,8 @@ public struct KozmosPOIResultCard: View {
         self.appearance = appearance
         self.onSelect = onSelect
         self.onAction = onAction
+        self.onOpen = onOpen
+        self.openLabel = openLabel
     }
 
     /// The card's one tab, and what it says decides how it looks. Featured
@@ -333,9 +346,40 @@ public struct KozmosPOIResultCard: View {
         onSelect(poi.id)
     }
 
+    /// A tap on the select row. Without `onOpen` it selects, every time. With
+    /// it, the first tap selects at once and a second on this result within
+    /// the double-tap time opens it instead of selecting again; a third quick
+    /// tap does nothing (`KozmosDoubleTapGate`).
+    private func handleTap() {
+        guard available else { return }
+        guard onOpen != nil else { return handleSelect() }
+        switch doubleTap.press(poi.id, at: ProcessInfo.processInfo.systemUptime) {
+        case .select: handleSelect()
+        case .open: handleOpen()
+        case .ignore: break
+        }
+    }
+
+    /// Opens the result's details: the second of two quick taps, or
+    /// VoiceOver's action.
+    private func handleOpen() {
+        guard available, let onOpen else { return }
+        trackEvent(
+            KozmosAnalyticsEvent(
+                eventName: "poi_result_opened",
+                component: "POIResultCard",
+                properties: [
+                    "poiId": poi.id,
+                    "resultIndex": result.resultIndex
+                ]
+            )
+        )
+        onOpen(poi.id)
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button(action: handleSelect) {
+            Button(action: handleTap) {
                 VStack(alignment: .leading, spacing: 0) {
                     if sdk, let tab, let paint = tabPaint {
                         tabView(tab, paint).allowsHitTesting(false)
@@ -426,7 +470,8 @@ public struct KozmosPOIResultCard: View {
             .modifier(SelectRowAccessibility(
                 phrases: accessibilityPhrases, traits: accessibilityTraits,
                 available: available, selected: result.selected,
-                identifier: kozmosPOIResultIdentifier(poi.id), select: handleSelect))
+                identifier: kozmosPOIResultIdentifier(poi.id), select: handleSelect,
+                open: onOpen != nil && available ? KozmosSpokenAction(name: openLabel, perform: handleOpen) : nil))
             // Outside the row's element, so that element is the one heard as
             // dimmed, as the web's disabled button is. Inside it, VoiceOver
             // heard an unavailable result as an enabled button (measured
@@ -601,7 +646,12 @@ private struct SelectRowAccessibility: ViewModifier {
     /// SwiftUI row is hidden and takes it out of the tree, so the element
     /// carries it instead and a UI test finds every row by it.
     let identifier: String
+    /// What VoiceOver's activation runs: a VoiceOver double tap is one
+    /// activation, so it selects, never opens.
     let select: () -> Void
+    /// The named action that opens the result's details, when the product
+    /// can open them (`onOpen`) and the result is available.
+    let open: KozmosSpokenAction?
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -615,7 +665,8 @@ private struct SelectRowAccessibility: ViewModifier {
                     traits: UIAccessibilityTraits.button.union(
                         available ? (selected ? .selected : []) : .notEnabled),
                     identifier: identifier,
-                    activate: available ? select : nil)
+                    activate: available ? select : nil,
+                    actions: open.map { [$0] } ?? [])
             } else {
                 plain(content)
             }
@@ -633,6 +684,11 @@ private struct SelectRowAccessibility: ViewModifier {
                 // No-ops when unavailable; the traits above already withhold
                 // the button affordance so VoiceOver does not offer the action.
                 select()
+            }
+            .accessibilityActions {
+                if let open {
+                    Button(open.name, action: open.perform)
+                }
             }
     }
 }

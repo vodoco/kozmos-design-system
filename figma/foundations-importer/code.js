@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "1c784e8b0297";
+const PLUGIN_BUILD = "83e94a8b8d52";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -46076,7 +46076,13 @@ async function rebuildItineraryComponent() {
 // padding, 12 between its rows, the floating shadow. Closed, the instruction
 // row: a 24 mark in a 32 box, 12 from the instruction (20/25 semibold) and the
 // detail (14/20) 2 under it. Open, the itinerary in the instruction's place.
-// Under both, the grab bar: a 36 by 5 pill centred in a 44 row.
+// Under both, the grab bar: a 36 by 5 pill, 12 under the content (the card's
+// spacing) and 4 above its edge (its bottom padding), so the card ends 21 under
+// its content (decision 74, GAP-140); the code's 44 target reaches up over that
+// space invisibly. Open, the itinerary keeps 23 under its rows, so the card
+// ends 44 under them and the target covers none. On the theme fill the pill is at 62% (3.09:1 on #135BEC),
+// set on the layer, as a strength on an opaque token is; the background card's
+// grey pill stays whole.
 //
 // Theme, the default, is the brand card, a prominent fill (decision 59): the
 // theme fill, theme 500 in both themes, with every word, mark and the grip in
@@ -46130,6 +46136,7 @@ function manoeuvreCardPalette(appearance) {
       text: MANOEUVRE_CARD_ON_THEME,
       accent: MANOEUVRE_CARD_ON_THEME,
       grip: MANOEUVRE_CARD_ON_THEME,
+      gripOpacity: 0.62,
     };
   }
   return {
@@ -46137,6 +46144,7 @@ function manoeuvreCardPalette(appearance) {
     text: ITINERARY_TEXT,
     accent: ITINERARY_ACCENT,
     grip: MANOEUVRE_CARD_GRIP_BACKGROUND,
+    gripOpacity: 1,
   };
 }
 
@@ -46246,11 +46254,14 @@ async function createManoeuvreItinerary({
   variableByName,
   stats,
 }) {
+  // 23 under the rows: with the card's 12, the grip's 5 and its 4, the open
+  // card ends 44 under them, so the code's 44 target never covers a row.
   const list = productSdkFrame("Itinerary", {
     direction: "vertical",
     primarySizing: "AUTO",
     counterSizing: "FIXED",
     spacing: 8,
+    paddingBottom: 23,
     width: MANOEUVRE_CARD_CONTENT_WIDTH,
     height: 200,
   });
@@ -46365,9 +46376,9 @@ async function updateManoeuvreCardVariant(
     primarySizing: "FIXED",
     counterSizing: "FIXED",
     primaryAlign: "CENTER",
-    counterAlign: "CENTER",
+    counterAlign: "MAX",
     width: MANOEUVRE_CARD_CONTENT_WIDTH,
-    height: 44,
+    height: 5,
   });
   const grip = figma.createRectangle();
   grip.name = "Grip";
@@ -46381,6 +46392,7 @@ async function updateManoeuvreCardVariant(
       stats,
     ),
   ];
+  grip.opacity = palette.gripOpacity;
   bar.appendChild(grip);
   appendWithSizing(component, bar, "FILL", "FIXED");
 }

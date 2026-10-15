@@ -58,8 +58,10 @@ Combobox does not emit automatic selection-value analytics.
 
 ### React popup commands
 
-Use `popupLayout="inline"` inside a content-sized or clipping sheet so the open dropdown
-participates in layout and scrolling. The default remains `overlay` for existing consumers.
+The default `overlay` popup is drawn in the theme's portal under the field, so a panel, a sheet
+or a card that clips its overflow never cuts it off; focus stays in the field. Use
+`popupLayout="inline"` where the open dropdown should take its place in the layout and scroll with
+the content, as RouteLocationField's does. Either way the listbox itself is what scrolls.
 
 `popupActions` adds persistent commands below the filtered suggestions inside the popup.
 Each has a stable `id`, localized `label`, optional decorative `icon`/`disabled`, and `onAction`.

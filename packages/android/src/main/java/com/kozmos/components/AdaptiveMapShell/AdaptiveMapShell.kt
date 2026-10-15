@@ -25,6 +25,10 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -137,6 +141,24 @@ val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
 val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
 
 /**
+ * What the shell's panel leaves empty below its content (GAP-085): 16dp, in a
+ * side panel above its bottom edge and in a sheet above the navigation bar's
+ * inset, which the sheet keeps its content above as well. So content the
+ * product lays out itself ends 16 above the panel's edge, as it starts 16
+ * below its top. A part with its own bottom padding and no surface of its own
+ * tops it up to what it needs rather than adding to it, as
+ * `KozmosRoutePreviewPanel` does, and `KozmosPOIDetailPanel` in its sheet
+ * presentation and `KozmosBrowseCategoriesPanel` do when they do not scroll;
+ * a part that draws its own bordered surface keeps its padding inside the
+ * border. A scroller that ends the panel takes the space as its own end
+ * padding instead, through [kozmosPanelScrollEndPadding], and runs to the
+ * panel's edge. 0 outside a shell. It describes the panel's bottom: a product
+ * that puts such a part above a row of its own provides 0 for this to it,
+ * which also stops the part claiming the end.
+ */
+val LocalKozmosPanelInsetBottom = compositionLocalOf { 0.dp }
+
+/**
  * The surface of the shell's panel under what it hosts, a sheet's or a side
  * panel's, solid or glass; null outside a shell. The panel's surface is the
  * one surface (decision 43): a part that fills its own box standing alone,
@@ -181,7 +203,13 @@ private val HandleClearance = (MinimumTargetSpacing - SheetHandleRowHeight) / 2
  * [LocalKozmosPanelClearanceTop] — so a part with its own top padding and no
  * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation
  * and `KozmosBrowseCategoriesPanel` and `KozmosRoutePreviewPanel` are, tops it
- * up rather than adding to it (GAP-083, decision 14).
+ * up rather than adding to it (GAP-083, decision 14). The panel keeps 16 below
+ * its content too, above a side panel's edge and above a sheet's safe inset,
+ * and says so in [LocalKozmosPanelInsetBottom], which those parts top their
+ * own bottom padding up to (GAP-085). A scroller that ends the panel claims
+ * that space with [kozmosPanelScrollEndPadding] and runs to the panel's edge,
+ * its last row stopping above it only at the end of the scroll, as on iOS
+ * and the web.
  */
 @Composable
 fun KozmosAdaptiveMapShell(
@@ -518,13 +546,21 @@ fun KozmosAdaptiveMapShell(
                             if (panelHeader != null) {
                                 Box(modifier = Modifier.fillMaxWidth().padding(vertical = gap)) { panelHeader() }
                             }
+                            // 16 below the content, as above it (GAP-085):
+                            // padding, until a scroller claims it and runs to
+                            // the panel's edge with the 16 as its own end.
+                            val scrollEnd = remember { KozmosPanelScrollEnd(PanelContentSpacing) }
                             Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
-                                .padding(top = if (panelHeader == null) gap else 0.dp)) {
+                                .padding(top = if (panelHeader == null) gap else 0.dp)
+                                .kozmosPanelEndPadding(scrollEnd, PanelContentSpacing)) {
                                 // The shell supplied top padding or the header's
-                                // bottom gap. Hosted parts must not add it again.
+                                // bottom gap, and the 16 below the content
+                                // (GAP-085). Hosted parts must not add them again.
                                 CompositionLocalProvider(
                                     LocalKozmosPanelInsetTop provides gap,
                                     LocalKozmosPanelClearanceTop provides 0.dp,
+                                    LocalKozmosPanelInsetBottom provides PanelContentSpacing,
+                                    LocalKozmosPanelScrollEnd provides scrollEnd,
                                     content = panel
                                 )
                             }
@@ -629,6 +665,7 @@ fun KozmosAdaptiveMapShell(
  * and a downward drag empties its scroll before the sheet moves; a release
  * snaps to the nearest detent, the fling's velocity counted.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BottomSheet(
     panel: @Composable () -> Unit,
@@ -644,6 +681,8 @@ private fun BottomSheet(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
+    // The space below the content and who scrolls under it (GAP-085).
+    val scrollEnd = remember { KozmosPanelScrollEnd(PanelContentSpacing) }
     // What the last measure pass learned about the content: the peek anchor's
     // edge and the content's height. Written in layout, read for the gesture
     // maths; the height itself is decided in the same pass, so the first
@@ -773,18 +812,28 @@ private fun BottomSheet(
                                     bottom = PanelContentSpacing)
                         ) { panelHeader() }
                     }
+                    // The bottom safe area, as far as nothing above the
+                    // shell has taken it: measured, never placed.
+                    Spacer(Modifier.layoutId(SheetPart.SafeBottom).windowInsetsBottomHeight(WindowInsets.safeDrawing))
                     Box(
                         modifier = Modifier
                             .layoutId(SheetPart.Content)
                             .fillMaxWidth()
-                            // The sheet's surface reaches the bottom edge; what it
-                            // holds keeps above the navigation bar.
-                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                            // The sheet's surface reaches the bottom edge. What
+                            // it holds keeps above the navigation bar, and 16
+                            // above that (GAP-085), by the Layout's padding
+                            // below — unless a scroller claims that space and
+                            // runs under it to the edge. Taken here either
+                            // way, so nothing inside adds the bar again.
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                            .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
                             .padding(top = if (!showsHandle && panelHeader == null) PanelContentSpacing else 0.dp)
                     ) {
                         CompositionLocalProvider(
                             LocalKozmosPanelInsetTop provides insetTop,
                             LocalKozmosPanelClearanceTop provides clearanceTop,
+                            LocalKozmosPanelInsetBottom provides PanelContentSpacing,
+                            LocalKozmosPanelScrollEnd provides scrollEnd,
                             content = panel
                         )
                     }
@@ -808,8 +857,17 @@ private fun BottomSheet(
             val headerClearance = if (handle != null && part(SheetPart.Header) != null) HandleClearance.roundToPx() else 0
             val largestNow = minOf(orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures), maximumHeight).roundToPx()
             val header = part(SheetPart.Header)?.measure(loose.copy(maxHeight = largestNow))
+            // Below the content: the safe area and 16 (GAP-085). Padding,
+            // unless a scroller has claimed it, which then takes it as its
+            // own end and runs to the sheet's edge, as on iOS.
+            val endInset = (part(SheetPart.SafeBottom)?.measure(loose)?.height ?: 0) + PanelContentSpacing.roundToPx()
+            if (scrollEnd.inset != endInset.toDp()) scrollEnd.inset = endInset.toDp()
+            val endPad = if (scrollEnd.claims > 0) 0 else endInset
+            // What the largest detent leaves under the handle and the header:
+            // the handle's row was not counted, so content that filled it ran
+            // 16 past the sheet's edge, where the old end padding hid it.
             val content = part(SheetPart.Content)!!.measure(
-                loose.copy(maxHeight = (largestNow - (header?.height ?: 0) - headerClearance).coerceAtLeast(0))
+                loose.copy(maxHeight = (largestNow - (handle?.height ?: 0) - (header?.height ?: 0) - headerClearance - endPad).coerceAtLeast(0))
             )
             val headerTop = (handle?.height ?: 0) + headerClearance
             val contentTop = headerTop + (header?.height ?: 0)
@@ -822,7 +880,7 @@ private fun BottomSheet(
             val headerGap = PanelContentSpacing.roundToPx()
             val headerPadding = headerGap + if (handle == null) headerGap else 0
             val fresh = KozmosPanelMeasures(
-                contentHeight = (contentTop + content.height).toDp(),
+                contentHeight = (contentTop + content.height + endPad).toDp(),
                 peekBottom = when {
                     headerLine != AlignmentLine.Unspecified -> (headerTop + headerLine).toDp()
                     contentLine != AlignmentLine.Unspecified -> (contentTop + contentLine).toDp()
@@ -850,8 +908,8 @@ private fun BottomSheet(
     }
 }
 
-/** The sheet's parts, in the order they stack. */
-private enum class SheetPart { Handle, Header, Content }
+/** The sheet's parts, in the order they stack, and the safe area it measures. */
+private enum class SheetPart { Handle, Header, Content, SafeBottom }
 
 /** The grab handle's row: 16 tall, a 40 x 4 capsule; a tap cycles the detents, accessibility adjusts them. */
 @Composable

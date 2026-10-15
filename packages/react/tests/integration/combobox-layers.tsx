@@ -9,9 +9,11 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
+  MultiSelect,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  ThemeProvider,
 } from "@kozmos-ds/react";
 
 const root = document.getElementById("root")!;
@@ -44,7 +46,59 @@ function Fixture() {
     />
   );
   let content: React.ReactNode;
-  if (root.dataset.host === "dialog")
+  // Ten places: more than the popup's 16rem shows, so the listbox scrolls.
+  const places = Array.from({ length: 10 }, (_, index) => ({
+    label: `Place ${index + 1}`,
+    value: `place-${index + 1}`,
+  }));
+  if (root.dataset.host === "clip")
+    // A box that clips its overflow, as a panel, a sheet or a card does: an
+    // overlay popup must not be cut off by it (it is in a portal). The inline
+    // layout takes its place in the flow and is for content-sized boxes.
+    // In a ThemeProvider, as a product has it: its utilities apply, and the
+    // popup's portal is the theme's own.
+    return (
+      <ThemeProvider>
+        <div
+          data-clip=""
+          style={{
+            height: root.dataset.layout === "inline" ? "auto" : 120,
+            overflow: "hidden",
+            border: "1px solid",
+          }}
+        >
+          <Combobox
+            label="Origin"
+            options={places}
+            popupLayout={
+              root.dataset.layout === "inline" ? "inline" : "overlay"
+            }
+          />
+          {root.dataset.layout !== "inline" && (
+            <MultiSelect label="Tags" options={places} />
+          )}
+        </div>
+      </ThemeProvider>
+    );
+  if (root.dataset.host === "dialog-multi")
+    // A MultiSelect in a modal dialog: the dialog turns pointer events off
+    // outside its layers, so the list in its portal must be a layer of its
+    // own, or a press on a place lands on the dialog's overlay.
+    content = (
+      <ThemeProvider>
+        <Dialog open={open} onOpenChange={change}>
+          <DialogTrigger asChild>
+            <Button>Open</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Choose tags</DialogTitle>
+            <DialogDescription>Choose places</DialogDescription>
+            <MultiSelect label="Tags" options={places} />
+          </DialogContent>
+        </Dialog>
+      </ThemeProvider>
+    );
+  else if (root.dataset.host === "dialog")
     content = (
       <Dialog open={open} onOpenChange={change}>
         <DialogTrigger asChild>

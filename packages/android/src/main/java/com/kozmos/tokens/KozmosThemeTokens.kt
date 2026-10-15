@@ -1237,6 +1237,27 @@ object KozmosThemeTokens {
             KozmosColorsDark.semanticsAccentOnfill
         )
 
+    /**
+     * A scroll region's thumb on desktop: thin, on a transparent track, inside
+     * the panel's corners (GAP-139). The input border's colour, 3:1 on the
+     * page and the panel. Phone presentations draw no lasting scrollbar
+     * (decision 75).
+     */
+    val semanticsScrollbarThumb: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsScrollbarThumb,
+            KozmosColorsDark.semanticsScrollbarThumb
+        )
+
+    /**
+     * The thumb under the pointer: one step further from the page than thumb.
+     */
+    val semanticsScrollbarThumbhover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsScrollbarThumbhover,
+            KozmosColorsDark.semanticsScrollbarThumbhover
+        )
+
     val semanticsDiffNew: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsDiffNew,

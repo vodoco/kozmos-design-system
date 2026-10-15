@@ -99,3 +99,40 @@ describe("Notice", () => {
     );
   });
 });
+
+describe("Notice icon (GAP-118)", () => {
+  it("draws no icon and leaves no column for icon={null} or {false}", () => {
+    for (const icon of [null, false] as const) {
+      const { container, unmount } = render(
+        <Notice
+          action={<button type="button">Call 112</button>}
+          icon={icon}
+          summary="Not finding it?"
+        >
+          The longer wording
+        </Notice>,
+      );
+      expect(
+        container.querySelector('span[aria-hidden="true"] svg'),
+      ).toBeNull();
+      expect(container.querySelector(".pl-6")).toBeNull();
+      unmount();
+    }
+  });
+
+  it("centres its icon on a one-line summary with iconAlign='center'", () => {
+    const { container } = render(
+      <Notice iconAlign="center" summary="Not finding it?" />,
+    );
+    const icon = container.querySelector('span[aria-hidden="true"]');
+    expect(icon?.parentElement).toHaveClass("items-center");
+    expect(icon).not.toHaveClass("mt-0.5");
+  });
+
+  it("keeps the icon on the first line by default", () => {
+    const { container } = render(<Notice summary="A summary that wraps" />);
+    const icon = container.querySelector('span[aria-hidden="true"]');
+    expect(icon?.parentElement).toHaveClass("items-start");
+    expect(icon).toHaveClass("mt-0.5");
+  });
+});

@@ -204,6 +204,18 @@ private struct InteractionFixture: View {
                 selectedPoiId: groupedSelection, numbered: true,
                 onSelect: { groupedSelection = $0; select($0) }, onAction: action)
                 .accessibilityIdentifier("result-group-container")
+        case "list-open":
+            // Decision 72: the product's selection follows onSelect, as a real
+            // list's does, so the card redraws selected between the two taps.
+            KozmosPOIResultList(items: items([go]), resultCountLabel: "2 results",
+                               selectedPoiId: groupedSelection,
+                               onSelect: { groupedSelection = $0; select($0) },
+                               onOpen: { events.append("open \($0)") })
+        case "group-open":
+            KozmosPOIResultGroup(items: items([go]), label: "Coffee branches", expanded: true,
+                selectedPoiId: groupedSelection, numbered: true,
+                onSelect: { groupedSelection = $0; select($0) },
+                onOpen: { events.append("open \($0)") })
         case "map-control-regions", "map-control-regions-localized":
             KozmosAdaptiveMapShell(
                 attribution: AnyView(Text("Attribution")),
@@ -235,6 +247,8 @@ private struct InteractionFixture: View {
                                 collapseLabel: "Masquer le trajet", manoeuvreLabel: "Navigation en cours") {
                 Text("Continue to the gate")
             }
+        case "manoeuvre-closed":
+            ManoeuvreToggleFixture { events.append($0) }
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})
@@ -461,6 +475,20 @@ private final class PressSampler: ObservableObject {
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 1, height: 1))
         return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
+    }
+}
+
+/// A closed manoeuvre card that opens and closes as a product's does, each
+/// toggle reported.
+private struct ManoeuvreToggleFixture: View {
+    let record: (String) -> Void
+    @State private var expanded = false
+    var body: some View {
+        KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: expanded,
+                            onToggle: { expanded.toggle(); record("toggle") },
+                            collapseLabel: "Masquer le trajet", manoeuvreLabel: "Navigation en cours") {
+            Text("Continue to the gate")
+        }
     }
 }
 

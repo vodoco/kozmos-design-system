@@ -5,6 +5,10 @@ import {
   MapShellPanelFillContext,
 } from "./map-shell-panel";
 import { MapShellAttributionCompactContext } from "./map-shell-attribution";
+import {
+  MapShellPresentationContext,
+  scrollbarFor,
+} from "./map-shell-presentation";
 import type {
   AdaptiveMapLayoutSnapshot,
   MapCollisionInsets,
@@ -232,6 +236,9 @@ const position = (rect: MapLayoutRect): React.CSSProperties => ({
   width: rect.width,
   height: rect.height,
 });
+
+/** Space below the panel's content, as above it (GAP-085). */
+const PANEL_END_INSET = 16;
 
 const AdaptiveMapShell = React.forwardRef<
   HTMLDivElement,
@@ -1066,410 +1073,432 @@ const AdaptiveMapShell = React.forwardRef<
     };
 
     return (
-      <div
-        ref={root}
-        className={cn(
-          "relative isolate h-full min-h-0 w-full overflow-hidden bg-muted",
-          className,
-        )}
-        data-map-status={mapStatus}
-        data-panel-placement={panelPlacement}
-        data-panel-presentation={layout.presentation}
-        style={
-          {
-            "--kozmos-map-inset-top": `${insets.top}px`,
-            "--kozmos-map-inset-right": `${insets.right}px`,
-            "--kozmos-map-inset-bottom": `${insets.bottom}px`,
-            "--kozmos-map-inset-left": `${insets.left}px`,
-            ...style,
-          } as React.CSSProperties
-        }
-        {...props}
-      >
+      <MapShellPresentationContext.Provider value={layout.presentation}>
         <div
-          ref={safeArea}
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            visibility: "hidden",
-            pointerEvents: "none",
-            paddingTop: "env(safe-area-inset-top, 0px)",
-            paddingRight: "env(safe-area-inset-right, 0px)",
-            paddingBottom: "env(safe-area-inset-bottom, 0px)",
-            paddingLeft: "env(safe-area-inset-left, 0px)",
-          }}
-        />
-        <section
-          ref={mapRegion}
-          tabIndex={-1}
-          aria-label={mapLabel}
-          hidden={unavailable}
-          style={position(layout.mapBounds)}
-          className="overflow-hidden"
+          ref={root}
+          className={cn(
+            "relative isolate h-full min-h-0 w-full overflow-hidden bg-muted",
+            className,
+          )}
+          data-map-status={mapStatus}
+          data-panel-placement={panelPlacement}
+          data-panel-presentation={layout.presentation}
+          style={
+            {
+              "--kozmos-map-inset-top": `${insets.top}px`,
+              "--kozmos-map-inset-right": `${insets.right}px`,
+              "--kozmos-map-inset-bottom": `${insets.bottom}px`,
+              "--kozmos-map-inset-left": `${insets.left}px`,
+              ...style,
+            } as React.CSSProperties
+          }
+          {...props}
         >
-          {map}
-        </section>
-        {mapStatus !== "ready" && mapStatusContent && (
           <div
+            ref={safeArea}
+            aria-hidden="true"
             style={{
-              ...position(layout.mapBounds),
-              display: unavailable ? "none" : undefined,
+              position: "absolute",
+              visibility: "hidden",
+              pointerEvents: "none",
+              paddingTop: "env(safe-area-inset-top, 0px)",
+              paddingRight: "env(safe-area-inset-right, 0px)",
+              paddingBottom: "env(safe-area-inset-bottom, 0px)",
+              paddingLeft: "env(safe-area-inset-left, 0px)",
             }}
+          />
+          <section
+            ref={mapRegion}
+            tabIndex={-1}
+            aria-label={mapLabel}
             hidden={unavailable}
-            className="z-20 flex items-center justify-center overflow-auto bg-background/80 p-6 text-center backdrop-blur-sm"
-            role={mapStatus === "error" ? "alert" : "status"}
+            style={position(layout.mapBounds)}
+            className="overflow-hidden"
           >
-            {mapStatusContent}
-          </div>
-        )}
-        {topBar && (
-          <div
-            ref={bar}
-            hidden={unavailable}
-            className="absolute z-30 overflow-auto"
-            style={{
-              left: barBounds.x,
-              top: barBounds.y,
-              width: barWidth,
-              maxHeight: chromeHeight,
-            }}
-          >
-            {topBar}
-          </div>
-        )}
-        {controls && (
-          <div
-            ref={buttons}
-            role="region"
-            aria-label={controlsLabel}
-            hidden={unavailable || controlsOutOfRoom}
-            className="absolute z-30 overflow-auto"
-            style={{
-              left: controlsOnLeft ? available.x + gap : undefined,
-              right: controlsOnLeft
-                ? undefined
-                : measured.width - available.x - available.width + gap,
-              top: controlsY,
-              maxWidth: chromeWidth,
-              maxHeight: controlsBand,
-            }}
-          >
-            {controls}
-          </div>
-        )}
-        {hasBottomControls && (
-          <MapPopupRegionContext.Provider
-            value={{
-              boundary: popupBoundary,
-              available: bottomControlsFit && !unavailable,
-              focusFallback: () =>
-                mapRegion.current?.focus({ preventScroll: true }),
-            }}
-          >
+            {map}
+          </section>
+          {mapStatus !== "ready" && mapStatusContent && (
             <div
-              ref={setPopupBoundary}
-              aria-hidden="true"
               style={{
-                position: "absolute",
-                pointerEvents: "none",
-                left: available.x + gap,
-                top: available.y + available.height - gap - bottomControlsBand,
-                width: chromeWidth,
-                height: bottomControlsBand,
+                ...position(layout.mapBounds),
+                display: unavailable ? "none" : undefined,
               }}
-            />
-            {layout.presentation === "side" && layout.panelBounds && (
+              hidden={unavailable}
+              className="z-20 flex items-center justify-center overflow-auto bg-background/80 p-6 text-center backdrop-blur-sm"
+              role={mapStatus === "error" ? "alert" : "status"}
+            >
+              {mapStatusContent}
+            </div>
+          )}
+          {topBar && (
+            <div
+              ref={bar}
+              hidden={unavailable}
+              className="absolute z-30 overflow-auto"
+              style={{
+                left: barBounds.x,
+                top: barBounds.y,
+                width: barWidth,
+                maxHeight: chromeHeight,
+              }}
+            >
+              {topBar}
+            </div>
+          )}
+          {controls && (
+            <div
+              ref={buttons}
+              role="region"
+              aria-label={controlsLabel}
+              hidden={unavailable || controlsOutOfRoom}
+              className="absolute z-30 overflow-auto"
+              style={{
+                left: controlsOnLeft ? available.x + gap : undefined,
+                right: controlsOnLeft
+                  ? undefined
+                  : measured.width - available.x - available.width + gap,
+                top: controlsY,
+                maxWidth: chromeWidth,
+                maxHeight: controlsBand,
+              }}
+            >
+              {controls}
+            </div>
+          )}
+          {hasBottomControls && (
+            <MapPopupRegionContext.Provider
+              value={{
+                boundary: popupBoundary,
+                available: bottomControlsFit && !unavailable,
+                focusFallback: () =>
+                  mapRegion.current?.focus({ preventScroll: true }),
+              }}
+            >
               <div
-                ref={setBelowPanelBoundary}
+                ref={setPopupBoundary}
                 aria-hidden="true"
                 style={{
                   position: "absolute",
                   pointerEvents: "none",
-                  left: footerAvailable.x + gap,
-                  top: layout.panelBounds.y + layout.panelBounds.height + gap,
-                  width: bottomControlsBounds.width,
-                  height: Math.max(
-                    0,
-                    footerAvailable.y +
-                      footerAvailable.height -
-                      gap -
-                      (layout.panelBounds.y + layout.panelBounds.height + gap),
-                  ),
+                  left: available.x + gap,
+                  top:
+                    available.y + available.height - gap - bottomControlsBand,
+                  width: chromeWidth,
+                  height: bottomControlsBand,
                 }}
               />
-            )}
+              {layout.presentation === "side" && layout.panelBounds && (
+                <div
+                  ref={setBelowPanelBoundary}
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    pointerEvents: "none",
+                    left: footerAvailable.x + gap,
+                    top: layout.panelBounds.y + layout.panelBounds.height + gap,
+                    width: bottomControlsBounds.width,
+                    height: Math.max(
+                      0,
+                      footerAvailable.y +
+                        footerAvailable.height -
+                        gap -
+                        (layout.panelBounds.y +
+                          layout.panelBounds.height +
+                          gap),
+                    ),
+                  }}
+                />
+              )}
+              <div
+                ref={bottomControls}
+                role="region"
+                aria-label={bottomControlsLabel}
+                data-kozmos-bottom-controls=""
+                data-settling={
+                  isSheet && settling && dragHeight === null ? "" : undefined
+                }
+                hidden={unavailable}
+                className="kozmos-map-footer absolute z-30"
+                style={{
+                  left: bottomControlsBounds.x,
+                  bottom:
+                    measured.height -
+                    footerAvailable.y -
+                    footerAvailable.height +
+                    gap,
+                  width: bottomControlsBounds.width,
+                  visibility: bottomControlsFit ? "visible" : "hidden",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="flex flex-wrap items-end gap-4">
+                  {hasBottomStart && (
+                    <div
+                      ref={bottomStart}
+                      style={{
+                        maxWidth: "100%",
+                        marginInlineEnd: "auto",
+                        pointerEvents: "auto",
+                      }}
+                    >
+                      <MapPopupRegionContext.Provider
+                        value={{
+                          boundary:
+                            layout.presentation === "side" &&
+                            panelPlacement === "start" &&
+                            popupFitsBelowPanel
+                              ? belowPanelBoundary
+                              : popupBoundary,
+                          available: bottomControlsFit && !unavailable,
+                          focusFallback: () =>
+                            mapRegion.current?.focus({ preventScroll: true }),
+                        }}
+                      >
+                        {controlsBottomStart}
+                      </MapPopupRegionContext.Provider>
+                    </div>
+                  )}
+                  {hasBottomEnd && (
+                    <div
+                      ref={bottomEnd}
+                      style={{
+                        maxWidth: "100%",
+                        marginInlineStart: "auto",
+                        pointerEvents: "auto",
+                      }}
+                    >
+                      <MapPopupRegionContext.Provider
+                        value={{
+                          boundary:
+                            layout.presentation === "side" &&
+                            panelPlacement === "end" &&
+                            popupFitsBelowPanel
+                              ? belowPanelBoundary
+                              : popupBoundary,
+                          available: bottomControlsFit && !unavailable,
+                          focusFallback: () =>
+                            mapRegion.current?.focus({ preventScroll: true }),
+                        }}
+                      >
+                        {controlsBottomEnd}
+                      </MapPopupRegionContext.Provider>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </MapPopupRegionContext.Provider>
+          )}
+          {hasAttribution && (
             <div
-              ref={bottomControls}
-              role="region"
-              aria-label={bottomControlsLabel}
-              data-kozmos-bottom-controls=""
+              data-kozmos-attribution=""
               data-settling={
                 isSheet && settling && dragHeight === null ? "" : undefined
               }
               hidden={unavailable}
               className="kozmos-map-footer absolute z-30"
               style={{
-                left: bottomControlsBounds.x,
+                left: attributionBounds.x,
                 bottom:
                   measured.height -
-                  footerAvailable.y -
-                  footerAvailable.height +
-                  gap,
-                width: bottomControlsBounds.width,
-                visibility: bottomControlsFit ? "visible" : "hidden",
-                pointerEvents: "none",
+                  available.y -
+                  available.height +
+                  gap +
+                  attributionLift,
+                width: attributionBounds.width,
               }}
             >
-              <div className="flex flex-wrap items-end gap-4">
-                {hasBottomStart && (
-                  <div
-                    ref={bottomStart}
-                    style={{
-                      maxWidth: "100%",
-                      marginInlineEnd: "auto",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <MapPopupRegionContext.Provider
-                      value={{
-                        boundary:
-                          layout.presentation === "side" &&
-                          panelPlacement === "start" &&
-                          popupFitsBelowPanel
-                            ? belowPanelBoundary
-                            : popupBoundary,
-                        available: bottomControlsFit && !unavailable,
-                        focusFallback: () =>
-                          mapRegion.current?.focus({ preventScroll: true }),
-                      }}
-                    >
-                      {controlsBottomStart}
-                    </MapPopupRegionContext.Provider>
-                  </div>
-                )}
-                {hasBottomEnd && (
-                  <div
-                    ref={bottomEnd}
-                    style={{
-                      maxWidth: "100%",
-                      marginInlineStart: "auto",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <MapPopupRegionContext.Provider
-                      value={{
-                        boundary:
-                          layout.presentation === "side" &&
-                          panelPlacement === "end" &&
-                          popupFitsBelowPanel
-                            ? belowPanelBoundary
-                            : popupBoundary,
-                        available: bottomControlsFit && !unavailable,
-                        focusFallback: () =>
-                          mapRegion.current?.focus({ preventScroll: true }),
-                      }}
-                    >
-                      {controlsBottomEnd}
-                    </MapPopupRegionContext.Provider>
-                  </div>
-                )}
+              <div
+                ref={attributionContent}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  minWidth: 0,
+                }}
+              >
+                <MapShellAttributionCompactContext.Provider
+                  value={attributionCompact}
+                >
+                  {attribution}
+                </MapShellAttributionCompactContext.Provider>
               </div>
             </div>
-          </MapPopupRegionContext.Provider>
-        )}
-        {hasAttribution && (
-          <div
-            data-kozmos-attribution=""
-            data-settling={
-              isSheet && settling && dragHeight === null ? "" : undefined
-            }
-            hidden={unavailable}
-            className="kozmos-map-footer absolute z-30"
-            style={{
-              left: attributionBounds.x,
-              bottom:
-                measured.height -
-                available.y -
-                available.height +
-                gap +
-                attributionLift,
-              width: attributionBounds.width,
-            }}
-          >
-            <div
-              ref={attributionContent}
-              style={{ display: "flex", justifyContent: "center", minWidth: 0 }}
+          )}
+          {panel && (
+            <aside
+              ref={panelElement}
+              aria-label={panelLabel}
+              hidden={panelHidden}
+              style={{
+                ...position(layout.panelBounds ?? zero),
+                ...(sidePanelCap === undefined
+                  ? {}
+                  : panelFills
+                    ? { height: sidePanelCap }
+                    : { height: "auto", maxHeight: sidePanelCap }),
+              }}
+              className={cn(
+                surfaceClass(panelSurface),
+                "z-40 flex-col overflow-hidden shadow-overlay",
+                // Its own display would outrank the hidden attribute and keep
+                // a panel with no room drawn and in the accessibility tree.
+                panelHidden ? undefined : "flex",
+                layout.presentation === "bottom"
+                  ? "kozmos-map-sheet rounded-t-container"
+                  : "rounded-container",
+              )}
+              // What names the panel to a check that reads axe's snippet of it
+              // (the website's GAP-17 exclusion): a value of 20 characters or
+              // fewer, which axe keeps whole however long the tag grows.
+              data-slot="map-shell-panel"
+              data-dragging={dragHeight !== null ? "" : undefined}
+              data-settling={isSheet && settling ? "" : undefined}
+              data-detent={
+                isSheet ? panelDetentDescription(activeDetent) : undefined
+              }
+              // The whole sheet drags, not only its handle: the prototype's
+              // rule, with the content's scroll handed off by `decidePanelDrag`.
+              onPointerDown={isSheet ? onSheetPointerDown : undefined}
+              onPointerMove={isSheet ? onSheetPointerMove : undefined}
+              onPointerUp={isSheet ? onSheetPointerUp : undefined}
+              onPointerCancel={isSheet ? onSheetPointerUp : undefined}
+              onClickCapture={isSheet ? onSheetClickCapture : undefined}
             >
-              <MapShellAttributionCompactContext.Provider
-                value={attributionCompact}
-              >
-                {attribution}
-              </MapShellAttributionCompactContext.Provider>
-            </div>
-          </div>
-        )}
-        {panel && (
-          <aside
-            ref={panelElement}
-            aria-label={panelLabel}
-            hidden={panelHidden}
-            style={{
-              ...position(layout.panelBounds ?? zero),
-              ...(sidePanelCap === undefined
-                ? {}
-                : panelFills
-                  ? { height: sidePanelCap }
-                  : { height: "auto", maxHeight: sidePanelCap }),
-            }}
-            className={cn(
-              surfaceClass(panelSurface),
-              "z-40 flex-col overflow-hidden shadow-overlay",
-              // Its own display would outrank the hidden attribute and keep
-              // a panel with no room drawn and in the accessibility tree.
-              panelHidden ? undefined : "flex",
-              layout.presentation === "bottom"
-                ? "kozmos-map-sheet rounded-t-container"
-                : "rounded-container",
-            )}
-            // What names the panel to a check that reads axe's snippet of it
-            // (the website's GAP-17 exclusion): a value of 20 characters or
-            // fewer, which axe keeps whole however long the tag grows.
-            data-slot="map-shell-panel"
-            data-dragging={dragHeight !== null ? "" : undefined}
-            data-settling={isSheet && settling ? "" : undefined}
-            data-detent={
-              isSheet ? panelDetentDescription(activeDetent) : undefined
-            }
-            // The whole sheet drags, not only its handle: the prototype's
-            // rule, with the content's scroll handed off by `decidePanelDrag`.
-            onPointerDown={isSheet ? onSheetPointerDown : undefined}
-            onPointerMove={isSheet ? onSheetPointerMove : undefined}
-            onPointerUp={isSheet ? onSheetPointerUp : undefined}
-            onPointerCancel={isSheet ? onSheetPointerUp : undefined}
-            onClickCapture={isSheet ? onSheetClickCapture : undefined}
-          >
-            {drawsHandle && (
+              {drawsHandle && (
+                <div
+                  ref={handleElement}
+                  className="kozmos-map-sheet-handle"
+                  role="slider"
+                  tabIndex={0}
+                  aria-label={panelHandleLabel}
+                  aria-orientation="vertical"
+                  aria-valuemin={0}
+                  aria-valuemax={ordered.length - 1}
+                  aria-valuenow={activeIndex}
+                  aria-valuetext={panelDetentDescription(activeDetent)}
+                  onClick={onHandleClick}
+                  onKeyDown={onHandleKeyDown}
+                >
+                  <span aria-hidden="true" className="kozmos-map-sheet-grip" />
+                </div>
+              )}
+              {hasPanelHeader && (
+                <div
+                  ref={panelHeaderElement}
+                  className={cn("flex-none pb-4", !drawsHandle && "pt-4")}
+                  data-kozmos-panel-header=""
+                  style={
+                    {
+                      paddingLeft: isSheet ? chrome.left : undefined,
+                      paddingRight: isSheet ? chrome.right : undefined,
+                      // The search field a header usually starts with keeps the
+                      // handle's target clear (WCAG 2.5.8).
+                      paddingTop: drawsHandle ? gripClearance : undefined,
+                      // A vertical drag here is the sheet's; a sideways one stays
+                      // with the header, for a row of chips that scrolls.
+                      touchAction: isSheet ? "pan-x" : undefined,
+                      // What the header holds sits on the panel's surface too
+                      // (decision 43; the content's style says why).
+                      "--kozmos-panel-part-fill": "transparent",
+                    } as React.CSSProperties
+                  }
+                >
+                  {/* Hosted, as the content is: a part with a hosted
+                    presentation, a RouteSummary in the header, takes it here
+                    too, as SwiftUI and Compose host either slot. */}
+                  <MapShellPanelContext.Provider value={true}>
+                    {panelHeader}
+                  </MapShellPanelContext.Provider>
+                </div>
+              )}
               <div
-                ref={handleElement}
-                className="kozmos-map-sheet-handle"
-                role="slider"
-                tabIndex={0}
-                aria-label={panelHandleLabel}
-                aria-orientation="vertical"
-                aria-valuemin={0}
-                aria-valuemax={ordered.length - 1}
-                aria-valuenow={activeIndex}
-                aria-valuetext={panelDetentDescription(activeDetent)}
-                onClick={onHandleClick}
-                onKeyDown={onHandleKeyDown}
-              >
-                <span aria-hidden="true" className="kozmos-map-sheet-grip" />
-              </div>
-            )}
-            {hasPanelHeader && (
-              <div
-                ref={panelHeaderElement}
-                className={cn("flex-none pb-4", !drawsHandle && "pt-4")}
-                data-kozmos-panel-header=""
+                ref={panelContent}
+                // A scroller even while it hides its overflow below the largest
+                // detent: a finger cannot scroll it there, but POIResultList
+                // brings a selected result into it (row 70), and a box that
+                // hides its overflow is otherwise only clipping.
+                data-kozmos-scroller=""
+                // A sheet draws no lasting scrollbar, as a phone shows none at
+                // rest; beside the map the thin Kozmos one (decision 75).
+                data-kozmos-scrollbar={scrollbarFor(layout.presentation)}
+                className={cn(
+                  "min-h-0 overscroll-contain",
+                  // A fitted sheet measures intrinsic content. Growing its
+                  // scroller to yesterday's measured height feeds that empty
+                  // space back into the next measurement (notably when a grip
+                  // appears and replaces the gripless top inset).
+                  isSheet && activeDetent === "content"
+                    ? "flex-initial"
+                    : layout.presentation === "side"
+                      ? "flex-auto"
+                      : "flex-1",
+                  // Without a grip or header the shell still supplies its top
+                  // inset, in a fitted bottom sheet as well as a side panel.
+                  !drawsHandle && !hasPanelHeader && "pt-4",
+                )}
+                // A finger scrolls the list natively at the largest detent;
+                // at the list's top only downward panning (into the list) is
+                // native, so a finger pulling the other way reaches the sheet
+                // as pointer events. Below the largest detent every touch is
+                // the sheet's.
                 style={
                   {
+                    // The content keeps the device's safe areas inside the
+                    // sheet's edge-to-edge surface; scrolling content runs under
+                    // them to this padding.
+                    // And 16 below the content's end, as above it (GAP-085): a
+                    // short list ends 16 above the panel's edge. A part that
+                    // fills the panel (the assistant) ends itself.
+                    paddingBottom:
+                      (isSheet ? chrome.bottom : 0) +
+                      (panelFills ? 0 : PANEL_END_INSET),
                     paddingLeft: isSheet ? chrome.left : undefined,
                     paddingRight: isSheet ? chrome.right : undefined,
-                    // The search field a header usually starts with keeps the
-                    // handle's target clear (WCAG 2.5.8).
-                    paddingTop: drawsHandle ? gripClearance : undefined,
-                    // A vertical drag here is the sheet's; a sideways one stays
-                    // with the header, for a row of chips that scrolls.
-                    touchAction: isSheet ? "pan-x" : undefined,
-                    // What the header holds sits on the panel's surface too
-                    // (decision 43; the content's style says why).
+                    overflowY: scrollEnabled ? "auto" : "hidden",
+                    touchAction: scrollEnabled
+                      ? scrolled
+                        ? "pan-y"
+                        : "pan-down"
+                      : "none",
+                    // The shell supplies either the grip's row, the header's
+                    // bottom gap, or gripless top padding. Hosted parts subtract
+                    // this from their own padding instead of adding it twice.
+                    // What the shell leaves below the content: a part that ends
+                    // with padding of its own gives it back (owned CSS).
+                    "--kozmos-panel-inset-bottom": panelFills
+                      ? "0px"
+                      : `${PANEL_END_INSET}px`,
+                    "--kozmos-panel-inset-top":
+                      drawsHandle && !hasPanelHeader
+                        ? "calc(var(--primitives-layout-spacing-200) * 1px)"
+                        : "1rem",
+                    // And how far its first control must still sit below that,
+                    // so the grip's target keeps its clear space.
+                    "--kozmos-panel-clearance-top": hasPanelHeader
+                      ? "0px"
+                      : gripClearance,
+                    // Decision 43: the panel's surface, solid or glass, is the
+                    // one surface. A part that fills its own box standing alone
+                    // (the category browser, the route preview) paints nothing
+                    // on it, in a sheet or a side panel; on a solid panel
+                    // nothing changes, its fill being the parts' colour. Said
+                    // here and on the header, not on the aside: its opening tag
+                    // is what axe reports for the landmark it is, and past 300
+                    // characters axe cuts every attribute value to 20.
                     "--kozmos-panel-part-fill": "transparent",
                   } as React.CSSProperties
                 }
+                onScroll={onContentScroll}
               >
-                {/* Hosted, as the content is: a part with a hosted
-                    presentation, a RouteSummary in the header, takes it here
-                    too, as SwiftUI and Compose host either slot. */}
                 <MapShellPanelContext.Provider value={true}>
-                  {panelHeader}
+                  <MapShellPanelFillContext.Provider value={claimPanelFill}>
+                    {panel}
+                  </MapShellPanelFillContext.Provider>
                 </MapShellPanelContext.Provider>
               </div>
-            )}
-            <div
-              ref={panelContent}
-              // A scroller even while it hides its overflow below the largest
-              // detent: a finger cannot scroll it there, but POIResultList
-              // brings a selected result into it (row 70), and a box that
-              // hides its overflow is otherwise only clipping.
-              data-kozmos-scroller=""
-              className={cn(
-                "min-h-0 overscroll-contain",
-                // A fitted sheet measures intrinsic content. Growing its
-                // scroller to yesterday's measured height feeds that empty
-                // space back into the next measurement (notably when a grip
-                // appears and replaces the gripless top inset).
-                isSheet && activeDetent === "content"
-                  ? "flex-initial"
-                  : layout.presentation === "side"
-                    ? "flex-auto"
-                    : "flex-1",
-                // Without a grip or header the shell still supplies its top
-                // inset, in a fitted bottom sheet as well as a side panel.
-                !drawsHandle && !hasPanelHeader && "pt-4",
-              )}
-              // A finger scrolls the list natively at the largest detent;
-              // at the list's top only downward panning (into the list) is
-              // native, so a finger pulling the other way reaches the sheet
-              // as pointer events. Below the largest detent every touch is
-              // the sheet's.
-              style={
-                {
-                  // The content keeps the device's safe areas inside the
-                  // sheet's edge-to-edge surface; scrolling content runs under
-                  // them to this padding.
-                  paddingBottom: isSheet ? chrome.bottom : undefined,
-                  paddingLeft: isSheet ? chrome.left : undefined,
-                  paddingRight: isSheet ? chrome.right : undefined,
-                  overflowY: scrollEnabled ? "auto" : "hidden",
-                  touchAction: scrollEnabled
-                    ? scrolled
-                      ? "pan-y"
-                      : "pan-down"
-                    : "none",
-                  // The shell supplies either the grip's row, the header's
-                  // bottom gap, or gripless top padding. Hosted parts subtract
-                  // this from their own padding instead of adding it twice.
-                  "--kozmos-panel-inset-top":
-                    drawsHandle && !hasPanelHeader
-                      ? "calc(var(--primitives-layout-spacing-200) * 1px)"
-                      : "1rem",
-                  // And how far its first control must still sit below that,
-                  // so the grip's target keeps its clear space.
-                  "--kozmos-panel-clearance-top": hasPanelHeader
-                    ? "0px"
-                    : gripClearance,
-                  // Decision 43: the panel's surface, solid or glass, is the
-                  // one surface. A part that fills its own box standing alone
-                  // (the category browser, the route preview) paints nothing
-                  // on it, in a sheet or a side panel; on a solid panel
-                  // nothing changes, its fill being the parts' colour. Said
-                  // here and on the header, not on the aside: its opening tag
-                  // is what axe reports for the landmark it is, and past 300
-                  // characters axe cuts every attribute value to 20.
-                  "--kozmos-panel-part-fill": "transparent",
-                } as React.CSSProperties
-              }
-              onScroll={onContentScroll}
-            >
-              <MapShellPanelContext.Provider value={true}>
-                <MapShellPanelFillContext.Provider value={claimPanelFill}>
-                  {panel}
-                </MapShellPanelFillContext.Provider>
-              </MapShellPanelContext.Provider>
-            </div>
-          </aside>
-        )}
-      </div>
+            </aside>
+          )}
+        </div>
+      </MapShellPresentationContext.Provider>
     );
   },
 );

@@ -143,6 +143,8 @@ export interface POIResultListProps extends Omit<
    */
   items: readonly POIResultListEntry[];
   onSelect: (poiId: string) => void;
+  /** A double tap on a result opens its details: POIResultCard's `onOpen` (decision 72). */
+  onOpen?: (poiId: string) => void;
   /** Run an action from the selected result's action row. */
   onAction?: (action: POIResultAction, poiId: string) => void;
   selectedPoiId?: string;
@@ -235,6 +237,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       className,
       items,
       onSelect,
+      onOpen,
       onAction,
       selectedPoiId,
       label = "Points of interest",
@@ -415,6 +418,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                         onGroupExpandedChange &&
                         ((open) => onGroupExpandedChange(entry.id, open))
                       }
+                      onOpen={onOpen}
                       onSelect={onSelect}
                       showMoreLabel={showMoreLabel}
                       travelTimeBandLabels={travelTimeBandLabels}
@@ -435,6 +439,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     numbered={numbered}
                     presentationStyle={presentationStyle}
                     onAction={onAction}
+                    onOpen={onOpen}
                     onSelect={onSelect}
                     poi={poi}
                     result={select(entry)}

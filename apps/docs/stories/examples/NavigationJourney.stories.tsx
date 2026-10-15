@@ -326,7 +326,13 @@ function NavigationJourney({
             tabIndex={-1}
             role="group"
             aria-label={`${state.phase} journey`}
+            // Focused when the phase changes, it draws its ring around its
+            // own 16 below the content, and gives the shell's 16 back, as a
+            // part with its own end padding does (GAP-085).
             className="flex min-w-0 flex-col gap-4 px-4 pb-4"
+            style={{
+              marginBottom: "calc(-1 * var(--kozmos-panel-inset-bottom, 0px))",
+            }}
           >
             {["setup", "calculating", "recovery"].includes(state.phase) &&
               setup}

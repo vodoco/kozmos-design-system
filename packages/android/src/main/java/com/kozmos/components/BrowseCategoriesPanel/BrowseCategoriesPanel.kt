@@ -21,8 +21,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetBottom
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.components.adaptivemapshell.kozmosPanelScrollEndPadding
 import com.kozmos.components.categorytile.KozmosCategoryTile
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.surface.kozmosDashedEdge
@@ -68,6 +70,9 @@ fun KozmosBrowseCategoriesPanel(
     // handle's 16dp row: the search field sat 32 from the sheet's top and 16
     // from its side. Outside a shell both are 0, and it keeps its 16.
     val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
+    // The last row's bottom padding, topped up the same way to what the panel
+    // leaves below it (GAP-085): it would end 32 above the panel's edge.
+    val lastRowBottom = (padding - LocalKozmosPanelInsetBottom.current).coerceAtLeast(0.dp)
     // Standing alone the browser fills its box with the background colour,
     // as the web's and iOS's do; in the shell's panel it paints none, the
     // panel's surface being the one surface (decision 43). It painted none
@@ -122,7 +127,7 @@ fun KozmosBrowseCategoriesPanel(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = padding, top = tilesTop, end = padding, bottom = padding)
+                    .padding(start = padding, top = tilesTop, end = padding, bottom = lastRowBottom)
                     .kozmosDashedEdge(KozmosThemeTokens.semanticsBorderSubtle, radius),
                 shape = RoundedCornerShape(radius),
                 color = KozmosThemeTokens.primitivesColorsBackground100.copy(alpha = 0.4f)
@@ -135,6 +140,12 @@ fun KozmosBrowseCategoriesPanel(
                 }
             }
         } else {
+            // The grid scrolls, and ends the panel: it claims the panel's end
+            // and runs to its edge, the space as its own last padding, so
+            // its last row stops 16 above the edge only at the end of the
+            // scroll (GAP-085). Outside a shell, or told it is not at the
+            // end, it keeps its own 16, topped up.
+            val scrollEnd = kozmosPanelScrollEndPadding()
             LazyVerticalGrid(
                 // Four across, 8 apart, and rows 12 apart: the prototype's grid
                 // (row-gap 12px, column-gap 8px, measured on 2026-09-22). The
@@ -145,7 +156,7 @@ fun KozmosBrowseCategoriesPanel(
                     start = padding,
                     top = tilesTop,
                     end = padding,
-                    bottom = padding
+                    bottom = if (scrollEnd > 0.dp) scrollEnd else lastRowBottom
                 ),
                 horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
                 verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)

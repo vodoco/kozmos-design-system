@@ -43,7 +43,14 @@ try {
                   panel.querySelector("[data-spacing-content]") ??
                   panel.querySelector('button[aria-label="Close details"]');
                 if (!first) throw new Error("Missing first content target");
+                const style = getComputedStyle(scroller);
                 return {
+                  scrollbar: scroller.getAttribute("data-kozmos-scrollbar"),
+                  scrollbarWidth: style.scrollbarWidth,
+                  endGap:
+                    panel.getBoundingClientRect().bottom -
+                    parseFloat(getComputedStyle(panel).borderBottomWidth) -
+                    first.getBoundingClientRect().bottom,
                   first: first.getBoundingClientRect().top,
                   top: panel.getBoundingClientRect().top + panel.clientTop,
                   headerBottom: header?.getBoundingClientRect().bottom,
@@ -57,14 +64,31 @@ try {
                 16,
                 JSON.stringify(config),
               );
+              // Decision 75 (GAP-138/139): a sheet draws no lasting
+              // scrollbar; beside the map the thin Kozmos one.
+              assert.equal(
+                boxes.scrollbar,
+                side ? "thin" : "hidden",
+                `${JSON.stringify(config)}: the scroller's scrollbar`,
+              );
+              if (!side)
+                assert.equal(
+                  boxes.scrollbarWidth,
+                  "none",
+                  `${JSON.stringify(config)}: a sheet's scrollbar is drawn`,
+                );
               if (!details && !long) {
+                // GAP-085: the content ends 16 above the panel's edge, as it
+                // starts 16 below its top.
+                near(boxes.endGap, 16, `${JSON.stringify(config)}: end gap`);
                 const top = 16;
+                const bottom = 16;
                 const headerHeight = header
                   ? 44 + 16 + (grip && !side ? 4 : 0)
                   : 0;
                 near(
                   boxes.height,
-                  300 + top + headerHeight + 2,
+                  300 + top + bottom + headerHeight + 2,
                   "content-fit includes shell spacing",
                 );
                 near(
@@ -123,10 +147,41 @@ try {
       await page
         .locator("aside")
         .evaluate((node) => node.getBoundingClientRect().height),
-      header ? 382 : 318,
+      header ? 398 : 334,
       "mounted fitted panel shrinks when content changes",
     );
   }
+  // GAP-085: a part that ends with padding of its own gives the shell's 16
+  // back, so the category browser's last row ends 16 above the panel's edge,
+  // as SwiftUI's and Compose's do, not 32.
+  for (const side of [false, true]) {
+    const config = {
+      side,
+      header: false,
+      grip: false,
+      long: false,
+      rtl: false,
+      details: false,
+      browse: true,
+    };
+    await page.evaluate((config) => window.renderPanelSpacing(config), config);
+    await page.getByRole("complementary").waitFor();
+    await settleLayout(page);
+    const end = await page.evaluate(() => {
+      const panel = document.querySelector("aside");
+      const tiles = panel.querySelectorAll(".kozmos-browse-categories li");
+      const last = tiles[tiles.length - 1];
+      return (
+        panel.getBoundingClientRect().bottom -
+        parseFloat(getComputedStyle(panel).borderBottomWidth) -
+        last.getBoundingClientRect().bottom
+      );
+    });
+    near(end, 16, `the category browser's end gap, ${side ? "side" : "sheet"}`);
+  }
+  console.log(
+    "PASS GAP-085 the category browser ends 16 above the panel's edge",
+  );
   // GAP-121: the assistant's header tops its own 12 up to what the shell
   // leaves, rather than adding to it, so its close button sits where a panel
   // header's search field does: under a grip (the grip's row and its 4px

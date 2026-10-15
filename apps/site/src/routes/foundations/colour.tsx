@@ -68,6 +68,11 @@ const semanticGroups = [
     lead: "What is featured: the accent’s fill and the ink on it. A featured pin and POIResultCard’s Featured tab and edge wear it. Amber unless a product sets its own (decision 68).",
   },
   {
+    prefix: "--semantics-scrollbar",
+    title: "Scrollbar",
+    lead: "The thin thumb of a scroll region beside the map, and under the pointer: 3:1 on the page. A phone presentation draws no lasting scrollbar (decision 75).",
+  },
+  {
     prefix: "--semantics-category",
     title: "Category",
     lead: "The taxonomy’s eight quick-access colours: an accent, a fill, and the ink that reads on the fill at 4.5:1.",

@@ -47,6 +47,10 @@ struct KozmosPanelClearanceTopKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
 }
 
+struct KozmosPanelInsetBottomKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
 public extension EnvironmentValues {
     /// What the shell's panel leaves empty above its content (GAP-083): the
     /// grabber's 16-point row, the 16-point gap below a `panelHeader`, or
@@ -76,6 +80,20 @@ public extension EnvironmentValues {
     var kozmosPanelClearanceTop: CGFloat {
         get { self[KozmosPanelClearanceTopKey.self] }
         set { self[KozmosPanelClearanceTopKey.self] = newValue }
+    }
+
+    /// What the shell's panel leaves empty below its content (GAP-085): 16
+    /// points, above a side panel's bottom edge or above a sheet's bottom
+    /// safe area, the space it leaves above the content. Zero outside a
+    /// shell. A part with its own bottom padding and no surface of its own
+    /// tops it up to what it needs rather than adding to it, as
+    /// `KozmosPOIDetailPanel` and `KozmosBrowseCategoriesPanel` do in their
+    /// sheet presentations and `KozmosRoutePreviewPanel` does: the
+    /// `kozmosPanelInsetTop` rule, at the other end. A product that puts such
+    /// a part above a row of its own sets this to zero for it.
+    var kozmosPanelInsetBottom: CGFloat {
+        get { self[KozmosPanelInsetBottomKey.self] }
+        set { self[KozmosPanelInsetBottomKey.self] = newValue }
     }
 }
 
@@ -196,10 +214,14 @@ public struct KozmosPanelScrollView<Content: View>: View {
         .onPreferenceChange(KozmosScrollContentHeightKey.self) { contentHeight = $0 }
         .coordinateSpace(name: Self.spaceName)
         .scrollDisabled(!scrollEnabled)
-        // The sheet's scrolling content runs under the home indicator, as a
-        // scroll view's does, its content inset so the last row is reachable;
-        // a peek then shows what the prototype's shows, not 34 points less.
-        .ignoresSafeArea(.container, edges: .bottom)
+        // The sheet's scrolling content runs under the home indicator, so a
+        // peek shows what the prototype's shows, not 34 points less, and
+        // under the 16 the panel leaves below its content (GAP-085): a scroll
+        // view does that by itself for the safe area the shell gives the
+        // content, with its content inset, so scrolled to its end the last
+        // row stops 16 above the indicator, or above a side panel's edge. It
+        // ignored that safe area, which took the inset away with it: the
+        // last row stopped on the home indicator.
     }
 
     private static var spaceName: String { "kozmosPanelScroll" }

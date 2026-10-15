@@ -20,6 +20,7 @@ import SwiftUI
 public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: View {
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelInsetBottom) private var panelInsetBottom
     @Environment(\.kozmosPanelSurface) private var panelSurface
 
     private let destinationName: String
@@ -96,6 +97,16 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
     private var firstRowTopPadding: CGFloat {
         let padding = KozmosDimensions.primitivesLayoutSpacing200
         return max(panelClearanceTop, padding - panelInsetTop)
+    }
+
+    /// The action row's bottom padding: hosted in the shell's panel, the
+    /// space the panel leaves below its content (`kozmosPanelInsetBottom`,
+    /// GAP-085) is the preview's own bottom, and the row tops its 16 up to it
+    /// rather than adding 16 to it. Outside a shell it is zero, and the row
+    /// keeps its 16.
+    private var lastRowBottomPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        return max(0, padding - panelInsetBottom)
     }
 
     public var body: some View {
@@ -193,7 +204,8 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                 }
                 .frame(maxWidth: .infinity)
             }
-            .padding(KozmosDimensions.primitivesLayoutSpacing200)
+            .padding([.horizontal, .top], KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.bottom, lastRowBottomPadding)
         }
         .frame(maxWidth: .infinity)
         // The background colour standing alone, and no fill on the shell's

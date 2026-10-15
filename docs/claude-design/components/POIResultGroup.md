@@ -99,6 +99,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
   does not reorder.
 
 - `onSelect`: `(poiId: string) => void`, **required**.
+- `onOpen`: `(poiId: string) => void`, optional.
+
+  A double tap on a result opens its details: POIResultCard's `onOpen` (decision 72).
+
 - `onAction`: `(action: POIResultAction, poiId: string) => void`, optional.
 - `collapsedCount`: `number`, optional, default `1`.
 
@@ -189,6 +193,14 @@ interface POIResultCardProps extends Omit<
   poi: POIPresentation;
   result: POIResultPresentation;
   onSelect: (poiId: string) => void;
+  /**
+   * Open the result's details: a double tap, or a double click, on the result,
+   * selected or not (decision 72, GAP-143). It is called once, and the second
+   * tap is not passed on as a second selection, so the first tap's selection
+   * stands. Without it, every tap selects, as before. A keyboard press always
+   * selects; the action row's details action is the keyboard's way in.
+   */
+  onOpen?: (poiId: string) => void;
   /**
    * Run an action from the selected result. The card draws whatever
    * `result.actions` carries and reports which was pressed; it never decides

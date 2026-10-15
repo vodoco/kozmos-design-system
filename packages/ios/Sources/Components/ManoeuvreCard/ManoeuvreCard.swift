@@ -10,8 +10,12 @@ enum KozmosManoeuvreCardPart: Hashable {
 /// itinerary in its place. Theme-filled by default, with contrasting instruction
 /// and detail text. A `surface:` named with no `appearance:` is the neutral
 /// solid or glass surface it names, as a 0.5.0 call got (D6); an `appearance:`
-/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar has a
-/// minimum 44-point activation area.
+/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar sits
+/// 12 points under the content and 4 above the card's bottom edge, a row no
+/// taller than itself; its 44-point activation area reaches up from the
+/// card's edge over the instruction row's foot, or, open, over a 23-point
+/// space under the itinerary. On the theme fill it is drawn quieter than the
+/// instruction (decision 74).
 ///
 /// The card owns the toggle and what VoiceOver hears of it. The itinerary it
 /// opens into is the caller's — `KozmosItinerary`, in the products — so the
@@ -134,6 +138,39 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         }
     }
 
+    /// The grab bar's grip, and all of its row: the card is laid out with
+    /// the content, its 12, the grip and its 4 to the edge, 21 below the
+    /// instruction row, and open 23 more below the itinerary (decision 74,
+    /// GAP-140). Its row was 44 tall, the content 60 above the edge with
+    /// about 50 empty above the grip.
+    static var gripHeight: CGFloat { 5 }
+
+    /// The bar's activation area, reaching up from the card's bottom edge.
+    static var barTargetHeight: CGFloat { 44 }
+
+    /// How far the bar's activation area reaches above the 12 over the grip:
+    /// 44 less the card's 4 below the grip, the grip and the 12, 23. Closed,
+    /// that is the foot of the instruction row, which opens the card too.
+    /// Open, a fixed space this tall lies under the itinerary, outside its
+    /// scroll view, so the area never covers any of the itinerary at any
+    /// scroll position.
+    static var barTargetOverlap: CGFloat {
+        barTargetHeight - KozmosDimensions.primitivesLayoutSpacing50 - gripHeight
+            - KozmosDimensions.primitivesLayoutSpacing150
+    }
+
+    /// The grab bar's colour (decision 74, GAP-140). On the theme fill, the
+    /// guidance foreground at 62%: quieter than the instruction, whose white
+    /// reads 5.6:1 on `#135BEC`, and still 3.09:1, over WCAG 1.4.11's 3:1 for
+    /// a control's only visual (60% reads 2.99:1). On a surface,
+    /// background/300 at full strength, as before: already quiet, and dimming
+    /// it would only lower its contrast.
+    static func grabBarColor(_ appearance: KozmosManoeuvreAppearance) -> Color {
+        appearance == .theme
+            ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle.opacity(0.62)
+            : KozmosColors.primitivesColorsBackground300
+    }
+
     /// The card's own toggle: it decides where VoiceOver goes while VoiceOver
     /// is still on the part that was pressed, then asks the product to flip.
     private func toggle() {
@@ -165,6 +202,12 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 // one container around whatever the product put in it.
                 .accessibilityElement(children: .contain)
                 .kozmosVoiceOverFocus($voiceOverFocus, .itinerary)
+                // The bar's activation area reaches 23 above the 12 over the
+                // grip: a fixed space under the itinerary's viewport, outside
+                // its scroll view, so no row is ever under the area, at any
+                // scroll position, and a tap or a drag low in the list (a
+                // destination's Change button) reaches the itinerary.
+                .padding(.bottom, Self.barTargetOverlap)
             } else {
                 // The instruction row is the button: a tap anywhere on it opens
                 // the itinerary, and VoiceOver hears the manoeuvre with that hint.
@@ -199,20 +242,12 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                                                 hint: expandLabel, activate: toggle)
                 .kozmosVoiceOverFocus($voiceOverFocus, .instruction)
             }
-            // The grab bar: the sign that the card opens, and the way to close it.
-            Button(action: toggle) {
-                Capsule()
-                    .fill(appearance == .theme ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground300)
-                    .frame(width: 36, height: 5)
-                    .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? collapseLabel : expandLabel)
-            // Closed, the instruction row already offers the way in.
-            .accessibilityHidden(!isExpanded)
-            .kozmosVoiceOverFocus($voiceOverFocus, .bar)
+            // The grab bar's row: the grip's 5, 12 under the content and 4
+            // above the card's edge. The bar itself, grip and activation
+            // area, lies over the card's foot (`grabBar`).
+            Color.clear
+                .frame(height: Self.gripHeight)
+                .accessibilityHidden(true)
         }
         // Opened or closed, by the card's toggle or by the product: focus
         // that was on the part that went follows to the part in its place.
@@ -227,12 +262,39 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
         .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing50)
         .frame(maxWidth: .infinity)
+        // Over the content, so its activation area wins where it reaches
+        // over the content's foot.
+        .overlay(alignment: .bottom) { grabBar }
         .modifier(KozmosGuidanceSurface(appearance: appearance, surface: surface))
         .kozmosElevation(KozmosShadows.semanticsElevationFloating)
         .accessibilityElement(children: .contain)
         // Keep the card named even when custom itinerary content has no
         // container of its own. Contain, rather than combine, its controls.
         .accessibilityLabel(manoeuvreLabel)
+    }
+
+    /// The grab bar: the sign that the card opens, and the way to close it.
+    /// The grip sits 4 above the card's bottom edge, as an iOS sheet's
+    /// grabber does, at the foot of a 44-point activation area that reaches
+    /// up from the edge over the card's 4, the grip, the 12 above it and 23
+    /// more (decision 74, GAP-140): closed, the instruction row's foot; open,
+    /// the space under the itinerary. It lies over the card, so it changes
+    /// nothing of the layout.
+    private var grabBar: some View {
+        Button(action: toggle) {
+            Capsule()
+                .fill(Self.grabBarColor(appearance))
+                .frame(width: 36, height: Self.gripHeight)
+                .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing50)
+                .frame(maxWidth: .infinity, minHeight: Self.barTargetHeight, alignment: .bottom)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+        .accessibilityLabel(isExpanded ? collapseLabel : expandLabel)
+        // Closed, the instruction row already offers the way in.
+        .accessibilityHidden(!isExpanded)
+        .kozmosVoiceOverFocus($voiceOverFocus, .bar)
     }
 }
 

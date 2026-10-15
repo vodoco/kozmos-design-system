@@ -352,6 +352,8 @@
   <color name="semantics_emotion_informative_text">@color/primitives_colors_emotional_info_800</color>
   <color name="semantics_accent_fill">@color/primitives_colors_accent_500</color>
   <color name="semantics_accent_on_fill">@color/primitives_colors_foreground_1000</color>
+  <color name="semantics_scrollbar_thumb">@color/primitives_colors_foreground_500</color>
+  <color name="semantics_scrollbar_thumb_hover">@color/primitives_colors_foreground_400</color>
   <string name="semantics_elevation_raised">@string/shadow_sm</string>
   <string name="semantics_elevation_floating">@string/shadow_md</string>
   <string name="semantics_elevation_overlay">@string/shadow_lg</string>

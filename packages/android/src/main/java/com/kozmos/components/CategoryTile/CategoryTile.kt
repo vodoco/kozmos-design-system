@@ -139,7 +139,9 @@ fun KozmosCategoryTile(
             Text(
                 text = category.label,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
+                // A CJK name gets a third line, so a long word shows whole
+                // rather than cut (decision 78, GAP-010).
+                maxLines = categoryLabelMaxLines(category.label),
                 overflow = TextOverflow.Ellipsis,
                 color = if (isEnabled) {
                     KozmosThemeTokens.primitivesColorsForeground100
@@ -151,3 +153,17 @@ fun KozmosCategoryTile(
         }
     }
 }
+
+/**
+ * Three lines for a category name in Han, kana or Hangul, which break between
+ * characters, so a long word shows whole (decision 78, GAP-010); two for
+ * every other script.
+ */
+internal fun categoryLabelMaxLines(label: String): Int =
+    if (label.any { ch -> CJK_RANGES.any { ch.code in it } }) 3 else 2
+
+private val CJK_RANGES = listOf(
+    0x1100..0x11FF, 0x2E80..0x2FDF, 0x3000..0x30FF, 0x3100..0x31FF,
+    0x3400..0x4DBF, 0x4E00..0x9FFF, 0xAC00..0xD7AF, 0xF900..0xFAFF,
+    0xFF00..0xFFEF,
+)

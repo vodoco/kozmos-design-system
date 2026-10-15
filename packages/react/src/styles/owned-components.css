@@ -456,6 +456,17 @@
      container queries, and its cqi and cqw units, in content hosted here
      read the product's own containers, not the panel. The details card is
      its own container under the shell (owned-poi-detail.css). */
+  /* Below the content the shell leaves 16 too, --kozmos-panel-inset-bottom
+     (GAP-085), so a short result list or a part with no padding of its own
+     ends 16 above the panel's edge. The details card, the route preview and
+     the category browser end with padding of their own, and give the
+     shell's back, so their ends stay where they were, as SwiftUI's and
+     Compose's do. */
+  .kozmos-poi-detail[data-presentation="sheet"],
+  .kozmos-route-preview,
+  .kozmos-browse-categories {
+    margin-block-end: calc(-1 * var(--kozmos-panel-inset-bottom, 0px));
+  }
   .kozmos-browse-categories-first-row,
   .kozmos-route-preview-first-row {
     padding-top: max(
@@ -548,10 +559,104 @@
       var(--primitives-colors-theme-600)
     );
   }
+  /* Scrollbars, by presentation (decision 75, GAP-138/139). A scroll region
+     marks which it draws: `hidden` on a phone presentation, where touch
+     platforms show none at rest and a desktop browser drawing the phone's
+     frame drew its 15px track inside the card and the sheet; `thin` beside the
+     map and alone, Kozmos's thin thumb on a transparent track, kept inside a
+     rounded panel's corners. Both still scroll by touch, wheel and keys. */
+  /* These regions scroll down, never across. Saying so matters in WebKit:
+     with a styled scrollbar it adds a horizontal bar's height to an
+     overflow:auto box's own height even when nothing overflows, which put a
+     side panel's content end 26 above its edge rather than 16. */
+  [data-kozmos-scrollbar] {
+    overflow-x: hidden;
+  }
+  [data-kozmos-scrollbar="hidden"] {
+    scrollbar-width: none;
+  }
+  [data-kozmos-scrollbar="hidden"]::-webkit-scrollbar {
+    display: none;
+  }
+  /* Chromium and WebKit draw the thin one with their pseudo-elements, which
+     alone can keep the track off a rounded corner; a standard
+     scrollbar-width or scrollbar-color would switch them off there. */
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: calc(var(--semantics-radius-container) * 1px);
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-thumb {
+    background-color: var(--semantics-scrollbar-thumb);
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-thumb:hover {
+    background-color: var(--semantics-scrollbar-thumb-hover);
+  }
+  [data-kozmos-scrollbar="thin"]::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Firefox has no such pseudo-elements: the standard pair. */
+  @supports not selector(::-webkit-scrollbar) {
+    [data-kozmos-scrollbar="thin"] {
+      scrollbar-width: thin;
+      scrollbar-color: var(--semantics-scrollbar-thumb) transparent;
+    }
+  }
+  /* The grab bar is laid out as its grip alone, 12 under the content and 4
+     above the card's edge, so the closed card ends 21 under its instruction
+     (decision 74, GAP-140: about 50 of empty space sat above the grip). Its
+     target stays 44: from the card's edge up, over the grip, the gap and the
+     foot of the instruction row, which opens the card too. Owned, the
+     target's anchor too: without @scope a positioned ancestor further out
+     would take the band. */
+  .kozmos-manoeuvre-disclosure {
+    position: relative;
+  }
+  .kozmos-manoeuvre-disclosure::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-inline: 0;
+    bottom: calc(-1 * var(--primitives-layout-spacing-50) * 1px);
+    height: 44px;
+  }
+  /* Open, the itinerary stops 23 above the gap, outside what scrolls, so the
+     target covers none of it at any scroll position: a press or a drag low in
+     the list reaches the list. */
+  .kozmos-manoeuvre-itinerary {
+    margin-bottom: 23px;
+  }
+  /* On the theme fill the scrollbar's thumb is the guidance foreground, as
+     the grip is: the neutral thumb reads about 1.4:1 there. */
+  .kozmos-manoeuvre-card[data-appearance="theme"] {
+    --semantics-scrollbar-thumb: color-mix(
+      in srgb,
+      var(--kozmos-guidance-foreground) 62%,
+      transparent
+    );
+    --semantics-scrollbar-thumb-hover: var(--kozmos-guidance-foreground);
+  }
   .kozmos-manoeuvre-grip {
     background-color: var(
       --kozmos-guidance-foreground,
       var(--primitives-colors-background-300)
+    );
+  }
+  /* On the theme fill the bar is quieter than the instruction: the guidance
+     foreground at 62%, 3.09:1 on #135BEC, where 60% would be 2.99:1
+     (decision 74, GAP-140). The background card's grey bar is already
+     quiet and stays as it was. */
+  .kozmos-manoeuvre-card[data-appearance="theme"] .kozmos-manoeuvre-grip {
+    background-color: color-mix(
+      in srgb,
+      var(--kozmos-guidance-foreground) 62%,
+      transparent
     );
   }
   .kozmos-manoeuvre-card button:focus-visible {
@@ -864,6 +969,9 @@
     text-transform: none;
     -webkit-appearance: button;
     background-image: none;
+    /* A double tap opens the result's details (decision 72): it must never
+       zoom the page on a mobile browser instead (GAP-144). Pinch zoom stays. */
+    touch-action: manipulation;
   }
   .kozmos-poi-result-select:disabled {
     cursor: not-allowed;
@@ -1370,13 +1478,11 @@
      taking its clicks, which trades one 2.5.8 failure for a worse bug. Tall
      is free: it lands in the gap between wrapped rows, where nothing sits. */
   .kozmos-chip-remove,
-  .kozmos-notice-more,
-  .kozmos-ai-companion-close {
+  .kozmos-notice-more {
     position: relative;
   }
   .kozmos-chip-remove::after,
-  .kozmos-notice-more::after,
-  .kozmos-ai-companion-close::after {
+  .kozmos-notice-more::after {
     content: "";
     position: absolute;
     top: 50%;
@@ -1395,8 +1501,7 @@
      61px header. The header's 12px padding and the 8px gap before the close
      hold the 4px the target reaches past the mark on each side, and nothing
      beside it is a control. */
-  .kozmos-notice-more::after,
-  .kozmos-ai-companion-close::after {
+  .kozmos-notice-more::after {
     width: max(100%, 44px);
   }
 }

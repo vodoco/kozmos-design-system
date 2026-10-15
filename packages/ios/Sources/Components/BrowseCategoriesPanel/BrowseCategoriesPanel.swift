@@ -28,6 +28,7 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
 
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelInsetBottom) private var panelInsetBottom
     @Environment(\.kozmosPanelSurface) private var panelSurface
 
     /// Whether the browser sits on a surface it does not draw: in the map
@@ -100,6 +101,17 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
         return max(panelClearanceTop, padding - panelInsetTop)
     }
 
+    /// The tiles' bottom padding: hosted in the shell's panel, the space the
+    /// panel leaves below its content (`kozmosPanelInsetBottom`, GAP-085) is
+    /// the browser's own bottom, and the tiles top their 16 up to it rather
+    /// than adding 16 to it, as the first row does at the top. Standing
+    /// alone they keep their 16.
+    private var lastRowBottomPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        guard onPanelSurface else { return padding }
+        return max(0, padding - panelInsetBottom)
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             if hasSearch || hasActions {
@@ -154,7 +166,8 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
                 }
                 // Under the search row the tiles sit under that row, not
                 // under whatever the panel leaves: they keep their 16.
-                .padding([.horizontal, .bottom], KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.bottom, lastRowBottomPadding)
                 .padding(.top, hasSearch || hasActions ? KozmosDimensions.primitivesLayoutSpacing200 : firstRowTopPadding)
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -33,6 +34,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
@@ -46,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.KozmosSurfaceDefaults
@@ -68,6 +72,38 @@ fun manoeuvreDescription(instruction: String, detail: String?): String =
  * line or more.
  */
 internal fun manoeuvreInstructionLineLimit(lines: Int?): Int? = lines?.takeIf { it >= 1 }
+
+/** The grip's strength on the theme fill, a share of the guidance foreground (decision 74). */
+private const val GripForegroundAlpha = 0.62f
+
+/** The grip, 36 × 5, and its target's least height. */
+private val GripHeight = 5.dp
+private val GripTarget = 48.dp
+
+/**
+ * How far the grip's target reaches above the 21 the card keeps under the
+ * content (the 12 gap, the grip and the 4 under it): its 48 less those 21.
+ * Closed, it reaches over the instruction row's foot; open, over a fixed
+ * space this tall under the itinerary, never over the itinerary itself.
+ */
+internal val ManoeuvreGripOverlap: Dp =
+    GripTarget - (KozmosDimensions.primitivesLayoutSpacing150 + GripHeight + KozmosDimensions.primitivesLayoutSpacing50)
+
+/**
+ * Lays its node out [grip] tall while what follows in the chain, the target,
+ * is measured [target] tall and placed so its bottom is [below] under the
+ * node's: the card's bottom edge. The target reaches up from there, over
+ * whatever sits above, and never down past the card; at 48 it needs none of
+ * Compose's own widening of a small target, which reaches both ways.
+ */
+private fun Modifier.gripTarget(grip: Dp, below: Dp, target: Dp): Modifier = layout { measurable, constraints ->
+    val targetHeight = target.roundToPx()
+    val placeable = measurable.measure(constraints.copy(minHeight = targetHeight, maxHeight = targetHeight))
+    val height = constraints.constrainHeight(grip.roundToPx())
+    layout(constraints.constrainWidth(placeable.width), height) {
+        placeable.place(0, height + below.roundToPx() - placeable.height)
+    }
+}
 
 /** The parts of the manoeuvre card that can hold focus. */
 internal enum class ManoeuvreCardPart { Instruction, Itinerary, Bar }
@@ -212,6 +248,8 @@ fun KozmosManoeuvreCard(
         ) {
         val instructionText = instructionAnnotatedText(instruction, surface)
         val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
+        // Under the content: 12, the 5dp grip, and the card's 4 (decision 74);
+        // open, the itinerary keeps the overlap's 27 above the 12 as well.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -236,6 +274,14 @@ fun KozmosManoeuvreCard(
                 ) {
                     itinerary()
                 }
+                // Outside what scrolls, between the itinerary and the grip's
+                // 12: the grab bar's target reaches this far up, and no
+                // further, so it never covers a row of the itinerary at any
+                // scroll position; the scroller ends 48 above the card's edge.
+                // Padding inside the scroll cleared the last row only at the
+                // end: mid-scroll the target took taps and drags meant for
+                // the rows under it.
+                Spacer(Modifier.height(ManoeuvreGripOverlap))
             } else {
                 // The instruction row is the button: a tap anywhere on it opens
                 // the itinerary, and TalkBack hears the manoeuvre with the action.
@@ -299,11 +345,21 @@ fun KozmosManoeuvreCard(
                 }
             }
             // The grab bar: the sign that the card opens, and the way to close
-            // it. Closed, the instruction row already offers the way in.
+            // it. Closed, the instruction row already offers the way in. It
+            // sits 12 under the content and 4 above the card's bottom edge,
+            // as an iOS sheet's grabber does (GAP-140, decision 74), and is
+            // laid out as tall as the grip alone: 21 under the content in all.
+            // Its target is 48 tall all the same, reaching up from the card's
+            // bottom edge over the grip, the gap and the content's foot,
+            // never down onto the map. Drawn after the content, it is the
+            // first thing a touch there finds: closed, the instruction row
+            // under it does the same; open, a fixed space of the overlap's
+            // height under the itinerary is all it covers.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = KozmosDimensions.primitivesLayoutSpacing150)
+                    .gripTarget(grip = GripHeight, below = KozmosDimensions.primitivesLayoutSpacing50, target = GripTarget)
                     .focusRequester(barFocus)
                     .onFocusChanged { state ->
                         if (state.isFocused) focused = ManoeuvreCardPart.Bar
@@ -327,15 +383,22 @@ fun KozmosManoeuvreCard(
                     // focus there would be on something TalkBack cannot see.
                     .focusProperties { canFocus = expanded }
                     .clickable(onClick = onToggle, role = Role.Button)
-                    .heightIn(min = 48.dp)
-                    .padding(vertical = KozmosDimensions.primitivesLayoutSpacing50),
-                contentAlignment = Alignment.Center
+                    .padding(bottom = KozmosDimensions.primitivesLayoutSpacing50),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Box(
                     modifier = Modifier
                         .width(36.dp)
-                        .height(5.dp)
-                        .background(guidanceForeground ?: KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
+                        .height(GripHeight)
+                        .background(
+                            // On the theme fill, the guidance foreground at
+                            // 62%: quieter than the instruction, and 3.09:1 on
+                            // #135BEC (60% read 2.99:1), the 3:1 a control's
+                            // only visual needs (WCAG 1.4.11). On the
+                            // background appearance background/300, as it was.
+                            guidanceForeground?.copy(alpha = GripForegroundAlpha) ?: KozmosThemeTokens.primitivesColorsBackground300,
+                            CircleShape
+                        )
                 )
             }
         }

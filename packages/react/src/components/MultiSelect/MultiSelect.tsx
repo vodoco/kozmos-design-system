@@ -1,10 +1,21 @@
 import React from "react";
+import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Chip, ChipGroup } from "../Chip";
 import { FieldWrapper } from "../FieldWrapper";
+import {
+  FIELD_POPUP_MAX_HEIGHT,
+  FieldPopupAnchor,
+  FieldPopupContent,
+  FieldPopupRoot,
+} from "../Combobox/field-popup";
+import {
+  MapShellPresentationContext,
+  scrollbarFor,
+} from "../AdaptiveMapShell/map-shell-presentation";
 import { type ComboboxOption } from "../Combobox";
 import { type InputStatus } from "../Input/Input";
 
@@ -99,6 +110,10 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const rootRef = React.useRef<HTMLDivElement>(null);
+    // The popup is in a portal, outside the root: a press or focus inside
+    // it is still inside the field.
+    const popupRef = React.useRef<HTMLDivElement>(null);
+    const presentation = React.useContext(MapShellPresentationContext);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const defaultInputId = React.useId();
     const errorId = React.useId();
@@ -174,7 +189,11 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       if (!open) return undefined;
 
       const handlePointerDown = (event: MouseEvent) => {
-        if (!rootRef.current?.contains(event.target as Node)) {
+        const target = event.target as Node;
+        if (
+          !rootRef.current?.contains(target) &&
+          !popupRef.current?.contains(target)
+        ) {
           setOpen(false);
         }
       };
@@ -279,176 +298,207 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         required={required}
         status={resolvedStatus}
       >
-        <div
-          ref={rootRef}
-          className="relative"
-          onBlur={(event) => {
-            if (
-              !event.currentTarget.contains(event.relatedTarget as Node | null)
-            )
-              setOpen(false);
-          }}
-        >
+        <FieldPopupRoot>
           <div
-            ref={setRefs}
-            className={cn(
-              "flex min-h-11 w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-              resolvedStatus === "error" &&
-                "border-destructive focus-within:ring-destructive",
-              resolvedStatus === "warning" &&
-                "border-warning focus-within:ring-warning",
-              resolvedStatus === "success" &&
-                "border-success focus-within:ring-success",
-              disabled &&
-                "cursor-not-allowed bg-muted text-muted-foreground opacity-80",
-              className,
-            )}
-            onClick={() => inputRef.current?.focus()}
-            {...props}
+            ref={rootRef}
+            className="relative"
+            onBlur={(event) => {
+              const next = event.relatedTarget as Node | null;
+              if (
+                !event.currentTarget.contains(next) &&
+                !popupRef.current?.contains(next)
+              )
+                setOpen(false);
+            }}
           >
-            <ChipGroup className="min-w-0 flex-1 gap-1.5">
-              {selectedOptions.map((option) => (
-                <Chip
-                  key={option.value}
-                  size="sm"
-                  selected
-                  disabled={disabled || readOnly}
-                  onRemove={() => removeValue(option.value)}
-                >
-                  {option.label}
-                </Chip>
-              ))}
-              <input
-                ref={inputRef}
-                id={inputId}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-controls={listboxOpen ? listboxId : undefined}
-                aria-expanded={listboxOpen}
-                aria-haspopup="listbox"
-                aria-activedescendant={activeOptionId}
-                aria-label={ariaLabel}
-                aria-labelledby={ariaLabelledBy}
-                aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
-                aria-invalid={resolvedStatus === "error" ? true : callerInvalid}
-                aria-required={required || undefined}
-                autoComplete="off"
-                className="kozmos-reset kozmos-multiselect-input"
-                disabled={disabled}
-                readOnly={readOnly}
-                placeholder={selectedValues.length > 0 ? "" : placeholder}
-                value={visibleSearchValue}
-                onFocus={() => {
-                  if (!disabled && !readOnly && !keepListClosed.current)
-                    setOpen(true);
-                }}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setOpen(true);
-                }}
-                onKeyDown={(event) => {
-                  if (disabled || readOnly || event.nativeEvent.isComposing)
-                    return;
-                  if (event.key === "Backspace" && !visibleSearchValue) {
-                    const lastValue = selectedValues[selectedValues.length - 1];
-                    if (lastValue) removeValue(lastValue);
-                  } else if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    setOpen(true);
-                    setActiveIndex((current) =>
-                      enabledIndex(navigableOptions, current, 1),
-                    );
-                  } else if (event.key === "ArrowUp") {
-                    event.preventDefault();
-                    setOpen(true);
-                    setActiveIndex((current) =>
-                      enabledIndex(navigableOptions, current, -1),
-                    );
-                  } else if (event.key === "Enter" && open) {
-                    event.preventDefault();
-                    toggleOption(activeOption);
-                  } else if (event.key === "Escape") {
-                    setOpen(false);
-                  }
-                }}
-              />
-            </ChipGroup>
-            {canClear && (
-              <button
-                type="button"
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                aria-label="Clear selected options"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  clearSelection();
-                }}
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            )}
-            <button
-              type="button"
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label={open ? "Close options" : "Open options"}
-              disabled={disabled || readOnly}
-              onClick={(event) => {
-                event.stopPropagation();
-                const nextOpen = !open;
-                inputRef.current?.focus();
-                setOpen(nextOpen);
-              }}
-            >
-              <ChevronDown
+            <FieldPopupAnchor asChild>
+              <div
+                ref={setRefs}
                 className={cn(
-                  "h-4 w-4 transition-transform",
-                  open && "rotate-180",
+                  "flex min-h-11 w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                  resolvedStatus === "error" &&
+                    "border-destructive focus-within:ring-destructive",
+                  resolvedStatus === "warning" &&
+                    "border-warning focus-within:ring-warning",
+                  resolvedStatus === "success" &&
+                    "border-success focus-within:ring-success",
+                  disabled &&
+                    "cursor-not-allowed bg-muted text-muted-foreground opacity-80",
+                  className,
                 )}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-          {open && (
-            <div
-              id={listboxOpen ? listboxId : undefined}
-              role={listboxOpen ? "listbox" : "status"}
-              aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
-              aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
-              aria-multiselectable={listboxOpen ? true : undefined}
-              className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
-            >
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  {emptyText}
-                </div>
-              ) : (
-                filteredOptions.map((option, index) => {
-                  const selected = selectedSet.has(option.value);
-                  const disabledOption =
-                    option.disabled || (!selected && atSelectionLimit);
-                  const active = index === activeIndex;
-
-                  return (
-                    <OptionRow
+                onClick={() => inputRef.current?.focus()}
+                {...props}
+              >
+                <ChipGroup className="min-w-0 flex-1 gap-1.5">
+                  {selectedOptions.map((option) => (
+                    <Chip
                       key={option.value}
-                      id={`${inputId}-option-${index}`}
-                      option={option}
-                      selected={selected}
-                      active={active}
-                      disabled={disabledOption}
-                      onMouseEnter={() => {
-                        if (!disabledOption) setActiveIndex(index);
-                      }}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() =>
-                        !disabledOption ? toggleOption(option) : undefined
+                      size="sm"
+                      selected
+                      disabled={disabled || readOnly}
+                      onRemove={() => removeValue(option.value)}
+                    >
+                      {option.label}
+                    </Chip>
+                  ))}
+                  <input
+                    ref={inputRef}
+                    id={inputId}
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-controls={listboxOpen ? listboxId : undefined}
+                    aria-expanded={listboxOpen}
+                    aria-haspopup="listbox"
+                    aria-activedescendant={activeOptionId}
+                    aria-label={ariaLabel}
+                    aria-labelledby={ariaLabelledBy}
+                    aria-describedby={mergeAriaIds(
+                      callerDescribedBy,
+                      describedBy,
+                    )}
+                    aria-invalid={
+                      resolvedStatus === "error" ? true : callerInvalid
+                    }
+                    aria-required={required || undefined}
+                    autoComplete="off"
+                    className="kozmos-reset kozmos-multiselect-input"
+                    disabled={disabled}
+                    readOnly={readOnly}
+                    placeholder={selectedValues.length > 0 ? "" : placeholder}
+                    value={visibleSearchValue}
+                    onFocus={() => {
+                      if (!disabled && !readOnly && !keepListClosed.current)
+                        setOpen(true);
+                    }}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setOpen(true);
+                    }}
+                    onKeyDown={(event) => {
+                      if (disabled || readOnly || event.nativeEvent.isComposing)
+                        return;
+                      if (event.key === "Backspace" && !visibleSearchValue) {
+                        const lastValue =
+                          selectedValues[selectedValues.length - 1];
+                        if (lastValue) removeValue(lastValue);
+                      } else if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        setOpen(true);
+                        setActiveIndex((current) =>
+                          enabledIndex(navigableOptions, current, 1),
+                        );
+                      } else if (event.key === "ArrowUp") {
+                        event.preventDefault();
+                        setOpen(true);
+                        setActiveIndex((current) =>
+                          enabledIndex(navigableOptions, current, -1),
+                        );
+                      } else if (event.key === "Enter" && open) {
+                        event.preventDefault();
+                        toggleOption(activeOption);
+                      } else if (event.key === "Escape") {
+                        setOpen(false);
                       }
-                    />
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
+                    }}
+                  />
+                </ChipGroup>
+                {canClear && (
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    aria-label="Clear selected options"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      clearSelection();
+                    }}
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={open ? "Close options" : "Open options"}
+                  disabled={disabled || readOnly}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const nextOpen = !open;
+                    inputRef.current?.focus();
+                    setOpen(nextOpen);
+                  }}
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      open && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </FieldPopupAnchor>
+            {open && (
+              <FieldPopupContent>
+                {/* A layer of Core's, as Combobox's list is: in its portal it
+                    is outside a modal dialog, which turns pointer events off
+                    everywhere but its layers. No onDismiss: the field closes
+                    it, as before. Escape in the input is the input's own
+                    (after IME and host handling); on the field's buttons
+                    (a chip's remove, clear, the chevron) the layer closes
+                    the list, since it, the topmost, keeps the dialog's. */}
+                <DismissableLayer
+                  asChild
+                  onEscapeKeyDown={(event) => {
+                    if (event.target !== inputRef.current) setOpen(false);
+                  }}
+                >
+                  <div
+                    ref={popupRef}
+                    data-kozmos-scrollbar={scrollbarFor(presentation)}
+                    id={listboxOpen ? listboxId : undefined}
+                    role={listboxOpen ? "listbox" : "status"}
+                    aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
+                    aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
+                    aria-multiselectable={listboxOpen ? true : undefined}
+                    className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
+                    style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
+                  >
+                    {filteredOptions.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        {emptyText}
+                      </div>
+                    ) : (
+                      filteredOptions.map((option, index) => {
+                        const selected = selectedSet.has(option.value);
+                        const disabledOption =
+                          option.disabled || (!selected && atSelectionLimit);
+                        const active = index === activeIndex;
+
+                        return (
+                          <OptionRow
+                            key={option.value}
+                            id={`${inputId}-option-${index}`}
+                            option={option}
+                            selected={selected}
+                            active={active}
+                            disabled={disabledOption}
+                            onMouseEnter={() => {
+                              if (!disabledOption) setActiveIndex(index);
+                            }}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() =>
+                              !disabledOption ? toggleOption(option) : undefined
+                            }
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+                </DismissableLayer>
+              </FieldPopupContent>
+            )}
+          </div>
+        </FieldPopupRoot>
       </FieldWrapper>
     );
   },

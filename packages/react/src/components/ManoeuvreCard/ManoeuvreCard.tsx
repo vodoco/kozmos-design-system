@@ -2,6 +2,10 @@ import React from "react";
 import type { Instruction } from "@kozmos-ds/product-contracts";
 import { InstructionText, instructionText } from "../../utils/instruction";
 import { cn } from "../../utils";
+import {
+  MapShellPresentationContext,
+  scrollbarFor,
+} from "../AdaptiveMapShell/map-shell-presentation";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import {
   DirectionIcon,
@@ -120,6 +124,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
       appearanceProp ?? (surfaceProp !== undefined ? "background" : "theme");
     const surface = surfaceProp ?? "solid";
     const instructionRef = React.useRef<HTMLButtonElement>(null);
+    const presentation = React.useContext(MapShellPresentationContext);
     const itineraryRef = React.useRef<HTMLDivElement>(null);
     const barRef = React.useRef<HTMLButtonElement>(null);
 
@@ -191,6 +196,9 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
             aria-label={itineraryLabel}
             tabIndex={0}
             className="kozmos-manoeuvre-itinerary overflow-y-auto"
+            // No lasting scrollbar on a phone, Kozmos's thin one beside the
+            // map or alone (decision 75, GAP-138/139).
+            data-kozmos-scrollbar={scrollbarFor(presentation)}
             style={{ maxHeight: maxItineraryHeight }}
           >
             {children}
@@ -239,14 +247,20 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
           </button>
         )}
         {/* The grab bar: the sign that the card opens, and the way to close
-            it. Closed, the instruction row already offers the way in, so the
-            bar is silent then — and a pointer pressing it leaves focus where
-            it was, so focus never rests on something assistive technology
-            cannot hear. */}
+            it. It is 4 above the card's edge (the card's own padding) and 12
+            under the content, laid out as the grip alone; its 44px target
+            reaches up from the card's edge over that space, drawn in owned
+            CSS (decision 74, GAP-140). Closed, it reaches over the
+            instruction row's foot, which opens the card too; open, the
+            itinerary stops short of it, outside what scrolls. Closed, the
+            instruction row already offers the way in, so the bar is silent
+            then — and a pointer pressing it leaves focus where it was, so
+            focus never rests on something assistive technology cannot
+            hear. */}
         <button
           ref={barRef}
           type="button"
-          className="kozmos-manoeuvre-disclosure flex min-h-11 w-full items-center justify-center bg-transparent py-1"
+          className="kozmos-manoeuvre-disclosure flex h-[5px] w-full items-end justify-center bg-transparent"
           onClick={onToggle}
           onMouseDown={expanded ? undefined : (event) => event.preventDefault()}
           aria-label={expanded ? collapseLabel : expandLabel}

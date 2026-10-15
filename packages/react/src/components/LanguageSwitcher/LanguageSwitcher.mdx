@@ -15,8 +15,10 @@ device/app language and do not have this button. This is a product decision, not
 ## Ownership and placement
 
 Place it in `AdaptiveMapShell.controlsBottomStart`: bottom-left in LTR and bottom-right in RTL.
-The registered slot supplies the menu's collision boundary and availability. Menus close when
-that region disappears; restoring space does not reopen them. Standalone menus use the viewport.
+The menu opens straight above the control, from its start edge, over a side panel and anything
+else, as the Web SDK's does (decision 77, GAP-122); a long list stays above and scrolls. The
+registered slot supplies its availability: menus close when that region disappears, and restoring
+space does not reopen them.
 Select provides keyboard navigation, typeahead, scroll controls and selected-state announcements.
 
 Supply the tenant-supported `languages` with unique, nonempty canonical BCP 47 `id` values and

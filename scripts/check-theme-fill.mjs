@@ -27,6 +27,7 @@
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-theme-fill.mjs
  */
+import { createRequire } from "node:module";
 import {
   buildReactFixture,
   launchFixtureBrowser,
@@ -192,6 +193,9 @@ const READS = [
   ["toggle", "", "color", "ink"],
   ["manoeuvre", ".kozmos-manoeuvre-card", "backgroundColor", "fill"],
   ["manoeuvre", ".kozmos-manoeuvre-instruction", "color", "ink"],
+  // The drag indicator is quieter than the instruction and still 3:1 on the
+  // fill (decision 74, GAP-140).
+  ["manoeuvre", ".kozmos-manoeuvre-grip", "backgroundColor", "grip"],
   ["user-message", ".rounded-container", "backgroundColor", "fill"],
   ["user-message", ".rounded-container", "color", "ink"],
   [
@@ -506,6 +510,139 @@ try {
   await page.addScriptTag({ content: code });
   await page.getByTestId("dark-rating").waitFor();
   await settleLayout(page);
+  // The drag indicator sits 4 above the card's edge and 12 under the content,
+  // so the card ends 21 under it; its target still reaches 44 up from the
+  // card's edge (decision 74, GAP-140).
+  for (const theme of ["light", "dark"]) {
+    const box = await page
+      .getByTestId(`${theme}-manoeuvre`)
+      .evaluate((root) => {
+        const card = root.querySelector(".kozmos-manoeuvre-card");
+        const grip = root.querySelector(".kozmos-manoeuvre-grip");
+        const row = card?.firstElementChild;
+        if (!card || !grip || !row) return null;
+        // Into view: a point outside the window hits nothing.
+        card.scrollIntoView({ block: "center" });
+        const c = card.getBoundingClientRect();
+        const x = c.left + c.width / 2;
+        const hit = document.elementFromPoint(x, c.bottom - 40);
+        return {
+          gap: c.bottom - grip.getBoundingClientRect().bottom,
+          end: c.bottom - row.getBoundingClientRect().bottom,
+          reaches: Boolean(hit?.closest(".kozmos-manoeuvre-disclosure")),
+        };
+      });
+    read += 1;
+    if (!box) failures.push(`${theme} manoeuvre: no card, grip or content`);
+    else if (
+      Math.abs(box.gap - 4) > 1 ||
+      Math.abs(box.end - 21) > 1 ||
+      !box.reaches
+    )
+      failures.push(
+        `${theme} manoeuvre: the drag indicator sits ${box.gap.toFixed(1)} above the card's edge (want about 4), the card ends ${box.end.toFixed(1)} under its content (want about 21), and a press 40 above the edge ${box.reaches ? "reaches" : "misses"} it (want: reaches)`,
+      );
+  }
+  // The thin scrollbar on the theme fill (the open card's itinerary beside
+  // the map or alone, decision 75): its thumb is the guidance foreground, as
+  // the grip is, at least 3:1 on the fill at rest and hovered. The neutral
+  // thumb read about 1.4:1 there.
+  for (const theme of ["light", "dark"]) {
+    const thumbs = await page
+      .getByTestId(`${theme}-manoeuvre`)
+      .evaluate((root) => {
+        const card = root.querySelector(".kozmos-manoeuvre-card");
+        if (!card) return null;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        return Object.fromEntries(
+          [
+            "--semantics-scrollbar-thumb",
+            "--semantics-scrollbar-thumb-hover",
+          ].map((name) => {
+            const probe = document.createElement("span");
+            probe.style.backgroundColor = `var(${name})`;
+            card.append(probe);
+            const css = getComputedStyle(probe).backgroundColor;
+            probe.remove();
+            context.clearRect(0, 0, 1, 1);
+            context.fillStyle = css;
+            context.fillRect(0, 0, 1, 1);
+            return [
+              name,
+              { css, rgba: [...context.getImageData(0, 0, 1, 1).data] },
+            ];
+          }),
+        );
+      });
+    read += 1;
+    if (!thumbs) {
+      failures.push(`${theme} manoeuvre: no card for the scrollbar's thumb`);
+      continue;
+    }
+    for (const [name, { css, rgba }] of Object.entries(thumbs)) {
+      const alpha = rgba[3] / 255;
+      const over = [0, 1, 2].map((index) =>
+        Math.round(rgba[index] * alpha + THEME_FILL[index] * (1 - alpha)),
+      );
+      const ratio = contrast(over, THEME_FILL);
+      if (ratio < RING_MIN)
+        failures.push(
+          `${theme} manoeuvre ${name}: ${css} reads ${ratio.toFixed(2)}:1 on the theme fill; the scrollbar's thumb wants at least ${RING_MIN}:1 there`,
+        );
+    }
+  }
+  // Without @scope (a host that drops the scoped utilities) the grab bar's
+  // 44px target still anchors to the bar: its anchor is owned. Were it a
+  // utility, the band would anchor further out and take presses there.
+  {
+    const require = createRequire(
+      `${process.cwd()}/packages/react/package.json`,
+    );
+    const postcss = require("postcss");
+    const unscoped = postcss.parse(css);
+    unscoped.walkAtRules("scope", (rule) => rule.remove());
+    const bare = await browser.newPage({
+      viewport: { width: 1200, height: 900 },
+    });
+    try {
+      await bare.setContent('<!doctype html><div id="fixture"></div>');
+      await bare.addStyleTag({ content: unscoped.toString() });
+      await bare.addScriptTag({ content: code });
+      await bare.getByTestId("light-manoeuvre").waitFor();
+      await settleLayout(bare);
+      const anchored = await bare
+        .getByTestId("light-manoeuvre")
+        .evaluate((root) => {
+          const card = root.querySelector(".kozmos-manoeuvre-card");
+          const bar = root.querySelector(".kozmos-manoeuvre-disclosure");
+          if (!card || !bar) return null;
+          card.scrollIntoView({ block: "center" });
+          // The card's own layout is utilities, gone here; the target is
+          // measured from the bar: it ends 4 under the bar's foot and
+          // reaches 44 up from there.
+          const b = bar.getBoundingClientRect();
+          const x = b.left + b.width / 2;
+          const edge = b.bottom + 4;
+          const at = (y) => {
+            const hit = document.elementFromPoint(x, y);
+            return Boolean(hit && (hit === bar || bar.contains(hit)));
+          };
+          return {
+            position: getComputedStyle(bar).position,
+            reaches: at(edge - 40) && at(edge - 20) && !at(edge - 50),
+          };
+        });
+      read += 1;
+      if (!anchored || anchored.position !== "relative" || !anchored.reaches)
+        failures.push(
+          `without @scope, the grab bar is ${anchored?.position ?? "missing"} and its target ${anchored?.reaches ? "spans" : "does not span"} the 44 up from 4 under its foot (want: relative, spans)`,
+        );
+    } finally {
+      await bare.close();
+    }
+  }
   for (const theme of ["light", "dark"]) {
     for (const [part, selector, property, kind] of READS) {
       const testId = `${theme}-${part}`;
@@ -526,6 +663,20 @@ try {
         { selector, property },
       );
       read += 1;
+      if (kind === "grip") {
+        const alpha = actual.rgba[3] / 255;
+        const over = [0, 1, 2].map((index) =>
+          Math.round(
+            actual.rgba[index] * alpha + THEME_FILL[index] * (1 - alpha),
+          ),
+        );
+        const ratio = contrast(over, THEME_FILL);
+        if (actual.rgba[3] === 255 || ratio < RING_MIN)
+          failures.push(
+            `${theme} ${part} ${selector} ${property}: ${actual.css}; the drag indicator should be quieter than solid and at least ${RING_MIN}:1 on the fill, but reads ${ratio.toFixed(2)}:1 at alpha ${alpha.toFixed(2)}`,
+          );
+        continue;
+      }
       const want = expected(kind, theme);
       const where = `${theme} ${part}${selector ? ` ${selector}` : ""} ${property}`;
       if (actual.missing) {

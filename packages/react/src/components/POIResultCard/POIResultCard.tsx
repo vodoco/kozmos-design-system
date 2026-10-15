@@ -14,6 +14,15 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
 import { WithoutGenericClick } from "../../utils/generic-click";
 
+/** Android's double-tap timeout, and about iOS's: a second tap within it opens. */
+const DOUBLE_TAP_MS = 300;
+/**
+ * The longest a counted double click (`detail` 2) may follow this result's
+ * own first press: past any OS's default double-click time, so a slow setting
+ * still opens, while a press from another gesture long ago does not.
+ */
+const DOUBLE_CLICK_LIMIT_MS = 2000;
+
 /**
  * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
  * to say which card a pin controls. Pass the `idPrefix` the card's list was
@@ -32,6 +41,14 @@ export interface POIResultCardProps extends Omit<
   poi: POIPresentation;
   result: POIResultPresentation;
   onSelect: (poiId: string) => void;
+  /**
+   * Open the result's details: a double tap, or a double click, on the result,
+   * selected or not (decision 72, GAP-143). It is called once, and the second
+   * tap is not passed on as a second selection, so the first tap's selection
+   * stands. Without it, every tap selects, as before. A keyboard press always
+   * selects; the action row's details action is the keyboard's way in.
+   */
+  onOpen?: (poiId: string) => void;
   /**
    * Run an action from the selected result. The card draws whatever
    * `result.actions` carries and reports which was pressed; it never decides
@@ -144,6 +161,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       poi,
       result,
       onSelect,
+      onOpen,
       onAction,
       featuredLabel = "Featured",
       languageNotListedLabel = "Language not listed",
@@ -255,8 +273,42 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       </span>
     );
 
-    const handleSelect = () => {
+    // A double tap is the second press within the platform's double-tap
+    // time: the browser counts clicks in `detail` (by the OS's double-click
+    // setting); a touch browser that reports every tap as 1 is timed here.
+    // Either way this result took the first press, and lately: a browser
+    // counts by time and place, so a first press that moved the list can put
+    // another result under the second. A quick tap after an open does
+    // nothing, as on SwiftUI and Compose. `detail` 0 is a keyboard press,
+    // which always selects.
+    const lastPress = React.useRef<{ at: number; opened: boolean } | null>(
+      null,
+    );
+    const handleSelect = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (!available) return;
+      if (onOpen && event.detail > 0) {
+        if (event.detail > 2) return;
+        const previous = lastPress.current;
+        const since = previous ? event.timeStamp - previous.at : Infinity;
+        const second =
+          event.detail === 2
+            ? since < DOUBLE_CLICK_LIMIT_MS
+            : since < DOUBLE_TAP_MS;
+        if (second && previous?.opened) {
+          lastPress.current = { at: event.timeStamp, opened: true };
+          return;
+        }
+        if (second) {
+          lastPress.current = { at: event.timeStamp, opened: true };
+          trackEvent("POIResultCard", "poi_result_opened", {
+            poiId: poi.id,
+            resultIndex: result.resultIndex,
+          });
+          onOpen(poi.id);
+          return;
+        }
+        lastPress.current = { at: event.timeStamp, opened: false };
+      }
       trackEvent("POIResultCard", "poi_result_selected", {
         poiId: poi.id,
         resultIndex: result.resultIndex,

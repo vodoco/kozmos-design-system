@@ -513,6 +513,24 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
     }
 
+    /// The grab bar's 44-point target reaches up from the card's bottom
+    /// edge over the bottom of the content (decision 74): a tap 40 above
+    /// the edge, at the card's middle, toggles the card, closed (where the
+    /// instruction row under it opens the card too) and open (where the
+    /// itinerary's last line is under it).
+    func testATapFortyAboveTheCardsBottomEdgeTogglesIt() {
+        launch("manoeuvre-closed")
+        let card = app.otherElements["Navigation en cours"]
+        XCTAssertTrue(card.waitForExistence(timeout: 3))
+        let fortyAboveTheEdge = { card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1)).withOffset(CGVector(dx: 0, dy: -40)) }
+        fortyAboveTheEdge().tap()
+        received("toggle")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].waitForExistence(timeout: 3), "the card did not open")
+        fortyAboveTheEdge().tap()
+        received("toggle|toggle")
+        XCTAssertFalse(card.staticTexts["Continue to the gate"].exists, "the card did not close")
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)
@@ -596,6 +614,31 @@ final class InteractionTests: XCTestCase {
         }
         XCTAssertFalse(app.buttons["Halal"].isSelected)
         received("none")
+    }
+
+    /// Decision 72 (GAP-143), with a real finger: a double tap on a result
+    /// selects it once, at the first tap, and opens it once, at the second;
+    /// a tap after a pause selects again. In a list, and on a group's branch.
+    func testADoubleTapOnAResultSelectsItOnceAndOpensItOnce() {
+        for scenario in ["list-open", "group-open"] {
+            launch(scenario)
+            let row = app.buttons["poi-result-gate%2F12"]
+            XCTAssertTrue(row.waitForExistence(timeout: 3), scenario)
+            row.doubleTap()
+            received("select gate/12|open gate/12")
+            // Past the double-tap time: a new tap, and a selection.
+            Thread.sleep(forTimeInterval: 0.6)
+            row.tap()
+            received("select gate/12|open gate/12|select gate/12")
+            app.terminate()
+        }
+    }
+
+    /// Without onOpen a double tap is two selections, as before.
+    func testWithoutOnOpenADoubleTapSelectsTwice() {
+        launch("list-short")
+        app.buttons["poi-result-gate%2F12"].doubleTap()
+        received("select gate/12|select gate/12")
     }
 
     func testAnActionPressedInTheListReachesTheApp() {

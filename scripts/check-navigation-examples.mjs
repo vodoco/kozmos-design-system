@@ -33,6 +33,35 @@ const box = (locator) =>
   });
 
 /**
+ * The closed ManoeuvreCard's instruction row, pressed where it is its own:
+ * the grab bar's 44px target reaches up over the row's foot (decision 74),
+ * and a press there toggles the card through the bar instead, so a click at
+ * the row's centre can land on the bar. Press its top instead.
+ */
+const pressInstruction = (locator) =>
+  locator.click({ position: { x: 16, y: 6 } });
+
+/**
+ * Where the grab bar's target reaches, read as a pointer finds it: the
+ * element at the bar's centre line from the card's bottom edge up. Returns
+ * how many pixels above the card's edge the bar still takes the press.
+ */
+const barReach = (card) =>
+  card.evaluate((node) => {
+    node.scrollIntoView({ block: "center" });
+    const bar = node.querySelector(".kozmos-manoeuvre-disclosure");
+    const c = node.getBoundingClientRect();
+    const x = c.left + c.width / 2;
+    let reach = 0;
+    for (let up = 1; up <= 60; up += 1) {
+      const hit = document.elementFromPoint(x, c.bottom - up);
+      if (hit && (hit === bar || bar.contains(hit))) reach = up;
+      else if (reach) break;
+    }
+    return { reach, grip: bar.getBoundingClientRect().height };
+  });
+
+/**
  * What has focus, as a keyboard and a screen reader meet it: its name, its
  * role, whether it is hidden from assistive technology or out of the tab
  * order, whether it still exists, and whether it draws the keyboard's ring.
@@ -368,7 +397,7 @@ for (const theme of ["light", "dark"]) {
                 `kozmos-surface-${glass ? "glass" : "solid"}`,
               ),
             );
-            await card.getByRole("button").click();
+            await pressInstruction(card.getByRole("button"));
             await card
               .getByRole("region", { name: "Itinerary", exact: true })
               .waitFor();
@@ -395,9 +424,21 @@ for (const theme of ["light", "dark"]) {
             "the closed card shows its itinerary",
           );
           const bar = card.locator('[aria-label="Show itinerary"]');
+          // Laid out as the grip alone; its target reaches 44 up from the
+          // card's edge over the gap and the instruction's foot (decision 74).
+          const { reach, grip } = await barReach(card);
+          assert.equal(
+            grip,
+            5,
+            "the grab bar is laid out taller than its grip",
+          );
           assert.ok(
-            (await box(bar)).height >= 44,
-            "the disclosure target is under 44px",
+            reach >= 43,
+            `the disclosure target reaches ${reach}px, under 44px`,
+          );
+          assert.ok(
+            reach <= 45,
+            `the disclosure target reaches ${reach}px, over 44px`,
           );
           assert.equal(await card.getAttribute("data-appearance"), "theme");
           const palette = await card.evaluate((node) => {
@@ -447,7 +488,7 @@ for (const theme of ["light", "dark"]) {
           );
           // Opening: the itinerary appears, with exactly one current step, and
           // the card hugs it — no taller than its list plus the chrome.
-          await manoeuvre.click();
+          await pressInstruction(manoeuvre);
           const itinerary = page.getByRole("region", { name: "Itinerary" });
           await itinerary.waitFor();
           const current = itinerary.locator('[aria-current="step"]');
@@ -471,16 +512,31 @@ for (const theme of ["light", "dark"]) {
           );
           const cardBox = await box(page.locator(".kozmos-manoeuvre-card"));
           const bar2 = page.getByRole("button", { name: "Hide itinerary" });
-          const barBox = await box(bar2);
-          assert.ok(
-            barBox.height >= 44,
-            "the open disclosure target is under 44px",
+          // Open, the target is 44 all the same, and the itinerary stops
+          // where it starts: 44 above the card's edge, outside what scrolls
+          // (decision 74), so it covers no row.
+          const open = await barReach(page.locator(".kozmos-manoeuvre-card"));
+          assert.equal(
+            open.grip,
+            5,
+            "the open grab bar is laid out taller than its grip",
           );
-          // The interactive target is now 44px, rather than the old 13px grip.
-          // Check the remaining chrome separately so an inflated card cannot hide here.
           assert.ok(
-            cardBox.height - list.height - barBox.height < 47,
-            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}, target ${barBox.height}`,
+            open.reach >= 43 && open.reach <= 45,
+            `the open disclosure target reaches ${open.reach}px, not 44`,
+          );
+          const scroller = await box(
+            page.locator(".kozmos-manoeuvre-itinerary"),
+          );
+          assert.ok(
+            Math.abs(cardBox.bottom - scroller.bottom - 44) <= 1,
+            `the open card ends ${(cardBox.bottom - scroller.bottom).toFixed(1)} under its itinerary, not 44 (the grab bar's target, clear of the list)`,
+          );
+          // The rest of the chrome, so an inflated card cannot hide here:
+          // 16 above the list and 44 under the itinerary.
+          assert.ok(
+            cardBox.height - list.height < 63,
+            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}`,
           );
           assert.equal(await bar2.getAttribute("aria-expanded"), "true");
           await bar2.click();
@@ -774,7 +830,7 @@ for (const theme of ["light", "dark"]) {
             Number(after) > Number(before),
             `the rail did not advance: ${before} → ${after}`,
           );
-          await card.getByRole("button").first().click();
+          await pressInstruction(card.getByRole("button").first());
           const current = page
             .getByRole("region", { name: "Itinerary" })
             .locator('[aria-current="step"]');
@@ -947,6 +1003,31 @@ for (const theme of ["light", "dark"]) {
             named,
             { role: "group", name: "Wegbeschreibung", tabIndex: 0 },
             "the scrolling itinerary is not a focusable group named after it",
+          );
+          // Mid-scroll, the grab bar's 44px target covers none of the
+          // itinerary: its viewport ends 44 above the card's edge, so a press
+          // or a drag low in the list reaches the list (decision 74).
+          const clear = await scroller.evaluate((n) => {
+            n.scrollTop = (n.scrollHeight - n.clientHeight) / 2;
+            const card = n.closest(".kozmos-manoeuvre-card");
+            card.scrollIntoView({ block: "center" });
+            const c = card.getBoundingClientRect();
+            const r = n.getBoundingClientRect();
+            const hit = document.elementFromPoint(
+              r.left + r.width / 2,
+              r.bottom - 2,
+            );
+            const above = c.bottom - r.bottom;
+            n.scrollTop = 0;
+            return { above, inside: Boolean(hit && n.contains(hit)) };
+          });
+          assert.ok(
+            clear.above >= 43,
+            `the scrolling itinerary ends ${clear.above.toFixed(1)} above the card's edge, under the grab bar's 44px target`,
+          );
+          assert.ok(
+            clear.inside,
+            "a press at the foot of the scrolling itinerary misses the itinerary",
           );
           let reached = false;
           for (let press = 0; press < 12 && !reached; press++) {

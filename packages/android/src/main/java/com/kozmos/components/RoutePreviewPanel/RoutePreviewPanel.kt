@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetBottom
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
 import com.kozmos.components.button.KozmosButton
@@ -93,6 +94,7 @@ fun KozmosRoutePreviewPanel(
     // top and 16 from its side. Outside a shell both are 0, and it keeps its
     // 16. The options under the row keep theirs.
     val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
+    val lastRowBottom = (padding - LocalKozmosPanelInsetBottom.current).coerceAtLeast(0.dp)
     // Its fill: the background colour standing alone, and nothing on the
     // shell's panel, whose surface is the one surface (decision 43). On a
     // glass sheet it was an opaque block from under the handle's row down.
@@ -229,10 +231,12 @@ fun KozmosRoutePreviewPanel(
 
         Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
+        // The footer's bottom padding tops its 16 up to what the panel leaves
+        // below it (GAP-085), as the destination row tops up at the top.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(KozmosDimensions.primitivesLayoutSpacing200),
+                .padding(start = padding, top = padding, end = padding, bottom = lastRowBottom),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
         ) {

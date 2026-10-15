@@ -46,6 +46,11 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     /// Runs an action from the selected result's action row, told which
     /// action and the POI's ID.
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
+    /// Opens a result's details on a double tap, told the POI's ID: the
+    /// card's `onOpen`, given to every card (decision 72, GAP-143).
+    private let onOpen: ((String) -> Void)?
+    /// What VoiceOver calls the action that opens a result's details: the card's.
+    private let openLabel: String
     private let emptyState: EmptyStateContent
 
     public init(
@@ -62,6 +67,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
         languageNotListedLabel: String = "Language not listed",
         presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
+        onOpen: ((String) -> Void)? = nil,
+        openLabel: String = "Open details",
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
         self.items = items
@@ -77,6 +84,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.presentationStyle = presentationStyle
         self.onSelect = onSelect
         self.onAction = onAction
+        self.onOpen = onOpen
+        self.openLabel = openLabel
         self.emptyState = emptyState()
     }
 
@@ -95,7 +104,9 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             onSelect: onSelect,
             onAction: onAction,
             languageNotListedLabel: languageNotListedLabel,
-            presentationStyle: presentationStyle
+            presentationStyle: presentationStyle,
+            onOpen: onOpen,
+            openLabel: openLabel
         )
     }
 
@@ -152,7 +163,9 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
         languageNotListedLabel: String = "Language not listed",
-        presentationStyle: KozmosPOIResultPresentationStyle = .sdk
+        presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
+        onOpen: ((String) -> Void)? = nil,
+        openLabel: String = "Open details"
     ) {
         self.init(
             items: items,
@@ -167,7 +180,9 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             onSelect: onSelect,
             onAction: onAction,
             languageNotListedLabel: languageNotListedLabel,
-            presentationStyle: presentationStyle
+            presentationStyle: presentationStyle,
+            onOpen: onOpen,
+            openLabel: openLabel
         ) {
             EmptyView()
         }
