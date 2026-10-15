@@ -531,7 +531,9 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **79, LocationPin is the SDK's markers (GAP-120):** LocationPin draws a result's number in a pill on a
     pointer (a dot without one), a featured place's logo in a rounded tile on a dot, and a place on its own
     (its details open) as the green pin; a double tap opens the place's details (`onOpen`). Its teardrop
-    variants, category tints and sizes are removed on all three platforms.
+    variants, category tints and sizes are removed on all three platforms. `label` is the marker's whole
+    accessible name, the number included, as the product writes it; Kozmos adds only `featuredLabel`
+    (owner, 15 Oct).
   - **80, no other-level marker:** the dashed `offFloor` state is removed; only results on the level in
     view are marked, and the level switcher counts the rest.
   - **81, markers are sprites in a product:** every marker comes from the map style's sprite sheet, and a

@@ -7,6 +7,7 @@ LocationPin draws the SDK's map result markers (decision 71, GAP-120), as the bo
 - **A result** is its number in a pill on a pointer, anchored at the pointer's tip: 32 tall, as wide as its number and 8 more each side (32 at least), theme 600 on background/0 at rest, filled theme 600 under foreground/1000 when selected. Without a number it shows a dot.
 - **A featured place** (`featured`) is its logo (`markerContent`, normally an image, fitted inside the rim, never cropped) in a 44 tile with a 3 rim in foreground/0, 52 when selected, on a dot whose centre is the anchor. It shows no number, no star and no accent colour. Its name still adds `featuredLabel`.
 - **A place on its own** (`place`, new) is the green pin, emotional success 800 round a disc, on a dot whose centre is the anchor. It is the marker for a place whose details are open, the only one shown, and it wins over `featured` and `number`.
+- **Its name** is `label`, whole, as your product writes it with the number in it ("Result 3, Burger King"); LocationPin adds only `featuredLabel` on a featured tile.
 - **`onOpen`** (new): a double tap on the marker opens the place's details rather than zooming the map, with the same gate as `POIResultList.onOpen`. The first tap is the ordinary press; a keyboard press is always the ordinary press. Its target is 44 square at least.
 
 **Removed** (decisions 79 and 80):

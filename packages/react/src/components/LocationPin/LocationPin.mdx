@@ -93,23 +93,24 @@ let onOpenDetails: () -> Void
 import androidx.compose.runtime.Composable
 import com.kozmos.components.locationpin.KozmosLocationPin
 
-// A search result on the map, numbered as its card's tab: the pill fills
-// when the result is selected, and a double tap opens its details.
+// A result's marker, numbered as its card's tab and filled when the result is
+// selected; a second tap opens its details. Only results on the level in view
+// get a marker: the level switcher counts the rest.
 @Composable
 fun ResultPin(
-name: String,
-number: Int,
-isSelected: Boolean,
-onSelect: () -> Unit,
-onOpenDetails: () -> Unit
+    name: String,
+    number: Int,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    onOpen: () -> Unit
 ) {
-KozmosLocationPin(
-label = name,
-number = number,
-selected = isSelected,
-onClick = onSelect,
-onOpen = onOpenDetails
-)
+    KozmosLocationPin(
+        label = name,
+        number = number,
+        selected = isSelected,
+        onClick = onSelect,
+        onOpen = onOpen
+    )
 }
 `}
 
@@ -151,6 +152,12 @@ is the point. It wins over `featured` and `number`.
 <Canvas>
   <Story of={LocationPinStories.Place} />
 </Canvas>
+
+## Its name
+
+`label` is the marker's whole accessible name, as your product writes it, the number included ("Result 3,
+Burger King"): word order and translation are the product's. LocationPin adds nothing to it except
+`featuredLabel` on a featured tile, which shows no words of its own. The same holds on iOS and Android.
 
 ## Pressing and opening
 
