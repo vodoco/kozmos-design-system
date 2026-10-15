@@ -37,11 +37,13 @@ import org.junit.Test
  * ended against the panel's bottom edge, and in a sheet fitted to its content
  * against the navigation bar's inset: the content box padded nothing there.
  * Now it ends 16 above the side panel's edge, and 16 above the inset in a
- * sheet. A part that pads its own end and draws no surface of its own — the
- * details card in its sheet presentation, the category browser, the route
- * preview — tops its padding up to the panel's 16 rather than adding to it,
- * as each does at its top (GAP-083), so it still ends 16 above, not 32. Each
- * case is laid out as a device lays it out, and read as TalkBack is given it.
+ * sheet. A part that pads its own end and draws no surface of its own still
+ * ends 16 above, not 32: the route preview tops its padding up to the
+ * panel's 16, as it does at its top (GAP-083), and the details card in its
+ * sheet presentation and the category browser, which scroll, claim the
+ * panel's end and take the 16 as their own (15 Oct;
+ * KozmosAdaptiveMapShellPanelScrollEndTest scrolls them). Each case is laid
+ * out as a device lays it out, and read as TalkBack is given it.
  */
 class KozmosAdaptiveMapShellPanelEndTest {
     @get:Rule
