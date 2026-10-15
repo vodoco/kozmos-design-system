@@ -1,0 +1,72 @@
+{
+  "Density": {
+    "Control": {
+      "Height": {
+        "sm": {
+          "$value": "32px",
+          "$type": "dimension",
+          "$description": "The height of a Button at size sm.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "md": {
+          "$value": "40px",
+          "$type": "dimension",
+          "$description": "The height of a Button at its default size.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "lg": {
+          "$value": "48px",
+          "$type": "dimension",
+          "$description": "The height of a Button at size lg.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        }
+      }
+    },
+    "IconControl": {
+      "Size": {
+        "sm": {
+          "$value": "28px",
+          "$type": "dimension",
+          "$description": "The side of an IconButton at size sm.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "md": {
+          "$value": "32px",
+          "$type": "dimension",
+          "$description": "The side of an IconButton at its default size.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "lg": {
+          "$value": "40px",
+          "$type": "dimension",
+          "$description": "The side of an IconButton at size lg.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        }
+      }
+    },
+    "Field": {
+      "Height": {
+        "md": {
+          "$value": "40px",
+          "$type": "dimension",
+          "$description": "The height of a single-line text field.",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        }
+      }
+    }
+  }
+}
