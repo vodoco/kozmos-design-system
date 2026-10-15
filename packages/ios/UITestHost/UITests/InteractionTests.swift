@@ -584,6 +584,20 @@ final class InteractionTests: XCTestCase {
         received("select|open|select")
     }
 
+    /// A disabled pin with an action is a dimmed button, as React's
+    /// aria-disabled button and Compose's disabled Role.Button are: XCUI finds
+    /// it as a button that is not enabled, and a tap or a double tap on it
+    /// runs nothing.
+    func testADisabledPinIsADimmedButtonThatRunsNothing() {
+        launch("pin-disabled")
+        let pin = app.buttons["Gate 12"]
+        XCTAssertTrue(pin.waitForExistence(timeout: 3), "the disabled pin is not a button")
+        XCTAssertFalse(pin.isEnabled, "the disabled pin is not heard as dimmed")
+        pin.tap()
+        pin.doubleTap()
+        received("none")
+    }
+
     /// The pin's target is 44 tall, centred on its 38 body: a tap 2 inside
     /// its top edge, above the drawn pill, still reaches it.
     func testAPinTakesATapAboveItsPillInsideIts44PointTarget() {
