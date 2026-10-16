@@ -64,6 +64,16 @@ function Fixture() {
           <ThemeProvider defaultTheme="system">
             <Controls id="system" />
           </ThemeProvider>
+          {/* Decision 87: the brand face through the system role. */}
+          <ThemeProvider
+            defaultTheme="light"
+            tokens={{
+              "--semantics-typography-family-system":
+                "var(--semantics-typography-family-brand), ui-sans-serif, system-ui, sans-serif",
+            }}
+          >
+            <Controls id="brand" />
+          </ThemeProvider>
         </>
       )}
     </>

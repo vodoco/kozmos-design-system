@@ -35,6 +35,28 @@ export function App() {
 }
 ```
 
+### The font
+
+Kozmos ships no font: every part draws in the system stack, the `--semantics-typography-family-system` role. For Readex Pro, Pointr Cloud's face (decision 87), load it on the page, then point that role at the brand family through the provider's `tokens`. Every part inside, its popovers included, then draws in Readex Pro, and in the system stack wherever that face isn't available.
+
+```tsx
+import { Button, ThemeProvider } from "@kozmos-ds/react";
+
+export function BrandFaceExample() {
+  return (
+    <ThemeProvider
+      defaultTheme="light"
+      tokens={{
+        "--semantics-typography-family-system":
+          "var(--semantics-typography-family-brand), ui-sans-serif, system-ui, sans-serif",
+      }}
+    >
+      <Button>Take me there</Button>
+    </ThemeProvider>
+  );
+}
+```
+
 ### Where the API is
 
 - **The cards:** `components/<Name>.md`, one per component, listed below. Each part's props come with their type, whether they are required, their default and their description. The example is taken from the component's first story that an app could write, and `pnpm skills:check` type-checks every one against the build.
