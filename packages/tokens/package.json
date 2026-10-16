@@ -58,6 +58,6 @@
   },
   "devDependencies": {
     "@tokens-studio/sd-transforms": "2.0.3",
-    "style-dictionary": "5.2.0"
+    "style-dictionary": "5.4.4"
   }
 }
