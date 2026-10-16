@@ -701,7 +701,11 @@ function collectPropsFromFunctionLike(functionNode, context, props) {
       continue;
     }
 
-    if (ts.isIdentifier(element.name)) {
+    // A renamed binding (`{ "aria-describedby": describedBy }`) is the prop
+    // before the colon, not the local name after it.
+    if (element.propertyName) {
+      addProp(props, propNameFromNode(element.propertyName, context.sourceFile));
+    } else if (ts.isIdentifier(element.name)) {
       addProp(props, element.name.text);
     }
   }

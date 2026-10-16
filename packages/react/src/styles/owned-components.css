@@ -40,15 +40,26 @@
   }
   .kozmos-progress-track-flow {
     color: var(--primitives-colors-background-600);
-    background: radial-gradient(ellipse 4px 1.5px at center, currentColor 90%, transparent 100%) 0 center / 20px 6px repeat-x;
+    background: radial-gradient(
+        ellipse 4px 1.5px at center,
+        currentColor 90%,
+        transparent 100%
+      )
+      0 center / 20px 6px repeat-x;
     animation: track-flow 1s linear infinite;
   }
-  .kozmos-progress-track-flow[data-mode="static"] { color: rgb(255 255 255 / 65%); }
+  .kozmos-progress-track-flow[data-mode="static"] {
+    color: rgb(255 255 255 / 65%);
+  }
   @keyframes track-flow {
-    to { background-position-x: calc(20px - 40px * var(--kozmos-rtl, 0)); }
+    to {
+      background-position-x: calc(20px - 40px * var(--kozmos-rtl, 0));
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .kozmos-progress-track-flow { animation: none; }
+    .kozmos-progress-track-flow {
+      animation: none;
+    }
   }
   [data-kozmos-motion="reduced"] .kozmos-progress-track-flow {
     animation: none;
@@ -1631,5 +1642,226 @@
       animation: none;
       transition: none;
     }
+  }
+
+  /* LocationPin: the SDK's map result markers (decision 71, GAP-120), as
+     the map style's sprite draws them in a product; Kozmos draws them for
+     prototypes and boards (decision 81). Owned, so a marker's shape, its
+     anchor and its target hold with or without @scope. A result is a pill
+     on a pointer, anchored at the pointer's tip; a featured place a logo
+     tile and a place on its own a green pin, each anchored at the dot's
+     centre, 3 above the foot. The md shadow is on the body, never the dot. */
+  .kozmos-location-pin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translate(-50%, -100%);
+    touch-action: manipulation;
+  }
+  .kozmos-location-pin[data-kind="featured"],
+  .kozmos-location-pin[data-kind="place"] {
+    transform: translate(-50%, calc(-100% + 3px));
+  }
+  .kozmos-location-pin[data-interactive] {
+    cursor: pointer;
+  }
+  /* A marker nothing presses takes no pointer: a pan or a press that starts
+     on it reaches the map, as on iOS and Compose. */
+  .kozmos-location-pin:not([data-interactive]) {
+    pointer-events: none;
+  }
+  /* The words beside the marker (externalLabel), 4 from it. At its side
+     they are centred on its shape: the pill's centre, 16 down; the tile's,
+     22 (26 selected); the place's circle, 20. */
+  .kozmos-location-pin {
+    --kozmos-location-pin-centre: 16px;
+  }
+  .kozmos-location-pin[data-kind="featured"] {
+    --kozmos-location-pin-centre: 22px;
+  }
+  .kozmos-location-pin[data-kind="featured"][data-selected] {
+    --kozmos-location-pin-centre: 26px;
+  }
+  .kozmos-location-pin[data-kind="place"] {
+    --kozmos-location-pin-centre: 20px;
+  }
+  .kozmos-location-pin-label {
+    position: absolute;
+  }
+  .kozmos-location-pin-label[data-placement="top"] {
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 4px;
+    transform: translateX(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="bottom"] {
+    top: 100%;
+    left: 50%;
+    margin-top: 4px;
+    transform: translateX(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="left"],
+  .kozmos-location-pin-label[data-placement="right"] {
+    top: var(--kozmos-location-pin-centre);
+    transform: translateY(-50%);
+  }
+  .kozmos-location-pin-label[data-placement="left"] {
+    right: 100%;
+    margin-right: 4px;
+  }
+  .kozmos-location-pin-label[data-placement="right"] {
+    left: 100%;
+    margin-left: 4px;
+  }
+  /* The target is 44 square at least, round the body, and moves nothing. */
+  .kozmos-location-pin[data-interactive]::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  /* Disabled: dimmed, and it takes no pointer (no data-interactive), so a
+     press goes through to the map; no cursor of its own to show. */
+  .kozmos-location-pin[data-disabled] {
+    opacity: 0.5;
+  }
+  .kozmos-location-pin:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-ring;
+  }
+  .kozmos-location-pin-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* The floating elevation, 0 4 8 at 10% (40% in dark), as SwiftUI and
+     Compose draw it: a semantic token, which a design configuration leaves a
+     single shadow. The legacy --shadow-md it configures is two shadows with a
+     spread, which drop-shadow() can't take, so the marker drew none. */
+  .kozmos-location-pin[data-kind="result"] .kozmos-location-pin-body {
+    filter: drop-shadow(var(--semantics-elevation-floating));
+  }
+  /* A result: a pill 32 tall, as wide as its number and 8 more each side
+     (a 2 border and 6), 32 at least; theme 600 on background/0 at rest,
+     foreground/1000 on theme 600 when selected (6.24:1 in light, 6.17:1 in
+     dark). Without a number, an 8 dot. Two classes for the border and the
+     rim, because the scoped preflight resets every element's border at one
+     class's weight and wins a tie with an owned rule. */
+  .kozmos-location-pin .kozmos-location-pin-pill {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 32px;
+    padding: 0 6px;
+    border: 2px solid var(--primitives-colors-theme-600);
+    border-radius: 9999px;
+    background-color: var(--primitives-colors-background-0);
+    color: var(--primitives-colors-theme-600);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .kozmos-location-pin[data-selected] .kozmos-location-pin-pill {
+    background-color: var(--primitives-colors-theme-600);
+    color: var(--primitives-colors-foreground-1000);
+  }
+  /* Windows' high contrast repaints backgrounds with the system's, so the
+     selected pill keeps the system's highlight rather than looking at rest. */
+  @media (forced-colors: active) {
+    .kozmos-location-pin[data-selected] .kozmos-location-pin-pill {
+      forced-color-adjust: none;
+      border-color: Highlight;
+      background-color: Highlight;
+      color: HighlightText;
+    }
+  }
+  .kozmos-location-pin-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background-color: currentColor;
+  }
+  /* The pointer starts 1 inside the pill's border, so its tip is 6 below the
+     pill: 38 from the top. */
+  .kozmos-location-pin-pointer {
+    display: block;
+    width: 12px;
+    height: 7px;
+    margin-top: -1px;
+    fill: var(--primitives-colors-theme-600);
+  }
+  /* A featured place: its logo inside a 3 rim of foreground/0 on
+     background/0, 44 square, 52 when selected, corners of 16; no accent. */
+  .kozmos-location-pin .kozmos-location-pin-tile {
+    box-sizing: border-box;
+    display: flex;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--primitives-colors-foreground-0);
+    border-radius: 16px;
+    background-color: var(--primitives-colors-background-0);
+    box-shadow: var(--semantics-elevation-floating);
+    overflow: hidden;
+  }
+  .kozmos-location-pin[data-selected] .kozmos-location-pin-tile {
+    width: 52px;
+    height: 52px;
+  }
+  .kozmos-location-pin-logo {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+  }
+  /* The logo fits inside the rim and is never cropped, an image or a
+     drawing, on its own or inside a product's wrapper (a <picture>, an
+     image component's span). */
+  .kozmos-location-pin-logo > * {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .kozmos-location-pin-logo img,
+  .kozmos-location-pin-logo svg {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  /* The dot a featured tile and a place stand on: 6, 4 below the tile. */
+  .kozmos-location-pin-dot {
+    width: 6px;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 9999px;
+    background-color: var(--primitives-colors-foreground-0);
+  }
+  /* A place on its own: a green teardrop of 40 (emotional success 800,
+     #197F4C light, #A0ECC6 dark) round a disc of 20 in background/0, on a
+     green dot whose top is 6 below the circle. */
+  .kozmos-location-pin-teardrop {
+    display: block;
+    filter: drop-shadow(var(--semantics-elevation-floating));
+  }
+  .kozmos-location-pin-teardrop > path {
+    fill: var(--primitives-colors-emotional-success-800);
+  }
+  .kozmos-location-pin-teardrop > circle {
+    fill: var(--primitives-colors-background-0);
+  }
+  .kozmos-location-pin[data-kind="place"] .kozmos-location-pin-dot {
+    margin-top: -3px;
+    background-color: var(--primitives-colors-emotional-success-800);
   }
 }

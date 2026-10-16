@@ -21,13 +21,17 @@ export function MapViewExample() {
     <ThemeProvider defaultTheme="light">
       <MapView className="h-96">
         <div style={{ position: "absolute", top: "50%", left: "50%" }}>
-          <LocationPin variant="primary" size="lg" />
+          <LocationPin
+            label="Result 1, Harbour Coffee Co."
+            number={1}
+            selected
+          />
         </div>
         <div style={{ position: "absolute", top: "30%", left: "40%" }}>
-          <LocationPin variant="secondary" size="md" />
+          <LocationPin label="Result 2, Tessel Shoes" number={2} />
         </div>
         <div style={{ position: "absolute", top: "60%", left: "70%" }}>
-          <LocationPin variant="accent" size="sm" />
+          <LocationPin label="Result 3, Baskin-Robbins" number={3} />
         </div>
       </MapView>
     </ThemeProvider>

@@ -16,9 +16,8 @@ export interface UserLocationMarkerProps extends React.HTMLAttributes<HTMLDivEle
   /**
    * The visitor is on another level than the one in view.
    *
-   * Drawn the way LocationPin draws its own `offFloor`: the dot goes hollow
-   * rather than merely dimming, so the state is carried by shape and not by
-   * colour alone — and the halo and the heading cone go, because neither
+   * The dot goes hollow rather than merely dimming, so the state is carried
+   * by shape and not by colour alone — and the halo and the heading cone go, because neither
    * means anything about a level you are not looking at.
    *
    * Without it the marker looked the same whatever level was in view, so the
@@ -130,8 +129,8 @@ const UserLocationMarker = React.forwardRef<
             className={cn(
               "relative z-10 h-[18px] w-[18px] rounded-pill",
               offFloor
-                ? // Hollow, as LocationPin's offFloor is: the ring keeps the
-                  // marker findable while the empty middle says it is not here.
+                ? // Hollow: the ring keeps the marker findable while the empty
+                  // middle says it is not here.
                   "border-[3px] border-map-marker-dot bg-background"
                 : cn(
                     "border-[3px] bg-map-marker-dot",
