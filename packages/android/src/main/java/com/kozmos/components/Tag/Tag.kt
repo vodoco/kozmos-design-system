@@ -110,7 +110,9 @@ fun KozmosTag(
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = removeLabel,
-                tint = foregroundColor,
+                // The Tag's own ink, the emotion's when it has one, as its
+                // words are (KozmosTagRemovePixelsTest).
+                tint = resolvedForeground,
                 modifier = Modifier
                     .padding(start = KozmosDimensions.primitivesLayoutSpacing50)
                     .size(KozmosDimensions.primitivesLayoutSizing200)
