@@ -17,6 +17,11 @@ React 0.10.0 (2026-10-09, `1ddc4d10`; tokens 0.6.0, product-contracts 0.9.0, ico
 decisions 59–69 (the theme fill, re-branding, button states, the accent colour and the pins),
 ClientAppBanner, RouteSummary's actions and route preview (GAP-110, GAP-111), Itinerary's Change
 actions (GAP-104) and EmptyState progress (GAP-115). See [release evidence](release-process.md#0100).
+React 0.12.0 (2026-10-16, `5c3b7ecc`; tokens 0.8.0, product-contracts 0.9.1, icons unchanged) makes
+LocationPin the SDK's map markers (decisions 71, 79–81), adds compact density and `DensityScope` (decision 82;
+SDK parts stay touch, decision 89), and carries the Core review's fixes and Tag's `removeLabel`. See
+[release evidence](release-process.md#0120).
+
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
 presentation (decision 75), the field popups in a portal and the panel's end inset (GAP-085). See

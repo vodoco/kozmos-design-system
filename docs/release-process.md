@@ -486,3 +486,51 @@ SwiftUI and Compose changes ship from the repository at this commit, not a nativ
 scroller at the panel's end applies `kozmosPanelScrollEndPadding()` (see its CHANGELOG). Figma (the Update
 for ManoeuvreCard's painter is next), Code Connect, external Claude Design artifacts and product deployments
 are separate.
+
+### 0.12.0
+
+Published on 2026-10-16 from `5c3b7ecc7c14f129c03b3f75aebb093a10e7f5fc`, the version merge
+[#278](https://github.com/vodoco/kozmos-design-system/pull/278). It carries Track 2
+([#273](https://github.com/vodoco/kozmos-design-system/pull/273)): LocationPin draws the SDK's map markers
+(decisions 71, 79–81); compact density and `DensityScope`
+([#274](https://github.com/vodoco/kozmos-design-system/pull/274), decisions 82, 89, 90 and 97); and the Core
+review's fixes with Tag's `removeLabel` ([#277](https://github.com/vodoco/kozmos-design-system/pull/277)).
+React, tokens and product-contracts move; icons stays at 0.6.0, not planned. At Olcay's request Claude merged the
+version PR, ran the pre-flight, dispatched the release and approved the protected `npm-release` deployment, as
+`vodoco`, for this release only.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Versions                | React 0.12.0, tokens 0.8.0 and product-contracts 0.9.1 on npm `latest`; React pins tokens 0.8.0, icons 0.6.0 and product-contracts 0.9.1 exactly.                                                                                                                                                                                                                                                      |
+| Exact main-push CI      | [38954550675](https://github.com/vodoco/kozmos-design-system/actions/runs/38954550675): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis, Visual Regression, Lighthouse CI and Site succeeded on the merge.                                                                                                                                            |
+| Preflight / publication | `pnpm release:preflight` against that run passed (credential placement, request, evidence and plan; none of the versions on npm). [38961640954](https://github.com/vodoco/kozmos-design-system/actions/runs/38961640954) succeeded (guard, prepare, publish).                                                                                                                                          |
+| Registry readback       | All three versions are on `latest`, each with SLSA v1 provenance. Their SHA-512 integrities equal the tarballs in the run's `npm-candidate-38961640954-1` artifact (compared 2026-10-16).                                                                                                                                                                                                              |
+| Installed consumer      | A fresh npm installation of React 0.12.0 with React 19.3.1 resolved tokens 0.8.0, icons 0.6.0 and contracts 0.9.1, exposed 271 exports from CJS and from the ESM entry, and server-rendered ThemeProvider at `density="compact"` with a touch `DensityScope`, Button, a LocationPin with `onOpen`, and a Tag with `removeLabel`. `@kozmos-ds/tokens/css/density.css` resolves. The same with React 18. |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created the three tags and releases at `5c3b7ecc`, and a second dry-run found them in place. React 0.12.0 is Latest.                                                                                                                                                                                                                                                  |
+| Website / Storybook     | [Pages 38954550633](https://github.com/vodoco/kozmos-design-system/actions/runs/38954550633) built and deployed this exact SHA. The live Storybook's `index.json` lists the ThemeProvider Density story and the new LocationPin stories (Place among them); the removed ones are gone.                                                                                                                 |
+
+Note: CI on #273's merge to main (`08207f45`) failed once on the iOS interaction test
+`testAPressDrawsEachFillsOwnPressedToken` ("Timed out while evaluating UI query"), as on 8 Oct, on code its PR run
+passed; its re-run passed. A fix is tracked separately.
+
+Change details: [React](../packages/react/CHANGELOG.md#0120), [tokens](../packages/tokens/CHANGELOG.md#080),
+[product-contracts](../packages/product-contracts/CHANGELOG.md#091) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.11.0:
+
+- **LocationPin's look and API change** (decisions 79–81). Remove `variant`, `size`, `tint` and `offFloor`; write the
+  number into `label` yourself; pass `externalLabel` for visible words. A featured tile and a place are anchored at
+  their dot's centre, 3 above their foot. `data-featured` and `data-off-floor` are gone; `data-kind`,
+  `data-interactive` and `data-disabled` are new. A selected result is theme 600, not the theme fill.
+- **On a map:** with `onOpen`, a second touch tap within 500 ms stays on the pin, and MapLibre fires the map's `click`
+  for a marker too: a click handler that clears the selection should skip clicks inside `.kozmos-location-pin`.
+- **Density is opt-in.** At the default, touch, nothing changes size, except that Pagination's Previous and Next are
+  now the small Button (still 44 in touch, with the same padding).
+- **Switch and Checkbox keep a caller's `aria-describedby`** and join their error's to it; a caller's
+  `aria-invalid={false}` no longer hides a shown error. A caller's `onCheckedChange` on Checkbox no longer stops
+  `checkbox_toggled`.
+- **Toast reads its direction:** a test that looked for `space-x-4` or `pr-8` on a toast finds `gap-4` and `pe-8`.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry: `.kozmosLocationPinAt`
+on SwiftUI (`.position` mirrors in right-to-left), physical side labels, and the pin's analytics on both (see their
+CHANGELOGs). Figma (LocationPin updated and audited clean), Code Connect (published and read back), external Claude
+Design artifacts and product deployments are separate.
