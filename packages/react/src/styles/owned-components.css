@@ -131,7 +131,7 @@
   /* A single Core footer recipe, not separate SDK button overrides. */
   .kozmos-dialog-footer[data-layout="stacked"] > .kozmos-button {
     height: auto;
-    min-height: var(--density-control-height-md);
+    min-height: var(--density-control-height-md, 2.75rem);
     width: 100%;
     white-space: normal;
   }

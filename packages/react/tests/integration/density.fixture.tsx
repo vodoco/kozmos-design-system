@@ -3,6 +3,12 @@ import {
   AIInputBar,
   Button,
   Combobox,
+  DensityScope,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -15,6 +21,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  RouteSetupPanel,
   SearchBar,
   Select,
   SelectTrigger,
@@ -26,8 +33,10 @@ import { Plus } from "@kozmos-ds/icons";
 
 // Decision 82: the controls whose sizes follow ThemeProvider's density, each
 // marked with data-measure. scripts/check-density.mjs measures them in a touch
-// root, a compact root, a touch root inside a compact one, and a compact
-// root's portal.
+// root, a compact root, a touch root inside a compact one, a compact root's
+// portal, a compact right-to-left root, outside any provider, a compact
+// DensityScope in a touch root and its popover, and inside an SDK part in a
+// compact root: in a provider of its own and in its popover.
 const options = [
   { value: "one", label: "One" },
   { value: "two", label: "Two" },
@@ -64,6 +73,14 @@ function Controls({ board }: { board: string }) {
       <div data-measure-within="combobox">
         <Combobox label="View" options={options} defaultValue="one" clearable />
       </div>
+      <div data-measure-within="combobox-plain">
+        <Combobox
+          label="Plan"
+          options={options}
+          defaultValue="one"
+          clearable={false}
+        />
+      </div>
       <div data-measure-within="multi-select">
         <MultiSelect label="Tools" options={options} />
       </div>
@@ -77,21 +94,60 @@ function Controls({ board }: { board: string }) {
   );
 }
 
-function Board({ density, board }: { density?: ThemeDensity; board: string }) {
+// A dialog's and a drawer's close are the icon button's size, centred on the
+// title as touch centres them, and the title leaves room for it; a stacked
+// footer's buttons are the control's height.
+function Overlays({
+  board,
+  drawer = true,
+}: {
+  board: string;
+  drawer?: boolean;
+}) {
   return (
-    <ThemeProvider density={density}>
+    <>
+      <Dialog open modal={false}>
+        <DialogContent data-dialog={board}>
+          <DialogHeader>
+            <DialogTitle>Dialog</DialogTitle>
+          </DialogHeader>
+          <DialogFooter layout="stacked">
+            <Button>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {drawer && (
+        <Drawer open modal={false}>
+          <DrawerContent data-drawer={board}>
+            <DrawerHeader>
+              <DrawerTitle>Drawer</DrawerTitle>
+            </DrawerHeader>
+          </DrawerContent>
+        </Drawer>
+      )}
+    </>
+  );
+}
+
+function Board({
+  density,
+  board,
+  dir,
+}: {
+  density?: ThemeDensity;
+  board: string;
+  dir?: "rtl";
+}) {
+  return (
+    <ThemeProvider density={density} dir={dir}>
       <Controls board={board} />
-      {/* A drawer's close is the icon button's size, its header leaves room. */}
-      <Drawer open modal={false}>
-        <DrawerContent data-drawer={board}>
-          <DrawerHeader>
-            <DrawerTitle>Drawer</DrawerTitle>
-          </DrawerHeader>
-        </DrawerContent>
-      </Drawer>
+      {/* The drawer's sides and its close are physical: not in right-to-left. */}
+      <Overlays board={board} drawer={!dir} />
     </ThemeProvider>
   );
 }
+
+const noop = () => undefined;
 
 createRoot(document.getElementById("fixture")!).render(
   <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
@@ -118,6 +174,38 @@ createRoot(document.getElementById("fixture")!).render(
           <Controls board="compact-portal" />
         </PopoverContent>
       </Popover>
+    </ThemeProvider>
+    <Board board="compact-rtl" density="compact" dir="rtl" />
+    {/* Outside any provider, only the owned rules apply: at touch sizes. */}
+    <Controls board="outside" />
+    {/* A compact region on a touch page: its controls, its overlays and its
+        popover take the region's density. */}
+    <ThemeProvider>
+      <DensityScope density="compact">
+        <Controls board="compact-scope" />
+        <Overlays board="compact-scope" />
+        <Popover open>
+          <PopoverTrigger>Open</PopoverTrigger>
+          <PopoverContent>
+            <Controls board="compact-scope-portal" />
+          </PopoverContent>
+        </Popover>
+      </DensityScope>
+    </ThemeProvider>
+    {/* Inside an SDK part, a provider of its own and the part's popovers keep
+        the SDK's touch geometry too. */}
+    <ThemeProvider density="compact">
+      <RouteSetupPanel ready onContinue={noop} onClose={noop}>
+        <ThemeProvider>
+          <Controls board="provider-in-sdk" />
+        </ThemeProvider>
+        <Popover open>
+          <PopoverTrigger>Open</PopoverTrigger>
+          <PopoverContent>
+            <Controls board="sdk-portal" />
+          </PopoverContent>
+        </Popover>
+      </RouteSetupPanel>
     </ThemeProvider>
   </div>,
 );

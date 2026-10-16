@@ -831,7 +831,14 @@ for (const [density, expected] of [
   ["compact", { control: [32, 40, 48], iconControl: [28, 32, 40], field: 40 }],
 ]) {
   const tokens = densityTokens(density);
-  const px = (token) => Number.parseFloat(token.$value);
+  // In rem, so a control follows the reader's font size; 16 to the rem.
+  const px = (token) => {
+    if (!/^\d+(\.\d+)?rem$/.test(token.$value))
+      fail(
+        `packages/tokens/src/tokens-density-${density}.json: ${token.$value} is not in rem (decision 82)`,
+      );
+    return Number.parseFloat(token.$value) * 16;
+  };
   const got = {
     control: ["sm", "md", "lg"].map((k) => px(tokens.Control.Height[k])),
     iconControl: ["sm", "md", "lg"].map((k) => px(tokens.IconControl.Size[k])),
@@ -2216,8 +2223,8 @@ assertContains(
     );
     // The target contract belongs to Core now, not copied utility classes in
     // the SDK field. Keep asserting the same dimensions at their actual owner.
-    // Decision 82: IconButton reads the density's size, and CategoryField
-    // pins touch, where that size is the target.
+    // Decision 82: IconButton reads the density's size, and CategoryField's
+    // root is a touch DensityScope, where that size is the target.
     assertContains(
       files.reactIconButton,
       source.reactIconButton,
@@ -2227,14 +2234,15 @@ assertContains(
     assertContains(
       files.reactCategoryField,
       source.reactCategoryField,
-      'data-kozmos-density="touch"',
+      '<DensityScope density="touch" asChild>',
       "React CategoryField keeps the SDK's touch geometry under any density",
     );
     {
       const touch = JSON.parse(
         read("packages/tokens/src/tokens-density-touch.json"),
       ).Density.IconControl.Size.md.$value;
-      if (Number.parseFloat(touch) !== hit)
+      // The token is rem, 16 to the rem.
+      if (!touch.endsWith("rem") || Number.parseFloat(touch) * 16 !== hit)
         fail(
           `packages/tokens/src/tokens-density-touch.json: the touch icon control is ${touch}, but CategoryField's clear target is ${hit}`,
         );

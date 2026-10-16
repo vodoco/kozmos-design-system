@@ -3,7 +3,7 @@
     "Control": {
       "Height": {
         "sm": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The height of a Button at size sm.",
           "$extensions": {
@@ -11,7 +11,7 @@
           }
         },
         "md": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The height of a Button at its default size.",
           "$extensions": {
@@ -19,7 +19,7 @@
           }
         },
         "lg": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The height of a Button at size lg.",
           "$extensions": {
@@ -31,7 +31,7 @@
     "IconControl": {
       "Size": {
         "sm": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The side of an IconButton at size sm.",
           "$extensions": {
@@ -39,7 +39,7 @@
           }
         },
         "md": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The side of an IconButton at its default size.",
           "$extensions": {
@@ -47,7 +47,7 @@
           }
         },
         "lg": {
-          "$value": "48px",
+          "$value": "3rem",
           "$type": "dimension",
           "$description": "The side of an IconButton at size lg.",
           "$extensions": {
@@ -59,7 +59,7 @@
     "Field": {
       "Height": {
         "md": {
-          "$value": "44px",
+          "$value": "2.75rem",
           "$type": "dimension",
           "$description": "The height of a single-line text field.",
           "$extensions": {

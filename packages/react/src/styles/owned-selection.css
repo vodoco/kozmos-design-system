@@ -5,10 +5,10 @@
      .kozmos-input's physical padding-right win over this logical end padding
      once it reads a custom property, though the utility is more specific. */
   .kozmos-combobox-input {
-    padding-inline-end: calc(var(--density-field-height-md) + 0.25rem);
+    padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
   .kozmos-combobox-input[data-clearable] {
-    padding-inline-end: calc(var(--density-field-height-md) * 2 + 0.5rem);
+    padding-inline-end: calc(var(--density-field-height-md, 2.75rem) * 2 + 0.5rem);
   }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
@@ -44,7 +44,7 @@
     @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
     /* The field less its padding and border, so the field keeps its density's
        height: 32 in touch (44), 28 in compact (40). */
-    height: calc(var(--density-field-height-md) - 0.75rem);
+    height: calc(var(--density-field-height-md, 2.75rem) - 0.75rem);
     width: 6rem;
     max-width: 100%;
   }

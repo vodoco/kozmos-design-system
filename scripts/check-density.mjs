@@ -1,7 +1,11 @@
 /**
  * ThemeProvider's density (decision 82), on the built React package in a real
  * browser: every control that follows it, measured in a touch root, a compact
- * root, a touch root inside a compact one, and a compact root's portal.
+ * root, a touch root inside a compact one, a compact root's portal, a compact
+ * right-to-left root, outside any provider (touch, from the owned rules'
+ * fallbacks), in a compact DensityScope on a touch root and its popover, and
+ * inside an SDK part in a compact root, where a provider of its own and the
+ * part's popover stay touch.
  *
  * - Touch keeps today's sizes: buttons and fields 44, icon buttons 44 and 48.
  * - Compact: buttons 32, 40 and 48; icon buttons 28, 32 and 40; fields 40,
@@ -11,6 +15,9 @@
  * SDK parts (SearchBar, AIInputBar) keep the SDK's touch geometry inside a
  * compact provider: their roots are marked touch, which resets the sizes.
  *
+ * A dialog's and a drawer's close sit on their title as touch places them,
+ * and every var(--density-…) in the stylesheet falls back to its touch size.
+ *
  * Without @scope only the owned rules survive (the Button's sizes, the text
  * field, the field actions), so that pass measures those; the utilities'
  * sizes are measured with the full stylesheet.
@@ -18,6 +25,7 @@
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-density.mjs
  */
+import fs from "node:fs";
 import { createRequire } from "node:module";
 import {
   buildReactFixture,
@@ -27,6 +35,33 @@ import {
 
 const { code, css } = await buildReactFixture("density.fixture.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
+const failures = [];
+let reads = 0;
+
+// Outside a provider no density token is set, so every use of one falls back
+// to its touch size, as the tokens' own touch block gives it.
+const tokenCss = fs.readFileSync(
+  "packages/tokens/dist/css/variables-density.css",
+  "utf8",
+);
+const touchBlock = tokenCss.slice(0, tokenCss.indexOf("}"));
+const touchSizes = new Map(
+  [...touchBlock.matchAll(/(--density-[a-z0-9-]+):\s*([^;]+);/g)].map(
+    ([, name, value]) => [name, value.trim()],
+  ),
+);
+if (touchSizes.size === 0) failures.push("no touch density tokens found");
+for (const [, name, fallback] of css.matchAll(
+  /var\(\s*(--density-[a-z0-9-]+)\s*(?:,\s*([^)]+?))?\s*\)/g,
+)) {
+  reads += 1;
+  const want = touchSizes.get(name);
+  if (!want) failures.push(`var(${name}): no such density token`);
+  else if (fallback !== want)
+    failures.push(
+      `var(${name}${fallback ? `, ${fallback}` : ""}): falls back to ${fallback ?? "nothing"}, expected the touch size ${want}`,
+    );
+}
 const postcss = require("postcss");
 const unscoped = postcss.parse(css);
 unscoped.walkAtRules("scope", (rule) => rule.remove());
@@ -52,30 +87,51 @@ const EXPECTED = {
   // The room a field leaves for its actions follows them: 48 or 96, then 44
   // or 88; a drawer's close is the icon button's size.
   "combobox padding": { owned: true, padEnd: [96, 88] },
+  "combobox-plain padding": { owned: true, padEnd: [48, 44] },
   "password-input padding": { owned: true, padEnd: [48, 44] },
-  "drawer close": { height: [44, 32], width: [44, 32], drawer: true },
-  "drawer header": { padEnd: [48, 36], drawer: true },
+  // MultiSelect's input is the field less its padding and border.
+  "multi-select input": { owned: true, height: [32, 28] },
+  "dialog close": { height: [44, 32], width: [44, 32], overlay: "dialog" },
+  "dialog title": { padEnd: [56, 44], overlay: "dialog" },
+  "dialog footer button": { owned: true, height: [44, 40], overlay: "dialog" },
+  "drawer close": { height: [44, 32], width: [44, 32], overlay: "drawer" },
+  "drawer header": { padEnd: [48, 36], overlay: "drawer" },
 };
+// Each board: its column in EXPECTED, and the overlays it opens. Outside a
+// provider only the owned rules apply, and nothing marks a density.
 const BOARDS = {
-  touch: 0,
-  compact: 1,
-  "touch-in-compact": 0,
-  "compact-portal": 1,
+  touch: { column: 0, overlays: ["dialog", "drawer"] },
+  compact: { column: 1, overlays: ["dialog", "drawer"] },
+  "touch-in-compact": { column: 0, overlays: ["dialog", "drawer"] },
+  "compact-portal": { column: 1, overlays: [] },
+  "compact-rtl": { column: 1, overlays: ["dialog"] },
+  outside: { column: 0, overlays: [], outside: true },
+  "compact-scope": { column: 1, overlays: ["dialog", "drawer"] },
+  "compact-scope-portal": { column: 1, overlays: [] },
+  "provider-in-sdk": { column: 0, overlays: [] },
+  "sdk-portal": { column: 0, overlays: [] },
 };
+// A close sits on its title as touch places it: the same distance between
+// their centres in every board.
+const ALIGNED = ["dialog close offset", "drawer close offset"];
 
 const browser = await launchFixtureBrowser();
-const failures = [];
-let reads = 0;
 
 try {
-  for (const [mode, stylesheet] of [
-    ["full", css],
-    ["without-scope", unscoped.toString()],
+  // The sizes are in rem, so they follow the reader's font size: at a 20px
+  // root every one of them is a quarter larger, as h-11 was before density.
+  for (const [mode, stylesheet, rootSize] of [
+    ["full", css, 16],
+    ["without-scope", unscoped.toString(), 16],
+    ["full at a 20px root", css, 20],
   ]) {
+    const scale = rootSize / 16;
     const page = await browser.newPage({
       viewport: { width: 1800, height: 1000 },
     });
-    await page.setContent('<!doctype html><div id="fixture"></div>');
+    await page.setContent(
+      `<!doctype html><html style="font-size:${rootSize}px"><div id="fixture"></div></html>`,
+    );
     await page.addStyleTag({ content: stylesheet });
     await page.addScriptTag({ content: code });
     await page.locator('[data-board="compact-portal"]').waitFor();
@@ -102,6 +158,12 @@ try {
           padEnd: Number.parseFloat(getComputedStyle(element).paddingInlineEnd),
         };
       };
+      const centre = (element) => {
+        const box = element.getBoundingClientRect();
+        return box.top + box.height / 2;
+      };
+      const offset = (close, title) =>
+        close && title ? { offset: centre(close) - centre(title) } : null;
       const out = {};
       for (const board of document.querySelectorAll("[data-board]")) {
         const name = board.getAttribute("data-board");
@@ -132,15 +194,35 @@ try {
           within("password-input")?.querySelector(".kozmos-field-action"),
         );
         parts["combobox padding"] = parts["combobox field"];
-        parts["password-input padding"] = parts["password-input field"];
-        const drawer = document.querySelector(`[data-drawer="${name}"]`);
-        parts["drawer close"] = size(
-          [...(drawer?.querySelectorAll("button") ?? [])].find((button) =>
-            button.textContent?.includes("Close drawer"),
-          ),
+        parts["combobox-plain padding"] = size(
+          within("combobox-plain")?.querySelector(".kozmos-input"),
         );
+        parts["password-input padding"] = parts["password-input field"];
+        parts["multi-select input"] = size(
+          within("multi-select")?.querySelector(".kozmos-multiselect-input"),
+        );
+        const dialog = document.querySelector(`[data-dialog="${name}"]`);
+        const dialogClose = dialog?.querySelector('button[aria-label="Close"]');
+        parts["dialog close"] = size(dialogClose);
+        parts["dialog title"] = size(dialog?.querySelector("h2"));
+        parts["dialog footer button"] = size(
+          dialog?.querySelector(".kozmos-dialog-footer button"),
+        );
+        parts["dialog close offset"] = offset(
+          dialogClose,
+          dialog?.querySelector("h2"),
+        );
+        const drawer = document.querySelector(`[data-drawer="${name}"]`);
+        const drawerClose = [
+          ...(drawer?.querySelectorAll("button") ?? []),
+        ].find((button) => button.textContent?.includes("Close drawer"));
+        parts["drawer close"] = size(drawerClose);
         parts["drawer header"] = size(
           drawer?.querySelector("h2")?.parentElement,
+        );
+        parts["drawer close offset"] = offset(
+          drawerClose,
+          drawer?.querySelector("h2"),
         );
         parts["search clear"] = size(
           board.querySelector('button[aria-label="Clear search"]'),
@@ -197,22 +279,25 @@ try {
           );
       }
     }
-    for (const [board, column] of Object.entries(BOARDS)) {
+    for (const [board, { column, overlays, outside }] of Object.entries(
+      BOARDS,
+    )) {
       const result = measured[board];
       if (!result) {
         failures.push(`${mode} ${board}: the board did not render`);
         continue;
       }
-      reads += 1;
       const density = column ? "compact" : "touch";
-      if (result.density !== density)
-        failures.push(
-          `${mode} ${board}: its root says ${result.density}, expected ${density}`,
-        );
+      if (!outside) {
+        reads += 1;
+        if (result.density !== density)
+          failures.push(
+            `${mode} ${board}: its root says ${result.density}, expected ${density}`,
+          );
+      }
       for (const [part, expected] of Object.entries(EXPECTED)) {
-        if (mode === "without-scope" && !expected.owned) continue;
-        // The drawers open from the providers, not from inside the popover.
-        if (expected.drawer && board === "compact-portal") continue;
+        if ((mode === "without-scope" || outside) && !expected.owned) continue;
+        if (expected.overlay && !overlays.includes(expected.overlay)) continue;
         const box = result.parts[part];
         if (!box) {
           failures.push(`${mode} ${board} ${part}: not found`);
@@ -221,12 +306,26 @@ try {
         for (const axis of ["height", "width", "padEnd"]) {
           if (!expected[axis]) continue;
           reads += 1;
-          const want = expected[axis][column];
+          const want = expected[axis][column] * scale;
           if (Math.abs(box[axis] - want) > 0.5)
             failures.push(
               `${mode} ${board} ${part} ${axis}: ${box[axis].toFixed(2)}, expected ${want}`,
             );
         }
+      }
+      // The utilities place the closes, so only the full stylesheet can.
+      if (mode === "without-scope") continue;
+      for (const part of ALIGNED) {
+        if (!overlays.includes(part.split(" ")[0])) continue;
+        reads += 1;
+        const want = measured.touch.parts[part]?.offset;
+        const got = result.parts[part]?.offset;
+        if (want === undefined || got === undefined)
+          failures.push(`${mode} ${board} ${part}: not found`);
+        else if (Math.abs(got - want) > 0.5)
+          failures.push(
+            `${mode} ${board} ${part}: the close's centre is ${got.toFixed(2)} from the title's, ${want.toFixed(2)} in touch`,
+          );
       }
     }
     await page.close();
@@ -242,5 +341,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root and a portal, with and without @scope; SDK parts stay 44 in compact, and only their touch mark holds them`,
+  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
 );

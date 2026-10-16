@@ -6,16 +6,19 @@ const { withTokenAlpha } = require("./postcss/token-alpha.cjs");
 
 // The control sizes that follow ThemeProvider's density (decision 82): each
 // reads its token from @kozmos-ds/tokens/css/density.css, touch by default and
-// compact under [data-kozmos-density='compact']. src/utils.ts teaches the
-// same keys to tailwind-merge, so a caller's own size still wins.
+// compact under [data-kozmos-density='compact'], and falls back to its touch
+// size where no provider sets one (scripts/check-density.mjs holds every
+// fallback to the touch token). They are rem, so they follow the reader's
+// font size as h-11 did. src/utils.ts teaches the same keys to
+// tailwind-merge, so a caller's own size still wins.
 const DENSITY_SIZES = {
-  "control-sm": "var(--density-control-height-sm)",
-  control: "var(--density-control-height-md)",
-  "control-lg": "var(--density-control-height-lg)",
-  "icon-control-sm": "var(--density-icon-control-size-sm)",
-  "icon-control": "var(--density-icon-control-size-md)",
-  "icon-control-lg": "var(--density-icon-control-size-lg)",
-  field: "var(--density-field-height-md)",
+  "control-sm": "var(--density-control-height-sm, 2.75rem)",
+  control: "var(--density-control-height-md, 2.75rem)",
+  "control-lg": "var(--density-control-height-lg, 2.75rem)",
+  "icon-control-sm": "var(--density-icon-control-size-sm, 2.75rem)",
+  "icon-control": "var(--density-icon-control-size-md, 2.75rem)",
+  "icon-control-lg": "var(--density-icon-control-size-lg, 3rem)",
+  field: "var(--density-field-height-md, 2.75rem)",
 };
 
 module.exports = {
