@@ -40,7 +40,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { Checkbox } from "@kozmos-ds/vue"
+import { KozmosCheckbox } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const isChecked = ref(false)
@@ -48,7 +48,7 @@ const isChecked = ref(false)
 
 <template>
   <div class="flex items-center space-x-2">
-    <Checkbox id="terms" v-model:checked="isChecked" />
+    <KozmosCheckbox id="terms" v-model:checked="isChecked" />
     <label
       for="terms"
       class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

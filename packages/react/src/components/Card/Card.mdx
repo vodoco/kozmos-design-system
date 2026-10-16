@@ -51,29 +51,14 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@kozmos-ds/vue"
+import { KozmosCard } from "@kozmos-ds/vue"
+// @kozmos-ds/vue wraps the Card only: it has no CardHeader, CardTitle, CardDescription, CardContent or CardFooter.
 </script>
 
 <template>
-  <Card>
-    <CardHeader>
-      <CardTitle>Card Title</CardTitle>
-      <CardDescription>Card Description</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <p>Card Content</p>
-    </CardContent>
-    <CardFooter>
-      <p>Card Footer</p>
-    </CardFooter>
-  </Card>
+  <KozmosCard>
+    <p>Card Content</p>
+  </KozmosCard>
 </template>
     `}
     swift={`

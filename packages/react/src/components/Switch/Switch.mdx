@@ -37,7 +37,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { Switch, Label } from "@kozmos-ds/vue"
+import { KozmosSwitch, KozmosLabel } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const isChecked = ref(false)
@@ -45,8 +45,8 @@ const isChecked = ref(false)
 
 <template>
   <div class="flex items-center space-x-2">
-    <Switch id="airplane-mode" v-model:checked="isChecked" />
-    <Label for="airplane-mode">Airplane Mode</Label>
+    <KozmosSwitch id="airplane-mode" v-model:checked="isChecked" />
+    <KozmosLabel htmlFor="airplane-mode">Airplane Mode</KozmosLabel>
   </div>
 </template>
     `}

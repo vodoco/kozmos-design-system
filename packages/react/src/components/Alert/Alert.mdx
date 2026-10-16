@@ -39,18 +39,15 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { Alert, AlertDescription, AlertTitle } from "@kozmos-ds/vue"
-import { Terminal } from "lucide-vue-next"
+import { KozmosAlert } from "@kozmos-ds/vue"
+// KozmosAlert takes a title and a description only: @kozmos-ds/vue has no slot for the Alert's icon.
 </script>
 
 <template>
-  <Alert>
-    <Terminal class="h-4 w-4" />
-    <AlertTitle>Heads up!</AlertTitle>
-    <AlertDescription>
-      You can add components and dependencies to your app using the cli.
-    </AlertDescription>
-  </Alert>
+  <KozmosAlert
+    title="Heads up!"
+    description="The venue closes at 18:00 today."
+  />
 </template>
     `}
     swift={`

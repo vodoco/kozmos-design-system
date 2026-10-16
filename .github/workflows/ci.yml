@@ -250,6 +250,12 @@ jobs:
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
 
+      # The snippet check above resolves only Kozmos-prefixed names, so on
+      # 16 Oct 14 of the 80 Vue tabs imported Accordion, AlertTitle, a useToast
+      # and the like from @kozmos-ds/vue, which exports none of them, and passed.
+      - name: Verify Vue Tabs Import What @kozmos-ds/vue Exports
+        run: pnpm docs:snippets:vue:check
+
       # The icons' Code Connect is generated from the Icons page baseline, the
       # registry and the wayfinding glyphs. A hand edit on 2026-09-24 cut 58
       # of its 64 mappings, and no workflow ran this check, so nothing said so

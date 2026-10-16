@@ -45,23 +45,12 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@kozmos-ds/vue"
+import { KozmosButton } from "@kozmos-ds/vue"
+// @kozmos-ds/vue cannot attach a tooltip yet: it has no TooltipProvider, TooltipTrigger or TooltipContent, and KozmosTooltip throws outside a provider.
 </script>
 
 <template>
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger>Hover</TooltipTrigger>
-      <TooltipContent>
-        <p>Add to library</p>
-      </TooltipContent>
-    </Tooltip>
-  </Tooltip>
+  <KozmosButton>Hover</KozmosButton>
 </template>
     `}
     swift={`

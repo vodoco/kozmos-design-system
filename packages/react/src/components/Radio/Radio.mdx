@@ -43,20 +43,12 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { Label, RadioGroup, RadioGroupItem } from "@kozmos-ds/vue"
+import { KozmosRadioGroup } from "@kozmos-ds/vue"
+// Each @kozmos-ds/vue part mounts its own React root, so a KozmosRadioGroupItem inside a KozmosRadioGroup cannot reach its group and throws: it cannot draw options yet.
 </script>
 
 <template>
-  <RadioGroup defaultValue="option-one">
-    <div class="flex items-center space-x-2">
-      <RadioGroupItem value="option-one" id="r1" />
-      <Label for="r1">Option One</Label>
-    </div>
-    <div class="flex items-center space-x-2">
-      <RadioGroupItem value="option-two" id="r2" />
-      <Label for="r2">Option Two</Label>
-    </div>
-  </RadioGroup>
+  <KozmosRadioGroup aria-label="Choose an option" defaultValue="option-one" />
 </template>
     `}
     swift={`
