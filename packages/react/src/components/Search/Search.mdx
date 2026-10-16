@@ -93,3 +93,11 @@ unfocusedLeadingIconColor = com.kozmos.tokens.KozmosColors.primitivesColorsForeg
     `}
 
 />
+
+## In Safari
+
+`className` lands on the field. A utility class passed there styles it in Chrome, Edge and
+Firefox, and is ignored in Safari, where the field keeps its own look: WebKit applies no
+`@scope` rule to an `<input>` (GAP-174), and Kozmos's utilities are scoped. Use the props,
+the provider's `tokens`, an inline `style` or your own CSS, and `wrapperClassName` for the
+layout around it. Guides › Platform support › Fields in Safari has the detail.

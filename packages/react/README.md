@@ -103,6 +103,26 @@ Supporting older engines requires migrating remaining scoped components and chec
 used features, not just editing the browser list. A changed support promise needs explicit
 compatibility review and migration notes.
 
+### Fields in Safari (GAP-174)
+
+WebKit, so Safari and every iOS web view, applies no `@scope` rule to an element that
+hosts a shadow root: every text-like `<input>` (text, search, email, password, number,
+date, time, colour, range) and every `<textarea>`. Measured in WebKit 26.0. Kozmos's
+utility classes are emitted inside `@scope`, so none of them reaches a field in Safari.
+Every Kozmos field draws from its own unscoped CSS instead, and draws in Safari as in
+Chrome and Firefox: `pnpm test:field-styles` measures every part with a field in all three.
+
+- **A utility class passed to a field's `className`** (`px-4`, `w-72`, `border-destructive`)
+  applies in Chrome, Edge and Firefox, and is ignored in Safari, where the field keeps its
+  own look. Kozmos cannot change this: the scoping is what WebKit mishandles.
+- **What reaches a field in Safari:** its props (`status`, `error`, `disabled`, and density
+  from `ThemeProvider`), the provider's `tokens`, an inline `style`, and your own CSS
+  loaded after Kozmos's. One class of yours overrides a field's base look (`.kozmos-input`,
+  `.kozmos-textarea`); a part's own rules come after it, and some are two classes (Search's
+  room for its icon, ColorPicker's for its swatch), which your selector must match.
+- **Around a field,** use `wrapperClassName`: it lands on a `<div>`, which takes scoped rules.
+- `<button>`, `<select>`, checkboxes and radios take scoped rules in Safari as elsewhere.
+
 ## Use
 
 ```tsx
