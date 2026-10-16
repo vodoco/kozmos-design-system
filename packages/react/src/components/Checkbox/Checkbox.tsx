@@ -1,7 +1,7 @@
 import React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check, Minus } from "@kozmos-ds/icons";
-import { cn } from "../../utils";
+import { cn, mergeAriaIds } from "../../utils";
 import { Label } from "../Label";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
@@ -16,7 +16,14 @@ export interface CheckboxProps extends React.ComponentPropsWithoutRef<
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, label, error, wrapperClassName, ...props }, ref) => {
+>(({ className, label, error, wrapperClassName, ...rest }, ref) => {
+  // The caller's description is joined with the error's rather than
+  // replacing it, as Switch and Slider join theirs.
+  const {
+    "aria-describedby": ariaDescribedBy,
+    "aria-invalid": ariaInvalid,
+    ...props
+  } = rest;
   const defaultId = React.useId();
   const inputId = props.id || defaultId;
   const errorId = React.useId();
@@ -38,13 +45,19 @@ const Checkbox = React.forwardRef<
             hasError && "border-destructive focus-visible:ring-destructive",
             className,
           )}
-          aria-invalid={hasError}
-          aria-describedby={hasError && isStringError ? errorId : undefined}
+          // The caller's props first, then the handler that wraps theirs:
+          // spread last, a caller's onCheckedChange replaced the wrapper and
+          // the toggle was never reported.
+          {...props}
+          aria-invalid={hasError || ariaInvalid}
+          aria-describedby={mergeAriaIds(
+            ariaDescribedBy,
+            hasError && isStringError ? errorId : undefined,
+          )}
           onCheckedChange={(checked) => {
             trackEvent("Checkbox", "checkbox_toggled", { checked });
             props.onCheckedChange?.(checked);
           }}
-          {...props}
         >
           {/*
             Radix renders this for BOTH `checked` and `indeterminate`, so the mark has to say which

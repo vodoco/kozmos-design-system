@@ -1,6 +1,6 @@
 import React from "react";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
-import { cn } from "../../utils";
+import { cn, mergeAriaIds } from "../../utils";
 import { Label } from "../Label";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
@@ -15,7 +15,16 @@ export interface SwitchProps extends React.ComponentPropsWithoutRef<
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitive.Root>,
   SwitchProps
->(({ className, label, error, wrapperClassName, ...props }, ref) => {
+>(({ className, label, error, wrapperClassName, ...rest }, ref) => {
+  // The caller's description is kept and the error's joins it, and so is the
+  // caller's invalid state: both were written after the caller's props, so a
+  // product describing the setting lost its description to the component's
+  // own, which was undefined without an error.
+  const {
+    "aria-describedby": ariaDescribedBy,
+    "aria-invalid": ariaInvalid,
+    ...props
+  } = rest;
   const defaultId = React.useId();
   const inputId = props.id || defaultId;
   const errorId = React.useId();
@@ -40,8 +49,11 @@ const Switch = React.forwardRef<
             props.onCheckedChange?.(checked);
           }}
           ref={ref}
-          aria-invalid={hasError}
-          aria-describedby={hasError && isStringError ? errorId : undefined}
+          aria-invalid={hasError || ariaInvalid}
+          aria-describedby={mergeAriaIds(
+            ariaDescribedBy,
+            hasError && isStringError ? errorId : undefined,
+          )}
         >
           <SwitchPrimitive.Thumb
             className={cn(
