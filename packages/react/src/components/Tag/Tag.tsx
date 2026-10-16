@@ -114,8 +114,9 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
             // colour and then the theme's 600, 3:1 on the fill and on the
             // page; it drew none. On the theme fill its hover is the theme
             // foreground at a fifth: the 600 it took read 1.11:1 there.
-            // Drawn 16, its target is 24 by 24 (WCAG 2.2's 2.5.8), from owned
-            // CSS on kozmos-tag-remove, so the Tag is no larger for it.
+            // Drawn 16, its target is 24 wide and the Tag's own height (WCAG
+            // 2.2's 2.5.8, with its spacing), from owned CSS on
+            // kozmos-tag-remove, so the Tag is no larger for it.
             className={cn(
               "kozmos-tag-remove rounded-pill p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               onThemeFill && "hover:bg-theme-fill-foreground/20",

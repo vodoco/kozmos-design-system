@@ -36,6 +36,20 @@ createRoot(document.getElementById("root")!).render(
               Vegan
             </Tag>
           </div>
+          {/* A row of removable Tags that scrolls, flush: no padding above or
+              below them. */}
+          <div
+            data-testid={`tag-row-${dir}`}
+            style={{ display: "flex", gap: 4, overflowX: "auto" }}
+          >
+            {["Vegan", "Halal", "Kosher", "Gluten free", "Nut free"].map(
+              (word) => (
+                <Tag key={word} onRemove={() => undefined}>
+                  {word}
+                </Tag>
+              ),
+            )}
+          </div>
           <ToastProvider>
             {/* Long enough that the words shrink to the action, so the
                 space between them is the toast's own, not justify's. */}

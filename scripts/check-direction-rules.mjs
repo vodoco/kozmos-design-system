@@ -388,39 +388,52 @@ try {
     checked += 1;
   }
   // Tag: the remove mark is drawn 16 and the Tag is no taller for it, but
-  // its target is 24 by 24 (WCAG 2.2's 2.5.8), centred on the mark, in
-  // both directions. It was the mark's own 16.
+  // its target is 24 wide and the Tag's whole height, centred on the mark, in
+  // both directions; with the spacing a 24 circle round the mark needs, that
+  // meets WCAG 2.2's 2.5.8. It was the mark's own 16. The target never
+  // reaches past the Tag: at 24 by 24 it stood 1px above and below, so a
+  // flush row of Tags that scrolls scrolled a pixel and drew a scrollbar.
   for (const dir of ["ltr", "rtl"]) {
+    await page.getByTestId(`tag-${dir}`).scrollIntoViewIfNeeded();
     const tag = await page.getByTestId(`tag-${dir}`).evaluate((root) => {
       const plain = root.parentElement
         .querySelector("[data-testid^='tag-plain']")
         .getBoundingClientRect();
+      const box = root.getBoundingClientRect();
       const button = root.querySelector("button");
       const mark = button.getBoundingClientRect();
       const x = mark.left + mark.width / 2;
       const y = mark.top + mark.height / 2;
-      // Just inside each corner and edge of a 24 square round the mark.
+      const hits = (px, py) => {
+        const hit = document.elementFromPoint(px, py);
+        return hit === button || button.contains(hit);
+      };
+      // Just inside each corner and edge of the target: 24 wide, the Tag's
+      // height.
       const reach = 11.5;
+      const top = box.top + 0.5 - y;
+      const bottom = box.bottom - 0.5 - y;
       const probes = [
-        [-reach, -reach],
-        [reach, -reach],
-        [-reach, reach],
-        [reach, reach],
+        [-reach, top],
+        [reach, top],
+        [-reach, bottom],
+        [reach, bottom],
         [-reach, 0],
         [reach, 0],
-        [0, -reach],
-        [0, reach],
+        [0, top],
+        [0, bottom],
       ];
       return {
         mark: { width: mark.width, height: mark.height },
-        height: root.getBoundingClientRect().height,
+        height: box.height,
         plainHeight: plain.height,
         misses: probes
-          .filter(([dx, dy]) => {
-            const hit = document.elementFromPoint(x + dx, y + dy);
-            return !(hit === button || button.contains(hit));
-          })
-          .map(([dx, dy]) => `${dx},${dy}`),
+          .filter(([dx, dy]) => !hits(x + dx, y + dy))
+          .map(([dx, dy]) => `${dx},${dy.toFixed(1)}`),
+        // A pixel outside the Tag, above and below the mark (half a pixel
+        // past an edge still hits in Chromium and WebKit).
+        beyond: [box.top - 1, box.bottom + 1].filter((py) => hits(x, py))
+          .length,
       };
     });
     const where = `Tag ${dir}: ${JSON.stringify(tag)}`;
@@ -437,7 +450,23 @@ try {
     assert.deepEqual(
       tag.misses,
       [],
-      `${where}: the remove target is smaller than 24 by 24`,
+      `${where}: the remove target is not 24 wide and the Tag's height`,
+    );
+    assert.equal(
+      tag.beyond,
+      0,
+      `${where}: the remove target reaches past the Tag`,
+    );
+    const row = await page
+      .getByTestId(`tag-row-${dir}`)
+      .evaluate((element) => ({
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+      }));
+    assert.equal(
+      row.scrollHeight,
+      row.clientHeight,
+      `Tag ${dir}: a flush row of removable Tags scrolls ${row.scrollHeight - row.clientHeight}px up and down`,
     );
     checked += 1;
   }

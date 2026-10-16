@@ -32,7 +32,7 @@ describe("Tag", () => {
     expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
   });
 
-  it("marks its remove button for the owned 24 by 24 target", () => {
+  it("marks its remove button for the owned target", () => {
     // The target is a pseudo-element in owned CSS (check-direction-rules.mjs
     // measures it in a browser); the class is what this asserts.
     render(<Tag onRemove={() => undefined}>Vegan</Tag>);

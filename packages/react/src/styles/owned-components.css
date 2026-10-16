@@ -1512,10 +1512,13 @@
   .kozmos-notice-more::after {
     width: max(100%, 44px);
   }
-  /* Tag's remove: 16px drawn, at the end of a 22px Tag, its target 24 by 24
-     round the mark (it was the mark's own 16). The 4px it reaches past the
-     mark lands in the Tag's own 10px end padding and the 4px gap before its
-     words, and 1px above and below the Tag, where nothing is a control. */
+  /* Tag's remove: 16px drawn, at the end of a 22px Tag, its target 24 wide
+     and the Tag's own 22 tall round the mark (it was the mark's own 16). With
+     the spacing a 24 circle round the mark needs, that meets WCAG 2.2's
+     2.5.8. The 4px it reaches past the mark at each side lands in the Tag's
+     own 10px end padding and the 4px gap before its words; it never reaches
+     past the Tag, where a 24 square stood 1px above and below and made a
+     flush row of Tags that scrolls scroll a pixel. */
   .kozmos-tag-remove {
     position: relative;
   }
@@ -1525,7 +1528,7 @@
     top: 50%;
     left: 50%;
     width: 24px;
-    height: 24px;
+    height: 22px;
     transform: translate(-50%, -50%);
   }
 }
