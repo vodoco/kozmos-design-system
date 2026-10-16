@@ -330,6 +330,10 @@ private struct InteractionFixture: View {
             if scenario == "gallery-replace" {
                 Button("Replace the photos") { replaced = true }
             }
+        case "tag-remove":
+            KozmosTag("Vegan") { events.append("remove") }
+        case "tag-remove-localized":
+            KozmosTag("Vegan", removeLabel: "Vegan entfernen") { events.append("remove") }
         default:
             Text("Unknown fixture: \(scenario)")
         }

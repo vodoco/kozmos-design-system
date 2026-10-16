@@ -40,6 +40,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TagProps`, which extends
   The product drives this axis on 33,988 tag instances across 10 surfaces
   and Kozmos could express none of it before now.
 
+- `removeLabel`: `string`, optional, default `"Remove"`.
+
+  The remove button's accessible name. English by default; a product that
+  translates passes its own.
+
 - `variant`: `"default" | "destructive" | "outline" | "secondary" | null`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 

@@ -1,5 +1,18 @@
 import { createRoot } from "react-dom/client";
-import { Progress, SplitButton, Switch, ThemeProvider } from "@kozmos-ds/react";
+import {
+  Progress,
+  Search,
+  SplitButton,
+  Switch,
+  Tag,
+  ThemeProvider,
+  Toast,
+  ToastAction,
+  ToastClose,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@kozmos-ds/react";
 
 // The real components check-direction-rules.mjs measures in both directions.
 createRoot(document.getElementById("root")!).render(
@@ -16,6 +29,41 @@ createRoot(document.getElementById("root")!).render(
           >
             Start
           </SplitButton>
+          <Search aria-label={`Search ${dir}`} placeholder="Gate" />
+          <div style={{ display: "flex", gap: 8, padding: 8 }}>
+            <Tag data-testid={`tag-plain-${dir}`}>Vegan</Tag>
+            <Tag data-testid={`tag-${dir}`} onRemove={() => undefined}>
+              Vegan
+            </Tag>
+          </div>
+          {/* A row of removable Tags that scrolls, flush: no padding above or
+              below them. */}
+          <div
+            data-testid={`tag-row-${dir}`}
+            style={{ display: "flex", gap: 4, overflowX: "auto" }}
+          >
+            {["Vegan", "Halal", "Kosher", "Gluten free", "Nut free"].map(
+              (word) => (
+                <Tag key={word} onRemove={() => undefined}>
+                  {word}
+                </Tag>
+              ),
+            )}
+          </div>
+          <ToastProvider>
+            {/* Long enough that the words shrink to the action, so the
+                space between them is the toast's own, not justify's. */}
+            <Toast open data-testid={`toast-${dir}`}>
+              <div data-part="toast-text">
+                <ToastTitle>
+                  Your route was updated because a lift is out of service
+                </ToastTitle>
+              </div>
+              <ToastAction altText="Undo">Undo</ToastAction>
+              <ToastClose aria-label={`Dismiss ${dir}`} />
+            </Toast>
+            <ToastViewport style={{ position: "relative" }} />
+          </ToastProvider>
         </div>
       </ThemeProvider>
     ))}

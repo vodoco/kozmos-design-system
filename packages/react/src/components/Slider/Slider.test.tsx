@@ -48,6 +48,21 @@ describe("Slider", () => {
     ).toBeInTheDocument();
   });
 
+  it("names a range's thumbs in the product's own words", () => {
+    render(
+      <Slider
+        defaultValue={[20, 50, 80]}
+        thumbLabels={["Prix minimum", "Prix cible", "Prix maximum"]}
+      />,
+    );
+    expect(
+      screen
+        .getAllByRole("slider")
+        .map((thumb) => thumb.getAttribute("aria-label")),
+    ).toEqual(["Prix minimum", "Prix cible", "Prix maximum"]);
+    expect(screen.queryByRole("slider", { name: "Minimum value" })).toBeNull();
+  });
+
   it("can reserve multiple thumbs before a value is supplied", () => {
     render(<Slider thumbCount={2} max={100} />);
     expect(screen.getAllByRole("slider")).toHaveLength(2);

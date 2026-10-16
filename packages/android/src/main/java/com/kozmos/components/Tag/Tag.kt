@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +43,12 @@ fun KozmosTag(
      */
     emotion: KozmosEmotion? = null,
     onRemove: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * The remove button's spoken name. English by default, as React's is; a
+     * product that translates passes its own.
+     */
+    removeLabel: String = "Remove"
 ) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)
     val emotionSurface = emotion?.surface
@@ -97,15 +103,21 @@ fun KozmosTag(
             fontWeight = FontWeight.SemiBold
         )
         if (onRemove != null) {
+            // A button TalkBack names in the product's words; it was a
+            // fixed "Remove" read as an image. Drawn 16, its target is
+            // Compose's minimum touch target, 48 for a finger, without the
+            // Tag growing (KozmosTagRemoveTest).
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Remove",
-                tint = foregroundColor,
+                contentDescription = removeLabel,
+                // The Tag's own ink, the emotion's when it has one, as its
+                // words are (KozmosTagRemovePixelsTest).
+                tint = resolvedForeground,
                 modifier = Modifier
                     .padding(start = KozmosDimensions.primitivesLayoutSpacing50)
                     .size(KozmosDimensions.primitivesLayoutSizing200)
                     .clip(CircleShape)
-                    .clickable { onRemove() }
+                    .clickable(role = Role.Button) { onRemove() }
             )
         }
     }

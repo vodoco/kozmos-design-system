@@ -15,6 +15,32 @@ describe("Tag", () => {
     expect(handleRemove).toHaveBeenCalled();
   });
 
+  it("names its remove button in English by default", () => {
+    render(<Tag onRemove={() => undefined}>Vegan</Tag>);
+    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+  });
+
+  it("names its remove button with the product's own words", () => {
+    const handleRemove = vi.fn();
+    render(
+      <Tag onRemove={handleRemove} removeLabel="Vegan entfernen">
+        Vegan
+      </Tag>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Vegan entfernen" }));
+    expect(handleRemove).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
+  });
+
+  it("marks its remove button for the owned target", () => {
+    // The target is a pseudo-element in owned CSS (check-direction-rules.mjs
+    // measures it in a browser); the class is what this asserts.
+    render(<Tag onRemove={() => undefined}>Vegan</Tag>);
+    expect(screen.getByRole("button", { name: "Remove" })).toHaveClass(
+      "kozmos-tag-remove",
+    );
+  });
+
   describe("emotion", () => {
     it("leaves the variant untouched when it is not set", () => {
       const { container } = render(<Tag variant="secondary">Draft</Tag>);

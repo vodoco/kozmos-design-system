@@ -80,7 +80,8 @@ and complete-screen verification. Component coverage alone is not a finished SDK
 Next work after the 0.8.0 library release:
 
 1. Reuse the shipped level switcher, logical map-corner slots, attribution and Info components;
-   use the web-only language switcher where the SDK host supports it.
+   use the language switcher where the SDK host shows it (web today; SwiftUI and Compose to come,
+   decision 70).
 2. Reuse merged PR #160 for the iOS host's floor ordering/default selection and lifecycle work;
    validate additional real-device/consumer scenarios instead of duplicating it.
 3. Complete real web/Android SDK adapters, locale/provider ownership and full-screen acceptance.
@@ -88,9 +89,9 @@ Next work after the 0.8.0 library release:
    physical-device accessibility, Figma mapping and consuming-app adoption separately.
 
 The user confirmed **React, iOS and Android enhancements in sync**, not React first with
-native parity deferred. **Explicit exception: LanguageSwitcher is web-only.** The user confirmed
-that iOS and Android follow device language and have no dedicated language button. Other shared
-batches include native implementation and named tests; do not invent native buttons for parity.
+native parity deferred. LanguageSwitcher was the one exception, web-only, until decision 70 (14 Oct):
+it goes to SwiftUI and Compose for iPad and other large-screen apps, and on phones the SDK hides it,
+the product's choice. Other shared batches include native implementation and named tests.
 Figma and consuming-app adoption must still be checked separately before claiming end-to-end parity.
 No new version, merge or publication is authorized by this plan.
 
@@ -122,9 +123,9 @@ No new version, merge or publication is authorized by this plan.
   React reveals the selected floor after portal measurement; native lists scroll to selection.
 - This is **not full closure of SDK-UI-001/002**: full keyboard/safe-area/device coverage,
   live SDK placement and Figma/consumer adoption remain open.
-- The web-only LanguageSwitcher now provides controlled selection, pending/error/retry states
-  and a shell-bounded menu. Native apps intentionally follow device/app language without a
-  button. Real SDK locale application and persistence remain host integration work.
+- The web LanguageSwitcher now provides controlled selection, pending/error/retry states
+  and a shell-bounded menu. Its SwiftUI and Compose versions are to be built for large screens
+  (decision 70). Real SDK locale application and persistence remain host integration work.
 - MapAttribution now supplies provider-neutral branding/credit presentation on web, iOS and
   Android. SDK metadata selection and wording remain adapter-owned, not a prerequisite for
   building the design-system component. MapInfoPanel and its responsive MapInfo host now
@@ -159,22 +160,22 @@ same radius.
 
 ## Current coverage: reuse versus implement
 
-| Area                          | Present in released source                                                                                                                                        | Remaining work                                                                                                                                                           |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Map control button            | Controlled pressed state, disabled/loading, accessible state words, labelled/icon-only presentation, reveal-on-change behavior.                                   | Map each host action/mode to the right semantics; not every button is an on/off toggle.                                                                                  |
-| MapControlsGroup              | Zoom, compass, location modes and step-free callbacks/labels.                                                                                                     | Fixed composition, not an arbitrary-children cluster. Adding language/info is not solved by passing children to it.                                                      |
-| FloorSelector                 | Four variants, availability cues, full-name hints, default-off list counts, stale-ID preservation and shell-bounded scrolling; native source counterparts.        | Real SDK floor ordering/default selection, device/keyboard acceptance and consuming-host adoption. Closed-tile counts are intentionally absent.                          |
-| MapOverlay / AdaptiveMapShell | Logical bottom corners, measured attribution, content-fitting panels, collision-aware floor menus and safe-area/layout callbacks across the three targets.        | Full native rectangle snapshots, physical keyboard/IME tests, custom overlay/status coexistence and renderer camera application.                                         |
-| MapStatusPill                 | Exported, tested in-map status surface, tones, icon override and live-region policy.                                                                              | SDK status/event mapping and placement; do not rebuild it as a Toast.                                                                                                    |
-| Language switcher             | Published web LanguageSwitcher: native names, controlled selection, pending/error/retry and bounded menu. Native has no language button by design.                | Actual host locale persistence, fallback and SDK/app synchronization; native runtime locale handling.                                                                    |
-| Branding / credits            | Published MapAttribution with bundled Pointr logo, replaceable/hidden branding, ordered credits and centered measured shell placement; native source equivalents. | Approved host assets/copy, provider resolution/deduplication, custom overlay coexistence and actual renderer integration remain.                                         |
-| Info trigger / panel          | MapInfoPanel / MapInfo are published for React, with corresponding SwiftUI and Compose source. The iOS Pointr QA host now replaces the disabled SDK Info control. | iPhone modal isolation and iPad SDK resize/POI/query retention passed live simulator tests. Web/Android live hosts and physical-device/route-specific acceptance remain. |
-| Exit building                 | Button primitives and host building state.                                                                                                                        | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
-| POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                                             | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
-| Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                                               | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
-| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep, ManoeuvreCard; instruction parts and languages (GAP-093/096, 0.8.0); step distance and duration (GAP-097, 0.9.0).    | Endpoint Change actions (GAP-104) are released in 0.10.0. SDK data adoption and physical speech acceptance remain.                                                       |
-| Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                                         | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
-| Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                                           | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
+| Area                          | Present in released source                                                                                                                                             | Remaining work                                                                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Map control button            | Controlled pressed state, disabled/loading, accessible state words, labelled/icon-only presentation, reveal-on-change behavior.                                        | Map each host action/mode to the right semantics; not every button is an on/off toggle.                                                                                  |
+| MapControlsGroup              | Zoom, compass, location modes and step-free callbacks/labels.                                                                                                          | Fixed composition, not an arbitrary-children cluster. Adding language/info is not solved by passing children to it.                                                      |
+| FloorSelector                 | Four variants, availability cues, full-name hints, default-off list counts, stale-ID preservation and shell-bounded scrolling; native source counterparts.             | Real SDK floor ordering/default selection, device/keyboard acceptance and consuming-host adoption. Closed-tile counts are intentionally absent.                          |
+| MapOverlay / AdaptiveMapShell | Logical bottom corners, measured attribution, content-fitting panels, collision-aware floor menus and safe-area/layout callbacks across the three targets.             | Full native rectangle snapshots, physical keyboard/IME tests, custom overlay/status coexistence and renderer camera application.                                         |
+| MapStatusPill                 | Exported, tested in-map status surface, tones, icon override and live-region policy.                                                                                   | SDK status/event mapping and placement; do not rebuild it as a Toast.                                                                                                    |
+| Language switcher             | Published web LanguageSwitcher: native names, controlled selection, pending/error/retry and bounded menu. SwiftUI and Compose to come for large screens (decision 70). | Actual host locale persistence, fallback and SDK/app synchronization; native runtime locale handling.                                                                    |
+| Branding / credits            | Published MapAttribution with bundled Pointr logo, replaceable/hidden branding, ordered credits and centered measured shell placement; native source equivalents.      | Approved host assets/copy, provider resolution/deduplication, custom overlay coexistence and actual renderer integration remain.                                         |
+| Info trigger / panel          | MapInfoPanel / MapInfo are published for React, with corresponding SwiftUI and Compose source. The iOS Pointr QA host now replaces the disabled SDK Info control.      | iPhone modal isolation and iPad SDK resize/POI/query retention passed live simulator tests. Web/Android live hosts and physical-device/route-specific acceptance remain. |
+| Exit building                 | Button primitives and host building state.                                                                                                                             | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
+| POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                                                  | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
+| Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                                                    | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
+| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep, ManoeuvreCard; instruction parts and languages (GAP-093/096, 0.8.0); step distance and duration (GAP-097, 0.9.0).         | Endpoint Change actions (GAP-104) are released in 0.10.0. SDK data adoption and physical speech acceptance remain.                                                       |
+| Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                                              | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
+| Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                                                | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
 
 Public source entry points:
 [React exports](../packages/react/src/index.ts),
@@ -337,8 +338,9 @@ Acceptance:
 ## SDK-UI-003: bottom-left language selector
 
 The released web `LanguageSwitcher` composes the supported Select pattern, not a second
-localization framework. Native iOS/Android deliberately have no language button and follow the
-effective device/app locale. Native runtime locale change handling still belongs to each host.
+localization framework. SwiftUI and Compose are to follow (decision 70), for iPad and other
+large-screen apps; on phones the SDK hides the selector and the app follows the device's language.
+Native runtime locale change handling still belongs to each host.
 
 Implemented web API: `languages` (unique BCP 47 `id`, native-name `label`, optional label
 `direction` and `disabled`), committed `selectedLocale`, `onLocaleRequest`, `pending`, `error`,

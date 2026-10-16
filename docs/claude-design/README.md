@@ -186,7 +186,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [DirectionStep](components/DirectionStep.md): A step of a route: the symbol, instruction and optional distance and duration.
 - [FloorSelector](components/FloorSelector.md): A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations.
 - [Itinerary](components/Itinerary.md): The whole route as a list: where it starts, every step with the current one emphasised, where it ends.
-- [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
+- [LanguageSwitcher](components/LanguageSwitcher.md): A language control built from Kozmos Select, in React today.
 - [LocationPin](components/LocationPin.md): The SDK's map result markers (decision 71): a result's number in a pill, a featured place's logo in a tile, and the green pin for a place whose details are open.
 - [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its direction mark, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
 - [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.

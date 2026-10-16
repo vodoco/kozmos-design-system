@@ -42,7 +42,10 @@ export interface LanguageSwitcherProps {
   className?: string;
 }
 
-/** Web-only map control. Native apps follow device/app language instead. */
+/**
+ * The map's language control. React only today; SwiftUI and Compose get it for
+ * large-screen apps (decision 70), and on phones the SDK hides it.
+ */
 export const LanguageSwitcher = React.forwardRef<
   HTMLButtonElement,
   LanguageSwitcherProps

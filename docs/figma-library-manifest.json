@@ -18813,6 +18813,7 @@
           "children",
           "emotion",
           "id",
+          "removeLabel",
           "role",
           "tabIndex",
           "title",

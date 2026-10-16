@@ -4714,11 +4714,12 @@ test.describe("components", () => {
         ),
       });
     }
-    // The cases the site was wrong about, and the one nobody expects.
-    const core = page.getByRole("table", {
-      name: "Core components by platform",
+    // The cases the site was wrong about, and the one nobody expects. The
+    // assistant is an SDK part, as Storybook files it.
+    const sdk = page.getByRole("table", {
+      name: `${componentIndex.lanes["product-sdk"].title} components by platform`,
     });
-    await expect(rowOf(core, "AICompanionPanel").getByRole("cell")).toHaveText([
+    await expect(rowOf(sdk, "AICompanionPanel").getByRole("cell")).toHaveText([
       "Implemented",
       "Not yet",
       "Not yet",
@@ -4886,8 +4887,10 @@ for (const colorScheme of ["light", "dark"] as const) {
       ),
     ).toBeLessThanOrEqual(0);
     await expect(code).toBeVisible();
+    // Its neighbours in the Product / SDK lane, which follows Storybook's
+    // SDK/ titles.
     await expect(
-      page.getByRole("link", { name: "← AdaptiveMapShell" }),
+      page.getByRole("link", { name: "← AISearchButton" }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "BrowseCategoriesPanel →" }),

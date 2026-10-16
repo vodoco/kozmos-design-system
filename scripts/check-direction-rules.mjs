@@ -292,10 +292,188 @@ try {
     );
     checked += 1;
   }
+  // Search: the magnifier sits 12 in from the inline start and the text
+  // clears it there, 36 in; the inline end keeps the field's own 12. A
+  // physical left-3 / pl-9 put both at the inline end of a right-to-left
+  // field, and WebKit's native search field never took pl-9 at all, so in
+  // Safari the text ran under the icon.
+  for (const dir of ["ltr", "rtl"]) {
+    const field = await page
+      .getByRole("searchbox", { name: `Search ${dir}` })
+      .evaluate((input) => {
+        const box = input.getBoundingClientRect();
+        const icon = input.parentElement
+          .querySelector("svg")
+          .getBoundingClientRect();
+        const style = getComputedStyle(input);
+        return {
+          iconLeft: icon.left - box.left,
+          iconRight: box.right - icon.right,
+          paddingLeft: parseFloat(style.paddingLeft),
+          paddingRight: parseFloat(style.paddingRight),
+        };
+      });
+    const where = `Search ${dir}: ${JSON.stringify(field)}`;
+    const [start, end] = dir === "rtl" ? ["Right", "Left"] : ["Left", "Right"];
+    assert.ok(
+      Math.abs(field[`icon${start}`] - 12) < 0.5,
+      `${where}: the icon is not 12 from the inline start (${start.toLowerCase()})`,
+    );
+    assert.equal(
+      field[`padding${start}`],
+      36,
+      `${where}: the text does not clear the icon at the inline start`,
+    );
+    assert.equal(
+      field[`padding${end}`],
+      12,
+      `${where}: the inline end lost the field's own padding`,
+    );
+    checked += 1;
+  }
+  // Toast: the close sits 8 from the inline end, the toast keeps 32 there
+  // for it and 24 at the start, and its words and action are 16 apart. A
+  // physical pr-8 / right-2 put the close and its room at the inline start
+  // of a right-to-left toast, and space-x-4's left margin put the space
+  // outside the action, which touched the words.
+  await page.getByTestId("toast-rtl").waitFor();
+  for (const dir of ["ltr", "rtl"]) {
+    const toast = await page.getByTestId(`toast-${dir}`).evaluate((root) => {
+      const box = root.getBoundingClientRect();
+      const close = root
+        .querySelector("button[toast-close]")
+        .getBoundingClientRect();
+      const text = root
+        .querySelector('[data-part="toast-text"]')
+        .getBoundingClientRect();
+      const action = [...root.querySelectorAll("button")]
+        .find((button) => button.textContent === "Undo")
+        .getBoundingClientRect();
+      const style = getComputedStyle(root);
+      // From the padding edge, which `end-2` is measured from, inside the
+      // toast's 1px border.
+      return {
+        closeLeft: close.left - box.left - parseFloat(style.borderLeftWidth),
+        closeRight:
+          box.right - parseFloat(style.borderRightWidth) - close.right,
+        paddingLeft: parseFloat(style.paddingLeft),
+        paddingRight: parseFloat(style.paddingRight),
+        // Along the reading direction: from the words to the action.
+        between:
+          getComputedStyle(root).direction === "rtl"
+            ? text.left - action.right
+            : action.left - text.right,
+      };
+    });
+    const where = `Toast ${dir}: ${JSON.stringify(toast)}`;
+    const [start, end] = dir === "rtl" ? ["Right", "Left"] : ["Left", "Right"];
+    assert.ok(
+      Math.abs(toast[`close${end}`] - 8) < 0.5,
+      `${where}: the close is not 8 from the inline end (${end.toLowerCase()})`,
+    );
+    assert.equal(
+      toast[`padding${end}`],
+      32,
+      `${where}: the toast keeps no room for its close at the inline end`,
+    );
+    assert.equal(
+      toast[`padding${start}`],
+      24,
+      `${where}: the toast's inline start is not its own 24`,
+    );
+    assert.ok(
+      Math.abs(toast.between - 16) < 0.5,
+      `${where}: the words and the action are not 16 apart`,
+    );
+    checked += 1;
+  }
+  // Tag: the remove mark is drawn 16 and the Tag is no taller for it, but
+  // its target is 24 wide and the Tag's whole height, centred on the mark, in
+  // both directions; with the spacing a 24 circle round the mark needs, that
+  // meets WCAG 2.2's 2.5.8. It was the mark's own 16. The target never
+  // reaches past the Tag: at 24 by 24 it stood 1px above and below, so a
+  // flush row of Tags that scrolls scrolled a pixel and drew a scrollbar.
+  for (const dir of ["ltr", "rtl"]) {
+    await page.getByTestId(`tag-${dir}`).scrollIntoViewIfNeeded();
+    const tag = await page.getByTestId(`tag-${dir}`).evaluate((root) => {
+      const plain = root.parentElement
+        .querySelector("[data-testid^='tag-plain']")
+        .getBoundingClientRect();
+      const box = root.getBoundingClientRect();
+      const button = root.querySelector("button");
+      const mark = button.getBoundingClientRect();
+      const x = mark.left + mark.width / 2;
+      const y = mark.top + mark.height / 2;
+      const hits = (px, py) => {
+        const hit = document.elementFromPoint(px, py);
+        return hit === button || button.contains(hit);
+      };
+      // Just inside each corner and edge of the target: 24 wide, the Tag's
+      // height.
+      const reach = 11.5;
+      const top = box.top + 0.5 - y;
+      const bottom = box.bottom - 0.5 - y;
+      const probes = [
+        [-reach, top],
+        [reach, top],
+        [-reach, bottom],
+        [reach, bottom],
+        [-reach, 0],
+        [reach, 0],
+        [0, top],
+        [0, bottom],
+      ];
+      return {
+        mark: { width: mark.width, height: mark.height },
+        height: box.height,
+        plainHeight: plain.height,
+        misses: probes
+          .filter(([dx, dy]) => !hits(x + dx, y + dy))
+          .map(([dx, dy]) => `${dx},${dy.toFixed(1)}`),
+        // A pixel outside the Tag, above and below the mark (half a pixel
+        // past an edge still hits in Chromium and WebKit).
+        beyond: [box.top - 1, box.bottom + 1].filter((py) => hits(x, py))
+          .length,
+      };
+    });
+    const where = `Tag ${dir}: ${JSON.stringify(tag)}`;
+    assert.deepEqual(
+      tag.mark,
+      { width: 16, height: 16 },
+      `${where}: the remove mark is not drawn 16`,
+    );
+    assert.equal(
+      tag.height,
+      tag.plainHeight,
+      `${where}: the remove button makes the Tag taller`,
+    );
+    assert.deepEqual(
+      tag.misses,
+      [],
+      `${where}: the remove target is not 24 wide and the Tag's height`,
+    );
+    assert.equal(
+      tag.beyond,
+      0,
+      `${where}: the remove target reaches past the Tag`,
+    );
+    const row = await page
+      .getByTestId(`tag-row-${dir}`)
+      .evaluate((element) => ({
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+      }));
+    assert.equal(
+      row.scrollHeight,
+      row.clientHeight,
+      `Tag ${dir}: a flush row of removable Tags scrolls ${row.scrollHeight - row.clientHeight}px up and down`,
+    );
+    checked += 1;
+  }
   await page.close();
 } finally {
   await browser.close();
 }
 console.log(
-  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners`,
+  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners; Search's icon and padding; Toast's close, padding and gap; Tag's remove target`,
 );

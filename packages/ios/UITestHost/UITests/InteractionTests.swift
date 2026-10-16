@@ -485,6 +485,35 @@ final class InteractionTests: XCTestCase {
         received("navigate cafe|details cafe")
     }
 
+    /// A Tag's remove mark is drawn small, but its target is 24 by 24 round
+    /// it (WCAG 2.2's 2.5.8), and it is a button named "Remove", as React's
+    /// is. It was the glyph's own size, read by its symbol's name.
+    func testTagRemoveIsNamedRemoveWithA24PointTarget() {
+        launch("tag-remove")
+        let remove = app.buttons["Remove"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 3), "the remove button is not named Remove")
+        var taps: [String] = []
+        // Just inside each edge and corner of a 24pt square centred on the
+        // mark: SwiftUI's own hit testing gives the 12pt glyph that target,
+        // so the Tag draws no larger for it.
+        for offset in [CGVector(dx: -11, dy: 0), CGVector(dx: 11, dy: 0),
+                       CGVector(dx: 0, dy: -11), CGVector(dx: 0, dy: 11),
+                       CGVector(dx: -11, dy: -11), CGVector(dx: 11, dy: -11),
+                       CGVector(dx: -11, dy: 11), CGVector(dx: 11, dy: 11)] {
+            remove.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(offset).tap()
+            taps.append("remove")
+            received(taps.joined(separator: "|"))
+        }
+    }
+
+    func testTagRemoveLabelCanBeLocalized() {
+        launch("tag-remove-localized")
+        XCTAssertTrue(app.buttons["Vegan entfernen"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["Remove"].exists)
+        app.buttons["Vegan entfernen"].tap()
+        received("remove")
+    }
+
     func testResultActionTargetsGrowForDynamicType() {
         launch("result-action-targets-large")
         for name in ["Go", "Details", "Order ahead"] {

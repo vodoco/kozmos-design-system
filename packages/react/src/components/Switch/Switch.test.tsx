@@ -44,4 +44,41 @@ describe("Switch", () => {
       "text-destructive-text",
     );
   });
+
+  it("keeps a caller's aria-describedby", () => {
+    render(
+      <>
+        <p id="switch-hint">Sends a push when your gate changes</p>
+        <Switch label="Gate alerts" aria-describedby="switch-hint" />
+      </>,
+    );
+    expect(screen.getByRole("switch")).toHaveAttribute(
+      "aria-describedby",
+      "switch-hint",
+    );
+  });
+
+  it("joins a caller's aria-describedby with its own error", () => {
+    render(
+      <>
+        <p id="switch-hint">Sends a push when your gate changes</p>
+        <Switch
+          label="Gate alerts"
+          aria-describedby="switch-hint"
+          error="Turn this on to continue"
+        />
+      </>,
+    );
+    const ids = screen
+      .getByRole("switch")
+      .getAttribute("aria-describedby")
+      ?.split(" ");
+    const errorId = screen.getByText("Turn this on to continue").id;
+    expect(ids).toEqual(["switch-hint", errorId]);
+  });
+
+  it("keeps a caller's aria-invalid when it sets no error", () => {
+    render(<Switch label="Gate alerts" aria-invalid />);
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-invalid", "true");
+  });
 });

@@ -312,6 +312,14 @@
   .kozmos-input {
     @apply flex h-field w-full rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[color:var(--primitives-colors-foreground-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:placeholder:text-muted-foreground disabled:opacity-100;
   }
+  /* Core Search's text clears its magnifier at the inline start, 36 in,
+     left or right as the field reads. Owned, after the recipe above, for the
+     reason the SDK input is: WebKit's native search field took neither the
+     `pl-9` utility this replaces nor its logical `ps-9`, so in Safari the
+     text ran under the icon. */
+  .kozmos-input.kozmos-search-input {
+    padding-inline-start: 2.25rem;
+  }
   .kozmos-input-warning {
     @apply border-warning text-warning-text focus-visible:ring-warning;
   }
@@ -1527,6 +1535,25 @@
      beside it is a control. */
   .kozmos-notice-more::after {
     width: max(100%, 44px);
+  }
+  /* Tag's remove: 16px drawn, at the end of a 22px Tag, its target 24 wide
+     and the Tag's own 22 tall round the mark (it was the mark's own 16). With
+     the spacing a 24 circle round the mark needs, that meets WCAG 2.2's
+     2.5.8. The 4px it reaches past the mark at each side lands in the Tag's
+     own 10px end padding and the 4px gap before its words; it never reaches
+     past the Tag, where a 24 square stood 1px above and below and made a
+     flush row of Tags that scrolls scroll a pixel. */
+  .kozmos-tag-remove {
+    position: relative;
+  }
+  .kozmos-tag-remove::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 22px;
+    transform: translate(-50%, -50%);
   }
 }
 /* Information is a separate task, not a detent of the browse/POI sheet. */

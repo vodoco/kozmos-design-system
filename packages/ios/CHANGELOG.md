@@ -8,6 +8,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Fixed
 
+- **A Tag's remove button is named in the product's words:** `KozmosTag` takes `removeLabel` ("Remove" by default, as React's), before `onRemove`, so a trailing closure still compiles. VoiceOver read the symbol's own "Close". Its 24pt target is unchanged.
 - **A CJK category name gets three lines (decision 78, GAP-010):** `KozmosCategoryTile` gives a name in Han, kana or Hangul a third line, so a long word such as カスタマーサービス shows whole rather than cut; other scripts keep two.
 - **The map shell's panel ends its content 16 above its edge (GAP-085):** `KozmosAdaptiveMapShell` leaves 16pt below the panel's content, as it does above it. In a side panel the content ends 16 above the panel's bottom edge; in the docked sheet, 16 above the bottom safe area, with the sheet's surface still reaching the screen's edge. It ran to the edge: a two-result list ended against the panel's bottom edge. A fitted sheet and a fitted side panel are 16pt taller.
   - A `KozmosPanelScrollView` still runs under that space, and under the home indicator, to the edge while it scrolls, and scrolled to its end its last row stops 16 above it. It no longer ignores the safe area the shell gives it: that took its content inset away, and a long list's last row stopped on the home indicator.
