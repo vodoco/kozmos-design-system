@@ -2,12 +2,14 @@
  * GAP-174: every Kozmos field draws in the engine named by ADAPTIVE_BROWSER
  * as Chromium draws it, on the built React package.
  *
- * WebKit (26) applies no `@scope` rule that has a scope-start selector to an
- * element that hosts a shadow root, and every text-like <input> and every
- * <textarea> hosts one: a scoped padding or colour reaches a <div> and a
- * <button>, never a field. Kozmos's utilities are emitted inside
- * `@scope ([data-kozmos-root])`, so in Safari a field holds only what owned
- * CSS (`@kozmos-owned`, unscoped) gives it.
+ * Playwright's WebKit 26.0 applies no `@scope` rule that has a scope-start
+ * selector to an element that hosts a shadow root, and every text-like
+ * <input> and every <textarea> hosts one: a scoped padding or colour reaches a
+ * <div>, a <button> and a <select>, never a field. Safari 26.0 to 26.3 ship
+ * it; Apple fixed it in 26.4 ("CSS rules within @scope not being applied to
+ * <input> and <textarea> elements"). Kozmos's utilities are emitted inside
+ * `@scope ([data-kozmos-root])`, so on those versions a field holds only what
+ * owned CSS (`@kozmos-owned`, unscoped) gives it.
  *
  * The fixture (packages/react/tests/integration/field-styles.fixture.tsx)
  * draws every part with an <input> or a <textarea> in light and dark, left to
@@ -29,8 +31,9 @@
  * - A caller's emitted padding class (px-4, pl-12) wins over a field's own
  *   where @scope reaches a field (Chromium, Firefox). In WebKit it cannot
  *   land, and the field keeps its own padding: the limit GAP-174 documents.
- *   Should WebKit start to apply @scope to a field, the check fails there
- *   and says so, so the limit is lifted from the docs.
+ *   When Playwright's WebKit starts to apply @scope to a field (26.4 does),
+ *   the check fails there and says so, so the expectations and the docs
+ *   follow: the limit stays for Safari 26.0 to 26.3.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-field-styles.mjs
@@ -428,7 +431,7 @@ try {
       "probe",
       "WebKit now applies @scope to an <input>",
       "probe",
-      "lift GAP-174's caller limit from the docs and these expectations",
+      "as Safari 26.4 does: expect a caller's class to win here too, and keep GAP-174's limit in the docs for Safari 26.0 to 26.3",
     );
   if (engine !== "webkit" && !scopeReachesFields)
     fail(
@@ -658,5 +661,5 @@ if (failures.size) {
   process.exit(1);
 }
 console.log(
-  `PASS field styles in ${engine}: ${reads} reads; ${drawn.fields} fields of ${drawn.parts} parts in ${drawn.boards} boards compute as in Chromium, at rest and focused, in light and dark, left to right and right to left, touch and compact, and disabled; owned CSS carries every placeholder's colour and opacity; OTPInput's cells, ColorPicker's swatch room, Search's and the date fields' icon room, Combobox's and PasswordInput's button room, AIInputBar's bare field and the SDK route fields hold; ${engine === "webkit" ? "a caller's px-4 and pl-12 cannot reach a field in WebKit (GAP-174), and each field keeps its own padding" : "a caller's px-4 and pl-12 win over every field's own"}`,
+  `PASS field styles in ${engine}: ${reads} reads; ${drawn.fields} fields of ${drawn.parts} parts in ${drawn.boards} boards compute as in Chromium, at rest and focused, in light and dark, left to right and right to left, touch and compact, and disabled; owned CSS carries every placeholder's colour and opacity; OTPInput's cells, ColorPicker's swatch room, Search's and the date fields' icon room, Combobox's and PasswordInput's button room, AIInputBar's bare field and the SDK route fields hold; ${engine === "webkit" ? "a caller's px-4 and pl-12 cannot reach a field in this WebKit, as in Safari 26.0 to 26.3 (GAP-174), and each field keeps its own padding" : "a caller's px-4 and pl-12 win over every field's own"}`,
 );

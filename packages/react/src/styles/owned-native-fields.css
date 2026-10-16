@@ -57,10 +57,10 @@
     @apply border-success text-success-text focus-visible:ring-success;
   }
 }
-/* GAP-174: what every part's field must hold in Safari. WebKit applies no
-   @scope rule to an <input> or a <textarea> (to any element that hosts a
-   shadow root), so there a field takes only these unscoped rules, never a
-   utility. Each part's field is keyed by a class of its own, after
+/* GAP-174: what every part's field must hold in Safari. Safari 26.0 to 26.3
+   apply no @scope rule to an <input> or a <textarea> (fixed in 26.4; WebKit
+   26.0 misses any element that hosts a shadow root), so there a field takes
+   only these unscoped rules, never a utility. Each part's field is keyed by a class of its own, after
    .kozmos-input. Where a caller's className reaches the field (ColorPicker's),
    its utilities stay on the element too: scoped and nearer, they keep a
    caller's class winning in Chromium and Firefox. A caller's class cannot
