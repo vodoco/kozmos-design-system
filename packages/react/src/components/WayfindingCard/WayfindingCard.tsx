@@ -127,19 +127,21 @@ export const WayfindingInputRow = React.forwardRef<
           </div>
 
           <div className="min-w-0 flex-1 flex flex-col gap-2 relative">
+            {/* 40 tall, raised, with room for the swap: owned CSS, since
+                WebKit applies no scoped utility to an <input> (GAP-174). */}
             <Input
               aria-label={originLabel}
               value={originValue}
               onChange={(e) => onOriginChange?.(e.target.value)}
               placeholder={originPlaceholder}
-              className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
+              className="kozmos-wayfinding-input"
             />
             <Input
               aria-label={destinationLabel}
               value={destinationValue}
               onChange={(e) => onDestinationChange?.(e.target.value)}
               placeholder={destinationPlaceholder}
-              className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
+              className="kozmos-wayfinding-input"
             />
 
             <WithoutGenericClick>

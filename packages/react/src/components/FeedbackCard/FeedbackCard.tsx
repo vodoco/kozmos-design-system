@@ -123,7 +123,11 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
                 placeholder={commentPlaceholder}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px] resize-none bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
+                // On a wash with no edge, not resizable. The owned classes draw
+                // it in WebKit, which applies no scoped utility to a
+                // <textarea> (GAP-174); the utilities stay, as the wash is a
+                // raw colour with no role, and tokens:raw:check counts it here.
+                className="kozmos-washed-field kozmos-feedback-comment min-h-[80px] resize-none bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
               />
               <WithoutGenericClick>
                 <Button

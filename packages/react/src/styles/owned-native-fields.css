@@ -57,3 +57,92 @@
     @apply border-success text-success-text focus-visible:ring-success;
   }
 }
+/* GAP-174: what every part's field must hold in Safari. WebKit applies no
+   @scope rule to an <input> or a <textarea> (to any element that hosts a
+   shadow root), so there a field takes only these unscoped rules, never a
+   utility. Each part's field is keyed by a class of its own, after
+   .kozmos-input. Where a caller's className reaches the field (ColorPicker's),
+   its utilities stay on the element too: scoped and nearer, they keep a
+   caller's class winning in Chromium and Firefox. A caller's class cannot
+   land on a field in WebKit; only these rules do. Measured by
+   scripts/check-field-styles.mjs in all three engines. */
+@kozmos-owned {
+  /* OTPInput: each cell a 44 square at any density, the digit centred. */
+  .kozmos-input.kozmos-otp-cell {
+    @apply h-11 w-11 shrink-0 p-0 text-center text-lg;
+  }
+  /* ColorPicker: the swatch over the field's start, 8 from the left edge as
+     it always sat (physical, in either direction); the text 48 in from both
+     edges, clear of the swatch and of the open button; the value in mono
+     capitals, in the field and in the panel's HEX. */
+  .kozmos-color-picker-swatch {
+    @apply absolute left-2 z-10 h-8 w-8 cursor-pointer rounded-control border border-input bg-transparent p-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .kozmos-input.kozmos-color-picker-input {
+    @apply min-w-0;
+    padding-inline: 3rem;
+  }
+  .kozmos-color-picker-value {
+    @apply font-mono uppercase;
+  }
+  /* The panel's hue and opacity sliders, and its format, value and palette
+     controls. */
+  .kozmos-color-picker-range {
+    @apply block h-5 w-full min-w-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .kozmos-color-picker-control {
+    @apply h-9 min-w-0 rounded-control border border-input bg-background px-2 text-sm;
+  }
+  /* What the preflight gave the panel's controls before they were reset: the
+     number controls' spinners, Firefox's own focus ring, a disabled cursor. */
+  .kozmos-color-picker-control::-webkit-inner-spin-button,
+  .kozmos-color-picker-control::-webkit-outer-spin-button {
+    height: auto;
+  }
+  .kozmos-color-picker-range:-moz-focusring,
+  .kozmos-color-picker-control:-moz-focusring {
+    outline: auto;
+  }
+  .kozmos-color-picker-control:disabled {
+    cursor: default;
+  }
+  /* AIInputBar: the bare field inside its pill, which draws the edge, the
+     fill and the focus ring. */
+  .kozmos-ai-input {
+    @apply min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
+  }
+  /* RoutingInputGroup's and FeedbackCard's fields: no edge, on a wash that is
+     black at 5 % on light and white at 10 % on dark, 10 and 20 focused. The
+     theme is the nearest root's, as the dark: variant reads it: a root sets
+     the wash for what is inside it, a nested root its own. The wash has no
+     role; its utilities stay on the fields, where tokens:raw:check counts it,
+     and this repeats them for WebKit. */
+  [data-kozmos-root] {
+    --kozmos-field-wash: rgb(0 0 0 / theme(opacity.5));
+    --kozmos-field-wash-focus: rgb(0 0 0 / theme(opacity.10));
+  }
+  [data-kozmos-root][data-theme="dark"] {
+    --kozmos-field-wash: rgb(255 255 255 / theme(opacity.10));
+    --kozmos-field-wash-focus: rgb(255 255 255 / theme(opacity.20));
+  }
+  .kozmos-input.kozmos-washed-field,
+  .kozmos-textarea.kozmos-washed-field {
+    @apply border-transparent transition-all duration-300;
+    background-color: var(--kozmos-field-wash);
+  }
+  .kozmos-input.kozmos-washed-field:focus-visible,
+  .kozmos-textarea.kozmos-washed-field:focus-visible {
+    background-color: var(--kozmos-field-wash-focus);
+  }
+  .kozmos-input.kozmos-routing-input {
+    @apply h-10;
+  }
+  .kozmos-textarea.kozmos-feedback-comment {
+    @apply min-h-[80px] resize-none;
+  }
+  /* WayfindingInputRow's fields: 40 tall, raised on half the muted fill with
+     no edge, 64 left at the end for the swap button, and a 1 ring. */
+  .kozmos-input.kozmos-wayfinding-input {
+    @apply h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1;
+  }
+}

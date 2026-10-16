@@ -209,9 +209,11 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
               disabled ? "cursor-not-allowed bg-muted" : "bg-card",
             )}
           >
+            {/* Owned CSS: WebKit applies no scoped utility to an <input>
+                (GAP-174), and drew a bordered native field in the pill. */}
             <input
               aria-label={inputLabel}
-              className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground"
+              className="kozmos-reset kozmos-ai-input"
               disabled={disabled}
               onChange={(event) => onValueChange(event.target.value)}
               // While the conversation is live the empty field says where it
