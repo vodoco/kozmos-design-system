@@ -60,11 +60,11 @@ budgets, gzipped:
 | Any one public export, bundled alone | 8.5 KB |
 | `Button` alone                       | 2 KB   |
 | Every export at once                 | 88 KB  |
-| The stylesheet                       | 31 KB  |
+| The stylesheet                       | 32 KB  |
 
 The whole library's budget went from 64 to 68 KB on 2026-09-28 (decision 53), to 80 KB on 2026-09-30
-and to 88 KB on 2026-10-06 (decision 56); the stylesheet's from 30 to 30.5 KB on 2026-10-02 and to 31 KB on 2026-10-16 (decision 97), when Track 2's markers
-and compact density together measured 30.63 KB; and the per-export budget from 8 to 8.5 KB on 2026-10-16 (decision
+and to 88 KB on 2026-10-06 (decision 56); the stylesheet's from 30 to 30.5 KB on 2026-10-02 and to 32 KB on 2026-10-16 (decision 97), when Track 2's markers
+and compact density together measured 30.63 KB, with room for the next density groups; and the per-export budget from 8 to 8.5 KB on 2026-10-16 (decision
 90), when compact density's `DensityScope` took `AdaptiveMapShell` to 8.03 KB on CI. Each was Olcay's decision. The `Button` budget is unchanged.
 
 ### Package-Level Budgets
@@ -329,7 +329,7 @@ The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.
 | 2026-10-02 | The stylesheet's budget went from 30 to 30.5 KB for the SDK result look (#190); it measured 30.12 KB                           |
 | 2026-10-06 | Everything's budget went from 80 to 88 KB (decision 56); 0.9.0 measured 79.86 KB on CI, 79.21 KB here after two lossless trims |
 | 2026-10-16 | The per-export budget went from 8 to 8.5 KB (decision 90); `AdaptiveMapShell` measured 8.03 KB on CI with compact density      |
-| 2026-10-16 | The stylesheet's budget went from 30.5 to 31 KB (decision 97); Track 2 and compact density together measured 30.63 KB          |
+| 2026-10-16 | The stylesheet's budget went from 30.5 to 32 KB (decision 97); Track 2 and compact density together measured 30.63 KB          |
 
 No render or Core Web Vitals history is recorded.
 
