@@ -26,7 +26,7 @@ export interface AISearchButtonProps extends React.ButtonHTMLAttributes<HTMLButt
  */
 const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
   ({ className, label = "AI search", type = "button", ...props }, ref) => (
-    // The SDK's touch geometry under any density (decision 82).
+    // The SDK's touch geometry under any density (decision 89).
     <DensityScope density="touch" asChild>
       <button
         ref={ref}

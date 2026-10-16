@@ -77,7 +77,7 @@ export const POICard = forwardRef<HTMLDivElement, POICardProps>(
     );
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <Card
           ref={ref}

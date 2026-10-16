@@ -818,7 +818,7 @@ describe("AICompanionPanel", () => {
       [...node.classList].filter((name) => name !== "shrink-0").sort();
     expect(classes(close)).toEqual(classes(reference));
     // The icon button's size, kept 44 under any density: the panel holds the
-    // SDK's touch geometry (decision 82).
+    // SDK's touch geometry (decision 89).
     expect(close).toHaveClass("h-icon-control", "w-icon-control");
     expect(close.closest('[data-kozmos-density="touch"]')).not.toBeNull();
     expect(close).not.toHaveClass("rounded-pill");

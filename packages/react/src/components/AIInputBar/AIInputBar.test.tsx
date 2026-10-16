@@ -102,7 +102,7 @@ describe("AIInputBar", () => {
     );
     const send = screen.getByRole("button", { name: "Send" });
     // The icon button's size, kept 44 under any density: the bar holds the
-    // SDK's touch geometry (decision 82).
+    // SDK's touch geometry (decision 89).
     expect(send).toHaveClass("h-icon-control", "w-icon-control");
     expect(send.closest('[data-kozmos-density="touch"]')).not.toBeNull();
     expect(send).not.toHaveClass("h-10");

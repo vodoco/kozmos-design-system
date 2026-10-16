@@ -157,7 +157,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
         details?.tags?.length,
       );
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <article
           ref={root}

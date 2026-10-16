@@ -114,7 +114,7 @@ const MapOverlay = React.forwardRef<HTMLDivElement, MapOverlayProps>(
     } as React.CSSProperties;
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}

@@ -95,9 +95,9 @@ function DensityColumn({ density }: { density: ThemeDensity }) {
 }
 
 /**
- * Decision 82: the same controls at both densities. Touch keeps every control
- * at least 44 tall, as products and the SDK draw them; compact is for
- * pointer-first desktop tools such as Pointr Cloud.
+ * Decision 82: the same controls at both densities. Touch keeps today's
+ * sizes, 44 for buttons, icon buttons and fields, as products and the SDK draw
+ * them; compact is for pointer-first desktop tools such as Pointr Cloud.
  */
 export const Density: Story = {
   render: () => (

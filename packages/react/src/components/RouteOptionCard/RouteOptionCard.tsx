@@ -45,7 +45,7 @@ const RouteOptionCard = React.forwardRef<
     const warningId = option.warning ? `${instanceId}-warning` : undefined;
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <button
           ref={ref}

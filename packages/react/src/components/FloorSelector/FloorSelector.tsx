@@ -357,7 +357,7 @@ const CollapsibleFloorSelector = React.forwardRef<
 
     return (
       <TooltipProvider>
-        {/* The SDK's touch geometry under any density (decision 82). */}
+        {/* The SDK's touch geometry under any density (decision 89). */}
         <DensityScope density="touch" asChild>
           <div
             ref={ref}
@@ -624,7 +624,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
 
     if (variant === "compact-stepper") {
       return (
-        // The SDK's touch geometry under any density (decision 82).
+        // The SDK's touch geometry under any density (decision 89).
         <DensityScope density="touch" asChild>
           <div
             ref={ref}
@@ -678,7 +678,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
     }
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}

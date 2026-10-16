@@ -72,7 +72,7 @@ const MapStatusPill = React.forwardRef<HTMLDivElement, MapStatusPillProps>(
     const mark = icon === undefined ? MARK[tone] : icon;
     const says = children != null && children !== false && children !== "";
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}

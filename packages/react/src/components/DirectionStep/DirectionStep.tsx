@@ -109,7 +109,7 @@ export interface DirectionStepProps extends React.HTMLAttributes<HTMLDivElement>
 const DirectionStep = React.forwardRef<HTMLDivElement, DirectionStepProps>(
   ({ className, type, instruction, distance, duration, ...props }, ref) => {
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}

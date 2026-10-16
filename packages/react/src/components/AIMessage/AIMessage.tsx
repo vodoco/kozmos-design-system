@@ -52,7 +52,7 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
     },
     ref,
   ) => (
-    // The SDK's touch geometry under any density (decision 82).
+    // The SDK's touch geometry under any density (decision 89).
     <DensityScope density="touch" asChild>
       <div
         className={cn("flex w-full flex-col gap-2", className)}

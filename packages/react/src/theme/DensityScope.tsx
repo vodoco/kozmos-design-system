@@ -21,7 +21,8 @@ export interface DensityScopeProps {
  * compact editor's toolbar on a touch page. Its controls, the providers nested
  * in it and the popovers it opens take `density`, and the theme, its tokens
  * and the design configuration around it carry on unchanged. Every SDK part's
- * root is a touch scope, so it keeps the SDK's geometry on a compact page.
+ * root is a touch scope, so it keeps the SDK's geometry on a compact page
+ * (decision 89).
  */
 export function DensityScope({
   density,

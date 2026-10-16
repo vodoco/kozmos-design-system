@@ -180,7 +180,7 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
     }
 
     return (
-      // The SDK's geometry under any density (decision 82): a compact
+      // The SDK's geometry under any density (decision 89): a compact
       // ThemeProvider leaves the bar touch, its 44 send included.
       <DensityScope density="touch" asChild>
         <form

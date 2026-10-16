@@ -18,7 +18,8 @@
  *   room for their actions at the end.
  *
  * SDK parts (SearchBar, AIInputBar) keep the SDK's touch geometry inside a
- * compact provider: their roots are marked touch, which resets the sizes.
+ * compact provider (decision 89): their roots are marked touch, which resets
+ * the sizes.
  *
  * A stacked dialog footer's buttons are each their size's height, and a
  * dialog's and a drawer's close sit on their title as touch places them,

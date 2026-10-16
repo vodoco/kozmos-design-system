@@ -134,7 +134,7 @@ const MapControlButton = React.forwardRef<
     const drawsLabel = showLabel || !stateLabel;
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <Button
           ref={ref}

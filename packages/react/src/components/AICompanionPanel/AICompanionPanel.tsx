@@ -298,7 +298,7 @@ const AICompanionPanel = React.forwardRef<
 
     if (!open) return null;
     return (
-      // The SDK's geometry under any density (decision 82): a compact
+      // The SDK's geometry under any density (decision 89): a compact
       // ThemeProvider leaves the panel touch, its 44 close included.
       <DensityScope density="touch" asChild>
         <div

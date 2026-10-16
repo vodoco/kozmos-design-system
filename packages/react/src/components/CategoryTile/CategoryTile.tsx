@@ -56,7 +56,7 @@ const CategoryTile = React.forwardRef<HTMLButtonElement, CategoryTileProps>(
       : undefined;
 
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <button
           ref={ref}

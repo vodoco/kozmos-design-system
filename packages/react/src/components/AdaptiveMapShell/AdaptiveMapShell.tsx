@@ -1075,7 +1075,7 @@ const AdaptiveMapShell = React.forwardRef<
 
     return (
       <MapShellPresentationContext.Provider value={layout.presentation}>
-        {/* The SDK's touch geometry under any density (decision 82). */}
+        {/* The SDK's touch geometry under any density (decision 89). */}
         <DensityScope density="touch" asChild>
           <div
             ref={root}

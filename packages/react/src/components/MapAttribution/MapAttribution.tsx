@@ -104,7 +104,7 @@ export const MapAttribution = React.forwardRef<
     }, [hasCredits]);
     if (!hasBrand && !hasCredits) return null;
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <section
           ref={ref}

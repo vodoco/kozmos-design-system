@@ -80,7 +80,7 @@ const CategoryField = React.forwardRef<HTMLDivElement, CategoryFieldProps>(
     ref,
   ) => {
     const field = (
-      // The SDK's geometry under any density (decision 82), with or without a
+      // The SDK's geometry under any density (decision 89), with or without a
       // trailing slot.
       <DensityScope density="touch" asChild>
         <div
@@ -155,7 +155,7 @@ const CategoryField = React.forwardRef<HTMLDivElement, CategoryFieldProps>(
     if (!trailing) return field;
 
     return (
-      // The SDK's geometry under any density (decision 82): a compact
+      // The SDK's geometry under any density (decision 89): a compact
       // ThemeProvider leaves this part, and what sits in it, touch.
       <DensityScope density="touch" asChild>
         <div

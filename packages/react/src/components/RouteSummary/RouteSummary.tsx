@@ -108,7 +108,7 @@ const RouteSummaryNavigation = React.forwardRef<
       </h2>
     );
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}
@@ -191,7 +191,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
       ...rest
     } = props;
     return (
-      // The SDK's touch geometry under any density (decision 82).
+      // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
         <div
           ref={ref}
