@@ -69,8 +69,8 @@ class KozmosSearchSheetPaparazziTest {
                     KozmosPOIResultCard(poi = poi, result = KozmosPOIResultPresentation(poiId = "p", resultIndex = 1, selected = false, featured = false, floorId = "b:2"), onSelect = {}, currentFloorId = "b:2")
                     KozmosPOIResultCard(poi = poi.copy(id = "q", name = "Starbucks", floorId = "b:1", floorLabel = "First Floor"), result = KozmosPOIResultPresentation(poiId = "q", resultIndex = 2, selected = false, featured = false, floorId = "b:1"), onSelect = {}, currentFloorId = "b:2")
                     KozmosUserLocationMarker(showHeading = false)
-                    // A category's pin: the marker in the category's colour.
-                    KozmosLocationPin(tint = KozmosCategoryTint(KozmosColors.semanticsCategoryAccentRed, KozmosInkedFill(KozmosColors.semanticsCategoryFillRed, KozmosColors.semanticsCategoryOnfillRed)))
+                    // A result's marker at rest: the SDK's pill, its dot for no number.
+                    KozmosLocationPin()
                 }
             }
         }

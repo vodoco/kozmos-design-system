@@ -558,12 +558,56 @@ final class InteractionTests: XCTestCase {
             ("Selected static", true, false), ("Selected disabled", true, false),
             ("Selected action", true, true), ("Rest action", false, true), ("Rest static", false, false)
         ] {
-            let name = "\(label), 2"
+            // The label is the whole name (Olcay, 15 Oct 2026): no number is added.
+            let name = label
             let pin = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", name)).firstMatch
             XCTAssertTrue(pin.exists, name)
             XCTAssertEqual(pin.isSelected, selected, name)
             if pressable { XCTAssertTrue(app.buttons[name].exists) }
         }
+    }
+
+    /// Decision 71 (GAP-120), with a real finger: a double tap on a pin
+    /// selects it once, at the first tap, and opens the place's details once,
+    /// at the second, which is not a second selection; a tap after a pause
+    /// selects again. The first tap selects the pin, which redraws it, and
+    /// the second still pairs with it.
+    func testADoubleTapOnAPinSelectsItOnceAndOpensItOnce() {
+        launch("pin-open")
+        let pin = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Gate 12")).firstMatch
+        XCTAssertTrue(pin.waitForExistence(timeout: 3))
+        pin.doubleTap()
+        received("select|open")
+        // Past the double-tap time: a new tap, and a selection.
+        Thread.sleep(forTimeInterval: 0.6)
+        pin.tap()
+        received("select|open|select")
+    }
+
+    /// A disabled pin with an action is a dimmed button, as React's
+    /// aria-disabled button and Compose's disabled Role.Button are: XCUI finds
+    /// it as a button that is not enabled, and a tap or a double tap on it
+    /// runs nothing.
+    func testADisabledPinIsADimmedButtonThatRunsNothing() {
+        launch("pin-disabled")
+        let pin = app.buttons["Gate 12"]
+        XCTAssertTrue(pin.waitForExistence(timeout: 3), "the disabled pin is not a button")
+        XCTAssertFalse(pin.isEnabled, "the disabled pin is not heard as dimmed")
+        pin.tap()
+        pin.doubleTap()
+        received("none")
+    }
+
+    /// The pin's target is 44 tall, centred on its 38 body: a tap 2 inside
+    /// its top edge, above the drawn pill, still reaches it.
+    func testAPinTakesATapAboveItsPillInsideIts44PointTarget() {
+        launch("pin-open")
+        let pin = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Gate 12")).firstMatch
+        XCTAssertTrue(pin.waitForExistence(timeout: 3))
+        XCTAssertGreaterThanOrEqual(pin.frame.width, 44, "\(pin.frame)")
+        XCTAssertGreaterThanOrEqual(pin.frame.height, 44, "\(pin.frame)")
+        pin.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0)).withOffset(CGVector(dx: 0, dy: 2)).tap()
+        received("select")
     }
 
     func testRemoveIsItsOwnButtonAndTheChipsDoubleTapIsTheChips() {

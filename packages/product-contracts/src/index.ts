@@ -437,8 +437,8 @@ export interface FloorPresentation {
   /**
    * How many results sit on this level. Drawn as a small marker on the
    * floor's button, so a visitor can see that the answer is upstairs without
-   * changing level to find out — today only the hollow pins say so, and only
-   * once the map is looked at (GAP-070).
+   * changing level to find out. The map marks no results on another level
+   * (decision 80), so this count is the one place that says so (GAP-070).
    *
    * Absent means unknown, which is not the same as zero: a selector given no
    * counts marks nothing, rather than marking every level as empty.

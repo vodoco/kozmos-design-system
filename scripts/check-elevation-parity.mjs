@@ -284,7 +284,6 @@ for (const mode of ["light", "dark"]) {
       "the shell's paired chrome, one half of which casts upward",
     ColorPicker:
       "the handle's hard ring, which must stay visible on any colour beneath it",
-    LocationPin: "a pin has to read against an arbitrary map",
   };
   const ANDROID_ALLOWED = {
     Card: "deliberately flat at 0.dp on Android",

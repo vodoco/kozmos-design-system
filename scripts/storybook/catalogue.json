@@ -517,18 +517,13 @@
       "component": "LocationPin",
       "exports": [
         "Default",
-        "NumberedSelected",
-        "NumberedAtRest",
-        "NumberedOneSelected",
-        "FeaturedLogoAndPlain",
-        "OtherFloor",
-        "VariantsAtRest",
-        "InTheDark",
+        "Results",
+        "Selected",
+        "Featured",
+        "Place",
+        "OnAMap",
         "RightToLeft",
-        "ExternalLabel",
-        "Tinted",
-        "TintedSelected",
-        "TintedOffFloor"
+        "ExternalLabel"
       ]
     },
     {

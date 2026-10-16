@@ -264,16 +264,21 @@ struct VenueMapCanvas: View {
         .accessibilityHidden(true)
     }
 
+    /// Every place on the floor, as the SDK's map marks its results: the
+    /// destination is the place on its own (the green pin), the others result
+    /// markers, filled when selected. Each marker's anchor, the pointer's tip
+    /// or the dot, is at the centre of its frame, so `.position` puts it on
+    /// the place.
     private func pins(_ layout: PlanLayout) -> some View {
         let labelled = labelledPins
         return ForEach(pois) { poi in
             KozmosLocationPin(
-                variant: variant(for: poi),
-                size: size(for: poi),
-                label: labelled.contains(poi.id) ? poi.presentation.name : nil,
+                label: poi.presentation.name,
+                externalLabel: labelled.contains(poi.id) ? poi.presentation.name : nil,
                 labelPlacement: poi.position.y > PlanSpace.size.height * 0.75 ? .top : .bottom,
                 selected: poi.id == selectedPOIId,
                 featured: poi.featured,
+                place: poi.id == destinationPOIId,
                 isDisabled: poi.presentation.availability == .closed,
                 onSelect: { onSelect(poi.id) }
             )
@@ -286,18 +291,5 @@ struct VenueMapCanvas: View {
         if let selectedPOIId { labelled.insert(selectedPOIId) }
         if let destinationPOIId { labelled.insert(destinationPOIId) }
         return labelled
-    }
-
-    /// Resting pins recede; the ones the visitor is working with come forward.
-    private func variant(for poi: VenuePOI) -> KozmosLocationPinVariant {
-        if poi.id == destinationPOIId { return .accent }
-        if poi.id == selectedPOIId || highlightedPOIIds.contains(poi.id) { return .primary }
-        return .secondary
-    }
-
-    private func size(for poi: VenuePOI) -> KozmosLocationPinSize {
-        if poi.id == destinationPOIId { return .lg }
-        if poi.id == selectedPOIId || highlightedPOIIds.contains(poi.id) { return .md }
-        return .sm
     }
 }
