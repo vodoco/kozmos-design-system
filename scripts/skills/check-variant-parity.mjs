@@ -104,6 +104,11 @@ const INTENTIONAL = {
     android:
       "Expressed as LocalKozmosUseDarkTokens and the generated KozmosThemeTokens rather than as a parameter: Compose reads it from the composition, not from a prop.",
   },
+  "ThemeProvider.density": {
+    ios: "decision 82: density is web only; SwiftUI and Compose stay touch.",
+    android:
+      "decision 82: density is web only; SwiftUI and Compose stay touch.",
+  },
   "Sidebar.variant": {
     figma:
       "Modelled as part of the Content axis: SIDEBAR_CONTENT is Basic, Sections, Tools, Rail, so the rail variant is expressible. A separate Variant axis would multiply the set without adding a state designers cannot already pick.",
