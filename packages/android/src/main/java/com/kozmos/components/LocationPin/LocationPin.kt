@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -61,6 +62,8 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.poiresultcard.KozmosResultTapGate
+import com.kozmos.providers.KozmosAnalyticsEvent
+import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosShadows
 import com.kozmos.tokens.KozmosThemeTokens
@@ -69,7 +72,8 @@ import kotlin.math.sqrt
 
 /**
  * Where [KozmosLocationPin]'s `externalLabel` sits beside the marker. Left and
- * Right are the start and end sides: they change places in right to left.
+ * Right are the map's, in every language (Olcay, 16 Oct): a map doesn't mirror
+ * in right to left, and MapLibre places a symbol's text physically.
  */
 enum class KozmosLocationPinLabelPlacement {
     Top,
@@ -257,33 +261,61 @@ fun KozmosLocationPin(
     val readsSelected = selected || kind == MarkerKind.Place
     val pressable = onClick != null || onOpen != null
     val tapGate = remember { KozmosResultTapGate() }
+    // The product's analytics: the same events React's pin sends.
+    val trackEvent = LocalKozmosAnalytics.current
+    val kindName = kind.name.lowercase()
+    fun pinEvent(eventName: String, extra: Map<String, String> = emptyMap()) = trackEvent(
+        KozmosAnalyticsEvent(
+            component = "LocationPin",
+            eventName = eventName,
+            properties = buildMap {
+                put("kind", kindName)
+                if (number != null) put("number", number.toString())
+                putAll(extra)
+            }
+        )
+    )
+    val clicked: () -> Unit = {
+        pinEvent("location_pin_clicked", mapOf("selected" to selected.toString()))
+        onClick?.invoke()
+    }
+    val opened: () -> Unit = {
+        pinEvent("location_pin_opened")
+        onOpen?.invoke()
+    }
     val doubleTapTimeout = LocalViewConfiguration.current.doubleTapTimeoutMillis
     val interaction = remember { MutableInteractionSource() }
 
     val target = Modifier
         .then(
-            if (pressable) {
+            if (pressable && enabled) {
                 Modifier.clickable(
                     interactionSource = interaction,
                     // A marker on a map draws no ripple: the SDK's does not.
                     indication = null,
-                    enabled = enabled,
                     role = Role.Button,
                     onClick = {
-                        // A semantics action invoked directly stays inert when disabled.
-                        if (!enabled) return@clickable
                         // With onOpen, a second quick tap opens and a third
                         // does nothing; the first is the tap, at once.
                         if (onOpen != null) {
                             when (tapGate.tap(TAP_KEY, doubleTapTimeout)) {
-                                KozmosResultTapGate.Tap.Open -> return@clickable onOpen()
+                                KozmosResultTapGate.Tap.Open -> return@clickable opened()
                                 KozmosResultTapGate.Tap.Ignore -> return@clickable
                                 KozmosResultTapGate.Tap.Select -> Unit
                             }
                         }
-                        onClick?.invoke()
+                        clicked()
                     }
                 )
+            } else if (pressable) {
+                // Disabled: still a button to TalkBack, but with no pointer
+                // input, so a press goes through to the map, as on React and
+                // SwiftUI. clickable(enabled = false) still takes the touch
+                // down (Compose 1.6), which blocked a pan begun on the pin.
+                Modifier.semantics {
+                    role = Role.Button
+                    disabled()
+                }
             } else {
                 Modifier
             }
@@ -295,7 +327,7 @@ fun KozmosLocationPin(
             // TalkBack's double tap is the one activation, the tap: opening
             // is offered as an action of its own.
             if (onOpen != null && enabled) {
-                customActions = listOf(CustomAccessibilityAction(openLabel) { onOpen(); true })
+                customActions = listOf(CustomAccessibilityAction(openLabel) { opened(); true })
             }
         }
 
@@ -358,8 +390,8 @@ fun KozmosLocationPin(
         val anchorY = drawTop + geometry.anchorY.toPx()
         val shapeMiddle = drawTop + geometry.shapeMiddle.toPx()
         val gap = KozmosDimensions.primitivesLayoutSpacing50.toPx()
-        // The label beside the drawing, in left-to-right terms: Left is the
-        // start side.
+        // The label beside the drawing: Left and Right are the map's, physical
+        // in either direction.
         val labelAt = text?.let {
             when (labelPlacement) {
                 KozmosLocationPinLabelPlacement.Top -> Offset(anchorX - it.width / 2f, drawTop - gap - it.height)
@@ -374,9 +406,10 @@ fun KozmosLocationPin(
         val bottom = maxOf(box.height.toFloat(), (labelAt?.y ?: 0f) + (text?.height ?: 0))
         val width = (right - left).roundToInt()
         val height = (bottom - top).roundToInt()
-        val rtl = layoutDirection == LayoutDirection.Rtl
-        fun x(at: Float, w: Int): Int = if (rtl) (width - (at - left) - w).roundToInt() else (at - left).roundToInt()
-        val boxX = x(0f, box.width)
+        // Placed absolutely (`place`, not `placeRelative`), so nothing here
+        // mirrors in right to left, as a map's points don't.
+        fun x(at: Float): Int = (at - left).roundToInt()
+        val boxX = x(0f)
         val boxY = (-top).roundToInt()
         layout(
             width,
@@ -387,7 +420,7 @@ fun KozmosLocationPin(
             )
         ) {
             box.place(boxX, boxY)
-            if (text != null && labelAt != null) text.place(x(labelAt.x, text.width), (labelAt.y - top).roundToInt())
+            if (text != null && labelAt != null) text.place(x(labelAt.x), (labelAt.y - top).roundToInt())
         }
     }
 }

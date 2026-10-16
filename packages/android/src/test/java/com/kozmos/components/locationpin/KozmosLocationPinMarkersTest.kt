@@ -423,6 +423,38 @@ class KozmosLocationPinMarkersTest {
     }
 
     /**
+     * Left and Right are the map's, in every language (Olcay, 16 Oct): a map
+     * doesn't mirror in right to left, and MapLibre places a symbol's text
+     * physically, so a label on a pin's left stays on its left.
+     */
+    @Test
+    fun aSideLabelIsTheMapsLeftOrRightInRightToLeft() {
+        val wrong = mutableListOf<String>()
+        val ink = near(0xFF17191C.toInt(), 60)
+        for (placement in listOf(KozmosLocationPinLabelPlacement.Left, KozmosLocationPinLabelPlacement.Right)) {
+            val frame = draw(dark = false) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    KozmosLocationPin(number = 3, externalLabel = "Gate 12", labelPlacement = placement)
+                }
+            }
+            val pill = frame.bounds(matches = near(theme600(false), 6))
+            val label = frame.bounds(matches = ink)
+            println("Olcay 16 Oct Android, right to left, $placement: the pill $pill, the label's ink $label")
+            if (pill == null || label == null) {
+                wrong += "$placement: drew no pill ($pill) or no label ($label)"
+                continue
+            }
+            if (placement == KozmosLocationPinLabelPlacement.Left && label.right > pill.left - 3.5f) {
+                wrong += "in right to left, the Left label is not on the map's left (label ends at ${label.right}, the pill starts at ${pill.left})"
+            }
+            if (placement == KozmosLocationPinLabelPlacement.Right && label.left < pill.right + 3.5f) {
+                wrong += "in right to left, the Right label is not on the map's right (label starts at ${label.left}, the pill ends at ${pill.right})"
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
      * A label at the start or end is centred on the marker's shape, as React
      * and SwiftUI centre it: the pill's middle, 16 below its top, not the pill
      * with its pointer; the place's circle, 20 below its top, not the

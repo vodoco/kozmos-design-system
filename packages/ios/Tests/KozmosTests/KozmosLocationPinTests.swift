@@ -267,6 +267,37 @@ final class KozmosLocationPinTests: XCTestCase {
         }
     }
 
+    /// Left and right are the map's, in every language: a map doesn't mirror in
+    /// right-to-left, and MapLibre places a symbol's text physically, so the
+    /// label drawn on a pin's left stays on its left (Olcay, 16 Oct).
+    @MainActor func testSideLabelsAreTheMapsLeftAndRightInRightToLeft() throws {
+        // Off centre, so a mirrored position would show.
+        let point = CGPoint(x: 70, y: 90)
+        let place: (KozmosLocationPin) throws -> DrawnPixels = { pin in
+            try self.draw(
+                ZStack { pin.kozmosLocationPinAt(point) }
+                    .frame(width: 200, height: 180)
+                    .environment(\.layoutDirection, .rightToLeft),
+                in: .light
+            )
+        }
+        let isLabel: (UInt8, UInt8, UInt8, UInt8) -> Bool = { r, g, b, a in a > 200 && r < 90 && g < 90 && b < 90 }
+        let marker = try XCTUnwrap(try place(KozmosLocationPin(number: 3)).boundingBox(where: Self.opaque), "nothing drawn")
+        print("Olcay 16 Oct iOS, right-to-left: .kozmosLocationPinAt(\(point)) draws the marker at \(marker), its middle at x \(marker.midX)")
+        XCTAssertEqual(marker.midX, point.x, accuracy: 1, "in right-to-left, kozmosLocationPinAt does not put the marker on the map's point")
+        for placement in [KozmosLocationPinLabelPlacement.left, .right] {
+            let labelled = try place(KozmosLocationPin(label: "3, Gate 12", number: 3, externalLabel: "Gate",
+                                                       labelPlacement: placement))
+            let label = try XCTUnwrap(labelled.boundingBox(where: isLabel), "\(placement): no label drawn")
+            print("Olcay 16 Oct iOS, right-to-left, externalLabel \(placement): the marker is \(marker), the label's glyphs \(label)")
+            if placement == .left {
+                XCTAssertLessThanOrEqual(label.maxX, marker.minX - 3.5, "in right-to-left, the left label is not on the map's left")
+            } else {
+                XCTAssertGreaterThanOrEqual(label.minX, marker.maxX + 3.5, "in right-to-left, the right label is not on the map's right")
+            }
+        }
+    }
+
     /// `label` is the spoken name only: a marker given one draws exactly
     /// what a marker without one does, at every placement.
     @MainActor func testTheLabelIsSpokenOnlyAndNeverDrawn() throws {

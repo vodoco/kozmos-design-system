@@ -39,10 +39,13 @@ public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
 /// **Placing it.** The marker's anchor, the point it marks, is the pointer's
 /// tip on a result and the dot's centre on a featured tile or a place. The
 /// marker lays itself out with that anchor at the centre of its frame
-/// (`KozmosLocationPin.anchor`), so `.position(point)` in a map canvas puts
-/// the anchor on the point, and an annotation view that centres its content
-/// on a coordinate needs no offset. The frame is therefore taller than what is
-/// drawn: the space below the anchor balances the body above it.
+/// (`KozmosLocationPin.anchor`), so an annotation view that centres its
+/// content on a coordinate needs no offset. In a map canvas of your own, place
+/// it with `.kozmosLocationPinAt(point)`, which puts the anchor on the map's
+/// point in either direction: `.position(point)` measures from the leading
+/// edge, so in right-to-left it lands on the mirrored point, where a map's
+/// points don't mirror. The frame is taller than what is drawn: the space
+/// below the anchor balances the body above it.
 /// `externalLabel` is drawn outside the frame and never moves the anchor.
 ///
 /// **Naming it.** `label` is the marker's whole spoken name, as the product
@@ -62,8 +65,8 @@ public enum KozmosLocationPinLabelPlacement: String, CaseIterable, Sendable {
 /// action, VoiceOver hears it as a dimmed button.
 public struct KozmosLocationPin: View {
     /// The point of the marker's frame that its anchor — the pointer's tip,
-    /// or the dot's centre — sits on: the centre. `.position(point)` puts the
-    /// anchor on `point`.
+    /// or the dot's centre — sits on: the centre. `.kozmosLocationPinAt(point)`
+    /// puts the anchor on `point`.
     public static let anchor: UnitPoint = .center
 
     private let label: String?
@@ -91,6 +94,8 @@ public struct KozmosLocationPin: View {
     let openLabel: String
     /// Tells the second of two quick taps from a new one.
     @State private var doubleTap = KozmosDoubleTapGate()
+    /// The product's analytics: the same events React's pin sends.
+    @Environment(\.kozmosAnalytics) private var trackEvent
 
     /// - Parameters:
     ///   - label: What VoiceOver calls the marker: its whole name, as the
@@ -221,12 +226,24 @@ public struct KozmosLocationPin: View {
 
     private func select() {
         guard pressable else { return }
+        trackEvent(KozmosAnalyticsEvent(eventName: "location_pin_clicked", component: "LocationPin",
+                                        properties: analyticsProperties(["selected": selected])))
         onSelect?()
     }
 
     private func open() {
         guard pressable else { return }
+        trackEvent(KozmosAnalyticsEvent(eventName: "location_pin_opened", component: "LocationPin",
+                                        properties: analyticsProperties([:])))
         onOpen?()
+    }
+
+    /// React's payload: the marker's kind, and its number when it has one.
+    private func analyticsProperties(_ extra: [String: Any]) -> [String: Any] {
+        var properties = extra
+        properties["kind"] = "\(kind)"
+        if let number { properties["number"] = number }
+        return properties
     }
 
     // MARK: Drawing
@@ -342,13 +359,27 @@ public struct KozmosLocationPin: View {
         let label: String?
         let placement: KozmosLocationPinLabelPlacement
         let plan: Plan
+        @Environment(\.layoutDirection) private var layoutDirection
+
+        /// Left and right are the map's, in every language (Olcay, 16 Oct): a
+        /// map doesn't mirror, and MapLibre places a symbol's text physically.
+        /// SwiftUI mirrors leading and trailing in right-to-left, so there the
+        /// map's left is the trailing side.
+        private var onLeading: Bool {
+            let rtl = layoutDirection == .rightToLeft
+            return placement == (rtl ? .right : .left)
+        }
+
+        private var onTrailing: Bool {
+            let rtl = layoutDirection == .rightToLeft
+            return placement == (rtl ? .left : .right)
+        }
 
         private var alignment: Alignment {
             switch placement {
             case .top: return .top
             case .bottom: return .bottom
-            case .left: return .leading
-            case .right: return .trailing
+            case .left, .right: return onLeading ? .leading : .trailing
             }
         }
 
@@ -356,6 +387,8 @@ public struct KozmosLocationPin: View {
             if let label {
                 let gap = KozmosDimensions.primitivesLayoutSpacing50
                 let beside = placement == .left || placement == .right
+                let leading = onLeading
+                let trailing = onTrailing
                 // Every guide set, each for its own placement: an alignment
                 // guide set inside a conditional view is lost.
                 content.overlay(alignment: alignment) {
@@ -366,8 +399,8 @@ public struct KozmosLocationPin: View {
                         .fixedSize()
                         .alignmentGuide(.top) { placement == .top ? $0[.bottom] + gap : $0[.top] }
                         .alignmentGuide(.bottom) { placement == .bottom ? $0[.top] - gap : $0[.bottom] }
-                        .alignmentGuide(.leading) { placement == .left ? $0[.trailing] + gap : $0[.leading] }
-                        .alignmentGuide(.trailing) { placement == .right ? $0[.leading] - gap : $0[.trailing] }
+                        .alignmentGuide(.leading) { leading ? $0[.trailing] + gap : $0[.leading] }
+                        .alignmentGuide(.trailing) { trailing ? $0[.leading] - gap : $0[.trailing] }
                         .offset(y: beside ? plan.shapeMiddle - plan.height / 2 : 0)
                 }
             } else {
@@ -522,5 +555,30 @@ extension KozmosLocationPin {
                     .disabled(dimmed)
             }
         }
+    }
+}
+
+// MARK: - Placing it on a map
+
+public extension View {
+    /// Puts a `KozmosLocationPin`'s anchor on a map's point, from the canvas's
+    /// top left in either direction, as Compose's `kozmosLocationPinAt` does.
+    /// A map's points don't mirror in right-to-left, but `.position` measures
+    /// from the leading edge, so this positions in a left-to-right space and
+    /// gives the pin back the app's direction for what it draws.
+    func kozmosLocationPinAt(_ point: CGPoint) -> some View {
+        modifier(KozmosLocationPinPosition(point: point))
+    }
+}
+
+private struct KozmosLocationPinPosition: ViewModifier {
+    let point: CGPoint
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.layoutDirection, layoutDirection)
+            .position(point)
+            .environment(\.layoutDirection, .leftToRight)
     }
 }

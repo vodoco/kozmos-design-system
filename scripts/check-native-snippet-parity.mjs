@@ -114,6 +114,10 @@ for (const [platform, dir, extension] of DIRS) {
   }
 }
 
+// A run that compared nothing proves nothing: a moved folder or a changed
+// claim line would otherwise pass in silence.
+if (compared === 0)
+  failures.push("no tab was compared: the snippets or their claims moved");
 if (failures.length) {
   console.error(
     `FAIL native snippet parity: ${failures.length} of ${compared} tabs differ from their compiled snippets\n- ${failures.join("\n- ")}`,

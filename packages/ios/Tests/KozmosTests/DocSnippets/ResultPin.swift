@@ -7,7 +7,8 @@ import Kozmos
 // A result's marker, numbered as its card's tab: a theme-bordered pill at
 // rest, filled when the result is selected. Its label is its whole spoken
 // name, the number included. A double tap opens the place's details.
-// `.position(point)` puts the pointer's tip on the point.
+// `.kozmosLocationPinAt(point)` puts the pointer's tip on the map's point,
+// in either direction.
 struct ResultPin: View {
     let name: String
     let number: Int
@@ -24,6 +25,6 @@ struct ResultPin: View {
             onSelect: onSelect,
             onOpen: onOpen
         )
-        .position(point)
+        .kozmosLocationPinAt(point)
     }
 }
