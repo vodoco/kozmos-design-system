@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import type { ThemeDensity } from "../components/ThemeProvider/ThemeProvider";
 import { DensityContext } from "./density-context";
 
@@ -9,7 +8,8 @@ export interface DensityScopeProps {
   density: ThemeDensity;
   /**
    * Mark the one child element instead of adding an element: the child must
-   * pass a `data-*` attribute on to the element it renders.
+   * pass a `data-*` attribute on to the element it renders. Anything but one
+   * element gets an element of its own, as without `asChild`.
    */
   asChild?: boolean;
   children: React.ReactNode;
@@ -27,10 +27,16 @@ export function DensityScope({
   asChild = false,
   children,
 }: DensityScopeProps) {
+  // One attribute needs no Slot: the child keeps its own props and its ref.
   return (
     <DensityContext.Provider value={density}>
-      {asChild ? (
-        <Slot data-kozmos-density={density}>{children}</Slot>
+      {asChild && React.isValidElement(children) ? (
+        React.cloneElement(
+          children as React.ReactElement<{
+            "data-kozmos-density"?: ThemeDensity;
+          }>,
+          { "data-kozmos-density": density },
+        )
       ) : (
         <div data-kozmos-density={density} style={{ display: "contents" }}>
           {children}

@@ -35,7 +35,8 @@ Its props are `DensityScopeProps`.
 - `asChild`: `boolean`, optional, default `false`.
 
   Mark the one child element instead of adding an element: the child must
-  pass a `data-*` attribute on to the element it renders.
+  pass a `data-*` attribute on to the element it renders. Anything but one
+  element gets an element of its own, as without `asChild`.
 
 - `children`: `React.ReactNode`, **required**.
 
