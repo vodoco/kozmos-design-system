@@ -542,6 +542,11 @@ function renderReadme({ root, api, cards, owner }) {
       !cards.some((c) => c.module === owner.get(e.name)),
   );
 
+  // Pointr's brand face, which the brand family role names (decision 87).
+  const brandFamily = readJson(
+    path.join(root, "packages/tokens/src/tokens-light.json"),
+  ).Primitives.Typography.font.family.primary.$value;
+
   return [
     "# Kozmos for Claude Design",
     "",
@@ -575,6 +580,28 @@ function renderReadme({ root, api, cards, owner }) {
     "export function App() {",
     "  return (",
     '    <ThemeProvider defaultTheme="light">',
+    "      <Button>Take me there</Button>",
+    "    </ThemeProvider>",
+    "  );",
+    "}",
+    "```",
+    "",
+    "### The font",
+    "",
+    `Kozmos ships no font: every part draws in the system stack, the \`--semantics-typography-family-system\` role. For ${brandFamily}, Pointr Cloud's face (decision 87), load it on the page, then point that role at the brand family through the provider's \`tokens\`. Every part inside, its popovers included, then draws in ${brandFamily}, and in the system stack wherever that face isn't available.`,
+    "",
+    "```tsx",
+    'import { Button, ThemeProvider } from "@kozmos-ds/react";',
+    "",
+    "export function BrandFaceExample() {",
+    "  return (",
+    "    <ThemeProvider",
+    '      defaultTheme="light"',
+    "      tokens={{",
+    '        "--semantics-typography-family-system":',
+    '          "var(--semantics-typography-family-brand), ui-sans-serif, system-ui, sans-serif",',
+    "      }}",
+    "    >",
     "      <Button>Take me there</Button>",
     "    </ThemeProvider>",
     "  );",
