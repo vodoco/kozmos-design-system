@@ -9,7 +9,9 @@
     padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
   .kozmos-combobox-input[data-clearable] {
-    padding-inline-end: calc(var(--density-field-height-md, 2.75rem) * 2 + 0.5rem);
+    padding-inline-end: calc(
+      var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
+    );
   }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;

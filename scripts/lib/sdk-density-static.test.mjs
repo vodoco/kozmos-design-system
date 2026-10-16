@@ -23,18 +23,24 @@ const problems = (body) => checkComponent(part(body), "Part");
 test("a touch DensityScope around one intrinsic element holds the root", () => {
   assert.deepEqual(problems(`return ${scope("<div ref={ref} />")};`), []);
   assert.deepEqual(
-    problems(`return ${scope("<section />", 'density="touch" asChild={true}')};`),
+    problems(
+      `return ${scope("<section />", 'density="touch" asChild={true}')};`,
+    ),
     [],
   );
 });
 
 test("asChild must be bare or {true}", () => {
   assert.match(
-    problems(`return ${scope("<div />", 'density="touch" asChild={false}')};`)[0],
+    problems(
+      `return ${scope("<div />", 'density="touch" asChild={false}')};`,
+    )[0],
     /asChild=\{false\}/,
   );
   assert.match(
-    problems(`return ${scope("<div />", 'density="touch" asChild={wrap}')};`)[0],
+    problems(
+      `return ${scope("<div />", 'density="touch" asChild={wrap}')};`,
+    )[0],
     /asChild=\{wrap\}/,
   );
   assert.match(
@@ -116,10 +122,7 @@ test("the DensityScope's child is one element that takes the mark", () => {
   assert.deepEqual(problems(`return ${scope("<Card />")};`), []);
   assert.deepEqual(problems(`return ${scope("<Button />")};`), []);
   // A comment beside the child is no child.
-  assert.deepEqual(
-    problems(`return ${scope("{/* the root */}<div />")};`),
-    [],
-  );
+  assert.deepEqual(problems(`return ${scope("{/* the root */}<div />")};`), []);
 });
 
 test("a wrapper that renders no element is looked into", () => {
