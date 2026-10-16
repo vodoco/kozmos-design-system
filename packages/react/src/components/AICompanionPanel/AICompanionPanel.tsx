@@ -5,6 +5,7 @@ import { cn } from "../../utils";
 import { inertOutside } from "../../utils/modal-inert";
 import { Text } from "../Text";
 import { MapShellPanelFillContext } from "../AdaptiveMapShell/map-shell-panel";
+import { DensityScope } from "../../theme/DensityScope";
 
 const useLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -297,76 +298,77 @@ const AICompanionPanel = React.forwardRef<
 
     if (!open) return null;
     return (
-      <div
-        aria-label={ariaLabel}
-        // Named by its title, so a product that translates the title has
-        // translated the region. A name the product gives it outright wins.
-        aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
-        className={cn(
-          // Focused as it opens so a screen reader announces it, but it is a
-          // region, not a control: no ring round the whole frame.
-          "flex h-full min-h-0 w-full flex-col bg-background text-foreground outline-none",
-          className,
-        )}
-        // The SDK's geometry under any density (decision 82): a compact
-        // ThemeProvider leaves the panel touch, its 44 close included.
-        data-kozmos-density="touch"
-        onKeyDown={handleKeyDown}
-        ref={root}
-        role="region"
-        tabIndex={-1}
-        {...props}
-      >
-        {/* Its top padding is owned (owned-components.css): in a map
+      // The SDK's geometry under any density (decision 82): a compact
+      // ThemeProvider leaves the panel touch, its 44 close included.
+      <DensityScope density="touch" asChild>
+        <div
+          aria-label={ariaLabel}
+          // Named by its title, so a product that translates the title has
+          // translated the region. A name the product gives it outright wins.
+          aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
+          className={cn(
+            // Focused as it opens so a screen reader announces it, but it is a
+            // region, not a control: no ring round the whole frame.
+            "flex h-full min-h-0 w-full flex-col bg-background text-foreground outline-none",
+            className,
+          )}
+          onKeyDown={handleKeyDown}
+          ref={root}
+          role="region"
+          tabIndex={-1}
+          {...props}
+        >
+          {/* Its top padding is owned (owned-components.css): in a map
             shell's panel it tops its 12 up to what the shell leaves. */}
-        <div className="kozmos-ai-companion-header flex shrink-0 items-center gap-2 border-b border-border px-4 pb-3">
-          <span
-            aria-hidden="true"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-pill border border-border text-primary"
-          >
-            <Stars01 className="h-4 w-4" />
-          </span>
-          {/* A heading, so a screen reader moving by headings finds the
+          <div className="kozmos-ai-companion-header flex shrink-0 items-center gap-2 border-b border-border px-4 pb-3">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-pill border border-border text-primary"
+            >
+              <Stars01 className="h-4 w-4" />
+            </span>
+            {/* A heading, so a screen reader moving by headings finds the
               assistant; it was a <p>. Text, not Heading: the size is the
               header's, whatever the level. */}
-          <Text
-            as={`h${titleLevel}`}
-            className="min-w-0 flex-1"
-            id={titleId}
-            size="base"
-            truncate
-            weight="semibold"
-          >
-            {title}
-          </Text>
-          {onClose && (
-            // The details card's close (decision 73, GAP-145): an outline,
-            // neutral IconButton, 44 square, where it was a 36 bordered
-            // pill with an owned 44 target round it.
-            <IconButton
-              aria-label={closeLabel}
-              className="shrink-0"
-              emotion="neutral"
-              onClick={onClose}
-              type="button"
-              variant="outline"
+            <Text
+              as={`h${titleLevel}`}
+              className="min-w-0 flex-1"
+              id={titleId}
+              size="base"
+              truncate
+              weight="semibold"
             >
-              <X aria-hidden="true" size={20} />
-            </IconButton>
-          )}
-        </div>
-        {/* Space and a divider under it, as under the header, so the thread
-            no longer scrolls up flush against a pinned notice (GAP-063). */}
-        {banner && (
-          <div
-            className="shrink-0 border-b border-border px-4 pb-3 pt-4"
-            data-slot="ai-companion-banner"
-          >
-            {banner}
+              {title}
+            </Text>
+            {onClose && (
+              // The details card's close (decision 73, GAP-145): an outline,
+              // neutral IconButton, 44 square, where it was a 36 bordered
+              // pill with an owned 44 target round it.
+              <IconButton
+                aria-label={closeLabel}
+                className="shrink-0"
+                emotion="neutral"
+                onClick={onClose}
+                type="button"
+                variant="outline"
+              >
+                <X aria-hidden="true" size={20} />
+              </IconButton>
+            )}
           </div>
-        )}
-        {children}
-      </div>
+          {/* Space and a divider under it, as under the header, so the thread
+            no longer scrolls up flush against a pinned notice (GAP-063). */}
+          {banner && (
+            <div
+              className="shrink-0 border-b border-border px-4 pb-3 pt-4"
+              data-slot="ai-companion-banner"
+            >
+              {banner}
+            </div>
+          )}
+          {children}
+        </div>
+      </DensityScope>
     );
   },
 );

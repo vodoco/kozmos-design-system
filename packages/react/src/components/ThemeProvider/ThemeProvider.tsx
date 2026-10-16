@@ -2,6 +2,7 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DirectionProvider } from "@radix-ui/react-direction";
+import { DensityContext } from "../../theme/density-context";
 import {
   ThemeProviderContext,
   type ThemeState,
@@ -13,8 +14,9 @@ export type ThemeTokens = Record<`--${string}`, string | number>;
 /**
  * How large the controls are (decision 82). `touch`, the default, keeps every
  * control at least 44 tall, as products and the SDK want. `compact` is for
- * pointer-first desktop tools such as Pointr Cloud: 32, 40 and 48 buttons, 40
- * fields, 32 table heads. It is web only; SwiftUI and Compose stay touch.
+ * pointer-first desktop tools such as Pointr Cloud: 32, 40 and 48 buttons,
+ * 28, 32 and 40 icon buttons, and 40 fields. It is web only; SwiftUI and
+ * Compose stay touch.
  */
 export type ThemeDensity = "touch" | "compact";
 /**
@@ -40,7 +42,8 @@ export interface ThemeProviderProps {
   dir?: "ltr" | "rtl";
   /**
    * The control sizes inside this provider and its portals; a nested provider
-   * inherits it unless it names its own. Defaults to `touch`.
+   * inherits it, or a DensityScope's around it, unless it names its own.
+   * Defaults to `touch`.
    */
   density?: ThemeDensity;
   /**
@@ -74,6 +77,7 @@ export function ThemeProvider({
   tokens,
 }: ThemeProviderProps) {
   const parent = useContext(ThemeProviderContext);
+  const inheritedDensity = useContext(DensityContext);
   const root = useRef<HTMLDivElement>(null);
   const [preference, setPreference] = useState<Theme>(defaultTheme);
   const [systemTheme, setSystemTheme] =
@@ -85,7 +89,7 @@ export function ThemeProvider({
   const theme = controlledTheme ?? preference;
   const resolvedTheme = theme === "system" ? systemTheme : theme;
   const direction = dir ?? parent?.dir ?? "ltr";
-  const resolvedDensity = density ?? parent?.density ?? "touch";
+  const resolvedDensity = density ?? inheritedDensity ?? "touch";
   // Both themes' sets are inherited, so a nested provider that resolves to
   // the other theme applies that theme's set, not this one's.
   const tokenSets = useMemo(() => {
@@ -133,7 +137,6 @@ export function ThemeProvider({
     theme,
     resolvedTheme,
     dir: direction,
-    density: resolvedDensity,
     tokens: inheritedTokens,
     tokenSets,
     portalContainer,
@@ -165,20 +168,22 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider value={value}>
-      <DirectionProvider dir={direction}>
-        <div ref={root} {...attributes}>
-          {children}
-        </div>
-        {portalHost &&
-          createPortal(
-            <div
-              ref={setPortalContainer}
-              data-kozmos-portal=""
-              {...attributes}
-            />,
-            portalHost,
-          )}
-      </DirectionProvider>
+      <DensityContext.Provider value={resolvedDensity}>
+        <DirectionProvider dir={direction}>
+          <div ref={root} {...attributes}>
+            {children}
+          </div>
+          {portalHost &&
+            createPortal(
+              <div
+                ref={setPortalContainer}
+                data-kozmos-portal=""
+                {...attributes}
+              />,
+              portalHost,
+            )}
+        </DirectionProvider>
+      </DensityContext.Provider>
     </ThemeProviderContext.Provider>
   );
 }

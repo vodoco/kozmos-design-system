@@ -12,6 +12,7 @@ import {
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
 import { RouteOptionCard } from "../RouteOptionCard";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface RoutePreviewPanelProps extends React.HTMLAttributes<HTMLElement> {
   destinationName: string;
@@ -70,105 +71,110 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
     // one surface (decision 43). A `bg-background` would outrank it.
 
     return (
-      <section
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        aria-label="Route preview"
-        className={cn(
-          "kozmos-route-preview flex min-h-0 min-w-0 w-full flex-col text-foreground",
-          className,
-        )}
-        data-route-status={status}
-        {...props}
-      >
-        <header className="kozmos-route-preview-first-row border-b border-border px-4 pb-4">
-          <p className="kozmos-muted-text text-xs font-semibold uppercase tracking-wide">
-            {destinationLabel}
-          </p>
-          <h2 className="mt-1 truncate text-xl font-semibold tracking-tight">
-            {destinationName}
-          </h2>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-          <p aria-live="polite" className="sr-only">
-            {selectedRouteAnnouncement}
-          </p>
-
-          {status !== "ready" && statusContent ? (
-            <div
-              className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm"
-              role={
-                status === "error" || status === "no-route" ? "alert" : "status"
-              }
-            >
-              {statusContent}
-            </div>
-          ) : (
-            <div aria-label={optionsLabel} role="group">
-              <ul className="m-0 grid snap-x snap-mandatory auto-cols-[min(78%,14rem)] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-0 pb-3">
-                {options.map((option, index) => (
-                  <li
-                    className="list-none snap-start"
-                    key={validIds ? option.id : index}
-                  >
-                    <RouteOptionCard
-                      className="h-full"
-                      disabled={!ready}
-                      onSelect={onOptionSelect}
-                      option={option}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {options.length > 1 && optionsCountLabel && (
-                <p className="kozmos-muted-text text-xs">{optionsCountLabel}</p>
-              )}
-            </div>
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          aria-label="Route preview"
+          className={cn(
+            "kozmos-route-preview flex min-h-0 min-w-0 w-full flex-col text-foreground",
+            className,
           )}
+          data-route-status={status}
+          {...props}
+        >
+          <header className="kozmos-route-preview-first-row border-b border-border px-4 pb-4">
+            <p className="kozmos-muted-text text-xs font-semibold uppercase tracking-wide">
+              {destinationLabel}
+            </p>
+            <h2 className="mt-1 truncate text-xl font-semibold tracking-tight">
+              {destinationName}
+            </h2>
+          </header>
 
-          {alert && (
-            <div
-              className={cn(
-                "mt-3 rounded-control px-3 py-2 text-sm",
-                EMOTION_FILLED_CLASSES,
-              )}
-              style={emotionSurfaceProperties("alert")}
-              role="status"
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+            <p aria-live="polite" className="sr-only">
+              {selectedRouteAnnouncement}
+            </p>
+
+            {status !== "ready" && statusContent ? (
+              <div
+                className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm"
+                role={
+                  status === "error" || status === "no-route"
+                    ? "alert"
+                    : "status"
+                }
+              >
+                {statusContent}
+              </div>
+            ) : (
+              <div aria-label={optionsLabel} role="group">
+                <ul className="m-0 grid snap-x snap-mandatory auto-cols-[min(78%,14rem)] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-0 pb-3">
+                  {options.map((option, index) => (
+                    <li
+                      className="list-none snap-start"
+                      key={validIds ? option.id : index}
+                    >
+                      <RouteOptionCard
+                        className="h-full"
+                        disabled={!ready}
+                        onSelect={onOptionSelect}
+                        option={option}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {options.length > 1 && optionsCountLabel && (
+                  <p className="kozmos-muted-text text-xs">
+                    {optionsCountLabel}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {alert && (
+              <div
+                className={cn(
+                  "mt-3 rounded-control px-3 py-2 text-sm",
+                  EMOTION_FILLED_CLASSES,
+                )}
+                style={emotionSurfaceProperties("alert")}
+                role="status"
+              >
+                {alert}
+              </div>
+            )}
+          </div>
+
+          <footer className="flex gap-3 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <IconButton
+              aria-label={backLabel}
+              onClick={onBack}
+              type="button"
+              variant="outline"
             >
-              {alert}
-            </div>
-          )}
-        </div>
-
-        <footer className="flex gap-3 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <IconButton
-            aria-label={backLabel}
-            onClick={onBack}
-            type="button"
-            variant="outline"
-          >
-            {/* Drawn pointing left; mirrored right to left, so Back points
+              {/* Drawn pointing left; mirrored right to left, so Back points
                 to the start edge (kozmos-route-preview-back-arrow). */}
-            <ArrowLeft
-              aria-hidden="true"
-              className="kozmos-route-preview-back-arrow h-5 w-5"
-            />
-          </IconButton>
-          <Button
-            className="flex-1"
-            disabled={!ready || !selectedOption}
-            isLoading={status === "calculating"}
-            onClick={() =>
-              ready && selectedOption && onContinue(selectedOption.id)
-            }
-            type="button"
-          >
-            {continueLabel}
-          </Button>
-        </footer>
-      </section>
+              <ArrowLeft
+                aria-hidden="true"
+                className="kozmos-route-preview-back-arrow h-5 w-5"
+              />
+            </IconButton>
+            <Button
+              className="flex-1"
+              disabled={!ready || !selectedOption}
+              isLoading={status === "calculating"}
+              onClick={() =>
+                ready && selectedOption && onContinue(selectedOption.id)
+              }
+              type="button"
+            >
+              {continueLabel}
+            </Button>
+          </footer>
+        </section>
+      </DensityScope>
     );
   },
 );

@@ -3,6 +3,7 @@ import { cn } from "../../utils";
 import { Button } from "../Button";
 import { MarkerPin01 } from "@kozmos-ds/icons";
 import { Combobox, type ComboboxOption } from "../Combobox";
+import { DensityScope } from "../../theme/DensityScope";
 
 export type RouteLocationStatus =
   | "idle"
@@ -135,114 +136,118 @@ export const RouteLocationField = React.forwardRef<
       </div>
     );
     return (
-      <div
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        {...props}
-        ref={ref}
-        className={cn("flex min-w-0 flex-col gap-2 text-foreground", className)}
-      >
-        {location ? (
-          <div
-            className={cn(
-              "min-w-0 gap-2 rounded-control border border-border p-3",
-              onEdit
-                ? "grid grid-cols-[minmax(0,1fr)_fit-content(50%)] gap-x-3"
-                : "flex flex-col",
-            )}
-          >
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          {...props}
+          ref={ref}
+          className={cn(
+            "flex min-w-0 flex-col gap-2 text-foreground",
+            className,
+          )}
+        >
+          {location ? (
             <div
-              className={
+              className={cn(
+                "min-w-0 gap-2 rounded-control border border-border p-3",
                 onEdit
-                  ? "contents"
-                  : "flex min-w-0 items-center justify-between gap-3"
-              }
-            >
-              <span className="kozmos-muted-text min-w-0 text-sm [overflow-wrap:anywhere]">
-                {label}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                className={cn(
-                  "h-auto min-h-11 max-w-full shrink-0 whitespace-normal [overflow-wrap:anywhere]",
-                  onEdit &&
-                    "col-start-2 row-start-1 row-span-2 min-w-0 self-center",
-                )}
-                aria-label={onEdit ? `${changeLabel} ${label}` : clearLabel}
-                disabled={disabled}
-                onClick={onEdit ?? onClear}
-              >
-                {onEdit ? changeLabel : clearLabel}
-              </Button>
-            </div>
-            <div className="min-w-0 [overflow-wrap:anywhere]">
-              <p className="m-0 text-base font-semibold">{location.label}</p>
-              {location.description && (
-                <p className="kozmos-muted-text m-0 text-sm">
-                  {location.description}
-                </p>
+                  ? "grid grid-cols-[minmax(0,1fr)_fit-content(50%)] gap-x-3"
+                  : "flex flex-col",
               )}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-              <label
-                htmlFor={inputId}
-                className="kozmos-muted-text text-sm [overflow-wrap:anywhere]"
+            >
+              <div
+                className={
+                  onEdit
+                    ? "contents"
+                    : "flex min-w-0 items-center justify-between gap-3"
+                }
               >
-                {label}
-              </label>
-              {actions}
+                <span className="kozmos-muted-text min-w-0 text-sm [overflow-wrap:anywhere]">
+                  {label}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={cn(
+                    "h-auto min-h-11 max-w-full shrink-0 whitespace-normal [overflow-wrap:anywhere]",
+                    onEdit &&
+                      "col-start-2 row-start-1 row-span-2 min-w-0 self-center",
+                  )}
+                  aria-label={onEdit ? `${changeLabel} ${label}` : clearLabel}
+                  disabled={disabled}
+                  onClick={onEdit ?? onClear}
+                >
+                  {onEdit ? changeLabel : clearLabel}
+                </Button>
+              </div>
+              <div className="min-w-0 [overflow-wrap:anywhere]">
+                <p className="m-0 text-base font-semibold">{location.label}</p>
+                {location.description && (
+                  <p className="kozmos-muted-text m-0 text-sm">
+                    {location.description}
+                  </p>
+                )}
+              </div>
             </div>
-            <Combobox
-              popupLayout="inline"
-              id={inputId}
-              includeValueInAnalytics={false}
-              aria-label={label}
-              value=""
-              inputValue={query}
-              onInputValueChange={onQueryChange}
-              options={suggestions}
-              popupActions={[
-                ...(currentPosition?.value.trim() && !currentPosition.disabled
-                  ? [
-                      {
-                        id: "current-position",
-                        label: currentPositionLabel,
-                        onAction: () => onSelect(currentPosition),
-                      },
-                    ]
-                  : []),
-                ...(onChooseMap
-                  ? [
-                      {
-                        id: "choose-map",
-                        label: mapLabel,
-                        icon: <MarkerPin01 className="h-4 w-4" />,
-                        onAction: onChooseMap,
-                      },
-                    ]
-                  : []),
-              ]}
-              filterOption={filterMode === "host" ? () => true : undefined}
-              onValueChange={(_, option) => {
-                if (!disabled && allowed && option && !option.disabled)
-                  onSelect(option);
-              }}
-              clearable={false}
-              openLabel={openLabel}
-              closeLabel={closeLabel}
-              disabled={disabled}
-              placeholder={placeholder}
-              status={status === "error" ? "error" : "default"}
-              helperText={message}
-              emptyText={message ?? emptyText}
-            />
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <label
+                  htmlFor={inputId}
+                  className="kozmos-muted-text text-sm [overflow-wrap:anywhere]"
+                >
+                  {label}
+                </label>
+                {actions}
+              </div>
+              <Combobox
+                popupLayout="inline"
+                id={inputId}
+                includeValueInAnalytics={false}
+                aria-label={label}
+                value=""
+                inputValue={query}
+                onInputValueChange={onQueryChange}
+                options={suggestions}
+                popupActions={[
+                  ...(currentPosition?.value.trim() && !currentPosition.disabled
+                    ? [
+                        {
+                          id: "current-position",
+                          label: currentPositionLabel,
+                          onAction: () => onSelect(currentPosition),
+                        },
+                      ]
+                    : []),
+                  ...(onChooseMap
+                    ? [
+                        {
+                          id: "choose-map",
+                          label: mapLabel,
+                          icon: <MarkerPin01 className="h-4 w-4" />,
+                          onAction: onChooseMap,
+                        },
+                      ]
+                    : []),
+                ]}
+                filterOption={filterMode === "host" ? () => true : undefined}
+                onValueChange={(_, option) => {
+                  if (!disabled && allowed && option && !option.disabled)
+                    onSelect(option);
+                }}
+                clearable={false}
+                openLabel={openLabel}
+                closeLabel={closeLabel}
+                disabled={disabled}
+                placeholder={placeholder}
+                status={status === "error" ? "error" : "default"}
+                helperText={message}
+                emptyText={message ?? emptyText}
+              />
+            </>
+          )}
+        </div>
+      </DensityScope>
     );
   },
 );

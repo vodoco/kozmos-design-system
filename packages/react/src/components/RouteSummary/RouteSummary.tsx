@@ -5,6 +5,7 @@ import { Button } from "../Button";
 import { DestinationImage } from "../../utils/navigation-presentation";
 import { MapShellPanelContext } from "../AdaptiveMapShell/map-shell-panel";
 import { X, NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
+import { DensityScope } from "../../theme/DensityScope";
 
 interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
   distanceText?: string;
@@ -107,64 +108,65 @@ const RouteSummaryNavigation = React.forwardRef<
       </h2>
     );
     return (
-      <div
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        className={cn(
-          presentation === "hosted"
-            ? "kozmos-reset flex w-full flex-col text-foreground"
-            : cn(surfaceClass(surface), LAYOUT),
-          "gap-3",
-          className,
-        )}
-        {...props}
-        data-presentation={presentation}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {destinationImage && (
-            <DestinationImage key={destinationImage} src={destinationImage} />
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          className={cn(
+            presentation === "hosted"
+              ? "kozmos-reset flex w-full flex-col text-foreground"
+              : cn(surfaceClass(surface), LAYOUT),
+            "gap-3",
+            className,
           )}
-          {locationText ? (
-            <div className="min-w-0 flex-1 basis-40">
-              {heading}
-              {/* Muted, and on glass the foreground colour (decision 48). */}
-              <p className="kozmos-route-summary-destination kozmos-muted-text m-0 text-sm">
-                {locationText}
-              </p>
-            </div>
-          ) : (
-            heading
+          {...props}
+          data-presentation={presentation}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {destinationImage && (
+              <DestinationImage key={destinationImage} src={destinationImage} />
+            )}
+            {locationText ? (
+              <div className="min-w-0 flex-1 basis-40">
+                {heading}
+                {/* Muted, and on glass the foreground colour (decision 48). */}
+                <p className="kozmos-route-summary-destination kozmos-muted-text m-0 text-sm">
+                  {locationText}
+                </p>
+              </div>
+            ) : (
+              heading
+            )}
+            {onEndRoute && (
+              <Button
+                type="button"
+                variant="outline"
+                emotion="danger"
+                size="sm"
+                className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
+                onClick={onEndRoute}
+              >
+                {endLabel}
+              </Button>
+            )}
+          </div>
+          {(durationText || distanceText || arrivalText) && (
+            <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
+              {durationText && (
+                <span className="font-semibold">{durationText}</span>
+              )}
+              {distanceText && <span>{distanceText}</span>}
+              {arrivalText ? (
+                <span className="ms-auto">{arrivalText}</span>
+              ) : null}
+            </p>
           )}
-          {onEndRoute && (
-            <Button
-              type="button"
-              variant="outline"
-              emotion="danger"
-              size="sm"
-              className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
-              onClick={onEndRoute}
-            >
-              {endLabel}
-            </Button>
+          {progress}
+          {actions != null && actions !== false && (
+            <div className="kozmos-route-summary-actions">{actions}</div>
           )}
         </div>
-        {(durationText || distanceText || arrivalText) && (
-          <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
-            {durationText && (
-              <span className="font-semibold">{durationText}</span>
-            )}
-            {distanceText && <span>{distanceText}</span>}
-            {arrivalText ? (
-              <span className="ms-auto">{arrivalText}</span>
-            ) : null}
-          </p>
-        )}
-        {progress}
-        {actions != null && actions !== false && (
-          <div className="kozmos-route-summary-actions">{actions}</div>
-        )}
-      </div>
+      </DensityScope>
     );
   },
 );
@@ -189,58 +191,59 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
       ...rest
     } = props;
     return (
-      <div
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        className={cn(surfaceClass(surface), LAYOUT, "gap-4", className)}
-        {...rest}
-      >
-        {/* Information Row */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {transportModeIcon && (
-              <div className="w-10 h-10 rounded-pill bg-secondary text-primary flex items-center justify-center shrink-0">
-                {transportModeIcon}
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          className={cn(surfaceClass(surface), LAYOUT, "gap-4", className)}
+          {...rest}
+        >
+          {/* Information Row */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              {transportModeIcon && (
+                <div className="w-10 h-10 rounded-pill bg-secondary text-primary flex items-center justify-center shrink-0">
+                  {transportModeIcon}
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight text-foreground">
+                  {etaText}
+                </span>
+                {/* Muted, and on glass the foreground colour (decision 48). */}
+                <span className="kozmos-muted-text text-sm font-medium">
+                  {distanceText}
+                </span>
               </div>
-            )}
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-foreground">
-                {etaText}
-              </span>
-              {/* Muted, and on glass the foreground colour (decision 48). */}
-              <span className="kozmos-muted-text text-sm font-medium">
-                {distanceText}
-              </span>
             </div>
+            {state === "active" && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="h-11 w-11 shrink-0 rounded-pill"
+                onClick={onEndRoute}
+                aria-label={endRouteLabel}
+              >
+                <X aria-hidden="true" className="w-5 h-5" />
+              </Button>
+            )}
           </div>
-          {state === "active" && (
+
+          {/* Primary Action Row - if in preview mode */}
+          {state === "preview" && onStartNavigation && (
             <Button
               type="button"
-              variant="destructive"
-              size="icon"
-              className="h-11 w-11 shrink-0 rounded-pill"
-              onClick={onEndRoute}
-              aria-label={endRouteLabel}
+              size="lg"
+              className="w-full h-12 rounded-pill font-semibold text-base shadow-raised"
+              onClick={onStartNavigation}
             >
-              <X aria-hidden="true" className="w-5 h-5" />
+              <Navigation aria-hidden="true" className="w-5 h-5" />
+              {startNavigationLabel}
             </Button>
           )}
         </div>
-
-        {/* Primary Action Row - if in preview mode */}
-        {state === "preview" && onStartNavigation && (
-          <Button
-            type="button"
-            size="lg"
-            className="w-full h-12 rounded-pill font-semibold text-base shadow-raised"
-            onClick={onStartNavigation}
-          >
-            <Navigation aria-hidden="true" className="w-5 h-5" />
-            {startNavigationLabel}
-          </Button>
-        )}
-      </div>
+      </DensityScope>
     );
   },
 );

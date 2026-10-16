@@ -1,8 +1,8 @@
 import React from "react";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
-export interface AIMessageListProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface AIMessageListProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Names the thread for assistive technology. */
   label?: string;
   /**
@@ -22,7 +22,13 @@ export interface AIMessageListProps
  */
 const AIMessageList = React.forwardRef<HTMLDivElement, AIMessageListProps>(
   (
-    { className, children, label = "Assistant conversation", followLatest = true, ...props },
+    {
+      className,
+      children,
+      label = "Assistant conversation",
+      followLatest = true,
+      ...props
+    },
     ref,
   ) => {
     const inner = React.useRef<HTMLDivElement | null>(null);
@@ -58,23 +64,26 @@ const AIMessageList = React.forwardRef<HTMLDivElement, AIMessageListProps>(
     }, [followLatest]);
 
     return (
-      <div
-        aria-live="polite"
-        aria-label={label}
-        className={cn(
-          "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4",
-          className,
-        )}
-        ref={(node) => {
-          inner.current = node;
-          if (typeof ref === "function") ref(node);
-          else if (ref) ref.current = node;
-        }}
-        role="log"
-        {...props}
-      >
-        {children}
-      </div>
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          aria-live="polite"
+          aria-label={label}
+          className={cn(
+            "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4",
+            className,
+          )}
+          ref={(node) => {
+            inner.current = node;
+            if (typeof ref === "function") ref(node);
+            else if (ref) ref.current = node;
+          }}
+          role="log"
+          {...props}
+        >
+          {children}
+        </div>
+      </DensityScope>
     );
   },
 );

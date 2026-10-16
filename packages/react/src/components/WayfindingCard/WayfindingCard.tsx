@@ -10,6 +10,7 @@ import {
 import { Input } from "../Input/Input";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { WithoutGenericClick } from "../../utils/generic-click";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface WayfindingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
@@ -38,34 +39,35 @@ const WayfindingCard = React.forwardRef<HTMLDivElement, WayfindingCardProps>(
     };
 
     return (
-      <Card
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        className={cn("w-full max-w-sm shadow-floating", className)}
-        {...props}
-      >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          {onClose && (
-            <WithoutGenericClick>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClose}
-                type="button"
-                aria-label={closeLabel}
-                className="h-11 w-11 shrink-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </WithoutGenericClick>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">{children}</div>
-        </CardContent>
-      </Card>
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <Card
+          ref={ref}
+          className={cn("w-full max-w-sm shadow-floating", className)}
+          {...props}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            {onClose && (
+              <WithoutGenericClick>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClose}
+                  type="button"
+                  aria-label={closeLabel}
+                  className="h-11 w-11 shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </WithoutGenericClick>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">{children}</div>
+          </CardContent>
+        </Card>
+      </DensityScope>
     );
   },
 );
@@ -108,55 +110,56 @@ export const WayfindingInputRow = React.forwardRef<
     const { trackEvent } = useKozmosAnalytics();
 
     return (
-      <div
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        className={cn("relative flex gap-3", className)}
-        {...props}
-      >
-        {/* The line takes what the ring and the pin leave. It was h-full
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          className={cn("relative flex gap-3", className)}
+          {...props}
+        >
+          {/* The line takes what the ring and the pin leave. It was h-full
             until 2026-09-22, and flexbox took the overflow from the ring
             and the pin: the ring drew 10 x 8.2, the pin 11.2 high. */}
-        <div className="flex flex-col items-center py-3">
-          <div className="w-2.5 h-2.5 shrink-0 rounded-pill border-2 border-primary" />
-          <div className="w-[2px] flex-1 bg-border rounded-pill" />
-          <MapPin className="w-4 h-4 shrink-0 text-primary" />
-        </div>
+          <div className="flex flex-col items-center py-3">
+            <div className="w-2.5 h-2.5 shrink-0 rounded-pill border-2 border-primary" />
+            <div className="w-[2px] flex-1 bg-border rounded-pill" />
+            <MapPin className="w-4 h-4 shrink-0 text-primary" />
+          </div>
 
-        <div className="min-w-0 flex-1 flex flex-col gap-2 relative">
-          <Input
-            aria-label={originLabel}
-            value={originValue}
-            onChange={(e) => onOriginChange?.(e.target.value)}
-            placeholder={originPlaceholder}
-            className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
-          />
-          <Input
-            aria-label={destinationLabel}
-            value={destinationValue}
-            onChange={(e) => onDestinationChange?.(e.target.value)}
-            placeholder={destinationPlaceholder}
-            className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
-          />
+          <div className="min-w-0 flex-1 flex flex-col gap-2 relative">
+            <Input
+              aria-label={originLabel}
+              value={originValue}
+              onChange={(e) => onOriginChange?.(e.target.value)}
+              placeholder={originPlaceholder}
+              className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
+            />
+            <Input
+              aria-label={destinationLabel}
+              value={destinationValue}
+              onChange={(e) => onDestinationChange?.(e.target.value)}
+              placeholder={destinationPlaceholder}
+              className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
+            />
 
-          <WithoutGenericClick>
-            <Button
-              aria-label={swapLabel}
-              size="icon"
-              variant="secondary"
-              className="absolute end-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-pill shadow-raised z-10"
-              onClick={() => {
-                trackEvent("WayfindingInputRow", "wayfinding_route_swapped");
-                onSwap?.();
-              }}
-              type="button"
-            >
-              <ArrowDownUp className="w-4 h-4" />
-            </Button>
-          </WithoutGenericClick>
+            <WithoutGenericClick>
+              <Button
+                aria-label={swapLabel}
+                size="icon"
+                variant="secondary"
+                className="absolute end-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-pill shadow-raised z-10"
+                onClick={() => {
+                  trackEvent("WayfindingInputRow", "wayfinding_route_swapped");
+                  onSwap?.();
+                }}
+                type="button"
+              >
+                <ArrowDownUp className="w-4 h-4" />
+              </Button>
+            </WithoutGenericClick>
+          </div>
         </div>
-      </div>
+      </DensityScope>
     );
   },
 );

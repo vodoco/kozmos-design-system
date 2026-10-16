@@ -14,6 +14,7 @@ import {
   Plus,
 } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { DensityScope } from "../../theme/DensityScope";
 
 /**
  * The location control's mark for each state, as the Location Tracking
@@ -208,123 +209,126 @@ const MapControlsGroup = React.forwardRef<
     };
 
     return (
-      <div
-        ref={ref}
-        aria-label={label}
-        // Only its controls take presses: the 8px between them are the map's
-        // (decision 46; .kozmos-map-controls-group, owned-components.css).
-        className={cn(
-          "kozmos-map-controls-group relative flex flex-col gap-2",
-          className,
-        )}
-        role="group"
-        {...props}
-      >
-        {/* Zoom: one surface, its two controls its segments. The surface,
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          aria-label={label}
+          // Only its controls take presses: the 8px between them are the map's
+          // (decision 46; .kozmos-map-controls-group, owned-components.css).
+          className={cn(
+            "kozmos-map-controls-group relative flex flex-col gap-2",
+            className,
+          )}
+          role="group"
+          {...props}
+        >
+          {/* Zoom: one surface, its two controls its segments. The surface,
             the hairline between them and their inset focus rings are the
             owned map-control rules. */}
-        {(onZoomIn || onZoomOut) && (
-          <div className="kozmos-reset kozmos-map-control-stack">
-            {onZoomIn && (
-              <MapControlButton
-                icon={<Plus />}
-                label={zoomInLabel}
-                variant="ghost"
-                onClick={handleZoomIn}
-              />
-            )}
-            {onZoomOut && (
-              <MapControlButton
-                icon={<Minus />}
-                label={zoomOutLabel}
-                variant="ghost"
-                onClick={handleZoomOut}
-              />
-            )}
-          </div>
-        )}
+          {(onZoomIn || onZoomOut) && (
+            <div className="kozmos-reset kozmos-map-control-stack">
+              {onZoomIn && (
+                <MapControlButton
+                  icon={<Plus />}
+                  label={zoomInLabel}
+                  variant="ghost"
+                  onClick={handleZoomIn}
+                />
+              )}
+              {onZoomOut && (
+                <MapControlButton
+                  icon={<Minus />}
+                  label={zoomOutLabel}
+                  variant="ghost"
+                  onClick={handleZoomOut}
+                />
+              )}
+            </div>
+          )}
 
-        {/* Compass */}
-        {onCompassReset && (
-          <MapControlButton
-            icon={
-              <Compass
-                className="transition-transform duration-300"
-                style={{ transform: `rotate(${compassBearing}deg)` }}
-              />
-            }
-            label={compassResetLabel}
-            variant="ghost"
-            onClick={() => {
-              trackEvent("MapControls", "compass_reset", {});
-              onCompassReset();
-            }}
-          />
-        )}
+          {/* Compass */}
+          {onCompassReset && (
+            <MapControlButton
+              icon={
+                <Compass
+                  className="transition-transform duration-300"
+                  style={{ transform: `rotate(${compassBearing}deg)` }}
+                />
+              }
+              label={compassResetLabel}
+              variant="ghost"
+              onClick={() => {
+                trackEvent("MapControls", "compass_reset", {});
+                onCompassReset();
+              }}
+            />
+          )}
 
-        {/* Step-free, in the location control's place while a route is
+          {/* Step-free, in the location control's place while a route is
             active. Two controls, keyed apart: sharing one button, the swap
             read as that button changing state, revealed a label nobody had
             set, and handed the location control's focus to the new one. */}
-        {onStepFreeChange ? (
-          <MapControlButton
-            key="step-free"
-            data-map-control="step-free"
-            icon={
-              <LocationMarkBox>
-                {stepFreeIcon ?? <Accessibility />}
-              </LocationMarkBox>
-            }
-            label={stepFreeLabel}
-            labelPlacement={locationLabelPlacement}
-            presentation={locationPresentation}
-            pressed={stepFree}
-            revealOnChange={locationRevealOnChange}
-            stateLabel={stepFree ? stepFreeOnLabel : stepFreeOffLabel}
-            onClick={() => {
-              trackEvent("MapControls", "step_free_toggled", {
-                stepFree: !stepFree,
-              });
-              onStepFreeChange(!stepFree);
-            }}
-          />
-        ) : (
-          /* My Location */
-          onMyLocation && (
+          {onStepFreeChange ? (
             <MapControlButton
-              key="location"
-              data-location-state={locationState}
+              key="step-free"
+              data-map-control="step-free"
               icon={
                 <LocationMarkBox>
-                  {locationIcons?.[locationState] ??
-                    defaultLocationMark(locationState)}
+                  {stepFreeIcon ?? <Accessibility />}
                 </LocationMarkBox>
               }
-              isLoading={locationState === "locating"}
-              label={locationLabel}
+              label={stepFreeLabel}
               labelPlacement={locationLabelPlacement}
               presentation={locationPresentation}
-              pressed={
-                locationState === "following" || locationState === "heading"
-              }
+              pressed={stepFree}
               revealOnChange={locationRevealOnChange}
-              showLabel={!hasNoPosition(locationState)}
-              stateDescription={
-                locationState === "heading"
-                  ? locationHeadingDescription
-                  : locationState === "heading-paused"
-                    ? locationHeadingPausedDescription
-                    : undefined
-              }
-              stateLabel={locationStateLabel}
+              stateLabel={stepFree ? stepFreeOnLabel : stepFreeOffLabel}
               onClick={() => {
-                trackEvent("MapControls", "my_location_triggered", {});
-                onMyLocation();
+                trackEvent("MapControls", "step_free_toggled", {
+                  stepFree: !stepFree,
+                });
+                onStepFreeChange(!stepFree);
               }}
             />
-          )
-        )}
-      </div>
+          ) : (
+            /* My Location */
+            onMyLocation && (
+              <MapControlButton
+                key="location"
+                data-location-state={locationState}
+                icon={
+                  <LocationMarkBox>
+                    {locationIcons?.[locationState] ??
+                      defaultLocationMark(locationState)}
+                  </LocationMarkBox>
+                }
+                isLoading={locationState === "locating"}
+                label={locationLabel}
+                labelPlacement={locationLabelPlacement}
+                presentation={locationPresentation}
+                pressed={
+                  locationState === "following" || locationState === "heading"
+                }
+                revealOnChange={locationRevealOnChange}
+                showLabel={!hasNoPosition(locationState)}
+                stateDescription={
+                  locationState === "heading"
+                    ? locationHeadingDescription
+                    : locationState === "heading-paused"
+                      ? locationHeadingPausedDescription
+                      : undefined
+                }
+                stateLabel={locationStateLabel}
+                onClick={() => {
+                  trackEvent("MapControls", "my_location_triggered", {});
+                  onMyLocation();
+                }}
+              />
+            )
+          )}
+        </div>
+      </DensityScope>
     );
   },
 );

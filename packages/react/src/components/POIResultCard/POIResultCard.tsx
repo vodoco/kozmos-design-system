@@ -13,6 +13,7 @@ import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
 import { WithoutGenericClick } from "../../utils/generic-click";
+import { DensityScope } from "../../theme/DensityScope";
 
 /** Android's double-tap timeout, and about iOS's: a second tap within it opens. */
 const DOUBLE_TAP_MS = 300;
@@ -335,274 +336,275 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     );
 
     return (
-      <article
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        className={cn(
-          "kozmos-poi-result-card relative bg-card text-card-foreground",
-          appearance === "card" && "rounded-control border",
-          !sdk &&
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <article
+          ref={ref}
+          className={cn(
+            "kozmos-poi-result-card relative bg-card text-card-foreground",
+            appearance === "card" && "rounded-control border",
+            !sdk &&
+              appearance === "card" &&
+              result.selected &&
+              "ring-2 ring-primary/20",
+            // Only Featured recolours the card's edge, in its tab's amber (an
+            // owned rule), selected or not. Legacy uses a selection ring; SDK
+            // uses the neutral selection surface. A
+            // number keeps the grey edge, so it never reads as the selected
+            // card, and a badge is quiet: it must not read as featured
+            // (GAP-054).
             appearance === "card" &&
-            result.selected &&
-            "ring-2 ring-primary/20",
-          // Only Featured recolours the card's edge, in its tab's amber (an
-          // owned rule), selected or not. Legacy uses a selection ring; SDK
-          // uses the neutral selection surface. A
-          // number keeps the grey edge, so it never reads as the selected
-          // card, and a badge is quiet: it must not read as featured
-          // (GAP-054).
-          appearance === "card" &&
-            (tab?.kind === "featured"
-              ? "kozmos-poi-result-card-featured"
-              : result.selected && !sdk
-                ? "border-primary"
-                : "border-border"),
-          // A row states its selection with a fill, since it has no border of
-          // its own to thicken.
-          !sdk && appearance === "row" && result.selected && "bg-primary/5",
-          className,
-        )}
-        data-appearance={appearance}
-        data-presentation-style={presentationStyle}
-        data-available={available}
-        data-current-floor={onCurrentFloor || undefined}
-        data-featured={result.featured || undefined}
-        data-poi-id={poi.id}
-        data-selected={result.selected || undefined}
-        id={id}
-        {...props}
-      >
-        {/* Owned CSS preserves legacy geometry and gives SDK tabs normal-flow
+              (tab?.kind === "featured"
+                ? "kozmos-poi-result-card-featured"
+                : result.selected && !sdk
+                  ? "border-primary"
+                  : "border-border"),
+            // A row states its selection with a fill, since it has no border of
+            // its own to thicken.
+            !sdk && appearance === "row" && result.selected && "bg-primary/5",
+            className,
+          )}
+          data-appearance={appearance}
+          data-presentation-style={presentationStyle}
+          data-available={available}
+          data-current-floor={onCurrentFloor || undefined}
+          data-featured={result.featured || undefined}
+          data-poi-id={poi.id}
+          data-selected={result.selected || undefined}
+          id={id}
+          {...props}
+        >
+          {/* Owned CSS preserves legacy geometry and gives SDK tabs normal-flow
             height, matching outer/inner radii and wider padding. The combined
             SDK tab is decorative: its words are announced once by the row. */}
-        {!sdk && appearance === "card" && cornerTab}
+          {!sdk && appearance === "card" && cornerTab}
 
-        <button
-          aria-controls={showActions ? actionsId : undefined}
-          aria-describedby={describedBy}
-          aria-expanded={
-            (result.actions?.length ?? 0) > 0 ? showActions : undefined
-          }
-          aria-label={selectionLabel}
-          // `aria-current`, not `aria-pressed` (GAP-049).
-          //
-          // A pressed button is a toggle, and this one is not: `handleSelect`
-          // always selects, so a second tap never releases it. Claiming the
-          // toggle meant every result in a list announced itself as a button
-          // that was "not pressed" — a state the visitor could not reach and
-          // the card could not leave.
-          //
-          // What is actually true is that one result is the current one, which
-          // is what LocationPin has always said about the same state, in the
-          // same word. The two now agree, which matters: the pin and the row
-          // are one thing to a visitor and are announced together.
-          aria-current={result.selected ? "location" : undefined}
-          className="kozmos-reset kozmos-poi-result-select"
-          disabled={!available}
-          onClick={handleSelect}
-          type="button"
-        >
-          {sdk && cornerTab}
-          <span
-            className={cn(
-              "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3",
-              !sdk && appearance === "card" && tab && "pt-6",
-            )}
+          <button
+            aria-controls={showActions ? actionsId : undefined}
+            aria-describedby={describedBy}
+            aria-expanded={
+              (result.actions?.length ?? 0) > 0 ? showActions : undefined
+            }
+            aria-label={selectionLabel}
+            // `aria-current`, not `aria-pressed` (GAP-049).
+            //
+            // A pressed button is a toggle, and this one is not: `handleSelect`
+            // always selects, so a second tap never releases it. Claiming the
+            // toggle meant every result in a list announced itself as a button
+            // that was "not pressed" — a state the visitor could not reach and
+            // the card could not leave.
+            //
+            // What is actually true is that one result is the current one, which
+            // is what LocationPin has always said about the same state, in the
+            // same word. The two now agree, which matters: the pin and the row
+            // are one thing to a visitor and are announced together.
+            aria-current={result.selected ? "location" : undefined}
+            className="kozmos-reset kozmos-poi-result-select"
+            disabled={!available}
+            onClick={handleSelect}
+            type="button"
           >
-            <span className="min-w-0">
-              {sdk && (number !== undefined || tab) && (
-                <>
-                  <span className="kozmos-poi-result-number-name">
-                    {[number, tab?.kind !== "number" ? tab?.label : undefined]
-                      .filter(Boolean)
-                      .join(", ")}
-                    {","}
-                  </span>{" "}
-                </>
+            {sdk && cornerTab}
+            <span
+              className={cn(
+                "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3",
+                !sdk && appearance === "card" && tab && "pt-6",
               )}
-              {!sdk && number !== undefined && (
-                // The number leads the result's name, "2, Burger King": the tab
-                // that draws it is decorative. The space after it keeps WebKit
-                // from running it into the name.
-                <>
-                  <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
-                </>
-              )}
-              {!sdk && appearance === "row" && number !== undefined ? (
-                // A row in a POIResultGroup has no edge of its own to hang a
-                // tab from, so its number stands before its name, painted as
-                // the tab is.
-                <span className="flex min-w-0 items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
-                    data-placement="inline"
-                    data-selected={result.selected || undefined}
-                    data-tab="number"
-                  >
-                    {number}
+            >
+              <span className="min-w-0">
+                {sdk && (number !== undefined || tab) && (
+                  <>
+                    <span className="kozmos-poi-result-number-name">
+                      {[number, tab?.kind !== "number" ? tab?.label : undefined]
+                        .filter(Boolean)
+                        .join(", ")}
+                      {","}
+                    </span>{" "}
+                  </>
+                )}
+                {!sdk && number !== undefined && (
+                  // The number leads the result's name, "2, Burger King": the tab
+                  // that draws it is decorative. The space after it keeps WebKit
+                  // from running it into the name.
+                  <>
+                    <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
+                  </>
+                )}
+                {!sdk && appearance === "row" && number !== undefined ? (
+                  // A row in a POIResultGroup has no edge of its own to hang a
+                  // tab from, so its number stands before its name, painted as
+                  // the tab is.
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
+                      data-placement="inline"
+                      data-selected={result.selected || undefined}
+                      data-tab="number"
+                    >
+                      {number}
+                    </span>
+                    {name}
                   </span>
-                  {name}
+                ) : (
+                  name
+                )}
+                {poi.categoryLabel && (
+                  <span className="mt-0.5 block truncate text-sm text-muted-foreground">
+                    {poi.categoryLabel}
+                  </span>
+                )}
+                <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                  {onCurrentFloor && (
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 shrink-0 rounded-pill bg-primary"
+                    />
+                  )}
+                  <span className="truncate">{locationLabel}</span>
                 </span>
-              ) : (
-                name
-              )}
-              {poi.categoryLabel && (
-                <span className="mt-0.5 block truncate text-sm text-muted-foreground">
-                  {poi.categoryLabel}
-                </span>
-              )}
-              <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-                {onCurrentFloor && (
+                {result.summary && (
+                  // One generated line about this result. Two lines at most: a
+                  // result card is scanned, and a summary that grows makes the
+                  // cards below it move (GAP-029). The model writes it in the
+                  // query's language, which may not be the page's: its tag
+                  // makes a screen reader change voice for these words alone,
+                  // and is set only when the two differ (GAP-125).
                   <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 shrink-0 rounded-pill bg-primary"
+                    className="kozmos-poi-result-summary mt-1 line-clamp-2 block text-sm text-muted-foreground"
+                    lang={result.summaryLanguage || undefined}
+                    // Its own direction too, as the name's: a Hebrew summary's
+                    // full stop, and the clamp's ellipsis, at its end.
+                    dir="auto"
+                  >
+                    {result.summary}
+                  </span>
+                )}
+                {attributes.length > 0 && (
+                  <ul className="mt-1.5 flex list-none flex-wrap gap-1 p-0">
+                    {attributes.map((attribute) => (
+                      <li
+                        className={cn(
+                          "inline-flex max-w-full items-center gap-1 rounded-pill border px-2 py-0.5 text-xs font-medium",
+                          attributeTone[attribute.kind ?? "service"],
+                        )}
+                        key={attribute.id}
+                      >
+                        {attribute.iconUrl && (
+                          <img
+                            alt=""
+                            aria-hidden="true"
+                            className="h-3 w-3 shrink-0"
+                            src={attribute.iconUrl}
+                          />
+                        )}
+                        <span className="truncate">{attribute.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {poi.availabilityLabel && (
+                  <span
+                    className={cn(
+                      "mt-1 block text-xs font-semibold",
+                      poi.availability
+                        ? availabilityTone[poi.availability]
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {poi.availabilityLabel}
+                  </span>
+                )}
+              </span>
+
+              <span className="flex shrink-0 flex-col items-end gap-2">
+                {poi.logo && (
+                  <img
+                    alt={poi.logo.alt}
+                    className="h-12 w-12 rounded-control border border-border object-contain"
+                    src={poi.logo.src}
                   />
                 )}
-                <span className="truncate">{locationLabel}</span>
+                {result.travelEstimate && (
+                  <span
+                    className={cn(
+                      "whitespace-nowrap text-sm",
+                      // The word says Nearby, so the tone is never the only
+                      // signal; the colour is an owned rule, so it holds where
+                      // the utilities do not.
+                      band && bandLabel && travelTimeTone(band) === "success"
+                        ? "kozmos-travel-time-success"
+                        : "text-foreground",
+                    )}
+                  >
+                    {bandLabel || result.travelEstimate.durationLabel}
+                  </span>
+                )}
               </span>
-              {result.summary && (
-                // One generated line about this result. Two lines at most: a
-                // result card is scanned, and a summary that grows makes the
-                // cards below it move (GAP-029). The model writes it in the
-                // query's language, which may not be the page's: its tag
-                // makes a screen reader change voice for these words alone,
-                // and is set only when the two differ (GAP-125).
-                <span
-                  className="kozmos-poi-result-summary mt-1 line-clamp-2 block text-sm text-muted-foreground"
-                  lang={result.summaryLanguage || undefined}
-                  // Its own direction too, as the name's: a Hebrew summary's
-                  // full stop, and the clamp's ellipsis, at its end.
-                  dir="auto"
-                >
-                  {result.summary}
-                </span>
-              )}
-              {attributes.length > 0 && (
-                <ul className="mt-1.5 flex list-none flex-wrap gap-1 p-0">
-                  {attributes.map((attribute) => (
-                    <li
-                      className={cn(
-                        "inline-flex max-w-full items-center gap-1 rounded-pill border px-2 py-0.5 text-xs font-medium",
-                        attributeTone[attribute.kind ?? "service"],
-                      )}
-                      key={attribute.id}
-                    >
-                      {attribute.iconUrl && (
-                        <img
-                          alt=""
-                          aria-hidden="true"
-                          className="h-3 w-3 shrink-0"
-                          src={attribute.iconUrl}
-                        />
-                      )}
-                      <span className="truncate">{attribute.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {poi.availabilityLabel && (
-                <span
-                  className={cn(
-                    "mt-1 block text-xs font-semibold",
-                    poi.availability
-                      ? availabilityTone[poi.availability]
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {poi.availabilityLabel}
-                </span>
-              )}
             </span>
+          </button>
 
-            <span className="flex shrink-0 flex-col items-end gap-2">
-              {poi.logo && (
-                <img
-                  alt={poi.logo.alt}
-                  className="h-12 w-12 rounded-control border border-border object-contain"
-                  src={poi.logo.src}
-                />
-              )}
-              {result.travelEstimate && (
-                <span
-                  className={cn(
-                    "whitespace-nowrap text-sm",
-                    // The word says Nearby, so the tone is never the only
-                    // signal; the colour is an owned rule, so it holds where
-                    // the utilities do not.
-                    band && bandLabel && travelTimeTone(band) === "success"
-                      ? "kozmos-travel-time-success"
-                      : "text-foreground",
-                  )}
-                >
-                  {bandLabel || result.travelEstimate.durationLabel}
-                </span>
-              )}
-            </span>
-          </span>
-        </button>
+          {result.languageNotListed === true && (
+            <p
+              id={languageNotListedId}
+              className="px-4 pb-3 text-sm text-muted-foreground"
+            >
+              {languageNotListedLabel}
+            </p>
+          )}
 
-        {result.languageNotListed === true && (
-          <p
-            id={languageNotListedId}
-            className="px-4 pb-3 text-sm text-muted-foreground"
-          >
-            {languageNotListedLabel}
-          </p>
-        )}
-
-        {/* A sibling of the select button, never a child of it. A button inside
+          {/* A sibling of the select button, never a child of it. A button inside
             a button is invalid HTML: the browser closes the outer one, and
             what a screen reader and the keyboard then get is not what the
             markup says. This is why the whole card could not simply gain two
             more buttons. */}
-        {showActions && (
-          <div className="kozmos-poi-result-actions">
-            <div
-              aria-label={actionsLabel}
-              className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border px-4 py-3"
-              id={actionsId}
-              role="group"
-            >
-              <WithoutGenericClick>
-                {actions.map((entry, index) => (
-                  <Button
-                    variant={entry.primary ? "default" : "outline"}
-                    emotion={entry.primary ? "themed" : "neutral"}
-                    // The row owns available space; Core still owns the action's
-                    // appearance and interaction. Translations grow vertically.
-                    className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
-                    disabled={entry.disabled || !onAction}
-                    key={`${entry.action}-${index}`}
-                    onClick={() => handleAction(entry.action)}
-                    type="button"
-                  >
-                    {sdk && entry.action === "navigate" && (
-                      <NavigationPointer01
-                        aria-hidden="true"
-                        className="h-5 w-5 shrink-0"
-                      />
-                    )}
-                    <span className="min-w-0 [overflow-wrap:anywhere]">
-                      {entry.label}
-                    </span>
-                  </Button>
-                ))}
-              </WithoutGenericClick>
+          {showActions && (
+            <div className="kozmos-poi-result-actions">
+              <div
+                aria-label={actionsLabel}
+                className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border px-4 py-3"
+                id={actionsId}
+                role="group"
+              >
+                <WithoutGenericClick>
+                  {actions.map((entry, index) => (
+                    <Button
+                      variant={entry.primary ? "default" : "outline"}
+                      emotion={entry.primary ? "themed" : "neutral"}
+                      // The row owns available space; Core still owns the action's
+                      // appearance and interaction. Translations grow vertically.
+                      className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
+                      disabled={entry.disabled || !onAction}
+                      key={`${entry.action}-${index}`}
+                      onClick={() => handleAction(entry.action)}
+                      type="button"
+                    >
+                      {sdk && entry.action === "navigate" && (
+                        <NavigationPointer01
+                          aria-hidden="true"
+                          className="h-5 w-5 shrink-0"
+                        />
+                      )}
+                      <span className="min-w-0 [overflow-wrap:anywhere]">
+                        {entry.label}
+                      </span>
+                    </Button>
+                  ))}
+                </WithoutGenericClick>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!available && result.unavailableReason && (
-          <p
-            className="border-t border-border px-4 py-2 text-xs text-muted-foreground"
-            id={unavailableId}
-          >
-            {result.unavailableReason}
-          </p>
-        )}
-      </article>
+          {!available && result.unavailableReason && (
+            <p
+              className="border-t border-border px-4 py-2 text-xs text-muted-foreground"
+              id={unavailableId}
+            >
+              {result.unavailableReason}
+            </p>
+          )}
+        </article>
+      </DensityScope>
     );
   },
 );

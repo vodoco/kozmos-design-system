@@ -3,6 +3,7 @@ import type { POIMediaPresentation } from "@kozmos-ds/product-contracts";
 import { ChevronLeft, ChevronRight } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { IconButton } from "../IconButton";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface POIMediaGalleryProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
@@ -202,118 +203,119 @@ const POIMediaGallery = React.forwardRef<HTMLElement, POIMediaGalleryProps>(
 
     if (!hasMedia) return null;
     return (
-      <section
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        aria-label={label}
-        className={cn("kozmos-reset kozmos-poi-gallery", className)}
-        {...props}
-      >
-        <div className="kozmos-poi-gallery-toolbar">
-          <p
-            aria-live="polite"
-            aria-atomic="true"
-            className="kozmos-reset kozmos-poi-gallery-position"
-          >
-            {positionLabel(currentIndex + 1, media.length)}
-          </p>
-          {media.length > 1 && (
-            <div
-              aria-label={controlsLabel}
-              className="kozmos-poi-gallery-controls"
-              role="group"
-            >
-              <IconButton
-                aria-controls={galleryId}
-                aria-label={previousLabel}
-                variant="outline"
-                emotion="neutral"
-                disabled={currentIndex === 0}
-                onClick={() => selectIndex(currentIndex - 1)}
-                type="button"
-              >
-                <ChevronLeft
-                  aria-hidden="true"
-                  className="kozmos-poi-gallery-arrow"
-                  size={20}
-                />
-              </IconButton>
-              <IconButton
-                aria-controls={galleryId}
-                aria-label={nextLabel}
-                variant="outline"
-                emotion="neutral"
-                disabled={currentIndex === media.length - 1}
-                onClick={() => selectIndex(currentIndex + 1)}
-                type="button"
-              >
-                <ChevronRight
-                  aria-hidden="true"
-                  className="kozmos-poi-gallery-arrow"
-                  size={20}
-                />
-              </IconButton>
-            </div>
-          )}
-        </div>
-        <ul
-          tabIndex={0}
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
           aria-label={label}
-          ref={listRef}
-          id={galleryId}
-          className="kozmos-reset kozmos-poi-gallery-list"
-          onScroll={onScroll}
-          onKeyDown={(event) => {
-            if (
-              event.target !== event.currentTarget ||
-              event.altKey ||
-              event.ctrlKey ||
-              event.metaKey ||
-              event.shiftKey
-            )
-              return;
-            const rtl =
-              getComputedStyle(event.currentTarget).direction === "rtl";
-            const offset =
-              event.key === "ArrowRight"
-                ? rtl
-                  ? -1
-                  : 1
-                : event.key === "ArrowLeft"
-                  ? rtl
-                    ? 1
-                    : -1
-                  : 0;
-            if (offset || event.key === "Home" || event.key === "End") {
-              event.preventDefault();
-              selectIndex(
-                event.key === "Home"
-                  ? 0
-                  : event.key === "End"
-                    ? media.length - 1
-                    : currentIndex + offset,
-              );
-            }
-          }}
+          className={cn("kozmos-reset kozmos-poi-gallery", className)}
+          {...props}
         >
-          {media.map((item, index) => (
-            <li
-              className="kozmos-reset kozmos-poi-gallery-item"
-              data-active={index === currentIndex || undefined}
-              aria-current={index === currentIndex ? "true" : undefined}
-              key={item.id}
+          <div className="kozmos-poi-gallery-toolbar">
+            <p
+              aria-live="polite"
+              aria-atomic="true"
+              className="kozmos-reset kozmos-poi-gallery-position"
             >
-              <MediaImage
-                key={item.src}
-                item={item}
-                eager={index === currentIndex}
-                unavailableLabel={unavailableLabel}
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
+              {positionLabel(currentIndex + 1, media.length)}
+            </p>
+            {media.length > 1 && (
+              <div
+                aria-label={controlsLabel}
+                className="kozmos-poi-gallery-controls"
+                role="group"
+              >
+                <IconButton
+                  aria-controls={galleryId}
+                  aria-label={previousLabel}
+                  variant="outline"
+                  emotion="neutral"
+                  disabled={currentIndex === 0}
+                  onClick={() => selectIndex(currentIndex - 1)}
+                  type="button"
+                >
+                  <ChevronLeft
+                    aria-hidden="true"
+                    className="kozmos-poi-gallery-arrow"
+                    size={20}
+                  />
+                </IconButton>
+                <IconButton
+                  aria-controls={galleryId}
+                  aria-label={nextLabel}
+                  variant="outline"
+                  emotion="neutral"
+                  disabled={currentIndex === media.length - 1}
+                  onClick={() => selectIndex(currentIndex + 1)}
+                  type="button"
+                >
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="kozmos-poi-gallery-arrow"
+                    size={20}
+                  />
+                </IconButton>
+              </div>
+            )}
+          </div>
+          <ul
+            tabIndex={0}
+            aria-label={label}
+            ref={listRef}
+            id={galleryId}
+            className="kozmos-reset kozmos-poi-gallery-list"
+            onScroll={onScroll}
+            onKeyDown={(event) => {
+              if (
+                event.target !== event.currentTarget ||
+                event.altKey ||
+                event.ctrlKey ||
+                event.metaKey ||
+                event.shiftKey
+              )
+                return;
+              const rtl =
+                getComputedStyle(event.currentTarget).direction === "rtl";
+              const offset =
+                event.key === "ArrowRight"
+                  ? rtl
+                    ? -1
+                    : 1
+                  : event.key === "ArrowLeft"
+                    ? rtl
+                      ? 1
+                      : -1
+                    : 0;
+              if (offset || event.key === "Home" || event.key === "End") {
+                event.preventDefault();
+                selectIndex(
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? media.length - 1
+                      : currentIndex + offset,
+                );
+              }
+            }}
+          >
+            {media.map((item, index) => (
+              <li
+                className="kozmos-reset kozmos-poi-gallery-item"
+                data-active={index === currentIndex || undefined}
+                aria-current={index === currentIndex ? "true" : undefined}
+                key={item.id}
+              >
+                <MediaImage
+                  key={item.src}
+                  item={item}
+                  eager={index === currentIndex}
+                  unavailableLabel={unavailableLabel}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      </DensityScope>
     );
   },
 );

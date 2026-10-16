@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "../../utils";
 import { Button, type ButtonProps } from "../Button";
 import { useRevealOnChange } from "../../hooks/useRevealOnChange";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface MapControlButtonProps extends Omit<
   ButtonProps,
@@ -133,58 +134,59 @@ const MapControlButton = React.forwardRef<
     const drawsLabel = showLabel || !stateLabel;
 
     return (
-      <Button
-        // The SDK's touch geometry under any density (decision 82).
-        data-kozmos-density="touch"
-        ref={ref}
-        aria-label={accessibleLabel}
-        aria-pressed={pressed}
-        // The surface, its size and padding, the collapse and the tones are
-        // the owned map-control rules (styles/owned-map-controls.css), keyed
-        // to `data-presentation` and `aria-pressed`: the SDK's Tracking
-        // Indicator (decision 40). No utility here restates them, because a
-        // scoped utility outweighs an owned rule — the ring that drew a map
-        // control's edge also drew its focus ring in the edge's grey. A
-        // caller's className still wins, as over every owned rule.
-        className={cn("kozmos-map-control", className)}
-        data-presentation={resolvedPresentation}
-        type={type}
-        variant={resolvedVariant}
-        {...props}
-      >
-        <span
-          aria-hidden="true"
-          className="kozmos-reset kozmos-map-control-mark"
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <Button
+          ref={ref}
+          aria-label={accessibleLabel}
+          aria-pressed={pressed}
+          // The surface, its size and padding, the collapse and the tones are
+          // the owned map-control rules (styles/owned-map-controls.css), keyed
+          // to `data-presentation` and `aria-pressed`: the SDK's Tracking
+          // Indicator (decision 40). No utility here restates them, because a
+          // scoped utility outweighs an owned rule — the ring that drew a map
+          // control's edge also drew its focus ring in the edge's grey. A
+          // caller's className still wins, as over every owned rule.
+          className={cn("kozmos-map-control", className)}
+          data-presentation={resolvedPresentation}
+          type={type}
+          variant={resolvedVariant}
+          {...props}
         >
-          {icon}
-        </span>
-        {/*
+          <span
+            aria-hidden="true"
+            className="kozmos-reset kozmos-map-control-mark"
+          >
+            {icon}
+          </span>
+          {/*
           Always mounted, and clipped when icon-only, so max-width has something
           to animate between. The button's aria-label is the accessible name in
           both presentations, so clipped text is never what a screen reader
           reads. Two equal lines when stacked, the SDK's "Focus⏎Off": bold 16
           on a 16 line, in the control's tone.
         */}
-        <span
-          className={cn(
-            "kozmos-reset kozmos-map-control-words",
-            labelPlacement === "stacked"
-              ? "kozmos-map-control-words-stacked"
-              : "kozmos-map-control-words-inline",
-          )}
-        >
-          {drawsLabel && (
-            <span className="kozmos-reset kozmos-map-control-line">
-              {label}
-            </span>
-          )}
-          {stateLabel && (
-            <span className="kozmos-reset kozmos-map-control-line">
-              {stateLabel}
-            </span>
-          )}
-        </span>
-      </Button>
+          <span
+            className={cn(
+              "kozmos-reset kozmos-map-control-words",
+              labelPlacement === "stacked"
+                ? "kozmos-map-control-words-stacked"
+                : "kozmos-map-control-words-inline",
+            )}
+          >
+            {drawsLabel && (
+              <span className="kozmos-reset kozmos-map-control-line">
+                {label}
+              </span>
+            )}
+            {stateLabel && (
+              <span className="kozmos-reset kozmos-map-control-line">
+                {stateLabel}
+              </span>
+            )}
+          </span>
+        </Button>
+      </DensityScope>
     );
   },
 );

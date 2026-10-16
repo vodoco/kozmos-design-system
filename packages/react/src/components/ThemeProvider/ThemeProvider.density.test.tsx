@@ -1,8 +1,11 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ThemeProvider } from "./ThemeProvider";
 import { DesignConfigProvider } from "../../context/DesignConfigContext";
+import { DensityScope } from "../../theme/DensityScope";
 import { KozmosTheme } from "../../theme/KozmosTheme";
+import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
+import { RouteSetupPanel } from "../RouteSetupPanel";
 
 // Decision 82: a compact density for pointer-first desktop tools (Pointr
 // Cloud). The provider marks its root and its portal root, so every part
@@ -79,5 +82,123 @@ describe("DesignConfigProvider and KozmosTheme density", () => {
           ?.closest("[data-kozmos-root]")
           ?.getAttribute("data-kozmos-density"),
       ).toBe("compact");
+  });
+});
+
+// One region at another density (decision 82): DensityScope marks its element
+// and sets the density for the providers inside it and the popovers it opens,
+// and keeps the provider's theme around it.
+describe("DensityScope", () => {
+  const densityOf = (id: string) =>
+    screen
+      .getByTestId(id)
+      .closest("[data-kozmos-density]")
+      ?.getAttribute("data-kozmos-density");
+
+  it("marks the one child it is given, adding no element", () => {
+    render(
+      <ThemeProvider density="compact">
+        <DensityScope density="touch" asChild>
+          <section data-testid="part" />
+        </DensityScope>
+      </ThemeProvider>,
+    );
+    const part = screen.getByTestId("part");
+    expect(part.getAttribute("data-kozmos-density")).toBe("touch");
+    expect(part.parentElement?.hasAttribute("data-kozmos-root")).toBe(true);
+  });
+
+  it("marks an element of its own, which draws no box, without asChild", () => {
+    render(
+      <ThemeProvider>
+        <DensityScope density="compact">
+          <span data-testid="inside" />
+        </DensityScope>
+      </ThemeProvider>,
+    );
+    const scope = screen.getByTestId("inside").parentElement!;
+    expect(scope.getAttribute("data-kozmos-density")).toBe("compact");
+    expect(scope.style.display).toBe("contents");
+    expect(scope.hasAttribute("data-kozmos-root")).toBe(false);
+  });
+
+  it("sets the density of a provider nested in it", () => {
+    render(
+      <ThemeProvider density="compact">
+        <DensityScope density="touch">
+          <ThemeProvider>
+            <span data-testid="nested" />
+          </ThemeProvider>
+        </DensityScope>
+      </ThemeProvider>,
+    );
+    expect(
+      screen
+        .getByTestId("nested")
+        .closest("[data-kozmos-root]")
+        ?.getAttribute("data-kozmos-density"),
+    ).toBe("touch");
+  });
+
+  it("keeps the theme and the tokens around it: it is no provider", () => {
+    render(
+      <ThemeProvider
+        density="compact"
+        theme="dark"
+        tokens={{ "--probe": "1px" }}
+      >
+        <DensityScope density="touch">
+          <span data-testid="inside" />
+        </DensityScope>
+      </ThemeProvider>,
+    );
+    const root = screen.getByTestId("inside").closest("[data-kozmos-root]");
+    expect(root?.getAttribute("data-theme")).toBe("dark");
+    expect((root as HTMLElement).style.getPropertyValue("--probe")).toBe("1px");
+    expect(root?.getAttribute("data-kozmos-density")).toBe("compact");
+    expect(densityOf("inside")).toBe("touch");
+  });
+
+  it("opens its popovers at its density, in the provider's portal", () => {
+    render(
+      <ThemeProvider density="compact">
+        <DensityScope density="touch">
+          <Popover open>
+            <PopoverTrigger>Open</PopoverTrigger>
+            <PopoverContent data-testid="popover">Inside</PopoverContent>
+          </Popover>
+        </DensityScope>
+        <Popover open>
+          <PopoverTrigger>Open</PopoverTrigger>
+          <PopoverContent data-testid="page-popover">Page</PopoverContent>
+        </Popover>
+      </ThemeProvider>,
+    );
+    const popover = screen.getByTestId("popover");
+    expect(popover.closest("[data-kozmos-portal]")).not.toBeNull();
+    expect(popover.getAttribute("data-kozmos-density")).toBe("touch");
+    expect(densityOf("page-popover")).toBe("compact");
+  });
+
+  it("is every SDK part's root: a provider and a popover inside stay touch", () => {
+    render(
+      <ThemeProvider density="compact">
+        <RouteSetupPanel
+          ready
+          onContinue={() => undefined}
+          onClose={() => undefined}
+        >
+          <ThemeProvider>
+            <span data-testid="provider-in-part" />
+          </ThemeProvider>
+          <Popover open>
+            <PopoverTrigger>Open</PopoverTrigger>
+            <PopoverContent data-testid="part-popover">Inside</PopoverContent>
+          </Popover>
+        </RouteSetupPanel>
+      </ThemeProvider>,
+    );
+    expect(densityOf("provider-in-part")).toBe("touch");
+    expect(densityOf("part-popover")).toBe("touch");
   });
 });

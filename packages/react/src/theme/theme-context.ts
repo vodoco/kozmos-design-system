@@ -1,6 +1,5 @@
 import { createContext } from "react";
 import type {
-  ThemeDensity,
   Theme,
   ResolvedTheme,
   ThemeTokens,
@@ -16,7 +15,6 @@ export interface ThemeState {
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
   dir: "ltr" | "rtl";
-  density: ThemeDensity;
   /** The overrides this provider applies: its resolved theme's set. */
   tokens: ThemeTokens;
   tokenSets: InheritedThemeTokens;

@@ -3,6 +3,7 @@ import React from "react";
 import { MarkerPin01 as MapPin, Star01 as Star } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "primary" | "secondary" | "accent";
@@ -180,43 +181,45 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     };
 
     return (
-      <div
-        ref={ref}
-        aria-controls={resultId}
-        aria-current={selected ? "location" : undefined}
-        aria-disabled={isInteractive && disabled ? true : undefined}
-        aria-label={featured ? `${label}, ${featuredLabel}` : label}
-        className={cn(
-          // `left-0 top-0` physical, not `start-0`, and not omitted.
-          //
-          // The pin is positioned absolutely with no inset, so it fell back to
-          // its static position — where it would have sat in flow. In a
-          // left-to-right map that is the container's left edge, which is what
-          // the -50% translate expects. In Arabic it is the container's RIGHT
-          // edge, so every pin drew one pin-width to the left of its place.
-          //
-          // Physical because the translate beside it is physical: a logical
-          // `start-0` would flip the origin in RTL and leave the translate
-          // pulling the wrong way, which is the same bug with more steps. The
-          // renderer gives a physical point; the pin honours it.
-          "absolute left-0 top-0 flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-full items-center justify-center transition-transform",
-          isInteractive &&
-            "cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          selected && "scale-110",
-          disabled && "cursor-not-allowed opacity-50",
-          className,
-        )}
-        data-featured={featured || undefined}
-        data-off-floor={offFloor || undefined}
-        data-selected={selected || undefined}
-        onClick={isInteractive ? handleClick : undefined}
-        onKeyDown={handleKeyDown}
-        role={isInteractive ? "button" : "img"}
-        tabIndex={isInteractive && !disabled ? 0 : undefined}
-        {...props}
-      >
-        <span className="relative flex items-center justify-center">
-          {/* Selected, featured, or showing a logo, the marker is solid in its
+      // The SDK's touch geometry under any density (decision 82).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          aria-controls={resultId}
+          aria-current={selected ? "location" : undefined}
+          aria-disabled={isInteractive && disabled ? true : undefined}
+          aria-label={featured ? `${label}, ${featuredLabel}` : label}
+          className={cn(
+            // `left-0 top-0` physical, not `start-0`, and not omitted.
+            //
+            // The pin is positioned absolutely with no inset, so it fell back to
+            // its static position — where it would have sat in flow. In a
+            // left-to-right map that is the container's left edge, which is what
+            // the -50% translate expects. In Arabic it is the container's RIGHT
+            // edge, so every pin drew one pin-width to the left of its place.
+            //
+            // Physical because the translate beside it is physical: a logical
+            // `start-0` would flip the origin in RTL and leave the translate
+            // pulling the wrong way, which is the same bug with more steps. The
+            // renderer gives a physical point; the pin honours it.
+            "absolute left-0 top-0 flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-full items-center justify-center transition-transform",
+            isInteractive &&
+              "cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            selected && "scale-110",
+            disabled && "cursor-not-allowed opacity-50",
+            className,
+          )}
+          data-featured={featured || undefined}
+          data-off-floor={offFloor || undefined}
+          data-selected={selected || undefined}
+          onClick={isInteractive ? handleClick : undefined}
+          onKeyDown={handleKeyDown}
+          role={isInteractive ? "button" : "img"}
+          tabIndex={isInteractive && !disabled ? 0 : undefined}
+          {...props}
+        >
+          <span className="relative flex items-center justify-center">
+            {/* Selected, featured, or showing a logo, the marker is solid in its
               colour and the number is inked for that fill, as on iOS, Compose
               and in Figma. A numbered pin at rest is quiet: the outlined
               marker on the background, its ring and number in its colour.
@@ -224,55 +227,58 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
               the number in the foreground (Olcay, 2026-09-21), so shape, not
               colour, tells the floor. A number takes the place of the head's
               dot. */}
-          <MapPin
-            aria-hidden="true"
-            className={cn(
-              sizeClasses[size],
-              featured
-                ? featuredFill
-                : outlined
-                  ? outlineClasses[variant]
-                  : variantClasses[variant],
-              outlined ? "fill-background" : "fill-current",
-              offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]",
-              hasContent && "[&_circle]:hidden",
+            <MapPin
+              aria-hidden="true"
+              className={cn(
+                sizeClasses[size],
+                featured
+                  ? featuredFill
+                  : outlined
+                    ? outlineClasses[variant]
+                    : variantClasses[variant],
+                outlined ? "fill-background" : "fill-current",
+                offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]",
+                hasContent && "[&_circle]:hidden",
+              )}
+              style={tinted ? { color: tint?.fill } : undefined}
+            />
+            {hasContent && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-x-0 top-[18%] truncate px-1 text-center text-[10px] font-bold leading-none",
+                  // A tint's fill fails 4.5:1 as text on the background for six
+                  // of the eight categories (yellow reads 1.92:1), so an
+                  // outlined tinted pin's number is in the foreground.
+                  offFloor || (quiet && tinted)
+                    ? "text-foreground"
+                    : quiet
+                      ? outlineClasses[variant]
+                      : featured
+                        ? featuredInk
+                        : inkClasses[variant],
+                )}
+                style={
+                  tinted && !outlined ? { color: tint?.onFill } : undefined
+                }
+              >
+                {visibleContent}
+              </span>
             )}
-            style={tinted ? { color: tint?.fill } : undefined}
-          />
-          {hasContent && (
+          </span>
+          {externalLabel && (
             <span
               aria-hidden="true"
               className={cn(
-                "absolute inset-x-0 top-[18%] truncate px-1 text-center text-[10px] font-bold leading-none",
-                // A tint's fill fails 4.5:1 as text on the background for six
-                // of the eight categories (yellow reads 1.92:1), so an
-                // outlined tinted pin's number is in the foreground.
-                offFloor || (quiet && tinted)
-                  ? "text-foreground"
-                  : quiet
-                    ? outlineClasses[variant]
-                    : featured
-                      ? featuredInk
-                      : inkClasses[variant],
+                "absolute max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-medium text-foreground shadow-floating ring-1 ring-border",
+                externalLabelClasses[labelPlacement],
               )}
-              style={tinted && !outlined ? { color: tint?.onFill } : undefined}
             >
-              {visibleContent}
+              {externalLabel}
             </span>
           )}
-        </span>
-        {externalLabel && (
-          <span
-            aria-hidden="true"
-            className={cn(
-              "absolute max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-medium text-foreground shadow-floating ring-1 ring-border",
-              externalLabelClasses[labelPlacement],
-            )}
-          >
-            {externalLabel}
-          </span>
-        )}
-      </div>
+        </div>
+      </DensityScope>
     );
   },
 );

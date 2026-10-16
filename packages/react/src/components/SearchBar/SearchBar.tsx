@@ -5,6 +5,7 @@ import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { IconButton } from "../IconButton";
 import { WithoutGenericClick } from "../../utils/generic-click";
+import { DensityScope } from "../../theme/DensityScope";
 
 const searchBarVariants = cva(
   "flex items-center w-full rounded-control bg-background shadow-floating px-3 h-11 border border-input transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
@@ -89,95 +90,97 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     );
 
     const field = (
-      <div
-        className={cn(
-          searchBarVariants({ variant }),
-          // In a row the field takes what is left, and `min-w-0` lets it be
-          // narrower than the text inside it — without that a long placeholder
-          // pushes the row wider than its container and the wrap comes back by
-          // another door.
-          trailing && "w-auto min-w-0 flex-1",
-          containerClassName,
-        )}
-        // The SDK's geometry under any density (decision 82), with or
-        // without a trailing slot.
-        data-kozmos-density="touch"
-        role="search"
-      >
-        <Search
-          aria-hidden="true"
-          className="h-[18px] w-[18px] text-muted-foreground me-2 shrink-0"
-        />
-        <input
-          ref={setRef}
+      // The SDK's geometry under any density (decision 82), with or without a
+      // trailing slot.
+      <DensityScope density="touch" asChild>
+        <div
           className={cn(
-            "kozmos-reset kozmos-search-input kozmos-searchbar-input",
-            className,
+            searchBarVariants({ variant }),
+            // In a row the field takes what is left, and `min-w-0` lets it be
+            // narrower than the text inside it — without that a long placeholder
+            // pushes the row wider than its container and the wrap comes back by
+            // another door.
+            trailing && "w-auto min-w-0 flex-1",
+            containerClassName,
           )}
-          aria-label={ariaLabel ?? placeholder}
-          placeholder={placeholder}
-          type={type}
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
-          onKeyDown={(e) => {
-            onKeyDown?.(e);
-            if (
-              e.key === "Enter" &&
-              !e.defaultPrevented &&
-              !e.nativeEvent.isComposing
-            ) {
-              trackEvent("SearchBar", "search_initiated", { query: value });
-            }
-          }}
-          {...props}
-        />
-        {value && value.length > 0 && (
-          <WithoutGenericClick>
-            <IconButton
-              onClick={() => {
-                // Clearing removes this button. Restore focus before callbacks so
-                // hosts can still intentionally move it elsewhere.
-                inputRef.current?.focus();
-                trackEvent("SearchBar", "search_cleared");
-                onChange?.("");
-                onClear?.();
-              }}
-              className="kozmos-search-clear ms-1 shrink-0 rounded-pill"
-              aria-label={clearLabel}
-              disabled={props.disabled || props.readOnly}
-              type="button"
-            >
-              {/* A 24 grey circle to see; the 44 button around it to hit. */}
-              <span
-                aria-hidden="true"
-                className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+          role="search"
+        >
+          <Search
+            aria-hidden="true"
+            className="h-[18px] w-[18px] text-muted-foreground me-2 shrink-0"
+          />
+          <input
+            ref={setRef}
+            className={cn(
+              "kozmos-reset kozmos-search-input kozmos-searchbar-input",
+              className,
+            )}
+            aria-label={ariaLabel ?? placeholder}
+            placeholder={placeholder}
+            type={type}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            onKeyDown={(e) => {
+              onKeyDown?.(e);
+              if (
+                e.key === "Enter" &&
+                !e.defaultPrevented &&
+                !e.nativeEvent.isComposing
+              ) {
+                trackEvent("SearchBar", "search_initiated", { query: value });
+              }
+            }}
+            {...props}
+          />
+          {value && value.length > 0 && (
+            <WithoutGenericClick>
+              <IconButton
+                onClick={() => {
+                  // Clearing removes this button. Restore focus before callbacks so
+                  // hosts can still intentionally move it elsewhere.
+                  inputRef.current?.focus();
+                  trackEvent("SearchBar", "search_cleared");
+                  onChange?.("");
+                  onClear?.();
+                }}
+                className="kozmos-search-clear ms-1 shrink-0 rounded-pill"
+                aria-label={clearLabel}
+                disabled={props.disabled || props.readOnly}
+                type="button"
               >
-                <X className="h-3.5 w-3.5" />
-              </span>
-            </IconButton>
-          </WithoutGenericClick>
-        )}
-      </div>
+                {/* A 24 grey circle to see; the 44 button around it to hit. */}
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </span>
+              </IconButton>
+            </WithoutGenericClick>
+          )}
+        </div>
+      </DensityScope>
     );
 
     if (!trailing) return field;
 
     return (
-      <div
-        className={cn(
-          "kozmos-search-row flex w-full min-w-0 items-center gap-2",
-          rowClassName,
-        )}
-        // The SDK's geometry under any density (decision 82): a compact
-        // ThemeProvider leaves this part, and what sits in it, touch.
-        data-kozmos-density="touch"
-      >
-        {field}
-        {/* A row, not a box: the slot takes more than one control in the
+      // The SDK's geometry under any density (decision 82): a compact
+      // ThemeProvider leaves this part, and what sits in it, touch.
+      <DensityScope density="touch" asChild>
+        <div
+          className={cn(
+            "kozmos-search-row flex w-full min-w-0 items-center gap-2",
+            rowClassName,
+          )}
+        >
+          {field}
+          {/* A row, not a box: the slot takes more than one control in the
             prototype — the assistant beside Filters — and two inline-flex
             buttons in a plain div touch, with none of the row's gap. */}
-        <div className="flex shrink-0 items-center gap-2">{trailing}</div>
-      </div>
+          <div className="flex shrink-0 items-center gap-2">{trailing}</div>
+        </div>
+      </DensityScope>
     );
   },
 );

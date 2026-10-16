@@ -78,9 +78,10 @@ module.exports = () => ({
     // these belong on the roots like the theme tokens, never inside @scope,
     // where `:scope [data-kozmos-density]` would match only below a root.
     // Touch is every root that is not compact, a root without the attribute
-    // included, and any element marked touch: a touch root inside a compact
-    // one, or a part that keeps the SDK's touch geometry under any density
-    // (SearchBar, AIInputBar), resets the sizes for everything inside it.
+    // included; either density is any element marked with it, which resets
+    // the sizes for everything inside: a nested root, a DensityScope (every
+    // SDK part's root is a touch one), or an element a portal marks with the
+    // density where it opened.
     const densityRoot = (rule) => {
       const selectors = rule.selectors.map((s) => s.replace(/"/g, "'"));
       if (
@@ -93,7 +94,7 @@ module.exports = () => ({
         selectors.length === 1 &&
         selectors[0] === "[data-kozmos-density='compact']"
       )
-        return '[data-kozmos-root][data-kozmos-density="compact"]';
+        return '[data-kozmos-density="compact"]';
       return null;
     };
     root.walkRules((rule) => {
