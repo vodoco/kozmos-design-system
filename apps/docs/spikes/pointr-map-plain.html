@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+  Pointr maps spike, question 1 and 2: the Pointr Web SDK on a plain page.
+
+  No identifiers live in this file. The page reads them, in this order, from
+  window.__POINTR_SPIKE__ (set by the spike's Playwright driver before the page
+  runs) or from the URL's hash, which no server and no Referer header sees:
+    pointr-map-plain.html#baseUrl=…&clientIdentifier=…&licenseKey=…&ui=off
+  ui=off switches off every SDK UI switch Options accepts; ui=on (the default)
+  keeps the SDK's defaults. welcome=off skips the Cloud's onboarding card.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pointr map, plain page</title>
+    <link
+      href="https://pointr-websdk.azureedge.net/10.13.0/css/pointr.css"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      #pointr-map {
+        position: absolute;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="pointr-map"></div>
+    <script src="https://pointr-websdk.azureedge.net/10.13.0/pointrwebsdk.js"></script>
+    <script>
+      (function () {
+        var hash = new URLSearchParams(location.hash.slice(1));
+        var given = window.__POINTR_SPIKE__ || {};
+        var read = function (key) {
+          return given[key] !== undefined ? given[key] : hash.get(key);
+        };
+        var uiOff = read("ui") === "off";
+        var config = {
+          container: "pointr-map",
+          baseUrl: read("baseUrl"),
+          clientIdentifier: read("clientIdentifier"),
+          licenseKey: read("licenseKey"),
+          mapMaxZoom: 21,
+        };
+        if (uiOff) {
+          Object.assign(config, {
+            isSearchEnabled: false,
+            isPoiDetailsEnabled: false,
+            isZoomControlEnabled: false,
+            isLanguageSelectorEnabled: false,
+            isNavigationEnabled: false,
+            isAccessibilityEnabled: false,
+            isQuickAccessEnabled: false,
+            isAppBannerEnabled: false,
+          });
+        }
+        // The welcome card is the Cloud's onboarding (userInterface
+        // isOnboardingEnabledForSdk), shown while localStorage sessionCount
+        // is 0. No Options switch turns it off; welcome=off counts a session.
+        if (read("welcome") === "off") {
+          try {
+            localStorage.setItem("sessionCount", "1");
+          } catch (error) {}
+        }
+        var options = new PointrWebSDK.Options(config);
+        var widget = new PointrWebSDK.MapWidget(options);
+        window.pointrSpike = { widget: widget, options: options, uiOff: uiOff };
+        widget.start();
+      })();
+    </script>
+  </body>
+</html>
