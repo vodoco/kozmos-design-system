@@ -493,10 +493,6 @@ function renderReadme({ root, api, cards, owner }) {
   const fromDirectories = cards.filter((c) => c.module.kind === "component");
   const providers = cards.filter((c) => c.module.kind !== "component");
   const ns = ARTIFACT_NAMESPACE;
-  // Pointr's brand face, which the brand family role names (decision 87).
-  const brandFamily = readJson(
-    path.join(root, "packages/tokens/src/tokens-light.json"),
-  ).Primitives.Typography.font.family.primary.$value;
   // The examples that draw an icon component, which @kozmos-ds/react does not re-export.
   const withIcons = cards.filter((c) =>
     /from "@kozmos-ds\/icons"/.test(c.example.code),
@@ -525,6 +521,11 @@ function renderReadme({ root, api, cards, owner }) {
       !e.component &&
       !cards.some((c) => c.module === owner.get(e.name)),
   );
+
+  // Pointr's brand face, which the brand family role names (decision 87).
+  const brandFamily = readJson(
+    path.join(root, "packages/tokens/src/tokens-light.json"),
+  ).Primitives.Typography.font.family.primary.$value;
 
   return [
     "# Kozmos for Claude Design",
