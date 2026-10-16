@@ -2,6 +2,7 @@ import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { InfoCircle } from "@kozmos-ds/icons";
 import { MapControlButton } from "../MapControlButton";
+import { DensityScope } from "../../theme/DensityScope";
 import { createThemePortal } from "../../theme/ThemePortal";
 import { cn } from "../../utils";
 import { MapInfoPanel, type MapInfoPanelProps } from "./MapInfoPanel";
@@ -76,74 +77,78 @@ export const MapInfo = React.forwardRef<HTMLDivElement, MapInfoProps>(
     }, []);
     return (
       <Dialog.Root open={shown} onOpenChange={onOpenChange} modal={!wide}>
-        <div
-          ref={root}
-          tabIndex={-1}
-          className={cn("kozmos-map-info-host", className)}
-          style={style}
-          data-info-open={shown}
-          data-info-presentation={wide ? "side" : "full-screen"}
-        >
-          <div className="kozmos-map-info-map">{children}</div>
-          {available && (
-            <div className="kozmos-map-info-trigger" hidden={shown}>
-              <Dialog.Trigger asChild>
-                <MapControlButton
-                  ref={trigger}
-                  icon={<InfoCircle />}
-                  label={triggerLabel}
-                />
-              </Dialog.Trigger>
-            </div>
-          )}
-          <Portal container={wide ? root.current : undefined}>
-            {!wide && <Dialog.Overlay className="kozmos-map-info-backdrop" />}
-            <Dialog.Content
-              ref={pane}
-              className="kozmos-map-info-dialog"
-              data-presentation={wide ? "side" : "full-screen"}
-              aria-modal={wide ? undefined : true}
-              aria-describedby={undefined}
-              onOpenAutoFocus={(event) => {
-                event.preventDefault();
-                close.current?.focus();
-              }}
-              onCloseAutoFocus={(event) => {
-                event.preventDefault();
-                // Focus that was in the closed pane is now on the page body.
-                // Focus anywhere else is the visitor's: leave it there.
-                const active = document.activeElement;
-                if (active && active !== document.body) return;
-                (trigger.current ?? root.current)?.focus();
-              }}
-              onEscapeKeyDown={(event) => {
-                // Beside the map the pane is not modal: an Escape typed in the
-                // map's search or controls is theirs, not a request to close.
-                const active = document.activeElement;
-                if (
-                  wide &&
-                  active &&
-                  active !== document.body &&
-                  !pane.current?.contains(active)
-                )
+        {/* The SDK's touch geometry under any density, the map shell in
+            it and the pane it opens included (decision 89). */}
+        <DensityScope density="touch" asChild>
+          <div
+            ref={root}
+            tabIndex={-1}
+            className={cn("kozmos-map-info-host", className)}
+            style={style}
+            data-info-open={shown}
+            data-info-presentation={wide ? "side" : "full-screen"}
+          >
+            <div className="kozmos-map-info-map">{children}</div>
+            {available && (
+              <div className="kozmos-map-info-trigger" hidden={shown}>
+                <Dialog.Trigger asChild>
+                  <MapControlButton
+                    ref={trigger}
+                    icon={<InfoCircle />}
+                    label={triggerLabel}
+                  />
+                </Dialog.Trigger>
+              </div>
+            )}
+            <Portal container={wide ? root.current : undefined}>
+              {!wide && <Dialog.Overlay className="kozmos-map-info-backdrop" />}
+              <Dialog.Content
+                ref={pane}
+                className="kozmos-map-info-dialog"
+                data-presentation={wide ? "side" : "full-screen"}
+                aria-modal={wide ? undefined : true}
+                aria-describedby={undefined}
+                onOpenAutoFocus={(event) => {
                   event.preventDefault();
-              }}
-              onInteractOutside={(event) => {
-                if (wide) event.preventDefault();
-              }}
-            >
-              <MapInfoDialogTitle.Provider value={DialogHeading}>
-                <MapInfoPanel
-                  {...panelProps}
-                  closeButtonRef={close}
-                  expandedFAQ={faq}
-                  onExpandedFAQChange={setFAQ}
-                  onClose={() => onOpenChange(false)}
-                />
-              </MapInfoDialogTitle.Provider>
-            </Dialog.Content>
-          </Portal>
-        </div>
+                  close.current?.focus();
+                }}
+                onCloseAutoFocus={(event) => {
+                  event.preventDefault();
+                  // Focus that was in the closed pane is now on the page body.
+                  // Focus anywhere else is the visitor's: leave it there.
+                  const active = document.activeElement;
+                  if (active && active !== document.body) return;
+                  (trigger.current ?? root.current)?.focus();
+                }}
+                onEscapeKeyDown={(event) => {
+                  // Beside the map the pane is not modal: an Escape typed in the
+                  // map's search or controls is theirs, not a request to close.
+                  const active = document.activeElement;
+                  if (
+                    wide &&
+                    active &&
+                    active !== document.body &&
+                    !pane.current?.contains(active)
+                  )
+                    event.preventDefault();
+                }}
+                onInteractOutside={(event) => {
+                  if (wide) event.preventDefault();
+                }}
+              >
+                <MapInfoDialogTitle.Provider value={DialogHeading}>
+                  <MapInfoPanel
+                    {...panelProps}
+                    closeButtonRef={close}
+                    expandedFAQ={faq}
+                    onExpandedFAQChange={setFAQ}
+                    onClose={() => onOpenChange(false)}
+                  />
+                </MapInfoDialogTitle.Provider>
+              </Dialog.Content>
+            </Portal>
+          </div>
+        </DensityScope>
       </Dialog.Root>
     );
   },

@@ -86,7 +86,7 @@ const AXIS_ALIASES = {
 const INTENTIONAL = {
   // Three axes that became visible on 2026-09-25, when the analyser learned to
   // read a union given a name. Each is here because it has no visual form at
-  // all, which is the same test Sidebar.variant and LocationPin.variant meet —
+  // all, which is the same test Sidebar.variant meets —
   // not because nobody has got to it. Everything else the analyser newly found
   // is left in the report as a gap, for a decision rather than a silence.
   "Alert.live": {
@@ -104,13 +104,14 @@ const INTENTIONAL = {
     android:
       "Expressed as LocalKozmosUseDarkTokens and the generated KozmosThemeTokens rather than as a parameter: Compose reads it from the composition, not from a prop.",
   },
+  "ThemeProvider.density": {
+    ios: "decision 82: density is web only; SwiftUI and Compose stay touch.",
+    android:
+      "decision 82: density is web only; SwiftUI and Compose stay touch.",
+  },
   "Sidebar.variant": {
     figma:
       "Modelled as part of the Content axis: SIDEBAR_CONTENT is Basic, Sections, Tools, Rail, so the rail variant is expressible. A separate Variant axis would multiply the set without adding a state designers cannot already pick.",
-  },
-  "LocationPin.variant": {
-    figma:
-      "Colour role is a token override in Figma, not a variant. Crossing 4 colours with the 5 State variants would produce 20+ variants for a marker whose colour is usually themed per venue.",
   },
   "LocationPin.labelPlacement": {
     figma:

@@ -3,6 +3,7 @@ import type { CategoryPresentation } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { CategoryTile } from "../CategoryTile";
 import type { CategoryTint } from "../CategoryTile/CategoryTint";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface BrowseCategoriesPanelProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
@@ -49,50 +50,53 @@ const BrowseCategoriesPanel = React.forwardRef<
     // own, and nothing in the shell's panel, whose surface, solid or glass,
     // is the one surface (decision 43). A `bg-background` would outrank it.
     return (
-      <section
-        ref={ref}
-        aria-label={label}
-        className={cn(
-          "kozmos-browse-categories flex min-h-0 min-w-0 w-full flex-col text-foreground",
-          className,
-        )}
-        {...props}
-      >
-        {hasHeader && (
-          <header className="kozmos-browse-categories-first-row flex items-center gap-2 border-b border-border px-4 pb-4">
-            {search && <div className="min-w-0 flex-1">{search}</div>}
-            {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
-          </header>
-        )}
-        <div
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          aria-label={label}
           className={cn(
-            "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]",
-            hasHeader ? "pt-4" : "kozmos-browse-categories-first-row",
+            "kozmos-browse-categories flex min-h-0 min-w-0 w-full flex-col text-foreground",
+            className,
           )}
+          {...props}
         >
-          {categories.length === 0 ? (
-            <div className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm">
-              {emptyState}
-            </div>
-          ) : (
-            // Four across, 8 apart, and rows 12 apart: the prototype's grid
-            // (row-gap 12px, column-gap 8px, measured on 2026-09-22). The rows
-            // were 8 apart until then.
-            <ul className="m-0 grid list-none grid-cols-4 gap-x-2 gap-y-3 p-0">
-              {categories.map((category) => (
-                <li className="min-w-0" key={category.id}>
-                  <CategoryTile
-                    category={category}
-                    icon={renderIcon(category)}
-                    onSelect={onSelect}
-                    tint={tint?.(category)}
-                  />
-                </li>
-              ))}
-            </ul>
+          {hasHeader && (
+            <header className="kozmos-browse-categories-first-row flex items-center gap-2 border-b border-border px-4 pb-4">
+              {search && <div className="min-w-0 flex-1">{search}</div>}
+              {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
+            </header>
           )}
-        </div>
-      </section>
+          <div
+            className={cn(
+              "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]",
+              hasHeader ? "pt-4" : "kozmos-browse-categories-first-row",
+            )}
+          >
+            {categories.length === 0 ? (
+              <div className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm">
+                {emptyState}
+              </div>
+            ) : (
+              // Four across, 8 apart, and rows 12 apart: the prototype's grid
+              // (row-gap 12px, column-gap 8px, measured on 2026-09-22). The rows
+              // were 8 apart until then.
+              <ul className="m-0 grid list-none grid-cols-4 gap-x-2 gap-y-3 p-0">
+                {categories.map((category) => (
+                  <li className="min-w-0" key={category.id}>
+                    <CategoryTile
+                      category={category}
+                      icon={renderIcon(category)}
+                      onSelect={onSelect}
+                      tint={tint?.(category)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </DensityScope>
     );
   },
 );

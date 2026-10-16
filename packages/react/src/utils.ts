@@ -34,6 +34,17 @@ const ELEVATION_ROLES = ["raised", "floating", "overlay"] as const;
 
 const BORDER_WIDTHS = ["sm", "md", "lg"] as const;
 
+/** The control sizes that read the density's tokens (decision 82). */
+const DENSITY_SIZES = [
+  "control-sm",
+  "control",
+  "control-lg",
+  "icon-control-sm",
+  "icon-control",
+  "icon-control-lg",
+  "field",
+] as const;
+
 /** `rounded-*` has a group per corner and per side, and each needs the roles. */
 const ROUNDED_GROUPS = [
   "rounded",
@@ -63,6 +74,9 @@ const twMerge = extendTailwindMerge({
       ...roundedClassGroups,
       shadow: [{ shadow: [...ELEVATION_ROLES] }],
       "border-w": [{ border: [...BORDER_WIDTHS] }],
+      h: [{ h: [...DENSITY_SIZES] }],
+      w: [{ w: [...DENSITY_SIZES] }],
+      "min-h": [{ "min-h": [...DENSITY_SIZES] }],
     },
   },
 });

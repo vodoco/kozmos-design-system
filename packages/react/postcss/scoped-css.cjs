@@ -72,8 +72,39 @@ module.exports = () => ({
       rule.remove();
     });
     const foundations = [];
-    root.walkRules((rule) => {
+    // Density (decision 82): @kozmos-ds/tokens/css/density.css sets the
+    // control sizes on `:root, [data-kozmos-density='touch']` and on
+    // `[data-kozmos-density='compact']`. A provider marks its own root, so
+    // these belong on the roots like the theme tokens, never inside @scope,
+    // where `:scope [data-kozmos-density]` would match only below a root.
+    // Touch is every root that is not compact, a root without the attribute
+    // included; either density is any element marked with it, which resets
+    // the sizes for everything inside: a nested root, a DensityScope (every
+    // SDK part's root is a touch one), or an element a portal marks with the
+    // density where it opened.
+    const densityRoot = (rule) => {
+      const selectors = rule.selectors.map((s) => s.replace(/"/g, "'"));
       if (
+        selectors.length === 2 &&
+        selectors[0] === ":root" &&
+        selectors[1] === "[data-kozmos-density='touch']"
+      )
+        return '[data-kozmos-root]:not([data-kozmos-density="compact"]), [data-kozmos-density="touch"]';
+      if (
+        selectors.length === 1 &&
+        selectors[0] === "[data-kozmos-density='compact']"
+      )
+        return '[data-kozmos-density="compact"]';
+      return null;
+    };
+    root.walkRules((rule) => {
+      const density = densityRoot(rule);
+      if (density) {
+        const copy = rule.clone();
+        copy.selector = density;
+        foundations.push(copy);
+        rule.remove();
+      } else if (
         rule.selector === ":root" ||
         /^\[data-theme=['"]dark['"]\]$/.test(rule.selector)
       ) {

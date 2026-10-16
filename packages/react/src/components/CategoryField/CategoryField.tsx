@@ -4,6 +4,7 @@ import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { IconButton } from "../IconButton/IconButton";
 import { Counter } from "../Counter/Counter";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface CategoryFieldProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -79,89 +80,97 @@ const CategoryField = React.forwardRef<HTMLDivElement, CategoryFieldProps>(
     ref,
   ) => {
     const field = (
-      <div
-        ref={ref}
-        role="group"
-        aria-label={
-          count === undefined ? label : `${label}, ${countLabel(count)}`
-        }
-        className={cn(
-          "kozmos-reset kozmos-category-field flex h-12 min-w-0 items-center gap-2 rounded-control border pl-3 pr-0.5 text-foreground",
-          // In a row the field takes what is left; `min-w-0` is already on it,
-          // so a long category name truncates instead of widening the row.
-          trailing && "w-auto flex-1",
-          className,
-        )}
-        style={
-          {
-            "--kozmos-category-tint": tint.accent,
-            borderColor: "var(--kozmos-category-tint)",
-            background:
-              "color-mix(in srgb, var(--kozmos-category-tint) 12%, transparent)",
-            ...style,
-          } as React.CSSProperties
-        }
-        {...props}
-      >
-        {icon && (
-          <span
-            aria-hidden="true"
-            className="flex h-7 w-7 shrink-0 items-center justify-center [&>svg]:h-7 [&>svg]:w-7 [&>img]:h-7 [&>img]:w-7"
-            style={{ color: "var(--kozmos-category-tint)" }}
-          >
-            {icon}
+      // The SDK's geometry under any density (decision 89), with or without a
+      // trailing slot.
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          role="group"
+          aria-label={
+            count === undefined ? label : `${label}, ${countLabel(count)}`
+          }
+          className={cn(
+            "kozmos-reset kozmos-category-field flex h-12 min-w-0 items-center gap-2 rounded-control border pl-3 pr-0.5 text-foreground",
+            // In a row the field takes what is left; `min-w-0` is already on it,
+            // so a long category name truncates instead of widening the row.
+            trailing && "w-auto flex-1",
+            className,
+          )}
+          style={
+            {
+              "--kozmos-category-tint": tint.accent,
+              borderColor: "var(--kozmos-category-tint)",
+              background:
+                "color-mix(in srgb, var(--kozmos-category-tint) 12%, transparent)",
+              ...style,
+            } as React.CSSProperties
+          }
+          {...props}
+        >
+          {icon && (
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 shrink-0 items-center justify-center [&>svg]:h-7 [&>svg]:w-7 [&>img]:h-7 [&>img]:w-7"
+              style={{ color: "var(--kozmos-category-tint)" }}
+            >
+              {icon}
+            </span>
+          )}
+          <span className="min-w-0 truncate text-[15px] font-semibold">
+            {label}
           </span>
-        )}
-        <span className="min-w-0 truncate text-[15px] font-semibold">
-          {label}
-        </span>
-        {count !== undefined && (
-          <Counter
-            tone="brand"
-            className="h-[22px] min-w-[22px] shrink-0"
-            style={{ background: tint.fill, color: tint.onFill }}
-            aria-hidden="true"
-          >
-            {count}
-          </Counter>
-        )}
-        <span className="flex-1" />
-        {/* The clear: a 32 circle to see, the 44 button around it to hit, as
+          {count !== undefined && (
+            <Counter
+              tone="brand"
+              className="h-[22px] min-w-[22px] shrink-0"
+              style={{ background: tint.fill, color: tint.onFill }}
+              aria-hidden="true"
+            >
+              {count}
+            </Counter>
+          )}
+          <span className="flex-1" />
+          {/* The clear: a 32 circle to see, the 44 button around it to hit, as
           the search bar's (Olcay, 2026-09-21). The field's trailing padding
           is 2, so the circle sits 8 from the edge. Core IconButton owns the
           single focus ring around the actual hit target. */}
-        <IconButton
-          type="button"
-          aria-label={clearLabel}
-          onClick={onClear}
-          emotion="neutral"
-          className="shrink-0 rounded-pill text-current"
-        >
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill"
+          <IconButton
+            type="button"
+            aria-label={clearLabel}
+            onClick={onClear}
+            emotion="neutral"
+            className="shrink-0 rounded-pill text-current"
           >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </span>
-        </IconButton>
-      </div>
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill"
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </span>
+          </IconButton>
+        </div>
+      </DensityScope>
     );
 
     if (!trailing) return field;
 
     return (
-      <div
-        className={cn(
-          "kozmos-search-row flex w-full min-w-0 items-center gap-2",
-          rowClassName,
-        )}
-      >
-        {field}
-        {/* A row, not a box: the slot takes more than one control in the
+      // The SDK's geometry under any density (decision 89): a compact
+      // ThemeProvider leaves this part, and what sits in it, touch.
+      <DensityScope density="touch" asChild>
+        <div
+          className={cn(
+            "kozmos-search-row flex w-full min-w-0 items-center gap-2",
+            rowClassName,
+          )}
+        >
+          {field}
+          {/* A row, not a box: the slot takes more than one control in the
             prototype — the assistant beside Filters — and two inline-flex
             buttons in a plain div touch, with none of the row's gap. */}
-        <div className="flex shrink-0 items-center gap-2">{trailing}</div>
-      </div>
+          <div className="flex shrink-0 items-center gap-2">{trailing}</div>
+        </div>
+      </DensityScope>
     );
   },
 );

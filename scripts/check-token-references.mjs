@@ -242,13 +242,13 @@ try {
     }
   }
 
-  // Decision 68: under an override of accent 500 alone, the featured pin's
-  // marker and the Featured tab and its card's edge draw the product's
-  // accent. Until then they were alert colours, which an accent never moved.
+  // Decision 68: under an override of accent 500 alone, the Featured tab and
+  // its card's edge draw the product's accent. Until then they were alert
+  // colours, which an accent never moved. The featured pin is no longer the
+  // accent: the SDK draws a featured place's logo in a tile (decision 81).
   const accent = await colourOf(ACCENT_FILL);
   for (const theme of ["light", "dark"]) {
     for (const [part, selector, property] of [
-      ["featured-pin", '[role="img"] svg', "color"],
       ["featured-card", '[data-tab="featured"]', "backgroundColor"],
       ["featured-card", "", "borderTopColor"],
     ]) {

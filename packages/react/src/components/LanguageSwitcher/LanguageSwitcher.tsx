@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../Select";
+import { DensityScope } from "../../theme/DensityScope";
 
 /** A host-supported language. IDs must be unique, nonempty canonical BCP 47 tags. */
 export interface LanguageOption {
@@ -92,112 +93,117 @@ export const LanguageSwitcher = React.forwardRef<
     }, [canChange]);
 
     return (
-      <div className={cn("min-w-0 max-w-full", className)} dir={direction}>
-        <Select
-          value={selectedLocale}
-          dir={direction}
-          disabled={unavailable}
-          open={open && canChange}
-          onOpenChange={(next) => setOpen(next && canChange)}
-          onValueChange={(locale) => {
-            if (
-              canChange &&
-              locale !== selectedLocale &&
-              languages.some(
-                (language) => language.id === locale && !language.disabled,
-              )
-            ) {
-              onLocaleRequest(locale);
-            }
-          }}
-        >
-          <SelectTrigger
-            ref={ref}
-            // Pending looks as unavailable as disabled did, though it keeps focus.
-            className="h-12 min-w-32 max-w-full border-0 shadow-map-control aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-            aria-label={`${label}, ${display}`}
-            aria-busy={pending || undefined}
-            aria-disabled={(pending && !unavailable) || undefined}
-            aria-describedby={
-              error ? `${id}-error` : pending ? `${id}-pending` : undefined
-            }
-          >
-            <SelectValue placeholder={placeholder}>
-              <bdi lang={selected?.id} dir={selected?.direction ?? "auto"}>
-                {display}
-              </bdi>
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent
-            side="top"
-            align="start"
-            sideOffset={4}
-            collisionPadding={0}
-            // Straight above the trigger, over the side panel and anything
-            // else, as the Web SDK opens it (decision 77, GAP-122). It used to
-            // keep to the map's popup region, which put it beside a side
-            // panel, half way up the map.
-            sticky="partial"
-            // Never flipped below: a long list stays above and scrolls in the
-            // room there (its maxHeight is the available height).
-            avoidCollisions={false}
-            className="data-[side=top]:translate-y-0 data-[side=bottom]:translate-y-0"
-            style={{
-              maxHeight: "var(--radix-select-content-available-height)",
-              maxWidth: "var(--radix-select-content-available-width)",
-              minWidth:
-                "min(8rem, var(--radix-select-content-available-width))",
-            }}
-            onCloseAutoFocus={(event) => {
-              if (unavailable) {
-                event.preventDefault();
-                if (document.activeElement === document.body)
-                  region?.focusFallback();
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <div className={cn("min-w-0 max-w-full", className)} dir={direction}>
+          <Select
+            value={selectedLocale}
+            dir={direction}
+            disabled={unavailable}
+            open={open && canChange}
+            onOpenChange={(next) => setOpen(next && canChange)}
+            onValueChange={(locale) => {
+              if (
+                canChange &&
+                locale !== selectedLocale &&
+                languages.some(
+                  (language) => language.id === locale && !language.disabled,
+                )
+              ) {
+                onLocaleRequest(locale);
               }
             }}
           >
-            {languages.map((language) => (
-              <SelectItem
-                key={language.id}
-                value={language.id}
-                disabled={language.disabled}
-                textValue={language.label}
-                className="min-h-11 whitespace-normal break-words"
-              >
-                <bdi lang={language.id} dir={language.direction ?? "auto"}>
-                  {language.label}
+            <SelectTrigger
+              ref={ref}
+              // Pending looks as unavailable as disabled did, though it keeps focus.
+              className="h-12 min-w-32 max-w-full border-0 shadow-map-control aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+              aria-label={`${label}, ${display}`}
+              aria-busy={pending || undefined}
+              aria-disabled={(pending && !unavailable) || undefined}
+              aria-describedby={
+                error ? `${id}-error` : pending ? `${id}-pending` : undefined
+              }
+            >
+              <SelectValue placeholder={placeholder}>
+                <bdi lang={selected?.id} dir={selected?.direction ?? "auto"}>
+                  {display}
                 </bdi>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {/* Mounted throughout: a live region inserted with its text is often not announced. */}
-        <p
-          id={`${id}-pending`}
-          role="status"
-          className={pending ? "mt-2 text-sm text-muted-foreground" : "sr-only"}
-        >
-          {pending ? pendingLabel : null}
-        </p>
-        {error && (
-          <div className="mt-2 text-sm text-destructive-text">
-            <p id={`${id}-error`} role="alert">
-              {error}
-            </p>
-            {onRetry && (
-              <Button
-                variant="ghost"
-                disabled={blocked}
-                onClick={() => {
-                  if (!blocked) onRetry();
-                }}
-              >
-                {retryLabel}
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent
+              side="top"
+              align="start"
+              sideOffset={4}
+              collisionPadding={0}
+              // Straight above the trigger, over the side panel and anything
+              // else, as the Web SDK opens it (decision 77, GAP-122). It used to
+              // keep to the map's popup region, which put it beside a side
+              // panel, half way up the map.
+              sticky="partial"
+              // Never flipped below: a long list stays above and scrolls in the
+              // room there (its maxHeight is the available height).
+              avoidCollisions={false}
+              className="data-[side=top]:translate-y-0 data-[side=bottom]:translate-y-0"
+              style={{
+                maxHeight: "var(--radix-select-content-available-height)",
+                maxWidth: "var(--radix-select-content-available-width)",
+                minWidth:
+                  "min(8rem, var(--radix-select-content-available-width))",
+              }}
+              onCloseAutoFocus={(event) => {
+                if (unavailable) {
+                  event.preventDefault();
+                  if (document.activeElement === document.body)
+                    region?.focusFallback();
+                }
+              }}
+            >
+              {languages.map((language) => (
+                <SelectItem
+                  key={language.id}
+                  value={language.id}
+                  disabled={language.disabled}
+                  textValue={language.label}
+                  className="min-h-11 whitespace-normal break-words"
+                >
+                  <bdi lang={language.id} dir={language.direction ?? "auto"}>
+                    {language.label}
+                  </bdi>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Mounted throughout: a live region inserted with its text is often not announced. */}
+          <p
+            id={`${id}-pending`}
+            role="status"
+            className={
+              pending ? "mt-2 text-sm text-muted-foreground" : "sr-only"
+            }
+          >
+            {pending ? pendingLabel : null}
+          </p>
+          {error && (
+            <div className="mt-2 text-sm text-destructive-text">
+              <p id={`${id}-error`} role="alert">
+                {error}
+              </p>
+              {onRetry && (
+                <Button
+                  variant="ghost"
+                  disabled={blocked}
+                  onClick={() => {
+                    if (!blocked) onRetry();
+                  }}
+                >
+                  {retryLabel}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </DensityScope>
     );
   },
 );

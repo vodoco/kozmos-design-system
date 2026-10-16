@@ -2,7 +2,7 @@
    elements carrying these classes are reset or styled. */
 @kozmos-owned {
   .kozmos-field-action {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed;
+    @apply inline-flex h-field w-field shrink-0 items-center justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed;
     cursor: pointer;
     text-transform: none;
     -webkit-appearance: button;
@@ -15,7 +15,11 @@
     @apply relative flex items-center;
   }
   .kozmos-password-with-toggle {
-    @apply pe-12;
+    /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
+       44 in compact. The input carries it as a utility too, which beats a
+       caller's px-*; this is the room where no @scope rule reaches the input
+       (WebKit, GAP-20, and a browser without @scope). */
+    padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
   .kozmos-password-toggle {
     @apply absolute end-0 rounded-e-control bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:text-muted-foreground;

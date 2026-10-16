@@ -70,12 +70,14 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
+        {/* The close centres on the title's first line, 44 tall, at any
+            density (decision 82): 24 from the top at 44, 30 at 32. */}
         <WithoutGenericClick>
           <DialogPrimitive.Close asChild>
             <IconButton
               type="button"
               variant="outline"
-              className="absolute end-6 top-6"
+              className="absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)]"
               aria-label={closeLabel}
             >
               <X aria-hidden="true" />
@@ -128,7 +130,8 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "min-h-11 min-w-0 py-2 pe-14 text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
+      // Room for the close, the icon button's size, and 12 (decision 82).
+      "min-h-11 min-w-0 py-2 pe-[calc(var(--density-icon-control-size-md,2.75rem)_+_0.75rem)] text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
       className,
     )}
     {...props}

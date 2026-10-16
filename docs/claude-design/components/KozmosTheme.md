@@ -37,6 +37,12 @@ Its props are `KozmosThemeProps`, which is `DesignConfigProviderProps`.
 - `tokens`: `Record<string, string>`, optional.
 - `dir`: `"ltr" | "rtl"`, optional.
 - `children`: `React.ReactNode`, **required**.
+- `density`: `ThemeDensity`, optional.
+
+  The control sizes inside this provider and its portals; a nested provider
+  inherits it, or a DensityScope's around it, unless it names its own.
+  Defaults to `touch`.
+
 - `defaultTheme`: `Theme`, optional.
 - `theme`: `Theme`, optional.
 
@@ -88,6 +94,23 @@ interface DesignConfig {
     reduceTransparency: boolean;
   };
 }
+```
+
+### ThemeDensity
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How large the controls are (decision 82). `touch`, the default, keeps
+ * today's sizes, as products and the SDK want: buttons, icon buttons and
+ * fields 44, the large icon button 48. `compact` is for pointer-first desktop
+ * tools such as Pointr Cloud: 32, 40 and 48 buttons, 28, 32 and 40 icon
+ * buttons, and 40 fields. Parts with a smaller size of their own keep it at
+ * both: MultiSelect's clear and open buttons and the small Chip are 28. It is
+ * web only; SwiftUI and Compose stay touch.
+ */
+type ThemeDensity = "touch" | "compact";
 ```
 
 ### Theme

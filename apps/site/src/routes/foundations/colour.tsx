@@ -65,7 +65,7 @@ const semanticGroups = [
   {
     prefix: "--semantics-accent",
     title: "Accent",
-    lead: "What is featured: the accent’s fill and the ink on it. A featured pin and POIResultCard’s Featured tab and edge wear it. Amber unless a product sets its own (decision 68).",
+    lead: "What is featured: the accent’s fill and the ink on it. POIResultCard’s Featured tab and edge wear it. Amber unless a product sets its own (decision 68).",
   },
   {
     prefix: "--semantics-scrollbar",

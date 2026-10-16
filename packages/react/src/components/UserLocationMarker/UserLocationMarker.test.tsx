@@ -61,8 +61,8 @@ describe("UserLocationMarker", () => {
 
   it("goes hollow on another level, rather than looking the same everywhere", () => {
     // GAP-069. The marker looked identical whatever level was in view, so the
-    // map page hid it and the visitor lost their position. Hollow, as
-    // LocationPin's offFloor is: shape carries the state, not colour alone.
+    // map page hid it and the visitor lost their position. Hollow: shape
+    // carries the state, not colour alone.
     const { container, rerender } = render(<UserLocationMarker />);
     const dot = () => container.querySelector(".z-10.rounded-pill");
     expect(container.firstElementChild).not.toHaveAttribute("data-off-floor");

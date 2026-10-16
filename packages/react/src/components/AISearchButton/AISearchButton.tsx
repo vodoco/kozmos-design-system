@@ -8,6 +8,7 @@ import React from "react";
 // that touches this button — measured at 20 kB gzip against one icon's 19.
 import { Stars01 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface AISearchButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** What assistive technology hears; the button shows an icon alone. */
@@ -25,33 +26,36 @@ export interface AISearchButtonProps extends React.ButtonHTMLAttributes<HTMLButt
  */
 const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
   ({ className, label = "AI search", type = "button", ...props }, ref) => (
-    <button
-      ref={ref}
-      type={type}
-      aria-label={label}
-      // overflow-clip: the ring turns as a square whose corners are round, and
-      // layout counts the turned square — 68 wide at 45° — so a button at the
-      // end of a row widened the page for part of every turn. Clipped to the
-      // button it draws the same; the focus ring is a shadow and is not clipped.
-      className={cn(
-        "kozmos-reset kozmos-ai-search relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      {...props}
-    >
-      {/* The disc first, the ring over it: the band is cut out of the ring by
+    // The SDK's touch geometry under any density (decision 89).
+    <DensityScope density="touch" asChild>
+      <button
+        ref={ref}
+        type={type}
+        aria-label={label}
+        // overflow-clip: the ring turns as a square whose corners are round, and
+        // layout counts the turned square — 68 wide at 45° — so a button at the
+        // end of a row widened the page for part of every turn. Clipped to the
+        // button it draws the same; the focus ring is a shadow and is not clipped.
+        className={cn(
+          "kozmos-reset kozmos-ai-search relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        {...props}
+      >
+        {/* The disc first, the ring over it: the band is cut out of the ring by
           a mask, and the disc is inset 2 — inside the 2.5 band — so its own
           edge is covered and never decides where the ring ends. */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-[2px] rounded-pill bg-background"
-      />
-      <span
-        aria-hidden="true"
-        className="kozmos-ai-search-ring absolute inset-0 rounded-pill"
-      />
-      <Stars01 aria-hidden="true" className="relative h-4 w-4 text-primary" />
-    </button>
+        <span
+          aria-hidden="true"
+          className="absolute inset-[2px] rounded-pill bg-background"
+        />
+        <span
+          aria-hidden="true"
+          className="kozmos-ai-search-ring absolute inset-0 rounded-pill"
+        />
+        <Stars01 aria-hidden="true" className="relative h-4 w-4 text-primary" />
+      </button>
+    </DensityScope>
   ),
 );
 AISearchButton.displayName = "AISearchButton";

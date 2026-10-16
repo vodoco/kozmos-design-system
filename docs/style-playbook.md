@@ -90,7 +90,6 @@ anywhere else fails:
 - **AdaptiveMapShell** on iOS: a paired chrome, one half casting upward.
 - **The colour-picker handle**, web and iOS: a hard ring that must stay visible
   on any colour beneath it.
-- **LocationPin** on iOS: has to read against an arbitrary map.
 - **Card** on Android: deliberately flat at 0.dp.
 
 Android is held to geometry only. Compose draws a shadow from one elevation in

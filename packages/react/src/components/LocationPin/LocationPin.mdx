@@ -7,8 +7,11 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # LocationPin
 
-A map marker with optional result number, custom content, external label and category tint.
-Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
+The SDK's map result markers (decision 71): a result's number in a pill, a featured place's logo in a
+tile, and the green pin for a place whose details are open. In a product these markers come from the
+map style's sprite sheet, and a featured place's tile from the featured sprite Pointr's back end makes
+with its logo. LocationPin draws the same markers for prototypes and boards (decision 81). The SDK host
+owns geographic placement and selection state.
 
 <Canvas>
   <Story of={LocationPinStories.Default} />
@@ -24,31 +27,31 @@ Selected, featured and off-floor states distinguish the marker; the SDK host own
     react={`
 import { LocationPin } from "@kozmos-ds/react";
 
-// A result's pin, numbered as its card's tab: quiet at rest, filled when the
-// result is selected, and dashed when the place is on another floor.
+// A search result on the map, numbered as its card's tab: the pill fills
+// when the result is selected, and a double tap opens its details.
 export function ResultPin({
 name,
 number,
 selected,
-onAnotherFloor,
 cardId,
 onSelect,
+onOpenDetails,
 }: {
 name: string;
 number: number;
 selected: boolean;
-onAnotherFloor: boolean;
 cardId: string;
 onSelect: () => void;
+onOpenDetails: () => void;
 }) {
 return (
 <LocationPin
 label={\`\${number}, \${name}\`}
 number={number}
-offFloor={onAnotherFloor}
 resultId={cardId}
 selected={selected}
 onClick={onSelect}
+onOpen={onOpenDetails}
 />
 );
 }
@@ -65,107 +68,140 @@ onClick={onSelect}
 import SwiftUI
 import Kozmos
 
-// A result's pin, numbered as its card's tab: quiet at rest, filled when the
-// result is selected, and dashed when the place is on another floor.
+// A result's marker, numbered as its card's tab: a theme-bordered pill at
+// rest, filled when the result is selected. Its label is its whole spoken
+// name, the number included. A double tap opens the place's details.
+// \`.kozmosLocationPinAt(point)\` puts the pointer's tip on the map's point,
+// in either direction.
 struct ResultPin: View {
-let name: String
-let number: Int
-let isSelected: Bool
-let isOnAnotherFloor: Bool
-let onSelect: () -> Void
+    let name: String
+    let number: Int
+    let point: CGPoint
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
         KozmosLocationPin(
-            label: name,
+            label: "\\(number), \\(name)",
             number: number,
             selected: isSelected,
-            offFloor: isOnAnotherFloor,
-            onSelect: onSelect
+            onSelect: onSelect,
+            onOpen: onOpen
         )
+        .kozmosLocationPinAt(point)
     }
-
 }
 `}
     kotlin={`
 import androidx.compose.runtime.Composable
 import com.kozmos.components.locationpin.KozmosLocationPin
 
-// A result's pin, numbered as its card's tab: quiet at rest, filled when the
-// result is selected, and dashed when the place is on another floor.
+// A result's marker, numbered as its card's tab and filled when the result is
+// selected; a second tap opens its details. Only results on the level in view
+// get a marker: the level switcher counts the rest.
 @Composable
 fun ResultPin(
-name: String,
-number: Int,
-isSelected: Boolean,
-isOnAnotherFloor: Boolean
+    name: String,
+    number: Int,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    onOpen: () -> Unit
 ) {
-KozmosLocationPin(
-label = name,
-number = number,
-selected = isSelected,
-offFloor = isOnAnotherFloor
-)
+    KozmosLocationPin(
+        label = "$number, $name",
+        number = number,
+        selected = isSelected,
+        onClick = onSelect,
+        onOpen = onOpen
+    )
 }
 `}
 
 />
 
-## Numbered pins: quiet at rest, filled when selected
+## A result
 
-A pin with a `number` pairs with its result card's number tab (decision 55). At rest it is quiet: the
-outlined marker on the background, with its ring and number in the pin's colour, as the SDK's map
-draws its unselected results. Only the selected pin is filled, with the ink made for that fill on
-the number, and it grows, so selection is never told by colour alone. Its card's tab fills with it.
-
-<Canvas>
-  <Story of={LocationPinStories.NumberedOneSelected} />
-</Canvas>
-
-- **Keep their fill:** a featured pin (a featured result's pin shows its logo on the map, so a
-  product numbers only the others), a pin showing `markerContent`, and a pin with no number.
-- **Other variants** keep their colours in the ring and number, as ink that reads 4.5:1 on the
-  background in both themes: `secondary` is the muted foreground, foreground/400, filled or as a
-  ring, with a foreground/1000 number when filled, as on iOS and Compose (decision 66). On every
-  platform `primary` takes the theme's text role (theme/500 reads 3.74:1
-  on the dark background) and `accent` its theme variant's 700 (its 500 reads 3:1 there).
-- **Contrast:** the primary number reads 6.24:1 on the light background and 6.17:1 on the dark.
-  Its ring reads at least 4.68:1 against Pointr's light map (background, rooms, retail and food)
-  and 3.27:1 against the dark map's background, rooms, corridors and retail; dark food-and-drink
-  rooms are the exception, at 2.76:1, as the filled pin is.
-
-## Featured and accent
-
-A `featured` pin is the **accent colour**, the one a client sets in the Pointr Cloud Dashboard
-beside the theme colour: `--semantics-accent-fill`, amber `#FAB735` in both themes by default, with
-`--semantics-accent-on-fill`, black by default (11.89:1), on what it shows, whatever its variant or
-tint (decision 68). It shows the place's logo, passed as `markerContent`, and without one a star
-where the number would be: a featured pin never shows its number. Its accessible name adds
-`featuredLabel` ("Featured" unless you pass it translated) to `label`, so the colour is never the
-only way to tell it. A product that sets its accent sets both tokens on `ThemeProvider`.
-
-The `accent` **variant** is a different thing, despite the name: brand variant 1's 500, `#4135F1`
-in both themes, with a white number (6.99:1). Both are drawn the same way on the web, iOS, Compose
-and in Figma (decisions 62 and 68).
+A result's number sits in a pill on a pointer, and the pointer's tip is the point it marks. The pill is
+32 tall, as wide as its number and 8 more each side, 32 at least. At rest it is theme 600 on the
+background; selected, it fills with theme 600 under foreground/1000, and doesn't grow. Its card's number
+tab fills with it (decision 55). Without a number it shows a dot.
 
 <Canvas>
-  <Story of={LocationPinStories.FeaturedLogoAndPlain} />
+  <Story of={LocationPinStories.Selected} />
 </Canvas>
 
-## On another floor
+- **Contrast:** theme 600 on background/0 reads 6.24:1 in light and 6.17:1 in dark, and so does
+  foreground/1000 on theme 600.
+- **Selected is theme 600, not the theme fill** (theme 500, decision 59): it is the SDK's sprite.
 
-`offFloor` keeps the outlined marker, with a **dashed** ring and the number in the foreground. The
-dashes are what tell it from a quiet pin at rest on this floor, which is outlined too: shape, not
-colour, so it holds in forced colours and for any colour vision. Selected, it grows and is never
-filled.
+## A featured place
+
+A `featured` place is its logo in a tile: 44 square, 52 when selected, with a 3 rim in foreground/0
+(black in light, white in dark) and corners of 16, on a dot whose centre is the point. Pass the logo,
+normally an image, as `markerContent`; it fits inside the rim and is never cropped. The tile shows no
+number, no star and no accent colour (decision 81). Its accessible name adds `featuredLabel` ("Featured"
+unless you pass it translated) to `label`.
 
 <Canvas>
-  <Story of={LocationPinStories.OtherFloor} />
+  <Story of={LocationPinStories.Featured} />
 </Canvas>
 
-## A category's colours
+## A place on its own
 
-A `tint` — `{ accent, fill, onFill }` — colours the marker with the category's fill; a featured pin
-keeps the alert colour. Selected, the fill is the marker and its ink the number. At rest a numbered
-pin is outlined in the fill, and off the floor its outline is dashed; in both the number takes the
-foreground, since six of the eight fills fail 4.5:1 as text on the background (yellow reads
-1.92:1). The same holds on iOS and Compose.
+`place` is the marker for a place whose details are open, the only one on the map: a green teardrop of
+40 (emotional success 800, `#197F4C` in light, `#A0ECC6` in dark) round a disc, on a dot whose centre
+is the point. It wins over `featured` and `number`.
+
+<Canvas>
+  <Story of={LocationPinStories.Place} />
+</Canvas>
+
+## Its name
+
+`label` is the marker's whole accessible name, as your product writes it, the number included ("Result 3,
+Burger King"): word order and translation are the product's. LocationPin adds nothing to it except
+`featuredLabel` on a featured tile, which shows no words of its own. The same holds on iOS and Android.
+
+## Pressing and opening
+
+A pin with `onClick` or `onOpen` is a button with a target 44 square at least. A double tap opens the
+place's details through `onOpen` (decision 71) rather than zooming the map: the first tap is the
+ordinary press, and the second calls `onOpen` once and isn't passed on as another. It is the same gate as
+`POIResultList.onOpen`.
+
+- **By keyboard,** Enter opens a pin that is already the current one (selected, or a place) or whose only
+  action is `onOpen`. Otherwise Enter, and Space always, is the ordinary press: the first Enter selects a
+  result, the second opens it. A held Enter opens once.
+- **Its description** says so while Enter opens it: `openHint`, "Press Enter to open details" unless you
+  pass it translated. It joins any `aria-describedby` you pass.
+- **On iOS and Android,** VoiceOver and TalkBack get an Open action.
+
+## On a map
+
+- **A second tap stays on the pin.** MapLibre zooms on a second tap within 500 ms and cancels that tap's
+  click, so a pin's details would never open. With `onOpen`, the second touch tap, and its `dblclick`,
+  stop at the pin; a first tap, and a pan that starts on it, still reach the map. It holds for a marker
+  rendered in a portal too (measured with MapLibre GL 4.7.1). A second tap after the double-tap time (300
+  ms) but within MapLibre's 500 is an ordinary press, and the map doesn't zoom.
+- **A press is a click on the map too.** MapLibre fires the map's `click` for a click on a marker (its own
+  `Marker` relies on it), so a `click` handler that clears the selection would undo the pin's press. Skip a
+  click inside a pin: `if (event.originalEvent.target.closest(".kozmos-location-pin")) return;`.
+- **A pin nothing presses lets the map have it:** with no `onClick` or `onOpen`, or disabled, a press or a
+  pan starting on it reaches the map.
+- **`left` and `right` labels are the map's,** in either direction, as MapLibre places a symbol's text.
+  Place a pin by its physical point. On iOS use `.kozmosLocationPinAt(point)`, which keeps the point in
+  right-to-left layouts, where `.position` mirrors it; on Android, `Modifier.kozmosLocationPinAt { point }`,
+  which places it absolutely.
+
+## Results on another level
+
+Mark only the results on the level in view; the level switcher counts the rest (`showResultCounts`).
+LocationPin no longer has an off-floor state (decision 80).
+
+## Upgrading from 0.11.0
+
+- **`variant`, `size` and `tint`** are gone: the SDK's markers have one look. Remove them.
+- **`offFloor`** is gone: don't mark other-level results.
+- **Anchoring:** a pin is still placed by a physical point. A result's anchor is its pointer's tip, at
+  its foot, as before; a featured tile's and a place's is their dot's centre, 3 above their foot.

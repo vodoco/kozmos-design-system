@@ -11,6 +11,7 @@ import {
   DirectionIcon,
   type DirectionType,
 } from "../DirectionStep/DirectionStep";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface ManoeuvreCardProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
@@ -174,79 +175,81 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
     const lines = instructionLineLimit(instructionLines);
 
     return (
-      <section
-        ref={ref}
-        aria-label={manoeuvreLabel}
-        className={cn(
-          `kozmos-manoeuvre-card ${appearance === "background" ? surfaceClass(surface) : "kozmos-reset"} kozmos-guidance-text flex w-full flex-col gap-3 rounded-container px-4 pb-1 pt-4 shadow-floating`,
-          className,
-        )}
-        {...props}
-        data-appearance={appearance}
-      >
-        {expanded ? (
-          // The itinerary scrolls here past the cap, so the keyboard must be
-          // able to reach it (GAP-100, axe's scrollable-region-focusable): a
-          // stop of its own, named after the itinerary it holds. A group,
-          // not another landmark: the card already supplies one, and a
-          // nested Itinerary may supply its own distinct landmark.
-          <div
-            ref={itineraryRef}
-            role="group"
-            aria-label={itineraryLabel}
-            tabIndex={0}
-            className="kozmos-manoeuvre-itinerary overflow-y-auto"
-            // No lasting scrollbar on a phone, Kozmos's thin one beside the
-            // map or alone (decision 75, GAP-138/139).
-            data-kozmos-scrollbar={scrollbarFor(presentation)}
-            style={{ maxHeight: maxItineraryHeight }}
-          >
-            {children}
-          </div>
-        ) : (
-          // The instruction row is the button: a click anywhere on it opens
-          // the itinerary, and assistive technology hears the manoeuvre.
-          <button
-            ref={instructionRef}
-            type="button"
-            className="flex w-full items-start gap-3 bg-transparent p-0 text-start text-inherit"
-            onClick={onToggle}
-            aria-expanded={false}
-            // A flattened label would discard the inline foreign-language spans.
-            // Keep the legacy string name unchanged; rich names come from content.
-            aria-label={
-              typeof instruction === "string"
-                ? manoeuvreDescription(instruction, detail)
-                : undefined
-            }
-          >
-            <span className="kozmos-guidance-accent flex h-8 w-8 shrink-0 items-center justify-center">
-              <DirectionIcon type={type} className="h-6 w-6" />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              {/* Whole unless the product asks for a limit (GAP-094):
-                  owned CSS draws the limit, `data-lines`. */}
-              <span
-                className="kozmos-manoeuvre-instruction kozmos-guidance-text text-xl font-semibold leading-tight"
-                data-lines={lines}
-                style={
-                  lines === undefined
-                    ? undefined
-                    : ({
-                        "--kozmos-manoeuvre-instruction-lines": lines,
-                      } as React.CSSProperties)
-                }
-              >
-                <InstructionText instruction={instruction} />
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          aria-label={manoeuvreLabel}
+          className={cn(
+            `kozmos-manoeuvre-card ${appearance === "background" ? surfaceClass(surface) : "kozmos-reset"} kozmos-guidance-text flex w-full flex-col gap-3 rounded-container px-4 pb-1 pt-4 shadow-floating`,
+            className,
+          )}
+          {...props}
+          data-appearance={appearance}
+        >
+          {expanded ? (
+            // The itinerary scrolls here past the cap, so the keyboard must be
+            // able to reach it (GAP-100, axe's scrollable-region-focusable): a
+            // stop of its own, named after the itinerary it holds. A group,
+            // not another landmark: the card already supplies one, and a
+            // nested Itinerary may supply its own distinct landmark.
+            <div
+              ref={itineraryRef}
+              role="group"
+              aria-label={itineraryLabel}
+              tabIndex={0}
+              className="kozmos-manoeuvre-itinerary overflow-y-auto"
+              // No lasting scrollbar on a phone, Kozmos's thin one beside the
+              // map or alone (decision 75, GAP-138/139).
+              data-kozmos-scrollbar={scrollbarFor(presentation)}
+              style={{ maxHeight: maxItineraryHeight }}
+            >
+              {children}
+            </div>
+          ) : (
+            // The instruction row is the button: a click anywhere on it opens
+            // the itinerary, and assistive technology hears the manoeuvre.
+            <button
+              ref={instructionRef}
+              type="button"
+              className="flex w-full items-start gap-3 bg-transparent p-0 text-start text-inherit"
+              onClick={onToggle}
+              aria-expanded={false}
+              // A flattened label would discard the inline foreign-language spans.
+              // Keep the legacy string name unchanged; rich names come from content.
+              aria-label={
+                typeof instruction === "string"
+                  ? manoeuvreDescription(instruction, detail)
+                  : undefined
+              }
+            >
+              <span className="kozmos-guidance-accent flex h-8 w-8 shrink-0 items-center justify-center">
+                <DirectionIcon type={type} className="h-6 w-6" />
               </span>
-              {/* Muted, and on glass the foreground colour (decision 48). */}
-              {detail ? (
-                <span className="kozmos-muted-text text-sm">{detail}</span>
-              ) : null}
-            </span>
-          </button>
-        )}
-        {/* The grab bar: the sign that the card opens, and the way to close
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                {/* Whole unless the product asks for a limit (GAP-094):
+                  owned CSS draws the limit, `data-lines`. */}
+                <span
+                  className="kozmos-manoeuvre-instruction kozmos-guidance-text text-xl font-semibold leading-tight"
+                  data-lines={lines}
+                  style={
+                    lines === undefined
+                      ? undefined
+                      : ({
+                          "--kozmos-manoeuvre-instruction-lines": lines,
+                        } as React.CSSProperties)
+                  }
+                >
+                  <InstructionText instruction={instruction} />
+                </span>
+                {/* Muted, and on glass the foreground colour (decision 48). */}
+                {detail ? (
+                  <span className="kozmos-muted-text text-sm">{detail}</span>
+                ) : null}
+              </span>
+            </button>
+          )}
+          {/* The grab bar: the sign that the card opens, and the way to close
             it. It is 4 above the card's edge (the card's own padding) and 12
             under the content, laid out as the grip alone; its 44px target
             reaches up from the card's edge over that space, drawn in owned
@@ -257,20 +260,23 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
             then — and a pointer pressing it leaves focus where it was, so
             focus never rests on something assistive technology cannot
             hear. */}
-        <button
-          ref={barRef}
-          type="button"
-          className="kozmos-manoeuvre-disclosure flex h-[5px] w-full items-end justify-center bg-transparent"
-          onClick={onToggle}
-          onMouseDown={expanded ? undefined : (event) => event.preventDefault()}
-          aria-label={expanded ? collapseLabel : expandLabel}
-          aria-expanded={expanded}
-          aria-hidden={expanded ? undefined : true}
-          tabIndex={expanded ? 0 : -1}
-        >
-          <span className="kozmos-manoeuvre-grip h-[5px] w-9 rounded-pill" />
-        </button>
-      </section>
+          <button
+            ref={barRef}
+            type="button"
+            className="kozmos-manoeuvre-disclosure flex h-[5px] w-full items-end justify-center bg-transparent"
+            onClick={onToggle}
+            onMouseDown={
+              expanded ? undefined : (event) => event.preventDefault()
+            }
+            aria-label={expanded ? collapseLabel : expandLabel}
+            aria-expanded={expanded}
+            aria-hidden={expanded ? undefined : true}
+            tabIndex={expanded ? 0 : -1}
+          >
+            <span className="kozmos-manoeuvre-grip h-[5px] w-9 rounded-pill" />
+          </button>
+        </section>
+      </DensityScope>
     );
   },
 );
