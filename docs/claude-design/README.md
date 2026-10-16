@@ -37,7 +37,7 @@ export function App() {
 
 ### The font
 
-Kozmos ships no font: every part draws in the system stack, the `--semantics-typography-family-system` role. For Readex Pro, Pointr Cloud's face (decision 87), load it on the page, then point that role at the brand family through the provider's `tokens`. Every part inside, its popovers included, then draws in Readex Pro, and in the system stack until the font has loaded.
+Kozmos ships no font: every part draws in the system stack, the `--semantics-typography-family-system` role. For Readex Pro, Pointr Cloud's face (decision 87), load it on the page, then point that role at the brand family through the provider's `tokens`. Every part inside, its popovers included, then draws in Readex Pro, and in the system stack wherever that face isn't available.
 
 ```tsx
 import { Button, ThemeProvider } from "@kozmos-ds/react";
