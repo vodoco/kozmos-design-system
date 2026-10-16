@@ -2,7 +2,10 @@ import { createRoot } from "react-dom/client";
 import {
   AIInputBar,
   Button,
+  ColorPicker,
   Combobox,
+  DatePicker,
+  DateRangePicker,
   DensityScope,
   Dialog,
   DialogContent,
@@ -17,16 +20,24 @@ import {
   Input,
   MultiSelect,
   NumberInput,
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
   PasswordInput,
   Popover,
   PopoverContent,
   PopoverTrigger,
   RouteSetupPanel,
+  Search,
   SearchBar,
   Select,
   SelectTrigger,
   SelectValue,
   ThemeProvider,
+  TimePicker,
   type ThemeDensity,
 } from "@kozmos-ds/react";
 import { Plus } from "@kozmos-ds/icons";
@@ -90,6 +101,38 @@ function Controls({ board }: { board: string }) {
       <div data-measure-within="password-input">
         <PasswordInput label="Password" />
       </div>
+      {/* Every field drawn on Input's recipe takes the field's height. */}
+      <div data-measure-within="date-picker">
+        <DatePicker label="Day" />
+      </div>
+      <div data-measure-within="date-range-picker">
+        <DateRangePicker label="Stay" />
+      </div>
+      <div data-measure-within="time-picker">
+        <TimePicker label="Time" />
+      </div>
+      <div data-measure-within="search">
+        <Search label="Find" />
+      </div>
+      <div data-measure-within="color-picker">
+        <ColorPicker label="Colour" defaultValue="#4135F1" />
+      </div>
+      {/* Previous, Next and the page links are one height. */}
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious data-measure="pagination previous" href="#" />
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationLink data-measure="pagination page" href="#" isActive>
+              1
+            </PaginationLink>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext data-measure="pagination next" href="#" />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
       {/* A caller's own horizontal padding sets the start; the room for a
           field's actions still holds at the end. */}
       <Input

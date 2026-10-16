@@ -11,6 +11,9 @@
  * - Compact: buttons 32, 40 and 48; icon buttons 28, 32 and 40; fields 40,
  *   and the square actions inside a field (clear, open, steppers, show
  *   password) as tall as the field.
+ * - The fields drawn on Input's recipe (DatePicker, DateRangePicker,
+ *   TimePicker, Search, ColorPicker) are the field's height, and Pagination's
+ *   Previous and Next are as tall as its page links.
  * - A caller's px-* sets a field's start; Combobox and PasswordInput keep the
  *   room for their actions at the end.
  *
@@ -86,6 +89,19 @@ const EXPECTED = {
   "number-input field": { owned: true, height: [44, 40] },
   "number-input action": { owned: true, height: [44, 40], width: [44, 40] },
   "password-input field": { owned: true, height: [44, 40] },
+  // The fields drawn on Input's recipe.
+  "date-picker field": { owned: true, height: [44, 40] },
+  "date-range-picker field": { owned: true, height: [44, 40] },
+  "time-picker field": { owned: true, height: [44, 40] },
+  "search field": { owned: true, height: [44, 40] },
+  "color-picker field": { owned: true, height: [44, 40] },
+  // Previous and Next are the small Button, as tall as the page links.
+  "pagination previous": { owned: true, height: [44, 32] },
+  "pagination page": { owned: true, height: [44, 32], width: [44, 32] },
+  "pagination next": { owned: true, height: [44, 32] },
+  // and keep the default size's 16 beside their 10 by the arrow.
+  "pagination previous padding": { padStart: [10, 10], padEnd: [16, 16] },
+  "pagination next padding": { padStart: [16, 16], padEnd: [10, 10] },
   "password-input action": { owned: true, height: [44, 40], width: [44, 40] },
   // The room a field leaves for its actions follows them: 48 or 96, then 44
   // or 88; a drawer's close is the icon button's size.
@@ -241,6 +257,18 @@ try {
         parts["password-input action"] = size(
           within("password-input")?.querySelector(".kozmos-field-action"),
         );
+        for (const key of [
+          "date-picker",
+          "date-range-picker",
+          "time-picker",
+          "search",
+          "color-picker",
+        ])
+          parts[`${key} field`] = size(
+            within(key)?.querySelector(".kozmos-input"),
+          );
+        parts["pagination previous padding"] = parts["pagination previous"];
+        parts["pagination next padding"] = parts["pagination next"];
         parts["combobox padding"] = parts["combobox field"];
         parts["combobox-plain padding"] = size(
           within("combobox-plain")?.querySelector(".kozmos-input"),
@@ -406,5 +434,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; a caller's px-4 sets a field's start and Combobox and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); a stacked dialog footer's buttons keep their sizes' heights; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
+  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; the fields on Input's recipe (DatePicker, DateRangePicker, TimePicker, Search, ColorPicker) take the field's height and Pagination's Previous and Next its links'; a caller's px-4 sets a field's start and Combobox and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); a stacked dialog footer's buttons keep their sizes' heights; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
 );
