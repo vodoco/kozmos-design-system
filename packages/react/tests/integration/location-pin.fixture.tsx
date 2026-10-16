@@ -1,6 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { LocationPin, ThemeProvider } from "@kozmos-ds/react";
+import {
+  DesignConfigProvider,
+  LocationPin,
+  ThemeProvider,
+} from "@kozmos-ds/react";
 
 // The SDK's map result markers (decision 71), each stood on a known point:
 // scripts/check-location-pin.mjs measures their shapes, colours and anchors
@@ -16,9 +20,34 @@ const logo = (
     width={40}
   />
 );
+// A larger logo inside a wrapper, as a product's image component renders it
+// (a <picture>, a Next Image's span): it still fits inside the rim.
+const wrappedLogo = (
+  <picture>
+    <img
+      alt=""
+      height={120}
+      src={`data:image/svg+xml,${encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120"><rect width="200" height="120" fill="#C8102E"/></svg>',
+      )}`}
+      width={200}
+    />
+  </picture>
+);
 
 const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
-  ["result-1", { label: "Result 1", number: 1, onOpen: () => {} }],
+  [
+    "result-1",
+    {
+      label: "Result 1",
+      number: 1,
+      // Counted, for the touch double tap the check plays on a map.
+      onOpen: () => {
+        const w = window as unknown as { pinOpens?: number };
+        w.pinOpens = (w.pinOpens ?? 0) + 1;
+      },
+    },
+  ],
   [
     "result-128",
     {
@@ -45,7 +74,7 @@ const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
     {
       featured: true,
       label: "Harbour Coffee",
-      markerContent: logo,
+      markerContent: wrappedLogo,
       selected: true,
       externalLabel: "Harbour Coffee",
       labelPlacement: "left",
@@ -72,24 +101,29 @@ const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
 function Board({
   theme,
   dir,
+  configured = false,
 }: {
   theme: "light" | "dark";
   dir: "ltr" | "rtl";
+  configured?: boolean;
 }) {
   return (
     <ThemeProvider dir={dir} theme={theme}>
       <div
-        data-board={`${theme}-${dir}`}
+        data-board={`${theme}-${dir}${configured ? "-configured" : ""}`}
         style={{ display: "flex", gap: 24, padding: "80px 24px 24px" }}
       >
         {markers.map(([id, props]) => (
           <div
-            data-point={`${theme}-${dir}-${id}`}
+            data-point={`${theme}-${dir}${configured ? "-configured" : ""}-${id}`}
             key={id}
             style={{ position: "relative", width: 72, height: 1 }}
           >
             <div style={{ position: "absolute", left: 36, top: 0 }}>
-              <LocationPin data-pin={`${theme}-${dir}-${id}`} {...props} />
+              <LocationPin
+                data-pin={`${theme}-${dir}${configured ? "-configured" : ""}-${id}`}
+                {...props}
+              />
             </div>
           </div>
         ))}
@@ -103,5 +137,11 @@ createRoot(document.getElementById("fixture")!).render(
     <Board dir="ltr" theme="light" />
     <Board dir="ltr" theme="dark" />
     <Board dir="rtl" theme="light" />
+    {/* As Storybook and most products render it: a design configuration
+        around the provider rewrites the legacy --shadow-* aliases, which a
+        drop-shadow() can't take. */}
+    <DesignConfigProvider theme="light">
+      <Board dir="ltr" theme="light" configured />
+    </DesignConfigProvider>
   </>,
 );

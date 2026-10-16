@@ -71,7 +71,8 @@ import Kozmos
 // A result's marker, numbered as its card's tab: a theme-bordered pill at
 // rest, filled when the result is selected. Its label is its whole spoken
 // name, the number included. A double tap opens the place's details.
-// \`.position(point)\` puts the pointer's tip on the point.
+// \`.kozmosLocationPinAt(point)\` puts the pointer's tip on the map's point,
+// in either direction.
 struct ResultPin: View {
     let name: String
     let number: Int
@@ -88,7 +89,7 @@ struct ResultPin: View {
             onSelect: onSelect,
             onOpen: onOpen
         )
-        .position(point)
+        .kozmosLocationPinAt(point)
     }
 }
 `}
@@ -130,7 +131,7 @@ tab fills with it (decision 55). Without a number it shows a dot.
   <Story of={LocationPinStories.Selected} />
 </Canvas>
 
-- **Contrast:** theme 600 on background/0 reads 6.3:1 in light and 6.4:1 in dark, and so does
+- **Contrast:** theme 600 on background/0 reads 6.24:1 in light and 6.17:1 in dark, and so does
   foreground/1000 on theme 600.
 - **Selected is theme 600, not the theme fill** (theme 500, decision 59): it is the SDK's sprite.
 
@@ -166,9 +167,30 @@ Burger King"): word order and translation are the product's. LocationPin adds no
 
 A pin with `onClick` or `onOpen` is a button with a target 44 square at least. A double tap opens the
 place's details through `onOpen` (decision 71) rather than zooming the map: the first tap is the
-ordinary press, and the second calls `onOpen` once and isn't passed on as another. A keyboard press is
-always the ordinary press. It is the same gate as `POIResultList.onOpen`. On iOS and Android,
-VoiceOver and TalkBack get an Open action.
+ordinary press, and the second calls `onOpen` once and isn't passed on as another. It is the same gate as
+`POIResultList.onOpen`.
+
+- **By keyboard,** Enter opens a pin that is already the current one (selected, or a place) or whose only
+  action is `onOpen`. Otherwise Enter, and Space always, is the ordinary press: the first Enter selects a
+  result, the second opens it. A held Enter opens once.
+- **Its description** says so while Enter opens it: `openHint`, "Press Enter to open details" unless you
+  pass it translated. It joins any `aria-describedby` you pass.
+- **On iOS and Android,** VoiceOver and TalkBack get an Open action.
+
+## On a map
+
+- **A second tap stays on the pin.** MapLibre zooms on a second tap within 500 ms and cancels that tap's
+  click, so a pin's details would never open. With `onOpen`, the second touch tap, and its `dblclick`,
+  stop at the pin; a first tap, and a pan that starts on it, still reach the map. It holds for a marker
+  rendered in a portal too (measured with MapLibre GL 4.7.1).
+- **A press is a click on the map too.** MapLibre fires the map's `click` for a click on a marker (its own
+  `Marker` relies on it), so a `click` handler that clears the selection would undo the pin's press. Skip a
+  click inside a pin: `if (event.originalEvent.target.closest(".kozmos-location-pin")) return;`.
+- **A pin nothing presses lets the map have it:** with no `onClick` or `onOpen`, or disabled, a press or a
+  pan starting on it reaches the map.
+- **`left` and `right` labels are the map's,** in either direction, as MapLibre places a symbol's text.
+  Place a pin by its physical point; on iOS use `.kozmosLocationPinAt(point)`, which keeps the point in
+  right-to-left layouts, where `.position` mirrors it.
 
 ## Results on another level
 

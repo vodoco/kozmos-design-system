@@ -19,8 +19,9 @@ export type DoubleTapPress = "press" | "open" | "ignore";
  * as 1 is timed here. Either way this target took the first press, and lately:
  * a browser counts by time and place, so a first press that moved the layout
  * can put another target under the second. A quick tap after an open does
- * nothing, as on SwiftUI and Compose. `detail` 0 is a keyboard press, which is
- * always an ordinary press.
+ * nothing, as on SwiftUI and Compose. `detail` 0 is a keyboard press, which
+ * the gate always calls an ordinary press: LocationPin decides before it
+ * whether Enter opens (decision 79).
  */
 export function useDoubleTapGate() {
   const lastPress = React.useRef<{ at: number; opened: boolean } | null>(null);

@@ -1713,8 +1713,9 @@
     height: max(100%, 44px);
     transform: translate(-50%, -50%);
   }
+  /* Disabled: dimmed, and it takes no pointer (no data-interactive), so a
+     press goes through to the map; no cursor of its own to show. */
   .kozmos-location-pin[data-disabled] {
-    cursor: not-allowed;
     opacity: 0.5;
   }
   .kozmos-location-pin:focus-visible {
@@ -1726,13 +1727,17 @@
     flex-direction: column;
     align-items: center;
   }
+  /* The floating elevation, 0 4 8 at 10% (40% in dark), as SwiftUI and
+     Compose draw it: a semantic token, which a design configuration leaves a
+     single shadow. The legacy --shadow-md it configures is two shadows with a
+     spread, which drop-shadow() can't take, so the marker drew none. */
   .kozmos-location-pin[data-kind="result"] .kozmos-location-pin-body {
-    filter: drop-shadow(var(--shadow-md));
+    filter: drop-shadow(var(--semantics-elevation-floating));
   }
   /* A result: a pill 32 tall, as wide as its number and 8 more each side
      (a 2 border and 6), 32 at least; theme 600 on background/0 at rest,
-     foreground/1000 on theme 600 when selected (6.3:1 and up in both
-     themes). Without a number, an 8 dot. Two classes for the border and the
+     foreground/1000 on theme 600 when selected (6.24:1 in light, 6.17:1 in
+     dark). Without a number, an 8 dot. Two classes for the border and the
      rim, because the scoped preflight resets every element's border at one
      class's weight and wins a tie with an owned rule. */
   .kozmos-location-pin .kozmos-location-pin-pill {
@@ -1756,6 +1761,16 @@
   .kozmos-location-pin[data-selected] .kozmos-location-pin-pill {
     background-color: var(--primitives-colors-theme-600);
     color: var(--primitives-colors-foreground-1000);
+  }
+  /* Windows' high contrast repaints backgrounds with the system's, so the
+     selected pill keeps the system's highlight rather than looking at rest. */
+  @media (forced-colors: active) {
+    .kozmos-location-pin[data-selected] .kozmos-location-pin-pill {
+      forced-color-adjust: none;
+      border-color: Highlight;
+      background-color: Highlight;
+      color: HighlightText;
+    }
   }
   .kozmos-location-pin-pill-dot {
     width: 8px;
@@ -1782,7 +1797,7 @@
     border: 3px solid var(--primitives-colors-foreground-0);
     border-radius: 16px;
     background-color: var(--primitives-colors-background-0);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--semantics-elevation-floating);
     overflow: hidden;
   }
   .kozmos-location-pin[data-selected] .kozmos-location-pin-tile {
@@ -1797,8 +1812,15 @@
     min-width: 0;
     min-height: 0;
   }
-  .kozmos-location-pin-logo > img,
-  .kozmos-location-pin-logo > svg {
+  /* The logo fits inside the rim and is never cropped, an image or a
+     drawing, on its own or inside a product's wrapper (a <picture>, an
+     image component's span). */
+  .kozmos-location-pin-logo > * {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .kozmos-location-pin-logo img,
+  .kozmos-location-pin-logo svg {
     display: block;
     max-width: 100%;
     max-height: 100%;
@@ -1817,7 +1839,7 @@
      green dot whose top is 6 below the circle. */
   .kozmos-location-pin-teardrop {
     display: block;
-    filter: drop-shadow(var(--shadow-md));
+    filter: drop-shadow(var(--semantics-elevation-floating));
   }
   .kozmos-location-pin-teardrop > path {
     fill: var(--primitives-colors-emotional-success-800);

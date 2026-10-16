@@ -118,19 +118,23 @@ describe("LocationPin", () => {
   });
 
   it("takes no variant, size, tint or offFloor any more (decisions 79, 80)", () => {
-    const removedProps: Record<string, unknown> = {
-      offFloor: true,
-      size: "lg",
-      variant: "accent",
-    };
-    const { container } = render(
-      // The removed props, as a caller on 0.11.0 still passes them: no longer
-      // LocationPin's, they draw nothing of their own.
-      <LocationPin label="Result 1" number={1} {...removedProps} />,
+    // The types refuse them: each line below fails the typecheck
+    // (`pnpm --filter @kozmos-ds/react typecheck`) if LocationPin takes it.
+    const removed = (
+      <>
+        {/* @ts-expect-error variant was removed (decision 79) */}
+        <LocationPin label="Result 1" variant="accent" />
+        {/* @ts-expect-error size was removed (decision 79) */}
+        <LocationPin label="Result 1" size="lg" />
+        {/* @ts-expect-error tint was removed (decision 79) */}
+        <LocationPin label="Result 1" tint={{ fill: "#000", onFill: "#fff" }} />
+        {/* @ts-expect-error offFloor was removed (decision 80) */}
+        <LocationPin label="Result 1" offFloor />
+      </>
     );
-    const pin = container.firstElementChild as HTMLElement;
-    expect(pin).not.toHaveAttribute("data-off-floor");
-    expect(pin).toHaveAttribute("data-kind", "result");
+    expect(removed).toBeTruthy();
+    render(<LocationPin label="Result 1" number={1} />);
+    expect(screen.getByRole("img")).toHaveAttribute("data-kind", "result");
   });
 
   it("opens on a double tap: one press, then one open (decision 71)", () => {
@@ -155,13 +159,126 @@ describe("LocationPin", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it("is a button with onOpen alone, and a keyboard press never opens", () => {
+  // Olcay, 16 Oct: on the web, Enter on a pin that is already the current one
+  // (selected, or a place on its own) opens its details, as the natives'
+  // "Open details" action does; the first Enter selects it. Space is always
+  // the ordinary press. A pin with onOpen alone has no ordinary press, so
+  // Enter opens it.
+  it("opens with Enter once it's the current pin, and Space still presses", () => {
+    const onClick = vi.fn();
     const onOpen = vi.fn();
-    render(<LocationPin label="Result 2" number={2} onOpen={onOpen} />);
+    render(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        selected
+        onClick={onClick}
+        onOpen={onOpen}
+      />,
+    );
     const pin = screen.getByRole("button", { name: "Result 2" });
     fireEvent.keyDown(pin, { key: "Enter" });
-    fireEvent.keyDown(pin, { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(onClick).not.toHaveBeenCalled();
+    fireEvent.keyDown(pin, { key: " " });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("presses with Enter before it's selected, and opens a place or an onOpen-only pin", () => {
+    const onClick = vi.fn();
+    const onOpen = vi.fn();
+    const { rerender } = render(
+      <LocationPin
+        label="Result 3"
+        number={3}
+        onClick={onClick}
+        onOpen={onOpen}
+      />,
+    );
+    const pin = () => screen.getByRole("button");
+    fireEvent.keyDown(pin(), { key: "Enter" });
+    expect(onClick).toHaveBeenCalledTimes(1);
     expect(onOpen).not.toHaveBeenCalled();
+    rerender(
+      <LocationPin label="Cafe" place onClick={onClick} onOpen={onOpen} />,
+    );
+    fireEvent.keyDown(pin(), { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    rerender(<LocationPin label="Result 4" number={4} onOpen={onOpen} />);
+    fireEvent.keyDown(pin(), { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledTimes(2);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens once on a held Enter, and never when disabled", () => {
+    const onOpen = vi.fn();
+    const { rerender } = render(
+      <LocationPin label="Result 2" number={2} selected onOpen={onOpen} />,
+    );
+    const pin = screen.getByRole("button");
+    fireEvent.keyDown(pin, { key: "Enter" });
+    fireEvent.keyDown(pin, { key: "Enter", repeat: true });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    rerender(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        selected
+        disabled
+        onOpen={onOpen}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("says how to open it only while Enter opens, beside the caller's description", () => {
+    const { rerender } = render(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        selected
+        onClick={() => {}}
+        onOpen={() => {}}
+        aria-describedby="caller-note"
+      />,
+    );
+    const pin = () => screen.getByRole("button");
+    const ids = () => (pin().getAttribute("aria-describedby") ?? "").split(" ");
+    expect(ids()).toContain("caller-note");
+    expect(pin()).toHaveAccessibleDescription("Press Enter to open details");
+    rerender(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        onClick={() => {}}
+        onOpen={() => {}}
+        openHint="Appuyez sur Entrée pour ouvrir"
+      />,
+    );
+    expect(pin()).not.toHaveAttribute("aria-describedby");
+    rerender(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        selected
+        onClick={() => {}}
+        onOpen={() => {}}
+        openHint="Appuyez sur Entrée pour ouvrir"
+      />,
+    );
+    expect(pin()).toHaveAccessibleDescription("Appuyez sur Entrée pour ouvrir");
+    rerender(
+      <LocationPin
+        label="Result 2"
+        number={2}
+        selected
+        disabled
+        onOpen={() => {}}
+      />,
+    );
+    expect(pin()).not.toHaveAttribute("aria-describedby");
   });
 
   // Review, 16 Oct: the second tap opened the details and still reached the

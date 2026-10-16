@@ -35,12 +35,23 @@ export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   resultId?: string;
   /** A double tap on the marker opens the place's details (decision 71),
    *  rather than zooming the map: the first tap is the ordinary press, the
-   *  second calls this once and is not passed on as another. A keyboard press
-   *  is always the ordinary press. */
+   *  second calls this once and is not passed on as another. By keyboard,
+   *  Enter opens a pin that is already the current one (selected, or a place
+   *  on its own) or that has `onOpen` alone; otherwise Enter, and Space
+   *  always, is the ordinary press (Olcay, 16 Oct). */
   onOpen?: () => void;
+  /** Read after the label while Enter opens the pin, so a screen-reader user
+   *  knows. Default "Press Enter to open details"; pass it translated. */
+  openHint?: string;
 }
 
 type Kind = "result" | "featured" | "place";
+
+// MapLibre counts a second tap within 500 ms (its tap recognizer's
+// MAX_TAP_INTERVAL): on it, the map zooms and cancels the tap's click, so a
+// pin's details would never open. A pin keeps any second tap within that
+// window to itself.
+const MAP_DOUBLE_TAP_MS = 500;
 
 // The place pin's teardrop: a circle of 40 whose bottom comes to a point,
 // three quarter arcs and a square corner turned -45 degrees about its centre,
@@ -64,26 +75,92 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       labelPlacement = "bottom",
       resultId,
       onOpen,
+      openHint = "Press Enter to open details",
       onClick,
       onDoubleClick,
       onKeyDown,
+      "aria-describedby": describedBy,
       ...props
     },
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const doubleTap = useDoubleTapGate();
+    const hintId = React.useId();
+    const node = React.useRef<HTMLDivElement | null>(null);
+    const setRefs = React.useCallback(
+      (element: HTMLDivElement | null) => {
+        node.current = element;
+        if (typeof ref === "function") {
+          ref(element);
+        } else if (ref) {
+          ref.current = element;
+        }
+      },
+      [ref],
+    );
     const kind: Kind = place ? "place" : featured ? "featured" : "result";
     const isInteractive = Boolean(onClick || onOpen);
+    // Enter opens the current pin (selected, or a place on its own), or one
+    // whose only action is to open; any other pin it presses.
+    const opensOnEnter =
+      Boolean(onOpen) && !disabled && (selected || place || !onClick);
     // A disabled pin is still a (disabled) button for assistive technology,
     // but lets pointers through to the map, as on SwiftUI.
     const takesPointers = isInteractive && !disabled;
 
     // The second tap opens the place "rather than zooming the map" (decision
-    // 71): a map that zooms on double click listens above the pin.
+    // 71). A map listens for taps on its container, above the pin: MapLibre
+    // zooms on a second tap there and cancels its click, so the pin never saw
+    // it (measured with MapLibre GL 4.7.1, touch, Chromium and WebKit, on 16
+    // Oct: the map zoomed and the pin didn't open). Listened for on the pin
+    // itself, natively, so it holds wherever React delegates its events. Only
+    // a second tap is kept: a first tap, and a pan begun on the pin, still
+    // reach the map.
+    const keepsSecondTap = Boolean(onOpen) && !disabled;
+    React.useEffect(() => {
+      const element = node.current;
+      if (!element || !keepsSecondTap) return;
+      let lastTapEnd = -Infinity;
+      let second = false;
+      const touchStart = (event: TouchEvent) => {
+        second = event.timeStamp - lastTapEnd < MAP_DOUBLE_TAP_MS;
+        if (second) event.stopPropagation();
+      };
+      const touchEnd = (event: TouchEvent) => {
+        if (second) {
+          event.stopPropagation();
+          second = false;
+          lastTapEnd = -Infinity;
+        } else {
+          lastTapEnd = event.timeStamp;
+        }
+      };
+      const touchCancel = () => {
+        second = false;
+      };
+      element.addEventListener("touchstart", touchStart, { passive: true });
+      element.addEventListener("touchend", touchEnd, { passive: true });
+      element.addEventListener("touchcancel", touchCancel, { passive: true });
+      return () => {
+        element.removeEventListener("touchstart", touchStart);
+        element.removeEventListener("touchend", touchEnd);
+        element.removeEventListener("touchcancel", touchCancel);
+      };
+    }, [keepsSecondTap]);
+
+    // A double click stops at the pin: React listens on the pin's own root or
+    // portal container, which a map's marker element is, so the stop holds
+    // below the map's container either way (measured as above, a portal
+    // too).
     const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       if (onOpen && !disabled) event.stopPropagation();
       onDoubleClick?.(event);
+    };
+
+    const open = () => {
+      trackEvent("LocationPin", "location_pin_opened", { kind, number });
+      onOpen?.();
     };
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -92,8 +169,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         const press = doubleTap(event);
         if (press === "ignore") return;
         if (press === "open") {
-          trackEvent("LocationPin", "location_pin_opened", { kind, number });
-          onOpen();
+          open();
           return;
         }
       }
@@ -106,7 +182,12 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (
+      if (event.key === "Enter" && opensOnEnter) {
+        event.preventDefault();
+        // A held Enter opens once: the repeats that follow a first Enter
+        // which selected the pin would otherwise open it too.
+        if (!event.repeat) open();
+      } else if (
         isInteractive &&
         !disabled &&
         (event.key === "Enter" || event.key === " ")
@@ -116,10 +197,13 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       }
       onKeyDown?.(event);
     };
+    const describedByIds =
+      [describedBy, opensOnEnter ? hintId : null].filter(Boolean).join(" ") ||
+      undefined;
 
     return (
       <div
-        ref={ref}
+        ref={setRefs}
         aria-controls={resultId}
         aria-current={selected || place ? "location" : undefined}
         aria-disabled={isInteractive && disabled ? true : undefined}
@@ -138,6 +222,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         role={isInteractive ? "button" : "img"}
         tabIndex={isInteractive && !disabled ? 0 : undefined}
         {...props}
+        aria-describedby={describedByIds}
       >
         {kind === "result" && (
           <span aria-hidden="true" className="kozmos-location-pin-body">
@@ -186,10 +271,17 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         {externalLabel && (
           <span
             aria-hidden="true"
-            className="kozmos-location-pin-label max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-medium text-foreground shadow-floating ring-1 ring-border"
+            className="kozmos-location-pin-label max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-semibold text-foreground shadow-floating ring-1 ring-border"
             data-placement={labelPlacement}
           >
             {externalLabel}
+          </span>
+        )}
+        {opensOnEnter && (
+          // A description need not be shown to be read: hidden, it is still
+          // the pin's accessible description, and nothing draws it.
+          <span hidden id={hintId}>
+            {openHint}
           </span>
         )}
       </div>

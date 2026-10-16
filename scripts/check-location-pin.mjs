@@ -176,6 +176,10 @@ try {
             target,
             passes,
             label: box(".kozmos-location-pin-label"),
+            labelWeight: (() => {
+              const label = pin.querySelector(".kozmos-location-pin-label");
+              return label ? getComputedStyle(label).fontWeight : null;
+            })(),
           };
         }
       }
@@ -420,6 +424,14 @@ try {
             4,
             at("result-128", "a label at the side is 4 from the marker"),
           );
+          // Semibold on every platform (16 Oct); Figma draws it Medium. A
+          // utility: a browser without @scope has no Kozmos utilities at all
+          // (docs/embedding-isolation.md), so only that pass reads it.
+          if (mode !== "without-scope" && m.labelWeight !== "600") {
+            failures.push(
+              at("result-128", `the label is weight ${m.labelWeight}, not 600`),
+            );
+          }
         }
         const f = pins["featured-selected"];
         if (!f.label) failures.push(at("featured-selected", "no label"));
@@ -476,6 +488,102 @@ try {
         );
     }
     await page.close();
+
+    // A touch double tap on a marker that opens, on a map: MapLibre's tap
+    // recognizer, played on the board as it listens on its container. A
+    // second touchend within 500 ms (MAX_TAP_INTERVAL) zooms and cancels the
+    // tap's click. Measured with MapLibre GL 4.7.1 itself on 16 Oct, in
+    // Chromium and WebKit: before the pin kept its second tap, the map zoomed
+    // and the pin never opened. A double tap on the bare board zooms, or this
+    // would prove nothing.
+    const touch = await browser.newContext({
+      hasTouch: true,
+      viewport: { width: 1000, height: 700 },
+    });
+    const tapPage = await touch.newPage();
+    await tapPage.setContent('<!doctype html><div id="fixture"></div>');
+    await tapPage.addStyleTag({ content: stylesheet });
+    await tapPage.addScriptTag({ content: code });
+    await tapPage.locator("[data-pin]").first().waitFor();
+    await settleLayout(tapPage);
+    await tapPage.evaluate(() => {
+      const map = document.querySelector('[data-board="light-ltr"]');
+      window.mapZooms = 0;
+      window.pinOpens = 0;
+      let lastTapEnd = -Infinity;
+      map.addEventListener("touchend", (event) => {
+        if (event.timeStamp - lastTapEnd < 500) {
+          window.mapZooms += 1;
+          event.preventDefault();
+          lastTapEnd = -Infinity;
+        } else {
+          lastTapEnd = event.timeStamp;
+        }
+      });
+    });
+    const doubleTap = async (x, y) => {
+      await tapPage.touchscreen.tap(x, y);
+      await tapPage.waitForTimeout(80);
+      await tapPage.touchscreen.tap(x, y);
+      await tapPage.waitForTimeout(400);
+    };
+    const tapBox = await tapPage
+      .locator('[data-pin="light-ltr-result-1"] .kozmos-location-pin-body')
+      .boundingBox();
+    await doubleTap(tapBox.x + tapBox.width / 2, tapBox.y + tapBox.height / 2);
+    const onPin = await tapPage.evaluate(() => ({
+      zooms: window.mapZooms,
+      opens: window.pinOpens,
+    }));
+    const boardBox = await tapPage
+      .locator('[data-board="light-ltr"]')
+      .boundingBox();
+    await doubleTap(boardBox.x + 8, boardBox.y + 8);
+    const bare = await tapPage.evaluate(() => window.mapZooms - 0);
+    reads += 3;
+    if (onPin.opens !== 1)
+      failures.push(
+        `${mode} light-ltr result-1: a touch double tap opened it ${onPin.opens} times on a map, expected once`,
+      );
+    if (onPin.zooms !== 0)
+      failures.push(
+        `${mode} light-ltr result-1: a touch double tap on it zoomed the map`,
+      );
+    if (bare - onPin.zooms !== 1)
+      failures.push(
+        `${mode}: a touch double tap on the bare map zoomed it ${bare - onPin.zooms} times, expected once: the model map is blind`,
+      );
+    await touch.close();
+
+    // Windows' high contrast repaints a background with the system's: a
+    // selected pill, filled with theme 600, would look like one at rest. It
+    // keeps the system's highlight. Only Chromium emulates forced colours.
+    if ((process.env.ADAPTIVE_BROWSER ?? "chromium") === "chromium") {
+      const contrast = await browser.newPage({
+        viewport: { width: 1000, height: 700 },
+      });
+      await contrast.emulateMedia({ forcedColors: "active" });
+      await contrast.setContent('<!doctype html><div id="fixture"></div>');
+      await contrast.addStyleTag({ content: stylesheet });
+      await contrast.addScriptTag({ content: code });
+      await contrast.locator("[data-pin]").first().waitFor();
+      const fills = await contrast.evaluate(() =>
+        ["result-1", "result-selected"].map(
+          (id) =>
+            getComputedStyle(
+              document.querySelector(
+                `[data-pin="light-ltr-${id}"] .kozmos-location-pin-pill`,
+              ),
+            ).backgroundColor,
+        ),
+      );
+      reads += 1;
+      if (fills[0] === fills[1])
+        failures.push(
+          `${mode} light-ltr: in forced colours a selected pill's fill is a pill's at rest (${fills[1]})`,
+        );
+      await contrast.close();
+    }
   }
 } finally {
   await browser.close();
@@ -488,5 +596,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS LocationPin markers (decision 71): ${reads} reads — the result pill (32 tall, at least 32 wide and growing with its number, a 2 border in theme 600, filled when selected), its pointer's tip 6 below and on the point, the dot without a number; the featured tile (44, 52 selected, a 3 rim in foreground/0, corners of 16, the logo inside) on a dot 4 below whose centre is the point; the place's green teardrop of 40 round a disc of 20 on a dot 6 below; the md shadow on each body and a 44 target, in light and dark, left to right and right to left, with and without @scope`,
+  `PASS LocationPin markers (decision 71): ${reads} reads — the result pill (32 tall, at least 32 wide and growing with its number, a 2 border in theme 600, filled when selected), its pointer's tip 6 below and on the point, the dot without a number; the featured tile (44, 52 selected, a 3 rim in foreground/0, corners of 16, the logo inside) on a dot 4 below whose centre is the point; the place's green teardrop of 40 round a disc of 20 on a dot 6 below; the md shadow on each body (inside a design configuration too), a Semibold label 4 from the marker and centred on it at the side, and a 44 target, in light and dark, left to right and right to left, with and without @scope; a double click and a touch double tap open the pin without zooming a map; a wrapped logo fits the tile; a selected pill stays distinct in forced colours`,
 );

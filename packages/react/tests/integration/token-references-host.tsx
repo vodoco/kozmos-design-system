@@ -126,9 +126,10 @@ function Hovers({ id }: { id: (part: string) => string }) {
   );
 }
 
-/* Decision 68: the Featured tag, its card's edge and a featured pin draw the
-   accent fill, a reference to accent 500, so one override of accent 500
-   re-colours them all. */
+/* Decision 68: the Featured tag and its card's edge draw the accent fill, a
+   reference to accent 500, so one override of accent 500 re-colours them
+   both. A featured pin no longer does: its tile carries the place's logo and
+   no accent (decision 81). */
 function Accents({ id }: { id: (part: string) => string }) {
   return (
     <div>
