@@ -47,7 +47,12 @@ import { gzipSync } from "zlib";
 // as an app's build does. After them, Everything measured 79.21 KB here, leaving room for two to
 // four releases at the recent growth of 1.8 to 3.6 KB each. The per-export, Button, CSS and
 // module-count guards stay.
-const MAX_EXPORT_GZIP_KB = 8;
+// Olcay approved 8.5 KB on 2026-10-16 (decision 90) for compact density (#274). Its DensityScope,
+// on every SDK part's root, and cn's merge groups for the density sizes took AdaptiveMapShell
+// alone from 7.85 to 8.03 KB on CI (7.79 to 7.97 here). That is the shell's real size now, not a
+// tree-shaking slip, and it has no cheap lossless trim: the module is layout logic, not data. The
+// guard still catches an export that pulls in more than it should.
+const MAX_EXPORT_GZIP_KB = 8.5;
 const MAX_BUTTON_GZIP_KB = 2;
 const MAX_TOTAL_GZIP_KB = 88;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.

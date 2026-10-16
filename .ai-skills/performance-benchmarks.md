@@ -40,7 +40,7 @@
 
 ### Performance Budget Tiers
 
-There are no tiers: every public export is held to the same budget, 8 KB gzipped alone (§2). The
+There are no tiers: every public export is held to the same budget, 8.5 KB gzipped alone (§2). The
 tiers planned before the code are kept in
 [docs/proposals/performance-plan.md](../docs/proposals/performance-plan.md).
 
@@ -57,14 +57,15 @@ budgets, gzipped:
 
 | Measure                              | Budget  |
 | ------------------------------------ | ------- |
-| Any one public export, bundled alone | 8 KB    |
+| Any one public export, bundled alone | 8.5 KB  |
 | `Button` alone                       | 2 KB    |
 | Every export at once                 | 88 KB   |
 | The stylesheet                       | 30.5 KB |
 
 The whole library's budget went from 64 to 68 KB on 2026-09-28 (decision 53), to 80 KB on 2026-09-30
-and to 88 KB on 2026-10-06 (decision 56); the stylesheet's from 30 to 30.5 KB on 2026-10-02, each on Olcay's
-decision. The per-export and `Button` budgets are unchanged.
+and to 88 KB on 2026-10-06 (decision 56); the stylesheet's from 30 to 30.5 KB on 2026-10-02; and the per-export
+budget from 8 to 8.5 KB on 2026-10-16 (decision 90), when compact density's `DensityScope` took `AdaptiveMapShell` to
+8.03 KB on CI. Each was Olcay's decision. The `Button` budget is unchanged.
 
 ### Package-Level Budgets
 
