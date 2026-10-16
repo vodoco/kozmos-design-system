@@ -38,7 +38,9 @@ const BASELINE = {
   // 19 across 6 until 2026-09-25, when FeedbackCard's success mark stopped
   // being bg-green-100 / dark:bg-green-900-30 — a fixed rgb(220 252 231) that
   // a re-themed product got here and nowhere else — and took the success role.
-  colour: { total: 18, components: 6 },
+  // 18 across 6 until 2026-10-16, when a destructive Toast's close stopped
+  // being Tailwind's red-300 / red-50 / red-400 and took the destructive roles.
+  colour: { total: 15, components: 5 },
   // 6 across 5 until 2026-09-22, when the four map cards took the panel role.
   radius: { total: 2, components: 1 },
 };

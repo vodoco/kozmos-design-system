@@ -10,6 +10,11 @@ export interface SliderProps extends React.ComponentPropsWithoutRef<
   label?: string;
   error?: boolean | string;
   thumbCount?: number;
+  /**
+   * Each thumb's accessible name, in order, in the product's language. Unset,
+   * a single thumb takes `aria-label` or `label`, and a range's thumbs are
+   * named in English: "Minimum value", "Value 2"… "Maximum value".
+   */
   thumbLabels?: string[];
   wrapperClassName?: string;
   /**
