@@ -305,8 +305,8 @@ const NATIVE_MARKS_ALLOWED = {
     why: "the handle needs a hard ring to stay visible on any colour beneath it, as in Figma",
   },
   "LocationPin.swift": {
-    primitive: "primitivesColorsForeground1000",
-    why: "a white ring is what makes a pin read against an arbitrary map, as in Figma",
+    primitive: "primitivesColorsForeground0",
+    why: "the featured tile's 3pt rim, the SDK's featured sprite drawn (decision 79): a mark, not a container's edge",
   },
   "RoutingInputGroup.swift": {
     primitive: "primitivesColorsForeground400",

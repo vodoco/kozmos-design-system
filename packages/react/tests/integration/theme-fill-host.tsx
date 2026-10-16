@@ -10,7 +10,6 @@ import {
   FloorSelector,
   IconButton,
   Link,
-  LocationPin,
   ManoeuvreCard,
   MapControlButton,
   POIResultCard,
@@ -152,24 +151,6 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
           selectedFloor="2"
           showResultCounts
         />
-      </div>
-      <div data-testid={id("pin")}>
-        <LocationPin label="Result 1" number={1} selected variant="primary" />
-      </div>
-      {/* Decision 62: the accent pin and a featured pin, as the natives
-          draw them. */}
-      <div data-testid={id("pin-accent")}>
-        <LocationPin label="Gate 4" number={4} selected variant="accent" />
-      </div>
-      <div data-testid={id("pin-accent-quiet")}>
-        <LocationPin label="Gate 5" number={5} variant="accent" />
-      </div>
-      <div data-testid={id("pin-featured")}>
-        <LocationPin featured label="Burger King" number={2} />
-      </div>
-      {/* Decision 66: a filled secondary pin, as the natives draw it. */}
-      <div data-testid={id("pin-secondary")}>
-        <LocationPin label="Gate 6" number={6} selected variant="secondary" />
       </div>
       <div data-testid={id("save")}>
         <SaveLocationCard isSaved title="Gate 12" />
