@@ -58,7 +58,12 @@ const MAX_TOTAL_GZIP_KB = 88;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
-const MAX_CSS_GZIP_KB = 30.5;
+// 31 KB on 2026-10-16 (decision 97, under Olcay's overnight authority to raise it for the
+// density PR that needs it): main measured 29.68 KB here, Track 2 (#273) 30.14, compact
+// density (#274) 30.22 and the two together 30.63. Both are new rules, not duplication: the
+// SDK's markers in owned CSS (about 1 KB gzip alone) and the density rules. CI reads the
+// stylesheet the same as a Mac. The next density group measures and raises it again.
+const MAX_CSS_GZIP_KB = 31;
 const MIN_ESM_MODULES = 50;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
