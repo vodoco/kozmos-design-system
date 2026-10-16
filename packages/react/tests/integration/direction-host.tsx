@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import {
+  ColorPicker,
   Progress,
   Search,
   SplitButton,
@@ -30,6 +31,11 @@ createRoot(document.getElementById("root")!).render(
             Start
           </SplitButton>
           <Search aria-label={`Search ${dir}`} placeholder="Gate" />
+          <ColorPicker
+            label={`Colour ${dir}`}
+            defaultValue="#4135F1"
+            defaultOpen
+          />
           <div style={{ display: "flex", gap: 8, padding: 8 }}>
             <Tag data-testid={`tag-plain-${dir}`}>Vegan</Tag>
             <Tag data-testid={`tag-${dir}`} onRemove={() => undefined}>

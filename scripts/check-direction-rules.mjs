@@ -92,6 +92,20 @@ const parts = `
     <div class="kozmos-map-overlay-end" data-part="overlay-end" style="position:absolute;width:20px;height:20px"></div>
   </div>`;
 
+/** A linear gradient's angle in degrees, 0 to 359, or NaN without one. */
+const gradientAngle = (image) => {
+  const run = image.match(
+    /linear-gradient\((to (?:left|right)|-?[\d.]+deg)/,
+  )?.[1];
+  const angle =
+    run === "to right"
+      ? 90
+      : run === "to left"
+        ? 270
+        : Number(run?.slice(0, -3));
+  return ((angle % 360) + 360) % 360;
+};
+
 const browser = await launchFixtureBrowser();
 let checked = 0;
 try {
@@ -151,18 +165,10 @@ try {
         scenario.rtl ? turned(drawn.gallery) : !turned(drawn.gallery),
         `${where}: the gallery arrow ${scenario.rtl ? "is not turned" : "is turned"}`,
       );
-      const run = drawn.gradient.match(
-        /linear-gradient\((to (?:left|right)|-?[\d.]+deg)/,
-      )?.[1];
-      const angle =
-        run === "to right"
-          ? 90
-          : run === "to left"
-            ? 270
-            : Number(run?.slice(0, -3));
+      const angle = gradientAngle(drawn.gradient);
       assert.ok(Number.isFinite(angle), `${where}: the gradient has no angle`);
       assert.equal(
-        ((angle % 360) + 360) % 360,
+        angle,
         scenario.rtl ? 270 : 90,
         `${where}: the gradient does not run from the inline start`,
       );
@@ -331,6 +337,80 @@ try {
     );
     checked += 1;
   }
+  // ColorPicker: the swatch sits 8 in from the inline start and the open
+  // button 4 in from the inline end, each inside the 48 the text keeps at
+  // that end. A physical left-2 / right-1 put both at the wrong end of a
+  // right-to-left field: the swatch over the end of the text, the button
+  // over its start, where the text begins.
+  for (const dir of ["ltr", "rtl"]) {
+    const picker = await page
+      .getByRole("textbox", { name: `Colour ${dir}`, exact: true })
+      .evaluate((input) => {
+        const box = input.getBoundingClientRect();
+        const swatch = input.parentElement
+          .querySelector('input[type="color"]')
+          .getBoundingClientRect();
+        const open = input.parentElement
+          .querySelector("button[aria-controls]")
+          .getBoundingClientRect();
+        const style = getComputedStyle(input);
+        return {
+          swatchLeft: swatch.left - box.left,
+          swatchRight: box.right - swatch.right,
+          swatchWidth: swatch.width,
+          openLeft: open.left - box.left,
+          openRight: box.right - open.right,
+          openWidth: open.width,
+          paddingLeft: parseFloat(style.paddingLeft),
+          paddingRight: parseFloat(style.paddingRight),
+        };
+      });
+    const where = `ColorPicker ${dir}: ${JSON.stringify(picker)}`;
+    const [start, end] = dir === "rtl" ? ["Right", "Left"] : ["Left", "Right"];
+    assert.ok(
+      Math.abs(picker[`swatch${start}`] - 8) < 0.5,
+      `${where}: the swatch is not 8 from the inline start (${start.toLowerCase()})`,
+    );
+    assert.ok(
+      picker[`swatch${start}`] + picker.swatchWidth <=
+        picker[`padding${start}`] + 0.5,
+      `${where}: the swatch reaches past the room the text keeps at the inline start`,
+    );
+    assert.ok(
+      Math.abs(picker[`open${end}`] - 4) < 0.5,
+      `${where}: the open button is not 4 from the inline end (${end.toLowerCase()})`,
+    );
+    assert.ok(
+      picker[`open${end}`] + picker.openWidth <= picker[`padding${end}`] + 0.5,
+      `${where}: the open button reaches past the room the text keeps at the inline end`,
+    );
+    // The panel's hue and opacity sliders are native ranges, which run from
+    // the inline start: right to left, the lowest value is at the right. Each
+    // gradient must run the same way. Drawn "to right", the opacity slider
+    // showed clear under a thumb that said opaque, and the hue under the
+    // thumb was not the hue it set.
+    for (const name of ["Hue", "Opacity"]) {
+      const range = await page
+        .locator(`[data-direction="${dir}"]`)
+        .getByRole("slider", { name, exact: true })
+        .evaluate((input) => {
+          const style = getComputedStyle(input);
+          return { direction: style.direction, image: style.backgroundImage };
+        });
+      const there = `ColorPicker ${dir}, ${name}: ${JSON.stringify(range)}`;
+      assert.equal(
+        range.direction,
+        dir,
+        `${there}: the range does not read ${dir}`,
+      );
+      assert.equal(
+        gradientAngle(range.image),
+        dir === "rtl" ? 270 : 90,
+        `${there}: the gradient does not run from the inline start, as the range does`,
+      );
+    }
+    checked += 1;
+  }
   // Toast: the close sits 8 from the inline end, the toast keeps 32 there
   // for it and 24 at the start, and its words and action are 16 apart. A
   // physical pr-8 / right-2 put the close and its room at the inline start
@@ -475,5 +555,5 @@ try {
   await browser.close();
 }
 console.log(
-  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners; Search's icon and padding; Toast's close, padding and gap; Tag's remove target`,
+  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners; Search's icon and padding; ColorPicker's swatch, open button and sliders; Toast's close, padding and gap; Tag's remove target`,
 );
