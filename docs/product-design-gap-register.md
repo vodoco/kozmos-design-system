@@ -653,7 +653,7 @@ camera control, branding/provider policy and product ranking in their host adapt
     draws as the apps draw it. Every SDK part's root is a touch `DensityScope`, and its slots stay touch:
     a product's own content in one is touch too, unless the product wraps it in
     `DensityScope density="compact"`.
-- **Decisions 90–96 (owner, 2026-10-16, answers on the Cloud plan):**
+- **Decisions 90–97 (owner, 2026-10-16, answers on the Cloud plan; 97 under the owner's authority):**
   - **90, one export may cost 8.5 KB:** the per-export bundle budget moves from 8 to 8.5 KB, since
     compact density's `DensityScope` took AdaptiveMapShell to 8.03 KB on CI (#274). The whole
     library's 88 KB and Button's 2 KB are unchanged.
@@ -674,6 +674,10 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **96, Cloud's level and building picker and its layers button:** Dashboard modules built from Core
     parts, Select and IconButton (CLOUD-UI-009), not variants of the SDK's FloorSelector and
     MapControlsGroup.
+  - **97, the stylesheet may cost 31 KB (16 Oct, under the owner's overnight authority to raise it for
+    the density PR that needs it):** Track 2 (#273) and compact density (#274) together measure 30.63
+    KB against 30.5: the SDK's markers in owned CSS and the density rules, both new rules. The next
+    density group measures and raises it again.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;
