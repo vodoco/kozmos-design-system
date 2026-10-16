@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import prettier from "prettier";
+import { readStories } from "../../apps/site/scripts/generate-reference.mjs";
 
 /**
  * Scans component implementation status across Web, iOS, and Android.
@@ -24,42 +25,57 @@ const INTERNAL_COMPONENT_NAMES = new Set(["GlassSettingsPanel"]);
 // keeps KozmosTransitions in components/Motion; iOS keeps it beside the
 // components (Sources/KozmosTransitions.swift), and React has none.
 const NON_COMPONENT_DIRECTORIES = new Set(["Motion"]);
+// The parts Storybook files under SDK/ (laneDrift, below, holds this list to
+// those titles).
 const PRODUCT_SDK_COMPONENT_NAMES = new Set([
+  "AICompanionPanel",
+  "AIInputBar",
+  "AIMessage",
+  "AIMessageList",
+  "AISearchButton",
   "AdaptiveMapShell",
   "ArrivalPanel",
   "RouteLocationField",
   "RouteSetupPanel",
   "BrowseCategoriesPanel",
+  "CategoryField",
   "CategoryTile",
   "ClientAppBanner",
   "DirectionStep",
   "FloorSelector",
+  "Itinerary",
   "LanguageSwitcher",
   "MapAttribution",
   "MapInfoPanel",
   "LocationPin",
   "MapControlsGroup",
   "MapControlButton",
+  "ManoeuvreCard",
   "MapOverlay",
   "MapStatusPill",
   "MapView",
+  "NavigationAnnouncer",
   "POICard",
   "POIDetailPanel",
   "POIMediaGallery",
   "POIResultCard",
+  "POIResultGroup",
   "POIResultList",
+  "RouteProgressRail",
   "RouteSummary",
   "RouteOptionCard",
   "RoutePreviewPanel",
   "RoutingInputGroup",
   "SaveLocationCard",
+  "SearchBar",
   "UserLocationMarker",
   "WayfindingCard",
 ]);
+// NavigationAnnouncer is nonvisual too, but Storybook files it under SDK/, so
+// it is in that lane; it still expects no Code Connect (below).
 const CODE_ONLY_UTILITY_COMPONENT_NAMES = new Set([
   "Heading",
   "Label",
-  "NavigationAnnouncer",
   "Text",
   "ThemeProvider",
 ]);
@@ -253,6 +269,41 @@ function componentLane(name: string): ComponentLaneId {
   return "core";
 }
 
+/**
+ * Storybook's titles say what an SDK part is (owner, 2026-10-16): a component
+ * whose own stories are filed under `SDK/` is in the Product / SDK lane, and
+ * every component in that lane has its stories there. The lists above are
+ * kept by hand, so this holds them to the titles: the status page once put
+ * twelve SDK parts (SearchBar, the AI family, CategoryField, Itinerary,
+ * ManoeuvreCard, NavigationAnnouncer, POIResultGroup, RouteProgressRail) in
+ * Core and Code-Only while Storybook filed them under SDK. A component with
+ * no React story of its own has no title to agree with and is left to its
+ * list.
+ */
+function laneDrift(statuses: ComponentStatus[]): string[] {
+  const problems: string[] = [];
+  for (const status of statuses) {
+    const file = PATHS.web.story(status.name);
+    if (!exists(file)) continue;
+    const { title } = readStories(read(file), file);
+    if (typeof title !== "string") {
+      problems.push(`${status.name}: ${file} has no Storybook title`);
+      continue;
+    }
+    const filedAsSdk = title.startsWith("SDK/");
+    const inSdkLane = status.lane === "product-sdk";
+    if (filedAsSdk && !inSdkLane)
+      problems.push(
+        `${status.name}: Storybook files it as ${title}, but its lane is ${laneTitle(status.lane)}`,
+      );
+    else if (!filedAsSdk && inSdkLane)
+      problems.push(
+        `${status.name}: its lane is Product / SDK, but Storybook files it as ${title}`,
+      );
+  }
+  return problems;
+}
+
 async function checkExports(componentNames: string[]): Promise<Set<string>> {
   const indexPath = path.join(ROOT_DIR, "packages/react/src/index.ts");
   const exportedSet = new Set<string>();
@@ -326,6 +377,14 @@ async function runCheck() {
   }
 
   printTable(statuses);
+
+  const drift = laneDrift(statuses);
+  if (drift.length > 0) {
+    console.error(
+      `\n❌ ${drift.length} lane(s) disagree with Storybook's SDK/ titles. Move each component into PRODUCT_SDK_COMPONENT_NAMES or out of it in scripts/skills/check-completion.ts, or retitle its stories:\n${drift.map((line) => `  - ${line}`).join("\n")}`,
+    );
+    process.exit(1);
+  }
 
   const markdown = await formatMarkdown(generateMarkdown(statuses));
 
@@ -439,7 +498,7 @@ function generateMarkdown(statuses: ComponentStatus[]): string {
 
   md += "## Scope Of This Report\n\n";
   md +=
-    "LanguageSwitcher is intentionally web-only: iOS and Android use device/app language without a dedicated button. Its absent native implementations are a product policy, not a parity backlog. See `docs/sdk-module-primitives.md`.\n\n";
+    "LanguageSwitcher is React only today. Decision 70 (2026-10-09) builds it on both natives, for iPad and other large-screen apps; on phones the SDK hides it, which is the product's choice. Its absent native implementations are a gap to close, not a policy. See decision 70 in `docs/product-design-gap-register.md`.\n\n";
   md +=
     "A checkmark confirms repository structure only: the expected implementation, story, test, export, or Code Connect mapping file was found. It does not grade the depth or correctness of that file.\n\n";
   md +=

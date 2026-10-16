@@ -17,10 +17,10 @@ React is the reference because it is the only platform carrying every
 component with stories and tests. A gap means "React can express this and the other platform
 cannot".
 
-Platform policy exception: **LanguageSwitcher is web-only**. iOS and Android follow
-device/app language and deliberately have no dedicated language button. The generated
-absence lists count files, so they include this component; its native absence is not
-an implementation backlog item.
+**LanguageSwitcher goes native** (decision 70, 2026-10-09): SwiftUI and Compose get it
+for iPad and other large-screen apps; on phones the SDK hides it, which is the product's
+choice. It was once a web-only exception. It is React only today, so its native absence
+in the generated lists is a gap to close.
 
 Platform difference, by decision: **iOS SplitButton's menu half keeps SwiftUI's system
 press** (decision 64, 2026-10-08). It is a `Menu`, which does not run a custom button
