@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d9f53eded3f9";
+const PLUGIN_BUILD = "1c974d16d110";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -478,7 +478,8 @@ const BROWSE_CATEGORIES_PANEL_CONTENT = ["Basic", "Search", "Empty"];
 const CATEGORY_TILE_STATES = ["Default", "Selected", "Disabled"];
 // The taxonomy's eight quick-access colours, as `Semantics.Category` carries
 // them, and the theme's own for a part with no category: the Tint axis on
-// CategoryTile, LocationPin and CategoryField. A tint is three variables —
+// CategoryTile and CategoryField (LocationPin has none since decision 79). A
+// tint is three variables —
 // the accent for the icon and the strokes, the fill for a count pill or a
 // marker, and the ink that reads on that fill (`pnpm tokens:contrast:check`
 // holds each pair to 4.5:1, which is why blue's fill is darker than its
@@ -1922,7 +1923,7 @@ const COMPONENT_DOCS = [
     properties: [
       "Kind: Result, Featured, Place",
       "State: Default, Selected",
-      "Content: Number, Dot (Result)",
+      "Content: Number, Dot (a Result); None (a Featured tile, a Place)",
       "Label Text, Number Text",
     ],
     accessibility: [
@@ -23728,6 +23729,16 @@ function addComponentTextStyleSpecs(specs, fonts) {
   addTextStyleSpec(specs, "fieldLabel", "Field / Label", fonts.medium, 14, 20);
   addTextStyleSpec(specs, "fieldText", "Field / Text", fonts.regular, 14, 20);
   addTextStyleSpec(specs, "fieldMeta", "Field / Meta", fonts.regular, 12, 16);
+  // A pin's side label: code draws it 12/16 semibold on every platform
+  // (Olcay, 16 Oct), Medium here by the library's three weights.
+  addTextStyleSpec(
+    specs,
+    "locationPinLabel",
+    "LocationPin / Label",
+    fonts.medium,
+    12,
+    16,
+  );
   addTextStyleSpec(
     specs,
     "avatarFallback",
@@ -45269,7 +45280,7 @@ async function updateLocationPinVariant(
   const label = await productSdkText({
     name: "Label Text",
     characters: "Gate 42",
-    styleKey: "fieldMeta",
+    styleKey: "locationPinLabel",
     fonts,
     bold: true,
     fontSize: 12,
@@ -45323,6 +45334,7 @@ const LOCATION_PIN_DESCRIPTION = [
   "State maps to selected: a Result fills, a Featured tile grows from 44 to 52.",
   "Content maps to number: Number shows Number Text, Dot shows none; a Featured tile and a Place are None.",
   "Label Text maps to LocationPin.label or externalLabel; Number Text maps to LocationPin.number.",
+  "Disabled has no variant: draw the variant at 50% layer opacity, as code dims a disabled pin, which takes no press.",
   "A Result's anchor is its pointer's tip; a Featured tile's and a Place's is their dot's centre.",
   "Marker placement and collision handling stay with the map renderer.",
 ];

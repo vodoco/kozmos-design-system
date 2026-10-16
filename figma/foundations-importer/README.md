@@ -127,8 +127,8 @@ convention that avoids variant explosion:
   a Featured place its logo in a tile with a dark rim, on a dot; a Place the
   green pin on a dot. Products take these markers from the map style's sprites;
   Kozmos draws them for prototypes. `labelPlacement` is renderer layout, not an
-  axis. This is the one Product / SDK set that uses the two-axis matrix builder
-  rather than the single-axis one.
+  axis. Like Tag, Tree and the other planned sets, it is built by the
+  planned-matrix builder.
 - **ManoeuvreCard** — `State` Closed and Open by `Appearance` Theme and Background:
   the current manoeuvre (DirectionStep's mark from the Icons page, the
   instruction and the detail) or, open, the itinerary's rows, over the grab bar.

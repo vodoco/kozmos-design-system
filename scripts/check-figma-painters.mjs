@@ -3392,6 +3392,26 @@ section("Text styles stay attached");
     "Colors/background/300",
   ]);
   const styles = await stylePlugin.ensureKozmosTextStyles(FONTS, freshStats());
+  // A pin's side label, painted with the library's styles present, as in
+  // Figma: code's 12/16 semibold, Medium by the three weights (Olcay, 16 Oct).
+  // Field / Meta, which it took before, set it Regular.
+  {
+    const pin = styleFigma.createComponent();
+    await stylePlugin.updateLocationPinVariant(pin, {
+      props: { kind: "Result", state: "Default", content: "Number" },
+      variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const sideLabel = pin.findOne((node) => node.name === "Label Text");
+    ok(
+      sideLabel &&
+        sideLabel.textStyleId === styles.locationPinLabel?.id &&
+        sideLabel.fontName.style === "Medium" &&
+        sideLabel.fontSize === 12,
+      `LocationPin's side label is LocationPin / Label, 12 Medium (got ${sideLabel && sideLabel.fontName && sideLabel.fontName.style} ${sideLabel && sideLabel.fontSize}, style ${sideLabel && sideLabel.textStyleId})`,
+    );
+  }
   const caption = styles.itineraryCaption;
   ok(
     caption &&
@@ -4998,12 +5018,6 @@ section("Every set's text carries a style");
 
 // --- The product sets audit clean ------------------------------------------------------
 
-// Every variant of the four sets the audit of 2026-09-21 20:38 warned on,
-// painted as Update paints it and audited in Light and Dark with the token
-// values the importer writes: no text below 4.5:1, no control below 3:1, and
-// the category symbols, named by their labels, measured apart as decorative.
-// Their c7d1d88351a7 drawings read five warnings live; replayed through this
-// build's Update, none.
 // Figma reads a component set's properties only when every variant names the
 // same ones: one variant without an axis the others have leaves the whole set
 // in error ("Component set has existing errors"), with no property panel and
@@ -5072,6 +5086,12 @@ section("Every planned set's variants name the same axes");
   }
 }
 
+// Every variant of the four sets the audit of 2026-09-21 20:38 warned on,
+// painted as Update paints it and audited in Light and Dark with the token
+// values the importer writes: no text below 4.5:1, no control below 3:1, and
+// the category symbols, named by their labels, measured apart as decorative.
+// Their c7d1d88351a7 drawings read five warnings live; replayed through this
+// build's Update, none.
 section("The product sets audit clean");
 {
   const painters = [
