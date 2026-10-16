@@ -8,9 +8,9 @@
 | package                        | version |
 | ------------------------------ | ------- |
 | `@kozmos-ds/icons`             | 0.6.0   |
-| `@kozmos-ds/product-contracts` | 0.9.0   |
-| `@kozmos-ds/react`             | 0.11.0  |
-| `@kozmos-ds/tokens`            | 0.7.0   |
+| `@kozmos-ds/product-contracts` | 0.9.1   |
+| `@kozmos-ds/react`             | 0.12.0  |
+| `@kozmos-ds/tokens`            | 0.8.0   |
 
 These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 (`packages/android`) are used from a checkout and are not published.
