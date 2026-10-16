@@ -13,6 +13,7 @@ import {
   emotionSurfaceProperties,
 } from "../../utils/emotion";
 import { SpinnerArc } from "../Spinner/SpinnerArc";
+import { DensityScope } from "../../theme/DensityScope";
 
 /**
  * Where a spoken conversation with the assistant is (decision 22).
@@ -179,125 +180,129 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
     }
 
     return (
-      <form
-        className={cn(
-          "flex items-center gap-2 border-t border-border px-4 py-3",
-          className,
-        )}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!canSend) return;
-          onSubmit(trimmed);
-        }}
-        ref={ref}
-        {...props}
-      >
-        {/* The pill draws the focus the input cannot. The input is
+      // The SDK's geometry under any density (decision 89): a compact
+      // ThemeProvider leaves the bar touch, its 44 send included.
+      <DensityScope density="touch" asChild>
+        <form
+          className={cn(
+            "flex items-center gap-2 border-t border-border px-4 py-3",
+            className,
+          )}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!canSend) return;
+            onSubmit(trimmed);
+          }}
+          ref={ref}
+          {...props}
+        >
+          {/* The pill draws the focus the input cannot. The input is
             outline-none, and until row 59 nothing showed in its place
             (WCAG 2.4.7); focus-within, as SearchBar draws it, rings the
             whole field, `trailing` included. At least 44 tall, level with
             send, as the prototype draws the two. */}
-        <div
-          className={cn(
-            "flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-pill border border-border px-4 py-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-            // The Input family's disabled look, a muted fill rather than a
-            // fade, on the field as well as the button.
-            disabled ? "cursor-not-allowed bg-muted" : "bg-card",
-          )}
-        >
-          <input
-            aria-label={inputLabel}
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground"
-            disabled={disabled}
-            onChange={(event) => onValueChange(event.target.value)}
-            // While the conversation is live the empty field says where it
-            // is, as the prototype's does: in words, not only in the
-            // microphone's colour and mark.
-            placeholder={
-              (voiceOn && live && voiceWords[voiceState]) || placeholder
-            }
-            ref={inputRef}
-            type="text"
-            value={value}
-          />
-          {trailing}
-        </div>
-        {voiceOn && (
-          <>
-            {/* Beside the field, not in it: a microphone in the field reads
+          <div
+            className={cn(
+              "flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-pill border border-border px-4 py-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+              // The Input family's disabled look, a muted fill rather than a
+              // fade, on the field as well as the button.
+              disabled ? "cursor-not-allowed bg-muted" : "bg-card",
+            )}
+          >
+            <input
+              aria-label={inputLabel}
+              className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground"
+              disabled={disabled}
+              onChange={(event) => onValueChange(event.target.value)}
+              // While the conversation is live the empty field says where it
+              // is, as the prototype's does: in words, not only in the
+              // microphone's colour and mark.
+              placeholder={
+                (voiceOn && live && voiceWords[voiceState]) || placeholder
+              }
+              ref={inputRef}
+              type="text"
+              value={value}
+            />
+            {trailing}
+          </div>
+          {voiceOn && (
+            <>
+              {/* Beside the field, not in it: a microphone in the field reads
                 as typing by voice, the keyboard's own job. The name is what
                 a press does, so there is no aria-pressed — a toggle's name
                 must not change with its state. One element through every
                 state, never `disabled`, so focus stays on it: unavailable is
                 aria-disabled, found by the keyboard and inert. */}
-            <button
-              aria-disabled={unavailable || undefined}
-              aria-label={
-                unavailable
-                  ? voiceUnavailableLabel || voiceStartLabel
-                  : live
-                    ? voiceEndLabel
-                    : voiceStartLabel
-              }
-              className={cn(
-                "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill border ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                unavailable
-                  ? // The field's own disabled look.
-                    "cursor-not-allowed border-border bg-muted text-muted-foreground"
-                  : live
-                    ? // The themed emotion's tint in a primary edge: the
-                      // prototype's listening microphone, from tokens.
-                      cn(EMOTION_FILLED_CLASSES, "border-primary")
-                    : voiceState === "error"
-                      ? cn(EMOTION_OUTLINE_CLASSES, "bg-card hover:bg-muted")
-                      : "border-border bg-card text-foreground hover:bg-muted",
-              )}
-              onClick={() => {
-                if (unavailable) return;
-                if (live) onVoiceEnd?.();
-                else onVoiceStart?.();
-              }}
-              style={
-                unavailable
-                  ? undefined
-                  : live
-                    ? emotionSurfaceProperties("themed")
-                    : voiceState === "error"
-                      ? emotionSurfaceProperties("danger")
-                      : undefined
-              }
-              // Inside a form a button submits it unless it says otherwise,
-              // and the draft in the field would go with it.
-              type="button"
-            >
-              {voiceState === "connecting" ? (
-                <SpinnerArc className="h-5 w-5" size={20} />
-              ) : voiceState === "speaking" ? (
-                <VolumeMax aria-hidden="true" className="h-5 w-5" />
-              ) : unavailable || voiceState === "error" ? (
-                <MicrophoneOff01 aria-hidden="true" className="h-5 w-5" />
-              ) : (
-                <Microphone01 aria-hidden="true" className="h-5 w-5" />
-              )}
-            </button>
-            {/* In the page from the start, so a change is read: a region
+              <button
+                aria-disabled={unavailable || undefined}
+                aria-label={
+                  unavailable
+                    ? voiceUnavailableLabel || voiceStartLabel
+                    : live
+                      ? voiceEndLabel
+                      : voiceStartLabel
+                }
+                className={cn(
+                  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill border ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  unavailable
+                    ? // The field's own disabled look.
+                      "cursor-not-allowed border-border bg-muted text-muted-foreground"
+                    : live
+                      ? // The themed emotion's tint in a primary edge: the
+                        // prototype's listening microphone, from tokens.
+                        cn(EMOTION_FILLED_CLASSES, "border-primary")
+                      : voiceState === "error"
+                        ? cn(EMOTION_OUTLINE_CLASSES, "bg-card hover:bg-muted")
+                        : "border-border bg-card text-foreground hover:bg-muted",
+                )}
+                onClick={() => {
+                  if (unavailable) return;
+                  if (live) onVoiceEnd?.();
+                  else onVoiceStart?.();
+                }}
+                style={
+                  unavailable
+                    ? undefined
+                    : live
+                      ? emotionSurfaceProperties("themed")
+                      : voiceState === "error"
+                        ? emotionSurfaceProperties("danger")
+                        : undefined
+                }
+                // Inside a form a button submits it unless it says otherwise,
+                // and the draft in the field would go with it.
+                type="button"
+              >
+                {voiceState === "connecting" ? (
+                  <SpinnerArc className="h-5 w-5" size={20} />
+                ) : voiceState === "speaking" ? (
+                  <VolumeMax aria-hidden="true" className="h-5 w-5" />
+                ) : unavailable || voiceState === "error" ? (
+                  <MicrophoneOff01 aria-hidden="true" className="h-5 w-5" />
+                ) : (
+                  <Microphone01 aria-hidden="true" className="h-5 w-5" />
+                )}
+              </button>
+              {/* In the page from the start, so a change is read: a region
                 that arrives with its words often is not. Polite — a change
                 of state never cuts off what is being read. */}
-            <span aria-live="polite" className="sr-only" role="status">
-              {said.words}
-            </span>
-          </>
-        )}
-        <IconButton
-          aria-label={sendLabel}
-          variant="default"
-          className="shrink-0 rounded-pill"
-          disabled={!canSend}
-          type="submit"
-        >
-          <Send01 aria-hidden="true" className="h-5 w-5" />
-        </IconButton>
-      </form>
+              <span aria-live="polite" className="sr-only" role="status">
+                {said.words}
+              </span>
+            </>
+          )}
+          <IconButton
+            aria-label={sendLabel}
+            variant="default"
+            className="shrink-0 rounded-pill"
+            disabled={!canSend}
+            type="submit"
+          >
+            <Send01 aria-hidden="true" className="h-5 w-5" />
+          </IconButton>
+        </form>
+      </DensityScope>
     );
   },
 );

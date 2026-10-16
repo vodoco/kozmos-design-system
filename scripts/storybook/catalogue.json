@@ -1101,7 +1101,7 @@
       "id": "system-themeprovider",
       "title": "Foundations/Theming/ThemeProvider",
       "component": "ThemeProvider",
-      "exports": ["Default"]
+      "exports": ["Default", "Density"]
     },
     {
       "file": "packages/react/src/components/TimePicker/TimePicker.stories.tsx",

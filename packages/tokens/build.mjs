@@ -1283,6 +1283,43 @@ async function build() {
     });
     await sdDark.buildAllPlatforms();
 
+    // 2b. Density (CSS, web only; decision 82). The same names in both
+    // files: touch on :root, and again on a touch provider so it resets
+    // what a compact ancestor set; compact on a compact provider. The
+    // native platforms stay touch and read none of these.
+    console.log("\n📏  Building Density...");
+    const densityParts = [];
+    for (const [density, selector] of [
+      ["touch", ":root, [data-kozmos-density='touch']"],
+      ["compact", "[data-kozmos-density='compact']"],
+    ]) {
+      const destination = `variables-density-${density}.css`;
+      const sdDensity = new StyleDictionary({
+        source: [`src/tokens-density-${density}.json`],
+        platforms: {
+          css: {
+            transformGroup: "css",
+            buildPath: "dist/css/",
+            files: [
+              {
+                destination,
+                format: "css/variables-in-source-order",
+                options: { selector, outputReferences: CSS_REFERENCES },
+              },
+            ],
+          },
+        },
+      });
+      await sdDensity.buildAllPlatforms();
+      const part = path.join("dist/css", destination);
+      densityParts.push(fs.readFileSync(part, "utf8"));
+      fs.rmSync(part);
+    }
+    fs.writeFileSync(
+      "dist/css/variables-density.css",
+      densityParts.join("\n"),
+    );
+
     // 3. JS
     console.log("\n📦  Building JS/TS...");
     const sdJS = new StyleDictionary({

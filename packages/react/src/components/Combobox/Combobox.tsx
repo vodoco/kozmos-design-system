@@ -421,9 +421,17 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   autoComplete="off"
                   className={cn(
                     inputVariants({ status: resolvedStatus }),
-                    canClear ? "pe-24" : "pe-12",
+                    // Room for the buttons, each as tall as the field
+                    // (decision 82). The utility beats a caller's px-* and
+                    // gives way to a caller's pe-*; the owned rule holds it
+                    // where no @scope rule reaches an <input> (WebKit).
+                    "kozmos-combobox-input",
+                    canClear
+                      ? "pe-[calc(var(--density-field-height-md,2.75rem)_*_2_+_0.5rem)]"
+                      : "pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
                     className,
                   )}
+                  data-clearable={canClear ? "" : undefined}
                   disabled={disabled}
                   readOnly={readOnly}
                   placeholder={placeholder}
@@ -477,7 +485,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   {canClear && (
                     <button
                       type="button"
-                      className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       aria-label={clearLabel}
                       onClick={clearSelection}
                     >
@@ -486,7 +494,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   )}
                   <button
                     type="button"
-                    className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={open ? closeLabel : openLabel}
                     disabled={disabled || readOnly}
                     onClick={() => setOpen((current) => !current)}

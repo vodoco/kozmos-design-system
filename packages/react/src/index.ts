@@ -129,6 +129,7 @@ export * from "./hooks/useKozmosMapSync";
 export * from "./hooks/useRevealOnChange";
 export * from "./context/DesignConfigContext";
 export * from "./theme/KozmosTheme";
+export * from "./theme/DensityScope";
 export * from "./utils/analytics";
 // The one derivation a product composing its own row needs: floor and building
 // joined the way every platform joins them.

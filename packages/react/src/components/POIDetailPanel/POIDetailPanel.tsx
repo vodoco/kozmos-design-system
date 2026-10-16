@@ -18,6 +18,7 @@ import {
   POIDetailContent,
   POIDetailSummaryStrip,
 } from "./POIDetailContent";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface POIActionState {
   disabled?: boolean;
@@ -156,221 +157,227 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
         details?.tags?.length,
       );
     return (
-      <article
-        ref={root}
-        aria-labelledby={titleId}
-        className={cn("kozmos-reset kozmos-poi-detail", className)}
-        data-presentation={presentation}
-        {...props}
-      >
-        <header className="kozmos-poi-header">
-          <div className="kozmos-poi-identity">
-            {poi.logo && <POILogo key={poi.logo.src} logo={poi.logo} />}
-            <Heading
-              level={titleLevel}
-              className="kozmos-poi-title"
-              id={titleId}
-            >
-              {poi.name}
-            </Heading>
-          </div>
-          <div className="kozmos-poi-header-actions">
-            {poi.actions.filter(isToggle).map((action) => {
-              const Icon = actionIcons[action];
-              const state = actionStates[action];
-              return (
-                <IconButton
-                  key={action}
-                  variant={state?.pressed ? "default" : "outline"}
-                  emotion={state?.pressed ? "themed" : "neutral"}
-                  aria-label={actionLabels[action]}
-                  aria-pressed={state?.pressed ?? false}
-                  disabled={state?.disabled}
-                  isLoading={state?.loading}
-                  onClick={() => onAction(action, poi.id)}
-                  type="button"
-                >
-                  <Icon aria-hidden="true" size={20} />
-                </IconButton>
-              );
-            })}
-            {onClose && (
-              <IconButton
-                variant="outline"
-                emotion="neutral"
-                aria-label={closeLabel}
-                onClick={onClose}
-                type="button"
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <article
+          ref={root}
+          aria-labelledby={titleId}
+          className={cn("kozmos-reset kozmos-poi-detail", className)}
+          data-presentation={presentation}
+          {...props}
+        >
+          <header className="kozmos-poi-header">
+            <div className="kozmos-poi-identity">
+              {poi.logo && <POILogo key={poi.logo.src} logo={poi.logo} />}
+              <Heading
+                level={titleLevel}
+                className="kozmos-poi-title"
+                id={titleId}
               >
-                <X aria-hidden="true" size={20} />
-              </IconButton>
-            )}
-          </div>
-        </header>
-        <div className="kozmos-poi-location">
-          {locationLabel && <p>{locationLabel}</p>}
-          {poi.availabilityLabel && (
-            <p
-              className="kozmos-poi-availability"
-              data-availability={poi.availability ?? "unknown"}
-            >
-              {poi.availabilityLabel}
-            </p>
-          )}
-        </div>
-        {poi.description && (
-          <p className="kozmos-poi-intro">{poi.description}</p>
-        )}
-        {(actions.length > 0 ||
-          Boolean(details?.supplementaryActions?.length)) && (
-          <div
-            key={poi.id}
-            className="kozmos-poi-actions"
-            role="group"
-            aria-label={actionsLabel}
-            tabIndex={0}
-            onKeyDown={scrollHorizontalWithKeyboard}
-            onFocusCapture={(event) => {
-              if (event.target === event.currentTarget) return;
-              const target = event.target.getBoundingClientRect();
-              const viewport = event.currentTarget.getBoundingClientRect();
-              // Reveal the focused control and its ring within this strip only.
-              // scrollIntoView would also move the panel/page ancestors.
-              const delta =
-                target.left < viewport.left
-                  ? target.left - viewport.left - 4
-                  : target.right > viewport.right
-                    ? target.right - viewport.right + 4
-                    : 0;
-              if (delta)
-                event.currentTarget.scrollBy({ left: delta, behavior: "auto" });
-            }}
-          >
-            {actions.map((action) => {
-              const state = actionStates[action];
-              const estimate =
-                action === "navigate" ? details?.travelEstimate : undefined;
-              return (
-                <Button
-                  key={action}
-                  className={cn(
-                    "kozmos-poi-action",
-                    action === "navigate" && "kozmos-poi-action-primary",
-                  )}
-                  data-has-estimate={Boolean(estimate) || undefined}
-                  disabled={state?.disabled}
-                  isLoading={state?.loading}
-                  onClick={() => onAction(action, poi.id)}
-                  type="button"
-                  variant={action === "navigate" ? "default" : "outline"}
-                  emotion={action === "navigate" ? "themed" : "neutral"}
-                  aria-label={
-                    estimate
-                      ? [
-                          actionLabels[action],
-                          estimate.durationLabel,
-                          estimate.distanceLabel,
-                        ]
-                          .filter(Boolean)
-                          .join(" ")
-                      : undefined
-                  }
-                >
-                  {action === "navigate" && (
-                    <Navigation aria-hidden="true" size={24} />
-                  )}
-                  <span>
-                    {actionLabels[action]}
-                    {estimate && (
-                      <small className="kozmos-poi-estimate">
-                        {" "}
-                        {[estimate.durationLabel, estimate.distanceLabel]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </small>
-                    )}
-                  </span>
-                </Button>
-              );
-            })}
-            {details?.supplementaryActions?.map(({ action, label }) => {
-              const state = supplementaryActionStates[action];
-              return (
-                <Button
-                  key={action}
-                  className="kozmos-poi-action"
+                {poi.name}
+              </Heading>
+            </div>
+            <div className="kozmos-poi-header-actions">
+              {poi.actions.filter(isToggle).map((action) => {
+                const Icon = actionIcons[action];
+                const state = actionStates[action];
+                return (
+                  <IconButton
+                    key={action}
+                    variant={state?.pressed ? "default" : "outline"}
+                    emotion={state?.pressed ? "themed" : "neutral"}
+                    aria-label={actionLabels[action]}
+                    aria-pressed={state?.pressed ?? false}
+                    disabled={state?.disabled}
+                    isLoading={state?.loading}
+                    onClick={() => onAction(action, poi.id)}
+                    type="button"
+                  >
+                    <Icon aria-hidden="true" size={20} />
+                  </IconButton>
+                );
+              })}
+              {onClose && (
+                <IconButton
                   variant="outline"
                   emotion="neutral"
+                  aria-label={closeLabel}
+                  onClick={onClose}
                   type="button"
-                  disabled={!onSupplementaryAction || state?.disabled}
-                  isLoading={state?.loading}
-                  onClick={() => onSupplementaryAction?.(action, poi.id)}
                 >
-                  {label}
-                </Button>
-              );
-            })}
+                  <X aria-hidden="true" size={20} />
+                </IconButton>
+              )}
+            </div>
+          </header>
+          <div className="kozmos-poi-location">
+            {locationLabel && <p>{locationLabel}</p>}
+            {poi.availabilityLabel && (
+              <p
+                className="kozmos-poi-availability"
+                data-availability={poi.availability ?? "unknown"}
+              >
+                {poi.availabilityLabel}
+              </p>
+            )}
           </div>
-        )}
-        {poi.actions.map((action) => (
-          <ActionMessage key={action} state={actionStates[action]} />
-        ))}
-        {details?.supplementaryActions?.map(({ action }) => (
-          <ActionMessage
-            key={action}
-            state={supplementaryActionStates[action]}
-          />
-        ))}
-        {details && <POIDetailSummaryStrip details={details} />}
-        {hasBody && (
-          <div className="kozmos-poi-body">
-            {poi.accessRestrictions !== undefined &&
-              poi.accessRestrictions !== "none" &&
-              poi.accessRestrictionsLabel && (
-                <section
-                  aria-label={accessRestrictionsHeading}
-                  className="kozmos-reset kozmos-poi-restrictions"
-                >
-                  {poi.accessRestrictionsLabel}
+          {poi.description && (
+            <p className="kozmos-poi-intro">{poi.description}</p>
+          )}
+          {(actions.length > 0 ||
+            Boolean(details?.supplementaryActions?.length)) && (
+            <div
+              key={poi.id}
+              className="kozmos-poi-actions"
+              role="group"
+              aria-label={actionsLabel}
+              tabIndex={0}
+              onKeyDown={scrollHorizontalWithKeyboard}
+              onFocusCapture={(event) => {
+                if (event.target === event.currentTarget) return;
+                const target = event.target.getBoundingClientRect();
+                const viewport = event.currentTarget.getBoundingClientRect();
+                // Reveal the focused control and its ring within this strip only.
+                // scrollIntoView would also move the panel/page ancestors.
+                const delta =
+                  target.left < viewport.left
+                    ? target.left - viewport.left - 4
+                    : target.right > viewport.right
+                      ? target.right - viewport.right + 4
+                      : 0;
+                if (delta)
+                  event.currentTarget.scrollBy({
+                    left: delta,
+                    behavior: "auto",
+                  });
+              }}
+            >
+              {actions.map((action) => {
+                const state = actionStates[action];
+                const estimate =
+                  action === "navigate" ? details?.travelEstimate : undefined;
+                return (
+                  <Button
+                    key={action}
+                    className={cn(
+                      "kozmos-poi-action",
+                      action === "navigate" && "kozmos-poi-action-primary",
+                    )}
+                    data-has-estimate={Boolean(estimate) || undefined}
+                    disabled={state?.disabled}
+                    isLoading={state?.loading}
+                    onClick={() => onAction(action, poi.id)}
+                    type="button"
+                    variant={action === "navigate" ? "default" : "outline"}
+                    emotion={action === "navigate" ? "themed" : "neutral"}
+                    aria-label={
+                      estimate
+                        ? [
+                            actionLabels[action],
+                            estimate.durationLabel,
+                            estimate.distanceLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(" ")
+                        : undefined
+                    }
+                  >
+                    {action === "navigate" && (
+                      <Navigation aria-hidden="true" size={24} />
+                    )}
+                    <span>
+                      {actionLabels[action]}
+                      {estimate && (
+                        <small className="kozmos-poi-estimate">
+                          {" "}
+                          {[estimate.durationLabel, estimate.distanceLabel]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </small>
+                      )}
+                    </span>
+                  </Button>
+                );
+              })}
+              {details?.supplementaryActions?.map(({ action, label }) => {
+                const state = supplementaryActionStates[action];
+                return (
+                  <Button
+                    key={action}
+                    className="kozmos-poi-action"
+                    variant="outline"
+                    emotion="neutral"
+                    type="button"
+                    disabled={!onSupplementaryAction || state?.disabled}
+                    isLoading={state?.loading}
+                    onClick={() => onSupplementaryAction?.(action, poi.id)}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+          {poi.actions.map((action) => (
+            <ActionMessage key={action} state={actionStates[action]} />
+          ))}
+          {details?.supplementaryActions?.map(({ action }) => (
+            <ActionMessage
+              key={action}
+              state={supplementaryActionStates[action]}
+            />
+          ))}
+          {details && <POIDetailSummaryStrip details={details} />}
+          {hasBody && (
+            <div className="kozmos-poi-body">
+              {poi.accessRestrictions !== undefined &&
+                poi.accessRestrictions !== "none" &&
+                poi.accessRestrictionsLabel && (
+                  <section
+                    aria-label={accessRestrictionsHeading}
+                    className="kozmos-reset kozmos-poi-restrictions"
+                  >
+                    {poi.accessRestrictionsLabel}
+                  </section>
+                )}
+              <POIMediaGallery
+                key={`media-${poi.id}`}
+                label={mediaLabel}
+                media={poi.media}
+                positionLabel={mediaPositionLabel}
+                previousLabel={mediaPreviousLabel}
+                nextLabel={mediaNextLabel}
+                unavailableLabel={mediaUnavailableLabel}
+                controlsLabel={mediaControlsLabel}
+              />
+              {Boolean(poi.services?.length) && (
+                <section aria-label={servicesHeading}>
+                  <SectionHeading className="kozmos-poi-section-heading">
+                    {servicesHeading}
+                  </SectionHeading>
+                  <ul className="kozmos-poi-chips">
+                    {poi.services!.map((service) => (
+                      <li className="kozmos-reset" key={service.id}>
+                        <POIDetailAttribute item={service} />
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
-            <POIMediaGallery
-              key={`media-${poi.id}`}
-              label={mediaLabel}
-              media={poi.media}
-              positionLabel={mediaPositionLabel}
-              previousLabel={mediaPreviousLabel}
-              nextLabel={mediaNextLabel}
-              unavailableLabel={mediaUnavailableLabel}
-              controlsLabel={mediaControlsLabel}
-            />
-            {Boolean(poi.services?.length) && (
-              <section aria-label={servicesHeading}>
-                <SectionHeading className="kozmos-poi-section-heading">
-                  {servicesHeading}
-                </SectionHeading>
-                <ul className="kozmos-poi-chips">
-                  {poi.services!.map((service) => (
-                    <li className="kozmos-reset" key={service.id}>
-                      <POIDetailAttribute item={service} />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            {details && (
-              <POIDetailContent
-                key={poi.id}
-                details={details}
-                titleLevel={titleLevel}
-                readMoreLabel={readMoreLabel}
-                readLessLabel={readLessLabel}
-                tagsLabel={tagsLabel}
-              />
-            )}
-          </div>
-        )}
-      </article>
+              {details && (
+                <POIDetailContent
+                  key={poi.id}
+                  details={details}
+                  titleLevel={titleLevel}
+                  readMoreLabel={readMoreLabel}
+                  readLessLabel={readLessLabel}
+                  tagsLabel={tagsLabel}
+                />
+              )}
+            </div>
+          )}
+        </article>
+      </DensityScope>
     );
   },
 );

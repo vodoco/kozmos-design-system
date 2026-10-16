@@ -6,6 +6,7 @@ import { Button } from "../Button";
 import { IconButton } from "../IconButton";
 import { surfaceClass } from "../Surface";
 import { Text } from "../Text";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface ClientAppBannerProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
@@ -90,84 +91,87 @@ const ClientAppBanner = React.forwardRef<HTMLElement, ClientAppBannerProps>(
     const nameId = React.useId();
     const iconNamed = Boolean(appIconAlt);
     return (
-      <section
-        ref={ref}
-        {...props}
-        // Named by the app, unless the product names it.
-        aria-labelledby={
-          props["aria-label"]
-            ? props["aria-labelledby"]
-            : (props["aria-labelledby"] ?? nameId)
-        }
-        className={cn(
-          surfaceClass("solid"),
-          "kozmos-client-app-banner",
-          className,
-        )}
-      >
-        <div className="kozmos-client-app-banner-body">
-          <div className="kozmos-client-app-banner-head">
-            <Avatar
-              // A new icon is a new image: without the key, an icon taken
-              // away after it loaded left the square empty, with no initial.
-              key={appIconSrc ?? ""}
-              // Named, the icon is one image whether it has loaded or not:
-              // the initial standing in for it is not read as a letter.
-              // Unnamed, it is decoration beside the app's name.
-              aria-hidden={iconNamed ? undefined : true}
-              aria-label={iconNamed ? appIconAlt : undefined}
-              role={iconNamed ? "img" : undefined}
-              // The utilities say under @scope what the owned rule says
-              // without it, over the Avatar's own 40 circle: 48 at every
-              // text size, as on SwiftUI and Compose.
-              className="kozmos-client-app-banner-icon h-[48px] w-[48px] rounded-control border border-border"
-            >
-              {appIconSrc && <AvatarImage alt="" src={appIconSrc} />}
-              <AvatarFallback className="kozmos-client-app-banner-initial rounded-control kozmos-text-lg kozmos-text-semibold">
-                {initialOf(appName)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="kozmos-client-app-banner-text">
-              {promotionText && (
-                <Text size="xs" weight="medium" color="muted">
-                  {promotionText}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          {...props}
+          // Named by the app, unless the product names it.
+          aria-labelledby={
+            props["aria-label"]
+              ? props["aria-labelledby"]
+              : (props["aria-labelledby"] ?? nameId)
+          }
+          className={cn(
+            surfaceClass("solid"),
+            "kozmos-client-app-banner",
+            className,
+          )}
+        >
+          <div className="kozmos-client-app-banner-body">
+            <div className="kozmos-client-app-banner-head">
+              <Avatar
+                // A new icon is a new image: without the key, an icon taken
+                // away after it loaded left the square empty, with no initial.
+                key={appIconSrc ?? ""}
+                // Named, the icon is one image whether it has loaded or not:
+                // the initial standing in for it is not read as a letter.
+                // Unnamed, it is decoration beside the app's name.
+                aria-hidden={iconNamed ? undefined : true}
+                aria-label={iconNamed ? appIconAlt : undefined}
+                role={iconNamed ? "img" : undefined}
+                // The utilities say under @scope what the owned rule says
+                // without it, over the Avatar's own 40 circle: 48 at every
+                // text size, as on SwiftUI and Compose.
+                className="kozmos-client-app-banner-icon h-[48px] w-[48px] rounded-control border border-border"
+              >
+                {appIconSrc && <AvatarImage alt="" src={appIconSrc} />}
+                <AvatarFallback className="kozmos-client-app-banner-initial rounded-control kozmos-text-lg kozmos-text-semibold">
+                  {initialOf(appName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="kozmos-client-app-banner-text">
+                {promotionText && (
+                  <Text size="xs" weight="medium" color="muted">
+                    {promotionText}
+                  </Text>
+                )}
+                <Text id={nameId} weight="semibold">
+                  {appName}
                 </Text>
-              )}
-              <Text id={nameId} weight="semibold">
-                {appName}
-              </Text>
-              {description && (
-                <Text
-                  size="sm"
-                  color="muted"
-                  className="kozmos-client-app-banner-description"
-                >
-                  {description}
-                </Text>
-              )}
+                {description && (
+                  <Text
+                    size="sm"
+                    color="muted"
+                    className="kozmos-client-app-banner-description"
+                  >
+                    {description}
+                  </Text>
+                )}
+              </div>
             </div>
+            <Button
+              className="kozmos-client-app-banner-action"
+              onClick={onAction}
+              type="button"
+            >
+              {actionLabel}
+            </Button>
           </div>
-          <Button
-            className="kozmos-client-app-banner-action"
-            onClick={onAction}
-            type="button"
-          >
-            {actionLabel}
-          </Button>
-        </div>
-        {onDismiss && (
-          <IconButton
-            aria-label={dismissLabel}
-            // The 44 target at every text size, as on SwiftUI; the owned
-            // rule says the same without @scope.
-            className="kozmos-client-app-banner-dismiss h-[44px] w-[44px]"
-            onClick={onDismiss}
-            type="button"
-          >
-            <X aria-hidden="true" size={20} />
-          </IconButton>
-        )}
-      </section>
+          {onDismiss && (
+            <IconButton
+              aria-label={dismissLabel}
+              // The 44 target at every text size, as on SwiftUI; the owned
+              // rule says the same without @scope.
+              className="kozmos-client-app-banner-dismiss h-[44px] w-[44px]"
+              onClick={onDismiss}
+              type="button"
+            >
+              <X aria-hidden="true" size={20} />
+            </IconButton>
+          )}
+        </section>
+      </DensityScope>
     );
   },
 );

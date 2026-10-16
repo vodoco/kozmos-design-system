@@ -80,8 +80,10 @@ const PaginationPrevious = ({
 }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="Go to previous page"
-    size="default"
-    className={cn("gap-1 ps-2.5", className)}
+    // As tall as the page links at either density (decision 82): 44 in
+    // touch, 32 in compact; the end keeps the default size's 16.
+    size="sm"
+    className={cn("gap-1 ps-2.5 pe-4", className)}
     {...props}
   >
     <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
@@ -96,8 +98,9 @@ const PaginationNext = ({
 }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="Go to next page"
-    size="default"
-    className={cn("gap-1 pe-2.5", className)}
+    // As tall as the page links (decision 82); the start keeps 16.
+    size="sm"
+    className={cn("gap-1 ps-4 pe-2.5", className)}
     {...props}
   >
     <span>Next</span>

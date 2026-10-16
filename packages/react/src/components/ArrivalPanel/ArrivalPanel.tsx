@@ -3,6 +3,7 @@ import { cn } from "../../utils";
 import { DestinationImage } from "../../utils/navigation-presentation";
 import { Button } from "../Button";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface ArrivalPanelProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -51,65 +52,68 @@ export const ArrivalPanel = React.forwardRef<HTMLDivElement, ArrivalPanelProps>(
     },
     ref,
   ) => (
-    <div
-      ref={ref}
-      {...props}
-      data-presentation={presentation}
-      className={cn(
-        "kozmos-arrival-panel flex w-full min-w-0 flex-col gap-4 text-foreground",
-        presentation === "standalone"
-          ? cn(surfaceClass(surface), "rounded-panel p-4 shadow-overlay")
-          : "kozmos-reset",
-        className,
-      )}
-    >
-      <h2 className="m-0 break-words text-xl font-semibold">{title}</h2>
-      <div className="flex min-w-0 items-center gap-3">
-        {destinationImage && (
-          <DestinationImage key={destinationImage} src={destinationImage} />
+    // The SDK's touch geometry under any density (decision 89).
+    <DensityScope density="touch" asChild>
+      <div
+        ref={ref}
+        {...props}
+        data-presentation={presentation}
+        className={cn(
+          "kozmos-arrival-panel flex w-full min-w-0 flex-col gap-4 text-foreground",
+          presentation === "standalone"
+            ? cn(surfaceClass(surface), "rounded-panel p-4 shadow-overlay")
+            : "kozmos-reset",
+          className,
         )}
-        <div className="min-w-0 flex-1">
-          <p className="m-0 break-words text-base font-semibold">
-            {destination}
-          </p>
-          {locationText && (
-            <p className="kozmos-muted-text m-0 break-words text-sm">
-              {locationText}
-            </p>
-          )}
-        </div>
-      </div>
-      {message && <p className="m-0 break-words text-base">{message}</p>}
-      {(actualDurationText || actualDistanceText) && (
-        <dl className="m-0 flex flex-wrap gap-4">
-          {actualDurationText && (
-            <div className="min-w-0">
-              <dt className="kozmos-muted-text text-sm">{durationLabel}</dt>
-              <dd className="m-0 break-words text-base font-semibold">
-                {actualDurationText}
-              </dd>
-            </div>
-          )}
-          {actualDistanceText && (
-            <div className="min-w-0">
-              <dt className="kozmos-muted-text text-sm">{distanceLabel}</dt>
-              <dd className="m-0 break-words text-base font-semibold">
-                {actualDistanceText}
-              </dd>
-            </div>
-          )}
-        </dl>
-      )}
-      <Button
-        type="button"
-        className="h-auto min-h-11 w-full whitespace-normal [overflow-wrap:anywhere]"
-        onClick={onDone}
-        disabled={pending}
-        aria-busy={pending || undefined}
       >
-        {doneLabel}
-      </Button>
-    </div>
+        <h2 className="m-0 break-words text-xl font-semibold">{title}</h2>
+        <div className="flex min-w-0 items-center gap-3">
+          {destinationImage && (
+            <DestinationImage key={destinationImage} src={destinationImage} />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="m-0 break-words text-base font-semibold">
+              {destination}
+            </p>
+            {locationText && (
+              <p className="kozmos-muted-text m-0 break-words text-sm">
+                {locationText}
+              </p>
+            )}
+          </div>
+        </div>
+        {message && <p className="m-0 break-words text-base">{message}</p>}
+        {(actualDurationText || actualDistanceText) && (
+          <dl className="m-0 flex flex-wrap gap-4">
+            {actualDurationText && (
+              <div className="min-w-0">
+                <dt className="kozmos-muted-text text-sm">{durationLabel}</dt>
+                <dd className="m-0 break-words text-base font-semibold">
+                  {actualDurationText}
+                </dd>
+              </div>
+            )}
+            {actualDistanceText && (
+              <div className="min-w-0">
+                <dt className="kozmos-muted-text text-sm">{distanceLabel}</dt>
+                <dd className="m-0 break-words text-base font-semibold">
+                  {actualDistanceText}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+        <Button
+          type="button"
+          className="h-auto min-h-11 w-full whitespace-normal [overflow-wrap:anywhere]"
+          onClick={onDone}
+          disabled={pending}
+          aria-busy={pending || undefined}
+        >
+          {doneLabel}
+        </Button>
+      </div>
+    </DensityScope>
   ),
 );
 ArrivalPanel.displayName = "ArrivalPanel";

@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "../Card/Card";
 import { Heading } from "../Heading/Heading";
 import { Text } from "../Text/Text";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface POICardProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -76,34 +77,37 @@ export const POICard = forwardRef<HTMLDivElement, POICardProps>(
     );
 
     return (
-      <Card
-        ref={ref}
-        className={cn("flex flex-col overflow-hidden", className)}
-        role="article"
-        {...props}
-      >
-        {onClick ? (
-          <button
-            aria-label={selectionLabel}
-            className="group w-full text-left transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            onClick={(event) => {
-              trackEvent("POICard", "poi_selected", { title, subtitle });
-              onClick(event);
-            }}
-            type="button"
-          >
-            {identity}
-          </button>
-        ) : (
-          <div>{identity}</div>
-        )}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <Card
+          ref={ref}
+          className={cn("flex flex-col overflow-hidden", className)}
+          role="article"
+          {...props}
+        >
+          {onClick ? (
+            <button
+              aria-label={selectionLabel}
+              className="group w-full text-left transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              onClick={(event) => {
+                trackEvent("POICard", "poi_selected", { title, subtitle });
+                onClick(event);
+              }}
+              type="button"
+            >
+              {identity}
+            </button>
+          ) : (
+            <div>{identity}</div>
+          )}
 
-        {actions && (
-          <CardFooter className="flex flex-wrap gap-3 pb-5 pt-4">
-            {actions}
-          </CardFooter>
-        )}
-      </Card>
+          {actions && (
+            <CardFooter className="flex flex-wrap gap-3 pb-5 pt-4">
+              {actions}
+            </CardFooter>
+          )}
+        </Card>
+      </DensityScope>
     );
   },
 );
