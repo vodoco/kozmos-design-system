@@ -535,11 +535,35 @@ try {
       zooms: window.mapZooms,
       opens: window.pinOpens,
     }));
+    // A slow second tap, 400 ms on: past the double-tap time (300), so an
+    // ordinary press, but inside MapLibre's 500, so the pin still keeps it
+    // and the map doesn't zoom.
+    await tapPage.waitForTimeout(700);
+    const centre = [tapBox.x + tapBox.width / 2, tapBox.y + tapBox.height / 2];
+    await tapPage.touchscreen.tap(...centre);
+    await tapPage.waitForTimeout(400);
+    await tapPage.touchscreen.tap(...centre);
+    await tapPage.waitForTimeout(400);
+    const slow = await tapPage.evaluate(() => ({
+      zooms: window.mapZooms,
+      opens: window.pinOpens,
+    }));
+    reads += 2;
+    if (slow.opens !== onPin.opens)
+      failures.push(
+        `${mode} light-ltr result-1: a second tap 400 ms on opened it; past the double-tap time it is an ordinary press`,
+      );
+    if (slow.zooms !== onPin.zooms)
+      failures.push(
+        `${mode} light-ltr result-1: a second tap 400 ms on zoomed the map`,
+      );
     const boardBox = await tapPage
       .locator('[data-board="light-ltr"]')
       .boundingBox();
     await doubleTap(boardBox.x + 8, boardBox.y + 8);
     const bare = await tapPage.evaluate(() => window.mapZooms - 0);
+    // The bare board's zoom is counted against the slow taps' total too.
+    onPin.zooms = slow.zooms;
     reads += 3;
     if (onPin.opens !== 1)
       failures.push(
@@ -596,5 +620,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS LocationPin markers (decision 71): ${reads} reads — the result pill (32 tall, at least 32 wide and growing with its number, a 2 border in theme 600, filled when selected), its pointer's tip 6 below and on the point, the dot without a number; the featured tile (44, 52 selected, a 3 rim in foreground/0, corners of 16, the logo inside) on a dot 4 below whose centre is the point; the place's green teardrop of 40 round a disc of 20 on a dot 6 below; the md shadow on each body (inside a design configuration too), a Semibold label 4 from the marker and centred on it at the side, and a 44 target, in light and dark, left to right and right to left, with and without @scope; a double click and a touch double tap open the pin without zooming a map; a wrapped logo fits the tile; a selected pill stays distinct in forced colours`,
+  `PASS LocationPin markers (decision 71): ${reads} reads — the result pill (32 tall, at least 32 wide and growing with its number, a 2 border in theme 600, filled when selected), its pointer's tip 6 below and on the point, the dot without a number; the featured tile (44, 52 selected, a 3 rim in foreground/0, corners of 16, the logo inside) on a dot 4 below whose centre is the point; the place's green teardrop of 40 round a disc of 20 on a dot 6 below; the md shadow on each body (inside a design configuration too), a Semibold label 4 from the marker and centred on it at the side, and a 44 target, in light and dark, left to right and right to left, with and without @scope; a double click and a touch double tap open the pin without zooming a map, and a slow second tap neither opens it nor zooms; a wrapped logo fits the tile; a selected pill stays distinct in forced colours`,
 );

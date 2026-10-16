@@ -182,15 +182,17 @@ ordinary press, and the second calls `onOpen` once and isn't passed on as anothe
 - **A second tap stays on the pin.** MapLibre zooms on a second tap within 500 ms and cancels that tap's
   click, so a pin's details would never open. With `onOpen`, the second touch tap, and its `dblclick`,
   stop at the pin; a first tap, and a pan that starts on it, still reach the map. It holds for a marker
-  rendered in a portal too (measured with MapLibre GL 4.7.1).
+  rendered in a portal too (measured with MapLibre GL 4.7.1). A second tap after the double-tap time (300
+  ms) but within MapLibre's 500 is an ordinary press, and the map doesn't zoom.
 - **A press is a click on the map too.** MapLibre fires the map's `click` for a click on a marker (its own
   `Marker` relies on it), so a `click` handler that clears the selection would undo the pin's press. Skip a
   click inside a pin: `if (event.originalEvent.target.closest(".kozmos-location-pin")) return;`.
 - **A pin nothing presses lets the map have it:** with no `onClick` or `onOpen`, or disabled, a press or a
   pan starting on it reaches the map.
 - **`left` and `right` labels are the map's,** in either direction, as MapLibre places a symbol's text.
-  Place a pin by its physical point; on iOS use `.kozmosLocationPinAt(point)`, which keeps the point in
-  right-to-left layouts, where `.position` mirrors it.
+  Place a pin by its physical point. On iOS use `.kozmosLocationPinAt(point)`, which keeps the point in
+  right-to-left layouts, where `.position` mirrors it; on Android, `Modifier.kozmosLocationPinAt { point }`,
+  which places it absolutely.
 
 ## Results on another level
 
