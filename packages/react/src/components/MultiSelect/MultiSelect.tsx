@@ -315,7 +315,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               <div
                 ref={setRefs}
                 className={cn(
-                  "flex min-h-11 w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                  "flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
                   resolvedStatus === "error" &&
                     "border-destructive focus-within:ring-destructive",
                   resolvedStatus === "warning" &&

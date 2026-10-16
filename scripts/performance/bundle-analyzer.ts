@@ -47,13 +47,23 @@ import { gzipSync } from "zlib";
 // as an app's build does. After them, Everything measured 79.21 KB here, leaving room for two to
 // four releases at the recent growth of 1.8 to 3.6 KB each. The per-export, Button, CSS and
 // module-count guards stay.
-const MAX_EXPORT_GZIP_KB = 8;
+// Olcay approved 8.5 KB on 2026-10-16 (decision 90) for compact density (#274). Its DensityScope,
+// on every SDK part's root, and cn's merge groups for the density sizes took AdaptiveMapShell
+// alone from 7.85 to 8.03 KB on CI (7.79 to 7.97 here). That is the shell's real size now, not a
+// tree-shaking slip, and it has no cheap lossless trim: the module is layout logic, not data. The
+// guard still catches an export that pulls in more than it should.
+const MAX_EXPORT_GZIP_KB = 8.5;
 const MAX_BUTTON_GZIP_KB = 2;
 const MAX_TOTAL_GZIP_KB = 88;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
-const MAX_CSS_GZIP_KB = 30.5;
+// 32 KB on 2026-10-16 (decision 97, Olcay's): main measured 29.68 KB here, Track 2 (#273)
+// 30.14, compact density (#274) 30.22 and the two together 30.63. Both are new rules, not
+// duplication: the SDK's markers in owned CSS (about 1 KB gzip alone) and the density rules.
+// The room above them is for the next density groups (chips, tags, rows, tabs, the table, the
+// tree). CI reads the stylesheet the same as a Mac.
+const MAX_CSS_GZIP_KB = 32;
 const MIN_ESM_MODULES = 50;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");

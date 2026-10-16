@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 /**
  * How far along an assistant turn is.
@@ -51,58 +52,61 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
     },
     ref,
   ) => (
-    <div
-      className={cn("flex w-full flex-col gap-2", className)}
-      data-status={status}
-      ref={ref}
-      {...props}
-    >
-      <div className="flex items-start gap-2">
-        <div
-          className={cn(
-            "max-w-[85%] rounded-container border border-border bg-card px-4 py-3 text-sm text-foreground",
-            status === "timedOut" && "text-muted-foreground",
-          )}
-        >
-          {/* First, and on every turn: a label added only once a reply
+    // The SDK's touch geometry under any density (decision 89).
+    <DensityScope density="touch" asChild>
+      <div
+        className={cn("flex w-full flex-col gap-2", className)}
+        data-status={status}
+        ref={ref}
+        {...props}
+      >
+        <div className="flex items-start gap-2">
+          <div
+            className={cn(
+              "max-w-[85%] rounded-container border border-border bg-card px-4 py-3 text-sm text-foreground",
+              status === "timedOut" && "text-muted-foreground",
+            )}
+          >
+            {/* First, and on every turn: a label added only once a reply
               completed would be announced by the thread's log on its own.
               The space after it is what keeps it a word of its own: WebKit
               runs a hidden span into the text that follows it ("Assistant
               saidThe assistant…"), where Chromium and Firefox break the
               line. It sits at the start of the line, so it is never drawn. */}
-          {speakerLabel && (
-            <>
-              <span className="sr-only">{speakerLabel}</span>{" "}
-            </>
-          )}
-          {/* The dots sit BESIDE the text, not instead of it: the prototype
+            {speakerLabel && (
+              <>
+                <span className="sr-only">{speakerLabel}</span>{" "}
+              </>
+            )}
+            {/* The dots sit BESIDE the text, not instead of it: the prototype
               streams "••• Looking through this building…", where the
               acknowledgement is the thing that arrives within 2.5s. */}
-          {status === "streaming" && (
-            // `me-2`, not `mr-2`: right to left the dots sit on the right,
-            // and a physical margin put the gap on their far side.
-            <span className="me-2 inline-flex items-center gap-1 align-middle">
-              <span className="sr-only">{streamingLabel}</span>
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary"
-              />
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary [animation-delay:150ms]"
-              />
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary [animation-delay:300ms]"
-              />
-            </span>
-          )}
-          {children ?? (status === "timedOut" ? timedOutLabel : null)}
+            {status === "streaming" && (
+              // `me-2`, not `mr-2`: right to left the dots sit on the right,
+              // and a physical margin put the gap on their far side.
+              <span className="me-2 inline-flex items-center gap-1 align-middle">
+                <span className="sr-only">{streamingLabel}</span>
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary"
+                />
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary [animation-delay:150ms]"
+                />
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse rounded-pill bg-primary [animation-delay:300ms]"
+                />
+              </span>
+            )}
+            {children ?? (status === "timedOut" ? timedOutLabel : null)}
+          </div>
+          {trailing}
         </div>
-        {trailing}
+        {actionCard}
       </div>
-      {actionCard}
-    </div>
+    </DensityScope>
   ),
 );
 AIMessage.displayName = "AIMessage";

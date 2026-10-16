@@ -7,6 +7,7 @@ import type {
 import { ChevronDown } from "@kozmos-ds/icons";
 import { POIResultCard, type POIResultCardProps } from "../POIResultCard";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface POIResultGroupItem {
   poi: POIPresentation;
@@ -122,63 +123,66 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
     };
 
     return (
-      <section
-        aria-label={label}
-        className={cn(
-          "kozmos-poi-result-group overflow-hidden rounded-control border border-border bg-card",
-          className,
-        )}
-        data-expanded={open || undefined}
-        data-presentation-style={presentationStyle}
-        ref={ref}
-        {...props}
-      >
-        <ul className="m-0 flex list-none flex-col p-0" id={listId}>
-          {shown.map(({ poi, result }, index) => (
-            <li
-              className={cn(index > 0 && "border-t border-border")}
-              key={poi.id}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          aria-label={label}
+          className={cn(
+            "kozmos-poi-result-group overflow-hidden rounded-control border border-border bg-card",
+            className,
+          )}
+          data-expanded={open || undefined}
+          data-presentation-style={presentationStyle}
+          ref={ref}
+          {...props}
+        >
+          <ul className="m-0 flex list-none flex-col p-0" id={listId}>
+            {shown.map(({ poi, result }, index) => (
+              <li
+                className={cn(index > 0 && "border-t border-border")}
+                key={poi.id}
+              >
+                <POIResultCard
+                  actionsLabel={actionsLabel}
+                  appearance="row"
+                  currentFloorId={currentFloorId}
+                  featuredLabel={featuredLabel}
+                  languageNotListedLabel={languageNotListedLabel}
+                  idPrefix={idPrefix}
+                  numbered={numbered}
+                  presentationStyle={presentationStyle}
+                  onAction={onAction}
+                  onOpen={onOpen}
+                  onSelect={onSelect}
+                  poi={poi}
+                  result={result}
+                  travelTimeBandLabels={travelTimeBandLabels}
+                />
+              </li>
+            ))}
+          </ul>
+          {hidden > 0 && (
+            <button
+              aria-controls={listId}
+              aria-expanded={open}
+              className="w-full border-t border-border bg-muted px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              onClick={toggle}
+              type="button"
             >
-              <POIResultCard
-                actionsLabel={actionsLabel}
-                appearance="row"
-                currentFloorId={currentFloorId}
-                featuredLabel={featuredLabel}
-                languageNotListedLabel={languageNotListedLabel}
-                idPrefix={idPrefix}
-                numbered={numbered}
-                presentationStyle={presentationStyle}
-                onAction={onAction}
-                onOpen={onOpen}
-                onSelect={onSelect}
-                poi={poi}
-                result={result}
-                travelTimeBandLabels={travelTimeBandLabels}
-              />
-            </li>
-          ))}
-        </ul>
-        {hidden > 0 && (
-          <button
-            aria-controls={listId}
-            aria-expanded={open}
-            className="w-full border-t border-border bg-muted px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            onClick={toggle}
-            type="button"
-          >
-            <span className="inline-flex items-center gap-1.5">
-              {open ? hideLabel : showMoreLabel(hidden)}
-              <ChevronDown
-                aria-hidden="true"
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  open && "rotate-180",
-                )}
-              />
-            </span>
-          </button>
-        )}
-      </section>
+              <span className="inline-flex items-center gap-1.5">
+                {open ? hideLabel : showMoreLabel(hidden)}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    open && "rotate-180",
+                  )}
+                />
+              </span>
+            </button>
+          )}
+        </section>
+      </DensityScope>
     );
   },
 );

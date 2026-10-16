@@ -101,7 +101,10 @@ describe("AIInputBar", () => {
       <AIInputBar onSubmit={vi.fn()} onValueChange={vi.fn()} value="ask" />,
     );
     const send = screen.getByRole("button", { name: "Send" });
-    expect(send).toHaveClass("h-11", "w-11");
+    // The icon button's size, kept 44 under any density: the bar holds the
+    // SDK's touch geometry (decision 89).
+    expect(send).toHaveClass("h-icon-control", "w-icon-control");
+    expect(send.closest('[data-kozmos-density="touch"]')).not.toBeNull();
     expect(send).not.toHaveClass("h-10");
     expect(send).not.toHaveClass("w-10");
     expect(field()).toHaveClass("min-h-11");

@@ -1,6 +1,7 @@
 import React from "react";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { DensityScope } from "../../theme/DensityScope";
 import { useDoubleTapGate } from "../../utils/double-tap";
 
 /**
@@ -202,89 +203,96 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       undefined;
 
     return (
-      <div
-        ref={setRefs}
-        aria-controls={resultId}
-        aria-current={selected || place ? "location" : undefined}
-        aria-disabled={isInteractive && disabled ? true : undefined}
-        aria-label={kind === "featured" ? `${label}, ${featuredLabel}` : label}
-        // Owned CSS draws the markers, anchors them (the pointer's tip, or the
-        // dot's centre) and keeps a 44px target round them, with or without
-        // @scope.
-        className={cn("kozmos-location-pin", className)}
-        data-disabled={disabled || undefined}
-        data-interactive={takesPointers || undefined}
-        data-kind={kind}
-        data-selected={selected || undefined}
-        onClick={isInteractive ? handleClick : undefined}
-        onDoubleClick={handleDoubleClick}
-        onKeyDown={handleKeyDown}
-        role={isInteractive ? "button" : "img"}
-        tabIndex={isInteractive && !disabled ? 0 : undefined}
-        {...props}
-        aria-describedby={describedByIds}
-      >
-        {kind === "result" && (
-          <span aria-hidden="true" className="kozmos-location-pin-body">
-            <span className="kozmos-location-pin-pill">
-              {number != null ? (
-                number
-              ) : (
-                <span className="kozmos-location-pin-pill-dot" />
-              )}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={setRefs}
+          aria-controls={resultId}
+          aria-current={selected || place ? "location" : undefined}
+          aria-disabled={isInteractive && disabled ? true : undefined}
+          aria-label={
+            kind === "featured" ? `${label}, ${featuredLabel}` : label
+          }
+          // Owned CSS draws the markers, anchors them (the pointer's tip, or the
+          // dot's centre) and keeps a 44px target round them, with or without
+          // @scope.
+          className={cn("kozmos-location-pin", className)}
+          data-disabled={disabled || undefined}
+          data-interactive={takesPointers || undefined}
+          data-kind={kind}
+          data-selected={selected || undefined}
+          onClick={isInteractive ? handleClick : undefined}
+          onDoubleClick={handleDoubleClick}
+          onKeyDown={handleKeyDown}
+          role={isInteractive ? "button" : "img"}
+          tabIndex={isInteractive && !disabled ? 0 : undefined}
+          {...props}
+          aria-describedby={describedByIds}
+        >
+          {kind === "result" && (
+            <span aria-hidden="true" className="kozmos-location-pin-body">
+              <span className="kozmos-location-pin-pill">
+                {number != null ? (
+                  number
+                ) : (
+                  <span className="kozmos-location-pin-pill-dot" />
+                )}
+              </span>
+              <svg
+                className="kozmos-location-pin-pointer"
+                height="7"
+                viewBox="0 0 12 7"
+                width="12"
+              >
+                <path d="M0 0H12L6 7Z" />
+              </svg>
             </span>
-            <svg
-              className="kozmos-location-pin-pointer"
-              height="7"
-              viewBox="0 0 12 7"
-              width="12"
-            >
-              <path d="M0 0H12L6 7Z" />
-            </svg>
-          </span>
-        )}
-        {kind === "featured" && (
-          <span aria-hidden="true" className="kozmos-location-pin-body">
-            <span className="kozmos-location-pin-tile">
-              <span className="kozmos-location-pin-logo">{markerContent}</span>
+          )}
+          {kind === "featured" && (
+            <span aria-hidden="true" className="kozmos-location-pin-body">
+              <span className="kozmos-location-pin-tile">
+                <span className="kozmos-location-pin-logo">
+                  {markerContent}
+                </span>
+              </span>
+              <span className="kozmos-location-pin-dot" />
             </span>
-            <span className="kozmos-location-pin-dot" />
-          </span>
-        )}
-        {kind === "place" && (
-          <span aria-hidden="true" className="kozmos-location-pin-body">
-            <svg
-              className="kozmos-location-pin-teardrop"
-              height="49"
-              viewBox="0 0 40 49"
-              width="40"
+          )}
+          {kind === "place" && (
+            <span aria-hidden="true" className="kozmos-location-pin-body">
+              <svg
+                className="kozmos-location-pin-teardrop"
+                height="49"
+                viewBox="0 0 40 49"
+                width="40"
+              >
+                <path d={TEARDROP} transform="rotate(-45 20 20)" />
+                <circle cx="20" cy="20" r="10" />
+              </svg>
+              <span className="kozmos-location-pin-dot" />
+            </span>
+          )}
+          {/* The words beside the marker, 4 from it; at its side, centred on
+              its shape (the pill, the tile, the circle), as on iOS and
+              Compose. Owned CSS places it. */}
+          {externalLabel && (
+            <span
+              aria-hidden="true"
+              className="kozmos-location-pin-label max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-semibold text-foreground shadow-floating ring-1 ring-border"
+              data-placement={labelPlacement}
             >
-              <path d={TEARDROP} transform="rotate(-45 20 20)" />
-              <circle cx="20" cy="20" r="10" />
-            </svg>
-            <span className="kozmos-location-pin-dot" />
-          </span>
-        )}
-        {/* The words beside the marker, 4 from it; at its side, centred on
-            its shape (the pill, the tile, the circle), as on iOS and
-            Compose. Owned CSS places it. */}
-        {externalLabel && (
-          <span
-            aria-hidden="true"
-            className="kozmos-location-pin-label max-w-48 whitespace-nowrap rounded-control bg-background px-2 py-1 text-xs font-semibold text-foreground shadow-floating ring-1 ring-border"
-            data-placement={labelPlacement}
-          >
-            {externalLabel}
-          </span>
-        )}
-        {opensOnEnter && (
-          // A description need not be shown to be read: hidden, it is still
-          // the pin's accessible description, and nothing draws it.
-          <span hidden id={hintId}>
-            {openHint}
-          </span>
-        )}
-      </div>
+              {externalLabel}
+            </span>
+          )}
+          {opensOnEnter && (
+            // A description need not be shown to be read: hidden, it is still
+            // the pin's accessible description, and nothing draws it.
+            <span hidden id={hintId}>
+              {openHint}
+            </span>
+          )}
+        </div>
+      </DensityScope>
     );
   },
 );

@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 /**
  * How the map sits in what holds it.
@@ -30,24 +31,27 @@ const MapView = React.forwardRef<HTMLDivElement, MapViewProps>(
     },
     ref,
   ) => (
-    <div
-      ref={ref}
-      aria-label={mapLabel}
-      className={cn(
-        "relative h-full w-full overflow-hidden bg-muted",
-        variant === "framed" &&
-          "min-h-[400px] rounded-container border border-border",
-        className,
-      )}
-      // A filling map is inside a shell that has already named the map area a
-      // region, so naming it again has a screen reader announce the same
-      // surface twice. `group` keeps the label without the second landmark.
-      // A caller's own role still wins.
-      role={role ?? (variant === "fill" ? "group" : "region")}
-      {...props}
-    >
-      {children}
-    </div>
+    // The SDK's touch geometry under any density (decision 89).
+    <DensityScope density="touch" asChild>
+      <div
+        ref={ref}
+        aria-label={mapLabel}
+        className={cn(
+          "relative h-full w-full overflow-hidden bg-muted",
+          variant === "framed" &&
+            "min-h-[400px] rounded-container border border-border",
+          className,
+        )}
+        // A filling map is inside a shell that has already named the map area a
+        // region, so naming it again has a screen reader announce the same
+        // surface twice. `group` keeps the label without the second landmark.
+        // A caller's own role still wins.
+        role={role ?? (variant === "fill" ? "group" : "region")}
+        {...props}
+      >
+        {children}
+      </div>
+    </DensityScope>
   ),
 );
 MapView.displayName = "MapView";

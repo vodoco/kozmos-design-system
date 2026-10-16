@@ -42,6 +42,7 @@ pnpm tokens:build    # pnpm --filter @kozmos-ds/tokens build, which runs node bu
 | Output                                                                                              | For                                                   |
 | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | `dist/css/variables-light.css`, `dist/css/variables-dark.css`                                       | The web: CSS custom properties                        |
+| `dist/css/variables-density.css`                                                                    | The web: the control sizes for each density           |
 | `dist/js/tokens.mjs`, `tokens.js`, `tokens.d.ts`, `tokens.d.mts`                                    | JavaScript and TypeScript: one named export per token |
 | `dist/ios/*.swift`                                                                                  | SwiftUI                                               |
 | `dist/android/src/main/java/com/kozmos/tokens/*.kt`, `dist/android/src/main/res/values*/colors.xml` | Compose and Android resources                         |
@@ -50,15 +51,20 @@ pnpm tokens:build    # pnpm --filter @kozmos-ds/tokens build, which runs node bu
 
 `@kozmos-ds/tokens` publishes `dist/`, through its manifest's `exports`:
 
-| Import                            | Resolves to                    |
-| --------------------------------- | ------------------------------ |
-| `@kozmos-ds/tokens`               | The JavaScript named exports   |
-| `@kozmos-ds/tokens/css/light.css` | `dist/css/variables-light.css` |
-| `@kozmos-ds/tokens/css/dark.css`  | `dist/css/variables-dark.css`  |
-| `@kozmos-ds/tokens/dist/*`        | Any built file, by its path    |
+| Import                              | Resolves to                      |
+| ----------------------------------- | -------------------------------- |
+| `@kozmos-ds/tokens`                 | The JavaScript named exports     |
+| `@kozmos-ds/tokens/css/light.css`   | `dist/css/variables-light.css`   |
+| `@kozmos-ds/tokens/css/dark.css`    | `dist/css/variables-dark.css`    |
+| `@kozmos-ds/tokens/css/density.css` | `dist/css/variables-density.css` |
+| `@kozmos-ds/tokens/dist/*`          | Any built file, by its path      |
 
 The light file defines every variable on `:root`, and the dark file redefines them under
-`[data-theme="dark"]`. The variables are named for their collection and path:
+`[data-theme="dark"]`. The density file (decision 82, web only) sets the control sizes: touch on
+`:root` and `[data-kozmos-density="touch"]` (buttons and fields 44, icon buttons 44 and 48), compact
+on `[data-kozmos-density="compact"]` (buttons 32, 40 and 48, icon buttons 28, 32 and 40, fields 40),
+each for everything inside the marked element. `ThemeProvider density` and `DensityScope` set it.
+The variables are named for their collection and path:
 `--primitives-colors-background-0`, `--semantics-radius-container`, `--components-…`. The semantic
 radius roles are unitless numbers, shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`.

@@ -12,6 +12,7 @@ import {
   DirectionIcon,
   type DirectionType,
 } from "../DirectionStep/DirectionStep";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface RouteProgressRailProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Absolute route position, 0 to 1. With activeLeg, null/nonfinite/outside
@@ -132,129 +133,136 @@ const RouteProgressRail = React.forwardRef<
     }, []);
     return (
       <>
-        <div
-          ref={setRef}
-          role={routeMode && positionMode === "static" ? "img" : "progressbar"}
-          aria-label={
-            routeMode && positionMode === "static" && valueText
-              ? `${label}: ${valueText}`
-              : label
-          }
-          aria-valuemin={routeMode && positionMode === "static" ? undefined : 0}
-          aria-valuemax={
-            routeMode && positionMode === "static" ? undefined : 100
-          }
-          aria-valuenow={
-            position === null ? undefined : Math.round(position * 100)
-          }
-          aria-valuetext={
-            routeMode && positionMode === "static" ? undefined : valueText
-          }
-          className={cn("kozmos-route-rail relative w-full", className)}
-          style={{ height: routeMode ? 48 : disc, ...style }}
-          {...props}
-          aria-describedby={
-            [
-              props["aria-describedby"],
-              valid.length ? waypointDescription : undefined,
-            ]
-              .filter(Boolean)
-              .join(" ") || undefined
-          }
-        >
-          {routeMode ? (
-            <RouteTrack
-              activeLeg={range}
-              activeWaypointId={activeWaypointId}
-              progress={position}
-              appearance={appearance}
-              positionMode={positionMode}
-              motion={motion}
-              waypoints={valid}
-              width={width}
-            />
-          ) : (
-            <>
-              <span
-                aria-hidden="true"
-                className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
-                style={{ insetInline: "min(10px, 20%)", height: track }}
+        {/* The SDK's touch geometry under any density (decision 89). */}
+        <DensityScope density="touch" asChild>
+          <div
+            ref={setRef}
+            role={
+              routeMode && positionMode === "static" ? "img" : "progressbar"
+            }
+            aria-label={
+              routeMode && positionMode === "static" && valueText
+                ? `${label}: ${valueText}`
+                : label
+            }
+            aria-valuemin={
+              routeMode && positionMode === "static" ? undefined : 0
+            }
+            aria-valuemax={
+              routeMode && positionMode === "static" ? undefined : 100
+            }
+            aria-valuenow={
+              position === null ? undefined : Math.round(position * 100)
+            }
+            aria-valuetext={
+              routeMode && positionMode === "static" ? undefined : valueText
+            }
+            className={cn("kozmos-route-rail relative w-full", className)}
+            style={{ height: routeMode ? 48 : disc, ...style }}
+            {...props}
+            aria-describedby={
+              [
+                props["aria-describedby"],
+                valid.length ? waypointDescription : undefined,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+          >
+            {routeMode ? (
+              <RouteTrack
+                activeLeg={range}
+                activeWaypointId={activeWaypointId}
+                progress={position}
+                appearance={appearance}
+                positionMode={positionMode}
+                motion={motion}
+                waypoints={valid}
+                width={width}
               />
-              {showCompletedTrack && progress !== null && clamped > 0 && (
+            ) : (
+              <>
                 <span
                   aria-hidden="true"
-                  data-testid="route-completed-track"
-                  className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-primary"
-                  style={{
-                    insetInlineStart: "min(10px, 20%)",
-                    height: track,
-                    width: `calc(min(17px, 30%) + max(0px, 100% - min(20px, 40%) - min(34px, 60%)) * ${clamped})`,
-                  }}
+                  className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
+                  style={{ insetInline: "min(10px, 20%)", height: track }}
                 />
-              )}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute top-1/2 -translate-y-1/2 rounded-pill",
-                  progress === null ? "bg-muted" : "bg-primary",
+                {showCompletedTrack && progress !== null && clamped > 0 && (
+                  <span
+                    aria-hidden="true"
+                    data-testid="route-completed-track"
+                    className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-primary"
+                    style={{
+                      insetInlineStart: "min(10px, 20%)",
+                      height: track,
+                      width: `calc(min(17px, 30%) + max(0px, 100% - min(20px, 40%) - min(34px, 60%)) * ${clamped})`,
+                    }}
+                  />
                 )}
-                style={{
-                  insetInlineStart: 0,
-                  width: "min(10px, 20%)",
-                  aspectRatio: "1",
-                }}
-              />
-              <span
-                aria-hidden="true"
-                className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
-                style={{
-                  insetInlineEnd: 0,
-                  width: "min(10px, 20%)",
-                  aspectRatio: "1",
-                }}
-              />
-              {visible.map((point) => (
-                <span
-                  key={point.id}
-                  aria-hidden="true"
-                  data-waypoint-id={point.id}
-                  className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-pill bg-muted text-foreground border border-border"
-                  style={{
-                    insetInlineStart:
-                      15 + Math.max(0, width - 54) * point.position,
-                    width: 24,
-                    height: 24,
-                  }}
-                >
-                  <DirectionIcon type={point.type} className="h-4 w-4" />
-                </span>
-              ))}
-              {progress !== null && (
                 <span
                   aria-hidden="true"
-                  data-testid="route-progress-disc"
-                  className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-pill bg-primary text-primary-foreground"
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 rounded-pill",
+                    progress === null ? "bg-muted" : "bg-primary",
+                  )}
                   style={{
-                    insetInlineStart: discLeading(clamped),
-                    width: "min(34px, 60%)",
+                    insetInlineStart: 0,
+                    width: "min(10px, 20%)",
                     aspectRatio: "1",
                   }}
-                >
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
+                  style={{
+                    insetInlineEnd: 0,
+                    width: "min(10px, 20%)",
+                    aspectRatio: "1",
+                  }}
+                />
+                {visible.map((point) => (
                   <span
+                    key={point.id}
+                    aria-hidden="true"
+                    data-waypoint-id={point.id}
+                    className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-pill bg-muted text-foreground border border-border"
                     style={{
-                      width: "50%",
-                      height: "50%",
-                      maxWidth: 16,
-                      maxHeight: 16,
+                      insetInlineStart:
+                        15 + Math.max(0, width - 54) * point.position,
+                      width: 24,
+                      height: 24,
                     }}
                   >
-                    <DirectionIcon type={type} className="h-full w-full" />
+                    <DirectionIcon type={point.type} className="h-4 w-4" />
                   </span>
-                </span>
-              )}
-            </>
-          )}
-        </div>
+                ))}
+                {progress !== null && (
+                  <span
+                    aria-hidden="true"
+                    data-testid="route-progress-disc"
+                    className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-pill bg-primary text-primary-foreground"
+                    style={{
+                      insetInlineStart: discLeading(clamped),
+                      width: "min(34px, 60%)",
+                      aspectRatio: "1",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "50%",
+                        height: "50%",
+                        maxWidth: 16,
+                        maxHeight: 16,
+                      }}
+                    >
+                      <DirectionIcon type={type} className="h-full w-full" />
+                    </span>
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        </DensityScope>
         {valid.length > 0 && (
           <span id={waypointDescription} hidden>
             {valid.map((point) => point.label).join("; ")}

@@ -32,7 +32,7 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-2.5 pe-4" href="#" size="sm">
             <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
@@ -53,7 +53,7 @@ figma.connect(Pagination, paginationUrl, {
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-4 pe-2.5" href="#" size="sm">
             <span>{nextText}</span>
             <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>
@@ -84,7 +84,7 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-2.5 pe-4" href="#" size="sm">
             <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
@@ -113,7 +113,7 @@ figma.connect(Pagination, paginationUrl, {
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-4 pe-2.5" href="#" size="sm">
             <span>{nextText}</span>
             <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>
@@ -133,7 +133,7 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-2.5 pe-4" href="#" size="sm">
             <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
@@ -144,7 +144,7 @@ figma.connect(Pagination, paginationUrl, {
           </span>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 ps-4 pe-2.5" href="#" size="sm">
             <span>{nextText}</span>
             <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>

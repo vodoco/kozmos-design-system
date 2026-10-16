@@ -47,4 +47,23 @@ describe("cn", () => {
   it("treats the border widths as one property", () => {
     expect(cn("border-sm", "border-lg")).toBe("border-lg");
   });
+
+  /**
+   * Decision 82: a control's size reads its density's token (`h-control`,
+   * `w-icon-control-sm`). A caller's own size must still win, and a density
+   * size must replace a standard one, or both stay and CSS order decides.
+   */
+  it("treats the density sizes as heights and widths", () => {
+    expect(cn("h-control", "h-8")).toBe("h-8");
+    expect(cn("h-11", "h-control-sm")).toBe("h-control-sm");
+    expect(cn("h-control", "h-control-lg")).toBe("h-control-lg");
+    expect(cn("h-icon-control", "h-icon-control-sm")).toBe("h-icon-control-sm");
+    expect(cn("w-icon-control", "w-12")).toBe("w-12");
+    expect(cn("h-field", "h-9")).toBe("h-9");
+    expect(cn("min-h-field", "min-h-0")).toBe("min-h-0");
+    // Height and width stay separate properties.
+    expect(cn("h-icon-control", "w-icon-control")).toBe(
+      "h-icon-control w-icon-control",
+    );
+  });
 });

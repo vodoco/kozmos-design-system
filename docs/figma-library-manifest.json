@@ -18925,6 +18925,7 @@
           "children",
           "defaultSystemTheme",
           "defaultTheme",
+          "density",
           "dir",
           "storageKey",
           "theme",

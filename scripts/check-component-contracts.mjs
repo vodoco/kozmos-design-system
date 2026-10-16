@@ -795,30 +795,60 @@ assertContains(
 );
 const ownedCssPath = "packages/react/src/styles/owned-components.css";
 const ownedCss = read(ownedCssPath);
+// Decision 82: the sizes read ThemeProvider's density. The recipes name the
+// density's keys, and the touch tokens hold the native platforms' 44 and 48,
+// so a product's touch Button is the SwiftUI and Compose one.
 for (const [size, classes] of [
-  ["default", "h-11 px-4 py-2"],
-  ["sm", "h-11 rounded-control px-3"],
-  ["icon", "h-11 w-11"],
+  ["default", "h-control px-4 py-2"],
+  ["sm", "h-control-sm rounded-control px-3"],
+  ["lg", "h-control-lg rounded-control px-8"],
+  ["icon", "h-icon-control w-icon-control"],
 ]) {
   assertContains(
     ownedCssPath,
     ownedCss,
     new RegExp(`\\.kozmos-button-size-${size}\\s*\\{\\s*@apply ${classes};`),
-    `44px ${size} Button recipe`,
+    `density ${size} Button recipe`,
   );
 }
 assertContains(
   files.reactIconButton,
   source.reactIconButton,
-  "h-11 w-11 px-0",
-  "44px IconButton root class",
+  'return "h-icon-control w-icon-control px-0"',
+  "IconButton root class at the density's size",
 );
 assertContains(
   files.reactIconButton,
   source.reactIconButton,
-  'if (size === "lg") return "h-12 w-12 px-0',
-  "48px IconButton large size",
+  '"h-icon-control-lg w-icon-control-lg px-0',
+  "IconButton large size at the density's size",
 );
+const densityTokens = (density) =>
+  JSON.parse(read(`packages/tokens/src/tokens-density-${density}.json`))
+    .Density;
+for (const [density, expected] of [
+  ["touch", { control: [44, 44, 44], iconControl: [44, 44, 48], field: 44 }],
+  ["compact", { control: [32, 40, 48], iconControl: [28, 32, 40], field: 40 }],
+]) {
+  const tokens = densityTokens(density);
+  // In rem, so a control follows the reader's font size; 16 to the rem.
+  const px = (token) => {
+    if (!/^\d+(\.\d+)?rem$/.test(token.$value))
+      fail(
+        `packages/tokens/src/tokens-density-${density}.json: ${token.$value} is not in rem (decision 82)`,
+      );
+    return Number.parseFloat(token.$value) * 16;
+  };
+  const got = {
+    control: ["sm", "md", "lg"].map((k) => px(tokens.Control.Height[k])),
+    iconControl: ["sm", "md", "lg"].map((k) => px(tokens.IconControl.Size[k])),
+    field: px(tokens.Field.Height.md),
+  };
+  if (JSON.stringify(got) !== JSON.stringify(expected))
+    fail(
+      `packages/tokens/src/tokens-density-${density}.json: ${JSON.stringify(got)}, expected ${JSON.stringify(expected)} (decision 82)`,
+    );
+}
 assertContains(
   files.androidIconButton,
   source.androidIconButton,
@@ -973,8 +1003,8 @@ const ownedInput = ownedCss.match(/\.kozmos-input\s*\{([^}]*)\}/)?.[1] ?? "";
 assertContains(
   ownedCssPath,
   ownedInput,
-  "h-11",
-  "React Input 44px field height",
+  "h-field",
+  "React Input at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
   ownedCssPath,
@@ -1011,8 +1041,8 @@ assertContains(
 assertContains(
   files.reactSelect,
   source.reactSelect,
-  "flex h-11 w-full",
-  "React SelectTrigger 44px field height",
+  "flex h-field w-full",
+  "React SelectTrigger at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
   files.reactSlider,
@@ -2193,12 +2223,30 @@ assertContains(
     );
     // The target contract belongs to Core now, not copied utility classes in
     // the SDK field. Keep asserting the same dimensions at their actual owner.
+    // Decision 82: IconButton reads the density's size, and CategoryField's
+    // root is a touch DensityScope, where that size is the target.
     assertContains(
       files.reactIconButton,
       source.reactIconButton,
-      `return "h-${twips(hit)} w-${twips(hit)} px-0"`,
-      `Core IconButton supplies CategoryField clear target ${hit}`,
+      'return "h-icon-control w-icon-control px-0"',
+      "Core IconButton supplies CategoryField clear target at the density's size",
     );
+    assertContains(
+      files.reactCategoryField,
+      source.reactCategoryField,
+      '<DensityScope density="touch" asChild>',
+      "React CategoryField keeps the SDK's touch geometry under any density",
+    );
+    {
+      const touch = JSON.parse(
+        read("packages/tokens/src/tokens-density-touch.json"),
+      ).Density.IconControl.Size.md.$value;
+      // The token is rem, 16 to the rem.
+      if (!touch.endsWith("rem") || Number.parseFloat(touch) * 16 !== hit)
+        fail(
+          `packages/tokens/src/tokens-density-touch.json: the touch icon control is ${touch}, but CategoryField's clear target is ${hit}`,
+        );
+    }
     assertContains(
       files.reactCategoryField,
       source.reactCategoryField,
@@ -6776,8 +6824,8 @@ assertContains(
 assertContains(
   ownedNativeFieldsPath,
   ownedNativeFields.match(/\.kozmos-field-action\s*\{([^}]*)\}/)?.[1] ?? "",
-  "h-11 w-11",
-  "React PasswordInput visibility toggle keeps 44px target",
+  "h-field w-field",
+  "React PasswordInput visibility toggle is as tall as the field (44 touch, 40 compact)",
 );
 assertContains(
   files.iosPasswordInput,

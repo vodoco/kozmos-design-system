@@ -10,6 +10,7 @@ import "@testing-library/jest-dom/vitest";
 import { MapInfoPanel } from "./MapInfoPanel";
 import { safeHref } from "../../utils/safe-href";
 import { MapInfo } from "./MapInfo";
+import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 
 afterEach(cleanup);
 const content = {
@@ -129,5 +130,25 @@ describe("MapInfo", () => {
     expect(within(dialog).queryByRole("region")).toBeNull();
     expect(error).not.toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  // An SDK part keeps the SDK's touch geometry in a compact page (decision
+  // 89): the map it hosts and the dialog it opens are touch.
+  it("stays touch inside a compact page, its dialog too", () => {
+    render(
+      <ThemeProvider density="compact">
+        <MapInfo open onOpenChange={() => {}} content={content}>
+          <div data-testid="map">Map</div>
+        </MapInfo>
+      </ThemeProvider>,
+    );
+    const density = (element: Element) =>
+      element
+        .closest("[data-kozmos-density]")
+        ?.getAttribute("data-kozmos-density");
+    expect(density(screen.getByTestId("map"))).toBe("touch");
+    expect(density(screen.getByRole("dialog", { name: content.title }))).toBe(
+      "touch",
+    );
   });
 });
