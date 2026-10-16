@@ -39,6 +39,11 @@ It forwards its ref to `HTMLSpanElement`. Its props are `SliderProps`, which ext
 - `error`: `boolean | string`, optional.
 - `thumbCount`: `number`, optional.
 - `thumbLabels`: `string[]`, optional.
+
+  Each thumb's accessible name, in order, in the product's language. Unset,
+  a single thumb takes `aria-label` or `label`, and a range's thumbs are
+  named in English: "Minimum value", "Value 2"… "Maximum value".
+
 - `wrapperClassName`: `string`, optional.
 - `showValueTooltip`: `boolean`, optional, default `false`.
 

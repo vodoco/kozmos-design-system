@@ -2,7 +2,7 @@
 
 # LanguageSwitcher
 
-A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button. This is a product decision, not a native parity gap.
+A language control built from Kozmos Select, in React today. SwiftUI and Compose get it too (decision 70), for iPad and other large-screen apps; on phones the SDK hides it and follows the device or app language, which is the product's choice.
 
 - **Import:** `import { LanguageSwitcher } from "@kozmos-ds/react";`
 - **Group:** SDK
@@ -38,7 +38,8 @@ export function LanguageSwitcherExample() {
 
 ## LanguageSwitcher
 
-Web-only map control. Native apps follow device/app language instead.
+The map's language control. React only today; SwiftUI and Compose get it for
+large-screen apps (decision 70), and on phones the SDK hides it.
 
 It forwards its ref to `HTMLButtonElement`. Its props are `LanguageSwitcherProps`.
 
