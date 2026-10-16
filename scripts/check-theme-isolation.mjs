@@ -143,6 +143,36 @@ try {
     await overlay.waitFor({ state: "hidden" });
   }
   console.log("PASS automatic overlay ownership and live theme updates");
+  // Decision 87: a page that loads Readex Pro points the system role at the
+  // brand family through the provider's tokens, and every part in it draws in
+  // that face, its popovers included. The light provider beside it keeps the
+  // system stack, so the match tells the two apart.
+  const family = (locator) =>
+    locator.evaluate((node) => getComputedStyle(node).fontFamily);
+  const brandFace = /^"?Readex Pro"?,/;
+  assert.match(
+    await family(
+      page.getByRole("button", { name: "brand light", exact: true }),
+    ),
+    brandFace,
+  );
+  assert.doesNotMatch(
+    await family(
+      page.getByRole("button", { name: "light light", exact: true }),
+    ),
+    /Readex Pro/,
+  );
+  await page
+    .getByRole("button", { name: "brand overlay", exact: true })
+    .click();
+  const brandOverlay = page.getByTestId("brand-overlay");
+  await brandOverlay.waitFor();
+  assert.match(await family(brandOverlay), brandFace);
+  await page.keyboard.press("Escape");
+  await brandOverlay.waitFor({ state: "hidden" });
+  console.log(
+    "PASS the brand face through the system role, in a provider and its popover",
+  );
   await page.emulateMedia({ colorScheme: "dark" });
   await page
     .getByRole("button", { name: "system dark", exact: true })
