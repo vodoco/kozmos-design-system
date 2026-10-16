@@ -173,6 +173,17 @@ try {
             number:
               pin.querySelector(".kozmos-location-pin-pill")?.textContent ??
               null,
+            // The number's own width, as this browser's font draws it.
+            numberWidth: (() => {
+              const pill = pin.querySelector(".kozmos-location-pin-pill");
+              const text = [...(pill?.childNodes ?? [])].find(
+                (child) => child.nodeType === Node.TEXT_NODE,
+              );
+              if (!text) return null;
+              const range = document.createRange();
+              range.selectNodeContents(text);
+              return range.getBoundingClientRect().width;
+            })(),
             target,
             passes,
             label: box(".kozmos-location-pin-label"),
@@ -277,9 +288,28 @@ try {
             at(id, `no md shadow on the body (filter ${m.body.filter})`),
           );
       }
-      // The pill grows with its number: 128 is wider than 1, 8 from each side.
+      // The pill grows with its number: as wide as the number, as this
+      // browser's font draws it, and 8 more each side (a 2 border and 6), 32
+      // at least. A fixed "128 is 8 wider than 1" failed in Linux WebKit,
+      // whose digits are narrower (a 39.36 pill, right for its 23.36 number).
+      for (const id of ["result-1", "result-128"]) {
+        const m = pins[id];
+        if (!m?.pill || m.numberWidth == null) {
+          reads += 1;
+          failures.push(at(id, "no number in the pill to measure"));
+          continue;
+        }
+        near(
+          m.pill.width,
+          Math.max(32, m.numberWidth + 16),
+          at(
+            id,
+            `the pill is its number (${m.numberWidth.toFixed(2)}) and 8 each side, 32 at least`,
+          ),
+        );
+      }
       reads += 1;
-      if (!(pins["result-128"].pill?.width > pins["result-1"].pill?.width + 8))
+      if (!(pins["result-128"].pill?.width > pins["result-1"].pill?.width))
         failures.push(
           `${mode} ${board}: the pill does not grow with its number (1: ${pins["result-1"].pill?.width}, 128: ${pins["result-128"].pill?.width})`,
         );
