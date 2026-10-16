@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "./ThemeProvider";
 import { DesignConfigProvider } from "../../context/DesignConfigContext";
 import { DensityScope } from "../../theme/DensityScope";
@@ -106,6 +106,30 @@ describe("DensityScope", () => {
     const part = screen.getByTestId("part");
     expect(part.getAttribute("data-kozmos-density")).toBe("touch");
     expect(part.parentElement?.hasAttribute("data-kozmos-root")).toBe(true);
+  });
+
+  it("gives a fragment an element of its own: a fragment takes no attribute", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      render(
+        <ThemeProvider density="compact">
+          <DensityScope density="touch" asChild>
+            <>
+              <span data-testid="first" />
+              <span data-testid="second" />
+            </>
+          </DensityScope>
+        </ThemeProvider>,
+      );
+      const scope = screen.getByTestId("first").parentElement!;
+      expect(scope.getAttribute("data-kozmos-density")).toBe("touch");
+      expect(scope.style.display).toBe("contents");
+      expect(densityOf("second")).toBe("touch");
+      // React warns when a fragment is given a prop it can't take.
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
   });
 
   it("marks an element of its own, which draws no box, without asChild", () => {

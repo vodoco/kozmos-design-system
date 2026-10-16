@@ -9,7 +9,8 @@ export interface DensityScopeProps {
   /**
    * Mark the one child element instead of adding an element: the child must
    * pass a `data-*` attribute on to the element it renders. Anything but one
-   * element gets an element of its own, as without `asChild`.
+   * element, a fragment included, gets an element of its own, as without
+   * `asChild`.
    */
   asChild?: boolean;
   children: React.ReactNode;
@@ -30,7 +31,9 @@ export function DensityScope({
   // One attribute needs no Slot: the child keeps its own props and its ref.
   return (
     <DensityContext.Provider value={density}>
-      {asChild && React.isValidElement(children) ? (
+      {asChild &&
+      React.isValidElement(children) &&
+      children.type !== React.Fragment ? (
         React.cloneElement(
           children as React.ReactElement<{
             "data-kozmos-density"?: ThemeDensity;
