@@ -11,7 +11,7 @@ import { PasswordInput } from "../PasswordInput";
 import { Select, SelectTrigger, SelectValue } from "../Select";
 import { Stack } from "../Stack";
 import { Text } from "../Text";
-import { KozmosTheme } from "../../theme/KozmosTheme";
+import { DensityScope } from "../../theme/DensityScope";
 
 const Demo = () => {
   const { setTheme } = useTheme();
@@ -49,16 +49,16 @@ const views = [
   { value: "details", label: "Details" },
 ];
 
-// A region at another density nests KozmosTheme, which keeps the outer
-// theme; a nested ThemeProvider would start its own (system, unless given).
+// A region at another density is a DensityScope, which keeps the theme and
+// the design configuration around it. The columns wrap on a narrow screen.
 function DensityColumn({ density }: { density: ThemeDensity }) {
   return (
-    <KozmosTheme density={density}>
-      <Stack gap={3} style={{ width: 300 }}>
+    <DensityScope density={density}>
+      <Stack gap={3} style={{ width: 300, maxWidth: "100%" }}>
         <Text weight="semibold">
           {density === "touch" ? "Touch (default)" : "Compact"}
         </Text>
-        <Stack direction="row" gap={2} align="center">
+        <Stack direction="row" gap={2} align="center" wrap="wrap">
           <Button size="sm">Small</Button>
           <Button>Default</Button>
           <Button size="lg">Large</Button>
@@ -90,7 +90,7 @@ function DensityColumn({ density }: { density: ThemeDensity }) {
         <NumberInput label="Capacity" defaultValue={2} showSteppers />
         <PasswordInput label="Password" />
       </Stack>
-    </KozmosTheme>
+    </DensityScope>
   );
 }
 
@@ -101,7 +101,7 @@ function DensityColumn({ density }: { density: ThemeDensity }) {
  */
 export const Density: Story = {
   render: () => (
-    <Stack direction="row" gap={8} align="start">
+    <Stack direction="row" gap={8} align="start" wrap="wrap">
       <DensityColumn density="touch" />
       <DensityColumn density="compact" />
     </Stack>
