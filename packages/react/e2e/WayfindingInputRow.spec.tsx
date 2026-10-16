@@ -47,19 +47,13 @@ test("the rail keeps its ring round and its pin whole", async ({ mount }) => {
   expect(b.line).toEqual([7, 22, 2, rowHeight - 12 - 16 - 22]);
 });
 
+// In WebKit too. Safari 26.0 to 26.3 apply no @scope rule to an <input>, so
+// until GAP-174 the row's utilities lost to the input recipe there (44 high,
+// bordered, white) and this was an expected failure. The fields' geometry is
+// owned CSS now (.kozmos-wayfinding-input), which reaches an <input> anyway.
 test("the fields are 40 high and 8 apart, with the swap centred at their end", async ({
   mount,
-  browserName,
 }) => {
-  // WebKit before Safari 26.4 does not apply @scope rules to inputs, so the
-  // row's utilities (h-10, pe-12, border-none, shadow-raised, bg-muted/50)
-  // lose to the input recipe there: 44 high, bordered, white. Known, and pinned
-  // by the `test.fail` below: it fails loudly once WebKit is fixed, so the
-  // expectation can be dropped.
-  test.fail(
-    browserName === "webkit",
-    "WebKit < 26.4 drops @scope rules on inputs",
-  );
   const b = await measure(await mount(<WayfindingInputRowFixture />));
   expect(b.origin).toEqual([28, 0, 300, 40]);
   expect(b.destination).toEqual([28, 48, 300, 40]);
