@@ -50,12 +50,18 @@ function MapStandIn({ children }: { children: ReactNode }) {
   );
 }
 
-function Spot({ children }: { children: ReactNode }) {
+function Spot({
+  children,
+  width = 64,
+  at = "50%",
+}: {
+  children: ReactNode;
+  width?: number;
+  at?: number | string;
+}) {
   return (
-    <div style={{ position: "relative", width: 64, height: 8 }}>
-      <div style={{ position: "absolute", left: "50%", top: 0 }}>
-        {children}
-      </div>
+    <div style={{ position: "relative", width, height: 8 }}>
+      <div style={{ position: "absolute", left: at, top: 0 }}>{children}</div>
     </div>
   );
 }
@@ -76,6 +82,19 @@ function OnTheMap({ pins }: { pins: LocationPinProps[] }) {
 const onTheMap: Decorator = (Story) => (
   <MapStandIn>
     <Spot>
+      <Story />
+    </Spot>
+  </MapStandIn>
+);
+
+/**
+ * One pin with its words at its right, on a stretch of map wide enough to
+ * hold them: the pin 32 in, and the words, 192 at most, 4 beyond it. On the
+ * 64 spot the words ran off the map, and past a phone's 320 in a wide font.
+ */
+const onTheMapWithWordsAtTheRight: Decorator = (Story) => (
+  <MapStandIn>
+    <Spot width={248} at={32}>
       <Story />
     </Spot>
   </MapStandIn>
@@ -233,5 +252,5 @@ export const ExternalLabel: Story = {
     externalLabel: "Harbour Coffee Co.",
     labelPlacement: "right",
   },
-  decorators: [onTheMap],
+  decorators: [onTheMapWithWordsAtTheRight],
 };
