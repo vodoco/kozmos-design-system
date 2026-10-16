@@ -342,6 +342,15 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:theme-fill
           ADAPTIVE_BROWSER=firefox pnpm test:theme-fill
 
+      # Decision 71: LocationPin draws the SDK's map result markers, measured
+      # against the boards' SVGs, light and dark, with and without @scope
+      # (scripts/check-location-pin.mjs).
+      - name: Verify LocationPin Markers
+        run: |
+          pnpm test:location-pin
+          ADAPTIVE_BROWSER=webkit pnpm test:location-pin
+          ADAPTIVE_BROWSER=firefox pnpm test:location-pin
+
       # GAP-23: the token stylesheets write an alias as a reference. Every
       # token computes the value it was written as before, in a light and a
       # dark root, and one override of theme 500 through ThemeProvider's
@@ -353,6 +362,16 @@ jobs:
           pnpm test:token-references
           ADAPTIVE_BROWSER=webkit pnpm test:token-references
           ADAPTIVE_BROWSER=firefox pnpm test:token-references
+
+      # Decision 82: ThemeProvider's density. Touch keeps every control at
+      # today's size; compact draws buttons 32, 40 and 48, icon buttons 28,
+      # 32 and 40, and fields 40, in a nested touch root and a portal too, with
+      # and without @scope (scripts/check-density.mjs).
+      - name: Verify Density
+        run: |
+          pnpm test:density
+          ADAPTIVE_BROWSER=webkit pnpm test:density
+          ADAPTIVE_BROWSER=firefox pnpm test:density
 
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
@@ -451,13 +470,13 @@ jobs:
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:poi-details
           - name: Map, Search & Navigation (chromium)
             port: 6110
-            run: pnpm -w test:map-sheet && pnpm -w test:search-sheet && pnpm -w test:navigation
+            run: pnpm -w test:map-sheet && pnpm -w test:search-sheet && pnpm -w test:navigation && pnpm -w test:sdk-density
           - name: Map, Search & Navigation (firefox)
             port: 6111
-            run: ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:navigation
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:navigation && ADAPTIVE_BROWSER=firefox pnpm -w test:sdk-density
           - name: Map, Search & Navigation (webkit)
             port: 6112
-            run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation && ADAPTIVE_BROWSER=webkit pnpm -w test:sdk-density
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4

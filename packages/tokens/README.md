@@ -14,11 +14,21 @@ npm install @kozmos-ds/tokens
 ```css
 @import "@kozmos-ds/tokens/css/light.css";
 @import "@kozmos-ds/tokens/css/dark.css";
+@import "@kozmos-ds/tokens/css/density.css";
 ```
 
 The light file defines every variable on `:root`; the dark file redefines them
 under `[data-theme="dark"]`, so setting that attribute on `<html>` switches the
 theme.
+
+The density file holds the control sizes (decision 82), web only. Touch, the
+default, is on `:root` and on `[data-kozmos-density="touch"]`: buttons and text
+fields 44, icon buttons 44 and 48. Compact, for pointer-first desktop tools, is
+on `[data-kozmos-density="compact"]`: buttons 32, 40 and 48, icon buttons 28,
+32 and 40, text fields 40. The sizes are in rem (44 is `2.75rem`), so they follow
+the reader's font size. Either attribute sets the sizes for everything inside
+the element that carries it. `@kozmos-ds/react`'s `style.css` includes this
+file, and `ThemeProvider density` and `DensityScope` set the attribute.
 
 A token that is an alias of another is written as a reference to it:
 `--components-primary-buttons-themed-button-background-idle` is

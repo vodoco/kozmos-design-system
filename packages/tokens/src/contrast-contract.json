@@ -298,7 +298,7 @@
       "minimum": 3
     },
     {
-      "name": "the accent fill / its ink: the Featured tag and a featured pin (decision 68)",
+      "name": "the accent fill / its ink: the Featured tag (decision 68)",
       "background": "semantics-accent-fill",
       "foreground": "semantics-accent-on-fill",
       "minimum": 4.5
@@ -316,7 +316,7 @@
       "minimum": 4.5
     },
     {
-      "name": "the theme foreground on brand variant 1's 500, the accent pin's number (decision 63)",
+      "name": "the theme foreground on brand variant 1's 500 (decision 63)",
       "background": "primitives-colors-theme-variant-1-500",
       "foreground": "components-primary-buttons-themed-button-foreground-content-idle",
       "minimum": 4.5

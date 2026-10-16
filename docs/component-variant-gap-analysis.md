@@ -254,6 +254,8 @@ Closed:
   `heading()`.
 - **LocationPin** — `variant`, `size`, `labelPlacement` implemented on both
   natives, alongside the existing selected/featured/offFloor/disabled flags.
+  (Since Track 2, decisions 71 and 79–81, LocationPin draws the SDK's markers:
+  `variant`, `size`, `tint` and `offFloor` are gone on every platform.)
 - **FloorSelector** — `variant` (vertical-list, horizontal-list,
   compact-stepper) implemented on both natives.
 - **MapControlsGroup** — `locationPresentation` added on both natives, now
@@ -267,8 +269,8 @@ Remaining:
 
 1. **The Figma sets still absent** — the Figma list in §3, using the plugin lane already built.
    This subsumes the Figma "component/set absent" rows in §1.
-2. ~~LocationPin `size` in Figma~~ — done. The set now uses the two-axis matrix
-   builder: State x Size, 15 variants.
+2. ~~LocationPin `size` in Figma~~ — done, then superseded: since Track 2 the
+   set is Kind x State x Content, 7 variants (decisions 71, 79–81).
 3. **Naming normalisation** — `Kozmos`-prefix the unprefixed native enums
    (`AlertStatus`, `BadgeVariant`, `ChipSize`, `CounterTone`,
    `SegmentedControlSize`, `StackDirection`) and reconcile `AlertStatus.Error`

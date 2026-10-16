@@ -23,6 +23,7 @@ import {
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 /** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
 export type DirectionType = DirectionKind;
@@ -108,28 +109,31 @@ export interface DirectionStepProps extends React.HTMLAttributes<HTMLDivElement>
 const DirectionStep = React.forwardRef<HTMLDivElement, DirectionStepProps>(
   ({ className, type, instruction, distance, duration, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn(
-          "flex items-center p-3 bg-background border border-border rounded-container shadow-raised",
-          className,
-        )}
-        {...props}
-      >
-        <div className="flex shrink-0 items-center justify-center w-10 h-10 me-3 text-primary bg-primary/10 rounded-pill">
-          <DirectionIcon type={type} className="w-6 h-6" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-foreground">
-            <InstructionText instruction={instruction} />
-          </p>
-          {(distance || duration) && (
-            <p className="text-sm text-muted-foreground">
-              {[distance, duration].filter(Boolean).join(" • ")}
-            </p>
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          className={cn(
+            "flex items-center p-3 bg-background border border-border rounded-container shadow-raised",
+            className,
           )}
+          {...props}
+        >
+          <div className="flex shrink-0 items-center justify-center w-10 h-10 me-3 text-primary bg-primary/10 rounded-pill">
+            <DirectionIcon type={type} className="w-6 h-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-foreground">
+              <InstructionText instruction={instruction} />
+            </p>
+            {(distance || duration) && (
+              <p className="text-sm text-muted-foreground">
+                {[distance, duration].filter(Boolean).join(" • ")}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      </DensityScope>
     );
   },
 );

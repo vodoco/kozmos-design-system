@@ -89,7 +89,11 @@ export const PasswordInput = React.forwardRef<
             id={inputId}
             className={cn(
               inputVariants({ status: resolvedStatus }),
-              showToggle && "kozmos-password-with-toggle",
+              // Room for the toggle (decision 82): the utility beats a
+              // caller's px-*; the owned rule holds it where no @scope rule
+              // reaches an <input> (WebKit).
+              showToggle &&
+                "kozmos-password-with-toggle pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
               className,
             )}
             ref={ref}

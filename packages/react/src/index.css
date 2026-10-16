@@ -1,6 +1,7 @@
 /* Import Design Tokens */
 @import "@kozmos-ds/tokens/css/light.css";
 @import "@kozmos-ds/tokens/css/dark.css";
+@import "@kozmos-ds/tokens/css/density.css";
 @import "./styles/owned-components.css";
 /* After the Button's rules, which the map controls' own outweigh by order. */
 @import "./styles/owned-map-controls.css";

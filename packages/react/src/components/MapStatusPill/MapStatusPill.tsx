@@ -2,6 +2,7 @@ import React from "react";
 import { AlertTriangle, Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { SpinnerArc } from "../Spinner/SpinnerArc";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface MapStatusPillProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -71,30 +72,36 @@ const MapStatusPill = React.forwardRef<HTMLDivElement, MapStatusPillProps>(
     const mark = icon === undefined ? MARK[tone] : icon;
     const says = children != null && children !== false && children !== "";
     return (
-      <div
-        ref={ref}
-        // `kozmos-reset`, as the Button recipe carries it: without it the
-        // scoped compiler defaults, nearer by scope, reset the elevation the
-        // owned surface rule sets, and the pill cast no shadow.
-        className={cn(says && "kozmos-reset kozmos-map-status-pill", className)}
-        data-tone={tone}
-        role={live === "off" ? undefined : ROLE[live]}
-        {...props}
-      >
-        {says && mark != null && mark !== false && (
-          <span
-            aria-hidden="true"
-            className="kozmos-reset kozmos-map-status-pill-mark"
-          >
-            {mark}
-          </span>
-        )}
-        {says && (
-          <span className="kozmos-reset kozmos-map-status-pill-words">
-            {children}
-          </span>
-        )}
-      </div>
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          // `kozmos-reset`, as the Button recipe carries it: without it the
+          // scoped compiler defaults, nearer by scope, reset the elevation the
+          // owned surface rule sets, and the pill cast no shadow.
+          className={cn(
+            says && "kozmos-reset kozmos-map-status-pill",
+            className,
+          )}
+          data-tone={tone}
+          role={live === "off" ? undefined : ROLE[live]}
+          {...props}
+        >
+          {says && mark != null && mark !== false && (
+            <span
+              aria-hidden="true"
+              className="kozmos-reset kozmos-map-status-pill-mark"
+            >
+              {mark}
+            </span>
+          )}
+          {says && (
+            <span className="kozmos-reset kozmos-map-status-pill-words">
+              {children}
+            </span>
+          )}
+        </div>
+      </DensityScope>
     );
   },
 );

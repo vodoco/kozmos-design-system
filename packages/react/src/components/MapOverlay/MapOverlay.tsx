@@ -1,6 +1,7 @@
 import React from "react";
 import type { MapCollisionInsets } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface MapOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Use start/end corners to mirror with interface direction; left/right stay physical. */
@@ -113,25 +114,28 @@ const MapOverlay = React.forwardRef<HTMLDivElement, MapOverlayProps>(
     } as React.CSSProperties;
 
     return (
-      <div
-        ref={ref}
-        className={cn(
-          "pointer-events-none absolute z-50 flex flex-col gap-4",
-          positionClasses[position],
-          widthClasses[width],
-          className,
-        )}
-        style={insetStyle}
-        {...props}
-      >
-        {/* The stack scrolls when it is taller than the map leaves room for.
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <div
+          ref={ref}
+          className={cn(
+            "pointer-events-none absolute z-50 flex flex-col gap-4",
+            positionClasses[position],
+            widthClasses[width],
+            className,
+          )}
+          style={insetStyle}
+          {...props}
+        >
+          {/* The stack scrolls when it is taller than the map leaves room for.
             Its rule keeps the floating shadow's reach clear around what it
             holds, so the scroll box's clip no longer cuts a control's shadow
             and edge (GAP-082); see .kozmos-map-overlay-stack. */}
-        <div ref={stack} className="kozmos-reset kozmos-map-overlay-stack">
-          {children}
+          <div ref={stack} className="kozmos-reset kozmos-map-overlay-stack">
+            {children}
+          </div>
         </div>
-      </div>
+      </DensityScope>
     );
   },
 );

@@ -120,22 +120,70 @@
       "notes": "The search field's form once a quick-access category is chosen — the prototype's, measured on 2026-09-20 — in the field's place in the search row. The clear is a clearSize circle to see in a clearHitArea target to hit, as the search bar's clear beside it (ruled by Olcay, 2026-09-21); the field's trailing padding is 2, so the circle sits 8 from the edge, where the prototype measured it. In Figma the label is drawn Medium, the importer's nearest weight to semibold. Ruled by Olcay on 2026-09-21: the label and the clear's cross take foreground/0, since the category colour on its own wash failed 4.5:1 for seven of the eight tints; the icon is decorative (the label names what it shows) and hidden from assistive technology on every platform."
     },
     "locationPin": {
-      "sizes": {
-        "small": {
-          "diameter": 24
+      "source": "the SDK's map result markers (decision 71, GAP-120), from the MAP-474 boards' SVGs of 15 Oct 2026; products draw them from the map style's sprites (decision 81)",
+      "result": {
+        "height": 32,
+        "minWidth": 32,
+        "inset": 8,
+        "border": 2,
+        "pointer": {
+          "width": 12,
+          "height": 7,
+          "tipBelowPill": 6
         },
-        "default": {
-          "diameter": 32
+        "number": {
+          "fontSize": 14,
+          "fontWeight": 600
         },
-        "large": {
-          "diameter": 40
-        }
+        "dot": 8,
+        "colors": {
+          "rest": {
+            "fill": "background/0",
+            "border": "theme/600",
+            "ink": "theme/600"
+          },
+          "selected": {
+            "fill": "theme/600",
+            "border": "theme/600",
+            "ink": "foreground/1000"
+          }
+        },
+        "anchor": "the pointer's tip"
       },
-      "content": {
-        "tint": "optional category tint: its fill is the marker, solid, its onFill the number's ink, over the variant's; a featured pin keeps the alert colour",
-        "offFloor": "a hollow ring in the marker colour on background/0; the number takes foreground/0 (Olcay, 2026-09-21: the marker colour on white failed 4.5:1 for six tints); shape carries the state, and the pin is not dimmed",
-        "offFloorNumberColor": "foreground/0"
-      }
+      "featured": {
+        "tile": 44,
+        "tileSelected": 52,
+        "radius": 16,
+        "rim": 3,
+        "dot": 6,
+        "dotGap": 4,
+        "colors": {
+          "fill": "background/0",
+          "rim": "foreground/0",
+          "dot": "foreground/0"
+        },
+        "anchor": "the dot's centre"
+      },
+      "place": {
+        "teardrop": 40,
+        "tipBelowTop": 48.28,
+        "disc": 20,
+        "dot": 6,
+        "dotGap": 6,
+        "colors": {
+          "fill": "emotional/success/800",
+          "disc": "background/0",
+          "dot": "emotional/success/800"
+        },
+        "anchor": "the dot's centre"
+      },
+      "shadow": "md, 0 4 8 at 10% (40% dark), on the body only",
+      "target": {
+        "web": 44,
+        "ios": 44,
+        "android": 48
+      },
+      "removed": "variant, size, tint and offFloor (decisions 79, 80)"
     },
     "poiDetailPanel": {
       "presentations": ["inline", "sheet", "panel"],

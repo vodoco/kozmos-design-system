@@ -53,7 +53,7 @@ export function MotionRace() {
               }}
             >
               <Box className="site-runner">
-                <LocationPin label={`${duration} marker`} size="sm" />
+                <LocationPin label={`${duration} marker`} />
               </Box>
             </Box>
           </Box>

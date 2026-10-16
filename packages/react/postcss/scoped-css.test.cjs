@@ -160,3 +160,37 @@ test("legacy preflight excludes owned targets, including pseudo-elements, but ut
     /:where\(:scope input:not\(:where\(\.kozmos-reset\)\)\)/,
   );
 });
+
+// Decision 82: density.css sets the control sizes on :root (touch) and on a
+// [data-kozmos-density] provider. Like the theme tokens they belong on each
+// Kozmos root itself, outside @scope: wrapped as `:scope [data-kozmos-density]`
+// they would match only below a root, never the provider's own root, and
+// compact would never apply. Compact is any element marked compact, a
+// DensityScope's or a portalled popover's as well as a root's.
+test("density tokens land on each root and on any marked element", async () => {
+  const root = await compile(
+    ":root {--same:8px} [data-theme=\"dark\"] {--same:8px} :root, [data-kozmos-density='touch'] {--density-field-height-md:44px} [data-kozmos-density='compact'] {--density-field-height-md:40px} .h-field {height:var(--density-field-height-md)}",
+  );
+  const density = [];
+  root.walkDecls("--density-field-height-md", (d) =>
+    density.push([d.parent.parent === root, d.parent.selector, d.value]),
+  );
+  assert.deepEqual(density, [
+    [
+      true,
+      '[data-kozmos-root]:not([data-kozmos-density="compact"]), [data-kozmos-density="touch"]',
+      "44px",
+    ],
+    [true, '[data-kozmos-density="compact"]', "40px"],
+  ]);
+  // The theme pair is still recognised and shared.
+  const same = [];
+  root.walkDecls("--same", (d) => same.push(d.parent.selector));
+  assert.deepEqual(same, [
+    '[data-kozmos-root], [data-kozmos-root][data-theme="dark"]',
+  ]);
+  // Utilities that read the tokens stay bounded inside @scope.
+  const utility = [];
+  root.walkRules(":scope .h-field", (r) => utility.push(r.parent.name));
+  assert.deepEqual(utility, ["scope"]);
+});

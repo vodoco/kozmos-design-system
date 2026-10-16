@@ -11,6 +11,7 @@ import { Link } from "../Link";
 import { safeHref } from "../../utils/safe-href";
 import { cn } from "../../utils";
 import { MapInfoDialogTitle } from "./map-info-title";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface MapInfoEntry {
   id: string;
@@ -102,87 +103,93 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
       content.versions?.length,
     );
     return (
-      <section
-        ref={ref}
-        className={cn("kozmos-map-info-panel", className)}
-        aria-labelledby={DialogTitle ? undefined : headingId}
-        {...props}
-      >
-        <div className="kozmos-map-info-close">
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="icon"
-            aria-label={closeLabel}
-            onClick={onClose}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
-        <div className="kozmos-map-info-heading">
-          {brand != null && (
-            <div className="kozmos-map-info-brand">{brand}</div>
-          )}
-          {DialogTitle ? <DialogTitle>{heading}</DialogTitle> : heading}
-        </div>
-        {content.introduction && (
-          <p className="m-0 text-sm text-muted-foreground whitespace-pre-line">
-            {content.introduction}
-          </p>
-        )}
-        {!!content.faqs?.length && (
-          <div className="kozmos-map-info-faq">
-            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-              {faqLabel}
-            </h3>
-            <Accordion
-              type="single"
-              collapsible
-              value={expandedFAQ}
-              onValueChange={onExpandedFAQChange}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          className={cn("kozmos-map-info-panel", className)}
+          aria-labelledby={DialogTitle ? undefined : headingId}
+          {...props}
+        >
+          <div className="kozmos-map-info-close">
+            <Button
+              ref={closeButtonRef}
+              variant="ghost"
+              size="icon"
+              aria-label={closeLabel}
+              onClick={onClose}
             >
-              {content.faqs.map((faq) => (
-                <AccordionItem key={faq.id} value={faq.id}>
-                  <AccordionTrigger className="gap-3 text-start text-sm">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+              <X aria-hidden="true" />
+            </Button>
           </div>
-        )}
-        {footer && (
-          <footer className="kozmos-map-info-footer">
-            {!!content.credits?.length && (
-              <div>
-                <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  {copyrightLabel}
-                </h3>
-                <ul className="m-0 list-none p-0 text-sm">
-                  {content.credits.map((item) => (
+          <div className="kozmos-map-info-heading">
+            {brand != null && (
+              <div className="kozmos-map-info-brand">{brand}</div>
+            )}
+            {DialogTitle ? <DialogTitle>{heading}</DialogTitle> : heading}
+          </div>
+          {content.introduction && (
+            <p className="m-0 text-sm text-muted-foreground whitespace-pre-line">
+              {content.introduction}
+            </p>
+          )}
+          {!!content.faqs?.length && (
+            <div className="kozmos-map-info-faq">
+              <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                {faqLabel}
+              </h3>
+              <Accordion
+                type="single"
+                collapsible
+                value={expandedFAQ}
+                onValueChange={onExpandedFAQChange}
+              >
+                {content.faqs.map((faq) => (
+                  <AccordionItem key={faq.id} value={faq.id}>
+                    <AccordionTrigger className="gap-3 text-start text-sm">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground whitespace-pre-line">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
+          {footer && (
+            <footer className="kozmos-map-info-footer">
+              {!!content.credits?.length && (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                    {copyrightLabel}
+                  </h3>
+                  <ul className="m-0 list-none p-0 text-sm">
+                    {content.credits.map((item) => (
+                      <li key={item.id}>{entry(item)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!!content.links?.length && (
+                <ul className="m-0 flex flex-wrap gap-x-4 gap-y-2 list-none p-0 text-sm">
+                  {content.links.map((item) => (
                     <li key={item.id}>{entry(item)}</li>
                   ))}
                 </ul>
-              </div>
-            )}
-            {!!content.links?.length && (
-              <ul className="m-0 flex flex-wrap gap-x-4 gap-y-2 list-none p-0 text-sm">
-                {content.links.map((item) => (
-                  <li key={item.id}>{entry(item)}</li>
-                ))}
-              </ul>
-            )}
-            {content.versions?.map((version) => (
-              <p key={version.id} className="m-0 text-xs text-muted-foreground">
-                {version.label}: {version.value}
-              </p>
-            ))}
-          </footer>
-        )}
-      </section>
+              )}
+              {content.versions?.map((version) => (
+                <p
+                  key={version.id}
+                  className="m-0 text-xs text-muted-foreground"
+                >
+                  {version.label}: {version.value}
+                </p>
+              ))}
+            </footer>
+          )}
+        </section>
+      </DensityScope>
     );
   },
 );

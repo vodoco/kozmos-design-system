@@ -4,6 +4,7 @@ import { Link } from "../Link";
 import { safeHref } from "../../utils/safe-href";
 import { pointrLogo } from "./pointr-logo";
 import { MapShellAttributionCompactContext } from "../AdaptiveMapShell/map-shell-attribution";
+import { DensityScope } from "../../theme/DensityScope";
 
 /** Presentation data supplied by the host, in display order. IDs must be unique. */
 export interface MapAttributionCredit {
@@ -103,68 +104,74 @@ export const MapAttribution = React.forwardRef<
     }, [hasCredits]);
     if (!hasBrand && !hasCredits) return null;
     return (
-      <section
-        ref={ref}
-        aria-label={label}
-        data-appearance={appearance}
-        className={cn(
-          "kozmos-map-attribution max-w-full min-w-0 rounded-control text-center text-foreground",
-          appearance === "surface" ? "bg-background p-2" : "px-2 pt-2",
-          className,
-        )}
-        {...props}
-        {...(!hasCredits && brandBox)}
-        style={!hasCredits && compact ? { ...style, ...measuredOnly } : style}
-      >
-        {hasBrand && (
-          <div
-            className={cn("flex min-w-0 justify-center", hasCredits && "mb-1")}
-            {...(hasCredits && brandBox)}
-            style={
-              hasCredits && compact
-                ? {
-                    ...measuredOnly,
-                    paddingLeft: "inherit",
-                    paddingRight: "inherit",
-                  }
-                : undefined
-            }
-          >
-            {brand}
-          </div>
-        )}
-        {hasCredits && (
-          <div
-            ref={scrollRef}
-            className="kozmos-map-attribution-scroll"
-            {...(overflows
-              ? { tabIndex: 0, role: "group", "aria-label": label }
-              : { tabIndex: -1 })}
-          >
-            <ul className="m-0 flex w-max min-w-full list-none items-center justify-center gap-x-1 p-0">
-              {credits.map((credit) => {
-                const href = safeHref(credit.href);
-                return (
-                  <li key={credit.id} className="shrink-0 whitespace-nowrap">
-                    {href ? (
-                      <Link
-                        href={href}
-                        className="inline-flex items-center justify-center whitespace-nowrap text-foreground underline"
-                      >
-                        <bdi>{credit.label}</bdi>
-                      </Link>
-                    ) : (
-                      <span className="inline-flex items-center justify-center">
-                        <bdi>{credit.label}</bdi>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-      </section>
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          aria-label={label}
+          data-appearance={appearance}
+          className={cn(
+            "kozmos-map-attribution max-w-full min-w-0 rounded-control text-center text-foreground",
+            appearance === "surface" ? "bg-background p-2" : "px-2 pt-2",
+            className,
+          )}
+          {...props}
+          {...(!hasCredits && brandBox)}
+          style={!hasCredits && compact ? { ...style, ...measuredOnly } : style}
+        >
+          {hasBrand && (
+            <div
+              className={cn(
+                "flex min-w-0 justify-center",
+                hasCredits && "mb-1",
+              )}
+              {...(hasCredits && brandBox)}
+              style={
+                hasCredits && compact
+                  ? {
+                      ...measuredOnly,
+                      paddingLeft: "inherit",
+                      paddingRight: "inherit",
+                    }
+                  : undefined
+              }
+            >
+              {brand}
+            </div>
+          )}
+          {hasCredits && (
+            <div
+              ref={scrollRef}
+              className="kozmos-map-attribution-scroll"
+              {...(overflows
+                ? { tabIndex: 0, role: "group", "aria-label": label }
+                : { tabIndex: -1 })}
+            >
+              <ul className="m-0 flex w-max min-w-full list-none items-center justify-center gap-x-1 p-0">
+                {credits.map((credit) => {
+                  const href = safeHref(credit.href);
+                  return (
+                    <li key={credit.id} className="shrink-0 whitespace-nowrap">
+                      {href ? (
+                        <Link
+                          href={href}
+                          className="inline-flex items-center justify-center whitespace-nowrap text-foreground underline"
+                        >
+                          <bdi>{credit.label}</bdi>
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center justify-center">
+                          <bdi>{credit.label}</bdi>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+      </DensityScope>
     );
   },
 );

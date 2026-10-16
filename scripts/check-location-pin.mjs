@@ -1,0 +1,654 @@
+/**
+ * LocationPin draws the SDK's map result markers (decision 71, GAP-120), on
+ * the built React package in a real browser: measured against the SVGs the
+ * MAP-474 boards export (the zip of 15 Oct; .notes/track2), in a light and a
+ * dark root, left to right and right to left, with and without @scope.
+ *
+ * - A result: a pill 32 tall, at least 32 wide and its number's width plus 16,
+ *   a 2 border in theme 600 on background/0 (filled theme 600 under
+ *   foreground/1000 when selected), a pointer whose tip is 6 below the pill
+ *   and is the anchor. Without a number, an 8 dot.
+ * - A featured place: a 44 tile (52 selected) with a 3 rim in foreground/0 on
+ *   background/0, corners of 16, its logo inside; a 6 dot 4 below; the dot's
+ *   centre is the anchor.
+ * - A place on its own: a 40 teardrop in emotional success 800 round a 20
+ *   disc in background/0, on a 6 dot whose top is 6 below the circle; the
+ *   dot's centre is the anchor.
+ * - The md shadow on the body, a 44 target round a pressable marker.
+ *
+ *   pnpm --filter "@kozmos-ds/react..." build
+ *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-location-pin.mjs
+ */
+import { createRequire } from "node:module";
+import {
+  buildReactFixture,
+  launchFixtureBrowser,
+  settleLayout,
+} from "./lib/built-react-fixture.mjs";
+
+const { code, css } = await buildReactFixture("location-pin.fixture.tsx");
+const require = createRequire(`${process.cwd()}/packages/react/package.json`);
+const postcss = require("postcss");
+const unscoped = postcss.parse(css);
+unscoped.walkAtRules("scope", (rule) => rule.remove());
+
+const browser = await launchFixtureBrowser();
+const failures = [];
+let reads = 0;
+const near = (actual, expected, what, tolerance = 0.75) => {
+  reads += 1;
+  if (!(Math.abs(actual - expected) <= tolerance))
+    failures.push(`${what}: ${actual.toFixed(2)}, expected ${expected}`);
+};
+const same = (actual, expected, what) => {
+  reads += 1;
+  if (actual !== expected)
+    failures.push(`${what}: ${actual}, expected ${expected}`);
+};
+
+try {
+  for (const [mode, stylesheet] of [
+    ["full", css],
+    ["without-scope", unscoped.toString()],
+  ]) {
+    const page = await browser.newPage({
+      viewport: { width: 1000, height: 700 },
+    });
+    await page.setContent('<!doctype html><div id="fixture"></div>');
+    await page.addStyleTag({ content: stylesheet });
+    await page.addScriptTag({ content: code });
+    await page.locator("[data-pin]").first().waitFor();
+    await settleLayout(page);
+    const measured = await page.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      const rgb = (value) => {
+        context.clearRect(0, 0, 1, 1);
+        context.fillStyle = value;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)].join(",");
+      };
+      const token = (board, name) => {
+        const probe = document.createElement("span");
+        probe.style.color = `var(${name})`;
+        board.append(probe);
+        const value = rgb(getComputedStyle(probe).color);
+        probe.remove();
+        return value;
+      };
+      const out = {};
+      for (const board of document.querySelectorAll("[data-board]")) {
+        const key = board.dataset.board;
+        out[key] = {
+          tokens: {
+            theme600: token(board, "--primitives-colors-theme-600"),
+            background0: token(board, "--primitives-colors-background-0"),
+            foreground0: token(board, "--primitives-colors-foreground-0"),
+            foreground1000: token(board, "--primitives-colors-foreground-1000"),
+            success800: token(
+              board,
+              "--primitives-colors-emotional-success-800",
+            ),
+          },
+          pins: {},
+        };
+        for (const point of board.querySelectorAll("[data-point]")) {
+          const id = point.dataset.point.replace(`${key}-`, "");
+          const pin = board.querySelector(
+            `[data-pin="${point.dataset.point}"]`,
+          );
+          const p = point.getBoundingClientRect();
+          const box = (selector) => {
+            const node = selector ? pin.querySelector(selector) : pin;
+            if (!node) return null;
+            const r = node.getBoundingClientRect();
+            const s = getComputedStyle(node);
+            return {
+              left: r.left,
+              top: r.top,
+              width: r.width,
+              height: r.height,
+              bottom: r.bottom,
+              right: r.right,
+              background: rgb(s.backgroundColor),
+              color: rgb(s.color),
+              border: parseFloat(s.borderTopWidth),
+              borderColor: rgb(s.borderTopColor),
+              radius: parseFloat(s.borderTopLeftRadius),
+              fill: s.fill && s.fill !== "none" ? rgb(s.fill) : null,
+              filter: s.filter,
+              boxShadow: s.boxShadow,
+            };
+          };
+          const pinBox = pin.getBoundingClientRect();
+          const target =
+            pin.dataset.interactive !== undefined
+              ? (() => {
+                  // The target is 44 square round the body: presses 21 off
+                  // its centre, either way, still reach the pin.
+                  const cx = pinBox.left + pinBox.width / 2;
+                  const cy = pinBox.top + pinBox.height / 2;
+                  return [
+                    [cx - 21, cy],
+                    [cx + 21, cy],
+                    [cx, cy - 21],
+                    [cx, cy + 21],
+                  ].every(([x, y]) => {
+                    const hit = document.elementFromPoint(x, y);
+                    return Boolean(hit && pin.contains(hit));
+                  });
+                })()
+              : null;
+          // A marker nothing presses passes a press at its body's centre to
+          // what lies under it, as on iOS and Compose.
+          const body = pin.querySelector(".kozmos-location-pin-body");
+          const passes =
+            pin.dataset.interactive === undefined && body
+              ? (() => {
+                  const r = body.getBoundingClientRect();
+                  const hit = document.elementFromPoint(
+                    r.left + r.width / 2,
+                    r.top + r.height / 2,
+                  );
+                  // Something under the pin takes it: a probe off the page
+                  // finds nothing and would prove nothing.
+                  return Boolean(hit) && !pin.contains(hit);
+                })()
+              : null;
+          out[key].pins[id] = {
+            kind: pin.dataset.kind,
+            point: { x: p.left + 36, y: p.top },
+            pin: box(),
+            pill: box(".kozmos-location-pin-pill"),
+            pillDot: box(".kozmos-location-pin-pill-dot"),
+            pointer: box(".kozmos-location-pin-pointer"),
+            body: box(".kozmos-location-pin-body"),
+            tile: box(".kozmos-location-pin-tile"),
+            logo: box(".kozmos-location-pin-logo img"),
+            dot: box(".kozmos-location-pin-dot"),
+            teardrop: box(".kozmos-location-pin-teardrop"),
+            teardropPath: box(".kozmos-location-pin-teardrop > path"),
+            disc: box(".kozmos-location-pin-teardrop > circle"),
+            number:
+              pin.querySelector(".kozmos-location-pin-pill")?.textContent ??
+              null,
+            // The number's own width, as this browser's font draws it.
+            numberWidth: (() => {
+              const pill = pin.querySelector(".kozmos-location-pin-pill");
+              const text = [...(pill?.childNodes ?? [])].find(
+                (child) => child.nodeType === Node.TEXT_NODE,
+              );
+              if (!text) return null;
+              const range = document.createRange();
+              range.selectNodeContents(text);
+              return range.getBoundingClientRect().width;
+            })(),
+            target,
+            passes,
+            label: box(".kozmos-location-pin-label"),
+            labelWeight: (() => {
+              const label = pin.querySelector(".kozmos-location-pin-label");
+              return label ? getComputedStyle(label).fontWeight : null;
+            })(),
+          };
+        }
+      }
+      return out;
+    });
+
+    for (const [board, { tokens, pins }] of Object.entries(measured)) {
+      const at = (id, what) => `${mode} ${board} ${id}: ${what}`;
+      // The md shadow, as the boards draw it: black at 10% in light and 40% in
+      // dark, 4 down, 8 of blur, whether a box-shadow or a drop-shadow filter.
+      const alpha = board.startsWith("dark") ? 0.4 : 0.1;
+      const isMd = (value) => {
+        const colour = /rgba\(0, 0, 0, ([\d.]+)\)/.exec(value || "");
+        const lengths = (value || "")
+          .replace(/rgba?\([^)]*\)/g, "")
+          .match(/-?[\d.]+px/g);
+        return (
+          Boolean(colour) &&
+          Math.abs(parseFloat(colour[1]) - alpha) < 0.01 &&
+          Boolean(lengths) &&
+          parseFloat(lengths[0]) === 0 &&
+          parseFloat(lengths[1]) === 4 &&
+          parseFloat(lengths[2]) === 8
+        );
+      };
+      const noShadow = (m) =>
+        (m.filter === "none" || !m.filter) &&
+        (m.boxShadow === "none" || !m.boxShadow);
+      // A result: the pill on its pointer, anchored at the pointer's tip.
+      for (const id of [
+        "result-1",
+        "result-128",
+        "result-selected",
+        "dot",
+        "dot-selected",
+      ]) {
+        const m = pins[id];
+        if (!m.pill || !m.pointer) {
+          reads += 1;
+          failures.push(at(id, `no pill or pointer (kind ${m.kind})`));
+          continue;
+        }
+        const selected = id.endsWith("selected");
+        near(m.pill.height, 32, at(id, "pill height"));
+        reads += 1;
+        if (m.pill.width < 31.5)
+          failures.push(at(id, `pill ${m.pill.width} wide, under 32`));
+        same(m.pill.border, 2, at(id, "pill border"));
+        same(
+          m.pill.borderColor,
+          tokens.theme600,
+          at(id, "pill border colour (theme 600)"),
+        );
+        same(
+          m.pill.background,
+          selected ? tokens.theme600 : tokens.background0,
+          at(id, `pill fill (${selected ? "theme 600" : "background/0"})`),
+        );
+        const ink = selected ? tokens.foreground1000 : tokens.theme600;
+        same(
+          m.pillDot ? m.pillDot.background : m.pill.color,
+          ink,
+          at(
+            id,
+            `${m.pillDot ? "dot" : "number"} (${selected ? "foreground/1000" : "theme 600"})`,
+          ),
+        );
+        if (id.startsWith("dot")) {
+          near(m.pillDot?.width ?? 0, 8, at(id, "dot width"));
+        }
+        near(m.pointer.width, 12, at(id, "pointer width"));
+        near(
+          m.pointer.bottom - m.pill.bottom,
+          6,
+          at(id, "pointer tip below the pill"),
+        );
+        same(
+          m.pointer.fill,
+          tokens.theme600,
+          at(id, "pointer fill (theme 600)"),
+        );
+        near(
+          m.pointer.bottom,
+          m.point.y,
+          at(id, "anchor: the pointer's tip on the point (y)"),
+        );
+        near(
+          m.pointer.left + m.pointer.width / 2,
+          m.point.x,
+          at(id, "anchor: the pointer's tip on the point (x)"),
+        );
+        reads += 1;
+        if (!/drop-shadow/.test(m.body.filter) || !isMd(m.body.filter))
+          failures.push(
+            at(id, `no md shadow on the body (filter ${m.body.filter})`),
+          );
+      }
+      // The pill grows with its number: as wide as the number, as this
+      // browser's font draws it, and 8 more each side (a 2 border and 6), 32
+      // at least. A fixed "128 is 8 wider than 1" failed in Linux WebKit,
+      // whose digits are narrower (a 39.36 pill, right for its 23.36 number).
+      for (const id of ["result-1", "result-128"]) {
+        const m = pins[id];
+        if (!m?.pill || m.numberWidth == null) {
+          reads += 1;
+          failures.push(at(id, "no number in the pill to measure"));
+          continue;
+        }
+        near(
+          m.pill.width,
+          Math.max(32, m.numberWidth + 16),
+          at(
+            id,
+            `the pill is its number (${m.numberWidth.toFixed(2)}) and 8 each side, 32 at least`,
+          ),
+        );
+      }
+      reads += 1;
+      if (!(pins["result-128"].pill?.width > pins["result-1"].pill?.width))
+        failures.push(
+          `${mode} ${board}: the pill does not grow with its number (1: ${pins["result-1"].pill?.width}, 128: ${pins["result-128"].pill?.width})`,
+        );
+      // A featured place: its logo in the tile, on a dot.
+      for (const id of ["featured", "featured-selected"]) {
+        const m = pins[id];
+        if (!m.tile || !m.dot) {
+          reads += 1;
+          failures.push(at(id, `no tile or dot (kind ${m.kind})`));
+          continue;
+        }
+        const size = id === "featured" ? 44 : 52;
+        near(m.tile.width, size, at(id, "tile width"));
+        near(m.tile.height, size, at(id, "tile height"));
+        same(m.tile.border, 3, at(id, "rim"));
+        same(
+          m.tile.borderColor,
+          tokens.foreground0,
+          at(id, "rim colour (foreground/0)"),
+        );
+        same(
+          m.tile.background,
+          tokens.background0,
+          at(id, "tile fill (background/0)"),
+        );
+        near(m.tile.radius, 16, at(id, "tile corner"));
+        reads += 1;
+        if (
+          !m.logo ||
+          m.logo.width > size - 6 + 0.5 ||
+          m.logo.left < m.tile.left + 3 - 0.5
+        )
+          failures.push(
+            at(
+              id,
+              `the logo is not inside the rim (${JSON.stringify(m.logo && { left: m.logo.left - m.tile.left, width: m.logo.width })})`,
+            ),
+          );
+        near(m.dot.width, 6, at(id, "dot"));
+        near(m.dot.top - m.tile.bottom, 4, at(id, "dot 4 below the tile"));
+        same(
+          m.dot.background,
+          tokens.foreground0,
+          at(id, "dot colour (foreground/0)"),
+        );
+        near(
+          m.dot.top + 3,
+          m.point.y,
+          at(id, "anchor: the dot's centre on the point (y)"),
+        );
+        near(
+          m.dot.left + 3,
+          m.point.x,
+          at(id, "anchor: the dot's centre on the point (x)"),
+        );
+        reads += 1;
+        if (!isMd(m.tile.boxShadow))
+          failures.push(at(id, "no md shadow on the tile"));
+        same(m.number, null, at(id, "a featured tile shows no number"));
+      }
+      // A place on its own: the green pin, over featured and a number.
+      {
+        const m = pins.place;
+        if (!m.teardrop || !m.dot) reads += 1;
+        if (!m.teardrop || !m.dot)
+          failures.push(at("place", `no teardrop or dot (kind ${m.kind})`));
+        else {
+          same(m.kind, "place", at("place", "kind"));
+          near(m.teardrop.width, 40, at("place", "teardrop width"));
+          same(
+            m.teardropPath.fill,
+            tokens.success800,
+            at("place", "teardrop fill (success 800)"),
+          );
+          same(
+            m.disc.fill,
+            tokens.background0,
+            at("place", "disc fill (background/0)"),
+          );
+          near(m.disc.width, 20, at("place", "disc"));
+          near(m.dot.width, 6, at("place", "dot"));
+          same(
+            m.dot.background,
+            tokens.success800,
+            at("place", "dot colour (success 800)"),
+          );
+          near(
+            m.dot.top - (m.teardrop.top + 40),
+            6,
+            at("place", "dot 6 below the circle"),
+          );
+          near(
+            m.dot.top + 3,
+            m.point.y,
+            at("place", "anchor: the dot's centre on the point (y)"),
+          );
+          near(
+            m.dot.left + 3,
+            m.point.x,
+            at("place", "anchor: the dot's centre on the point (x)"),
+          );
+          reads += 1;
+          if (
+            !/drop-shadow/.test(m.teardrop.filter) ||
+            !isMd(m.teardrop.filter)
+          )
+            failures.push(at("place", "no md shadow on the teardrop"));
+        }
+      }
+      // The dots a tile and a place stand on carry no shadow.
+      for (const id of ["featured", "featured-selected", "place"]) {
+        reads += 1;
+        if (pins[id].dot && !noShadow(pins[id].dot))
+          failures.push(
+            at(
+              id,
+              `the dot carries a shadow (${pins[id].dot.filter}; ${pins[id].dot.boxShadow})`,
+            ),
+          );
+      }
+      // A marker nothing presses lets a press through to the map, and so
+      // does a disabled one with an action (review, 16 Oct).
+      for (const id of ["dot", "featured-selected", "result-disabled"]) {
+        reads += 1;
+        if (pins[id].passes !== true)
+          failures.push(
+            at(id, "a static marker takes the press at its centre"),
+          );
+      }
+      // The words beside a marker: 4 from it, centred on its shape.
+      {
+        const m = pins["result-128"];
+        if (!m.label) failures.push(at("result-128", "no label"));
+        else {
+          near(
+            m.label.top + m.label.height / 2,
+            m.pill.top + m.pill.height / 2,
+            at("result-128", "a label at the side is centred on the pill"),
+          );
+          near(
+            m.label.left - m.pin.right,
+            4,
+            at("result-128", "a label at the side is 4 from the marker"),
+          );
+          // Semibold on every platform (16 Oct); Figma draws it Medium. A
+          // utility: a browser without @scope has no Kozmos utilities at all
+          // (docs/embedding-isolation.md), so only that pass reads it.
+          if (mode !== "without-scope" && m.labelWeight !== "600") {
+            failures.push(
+              at("result-128", `the label is weight ${m.labelWeight}, not 600`),
+            );
+          }
+        }
+        const f = pins["featured-selected"];
+        if (!f.label) failures.push(at("featured-selected", "no label"));
+        else {
+          near(
+            f.label.top + f.label.height / 2,
+            f.tile.top + f.tile.height / 2,
+            at(
+              "featured-selected",
+              "a label at the side is centred on the tile",
+            ),
+          );
+          near(
+            f.pin.left - f.label.right,
+            4,
+            at("featured-selected", "a label at the side is 4 from the marker"),
+          );
+        }
+      }
+      // A 44 target round a pressable marker: the pill on its pointer is 38
+      // tall and the teardrop 40 wide, so a press 21 off their centre lands
+      // outside the body and must still reach the marker.
+      for (const id of ["result-1", "place"]) {
+        reads += 1;
+        if (pins[id].target !== true)
+          failures.push(at(id, "a press 21 off the marker's centre misses it"));
+      }
+    }
+    // A double click on a marker that opens stops at it, so a map that zooms
+    // on double click (listening above the pin) doesn't zoom as well; one on
+    // a marker that only presses still reaches the map (review, 16 Oct).
+    for (const [id, reaches] of [
+      ["result-1", false],
+      ["featured", true],
+    ]) {
+      const pin = page.locator(`[data-pin="light-ltr-${id}"]`);
+      await page.evaluate(() => {
+        window.__mapDoubleClicks = 0;
+        document.addEventListener(
+          "dblclick",
+          () => {
+            window.__mapDoubleClicks += 1;
+          },
+          { once: true },
+        );
+      });
+      const box = await pin.locator(".kozmos-location-pin-body").boundingBox();
+      await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+      const count = await page.evaluate(() => window.__mapDoubleClicks);
+      reads += 1;
+      if (count > 0 !== reaches)
+        failures.push(
+          `${mode} light-ltr ${id}: a double click ${count > 0 ? "reached" : "did not reach"} the map, expected it ${reaches ? "to" : "not to"}`,
+        );
+    }
+    await page.close();
+
+    // A touch double tap on a marker that opens, on a map: MapLibre's tap
+    // recognizer, played on the board as it listens on its container. A
+    // second touchend within 500 ms (MAX_TAP_INTERVAL) zooms and cancels the
+    // tap's click. Measured with MapLibre GL 4.7.1 itself on 16 Oct, in
+    // Chromium and WebKit: before the pin kept its second tap, the map zoomed
+    // and the pin never opened. A double tap on the bare board zooms, or this
+    // would prove nothing.
+    const touch = await browser.newContext({
+      hasTouch: true,
+      viewport: { width: 1000, height: 700 },
+    });
+    const tapPage = await touch.newPage();
+    await tapPage.setContent('<!doctype html><div id="fixture"></div>');
+    await tapPage.addStyleTag({ content: stylesheet });
+    await tapPage.addScriptTag({ content: code });
+    await tapPage.locator("[data-pin]").first().waitFor();
+    await settleLayout(tapPage);
+    await tapPage.evaluate(() => {
+      const map = document.querySelector('[data-board="light-ltr"]');
+      window.mapZooms = 0;
+      window.pinOpens = 0;
+      let lastTapEnd = -Infinity;
+      map.addEventListener("touchend", (event) => {
+        if (event.timeStamp - lastTapEnd < 500) {
+          window.mapZooms += 1;
+          event.preventDefault();
+          lastTapEnd = -Infinity;
+        } else {
+          lastTapEnd = event.timeStamp;
+        }
+      });
+    });
+    const doubleTap = async (x, y) => {
+      await tapPage.touchscreen.tap(x, y);
+      await tapPage.waitForTimeout(80);
+      await tapPage.touchscreen.tap(x, y);
+      await tapPage.waitForTimeout(400);
+    };
+    const tapBox = await tapPage
+      .locator('[data-pin="light-ltr-result-1"] .kozmos-location-pin-body')
+      .boundingBox();
+    await doubleTap(tapBox.x + tapBox.width / 2, tapBox.y + tapBox.height / 2);
+    const onPin = await tapPage.evaluate(() => ({
+      zooms: window.mapZooms,
+      opens: window.pinOpens,
+    }));
+    // A slow second tap, 400 ms on: past the double-tap time (300), so an
+    // ordinary press, but inside MapLibre's 500, so the pin still keeps it
+    // and the map doesn't zoom.
+    await tapPage.waitForTimeout(700);
+    const centre = [tapBox.x + tapBox.width / 2, tapBox.y + tapBox.height / 2];
+    await tapPage.touchscreen.tap(...centre);
+    await tapPage.waitForTimeout(400);
+    await tapPage.touchscreen.tap(...centre);
+    await tapPage.waitForTimeout(400);
+    const slow = await tapPage.evaluate(() => ({
+      zooms: window.mapZooms,
+      opens: window.pinOpens,
+    }));
+    reads += 2;
+    if (slow.opens !== onPin.opens)
+      failures.push(
+        `${mode} light-ltr result-1: a second tap 400 ms on opened it; past the double-tap time it is an ordinary press`,
+      );
+    if (slow.zooms !== onPin.zooms)
+      failures.push(
+        `${mode} light-ltr result-1: a second tap 400 ms on zoomed the map`,
+      );
+    const boardBox = await tapPage
+      .locator('[data-board="light-ltr"]')
+      .boundingBox();
+    await doubleTap(boardBox.x + 8, boardBox.y + 8);
+    const bare = await tapPage.evaluate(() => window.mapZooms - 0);
+    // The bare board's zoom is counted against the slow taps' total too.
+    onPin.zooms = slow.zooms;
+    reads += 3;
+    if (onPin.opens !== 1)
+      failures.push(
+        `${mode} light-ltr result-1: a touch double tap opened it ${onPin.opens} times on a map, expected once`,
+      );
+    if (onPin.zooms !== 0)
+      failures.push(
+        `${mode} light-ltr result-1: a touch double tap on it zoomed the map`,
+      );
+    if (bare - onPin.zooms !== 1)
+      failures.push(
+        `${mode}: a touch double tap on the bare map zoomed it ${bare - onPin.zooms} times, expected once: the model map is blind`,
+      );
+    await touch.close();
+
+    // Windows' high contrast repaints a background with the system's: a
+    // selected pill, filled with theme 600, would look like one at rest. It
+    // keeps the system's highlight. Only Chromium emulates forced colours.
+    if ((process.env.ADAPTIVE_BROWSER ?? "chromium") === "chromium") {
+      const contrast = await browser.newPage({
+        viewport: { width: 1000, height: 700 },
+      });
+      await contrast.emulateMedia({ forcedColors: "active" });
+      await contrast.setContent('<!doctype html><div id="fixture"></div>');
+      await contrast.addStyleTag({ content: stylesheet });
+      await contrast.addScriptTag({ content: code });
+      await contrast.locator("[data-pin]").first().waitFor();
+      const fills = await contrast.evaluate(() =>
+        ["result-1", "result-selected"].map(
+          (id) =>
+            getComputedStyle(
+              document.querySelector(
+                `[data-pin="light-ltr-${id}"] .kozmos-location-pin-pill`,
+              ),
+            ).backgroundColor,
+        ),
+      );
+      reads += 1;
+      if (fills[0] === fills[1])
+        failures.push(
+          `${mode} light-ltr: in forced colours a selected pill's fill is a pill's at rest (${fills[1]})`,
+        );
+      await contrast.close();
+    }
+  }
+} finally {
+  await browser.close();
+}
+
+if (failures.length) {
+  console.error(
+    `FAIL LocationPin markers (decision 71): ${failures.length} of ${reads} reads\n- ${failures.slice(0, 60).join("\n- ")}`,
+  );
+  process.exit(1);
+}
+console.log(
+  `PASS LocationPin markers (decision 71): ${reads} reads — the result pill (32 tall, at least 32 wide and growing with its number, a 2 border in theme 600, filled when selected), its pointer's tip 6 below and on the point, the dot without a number; the featured tile (44, 52 selected, a 3 rim in foreground/0, corners of 16, the logo inside) on a dot 4 below whose centre is the point; the place's green teardrop of 40 round a disc of 20 on a dot 6 below; the md shadow on each body (inside a design configuration too), a Semibold label 4 from the marker and centred on it at the side, and a 44 target, in light and dark, left to right and right to left, with and without @scope; a double click and a touch double tap open the pin without zooming a map, and a slow second tap neither opens it nor zooms; a wrapped logo fits the tile; a selected pill stays distinct in forced colours`,
+);

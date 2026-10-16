@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface NavigationAnnouncerProps {
   message: string;
@@ -35,14 +36,17 @@ const NavigationAnnouncer: React.FC<NavigationAnnouncerProps> = ({
   }, [message, isActive, trackEvent]);
 
   return (
-    <div
-      className="sr-only"
-      aria-live="assertive"
-      aria-atomic="true"
-      role="alert"
-    >
-      {announcement}
-    </div>
+    // The SDK's touch geometry under any density (decision 89).
+    <DensityScope density="touch" asChild>
+      <div
+        className="sr-only"
+        aria-live="assertive"
+        aria-atomic="true"
+        role="alert"
+      >
+        {announcement}
+      </div>
+    </DensityScope>
   );
 };
 

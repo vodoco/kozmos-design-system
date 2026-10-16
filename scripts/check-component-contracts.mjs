@@ -795,30 +795,60 @@ assertContains(
 );
 const ownedCssPath = "packages/react/src/styles/owned-components.css";
 const ownedCss = read(ownedCssPath);
+// Decision 82: the sizes read ThemeProvider's density. The recipes name the
+// density's keys, and the touch tokens hold the native platforms' 44 and 48,
+// so a product's touch Button is the SwiftUI and Compose one.
 for (const [size, classes] of [
-  ["default", "h-11 px-4 py-2"],
-  ["sm", "h-11 rounded-control px-3"],
-  ["icon", "h-11 w-11"],
+  ["default", "h-control px-4 py-2"],
+  ["sm", "h-control-sm rounded-control px-3"],
+  ["lg", "h-control-lg rounded-control px-8"],
+  ["icon", "h-icon-control w-icon-control"],
 ]) {
   assertContains(
     ownedCssPath,
     ownedCss,
     new RegExp(`\\.kozmos-button-size-${size}\\s*\\{\\s*@apply ${classes};`),
-    `44px ${size} Button recipe`,
+    `density ${size} Button recipe`,
   );
 }
 assertContains(
   files.reactIconButton,
   source.reactIconButton,
-  "h-11 w-11 px-0",
-  "44px IconButton root class",
+  'return "h-icon-control w-icon-control px-0"',
+  "IconButton root class at the density's size",
 );
 assertContains(
   files.reactIconButton,
   source.reactIconButton,
-  'if (size === "lg") return "h-12 w-12 px-0',
-  "48px IconButton large size",
+  '"h-icon-control-lg w-icon-control-lg px-0',
+  "IconButton large size at the density's size",
 );
+const densityTokens = (density) =>
+  JSON.parse(read(`packages/tokens/src/tokens-density-${density}.json`))
+    .Density;
+for (const [density, expected] of [
+  ["touch", { control: [44, 44, 44], iconControl: [44, 44, 48], field: 44 }],
+  ["compact", { control: [32, 40, 48], iconControl: [28, 32, 40], field: 40 }],
+]) {
+  const tokens = densityTokens(density);
+  // In rem, so a control follows the reader's font size; 16 to the rem.
+  const px = (token) => {
+    if (!/^\d+(\.\d+)?rem$/.test(token.$value))
+      fail(
+        `packages/tokens/src/tokens-density-${density}.json: ${token.$value} is not in rem (decision 82)`,
+      );
+    return Number.parseFloat(token.$value) * 16;
+  };
+  const got = {
+    control: ["sm", "md", "lg"].map((k) => px(tokens.Control.Height[k])),
+    iconControl: ["sm", "md", "lg"].map((k) => px(tokens.IconControl.Size[k])),
+    field: px(tokens.Field.Height.md),
+  };
+  if (JSON.stringify(got) !== JSON.stringify(expected))
+    fail(
+      `packages/tokens/src/tokens-density-${density}.json: ${JSON.stringify(got)}, expected ${JSON.stringify(expected)} (decision 82)`,
+    );
+}
 assertContains(
   files.androidIconButton,
   source.androidIconButton,
@@ -973,8 +1003,8 @@ const ownedInput = ownedCss.match(/\.kozmos-input\s*\{([^}]*)\}/)?.[1] ?? "";
 assertContains(
   ownedCssPath,
   ownedInput,
-  "h-11",
-  "React Input 44px field height",
+  "h-field",
+  "React Input at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
   ownedCssPath,
@@ -1011,8 +1041,8 @@ assertContains(
 assertContains(
   files.reactSelect,
   source.reactSelect,
-  "flex h-11 w-full",
-  "React SelectTrigger 44px field height",
+  "flex h-field w-full",
+  "React SelectTrigger at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
   files.reactSlider,
@@ -2193,12 +2223,30 @@ assertContains(
     );
     // The target contract belongs to Core now, not copied utility classes in
     // the SDK field. Keep asserting the same dimensions at their actual owner.
+    // Decision 82: IconButton reads the density's size, and CategoryField's
+    // root is a touch DensityScope, where that size is the target.
     assertContains(
       files.reactIconButton,
       source.reactIconButton,
-      `return "h-${twips(hit)} w-${twips(hit)} px-0"`,
-      `Core IconButton supplies CategoryField clear target ${hit}`,
+      'return "h-icon-control w-icon-control px-0"',
+      "Core IconButton supplies CategoryField clear target at the density's size",
     );
+    assertContains(
+      files.reactCategoryField,
+      source.reactCategoryField,
+      '<DensityScope density="touch" asChild>',
+      "React CategoryField keeps the SDK's touch geometry under any density",
+    );
+    {
+      const touch = JSON.parse(
+        read("packages/tokens/src/tokens-density-touch.json"),
+      ).Density.IconControl.Size.md.$value;
+      // The token is rem, 16 to the rem.
+      if (!touch.endsWith("rem") || Number.parseFloat(touch) * 16 !== hit)
+        fail(
+          `packages/tokens/src/tokens-density-touch.json: the touch icon control is ${touch}, but CategoryField's clear target is ${hit}`,
+        );
+    }
     assertContains(
       files.reactCategoryField,
       source.reactCategoryField,
@@ -6776,8 +6824,8 @@ assertContains(
 assertContains(
   ownedNativeFieldsPath,
   ownedNativeFields.match(/\.kozmos-field-action\s*\{([^}]*)\}/)?.[1] ?? "",
-  "h-11 w-11",
-  "React PasswordInput visibility toggle keeps 44px target",
+  "h-field w-field",
+  "React PasswordInput visibility toggle is as tall as the field (44 touch, 40 compact)",
 );
 assertContains(
   files.iosPasswordInput,
@@ -9840,131 +9888,158 @@ if (counter.fill) {
   );
 }
 
-// LocationPin: a tint for the marker, over the variant's colour; featured still
-// wins, in the accent (decision 68).
-if (locationPin.content.tint) {
+// LocationPin is the SDK's map result markers (decisions 71, 79-81) on every
+// platform: a result's pill on a pointer, a featured logo tile on a dot, a
+// place's green pin on a dot; place wins over featured and number; theme 600,
+// background/0, foreground/0, foreground/1000 and emotional success 800; a
+// double tap opens through the platform's gate. The teardrop's variants,
+// tints, sizes and off-floor state are gone everywhere.
+{
+  const pin = locationPin;
+  if (
+    !pin.result ||
+    pin.result.height !== 32 ||
+    pin.result.pointer.tipBelowPill !== 6 ||
+    pin.featured.tile !== 44 ||
+    pin.featured.tileSelected !== 52 ||
+    pin.place.teardrop !== 40
+  )
+    fail(
+      "packages/tokens/src/component-contracts.json: locationPin is not the SDK's markers (decision 71)",
+    );
+  // React: the kind, the owned geometry and colours, the shared gate.
   assertContains(
-    files.iosLocationPin,
-    source.iosLocationPin,
-    /if featured \{ return KozmosColors\.semanticsAccentFill \}\s+if let tint \{ return tint\.fill\.fill \}/,
-    "iOS LocationPin tint after featured",
+    files.reactLocationPin,
+    source.reactLocationPin,
+    'place ? "place" : featured ? "featured" : "result"',
+    "React LocationPin: place wins over featured, featured over a result",
   );
   assertContains(
     files.reactLocationPin,
     source.reactLocationPin,
-    "Boolean(tint) && !featured",
-    "React LocationPin tint unless featured",
+    "useDoubleTapGate",
+    "React LocationPin opens through the shared double-tap gate",
+  );
+  for (const [pattern, label] of [
+    [
+      /\.kozmos-location-pin \.kozmos-location-pin-pill \{[^}]*height: 32px;[^}]*min-width: 32px;[^}]*border: 2px solid var\(--primitives-colors-theme-600\)/,
+      "the pill: 32 tall, 32 wide at least, a 2 border of theme 600",
+    ],
+    [
+      /\[data-selected\] \.kozmos-location-pin-pill \{\s*background-color: var\(--primitives-colors-theme-600\);\s*color: var\(--primitives-colors-foreground-1000\);/,
+      "a selected pill: theme 600 under foreground/1000",
+    ],
+    [
+      /\.kozmos-location-pin \.kozmos-location-pin-tile \{[^}]*width: 44px;[^}]*border: 3px solid var\(--primitives-colors-foreground-0\);[^}]*border-radius: 16px;/,
+      "the featured tile: 44, a 3 rim of foreground/0, corners of 16",
+    ],
+    [
+      /\.kozmos-location-pin-teardrop > path \{\s*fill: var\(--primitives-colors-emotional-success-800\);/,
+      "the place's teardrop: emotional success 800",
+    ],
+  ])
+    assertContains(
+      ownedCssPath,
+      ownedCss,
+      pattern,
+      `React LocationPin ${label}`,
+    );
+  for (const removed of ["variant?:", "size?:", "tint?:", "offFloor?:"])
+    assertNotContains(
+      files.reactLocationPin,
+      source.reactLocationPin,
+      removed,
+      `React LocationPin no longer takes ${removed.replace("?:", "")} (decisions 79, 80)`,
+    );
+  // SwiftUI.
+  assertContains(
+    files.iosLocationPin,
+    source.iosLocationPin,
+    "if place { return .place }",
+    "iOS LocationPin: place wins",
+  );
+  assertContains(
+    files.iosLocationPin,
+    source.iosLocationPin,
+    "KozmosDoubleTapGate",
+    "iOS LocationPin opens through KozmosDoubleTapGate",
+  );
+  for (const [pattern, label] of [
+    [
+      /Capsule\(\)\.fill\(selected \? KozmosColors\.primitivesColorsTheme600 : KozmosColors\.primitivesColorsBackground0\)/,
+      "the pill: theme 600 when selected, else background/0",
+    ],
+    [
+      /strokeBorder\(KozmosColors\.primitivesColorsForeground0, lineWidth: Metrics\.rim\)/,
+      "the featured tile's rim: foreground/0",
+    ],
+    [
+      /KozmosColors\.primitivesColorsEmotionalSuccess800/,
+      "the place: emotional success 800",
+    ],
+  ])
+    assertContains(
+      files.iosLocationPin,
+      source.iosLocationPin,
+      pattern,
+      `iOS LocationPin ${label}`,
+    );
+  for (const removed of [
+    "KozmosLocationPinVariant",
+    "KozmosLocationPinSize",
+    "offFloor",
+  ])
+    assertNotContains(
+      files.iosLocationPin,
+      source.iosLocationPin,
+      removed,
+      `iOS LocationPin no longer has ${removed} (decisions 79, 80)`,
+    );
+  // Compose.
+  assertContains(
+    files.androidLocationPin,
+    source.androidLocationPin,
+    "place -> MarkerKind.Place",
+    "Android LocationPin: place wins",
   );
   assertContains(
     files.androidLocationPin,
     source.androidLocationPin,
-    /featured -> KozmosThemeTokens\.semanticsAccentFill\s+tint != null -> tint\.fill\.fill/,
-    "Android LocationPin tint after featured",
+    "KozmosResultTapGate",
+    "Android LocationPin opens through KozmosResultTapGate",
   );
+  for (const [pattern, label] of [
+    [
+      /val fill = if \(selected\) theme600 else KozmosThemeTokens\.primitivesColorsBackground0/,
+      "the pill: theme 600 when selected, else background/0",
+    ],
+    [
+      /val rim = KozmosThemeTokens\.primitivesColorsForeground0/,
+      "the featured tile's rim: foreground/0",
+    ],
+    [
+      /val green = KozmosThemeTokens\.primitivesColorsEmotionalSuccess800/,
+      "the place: emotional success 800",
+    ],
+  ])
+    assertContains(
+      files.androidLocationPin,
+      source.androidLocationPin,
+      pattern,
+      `Android LocationPin ${label}`,
+    );
+  for (const removed of [
+    "KozmosLocationPinVariant",
+    "KozmosLocationPinSize",
+    "offFloor",
+  ])
+    assertNotContains(
+      files.androidLocationPin,
+      source.androidLocationPin,
+      removed,
+      `Android LocationPin no longer has ${removed} (decisions 79, 80)`,
+    );
 }
-
-// LocationPin off the floor: a hollow ring on the background, the number in
-// foreground/0, not dimmed (ruled 2026-09-21).
-if (locationPin.content.offFloorNumberColor === "foreground/0") {
-  assertContains(
-    files.iosLocationPin,
-    source.iosLocationPin,
-    "if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }",
-    "iOS LocationPin off-floor number in foreground/0",
-  );
-  assertContains(
-    files.androidLocationPin,
-    source.androidLocationPin,
-    "offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0",
-    "Android LocationPin off-floor number in foreground/0",
-  );
-  assertContains(
-    files.reactLocationPin,
-    source.reactLocationPin,
-    'outlined ? "fill-background" : "fill-current"',
-    "React LocationPin solid when filled, hollow off the floor and at rest",
-  );
-  assertContains(
-    files.reactLocationPin,
-    source.reactLocationPin,
-    /offFloor \|\| \(quiet && tinted\)\s*\?\s*"text-foreground"/,
-    "React LocationPin off-floor number in the foreground",
-  );
-  assertNotContains(
-    files.reactLocationPin,
-    source.reactLocationPin,
-    'offFloor && "opacity-50"',
-    "React LocationPin dimming off the floor",
-  );
-  assertContains(
-    files.figma,
-    source.figma,
-    /const LOCATION_PIN_OFF_FLOOR_INK = \{\s*name: "Colors\/foreground\/0",/,
-    "Figma LocationPin off-floor ink is foreground/0",
-  );
-  assertContains(
-    files.figma,
-    source.figma,
-    "colorToken: offFloor ? LOCATION_PIN_OFF_FLOOR_INK.name : ink.name,",
-    "Figma LocationPin off-floor number takes that ink",
-  );
-}
-
-// LocationPin numbered at rest (decision 55, 2026-09-29): quiet — the
-// outlined marker, its ring and number in its colour — and filled only when
-// selected; a featured pin, a pin showing markerContent (on every platform
-// since decision 68) and a pin with no number keep their fill. Off the floor
-// the outlined marker's ring is dashed, so the two never read alike, and on
-// iOS and Compose the primary's ring and number take the theme's text role
-// (theme/500 reads 3.74:1 on the dark surface).
-assertContains(
-  files.reactLocationPin,
-  source.reactLocationPin,
-  /const quiet =\s*markerContent == null &&\s*number != null &&\s*!selected &&\s*!featured &&\s*!offFloor/,
-  "React LocationPin quiet only for a numbered pin at rest on the floor",
-);
-assertContains(
-  files.reactLocationPin,
-  source.reactLocationPin,
-  'offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]"',
-  "React LocationPin off-floor ring dashed",
-);
-assertContains(
-  files.iosLocationPin,
-  source.iosLocationPin,
-  "number != nil && markerContent == nil && !selected && !featured && !offFloor",
-  "iOS LocationPin quiet only for a numbered pin at rest on the floor",
-);
-assertContains(
-  files.iosLocationPin,
-  source.iosLocationPin,
-  "guard offFloor else { return StrokeStyle(lineWidth: width) }",
-  "iOS LocationPin off-floor ring dashed",
-);
-assertContains(
-  files.iosLocationPin,
-  source.iosLocationPin,
-  "case .primary: return KozmosColors.semanticsEmotionThemedText",
-  "iOS LocationPin primary outline in the theme's text role",
-);
-assertContains(
-  files.androidLocationPin,
-  source.androidLocationPin,
-  "val quiet = number != null && markerContent == null && !selected && !featured && !offFloor",
-  "Android LocationPin quiet only for a numbered pin at rest on the floor",
-);
-assertContains(
-  files.androidLocationPin,
-  source.androidLocationPin,
-  "val dashes = if (offFloor) {",
-  "Android LocationPin off-floor ring dashed",
-);
-assertContains(
-  files.androidLocationPin,
-  source.androidLocationPin,
-  "variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.semanticsEmotionThemedText",
-  "Android LocationPin primary outline in the theme's text role",
-);
 
 // POIDetailPanel: in a sheet, no surface of its own.
 if (
@@ -11425,14 +11500,40 @@ for (const [file, symbols] of [
   );
   const swift = "packages/ios/Sources/Components/Progress/Progress.swift";
   const swiftContent = read(swift);
-  assertNotContains(swift, swiftContent, "tint: .blue", "SwiftUI Progress drawing SwiftUI's blue");
-  assertNotContains(swift, swiftContent, "primitivesColorsTheme500", "SwiftUI Progress drawing theme 500, not React's 600");
-  assertContains(swift, swiftContent, ".tint(KozmosColors.primitivesColorsTheme600)", "SwiftUI Progress drawing React's primary");
-  const kotlin = "packages/android/src/main/java/com/kozmos/components/Progress/Progress.kt";
+  assertNotContains(
+    swift,
+    swiftContent,
+    "tint: .blue",
+    "SwiftUI Progress drawing SwiftUI's blue",
+  );
+  assertNotContains(
+    swift,
+    swiftContent,
+    "primitivesColorsTheme500",
+    "SwiftUI Progress drawing theme 500, not React's 600",
+  );
+  assertContains(
+    swift,
+    swiftContent,
+    ".tint(KozmosColors.primitivesColorsTheme600)",
+    "SwiftUI Progress drawing React's primary",
+  );
+  const kotlin =
+    "packages/android/src/main/java/com/kozmos/components/Progress/Progress.kt";
   const kotlinContent = read(kotlin);
   const bar = kotlinContent.slice(kotlinContent.indexOf("fun KozmosProgress("));
-  assertContains(kotlin, bar, "color = KozmosThemeTokens.primitivesColorsTheme600", "Compose Progress drawing React's primary");
-  assertContains(kotlin, bar, "trackColor = KozmosThemeTokens.primitivesColorsBackground200", "Compose Progress drawing React's track");
+  assertContains(
+    kotlin,
+    bar,
+    "color = KozmosThemeTokens.primitivesColorsTheme600",
+    "Compose Progress drawing React's primary",
+  );
+  assertContains(
+    kotlin,
+    bar,
+    "trackColor = KozmosThemeTokens.primitivesColorsBackground200",
+    "Compose Progress drawing React's track",
+  );
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.

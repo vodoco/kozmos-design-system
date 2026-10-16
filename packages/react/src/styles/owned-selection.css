@@ -1,4 +1,18 @@
 @kozmos-owned {
+  /* Room for Combobox's buttons, each as tall as the field (decision 82): 48,
+     or 96 with the clear, in touch; 44 or 88 in compact. The input carries
+     the same room as a utility, which beats a caller's px-* by order and
+     gives way to a caller's pe-*. This owned copy, after .kozmos-input, is
+     the room where no @scope rule reaches the input: WebKit applies none to
+     an <input> (GAP-20), and a browser without @scope has no utilities. */
+  .kozmos-combobox-input {
+    padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
+  }
+  .kozmos-combobox-input[data-clearable] {
+    padding-inline-end: calc(
+      var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
+    );
+  }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
@@ -30,7 +44,10 @@
     @apply block mt-0.5 h-4 w-4 shrink-0;
   }
   .kozmos-multiselect-input {
-    @apply h-8 min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
+    @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
+    /* The field less its padding and border, so the field keeps its density's
+       height: 32 in touch (44), 28 in compact (40). */
+    height: calc(var(--density-field-height-md, 2.75rem) - 0.75rem);
     width: 6rem;
     max-width: 100%;
   }

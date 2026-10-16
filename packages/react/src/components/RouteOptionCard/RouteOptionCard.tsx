@@ -6,6 +6,7 @@ import {
 } from "@kozmos-ds/icons";
 import { Accessibility } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface RouteOptionCardProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -44,50 +45,53 @@ const RouteOptionCard = React.forwardRef<
     const warningId = option.warning ? `${instanceId}-warning` : undefined;
 
     return (
-      <button
-        ref={ref}
-        aria-describedby={
-          [describedBy, warningId].filter(Boolean).join(" ") || undefined
-        }
-        aria-pressed={option.selected}
-        className={cn(
-          // The fill is owned: the background colour, and for the chosen
-          // option the theme's 5% tint on it (kozmos-route-option).
-          "kozmos-route-option flex min-h-24 w-full min-w-52 flex-col justify-between rounded-container border p-3 text-left text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          option.selected
-            ? "border-primary ring-1 ring-primary/20"
-            : "border-border hover:bg-muted/60",
-          className,
-        )}
-        data-route-id={option.id}
-        disabled={disabled}
-        onClick={() => onSelect(option.id)}
-        type={type}
-        {...props}
-      >
-        <span className="flex w-full items-center gap-2 text-sm font-semibold">
-          <span aria-hidden="true" className="text-primary">
-            {icon}
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <button
+          ref={ref}
+          aria-describedby={
+            [describedBy, warningId].filter(Boolean).join(" ") || undefined
+          }
+          aria-pressed={option.selected}
+          className={cn(
+            // The fill is owned: the background colour, and for the chosen
+            // option the theme's 5% tint on it (kozmos-route-option).
+            "kozmos-route-option flex min-h-24 w-full min-w-52 flex-col justify-between rounded-container border p-3 text-left text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            option.selected
+              ? "border-primary ring-1 ring-primary/20"
+              : "border-border hover:bg-muted/60",
+            className,
+          )}
+          data-route-id={option.id}
+          disabled={disabled}
+          onClick={() => onSelect(option.id)}
+          type={type}
+          {...props}
+        >
+          <span className="flex w-full items-center gap-2 text-sm font-semibold">
+            <span aria-hidden="true" className="text-primary">
+              {icon}
+            </span>
+            <span className="truncate">{option.label}</span>
           </span>
-          <span className="truncate">{option.label}</span>
-        </span>
-        <span className="mt-3 flex w-full items-end justify-between gap-3">
-          <span className="text-xl font-semibold leading-none">
-            {option.durationLabel}
+          <span className="mt-3 flex w-full items-end justify-between gap-3">
+            <span className="text-xl font-semibold leading-none">
+              {option.durationLabel}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {option.distanceLabel}
+            </span>
           </span>
-          <span className="text-xs text-muted-foreground">
-            {option.distanceLabel}
-          </span>
-        </span>
-        {option.warning && (
-          <span
-            className="mt-2 block text-xs text-warning-foreground"
-            id={warningId}
-          >
-            {option.warning}
-          </span>
-        )}
-      </button>
+          {option.warning && (
+            <span
+              className="mt-2 block text-xs text-warning-foreground"
+              id={warningId}
+            >
+              {option.warning}
+            </span>
+          )}
+        </button>
+      </DensityScope>
     );
   },
 );

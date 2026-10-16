@@ -7,6 +7,7 @@ import {
   DirectionIcon,
   type DirectionType,
 } from "../DirectionStep/DirectionStep";
+import { DensityScope } from "../../theme/DensityScope";
 
 /** One step of an itinerary, as the products present it. */
 export interface ItineraryStep {
@@ -119,58 +120,69 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       </li>
     );
     return (
-      <section
-        ref={ref}
-        aria-label={label}
-        className={cn("kozmos-itinerary kozmos-guidance-text", className)}
-        {...props}
-      >
-        <ol className="m-0 flex list-none flex-col gap-2 p-0">
-          {endpoint(originLabel, origin, false, onEditOrigin, editOriginLabel)}
-          {steps.map((step) => (
-            <li
-              key={step.id}
-              aria-current={
-                step.current && currentCount === 1 ? "step" : undefined
-              }
-              className={cn(
-                "flex items-start gap-3 text-[15px]",
-                step.current && currentCount === 1
-                  ? "font-semibold kozmos-guidance-accent"
-                  : "kozmos-guidance-text",
-              )}
-            >
-              <span
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={ref}
+          aria-label={label}
+          className={cn("kozmos-itinerary kozmos-guidance-text", className)}
+          {...props}
+        >
+          <ol className="m-0 flex list-none flex-col gap-2 p-0">
+            {endpoint(
+              originLabel,
+              origin,
+              false,
+              onEditOrigin,
+              editOriginLabel,
+            )}
+            {steps.map((step) => (
+              <li
+                key={step.id}
+                aria-current={
+                  step.current && currentCount === 1 ? "step" : undefined
+                }
                 className={cn(
-                  "flex h-5 w-10 shrink-0 items-center",
+                  "flex items-start gap-3 text-[15px]",
                   step.current && currentCount === 1
-                    ? "kozmos-guidance-accent"
-                    : "kozmos-muted-text",
+                    ? "font-semibold kozmos-guidance-accent"
+                    : "kozmos-guidance-text",
                 )}
               >
-                <DirectionIcon type={step.type} className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex flex-col gap-0.5">
-                <span>
-                  <InstructionText instruction={step.instruction} />
+                <span
+                  className={cn(
+                    "flex h-5 w-10 shrink-0 items-center",
+                    step.current && currentCount === 1
+                      ? "kozmos-guidance-accent"
+                      : "kozmos-muted-text",
+                  )}
+                >
+                  <DirectionIcon type={step.type} className="h-4 w-4" />
                 </span>
-                {(step.distance || step.duration) && (
-                  <span className="kozmos-muted-text text-sm font-normal">
-                    {[step.distance, step.duration].filter(Boolean).join(" • ")}
+                <span className="min-w-0 flex flex-col gap-0.5">
+                  <span>
+                    <InstructionText instruction={step.instruction} />
                   </span>
-                )}
-              </span>
-            </li>
-          ))}
-          {endpoint(
-            destinationLabel,
-            destination,
-            true,
-            onEditDestination,
-            editDestinationLabel,
-          )}
-        </ol>
-      </section>
+                  {(step.distance || step.duration) && (
+                    <span className="kozmos-muted-text text-sm font-normal">
+                      {[step.distance, step.duration]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+            {endpoint(
+              destinationLabel,
+              destination,
+              true,
+              onEditDestination,
+              editDestinationLabel,
+            )}
+          </ol>
+        </section>
+      </DensityScope>
     );
   },
 );

@@ -42,6 +42,7 @@
     },
     "./css/light.css": "./dist/css/variables-light.css",
     "./css/dark.css": "./dist/css/variables-dark.css",
+    "./css/density.css": "./dist/css/variables-density.css",
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   },

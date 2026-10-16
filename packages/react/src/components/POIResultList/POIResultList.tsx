@@ -8,6 +8,7 @@ import { cn } from "../../utils";
 import { EmptyStateDensity } from "../EmptyState/EmptyState";
 import { POIResultCard, type POIResultCardProps } from "../POIResultCard";
 import { POIResultGroup } from "../POIResultGroup";
+import { DensityScope } from "../../theme/DensityScope";
 
 export interface POIResultListItem {
   poi: POIPresentation;
@@ -338,119 +339,124 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
     }, [scrollSelectedIntoView, selectedPoiId, selectedListed]);
 
     return (
-      <section
-        ref={setSection}
-        aria-label={label}
-        // `kozmos-poi-result-list` keeps the grip's clearance above the first
-        // result when the list is the top of AdaptiveMapShell's sheet (owned
-        // CSS); it adds nothing anywhere else.
-        className={cn("kozmos-poi-result-list min-w-0", className)}
-        {...props}
-      >
-        <p aria-live="polite" className="sr-only">
-          {resultCountLabel}
-        </p>
-        {header !== undefined && header !== null && (
-          <div className="mb-3">{header}</div>
-        )}
-        {items.length === 0 ? (
-          // Pad a string; never pad a component.
-          //
-          // The slot used to add p-6 whatever it held. A string needs that -
-          // "Try removing a filter." against a dashed border with no room is
-          // not a message, it is a mistake. A component pads itself, and
-          // EmptyState adds p-8, so the two together made a one-line
-          // no-result into a 222px box.
-          //
-          // Deciding on the CHILD rather than on a prop means a product gets
-          // the right answer without knowing this rule exists, which is the
-          // only version of this fix that actually fixes anything: nothing in
-          // this repository was passing a flag, and nothing would have.
-          <div
-            className={cn(
-              "kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 text-center text-sm",
-              typeof emptyState === "string" && "p-6",
-            )}
-          >
-            {/* The slot draws the box, so a component inside it should not
+      // The SDK's touch geometry under any density (decision 89).
+      <DensityScope density="touch" asChild>
+        <section
+          ref={setSection}
+          aria-label={label}
+          // `kozmos-poi-result-list` keeps the grip's clearance above the first
+          // result when the list is the top of AdaptiveMapShell's sheet (owned
+          // CSS); it adds nothing anywhere else.
+          className={cn("kozmos-poi-result-list min-w-0", className)}
+          {...props}
+        >
+          <p aria-live="polite" className="sr-only">
+            {resultCountLabel}
+          </p>
+          {header !== undefined && header !== null && (
+            <div className="mb-3">{header}</div>
+          )}
+          {items.length === 0 ? (
+            // Pad a string; never pad a component.
+            //
+            // The slot used to add p-6 whatever it held. A string needs that -
+            // "Try removing a filter." against a dashed border with no room is
+            // not a message, it is a mistake. A component pads itself, and
+            // EmptyState adds p-8, so the two together made a one-line
+            // no-result into a 222px box.
+            //
+            // Deciding on the CHILD rather than on a prop means a product gets
+            // the right answer without knowing this rule exists, which is the
+            // only version of this fix that actually fixes anything: nothing in
+            // this repository was passing a flag, and nothing would have.
+            <div
+              className={cn(
+                "kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 text-center text-sm",
+                typeof emptyState === "string" && "p-6",
+              )}
+            >
+              {/* The slot draws the box, so a component inside it should not
                 draw another. A product passing an EmptyState here has no
                 reason to know that; the slot does, so the slot says so, and
                 an explicit size on the EmptyState still wins. */}
-            <EmptyStateDensity value="compact">{emptyState}</EmptyStateDensity>
-          </div>
-        ) : (
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
-            {items.map((entry) => {
-              // Selection is the list's to decide when it was given a
-              // selectedPoiId, and a member of a group is no exception: a
-              // grouped result must highlight the same way an ungrouped one
-              // does, or the map and the list disagree.
-              const select = (item: POIResultListItem) => ({
-                ...item.result,
-                selected:
-                  selectedPoiId === undefined
-                    ? item.result.selected
-                    : selectedPoiId === item.poi.id,
-              });
+              <EmptyStateDensity value="compact">
+                {emptyState}
+              </EmptyStateDensity>
+            </div>
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              {items.map((entry) => {
+                // Selection is the list's to decide when it was given a
+                // selectedPoiId, and a member of a group is no exception: a
+                // grouped result must highlight the same way an ungrouped one
+                // does, or the map and the list disagree.
+                const select = (item: POIResultListItem) => ({
+                  ...item.result,
+                  selected:
+                    selectedPoiId === undefined
+                      ? item.result.selected
+                      : selectedPoiId === item.poi.id,
+                });
 
-              if (isGroup(entry)) {
+                if (isGroup(entry)) {
+                  return (
+                    <li data-result-group={entry.id} key={entry.id}>
+                      <POIResultGroup
+                        actionsLabel={actionsLabel}
+                        collapsedCount={entry.collapsedCount}
+                        currentFloorId={currentFloorId}
+                        defaultExpanded={entry.defaultExpanded}
+                        expanded={entry.expanded}
+                        featuredLabel={featuredLabel}
+                        languageNotListedLabel={languageNotListedLabel}
+                        hideLabel={hideLabel}
+                        idPrefix={idPrefix}
+                        items={entry.items.map((item) => ({
+                          poi: item.poi,
+                          result: select(item),
+                        }))}
+                        label={entry.label}
+                        numbered={numbered}
+                        presentationStyle={presentationStyle}
+                        onAction={onAction}
+                        onExpandedChange={
+                          onGroupExpandedChange &&
+                          ((open) => onGroupExpandedChange(entry.id, open))
+                        }
+                        onOpen={onOpen}
+                        onSelect={onSelect}
+                        showMoreLabel={showMoreLabel}
+                        travelTimeBandLabels={travelTimeBandLabels}
+                      />
+                    </li>
+                  );
+                }
+
+                const { poi } = entry;
                 return (
-                  <li data-result-group={entry.id} key={entry.id}>
-                    <POIResultGroup
+                  <li key={poi.id}>
+                    <POIResultCard
                       actionsLabel={actionsLabel}
-                      collapsedCount={entry.collapsedCount}
                       currentFloorId={currentFloorId}
-                      defaultExpanded={entry.defaultExpanded}
-                      expanded={entry.expanded}
                       featuredLabel={featuredLabel}
                       languageNotListedLabel={languageNotListedLabel}
-                      hideLabel={hideLabel}
                       idPrefix={idPrefix}
-                      items={entry.items.map((item) => ({
-                        poi: item.poi,
-                        result: select(item),
-                      }))}
-                      label={entry.label}
                       numbered={numbered}
                       presentationStyle={presentationStyle}
                       onAction={onAction}
-                      onExpandedChange={
-                        onGroupExpandedChange &&
-                        ((open) => onGroupExpandedChange(entry.id, open))
-                      }
                       onOpen={onOpen}
                       onSelect={onSelect}
-                      showMoreLabel={showMoreLabel}
+                      poi={poi}
+                      result={select(entry)}
                       travelTimeBandLabels={travelTimeBandLabels}
                     />
                   </li>
                 );
-              }
-
-              const { poi } = entry;
-              return (
-                <li key={poi.id}>
-                  <POIResultCard
-                    actionsLabel={actionsLabel}
-                    currentFloorId={currentFloorId}
-                    featuredLabel={featuredLabel}
-                    languageNotListedLabel={languageNotListedLabel}
-                    idPrefix={idPrefix}
-                    numbered={numbered}
-                    presentationStyle={presentationStyle}
-                    onAction={onAction}
-                    onOpen={onOpen}
-                    onSelect={onSelect}
-                    poi={poi}
-                    result={select(entry)}
-                    travelTimeBandLabels={travelTimeBandLabels}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+              })}
+            </ul>
+          )}
+        </section>
+      </DensityScope>
     );
   },
 );

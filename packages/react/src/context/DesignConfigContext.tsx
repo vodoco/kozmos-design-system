@@ -81,6 +81,7 @@ export function DesignConfigProvider({
   defaultSystemTheme,
   onThemeChange,
   dir,
+  density,
   storageKey,
 }: DesignConfigProviderProps) {
   const parentTheme = useContext(ThemeProviderContext);
@@ -271,6 +272,7 @@ export function DesignConfigProvider({
             : onThemeChange
         }
         dir={dir}
+        density={density}
         storageKey={storageKey}
         tokens={values}
       >

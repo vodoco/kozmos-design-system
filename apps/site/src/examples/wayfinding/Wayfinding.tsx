@@ -26,10 +26,8 @@ import type { UserLocationState } from "@kozmos-ds/product-contracts";
 import { useControlsEdge } from "../controls-edge";
 import { useFocusOnChange } from "../focus";
 import {
-  categoryFor,
   locationStateLabel,
   nextLocationState,
-  tint,
   venueName,
 } from "../venue-explorer/data";
 import {
@@ -311,7 +309,6 @@ export default function Wayfinding() {
             ))
           : null}
         {shownPins.map((place) => {
-          const category = categoryFor(place.poi.categoryId);
           return (
             <Box
               key={place.poi.id}
@@ -323,9 +320,7 @@ export default function Wayfinding() {
             >
               <LocationPin
                 label={`${place.poi.name}, ${place.poi.floorLabel}`}
-                selected={place.poi.id === destinationId}
-                featured={arrived && place.poi.id === destinationId}
-                tint={category ? tint(category.tint) : undefined}
+                place={place.poi.id === destinationId}
                 onClick={
                   stage === "plan" ? () => choose(place.poi.id) : undefined
                 }

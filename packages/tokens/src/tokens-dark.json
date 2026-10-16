@@ -2669,7 +2669,7 @@
       "fill": {
         "$value": "{Primitives.Colors.accent.500}",
         "$type": "color",
-        "$description": "The accent as a fill: the Featured tag, its card's edge and a featured pin, everywhere in the UI. Accent 500, the client's accent; it stays bright in both themes and carries onFill, not the page's ink."
+        "$description": "The accent as a fill: the Featured tag and its card's edge, everywhere in the UI. Accent 500, the client's accent; it stays bright in both themes and carries onFill, not the page's ink."
       },
       "onFill": {
         "$value": "{Primitives.Colors.foreground.1000}",
@@ -2952,7 +2952,7 @@
       }
     },
     "Category": {
-      "$description": "The taxonomy's eight quick-access colours (measured from the published 10.12.0 sprite atlas's section markers, light and dark alike), for a category's tile, chip and pin. Accent draws icons and strokes; Fill fills a count pill or counter; OnFill is the ink on that fill, chosen so the digits reach 4.5:1 (scripts/check-token-contrast.mjs holds it).",
+      "$description": "The taxonomy's eight quick-access colours (measured from the published 10.12.0 sprite atlas's section markers, light and dark alike), for a category's tile and chip. Accent draws icons and strokes; Fill fills a count pill or counter; OnFill is the ink on that fill, chosen so the digits reach 4.5:1 (scripts/check-token-contrast.mjs holds it).",
       "Accent": {
         "Yellow": {
           "$value": "#F9AC17",
@@ -3206,7 +3206,7 @@
             "idle": {
               "$type": "color",
               "$value": "{Primitives.Colors.theme.500}",
-              "$description": "Decision 59: the theme fill. Theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes. Every prominent filled item draws it: a filled primary Button, a checked Checkbox or Switch, a selected Chip, a default Tag or Badge, a filled LocationPin. Text, icons, borders and focus rings stay on theme 600.",
+              "$description": "Decision 59: the theme fill. Theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes. Every prominent filled item draws it: a filled primary Button, a checked Checkbox or Switch, a selected Chip, a default Tag or Badge. Text, icons, borders and focus rings stay on theme 600.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2679",
                 "com.figma.isOverride": true
