@@ -17,7 +17,8 @@
  * SDK parts (SearchBar, AIInputBar) keep the SDK's touch geometry inside a
  * compact provider: their roots are marked touch, which resets the sizes.
  *
- * A dialog's and a drawer's close sit on their title as touch places them,
+ * A stacked dialog footer's buttons are each their size's height, and a
+ * dialog's and a drawer's close sit on their title as touch places them,
  * and every var(--density-…) in the stylesheet falls back to its touch size.
  *
  * Without @scope only the owned rules survive (the Button's sizes, the text
@@ -122,6 +123,21 @@ const EXPECTED = {
   "dialog close": { height: [44, 32], width: [44, 32], overlay: "dialog" },
   "dialog title": { padEnd: [56, 44], overlay: "dialog" },
   "dialog footer button": { owned: true, height: [44, 40], overlay: "dialog" },
+  "dialog footer button-sm": {
+    owned: true,
+    height: [44, 32],
+    overlay: "dialog",
+  },
+  "dialog footer button-lg": {
+    owned: true,
+    height: [44, 48],
+    overlay: "dialog",
+  },
+  "dialog footer button-icon": {
+    owned: true,
+    height: [44, 32],
+    overlay: "dialog",
+  },
   "drawer close": { height: [44, 32], width: [44, 32], overlay: "drawer" },
   "drawer header": { padEnd: [48, 36], overlay: "drawer" },
 };
@@ -248,6 +264,12 @@ try {
         parts["dialog footer button"] = size(
           dialog?.querySelector(".kozmos-dialog-footer button"),
         );
+        for (const footer of ["sm", "lg", "icon"])
+          parts[`dialog footer button-${footer}`] = size(
+            dialog?.querySelector(
+              `.kozmos-dialog-footer [data-footer="${footer}"]`,
+            ),
+          );
         parts["dialog close offset"] = offset(
           dialogClose,
           dialog?.querySelector("h2"),
@@ -384,5 +406,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; a caller's px-4 sets a field's start and Combobox and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
+  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; a caller's px-4 sets a field's start and Combobox and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); a stacked dialog footer's buttons keep their sizes' heights; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
 );

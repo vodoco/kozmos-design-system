@@ -124,7 +124,7 @@ function Controls({ board }: { board: string }) {
 
 // A dialog's and a drawer's close are the icon button's size, centred on the
 // title as touch centres them, and the title leaves room for it; a stacked
-// footer's buttons are the control's height.
+// footer's buttons are each their size's height.
 function Overlays({
   board,
   drawer = true,
@@ -141,6 +141,15 @@ function Overlays({
           </DialogHeader>
           <DialogFooter layout="stacked">
             <Button>Continue</Button>
+            <Button data-footer="sm" size="sm">
+              Later
+            </Button>
+            <Button data-footer="lg" size="lg">
+              Start
+            </Button>
+            <Button data-footer="icon" size="icon" aria-label="Add">
+              <Plus />
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
