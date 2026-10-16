@@ -1586,8 +1586,8 @@ object KozmosThemeTokens {
      * Decision 59: the theme fill. Theme 500, the client's base colour set in
      * the Pointr Cloud Dashboard, in both themes. Every prominent filled item
      * draws it: a filled primary Button, a checked Checkbox or Switch, a
-     * selected Chip, a default Tag or Badge, a filled LocationPin. Text,
-     * icons, borders and focus rings stay on theme 600.
+     * selected Chip, a default Tag or Badge. Text, icons, borders and focus
+     * rings stay on theme 600.
      */
     val componentsPrimaryButtonsThemedButtonBackgroundIdle: Color
         @Composable @ReadOnlyComposable get() = themed(

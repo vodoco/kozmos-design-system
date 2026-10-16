@@ -75,8 +75,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
 
   A double tap on the marker opens the place's details (decision 71),
   rather than zooming the map: the first tap is the ordinary press, the
-  second calls this once and is not passed on as another. A keyboard press
-  is always the ordinary press.
+  second calls this once and is not passed on as another. By keyboard,
+  Enter opens a pin that is already the current one (selected, or a place
+  on its own) or that has `onOpen` alone; otherwise Enter, and Space
+  always, is the ordinary press (Olcay, 16 Oct).
+
+- `openHint`: `string`, optional, default `"Press Enter to open details"`.
+
+  Read after the label while Enter opens the pin, so a screen-reader user
+  knows. Default "Press Enter to open details"; pass it translated.
 
 - `children`: `ReactNode`, optional.
 
