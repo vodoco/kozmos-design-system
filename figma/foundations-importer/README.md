@@ -121,7 +121,9 @@ convention that avoids variant explosion:
   its own. Run Curated Icons first.
 - **LocationPin** — the SDK's map result markers (decision 71): `Kind` of Result,
   Featured and Place by `State` of Default and Selected by `Content` of Number and
-  Dot (a Result only), 7 variants. A Result is its number in a pill on a pointer;
+  Dot on a Result and None on a Featured tile or a Place, 7 variants. Every
+  variant names every axis: a variant without one holds the whole set in error,
+  with no property panel and nothing for Code Connect to read. A Result is its number in a pill on a pointer;
   a Featured place its logo in a tile with a dark rim, on a dot; a Place the
   green pin on a dot. Products take these markers from the map style's sprites;
   Kozmos draws them for prototypes. `labelPlacement` is renderer layout, not an

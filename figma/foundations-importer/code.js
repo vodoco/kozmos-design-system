@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "9d1bd83965c0";
+const PLUGIN_BUILD = "d9f53eded3f9";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -407,7 +407,10 @@ const FLOOR_SELECTOR_VARIANTS = [
 // tile and a place have no Content; a place has no Selected.
 const LOCATION_PIN_KINDS = ["Result", "Featured", "Place"];
 const LOCATION_PIN_STATES = ["Default", "Selected"];
-const LOCATION_PIN_CONTENT = ["Number", "Dot"];
+// Every variant names every axis, or Figma holds the whole set in error: a
+// Featured tile and a Place show no number or dot, so their Content is None.
+const LOCATION_PIN_CONTENT = ["Number", "Dot", "None"];
+const LOCATION_PIN_RESULT_CONTENT = ["Number", "Dot"];
 const POI_CARD_CONTENT = ["Basic", "Media", "Full"];
 const WAYFINDING_CARD_CONTENT = ["Basic", "Titled"];
 // The React Itinerary's three stories: a current step, none, and steps with
@@ -44965,20 +44968,18 @@ function locationPinVariantCombinations() {
     { kind: "Result", state: "Selected", content: "Number" },
     { kind: "Result", state: "Default", content: "Dot" },
     { kind: "Result", state: "Selected", content: "Dot" },
-    { kind: "Featured", state: "Default", content: null },
-    { kind: "Featured", state: "Selected", content: null },
-    { kind: "Place", state: "Default", content: null },
+    { kind: "Featured", state: "Default", content: "None" },
+    { kind: "Featured", state: "Selected", content: "None" },
+    { kind: "Place", state: "Default", content: "None" },
   ];
 }
 
 function locationPinVariantKey(props) {
-  return `${props.kind}/${props.state}/${props.content || "-"}`;
+  return `${props.kind}/${props.state}/${props.content}`;
 }
 
 function locationPinVariantName(props) {
-  return props.content
-    ? `Kind=${props.kind}, State=${props.state}, Content=${props.content}`
-    : `Kind=${props.kind}, State=${props.state}`;
+  return `Kind=${props.kind}, State=${props.state}, Content=${props.content}`;
 }
 
 function parseLocationPinVariantName(name) {
@@ -44990,10 +44991,19 @@ function parseLocationPinVariantName(name) {
     ) {
       return null;
     }
-    const content = values.Kind === "Result" ? values.Content : null;
+    // A Featured tile or a Place painted on 16 Oct named no Content, which
+    // held the set in error; it reads as Content=None, so Update renames it
+    // in place and it keeps its node ID.
+    const content =
+      values.Kind === "Result"
+        ? values.Content
+        : values.Content === undefined
+          ? "None"
+          : values.Content;
     if (
-      values.Kind === "Result" &&
-      LOCATION_PIN_CONTENT.indexOf(content) === -1
+      values.Kind === "Result"
+        ? LOCATION_PIN_RESULT_CONTENT.indexOf(content) === -1
+        : content !== "None"
     )
       return null;
     if (values.Kind === "Place" && values.State !== "Default") return null;
@@ -45011,7 +45021,7 @@ function parseLocationPinVariantName(name) {
   if (values.State === "Selected")
     return { kind: "Result", state: "Selected", content: "Number" };
   if (values.State === "Featured")
-    return { kind: "Featured", state: "Default", content: null };
+    return { kind: "Featured", state: "Default", content: "None" };
   return { stale: true };
 }
 
@@ -45311,7 +45321,7 @@ const LOCATION_PIN_DESCRIPTION = [
   "In a product these markers come from the map style's sprite sheet, and a featured place's tile from the featured sprite Pointr's back end makes with its logo; Kozmos draws them for prototypes and boards (decision 81).",
   "Kind maps to featured and place: Result is neither, Featured is featured, Place is place (a place on its own, its details open).",
   "State maps to selected: a Result fills, a Featured tile grows from 44 to 52.",
-  "Content maps to number: Number shows Number Text, Dot shows none.",
+  "Content maps to number: Number shows Number Text, Dot shows none; a Featured tile and a Place are None.",
   "Label Text maps to LocationPin.label or externalLabel; Number Text maps to LocationPin.number.",
   "A Result's anchor is its pointer's tip; a Featured tile's and a Place's is their dot's centre.",
   "Marker placement and collision handling stay with the map renderer.",

@@ -5,7 +5,8 @@ const locationPinUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847";
 
 // The SDK's map result markers (decision 71): Kind is the marker, State its
-// selection, and Content whether a result shows its number or a dot. The
+// selection, and Content whether a result shows its number or a dot (None on
+// a Featured tile or a Place, which show neither). The
 // Number Text the set draws is 12; React Code Connect enums take literals
 // only, so a numbered result connects as number={12}.
 figma.connect(LocationPin, locationPinUrl, {
@@ -28,6 +29,7 @@ figma.connect(LocationPin, locationPinUrl, {
     number: figma.enum("Content", {
       Number: 12,
       Dot: undefined,
+      None: undefined,
     }),
   },
   // labelPlacement is owned by the map renderer, and a featured tile's logo

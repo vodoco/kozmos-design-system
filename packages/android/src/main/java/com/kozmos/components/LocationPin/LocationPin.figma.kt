@@ -8,9 +8,10 @@ import com.figma.code.connect.FigmaType
 import com.figma.code.connect.FigmaVariant
 
 // The SDK's map result markers (decision 71): Kind is Result, Featured or
-// Place; State is Default or Selected; Content, on a Result only, is Number
-// or Dot. A Result with Content=Dot has no number. The place's State is
-// always Default: selected changes nothing on it.
+// Place; State is Default or Selected; Content is Number or Dot on a Result,
+// and None on a Featured tile or a Place (every variant names every axis, or
+// Figma holds the set in error). A Result with Content=Dot has no number. The
+// place's State is always Default: selected changes nothing on it.
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847")
 @FigmaVariant("Kind", "Result")
@@ -56,6 +57,7 @@ class KozmosLocationPinResultDotConnect {
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847")
 @FigmaVariant("Kind", "Featured")
+@FigmaVariant("Content", "None")
 class KozmosLocationPinFeaturedConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Cafe"
@@ -77,6 +79,7 @@ class KozmosLocationPinFeaturedConnect {
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847")
 @FigmaVariant("Kind", "Place")
+@FigmaVariant("Content", "None")
 class KozmosLocationPinPlaceConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Cafe"

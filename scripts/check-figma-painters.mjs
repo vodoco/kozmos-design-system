@@ -524,9 +524,9 @@ section("LocationPin");
         JSON.stringify({
           Kind: ["Result", "Featured", "Place"],
           State: ["Default", "Selected"],
-          Content: ["Number", "Dot"],
+          Content: ["Number", "Dot", "None"],
         }),
-    "the set expects Kind, State and Content",
+    "the set expects Kind, State and Content, None on a Featured tile and a Place",
   );
   const parse = (name) =>
     JSON.stringify(plugin.parseLocationPinVariantName(name));
@@ -534,9 +534,11 @@ section("LocationPin");
     typeof plugin.parseLocationPinVariantName === "function" &&
       parse("Kind=Result, State=Selected, Content=Dot") ===
         JSON.stringify({ kind: "Result", state: "Selected", content: "Dot" }) &&
-      parse("Kind=Place, State=Default") ===
-        JSON.stringify({ kind: "Place", state: "Default", content: null }),
-    "the new variant names read back",
+      parse("Kind=Place, State=Default, Content=None") ===
+        JSON.stringify({ kind: "Place", state: "Default", content: "None" }) &&
+      parse("Kind=Featured, State=Selected, Content=Number") === "null" &&
+      parse("Kind=Result, State=Default, Content=None") === "null",
+    "the new variant names read back, and a Content that doesn't fit its Kind is refused",
   );
   // The theme's medium pins become the new markers in place, keeping their
   // node IDs; every other old pin is stale and goes once the new ones exist.
@@ -555,12 +557,31 @@ section("LocationPin");
           content: "Number",
         }) &&
       parse("State=Featured, Size=Md, Tint=Theme") ===
-        JSON.stringify({ kind: "Featured", state: "Default", content: null }) &&
+        JSON.stringify({
+          kind: "Featured",
+          state: "Default",
+          content: "None",
+        }) &&
       parse("State=OffFloor, Size=Md, Tint=Theme") ===
         JSON.stringify({ stale: true }) &&
       parse("State=Default, Size=Lg, Tint=Red") ===
         JSON.stringify({ stale: true }),
     "old pins: the theme's medium three are renamed in place, the rest stale",
+  );
+  // The Featured tiles and the Place the 16 Oct Update painted named no
+  // Content, which held the live set in error; they read as None, so the next
+  // Update renames them in place and they keep their node IDs.
+  ok(
+    typeof plugin.parseLocationPinVariantName === "function" &&
+      parse("Kind=Featured, State=Default") ===
+        JSON.stringify({
+          kind: "Featured",
+          state: "Default",
+          content: "None",
+        }) &&
+      parse("Kind=Place, State=Default") ===
+        JSON.stringify({ kind: "Place", state: "Default", content: "None" }),
+    "the 16 Oct variants without Content are renamed in place",
   );
   const config =
     typeof plugin.locationPinComponentConfig === "function" &&
@@ -669,15 +690,15 @@ section("LocationPin");
       const { component, stats } = await paint({
         kind: "Featured",
         state,
-        content: null,
+        content: "None",
       });
       const tile = named(component, "Tile");
       const dot = named(component, "Dot");
       const marker = named(component, "Pin Marker");
       const number = named(component, "Number Text");
       ok(
-        component.name === `Kind=Featured, State=${state}`,
-        `featured, ${state}: named by two axes (got "${component.name}")`,
+        component.name === `Kind=Featured, State=${state}, Content=None`,
+        `featured, ${state}: named by all three axes, Content None (got "${component.name}")`,
       );
       ok(
         tile &&
@@ -713,7 +734,7 @@ section("LocationPin");
       const { component, stats } = await paint({
         kind: "Place",
         state: "Default",
-        content: null,
+        content: "None",
       });
       const pin = named(component, "Teardrop");
       const drop = named(component, "Drop");
@@ -721,8 +742,8 @@ section("LocationPin");
       const dot = named(component, "Dot");
       const marker = named(component, "Pin Marker");
       ok(
-        component.name === "Kind=Place, State=Default",
-        `place: named by two axes (got "${component.name}")`,
+        component.name === "Kind=Place, State=Default, Content=None",
+        `place: named by all three axes, Content None (got "${component.name}")`,
       );
       ok(
         pin &&
@@ -4983,6 +5004,74 @@ section("Every set's text carries a style");
 // the category symbols, named by their labels, measured apart as decorative.
 // Their c7d1d88351a7 drawings read five warnings live; replayed through this
 // build's Update, none.
+// Figma reads a component set's properties only when every variant names the
+// same ones: one variant without an axis the others have leaves the whole set
+// in error ("Component set has existing errors"), with no property panel and
+// nothing for Code Connect to read. LocationPin's Featured and Place variants
+// named no Content on 16 Oct and did exactly that live. So every planned set
+// is painted here as Update paints it: each variant's name must carry the same
+// axes as its siblings', no two may be equal, and each must read back as the
+// variant it was painted for.
+section("Every planned set's variants name the same axes");
+{
+  const parseAxes = (name) =>
+    Object.fromEntries(
+      name.split(",").map((part) => {
+        const [axis, ...value] = part.split("=");
+        return [axis.trim(), value.join("=").trim()];
+      }),
+    );
+  const configs = Object.keys(plugin)
+    .filter(
+      (name) =>
+        /ComponentConfig$/.test(name) && typeof plugin[name] === "function",
+    )
+    .sort();
+  ok(configs.length >= 18, `${configs.length} planned sets found`);
+  for (const configName of configs) {
+    const config = plugin[configName]();
+    if (
+      !config ||
+      typeof config.combinations !== "function" ||
+      typeof config.updateVariant !== "function"
+    )
+      continue;
+    const names = [];
+    for (const props of config.combinations()) {
+      const component = figma.createComponent();
+      await config.updateVariant(component, {
+        props,
+        variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      names.push({ name: component.name, key: config.keyForProps(props) });
+    }
+    const axes = (name) => Object.keys(parseAxes(name)).sort().join(", ");
+    const first = names.length ? axes(names[0].name) : "";
+    const uneven = names.filter(({ name }) => axes(name) !== first);
+    ok(
+      uneven.length === 0,
+      `${config.componentSetName}: all ${names.length} variants name ${first}${uneven.length ? `, but ${uneven.map(({ name }) => `"${name}"`).join(", ")} do not` : ""}`,
+    );
+    const repeated = names.filter(
+      ({ name }, index) => names.findIndex((n) => n.name === name) !== index,
+    );
+    ok(
+      repeated.length === 0,
+      `${config.componentSetName}: no two variants share a name${repeated.length ? ` (${repeated.map(({ name }) => `"${name}"`).join(", ")} repeat)` : ""}`,
+    );
+    const misread = names.filter(({ name, key }) => {
+      const props = config.parseVariantName(name);
+      return !props || props.stale || config.keyForProps(props) !== key;
+    });
+    ok(
+      misread.length === 0,
+      `${config.componentSetName}: each variant reads back as itself${misread.length ? ` (${misread.map(({ name }) => `"${name}"`).join(", ")} do not)` : ""}`,
+    );
+  }
+}
+
 section("The product sets audit clean");
 {
   const painters = [

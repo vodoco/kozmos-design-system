@@ -2,8 +2,10 @@ import SwiftUI
 import Figma
 
 // The LocationPin set (decision 79): Kind is Result, Featured or Place; State
-// is Default or Selected; Content is Number or Dot, on a Result only. One
-// mapping per Kind and Content, as the set's seven variants are drawn.
+// is Default or Selected; Content is Number or Dot on a Result, and None on a
+// Featured tile or a Place (every variant names every axis, or Figma holds the
+// set in error). One mapping per Kind and Content, as the set's seven
+// variants are drawn.
 // labelPlacement belongs to the map renderer, so it is not a Figma axis.
 
 struct KozmosLocationPinResultNumberConnect: FigmaConnect {
@@ -51,7 +53,7 @@ struct KozmosLocationPinResultDotConnect: FigmaConnect {
 struct KozmosLocationPinFeaturedConnect: FigmaConnect {
     let component = KozmosLocationPin.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847"
-    var variant = ["Kind": "Featured"]
+    var variant = ["Kind": "Featured", "Content": "None"]
 
     @FigmaString("Label Text")
     var label: String = "Cafe"
@@ -72,7 +74,7 @@ struct KozmosLocationPinFeaturedConnect: FigmaConnect {
 struct KozmosLocationPinPlaceConnect: FigmaConnect {
     let component = KozmosLocationPin.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6847"
-    var variant = ["Kind": "Place"]
+    var variant = ["Kind": "Place", "Content": "None"]
 
     @FigmaString("Label Text")
     var label: String = "Gate 12"
