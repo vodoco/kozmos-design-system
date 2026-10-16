@@ -90,6 +90,34 @@ function Controls({ board }: { board: string }) {
       <div data-measure-within="password-input">
         <PasswordInput label="Password" />
       </div>
+      {/* A caller's own horizontal padding sets the start; the room for a
+          field's actions still holds at the end. */}
+      <Input
+        data-measure="input px padding"
+        aria-label="Note"
+        className="px-4"
+      />
+      <div data-measure-within="combobox-px">
+        <Combobox
+          label="Zone"
+          className="px-4"
+          options={options}
+          defaultValue="one"
+          clearable
+        />
+      </div>
+      <div data-measure-within="combobox-plain-px">
+        <Combobox
+          label="Site"
+          className="px-4"
+          options={options}
+          defaultValue="one"
+          clearable={false}
+        />
+      </div>
+      <div data-measure-within="password-input-px">
+        <PasswordInput label="Passphrase" className="px-4" />
+      </div>
     </div>
   );
 }

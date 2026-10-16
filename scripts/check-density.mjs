@@ -11,6 +11,8 @@
  * - Compact: buttons 32, 40 and 48; icon buttons 28, 32 and 40; fields 40,
  *   and the square actions inside a field (clear, open, steppers, show
  *   password) as tall as the field.
+ * - A caller's px-* sets a field's start; Combobox and PasswordInput keep the
+ *   room for their actions at the end.
  *
  * SDK parts (SearchBar, AIInputBar) keep the SDK's touch geometry inside a
  * compact provider: their roots are marked touch, which resets the sizes.
@@ -89,6 +91,32 @@ const EXPECTED = {
   "combobox padding": { owned: true, padEnd: [96, 88] },
   "combobox-plain padding": { owned: true, padEnd: [48, 44] },
   "password-input padding": { owned: true, padEnd: [48, 44] },
+  // A caller's px-4 sets both sides of a plain field, and the start of a field
+  // with actions, whose end keeps the room for them: the room is a utility
+  // too, after px-4. A caller's class is a utility, so not without @scope;
+  // and WebKit applies no @scope rule to an <input> (GAP-20), so there the
+  // caller's px-4 never lands and the field keeps its own 12, while the owned
+  // room still holds. Should WebKit start to apply it, these fail there.
+  "input px padding": {
+    padStart: [16, 16],
+    padEnd: [16, 16],
+    webkit: { padStart: [12, 12], padEnd: [12, 12] },
+  },
+  "combobox px padding": {
+    padStart: [16, 16],
+    padEnd: [96, 88],
+    webkit: { padStart: [12, 12] },
+  },
+  "combobox-plain px padding": {
+    padStart: [16, 16],
+    padEnd: [48, 44],
+    webkit: { padStart: [12, 12] },
+  },
+  "password-input px padding": {
+    padStart: [16, 16],
+    padEnd: [48, 44],
+    webkit: { padStart: [12, 12] },
+  },
   // MultiSelect's input is the field less its padding and border.
   "multi-select input": { owned: true, height: [32, 28] },
   "dialog close": { height: [44, 32], width: [44, 32], overlay: "dialog" },
@@ -116,6 +144,7 @@ const BOARDS = {
 const ALIGNED = ["dialog close offset", "drawer close offset"];
 
 const browser = await launchFixtureBrowser();
+const engine = browser.browserType().name();
 
 try {
   // The sizes are in rem, so they follow the reader's font size: at a 20px
@@ -155,6 +184,9 @@ try {
         return {
           height: box.height,
           width: box.width,
+          padStart: Number.parseFloat(
+            getComputedStyle(element).paddingInlineStart,
+          ),
           padEnd: Number.parseFloat(getComputedStyle(element).paddingInlineEnd),
         };
       };
@@ -198,6 +230,14 @@ try {
           within("combobox-plain")?.querySelector(".kozmos-input"),
         );
         parts["password-input padding"] = parts["password-input field"];
+        for (const key of [
+          "combobox-px",
+          "combobox-plain-px",
+          "password-input-px",
+        ])
+          parts[`${key.replace(/-px$/, "")} px padding`] = size(
+            within(key)?.querySelector(".kozmos-input"),
+          );
         parts["multi-select input"] = size(
           within("multi-select")?.querySelector(".kozmos-multiselect-input"),
         );
@@ -303,10 +343,13 @@ try {
           failures.push(`${mode} ${board} ${part}: not found`);
           continue;
         }
-        for (const axis of ["height", "width", "padEnd"]) {
+        for (const axis of ["height", "width", "padStart", "padEnd"]) {
           if (!expected[axis]) continue;
           reads += 1;
-          const want = expected[axis][column] * scale;
+          const want =
+            (engine === "webkit" && expected.webkit?.[axis]
+              ? expected.webkit[axis]
+              : expected[axis])[column] * scale;
           if (Math.abs(box[axis] - want) > 0.5)
             failures.push(
               `${mode} ${board} ${part} ${axis}: ${box[axis].toFixed(2)}, expected ${want}`,
@@ -341,5 +384,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
+  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; a caller's px-4 sets a field's start and Combobox and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
 );

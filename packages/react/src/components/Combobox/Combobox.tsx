@@ -421,7 +421,14 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   autoComplete="off"
                   className={cn(
                     inputVariants({ status: resolvedStatus }),
+                    // Room for the buttons, each as tall as the field
+                    // (decision 82). The utility beats a caller's px-* and
+                    // gives way to a caller's pe-*; the owned rule holds it
+                    // where no @scope rule reaches an <input> (WebKit).
                     "kozmos-combobox-input",
+                    canClear
+                      ? "pe-[calc(var(--density-field-height-md,2.75rem)_*_2_+_0.5rem)]"
+                      : "pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
                     className,
                   )}
                   data-clearable={canClear ? "" : undefined}

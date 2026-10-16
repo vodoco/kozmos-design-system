@@ -1,9 +1,10 @@
 @kozmos-owned {
   /* Room for Combobox's buttons, each as tall as the field (decision 82): 48,
-     or 96 with the clear, in touch; 44 or 88 in compact. Owned and after
-     .kozmos-input on purpose: as a utility inside @scope, WebKit let
-     .kozmos-input's physical padding-right win over this logical end padding
-     once it reads a custom property, though the utility is more specific. */
+     or 96 with the clear, in touch; 44 or 88 in compact. The input carries
+     the same room as a utility, which beats a caller's px-* by order and
+     gives way to a caller's pe-*. This owned copy, after .kozmos-input, is
+     the room where no @scope rule reaches the input: WebKit applies none to
+     an <input> (GAP-20), and a browser without @scope has no utilities. */
   .kozmos-combobox-input {
     padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
