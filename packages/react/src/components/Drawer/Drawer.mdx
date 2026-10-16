@@ -72,32 +72,12 @@ export function Example({ onSave }: { onSave: (name: string) => void }) {
   `}
   vue={`
 <script setup>
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@kozmos-ds/vue"
+import { KozmosDrawer } from "@kozmos-ds/vue"
+// @kozmos-ds/vue wraps the Drawer root only: it has no DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription or DrawerFooter, so it cannot draw a drawer yet.
 </script>
 
 <template>
-  <Drawer>
-    <DrawerTrigger>Open drawer</DrawerTrigger>
-    <DrawerContent side="right">
-      <DrawerHeader>
-        <DrawerTitle>Manage layers</DrawerTitle>
-        <DrawerDescription>Update map display settings.</DrawerDescription>
-      </DrawerHeader>
-      <p>Drawer body content</p>
-      <DrawerFooter>
-        <KozmosButton variant="outline">Cancel</KozmosButton>
-        <KozmosButton>Save changes</KozmosButton>
-      </DrawerFooter>
-    </DrawerContent>
-  </Drawer>
+  <KozmosDrawer />
 </template>
   `}
   swift={`

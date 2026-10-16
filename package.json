@@ -92,6 +92,7 @@
     "skills:build": "node scripts/build-ai-skills.mjs",
     "skills:check": "node scripts/build-ai-skills.mjs --check && node --test scripts/skills/ai-facts.test.mjs scripts/skills/ai-snippets.test.mjs && node scripts/check-ai-skills.mjs && node --test scripts/skills/claude-design-docs.test.mjs",
     "docs:snippets:check": "node scripts/check-doc-snippets.mjs && node scripts/check-native-snippet-parity.mjs",
+    "docs:snippets:vue:check": "node scripts/check-vue-snippet-imports.mjs",
     "docs:snippets:compile": "node scripts/check-package-install.mjs",
     "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs scripts/lib/native-token-members.test.mjs",
     "figma:verify": "node scripts/verify-figma-library.mjs",

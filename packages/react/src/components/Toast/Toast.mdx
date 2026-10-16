@@ -51,22 +51,12 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { useToast, KozmosButton } from "@kozmos-ds/vue"
-
-const { toast } = useToast()
+import { KozmosButton } from "@kozmos-ds/vue"
+// @kozmos-ds/vue cannot show a toast yet: it has no ToastProvider, ToastViewport, ToastTitle, ToastDescription or ToastClose and no toast(), and KozmosToast throws outside a provider.
 </script>
 
 <template>
-  <KozmosButton
-    @click="() => {
-      toast({
-        title: 'Scheduled: Catch up',
-        description: 'Friday, February 10, 2023 at 5:57 PM',
-      })
-    }"
-  >
-    Show Toast
-  </KozmosButton>
+  <KozmosButton>Show toast</KozmosButton>
 </template>
     `}
     swift={`
