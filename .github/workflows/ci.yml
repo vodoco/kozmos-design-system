@@ -373,6 +373,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:density
           ADAPTIVE_BROWSER=firefox pnpm test:density
 
+      # GAP-174: WebKit applies no @scope rule to an <input> or a <textarea>,
+      # so every part with a field draws it from owned CSS. In each engine
+      # every field computes as in Chromium, light and dark, both directions,
+      # touch and compact, disabled and focused, and a caller's padding class
+      # wins where @scope reaches a field (scripts/check-field-styles.mjs).
+      - name: Verify Field Styles
+        run: |
+          pnpm test:field-styles
+          ADAPTIVE_BROWSER=webkit pnpm test:field-styles
+          ADAPTIVE_BROWSER=firefox pnpm test:field-styles
+
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
       - name: Verify Built Form Control Compatibility

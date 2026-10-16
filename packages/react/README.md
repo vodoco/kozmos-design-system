@@ -103,6 +103,31 @@ Supporting older engines requires migrating remaining scoped components and chec
 used features, not just editing the browser list. A changed support promise needs explicit
 compatibility review and migration notes.
 
+### Fields in Safari (GAP-174)
+
+Safari 26.0 to 26.3, on macOS and iOS (and so every iOS browser and web view on those
+versions), applies no `@scope` rule to an `<input>` or a `<textarea>`. Apple fixed it in
+Safari 26.4 ("CSS rules within `@scope` not being applied to `<input>` and `<textarea>`
+elements"); 17.4 to 18 were not affected, as MDN's compatibility data records. Measured
+in Playwright's WebKit 26.0: every text-like `<input>` (text, search, email, password,
+number, date, time, colour, range) and every `<textarea>` misses, while a `<div>`, a
+`<button>` and a `<select>` take the same rule. Kozmos's utility classes are emitted
+inside `@scope`, so on those versions none of them reaches a field. Every Kozmos field
+draws from its own unscoped CSS instead, and draws there as in Chrome and Firefox:
+`pnpm test:field-styles` measures every part with a field in all three engines.
+
+- **A utility class passed to a field's `className`** (`px-4`, `w-72`, `border-destructive`)
+  applies in Chrome, Edge, Firefox and Safari 26.4, and is ignored in Safari 26.0 to 26.3,
+  where the field keeps its own look. Kozmos cannot change this: the scoping is what
+  those versions mishandle.
+- **What reaches a field there:** its props (`status`, `error`, `disabled`, and density
+  from `ThemeProvider`), the provider's `tokens`, an inline `style`, and your own CSS
+  loaded after Kozmos's. One class of yours overrides a field's base look (`.kozmos-input`,
+  `.kozmos-textarea`); a part's own rules come after it, and some are two classes (Search's
+  room for its icon, ColorPicker's for its swatch), which your selector must match.
+- **Around a field,** use `wrapperClassName`: it lands on a `<div>`, which takes scoped rules.
+- `<button>`, `<select>`, checkboxes and radios take scoped rules on those versions too.
+
 ## Use
 
 ```tsx

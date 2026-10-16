@@ -261,8 +261,9 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
     const currentRgb = hexToRgb(currentValue);
     const currentHsl = rgbToHsl(hexToRgb(currentValue));
     const hueColor = rgbToHex(hslToRgb({ h: currentHsl.h, s: 100, l: 50 }));
-    const compactControlClassName =
-      "h-9 min-w-0 rounded-control border border-input bg-background px-2 text-sm";
+    // The panel's controls, its sliders, the swatch and the field's room are
+    // owned CSS: WebKit applies no scoped utility to an <input> (GAP-174).
+    const compactControlClassName = "kozmos-reset kozmos-color-picker-control";
     const describedBy = fieldDescriptionIds({
       description,
       descriptionId,
@@ -359,7 +360,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
             <input
               type="color"
               aria-label={label ? `${label} color` : "Choose color"}
-              className="absolute left-2 z-10 h-8 w-8 cursor-pointer rounded-control border border-input bg-transparent p-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="kozmos-reset kozmos-color-picker-swatch"
               value={currentValue}
               disabled={pickerDisabled}
               onChange={(event) => commitValue(event.currentTarget.value)}
@@ -374,8 +375,12 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
               value={textValue}
               aria-describedby={mergeAriaIds(ariaDescribedBy, describedBy)}
               aria-invalid={isInvalid || ariaInvalid}
+              // The owned classes hold the room in WebKit; the utilities, scoped
+              // and nearer, let a caller's className win where @scope reaches
+              // the field (Chromium, Firefox).
               className={cn(
                 inputVariants({ status: resolvedStatus }),
+                "kozmos-color-picker-input kozmos-color-picker-value",
                 "min-w-0 font-mono uppercase pl-12 pr-12",
                 className,
               )}
@@ -490,7 +495,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                   value={currentHsl.h}
                   disabled={pickerDisabled}
                   aria-label="Hue"
-                  className="block h-5 w-full min-w-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  className="kozmos-reset kozmos-color-picker-range"
                   style={{
                     accentColor: currentValue,
                     background:
@@ -514,7 +519,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                   value={currentAlpha}
                   disabled={pickerDisabled}
                   aria-label="Opacity"
-                  className="block h-5 w-full min-w-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  className="kozmos-reset kozmos-color-picker-range"
                   style={{
                     accentColor: currentValue,
                     background: `linear-gradient(to right, transparent, ${currentValue})`,
@@ -560,7 +565,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                     readOnly={readOnly}
                     className={cn(
                       compactControlClassName,
-                      "font-mono uppercase",
+                      "kozmos-color-picker-value",
                     )}
                     pattern="^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                     onChange={(event) => {

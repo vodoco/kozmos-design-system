@@ -138,7 +138,11 @@ const RoutingInputGroup = React.forwardRef<
                       ? "Choose Starting Point"
                       : "Choose Destination")
                   }
-                  className="h-10 text-sm bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
+                  // 40 tall on a wash with no edge. The owned classes draw it
+                  // in WebKit, which applies no scoped utility to an <input>
+                  // (GAP-174); the utilities stay, as the wash is a raw colour
+                  // with no role, and tokens:raw:check counts it here.
+                  className="kozmos-washed-field kozmos-routing-input h-10 text-sm bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
                 />
                 {points.length > 2 &&
                   index > 0 &&

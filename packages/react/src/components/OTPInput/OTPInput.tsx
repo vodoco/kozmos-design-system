@@ -186,9 +186,11 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               aria-invalid={isInvalid || undefined}
               aria-describedby={describedBy}
               aria-label={`Digit ${index + 1} of ${cellCount}`}
+              // The cell's square, padding and centred digit are owned CSS:
+              // WebKit applies no scoped utility to an <input> (GAP-174).
               className={cn(
                 inputVariants({ status: resolvedStatus }),
-                "h-11 w-11 shrink-0 p-0 text-center text-lg",
+                "kozmos-otp-cell",
               )}
             />
           ))}
