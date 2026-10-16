@@ -1,0 +1,292 @@
+<!doctype html>
+<!--
+  Pointr map sandbox check, for a Claude Design prototype (or any sandbox).
+
+  Paste this whole file into the prototype, replace the three placeholders in
+  POINTR below with the identifiers Pointr gave you, and open it. The panel in
+  the corner says, line by line, whether the sandbox let the SDK's stylesheet,
+  script and network calls through, and lists every Content-Security-Policy
+  violation the browser reported, with the directive that blocked it.
+
+  The SDK's own interface is switched off: what remains is the map, Pointr's
+  watermark and credits (a Pointr Cloud setting, not an option), and nothing
+  else once the building's level selector, Exit and info buttons are hidden.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pointr map sandbox check</title>
+    <script>
+      // CSP violations are reported before anything else can run: listen first.
+      window.__pointrCheck = { violations: [] };
+      document.addEventListener("securitypolicyviolation", function (e) {
+        window.__pointrCheck.violations.push(
+          e.violatedDirective + " blocked " + (e.blockedURI || "inline"),
+        );
+        if (window.__pointrCheckRender) window.__pointrCheckRender();
+      });
+    </script>
+    <link
+      id="pointr-css"
+      href="https://pointr-websdk.azureedge.net/10.13.0/css/pointr.css"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font:
+          13px/1.4 system-ui,
+          sans-serif;
+      }
+      #map-host {
+        position: absolute;
+        inset: 0;
+        isolation: isolate;
+      }
+      #pointr-map {
+        position: absolute;
+        inset: 0;
+      }
+      /* Chrome no Options switch turns off. Never hide the watermark: the
+         SDK watches it and removes the map when it is hidden. */
+      #pointr-map #pointr-levels,
+      #pointr-map #pointr-exit-button,
+      #pointr-map #pointr-info-button {
+        display: none !important;
+      }
+      #check {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 1;
+        max-width: min(360px, calc(100% - 24px));
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #111;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+      }
+      #check ul {
+        margin: 4px 0 0;
+        padding-left: 18px;
+      }
+      #check .bad {
+        color: #b42318;
+      }
+      #check .good {
+        color: #067647;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map-host"><div id="pointr-map"></div></div>
+    <div id="check" role="status" aria-live="polite">Checking…</div>
+    <script>
+      var POINTR = {
+        baseUrl: "__POINTR_BASE_URL__", // e.g. https://<your-env>.pointr.cloud
+        clientIdentifier: "__POINTR_CLIENT_IDENTIFIER__",
+        licenseKey: "__POINTR_LICENSE_KEY__",
+        // Optional: open one building at start (both or neither).
+        siteInternalIdentifier: undefined,
+        buildingInternalIdentifier: undefined,
+      };
+
+      // A sandbox without allow-same-origin gives the page an opaque origin,
+      // and reading localStorage there throws: the SDK reads it unguarded in
+      // start() and fails ("Failed to authenticate SecurityError", measured).
+      // A memory stand-in lets it run; nothing persists between visits.
+      var storageNote = "real";
+      ["localStorage", "sessionStorage"].forEach(function (name) {
+        try {
+          window[name].getItem("pointr-check");
+        } catch (e) {
+          var mem = {};
+          storageNote = "memory stand-in (sandbox has no storage)";
+          Object.defineProperty(window, name, {
+            configurable: true,
+            value: {
+              getItem: function (k) {
+                return Object.prototype.hasOwnProperty.call(mem, k)
+                  ? mem[k]
+                  : null;
+              },
+              setItem: function (k, v) {
+                mem[k] = String(v);
+              },
+              removeItem: function (k) {
+                delete mem[k];
+              },
+              clear: function () {
+                mem = {};
+              },
+              key: function (i) {
+                return Object.keys(mem)[i] || null;
+              },
+              get length() {
+                return Object.keys(mem).length;
+              },
+            },
+          });
+        }
+      });
+
+      var state = {
+        storage: storageNote,
+        css: "waiting",
+        script: "waiting",
+        auth: "waiting",
+        data: "waiting",
+        map: "waiting",
+      };
+      var hosts = {};
+      function render() {
+        var rows = Object.keys(state).map(function (key) {
+          var v = state[key];
+          var cls = /^(ok|ready|real)/.test(v)
+            ? "good"
+            : /fail|blocked|error/.test(v)
+              ? "bad"
+              : "";
+          return "<li class='" + cls + "'>" + key + ": " + v + "</li>";
+        });
+        var v = window.__pointrCheck.violations.filter(function (x, i, all) {
+          return all.indexOf(x) === i;
+        });
+        var host = Object.keys(hosts).join(", ") || "none yet";
+        document.getElementById("check").innerHTML =
+          "<strong>Pointr map sandbox check</strong><ul>" +
+          rows.join("") +
+          "<li>hosts reached: " +
+          host +
+          "</li>" +
+          "<li class='" +
+          (v.length ? "bad" : "good") +
+          "'>CSP violations: " +
+          (v.length ? v.slice(0, 8).join("<br>") : "none") +
+          "</li></ul>";
+      }
+      window.__pointrCheckRender = render;
+      render();
+
+      // Which hosts answered (resource timing sees fetches, scripts, images).
+      try {
+        new PerformanceObserver(function (list) {
+          list.getEntries().forEach(function (entry) {
+            try {
+              var h = new URL(entry.name).host;
+              if (h && h !== location.host) hosts[h] = true;
+              if (/\/auth\/token$/.test(new URL(entry.name).pathname))
+                state.auth =
+                  entry.responseStatus >= 400
+                    ? "failed (" + entry.responseStatus + ")"
+                    : "ok";
+            } catch (e) {}
+          });
+          render();
+        }).observe({ type: "resource", buffered: true });
+      } catch (e) {}
+
+      var link = document.getElementById("pointr-css");
+      state.css = link.sheet ? "ok" : "waiting";
+      link.addEventListener("load", function () {
+        state.css = "ok";
+        render();
+      });
+      link.addEventListener("error", function () {
+        state.css = "failed (network or style-src)";
+        render();
+      });
+
+      if (/^__POINTR_/.test(POINTR.clientIdentifier)) {
+        state.script = "not started: replace the placeholders in POINTR";
+        render();
+      } else {
+        var script = document.createElement("script");
+        script.src =
+          "https://pointr-websdk.azureedge.net/10.13.0/pointrwebsdk.js";
+        script.onerror = function () {
+          state.script = "failed (network or script-src)";
+          render();
+        };
+        script.onload = start;
+        document.head.appendChild(script);
+      }
+
+      function start() {
+        if (!window.PointrWebSDK) {
+          state.script = "failed: ran but set no PointrWebSDK";
+          return render();
+        }
+        state.script = "ok";
+        // The Cloud's onboarding card shows in a first session only.
+        try {
+          if (!Number(localStorage.getItem("sessionCount")))
+            localStorage.setItem("sessionCount", "1");
+        } catch (e) {}
+        var config = {
+          container: "pointr-map",
+          baseUrl: POINTR.baseUrl,
+          clientIdentifier: POINTR.clientIdentifier,
+          licenseKey: POINTR.licenseKey,
+          mapMaxZoom: 21,
+          isSearchEnabled: false,
+          isPoiDetailsEnabled: false,
+          isZoomControlEnabled: false,
+          isLanguageSelectorEnabled: false,
+          isNavigationEnabled: false,
+          isAccessibilityEnabled: false,
+          isQuickAccessEnabled: false,
+          isAppBannerEnabled: false,
+        };
+        if (
+          POINTR.siteInternalIdentifier &&
+          POINTR.buildingInternalIdentifier
+        ) {
+          config.siteInternalIdentifier = POINTR.siteInternalIdentifier;
+          config.buildingInternalIdentifier = POINTR.buildingInternalIdentifier;
+        }
+        try {
+          var widget = new PointrWebSDK.MapWidget(
+            new PointrWebSDK.Options(config),
+          );
+          widget.on("data-loaded", function () {
+            state.data = "ok";
+            render();
+          });
+          widget.start();
+        } catch (e) {
+          state.map = "error: " + e.message;
+          return render();
+        }
+        var tries = 0;
+        var poll = setInterval(function () {
+          tries += 1;
+          var view =
+            widget.getUiController() &&
+            widget.getUiController().getMapViewController() &&
+            widget.getUiController().getMapViewController().getView();
+          var map = view && view.map;
+          if (map && view.isMapReadyEmitted) {
+            clearInterval(poll);
+            state.map =
+              "ready (MapLibre map reachable: flyTo " +
+              typeof map.flyTo +
+              ", setPadding " +
+              typeof map.setPadding +
+              ")";
+            window.pointrMap = map;
+            window.pointrWidget = widget;
+          } else if (tries > 120) {
+            clearInterval(poll);
+            state.map =
+              "failed: no map after 60 s (see CSP violations; WebGL may be unavailable)";
+          }
+          render();
+        }, 500);
+      }
+    </script>
+  </body>
+</html>
