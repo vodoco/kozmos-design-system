@@ -12,6 +12,11 @@ const config: StorybookConfig = {
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     "../../../packages/react/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     "../../../packages/react/src/**/*.mdx",
+    // Spikes need the network and run-time identifiers: never in a build,
+    // the visual review or the catalogue unless asked for.
+    ...(process.env.KOZMOS_SPIKES === "1"
+      ? ["../spikes/**/*.stories.@(ts|tsx)"]
+      : []),
   ],
   addons: [
     getAbsolutePath("@storybook/addon-links"),
