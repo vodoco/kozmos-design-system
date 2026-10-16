@@ -61,6 +61,12 @@ const markers: [string, React.ComponentProps<typeof LocationPin>][] = [
       onClick: () => {},
     },
   ],
+  // Disabled with an action: a disabled button to assistive technology, but
+  // pointers reach the map under it, as on SwiftUI.
+  [
+    "result-disabled",
+    { label: "Result 9", number: 9, disabled: true, onOpen: () => {} },
+  ],
 ];
 
 function Board({

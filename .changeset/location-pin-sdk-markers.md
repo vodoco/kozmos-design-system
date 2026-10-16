@@ -8,7 +8,10 @@ LocationPin draws the SDK's map result markers (decision 71, GAP-120), as the bo
 - **A featured place** (`featured`) is its logo (`markerContent`, normally an image, fitted inside the rim, never cropped) in a 44 tile with a 3 rim in foreground/0, 52 when selected, on a dot whose centre is the anchor. It shows no number, no star and no accent colour. Its name still adds `featuredLabel`.
 - **A place on its own** (`place`, new) is the green pin, emotional success 800 round a disc, on a dot whose centre is the anchor. It is the marker for a place whose details are open, the only one shown, and it wins over `featured` and `number`.
 - **Its name** is `label`, whole, as your product writes it with the number in it ("Result 3, Burger King"); LocationPin adds only `featuredLabel` on a featured tile.
-- **`onOpen`** (new): a double tap on the marker opens the place's details rather than zooming the map, with the same gate as `POIResultList.onOpen`. The first tap is the ordinary press; a keyboard press is always the ordinary press. Its target is 44 square at least.
+- **`onOpen`** (new): a double tap on the marker opens the place's details rather than zooming the map, with the same gate as `POIResultList.onOpen`. The first tap is the ordinary press; a keyboard press is always the ordinary press. Its target is 44 square at least. With `onOpen`, the second tap's `dblclick` stops at the pin, so a map that zooms on double click doesn't zoom as well.
+- **Pointers:** a pin with no `onClick` or `onOpen`, or a disabled one, lets presses through to the map (`pointer-events: none`), as SwiftUI does. A disabled pin with an action is still a disabled button for assistive technology. Handlers passed through to a static pin (`onMouseEnter` and the like) no longer fire; give it `onClick` to make it interactive.
+- **`aria-current="location"`** is now on a place as well as on a selected result.
+- **Analytics:** `location_pin_clicked` carries `kind` where it carried `variant` and `size` (`number` and `selected` stay), and a new `location_pin_opened` event carries `kind` and `number`.
 
 **Removed** (decisions 79 and 80):
 

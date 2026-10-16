@@ -65,6 +65,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       resultId,
       onOpen,
       onClick,
+      onDoubleClick,
       onKeyDown,
       ...props
     },
@@ -74,6 +75,16 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     const doubleTap = useDoubleTapGate();
     const kind: Kind = place ? "place" : featured ? "featured" : "result";
     const isInteractive = Boolean(onClick || onOpen);
+    // A disabled pin is still a (disabled) button for assistive technology,
+    // but lets pointers through to the map, as on SwiftUI.
+    const takesPointers = isInteractive && !disabled;
+
+    // The second tap opens the place "rather than zooming the map" (decision
+    // 71): a map that zooms on double click listens above the pin.
+    const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+      if (onOpen && !disabled) event.stopPropagation();
+      onDoubleClick?.(event);
+    };
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
@@ -118,10 +129,11 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         // @scope.
         className={cn("kozmos-location-pin", className)}
         data-disabled={disabled || undefined}
-        data-interactive={isInteractive || undefined}
+        data-interactive={takesPointers || undefined}
         data-kind={kind}
         data-selected={selected || undefined}
         onClick={isInteractive ? handleClick : undefined}
+        onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
         role={isInteractive ? "button" : "img"}
         tabIndex={isInteractive && !disabled ? 0 : undefined}

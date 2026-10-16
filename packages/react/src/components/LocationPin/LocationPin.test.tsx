@@ -164,6 +164,41 @@ describe("LocationPin", () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 
+  // Review, 16 Oct: the second tap opened the details and still reached the
+  // map, so a MapLibre container zoomed too. Decision 71 says it opens
+  // "rather than zooming the map".
+  it("keeps the double tap from the map when it opens, and only then", () => {
+    const onMapDoubleClick = vi.fn();
+    const { rerender } = render(
+      <div onDoubleClick={onMapDoubleClick}>
+        <LocationPin label="Result 4" number={4} onOpen={vi.fn()} />
+      </div>,
+    );
+    fireEvent.doubleClick(screen.getByRole("button", { name: "Result 4" }));
+    expect(onMapDoubleClick).not.toHaveBeenCalled();
+    // Without onOpen a double tap is the map's, as before.
+    rerender(
+      <div onDoubleClick={onMapDoubleClick}>
+        <LocationPin label="Result 4" number={4} onClick={vi.fn()} />
+      </div>,
+    );
+    fireEvent.doubleClick(screen.getByRole("button", { name: "Result 4" }));
+    expect(onMapDoubleClick).toHaveBeenCalledTimes(1);
+  });
+
+  // Review, 16 Oct: a disabled pin with an action kept catching pointers and
+  // its 44 target, where SwiftUI passes them through to the map. It stays a
+  // button, disabled, for assistive technology.
+  it("lets pointers through when disabled, and is still a disabled button", () => {
+    render(
+      <LocationPin disabled label="Unavailable" number={5} onOpen={vi.fn()} />,
+    );
+    const pin = screen.getByRole("button", { name: "Unavailable" });
+    expect(pin).toHaveAttribute("aria-disabled", "true");
+    // Owned CSS gives pointers and the target only to data-interactive.
+    expect(pin).not.toHaveAttribute("data-interactive");
+  });
+
   it("presses on every tap without onOpen, as before", () => {
     const onClick = vi.fn();
     render(<LocationPin label="Result 3" number={3} onClick={onClick} />);

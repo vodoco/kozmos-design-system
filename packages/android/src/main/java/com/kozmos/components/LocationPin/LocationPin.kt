@@ -356,7 +356,7 @@ fun KozmosLocationPin(
         val drawBottom = drawTop + geometry.drawHeight.toPx()
         val anchorX = (drawLeft + drawRight) / 2f
         val anchorY = drawTop + geometry.anchorY.toPx()
-        val bodyMiddle = drawTop + geometry.bodyHeight.toPx() / 2f
+        val shapeMiddle = drawTop + geometry.shapeMiddle.toPx()
         val gap = KozmosDimensions.primitivesLayoutSpacing50.toPx()
         // The label beside the drawing, in left-to-right terms: Left is the
         // start side.
@@ -364,8 +364,8 @@ fun KozmosLocationPin(
             when (labelPlacement) {
                 KozmosLocationPinLabelPlacement.Top -> Offset(anchorX - it.width / 2f, drawTop - gap - it.height)
                 KozmosLocationPinLabelPlacement.Bottom -> Offset(anchorX - it.width / 2f, drawBottom + gap)
-                KozmosLocationPinLabelPlacement.Left -> Offset(drawLeft - gap - it.width, bodyMiddle - it.height / 2f)
-                KozmosLocationPinLabelPlacement.Right -> Offset(drawRight + gap, bodyMiddle - it.height / 2f)
+                KozmosLocationPinLabelPlacement.Left -> Offset(drawLeft - gap - it.width, shapeMiddle - it.height / 2f)
+                KozmosLocationPinLabelPlacement.Right -> Offset(drawRight + gap, shapeMiddle - it.height / 2f)
             }
         }
         val left = minOf(0f, labelAt?.x ?: 0f)
@@ -431,7 +431,13 @@ private class MarkerGeometry(
     /** The body's height from the drawing's top: the pill and pointer, the tile, the teardrop. */
     val bodyHeight: Dp,
     /** The anchor's height from the drawing's top; across, it is the middle. */
-    val anchorY: Dp
+    val anchorY: Dp,
+    /**
+     * The shape's middle from the drawing's top, where a label at the start or
+     * end centres, as on React and SwiftUI: the pill's, the tile's, the
+     * place's circle's.
+     */
+    val shapeMiddle: Dp
 ) {
     val targetWidth = max(MIN_TARGET, drawWidth)
     val targetHeight = max(MIN_TARGET, bodyHeight)
@@ -444,20 +450,22 @@ private class MarkerGeometry(
     val targetTop = targetTopInDrawing - boxTop
 
     companion object {
-        fun result(pillWidth: Dp) = MarkerGeometry(pillWidth, POINTER_TIP, POINTER_TIP, POINTER_TIP)
+        fun result(pillWidth: Dp) = MarkerGeometry(pillWidth, POINTER_TIP, POINTER_TIP, POINTER_TIP, PILL_HEIGHT / 2)
 
         fun featured(tile: Dp) = MarkerGeometry(
             drawWidth = tile,
             drawHeight = tile + TILE_DOT_GAP + ANCHOR_DOT,
             bodyHeight = tile,
-            anchorY = tile + TILE_DOT_GAP + ANCHOR_DOT / 2
+            anchorY = tile + TILE_DOT_GAP + ANCHOR_DOT / 2,
+            shapeMiddle = tile / 2
         )
 
         fun place() = MarkerGeometry(
             drawWidth = PLACE_CIRCLE,
             drawHeight = PLACE_CIRCLE + PLACE_DOT_GAP + ANCHOR_DOT,
             bodyHeight = PLACE_CIRCLE / 2 * (1f + sqrt(2f)),
-            anchorY = PLACE_CIRCLE + PLACE_DOT_GAP + ANCHOR_DOT / 2
+            anchorY = PLACE_CIRCLE + PLACE_DOT_GAP + ANCHOR_DOT / 2,
+            shapeMiddle = PLACE_CIRCLE / 2
         )
     }
 }

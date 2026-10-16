@@ -423,6 +423,49 @@ class KozmosLocationPinMarkersTest {
     }
 
     /**
+     * A label at the start or end is centred on the marker's shape, as React
+     * and SwiftUI centre it: the pill's middle, 16 below its top, not the pill
+     * with its pointer; the place's circle, 20 below its top, not the
+     * teardrop. Review, 16 Oct: Compose centred it on the whole body, 19 and
+     * 24.1. Read from the label's ink, whose middle sits a fixed distance
+     * above its box's for a line without descenders.
+     */
+    @Test
+    fun aLabelBesideTheMarkerIsCentredOnItsShape() {
+        val wrong = mutableListOf<String>()
+        val ink = near(0xFF17191C.toInt(), 60)
+        fun labelMiddle(frame: Frame, shape: Box4): Float? =
+            frame.bounds(Box4(shape.right + 2f, shape.top - 20f, shape.right + 120f, shape.top + 60f), ink)
+                ?.let { (it.top + it.bottom) / 2 }
+
+        val result = draw(dark = false) {
+            KozmosLocationPin(number = 3, externalLabel = "Gate 12", labelPlacement = KozmosLocationPinLabelPlacement.Right)
+        }
+        val pill = result.bounds(matches = near(theme600(false), 6))
+        val place = draw(dark = false) {
+            KozmosLocationPin(label = "Harbour", place = true, externalLabel = "Gate 12", labelPlacement = KozmosLocationPinLabelPlacement.Right)
+        }
+        val teardrop = place.bounds(matches = near(success800(false), 6))
+        if (pill == null || teardrop == null) {
+            wrong += "a marker drew no shape (pill $pill, teardrop $teardrop)"
+        } else {
+            val resultLabel = labelMiddle(result, pill)
+            val placeLabel = labelMiddle(place, teardrop)
+            println("Track 2 Android, side labels: the Result's ink middle %.2f below the pill's top, the place's %.2f below the circle's".format(
+                resultLabel?.minus(pill.top), placeLabel?.minus(teardrop.top)))
+            if (resultLabel == null || placeLabel == null) wrong += "a label drew no ink beside its marker"
+            else {
+                // The ink's middle is the same distance from its box's middle
+                // in both: the label centres on 16 and on 20 when the two
+                // differ by 4, and on the body (19 and 24.1) when by 5.1.
+                wrong.within("the place's label below the Result's", placeLabel - teardrop.top - (resultLabel - pill.top), 4f, 0.5f)
+                wrong.within("the Result's label centre", resultLabel - pill.top, 16f, 1.5f)
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
      * The featured tile's logo, `markerContent`, has the area inside the rim
      * (38, or 46 selected), clipped to the inner radius 13: a logo that fills
      * it shows to the rim along the edges but not in the corners, and the rim

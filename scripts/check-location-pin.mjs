@@ -151,7 +151,9 @@ try {
                     r.left + r.width / 2,
                     r.top + r.height / 2,
                   );
-                  return !(hit && pin.contains(hit));
+                  // Something under the pin takes it: a probe off the page
+                  // finds nothing and would prove nothing.
+                  return Boolean(hit) && !pin.contains(hit);
                 })()
               : null;
           out[key].pins[id] = {
@@ -394,8 +396,9 @@ try {
             ),
           );
       }
-      // A marker nothing presses lets a press through to the map.
-      for (const id of ["dot", "featured-selected"]) {
+      // A marker nothing presses lets a press through to the map, and so
+      // does a disabled one with an action (review, 16 Oct).
+      for (const id of ["dot", "featured-selected", "result-disabled"]) {
         reads += 1;
         if (pins[id].passes !== true)
           failures.push(
@@ -444,6 +447,33 @@ try {
         if (pins[id].target !== true)
           failures.push(at(id, "a press 21 off the marker's centre misses it"));
       }
+    }
+    // A double click on a marker that opens stops at it, so a map that zooms
+    // on double click (listening above the pin) doesn't zoom as well; one on
+    // a marker that only presses still reaches the map (review, 16 Oct).
+    for (const [id, reaches] of [
+      ["result-1", false],
+      ["featured", true],
+    ]) {
+      const pin = page.locator(`[data-pin="light-ltr-${id}"]`);
+      await page.evaluate(() => {
+        window.__mapDoubleClicks = 0;
+        document.addEventListener(
+          "dblclick",
+          () => {
+            window.__mapDoubleClicks += 1;
+          },
+          { once: true },
+        );
+      });
+      const box = await pin.locator(".kozmos-location-pin-body").boundingBox();
+      await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+      const count = await page.evaluate(() => window.__mapDoubleClicks);
+      reads += 1;
+      if (count > 0 !== reaches)
+        failures.push(
+          `${mode} light-ltr ${id}: a double click ${count > 0 ? "reached" : "did not reach"} the map, expected it ${reaches ? "to" : "not to"}`,
+        );
     }
     await page.close();
   }
