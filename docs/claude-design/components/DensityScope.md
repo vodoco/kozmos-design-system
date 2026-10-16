@@ -2,7 +2,7 @@
 
 # DensityScope
 
-One region at another density inside a provider (decision 82), such as a compact editor's toolbar on a touch page. Its controls, the providers nested in it and the popovers it opens take `density`, and the theme, its tokens and the design configuration around it carry on unchanged. Every SDK part's root is a touch scope, so it keeps the SDK's geometry on a compact page.
+One region at another density inside a provider (decision 82), such as a compact editor's toolbar on a touch page. Its controls, the providers nested in it and the popovers it opens take `density`, and the theme, its tokens and the design configuration around it carry on unchanged. Every SDK part's root is a touch scope, so it keeps the SDK's geometry on a compact page (decision 89).
 
 - **Import:** `import { DensityScope } from "@kozmos-ds/react";`
 - **Group:** Providers
@@ -36,7 +36,8 @@ Its props are `DensityScopeProps`.
 
   Mark the one child element instead of adding an element: the child must
   pass a `data-*` attribute on to the element it renders. Anything but one
-  element gets an element of its own, as without `asChild`.
+  element, a fragment included, gets an element of its own, as without
+  `asChild`.
 
 - `children`: `React.ReactNode`, **required**.
 
@@ -48,11 +49,13 @@ From `@kozmos-ds/react`.
 
 ```ts
 /**
- * How large the controls are (decision 82). `touch`, the default, keeps every
- * control at least 44 tall, as products and the SDK want. `compact` is for
- * pointer-first desktop tools such as Pointr Cloud: 32, 40 and 48 buttons,
- * 28, 32 and 40 icon buttons, and 40 fields. It is web only; SwiftUI and
- * Compose stay touch.
+ * How large the controls are (decision 82). `touch`, the default, keeps
+ * today's sizes, as products and the SDK want: buttons, icon buttons and
+ * fields 44, the large icon button 48. `compact` is for pointer-first desktop
+ * tools such as Pointr Cloud: 32, 40 and 48 buttons, 28, 32 and 40 icon
+ * buttons, and 40 fields. Parts with a smaller size of their own keep it at
+ * both: MultiSelect's clear and open buttons and the small Chip are 28. It is
+ * web only; SwiftUI and Compose stay touch.
  */
 type ThemeDensity = "touch" | "compact";
 ```

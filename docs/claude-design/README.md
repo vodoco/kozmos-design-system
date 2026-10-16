@@ -19,7 +19,7 @@ npm install @kozmos-ds/react react react-dom
 - Import `@kozmos-ds/react/style.css` once. It holds the token variables for both themes and every component's styles, so there is no Tailwind configuration to add.
 - Put everything inside a `ThemeProvider`. The styles are scoped to the provider's own part of the page: a component outside one is not themed, and most are not styled at all. `defaultTheme` takes `"dark" | "light" | "system"`, and `dir="rtl"` lays the provider's components out right to left.
 - The scoping is CSS `@scope`, which sets the browser floor: Chrome 118, Edge 118, Safari 17.4, Firefox 146 and Android WebView 118.
-- **Density** (decision 82). `density="compact"` on the provider sizes the controls for a pointer-first desktop tool such as Pointr Cloud: buttons 32, 40 and 48, icon buttons 28, 32 and 40, single-line fields 40. `touch`, the default, keeps buttons and fields 44 and icon buttons 44, 44 and 48. `DensityScope density="…"` puts one region at another density and keeps the theme around it. SDK parts stay touch on a compact page.
+- **Density** (decision 82). `density="compact"` on the provider sizes the controls for a pointer-first desktop tool such as Pointr Cloud: buttons 32, 40 and 48, icon buttons 28, 32 and 40, single-line fields 40. `touch`, the default, keeps buttons and fields 44 and icon buttons 44, 44 and 48. `DensityScope density="…"` puts one region at another density and keeps the theme around it. SDK parts stay touch on a compact page, and so does what a product puts in an SDK part's slots unless it wraps that in `DensityScope density="compact"` (decision 89).
 
 ### A minimal example
 
