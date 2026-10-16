@@ -50,6 +50,9 @@ public struct KozmosTag: View {
     /// Unset and the variant draws as it always has; set and the emotion
     /// decides the colour, whatever the variant.
     let emotion: KozmosEmotion?
+    /// The remove button's spoken name. English by default, as React's is; a
+    /// product that translates passes its own.
+    let removeLabel: String
     let onRemove: (() -> Void)?
     
     public enum KozmosTagVariant {
@@ -81,11 +84,13 @@ public struct KozmosTag: View {
         _ text: String,
         variant: KozmosTagVariant = .default,
         emotion: KozmosEmotion? = nil,
+        removeLabel: String = "Remove",
         onRemove: (() -> Void)? = nil
     ) {
         self.text = text
         self.variant = variant
         self.emotion = emotion
+        self.removeLabel = removeLabel
         self.onRemove = onRemove
     }
 
@@ -107,12 +112,17 @@ public struct KozmosTag: View {
                 .foregroundColor(resolvedForeground)
             
             if let onRemove = onRemove {
+                // Named in the product's words: VoiceOver read the symbol's
+                // own "Close". The glyph is drawn about 12pt; SwiftUI's hit
+                // testing already gives it a 24pt target, which
+                // testTagRemoveIsNamedRemoveWithA24PointTarget taps.
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(KozmosTypography.caption2)
                         .fontWeight(.bold)
                         .foregroundColor(resolvedForeground)
                 }
+                .accessibilityLabel(removeLabel)
             }
         }
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
