@@ -6,20 +6,28 @@
  *
  * What holds a root, read from the source:
  *
- * - `<DensityScope density="touch" asChild>`, with `asChild` bare or `{true}`,
- *   around exactly one JSX element whose tag is intrinsic or a component known
- *   to pass `data-*` on to its element (FORWARDS_DATA). A fragment, an
- *   expression or another component would lose the mark.
+ * - Kozmos's `<DensityScope density="touch" asChild>` (by its import, under
+ *   any local name), with `asChild` bare or `{true}` and no spread that could
+ *   override either, around exactly one JSX element whose tag is intrinsic or
+ *   a component known to pass `data-*` on to its element (FORWARDS_DATA, each
+ *   confirmed to spread its own props). A fragment, an expression or another
+ *   component would lose the mark.
+ * - Every way the render returns: each return, both sides of a ternary, the
+ *   right of an `&&`; a function inside the render returns for itself.
  * - A wrapper that renders no element (a context provider, Dialog.Root) is
  *   looked into; it must hold one child.
- * - A fragment's children are each held, but for one with a bare `hidden`,
- *   which has no geometry to hold; `hidden={…}` may show, so it is held too.
- * - A returned identifier is followed only to a `const` of the render's own
+ * - A fragment's children are each held, but for a plain intrinsic element
+ *   with a bare `hidden` and no class or style, which has no geometry to hold.
+ * - A returned identifier is followed only to a `const` of its own render's
  *   top-level block that nothing reassigns or shadows.
- * - A component of the same file is followed into its own render.
+ * - A component of the same file is followed into its own render, once.
  *
- * Nothing in an SDK directory marks a density by hand: a bare attribute would
- * hold the CSS but not the providers and popovers inside.
+ * Nothing in an SDK directory, in any file, marks a density by hand or sets
+ * one inside a part (a DensityScope other than touch, a provider's
+ * `density`): a bare attribute would hold the CSS but not the providers and
+ * popovers inside. An export of a shape this can't follow is named, never
+ * skipped. Reviewed adversarially on 16 Oct: each rule has a self-test that
+ * fails when the rule is taken out.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -58,7 +66,14 @@ export const EXEMPT = {
 };
 
 const unwrap = (node) => {
-  while (node && ts.isParenthesizedExpression(node)) node = node.expression;
+  while (
+    node &&
+    (ts.isParenthesizedExpression(node) ||
+      ts.isAsExpression(node) ||
+      ts.isSatisfiesExpression(node) ||
+      ts.isNonNullExpression(node))
+  )
+    node = node.expression;
   return node;
 };
 const opening = (node) => (ts.isJsxElement(node) ? node.openingElement : node);
@@ -79,10 +94,36 @@ const rendered = (children) =>
   );
 const isElement = (node) =>
   ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node);
-// Only a bare `hidden` is surely hidden.
+// Only a bare `hidden` on a plain intrinsic element is surely hidden: a
+// component may ignore it, and the stylesheet's [hidden] rule has no weight,
+// so any class or style that sets display shows the element.
 const bareHidden = (node, sf) => {
   const hidden = attribute(node, "hidden", sf);
-  return Boolean(hidden && !hidden.initializer);
+  if (!hidden || hidden.initializer) return false;
+  if (!/^[a-z][\w-]*$/.test(tagOf(node, sf))) return false;
+  return opening(node).attributes.properties.every(
+    (property) =>
+      ts.isJsxAttribute(property) &&
+      !["className", "class", "style"].includes(property.name.getText(sf)),
+  );
+};
+
+// The local names this file gives Kozmos's DensityScope, by its import.
+const scopeNames = (sf) => {
+  const names = new Set();
+  for (const statement of sf.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !/(^|\/)(theme|DensityScope)$/.test(statement.moduleSpecifier.text)
+    )
+      continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamedImports(bindings))
+      for (const element of bindings.elements)
+        if ((element.propertyName ?? element.name).text === "DensityScope")
+          names.add(element.name.text);
+  }
+  return names;
 };
 
 /** The function a component named `name` renders with, or null. */
@@ -99,19 +140,19 @@ export function renderOf(sf, name) {
       while (
         init &&
         !ts.isArrowFunction(init) &&
-        !ts.isFunctionExpression(init)
+        !ts.isFunctionExpression(init) &&
+        !ts.isIdentifier(init)
       )
+        // forwardRef(fn), memo(fn, compare), memo(forwardRef(fn)): the
+        // render is the first argument, never memo's comparator.
         init = ts.isCallExpression(init)
-          ? init.arguments.find(
-              (argument) =>
-                ts.isArrowFunction(argument) ||
-                ts.isFunctionExpression(argument) ||
-                ts.isCallExpression(argument),
-            )
+          ? init.arguments[0]
           : ts.isAsExpression(init) || ts.isParenthesizedExpression(init)
             ? init.expression
             : null;
-      render = init ?? null;
+      if (init && ts.isIdentifier(init) && init.text !== name)
+        render = renderOf(sf, init.text);
+      else render = init ?? null;
     }
     if (ts.isFunctionDeclaration(node) && node.name?.getText(sf) === name)
       render = node;
@@ -195,11 +236,24 @@ function constOf(name, render) {
   return { value: own[0].initializer };
 }
 
+// A density written `"touch"` or `{"touch"}`.
+const densityOf = (node, sf) => {
+  let value = attribute(node, "density", sf)?.initializer;
+  if (value && ts.isJsxExpression(value)) value = unwrap(value.expression);
+  return value && ts.isStringLiteral(value) ? value.text : value?.getText(sf);
+};
+
 function densityScope(node, sf) {
   const problems = [];
-  const density = attribute(node, "density", sf)?.initializer?.getText(sf);
-  if (density !== '"touch"')
-    problems.push(`a DensityScope with density ${density ?? "unset"}`);
+  if (opening(node).attributes.properties.some(ts.isJsxSpreadAttribute))
+    problems.push(
+      "a DensityScope with a spread, which can override its density or asChild",
+    );
+  const density = densityOf(node, sf);
+  if (density !== "touch")
+    problems.push(
+      `a DensityScope with density ${density ? JSON.stringify(density) : "unset"}`,
+    );
   const asChild = attribute(node, "asChild", sf);
   if (!asChild) problems.push("a DensityScope with no asChild");
   else if (
@@ -230,39 +284,55 @@ function densityScope(node, sf) {
 }
 
 /** What keeps `node`, one way a render returns, from being a touch root. */
-function held(node, sf, scope, seen) {
+function held(node, sf, scope, seen, scopes) {
   node = unwrap(node);
-  if (!node || node.kind === ts.SyntaxKind.NullKeyword) return [];
+  // Nothing rendered holds nothing.
+  if (
+    !node ||
+    node.kind === ts.SyntaxKind.NullKeyword ||
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    (ts.isIdentifier(node) && node.text === "undefined")
+  )
+    return [];
   if (ts.isIdentifier(node)) {
-    if (seen.has(node.text)) return [];
-    seen.add(node.text);
+    // A name is its render's: the same name in another render is another.
+    const key = `${scope.pos}:${node.text}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
     const { value, problem } = constOf(node.text, scope);
-    return value ? held(value, sf, scope, seen) : [problem];
+    return value ? held(value, sf, scope, seen, scopes) : [problem];
   }
   if (ts.isConditionalExpression(node))
     return [
-      ...held(node.whenTrue, sf, scope, seen),
-      ...held(node.whenFalse, sf, scope, seen),
+      ...held(node.whenTrue, sf, scope, seen, scopes),
+      ...held(node.whenFalse, sf, scope, seen, scopes),
     ];
   if (
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
   )
-    return held(node.right, sf, scope, seen);
-  if (ts.isJsxFragment(node))
+    return held(node.right, sf, scope, seen, scopes);
+  const fragment =
+    ts.isJsxFragment(node) ||
+    (ts.isJsxElement(node) &&
+      /^(React\.)?Fragment$/.test(tagOf(node, sf)) &&
+      opening(node).attributes.properties.length === 0);
+  if (fragment)
     return node.children.flatMap((child) => {
       if (ts.isJsxText(child)) return [];
       if (ts.isJsxExpression(child))
-        return child.expression ? held(child.expression, sf, scope, seen) : [];
+        return child.expression
+          ? held(child.expression, sf, scope, seen, scopes)
+          : [];
       if (isElement(child) && bareHidden(child, sf)) return [];
-      return held(child, sf, scope, seen);
+      return held(child, sf, scope, seen, scopes);
     });
   if (!isElement(node))
     return [`returns ${ts.SyntaxKind[node.kind]}, which can't be read`];
   // Hidden, it has no geometry to hold.
   if (bareHidden(node, sf)) return [];
   const tag = tagOf(node, sf);
-  if (tag === "DensityScope") return densityScope(node, sf);
+  if (scopes.has(tag)) return densityScope(node, sf);
   // A wrapper that renders no element: look inside.
   if (rendersNoElement(tag) && ts.isJsxElement(node)) {
     const children = rendered(node.children);
@@ -274,15 +344,17 @@ function held(node, sf, scope, seen) {
           sf,
           scope,
           seen,
+          scopes,
         )
       : [`<${tag}> holds ${children.length} children`];
   }
-  // A part of the same file: its own render must hold its root.
-  const inner = /^[A-Z]\w*$/.test(tag) && !seen.has(tag) && renderOf(sf, tag);
+  // A part of the same file: its own render must hold its root, read once.
+  const inner = /^[A-Z]\w*$/.test(tag) && renderOf(sf, tag);
   if (inner) {
-    seen.add(tag);
+    if (seen.has(`part:${tag}`)) return [];
+    seen.add(`part:${tag}`);
     return returnsOf(inner).flatMap((expression) =>
-      held(expression, sf, inner, seen),
+      held(expression, sf, inner, seen, scopes),
     );
   }
   return [`returns <${tag}> at line ${line(node, sf)}`];
@@ -304,8 +376,10 @@ export function checkComponent(text, name, fileName = `${name}.tsx`) {
   if (!render) return [`no render function named ${name}`];
   const returns = returnsOf(render);
   if (!returns.length) return ["its render returns nothing"];
+  const seen = new Set();
+  const scopes = scopeNames(sf);
   return returns.flatMap((expression) =>
-    held(expression, sf, render, new Set()),
+    held(expression, sf, render, seen, scopes),
   );
 }
 
@@ -316,12 +390,18 @@ const resolveModule = (from, specifier) => {
   return null;
 };
 
-/** The values a module exports, each with the file that declares it. */
+/**
+ * The values a module exports, each with the file that declares it. An
+ * export of a shape this can't follow comes back as `{ unreadable }`, so it
+ * is named rather than skipped.
+ */
 export function exportsOf(file, seen = new Set()) {
   if (!file || seen.has(file)) return [];
   seen.add(file);
   const sf = parseSource(file, fs.readFileSync(file, "utf8"));
   const out = [];
+  const unreadable = (statement) =>
+    out.push({ unreadable: statement.getText(sf).split("\n")[0], file });
   const exported = (node) =>
     node.modifiers?.some(
       (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
@@ -333,14 +413,28 @@ export function exportsOf(file, seen = new Set()) {
         ? resolveModule(file, statement.moduleSpecifier.text)
         : file;
       if (!statement.exportClause) out.push(...exportsOf(target, seen));
-      else if (ts.isNamedExports(statement.exportClause))
-        for (const element of statement.exportClause.elements)
-          if (!element.isTypeOnly)
+      else if (ts.isNamedExports(statement.exportClause)) {
+        for (const element of statement.exportClause.elements) {
+          if (element.isTypeOnly) continue;
+          const local = (element.propertyName ?? element.name).text;
+          if (local === "default" || element.name.text === "default")
+            unreadable(statement);
+          else if (statement.moduleSpecifier) {
+            // Re-exported from another module: follow it to where it is
+            // declared, under the name that module gives it.
+            const found = exportsOf(target, new Set(seen)).find(
+              (entry) => entry.name === local,
+            );
             out.push({
               name: element.name.text,
-              local: (element.propertyName ?? element.name).text,
-              file: target,
+              local: found?.local ?? local,
+              file: found?.file ?? target,
             });
+          } else out.push({ name: element.name.text, local, file: target });
+        }
+      } else unreadable(statement);
+    } else if (ts.isExportAssignment(statement)) {
+      unreadable(statement);
     } else if (exported(statement)) {
       if (ts.isVariableStatement(statement))
         for (const declaration of statement.declarationList.declarations)
@@ -350,6 +444,7 @@ export function exportsOf(file, seen = new Set()) {
               local: declaration.name.text,
               file,
             });
+          else unreadable(statement);
       if (
         (ts.isFunctionDeclaration(statement) ||
           ts.isClassDeclaration(statement)) &&
@@ -365,8 +460,16 @@ export function exportsOf(file, seen = new Set()) {
   return out;
 }
 
-// A component's name: a capital, and a small letter somewhere (not a constant).
-const isComponentName = (name) => /^[A-Z]/.test(name) && /[a-z]/.test(name);
+// A component's name starts with a capital. A name with a small letter is
+// always checked; one in capitals only (POI, or a constant like PANEL_SIZE)
+// is a component when its file gives it a render.
+const isComponent = (entry) => {
+  if (!/^[A-Z]/.test(entry.name)) return false;
+  if (/[a-z]/.test(entry.name)) return true;
+  if (!entry.file || !fs.existsSync(entry.file)) return false;
+  const sf = parseSource(entry.file, fs.readFileSync(entry.file, "utf8"));
+  return Boolean(renderOf(sf, entry.local));
+};
 
 /** Does the component `name` spread its props onto the element it renders? */
 function spreadsProps(componentsDir, name) {
@@ -382,15 +485,63 @@ function spreadsProps(componentsDir, name) {
     const children = ts.isJsxElement(node) ? rendered(node.children) : [];
     return children.length === 1 ? element(children[0]) : null;
   };
+  // The render's own props: its first parameter, or the rest of it.
+  const first = render?.parameters?.[0]?.name;
+  const props =
+    first && ts.isIdentifier(first)
+      ? first.text
+      : first && ts.isObjectBindingPattern(first)
+        ? first.elements.find((element) => element.dotDotDotToken)?.name?.text
+        : undefined;
   const returns = render ? returnsOf(render).map(element) : [];
   return (
+    Boolean(props) &&
     returns.length > 0 &&
     returns.every(
       (node) =>
         node &&
-        opening(node).attributes.properties.some(ts.isJsxSpreadAttribute),
+        opening(node).attributes.properties.some(
+          (property) =>
+            ts.isJsxSpreadAttribute(property) &&
+            ts.isIdentifier(unwrap(property.expression)) &&
+            unwrap(property.expression).text === props,
+        ),
     )
   );
+}
+
+// Every source file of a directory, in its subfolders too.
+const sourcesOf = (dir, prefix = "") =>
+  fs
+    .readdirSync(path.join(dir, prefix), { withFileTypes: true })
+    .flatMap((entry) => {
+      const file = path.join(prefix, entry.name);
+      if (entry.isDirectory()) return sourcesOf(dir, file);
+      return /\.tsx?$/.test(entry.name) &&
+        !/\.(test|stories|figma)\.tsx?$/.test(entry.name)
+        ? [file]
+        : [];
+    });
+
+// The densities a file sets inside a part: a DensityScope other than touch,
+// or a provider given a density of its own.
+const DENSITY_SETTERS = /^(ThemeProvider|DesignConfigProvider|KozmosTheme)$/;
+function densitiesSet(text, file) {
+  const sf = parseSource(file, text);
+  const scopes = scopeNames(sf);
+  const found = [];
+  const walk = (node) => {
+    if (isElement(node)) {
+      const tag = tagOf(node, sf);
+      const density = attribute(node, "density", sf) && densityOf(node, sf);
+      if (scopes.has(tag) && density !== "touch")
+        found.push(density ?? "unset");
+      else if (DENSITY_SETTERS.test(tag) && density) found.push(density);
+    }
+    ts.forEachChild(node, walk);
+  };
+  walk(sf);
+  return found;
 }
 
 /**
@@ -413,22 +564,27 @@ export function checkSdkParts(componentsDir = COMPONENTS) {
     if (!fs.existsSync(story)) continue;
     if (!/title:\s*"SDK\//.test(fs.readFileSync(story, "utf8"))) continue;
     parts += 1;
-    for (const file of fs.readdirSync(dir)) {
-      if (!/\.tsx?$/.test(file) || /\.(test|stories|figma)\.tsx?$/.test(file))
-        continue;
-      if (
-        /data-kozmos-density=/.test(
-          fs.readFileSync(path.join(dir, file), "utf8"),
-        )
-      )
+    for (const file of sourcesOf(dir)) {
+      const text = fs.readFileSync(path.join(dir, file), "utf8");
+      if (/data-kozmos-density/.test(text))
         unheld.push(`${name}: ${file} marks a density by hand`);
+      for (const density of densitiesSet(text, file))
+        unheld.push(
+          `${name}: ${file} sets density ${JSON.stringify(density)} inside the part`,
+        );
     }
     const index = ["index.ts", "index.tsx"]
       .map((file) => path.join(dir, file))
       .find((file) => fs.existsSync(file));
-    const exports = index
-      ? exportsOf(index).filter((entry) => isComponentName(entry.name))
+    const all = index
+      ? exportsOf(index)
       : [{ name, local: name, file: path.join(dir, `${name}.tsx`) }];
+    for (const entry of all)
+      if (entry.unreadable)
+        unheld.push(`${name}: an export it can't read: ${entry.unreadable}`);
+    const exports = all.filter(
+      (entry) => !entry.unreadable && isComponent(entry),
+    );
     if (!exports.length) unheld.push(`${name}: its index exports no component`);
     for (const entry of exports) {
       if (Object.hasOwn(EXEMPT, entry.name)) {
