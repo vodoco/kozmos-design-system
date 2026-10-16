@@ -1,5 +1,11 @@
 # @kozmos-ds/product-contracts
 
+## 0.9.1
+
+### Patch Changes
+
+- 08207f4: `FloorPresentation.resultCount`'s description no longer mentions hollow pins. The map marks no results on another level (decision 80), so the level's count is the one place that says a level has some. No type changes.
+
 ## 0.9.0
 
 ### Minor Changes

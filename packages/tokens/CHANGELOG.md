@@ -1,5 +1,18 @@
 # @kozmos-ds/tokens
 
+## 0.8.0
+
+### Minor Changes
+
+- 8ceb3bb: Density tokens (decision 82): `@kozmos-ds/tokens/css/density.css` sets the control sizes for both densities. Touch, the default, is on `:root` and on `[data-kozmos-density='touch']`, at today's sizes: buttons 44, icon buttons 44 and 48, text fields 44. Compact is on `[data-kozmos-density='compact']`: buttons 32, 40 and 48; icon buttons 28, 32 and 40; text fields 40. The sizes are in rem (44 is `2.75rem`), so the controls follow the reader's font size as before. `ThemeProvider density` and `DensityScope` set the attribute. The tokens are web only; the iOS and Android outputs are unchanged.
+
+### Patch Changes
+
+- 08207f4: Three descriptions no longer describe LocationPin's old look. No value changes.
+  - `--semantics-accent-fill` no longer names a featured LocationPin: the SDK's featured tile has no accent (decision 81). The accent still draws the Featured tag and the edge of its card.
+  - The theme fill (decision 59) no longer names a filled LocationPin. A selected pin is theme 600, as the SDK's sprite is.
+  - The category colours are for a category's tile and chip. LocationPin takes no tint now (decision 79); the map's category markers come from the sprite.
+
 ## 0.7.0
 
 ### Minor Changes
