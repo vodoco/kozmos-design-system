@@ -493,6 +493,26 @@ function renderReadme({ root, api, cards, owner }) {
   const fromDirectories = cards.filter((c) => c.module.kind === "component");
   const providers = cards.filter((c) => c.module.kind !== "component");
   const ns = ARTIFACT_NAMESPACE;
+  // The control sizes of each density (decision 82), from the tokens.
+  const density = (name) => {
+    const tokens = readJson(
+      path.join(root, `packages/tokens/src/tokens-density-${name}.json`),
+    ).Density;
+    // The tokens are rem, 16 to the rem.
+    const px = (token) => Number.parseFloat(token.$value) * 16;
+    const sizes = (group) => ["sm", "md", "lg"].map((k) => px(group[k]));
+    return {
+      button: sizes(tokens.Control.Height),
+      icon: sizes(tokens.IconControl.Size),
+      field: px(tokens.Field.Height.md),
+    };
+  };
+  const compact = density("compact");
+  const touch = density("touch");
+  const sizes = (values) =>
+    [...new Set(values)].length === 1
+      ? `${values[0]}`
+      : list(values.map(String));
   // The examples that draw an icon component, which @kozmos-ds/react does not re-export.
   const withIcons = cards.filter((c) =>
     /from "@kozmos-ds\/icons"/.test(c.example.code),
@@ -544,6 +564,7 @@ function renderReadme({ root, api, cards, owner }) {
     `- Import \`${css}\` once. It holds the token variables for both themes and every component's styles, so there is no Tailwind configuration to add.`,
     `- Put everything inside a \`ThemeProvider\`. The styles are scoped to the provider's own part of the page: a component outside one is not themed, and most are not styled at all. \`defaultTheme\` takes ${code(themeValues)}, and \`dir="rtl"\` lays the provider's components out right to left.`,
     `- The scoping is CSS \`@scope\`, which sets the browser floor: ${floor}.`,
+    `- **Density** (decision 82). \`density="compact"\` on the provider sizes the controls for a pointer-first desktop tool such as Pointr Cloud: buttons ${sizes(compact.button)}, icon buttons ${sizes(compact.icon)}, single-line fields ${compact.field}. \`touch\`, the default, keeps buttons and fields ${sizes([...touch.button, touch.field])} and icon buttons ${sizes(touch.icon)}. \`DensityScope density="…"\` puts one region at another density and keeps the theme around it. SDK parts stay touch on a compact page.`,
     "",
     "### A minimal example",
     "",
