@@ -460,23 +460,39 @@ private fun CompactValueBox(text: String, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * The palette field: at least 40dp, and 8dp taller than its label above and
+ * below, so it grows with large text as React's 2.25rem <select> does. A
+ * fixed 40dp cut the label's second line off from font scale 1.5. The label
+ * stays on one line, as React's and SwiftUI's do, and ends in an ellipsis
+ * where it does not fit; TalkBack reads it whole. Its box is weighted, so it
+ * is measured after the caret and takes only what the caret leaves: laid
+ * out first, the label took the caret's 20dp, down to 0. At least 8dp sit
+ * between them, as SwiftUI's Spacer(minLength: 8) keeps.
+ */
 @Composable
 private fun PaletteSelector(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
+            .heightIn(min = 40.dp)
             .background(KozmosThemeTokens.primitivesColorsBackground0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .border(1.dp, KozmosThemeTokens.semanticsBorderInput, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150, vertical = KozmosDimensions.primitivesLayoutSpacing100),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = KozmosThemeTokens.primitivesColorsForeground0
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        // The box fills the room; the label in it keeps its own width, so
+        // where it fits it is laid out as it was.
+        Box(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = KozmosThemeTokens.primitivesColorsForeground0,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
         androidx.compose.material3.Icon(
             imageVector = Icons.Default.KeyboardArrowDown,
             contentDescription = null,
