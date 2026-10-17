@@ -1,6 +1,6 @@
-// RouteSummary.mdx's Compose snippets, word for word below the package line:
-// compiled here, and composed and measured by KozmosRouteSummaryActionsTest.
-// Change the two together.
+// RouteSummary.mdx's Compose snippets ("Route preview"), word for word below
+// the package line: compiled here, and composed and measured by
+// KozmosRouteSummaryActionsTest. Change the two together.
 package com.kozmos.docsnippets
 
 import androidx.compose.foundation.layout.Column
