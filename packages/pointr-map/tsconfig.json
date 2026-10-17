@@ -1,0 +1,15 @@
+{
+  // The publish list: vite-plugin-dts follows this file, so it holds src only.
+  // tsconfig.test.json type-checks the tests and the scripts with it.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["src"]
+}

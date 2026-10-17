@@ -1,0 +1,11 @@
+{
+  // The tests, with the source they test. tsconfig.json stays the publish list.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "."
+  },
+  "include": ["src", "tests"]
+}
