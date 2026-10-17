@@ -34,16 +34,29 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { Input } from "@kozmos-ds/vue"
+import { KozmosInput } from "@kozmos-ds/vue"
 import { ref } from "vue"
+// v-model does not reach KozmosInput: @kozmos-ds/vue declares its update:modelValue and never emits it, so bind :value and @change.
 
 const email = ref("")
 const password = ref("")
 </script>
 
 <template>
-  <Input v-model="email" placeholder="Enter your email" />
-  <Input type="password" v-model="password" placeholder="Password" />
+  <KozmosInput
+    label="Email"
+    type="email"
+    placeholder="Enter your email"
+    :value="email"
+    @change="(event) => (email = event.target.value)"
+  />
+  <KozmosInput
+    label="Password"
+    type="password"
+    placeholder="Password"
+    :value="password"
+    @change="(event) => (password = event.target.value)"
+  />
 </template>
   `}
   swift={`

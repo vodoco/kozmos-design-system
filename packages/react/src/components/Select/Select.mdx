@@ -48,26 +48,12 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@kozmos-ds/vue"
+import { KozmosSelect } from "@kozmos-ds/vue"
+// @kozmos-ds/vue wraps the Select root only: it has no SelectTrigger, SelectValue, SelectContent or SelectItem, so it cannot draw the field or its options yet.
 </script>
 
 <template>
-  <Select>
-    <SelectTrigger class="w-[180px]">
-      <SelectValue placeholder="Theme" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="light">Light</SelectItem>
-      <SelectItem value="dark">Dark</SelectItem>
-      <SelectItem value="system">System</SelectItem>
-    </SelectContent>
-  </Select>
+  <KozmosSelect />
 </template>
     `}
     swift={`
