@@ -20,6 +20,18 @@
  * never imported. A default or namespace import fails too, since the harness
  * has no default export and a namespace hides which parts the tab uses.
  *
+ * A tab imports from nothing else. Every module its script names (an `import`
+ * or `export … from`, an `import x = require(…)`, a dynamic `import(…)` or a
+ * `require(…)`) must be `@kozmos-ds/vue` or `vue`: examples use only Kozmos
+ * (AGENTS.md). On 17 Oct 2026 IconButton's tab took its icon from
+ * `lucide-vue-next`, a library Kozmos does not use and the workspace does not
+ * install, so the tab could not even mount, and this check passed it: it read
+ * only the imports from `@kozmos-ds/vue`. There is no allow-list, since no tab
+ * needs another module; add one to MODULES, with the reason beside it, only
+ * when one does. Each module the tab's text names in an import is counted
+ * against the imports the parser read, so an import the parse missed fails
+ * instead of passing unread.
+ *
  * It fails when it finds no tab or no import, so a page that moved or a parse
  * that matched nothing cannot pass by checking nothing.
  */
@@ -30,6 +42,13 @@ import { extractSnippets } from "./lib/doc-snippets.mjs";
 
 const ROOT = process.cwd();
 const PACKAGE = "@kozmos-ds/vue";
+// The only modules a Vue tab may import from: the Kozmos harness, and Vue for
+// `ref` and the like. Nothing else is allowed today; see the header.
+const MODULES = [PACKAGE, "vue"];
+// A module the tab's text names in an import, export … from, import(…) or
+// require(…), counted against what the parser read.
+const WRITTEN =
+  /\bfrom\s*["']([^"']+)["']|\bimport\s*["']([^"']+)["']|\b(?:import|require)\s*\(\s*["']([^"']+)["']/g;
 const ENTRY = path.join(ROOT, "packages/vue/src/index.ts");
 const DOC_ROOTS = ["packages/react/src/components", "apps/docs/stories"];
 
@@ -146,6 +165,8 @@ const tabsPerRoot = {};
 let tabCount = 0;
 let importCount = 0;
 let tagCount = 0;
+let referenceCount = 0;
+const moduleCounts = new Map();
 
 for (const docRoot of DOC_ROOTS) {
   tabsPerRoot[docRoot] = 0;
@@ -158,7 +179,7 @@ for (const docRoot of DOC_ROOTS) {
       tabsPerRoot[docRoot] += 1;
 
       const imported = new Set();
-      let declarations = 0;
+      const read = new Map();
       for (const script of code.matchAll(
         /<script\b[^>]*>([\s\S]*?)<\/script>/g,
       )) {
@@ -171,16 +192,68 @@ for (const docRoot of DOC_ROOTS) {
           true,
           ts.ScriptKind.TS,
         );
+        const lineOf = (node) =>
+          scriptLine +
+          body.getLineAndCharacterOfPosition(node.getStart(body)).line;
+
+        // Every module the script names, wherever it names it.
+        const reference = (module, node, how) => {
+          read.set(module, (read.get(module) ?? 0) + 1);
+          moduleCounts.set(module, (moduleCounts.get(module) ?? 0) + 1);
+          referenceCount += 1;
+          if (!MODULES.includes(module))
+            problems.push(
+              `${relative}:${lineOf(node)}: ${how} "${module}", which is not Kozmos: a Vue tab imports only from ${MODULES.join(" and ")}`,
+            );
+        };
+        const visit = (node) => {
+          if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+            if (
+              node.moduleSpecifier &&
+              ts.isStringLiteral(node.moduleSpecifier)
+            )
+              reference(
+                node.moduleSpecifier.text,
+                node,
+                ts.isImportDeclaration(node)
+                  ? "imports from"
+                  : "re-exports from",
+              );
+          } else if (
+            ts.isImportEqualsDeclaration(node) &&
+            ts.isExternalModuleReference(node.moduleReference) &&
+            ts.isStringLiteral(node.moduleReference.expression)
+          ) {
+            reference(
+              node.moduleReference.expression.text,
+              node,
+              "imports from",
+            );
+          } else if (
+            ts.isCallExpression(node) &&
+            (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+              (ts.isIdentifier(node.expression) &&
+                node.expression.text === "require"))
+          ) {
+            const target = node.arguments[0];
+            if (target && ts.isStringLiteralLike(target))
+              reference(target.text, node, "loads");
+            else
+              problems.push(
+                `${relative}:${lineOf(node)}: loads a module it does not name; a Vue tab imports only from ${MODULES.join(" and ")}`,
+              );
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(body);
+
         for (const statement of body.statements) {
           if (
             !ts.isImportDeclaration(statement) ||
             statement.moduleSpecifier.text !== PACKAGE
           )
             continue;
-          declarations += 1;
-          const line =
-            scriptLine +
-            body.getLineAndCharacterOfPosition(statement.getStart(body)).line;
+          const line = lineOf(statement);
           const clause = statement.importClause;
           if (!clause) continue;
           if (clause.name) {
@@ -214,12 +287,19 @@ for (const docRoot of DOC_ROOTS) {
       }
 
       // A parse that missed an import must not pass as a tab that has none.
-      const written = [...code.matchAll(/\bfrom\s+["']@kozmos-ds\/vue["']/g)]
-        .length;
-      if (written !== declarations)
-        problems.push(
-          `${relative}:${codeLine}: the tab names ${PACKAGE} in ${written} import(s), but ${declarations} could be read`,
-        );
+      const written = new Map();
+      for (const match of code.matchAll(WRITTEN)) {
+        const module = match[1] ?? match[2] ?? match[3];
+        written.set(module, (written.get(module) ?? 0) + 1);
+      }
+      for (const module of new Set([...written.keys(), ...read.keys()])) {
+        const named = written.get(module) ?? 0;
+        const parsed = read.get(module) ?? 0;
+        if (named !== parsed)
+          problems.push(
+            `${relative}:${codeLine}: the tab names "${module}" in ${named} import(s), but ${parsed} could be read`,
+          );
+      }
 
       const template = code.match(/<template\b[^>]*>([\s\S]*)<\/template>/);
       if (!template) continue;
@@ -254,7 +334,11 @@ if (!importCount)
 const where = DOC_ROOTS.map((root) => `${tabsPerRoot[root]} in ${root}`).join(
   ", ",
 );
-const compared = `${tabCount} Vue tab(s) (${where}): ${importCount} import(s) from ${PACKAGE} against its ${exported.size} exports, and ${tagCount} Kozmos tag(s) against the tab's own imports`;
+const modules = [...moduleCounts]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([module, count]) => `${module} ${count}`)
+  .join(", ");
+const compared = `${tabCount} Vue tab(s) (${where}): ${referenceCount} module reference(s) (${modules}) against the ${MODULES.length} a tab may import from (${MODULES.join(", ")}), ${importCount} import(s) from ${PACKAGE} against its ${exported.size} exports, and ${tagCount} Kozmos tag(s) against the tab's own imports`;
 
 if (problems.length) {
   console.error(
