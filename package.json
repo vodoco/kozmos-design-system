@@ -94,7 +94,7 @@
     "docs:snippets:check": "node scripts/check-doc-snippets.mjs && node scripts/check-native-snippet-parity.mjs",
     "docs:snippets:vue:check": "node scripts/check-vue-snippet-imports.mjs",
     "docs:snippets:compile": "node scripts/check-package-install.mjs",
-    "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs scripts/lib/native-token-members.test.mjs",
+    "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs scripts/lib/native-token-members.test.mjs scripts/lib/native-snippet-parity.test.mjs",
     "figma:verify": "node scripts/verify-figma-library.mjs",
     "components:variant:check": "node scripts/skills/check-variant-parity.mjs",
     "components:variant:write": "node scripts/skills/check-variant-parity.mjs --write",
