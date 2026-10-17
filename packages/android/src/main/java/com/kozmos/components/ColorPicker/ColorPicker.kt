@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -194,10 +195,15 @@ private fun ColorArea(color: Color, hsl: HslColor) {
             .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, shape)
     ) {
         val handleSize = 18.dp
+        // The square is drawn physically, as React draws it: white at the
+        // left and the hue at the right in either reading direction, since
+        // horizontalGradient runs left to right. The handle is placed from
+        // the left too: TopStart and offset mirrored right to left while the
+        // gradient did not, so the handle sat over the wrong end of it.
         Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(
+                .align(AbsoluteAlignment.TopLeft)
+                .absoluteOffset(
                     x = (maxWidth - handleSize) * (hsl.s.coerceIn(0f, 100f) / 100f),
                     y = (maxHeight - handleSize) * (1f - hsl.l.coerceIn(0f, 100f) / 100f)
                 )
