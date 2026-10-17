@@ -217,8 +217,15 @@ public struct KozmosColorPicker: View {
         }
     }
 
+    // Each box fills the width the row gives it; the row decides that width
+    // from the box's KozmosColorFormatBox, as the HStack it replaced did from
+    // the boxes' own frames.
     private var formatControls: some View {
-        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing75) {
+        KozmosColorFormatRowLayout(
+            spacing: KozmosDimensions.primitivesLayoutSpacing75,
+            // React's columns: minmax(3.5rem, 1fr), and 6rem for HEX.
+            minimumColumn: currentFormat == .hex ? 96 : 56
+        ) {
             Menu {
                 Button("HEX") { currentFormat = .hex }
                 Button("RGB") { currentFormat = .rgb }
@@ -226,10 +233,10 @@ public struct KozmosColorPicker: View {
             } label: {
                 Text(currentFormat.label)
                     .font(.subheadline.weight(.semibold))
-                    .frame(minWidth: 56)
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
-            .frame(height: 36)
+            .frame(minHeight: 36)
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
             .background(KozmosColors.primitivesColorsBackground0)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
@@ -237,12 +244,15 @@ public struct KozmosColorPicker: View {
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                     .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
             )
+            .layoutValue(key: KozmosColorFormatBox.self, value: KozmosColorFormatBox(narrowest: 72))
 
-            ForEach(channelLabels, id: \.self) { channel in
+            // By place, not by value: two channels can read the same, as
+            // #FF0000's green and blue do.
+            ForEach(Array(channelLabels.enumerated()), id: \.offset) { _, channel in
                 Text(channel)
                     .font(.subheadline.monospacedDigit())
                     .foregroundColor(KozmosColors.primitivesColorsForeground0)
-                    .frame(minWidth: currentFormat == .hex ? 104 : 44, maxWidth: currentFormat == .hex ? .infinity : 56, minHeight: 36)
+                    .frame(maxWidth: .infinity, minHeight: 36)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
                     .background(KozmosColors.primitivesColorsBackground0)
                     .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
@@ -250,18 +260,27 @@ public struct KozmosColorPicker: View {
                         RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                             .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
                     )
+                    .layoutValue(
+                        key: KozmosColorFormatBox.self,
+                        value: currentFormat == .hex
+                            ? KozmosColorFormatBox(narrowest: 120, widest: .infinity)
+                            : KozmosColorFormatBox(narrowest: 60, widest: 72)
+                    )
             }
 
             Text("\(Int(alpha))%")
                 .font(.subheadline.monospacedDigit())
                 .foregroundColor(KozmosColors.primitivesColorsForeground0)
-                .frame(minWidth: 52, minHeight: 36)
+                .frame(maxWidth: .infinity, minHeight: 36)
                 .background(KozmosColors.primitivesColorsBackground0)
                 .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
                 .overlay(
                     RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                         .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
                 )
+                // It has no padding of its own: in a column it keeps 8pt
+                // either side of its text, as the other boxes do.
+                .layoutValue(key: KozmosColorFormatBox.self, value: KozmosColorFormatBox(narrowest: 52, inset: 16))
         }
     }
 
@@ -389,6 +408,125 @@ public struct KozmosColorPicker: View {
 
     private func updateColor(h: Double, s: Double, l: Double) {
         commitValue(rgbToHex(hslToRgb(h: h, s: s, l: l)))
+    }
+}
+
+/// How wide the format row may draw one of its boxes while they all fit on
+/// one line. Never narrower than the box's text needs.
+private struct KozmosColorFormatBox: LayoutValueKey {
+    static let defaultValue = KozmosColorFormatBox()
+
+    /// The narrowest the line draws the box.
+    var narrowest: CGFloat = 0
+    /// The widest the line lets it grow; nil: as wide as its text, and no wider.
+    var widest: CGFloat?
+    /// What a column must give the box beyond its own width for its text to
+    /// clear its rounded ends.
+    var inset: CGFloat = 0
+}
+
+/// The open colour picker's format row: the format menu, the value boxes and
+/// the opacity box.
+///
+/// Where every box fits on one line at its text's width it is laid out as the
+/// HStack it replaces laid it out: the least flexible box first, each offered
+/// an equal share of what is left and drawn between its `narrowest` and
+/// `widest` (the menu 72pt, a value box 60–72, the opacity box 52 or its
+/// text). That HStack could not shrink below 328pt, so the open picker
+/// needed 352 and grew past a phone's 343, and at accessibility text sizes
+/// it squeezed the boxes' text: digits one above another, the menu's label
+/// an ellipsis.
+///
+/// Where they do not fit, it wraps as React's format grid does,
+/// `repeat(auto-fit, minmax(3.5rem, 1fr))`: as many equal columns to a line
+/// as fit, each at least `minimumColumn` and at least as wide as the widest
+/// box's text, the boxes in reading order. Placement is logical; SwiftUI
+/// mirrors it right to left.
+private struct KozmosColorFormatRowLayout: Layout {
+    var spacing: CGFloat
+    var minimumColumn: CGFloat
+
+    private struct Arrangement {
+        var size: CGSize
+        var frames: [CGRect]
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(width: proposal.width, subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        // Arranged for the width offered, as the size was: the line can be
+        // narrower than its bounds, and shared out again over its own width
+        // it would come out differently.
+        let arrangement = arrange(width: proposal.width ?? bounds.width, subviews)
+        for (subview, frame) in zip(subviews, arrangement.frames) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                anchor: .topLeading,
+                proposal: ProposedViewSize(frame.size)
+            )
+        }
+    }
+
+    private func arrange(width: CGFloat?, _ subviews: Subviews) -> Arrangement {
+        guard !subviews.isEmpty else { return Arrangement(size: .zero, frames: []) }
+        let offered = width.flatMap { $0.isFinite ? $0 : nil }
+        let ideals = subviews.map { $0.sizeThatFits(.unspecified).width }
+        let boxes = subviews.map { $0[KozmosColorFormatBox.self] }
+        return line(width: offered, subviews, ideals, boxes) ?? columns(width: offered, subviews, ideals, boxes)
+    }
+
+    /// The boxes on one line, or nil when they do not all fit at their
+    /// text's width.
+    private func line(width: CGFloat?, _ subviews: Subviews, _ ideals: [CGFloat], _ boxes: [KozmosColorFormatBox]) -> Arrangement? {
+        let count = subviews.count
+        let gaps = spacing * CGFloat(count - 1)
+        let lower = boxes.map(\.narrowest)
+        let upper = boxes.indices.map { max(boxes[$0].narrowest, boxes[$0].widest ?? ideals[$0]) }
+        var widths = ideals.indices.map { min(max(ideals[$0], lower[$0]), upper[$0]) }
+        if let width {
+            // As the HStack shared it out: least flexible first, ties in order.
+            let order = boxes.indices.sorted { (upper[$0] - lower[$0], $0) < (upper[$1] - lower[$1], $1) }
+            var remaining = width - gaps
+            for (taken, index) in order.enumerated() {
+                let offer = remaining / CGFloat(count - taken)
+                widths[index] = min(max(offer, lower[index]), upper[index])
+                remaining -= widths[index]
+            }
+            guard widths.reduce(0, +) + gaps <= width + 0.001 else { return nil }
+        }
+        guard widths.indices.allSatisfy({ widths[$0] + 0.001 >= ideals[$0] }) else { return nil }
+        let heights = subviews.indices.map { subviews[$0].sizeThatFits(ProposedViewSize(width: widths[$0], height: nil)).height }
+        let height = heights.max() ?? 0
+        var x: CGFloat = 0
+        let frames = subviews.indices.map { index -> CGRect in
+            defer { x += widths[index] + spacing }
+            return CGRect(x: x, y: (height - heights[index]) / 2, width: widths[index], height: heights[index])
+        }
+        return Arrangement(size: CGSize(width: widths.reduce(0, +) + gaps, height: height), frames: frames)
+    }
+
+    /// The boxes in equal columns, as many to a line as fit.
+    private func columns(width: CGFloat?, _ subviews: Subviews, _ ideals: [CGFloat], _ boxes: [KozmosColorFormatBox]) -> Arrangement {
+        let count = subviews.count
+        let floor = max(minimumColumn, ideals.indices.map { ideals[$0] + boxes[$0].inset }.max() ?? 0)
+        let width = width ?? floor * CGFloat(count) + spacing * CGFloat(count - 1)
+        let perLine = max(1, min(count, Int((width + spacing) / (floor + spacing))))
+        let column = max(0, (width - spacing * CGFloat(perLine - 1)) / CGFloat(perLine))
+        let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: column, height: nil)).height }
+        var frames: [CGRect] = []
+        var y: CGFloat = 0
+        for start in stride(from: 0, to: count, by: perLine) {
+            let indices = start..<min(count, start + perLine)
+            let height = indices.map { heights[$0] }.max() ?? 0
+            for index in indices {
+                let x = CGFloat(index - start) * (column + spacing)
+                frames.append(CGRect(x: x, y: y + (height - heights[index]) / 2, width: column, height: heights[index]))
+            }
+            y += height + spacing
+        }
+        return Arrangement(size: CGSize(width: width, height: max(0, y - spacing)), frames: frames)
     }
 }
 
