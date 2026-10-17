@@ -141,8 +141,31 @@ for (const story of stories) {
                 style.getPropertyValue(`border-${side.toLowerCase()}-color`),
               ),
           );
+        // Visually hidden: the accessible-only box (Tailwind's sr-only,
+        // Radix's VisuallyHidden) is clipped away, and nothing in it is drawn,
+        // though its text keeps a full layout box at the box's place. Radix
+        // Toast portals such an announcement to the start of the body for a
+        // second after a toast opens: counted, it stretched the clip to the
+        // page's left edge when measured inside that second and not after,
+        // so feedback-toast--open was 1272 or 404 wide by timing (16 Oct
+        // 2026, a pull request's run).
+        const hidden = new Map<Element, boolean>();
+        const clippedAway = (element: Element | null): boolean => {
+          if (!element) return false;
+          const known = hidden.get(element);
+          if (known !== undefined) return known;
+          const style = getComputedStyle(element);
+          const away =
+            (/^(absolute|fixed)$/.test(style.position) &&
+              /^rect\(0px,? 0px,? 0px,? 0px\)$/.test(style.clip)) ||
+            style.clipPath === "inset(50%)" ||
+            clippedAway(element.parentElement);
+          hidden.set(element, away);
+          return away;
+        };
         for (const element of document.body.querySelectorAll("*")) {
           if (element.closest("script, style, noscript, template")) continue;
+          if (clippedAway(element)) continue;
           const style = getComputedStyle(element);
           if (
             style.display === "none" ||
@@ -164,6 +187,7 @@ for (const story of stories) {
           const parent = text.parentElement;
           if (!parent || parent.closest("script, style, noscript, template"))
             continue;
+          if (clippedAway(parent)) continue;
           range.selectNodeContents(text);
           for (const rect of range.getClientRects()) add(rect);
         }

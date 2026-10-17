@@ -15,7 +15,8 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   differently and must never record a baseline.
 - **Only the drawing.** Each screenshot is cropped to what paints (text, images, controls, anything
   with a fill, border, shadow or outline, portals included), so a button's baseline is about 94×60 px
-  and 1 KB.
+  and 1 KB. What a visually hidden box holds (`sr-only`, Radix's `VisuallyHidden`: a box clipped to
+  nothing) is left out: it is never drawn, though its text keeps a layout box.
 - **Nothing from outside.** The suite refuses every request that is not to its own Storybook: remote
   photos become one grey pixel, and Pointr's taxonomy symbols a filled circle, and Google Fonts are refused, so text is drawn in the image's own
   fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) and the slots of
@@ -105,3 +106,10 @@ application code ran matched the existing baseline; changing only that timing re
 the failed CI drawing. `tests/visual/stillness.visual.ts` checks the component's first computed
 styles, including its pseudo-element, so a late-only suppression cannot regress unnoticed.
 This does not change production motion, mask arrows, or relax comparison tolerances.
+
+Another, found on 2026-10-17: **the crop counted hidden text.** Radix Toast portals a visually
+hidden announcement for one second after a toast opens, and its text sat at the page's left edge,
+so `feedback-toast--open` was cropped 1272 or 404 wide depending on whether the crop was measured
+inside that second (#283's run failed on it). The crop now leaves out visually hidden boxes; 34
+baselines whose crop hidden labels had stretched were redrawn, each the old drawing with nothing
+changed but the empty margin.

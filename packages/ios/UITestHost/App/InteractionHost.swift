@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit.UIGestureRecognizerSubclass
 import Kozmos
 
 /// Offline fixtures exercise the public component API. No SDK, credentials or
@@ -342,10 +343,11 @@ private struct InteractionFixture: View {
 
 /// Real presses, read off the screen. Each part's colour at one point — inside
 /// its fill, clear of its words, or on a map control's mark — is read from the
-/// window twenty times a second, so what a press draws is told without a hook
-/// into the component: the colour at rest, and the one furthest from it while
-/// a finger was down. The map controls sit on black, and draw a solid square
-/// for a mark, so a part that dims under a press shows it.
+/// window at rest and, while a finger is down, twenty times a second, so
+/// what a press draws is told without a hook into the component: the colour at
+/// rest, and the one furthest from it while a finger was down. The map
+/// controls sit on black, and draw a solid square for a mark, so a part that
+/// dims under a press shows it.
 private struct PressFeedbackFixture: View {
     private struct Part {
         let id: String
@@ -419,6 +421,7 @@ private struct PressFeedbackFixture: View {
         }
         // Pinned to the leading edge, so the reports' widths never move a part.
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(FingerWatch(sampler: sampler).accessibilityHidden(true))
         .preferredColorScheme(.light)
         .onPreferenceChange(FramesKey.self) { frames in
             let probes = (buttons.flatMap { $0 } + mapControls).reduce(into: [String: (CGRect) -> CGPoint]()) { $0[$1.id] = $1.probe }
@@ -426,39 +429,73 @@ private struct PressFeedbackFixture: View {
                 if let probe = probes[entry.key] { result[entry.key] = probe(entry.value) }
             }
         }
-        .onAppear { sampler.start() }
     }
 }
 
-/// Reads one pixel per part from the key window on a timer that runs while a
-/// touch is tracked, and reports each part's colour at rest and the one
-/// furthest from it, as hex.
+/// Reads every part's pixel from one render of the window: once at rest when
+/// the parts are placed, then while a finger is down (as the touch arrives,
+/// twenty times a second, and at the lift), and reports each part's colour at
+/// rest and the one furthest from it, as hex. Between presses it does
+/// nothing. XCUI's queries, idle waits and synthesized touches are all served
+/// by the app's main thread, and a sampler that rendered the window once per
+/// part, twenty times a second, for the whole test spent about 45 of every
+/// 50 ms of that thread on a fast Mac: on a loaded CI runner the queries timed
+/// out (8 and 16 Oct 2026).
 @MainActor
 private final class PressSampler: ObservableObject {
     typealias RGB = (r: Int, g: Int, b: Int)
-    var points: [String: CGPoint] = [:]
+    /// The window the parts are in, set by `FingerWatch`.
+    weak var window: UIWindow? { didSet { readRestWhenPlaced() } }
+    /// Where to read each part, in the window's coordinates.
+    var points: [String: CGPoint] = [:] { didSet { readRestWhenPlaced() } }
     @Published private(set) var reports: [String: String] = [:]
     private var rest: [String: RGB] = [:]
     private var extreme: [String: RGB] = [:]
     private var timer: Timer?
 
-    func start() {
-        guard timer == nil else { return }
-        let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.sample() }
+    /// A finger went down in the window, or the last one came up.
+    func fingerDown(_ down: Bool) {
+        if down {
+            guard timer == nil else { return }
+            // A part not yet read at rest is read now, while the touch is not
+            // drawn; otherwise nothing is rendered here, so the main thread is
+            // free to draw the press.
+            if points.keys.contains(where: { rest[$0] == nil }) { sample() }
+            let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.sample() }
+            }
+            RunLoop.main.add(timer, forMode: .common)
+            self.timer = timer
+            // Once the touch has reached the part, its press is rendered and
+            // read at once: on a busy main thread the lift can come before the
+            // timer fires. A lift dispatched before this runs has ended this
+            // press already, so it never reads a release.
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.timer === timer else { return }
+                self.sample(afterScreenUpdates: true)
+            }
+        } else if let timer {
+            timer.invalidate()
+            self.timer = nil
+            // The lift is not drawn yet: what is on screen is still the press.
+            sample()
         }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
+    }
+
+    /// A part placed for the first time is read at rest, once the window has
+    /// drawn it.
+    private func readRestWhenPlaced() {
+        guard window != nil, points.keys.contains(where: { rest[$0] == nil }) else { return }
+        DispatchQueue.main.async { [weak self] in self?.sample(afterScreenUpdates: true) }
     }
 
     private static func hex(_ c: RGB) -> String { String(format: "#%02X%02X%02X", c.r, c.g, c.b) }
     private static func distance(_ a: RGB, _ b: RGB) -> Int { abs(a.r - b.r) + abs(a.g - b.g) + abs(a.b - b.b) }
 
-    private func sample() {
-        guard let window = UIApplication.shared.connectedScenes
-            .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first else { return }
-        for (id, point) in points {
-            guard let colour = Self.colour(at: point, in: window) else { continue }
+    private func sample(afterScreenUpdates: Bool = false) {
+        guard let window, let colours = Self.colours(at: points, in: window, afterScreenUpdates: afterScreenUpdates)
+        else { return }
+        for (id, colour) in colours {
             guard let base = rest[id] else {
                 rest[id] = colour
                 extreme[id] = colour
@@ -472,21 +509,92 @@ private final class PressSampler: ObservableObject {
         }
     }
 
-    private static func colour(at point: CGPoint, in window: UIWindow) -> RGB? {
+    /// One render of the window at one pixel a point, over the box round the
+    /// points, and the pixel at each point.
+    private static func colours(at points: [String: CGPoint], in window: UIWindow,
+                                afterScreenUpdates: Bool) -> [String: RGB]? {
+        guard !points.isEmpty else { return nil }
+        let origin = CGPoint(x: points.values.map(\.x).min()!.rounded(.down), y: points.values.map(\.y).min()!.rounded(.down))
+        let width = Int((points.values.map(\.x).max()! - origin.x).rounded(.up)) + 1
+        let height = Int((points.values.map(\.y).max()! - origin.y).rounded(.up)) + 1
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.preferredRange = .standard
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1), format: format).image { context in
-            context.cgContext.translateBy(x: -point.x, y: -point.y)
-            window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { context in
+            context.cgContext.translateBy(x: -origin.x, y: -origin.y)
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: afterScreenUpdates)
         }
         guard let cgImage = image.cgImage else { return nil }
-        var pixel = [UInt8](repeating: 0, count: 4)
-        guard let context = CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard let context = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
                                       space: CGColorSpace(name: CGColorSpace.sRGB)!,
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 1, height: 1))
-        return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        // Row 0 of the buffer is the top of the render.
+        return points.mapValues { point in
+            let x = min(width - 1, Int((point.x - origin.x).rounded()))
+            let y = min(height - 1, Int((point.y - origin.y).rounded()))
+            let offset = (y * width + x) * 4
+            return (Int(pixels[offset]), Int(pixels[offset + 1]), Int(pixels[offset + 2]))
+        }
+    }
+}
+
+/// Tells the sampler which window the parts are in, and when a finger goes
+/// down in it and when the last one lifts. Its recognizer takes no part in a
+/// gesture: it never begins, prevents nothing and cannot be prevented, and
+/// delays and cancels no touch, so each part gets its touches as it would
+/// without it.
+private struct FingerWatch: UIViewRepresentable {
+    let sampler: PressSampler
+
+    func makeUIView(context: Context) -> Anchor { Anchor(sampler: sampler) }
+    func updateUIView(_ view: Anchor, context: Context) {}
+
+    final class Anchor: UIView {
+        private let sampler: PressSampler
+        private let watcher: Watcher
+
+        init(sampler: PressSampler) {
+            self.sampler = sampler
+            watcher = Watcher { [weak sampler] in sampler?.fingerDown($0) }
+            super.init(frame: .zero)
+            isUserInteractionEnabled = false
+        }
+
+        required init?(coder: NSCoder) { nil }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            watcher.view?.removeGestureRecognizer(watcher)
+            window?.addGestureRecognizer(watcher)
+            sampler.window = window
+        }
+    }
+
+    final class Watcher: UIGestureRecognizer {
+        private let report: (Bool) -> Void
+
+        init(report: @escaping (Bool) -> Void) {
+            self.report = report
+            super.init(target: nil, action: nil)
+            cancelsTouchesInView = false
+            delaysTouchesBegan = false
+            delaysTouchesEnded = false
+        }
+
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) { report(true) }
+        override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) { lifted(event) }
+        override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) { lifted(event) }
+        override func reset() { report(false) }
+        override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+        override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+
+        private func lifted(_ event: UIEvent) {
+            guard event.allTouches?.allSatisfy({ $0.phase == .ended || $0.phase == .cancelled }) ?? true else { return }
+            report(false)
+            state = .failed
+        }
     }
 }
 

@@ -3,9 +3,16 @@ import SwiftUI
 public typealias KozmosAnalyticsTracker = (KozmosAnalyticsEvent) -> Void
 
 public struct KozmosAnalyticsKey: EnvironmentKey {
+    /// With no tracker in the environment, an event goes to the console.
     public static let defaultValue: KozmosAnalyticsTracker = { event in
-        // Passive logging node capturing orphaned telemetry pipelines natively
-        print("[Kozmos Analytics] \\(event.component) -> \\(event.eventName)")
+        print(logLine(for: event))
+    }
+
+    /// The line the default tracker prints for an event,
+    /// `[Kozmos Analytics] <component> -> <eventName>`: the line Compose's
+    /// `LocalKozmosAnalytics` default prints.
+    static func logLine(for event: KozmosAnalyticsEvent) -> String {
+        "[Kozmos Analytics] \(event.component) -> \(event.eventName)"
     }
 }
 
