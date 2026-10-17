@@ -71,12 +71,13 @@
   .kozmos-input.kozmos-otp-cell {
     @apply h-11 w-11 shrink-0 p-0 text-center text-lg;
   }
-  /* ColorPicker: the swatch over the field's start, 8 from the left edge as
-     it always sat (physical, in either direction); the text 48 in from both
-     edges, clear of the swatch and of the open button; the value in mono
-     capitals, in the field and in the panel's HEX. */
+  /* ColorPicker: the swatch over the field's start, 8 from its inline start
+     (a physical left-2 left it at the end of a right-to-left field, over the
+     text); the text 48 in from both edges, clear of the swatch and of the
+     open button; the value in mono capitals, in the field and in the panel's
+     HEX. */
   .kozmos-color-picker-swatch {
-    @apply absolute left-2 z-10 h-8 w-8 cursor-pointer rounded-control border border-input bg-transparent p-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply absolute start-2 z-10 h-8 w-8 cursor-pointer rounded-control border border-input bg-transparent p-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .kozmos-input.kozmos-color-picker-input {
     @apply min-w-0;
