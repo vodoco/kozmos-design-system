@@ -1,3 +1,4 @@
+// Not a docs tab: no MDX page shows it; the Android CHANGELOG points here.
 // How a prototype puts LocationPin's markers on a map, compiled here so the
 // positioning API it shows cannot drift from the code. In production the map
 // style's sprite sheet draws these markers.

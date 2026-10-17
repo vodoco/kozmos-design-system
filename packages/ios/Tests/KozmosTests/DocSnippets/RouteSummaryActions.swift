@@ -1,6 +1,6 @@
-// RouteSummary.mdx's SwiftUI snippets, word for word below this comment:
-// compiled here, and laid out and measured by KozmosRouteSummaryActionsTests.
-// Change the two together.
+// RouteSummary.mdx's SwiftUI snippets ("Route preview"), word for word below
+// this comment: compiled here, and laid out and measured by
+// KozmosRouteSummaryActionsTests. Change the two together.
 import SwiftUI
 import Kozmos
 
