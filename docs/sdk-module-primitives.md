@@ -22,6 +22,10 @@ LocationPin the SDK's map markers (decisions 71, 79–81), adds compact density 
 SDK parts stay touch, decision 89), and carries the Core review's fixes and Tag's `removeLabel`. See
 [release evidence](release-process.md#0120).
 
+React 0.12.1 (2026-10-17, `8207ff4b`; tokens, icons and product-contracts unchanged) draws every Kozmos field
+in Safari 26.0–26.3 as in the other engines (GAP-174) and mirrors ColorPicker right to left. See
+[release evidence](release-process.md#0121).
+
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
 presentation (decision 75), the field popups in a portal and the panel's end inset (GAP-085). See
