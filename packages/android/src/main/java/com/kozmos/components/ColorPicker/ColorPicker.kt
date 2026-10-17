@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -33,7 +34,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.slider.KozmosSlider
@@ -246,10 +257,11 @@ private fun FormatControls(
     alpha: Float,
     hsl: HslColor
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75),
-        verticalAlignment = Alignment.CenterVertically
+    FormatRowLayout(
+        spacing = KozmosDimensions.primitivesLayoutSpacing75,
+        // React's columns: minmax(3.5rem, 1fr), and 6rem for HEX.
+        minimumColumn = if (format == KozmosColorPickerFormat.Hex) 96.dp else 56.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
         CompactValueBox(
             text = when (format) {
@@ -280,12 +292,155 @@ private fun FormatControls(
         channels.forEach { channel ->
             CompactValueBox(
                 text = channel,
-                modifier = if (format == KozmosColorPickerFormat.Hex) Modifier.weight(1f) else Modifier.widthIn(min = 44.dp)
+                modifier = if (format == KozmosColorPickerFormat.Hex) Modifier.layoutId(FormatRowFill) else Modifier.widthIn(min = 44.dp)
             )
         }
 
         CompactValueBox(text = alpha.coerceIn(0f, 100f).toInt().toString())
-        Text(text = "%", color = KozmosThemeTokens.primitivesColorsForeground500)
+        Text(
+            text = "%",
+            color = KozmosThemeTokens.primitivesColorsForeground500,
+            modifier = Modifier.layoutId(FormatRowUnit)
+        )
+    }
+}
+
+/**
+ * The HEX value box: where the row is one line, it takes the width the other
+ * parts leave, as its weight did in the Row this layout replaced.
+ */
+private object FormatRowFill
+
+/** The opacity box's "%": it stays beside the box before it, in that box's column. */
+private object FormatRowUnit
+
+/**
+ * The open picker's format row: the format menu, the value boxes, the
+ * opacity box and its "%".
+ *
+ * Where every part fits on one line at its text's width, it is laid out as
+ * the Row it replaces laid it out: from the inline start, [spacing] apart,
+ * centred on the line, each part as wide as its text (a value box at least
+ * 44dp) and the HEX value filling what is left. That Row could not wrap, so
+ * at large text it squeezed its last parts: at font scale 2 and 320dp the
+ * opacity value broke over three lines and the "%" was drawn 0dp wide.
+ *
+ * Where they do not fit, it wraps as React's format grid does,
+ * `repeat(auto-fit, minmax(3.5rem, 1fr))`: as many equal columns to a line
+ * as fit, each at least [minimumColumn] and at least as wide as the widest
+ * part's text, the parts in reading order and lines [spacing] apart. The
+ * opacity box and its "%" share a column. Placement is relative, so right
+ * to left mirrors it, as React's grid does.
+ */
+@Composable
+private fun FormatRowLayout(
+    spacing: Dp,
+    minimumColumn: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val gap = spacing.roundToPx()
+        val ideals = measurables.map { it.maxIntrinsicWidth(Constraints.Infinity) }
+        val oneLine = ideals.sum() + gap * (measurables.size - 1).coerceAtLeast(0)
+        if (!constraints.hasBoundedWidth || oneLine <= constraints.maxWidth) {
+            formatRowLine(measurables, constraints, spacing)
+        } else {
+            formatRowColumns(measurables, constraints, gap, ideals, minimumColumn.roundToPx())
+        }
+    }
+}
+
+/** The row on one line, measured and placed as `Row(Arrangement.spacedBy(spacing), CenterVertically)` did. */
+private fun MeasureScope.formatRowLine(
+    measurables: List<Measurable>,
+    constraints: Constraints,
+    spacing: Dp
+): MeasureResult {
+    val gap = spacing.roundToPx()
+    val loose = constraints.copy(minWidth = 0, minHeight = 0)
+    val placeables = arrayOfNulls<Placeable>(measurables.size)
+    measurables.forEachIndexed { index, measurable ->
+        if (measurable.layoutId != FormatRowFill) placeables[index] = measurable.measure(loose)
+    }
+    // What is left is shared among the fills, as the Row shared it among
+    // its weights; there is one, the HEX value.
+    val fills = measurables.indices.filter { measurables[it].layoutId == FormatRowFill }
+    val fixed = placeables.sumOf { it?.width ?: 0 } + gap * (measurables.size - 1)
+    val left = if (constraints.hasBoundedWidth) (constraints.maxWidth - fixed).coerceAtLeast(0) else 0
+    fills.forEachIndexed { taken, index ->
+        val width = if (constraints.hasBoundedWidth) {
+            left / fills.size + if (taken < left % fills.size) 1 else 0
+        } else {
+            measurables[index].maxIntrinsicWidth(Constraints.Infinity)
+        }
+        placeables[index] = measurables[index].measure(Constraints(width, width, 0, constraints.maxHeight))
+    }
+    val placed = placeables.map { checkNotNull(it) }
+    val width = constraints.constrainWidth(placed.sumOf { it.width } + gap * (placed.size - 1))
+    val height = constraints.constrainHeight(placed.maxOfOrNull { it.height } ?: 0)
+    val positions = IntArray(placed.size)
+    with(Arrangement.spacedBy(spacing)) {
+        arrange(width, IntArray(placed.size) { placed[it].width }, layoutDirection, positions)
+    }
+    return layout(width, height) {
+        placed.forEachIndexed { index, placeable ->
+            placeable.place(positions[index], Alignment.CenterVertically.align(placeable.height, height))
+        }
+    }
+}
+
+/** The row in equal columns, as many to a line as fit. */
+private fun MeasureScope.formatRowColumns(
+    measurables: List<Measurable>,
+    constraints: Constraints,
+    gap: Int,
+    ideals: List<Int>,
+    minimumColumn: Int
+): MeasureResult {
+    // A column holds a box, and the "%" that follows the opacity box.
+    val cells = mutableListOf<Pair<Int, Int?>>()
+    measurables.forEachIndexed { index, measurable ->
+        val last = cells.lastOrNull()
+        if (measurable.layoutId == FormatRowUnit && last != null && last.second == null) {
+            cells[cells.size - 1] = last.first to index
+        } else {
+            cells += index to null
+        }
+    }
+    val widest = cells.maxOf { (box, unit) -> ideals[box] + (unit?.let { gap + ideals[it] } ?: 0) }
+    val column = maxOf(minimumColumn, widest)
+    val width = constraints.maxWidth
+    val perLine = ((width + gap) / (column + gap)).coerceIn(1, cells.size)
+    // The line's width shared out in whole pixels, the odd ones to the first columns.
+    val shared = (width - gap * (perLine - 1)).coerceAtLeast(0)
+    fun columnWidth(at: Int): Int = shared / perLine + if (at < shared % perLine) 1 else 0
+
+    class Cell(val box: Placeable, val unit: Placeable?) {
+        val height: Int get() = maxOf(box.height, unit?.height ?: 0)
+    }
+    val laid = cells.mapIndexed { index, (box, unit) ->
+        val cellWidth = columnWidth(index % perLine)
+        val unitPlaceable = unit?.let { measurables[it].measure(Constraints(maxWidth = cellWidth, maxHeight = constraints.maxHeight)) }
+        val boxWidth = (cellWidth - (unitPlaceable?.let { it.width + gap } ?: 0)).coerceAtLeast(0)
+        Cell(measurables[box].measure(Constraints(boxWidth, boxWidth, 0, constraints.maxHeight)), unitPlaceable)
+    }
+    val lines = laid.chunked(perLine)
+    val lineHeights = lines.map { line -> line.maxOf { it.height } }
+    val height = constraints.constrainHeight(lineHeights.sum() + gap * (lines.size - 1))
+    return layout(width, height) {
+        var y = 0
+        lines.forEachIndexed { line, cellsOnLine ->
+            var x = 0
+            cellsOnLine.forEachIndexed { at, cell ->
+                cell.box.placeRelative(x, y + Alignment.CenterVertically.align(cell.box.height, lineHeights[line]))
+                cell.unit?.let { unit ->
+                    unit.placeRelative(x + cell.box.width + gap, y + Alignment.CenterVertically.align(unit.height, lineHeights[line]))
+                }
+                x += columnWidth(at) + gap
+            }
+            y += lineHeights[line] + gap
+        }
     }
 }
 
@@ -295,31 +450,49 @@ private fun CompactValueBox(text: String, modifier: Modifier = Modifier) {
         text = text,
         style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
         color = KozmosThemeTokens.primitivesColorsForeground0,
+        // At least 36dp, and taller with its text: a fixed 36 cut the text
+        // top and bottom from font scale 1.3.
         modifier = modifier
-            .height(36.dp)
+            .heightIn(min = 36.dp)
             .background(KozmosThemeTokens.primitivesColorsBackground0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .border(1.dp, KozmosThemeTokens.semanticsBorderInput, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing100, vertical = KozmosDimensions.primitivesLayoutSpacing75)
     )
 }
 
+/**
+ * The palette field: at least 40dp, and 8dp taller than its label above and
+ * below, so it grows with large text as React's 2.25rem <select> does. A
+ * fixed 40dp cut the label's second line off from font scale 1.5. The label
+ * stays on one line, as React's and SwiftUI's do, and ends in an ellipsis
+ * where it does not fit; TalkBack reads it whole. Its box is weighted, so it
+ * is measured after the caret and takes only what the caret leaves: laid
+ * out first, the label took the caret's 20dp, down to 0. At least 8dp sit
+ * between them, as SwiftUI's Spacer(minLength: 8) keeps.
+ */
 @Composable
 private fun PaletteSelector(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
+            .heightIn(min = 40.dp)
             .background(KozmosThemeTokens.primitivesColorsBackground0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .border(1.dp, KozmosThemeTokens.semanticsBorderInput, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150, vertical = KozmosDimensions.primitivesLayoutSpacing100),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = KozmosThemeTokens.primitivesColorsForeground0
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        // The box fills the room; the label in it keeps its own width, so
+        // where it fits it is laid out as it was.
+        Box(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = KozmosThemeTokens.primitivesColorsForeground0,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
         androidx.compose.material3.Icon(
             imageVector = Icons.Default.KeyboardArrowDown,
             contentDescription = null,

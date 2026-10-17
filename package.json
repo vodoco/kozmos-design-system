@@ -114,6 +114,7 @@
     "version-packages": "changeset version",
     "release": "node scripts/release/local-release.mjs",
     "test:release": "node --test scripts/release/*.test.mjs",
+    "release:pins:check": "node scripts/release/check-action-pins.mjs",
     "test:release:packages": "node scripts/release/export-smoke.mjs",
     "release:credential:check": "node scripts/release/check-credential-placement.mjs",
     "release:preflight": "node scripts/release/preflight.mjs",
