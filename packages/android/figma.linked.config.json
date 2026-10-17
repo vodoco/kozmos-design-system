@@ -38,6 +38,7 @@
       "src/main/java/com/kozmos/components/Button/Button.kt",
       "src/main/java/com/kozmos/components/Icon/Icon.figma.kt",
       "src/main/java/com/kozmos/components/Icon/Icon.kt",
+      "src/main/java/com/kozmos/components/Icon/IconLibrary.figma.kt",
       "src/main/java/com/kozmos/components/IconButton/IconButton.figma.kt",
       "src/main/java/com/kozmos/components/IconButton/IconButton.kt",
       "src/main/java/com/kozmos/components/ToggleButton/ToggleButton.figma.kt",
