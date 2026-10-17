@@ -13,10 +13,15 @@ final class KozmosPOIDetailTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(KozmosPOIDetailsPresentation.self, from: Data(#"{"summary":"not an array"}"#.utf8)))
     }
 
+    /// A service's tag keeps its Kozmos name, which `KozmosIcon` draws
+    /// (KozmosPOIDetailTagIconTests), rather than an SF Symbol name.
     func testLegacyServiceIconsUseTheKozmosResolver() {
         let tag = KozmosPOIDetailTag(service: .init(id: "alert", label: "Access notice", iconName: "alert-circle"))
-        XCTAssertEqual(tag.systemImage, "exclamationmark.circle")
-        XCTAssertNil(KozmosPOIDetailTag(service: .init(id: "text", label: "Text only")).systemImage)
+        XCTAssertEqual(tag.iconName, "alert-circle")
+        XCTAssertNil(tag.systemImage)
+        let text = KozmosPOIDetailTag(service: .init(id: "text", label: "Text only"))
+        XCTAssertNil(text.iconName)
+        XCTAssertNil(text.systemImage)
     }
 
     func testLoadingLabelCanBeLocalizedWithoutChangingActionIdentity() {
@@ -36,6 +41,7 @@ final class KozmosPOIDetailTests: XCTestCase {
 
     func testTagArtworkIsOptionalAndNeverInferredFromText() {
         let text = KozmosPOIDetailTag(id: "italian", label: "Italian")
+        XCTAssertNil(text.iconName)
         XCTAssertNil(text.systemImage)
         XCTAssertNil(text.iconUrl)
         let icon = KozmosPOIDetailTag(id: "wifi", label: "WiFi", iconUrl: "https://example.com/wifi.png", iconMonochrome: true)

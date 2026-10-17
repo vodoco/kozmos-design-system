@@ -54,6 +54,8 @@ public struct KozmosIcon: View {
     let size: KozmosIconSize
     let color: KozmosIconColor
     let accessibilityLabel: String?
+    /// The weight an SF Symbol is drawn at; Pointr's artwork has its own.
+    let symbolWeight: Font.Weight
     @Environment(\.kozmosIconHostInk) private var hostInk
 
     public init(
@@ -62,16 +64,23 @@ public struct KozmosIcon: View {
         color: KozmosIconColor = .default,
         accessibilityLabel: String? = nil
     ) {
+        self.init(name, size: size, color: color, accessibilityLabel: accessibilityLabel, symbolWeight: .medium)
+    }
+
+    /// A part that drew SF Symbols at another weight before it drew
+    /// `KozmosIcon` keeps that weight: a POI detail tag's are regular.
+    init(_ name: String, size: KozmosIconSize, color: KozmosIconColor = .default,
+         accessibilityLabel: String? = nil, symbolWeight: Font.Weight) {
         self.name = name
         self.size = size
         self.color = color
         self.accessibilityLabel = accessibilityLabel
+        self.symbolWeight = symbolWeight
     }
 
     public var body: some View {
         Group {
-            if let glyph = KozmosPointrGlyph.named(Self.resolvedIconName(name))
-                ?? KozmosPointrGlyph.navigationArtwork(Self.resolvedIconName(name)) {
+            if let glyph = Self.pointrArtwork(for: name) {
                 // SF Symbols has nothing for this name: Pointr's own outline,
                 // stroked, or its wayfinding artwork, filled.
                 glyph.painted(size: size.pointSize)
@@ -79,7 +88,7 @@ public struct KozmosIcon: View {
                     .environment(\.layoutDirection, .leftToRight)
             } else {
                 Image(systemName: Self.symbolName(for: name))
-                    .font(.system(size: size.pointSize, weight: .medium))
+                    .font(.system(size: size.pointSize, weight: symbolWeight))
             }
         }
         .foregroundColor(color == .default ? hostInk ?? color.swiftUIColor : color.swiftUIColor)
@@ -88,7 +97,27 @@ public struct KozmosIcon: View {
         .accessibilityLabel(accessibilityLabel ?? "")
     }
 
+    /// Whether a name, or an alias for one, draws its own artwork rather
+    /// than the `questionmark.circle` stand-in an unknown name gets. A part
+    /// that draws no icon for a name Kozmos does not know, as the web's do,
+    /// asks this first.
+    static func drawsArtwork(for rawName: String) -> Bool {
+        pointrArtwork(for: rawName) != nil || knownSymbolName(for: rawName) != nil
+    }
+
+    /// Pointr's outline or wayfinding artwork for a name, which `KozmosIcon`
+    /// draws rather than an SF Symbol; nil where it draws a symbol.
+    private static func pointrArtwork(for rawName: String) -> KozmosPointrGlyph? {
+        let name = resolvedIconName(rawName)
+        return KozmosPointrGlyph.named(name) ?? KozmosPointrGlyph.navigationArtwork(name)
+    }
+
     static func symbolName(for rawName: String) -> String {
+        knownSymbolName(for: rawName) ?? "questionmark.circle"
+    }
+
+    /// The SF Symbol for a name, or nil where SF Symbols has none for it.
+    private static func knownSymbolName(for rawName: String) -> String? {
         let name = resolvedIconName(rawName)
 
         switch name {
@@ -129,7 +158,7 @@ public struct KozmosIcon: View {
         case "users-01": return "person.2"
         case "wifi": return "wifi"
         case "x-close": return "xmark"
-        default: return "questionmark.circle"
+        default: return nil
         }
     }
 

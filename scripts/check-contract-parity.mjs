@@ -81,7 +81,7 @@ const IOS_DETAILS = "packages/ios/Sources/Components/POIDetailPanel/POIDetailsPr
 const IOS_ELSEWHERE = new Map([
   ["POIDetailsPresentation", { swift: "KozmosPOIDetailsPresentation", why: "the same seven fields, declared beside the SwiftUI panel" }],
   ["POIDetailSummary", { swift: "KozmosPOIDetailSummary", why: "no kind: SwiftUI takes an SF Symbol name, systemImage, for the icon" }],
-  ["POIDetailAttributeGroup", { swift: "KozmosPOIDetailAttributeGroup", why: "its items are KozmosPOIDetailTag, with an SF Symbol name, not the service shape" }],
+  ["POIDetailAttributeGroup", { swift: "KozmosPOIDetailAttributeGroup", why: "its items are KozmosPOIDetailTag, not the service shape: its iconName, iconUrl and iconMonochrome, an SF Symbol name, systemImage, as well, and no kind" }],
   ["POIOpeningHoursPresentation", { swift: "KozmosPOIOpeningHours", why: "named KozmosPOIOpeningHours, its rows a nested Row" }],
   ["POISupplementaryAction", { swift: null, why: "a String on SwiftUI's KozmosPOIDetailAction, not an enumeration, so its values go unchecked there" }],
 ]);

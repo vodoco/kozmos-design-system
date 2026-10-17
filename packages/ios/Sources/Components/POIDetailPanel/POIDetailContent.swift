@@ -3,10 +3,12 @@ import SwiftUI
 /// Optional remote taxonomy artwork. Missing/failed artwork leaves the label
 /// intact; text-only values do not receive an invented fallback icon.
 struct POIDetailIcon: View {
+    /// A Kozmos icon name, drawn by `KozmosIcon` where it knows the name.
+    var iconName: String? = nil
     let systemImage: String?
     let url: String?
     let monochrome: Bool
-    var size: CGFloat = 16
+    var size: KozmosIconSize = .sm
 
     static func remoteURL(_ raw: String?) -> URL? {
         guard let raw, let url = URL(string: raw),
@@ -23,13 +25,16 @@ struct POIDetailIcon: View {
                         image.resizable()
                             .renderingMode(monochrome ? .template : .original)
                             .scaledToFit()
-                            .frame(width: size, height: size)
+                            .frame(width: size.pointSize, height: size.pointSize)
                     }
                 }
+            } else if let iconName, KozmosIcon.drawsArtwork(for: iconName) {
+                // Its SF Symbols at the regular weight this part always drew.
+                KozmosIcon(iconName, size: size, symbolWeight: .regular)
             } else if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: size))
-                    .frame(width: size, height: size)
+                    .font(.system(size: size.pointSize))
+                    .frame(width: size.pointSize, height: size.pointSize)
             }
         }
         .accessibilityHidden(true)
@@ -43,7 +48,7 @@ struct POIDetailTags: View {
         FlowLayout(spacing: 8) {
             ForEach(items) { item in
                 HStack(spacing: 4) {
-                    POIDetailIcon(systemImage: item.systemImage, url: item.iconUrl,
+                    POIDetailIcon(iconName: item.iconName, systemImage: item.systemImage, url: item.iconUrl,
                                   monochrome: item.iconMonochrome == true)
                     Text(item.label).fixedSize(horizontal: false, vertical: true)
                 }
@@ -101,7 +106,7 @@ struct POIDetailSummary: View {
 
     private func icon(_ item: KozmosPOIDetailSummary) -> some View {
         POIDetailIcon(systemImage: item.systemImage, url: item.iconUrl,
-                      monochrome: item.iconMonochrome == true, size: 20)
+                      monochrome: item.iconMonochrome == true, size: .md)
             .foregroundColor(Self.color(item.tone))
     }
 
