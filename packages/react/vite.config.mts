@@ -103,6 +103,9 @@ export default defineConfig(async () => {
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "KozmosReact",
+        // The stylesheet ships as dist/style.css, which package.json exports as ./style.css.
+        // Vite 6 names a library's CSS after the package (react.css) unless told otherwise.
+        cssFileName: "style",
       },
       rollupOptions: {
         external: dependencyExternals,

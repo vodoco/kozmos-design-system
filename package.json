@@ -140,7 +140,6 @@
     "@changesets/cli": "^2.27.0",
     "@playwright/test": "1.58.2",
     "@storybook/blocks": "8.6.18",
-    "@turbo/gen": "^1.11.3",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "8.56.1",
     "dotenv": "17.2.4",
@@ -153,11 +152,11 @@
     "playwright": "1.58.2",
     "prettier": "^3.2.0",
     "semver": "7.8.5",
-    "tsx": "^4.7.0",
-    "turbo": "^2.0.0",
+    "tsx": "^4.22.0",
+    "turbo": "^2.9.14",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.57.0",
-    "vitest": "^1.2.0",
+    "vitest": "^4.1.11",
     "yaml": "2.9.1"
   },
   "lint-staged": {
@@ -168,5 +167,40 @@
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "@babel/core@^7": "7.29.6",
+      "@humanfs/node@^0.16": "0.16.8",
+      "ajv@^6": "6.14.0",
+      "axios@^1": "1.20.0",
+      "baseline-browser-mapping@^2": "2.11.0",
+      "body-parser@^2": "2.3.0",
+      "brace-expansion@^1": "1.1.21",
+      "brace-expansion@^5": "5.0.12",
+      "browserslist@^4": "4.28.7",
+      "fast-copy@^4": "4.1.0",
+      "flatted@^3": "3.4.2",
+      "follow-redirects@^1": "1.16.0",
+      "form-data@^4": "4.0.6",
+      "js-yaml@^3": "3.15.2",
+      "js-yaml@^4": "4.3.2",
+      "lodash-es@^4": "4.18.0",
+      "lodash@^4": "4.18.0",
+      "minimatch@^3": "3.1.5",
+      "minimatch@^9": "9.0.7",
+      "path-to-regexp@^8": "8.4.0",
+      "picomatch@^2": "2.3.2",
+      "picomatch@^4": "4.0.7",
+      "postcss-selector-parser@^6": "7.1.6",
+      "proxy-addr@^2": "2.0.8",
+      "qs@^6": "6.16.0",
+      "rollup@^4": "4.59.0",
+      "source-map-js@^1": "1.2.2",
+      "undici@^7": "7.29.1",
+      "uuid@^9": "11.1.1",
+      "ws@^8": "8.21.3",
+      "yaml@^2": "2.9.1"
+    }
   }
 }
