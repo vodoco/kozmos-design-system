@@ -229,10 +229,10 @@ CommonJS entry and server-renders a Button. It took four dispatches, and each
 failure was a real defect rather than bad luck:
 
 1. `pnpm/action-setup@v4` refuses to start when the action input and
-   `package.json`'s `packageManager` both name a version. CI pins v3, which has
-   no such check, so the release workflow's `uses:` steps had never executed
-   anywhere. The input is gone and a control holds the manifest as the only
-   declaration.
+   `package.json`'s `packageManager` both name a version. CI pinned v3 then,
+   which has no such check, so the release workflow's `uses:` steps had never
+   executed anywhere. The input is gone and a control holds the manifest as the
+   only declaration.
 2. The npm token was a granular token without **Bypass two-factor
    authentication**, so the registry answered `EOTP` and asked for a code no
    runner can supply. Nothing published.

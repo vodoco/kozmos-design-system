@@ -57,7 +57,7 @@ test("pnpm version is declared once, in the manifest", () => {
   // pnpm/action-setup v4 refuses to run when the action and package.json both
   // name a version: "Multiple versions of pnpm specified". On 2026-09-23 that
   // killed a release dispatch at step 3, before any validation ran, because CI
-  // pins v3 — which has no such check — and this workflow pins v4.
+  // pinned v3 then — which has no such check — and this workflow pins v4.
   const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
   assert.match(manifest.packageManager ?? "", /^pnpm@\d+\.\d+\.\d+$/);
   for (const [name, job] of Object.entries(workflow.jobs)) {
