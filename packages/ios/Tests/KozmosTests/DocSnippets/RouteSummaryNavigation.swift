@@ -1,6 +1,6 @@
-// RouteSummary.mdx's SwiftUI snippet, word for word below this comment: the
-// Navigation section's tab, compiled here so a renamed or removed parameter
-// fails the build. RouteSummaryActions.swift holds the Route preview tab.
+// RouteSummary.mdx's SwiftUI snippet ("Navigation"), word for word below this
+// comment: compiled here so a renamed or removed parameter fails the build.
+// RouteSummaryActions.swift holds the Route preview tabs.
 import SwiftUI
 import Kozmos
 

@@ -1,7 +1,6 @@
-// RouteSummary.mdx's Compose snippet, word for word below the package line:
-// the Navigation section's tab, compiled here so a renamed or removed
-// parameter fails the build. RouteSummaryActions.kt holds the Route preview
-// tab.
+// RouteSummary.mdx's Compose snippet ("Navigation"), word for word below the
+// package line: compiled here so a renamed or removed parameter fails the
+// build. RouteSummaryActions.kt holds the Route preview tabs.
 package com.kozmos.docsnippets
 
 import androidx.compose.runtime.Composable
