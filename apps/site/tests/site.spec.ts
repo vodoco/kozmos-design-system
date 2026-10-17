@@ -814,7 +814,18 @@ for (const address of ["/no-such-page", "/components/no-such-component"]) {
   });
 }
 
-test("the theme choice is kept across a reload", async ({ page }) => {
+test("the theme choice is kept across a reload", async ({
+  page,
+  browserName,
+}) => {
+  // Two loads of the home page, each waiting out the cover's animations, and
+  // four menu choices: 4–8s in Chromium and Firefox on CI, but 14–27s in
+  // WebKit over the 30 Site runs to 17 October, and 31s, past the 30s limit,
+  // on the slowest runner (run 38992185905), where the limit fell on the last
+  // step with <html> still light. Nothing raced there: choosing System adds
+  // the colour-scheme listener in the click's own task, before <html> turns
+  // light, and the device's change reaches it.
+  test.slow(browserName === "webkit", "14–27s in WebKit on CI");
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
   await hydrated(page);

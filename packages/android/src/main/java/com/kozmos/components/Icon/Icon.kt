@@ -111,7 +111,7 @@ internal fun resolveIconVector(rawName: String): ImageVector = knownIconVector(r
  * Every name the web registry knows draws here: a name this mapping has no
  * Material or wayfinding glyph for draws Pointr's own outline from
  * [KozmosPointrIcons], generated from packages/icons by
- * scripts/generate-compose-icons.mjs. IconNamesTest holds Compose to the web
+ * scripts/generate-native-icons.mjs. IconNamesTest holds Compose to the web
  * registry's names.
  */
 internal fun knownIconVector(rawName: String): ImageVector? {

@@ -11,13 +11,23 @@
 // forward.
 //
 // Every call counts against a daily limit Figma sets per account, shared with
-// any other use of the Dev Mode server. A full pass is 285 calls (95 nodes on
-// three platforms); on 2026-09-21, after some 500 in the day, it answered
-// "Rate limit exceeded, please try again tomorrow". Narrow a pass with --label
-// and --node when you can. The script stops at the first rate-limit answer.
+// any other use of the Dev Mode server. A full pass is 534 calls (178 nodes on
+// each of three platforms: 98 component nodes and the 80 library icons), more
+// than one day's allowance: on 2026-09-21, after some 500 in the day, it
+// answered "Rate limit exceeded, please try again tomorrow". Run a full pass a
+// label at a time, and narrow with --label and --node when you can. The script
+// stops at the first rate-limit answer.
 //
-//   pnpm figma:connect:readback
+// --node asks the nodes it names, linked or not, so a variant or a nested
+// instance can be read on its own. A set's answer holds every variant and
+// every mapped instance under it; on 2026-10-16 ColorPicker's set (451:13566,
+// 384 such nodes, the most of any) answered nothing on all three platforms,
+// though the same nested mappings answered in other sets. Asking one variant
+// tells a mapping that is missing from a set that is not read whole.
+//
+//   pnpm figma:connect:readback -- --label React
 //   pnpm figma:connect:readback -- --label React --node 1933:9257
+//   pnpm figma:connect:readback -- --label SwiftUI --node 451:12870
 import fs from "node:fs";
 import path from "node:path";
 
@@ -142,6 +152,13 @@ async function readMapping(nodeId, label) {
         .map((part) => part.text || "")
         .join("");
       consecutiveTimeouts = 0;
+      // An answer with no text is not an empty map. Read as "{}", it was
+      // reported as "nothing published reads back", the verdict for a node
+      // with no mapping at all.
+      if (!reply.error && !reply.result?.isError && !text.trim()) {
+        lastError = "the server answered with no text";
+        continue;
+      }
       if (reply.error || reply.result?.isError) {
         lastError = JSON.stringify(reply.error || text).slice(0, 200);
         // A retry spends another call of the day's allowance and fails the same way.
@@ -151,7 +168,12 @@ async function readMapping(nodeId, label) {
         }
         continue;
       }
-      return { map: JSON.parse(text || "{}") };
+      const map = JSON.parse(text);
+      if (!map || typeof map !== "object" || Array.isArray(map)) {
+        lastError = `the server answered ${text.slice(0, 120)}, not a map`;
+        continue;
+      }
+      return { map };
     } catch (error) {
       if (error.name === "TimeoutError") {
         consecutiveTimeouts += 1;
@@ -197,6 +219,8 @@ try {
 const onlyLabels = argValues("--label");
 const onlyNodes = argValues("--node").map((node) => node.replace("-", ":"));
 const problems = [];
+let totalAsked = 0;
+let emptySets = 0;
 const report = (problem) => {
   if (problems.includes(problem)) return;
   problems.push(problem);
@@ -208,9 +232,11 @@ for (const platform of PLATFORMS) {
   const config = JSON.parse(
     fs.readFileSync(path.join(ROOT, platform.config), "utf8"),
   );
-  const nodes = linkedNodes(platform).filter(
-    (node) => !onlyNodes.length || onlyNodes.includes(node),
-  );
+  // Named nodes are asked whether this platform links them or not: a
+  // variant or a nested instance is never linked, and a filter over the
+  // linked nodes asked nothing for one and called that a pass.
+  const linked = linkedNodes(platform);
+  const nodes = onlyNodes.length ? onlyNodes : linked;
   let withSnippet = 0;
   let notAsked = 0;
   const results = await inBatches(nodes, async (nodeId) => ({
@@ -229,7 +255,10 @@ for (const platform of PLATFORMS) {
     const entries = Object.values(map);
     withSnippet += entries.length;
     if (entries.length === 0) {
-      report(`${platform.label} ${nodeId}: nothing published reads back`);
+      if (linked.includes(nodeId)) emptySets += 1;
+      report(
+        `${platform.label} ${nodeId}: nothing published reads back${linked.includes(nodeId) ? "" : " (not a node this platform links)"}`,
+      );
       continue;
     }
     for (const entry of entries) {
@@ -249,8 +278,9 @@ for (const platform of PLATFORMS) {
       }
     }
   }
+  totalAsked += nodes.length - notAsked;
   console.log(
-    `${platform.label}: ${nodes.length - notAsked} of ${nodes.length} linked node(s) asked, ${withSnippet} variant or instance node(s) carry a snippet`,
+    `${platform.label}: ${nodes.length - notAsked} of ${nodes.length} ${onlyNodes.length ? "named" : "linked"} node(s) asked, ${withSnippet} variant or instance node(s) carry a snippet`,
   );
   if (consecutiveTimeouts >= MAX_CONSECUTIVE_TIMEOUTS) {
     console.error(
@@ -266,10 +296,23 @@ for (const platform of PLATFORMS) {
   }
 }
 
+if (totalAsked === 0) {
+  console.error(
+    `Nothing was asked: no platform is labelled ${onlyLabels.join(" or ")} (React, SwiftUI, Compose).`,
+  );
+  process.exit(1);
+}
 if (problems.length) {
+  if (emptySets) {
+    console.error(
+      "A set's answer holds every variant and every mapped instance under it. Ask one of its variants with --node to tell a missing mapping from a set that is not read whole.",
+    );
+  }
   console.error(`${problems.length} problem(s), listed above.`);
   process.exit(1);
 }
 console.log(
-  "Every linked node reads back on every platform, with imports a consumer can use.",
+  onlyNodes.length || onlyLabels.length
+    ? "Every node asked reads back, with imports a consumer can use."
+    : "Every linked node reads back on every platform, with imports a consumer can use.",
 );
