@@ -72,22 +72,29 @@ public enum KozmosPOIDetailTone: String, Sendable, Hashable, Codable {
     case neutral, success, warning, danger, brand
 }
 
+/// A tag, or an item of a group: its label, and at most one icon. The tag
+/// draws `iconUrl` where it is a safe HTTPS URL; else `iconName` where
+/// `KozmosIcon` draws it; else `systemImage`; else no icon, never a stand-in.
 public struct KozmosPOIDetailTag: Sendable, Hashable, Identifiable, Codable {
     public let id: String
     public let label: String
+    /// A Kozmos icon name, or an alias for one, drawn as `KozmosIcon` draws
+    /// it, as the web's and Compose's chips draw the contract's `iconName`. A
+    /// name Kozmos does not know draws no icon of its own, never the stand-in.
+    public let iconName: String?
+    /// An SF Symbol name, drawn where there is no Kozmos `iconName` to draw.
     public let systemImage: String?
     public let iconUrl: String?
     public let iconMonochrome: Bool?
 
-    public init(id: String, label: String, systemImage: String? = nil,
+    public init(id: String, label: String, iconName: String? = nil, systemImage: String? = nil,
                 iconUrl: String? = nil, iconMonochrome: Bool? = nil) {
-        self.id = id; self.label = label; self.systemImage = systemImage
+        self.id = id; self.label = label; self.iconName = iconName; self.systemImage = systemImage
         self.iconUrl = iconUrl; self.iconMonochrome = iconMonochrome
     }
 
     init(service: KozmosPOIServicePresentation) {
-        self.init(id: service.id, label: service.label,
-                  systemImage: service.iconName.map(KozmosIcon.symbolName(for:)))
+        self.init(id: service.id, label: service.label, iconName: service.iconName)
     }
 }
 

@@ -115,6 +115,20 @@ struct RenderedPixels {
         return boxes
     }
 
+    /// How many pixels differ from another render of one size by more than
+    /// `tolerance` in any channel; nil when their sizes differ.
+    func differingPixels(from other: RenderedPixels, tolerance: Int = 8) -> Int? {
+        guard width == other.width, height == other.height else { return nil }
+        var found = 0
+        for i in stride(from: 0, to: rgba.count, by: 4) {
+            for channel in 0..<3 where abs(Int(rgba[i + channel]) - Int(other.rgba[i + channel])) > tolerance {
+                found += 1
+                break
+            }
+        }
+        return found
+    }
+
     /// The colour drawn at a point, in points.
     func color(at point: CGPoint) -> (r: UInt8, g: UInt8, b: UInt8) {
         let x = min(max(Int(point.x * scale), 0), width - 1), y = min(max(Int(point.y * scale), 0), height - 1)

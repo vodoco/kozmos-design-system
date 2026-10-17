@@ -36,6 +36,29 @@ struct DrawnPixels {
         rgba = buffer
     }
 
+    private init(width: Int, height: Int, scale: CGFloat, rgba: [UInt8]) {
+        self.width = width
+        self.height = height
+        self.scale = scale
+        self.rgba = rgba
+    }
+
+    /// What is drawn inside `region` (in points, to the nearest pixel), as a
+    /// drawing of its own: a part's icon, to compare with the icon drawn alone.
+    func cropped(to region: CGRect) -> DrawnPixels {
+        let x0 = min(max(0, Int((region.minX * scale).rounded())), width)
+        let x1 = min(max(x0, Int((region.maxX * scale).rounded())), width)
+        let y0 = min(max(0, Int((region.minY * scale).rounded())), height)
+        let y1 = min(max(y0, Int((region.maxY * scale).rounded())), height)
+        var part: [UInt8] = []
+        part.reserveCapacity((x1 - x0) * (y1 - y0) * 4)
+        for y in y0..<y1 {
+            let start = (y * width + x0) * 4
+            part.append(contentsOf: rgba[start..<start + (x1 - x0) * 4])
+        }
+        return DrawnPixels(width: x1 - x0, height: y1 - y0, scale: scale, rgba: part)
+    }
+
     /// The drawing's size, in points.
     var size: CGSize { CGSize(width: CGFloat(width) / scale, height: CGFloat(height) / scale) }
 
