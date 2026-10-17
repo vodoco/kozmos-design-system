@@ -193,6 +193,12 @@ public struct KozmosColorPicker: View {
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
+        // The square is drawn physically, as React draws it: white at the
+        // left and the hue at the right in either reading direction. Laid
+        // out right to left, the handle's top-leading alignment and offset
+        // mirrored while the gradient did not, so the handle sat over the
+        // wrong end of it.
+        .environment(\.layoutDirection, .leftToRight)
         .accessibilityLabel("Saturation and lightness")
         .accessibilityValue("\(Int(currentHsl.s)) percent saturation, \(Int(currentHsl.l)) percent lightness")
     }
