@@ -536,3 +536,44 @@ SwiftUI and Compose changes ship from the repository at this commit, not a nativ
 on SwiftUI (`.position` mirrors in right-to-left), physical side labels, and the pin's analytics on both (see their
 CHANGELOGs). Figma (LocationPin updated and audited clean), Code Connect (published and read back), external Claude
 Design artifacts and product deployments are separate.
+
+### 0.12.1
+
+Published on 2026-10-17 from `8207ff4b390335a9c0afbe28f6e4d4d6e28f1738`, the version merge
+[#301](https://github.com/vodoco/kozmos-design-system/pull/301). It carries two React fixes: every Kozmos field
+draws in Safari 26.0–26.3 as in the other engines (GAP-174,
+[#279](https://github.com/vodoco/kozmos-design-system/pull/279)), and ColorPicker mirrors right to left, its swatch,
+open button and hue and opacity gradients ([#282](https://github.com/vodoco/kozmos-design-system/pull/282)). React
+alone moves; tokens 0.8.0, icons 0.6.0 and product-contracts 0.9.1 are unchanged and not planned. At Olcay's request
+Claude merged the version PR, ran the pre-flight, dispatched the release and approved the protected `npm-release`
+deployment, as `vodoco`, for this release only.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.12.1 on npm `latest`; it pins tokens 0.8.0, icons 0.6.0 and product-contracts 0.9.1 exactly.                                                                                                                                                                                                                                                                                                                                                                             |
+| Exact main-push CI      | [39058268738](https://github.com/vodoco/kozmos-design-system/actions/runs/39058268738): all 17 jobs succeeded on the first attempt, including web, iOS and Android; its new step found the release workflow's 5 SHA-pinned actions to be commits (#295). Bundle Size Analysis, Visual Regression, Lighthouse CI, Pages and Site succeeded on the merge.                                                                                                                          |
+| Preflight / publication | `pnpm release:preflight` against that run passed (credential placement, request, evidence and plan; 0.12.1 not on npm). [39061203007](https://github.com/vodoco/kozmos-design-system/actions/runs/39061203007) succeeded (guard, prepare, publish).                                                                                                                                                                                                                              |
+| Registry readback       | 0.12.1 is on `latest` with SLSA v1 provenance (Sigstore log index 3299501080). Its SHA-512 integrity equals the one the publish job printed, and the job verified the approved tarball in the registry.                                                                                                                                                                                                                                                                          |
+| Installed consumer      | A fresh npm installation of React 0.12.1 with React 19.3.1 resolved tokens 0.8.0, icons 0.6.0 and contracts 0.9.1, exposed 271 exports from CJS and from the ESM entry, and server-rendered ThemeProvider with a right-to-left Button, ColorPicker and Input. The same with React 18.3.1. The installed stylesheet carries the owned field rules (the swatch at `inset-inline-start`, the OTP cells, the AI input), and the ColorPicker module the right-to-left range gradient. |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/react@0.12.1` at `8207ff4b`, and a second dry-run found it in place. React 0.12.1 is Latest.                                                                                                                                                                                                                                                                                                                                |
+| Website / Storybook     | [Pages 39058268690](https://github.com/vodoco/kozmos-design-system/actions/runs/39058268690) built and deployed this exact SHA. The live Storybook's `index.json` (608 entries) lists ColorPicker Open, Search Default and Textarea WithError, and their iframes answer.                                                                                                                                                                                                         |
+
+Change details: [React](../packages/react/CHANGELOG.md#0121) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.12.0:
+
+- **A field's `className` and Safari 26.0–26.3.** Those versions apply no `@scope` rule to an `<input>` or a
+  `<textarea>`, so a utility class passed to a field's `className` never reaches the field there (it still does in
+  Chrome, Edge, Firefox and Safari 26.4). Style a field through its props, the provider's `tokens`, an inline
+  `style` or your own CSS, and the layout around it through `wrapperClassName` (the README's "Fields in Safari").
+- **ColorPicker right to left:** the swatch sits at the inline start, the open button at the inline end, and the hue
+  and opacity gradients run with their sliders. Left to right nothing changes.
+- **Build output:** the UMD file gains two parentheses round the factory, and the stylesheet writes `@media`
+  preludes without spaces (#283's toolchain); no rule changed.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry (see their CHANGELOGs):
+the SwiftUI default analytics log (#286); Android's unused `com.kozmos.utils` analytics copies removed, with a
+migration note (#288); ColorPicker's colour square right to left (#290), the iOS format row at phone widths (#296),
+Compose's format row and palette field at large text (#298, #299); `KozmosIcon` drawing all 80 icons on SwiftUI
+(#297); and POI detail tags drawing Kozmos icons, with the additive `iconName` (#300). The native Code Connect,
+with the library icons (#293), was published and read back on 17 Oct (SwiftUI 214, Compose 209 mappings). External
+Claude Design artifacts and product deployments are separate.
