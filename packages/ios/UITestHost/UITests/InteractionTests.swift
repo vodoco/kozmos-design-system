@@ -349,6 +349,8 @@ final class InteractionTests: XCTestCase {
     /// button's #B01736 to #EFD1D7. The light theme's values: since decision
     /// 60 each emotion presses two steps along its own ramp, away from the
     /// page (danger 900, informative 900, the neutral's background 400).
+    /// The parts are drawn with "received-events", which `launch` waited for,
+    /// so each is looked up once rather than polled.
     func testAPressDrawsEachFillsOwnPressedToken() {
         launch("press-feedback")
         let pressed = [
@@ -358,7 +360,7 @@ final class InteractionTests: XCTestCase {
         ]
         for id in pressed.keys.sorted() {
             let part = app.buttons["part-\(id)"]
-            XCTAssertTrue(part.waitForExistence(timeout: 3), id)
+            XCTAssertTrue(part.exists, id)
             part.press(forDuration: 1)
         }
         for (id, want) in pressed.sorted(by: { $0.key < $1.key }) {
@@ -375,7 +377,7 @@ final class InteractionTests: XCTestCase {
         launch("press-feedback")
         for id in ["map-tinted-off", "map-filled-off"] {
             let part = app.buttons["part-\(id)"]
-            XCTAssertTrue(part.waitForExistence(timeout: 3), id)
+            XCTAssertTrue(part.exists, id)
             part.press(forDuration: 1)
         }
         let plain = Self.sample(app, "map-tinted-off")
