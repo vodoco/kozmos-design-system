@@ -178,6 +178,44 @@ Submit documentation corrections through a PR and retain the normal merge gates.
 bump or npm republication is needed for documentation that does not change shipped output.
 Do not rerun a publication or move existing tags to include post-release documentation edits.
 
+## Dependency overrides and pins
+
+The root `package.json` holds `pnpm.overrides` that lift transitive development dependencies past
+published advisories (#283, 17 Oct 2026; 161 open alerts became 2). No published package's own
+dependencies are overridden: the four public packages ship the dependency ranges their
+`package.json` names, and consumers resolve those themselves.
+
+- **Each override is scoped to the vulnerable major** (`axios@^1`, not `axios`), so a parent that
+  moves to a new major is not held back. Two cross a major because no lower release is patched:
+  `uuid@^9` → 11.1.1 (Storybook's addon-actions imports only `v4`) and `postcss-selector-parser@^6`
+  → 7.1.6 (Tailwind 3; react's built stylesheet was unchanged by it).
+- **Drop an override when nothing needs it.** Run `pnpm why <package>`: once every parent asks for
+  a range at or above the pinned version, delete the entry, `pnpm install`, and confirm that
+  `pnpm audit` lists nothing new. An override left in place pins that version even after the
+  parents move on.
+- **`ajv@^6` and `yaml@^2`** are pinned because `pnpm audit` listed them, though GitHub had
+  dismissed their alerts.
+- **`apps/mapscale-review` takes `vite ~8.1.6`, not the 8.3 the other apps use.** Vite 8.2 and later
+  declare an optional peer, `@vitejs/devtools ^0.7`, whose peer set crashes npm 10 (Node 20's own
+  npm) on Linux in arborist's `#loadPeerSet` ("Cannot read properties of null (reading
+  'edgesOut')"). `pnpm product:consumer:check` installs mapscale-review with npm, as a product
+  team would, and failed on CI for that reason alone. A bare project holding only `vite@8.3.4`
+  fails the same way in `node:20`; npm 11 installs it, and macOS npm 10 did too, so a local run
+  passes. Before raising this range, install the consumer in `node:20` (linux/amd64) with npm
+  10.8.2. 8.1.6 is patched for every Vite 8 alert open in October 2026 (8.0.16 is the first).
+- **Two alerts stay open: no patched release exists.**
+  - `sprintf-js` 1.0.3 (alert 198): through argparse 1.x, which API Extractor (via
+    `vite-plugin-dts`) and js-yaml 3 (via `@changesets/cli`) require. The DoS needs an
+    attacker-controlled format string; these tools format only their own help text.
+  - `vue-template-compiler` 2.7.16 (alert 20): through `vite-plugin-dts` 3.9.1, at build time only;
+    the XSS is in compiling templates in a browser, and these packages have no `.vue` files.
+    `vite-plugin-dts` 4 drops it, but it changes how the published packages' declarations are
+    emitted, so it needs a change of its own that compares `dist` before and after.
+- **Verify a dependency change by its output**, not only by green checks: build tokens, icons,
+  product-contracts and react before and after and compare `dist` byte for byte, then explain
+  each difference (#283's were two parentheses in react's UMD file and the spaces inside 25
+  `@media` preludes).
+
 ## Evidence and remaining risk
 
 Attach test commands, exact commit/artifact identifiers, counts, visual review and known gaps
