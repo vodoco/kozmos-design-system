@@ -1859,6 +1859,56 @@ assertContains(
     );
   }
 }
+// Every node one platform maps, every platform maps. Dev Mode falls back to
+// another label's snippet for a node its own label does not map: from 23 Sep,
+// when only React mapped the Icons page, every library icon nested in a set
+// read back on SwiftUI and Compose as React's <Icon name=…/>, without
+// `import Kozmos` (58 sets on each in the 16 Oct readback).
+{
+  const nodesOf = (config, packageRoot, extension) => {
+    const nodes = new Map();
+    for (const includePath of JSON.parse(read(config)).codeConnect.include) {
+      if (!includePath.endsWith(extension)) continue;
+      const filePath = [
+        path.join(path.dirname(config), includePath),
+        includePath,
+        path.join(packageRoot, includePath),
+      ].find((candidate) => fs.existsSync(path.join(root, candidate)));
+      if (!filePath) continue;
+      for (const match of read(filePath).matchAll(/node-id=(\d+)-(\d+)/g)) {
+        nodes.set(`${match[1]}:${match[2]}`, path.normalize(filePath));
+      }
+    }
+    return nodes;
+  };
+  const platforms = [
+    ["React", nodesOf(files.figmaLinked, "packages/react", ".figma.tsx")],
+    ["SwiftUI", nodesOf(files.iosFigmaLinked, "packages/ios", ".figma.swift")],
+    [
+      "Compose",
+      nodesOf(files.androidFigmaLinked, "packages/android", ".figma.kt"),
+    ],
+  ];
+  const missing = [];
+  for (const [label, nodes] of platforms) {
+    for (const [otherLabel, otherNodes] of platforms) {
+      if (otherLabel === label) continue;
+      const absent = [...otherNodes].filter(([node]) => !nodes.has(node));
+      if (absent.length === 0) continue;
+      const sources = [...new Set(absent.map(([, filePath]) => filePath))];
+      const first = absent.slice(0, 4).map(([node]) => node);
+      if (absent.length > 4) first.push("…");
+      missing.push(
+        `${label} maps none of ${absent.length} node(s) ${otherLabel} maps (${first.join(", ")}), from ${sources.join(", ")}`,
+      );
+    }
+  }
+  if (missing.length > 0) {
+    fail(
+      `The linked Code Connect platforms map different Figma nodes; Dev Mode shows another platform's snippet for the gap:\n  ${missing.join("\n  ")}`,
+    );
+  }
+}
 // Dev Mode shows each snippet's import line. Without importPaths the React
 // parser prints the mapping file's own relative import ("./CategoryField"),
 // which no consumer can use, and SwiftUI snippets print no import at all.
