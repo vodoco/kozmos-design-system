@@ -29,17 +29,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # No `version`: pnpm/action-setup v4.4 and later refuse to run when the
+      # action and package.json's `packageManager` both name one, so pnpm is
+      # the manifest's, as in release.yml.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "pnpm"
@@ -412,7 +413,7 @@ jobs:
 
       - name: Preserve Storybook Audit Evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: storybook-audit
           path: test-results/storybook-*.json
@@ -496,15 +497,13 @@ jobs:
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation && ADAPTIVE_BROWSER=webkit pnpm -w test:sdk-density
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "pnpm"
@@ -529,7 +528,7 @@ jobs:
 
       - name: Preserve Evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: browser-evidence-${{ strategy.job-index }}
           path: |
@@ -552,15 +551,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "pnpm"
@@ -590,7 +587,7 @@ jobs:
 
       - name: Preserve POI Reference Evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: poi-gallery
           path: test-results/poi-gallery
@@ -612,7 +609,7 @@ jobs:
       ios: ${{ steps.diff.outputs.ios }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -645,15 +642,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "pnpm"
@@ -677,7 +672,7 @@ jobs:
 
       - name: Preserve Native POI Render Evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: native-poi-test-results
           path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
@@ -704,15 +699,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "pnpm"
@@ -724,7 +717,7 @@ jobs:
         run: pnpm --filter @kozmos-ds/tokens build
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "zulu"
           java-version: "17"
@@ -741,7 +734,7 @@ jobs:
       # A green task alone does not prove which native tests actually ran.
       - name: Upload Android Test Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-test-results
           path: packages/android/build/test-results/testDebugUnitTest/TEST-*.xml
@@ -752,7 +745,7 @@ jobs:
       # delta images Paparazzi writes show what moved, and by how much.
       - name: Upload Paparazzi Failures
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: paparazzi-failures
           path: packages/android/build/paparazzi/failures/
