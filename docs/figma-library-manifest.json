@@ -20,7 +20,7 @@
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 98 Core SwiftUI and 98 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 99 Core SwiftUI and 99 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
