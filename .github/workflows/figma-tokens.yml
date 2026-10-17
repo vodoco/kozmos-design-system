@@ -53,8 +53,11 @@ jobs:
       - name: Route Native Token Output Arrays
         run: pnpm tokens:native:copy && pnpm tokens:copies:check
 
+      # v8 is the first major on Node 24. Between v6 and it, v7 renamed
+      # `git-token` to `branch-token` and added commit signing, off by default;
+      # this step sets neither, so its five inputs mean what they did.
       - name: Generate Cross-Platform Semantic PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore(tokens): sync stylistic properties securely from Figma"
