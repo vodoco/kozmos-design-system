@@ -41,11 +41,12 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
       options: --ipc=host
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      # No `version`: pnpm/action-setup v4.4 and later refuse to run when the
+      # action and package.json's `packageManager` both name one, so pnpm is
+      # the manifest's, as in release.yml.
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
@@ -59,7 +60,7 @@ jobs:
         run: node scripts/visual/summary.mjs >> "$GITHUB_STEP_SUMMARY"
       - name: Keep the report
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: visual-report
           path: |
@@ -80,11 +81,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm

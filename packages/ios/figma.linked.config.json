@@ -42,6 +42,7 @@
       "Sources/Components/Button/Button.swift",
       "Sources/Components/Icon/Icon.figma.swift",
       "Sources/Components/Icon/Icon.swift",
+      "Sources/Components/Icon/IconLibrary.figma.swift",
       "Sources/Components/IconButton/IconButton.figma.swift",
       "Sources/Components/IconButton/IconButton.swift",
       "Sources/Components/ToggleButton/ToggleButton.figma.swift",
