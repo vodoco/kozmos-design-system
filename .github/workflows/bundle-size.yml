@@ -21,17 +21,22 @@ jobs:
   analyze-bundle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
+          # setup-node v5 caches by itself when package.json names a
+          # packageManager, and pnpm is not installed yet at this step. This job
+          # has never cached; it still does not.
+          package-manager-cache: false
 
+      # No `version`: pnpm/action-setup v4.4 and later refuse to run when the
+      # action and package.json's `packageManager` both name one, so pnpm is
+      # the manifest's, as in release.yml.
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v5
 
       - name: Install dependencies
         run: pnpm install
