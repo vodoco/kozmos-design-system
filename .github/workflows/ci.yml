@@ -51,6 +51,14 @@ jobs:
       - name: Verify Release Safeguards
         run: pnpm test:release
 
+      # release.yml pins each action by SHA; the test above holds the form, not
+      # that the SHA is a commit. pnpm/action-setup's pin was v4's annotated tag
+      # object until 17 Oct 2026, which resolved only while the tag stayed put.
+      - name: Verify Release Action Pins Are Commits
+        run: pnpm release:pins:check
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       # The Changes job's iOS decision, over a scratch repository: a skip only
       # when the changed paths are known and none is an iOS input.
       - name: Verify CI Change Detection
