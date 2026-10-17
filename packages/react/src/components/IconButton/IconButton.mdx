@@ -39,13 +39,12 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosIconButton } from '@kozmos-ds/vue';
-import { Home } from 'lucide-vue-next';
+import { KozmosIcon, KozmosIconButton } from '@kozmos-ds/vue';
 </script>
 
 <template>
-  <KozmosIconButton>
-    <Home class="h-4 w-4" />
+  <KozmosIconButton aria-label="Home">
+    <KozmosIcon name="home-line" size="sm" />
   </KozmosIconButton>
 </template>
     `}

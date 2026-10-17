@@ -79,7 +79,8 @@ platform's source tree. It does **not** compile examples, validate all imports o
 props, or establish behavioural equivalence. Native builds and adapter tests do
 not automatically compile the strings displayed in these documentation tabs.
 `pnpm docs:snippets:vue:check` holds every name a Vue tab imports from
-`@kozmos-ds/vue`, and every `Kozmos*` tag it draws, to what the harness exports;
+`@kozmos-ds/vue`, and every `Kozmos*` tag it draws, to what the harness exports,
+and fails a tab that imports from any module but `@kozmos-ds/vue` and `vue`;
 it does not run the tab.
 
 Missing example text means **not documented**, not automatically unsupported.
