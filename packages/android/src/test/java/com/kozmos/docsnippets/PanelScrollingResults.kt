@@ -1,3 +1,4 @@
+// Not a docs tab: no MDX page shows it; its KDoc and CHANGELOG point here.
 // A product's own scroller in the shell's panel (GAP-085), as
 // kozmosPanelScrollEndPadding's KDoc and the Android CHANGELOG describe it:
 // compiled here, and drawn and measured by
