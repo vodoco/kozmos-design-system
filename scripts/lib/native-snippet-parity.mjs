@@ -182,7 +182,7 @@ export function readPage(source) {
         if (source[i] === "`") break;
         i += 1;
       }
-      if (name && PLATFORMS[name])
+      if (name && Object.hasOwn(PLATFORMS, name))
         tabs.push({
           platform: name,
           code: rendered(source.slice(open + 3, i)),
