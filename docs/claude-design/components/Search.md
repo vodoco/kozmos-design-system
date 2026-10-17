@@ -19,7 +19,7 @@ import { Search, ThemeProvider } from "@kozmos-ds/react";
 export function SearchExample() {
   return (
     <ThemeProvider defaultTheme="light">
-      <Search placeholder="Search..." className="w-72" />
+      <Search placeholder="Search..." wrapperClassName="w-72" />
     </ThemeProvider>
   );
 }

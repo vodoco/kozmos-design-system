@@ -5,6 +5,11 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/Input";
 
+// The way the panel's range gradients run: 90deg ("to right") left to right,
+// and from the right in a right-to-left field, where a native range's lowest
+// value is. --kozmos-rtl follows the nearest dir attribute (owned-components.css).
+const RANGE_RUN = "calc(90deg - 180deg * var(--kozmos-rtl, 0))";
+
 const DEFAULT_PRESETS = [
   "#135BEC",
   "#8FB4FF",
@@ -410,7 +415,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                 aria-label={isOpen ? "Hide color picker" : "Show color picker"}
                 aria-controls={panelId}
                 aria-expanded={isOpen}
-                className="absolute right-1 inline-flex h-9 w-9 items-center justify-center rounded-control text-muted-foreground ring-offset-background transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="absolute end-1 inline-flex h-9 w-9 items-center justify-center rounded-control text-muted-foreground ring-offset-background transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={disabled}
                 onClick={() => setOpen(!isOpen)}
               >
@@ -498,8 +503,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                   className="kozmos-reset kozmos-color-picker-range"
                   style={{
                     accentColor: currentValue,
-                    background:
-                      "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                    background: `linear-gradient(${RANGE_RUN}, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)`,
                   }}
                   onChange={(event) =>
                     commitHsl({
@@ -522,7 +526,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                   className="kozmos-reset kozmos-color-picker-range"
                   style={{
                     accentColor: currentValue,
-                    background: `linear-gradient(to right, transparent, ${currentValue})`,
+                    background: `linear-gradient(${RANGE_RUN}, transparent, ${currentValue})`,
                   }}
                   onChange={(event) =>
                     setAlpha(Number(event.currentTarget.value))
