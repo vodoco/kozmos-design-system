@@ -27,11 +27,13 @@ export const WithError: Story = {
   render: () => (
     <div className="grid w-full gap-1.5">
       <Label htmlFor="message-error">Your message</Label>
+      {/* error draws the edge, the text and the focus ring, and sets
+          aria-invalid: a className here never lands in Safari 26.0 to 26.3,
+          which apply no @scope rule to a <textarea> (GAP-174). */}
       <Textarea
         placeholder="Type your message here."
         id="message-error"
-        aria-invalid="true"
-        className="border-destructive focus-visible:ring-destructive"
+        error
       />
       <span className="text-sm font-medium text-destructive-text">
         Message cannot be empty.
