@@ -107,7 +107,6 @@ public struct KozmosIcon: View {
         case "chevron-right": return "chevron.right"
         case "chevron-up": return "chevron.up"
         case "clock": return "clock"
-        case "compass-01": return "compass"
         case "download-01": return "arrow.down.to.line"
         case "edit-01": return "pencil"
         case "home-line": return "house"
