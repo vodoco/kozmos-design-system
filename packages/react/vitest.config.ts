@@ -16,10 +16,6 @@ export default defineConfig({
       "tests/visual/**",
       "tests/e2e/**",
     ],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-    },
     alias: {
       "@kozmos-ds/react": resolve(__dirname, "./src"),
     },
