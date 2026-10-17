@@ -40,7 +40,9 @@ struct KozmosPointrGlyph: Shape {
             // Node 1007:9283.
             return outline("M7 7L17 17M7 17H17V7")
         default:
-            return nil
+            // The web registry's names SF Symbols has no symbol for, generated
+            // from packages/icons into PointrIcons.generated.swift.
+            return KozmosPointrIconPaths.data(name).flatMap { outline($0.joined(separator: " ")) }
         }
     }
 
