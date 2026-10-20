@@ -521,7 +521,7 @@ echo "✅ Setup verification complete!"
 ```
 🔍 Verifying Kozmos Design System setup...
 Node.js: v20.10.0
-pnpm: 9.0.0
+pnpm: 9.15.9
 Dependencies: ✅ Installed
 Tokens build: ✅ Success
 React build: ✅ Success

@@ -4,15 +4,96 @@ import type {
   POIServicePresentation,
 } from "@kozmos-ds/product-contracts";
 import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Arriving,
   ClockPlus,
+  CustomTransition,
+  ElevatorDown,
+  ElevatorUp,
+  ElevatorUpAndDown,
+  EscalatorDown,
+  EscalatorNoDirection,
+  EscalatorUp,
   Feather,
-  getIconDefinition,
+  FollowTheLine,
+  HardLeft,
+  HardRight,
+  LogIn01,
+  LogOut01,
+  RampDown,
+  RampNoDirection,
+  RampUp,
+  RouteEnter,
+  RouteEntranceExit,
+  RouteExit,
+  SecurityControl,
+  Shuttle,
+  StairsDown,
+  StairsNoDirection,
+  StairsUp,
+  TurnBack,
+  getIconComponent,
   isKozmosIconKey,
+  type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { Star01 as Star } from "@kozmos-ds/icons";
 import { Accessibility } from "@kozmos-ds/icons";
 import { Button } from "../Button";
 import { MetaStrip, MetaStripItem } from "../MetaStrip";
+
+/**
+ * The names a tag draws that `Icon`'s registry does not know, which
+ * `KozmosIcon` on iOS and Android draws, and so their tags: each wayfinding
+ * glyph of Pointr Maps - Express (navigation-glyphs.json) by the kebab case
+ * of its export name, and the four Pointr Icon Library outlines the natives
+ * keep by name. The artwork is `@kozmos-ds/icons`' own, the source the
+ * natives' copies are generated or taken from. The registry's names and
+ * aliases resolve through the registry first; none of them is here.
+ */
+const tagIconsBeyondTheRegistry: Readonly<Record<string, KozmosIconComponent>> =
+  {
+    "elevator-up": ElevatorUp,
+    "elevator-down": ElevatorDown,
+    "stairs-up": StairsUp,
+    "stairs-down": StairsDown,
+    "escalator-up": EscalatorUp,
+    "escalator-down": EscalatorDown,
+    "ramp-up": RampUp,
+    "ramp-down": RampDown,
+    "route-enter": RouteEnter,
+    "route-exit": RouteExit,
+    "elevator-up-and-down": ElevatorUpAndDown,
+    "escalator-no-direction": EscalatorNoDirection,
+    "stairs-no-direction": StairsNoDirection,
+    "ramp-no-direction": RampNoDirection,
+    "route-entrance-exit": RouteEntranceExit,
+    "hard-left": HardLeft,
+    "hard-right": HardRight,
+    "turn-back": TurnBack,
+    "follow-the-line": FollowTheLine,
+    arriving: Arriving,
+    "custom-transition": CustomTransition,
+    "security-control": SecurityControl,
+    shuttle: Shuttle,
+    "log-in-01": LogIn01,
+    "log-out-01": LogOut01,
+    "arrow-up-right": ArrowUpRight,
+    "arrow-down-right": ArrowDownRight,
+  };
+
+/**
+ * A tag's icon for its `iconName`, or none for a name Kozmos does not know:
+ * the label stands alone, never beside a stand-in. Only the map's own keys
+ * count, so an inherited name such as `constructor` draws nothing.
+ */
+function tagIcon(name: string | undefined): KozmosIconComponent | undefined {
+  if (!name) return undefined;
+  if (isKozmosIconKey(name)) return getIconComponent(name);
+  return Object.prototype.hasOwnProperty.call(tagIconsBeyondTheRegistry, name)
+    ? tagIconsBeyondTheRegistry[name]
+    : undefined;
+}
 
 const summaryIcons = {
   rating: Star,
@@ -70,10 +151,7 @@ export function POIDetailAssetIcon({
 }
 
 export function POIDetailAttribute({ item }: { item: POIServicePresentation }) {
-  const Icon =
-    item.iconName && isKozmosIconKey(item.iconName)
-      ? getIconDefinition(item.iconName)?.component
-      : undefined;
+  const Icon = tagIcon(item.iconName);
   return (
     <>
       {item.iconUrl ? (

@@ -23,6 +23,14 @@ on:
       - "scripts/skills/check-completion.ts"
       - ".github/workflows/site.yml"
       - "pnpm-lock.yaml"
+      # The workspace's own build: the pnpm that installs it and the
+      # overrides it resolves with, the packages it holds, Turborepo's
+      # pipeline and the TypeScript settings every package extends. Each
+      # changes how the site and Storybook build without touching packages/.
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
   pull_request:
     types: [opened, synchronize]
     paths:
@@ -33,6 +41,14 @@ on:
       - "scripts/skills/check-completion.ts"
       - ".github/workflows/site.yml"
       - "pnpm-lock.yaml"
+      # The workspace's own build: the pnpm that installs it and the
+      # overrides it resolves with, the packages it holds, Turborepo's
+      # pipeline and the TypeScript settings every package extends. Each
+      # changes how the site and Storybook build without touching packages/.
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
 
 jobs:
   site:
