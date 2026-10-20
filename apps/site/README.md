@@ -690,8 +690,9 @@ page's height budget — is written with that slack and says so.
 typecheck, unit tests and the build; then builds Storybook and checks that
 every component page's Storybook link names a page the build has; then the
 e2e suite in all three engines — on every pull request that touches
-`apps/site`, `apps/docs`, `packages`, the status script or the lockfile —
-and then builds the site again for its subpath and reads the pages back for
+`apps/site`, `apps/docs`, `packages`, the status script, the lockfile or the
+workspace's root build files (`package.json`, `pnpm-workspace.yaml`,
+`turbo.json`, `tsconfig.base.json`) — and then builds the site again for its subpath and reads the pages back for
 any address that points at the domain's root.
 
 ## Keeping up with `main`
