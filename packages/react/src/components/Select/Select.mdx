@@ -88,21 +88,20 @@ struct ThemeSelect: View {
 `}
     kotlin={`
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.kozmos.components.input.KozmosInput
 import com.kozmos.components.select.KozmosSelect
 import com.kozmos.components.select.KozmosSelectItem
 
 // KozmosSelect draws the menu, not the field: the trigger is yours, and
-// menuAnchor() opens the menu from it. An item hands on its value, then
-// asks for the menu to close.
+// menuAnchor() opens the menu from it. The closed field is a read-only
+// KozmosInput, which takes no trailing icon, so it draws no caret. An item
+// hands on its value, then asks for the menu to close.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
@@ -111,13 +110,12 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
     KozmosSelect(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        trigger = { open ->
-            OutlinedTextField(
+        trigger = {
+            KozmosInput(
                 value = themes[theme] ?: "",
                 onValueChange = {},
+                placeholder = "Theme",
                 readOnly = true,
-                placeholder = { Text("Theme") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
                 modifier = Modifier.menuAnchor()
             )
         }
