@@ -50,52 +50,36 @@ import { KozmosIcon, KozmosIconButton } from '@kozmos-ds/vue';
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-public struct KozmosIconButton: View {
-let iconName: String
-let action: () -> Void
+// An action with no words of its own. iconName is an SF Symbol's name, not
+// a Kozmos icon's (KozmosIcon draws "home-line" as "house"), and the label
+// is what VoiceOver says, as aria-label is on the web.
+struct HomeButton: View {
+    let goHome: () -> Void
 
-    public init(
-        iconName: String,
-        action: @escaping () -> Void
-    ) {
-        self.iconName = iconName
-        self.action = action
+    var body: some View {
+        KozmosIconButton(iconName: "house", action: goHome)
+            .accessibilityLabel("Home")
     }
-
-    public var body: some View {
-        Button(action: action) {
-            Image(systemName: iconName)
-                .font(.system(size: 20))
-                .foregroundColor(.primary)
-                .padding(8)
-                .background(Color.clear)
-                .clipShape(Circle())
-        }
-    }
-
 }
 `}
     kotlin={`
-package com.kozmos.components.iconbutton
-
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.kozmos.components.iconbutton.KozmosIconButton
 
+// An action with no words of its own. The icon is an ImageVector, not a
+// Kozmos icon's name (KozmosIcon's "home-line" draws Material's Home), and
+// contentDescription is what TalkBack says, as aria-label is on the web.
 @Composable
-fun KozmosIconButton(
-icon: ImageVector,
-onClick: () -> Unit,
-contentDescription: String? = null
-) {
-IconButton(onClick = onClick) {
-Icon(
-imageVector = icon,
-contentDescription = contentDescription
-)
-}
+fun HomeButton(goHome: () -> Unit) {
+    KozmosIconButton(
+        icon = Icons.Default.Home,
+        onClick = goHome,
+        contentDescription = "Home"
+    )
 }
 `}
 />

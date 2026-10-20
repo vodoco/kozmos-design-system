@@ -603,7 +603,7 @@ Use **MIT License**.
 
 ### ADR-010: Callback Props for Error Tracking
 
-**Status:** ✅ Accepted, not built as written: no component takes an `onError` for tracking. What exists is an event callback, React's `AnalyticsProvider` (`onDispatch`), SwiftUI's `kozmosAnalytics` environment value and Compose's `LocalKozmosAnalytics`
+**Status:** ✅ Accepted, not built as written: no component takes an `onError` for tracking. What exists is an event callback, React's `AnalyticsProvider` (`onDispatch`), SwiftUI's `kozmosAnalytics` environment value and its batching `.kozmosAnalytics(batchDelayMs:onDispatch:)` modifier, which batches as `AnalyticsProvider` does, and Compose's `LocalKozmosAnalytics`, which delivers each event
 **Date:** 2026-02-05
 **Decision Makers:** Core Team
 

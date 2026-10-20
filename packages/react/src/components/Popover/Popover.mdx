@@ -47,59 +47,50 @@ import { KozmosPopover } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Button("Show details") {}
-.kozmosPopover(
-isPresented: .constant(true),
-title: "Details",
-description: "Supporting context."
-)
+// The popover Kozmos draws is a title and an optional description. Given
+// content of its own instead, it draws only that content.
+struct OpeningHoursPopover: View {
+    @State private var isPresented = false
+
+    var body: some View {
+        KozmosButton("Opening hours") { isPresented = true }
+            .kozmosPopover(
+                isPresented: $isPresented,
+                title: "Opening hours",
+                description: "Monday–Friday, 09:00–18:00"
+            )
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.popover
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import com.kozmos.tokens.KozmosColors
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.popover.KozmosPopover
+import com.kozmos.components.text.KozmosText
 
+// Compose's popover opens over its parent's top-start corner, so it shares a
+// Box with the button that opens it.
 @Composable
-fun KozmosPopover(
-isExpanded: Boolean,
-onDismissRequest: () -> Unit,
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit
-) {
-if (isExpanded) {
-Popup(
-onDismissRequest = onDismissRequest,
-properties = PopupProperties(focusable = true)
-) {
-Surface(
-shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100),
-shadowElevation = 4.dp,
-color = KozmosColors.primitivesColorsBackground0,
-modifier = modifier
-) {
-Box(modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing200)) {
-content()
+fun OpeningHoursPopover() {
+    var isExpanded by remember { mutableStateOf(false) }
+    Box {
+        KozmosButton(onClick = { isExpanded = true }) { Text("Opening hours") }
+        KozmosPopover(
+            isExpanded = isExpanded,
+            onDismissRequest = { isExpanded = false }
+        ) {
+            KozmosText(text = "Monday–Friday, 09:00–18:00")
+        }
+    }
 }
-}
-}
-}
-}
-
-    `}
+`}
 
 />

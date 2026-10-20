@@ -93,8 +93,12 @@ public struct KozmosPOIDetailTag: Sendable, Hashable, Identifiable, Codable {
         self.iconUrl = iconUrl; self.iconMonochrome = iconMonochrome
     }
 
+    /// A service's tag, with the service's artwork: its `iconUrl` (tinted
+    /// when `iconMonochrome`), else its `iconName`, as the web and Compose
+    /// draw a service.
     init(service: KozmosPOIServicePresentation) {
-        self.init(id: service.id, label: service.label, iconName: service.iconName)
+        self.init(id: service.id, label: service.label, iconName: service.iconName,
+                  iconUrl: service.iconUrl, iconMonochrome: service.iconMonochrome)
     }
 }
 
