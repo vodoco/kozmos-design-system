@@ -2,7 +2,9 @@ package com.kozmos.components.fileupload
 
 import com.kozmos.tokens.KozmosDimensions
 
+import android.content.ContentResolver
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -51,7 +53,11 @@ fun KozmosFileUpload(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            fileName = it.lastPathSegment ?: "Selected File" // Simplified name getting
+            // The file's own name, as React shows a File's name. The URI's last
+            // segment is only a fallback: for a document provider's URI it is
+            // the document's ID, not its name. It was all this showed until
+            // 2026-10-20.
+            fileName = displayNameOf(context.contentResolver, it) ?: it.lastPathSegment ?: "Selected File"
             onFileSelected(it)
         }
     }
@@ -109,4 +115,19 @@ fun KozmosFileUpload(
             )
         }
     }
+}
+
+/**
+ * The name the provider that holds a picked file gives it
+ * (`OpenableColumns.DISPLAY_NAME`), the platform's way to name a content URI;
+ * null for any other URI, and for a provider that gives none or fails.
+ */
+private fun displayNameOf(resolver: ContentResolver, uri: Uri): String? {
+    if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+    return runCatching {
+        resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (column >= 0 && cursor.moveToFirst()) cursor.getString(column) else null
+        }
+    }.getOrNull()?.takeIf { it.isNotBlank() }
 }
