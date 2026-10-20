@@ -1,6 +1,7 @@
 {
   // The publish list: vite-plugin-dts follows this file, so it holds src only.
-  // tsconfig.test.json type-checks the tests and the scripts with it.
+  // tsconfig.test.json type-checks the tests with it; scripts/ is plain .mjs,
+  // linted but not type-checked.
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "declaration": true,
