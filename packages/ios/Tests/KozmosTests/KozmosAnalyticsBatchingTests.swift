@@ -292,6 +292,35 @@ final class KozmosAnalyticsBatchingTests: XCTestCase {
       }
     }
 
+    /// The view above the modifier redraws between two presses: they are still
+    /// one batch, delivered 2 seconds after the first. React's provider keeps
+    /// its queue across renders; until 17 Oct the modifier made a new engine,
+    /// with an empty queue, each time the view above redrew.
+    @MainActor func testARedrawOfTheViewAboveKeepsTheBatch() async throws {
+      try await withAutomation {
+        let clock = ManualClock()
+        let redraws = Redraws()
+        var batches: [String] = []
+        let window = await host(
+          RedrawingSwitch(redraws: redraws, schedule: clock.schedule(after:_:)) { events in
+            batches.append("\(clock.now)ms: \(events.map(\.eventName).joined(separator: ", "))")
+          })
+        defer { window.isHidden = true }
+        try press("Notifications", in: window)
+        let drawn = redraws.drawn
+        redraws.count += 1
+        await settle { redraws.drawn > drawn }
+        XCTAssertGreaterThan(redraws.drawn, drawn, "the view above did not redraw")
+        try press("Notifications", in: window)
+        clock.advance(milliseconds: 1999)
+        await settle()
+        XCTAssertEqual(batches, [])
+        clock.advance(milliseconds: 1)
+        await settle()
+        XCTAssertEqual(batches, ["2000ms: switch_toggled, switch_toggled"])
+      }
+    }
+
     /// The modified view leaves the hierarchy with a batch waiting a minute:
     /// the batch is delivered then, as React's provider flushes on unmount.
     @MainActor func testWhatIsQueuedIsDeliveredWhenTheViewLeaves() async throws {
@@ -334,6 +363,29 @@ final class KozmosAnalyticsBatchingTests: XCTestCase {
 
   private final class Shown: ObservableObject {
     @Published var isShown = true
+  }
+
+  private final class Redraws: ObservableObject {
+    @Published var count = 0
+    /// How many times `RedrawingSwitch` has drawn.
+    var drawn = 0
+  }
+
+  /// A switch inside the modifier, under a view that redraws when `redraws`
+  /// changes and builds the modifier again each time.
+  private struct RedrawingSwitch: View {
+    @ObservedObject var redraws: Redraws
+    let schedule: KozmosAnalytics.Schedule
+    let onDispatch: ([KozmosAnalyticsEvent]) -> Void
+
+    var body: some View {
+      redraws.drawn += 1
+      return VStack {
+        Text("Drawn for \(redraws.count)")
+        KozmosSwitch(checked: .constant(false), label: "Notifications")
+          .modifier(KozmosAnalyticsModifier(batchDelayMs: 2000, schedule: schedule, onDispatch: onDispatch))
+      }
+    }
   }
 
   private struct RemovableCheckbox: View {
