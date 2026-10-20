@@ -49,90 +49,37 @@ import { KozmosAvatar } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct KozmosAvatar: View {
-    let imageURL: URL?
-    let fallbackText: String
-    let size: CGFloat = 40
-    
+// The initials show while the image loads, if it fails, and with no URL.
+// The avatar takes no alt text: the label is what VoiceOver says.
+struct ProfileAvatar: View {
     var body: some View {
-        ZStack {
-            // Fallback layer
-            Circle()
-                .fill(KozmosColors.primitivesColorsBackground500)
-            Text(fallbackText)
-                .font(.system(size: size * 0.4, weight: .medium))
-                .foregroundColor(KozmosColors.primitivesColorsBackground0)
-            
-            // Image layer
-            if let url = imageURL {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .clipShape(Circle())
-                    }
-                }
-            }
-        }
-        .frame(width: size, height: size)
-        .overlay(
-             Circle().stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
+        KozmosAvatar(
+            imageURL: URL(string: "https://github.com/shadcn.png"),
+            fallbackText: "CN"
         )
+        .accessibilityLabel("@shadcn")
     }
 }
-    `}
+`}
     kotlin={`
-package com.kozmos.components.avatar
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.kozmos.tokens.KozmosColors
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import com.kozmos.components.avatar.KozmosAvatar
 
+// The initials show only when imageUrl is null: loading or failed, the image
+// leaves an empty circle. The avatar takes no alt text: TalkBack says the
+// description it is given.
 @Composable
-fun KozmosAvatar(
-    imageUrl: String?,
-    fallbackText: String,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(KozmosDimensions.primitivesLayoutSizing500)
-            .clip(CircleShape)
-            .background(KozmosColors.primitivesColorsBackground300),
-        contentAlignment = Alignment.Center
-    ) {
-        if (imageUrl != null) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
-            )
-        } else {
-            Text(
-                text = fallbackText,
-                style = MaterialTheme.typography.titleMedium,
-                color = KozmosColors.primitivesColorsForeground500
-            )
-        }
-    }
+fun ProfileAvatar() {
+    KozmosAvatar(
+        imageUrl = "https://github.com/shadcn.png",
+        fallbackText = "CN",
+        modifier = Modifier.clearAndSetSemantics { contentDescription = "@shadcn" }
+    )
 }
-
-    `}
+`}
 />

@@ -44,28 +44,31 @@ import { KozmosBox } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Box {
-Text("Content")
+// SwiftUI's Box is named Box, with no Kozmos prefix. It adds nothing, not
+// even a stack: what it holds lays out as its parent lays it out.
+struct OverviewBox: View {
+    var body: some View {
+        Box {
+            KozmosText("Venue overview")
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.box
-
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import com.kozmos.components.box.KozmosBox
+import com.kozmos.components.text.KozmosText
 
+// KozmosBox is Compose's Box and adds nothing to it: what it holds stacks
+// at its top-start corner, one child over the next.
 @Composable
-fun KozmosBox(
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit
-) {
-Box(modifier = modifier) {
-content()
+fun OverviewBox() {
+    KozmosBox {
+        KozmosText(text = "Venue overview")
+    }
 }
-}
-
-    `}
+`}
 
 />

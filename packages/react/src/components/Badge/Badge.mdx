@@ -54,103 +54,36 @@ import { KozmosBadge } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct KozmosBadge: View {
-    let label: String
-    let variant: BadgeVariant // default, secondary, destructive, outline
-    
+// A badge's count shows only with showCounter, and it is a String.
+// KozmosCounter is the same pill on its own.
+struct BadgeAndCounter: View {
     var body: some View {
-        Text(label)
-            .font(.system(size: 12, weight: .semibold))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 2)
-            .background(backgroundColor)
-            .foregroundColor(foregroundColor)
-            .cornerRadius(100) // Stadium shape
-            .overlay(
-                RoundedRectangle(cornerRadius: 100)
-                    .stroke(borderColor, lineWidth: variant == .outline ? 1 : 0)
-            )
-    }
-    
-    private var backgroundColor: Color {
-        switch variant {
-        case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
-        case .secondary: return KozmosColors.componentsPrimaryButtonsNeutralButtonBackgroundIdle
-        case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundIdle
-        case .outline: return Color.clear
-        }
-    }
-    
-    private var foregroundColor: Color {
-        switch variant {
-        case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-        case .secondary: return KozmosColors.componentsPrimaryButtonsNeutralButtonForegroundContentIdle
-        case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonForegroundContentIdle
-        case .outline: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
-        }
-    }
-    
-    private var borderColor: Color {
-        switch variant {
-        case .outline: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
-        default: return Color.clear
+        HStack {
+            KozmosBadge("Badge", variant: .outline)
+            KozmosBadge("New", variant: .secondary, counter: "2", showCounter: true)
+            KozmosCounter("2")
         }
     }
 }
-    `}
+`}
     kotlin={`
-package com.kozmos.components.badge
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
-import androidx.compose.ui.unit.sp
+import com.kozmos.components.badge.BadgeVariant
+import com.kozmos.components.badge.KozmosBadge
+import com.kozmos.components.counter.KozmosCounter
 
-enum class BadgeVariant {
-    Default, Secondary, Destructive, Outline
-}
-
+// A badge's count shows only with showCounter, and it is a String.
+// KozmosCounter is the same pill on its own.
 @Composable
-fun KozmosBadge(
-    text: String,
-    variant: BadgeVariant = BadgeVariant.Default,
-    modifier: Modifier = Modifier
-) {
-    val (containerColor, contentColor) = when (variant) {
-        BadgeVariant.Default -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle to KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-        BadgeVariant.Secondary -> KozmosColors.primitivesColorsBackground200 to KozmosColors.primitivesColorsForeground100
-        BadgeVariant.Destructive -> KozmosColors.primitivesColorsEmotionalDanger600 to androidx.compose.ui.graphics.Color.White
-        BadgeVariant.Outline -> Color.Transparent to KozmosColors.primitivesColorsForeground100
-    }
-
-    Box(
-        modifier = modifier
-            .background(containerColor, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200))
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing100, vertical = KozmosDimensions.primitivesLayoutSpacing25),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = contentColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+fun BadgeAndCounter() {
+    Row {
+        KozmosBadge(text = "Badge", variant = BadgeVariant.Outline)
+        KozmosBadge(text = "New", variant = BadgeVariant.Secondary, counter = "2", showCounter = true)
+        KozmosCounter(text = "2")
     }
 }
-
-    `}
+`}
 />
