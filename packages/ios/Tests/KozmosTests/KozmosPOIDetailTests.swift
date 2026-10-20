@@ -49,6 +49,27 @@ final class KozmosPOIDetailTests: XCTestCase {
         XCTAssertEqual(icon.label, "WiFi")
     }
 
+    /// A service's tag keeps the service's own artwork, as React's chip and
+    /// Compose's draw a service's `iconUrl` before its `iconName`. Until
+    /// 20 Oct `KozmosPOIDetailTag(service:)` kept only the name, so on iOS a
+    /// service with an asset drew its Kozmos name, or nothing, and a
+    /// monochrome asset lost its tint.
+    func testAServiceTagKeepsTheServicesArtwork() {
+        let asset = KozmosPOIDetailTag(service: .init(
+            id: "wifi", label: "WiFi", iconName: "phone",
+            iconUrl: "https://example.com/wifi.svg", iconMonochrome: true))
+        XCTAssertEqual(asset.iconUrl, "https://example.com/wifi.svg")
+        XCTAssertEqual(asset.iconMonochrome, true)
+        XCTAssertEqual(asset.iconName, "phone")
+        XCTAssertEqual(asset.label, "WiFi")
+        let colour = KozmosPOIDetailTag(service: .init(id: "logo", label: "Logo", iconUrl: "https://example.com/logo.png"))
+        XCTAssertEqual(colour.iconUrl, "https://example.com/logo.png")
+        XCTAssertNotEqual(colour.iconMonochrome, true)
+        let plain = KozmosPOIDetailTag(service: .init(id: "italian", label: "Italian"))
+        XCTAssertNil(plain.iconUrl)
+        XCTAssertNotEqual(plain.iconMonochrome, true)
+    }
+
     func testRemoteIconsRejectUnsafeAndCredentialledURLs() {
         XCTAssertNotNil(POIDetailIcon.remoteURL("https://example.com/icon.png"))
         for url in ["http://example.com/icon.png", "file:///tmp/icon.png", "data:image/png;base64,abc", "https://user:pass@example.com/icon.png", "javascript:alert(1)", "not a URL"] {
