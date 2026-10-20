@@ -24,7 +24,10 @@ fun KozmosDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Select Date"
+    // The product's words, or none, as React's optional `label` and SwiftUI's
+    // empty default: Kozmos writes no English of its own into the field. It
+    // was "Select Date" until 2026-10-20.
+    label: String? = null
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -47,10 +50,12 @@ fun KozmosDatePicker(
         OutlinedTextField(
             value = date?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
             onValueChange = {},
-            label = { Text(label) },
+            label = label?.let { { Text(it) } },
             readOnly = true,
             trailingIcon = {
-                Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                // Decoration, as React's aria-hidden calendar: the label names
+                // the field. It was described by a fixed English "Select Date".
+                Icon(Icons.Default.CalendarToday, contentDescription = null)
             },
             modifier = Modifier.fillMaxWidth(),
             interactionSource = remember { MutableInteractionSource() }
