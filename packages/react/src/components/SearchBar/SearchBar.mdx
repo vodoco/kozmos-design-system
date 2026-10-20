@@ -54,94 +54,33 @@ import { KozmosSearchBar } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosSearchBar(
-text: .constant(""),
-placeholder: "Search places"
-)
+// The placeholder is also the field's spoken name. The clear button empties
+// the query, then calls onClear if there is one.
+struct PlaceSearch: View {
+    @Binding var query: String
+
+    var body: some View {
+        KozmosSearchBar(text: $query, placeholder: "Search places")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.searchbar
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
-import com.kozmos.providers.LocalKozmosAnalytics
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
+import com.kozmos.components.searchbar.KozmosSearchBar
 
+// The placeholder is also the field's spoken name. The clear button shows
+// only with an onClear, and it is onClear that empties the query.
 @Composable
-fun KozmosSearchBar(
-value: String,
-onValueChange: (String) -> Unit,
-onClear: (() -> Unit)? = null,
-placeholder: String = "Search...",
-modifier: Modifier = Modifier
-) {
-val trackEvent = LocalKozmosAnalytics.current
-
-    Surface(
-        modifier = modifier.fillMaxWidth().padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = KozmosDimensions.primitivesLayoutSpacing100),
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200),
-        color = KozmosColors.primitivesColorsBackground0
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (value.isNotEmpty() && onClear != null) {
-                    IconButton(onClick = {
-                        trackEvent(com.kozmos.providers.KozmosAnalyticsEvent("SearchBar", "search_cleared"))
-                        onClear()
-                    }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear")
-                    }
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(
-                        component = "SearchBar",
-                        eventName = "search_initiated",
-                        properties = mapOf("query" to value)
-                    ))
-                }
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200),
-            singleLine = true,
-            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                cursorColor = KozmosThemeTokens.primitivesColorsTheme600,
-                focusedLeadingIconColor = KozmosColors.primitivesColorsForeground500,
-                unfocusedLeadingIconColor = KozmosColors.primitivesColorsForeground500
-            )
-        )
-    }
-
+fun PlaceSearch(query: String, onQueryChange: (String) -> Unit) {
+    KozmosSearchBar(
+        value = query,
+        onValueChange = onQueryChange,
+        onClear = { onQueryChange("") },
+        placeholder = "Search places"
+    )
 }
-
-    `}
+`}
 
 />

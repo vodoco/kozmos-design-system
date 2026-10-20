@@ -52,76 +52,25 @@ const isChecked = ref(false)
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct KozmosSwitch: View {
+// The switch draws its label beside it, and the whole row toggles.
+struct AirplaneMode: View {
     @Binding var isOn: Bool
-    
+
     var body: some View {
-        Toggle("", isOn: $isOn)
-            .toggleStyle(SwitchToggleStyle(tint: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle))
-            .labelsHidden()
+        KozmosSwitch(checked: $isOn, label: "Airplane Mode")
     }
 }
-
-// Or Custom ToggleStyle if more customization is needed
-struct KozmosSwitchStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            configuration.label
-            Spacer()
-            RoundedRectangle(cornerRadius: 16)
-                .fill(configuration.isOn ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : KozmosColors.primitivesColorsForeground500)
-                .frame(width: 50, height: 30)
-                .overlay(
-                    Circle()
-                        .fill(configuration.isOn ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground0)
-                        .padding(2)
-                        .offset(x: configuration.isOn ? 10 : -10)
-                )
-                .onTapGesture {
-                    withAnimation {
-                        configuration.isOn.toggle()
-                    }
-                }
-        }
-    }
-}
-    `}
+`}
     kotlin={`
-package com.kozmos.components.switch
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.switch.KozmosSwitch
 
+// The switch draws its label beside it, and the whole row toggles.
 @Composable
-fun KozmosSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
-) {
-    val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    Switch(
-        checked = checked,
-        onCheckedChange = { 
-            trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Switch", eventName = "switch_toggled", properties = mapOf("checked" to it.toString())))
-            onCheckedChange(it) 
-        },
-        modifier = modifier,
-        enabled = enabled,
-        colors = SwitchDefaults.colors(
-            checkedThumbColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
-            checkedTrackColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
-            uncheckedThumbColor = KozmosColors.primitivesColorsBackground300,
-            uncheckedTrackColor = KozmosColors.primitivesColorsBackground100,
-        )
-    )
+fun AirplaneMode(isOn: Boolean, onChange: (Boolean) -> Unit) {
+    KozmosSwitch(checked = isOn, onCheckedChange = onChange, label = "Airplane Mode")
 }
-
-    `}
+`}
 />

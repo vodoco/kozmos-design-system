@@ -61,80 +61,55 @@ const password = ref("")
   `}
   swift={`
 import SwiftUI
+import Kozmos
 
-public struct KozmosInput: View {
-    @Binding var text: String
-    let placeholder: String
-    
-    public init(
-        text: Binding<String>,
-        placeholder: String = ""
-    ) {
-        self._text = text
-        self.placeholder = placeholder
-    }
-    
-    public var body: some View {
-        TextField(placeholder, text: $text)
-            .padding(EdgeInsets(
-                top: KozmosDimensions.primitivesLayoutSpacing100,
-                leading: KozmosDimensions.primitivesLayoutSpacing150,
-                bottom: KozmosDimensions.primitivesLayoutSpacing100,
-                trailing: KozmosDimensions.primitivesLayoutSpacing150
-            ))
-            .background(KozmosColors.primitivesColorsBackground0)
-            .cornerRadius(KozmosDimensions.primitivesLayoutRadius100)
-            .overlay(
-                RoundedRectangle(cornerRadius: KozmosDimensions.primitivesLayoutRadius100)
-                    .stroke(KozmosColors.primitivesColorsForeground300, lineWidth: 1)
-            )
-            .font(.subheadline)
+// KozmosInput has no type: it is a plain text field. A password is
+// KozmosPasswordInput, which hides what is typed and can show it.
+struct SignInFields: View {
+    @Binding var email: String
+    @Binding var password: String
+
+    var body: some View {
+        VStack(spacing: KozmosDimensions.primitivesLayoutSpacing200) {
+            KozmosInput(text: $email, label: "Email", placeholder: "Enter your email")
+            KozmosPasswordInput(text: $password, label: "Password", placeholder: "Password")
+        }
     }
 }
-
-    `}
+`}
   kotlin={`
-package com.kozmos.components.input
-
-import com.kozmos.tokens.KozmosColors
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import com.kozmos.components.input.KozmosInput
+import com.kozmos.components.passwordinput.KozmosPasswordInput
 import com.kozmos.tokens.KozmosDimensions
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-
+// KozmosInput has no type: it is a plain text field. A password is
+// KozmosPasswordInput, which hides what is typed and can show it.
 @Composable
-fun KozmosInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String = "",
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
+fun SignInFields(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(placeholder) },
-        enabled = enabled,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(com.kozmos.tokens.KozmosDimensions.primitivesLayoutRadius100),
-        singleLine = true,
-        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
-            unfocusedBorderColor = com.kozmos.tokens.KozmosColors.primitivesColorsForeground300,
-            cursorColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
-            focusedLabelColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing200)) {
+        KozmosInput(
+            value = email,
+            onValueChange = onEmailChange,
+            label = "Email",
+            placeholder = "Enter your email"
         )
-    )
+        KozmosPasswordInput(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = "Password",
+            placeholder = "Password"
+        )
+    }
 }
-
-    `}
+`}
 />
 
 ## In Safari

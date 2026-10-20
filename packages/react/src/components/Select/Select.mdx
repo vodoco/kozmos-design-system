@@ -58,108 +58,80 @@ import { KozmosSelect } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-public struct KozmosSelect<Trigger: View, Content: View>: View {
-    let trigger: Trigger
-    let content: Content
-    
-    public init(@ViewBuilder trigger: () -> Trigger, @ViewBuilder content: () -> Content) {
-        self.trigger = trigger()
-        self.content = content()
+// KozmosSelect is the system menu around a trigger you draw; each item
+// sets the selection and ticks itself when it is the one chosen.
+struct ThemeSelect: View {
+    @Binding var theme: String
+
+    var body: some View {
+        KozmosSelect {
+            Text(label)
+        } content: {
+            KozmosSelectItem(value: "light", label: "Light", selection: $theme)
+            KozmosSelectItem(value: "dark", label: "Dark", selection: $theme)
+            KozmosSelectItem(value: "system", label: "System", selection: $theme)
+        }
     }
-    
-    public var body: some View {
-        Menu {
-            content
-        } label: {
-            trigger
+
+    // The trigger shows the choice, or what is being chosen until there is one.
+    private var label: String {
+        switch theme {
+        case "light": return "Light"
+        case "dark": return "Dark"
+        case "system": return "System"
+        default: return "Theme"
         }
     }
 }
-
-public struct KozmosSelectItem: View {
-    let value: String
-    let label: String
-    @Binding var selection: String
-    @Environment(\.kozmosAnalytics) var trackEvent
-    
-    public init(value: String, label: String, selection: Binding<String>) {
-        self.value = value
-        self.label = label
-        self._selection = selection
-    }
-    
-    public var body: some View {
-        Button(action: {
-            trackEvent(KozmosAnalyticsEvent(eventName: "select_value_changed", component: "Select", properties: ["value": value]))
-            selection = value
-        }) {
-            HStack {
-                Text(label)
-                if selection == value {
-                    Image(systemName: "checkmark")
-                }
-            }
-        }
-    }
-}
-
-    `}
+`}
     kotlin={`
-package com.kozmos.components.select
-
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.kozmos.components.input.KozmosInput
+import com.kozmos.components.select.KozmosSelect
+import com.kozmos.components.select.KozmosSelectItem
 
+// KozmosSelect draws the menu, not the field: the trigger is yours, and
+// menuAnchor() opens the menu from it. Compose has no closed select field:
+// a read-only KozmosInput stands in, with the read-only fill and no caret,
+// as it takes no trailing icon. An item hands on its value, then asks for
+// the menu to close.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KozmosSelect(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    trigger: @Composable ExposedDropdownMenuBoxScope.(Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    ExposedDropdownMenuBox(
+fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val themes = mapOf("light" to "Light", "dark" to "Dark", "system" to "System")
+    KozmosSelect(
         expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        modifier = modifier
+        onExpandedChange = { expanded = it },
+        trigger = {
+            KozmosInput(
+                value = themes[theme] ?: "",
+                onValueChange = {},
+                placeholder = "Theme",
+                readOnly = true,
+                modifier = Modifier.menuAnchor()
+            )
+        }
     ) {
-        trigger(expanded)
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
-        ) {
-            content()
+        themes.forEach { (value, label) ->
+            KozmosSelectItem(
+                value = value,
+                label = label,
+                onValueChange = onThemeChange,
+                onDismissRequest = { expanded = false }
+            )
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun KozmosSelectItem(
-    value: String,
-    label: String,
-    onValueChange: (String) -> Unit,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    DropdownMenuItem(
-        text = { Text(label) },
-        onClick = {
-            trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Select", eventName = "select_value_changed", properties = mapOf("value" to value.toString())))
-            onValueChange(value)
-            onDismissRequest()
-        },
-        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-        modifier = modifier
-    )
-}
-
-    `}
+`}
 />
 
 ## Stories
