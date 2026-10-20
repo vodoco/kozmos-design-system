@@ -15,9 +15,10 @@ import com.kozmos.components.select.KozmosSelect
 import com.kozmos.components.select.KozmosSelectItem
 
 // KozmosSelect draws the menu, not the field: the trigger is yours, and
-// menuAnchor() opens the menu from it. The closed field is a read-only
-// KozmosInput, which takes no trailing icon, so it draws no caret. An item
-// hands on its value, then asks for the menu to close.
+// menuAnchor() opens the menu from it. Compose has no closed select field:
+// a read-only KozmosInput stands in, with the read-only fill and no caret,
+// as it takes no trailing icon. An item hands on its value, then asks for
+// the menu to close.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
