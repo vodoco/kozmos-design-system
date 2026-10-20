@@ -54,32 +54,33 @@ import { KozmosProgress } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosProgress(value: 0.6)
+// value is measured against total (1 by default), as React's is against max.
+// The bar has no name of its own: VoiceOver says the label it is given.
+struct UploadProgress: View {
+    var body: some View {
+        KozmosProgress(value: 25, total: 50)
+            .accessibilityLabel("Upload progress")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.progress
-
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.progress.KozmosProgress
 
+// progress is a fraction of 1: Compose takes no max, so 25 of 50 is 0.5.
+// The bar has no name of its own: TalkBack says the one it is given.
 @Composable
-fun KozmosProgress(
-progress: Float,
-modifier: Modifier = Modifier
-) {
-LinearProgressIndicator(
-progress = progress,
-modifier = modifier,
-color = KozmosThemeTokens.primitivesColorsTheme600,
-trackColor = KozmosColors.primitivesColorsBackground300,
-)
+fun UploadProgress() {
+    KozmosProgress(
+        progress = 25f / 50f,
+        modifier = Modifier.semantics { contentDescription = "Upload progress" }
+    )
 }
-
-    `}
+`}
 
 />

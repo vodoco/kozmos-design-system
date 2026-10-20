@@ -60,111 +60,33 @@ const isChecked = ref(false)
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-public struct KozmosCheckbox: View {
-    @Binding var checked: Bool
-    let label: String?
-    @Environment(\.kozmosAnalytics) var trackEvent
-    
-    public init(checked: Binding<Bool>, label: String? = nil) {
-        self._checked = checked
-        self.label = label
-    }
-    
-    public var body: some View {
-        Button(action: {
-            trackEvent(KozmosAnalyticsEvent(eventName: "checkbox_toggled", component: "Checkbox", properties: ["checked": !checked]))
-            checked.toggle()
-        }) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: KozmosDimensions.primitivesLayoutRadius50)
-                        .stroke(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : KozmosColors.primitivesColorsForeground400, lineWidth: 1)
-                        .background(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
-                        .frame(width: 20, height: 20)
-                        .cornerRadius(KozmosDimensions.primitivesLayoutRadius50)
-                    
-                    if checked {
-                        Image(systemName: "checkmark")
-                            .font(.caption)
-                            .bold()
-                            .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
-                    }
-                }
-                
-                if let label = label {
-                    Text(label)
-                        .font(.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                }
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
+// The checkbox draws its label beside it, and the whole row toggles. It has
+// two states, checked and not: no indeterminate one.
+struct AcceptTerms: View {
+    @Binding var accepted: Bool
+
+    var body: some View {
+        KozmosCheckbox(checked: $accepted, label: "Accept terms and conditions")
     }
 }
-
-    `}
+`}
     kotlin={`
-package com.kozmos.components.checkbox
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.checkbox.KozmosCheckbox
 
+// The checkbox draws its label beside it, and the whole row toggles. It has
+// two states, checked and not: no indeterminate one.
 @Composable
-fun KozmosCheckbox(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    label: String? = null,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
-) {
-    val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clickable(enabled = enabled) { 
-                trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to (!checked).toString())))
-                onCheckedChange(!checked) 
-            }
-            .padding(KozmosDimensions.primitivesLayoutSpacing50)
-    ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = null, // Handled by Row clickable for better touch target
-            enabled = enabled,
-            colors = CheckboxDefaults.colors(
-                checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
-                uncheckedColor = KozmosColors.primitivesColorsForeground500,
-                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-            )
-        )
-        
-        if (label != null) {
-            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
+fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
+    KozmosCheckbox(
+        checked = accepted,
+        onCheckedChange = onAcceptedChange,
+        label = "Accept terms and conditions"
+    )
 }
-
-    `}
+`}
 />
 
 ## Stories

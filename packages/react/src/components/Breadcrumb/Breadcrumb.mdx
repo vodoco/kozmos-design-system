@@ -57,69 +57,35 @@ import { KozmosBreadcrumb } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosBreadcrumb(
-items: ["Home", "Maps", "Dubai Mall"],
-onSelect: { \_ in }
-)
+// The trail is its titles, in order, and the last is the current page,
+// which cannot be pressed. A press hands back the item's index: where it
+// goes is yours, as the trail has no links.
+struct VenueTrail: View {
+    let showVenues: () -> Void
+
+    var body: some View {
+        KozmosBreadcrumb(items: ["Venues", "Central venue"], onSelect: { index in
+            if index == 0 { showVenues() }
+        })
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.breadcrumb
-
-import androidx.compose.material.icons.filled.*
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.breadcrumb.KozmosBreadcrumb
 
+// The trail is its titles, in order, and the last is the current page,
+// which cannot be pressed. A press hands back the item's index: where it
+// goes is yours, as the trail has no links.
 @Composable
-fun KozmosBreadcrumb(
-items: List<String>,
-onItemClick: (Int) -> Unit,
-modifier: Modifier = Modifier
-) {
-Row(
-modifier = modifier,
-verticalAlignment = Alignment.CenterVertically
-) {
-items.forEachIndexed { index, item ->
-val isLast = index == items.size - 1
-
-            Text(
-                text = item,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isLast) KozmosColors.primitivesColorsForeground100 else KozmosColors.primitivesColorsForeground500,
-                modifier = Modifier
-                    .clickable(enabled = !isLast) { onItemClick(index) }
-                    .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            if (!isLast) {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = KozmosColors.primitivesColorsForeground500,
-                    modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing0)
-                )
-            }
-        }
-    }
-
+fun VenueTrail(showVenues: () -> Unit) {
+    KozmosBreadcrumb(
+        items = listOf("Venues", "Central venue"),
+        onItemClick = { index -> if (index == 0) showVenues() }
+    )
 }
-
-    `}
+`}
 
 />
