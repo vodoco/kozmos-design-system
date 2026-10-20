@@ -7,6 +7,19 @@
  * failure before showLoadingView and a data failure after it; setLevel takes
  * Level instances only; Options warns about a key it does not know.
  *
+ * Also as the 10.13.0 bundle reads (its Options constructor, validate() and
+ * MapWidget.start(), read from a local copy on 17 Oct):
+ * - Options takes every option from the page's query string too, as
+ *   `?<option>=` or `?ptr<Option>=` (the ptr form wins), then a token's
+ *   `clientIdentifiers[0]` and `iss` over the client and the base URL.
+ * - validate() writes each refused value into the console:
+ *   `licenseKey(<the value>) is not valid - …`. StringHelper.isValid's own
+ *   rule is not in what was read: the fake takes a non-empty string.
+ * - start() makes the UiController itself (there is none before it), calls
+ *   showError at once for options validate() refuses, and calls
+ *   showLoadingView from a promise callback once the token is in hand: at
+ *   once for a cloud token, after the token request for keys.
+ *
  * No network and no keys: the identifiers the tests pass are made up.
  */
 import { vi } from "vitest";
@@ -60,6 +73,51 @@ export const SDK_OPTION_KEYS = new Set([
 ]);
 
 type Listener = (...args: unknown[]) => void;
+
+/** What `updateOptionsWithQueryString` does: `?ptr<Option>` over `?<option>` over the value given. */
+function fromAddress(values: Record<string, unknown>) {
+  const query = new URLSearchParams(window.location.search);
+  for (const option of SDK_OPTION_KEYS) {
+    const ptr = `ptr${option.charAt(0).toUpperCase()}${option.slice(1)}`;
+    const value = query.get(ptr) ?? query.get(option);
+    if (value !== null) values[option] = value;
+  }
+}
+
+/** The claims of an unsigned test token, or undefined. */
+function claimsOf(token: unknown): Record<string, unknown> | undefined {
+  if (typeof token !== "string") return undefined;
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(part.padEnd(Math.ceil(part.length / 4) * 4, "=")));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Options.validate(): each refused value goes to console.error, as the bundle's does. */
+function validate(values: Record<string, unknown>) {
+  const valid = (value: unknown) =>
+    typeof value === "string" && value.length > 0;
+  const errors: string[] = [];
+  const refuse = (message: string) => {
+    console.error(message);
+    errors.push(message);
+  };
+  if (!valid(values.clientIdentifier))
+    refuse(
+      `clientIdentifier(${String(values.clientIdentifier)}) is not valid - SDK cannot work without a valid client id`,
+    );
+  if (!valid(values.licenseKey) && !values.pointrCloudToken)
+    refuse(
+      `licenseKey(${String(values.licenseKey)}) is not valid - SDK cannot work without a valid client secret`,
+    );
+  if (!valid(values.baseUrl))
+    refuse(
+      `baseUrl(${String(values.baseUrl)}) is not valid - SDK cannot work without a valid endpoint URL`,
+    );
+  return { isValid: errors.length === 0, errorMsg: errors[0] };
+}
 
 class Emitter {
   handlers: Record<string, Listener[]> = {};
@@ -279,6 +337,9 @@ export class FakeWidget extends Emitter {
 
   /** Makes the next constructor throw, as one racing another page script's would. */
   static refuseNext = false;
+  /** Makes start() throw before it reaches its own try, as `Storage.clear()` can. */
+  static throwOnStart = false;
+  isOptionsValid = true;
   constructor(options: FakeOptions) {
     super();
     if (FakeWidget.refuseNext) {
@@ -291,12 +352,33 @@ export class FakeWidget extends Emitter {
       );
     FakeWidget.instance = this;
     FakeWidget.constructed += 1;
-    this.options = options.values;
+    this.options = options.effective;
   }
   start() {
     this.started += 1;
     this.sessionCountAtStart = localStorage.getItem("sessionCount");
-    this.ui = new FakeUiController();
+    if (FakeWidget.throwOnStart) {
+      FakeWidget.throwOnStart = false;
+      throw new TypeError(
+        `Cannot read properties of null (reading 'clear') for ${String(this.options?.licenseKey)}`,
+      );
+    }
+    // A new UiController each start(), as the bundle's start() makes it.
+    const ui = new FakeUiController();
+    this.ui = ui;
+    const checked = validate(this.options ?? {});
+    if (!checked.isValid) {
+      ui.showError(checked);
+      this.isOptionsValid = false;
+      console.warn("Invalid options given - please check the logs");
+      return;
+    }
+    // setApiToken(token).then(() => showLoadingView()): a token needs no
+    // request, so the loading view follows in a promise callback.
+    if (this.options?.pointrCloudToken)
+      void Promise.resolve().then(() => {
+        if (this.ui === ui) ui.showLoadingView();
+      });
   }
   destroy() {
     if (!this.options)
@@ -386,13 +468,24 @@ export class FakeWidget extends Emitter {
 }
 
 export class FakeOptions {
+  /** What PointrMap passed. */
   values: Record<string, unknown>;
+  /** What the SDK goes on: the page's address and the token's claims over `values`. */
+  effective: Record<string, unknown>;
   unknownKeys: string[];
   constructor(options: Record<string, unknown>) {
     this.values = { ...options };
     this.unknownKeys = Object.keys(options).filter(
       (k) => !SDK_OPTION_KEYS.has(k),
     );
+    const effective = { ...options };
+    fromAddress(effective);
+    const claims = claimsOf(effective.pointrCloudToken);
+    const clients = claims?.clientIdentifiers;
+    if (Array.isArray(clients) && clients.length)
+      effective.clientIdentifier = clients[0];
+    if (claims?.iss) effective.baseUrl = claims.iss;
+    this.effective = effective;
     FakeOptions.made.push(this);
   }
   static made: FakeOptions[] = [];
@@ -411,6 +504,7 @@ export function resetFakeSdk() {
   FakeWidget.instance = undefined;
   FakeWidget.constructed = 0;
   FakeWidget.refuseNext = false;
+  FakeWidget.throwOnStart = false;
   FakeOptions.made = [];
 }
 
@@ -433,6 +527,19 @@ export async function serveSdkFiles() {
   installFakeSdk();
   for (const file of files) file.dispatchEvent(new Event("load"));
   return files;
+}
+
+/** The SDK's stylesheet arrives, for a page whose script is already in (a global the host loaded). */
+export async function serveSdkStylesheet() {
+  const { waitFor } = await import("@testing-library/react");
+  let link: HTMLElement | null = null;
+  await waitFor(() => {
+    link = document.head.querySelector<HTMLElement>(
+      "link[data-kozmos-pointr-sdk]",
+    );
+    if (!link) throw new Error("the SDK's stylesheet is not requested yet");
+  });
+  link!.dispatchEvent(new Event("load"));
 }
 
 /** One of the SDK's files fails to arrive. */
