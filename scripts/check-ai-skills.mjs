@@ -106,22 +106,25 @@ const rootScripts = new Set(
 );
 
 /**
- * pnpm 9's own commands — every `commandNames` entry it registers — and the
- * npm commands it hands straight to npm (`pnpm view`, `pnpm version`). `run`,
- * `test` and `start` are not here: each runs a script, which must exist.
+ * The commands of the pnpm that package.json's `packageManager` names
+ * (9.15.9) — every `commandNames` entry it registers — and the npm commands
+ * it hands straight to npm (`pnpm view`, `pnpm version`). `run`, `test` and
+ * `start` are not here: each runs a script, which must exist. 9.15.9 added
+ * `cache` and `self-update` to 9.0.0's commands, and `find`, `home` and
+ * `issues` to what it passes to npm.
  */
 const PNPM_BUILTINS = new Set(
   (
-    "add audit bin c cat-file cat-index completion config create dedupe " +
-    "deploy dislink dlx doctor env exec fetch find-hash get help i import " +
-    "init install install-test it la licenses link ll ln list ls m multi " +
-    "outdated pack patch patch-commit patch-remove prune publish rb rebuild " +
-    "recursive remove restart rm root server set setup store un uni " +
-    "uninstall unlink up update upgrade why " +
+    "add audit bin c cache cat-file cat-index completion config create " +
+    "dedupe deploy dislink dlx doctor env exec fetch find-hash get help i " +
+    "import init install install-test it la licenses link ll ln list ls m " +
+    "multi outdated pack patch patch-commit patch-remove prune publish rb " +
+    "rebuild recursive remove restart rm root self-update server set setup " +
+    "store un uni uninstall unlink up update upgrade why " +
     // passed through to npm
-    "access adduser bugs deprecate dist-tag docs edit info login logout " +
-    "owner ping pkg prefix profile repo s se search set-script show star " +
-    "stars team token unpublish unstar v version view whoami xmas"
+    "access adduser bugs deprecate dist-tag docs edit find home info issues " +
+    "login logout owner ping pkg prefix profile repo s se search set-script " +
+    "show star stars team token unpublish unstar v version view whoami xmas"
   ).split(" "),
 );
 
@@ -144,7 +147,7 @@ const PNPM_VALUE_OPTIONS = new Set([
  * The binaries `pnpm <name>` runs when no script has that name — `pnpm tsx
  * scripts/performance/bundle-analyzer.ts` is how bundle-size.yml starts. pnpm
  * does this only for that bare form: `pnpm run <name>` and a filtered run
- * answer "missing script" instead (measured with pnpm 9.0.0).
+ * answer "missing script" instead (measured with pnpm 9.0.0 and 9.15.9).
  */
 const binariesOf = (dir) => {
   const bin = path.join(root, dir, "node_modules/.bin");
