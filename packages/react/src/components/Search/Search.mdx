@@ -42,55 +42,35 @@ import { KozmosSearch } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosSearch(
-text: .constant(""),
-placeholder: "Search"
-)
+// A field with a magnifying glass and no label, helper text or error. The
+// placeholder is the field's title, so it is the name VoiceOver says: React's
+// aria-label has no counterpart.
+struct SearchPlaces: View {
+    @Binding var query: String
+
+    var body: some View {
+        KozmosSearch(text: $query, placeholder: "Search places")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.search
-
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.kozmos.components.search.KozmosSearch
 
+// A field with a search icon and no label, helper text or error. The
+// placeholder, shown while the field is empty, is its only words: React's
+// aria-label has no counterpart.
 @Composable
-fun KozmosSearch(
-value: String,
-onValueChange: (String) -> Unit,
-placeholder: String = "Search",
-modifier: Modifier = Modifier
-) {
-OutlinedTextField(
-value = value,
-onValueChange = onValueChange,
-placeholder = { Text(placeholder) },
-leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-modifier = modifier.fillMaxWidth(),
-shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100),
-singleLine = true,
-colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-focusedBorderColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
-unfocusedBorderColor = com.kozmos.tokens.KozmosColors.primitivesColorsForeground300,
-cursorColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
-focusedLeadingIconColor = com.kozmos.tokens.KozmosColors.primitivesColorsForeground500,
-unfocusedLeadingIconColor = com.kozmos.tokens.KozmosColors.primitivesColorsForeground500
-)
-)
+fun SearchPlaces(query: String, onQueryChange: (String) -> Unit) {
+    KozmosSearch(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = "Search places"
+    )
 }
-
-    `}
+`}
 
 />
 
