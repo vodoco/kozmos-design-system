@@ -51,6 +51,17 @@ export interface PointrSearchResponse extends SearchResponsePresentation {
 const words = (value: unknown) =>
   typeof value === "string" && value.trim() ? value : undefined;
 
+/**
+ * An identifier the SDK may hold as a string or a number: one rule for every
+ * id (site, building, POI). Null, undefined, an empty or blank string and a
+ * number that is not finite are no id.
+ */
+const identifier = (value: unknown) =>
+  (typeof value === "string" && value.trim() !== "") ||
+  (typeof value === "number" && Number.isFinite(value))
+    ? String(value)
+    : undefined;
+
 const index = (value: unknown) => {
   if (value === undefined || value === null || value === "") return undefined;
   const number = Number(value);
@@ -87,12 +98,12 @@ export function toFloors(
 export function toBuilding(
   building: SdkBuilding | undefined,
 ): PointrBuildingPresentation | undefined {
-  const id = words(building?.buildingInternalIdentifier);
+  const id = identifier(building?.buildingInternalIdentifier);
   if (!building || !id) return undefined;
   return {
     id,
     label: words(building.buildingTitle) ?? "",
-    siteId: String(building.siteInternalIdentifier ?? ""),
+    siteId: identifier(building.siteInternalIdentifier) ?? "",
     floors: toFloors(building.levels),
   };
 }
@@ -100,10 +111,7 @@ export function toBuilding(
 export function toSite(
   site: SdkSite | undefined,
 ): PointrSitePresentation | undefined {
-  const id =
-    site?.siteInternalIdentifier !== undefined
-      ? String(site.siteInternalIdentifier)
-      : undefined;
+  const id = identifier(site?.siteInternalIdentifier);
   if (!site || !id) return undefined;
   return {
     id,
@@ -134,7 +142,13 @@ export function poiCoordinates(
   };
   walk(geometry.coordinates);
   if (!points.length) return undefined;
-  if (geometry.type.toLowerCase() === "point") return points[0];
+  // The SDK's features are GeoJSON, but one without a type is centred on its
+  // bounds rather than thrown on inside the SDK's event emitter.
+  if (
+    typeof geometry.type === "string" &&
+    geometry.type.toLowerCase() === "point"
+  )
+    return points[0];
   let [minX, minY] = points[0];
   let [maxX, maxY] = points[0];
   for (const [x, y] of points) {
@@ -175,12 +189,6 @@ export interface PoiContext {
   resultIndex: number;
   selected: boolean;
 }
-
-/** An identifier the SDK may hold as a string or a number. */
-const identifier = (value: unknown) =>
-  (typeof value === "string" && value !== "") || typeof value === "number"
-    ? String(value)
-    : undefined;
 
 /** The POI's id, `properties.fid`, which every SDK event and search uses. */
 export function poiId(poi: SdkPoi | undefined): string | undefined {

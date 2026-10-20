@@ -187,3 +187,34 @@ describe("POIs", () => {
     });
   });
 });
+
+describe("the 20 Oct audit", () => {
+  it("reads every id with one rule: a number is kept, null and undefined are none", () => {
+    expect(
+      toBuilding({
+        buildingInternalIdentifier: 7 as never,
+        siteInternalIdentifier: 3 as never,
+      }),
+    ).toMatchObject({ id: "7", siteId: "3" });
+    expect(
+      toBuilding({
+        buildingInternalIdentifier: "b",
+        siteInternalIdentifier: null as never,
+      })?.siteId,
+    ).toBe("");
+    expect(toSite({ siteInternalIdentifier: null as never })).toBeUndefined();
+    expect(toSite({ siteInternalIdentifier: 12 as never })?.id).toBe("12");
+  });
+
+  it("centres a geometry without a type on its bounds, rather than throwing", () => {
+    expect(poiCoordinates({ coordinates: [3, 4] } as never)).toEqual([3, 4]);
+    expect(
+      poiCoordinates({
+        coordinates: [
+          [0, 0],
+          [2, 2],
+        ],
+      } as never),
+    ).toEqual([1, 1]);
+  });
+});

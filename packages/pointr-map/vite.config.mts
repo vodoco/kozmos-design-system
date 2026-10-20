@@ -8,7 +8,6 @@ import dts from "vite-plugin-dts";
 const externals = [
   "react",
   "react/jsx-runtime",
-  "react-dom",
   "@kozmos-ds/react",
   "@kozmos-ds/product-contracts",
 ];
@@ -25,6 +24,10 @@ export default defineConfig({
     },
     rollupOptions: {
       external: externals,
+      // A client component (refs, effects, the DOM), as @kozmos-ds/react's
+      // build marks its own, so a React Server Components host keeps it on
+      // the client.
+      output: { banner: '"use client";' },
     },
   },
 });

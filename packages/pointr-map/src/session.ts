@@ -4,6 +4,8 @@ import type {
   MapReadiness,
 } from "@kozmos-ds/product-contracts";
 import {
+  addressError,
+  addressOverrides,
   checkConfig,
   configSecrets,
   sdkOptions,
@@ -31,6 +33,7 @@ import {
 import { PointrMapError, redact, sdkErrorText } from "./errors";
 import {
   CONTAINER_ID,
+  hideResidualChrome,
   pointrSdkGlobal,
   type PointrMapLibreMap,
   type PointrWebSDKGlobal,
@@ -41,7 +44,7 @@ import {
   type SdkPoi,
   type SdkSite,
 } from "./sdk";
-import { loadPointrSdk, PointrSdkLoadError } from "./sdk-loader";
+import { holdPointrSdk, PointrSdkLoadError } from "./sdk-loader";
 import { POINTR_SDK_VERSION } from "./sdk-versions";
 
 /** What a session tells the component. */
@@ -59,8 +62,13 @@ export interface SessionEvents {
 }
 
 export interface SearchOptions {
-  /** `building` (the default) searches the open building when there is one; `site` searches the whole site. */
-  scope?: "building" | "site";
+  /**
+   * `site` (the default) searches the whole site, the contracts' default: the
+   * response has no `appliedScope`. `building` holds the search to the open
+   * building and says so in `appliedScope`; with no building open, it
+   * searches the site.
+   */
+  scope?: "site" | "building";
 }
 
 export interface FlyToPoiOptions {
@@ -74,6 +82,8 @@ export interface FlyToPoiOptions {
 let owner: object | undefined;
 
 const POLL_MS = 50;
+/** A browser runs a longer timeout (Infinity, 2^31 ms) at once; this is its longest. */
+const MAX_TIMER_MS = 2_147_483_647;
 const NO_PADDING: MapCollisionInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 /** The next task, after every event already queued (a CSP report, a script's error). */
@@ -96,9 +106,13 @@ export class PointrMapSession {
   private padding: MapCollisionInsets;
   private ownedContainer = false;
   private loadingShown = false;
+  /** The failure is the ready timeout's, and a late SDK or map may still end it. */
   private timedOut = false;
+  private loaded = false;
   private cspSeen: PointrCspViolation | undefined;
   private stopCsp: (() => void) | undefined;
+  private showChrome: (() => void) | undefined;
+  private releaseSdk: (() => void) | undefined;
   private pollTimer: ReturnType<typeof setTimeout> | undefined;
   private readyTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly unsubscribe: (() => void)[] = [];
@@ -114,6 +128,8 @@ export class PointrMapSession {
     private readonly events: SessionEvents,
     private readonly readyTimeoutMs: number,
     padding: MapCollisionInsets | undefined,
+    /** The page's CSP nonce, for the chrome's `<style>` where constructed stylesheets are missing. */
+    private readonly nonce?: string,
   ) {
     this.padding = padding ?? NO_PADDING;
     this.secrets = configSecrets(config);
@@ -131,6 +147,15 @@ export class PointrMapSession {
     owner = this.claim;
     const problem = checkConfig(this.config);
     if (problem) return this.fail(problem);
+    if (!(this.readyTimeoutMs > 0))
+      return this.fail(
+        new PointrMapError(
+          "config",
+          "readyTimeoutMs must be a positive number of milliseconds",
+        ),
+      );
+    const overrides = addressOverrides();
+    if (overrides.length) return this.fail(addressError(overrides));
     if (!hasStorage())
       return this.fail(
         new PointrMapError(
@@ -146,21 +171,35 @@ export class PointrMapSession {
         ),
       );
     this.events.status("loading");
+    this.showChrome = hideResidualChrome(this.nonce);
     this.stopCsp = watchCsp(this.config.baseUrl, (violation) =>
       this.onCsp(violation),
     );
+    // From the first request, so a script that stalls with no error (the
+    // spike saw it in two sandbox shapes) still ends in a status.
+    this.readyTimer = setTimeout(
+      () => this.onTimeout(),
+      Math.min(this.readyTimeoutMs, MAX_TIMER_MS),
+    );
 
     let sdk: PointrWebSDKGlobal;
+    const hold = holdPointrSdk(this.config.sdkVersion ?? POINTR_SDK_VERSION);
+    this.releaseSdk = hold.release;
     try {
-      sdk = await loadPointrSdk(this.config.sdkVersion ?? POINTR_SDK_VERSION);
+      sdk = await hold.ready;
     } catch (error) {
       // A CSP report and the script's error arrive as separate tasks: wait
       // for the report, so a blocked script is named as one.
       await nextTask();
-      if (this.disposed || this.failed) return;
+      if (this.disposed || (this.failed && !this.timedOut)) return;
       return this.fail(this.loadError(error));
     }
-    if (this.disposed || this.failed) return;
+    this.loaded = true;
+    // A load that arrives after the timeout carries on: the map may yet come.
+    if (this.disposed || (this.failed && !this.timedOut)) return;
+    // The address may have changed while the files loaded; the SDK reads it now.
+    const late = addressOverrides();
+    if (late.length) return this.fail(addressError(late));
     if (sdk.MapWidget.getInstance())
       return this.fail(
         new PointrMapError(
@@ -195,8 +234,10 @@ export class PointrMapSession {
         ),
       );
     }
+    // The SDK makes its UiController inside start(), so there is none to
+    // intercept before it; its loading view follows in a promise callback
+    // (after the token), never inside start(), so nothing is missed here.
     this.interceptErrors(widget);
-    this.readyTimer = setTimeout(() => this.onTimeout(), this.readyTimeoutMs);
     this.attach();
   }
 
@@ -213,6 +254,9 @@ export class PointrMapSession {
     this.view = undefined;
     this.map = undefined;
     if (this.ownedContainer) this.container.removeAttribute("id");
+    this.showChrome?.();
+    this.showChrome = undefined;
+    this.releaseSdk?.();
     if (owner === this.claim) owner = undefined;
   }
 
@@ -228,7 +272,13 @@ export class PointrMapSession {
 
   setLevel(level: number | string): boolean {
     const widget = this.widget;
-    const wanted = Number(level);
+    // A level index, or a FloorPresentation's id: digits only ("" is no level 0).
+    const wanted =
+      typeof level === "number"
+        ? level
+        : typeof level === "string" && /^-?\d+$/.test(level)
+          ? Number(level)
+          : Number.NaN;
     if (!widget || !this.map || !Number.isInteger(wanted)) return false;
     // setLevel takes the SDK's own Level instances: the levels in a
     // current-building-changed payload are plain objects, and refused.
@@ -275,14 +325,27 @@ export class PointrMapSession {
       });
     if (!query.trim()) return { results: [], items: [] };
     const site = widget.getCurrentSite();
+    // The whole venue unless the building is asked for: a scope is something
+    // the host asks for, never something the list assumes (the contracts).
     const building =
-      options.scope === "site" || !site
-        ? undefined
-        : widget.getCurrentBuilding();
-    const found = site
-      ? await widget.search(query, site, building)
-      : await widget.search(query);
-    if (this.disposed) return { results: [], items: [] };
+      options.scope === "building" && site
+        ? widget.getCurrentBuilding()
+        : undefined;
+    let found: Awaited<ReturnType<SdkMapWidget["search"]>>;
+    try {
+      found = site
+        ? await widget.search(query, site, building)
+        : await widget.search(query);
+    } catch (error) {
+      throw this.disposed
+        ? this.outlived()
+        : new PointrMapError(
+            "data",
+            `The Pointr SDK's search failed: ${this.clean(sdkErrorText(error))}`,
+            { fatal: false },
+          );
+    }
+    if (this.disposed) throw this.outlived();
     const list = Array.isArray(found) ? found : Object.values(found ?? {});
     const scopeBuilding = toBuilding(building);
     const response = toSearchResponse(list, {
@@ -308,21 +371,37 @@ export class PointrMapSession {
     return redact(text, this.secrets);
   }
 
-  private fail(error: PointrMapError) {
+  private outlived() {
+    return new PointrMapError(
+      "data",
+      "The map was removed before its search answered",
+      { fatal: false },
+    );
+  }
+
+  /**
+   * Reports a failure. The first fatal one stands, unless it is the ready
+   * timeout's (`waiting`), which a later failure or a late map replaces.
+   */
+  private fail(error: PointrMapError, waiting = false) {
     if (this.disposed) return;
     if (!error.fatal) {
       this.events.error(error);
       return;
     }
-    if (this.failed) return;
+    if (this.failed && !this.timedOut) return;
     this.failed = error;
+    this.timedOut = waiting;
     clearTimeout(this.readyTimer);
-    // Refused before a widget existed, the page's map, and its element id,
-    // are free for another.
-    if (!this.widget) {
+    // Refused before a widget existed, the page's map, its element id and the
+    // stylesheets are free for another.
+    if (!this.widget && !waiting) {
       if (owner === this.claim) owner = undefined;
       if (this.ownedContainer) this.container.removeAttribute("id");
       this.ownedContainer = false;
+      this.showChrome?.();
+      this.showChrome = undefined;
+      this.releaseSdk?.();
     }
     this.events.status(error.status, error);
     this.events.error(error);
@@ -346,11 +425,18 @@ export class PointrMapSession {
   }
 
   private onCsp(violation: PointrCspViolation) {
+    const worker = violation.blocked === "blob";
+    // MapLibre makes its workers after the SDK's start() and before the map
+    // is drawn: a blocked worker with no named source before start() is not
+    // the map's.
+    if (worker && violation.source === "none" && !this.widget) return;
     this.cspSeen ??= violation;
-    // Without blob: workers MapLibre never draws (measured): that one is
-    // fatal at once. Another blocked host may cost only some tiles, so it is
-    // reported, and named if the map then never becomes ready.
-    const fatal = violation.blocked === "blob" && !this.map;
+    // Without blob: workers MapLibre never draws (measured): a blocked worker
+    // that is the map's (the SDK's script asked for it, or, where the browser
+    // names no source, it came while the map loads) is fatal at once, until
+    // the map is drawn. Another blocked host may cost only some tiles, so it
+    // is reported, and named if the map then never becomes ready.
+    const fatal = worker && !this.map;
     this.fail(
       new PointrMapError(
         "csp",
@@ -362,19 +448,27 @@ export class PointrMapSession {
 
   private onTimeout() {
     if (this.map) return;
-    // The view is still watched: a map that arrives late is still ready.
-    this.timedOut = true;
+    // The files and the view are still awaited: a late SDK, or a late map,
+    // still makes the map ready.
+    const after = `in ${Math.min(this.readyTimeoutMs, MAX_TIMER_MS)} ms`;
     this.fail(
       this.cspSeen
         ? new PointrMapError(
             "csp",
-            `The map did not become ready in ${this.readyTimeoutMs} ms; a Content-Security-Policy ${this.cspSeen.directive} blocked ${this.cspSeen.blocked}`,
+            `The map did not become ready ${after}; a Content-Security-Policy ${this.cspSeen.directive} blocked ${this.cspSeen.blocked}`,
           )
-        : new PointrMapError(
-            "data",
-            `The map did not become ready in ${this.readyTimeoutMs} ms`,
-            { offline: isOffline() },
-          ),
+        : !this.loaded
+          ? new PointrMapError(
+              "script",
+              `The Pointr SDK's files did not arrive ${after}`,
+              { offline: isOffline() },
+            )
+          : new PointrMapError(
+              "data",
+              `The map did not become ready ${after}`,
+              { offline: isOffline() },
+            ),
+      true,
     );
   }
 
@@ -455,8 +549,9 @@ export class PointrMapSession {
     this.view = view;
     const names = view.events ?? {};
     const on = (name: string, listener: (...args: unknown[]) => void) => {
-      view.on(name, listener);
-      this.unsubscribe.push(() => view.off?.(name, listener));
+      const guarded = this.guard(name, listener);
+      view.on(name, guarded);
+      this.unsubscribe.push(() => view.off?.(name, guarded));
     };
     on(names.mapReady ?? "map-ready", () => this.ready());
     on(names.poiClicked ?? "poi-clicked", (detail) => {
@@ -482,13 +577,38 @@ export class PointrMapSession {
     if (view.isMapReadyEmitted) this.ready();
   }
 
+  /**
+   * A listener the SDK's emitter calls, which reports what it cannot read as
+   * a non-fatal `data` error: the emitter calls its listeners in a plain loop,
+   * so an exception would stop the SDK's own and reach the page.
+   */
+  private guard<A extends unknown[]>(
+    name: string,
+    listener: (...args: A) => void,
+  ) {
+    return (...args: A) => {
+      try {
+        listener(...args);
+      } catch (error) {
+        this.fail(
+          new PointrMapError(
+            "data",
+            `PointrMap could not read the SDK's ${name} event: ${this.clean(sdkErrorText(error))}`,
+            { fatal: false },
+          ),
+        );
+      }
+    };
+  }
+
   private ready() {
     const map = this.view?.map;
     if (this.disposed || !map || this.map === map) return;
     clearTimeout(this.readyTimer);
     this.map = map;
     this.failed = undefined;
-    const reapply = () => this.applyPadding();
+    this.timedOut = false;
+    const reapply = this.guard("idle", () => this.applyPadding());
     // The SDK sets its own padding as it goes (a POI click resets it to 0,
     // measured), so the shell's is put back each time the camera rests.
     map.on("idle", reapply);

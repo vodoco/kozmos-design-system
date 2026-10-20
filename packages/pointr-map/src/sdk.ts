@@ -102,7 +102,7 @@ export interface SdkSite {
  */
 export interface SdkPoi {
   properties?: Record<string, unknown>;
-  geometry?: { type: string; coordinates: unknown };
+  geometry?: { type?: string; coordinates: unknown };
 }
 
 export interface SdkMapWidget extends SdkEmitter {
@@ -176,3 +176,35 @@ export const RESIDUAL_CHROME_CSS = [
 ]
   .join(",\n")
   .concat(" { display: none !important; }");
+
+/**
+ * Adds RESIDUAL_CHROME_CSS to the document until the returned function takes
+ * it away. It goes in a constructed stylesheet (`document.adoptedStyleSheets`),
+ * which is CSSOM and needs no `style-src 'unsafe-inline'`. A browser without
+ * constructed stylesheets (Safari before 16.4) gets a `<style>` element
+ * instead, carrying `nonce`: there the policy needs that nonce, or
+ * `'unsafe-inline'`, in `style-src`.
+ */
+export function hideResidualChrome(nonce?: string): () => void {
+  const doc = document as Document & { adoptedStyleSheets?: CSSStyleSheet[] };
+  if (
+    typeof CSSStyleSheet === "function" &&
+    "replaceSync" in CSSStyleSheet.prototype &&
+    "adoptedStyleSheets" in Document.prototype
+  ) {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(RESIDUAL_CHROME_CSS);
+    doc.adoptedStyleSheets = [...(doc.adoptedStyleSheets ?? []), sheet];
+    return () => {
+      doc.adoptedStyleSheets = (doc.adoptedStyleSheets ?? []).filter(
+        (adopted) => adopted !== sheet,
+      );
+    };
+  }
+  const node = document.createElement("style");
+  if (nonce) node.setAttribute("nonce", nonce);
+  node.setAttribute("data-kozmos-pointr-chrome", "");
+  node.textContent = RESIDUAL_CHROME_CSS;
+  document.head.append(node);
+  return () => node.remove();
+}

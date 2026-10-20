@@ -66,8 +66,10 @@ export function tokenClaims(
 
 /**
  * Refuses, before the SDK sees it, every config its own validation would
- * refuse, because the SDK writes the client identifier and licence key into
- * the console when it refuses them. `now` is for tests.
+ * refuse, because the SDK writes a client identifier or a licence key it
+ * refuses into the console (`licenseKey(<the value>) is not valid`). `baseUrl`
+ * is needed with a token too: the SDK goes to the token's `iss` instead when
+ * it has one. `now` is for tests.
  */
 export function checkConfig(
   config: PointrMapConfig | undefined,
@@ -128,6 +130,56 @@ export function checkConfig(
       `No integrity is recorded for Pointr SDK ${String(version)}; add it to sdk-versions.ts`,
     );
   return undefined;
+}
+
+/**
+ * The SDK's options that decide where the keys or the token go, and whose
+ * they are. Its Options constructor takes every option from the page's
+ * address over what it is given (`?<option>=`, or `?ptr<Option>=`, which
+ * wins: `QueryParameterController.updateOptionsWithQueryString`, read from the
+ * 10.13.0 bundle). Its token request is `POST <baseUrl>/identity/clients/
+ * <clientIdentifier>/auth/token` with the licence key in the body, and a
+ * token goes as a Bearer to `baseUrl` (or to the token's own `iss`, which the
+ * SDK puts over it), so `?baseUrl=` in a link would send them elsewhere.
+ */
+const CREDENTIAL_OPTIONS = [
+  "baseUrl",
+  "clientIdentifier",
+  "licenseKey",
+  "pointrCloudToken",
+];
+const REFUSED_IN_ADDRESS = new Set(
+  CREDENTIAL_OPTIONS.flatMap((option) => [
+    option.toLowerCase(),
+    `ptr${option}`.toLowerCase(),
+  ]),
+);
+
+/**
+ * The names in the page's address that the SDK would read over the config's
+ * host, keys or token: names only, never their values. Read from the query
+ * and the hash, ignoring case, because how the SDK's own reader matches them
+ * was not read.
+ */
+export function addressOverrides(
+  location: Pick<Location, "search" | "hash"> = window.location,
+): string[] {
+  const names: string[] = [];
+  for (const part of [location.search, location.hash]) {
+    const query = part.replace(/^[?#]/, "").replace(/\?/g, "&");
+    for (const name of new URLSearchParams(query).keys())
+      if (REFUSED_IN_ADDRESS.has(name.toLowerCase()) && !names.includes(name))
+        names.push(name);
+  }
+  return names;
+}
+
+/** The refusal of a page whose address would redirect the keys. */
+export function addressError(names: readonly string[]) {
+  return new PointrMapError(
+    "config",
+    `The page's address carries ${names.join(", ")}, which the Pointr SDK reads over PointrMap's config; it could send the keys or the token to another host, so the map does not start`,
+  );
 }
 
 /** The secrets in a config, to take back out of anything written. */

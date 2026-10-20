@@ -13,7 +13,7 @@ import type {
   PointrSitePresentation,
 } from "./convert";
 import { PointrMapError } from "./errors";
-import { RESIDUAL_CHROME_CSS, type PointrMapLibreMap } from "./sdk";
+import type { PointrMapLibreMap } from "./sdk";
 import { POINTR_SDK_VERSION } from "./sdk-versions";
 import {
   PointrMapSession,
@@ -22,7 +22,11 @@ import {
 } from "./session";
 
 export interface PointrMapProps {
-  /** Read at run time; never in source. A change to any of it starts the map again. */
+  /**
+   * Read at run time; never in source. A change to any of it starts the map
+   * again, a new `auth.cloudToken` too: the SDK offers no way to give a running
+   * map a new token.
+   */
   config: PointrMapConfig;
   /**
    * The shell's collision insets (`AdaptiveMapShell`'s
@@ -36,8 +40,20 @@ export interface PointrMapProps {
   variant?: MapViewVariant;
   className?: string;
   style?: React.CSSProperties;
-  /** How long the map may take to become ready before it is a `data` error; 60 s by default. */
+  /**
+   * How long the SDK's files and then the map may take before it is an error
+   * (`script` while the files are on their way, `data` after, `csp` when a
+   * policy blocked something); 60 s by default. A late map is still ready.
+   * Longer than 2^31 - 1 ms (`Infinity`) is that.
+   */
   readyTimeoutMs?: number;
+  /**
+   * The page's Content-Security-Policy nonce. The SDK chrome Kozmos hides is
+   * hidden by a constructed stylesheet, which needs none; a browser without
+   * constructed stylesheets (Safari before 16.4) gets a `<style>` element
+   * with this nonce instead.
+   */
+  nonce?: string;
   /** The map is drawn: `map` is the MapLibre map, for `project` and the camera. */
   onReady?: (map: PointrMapLibreMap) => void;
   /** For AdaptiveMapShell's `mapStatus`: `loading`, `ready`, or what an error means. */
@@ -65,9 +81,18 @@ export interface PointrMapHandle {
    * the POI is unknown or the map is not ready.
    */
   flyToPoi(id: string, options?: FlyToPoiOptions): boolean;
-  /** Changes level by its index, or a FloorPresentation's id. False when the open building has no such level. */
+  /**
+   * Changes level by its index, or a FloorPresentation's id (digits, as
+   * `"-1"`). False when the open building has no such level, or for any other
+   * string.
+   */
   setLevel(level: number | string): boolean;
-  /** Searches the open building (or the site), numbered from 1. Rejects with a PointrMapError before the map is ready. */
+  /**
+   * Searches the whole site, or the open building with `{ scope: "building" }`,
+   * numbered from 1. Rejects with a non-fatal `data` PointrMapError before the
+   * map is ready, when the SDK's search fails, and when the map is removed
+   * before it answers.
+   */
   search(query: string, options?: SearchOptions): Promise<PointrSearchResponse>;
 }
 
@@ -94,6 +119,7 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
       className,
       style,
       readyTimeoutMs = 60_000,
+      nonce,
       onReady,
       onStatusChange,
       onError,
@@ -116,8 +142,10 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
     const container = React.useRef<HTMLDivElement>(null);
     const session = React.useRef<PointrMapSession | undefined>(undefined);
     const latestPadding = React.useRef(padding);
+    const latestNonce = React.useRef(nonce);
     useLatestEffect(() => {
       latestPadding.current = padding;
+      latestNonce.current = nonce;
       callbacks.current = {
         onReady,
         onStatusChange,
@@ -154,6 +182,7 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
         },
         readyTimeoutMs,
         latestPadding.current,
+        latestNonce.current,
       );
       session.current = current;
       void current.start();
@@ -201,7 +230,6 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
         data-pointr-map-status={status}
         data-pointr-sdk={config?.sdkVersion ?? POINTR_SDK_VERSION}
       >
-        <style>{RESIDUAL_CHROME_CSS}</style>
         <div ref={container} style={{ position: "absolute", inset: 0 }} />
       </MapView>
     );
