@@ -1,34 +1,8 @@
-// The SwiftUI snippet of Tabs.mdx, character for character below its
-// imports, so it compiles with the package and a renamed or removed parameter
-// fails here rather than in a reader's project. Change one, change the other.
+// Draws Tabs.mdx's SwiftUI snippet, DocSnippets/PlaceDetailsTabs.swift, which
+// check-native-snippet-parity holds to the page word for word.
 import SwiftUI
 import Kozmos
 import XCTest
-
-// MARK: - Tabs.mdx
-
-// The list is a background/100 track. The selected tab is a background/0
-// segment 4pt inside it, raised by KozmosShadows.semanticsElevationRaised,
-// with foreground/0 words; the other tabs' words are foreground/400. No theme
-// colour, as on the web and in Compose (decision 65).
-struct PlaceDetailsTabs: View {
-    @State private var selection = "overview"
-
-    var body: some View {
-        KozmosTabs(selection: $selection) {
-            KozmosTabsList {
-                KozmosTabsTrigger(value: "overview", title: "Overview", selection: $selection)
-                KozmosTabsTrigger(value: "access", title: "Access", selection: $selection)
-            }
-            KozmosTabsContent(value: "overview", selection: $selection) {
-                Text("Reception is on the ground floor.")
-            }
-            KozmosTabsContent(value: "access", selection: $selection) {
-                Text("Step-free access through the main entrance.")
-            }
-        }
-    }
-}
 
 // MARK: - The snippet draws
 
