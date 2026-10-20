@@ -42,42 +42,38 @@ import { KozmosSeparator } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosSeparator(orientation: .horizontal)
+// A line between two sections. Between the items of a row it is
+// KozmosSeparator(orientation: .vertical).
+struct PlaceSections: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+            KozmosText("Opening hours", style: .headline)
+            KozmosSeparator()
+            KozmosText("Monday–Friday, 09:00–18:00")
+        }
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.separator
-
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Divider
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.separator.KozmosSeparator
+import com.kozmos.components.text.KozmosText
+import com.kozmos.tokens.KozmosDimensions
 
-enum class SeparatorOrientation {
-Horizontal,
-Vertical
-}
-
+// A line between two sections. Between the items of a row it is
+// KozmosSeparator(orientation = SeparatorOrientation.Vertical).
 @Composable
-fun KozmosSeparator(
-modifier: Modifier = Modifier,
-orientation: SeparatorOrientation = SeparatorOrientation.Horizontal
-) {
-if (orientation == SeparatorOrientation.Horizontal) {
-Divider(modifier = modifier, color = KozmosColors.primitivesColorsBackground300)
-} else {
-Divider(
-modifier = modifier
-.fillMaxHeight()
-.width(1.dp),
-color = KozmosColors.primitivesColorsBackground300
-)
+fun PlaceSections() {
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)) {
+        KozmosText(text = "Opening hours")
+        KozmosSeparator()
+        KozmosText(text = "Monday–Friday, 09:00–18:00")
+    }
 }
-}
-
-    `}
+`}
 
 />

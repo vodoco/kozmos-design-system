@@ -44,46 +44,42 @@ import { KozmosSlider } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosSlider(value: .constant(0.6))
+// The slider draws no label: KozmosFieldWrapper puts one above it, and
+// VoiceOver says the one the slider is given.
+struct VolumeSlider: View {
+    @Binding var volume: Double
+
+    var body: some View {
+        KozmosFieldWrapper(label: "Volume") {
+            KozmosSlider(value: $volume, range: 0...100)
+                .accessibilityLabel("Volume")
+        }
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.slider
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.KozmosFieldWrapper
+import com.kozmos.components.slider.KozmosSlider
 
+// The slider draws no label: KozmosFieldWrapper puts one above it, and
+// TalkBack says the one the slider is given.
 @Composable
-fun KozmosSlider(
-value: Float,
-onValueChange: (Float) -> Unit,
-modifier: Modifier = Modifier,
-valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-enabled: Boolean = true
-) {
-val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-Slider(
-value = value,
-onValueChange = onValueChange,
-onValueChangeFinished = {
-trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Slider", eventName = "slider_value_changed", properties = mapOf("value" to value.toString())))
-},
-modifier = modifier,
-valueRange = valueRange,
-enabled = enabled,
-colors = SliderDefaults.colors(
-thumbColor = KozmosThemeTokens.primitivesColorsTheme600,
-activeTrackColor = KozmosThemeTokens.primitivesColorsTheme600,
-inactiveTrackColor = KozmosColors.primitivesColorsBackground300,
-)
-)
+fun VolumeSlider(volume: Float, onVolumeChange: (Float) -> Unit) {
+    KozmosFieldWrapper(label = "Volume") {
+        KozmosSlider(
+            value = volume,
+            onValueChange = onVolumeChange,
+            valueRange = 0f..100f,
+            modifier = Modifier.semantics { contentDescription = "Volume" }
+        )
+    }
 }
-
-    `}
+`}
 
 />

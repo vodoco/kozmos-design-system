@@ -42,24 +42,26 @@ import { KozmosText } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosText("Body copy")
+// Body text on the type ramp. style and tone name a step and a purpose,
+// such as .footnote and .muted, rather than a font and a colour.
+struct ReceptionHint: View {
+    var body: some View {
+        KozmosText("Find your way to reception.")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.text
-
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import com.kozmos.components.text.KozmosText
 
+// Body text. Compose's KozmosText takes the words and a modifier, nothing
+// else: it has no style, tone or truncation, and draws in the ambient style.
 @Composable
-fun KozmosText(
-text: String,
-modifier: Modifier = Modifier
-) {
-Text(text = text, modifier = modifier)
+fun ReceptionHint() {
+    KozmosText(text = "Find your way to reception.")
 }
-
-    `}
+`}
 
 />

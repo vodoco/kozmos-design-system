@@ -55,52 +55,39 @@ import { KozmosButton } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-// Tooltip is often native in newer SwiftUI versions via .help or standard implementations on macOS/iPadOS.
-// On iOS, custom overlay is common.
+// The bubble shows on hover, or when a finger holds the view down. Its text
+// is VoiceOver's hint too; pass isAccessibilityHint: false where it repeats
+// the view's own label.
+struct AddToLibrary: View {
+    let add: () -> Void
 
-extension View {
-    func kozmosTooltip(_ text: String, visible: Bool) -> some View {
-        self.overlay(
-            Group {
-                if visible {
-                    Text(text)
-                        .font(.caption)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground0)
-                        .padding(8)
-                        .background(KozmosColors.primitivesColorsBackground0)
-                        .cornerRadius(6)
-                        .offset(y: -40) // Position above
-                        .transition(.opacity)
-                }
-            }
-        )
+    var body: some View {
+        KozmosButton("Hover", action: add)
+            .kozmosTooltip("Add to library")
     }
 }
-    `}
+`}
     kotlin={`
-package com.kozmos.components.tooltip
-
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.Alignment
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.tooltip.KozmosTooltip
 
+// Compose's tooltip shows only while visible is true: it watches nothing
+// itself, so this one follows the button's press.
 @Composable
-fun KozmosTooltip(
-    tooltip: String,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    // Basic wrapper to bypass M3 experimental fragmentation. 
-    // In actual production, this would leverage standard custom Android Tooltip logic.
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        content()
+fun AddToLibrary(add: () -> Unit) {
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
+    KozmosTooltip(tooltip = "Add to library", visible = pressed) {
+        KozmosButton(onClick = add, interactionSource = interactions) { Text("Hover") }
     }
 }
-
-    `}
+`}
 />
