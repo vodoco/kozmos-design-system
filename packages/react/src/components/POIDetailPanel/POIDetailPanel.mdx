@@ -46,10 +46,14 @@ the estimate. Information chips/tags are non-interactive, with a 32px minimum
 height, ~13px/16px type, 16px corners and room to grow for wrapped/zoomed text.
 They are not 44px action targets.
 
-Group items and services accept optional `iconName`, using the existing Kozmos
-icon registry. Icons are decorative, 16px, and explicitly assigned by the adapter;
+Group items, services and tags accept optional `iconName`: a name or alias in the
+Kozmos icon registry, a wayfinding glyph by the kebab case of its export name
+(`elevator-up`, `security-control`, `shuttle`: all 23 in DirectionStep's Glyph Atlas),
+or `log-in-01`, `log-out-01`, `arrow-up-right` and `arrow-down-right`. These are the
+names `KozmosIcon` draws on iOS and Android, so a tag draws the same artwork on all
+three. Icons are decorative, 16px, and explicitly assigned by the adapter;
 the component does not infer them from translated text. Unknown icons leave
-the full label visible. No external image URL or raw SVG is accepted by this field.
+the full label visible, with no icon. No external image URL or raw SVG is accepted by this field.
 
 Summary facts use the shared `MetaStrip`: exactly one row of cells, with local
 horizontal scrolling when the host is too narrow. Facts never move to a second
