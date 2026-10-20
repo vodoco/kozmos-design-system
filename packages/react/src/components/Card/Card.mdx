@@ -63,175 +63,53 @@ import { KozmosCard } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct KozmosCard<Content: View>: View {
-    let title: String?
-    let description: String?
-    let content: Content
-    let footer: AnyView?
-    
-    init(
-        title: String? = nil,
-        description: String? = nil,
-        @ViewBuilder content: () -> Content,
-        footer: AnyView? = nil
-    ) {
-        self.title = title
-        self.description = description
-        self.content = content()
-        self.footer = footer
-    }
-    
+// The header, content and footer pad themselves by the card's padding:
+// KozmosCard(padding: .compact) tightens all three.
+struct TitledCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if title != nil || description != nil {
-                VStack(alignment: .leading, spacing: 4) {
-                    if let title = title {
-                        Text(title)
-                            .font(.headline)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                    }
-                    if let description = description {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
-                    }
-                }
-                .padding([.top, .horizontal])
+        KozmosCard {
+            KozmosCardHeader {
+                KozmosCardTitle("Card Title")
+                KozmosCardDescription("Card Description")
             }
-            
-            content
-                .padding(.horizontal)
-            
-            if let footer = footer {
-                footer
-                    .padding([.bottom, .horizontal])
-            } else {
-                 Spacer().frame(height: 16)
+            KozmosCardContent {
+                KozmosText("Card Content")
+            }
+            KozmosCardFooter {
+                KozmosText("Card Footer")
             }
         }
-        .background(KozmosColors.primitivesColorsBackground0)
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
-        )
-        .kozmosElevation(KozmosShadows.semanticsElevationRaised)
     }
 }
-    `}
+`}
     kotlin={`
-package com.kozmos.components.card
-
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.components.card.KozmosCard
+import com.kozmos.components.card.KozmosCardContent
+import com.kozmos.components.card.KozmosCardDescription
+import com.kozmos.components.card.KozmosCardFooter
+import com.kozmos.components.card.KozmosCardHeader
+import com.kozmos.components.card.KozmosCardTitle
+import com.kozmos.components.text.KozmosText
 
+// The header, content and footer pad themselves by the card's padding:
+// KozmosCard(padding = KozmosCardPadding.Compact) tightens all three.
 @Composable
-fun KozmosCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = modifier.border(
-            1.dp,
-            KozmosColors.primitivesColorsBackground200,
-            RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200)
-        ),
-        shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200),
-        colors = CardDefaults.cardColors(
-            containerColor = KozmosColors.primitivesColorsBackground0,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        content = {
-            Column(modifier = Modifier) {
-                content()
-            }
+fun TitledCard() {
+    KozmosCard {
+        KozmosCardHeader {
+            KozmosCardTitle(title = "Card Title")
+            KozmosCardDescription(description = "Card Description")
         }
-    )
-}
-
-@Composable
-fun KozmosCardHeader(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = modifier.padding(KozmosDimensions.primitivesLayoutSpacing300)
-    ) {
-        content()
+        KozmosCardContent {
+            KozmosText(text = "Card Content")
+        }
+        KozmosCardFooter {
+            KozmosText(text = "Card Footer")
+        }
     }
 }
-
-@Composable
-fun KozmosCardTitle(
-    title: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.SemiBold,
-        color = KozmosColors.primitivesColorsForeground100,
-        modifier = modifier
-    )
-}
-
-@Composable
-fun KozmosCardDescription(
-    description: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = description,
-        style = MaterialTheme.typography.bodyMedium,
-        color = KozmosColors.primitivesColorsForeground400,
-        modifier = modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing50)
-    )
-}
-
-@Composable
-fun KozmosCardContent(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = modifier
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing300)
-            .padding(bottom = KozmosDimensions.primitivesLayoutSpacing300)
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun KozmosCardFooter(
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
-) {
-    Row(
-        modifier = modifier
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing300)
-            .padding(bottom = KozmosDimensions.primitivesLayoutSpacing300),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-    ) {
-        content()
-    }
-}
-
-    `}
+`}
 />
