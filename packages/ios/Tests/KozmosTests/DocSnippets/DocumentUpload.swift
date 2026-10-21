@@ -8,13 +8,15 @@ import Kozmos
 // names (any, unless it says otherwise): no drag and drop, no second file, no
 // size limit and no message. The part draws no label, so KozmosFieldWrapper
 // puts one above it. Picking a file hands you its URL and uploads nothing;
-// removing it tells you nothing.
+// removing it hands you the same URL. browseLabel is the drop area's words,
+// "Tap to upload file" unless you pass your own.
 struct DocumentUpload: View {
     let receive: (URL) -> Void
+    let drop: (URL) -> Void
 
     var body: some View {
         KozmosFieldWrapper(label: "Documents") {
-            KozmosFileUpload(onFileSelected: receive)
+            KozmosFileUpload(onFileSelected: receive, onFileRemoved: drop)
         }
     }
 }
