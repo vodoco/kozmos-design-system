@@ -407,6 +407,9 @@ describe("Calendar", () => {
       />,
     );
     expect(tabStops()).toEqual([]);
+    // Not even the pointer focuses a day, so no key moves in it.
+    for (const cell of screen.getAllByRole("gridcell"))
+      expect(cell).not.toHaveAttribute("tabindex");
     expect(screen.getByRole("grid")).toHaveAttribute("aria-disabled", "true");
     for (const button of screen.getAllByRole("button"))
       expect(button).toBeDisabled();

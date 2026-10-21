@@ -444,7 +444,10 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
                             role="gridcell"
                             className="kozmos-reset kozmos-calendar-day"
                             data-day={toIso(day)}
-                            tabIndex={!disabled && day === activeDay ? 0 : -1}
+                            // Disabled, no day takes focus, by key or pointer.
+                            tabIndex={
+                              disabled ? undefined : day === activeDay ? 0 : -1
+                            }
                             aria-label={names.full.format(day * 86_400_000)}
                             aria-selected={chosen || ends}
                             aria-current={day === today ? "date" : undefined}
