@@ -47,12 +47,15 @@ fun KozmosSplitButton(
     // pressed, focused or hovered it is the tokens' own step with no ripple
     // over the fill, on any Material version, React's ring shows focus, and a
     // quick tap is still drawn pressed.
+    // The outer corners are the control radius, 16, as React's
+    // rounded-control halves and SwiftUI's are; they were the panel's 24,
+    // which a 40dp-high half draws as a half circle.
     Row(modifier = modifier) {
         KozmosFillButton(
             onClick = onMainClick,
             modifier = Modifier,
             enabled = true,
-            shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusPanel, bottomStart = KozmosDimensions.semanticsRadiusPanel, topEnd = KozmosDimensions.semanticsRadiusNone, bottomEnd = KozmosDimensions.semanticsRadiusNone),
+            shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusControl, bottomStart = KozmosDimensions.semanticsRadiusControl, topEnd = KozmosDimensions.semanticsRadiusNone, bottomEnd = KozmosDimensions.semanticsRadiusNone),
             fill = KozmosFillStates.themed,
             interactionSource = mainSource
         ) {
@@ -63,7 +66,7 @@ fun KozmosSplitButton(
             onClick = { expanded = true },
             modifier = Modifier,
             enabled = true,
-            shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusNone, bottomStart = KozmosDimensions.semanticsRadiusNone, topEnd = KozmosDimensions.semanticsRadiusPanel, bottomEnd = KozmosDimensions.semanticsRadiusPanel),
+            shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusNone, bottomStart = KozmosDimensions.semanticsRadiusNone, topEnd = KozmosDimensions.semanticsRadiusControl, bottomEnd = KozmosDimensions.semanticsRadiusControl),
             fill = KozmosFillStates.themed,
             interactionSource = menuSource
         ) {

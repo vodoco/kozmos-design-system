@@ -47,78 +47,33 @@ import { KozmosTimePicker } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosTimePicker(
-selection: .constant(Date()),
-label: "Time"
-)
+// The picker hides its label, which VoiceOver still says: KozmosFieldWrapper
+// shows it above the field, as React's label is. There is always a time.
+struct ArrivalTime: View {
+    @Binding var time: Date
+
+    var body: some View {
+        KozmosFieldWrapper(label: "Arrival time") {
+            KozmosTimePicker(selection: $time, label: "Arrival time")
+        }
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.timepicker
-
-import android.app.TimePickerDialog
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import com.kozmos.components.timepicker.KozmosTimePicker
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
 
+// A read-only field, labelled inside, that opens the system's time dialog.
+// time is null until one is chosen, and the dialog and the field keep a
+// 12-hour clock in every locale.
 @Composable
-fun KozmosTimePicker(
-time: LocalTime?,
-onTimeSelected: (LocalTime) -> Unit,
-modifier: Modifier = Modifier,
-label: String = "Select Time"
-) {
-val context = LocalContext.current
-val calendar = Calendar.getInstance()
-
-    if (time != null) {
-        calendar.set(Calendar.HOUR_OF_DAY, time.hour)
-        calendar.set(Calendar.MINUTE, time.minute)
-    }
-
-    val timePickerDialog = TimePickerDialog(
-        context,
-        { _, hourOfDay, minute ->
-            onTimeSelected(LocalTime.of(hourOfDay, minute))
-        },
-        calendar.get(Calendar.HOUR_OF_DAY),
-        calendar.get(Calendar.MINUTE),
-        false // is24HourView
-    )
-
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: "",
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            trailingIcon = {
-                Icon(Icons.Default.AccessTime, contentDescription = "Select Time")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { timePickerDialog.show() }
-        )
-    }
-
+fun ArrivalTime(time: LocalTime?, onTimeChange: (LocalTime) -> Unit) {
+    KozmosTimePicker(time = time, onTimeSelected = onTimeChange, label = "Arrival time")
 }
-
-    `}
+`}
 
 />
 
