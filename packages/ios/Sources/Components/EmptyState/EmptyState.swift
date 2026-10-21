@@ -86,9 +86,11 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
             }
             
             VStack(spacing: 4) {
+                // The foreground, React's `text-foreground` and Figma's
+                // Colors/foreground/0: it was foreground/100.
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground0)
                     .multilineTextAlignment(.center)
                 
                 if let description = description {
@@ -103,12 +105,15 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
             if let progress {
                 VStack(spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        // What is in progress in the foreground, and how far in
+                        // the muted foreground, as React's `text-foreground` and
+                        // `text-muted-foreground`: they were foreground/100 and 300.
                         Text(progress.label)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground0)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if let valueText = progress.valueText {
                             Text(valueText)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         }
                     }
                     .font(KozmosTypography.subheadline)

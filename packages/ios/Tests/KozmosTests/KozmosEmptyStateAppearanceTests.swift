@@ -3,18 +3,24 @@ import SwiftUI
 @testable import Kozmos
 
 /// An empty state draws as React's and Figma's do: its icon in foreground 400
-/// on a muted circle, background 100, 64 across (40 compact), and its
-/// description in foreground 400. React's are `text-muted-foreground` and
-/// `w-16 h-16 rounded-pill bg-muted` (`h-10 w-10` compact). SwiftUI drew the
-/// icon and the description in foreground 300, with no circle.
+/// on a muted circle, background 100, 64 across (40 compact), its title in
+/// foreground 0 and its description in foreground 400. React's are
+/// `text-muted-foreground`, `w-16 h-16 rounded-pill bg-muted` (`h-10 w-10`
+/// compact) and `text-foreground`, and Figma's painter paints the same
+/// variables. A progress line says what is in progress in foreground 0 and
+/// how far in foreground 400, as React's does (Figma draws no progress).
+/// SwiftUI drew the icon, the description and the value in foreground 300,
+/// with no circle, and the title and the label in foreground 100.
 ///
 /// Drawn without a window, on the page's own surface, in both themes, so
 /// these run in `swift test` on a Mac too.
 final class KozmosEmptyStateAppearanceTests: XCTestCase {
     private typealias Ink = (r: UInt8, g: UInt8, b: UInt8, a: UInt8)
 
-    @MainActor private func draw(_ size: KozmosEmptyStateSize, _ scheme: ColorScheme) throws -> DrawnPixels {
-        let empty = KozmosEmptyState(title: "No results", description: "Try another word", size: size) {
+    @MainActor private func draw(_ size: KozmosEmptyStateSize, _ scheme: ColorScheme,
+                                 progress: KozmosEmptyStateProgress? = nil) throws -> DrawnPixels {
+        let empty = KozmosEmptyState(title: "No results", description: progress == nil ? "Try another word" : nil,
+                                     size: size, progress: progress) {
             KozmosIcon("search-md", size: .lg)
         } action: {
             EmptyView()
@@ -84,6 +90,48 @@ final class KozmosEmptyStateAppearanceTests: XCTestCase {
             guard let description = lines.last, lines.count >= 3 else { wrong.append("\(Self.name(scheme)): lines \(lines)"); continue }
             let words = ink(drawn, in: description, against: page)
             if !close(words, expected) { wrong.append("\(Self.name(scheme)): the description is \(hex(words)), not foreground/400 \(hex(expected))") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    /// The lines of text drawn on the page, top to bottom: what differs from it.
+    private func lines(_ drawn: DrawnPixels, on page: Ink) -> [CGRect] {
+        drawn.bands { r, g, b, a in
+            a > 240 && abs(Int(r) - Int(page.r)) + abs(Int(g) - Int(page.g)) + abs(Int(b) - Int(page.b)) > 30
+        }
+    }
+
+    @MainActor func testTheTitleIsForeground0() throws {
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let page = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            let expected = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground0, in: scheme)
+            let drawn = try draw(.default, scheme)
+            // The circle, the title, the description: the title is the second.
+            let found = lines(drawn, on: page)
+            guard found.count >= 3 else { wrong.append("\(Self.name(scheme)): lines \(found)"); continue }
+            let title = ink(drawn, in: found[found.count - 2], against: page)
+            if !close(title, expected) { wrong.append("\(Self.name(scheme)): the title is \(hex(title)), not foreground/0 \(hex(expected))") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    @MainActor func testTheProgressSaysWhatInForeground0AndHowFarIn400() throws {
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let page = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            let strong = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground0, in: scheme)
+            let muted = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground400, in: scheme)
+            let drawn = try draw(.default, scheme, progress: KozmosEmptyStateProgress(value: 0.4, label: "Downloading", valueText: "40%"))
+            // The progress line's words run the bar's 280 width, from 10 to
+            // 290: the label at its start, the value at its end.
+            guard let row = lines(drawn, on: page).first(where: { $0.width > 200 && $0.height > 8 }) else {
+                wrong.append("\(Self.name(scheme)): no progress line"); continue
+            }
+            let label = ink(drawn, in: CGRect(x: row.minX, y: row.minY, width: 90, height: row.height), against: page)
+            let value = ink(drawn, in: CGRect(x: row.maxX - 30, y: row.minY, width: 30, height: row.height), against: page)
+            if !close(label, strong) { wrong.append("\(Self.name(scheme)): the label is \(hex(label)), not foreground/0 \(hex(strong))") }
+            if !close(value, muted) { wrong.append("\(Self.name(scheme)): the value is \(hex(value)), not foreground/400 \(hex(muted))") }
         }
         XCTAssertEqual(wrong, [])
     }
