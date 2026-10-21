@@ -342,7 +342,20 @@ export function describeComponent(api, name, defaults = new Map()) {
       continue;
     }
     let type;
-    if (
+    // A prop of a union of props (Calendar's single or range) is declared
+    // once in each: it takes any of their types.
+    const each = declarations.filter(
+      (d) =>
+        originOf(d.getSourceFile().fileName) === "kozmos" &&
+        (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
+        d.type,
+    );
+    const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
+    if (texts.length > 1)
+      type = texts
+        .map((text) => (/=>/.test(text) ? `(${text})` : text))
+        .join(" | ");
+    else if (
       own &&
       (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
       own.type
