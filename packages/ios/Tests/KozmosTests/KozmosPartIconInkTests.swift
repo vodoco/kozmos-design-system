@@ -109,18 +109,19 @@ final class KozmosPartIconInkTests: XCTestCase {
         XCTAssertEqual(wrong, [])
     }
 
-    /// SwiftUI's empty state draws its icon in foreground 300, as it draws its
-    /// description. React's is `text-muted-foreground`, foreground 400, in a
-    /// 64pt circle; Compose's gives it no colour of its own.
+    /// The empty state draws its icon in foreground 400 on its muted circle,
+    /// as React's `text-muted-foreground` on `bg-muted` is;
+    /// `KozmosEmptyStateAppearanceTests` holds the circle and the description.
     @MainActor func testAnEmptyStatesIconIsItsMutedColour() throws {
         let empty = KozmosEmptyState(title: "No results", description: "Try another word") {
             KozmosIcon("search-md", size: .xl)
         } action: {
             EmptyView()
         }
-        // The 32pt icon, centred, 24pt down.
-        let fault = try fault("empty state", empty.frame(width: 300), icon: CGRect(x: 130, y: 20, width: 40, height: 40),
-                              fill: CGPoint(x: 10, y: 10), expected: KozmosColors.primitivesColorsForeground300)
+        // The 32pt icon, centred in the 64pt circle 24pt down; the circle's
+        // fill beside it.
+        let fault = try fault("empty state", empty.frame(width: 300), icon: CGRect(x: 132, y: 38, width: 36, height: 36),
+                              fill: CGPoint(x: 122, y: 56), expected: KozmosColors.primitivesColorsForeground400)
         XCTAssertNil(fault)
     }
 

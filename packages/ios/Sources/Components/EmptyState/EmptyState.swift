@@ -13,6 +13,9 @@ public enum KozmosEmptyStateSize: Sendable, Hashable, CaseIterable {
 
     var padding: CGFloat { self == .compact ? 16 : 24 }
     var stackSpacing: CGFloat { self == .compact ? 8 : 16 }
+    /// The muted circle the icon sits on: React's `w-16 h-16`, `h-10 w-10`
+    /// compact.
+    var iconCircle: CGFloat { self == .compact ? 40 : 64 }
 }
 
 /// A long wait the empty state is explaining, such as a download, and how
@@ -71,11 +74,15 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
     public var body: some View {
         VStack(spacing: size.stackSpacing) {
             if let icon = icon {
+                // In the muted foreground on a muted circle, as React's
+                // `text-muted-foreground` on `bg-muted` and Figma's are: it was
+                // foreground/300, with no circle. A KozmosIcon takes the
+                // colour too, as React's icon is currentColor.
                 icon
-                    .foregroundColor(KozmosColors.primitivesColorsForeground300)
-                    // A KozmosIcon takes the muted colour too, as React's icon
-                    // is currentColor: it kept its own foreground/100.
-                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground300)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
+                    .frame(width: size.iconCircle, height: size.iconCircle)
+                    .background(Circle().fill(KozmosColors.primitivesColorsBackground100))
             }
             
             VStack(spacing: 4) {
@@ -85,9 +92,10 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                     .multilineTextAlignment(.center)
                 
                 if let description = description {
+                    // The muted foreground, React's `text-muted-foreground`.
                     Text(description)
                         .font(.system(size: 14))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .multilineTextAlignment(.center)
                 }
             }
