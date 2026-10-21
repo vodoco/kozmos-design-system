@@ -1,15 +1,6 @@
 package com.kozmos.components.bottomnavigation
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -21,6 +12,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import com.kozmos.docsnippets.BottomNavigationExample
 import com.kozmos.tokens.KozmosTypography
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -30,7 +22,8 @@ import org.junit.Test
  * Decision 41: the bottom navigation's labels are 11sp, as React's and
  * iOS's bars label theirs. It is Material's NavigationBar, whose items label
  * themselves in labelMedium, 12sp, unless told otherwise. Read from each
- * label's own text layout.
+ * label's own text layout, in BottomNavigation.mdx's Compose snippet
+ * (docsnippets/BottomNavigationExample.kt).
  */
 class KozmosBottomNavigationTest {
     @get:Rule
@@ -64,20 +57,4 @@ class KozmosBottomNavigationTest {
         }
         for (title in titles) assertEquals("\"$title\"", 11f, checkNotNull(sizes[title]) { "no label \"$title\"" }, 0.01f)
     }
-}
-
-// BottomNavigation.mdx's Compose example, the same code, so that it compiles
-// somewhere: the docs' native snippets are compiled nowhere else.
-@Composable
-fun BottomNavigationExample() {
-    var route by remember { mutableStateOf("home") }
-    KozmosBottomNavigation(
-        items = listOf(
-            BottomNavigationItem(title = "Home", icon = Icons.Default.Home, route = "home"),
-            BottomNavigationItem(title = "Maps", icon = Icons.Default.Place, route = "maps"),
-            BottomNavigationItem(title = "Alerts", icon = Icons.Default.Notifications, route = "alerts")
-        ),
-        currentRoute = route,
-        onNavigate = { route = it }
-    )
 }
