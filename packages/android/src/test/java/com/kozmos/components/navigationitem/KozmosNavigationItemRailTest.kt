@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +31,7 @@ import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.sidebar.KozmosSidebar
 import com.kozmos.components.sidebar.KozmosSidebarVariant
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import com.kozmos.docsnippets.RailNavigationExample
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosTypography
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -231,6 +230,7 @@ class KozmosNavigationItemRailTest {
         assertEquals("the item's width", 95f, item, 0.5f)
     }
 
+    // NavigationItem.mdx's Compose rail example, docsnippets/RailNavigationExample.kt.
     @Test
     fun theDocsRailExampleIsTheSidebarRail() {
         var width = 0f
@@ -247,28 +247,3 @@ class KozmosNavigationItemRailTest {
         assertEquals("the example's rail", 96f, width, 0.5f)
     }
 }
-
-// NavigationItem.mdx's Compose rail example, the same code, so that it
-// compiles somewhere: the docs' native snippets are compiled nowhere else.
-@Composable
-fun RailNavigationExample() {
-    KozmosSidebar(
-        variant = KozmosSidebarVariant.Rail,
-        navigation = {
-            KozmosNavigationItem(
-                label = "Home",
-                placement = KozmosNavigationItemPlacement.Rail,
-                content = KozmosNavigationItemContent.IconLabel,
-                selected = true,
-                icon = { Icon(Icons.Default.Home, contentDescription = null) }
-            )
-            KozmosNavigationItem(
-                label = "Accessible routes",
-                placement = KozmosNavigationItemPlacement.Rail,
-                content = KozmosNavigationItemContent.IconLabel,
-                icon = { Icon(Icons.Default.Place, contentDescription = null) }
-            )
-        }
-    )
-}
-

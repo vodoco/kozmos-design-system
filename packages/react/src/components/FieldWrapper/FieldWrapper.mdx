@@ -96,35 +96,42 @@ import { KozmosFieldWrapper } from "@kozmos-ds/vue"
 import SwiftUI
 import Kozmos
 
-struct CustomField: View {
+// The wrapper draws a label, a required mark and helper text around a
+// control that has none of its own, here a KozmosSearch. It ties none of them
+// to the control, so the field keeps its own name: its placeholder.
+struct VenueField: View {
+    @Binding var venue: String
+
     var body: some View {
         KozmosFieldWrapper(
             label: "Venue",
-            helperText: "Search by name or category",
-            required: true
+            required: true,
+            helperText: "Search by name or category"
         ) {
-            MyCustomControl()
+            KozmosSearch(text: $venue, placeholder: "Venue")
         }
     }
 }
-  `}
+`}
   kotlin={`
-package com.kozmos.example
-
 import androidx.compose.runtime.Composable
 import com.kozmos.components.fieldwrapper.KozmosFieldWrapper
+import com.kozmos.components.search.KozmosSearch
 
+// The wrapper draws a label, a required mark and helper text around a
+// control that has none of its own, here a KozmosSearch. It ties none of them
+// to the control: TalkBack reads them as text beside it.
 @Composable
-fun CustomField() {
+fun VenueField(venue: String, onVenueChange: (String) -> Unit) {
     KozmosFieldWrapper(
         label = "Venue",
-        helperText = "Search by name or category",
-        required = true
+        required = true,
+        helperText = "Search by name or category"
     ) {
-        MyCustomControl()
+        KozmosSearch(value = venue, onValueChange = onVenueChange, placeholder = "Venue")
     }
 }
-  `}
+`}
 />
 
 ## Accessibility
@@ -137,6 +144,10 @@ fun CustomField() {
   Use it rather than dropping the label.
 - `required` marks the field for assistive technology as well as visually;
   `optionalText` is the inverse convention if you mark optional fields instead.
+- On iOS and Android the wrapper only draws. It has no `inputId` and ties no
+  label, description or message to the control, so the control names itself;
+  `hideLabel` removes the label for VoiceOver and TalkBack too, and `required`
+  is a drawn asterisk.
 
 ## Stories
 
