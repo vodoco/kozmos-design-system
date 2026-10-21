@@ -6,6 +6,7 @@ public struct KozmosToast: View {
     let description: String?
     let actionTitle: String?
     let showsCloseButton: Bool
+    let closeLabel: String
     let autoDismissAfter: TimeInterval?
     let onAction: (() -> Void)?
 
@@ -19,6 +20,7 @@ public struct KozmosToast: View {
         description: String? = nil,
         actionTitle: String? = nil,
         showsCloseButton: Bool = true,
+        closeLabel: String = "Dismiss notification",
         autoDismissAfter: TimeInterval? = 3,
         onAction: (() -> Void)? = nil
     ) {
@@ -27,6 +29,9 @@ public struct KozmosToast: View {
         self.description = description
         self.actionTitle = actionTitle
         self.showsCloseButton = showsCloseButton
+        // The close button's spoken name, as React's ToastClose `aria-label`;
+        // a product that translates passes its own.
+        self.closeLabel = closeLabel
         self.autoDismissAfter = autoDismissAfter
         self.onAction = onAction
     }
@@ -87,7 +92,7 @@ public struct KozmosToast: View {
                         .foregroundColor(KozmosColors.primitivesColorsForeground500)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Dismiss notification")
+                .accessibilityLabel(Text(verbatim: closeLabel))
             }
         }
         .padding(.leading, KozmosDimensions.primitivesLayoutSpacing300)
