@@ -29,10 +29,12 @@ import org.junit.Test
 /**
  * A side tooltip's tip points at its trigger, as React's Radix arrow does.
  * KozmosTooltip places a Right tooltip to the trigger's physical right and a
- * Left one to its physical left, in either reading direction (whether those
- * should mean the leading and trailing sides is the owner's decision, and is
- * not changed here). So a Right tooltip's tip is at the bubble's physical
- * left, pointing left, and a Left one's at its physical right, pointing right.
+ * Left one to its physical left, in either reading direction, as React's
+ * Radix sides and Figma's are; Leading and Trailing (the owner's decision, 21
+ * Oct) are the side reading starts and ends on. So a Right tooltip's tip is at
+ * the bubble's physical left, pointing left, and a Left one's at its physical
+ * right, pointing right; a Leading one's is a Left one's left to right and a
+ * Right one's right to left.
  * Right to left, Compose's bubble put the tip at its start, now the right,
  * while the tip's path stayed physical: it stood on the far side, pointing
  * into the bubble. iOS had the same defect (#356).
@@ -48,6 +50,8 @@ class KozmosTooltipTipTest {
     private val page = 0xFFFF00FF.toInt()
 
     @Test fun eachSidesTipPointsAtItsTriggerInBothDirections() {
+        // Every side, the four physical ones and Leading and Trailing.
+        assertTrue(KozmosTooltipSide.values().map { it.name }.containsAll(listOf("Leading", "Trailing")))
         val wrong = mutableListOf<String>()
         for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
             for (side in KozmosTooltipSide.values()) {
@@ -88,20 +92,27 @@ class KozmosTooltipTipTest {
                 // The bubble's end toward its trigger, and the way into the
                 // bubble from there: a Right tooltip's trigger is to its left,
                 // a Top one's below it.
-                val vertical = side == KozmosTooltipSide.Top || side == KozmosTooltipSide.Bottom
-                val end = when (side) {
+                // Leading and Trailing are the physical side reading starts
+                // and ends on: Left and Right left to right, mirrored right to left.
+                val physical = when (side) {
+                    KozmosTooltipSide.Leading -> if (direction == LayoutDirection.Rtl) KozmosTooltipSide.Right else KozmosTooltipSide.Left
+                    KozmosTooltipSide.Trailing -> if (direction == LayoutDirection.Rtl) KozmosTooltipSide.Left else KozmosTooltipSide.Right
+                    else -> side
+                }
+                val vertical = physical == KozmosTooltipSide.Top || physical == KozmosTooltipSide.Bottom
+                val end = when (physical) {
                     KozmosTooltipSide.Right -> row.left
                     KozmosTooltipSide.Left -> row.right
                     KozmosTooltipSide.Top -> row.bottom
-                    KozmosTooltipSide.Bottom -> row.top
+                    else -> row.top
                 }
-                val inward = if (side == KozmosTooltipSide.Right || side == KozmosTooltipSide.Bottom) 1 else -1
+                val inward = if (physical == KozmosTooltipSide.Right || physical == KozmosTooltipSide.Bottom) 1 else -1
                 // A point [depth] dp in from the end, [across] dp off the tip's middle line.
                 fun sample(depth: Float, across: Float): Int {
                     val along = end + inward * depth * dp
                     return if (vertical) at(row.center.x + across * dp, along) else at(along, row.center.y + across * dp)
                 }
-                val case = "$direction $side"
+                val case = "$direction $side" + if (physical != side) " ($physical)" else ""
                 // A tip 4dp long and 8 across, its point at the end: half a dp
                 // in, 3 off the middle, is the page beside the point; 1dp in,
                 // on the middle, the point; 3.5dp in, 3 off, its broad base.
