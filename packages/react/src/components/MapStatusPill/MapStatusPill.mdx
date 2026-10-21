@@ -144,7 +144,9 @@ Both marks here come from `@kozmos-ds/icons`. Walking improves accuracy passes
 theme's blue as the SDK does. No Bluetooth passes `BluetoothOff`, the Pointr
 Icon Library's outline. `bluetooth-off` is in the icon name list, so
 `Icon name="bluetooth-off"` reaches it too, and SwiftUI's and Compose's
-`KozmosIcon` draw it by that name.
+`KozmosIcon` draw it by that name. They draw the walking figure by the name
+`walking`, generated from the same `Walking` artwork; on the web it is the export,
+not a name in the list.
 
 <Canvas of={Stories.NoBluetooth} />
 
@@ -265,19 +267,16 @@ struct BluetoothStatus: View {
     }
 }
 
-// The system's walking figure, in the progress tone's blue.
+// The SDK's walking figure, by its Kozmos name, in the progress tone's blue.
 struct WalkingStatus: View {
     var body: some View {
         KozmosMapStatusPill(String(localized: "Walking improves accuracy"), tone: .progress) {
-            Image(systemName: "figure.walk").resizable().scaledToFit()
+            KozmosIcon("walking", size: .lg)
         }
     }
 }
   `}
   kotlin={`
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import com.kozmos.components.icon.KozmosIcon
 import com.kozmos.components.icon.KozmosIconSize
@@ -303,13 +302,13 @@ fun BluetoothStatus() {
     )
 }
 
-// Material's walking figure, in the progress tone's blue.
+// The SDK's walking figure, by its Kozmos name, in the progress tone's blue.
 @Composable
 fun WalkingStatus() {
     KozmosMapStatusPill(
         text = "Walking improves accuracy",
         tone = KozmosMapStatusPillTone.Progress,
-        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null) }
+        icon = { KozmosIcon(name = "walking", size = KozmosIconSize.Lg) }
     )
 }
   `}

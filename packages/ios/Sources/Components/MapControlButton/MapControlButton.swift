@@ -309,6 +309,9 @@ public struct KozmosMapControlButton<Icon: View>: View {
                             }
                         }
                         .foregroundColor(color(appearance.icon))
+                        // A KozmosIcon in the slot takes the control's ink, as
+                        // a system image does: it kept its own foreground/100.
+                        .environment(\.kozmosIconHostInk, color(appearance.icon))
                         .accessibilityHidden(true)
 
                     labelContent

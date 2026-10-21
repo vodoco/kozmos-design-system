@@ -29,11 +29,11 @@ struct BluetoothStatus: View {
     }
 }
 
-// The system's walking figure, in the progress tone's blue.
+// The SDK's walking figure, by its Kozmos name, in the progress tone's blue.
 struct WalkingStatus: View {
     var body: some View {
         KozmosMapStatusPill(String(localized: "Walking improves accuracy"), tone: .progress) {
-            Image(systemName: "figure.walk").resizable().scaledToFit()
+            KozmosIcon("walking", size: .lg)
         }
     }
 }
