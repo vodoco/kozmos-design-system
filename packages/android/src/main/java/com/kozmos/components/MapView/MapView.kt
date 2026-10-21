@@ -22,8 +22,11 @@ fun KozmosMapView(
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = 400.dp)
-            .background(KozmosThemeTokens.primitivesColorsBackground100)
+            // Clipped, then filled: the fill keeps to the rounded corners, as
+            // React's overflow-hidden box does. It was filled first, so the
+            // fill kept square corners outside the rounded border.
             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+            .background(KozmosThemeTokens.primitivesColorsBackground100)
             .border(1.dp, KozmosThemeTokens.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
     ) {
         Box(
