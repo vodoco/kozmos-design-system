@@ -10,8 +10,8 @@ import org.junit.Test
 
 /**
  * GAP-182: the card's close button was named "Close" in fixed English. It is
- * named by `closeLabel`, as SwiftUI's and React's are, and keeps "Close"
- * when that is left out.
+ * named by `closeLabel`, as SwiftUI's and React's are, and is "Close
+ * navigation" when that is left out, their default (the owner, 21 Oct).
  */
 class KozmosWayfindingCardCloseLabelTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
@@ -27,7 +27,7 @@ class KozmosWayfindingCardCloseLabelTest {
         assertEquals(listOf("Navigation schließen"), tree.merged.filter { it.click != null }.map { it.words })
     }
 
-    @Test fun theCloseButtonKeepsTheEnglishWhenLeftOut() {
+    @Test fun theCloseButtonIsCloseNavigationWhenLeftOut() {
         val tree = paparazzi.readSemantics {
             KozmosMaterialTheme {
                 KozmosWayfindingCard(title = "Route", onClose = {}) {
@@ -35,6 +35,6 @@ class KozmosWayfindingCardCloseLabelTest {
                 }
             }
         }
-        assertEquals(listOf("Close"), tree.merged.filter { it.click != null }.map { it.words })
+        assertEquals(listOf("Close navigation"), tree.merged.filter { it.click != null }.map { it.words })
     }
 }

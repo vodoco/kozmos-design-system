@@ -60,11 +60,11 @@ fun KozmosWayfindingCard(
     onClose: (() -> Unit)? = null,
     /**
      * The close button's spoken name, drawn when [onClose] is set, as
-     * SwiftUI's and React's `closeLabel`. "Close" by default; a product that
-     * translates passes its own. Before [content], so a trailing lambda still
-     * compiles.
+     * SwiftUI's and React's `closeLabel`. "Close navigation" by default, as
+     * theirs; a product that translates passes its own. Before [content], so
+     * a trailing lambda still compiles.
      */
-    closeLabel: String = "Close",
+    closeLabel: String = "Close navigation",
     content: @Composable () -> Unit
 ) {
     Card(
