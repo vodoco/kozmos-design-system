@@ -218,7 +218,11 @@ public struct KozmosNavigationItem: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .accessibilityLabel(label ?? "")
-        .accessibilityValue(isSelected ? "Selected" : "")
+        // The selected item has the platform's selected state, which
+        // VoiceOver says in the person's language, as React's item is
+        // aria-current. It had the value "Selected", English in every
+        // language, and no state.
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var rowContent: some View {
