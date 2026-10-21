@@ -67,6 +67,7 @@ export async function measure(page: Page, label: string, css = "") {
   await page.waitForTimeout(800);
   const a = await share(page);
   const f = await frames(page);
+  void cases;
   console.log(
     `DIAG ${test.info().project.name} ${label}: share ${a.share}% longest gap ${a.longestGap}ms | rAF ${f.fps}/s median ${f.median}ms worst ${f.worst}ms`,
   );
