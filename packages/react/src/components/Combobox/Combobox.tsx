@@ -577,7 +577,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                                       : undefined
                                   }
                                   className={cn(
-                                    "kozmos-reset kozmos-option min-h-11 items-center",
+                                    "kozmos-reset kozmos-option",
                                     index === filteredOptions.length &&
                                       "border-t border-border",
                                   )}
