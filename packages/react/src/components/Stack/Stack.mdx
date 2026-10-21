@@ -45,54 +45,35 @@ import { KozmosStack } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Stack(direction: .vertical, spacing: 8) {
-Text("First")
-Text("Second")
+// A column with Kozmos's spacing between its children, 8pt by default.
+// Unlike React's column it never stretches them: .start lines them up on the
+// leading edge. There is no wrap or justify.
+struct ReceptionStack: View {
+    var body: some View {
+        Stack(alignment: .start) {
+            KozmosText("Reception")
+            KozmosText("Ground floor")
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.stack
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.kozmos.components.stack.KozmosStack
+import com.kozmos.components.text.KozmosText
 
-enum class StackDirection {
-Horizontal,
-Vertical
-}
-
+// A column with Kozmos's spacing between its children, 8dp by default, on
+// its start edge. It takes no alignment, wrap or justify, and its children
+// are in no ColumnScope, so none can take a weight.
 @Composable
-fun KozmosStack(
-modifier: Modifier = Modifier,
-direction: StackDirection = StackDirection.Vertical,
-spacing: Dp = com.kozmos.tokens.KozmosDimensions.primitivesLayoutSpacing100,
-content: @Composable () -> Unit
-) {
-val arrangement = Arrangement.spacedBy(spacing)
-
-    when (direction) {
-        StackDirection.Horizontal -> {
-            Row(modifier = modifier, horizontalArrangement = arrangement) {
-                content()
-            }
-        }
-        StackDirection.Vertical -> {
-            Column(modifier = modifier, verticalArrangement = arrangement) {
-                content()
-            }
-        }
+fun ReceptionStack() {
+    KozmosStack {
+        KozmosText(text = "Reception")
+        KozmosText(text = "Ground floor")
     }
-
 }
-
-    `}
+`}
 
 />
