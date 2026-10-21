@@ -101,7 +101,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Combobox](components/Combobox.md): A single-select field that filters its options as the user types.
 - [Container](components/Container.md): Constrains content width and applies consistent horizontal insets.
 - [Counter](components/Counter.md): Displays a compact count for badges, filters, unread items, and status summaries.
-- [DatePicker](components/DatePicker.md): DatePicker retains the browser's native date input.
+- [DatePicker](components/DatePicker.md): A date field: the browser's own, with its segmented typing in the reader's format, and a button at its end that opens Kozmos's calendar (decisions 104 and 105), drawn as Figma's Open variant (`438:2392`).
 - [DateRangePicker](components/DateRangePicker.md): The range adapts to its container width rather than the screen width: narrow modules stack the individually labelled fields.
 - [Dialog](components/Dialog.md): A window overlaid on existing content.
 - [Drawer](components/Drawer.md): Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.

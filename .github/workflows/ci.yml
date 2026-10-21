@@ -332,7 +332,8 @@ jobs:
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws
-      # its panels (scripts/check-calendar.mjs).
+      # its panels (scripts/check-calendar.mjs), and DatePicker opening it
+      # where the browser's own button can give way (check-date-picker.mjs).
       - name: Verify Built Focus, Keyboard and Scrolling
         run: |
           pnpm test:react-interactions
