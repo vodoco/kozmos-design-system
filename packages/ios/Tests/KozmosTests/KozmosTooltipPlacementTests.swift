@@ -10,13 +10,13 @@ import SwiftUI
 /// conditional view. So until 2026-10-21 every tooltip was drawn against its
 /// view's edge, over the view, on every side.
 ///
-/// Its sides keep their meaning here: `.right` is after the view in the
-/// reading direction, the view's left right to left, and `.left` before it.
-/// A 40pt grey view centred in 320 by 160 on black, so the white bubble is
+/// `.top`, `.right`, `.bottom` and `.left` are the view's own sides in every
+/// language, as React's Radix `side` and Figma's Side are, and `.leading`
+/// and `.trailing` follow the reading direction. A 40pt grey view centred in 320 by 160 on black, so the white bubble is
 /// what is found. Drawn without a window, so the first runs in `swift test`
 /// on a Mac too; the second is hosted in UIKit, as an app hosts it.
 final class KozmosTooltipPlacementTests: XCTestCase {
-    private static let sides: [KozmosTooltipSide] = [.top, .right, .bottom, .left]
+    private static let sides: [KozmosTooltipSide] = [.top, .right, .bottom, .left, .leading, .trailing]
     private static let directions: [LayoutDirection] = [.leftToRight, .rightToLeft]
     private static func name(_ direction: LayoutDirection) -> String { direction == .leftToRight ? "LTR" : "RTL" }
 
@@ -26,8 +26,10 @@ final class KozmosTooltipPlacementTests: XCTestCase {
         switch side {
         case .top: return "top"
         case .bottom: return "bottom"
-        case .right: return rightToLeft ? "left" : "right"
-        case .left: return rightToLeft ? "right" : "left"
+        case .right: return "right"
+        case .left: return "left"
+        case .leading: return rightToLeft ? "right" : "left"
+        case .trailing: return rightToLeft ? "left" : "right"
         }
     }
 
