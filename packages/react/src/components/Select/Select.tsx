@@ -8,6 +8,7 @@ import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
+import { useInputModality } from "../../utils/input-modality";
 
 const SelectPortal = createThemePortal(SelectPrimitive.Portal);
 
@@ -53,6 +54,8 @@ const SelectTrigger = React.forwardRef<
     const errorId = React.useId();
     const hasError = !!error;
     const isStringError = typeof error === "string";
+    // Listening before the list opens: the key that opens it comes first.
+    useInputModality();
 
     return (
       <FieldWrapper
@@ -134,6 +137,9 @@ const SelectContent = React.forwardRef<
     ref,
   ) => {
     const release = React.useRef<(() => void) | undefined>();
+    // Radix focuses its items under the pointer too, so the row's keyboard
+    // ring reads which hand moved last (owned-selection.css).
+    const modality = useInputModality();
     const contentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         release.current?.();
@@ -154,6 +160,7 @@ const SelectContent = React.forwardRef<
             className,
           )}
           position={position}
+          data-modality={modality}
           {...props}
         >
           <SelectScrollUpButton />

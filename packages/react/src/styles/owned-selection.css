@@ -54,6 +54,16 @@
   .kozmos-option[data-state="checked"] {
     background-color: var(--primitives-colors-background-100);
   }
+  /* Reached by the keyboard (decision 26), the active row also draws a 2px
+     inset ring in theme 600, 4.9:1 or more against it in both themes, where
+     the light row alone reads 1.1:1; under the pointer it draws none. Inset,
+     so nothing moves. The list says which hand moved last
+     (utils/input-modality.ts): Radix Select focuses its items under the
+     pointer too, and Combobox's rows never take focus. */
+  [data-modality="keyboard"] .kozmos-option[data-active="true"],
+  [data-modality="keyboard"] .kozmos-option[data-highlighted] {
+    box-shadow: inset 0 0 0 2px var(--primitives-colors-theme-600);
+  }
   .kozmos-option[aria-disabled="true"],
   .kozmos-option[data-disabled] {
     @apply cursor-not-allowed text-muted-foreground opacity-60;

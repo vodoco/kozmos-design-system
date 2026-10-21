@@ -12,8 +12,15 @@
  * - The active row, under the pointer or the keyboard, on background/50
  *   with the words in full ink: a light row, not a filled one.
  * - The chosen row on background/100, its check at the end in theme 600.
+ * - Reached by the keyboard, the active row also draws a 2px inset ring in
+ *   theme 600 (decision 26, 21 Oct), at 3:1 or more against the row; under
+ *   the pointer it draws none. The pointer after the keyboard takes the ring
+ *   away and the keyboard after the pointer brings it back; the chosen row
+ *   takes it too; nothing moves.
  *
- * In light and dark, at touch and compact. Run with ADAPTIVE_BROWSER=firefox
+ * Combobox, MultiSelect, Select, the standalone Listbox and the SDK's
+ * LanguageSwitcher (Select's items, touch at any density, decision 89), in
+ * light and dark, at touch and compact. Run with ADAPTIVE_BROWSER=firefox
  * or webkit for the other engines, as CI does in test:overlays.
  */
 import assert from "node:assert/strict";
@@ -32,8 +39,8 @@ async function open(page, part) {
   if (part === "combobox" || part === "multiselect") {
     await page.getByRole("combobox").first().click();
     await page.keyboard.press("ArrowDown");
-  } else if (part === "select") {
-    await page.getByRole("combobox", { name: "City" }).click();
+  } else if (part === "select" || part === "languageswitcher") {
+    await page.getByRole("combobox").first().click();
   }
   await page.getByRole("option").first().waitFor();
   await page.evaluate(() =>
@@ -92,7 +99,63 @@ const read = (page) =>
     };
   });
 
-for (const part of ["combobox", "multiselect", "select", "listbox"])
+/** Every row's ring, fill and place, and which is active. */
+const rings = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('[role="option"]')].map((row) => {
+      const s = getComputedStyle(row);
+      const r = row.getBoundingClientRect();
+      return {
+        text: row.textContent.trim(),
+        active:
+          row.getAttribute("data-active") === "true" ||
+          row.hasAttribute("data-highlighted"),
+        shadow: s.boxShadow,
+        bg: s.backgroundColor,
+        top: Math.round(r.top * 100) / 100,
+        height: Math.round(r.height * 100) / 100,
+      };
+    }),
+  );
+/** A 2px inset ring's colour, or null: "<colour> 0px 0px 0px 2px inset". */
+const ringOf = (shadow) => {
+  const match = shadow.match(
+    /^(?:inset\s+)?((?:rgba?|color)\([^)]*\))\s+0px\s+0px\s+0px\s+2px(?:\s+inset)?$/,
+  );
+  return match && /inset/.test(shadow) ? match[1] : null;
+};
+const channels = (css) => {
+  const n = css.match(/[\d.]+/g).map(Number);
+  return css.startsWith("color(")
+    ? n.slice(0, 3).map((v) => v * 255)
+    : n.slice(0, 3);
+};
+const contrast = (a, b) => {
+  const lum = (c) => {
+    const [r, g, bl] = channels(c).map((v) => {
+      const x = v / 255;
+      return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+const settle = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+
+for (const part of [
+  "combobox",
+  "multiselect",
+  "select",
+  "listbox",
+  "languageswitcher",
+])
   for (const theme of ["light", "dark"])
     for (const density of ["touch", "compact"]) {
       const name = `${part}, ${theme}, ${density}`;
@@ -119,7 +182,9 @@ for (const part of ["combobox", "multiselect", "select", "listbox"])
           .hover();
         await settleLayout(page);
         const { rows, tokens } = await read(page);
-        const height = density === "compact" ? 40 : 44;
+        // The SDK's LanguageSwitcher stays touch at any density (decision 89).
+        const height =
+          density === "compact" && part !== "languageswitcher" ? 40 : 44;
         const [lisbon, porto, faro] = [
           "Lisbon",
           "Lisbon Oriente",
@@ -168,6 +233,71 @@ for (const part of ["combobox", "multiselect", "select", "listbox"])
           faro.bg,
           "rgba(0, 0, 0, 0)",
           `${name}: a plain row has no fill`,
+        );
+        // The keyboard's ring. The standalone Listbox takes the keys while it
+        // has focus; the others while their list is open.
+        if (part === "listbox") await page.getByRole("listbox").focus();
+        const ringed = (list) => list.filter((row) => row.shadow !== "none");
+        const pointerRows = await rings(page);
+        assert.deepEqual(
+          ringed(pointerRows).map((row) => row.text),
+          [],
+          `${name}: under the pointer no row is ringed`,
+        );
+        const expectRing = async (step) => {
+          await settle(page);
+          const list = await rings(page);
+          const active = list.find((row) => row.active);
+          assert.ok(active, `${name}: ${step}: a row is active`);
+          const colour = ringOf(active.shadow);
+          assert.ok(
+            colour,
+            `${name}: ${step}: ${active.text} draws a 2px inset ring (${active.shadow})`,
+          );
+          assert.equal(colour, tokens.check, `${name}: ${step}: in theme 600`);
+          const ratio = contrast(colour, active.bg);
+          assert.ok(
+            ratio >= 3,
+            `${name}: ${step}: ${ratio.toFixed(2)}:1 against the row`,
+          );
+          assert.deepEqual(
+            ringed(list).map((row) => row.text),
+            [active.text],
+            `${name}: ${step}: only the active row`,
+          );
+          assert.deepEqual(
+            list.map(({ top, height: h }) => [top, h]),
+            pointerRows.map(({ top, height: h }) => [top, h]),
+            `${name}: ${step}: nothing moves`,
+          );
+          return active;
+        };
+        await page.keyboard.press("ArrowDown");
+        await expectRing("the keyboard");
+        await page
+          .getByRole("option", { name: "Lisbon Rossio", exact: true })
+          .hover();
+        await settle(page);
+        assert.deepEqual(
+          ringed(await rings(page)).map((row) => row.text),
+          [],
+          `${name}: the pointer after the keyboard takes the ring away`,
+        );
+        await page.keyboard.press("ArrowUp");
+        await expectRing("the keyboard after the pointer");
+        let chosen;
+        for (let i = 0; i < 4; i++) {
+          chosen = (await rings(page)).find((row) => row.active);
+          if (chosen?.text === "Lisbon") break;
+          await page.keyboard.press("ArrowUp");
+          await settle(page);
+        }
+        const ringedChosen = await expectRing("the chosen row");
+        assert.equal(ringedChosen.text, "Lisbon");
+        assert.equal(
+          ringedChosen.bg,
+          tokens.chosen,
+          `${name}: the chosen row keeps background/100`,
         );
         assert.deepEqual(errors, [], "no page errors");
         console.log(`PASS ${name}`);

@@ -1,6 +1,7 @@
 import { createRoot, type Root } from "react-dom/client";
 import {
   Combobox,
+  LanguageSwitcher,
   Listbox,
   MultiSelect,
   Select,
@@ -12,7 +13,8 @@ import {
 } from "@kozmos-ds/react";
 
 /**
- * The list rows of Combobox, MultiSelect, Select and Listbox in the built
+ * The list rows of Combobox, MultiSelect, Select, Listbox and the SDK's
+ * LanguageSwitcher (Select's items) in the built
  * package, for scripts/check-list-rows.mjs: one part per mount, in a
  * provider of the given theme and density, with Lisbon chosen.
  */
@@ -25,7 +27,7 @@ const options = [
 ];
 
 interface Mount {
-  part: "combobox" | "multiselect" | "select" | "listbox";
+  part: "combobox" | "multiselect" | "select" | "listbox" | "languageswitcher";
   theme: "light" | "dark";
   density: "touch" | "compact";
 }
@@ -36,7 +38,15 @@ function mount({ part, theme, density }: Mount) {
   root = createRoot(document.getElementById("fixture")!);
   root.render(
     <ThemeProvider theme={theme} density={density}>
-      <div data-testid="frame" style={{ width: 320, padding: 24 }}>
+      {/* LanguageSwitcher opens its list above it (decision 77): room for it. */}
+      <div
+        data-testid="frame"
+        style={{
+          width: 320,
+          padding: 24,
+          paddingTop: part === "languageswitcher" ? 280 : 24,
+        }}
+      >
         {part === "combobox" && (
           <Combobox label="City" options={options} defaultValue="lisbon" />
         )}
@@ -63,6 +73,17 @@ function mount({ part, theme, density }: Mount) {
         )}
         {part === "listbox" && (
           <Listbox aria-label="City" options={options} value="lisbon" />
+        )}
+        {part === "languageswitcher" && (
+          <LanguageSwitcher
+            label="Language"
+            languages={options.map(({ value, label }) => ({
+              id: value,
+              label,
+            }))}
+            selectedLocale="lisbon"
+            onLocaleRequest={() => {}}
+          />
         )}
       </div>
     </ThemeProvider>,

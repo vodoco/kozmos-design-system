@@ -14,6 +14,7 @@ import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/Input";
 
@@ -173,6 +174,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // The active row's keyboard ring (owned-selection.css): its rows never
+    // take focus (aria-activedescendant), so the list reads which hand moved.
+    const modality = useInputModality();
     const rootRef = React.useRef<HTMLDivElement>(null);
     // The overlay popup is in a portal, outside the root: a press or focus
     // inside it is still inside the field.
@@ -543,6 +547,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     <div
                       id={listboxOpen ? listboxId : undefined}
                       className="min-h-0 overflow-y-auto"
+                      data-modality={modality}
                       data-kozmos-scrollbar={scrollbarFor(presentation)}
                       role={
                         listboxOpen
