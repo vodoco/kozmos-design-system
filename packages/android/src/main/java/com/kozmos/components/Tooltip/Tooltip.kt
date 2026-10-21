@@ -3,6 +3,7 @@ package com.kozmos.components.tooltip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,7 +60,7 @@ fun KozmosTooltip(
 }
 
 @Composable
-private fun TooltipBubble(
+internal fun TooltipBubble(
     text: String,
     side: KozmosTooltipSide,
     modifier: Modifier = Modifier
@@ -77,14 +78,19 @@ private fun TooltipBubble(
                 TooltipSurface(text)
             }
         }
+        // A side tooltip sits on its trigger's physical side, and its tip,
+        // drawn in physical coordinates, points at the trigger: laid out from
+        // the physical left in either reading direction. Right to left, a
+        // Row put the tip at its start, the right: on the far side, pointing
+        // into the bubble. The text inside still reads right to left.
         KozmosTooltipSide.Right -> {
-            Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                 TooltipTip(side)
                 TooltipSurface(text)
             }
         }
         KozmosTooltipSide.Left -> {
-            Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                 TooltipSurface(text)
                 TooltipTip(side)
             }
