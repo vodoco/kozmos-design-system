@@ -36,8 +36,9 @@ import org.junit.Test
  * React's EmptyState and Figma's draw the description in the muted colour,
  * foreground/400 (`text-muted-foreground`; `Colors/foreground/400`), and set
  * the icon in a circle: `w-16 h-16 rounded-pill bg-muted`, 64 across (40
- * compact) of background/100, 16 (8 compact) above the title. Compose drew
- * the description in foreground/300 and the icon on the page, with no circle.
+ * compact) of background/100, 16 (8 compact) above the title; a progress
+ * value's words are muted too. Compose drew the description and the progress
+ * value in foreground/300, and the icon on the page, with no circle.
  * Read off what is drawn, at twice the density, in light and dark.
  */
 class KozmosEmptyStateParityTest {
@@ -96,6 +97,25 @@ class KozmosEmptyStateParityTest {
             val ink = drawn.inkOf("Versuchen Sie es mit einem anderen Wort.")
             if (!DrawnPixels.matches(ink, expected, 6)) {
                 wrong += "${if (dark) "dark" else "light"}: the description is ${DrawnPixels.hex(ink)}, not foreground/400 ${DrawnPixels.hex(expected)}"
+            }
+        }
+        assertTrue(wrong.joinToString("; "), wrong.isEmpty())
+    }
+
+    @Test fun theProgressValueIsTheMutedForeground400InBothThemes() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            var expected = 0
+            val drawn = draw(dark) {
+                expected = KozmosThemeTokens.primitivesColorsForeground400.toArgb()
+                KozmosEmptyState(
+                    title = "Wird geladen",
+                    progress = KozmosEmptyStateProgress(0.4f, "Der Assistent wird geladen", valueText = "40 %")
+                )
+            }
+            val ink = drawn.inkOf("40 %")
+            if (!DrawnPixels.matches(ink, expected, 6)) {
+                wrong += "${if (dark) "dark" else "light"}: the progress value is ${DrawnPixels.hex(ink)}, not foreground/400 ${DrawnPixels.hex(expected)}"
             }
         }
         assertTrue(wrong.joinToString("; "), wrong.isEmpty())

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.progress.KozmosProgress
+import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import kotlin.math.roundToInt
 
@@ -49,9 +50,9 @@ enum class KozmosEmptyStateSize {
     val gap: Dp get() = if (this == Compact) 8.dp else 16.dp
 }
 
-/** The circle behind the icon: React's `w-16 h-16`, `h-10 w-10` compact. */
+/** The circle behind the icon: React's `w-16 h-16`, `h-10 w-10` compact, the sizing scale's 800 and 500. */
 private val KozmosEmptyStateSize.iconCircle: Dp
-    get() = if (this == KozmosEmptyStateSize.Compact) 40.dp else 64.dp
+    get() = if (this == KozmosEmptyStateSize.Compact) KozmosDimensions.primitivesLayoutSizing500 else KozmosDimensions.primitivesLayoutSizing800
 
 /**
  * A long wait the empty state is explaining, such as a download, and how far
@@ -147,7 +148,9 @@ fun KozmosEmptyState(
                     if (progress.valueText != null) {
                         Text(
                             text = progress.valueText,
-                            color = KozmosThemeTokens.primitivesColorsForeground300,
+                            // Muted, as React's text-muted-foreground: foreground/400.
+                            // It was foreground/300.
+                            color = KozmosThemeTokens.primitivesColorsForeground400,
                             fontSize = 14.sp
                         )
                     }
