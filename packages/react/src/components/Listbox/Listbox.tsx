@@ -20,8 +20,12 @@ function asValueArray(value: string | string[] | undefined) {
   return value ? [value] : [];
 }
 
-function firstEnabledIndex(options: ComboboxOption[]) {
-  return options.findIndex((option) => !option.disabled);
+function firstEnabledIndex(options: ComboboxOption[], selected?: string[]) {
+  // A chosen option is where the list starts, as the WAI-ARIA listbox has it.
+  const chosen = options.findIndex(
+    (option) => !option.disabled && selected?.includes(option.value),
+  );
+  return chosen >= 0 ? chosen : options.findIndex((option) => !option.disabled);
 }
 
 function nextEnabledIndex(
@@ -76,7 +80,7 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       [selectedValues],
     );
     const [activeIndex, setActiveIndex] = React.useState(() =>
-      firstEnabledIndex(options),
+      firstEnabledIndex(options, selectedValues),
     );
     const activeOptionId =
       activeIndex >= 0 && options[activeIndex]
@@ -84,7 +88,8 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         : undefined;
 
     React.useEffect(() => {
-      setActiveIndex(firstEnabledIndex(options));
+      setActiveIndex(firstEnabledIndex(options, selectedValues));
+      // Only for new options; a choice does not move the active one.
     }, [options]);
 
     React.useEffect(() => {
