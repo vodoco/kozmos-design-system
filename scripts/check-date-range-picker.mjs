@@ -105,7 +105,28 @@ await scenario(
         KOZMOS ? "48px" : "12px",
       );
     }
-    // Tab stops: each field's segments, then its button.
+    // Tab stops: each field's segments, as a bare field has them (three, or
+    // one where WebKit draws a plain field, as on Linux), then its button.
+    const segments = await page
+      .evaluate(() => {
+        const host = document.createElement("div");
+        host.innerHTML =
+          '<style>#bare::-webkit-calendar-picker-indicator{display:none}</style><button id="from">from</button><input id="bare" type="date"><button id="to">to</button>';
+        document.body.append(host);
+      })
+      .then(async () => {
+        await page.locator("#from").focus();
+        let count = 0;
+        for (; count < 8; count++) {
+          await page.keyboard.press("Tab");
+          if (await page.evaluate(() => document.activeElement.id === "to"))
+            break;
+        }
+        await page.evaluate(() =>
+          document.querySelector("#bare").parentElement.remove(),
+        );
+        return count;
+      });
     await page.getByRole("button", { name: "before" }).focus();
     const stops = [];
     for (let i = 0; i < 12; i++) {
@@ -115,9 +136,13 @@ await scenario(
       stops.push(name);
     }
     if (KOZMOS) {
-      assert.equal(stops.length, 8, `3 segments and a button, twice: ${stops}`);
-      assert.equal(stops[3], "Choose dates: Start date");
-      assert.equal(stops[7], "Choose dates: End date");
+      assert.equal(
+        stops.length,
+        2 * (segments + 1),
+        `${segments} segment stop(s) and a button, twice: ${stops}`,
+      );
+      assert.equal(stops[segments], "Choose dates: Start date");
+      assert.equal(stops[2 * segments + 1], "Choose dates: End date");
     } else assert.ok(!stops.some((name) => name?.startsWith("Choose dates")));
   },
 );

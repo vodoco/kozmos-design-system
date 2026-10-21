@@ -85,6 +85,39 @@ const pickerOpen = (page) =>
       return null; // WebKit 26.0 has no :open
     }
   });
+/**
+ * What this engine does with a bare <input type="date"> of the same value,
+ * with its own picker button hidden, beside the fixture: its tab stops (the
+ * segments: three in Chromium, Firefox and Safari, one where WebKit draws a
+ * plain field, as Playwright's on Linux) and what a click 44 in and
+ * ArrowUp do to it. Kozmos's field must do the same.
+ */
+const bareField = (page) =>
+  page
+    .evaluate(async () => {
+      const host = document.createElement("div");
+      host.innerHTML =
+        '<style>#bare::-webkit-calendar-picker-indicator{display:none}#bare{width:320px;height:44px;padding:0 12px 0 36px;font:14px sans-serif}</style><button id="from">from</button><input id="bare" type="date" value="2026-05-25"><button id="to">to</button>';
+      document.body.append(host);
+    })
+    .then(async () => {
+      await page.locator("#from").focus();
+      let stops = 0;
+      for (; stops < 8; stops++) {
+        await page.keyboard.press("Tab");
+        if (await page.evaluate(() => document.activeElement.id === "to"))
+          break;
+      }
+      const box = await page.locator("#bare").boundingBox();
+      await page.mouse.click(box.x + 44, box.y + box.height / 2);
+      await page.keyboard.press("ArrowUp");
+      const value = await page.locator("#bare").inputValue();
+      await page.evaluate(() =>
+        document.querySelector("#bare").parentElement.remove(),
+      );
+      return { stops, value };
+    });
+
 /** Closed: the dialog gone, after its exit animation. */
 const closed = (page) =>
   page.getByRole("dialog").waitFor({ state: "detached", timeout: 5000 });
@@ -108,8 +141,10 @@ await scenario(
       await field(page).getAttribute("data-picker"),
       KOZMOS ? "kozmos" : null,
     );
-    // Tab stops from before to after: the field's three segments, then
-    // Kozmos's button; Firefox's own button is a fourth stop of the field.
+    // Tab stops from before to after: the field's segments, as a bare field
+    // has them, then Kozmos's button; Firefox's own button is one more stop
+    // of the field.
+    const bare = await bareField(page);
     await page.getByRole("button", { name: "before" }).focus();
     const stops = [];
     for (let i = 0; i < 8; i++) {
@@ -124,7 +159,11 @@ await scenario(
         "Choose date",
         "Kozmos's button ends the field",
       );
-      assert.equal(stops.length, 4, `three segments and the button: ${stops}`);
+      assert.equal(
+        stops.length,
+        bare.stops + 1,
+        `the bare field's ${bare.stops} stop(s) and the button: ${stops}`,
+      );
     } else {
       assert.equal(stops.length, 4, "three segments and Firefox's button");
       assert.ok(!stops.includes("Choose date"));
@@ -164,16 +203,20 @@ await scenario(
   "the browser's typing still works in the field",
   { props: BASE },
   async (page) => {
+    // Whatever the browser does with a bare field, it does with Kozmos's:
+    // a click on the first segment and ArrowUp step it in Chromium, Firefox
+    // and Safari, and do nothing to WebKit's plain field on Linux.
+    const bare = await bareField(page);
     const before = await field(page).inputValue();
     const box = await field(page).boundingBox();
     await page.mouse.click(box.x + 44, box.y + box.height / 2);
     await page.keyboard.press("ArrowUp");
     const after = await field(page).inputValue();
-    assert.notEqual(after, before, "ArrowUp on a segment changes the date");
-    assert.match(after, /^\d{4}-\d{2}-\d{2}$/);
-    assert.deepEqual(await page.evaluate(() => window.datePicker.changes), [
-      after,
-    ]);
+    assert.equal(after, bare.value, "the field steps as a bare field does");
+    if (bare.value !== before)
+      assert.deepEqual(await page.evaluate(() => window.datePicker.changes), [
+        after,
+      ]);
     assert.equal(
       await page.getByRole("dialog").count(),
       0,
