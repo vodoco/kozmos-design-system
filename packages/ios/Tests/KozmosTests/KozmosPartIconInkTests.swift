@@ -118,10 +118,10 @@ final class KozmosPartIconInkTests: XCTestCase {
         } action: {
             EmptyView()
         }
-        // The 32pt icon, centred in the 64pt circle 24pt down; the circle's
+        // The 32pt icon, centred in the 64pt circle 32pt down; the circle's
         // fill beside it.
-        let fault = try fault("empty state", empty.frame(width: 300), icon: CGRect(x: 132, y: 38, width: 36, height: 36),
-                              fill: CGPoint(x: 122, y: 56), expected: KozmosColors.primitivesColorsForeground400)
+        let fault = try fault("empty state", empty.frame(width: 300), icon: CGRect(x: 132, y: 46, width: 36, height: 36),
+                              fill: CGPoint(x: 122, y: 64), expected: KozmosColors.primitivesColorsForeground400)
         XCTAssertNil(fault)
     }
 

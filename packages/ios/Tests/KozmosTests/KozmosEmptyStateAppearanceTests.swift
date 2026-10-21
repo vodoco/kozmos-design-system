@@ -10,7 +10,9 @@ import SwiftUI
 /// variables. A progress line says what is in progress in foreground 0 and
 /// how far in foreground 400, as React's does (Figma draws no progress).
 /// SwiftUI drew the icon, the description and the value in foreground 300,
-/// with no circle, and the title and the label in foreground 100.
+/// with no circle, and the title and the label in foreground 100. And it is
+/// padded 32 round its content, 16 compact, as React's `p-8`/`p-4` and
+/// Figma's are: SwiftUI padded 24.
 ///
 /// Drawn without a window, on the page's own surface, in both themes, so
 /// these run in `swift test` on a Mac too.
@@ -56,7 +58,7 @@ final class KozmosEmptyStateAppearanceTests: XCTestCase {
         var wrong: [String] = []
         for scheme in [ColorScheme.light, .dark] {
             let muted = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground100, in: scheme)
-            for (size, across, top) in [(KozmosEmptyStateSize.default, CGFloat(64), CGFloat(24)), (.compact, 40, 16)] {
+            for (size, across, top) in [(KozmosEmptyStateSize.default, CGFloat(64), CGFloat(32)), (.compact, 40, 16)] {
                 let drawn = try draw(size, scheme)
                 guard let circle = drawn.boundingBox(in: CGRect(x: 0, y: 0, width: 300, height: top + across + 8),
                                                      where: DrawnPixels.matches(muted, tolerance: 3)) else {
@@ -80,8 +82,8 @@ final class KozmosEmptyStateAppearanceTests: XCTestCase {
             let page = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
             let expected = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground400, in: scheme)
             let drawn = try draw(.default, scheme)
-            // The 24pt icon, centred in the 64pt circle 24pt down: 44 to 68.
-            let icon = ink(drawn, in: CGRect(x: 136, y: 42, width: 28, height: 28), against: muted)
+            // The 24pt icon, centred in the 64pt circle 32pt down: 52 to 76.
+            let icon = ink(drawn, in: CGRect(x: 136, y: 50, width: 28, height: 28), against: muted)
             if !close(icon, expected) { wrong.append("\(Self.name(scheme)): the icon is \(hex(icon)), not foreground/400 \(hex(expected))") }
             // The description: the last line of what is drawn on the page.
             let lines = drawn.bands { r, g, b, a in
@@ -90,6 +92,28 @@ final class KozmosEmptyStateAppearanceTests: XCTestCase {
             guard let description = lines.last, lines.count >= 3 else { wrong.append("\(Self.name(scheme)): lines \(lines)"); continue }
             let words = ink(drawn, in: description, against: page)
             if !close(words, expected) { wrong.append("\(Self.name(scheme)): the description is \(hex(words)), not foreground/400 \(hex(expected))") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    /// React's `p-8` and Figma's 32 round the content, `p-4` and 16 compact:
+    /// the first line drawn starts that far down and the last ends that far
+    /// up, and a long description wraps within the width less both sides.
+    @MainActor func testItIsPadded32RoundItsContentOr16Compact() throws {
+        var wrong: [String] = []
+        let words = Array(repeating: "Try another word", count: 6).joined(separator: " ")
+        for (size, pad) in [(KozmosEmptyStateSize.default, CGFloat(32)), (.compact, 16)] {
+            let empty = KozmosEmptyState(title: "No results", description: words, size: size)
+            let drawn = try DrawnPixels.draw(empty.frame(width: 300).background(Color.white).environment(\.colorScheme, .light), scale: 3)
+            let found = lines(drawn, on: (255, 255, 255, 255))
+            guard let first = found.first, let last = found.last else { wrong.append("\(size): nothing drawn"); continue }
+            // Text's own line box sits a point or two outside its ink.
+            if first.minY < pad || first.minY > pad + 4 { wrong.append("\(size): the title's ink starts \(first.minY) down, not \(pad)") }
+            let bottom = drawn.size.height - last.maxY
+            if bottom < pad || bottom > pad + 6 { wrong.append("\(size): the last line's ink ends \(bottom) up, not \(pad)") }
+            let widest = found.map(\.width).max() ?? 0
+            if widest > 300 - 2 * pad { wrong.append("\(size): a line is \(widest) wide, wider than \(300 - 2 * pad)") }
+            if widest < 300 - 2 * pad - 40 { wrong.append("\(size): the widest line is \(widest), far inside \(300 - 2 * pad)") }
         }
         XCTAssertEqual(wrong, [])
     }

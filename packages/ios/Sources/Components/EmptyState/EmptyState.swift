@@ -11,7 +11,8 @@ public enum KozmosEmptyStateSize: Sendable, Hashable, CaseIterable {
     case `default`
     case compact
 
-    var padding: CGFloat { self == .compact ? 16 : 24 }
+    /// React's `p-8` and `p-4`, and Figma's 32 and 16: it was 24 and 16.
+    var padding: CGFloat { self == .compact ? 16 : 32 }
     var stackSpacing: CGFloat { self == .compact ? 8 : 16 }
     /// The muted circle the icon sits on: React's `w-16 h-16`, `h-10 w-10`
     /// compact.
