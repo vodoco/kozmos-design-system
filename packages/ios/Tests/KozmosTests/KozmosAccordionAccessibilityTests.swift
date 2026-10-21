@@ -101,7 +101,54 @@ final class KozmosAccordionAccessibilityTests: XCTestCase {
         }
     }
 
+    /// A product's UI tests find the trigger by its identifier, as XCUITest
+    /// looks one up: `app.buttons["faq-floors"]`. From iOS 18 VoiceOver and
+    /// XCUITest read the UIKit element over the trigger, which a SwiftUI
+    /// `.accessibilityIdentifier` on the trigger never reaches, so the
+    /// trigger takes the identifier itself and sets it on whichever element
+    /// is read: the UIKit element from iOS 18, the button before.
+    @MainActor func testUITestsFindTheTriggerByItsIdentifier() async throws {
+        try requireExpandedStatus()
+        struct Identified: View {
+            @State var open: String? = nil
+            var body: some View {
+                KozmosAccordion {
+                    KozmosAccordionItem {
+                        KozmosAccordionTrigger(value: "floors", title: "How do I change floors?", selection: $open,
+                                               accessibilityIdentifier: "faq-floors")
+                        KozmosAccordionContent(value: "floors", selection: $open) { Text("Open the floor selector.") }
+                    }
+                    KozmosAccordionItem {
+                        KozmosAccordionTrigger(value: "lifts", title: "Where are the lifts?", selection: $open)
+                    }
+                }
+                .frame(width: 360)
+            }
+        }
+        try await inspect(Identified()) { window in
+            let found = self.elements(window).filter { self.identifier(of: $0) == "faq-floors" }
+            XCTAssertEqual(found.count, 1, "elements with the identifier; the tree:\n\(self.describe(window))")
+            let trigger = try XCTUnwrap(found.first)
+            XCTAssertEqual(trigger.accessibilityLabel, "How do I change floors?")
+            XCTAssertTrue(trigger.accessibilityTraits.contains(.button))
+            if #available(iOS 18.0, *) {
+                XCTAssertEqual(trigger.accessibilityExpandedStatus, .collapsed)
+            }
+            // A trigger given none has none.
+            let lifts = try self.element(named: "Where are the lifts?", in: window)
+            XCTAssertEqual(self.identifier(of: lifts) ?? "", "")
+        }
+    }
+
     // MARK: - Reading the tree
+
+    /// A node's accessibility identifier, as XCUITest reads it: a view's, or
+    /// a SwiftUI element's, whichever the node is.
+    @MainActor private func identifier(of node: NSObject) -> String? {
+        let getter = NSSelectorFromString("accessibilityIdentifier")
+        guard node.responds(to: getter) else { return nil }
+        return node.perform(getter)?.takeUnretainedValue() as? String
+    }
 
     /// The one element named `label`; fails, with the tree, if not exactly one.
     @MainActor private func element(named label: String, in window: UIWindow) throws -> NSObject {
@@ -150,7 +197,7 @@ final class KozmosAccordionAccessibilityTests: XCTestCase {
         var status = ""
         if #available(iOS 18.0, *) { status = " expanded=\(node.accessibilityExpandedStatus.rawValue)" }
         let line = String(repeating: "  ", count: depth)
-            + "\(type(of: node)) traits=\(node.accessibilityTraits.rawValue) element=\(node.isAccessibilityElement) label=\(node.accessibilityLabel ?? "-") value=\(node.accessibilityValue ?? "-")\(status)"
+            + "\(type(of: node)) traits=\(node.accessibilityTraits.rawValue) element=\(node.isAccessibilityElement) label=\(node.accessibilityLabel ?? "-") value=\(node.accessibilityValue ?? "-")\(status) id=\(identifier(of: node) ?? "-")"
         let below = (children(node) ?? []).map { describe($0, depth: depth + 1) }
         return ([line] + below).joined(separator: "\n")
     }

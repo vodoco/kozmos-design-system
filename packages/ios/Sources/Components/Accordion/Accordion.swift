@@ -16,12 +16,19 @@ public struct KozmosAccordionTrigger: View {
     let value: String
     @Binding var selection: String?
     let title: String
+    /// What a UI test finds the trigger by, as `app.buttons["…"]`.
+    let identifier: String?
     @Environment(\.kozmosAnalytics) var trackEvent
-    
-    public init(value: String, title: String, selection: Binding<String?>) {
+
+    /// `accessibilityIdentifier` is set on the element VoiceOver and XCUITest
+    /// read: from iOS 18 the UIKit element laid over the trigger, which a
+    /// SwiftUI `.accessibilityIdentifier` applied to the trigger never
+    /// reaches, and before iOS 18 the button.
+    public init(value: String, title: String, selection: Binding<String?>, accessibilityIdentifier: String? = nil) {
         self.value = value
         self.title = title
         self._selection = selection
+        self.identifier = accessibilityIdentifier
     }
 
     private var isExpanded: Bool { selection == value }
@@ -59,16 +66,30 @@ public struct KozmosAccordionTrigger: View {
             // VoiceOver hears the button itself, as it always has.
             button
                 .accessibilityHidden(true)
-                .overlay(KozmosAccordionTriggerElement(label: title, isExpanded: isExpanded, toggle: toggle))
+                .overlay(KozmosAccordionTriggerElement(label: title, identifier: identifier, isExpanded: isExpanded, toggle: toggle))
         } else {
-            button
+            button.modifier(KozmosAccordionTriggerIdentifier(identifier: identifier))
         }
         #else
-        button
+        button.modifier(KozmosAccordionTriggerIdentifier(identifier: identifier))
         #endif
         // The rule is decoration, as React's item border.
         Divider().overlay(KozmosColors.semanticsBorderSubtle)
             .accessibilityHidden(true)
+    }
+}
+
+/// The trigger's identifier on its button, where the button is what
+/// VoiceOver and XCUITest read; nothing where it has none.
+private struct KozmosAccordionTriggerIdentifier: ViewModifier {
+    let identifier: String?
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
     }
 }
 
@@ -83,6 +104,7 @@ import UIKit
 @available(iOS 18.0, *)
 struct KozmosAccordionTriggerElement: UIViewRepresentable {
     let label: String
+    let identifier: String?
     let isExpanded: Bool
     let toggle: () -> Void
 
@@ -90,6 +112,7 @@ struct KozmosAccordionTriggerElement: UIViewRepresentable {
 
     func updateUIView(_ view: ElementView, context: Context) {
         view.accessibilityLabel = label
+        view.accessibilityIdentifier = identifier
         view.toggle = toggle
         view.isExpanded = isExpanded
     }
