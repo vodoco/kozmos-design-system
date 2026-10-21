@@ -31,6 +31,11 @@ const browser = await launchFixtureBrowser();
 const engine = browser.browserType().name();
 // As measured for DatePicker on 21 Oct 2026 (check-date-picker.mjs).
 const KOZMOS = { chromium: true, webkit: true, firefox: false }[engine];
+// A bare date field's tab stops, measured on 21 Oct 2026: three segments in
+// every engine but WebKit on Linux (Playwright's, as CI's), which draws a
+// plain field, one stop. Holding the bare field to this keeps the count
+// below from following a field that has lost its segments.
+const PLAIN_FIELD = engine === "webkit" && process.platform === "linux";
 const failures = [];
 const RANGE = {
   defaultValue: { start: "2026-05-21", end: "2026-05-25" },
@@ -136,6 +141,11 @@ await scenario(
       stops.push(name);
     }
     if (KOZMOS) {
+      assert.equal(
+        segments,
+        PLAIN_FIELD ? 1 : 3,
+        "a bare field's stops in this engine, as measured",
+      );
       assert.equal(
         stops.length,
         2 * (segments + 1),
