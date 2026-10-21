@@ -7,7 +7,9 @@ import XCTest
 /// a file; SwiftUI's took only `onFileSelected`, so a product never heard of
 /// the removal. It takes `onFileRemoved`, told the file removed. GAP-182: the
 /// drop area's "Tap to upload file" was fixed English; it is `browseLabel`,
-/// as React's. Read and pressed through the accessibility tree VoiceOver
+/// as React's. The remove button had only its symbol's name, "Close", and
+/// the file icon read as "Document": the button is `removeLabel`, "Remove"
+/// as Compose's, and the icon is decoration. Read and pressed through the accessibility tree VoiceOver
 /// walks, in a window on the simulator.
 final class KozmosFileUploadRemoveTests: XCTestCase {
     private final class TestWindow: UIWindow {
@@ -23,7 +25,8 @@ final class KozmosFileUploadRemoveTests: XCTestCase {
         let window = try await show { KozmosFileUpload(holding: plan, onFileRemoved: { removed.append($0) }) }
         defer { window.isHidden = true }
         let shown = elements(in: window)
-        XCTAssertTrue(shown.compactMap(\.accessibilityLabel).contains("Grundriss Ebene 2.pdf"), "\(shown.compactMap(\.accessibilityLabel))")
+        // The file's name, then the remove button: the icon is decoration.
+        XCTAssertEqual(shown.compactMap(\.accessibilityLabel), ["Grundriss Ebene 2.pdf", "Remove"])
         let remove = try XCTUnwrap(shown.first { $0.accessibilityTraits.contains(.button) }, "no remove button among \(shown.compactMap(\.accessibilityLabel))")
         XCTAssertTrue(remove.accessibilityActivate(), "the remove button took no press")
         try await Task.sleep(nanoseconds: 350_000_000)
@@ -45,6 +48,14 @@ final class KozmosFileUploadRemoveTests: XCTestCase {
         let both = KozmosFileUpload { _ in } onFileRemoved: { _ in }
         XCTAssertNotNil(both.onFileSelected)
         XCTAssertNotNil(both.onFileRemoved)
+    }
+
+    @MainActor func testTheRemoveButtonSaysAProductsOwnWord() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let window = try await show { KozmosFileUpload(holding: plan, removeLabel: "Entfernen") }
+        defer { window.isHidden = true }
+        XCTAssertEqual(elements(in: window).compactMap(\.accessibilityLabel), ["Grundriss Ebene 2.pdf", "Entfernen"])
     }
 
     @MainActor func testTheDropAreaSaysAProductsOwnWords() async throws {

@@ -6,33 +6,38 @@ public struct KozmosFileUpload: View {
     @State private var file: URL?
     let allowedContentTypes: [UTType]
     let browseLabel: String
+    let removeLabel: String
     var onFileSelected: ((URL) -> Void)?
     var onFileRemoved: ((URL) -> Void)?
     
     /// `onFileRemoved` is told the file the visitor removed, as React's
     /// `onFilesChange` is told the files left. `browseLabel` is the drop
     /// area's words, "Tap to upload file" by default, as React's
-    /// `browseLabel`; a product that translates passes its own.
+    /// `browseLabel`, and `removeLabel` the remove button's spoken name,
+    /// "Remove" by default, as Compose's; a product that translates passes
+    /// its own.
     ///
-    /// `browseLabel` is last so that a lone trailing closure is still
+    /// The labels are last so that a lone trailing closure is still
     /// `onFileSelected` in every language mode: with the two callbacks last,
     /// Swift 5's backward matching gave it to `onFileRemoved`.
     public init(
         allowedContentTypes: [UTType] = [.content],
         onFileSelected: ((URL) -> Void)? = nil,
         onFileRemoved: ((URL) -> Void)? = nil,
-        browseLabel: String = "Tap to upload file"
+        browseLabel: String = "Tap to upload file",
+        removeLabel: String = "Remove"
     ) {
         self.allowedContentTypes = allowedContentTypes
         self.browseLabel = browseLabel
+        self.removeLabel = removeLabel
         self.onFileSelected = onFileSelected
         self.onFileRemoved = onFileRemoved
     }
 
     /// A part already holding `file`, for the tests: a picked file comes only
     /// from the system's importer.
-    init(holding file: URL, onFileRemoved: ((URL) -> Void)? = nil) {
-        self.init(onFileRemoved: onFileRemoved)
+    init(holding file: URL, onFileRemoved: ((URL) -> Void)? = nil, removeLabel: String = "Remove") {
+        self.init(onFileRemoved: onFileRemoved, removeLabel: removeLabel)
         self._file = State(initialValue: file)
     }
     
@@ -41,8 +46,11 @@ public struct KozmosFileUpload: View {
             if let file {
                 HStack {
                     // A theme-coloured icon: theme 600 (decision 59).
+                    // Decoration, as React's file icon: the name beside it
+                    // says what it is. VoiceOver read it as "Document".
                     Image(systemName: "doc.fill")
                         .foregroundColor(KozmosColors.primitivesColorsTheme600)
+                        .accessibilityHidden(true)
                     Text(file.lastPathComponent)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -54,6 +62,8 @@ public struct KozmosFileUpload: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(KozmosColors.primitivesColorsForeground500)
                     }
+                    // The symbol's own name, "Close", was all VoiceOver had.
+                    .accessibilityLabel(Text(verbatim: removeLabel))
                 }
                 .padding()
                 .background(KozmosColors.primitivesColorsBackground100)
