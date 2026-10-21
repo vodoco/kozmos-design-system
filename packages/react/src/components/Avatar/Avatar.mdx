@@ -70,9 +70,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import com.kozmos.components.avatar.KozmosAvatar
 
-// The initials show only when imageUrl is null: loading or failed, the image
-// leaves an empty circle. The avatar takes no alt text: TalkBack says the
-// description it is given.
+// The initials show while the image loads, if it fails, and with no URL.
+// The avatar takes no alt text: TalkBack says the description it is given.
 @Composable
 fun ProfileAvatar() {
     KozmosAvatar(
