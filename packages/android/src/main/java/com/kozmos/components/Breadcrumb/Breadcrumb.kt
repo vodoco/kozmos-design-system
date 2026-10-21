@@ -14,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
@@ -37,6 +39,10 @@ fun KozmosBreadcrumb(
                 color = if (isLast) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500,
                 modifier = Modifier
                     .clickable(enabled = !isLast) { onItemClick(index) }
+                    // The page the visitor is on, as React's
+                    // `aria-current="page"`: selected, as the navigation
+                    // item marks its current destination.
+                    .semantics { if (isLast) selected = true }
                     .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
