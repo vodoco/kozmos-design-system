@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun KozmosFileUpload(
@@ -48,17 +53,30 @@ fun KozmosFileUpload(
 ) {
     var fileName by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
-    
+    val scope = rememberCoroutineScope()
+    // Which pick, or removal, is the latest: a name that arrives for an
+    // earlier one is dropped.
+    val latest = remember { AtomicInteger() }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             // The file's own name, as React shows a File's name. The URI's last
-            // segment is only a fallback: for a document provider's URI it is
-            // the document's ID, not its name. It was all this showed until
-            // 2026-10-20.
-            fileName = displayNameOf(context.contentResolver, it) ?: it.lastPathSegment ?: "Selected File"
+            // segment shows until it arrives, and stays where the provider
+            // gives none: for a document provider's URI it is the document's
+            // ID, not its name. It was all this showed until 2026-10-20. With
+            // neither, nothing, as React shows a nameless File: the fixed
+            // English "Selected File" it fell back to is gone.
+            val pick = latest.incrementAndGet()
+            fileName = it.lastPathSegment.orEmpty()
             onFileSelected(it)
+            val resolver = context.contentResolver
+            // Asked off the main thread: a provider may answer over the network.
+            scope.launch {
+                val name = withContext(Dispatchers.IO) { displayNameOf(resolver, it) }
+                if (name != null && latest.get() == pick) fileName = name
+            }
         }
     }
 
@@ -80,7 +98,10 @@ fun KozmosFileUpload(
                 style = MaterialTheme.typography.bodyMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100
             )
-            IconButton(onClick = { fileName = null }) {
+            IconButton(onClick = {
+                latest.incrementAndGet()
+                fileName = null
+            }) {
                 Icon(Icons.Default.Close, contentDescription = "Remove")
             }
         }
