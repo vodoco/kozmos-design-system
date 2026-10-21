@@ -712,7 +712,7 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **97, the stylesheet may cost 32 KB (16 Oct):** Track 2 (#273) and compact density (#274) together
     measure 30.63 KB against 30.5: the SDK's markers in owned CSS and the density rules, both new rules.
     The owner chose 32 over 31 to leave room for the next density groups.
-- **Decisions 98–107 (owner, 2026-10-21, answers on the 20–21 Oct work):**
+- **Decisions 98–112 (owner, 2026-10-21, answers on the 20–21 Oct work):**
   - **98, CI's Xcode is pinned:** `iOS Build` runs on `macos-26` with Xcode 26.6, named rather than
     `macos-latest`. A non-required workflow runs the iOS tests on the newest Xcode every week, and the
     tests Xcode 27.1 fails are fixed before the pin moves (#337).
@@ -737,6 +737,16 @@ camera control, branding/provider policy and product ranking in their host adapt
     dialogs, so Kozmos's theme colours them and a range is one picker (API change).
   - **107, an alert's variant:** it colours the icon, the title and the description on every
     platform, and a default description is full ink, as Figma and React draw it (#330).
+  - **108, Firefox's date input:** Firefox keeps its own date button and picker until it can hide
+    them (Mozilla bug 2048623); Chromium and WebKit open Kozmos's calendar. Firefox switches later
+    with no API change (#352).
+  - **109, closed days:** a day out of bounds or closed keeps the muted look of another month's
+    day (foreground/400), with no mark of its own.
+  - **110, tooltip sides:** physical, as React's Radix and Figma's Top/Right/Bottom/Left, on
+    SwiftUI and Compose too, with new `.leading`/`.trailing` cases for logical placement (API).
+  - **111, WayfindingCard's close:** "Close navigation" by default on all three (`closeLabel`, #345).
+  - **112, FileUpload's Code Connect:** Figma's web "Browse Text" is not mapped into native code,
+    which keeps "Tap to upload file" (#357).
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;
