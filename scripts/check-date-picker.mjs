@@ -309,9 +309,23 @@ if (KOZMOS) {
       `${key} in the field opens Kozmos's calendar, not the browser's`,
       { props: BASE },
       async (page) => {
+        // What the window hears of the key, after DatePicker's handler: a
+        // trusted key that reaches it unprevented opens Chromium's own
+        // picker (W0), which the dialog's focus then closes unseen.
+        await page.evaluate(() => {
+          window.heardKeys = [];
+          window.addEventListener("keydown", (event) =>
+            window.heardKeys.push([event.key, event.defaultPrevented]),
+          );
+        });
         await field(page).focus();
         await page.keyboard.press(key);
         await page.getByRole("dialog").waitFor();
+        assert.deepEqual(
+          await page.evaluate(() => window.heardKeys.at(-1)),
+          [key === "F4" ? "F4" : "ArrowDown", true],
+          "the browser's own picker is refused the key",
+        );
         assert.equal(
           (await pickerOpen(page)) ?? false,
           false,
