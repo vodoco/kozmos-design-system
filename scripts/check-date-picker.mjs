@@ -35,6 +35,12 @@ const engine = browser.browserType().name();
 // 146 cannot (Mozilla bug 2051201). A new engine version that changes its
 // answer fails here first, and this table and the docs follow.
 const KOZMOS = { chromium: true, webkit: true, firefox: false }[engine];
+// A bare date field, measured on 21 Oct 2026: three segments that a click and
+// ArrowUp step, in every engine but WebKit on Linux (Playwright's, as CI's),
+// which draws a plain field, one stop that ArrowUp leaves alone. Holding the
+// bare field to this keeps the comparisons below from passing when neither
+// field works.
+const PLAIN_FIELD = engine === "webkit" && process.platform === "linux";
 const failures = [];
 const BASE = {
   defaultValue: "2026-05-25",
@@ -155,6 +161,11 @@ await scenario(
     }
     if (KOZMOS) {
       assert.equal(
+        bare.stops,
+        PLAIN_FIELD ? 1 : 3,
+        "a bare field's stops in this engine, as measured",
+      );
+      assert.equal(
         stops.at(-1),
         "Choose date",
         "Kozmos's button ends the field",
@@ -208,15 +219,19 @@ await scenario(
     // and Safari, and do nothing to WebKit's plain field on Linux.
     const bare = await bareField(page);
     const before = await field(page).inputValue();
+    if (PLAIN_FIELD)
+      assert.equal(bare.value, before, "WebKit's plain field, as measured");
+    else assert.notEqual(bare.value, before, "a bare field steps, as measured");
     const box = await field(page).boundingBox();
     await page.mouse.click(box.x + 44, box.y + box.height / 2);
     await page.keyboard.press("ArrowUp");
     const after = await field(page).inputValue();
     assert.equal(after, bare.value, "the field steps as a bare field does");
-    if (bare.value !== before)
-      assert.deepEqual(await page.evaluate(() => window.datePicker.changes), [
-        after,
-      ]);
+    assert.match(after, /^\d{4}-\d{2}-\d{2}$/);
+    assert.deepEqual(
+      await page.evaluate(() => window.datePicker.changes),
+      PLAIN_FIELD ? [] : [after],
+    );
     assert.equal(
       await page.getByRole("dialog").count(),
       0,
