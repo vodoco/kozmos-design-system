@@ -42,31 +42,28 @@ import { KozmosHeading } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Heading("Dashboard")
+// A level-1 heading unless level says otherwise: the level sets its size and
+// the heading level VoiceOver's rotor reads. Its text is a String, and there
+// is no \`as\`: the level is both.
+struct VenueHeading: View {
+    var body: some View {
+        KozmosHeading("Venue overview")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.heading
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.heading.KozmosHeading
 
+// A level-1 heading unless level says otherwise: the level sets its size.
+// TalkBack says "heading" but not which level, as Compose's semantics have
+// none. Its text is a String, and there is no \`as\`.
 @Composable
-fun KozmosHeading(
-text: String,
-modifier: Modifier = Modifier
-) {
-Text(
-text = text,
-modifier = modifier,
-style = MaterialTheme.typography.titleLarge,
-color = KozmosColors.primitivesColorsForeground100
-)
+fun VenueHeading() {
+    KozmosHeading(text = "Venue overview")
 }
-
-    `}
+`}
 
 />
