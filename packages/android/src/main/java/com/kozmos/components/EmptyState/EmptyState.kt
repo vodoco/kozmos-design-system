@@ -106,7 +106,9 @@ fun KozmosEmptyState(
         
         Text(
             text = title,
-            color = KozmosThemeTokens.primitivesColorsForeground100,
+            // React's text-foreground and Figma's Colors/foreground/0; it was
+            // foreground/100.
+            color = KozmosThemeTokens.primitivesColorsForeground0,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
@@ -141,7 +143,8 @@ fun KozmosEmptyState(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = progress.label,
-                        color = KozmosThemeTokens.primitivesColorsForeground100,
+                        // React's text-foreground, as the title; it was foreground/100.
+                        color = KozmosThemeTokens.primitivesColorsForeground0,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
