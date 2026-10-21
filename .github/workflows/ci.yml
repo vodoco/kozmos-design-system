@@ -20,8 +20,12 @@ on:
   # its checks have run against the main it merges into.
 
 concurrency:
+  # A pull request's older run gives way to its newer push; main's never does,
+  # so every commit on main has a finished run. A run cancelled on main left
+  # that commit with no green run to release from (release/policy.mjs wants the
+  # main-push run's jobs), as #310's and #311's merges were on 20 Oct.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   web:
@@ -648,8 +652,24 @@ jobs:
       ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       needs.changes.result != 'success' ||
       needs.changes.outputs.ios == 'true') }}
-    runs-on: macos-latest
+    # The image and Xcode are named, not "latest": macos-latest moves to a new
+    # Xcode when GitHub decides, and Xcode 27.1 fails three tests that 26.6
+    # passes (measured 21 Oct). A new Xcode arrives as a pull request that moves
+    # these two lines; ios-next-xcode.yml runs the same tests on the newest
+    # Xcode every week, so the move is known about before it is made. The
+    # simulator check-ios-poi.mjs pins has to exist on this image too.
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
+      - name: Use Xcode 26.6
+        run: |
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "::error::Xcode 26.6 is not on this runner image. Installed: $(ls -d /Applications/Xcode*.app | tr '\n' ' ')"
+            exit 1
+          fi
+          xcodebuild -version
+
       - name: Checkout Repo
         uses: actions/checkout@v5
 
