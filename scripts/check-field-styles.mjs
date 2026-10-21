@@ -195,6 +195,13 @@ const PROMISES = [
   // hidden (Firefox 146) the field is the browser's, with the field's own 12.
   { part: "date-picker", field: 0, picker: "kozmos", paddingEnd: [48, 44] },
   { part: "date-picker", field: 0, picker: null, paddingEnd: 12 },
+  {
+    part: "date-range-picker",
+    field: ALL,
+    picker: "kozmos",
+    paddingEnd: [48, 44],
+  },
+  { part: "date-range-picker", field: ALL, picker: null, paddingEnd: 12 },
   { part: "date-range-picker", field: ALL, paddingStart: 36 },
   { part: "time-picker", field: 0, paddingStart: 36 },
   // The room for the buttons at the end, each as tall as the field.
@@ -511,8 +518,10 @@ try {
         want.picker === "kozmos" &&
         have.picker !== "kozmos"
       )
-        expected =
-          ref.rest[key.replace("| date-picker #", "| time-picker #")][name];
+        // DateRangePicker's fields take no caller's class: the field's own 12.
+        expected = key.includes("| date-range-picker #")
+          ? "12px"
+          : ref.rest[key.replace("| date-picker #", "| time-picker #")][name];
       reads += 1;
       let same;
       if (LENGTHS.includes(name))
