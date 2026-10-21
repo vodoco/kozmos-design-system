@@ -42,40 +42,33 @@ import { KozmosFloatingActionButton } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosFloatingActionButton(
-iconName: "plus",
-action: {}
-)
+// A plus by default: iconName is an SF Symbol's name. The button takes no
+// label: VoiceOver says the one you give it, as aria-label is on the web, or
+// else the symbol's own name. It sits where you put it: there is no fixed
+// placement.
+struct AddPlaceButton: View {
+    let addPlace: () -> Void
+
+    var body: some View {
+        KozmosFloatingActionButton(action: addPlace)
+            .accessibilityLabel("Add place")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.floatingactionbutton
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.floatingactionbutton.KozmosFloatingActionButton
 
+// A plus by default: icon is an ImageVector. The part takes no name: TalkBack
+// calls it "Action", in English, whatever it does, and a contentDescription
+// you add is read before that word, not instead of it. It sits where you put
+// it: there is no fixed placement.
 @Composable
-fun KozmosFloatingActionButton(
-onClick: () -> Unit,
-modifier: Modifier = Modifier,
-icon: ImageVector = Icons.Default.Add
-) {
-FloatingActionButton(
-onClick = onClick,
-modifier = modifier,
-containerColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
-contentColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-) {
-Icon(icon, contentDescription = "Action")
+fun AddPlaceButton(addPlace: () -> Unit) {
+    KozmosFloatingActionButton(onClick = addPlace)
 }
-}
-
-    `}
+`}
 
 />
