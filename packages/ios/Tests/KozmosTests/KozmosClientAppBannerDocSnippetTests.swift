@@ -1,44 +1,8 @@
-// The SwiftUI snippet of ClientAppBanner.mdx, character for character between
-// the markers, so it compiles with the package and a renamed or removed
-// parameter fails here rather than in a reader's project. Change one, change
-// the other.
+// Draws ClientAppBanner.mdx's SwiftUI snippet, DocSnippets/AppBanner.swift,
+// which check-native-snippet-parity holds to the page word for word.
 import SwiftUI
 import Kozmos
 import XCTest
-
-// MARK: - ClientAppBanner.mdx
-
-// The customer's banner, as Pointr Cloud returns it, in the visitor's language.
-struct AppBannerSettings {
-    var promotionText: String?
-    var appName: String
-    var description: String?
-    var appIconURL: URL?
-    var buttonText: String
-    var storeURL: URL
-}
-
-// Shown in the map shell's top bar until the visitor dismisses it.
-struct AppBanner: View {
-    let settings: AppBannerSettings
-    @Binding var isDismissed: Bool
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        if !isDismissed {
-            KozmosClientAppBanner(
-                appName: settings.appName,
-                actionLabel: settings.buttonText,
-                promotionText: settings.promotionText,
-                description: settings.description,
-                appIconURL: settings.appIconURL,
-                dismissLabel: String(localized: "Dismiss"),
-                onAction: { openURL(settings.storeURL) },
-                onDismiss: { isDismissed = true }
-            )
-        }
-    }
-}
 
 // MARK: - The snippet draws
 
