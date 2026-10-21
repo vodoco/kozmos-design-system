@@ -13,20 +13,20 @@ import org.junit.Test
  * (`aria-hidden`): the label names the field. Compose's label has an English
  * default the product replaces, as every Compose label parameter has, but its
  * calendar icon was described by a fixed English "Select Date" that nothing
- * could replace, read even beside the product's own label.
+ * could replace, read even beside the product's own label. The field is a
+ * Kozmos field now, one button named by its label (decision 106).
  */
 class KozmosDatePickerWordsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
 
-    @Test fun theDefaultFieldIsNamedByItsLabelAlone() {
+    @Test fun theDefaultFieldIsOneButtonNamedByItsLabel() {
         val tree = paparazzi.readSemantics {
             KozmosMaterialTheme { KozmosDatePicker(date = null, onDateSelected = {}) }
         }
-        // The label is drawn, and the icon describes nothing.
+        // The one node with a description is the field, named by its label.
         assertEquals(
-            "the descriptions TalkBack reads, and the words drawn",
-            emptyList<String>() to listOf("Select Date"),
-            tree.unmerged.mapNotNull { it.description } to tree.unmerged.flatMap { it.texts }
+            listOf("Button: Select Date"),
+            tree.unmerged.filter { it.description != null }.map { "${it.role}: ${it.description}" }
         )
     }
 
@@ -36,11 +36,11 @@ class KozmosDatePickerWordsTest {
                 KozmosDatePicker(date = LocalDate.of(2026, 5, 25), onDateSelected = {}, label = "Besuchsdatum")
             }
         }
-        // The field is named by the product's label alone: the icon is decoration.
+        // The icon is described by nothing, as React's aria-hidden icon: the
+        // one description is the field's name, the product's label.
         assertEquals(
-            "the descriptions TalkBack reads, and the words drawn",
-            emptyList<String>() to listOf("Besuchsdatum"),
-            tree.unmerged.mapNotNull { it.description } to tree.unmerged.flatMap { it.texts }
+            listOf("Button: Besuchsdatum"),
+            tree.unmerged.filter { it.description != null }.map { "${it.role}: ${it.description}" }
         )
     }
 }

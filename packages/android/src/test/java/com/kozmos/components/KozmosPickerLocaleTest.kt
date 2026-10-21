@@ -62,7 +62,7 @@ class KozmosPickerLocaleTest {
         val shown = listOf(Locale.US, Locale.GERMANY).associateWith { locale ->
             paparazzi.readSemantics {
                 InLocale(locale) { KozmosDatePicker(date = day, onDateSelected = {}, label = "Datum") }
-            }.unmerged.mapNotNull { it.editableText }.filter { it.isNotEmpty() }
+            }.merged.filter { it.role == Role.Button }.flatMap { it.texts }
         }
         assertEquals(mapOf(Locale.US to listOf("May 25, 2026"), Locale.GERMANY to listOf("25.05.2026")), shown)
     }
@@ -79,7 +79,7 @@ class KozmosPickerLocaleTest {
                         KozmosTimePicker(time = LocalTime.of(21, 30), onTimeSelected = {}, label = "Zeit")
                     }
                 }
-            }.merged.mapNotNull { it.stateDescription?.spaced() }.single()
+            }.merged.filter { it.role == Role.Button }.flatMap { it.texts }.single().spaced()
         }
         assertEquals(listOf("9:30 PM", "21:30", "21:30", "9:30 PM"), shown)
     }

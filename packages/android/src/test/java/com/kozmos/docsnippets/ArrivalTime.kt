@@ -7,9 +7,10 @@ import androidx.compose.runtime.Composable
 import com.kozmos.components.timepicker.KozmosTimePicker
 import java.time.LocalTime
 
-// A read-only field, labelled inside, that opens the system's time dialog.
-// time is null until one is chosen. The field and the dialog keep the
-// device's clock, 12- or 24-hour, and write the time in the locale's style.
+// A Kozmos field, its label above, that opens Material's time picker in a
+// dialog, in the Kozmos theme's colours. time is null until one is chosen.
+// The field and the dialog keep the device's clock, 12- or 24-hour, and the
+// field writes the time in the locale's style.
 @Composable
 fun ArrivalTime(time: LocalTime?, onTimeChange: (LocalTime) -> Unit) {
     KozmosTimePicker(time = time, onTimeSelected = onTimeChange, label = "Arrival time")
