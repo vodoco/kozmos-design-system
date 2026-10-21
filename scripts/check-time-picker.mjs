@@ -25,6 +25,13 @@ import {
 
 const { code, css } = await buildReactFixture("time-picker-host.tsx");
 const browser = await launchFixtureBrowser();
+// A bare time field, measured on 21 Oct 2026: two or three segments (three
+// with AM/PM) that a click and ArrowUp step, in every engine but WebKit on
+// Linux (Playwright's, as CI's), which draws a plain field, one stop that
+// ArrowUp leaves alone. Holding the bare field to this keeps the comparisons
+// below from passing when neither field works.
+const PLAIN_FIELD =
+  browser.browserType().name() === "webkit" && process.platform === "linux";
 const failures = [];
 const BASE = { defaultValue: "18:30", locale: "en-GB" };
 
@@ -106,10 +113,15 @@ await scenario(
           if (await page.evaluate(() => document.activeElement.id === "to"))
             break;
         }
+        await page.evaluate(() =>
+          document.querySelector("#bare").parentElement.remove(),
+        );
         return count;
       });
-    // Two, or three with AM/PM; one where WebKit draws a plain field (Linux).
-    assert.ok(segments >= 1 && segments <= 3, `segments: ${segments}`);
+    assert.ok(
+      PLAIN_FIELD ? segments === 1 : segments === 2 || segments === 3,
+      `a bare field's stops in this engine, as measured: ${segments}`,
+    );
     assert.equal(stops.at(-1), "Choose time");
     assert.equal(
       stops.length,
@@ -245,6 +257,9 @@ await scenario(
     await page.evaluate(() =>
       document.querySelector("#bare").parentElement.remove(),
     );
+    if (PLAIN_FIELD)
+      assert.equal(expected, "18:30", "WebKit's plain field, as measured");
+    else assert.notEqual(expected, "18:30", "a bare field steps, as measured");
     const box = await field(page).boundingBox();
     await page.mouse.click(box.x + 44, box.y + box.height / 2);
     await page.keyboard.press("ArrowUp");
@@ -253,6 +268,7 @@ await scenario(
       expected,
       "it steps as a bare field does",
     );
+    assert.match(expected, /^\d{2}:\d{2}$/);
     assert.equal(await list(page).count(), 0, "and opens nothing");
   },
 );
