@@ -32,11 +32,8 @@ chosen there, by Enter, Space or the pointer, is typed into the field, and that 
 and returns focus to the button, as the WAI-ARIA date picker dialog does. `min`, `max` and
 `isDateUnavailable` bound the calendar's days; typing is the browser's, so a typed day out of them
 is yours to check, as it always was. `open` with `onOpenChange` controls it, and `defaultOpen` opens
-it at first.
-
-<Canvas>
-  <Story of={DatePickerStories.Open} />
-</Canvas>
+it at first. The calendar is modal, so this page shows it closed; Storybook's `Open` story draws it
+open.
 
 `chooseDateLabel` names the button and, with no `label`, the calendar (`"Choose date"` by default);
 `previousMonthLabel` and `nextMonthLabel` name the month buttons, `locale` the calendar's months
