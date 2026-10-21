@@ -885,7 +885,18 @@ test("the theme choice is kept across a reload", async ({
   await page.getByRole("button", { name: "Theme: System" }).click();
   await page.getByRole("menuitemradio", { name: "Dark" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible();
+  // The button says the choice in the commit that makes the page dark. Until
+  // the menu has finished closing (its exit animation, the frame that ends
+  // it, React taking it out), Radix keeps everything outside it hidden from
+  // assistive technology, the button too, so it is looked for among hidden
+  // elements here; after the reload, with no menu closing, assistive
+  // technology finds it by the same name. Re-theming the home page is
+  // WebKit's slowest frame on CI: measured there, the header came back 2.2
+  // to 2.8s after the choice (run 39650530076), and not within 5s, the
+  // expect's limit, on a loaded runner (run 39620687342, both tries).
+  await expect(
+    page.getByRole("button", { name: "Theme: Dark", includeHidden: true }),
+  ).toBeVisible();
   await page.reload();
   await hydrated(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
