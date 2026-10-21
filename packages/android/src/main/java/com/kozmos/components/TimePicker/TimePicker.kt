@@ -27,10 +27,9 @@ fun KozmosTimePicker(
     time: LocalTime?,
     onTimeSelected: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
-    // The product's words, or none, as React's optional `label` and SwiftUI's
-    // empty default: Kozmos writes no English of its own into the field. It
-    // was "Select Time" until 2026-10-20.
-    label: String? = null
+    // The product passes its own, translated words; the English default is
+    // the repo's convention for a label parameter (as Dialog's closeLabel).
+    label: String = "Select Time"
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -56,7 +55,7 @@ fun KozmosTimePicker(
         OutlinedTextField(
             value = shown,
             onValueChange = {},
-            label = label?.let { { Text(it) } },
+            label = { Text(label) },
             readOnly = true,
             trailingIcon = {
                 // Decoration, as React's aria-hidden clock: the label names
@@ -68,14 +67,14 @@ fun KozmosTimePicker(
             // second stop, which a double tap only focused.
             modifier = Modifier.fillMaxWidth().clearAndSetSemantics {}
         )
-        // What a tap opens the dialog on: a button, named by the product's
-        // label, its time its state. It had no role and no name.
+        // What a tap opens the dialog on: a button, named by the label, its
+        // time its state. It had no role and no name.
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .clickable(role = Role.Button) { timePickerDialog.show() }
                 .semantics {
-                    if (label != null) contentDescription = label
+                    contentDescription = label
                     if (shown.isNotEmpty()) stateDescription = shown
                 }
         )
