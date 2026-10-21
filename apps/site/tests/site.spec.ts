@@ -2781,6 +2781,24 @@ test.describe("foundations", () => {
     ).toBeVisible();
   });
 
+  test("icons lists the names drawn beyond the library, each with its glyph", async ({
+    page,
+  }) => {
+    await page.goto("/foundations/icons");
+    await hydrated(page);
+    const rows = page
+      .getByRole("table", { name: "Icon names beyond the library" })
+      .getByRole("row");
+    // The header, and one row for each of the 27 names.
+    await expect(rows).toHaveCount(28);
+    for (const name of ["elevator-up", "shuttle", "log-in-01"]) {
+      const row = rows.filter({ hasText: `<Icon name="${name}" />` });
+      await expect(row).toHaveCount(1);
+      // Icon draws nothing for a name it does not take: the glyph is the proof.
+      await expect(row.locator("svg")).toHaveCount(1);
+    }
+  });
+
   test("typography measures the scale from the stylesheet", async ({
     page,
   }) => {

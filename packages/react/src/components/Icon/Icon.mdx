@@ -16,6 +16,20 @@ Icons are decorative by default; provide an accessible label when the icon itsel
 
 <Controls />
 
+## Names
+
+`name` takes every name SwiftUI's and Compose's `KozmosIcon` take, the same on all three platforms:
+
+- the curated library's names, with their aliases (`close` for `x-close`, `search` for `search-md` and the rest), each a
+  Pointr Icon Library outline or a taxonomy symbol, which the Figma Icons page and Code Connect pair name for name;
+- the 23 wayfinding glyphs of Pointr Maps - Express, by the kebab case of their export names: `elevator-up`,
+  `stairs-no-direction`, `route-entrance-exit`, `security-control`, `shuttle` and the rest, filled in the text's colour;
+- four Pointr Icon Library outlines beyond the curated set: `log-in-01`, `log-out-01`, `arrow-up-right` and
+  `arrow-down-right`.
+
+`kozmosIconNames` lists the curated names and `kozmosIconNamesBeyondTheLibrary` the other 27. A name Kozmos does not
+know draws nothing. `icon` takes any component `@kozmos-ds/icons` exports, the whole Pointr Icon Library included.
+
 ## Implementation
 
 <div className="subheading">Code</div>

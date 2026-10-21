@@ -17,7 +17,11 @@ import {
   Text,
   type IconProps,
 } from "@kozmos-ds/react";
-import { kozmosIconAliases, kozmosIconDefinitions } from "@kozmos-ds/icons";
+import {
+  kozmosIconAliases,
+  kozmosIconDefinitions,
+  kozmosIconNamesBeyondTheLibrary,
+} from "@kozmos-ds/icons";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { foundationPage } from "../../foundations/nav";
 import { Section } from "../../site/Section";
@@ -77,7 +81,7 @@ export default function Icons() {
     <DocsPage page={page}>
       <Section
         title={`${definitions.length} icons`}
-        lead="The names Icon takes: stable keys, each drawn with the Pointr icon library’s own outline and matched to the Figma component by key. Press one to copy its JSX. The package exports the library’s other outlines as components, which Icon cannot name yet."
+        lead="The names Icon takes: stable keys, each drawn with the Pointr icon library’s own outline and matched to the Figma component by key. Press one to copy its JSX. The package exports the library’s other outlines as components: Icon names four of them, below, and cannot name the rest yet."
         actions={
           <Stack gap={3}>
             <SearchBar
@@ -164,6 +168,39 @@ export default function Icons() {
             ))}
           </Box>
         )}
+      </Section>
+
+      <Section
+        title="Names beyond the library"
+        lead={`Icon also takes ${kozmosIconNamesBeyondTheLibrary.length} names that SwiftUI’s and Compose’s KozmosIcon draw by the same names: the wayfinding glyphs of Pointr Maps - Express, in the kebab case of their export names, and four Pointr outlines. They sit outside the named set above, which the Figma icons page pairs with the Pointr icon library.`}
+      >
+        <Table aria-label="Icon names beyond the library">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>JSX</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {kozmosIconNamesBeyondTheLibrary.map((name) => (
+              <TableRow key={name}>
+                <TableCell>
+                  <Stack direction="row" align="center" gap={2}>
+                    <Icon name={name} size="sm" />
+                    <Text as="span" size="sm" className="site-mono">
+                      {name}
+                    </Text>
+                  </Stack>
+                </TableCell>
+                <TableCell>
+                  <Text as="span" size="sm" className="site-mono">
+                    {`<Icon name="${name}" />`}
+                  </Text>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Section>
 
       <Section

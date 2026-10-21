@@ -26,7 +26,8 @@ import { gzipSync } from "node:zlib";
 
 // Measured on 2026-09-29, each of the 1,180 icons bundled alone, factory included: median
 // 0.58 KB gzip, the heaviest (Settings01) 1.88 KB, Check 0.38 KB. A lookup by name keeps all
-// 57 of the registry's: 11.8 KB.
+// 57 of the registry's: 11.8 KB. From 2026-10-21 it also keeps the 27 the natives draw beyond
+// the registry (kozmosIconNamesBeyondTheLibrary, GAP-179): 84 icons, 18.8 KB.
 const MAX_ONE_ICON_GZIP_KB = 2;
 
 const PACKAGE_DIR = path.resolve(
@@ -58,6 +59,7 @@ const isIcon = (value) =>
 let work;
 let iconNames;
 let registryNames;
+let nameableNames;
 
 before(async () => {
   assert.ok(
@@ -73,6 +75,13 @@ before(async () => {
   registryNames = Object.values(built.kozmosIconRegistry).map(
     (icon) => icon.displayName,
   );
+  // Everything a name can reach: the registry, and the names drawn beyond it.
+  nameableNames = [
+    ...registryNames,
+    ...built.kozmosIconNamesBeyondTheLibrary.map(
+      (name) => built.getIconComponent(name).displayName,
+    ),
+  ];
   assert.ok(
     iconNames.length > 1000,
     `only ${iconNames.length} icons found in the build`,
@@ -173,7 +182,12 @@ const CASES = [
   { imports: ["SearchMd", "XClose"], keeps: ["SearchMd", "XClose"] },
   // The names and the aliases are data: they reach no icon at all.
   {
-    imports: ["kozmosIconNames", "kozmosIconAliases", "resolveIconName"],
+    imports: [
+      "kozmosIconNames",
+      "kozmosIconAliases",
+      "kozmosIconNamesBeyondTheLibrary",
+      "resolveIconName",
+    ],
     keeps: [],
   },
 ];
@@ -205,11 +219,12 @@ for (const [bundler, bundle] of Object.entries(bundlers)) {
       }
     }
 
-    // The control: a lookup by name needs every icon it can name, so these survive by design.
-    // It also proves the count above can see icons when they are there.
-    test("import { getIconComponent } keeps the whole registry, by design", async () => {
+    // The control: a lookup by name needs every icon it can name, so these survive by design:
+    // the registry's, and the 27 drawn beyond it by name. It also proves the count above can
+    // see icons when they are there.
+    test("import { getIconComponent } keeps every icon a name can reach, by design", async () => {
       const kept = survivors(await bundleOf(["getIconComponent"]));
-      assert.deepEqual(kept, [...registryNames].sort());
+      assert.deepEqual(kept, [...new Set(nameableNames)].sort());
     });
   });
 }

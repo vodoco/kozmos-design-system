@@ -19,6 +19,7 @@ import {
   type KozmosIconKey,
 } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
+import { Icon } from "../Icon";
 import { POIDetailPanel } from "./POIDetailPanel";
 
 // Paths from this file, not `new URL(literal, import.meta.url)`: Vite rewrites
@@ -201,9 +202,15 @@ function renderTags(names: readonly string[]) {
   };
 }
 
-/** The markup an icon draws at a tag's size and decoration. */
-function drawn(Icon: KozmosIconComponent): string {
-  const { container, unmount } = render(<Icon aria-hidden="true" size={16} />);
+/**
+ * The markup an icon draws at a tag's size and decoration: through `Icon`, at
+ * its small size and 16 across, as a tag draws it since its names come from
+ * the registry (GAP-179).
+ */
+function drawn(Component: KozmosIconComponent): string {
+  const { container, unmount } = render(
+    <Icon icon={Component} size="sm" width={16} height={16} />,
+  );
   const markup = container.querySelector("svg")!.outerHTML;
   unmount();
   return markup;

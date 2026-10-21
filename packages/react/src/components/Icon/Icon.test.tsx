@@ -99,3 +99,81 @@ describe("the map status pill's marks", () => {
     expect(25.667 / height).toBeCloseTo(20 / 24, 3);
   });
 });
+
+// GAP-179 (the owner's approval, 21 Oct): the 27 names SwiftUI's and
+// Compose's KozmosIcon draw beyond the curated library, which the web drew
+// only through POIDetailPanel's private map: the 23 wayfinding glyphs of
+// Pointr Maps - Express by the kebab case of their export names, and four
+// Pointr outlines. `Icon` draws each by name, as the export itself draws.
+describe("the names drawn beyond the curated library", () => {
+  const kebab = (exportName: string) =>
+    exportName.replace(/(?<=[a-z0-9])([A-Z])/g, "-$1").toLowerCase();
+  const beyond: Record<string, string> = {
+    "log-in-01": "LogIn01",
+    "log-out-01": "LogOut01",
+    "arrow-up-right": "ArrowUpRight",
+    "arrow-down-right": "ArrowDownRight",
+  };
+  for (const exportName of [
+    "ElevatorUp",
+    "ElevatorDown",
+    "StairsUp",
+    "StairsDown",
+    "EscalatorUp",
+    "EscalatorDown",
+    "RampUp",
+    "RampDown",
+    "RouteEnter",
+    "RouteExit",
+    "ElevatorUpAndDown",
+    "EscalatorNoDirection",
+    "StairsNoDirection",
+    "RampNoDirection",
+    "RouteEntranceExit",
+    "HardLeft",
+    "HardRight",
+    "TurnBack",
+    "FollowTheLine",
+    "Arriving",
+    "CustomTransition",
+    "SecurityControl",
+    "Shuttle",
+  ]) {
+    beyond[kebab(exportName)] = exportName;
+  }
+
+  it("are 27, none of them a name or alias the curated library already has", () => {
+    expect(Object.keys(beyond)).toHaveLength(27);
+    for (const name of Object.keys(beyond)) {
+      expect(kozmosIconNames as readonly string[]).not.toContain(name);
+    }
+  });
+
+  it("each draws, by name, the artwork its export draws", () => {
+    const drawsNothing: string[] = [];
+    const drawsOther: string[] = [];
+    for (const [name, exportName] of Object.entries(beyond)) {
+      const byName = render(
+        <Icon name={name as never} />,
+      ).container.querySelector("svg");
+      const Component = (
+        kozmosIcons as unknown as Record<string, ComponentType>
+      )[exportName];
+      const byExport = render(
+        <Icon icon={Component as never} />,
+      ).container.querySelector("svg");
+      if (!byName) drawsNothing.push(name);
+      else if (byName.innerHTML !== byExport?.innerHTML) drawsOther.push(name);
+    }
+    expect(drawsNothing, "names Icon draws nothing for").toEqual([]);
+    expect(drawsOther, "names Icon draws other artwork for").toEqual([]);
+  });
+
+  it("are keys the registry accepts, and an inherited property still is not", () => {
+    for (const name of Object.keys(beyond)) {
+      expect(kozmosIcons.isKozmosIconKey(name), name).toBe(true);
+    }
+    expect(kozmosIcons.isKozmosIconKey("constructor")).toBe(false);
+    expect(kozmosIcons.isKozmosIconKey("not-a-kozmos-icon")).toBe(false);
+  });
+});

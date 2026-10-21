@@ -41,11 +41,21 @@ Names are stable keys such as `arrow-left`, `bell-01` and `calendar`.
 `back`, `close`, `delete` — into its key. Icons with their own outlines are also
 named exports, for example `import { Heart } from "@kozmos-ds/icons"`.
 
+`kozmosIconNamesBeyondTheLibrary` lists 27 more names a lookup takes, the ones
+SwiftUI's and Compose's `KozmosIcon` draw beyond the registry: the 23 wayfinding
+glyphs of Pointr Maps - Express in the kebab case of their export names
+(`elevator-up`, `stairs-no-direction`, `security-control`, `shuttle` and the
+rest) and the outlines `log-in-01`, `log-out-01`, `arrow-up-right` and
+`arrow-down-right`. They are not in `kozmosIconNames` or `kozmosIconDefinitions`,
+the set the Figma icons page pairs with the Pointr icon library, so
+`getIconDefinition` returns nothing for them.
+
 A named export brings in that icon alone: 0.4 to 1.9 KB gzip with the code
-that draws it. A lookup by name brings in every icon the registry names, about
-12 KB gzip today, because any of them could be asked for. That covers
-`getIconComponent`, `getIconDefinition`, `isKozmosIconKey`, the registry and
-definitions themselves, and `@kozmos-ds/react`'s `Icon`, which takes a `name`.
+that draws it. A lookup by name brings in every icon a name can reach, the
+registry's and the 27, about 19 KB gzip today, because any of them could be
+asked for. That covers `getIconComponent`, `isKozmosIconKey` and
+`@kozmos-ds/react`'s `Icon`, which takes a `name`. `getIconDefinition`, the
+registry and the definitions bring in the registry's icons, about 12 KB.
 Import the icon when you know which one you need, and look it up when the name
 comes from data.
 
