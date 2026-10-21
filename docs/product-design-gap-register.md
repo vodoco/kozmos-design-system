@@ -712,7 +712,7 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **97, the stylesheet may cost 32 KB (16 Oct):** Track 2 (#273) and compact density (#274) together
     measure 30.63 KB against 30.5: the SDK's markers in owned CSS and the density rules, both new rules.
     The owner chose 32 over 31 to leave room for the next density groups.
-- **Decisions 98–112 (owner, 2026-10-21, answers on the 20–21 Oct work):**
+- **Decisions 98–115 (owner, 2026-10-21, answers on the 20–21 Oct work):**
   - **98, CI's Xcode is pinned:** `iOS Build` runs on `macos-26` with Xcode 26.6, named rather than
     `macos-latest`. A non-required workflow runs the iOS tests on the newest Xcode every week, and the
     tests Xcode 27.1 fails are fixed before the pin moves (#337).
@@ -747,6 +747,15 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **111, WayfindingCard's close:** "Close navigation" by default on all three (`closeLabel`, #345).
   - **112, FileUpload's Code Connect:** Figma's web "Browse Text" is not mapped into native code,
     which keeps "Tap to upload file" (#357).
+  - **113, a native symbol button's word:** with no label passed, it keeps the system's translated
+    name for its symbol where that name is the right word (SwiftUI POICard's close, "Close" or
+    "Schließen", `closeLabel: String? = nil`), and an English default where the symbol's name is
+    the wrong word (FileUpload's remove, "Remove"). It refines decision 100.
+  - **114, the whole library may cost 92 KB:** the budget moves from 88 to 92 KB for the web's date
+    and time panels (decision 104), which take it to about 87.93 KB on CI with no lossless trim.
+    The per-export, Button and stylesheet budgets are unchanged.
+  - **115, list rows:** Combobox's, Select's and TimePicker's rows are 44 tall with a light active
+    row, as Figma draws them, not 36 with a filled one.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;
