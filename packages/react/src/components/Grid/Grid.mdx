@@ -45,47 +45,37 @@ import { KozmosGrid } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Grid(cols: 2, spacing: 16) {
-Text("One")
-Text("Two")
-Text("Three")
-Text("Four")
+// Equal columns, two unless cols says otherwise, 16pt apart both ways; what
+// it holds fills them in order. There are no row, flow or alignment options.
+// Kozmos's Grid shares SwiftUI's name, and with Kozmos imported, Grid is
+// Kozmos's.
+struct VenueAreas: View {
+    var body: some View {
+        Grid(cols: 2) {
+            KozmosText("Reception")
+            KozmosText("Meeting rooms")
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.grid
-
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.kozmos.components.grid.KozmosGrid
+import com.kozmos.components.text.KozmosText
 
+// Equal columns, two unless cols says otherwise, 16dp apart both ways. It is
+// a LazyVerticalGrid: what it holds is item { } calls, and it scrolls itself,
+// so it cannot sit in a parent that scrolls vertically. There are no row,
+// flow or alignment options.
 @Composable
-fun KozmosGrid(
-modifier: Modifier = Modifier,
-cols: Int = 2,
-spacing: Dp = KozmosDimensions.primitivesLayoutSpacing200,
-content: LazyGridScope.() -> Unit
-) {
-LazyVerticalGrid(
-columns = GridCells.Fixed(cols),
-modifier = modifier,
-verticalArrangement = Arrangement.spacedBy(spacing),
-horizontalArrangement = Arrangement.spacedBy(spacing),
-content = content
-)
+fun VenueAreas() {
+    KozmosGrid(cols = 2) {
+        item { KozmosText(text = "Reception") }
+        item { KozmosText(text = "Meeting rooms") }
+    }
 }
-
-    `}
+`}
 
 />
