@@ -7,10 +7,9 @@ import androidx.compose.runtime.Composable
 import com.kozmos.components.text.KozmosText
 import com.kozmos.components.wayfindingcard.KozmosWayfindingCard
 
-// The card draws its title and, given an onClose, a close button TalkBack
-// names "Close", in fixed English: it takes no closeLabel. Your content goes
-// under them. KozmosWayfindingInputRow is the origin and destination row it
-// often holds.
+// The card draws its title and, given an onClose, a close button named by
+// closeLabel, "Close" unless you pass your own; your content goes under them.
+// KozmosWayfindingInputRow is the origin and destination row it often holds.
 @Composable
 fun RouteCard() {
     KozmosWayfindingCard(title = "Route") {
