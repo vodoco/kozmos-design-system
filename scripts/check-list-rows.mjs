@@ -14,9 +14,10 @@
  * - The chosen row on background/100, its check at the end in theme 600.
  * - Reached by the keyboard, the active row also draws a 2px inset ring in
  *   theme 600 (decision 26, 21 Oct), at 3:1 or more against the row; under
- *   the pointer it draws none. The pointer after the keyboard takes the ring
- *   away and the keyboard after the pointer brings it back; the chosen row
- *   takes it too; nothing moves.
+ *   the pointer it draws none, nor with a modifier held alone (a Shift- or
+ *   Cmd-click). The pointer after the keyboard takes the ring away and the
+ *   keyboard after the pointer brings it back; the chosen row takes it too;
+ *   nothing moves.
  *
  * Combobox, MultiSelect, Select, the standalone Listbox and the SDK's
  * LanguageSwitcher (Select's items, touch at any density, decision 89), in
@@ -244,6 +245,16 @@ for (const part of [
           [],
           `${name}: under the pointer no row is ringed`,
         );
+        // A modifier held alone, as for a Shift- or Cmd-click, is not the
+        // keyboard: the row under the pointer stays unringed.
+        await page.keyboard.down("Shift");
+        await settle(page);
+        assert.deepEqual(
+          ringed(await rings(page)).map((row) => row.text),
+          [],
+          `${name}: Shift held under the pointer rings no row`,
+        );
+        await page.keyboard.up("Shift");
         const expectRing = async (step) => {
           await settle(page);
           const list = await rings(page);

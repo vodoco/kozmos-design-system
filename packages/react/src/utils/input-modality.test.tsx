@@ -11,10 +11,10 @@ const move = (type: string, x: number, y: number) =>
       new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }),
     );
   });
-const key = () =>
+const key = (init: KeyboardEventInit = { key: "ArrowDown" }) =>
   act(() => {
     document.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+      new KeyboardEvent("keydown", { ...init, bubbles: true }),
     );
   });
 
@@ -34,5 +34,33 @@ describe("useInputModality", () => {
     key();
     move("pointerdown", 12, 10);
     expect(screen.getByRole("status")).toHaveTextContent("pointer");
+  });
+
+  it("does not count a lone modifier as the keyboard, but counts a key with one", () => {
+    render(<Probe />);
+    move("pointermove", 20, 20);
+    expect(screen.getByRole("status")).toHaveTextContent("pointer");
+    // Shift- or Cmd-click over a row, and Cmd-Tab away and back: the
+    // modifier alone is not the keyboard moving the row.
+    for (const [lone, flag] of [
+      ["Shift", "shiftKey"],
+      ["Control", "ctrlKey"],
+      ["Alt", "altKey"],
+      ["Meta", "metaKey"],
+      ["AltGraph", "altKey"],
+      ["CapsLock", ""],
+      ["Fn", ""],
+      ["OS", ""],
+    ] as const) {
+      key({ key: lone, ...(flag ? { [flag]: true } : {}) });
+      expect(screen.getByRole("status"), lone).toHaveTextContent("pointer");
+    }
+    // A modifier with another key is the keyboard: Alt+ArrowDown opens Select
+    // and Combobox, Shift+ArrowDown extends a selection.
+    key({ key: "ArrowDown", altKey: true });
+    expect(screen.getByRole("status")).toHaveTextContent("keyboard");
+    move("pointermove", 22, 20);
+    key({ key: "ArrowDown", shiftKey: true });
+    expect(screen.getByRole("status")).toHaveTextContent("keyboard");
   });
 });
