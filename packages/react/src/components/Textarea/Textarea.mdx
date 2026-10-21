@@ -45,49 +45,35 @@ import { KozmosTextarea } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosTextarea(
-text: .constant(""),
-placeholder: "Notes"
-)
+// A multiline editor with its placeholder drawn behind it. It takes no
+// label, name, error or character count: React's aria-label has no
+// counterpart here.
+struct VisitFeedback: View {
+    @Binding var feedback: String
+
+    var body: some View {
+        KozmosTextarea(text: $feedback, placeholder: "Tell us about your visit")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.textarea
-
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.textarea.KozmosTextarea
 
+// An outlined field three to five lines tall (minLines, maxLines). It takes
+// no label, name, error or character count: React's aria-label has no
+// counterpart here.
 @Composable
-fun KozmosTextarea(
-value: String,
-onValueChange: (String) -> Unit,
-placeholder: String = "",
-minLines: Int = 3,
-maxLines: Int = 5,
-modifier: Modifier = Modifier
-) {
-OutlinedTextField(
-value = value,
-onValueChange = onValueChange,
-placeholder = { Text(placeholder) },
-minLines = minLines,
-maxLines = maxLines,
-modifier = modifier.fillMaxWidth(),
-colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-focusedBorderColor = KozmosThemeTokens.primitivesColorsTheme600,
-unfocusedBorderColor = KozmosColors.primitivesColorsForeground300,
-cursorColor = KozmosThemeTokens.primitivesColorsTheme600,
-focusedLabelColor = KozmosThemeTokens.primitivesColorsTheme600
-)
-)
+fun VisitFeedback(feedback: String, onFeedbackChange: (String) -> Unit) {
+    KozmosTextarea(
+        value = feedback,
+        onValueChange = onFeedbackChange,
+        placeholder = "Tell us about your visit"
+    )
 }
-
-    `}
+`}
 
 />
 
