@@ -897,6 +897,13 @@ test("the theme choice is kept across a reload", async ({
   await expect(
     page.getByRole("button", { name: "Theme: Dark", includeHidden: true }),
   ).toBeVisible();
+  // And once closed, the menu gives the header back to assistive technology:
+  // one that kept the page hidden would leave the button out of reach until
+  // a reload. This waits for that alone, three times the 5s a loaded runner
+  // went past, and not for how fast the menu closes.
+  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.reload();
   await hydrated(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
