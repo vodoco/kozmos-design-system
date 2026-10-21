@@ -158,12 +158,13 @@ class KozmosTooltipTipTest {
             val drawn = DrawnPixels(checkNotNull(frames.last))
             val scale = drawn.width.toFloat() / canvas.width
             val dp = density
-            // The tip's middle, 2dp in from its point at the trigger's end.
-            val (x, y) = when (side) {
+            // The tip's middle, 2dp in from its point at the trigger's end,
+            // Leading and Trailing resolved to their physical side.
+            val (x, y) = when (side.physical(direction)) {
                 KozmosTooltipSide.Right -> (row.left + 2 * dp) to row.center.y
                 KozmosTooltipSide.Left -> (row.right - 2 * dp) to row.center.y
                 KozmosTooltipSide.Top -> row.center.x to (row.bottom - 2 * dp)
-                KozmosTooltipSide.Bottom -> row.center.x to (row.top + 2 * dp)
+                else -> row.center.x to (row.top + 2 * dp)
             }
             val tip = drawn.argb((x * scale).roundToInt(), (y * scale).roundToInt())
             if (!DrawnPixels.matches(tip, fill, 4)) {
