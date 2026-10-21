@@ -42,37 +42,30 @@ import { KozmosLink } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosLink(
-"Open dashboard",
-destination: URL(string: "https://example.com")!
-)
+// SwiftUI's Link, in the theme colour: a press opens the URL through the
+// environment's openURL, as an href does, and VoiceOver hears a link. There
+// is no subtle variant.
+struct BrowseVenuesLink: View {
+    let venues: URL
+
+    var body: some View {
+        KozmosLink("Browse venues", destination: venues)
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.link
-
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextDecoration
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.link.KozmosLink
 
+// Underlined text in the theme colour, with no destination: a press calls
+// onClick, and where it goes is yours. TalkBack is told no role, so it does
+// not hear a link. There is no subtle variant.
 @Composable
-fun KozmosLink(
-text: String,
-onClick: () -> Unit,
-modifier: Modifier = Modifier
-) {
-Text(
-text = text,
-color = KozmosThemeTokens.primitivesColorsTheme600,
-textDecoration = TextDecoration.Underline,
-modifier = modifier.clickable { onClick() }
-)
+fun BrowseVenuesLink(showVenues: () -> Unit) {
+    KozmosLink(text = "Browse venues", onClick = showVenues)
 }
-
-    `}
+`}
 
 />

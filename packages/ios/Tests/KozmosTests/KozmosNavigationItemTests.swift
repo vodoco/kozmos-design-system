@@ -233,20 +233,12 @@ final class KozmosNavigationItemTests: XCTestCase {
     }
     #endif
 
-    /// NavigationItem.mdx's SwiftUI rail example, the same code, so that it
-    /// compiles somewhere: the docs' native snippets are compiled nowhere
-    /// else. Its items fill the Sidebar's 96pt rail.
+    /// NavigationItem.mdx's SwiftUI rail example,
+    /// DocSnippets/RailNavigationExample.swift, which
+    /// check-native-snippet-parity holds to the page word for word. Its items
+    /// fill the Sidebar's 96pt rail.
     @MainActor func testTheDocsRailExampleFillsTheSidebarRail() async throws {
-        let example = KozmosSidebar(variant: .rail) {
-            VStack(spacing: 0) {
-                KozmosNavigationItem(label: "Home", placement: .rail, content: .iconLabel, selected: true) {
-                    Image(systemName: "house")
-                }
-                KozmosNavigationItem(label: "Accessible routes", placement: .rail, content: .iconLabel) {
-                    Image(systemName: "figure.roll")
-                }
-            }
-        }
+        let example = RailNavigationExample()
         #if os(iOS)
         let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
         let pixels = try await RenderedPixels.render(

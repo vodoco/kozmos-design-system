@@ -45,57 +45,35 @@ import { KozmosList } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosList {
-KozmosListItem("First item")
-KozmosListItem("Second item")
+// SwiftUI's List, in its plain style: it scrolls by itself, fills the height
+// it is given and draws the system's separators. A row is its text, and
+// there is no border or compact density.
+struct PlaceList: View {
+    var body: some View {
+        KozmosList {
+            KozmosListItem("Reception")
+            KozmosListItem("Atrium Café")
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.list
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.list.KozmosList
+import com.kozmos.components.list.KozmosListItem
 
+// A Column of rows, each its text with a divider under it, which the last
+// row turns off here. There is no border or compact density, and TalkBack is
+// not told it is a list.
 @Composable
-fun KozmosList(
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit
-) {
-Column(modifier = modifier) {
-content()
+fun PlaceList() {
+    KozmosList {
+        KozmosListItem(text = "Reception")
+        KozmosListItem(text = "Atrium Café", showDivider = false)
+    }
 }
-}
-
-@Composable
-fun KozmosListItem(
-text: String,
-modifier: Modifier = Modifier,
-showDivider: Boolean = true
-) {
-Column(modifier = modifier.fillMaxWidth()) {
-Text(
-text = text,
-style = MaterialTheme.typography.bodyLarge,
-color = KozmosColors.primitivesColorsForeground100,
-modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing200)
-)
-if (showDivider) {
-Divider(color = KozmosColors.primitivesColorsBackground300)
-}
-}
-}
-
-    `}
+`}
 
 />
