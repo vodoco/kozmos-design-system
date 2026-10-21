@@ -1,6 +1,8 @@
 package com.kozmos.components.emptystate
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +10,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -45,6 +49,10 @@ enum class KozmosEmptyStateSize {
     val gap: Dp get() = if (this == Compact) 8.dp else 16.dp
 }
 
+/** The circle behind the icon: React's `w-16 h-16`, `h-10 w-10` compact. */
+private val KozmosEmptyStateSize.iconCircle: Dp
+    get() = if (this == KozmosEmptyStateSize.Compact) 40.dp else 64.dp
+
 /**
  * A long wait the empty state is explaining, such as a download, and how far
  * it has got (GAP-115). [value] runs from 0 to 1 (clamped, and NaN is 0);
@@ -79,8 +87,18 @@ fun KozmosEmptyState(
             // currentColor in text-muted-foreground and Figma's is
             // foreground/400: a KozmosIcon or an Icon at its default colour
             // takes it. It got none, and drew black, unseen in the dark.
-            CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
-                icon()
+            // React's and Figma's circle behind it: `w-16 h-16 rounded-pill
+            // bg-muted`, 64 across (40 compact) of background/100. The icon
+            // stood on the page.
+            Box(
+                modifier = Modifier
+                    .size(size.iconCircle)
+                    .background(KozmosThemeTokens.primitivesColorsBackground100, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
+                    icon()
+                }
             }
             Spacer(modifier = Modifier.height(size.gap))
         }
@@ -97,7 +115,9 @@ fun KozmosEmptyState(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                color = KozmosThemeTokens.primitivesColorsForeground300,
+                // The muted colour, as React's text-muted-foreground and
+                // Figma's foreground/400; it was foreground/300.
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
