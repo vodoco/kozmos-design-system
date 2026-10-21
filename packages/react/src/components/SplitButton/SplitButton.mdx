@@ -61,84 +61,39 @@ import { KozmosSplitButton } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosSplitButton(
-label: "Export",
-mainAction: {},
-menuItems: [("CSV", {}), ("PDF", {})]
-)
+// The label is a String, and each menu item a title and what it does; the
+// menu half is the system's Menu. There is no disabled state.
+struct PublishOrSaveDraft: View {
+    let publish: () -> Void
+    let saveDraft: () -> Void
+
+    var body: some View {
+        KozmosSplitButton(
+            label: "Publish",
+            mainAction: publish,
+            menuItems: [("Save draft", saveDraft)]
+        )
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.splitbutton
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.splitbutton.KozmosSplitButton
+import com.kozmos.components.splitbutton.SplitContextMenuItem
 
-data class SplitContextMenuItem(val label: String, val onClick: () -> Unit)
-
+// The label is a String, and each menu item a SplitContextMenuItem: its
+// label and what it does. There is no disabled state, and TalkBack names the
+// menu half "More actions", in fixed English.
 @Composable
-fun KozmosSplitButton(
-label: String,
-onMainClick: () -> Unit,
-menuItems: List<SplitContextMenuItem>,
-modifier: Modifier = Modifier
-) {
-var expanded by remember { mutableStateOf(false) }
-
-    Row(modifier = modifier) {
-        Button(
-            onClick = onMainClick,
-            shape = RoundedCornerShape(topStart = KozmosDimensions.primitivesLayoutRadius300, bottomStart = KozmosDimensions.primitivesLayoutRadius300, topEnd = KozmosDimensions.primitivesLayoutRadius0, bottomEnd = KozmosDimensions.primitivesLayoutRadius0),
-            colors = ButtonDefaults.buttonColors(containerColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, contentColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
-        ) {
-            Text(label)
-        }
-        Spacer(modifier = Modifier.width(1.dp))
-        Button(
-            onClick = { expanded = true },
-            shape = RoundedCornerShape(topStart = KozmosDimensions.primitivesLayoutRadius0, bottomStart = KozmosDimensions.primitivesLayoutRadius0, topEnd = KozmosDimensions.primitivesLayoutRadius300, bottomEnd = KozmosDimensions.primitivesLayoutRadius300),
-            colors = ButtonDefaults.buttonColors(containerColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, contentColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
-        ) {
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "More actions")
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                menuItems.forEach { item ->
-                    DropdownMenuItem(
-                        text = { Text(item.label) },
-                        onClick = {
-                            item.onClick()
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-
+fun PublishOrSaveDraft(publish: () -> Unit, saveDraft: () -> Unit) {
+    KozmosSplitButton(
+        label = "Publish",
+        onMainClick = publish,
+        menuItems = listOf(SplitContextMenuItem(label = "Save draft", onClick = saveDraft))
+    )
 }
-
-    `}
+`}
 
 />

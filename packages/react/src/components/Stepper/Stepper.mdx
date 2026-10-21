@@ -43,112 +43,32 @@ import { KozmosStepper } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosStepper(
-steps: ["Details", "Review", "Publish"],
-currentStep: 1
-)
+// currentStep counts from 0: the steps before it are done, the ones after it
+// to come. It shows progress only, and no step can be pressed.
+struct RouteSteps: View {
+    var body: some View {
+        KozmosStepper(
+            steps: ["Choose destination", "Review route", "Navigate"],
+            currentStep: 1
+        )
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.stepper
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.stepper.KozmosStepper
 
+// currentStep counts from 0: the steps before it are done, the ones after it
+// to come. It shows progress only, and no step can be pressed.
 @Composable
-fun KozmosStepper(
-steps: List<String>,
-currentStep: Int,
-modifier: Modifier = Modifier
-) {
-Row(
-modifier = modifier.fillMaxWidth(),
-horizontalArrangement = Arrangement.SpaceBetween,
-verticalAlignment = Alignment.CenterVertically
-) {
-steps.forEachIndexed { index, step ->
-val isCompleted = index < currentStep
-val isCurrent = index == currentStep
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(KozmosDimensions.primitivesLayoutSizing400)
-                        .clip(CircleShape)
-                        .background(if (isCompleted) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle else Color.Transparent)
-                        .border(
-                            width = KozmosDimensions.primitivesLayoutSpacing25,
-                            color = when {
-                                isCompleted -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
-                                isCurrent -> KozmosThemeTokens.primitivesColorsTheme600
-                                else -> KozmosColors.primitivesColorsForeground300
-                            },
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isCompleted) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
-                            modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing200)
-                        )
-                    } else {
-                        Text(
-                            text = (index + 1).toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (isCurrent) KozmosThemeTokens.primitivesColorsForeground0 else KozmosColors.primitivesColorsForeground500
-                        )
-                    }
-                }
-
-                Text(
-                    text = step,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isCurrent) KozmosColors.primitivesColorsForeground100 else KozmosColors.primitivesColorsForeground500
-                )
-            }
-
-            if (index < steps.size - 1) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(KozmosDimensions.primitivesLayoutSpacing25)
-                        .background(if (index < currentStep) KozmosThemeTokens.primitivesColorsTheme600 else KozmosColors.primitivesColorsBackground300)
-                )
-            }
-        }
-    }
-
+fun RouteSteps() {
+    KozmosStepper(
+        steps = listOf("Choose destination", "Review route", "Navigate"),
+        currentStep = 1
+    )
 }
-
-    `}
+`}
 
 />

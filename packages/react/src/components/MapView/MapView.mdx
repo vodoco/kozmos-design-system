@@ -42,49 +42,38 @@ import { KozmosMapView } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosMapView {
-KozmosLocationPin()
+// The frame your map renderer sits in: a fill, a 1pt border, the control
+// radius and a 400pt floor, always. There is no fill variant for a map that
+// is the whole screen, and the frame names nothing: React's mapLabel and
+// region have no counterpart.
+struct FramedMap<Renderer: View>: View {
+    let renderer: Renderer
+
+    var body: some View {
+        KozmosMapView {
+            renderer
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.mapview
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.mapview.KozmosMapView
 
+// The frame your map renderer sits in: a fill, a 1dp border, the control
+// radius and a 400dp floor, always. There is no fill variant for a map that
+// is the whole screen, and the frame names nothing: React's mapLabel and
+// region have no counterpart. The renderer sizes itself.
 @Composable
-fun KozmosMapView(
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit = {}
-) {
-Box(
-modifier = modifier
-.defaultMinSize(minHeight = 400.dp)
-.background(KozmosColors.primitivesColorsBackground100)
-.clip(RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-.border(1.dp, KozmosColors.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-) {
-Box(
-modifier = Modifier
-.fillMaxSize()
-.background(KozmosColors.primitivesColorsBackground300.copy(alpha = 0.1f))
-)
-content()
+fun FramedMap(renderer: @Composable () -> Unit) {
+    KozmosMapView(modifier = Modifier.fillMaxWidth()) {
+        renderer()
+    }
 }
-}
-
-    `}
+`}
 
 />
