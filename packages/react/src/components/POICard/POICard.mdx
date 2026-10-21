@@ -18,8 +18,10 @@ Its selectable identity and action footer are separate; use POIResultCard for SD
 
 ## Implementation
 
-The web card has no close button. SwiftUI's and Compose's draw one when given `onClose`; Compose
-names it `closeLabel`, "Close" by default, which a product that translates passes in its own words.
+The web card has no close button. SwiftUI's and Compose's draw one when given `onClose`, named by
+`closeLabel`, which a product that translates passes in its own words. Left out, Compose's is
+"Close", and SwiftUI's keeps its symbol's own name, which the system says in the reader's language
+("Close", "Schließen").
 
 <div className="subheading">Code</div>
 
