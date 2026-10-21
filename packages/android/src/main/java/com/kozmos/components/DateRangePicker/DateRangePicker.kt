@@ -22,15 +22,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Calendar
-import java.util.Locale
 
 data class KozmosDateRangeValue(
     val start: LocalDate? = null,
@@ -52,6 +57,10 @@ fun KozmosDateRangePicker(
     expanded: Boolean = false
 ) {
     val statusColor = dateRangeStatusColor(status)
+    // The app's locale's own short date, for a field half the row wide:
+    // "5/25/26", "25.05.26". It was "MMM d, yyyy" in Locale.US.
+    val dates = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
+        .withLocale(LocalConfiguration.current.locales[0])
     val helperColor = when {
         !enabled -> KozmosThemeTokens.primitivesColorsForeground500
         statusColor != null -> statusColor
@@ -82,6 +91,7 @@ fun KozmosDateRangePicker(
             DateRangeField(
                 label = startLabel,
                 value = value.start,
+                dates = dates,
                 enabled = enabled,
                 readOnly = readOnly,
                 status = status,
@@ -91,6 +101,7 @@ fun KozmosDateRangePicker(
             DateRangeField(
                 label = endLabel,
                 value = value.end,
+                dates = dates,
                 enabled = enabled,
                 readOnly = readOnly,
                 status = status,
@@ -102,6 +113,9 @@ fun KozmosDateRangePicker(
         if (expanded) {
             DateRangePreview(
                 value = value,
+                dates = dates,
+                startLabel = startLabel,
+                endLabel = endLabel,
                 enabled = enabled
             )
         }
@@ -120,6 +134,7 @@ fun KozmosDateRangePicker(
 private fun DateRangeField(
     label: String,
     value: LocalDate?,
+    dates: DateTimeFormatter,
     enabled: Boolean,
     readOnly: Boolean,
     status: KozmosInputStatus,
@@ -165,7 +180,9 @@ private fun DateRangeField(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (enabled) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500
+            color = if (enabled) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500,
+            // The field carries this name; heard here too, it is said twice.
+            modifier = Modifier.clearAndSetSemantics { }
         )
         Row(
             modifier = Modifier
@@ -173,7 +190,10 @@ private fun DateRangeField(
                 .height(44.dp)
                 .background(background, shape)
                 .border(1.dp, borderColor, shape)
-                .clickable(enabled = enabled && !readOnly) { dialog.show() }
+                // One control, named by the field's label: with no date it
+                // shows no words, and wrote a fixed English "Select date".
+                .clickable(enabled = enabled && !readOnly, role = Role.Button) { dialog.show() }
+                .semantics { contentDescription = label }
                 .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
@@ -184,18 +204,26 @@ private fun DateRangeField(
                 tint = iconColor,
                 modifier = Modifier.size(18.dp)
             )
-            Text(
-                text = value?.format(displayDateFormatter) ?: "Select date",
-                style = MaterialTheme.typography.bodyMedium,
-                color = textColor,
-                maxLines = 1
-            )
+            if (value != null) {
+                Text(
+                    text = value.format(dates),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun DateRangePreview(value: KozmosDateRangeValue, enabled: Boolean) {
+private fun DateRangePreview(
+    value: KozmosDateRangeValue,
+    dates: DateTimeFormatter,
+    startLabel: String,
+    endLabel: String,
+    enabled: Boolean
+) {
     val textColor = if (enabled) {
         KozmosThemeTokens.primitivesColorsForeground0
     } else {
@@ -211,26 +239,16 @@ private fun DateRangePreview(value: KozmosDateRangeValue, enabled: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
+        // The range as a dash joins it, a missing date by its field's label:
+        // it wrote a fixed English "Start", "to" and "End".
         Text(
-            text = value.start?.format(displayDateFormatter) ?: "Start",
-            style = MaterialTheme.typography.bodySmall,
-            color = textColor
-        )
-        Text(
-            text = "to",
-            style = MaterialTheme.typography.bodySmall,
-            color = KozmosThemeTokens.primitivesColorsForeground500
-        )
-        Text(
-            text = value.end?.format(displayDateFormatter) ?: "End",
+            text = "${value.start?.format(dates) ?: startLabel} – ${value.end?.format(dates) ?: endLabel}",
             style = MaterialTheme.typography.bodySmall,
             color = textColor
         )
         Spacer(modifier = Modifier.weight(1f))
     }
 }
-
-private val displayDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US)
 
 @Composable
 private fun dateRangeStatusColor(status: KozmosInputStatus): Color? = when (status) {

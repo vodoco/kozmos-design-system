@@ -124,7 +124,9 @@ data class ReadNode(
      */
     val selectableGroup: List<ReadNode>? = null,
     /** The node's custom actions, by the label TalkBack offers each under. */
-    val customActions: Map<String, () -> Boolean> = emptyMap()
+    val customActions: Map<String, () -> Boolean> = emptyMap(),
+    /** What a text field holds: the words it shows as its value. */
+    val editableText: String? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -354,5 +356,6 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
         null
     },
     customActions = node.config.getOrNull(SemanticsActions.CustomActions)
-        ?.associate { it.label to it.action }.orEmpty()
+        ?.associate { it.label to it.action }.orEmpty(),
+    editableText = node.config.getOrNull(SemanticsProperties.EditableText)?.text
 )
