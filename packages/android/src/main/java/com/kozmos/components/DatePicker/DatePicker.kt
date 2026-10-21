@@ -24,6 +24,8 @@ fun KozmosDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    // The product passes its own, translated words; the English default is
+    // the repo's convention for a label parameter (as Dialog's closeLabel).
     label: String = "Select Date"
 ) {
     val context = LocalContext.current
@@ -50,7 +52,9 @@ fun KozmosDatePicker(
             label = { Text(label) },
             readOnly = true,
             trailingIcon = {
-                Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                // Decoration, as React's aria-hidden calendar: the label names
+                // the field. It was described by a fixed English "Select Date".
+                Icon(Icons.Default.CalendarToday, contentDescription = null)
             },
             modifier = Modifier.fillMaxWidth(),
             interactionSource = remember { MutableInteractionSource() }
