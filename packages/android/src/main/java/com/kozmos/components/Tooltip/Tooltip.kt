@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -137,7 +138,10 @@ private fun TooltipSurface(text: String) {
 @Composable
 private fun TooltipTip(side: KozmosTooltipSide) {
     val color = KozmosThemeTokens.primitivesColorsBackground0
-    Canvas(modifier = Modifier.size(width = tipWidth(side), height = tipHeight(side))) {
+    // Above its bubble, as React's arrow is drawn above the content's shadow:
+    // where the tip came before the bubble (Right, Bottom), the bubble's
+    // shadow fell over it, greying it (#E0E0E0 on a #FFFFFF bubble).
+    Canvas(modifier = Modifier.zIndex(1f).size(width = tipWidth(side), height = tipHeight(side))) {
         drawPath(tooltipTipPath(side), color = color)
     }
 }

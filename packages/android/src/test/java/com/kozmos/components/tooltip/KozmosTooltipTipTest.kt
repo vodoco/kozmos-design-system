@@ -22,6 +22,9 @@ import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.readSemantics
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.toArgb
+import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -122,6 +125,49 @@ class KozmosTooltipTipTest {
                 if (!isTip(point)) wrong += "$case: no tip at the trigger's end: ${DrawnPixels.hex(point)}"
                 val base = sample(3.5f, -3f)
                 if (!isTip(base)) wrong += "$case: the tip does not widen toward the bubble: ${DrawnPixels.hex(base)}"
+            }
+        }
+        assertTrue(wrong.joinToString("; "), wrong.isEmpty())
+    }
+
+    @Test fun eachSidesTipIsTheBubblesColourInBothThemes() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) for (direction in LayoutDirection.values()) for (side in KozmosTooltipSide.values()) {
+            var canvas = IntSize(1, 1)
+            var density = 1f
+            var fill = 0
+            var row = Rect.Zero
+            paparazzi.readSemantics {
+                val base = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalKozmosUseDarkTokens provides dark,
+                    LocalLayoutDirection provides direction,
+                    LocalDensity provides Density(base.density * 2f, base.fontScale)
+                ) {
+                    density = LocalDensity.current.density
+                    KozmosMaterialTheme {
+                        fill = KozmosThemeTokens.primitivesColorsBackground0.toArgb()
+                        Box(Modifier.fillMaxSize().background(Color(page)).onGloballyPositioned { canvas = it.size }) {
+                            Box(Modifier.padding(24.dp)) {
+                                TooltipBubble(text = "Aufzug", side = side, modifier = Modifier.onGloballyPositioned { row = it.boundsInRoot() })
+                            }
+                        }
+                    }
+                }
+            }
+            val drawn = DrawnPixels(checkNotNull(frames.last))
+            val scale = drawn.width.toFloat() / canvas.width
+            val dp = density
+            // The tip's middle, 2dp in from its point at the trigger's end.
+            val (x, y) = when (side) {
+                KozmosTooltipSide.Right -> (row.left + 2 * dp) to row.center.y
+                KozmosTooltipSide.Left -> (row.right - 2 * dp) to row.center.y
+                KozmosTooltipSide.Top -> row.center.x to (row.bottom - 2 * dp)
+                KozmosTooltipSide.Bottom -> row.center.x to (row.top + 2 * dp)
+            }
+            val tip = drawn.argb((x * scale).roundToInt(), (y * scale).roundToInt())
+            if (!DrawnPixels.matches(tip, fill, 4)) {
+                wrong += "${if (dark) "dark" else "light"} $direction $side: the tip is ${DrawnPixels.hex(tip)}, not the bubble's ${DrawnPixels.hex(fill)}"
             }
         }
         assertTrue(wrong.joinToString("; "), wrong.isEmpty())
