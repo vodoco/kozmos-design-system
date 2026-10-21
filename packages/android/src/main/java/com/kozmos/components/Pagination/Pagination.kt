@@ -90,7 +90,9 @@ fun KozmosPaginationPrevious(
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous", tint = KozmosThemeTokens.primitivesColorsForeground100)
+            // Decoration, as React's hidden chevron: the word names the
+            // control. Described as "Previous" too, TalkBack said it twice.
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsForeground100)
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing50))
             Text("Previous", color = KozmosThemeTokens.primitivesColorsForeground100, style = MaterialTheme.typography.bodyMedium)
         }
@@ -114,7 +116,9 @@ fun KozmosPaginationNext(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Next", color = KozmosThemeTokens.primitivesColorsForeground100, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing50))
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next", tint = KozmosThemeTokens.primitivesColorsForeground100)
+            // Decoration, as React's hidden chevron: the word names the
+            // control. Described as "Next" too, TalkBack said it twice.
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsForeground100)
         }
     }
 }

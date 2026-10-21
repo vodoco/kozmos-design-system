@@ -62,106 +62,57 @@ import { KozmosTable } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct Row: Identifiable {
-let id = UUID()
-let name: String
-let status: String
-}
+// The table draws a row for each element of your data, which is
+// Identifiable, and a cell takes a String. It has no header row, header
+// cell or caption: React's TableHeader, TableHead and TableCaption have no
+// counterpart here.
+struct PlacesTable: View {
+    struct Place: Identifiable {
+        let name: String
+        let floor: String
+        var id: String { name }
+    }
 
-KozmosTable([Row(name: "Dubai Mall", status: "Open")]) { row in
-KozmosTableRow {
-KozmosTableCell(row.name)
-KozmosTableCell(row.status)
-}
+    let places = [Place(name: "Reception", floor: "Ground")]
+
+    var body: some View {
+        KozmosTable(places) { place in
+            KozmosTableRow {
+                KozmosTableCell(place.name)
+                KozmosTableCell(place.floor)
+            }
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.table
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.table.KozmosTable
+import com.kozmos.components.table.KozmosTableCell
+import com.kozmos.components.table.KozmosTableHeaderCell
+import com.kozmos.components.table.KozmosTableRow
 
+// The header row goes in header, the body rows in the content. A cell takes
+// a String, and the cells in a row share its width by weight, 1 each by
+// default. There is no caption: React's TableCaption has no counterpart.
 @Composable
-fun KozmosTable(
-modifier: Modifier = Modifier,
-header: @Composable (() -> Unit)? = null,
-content: @Composable () -> Unit
-) {
-Column(
-modifier = modifier
-.fillMaxWidth()
-.clip(RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-.border(1.dp, KozmosColors.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-) {
-if (header != null) {
-header()
-Divider()
+fun PlacesTable() {
+    KozmosTable(
+        header = {
+            KozmosTableRow {
+                KozmosTableHeaderCell(text = "Name")
+                KozmosTableHeaderCell(text = "Floor")
+            }
+        }
+    ) {
+        KozmosTableRow {
+            KozmosTableCell(text = "Reception")
+            KozmosTableCell(text = "Ground")
+        }
+    }
 }
-content()
-}
-}
-
-@Composable
-fun KozmosTableRow(
-modifier: Modifier = Modifier,
-content: @Composable RowScope.() -> Unit
-) {
-Column {
-Row(
-modifier = modifier
-.fillMaxWidth()
-.padding(KozmosDimensions.primitivesLayoutSpacing200),
-content = content
-)
-Divider()
-}
-}
-
-@Composable
-fun RowScope.KozmosTableCell(
-text: String,
-modifier: Modifier = Modifier,
-weight: Float = 1f
-) {
-Text(
-text = text,
-style = MaterialTheme.typography.bodyMedium,
-modifier = modifier.weight(weight)
-)
-}
-
-@Composable
-fun RowScope.KozmosTableHeaderCell(
-text: String,
-modifier: Modifier = Modifier,
-weight: Float = 1f
-) {
-Text(
-text = text,
-style = MaterialTheme.typography.titleSmall,
-color = KozmosColors.primitivesColorsForeground500,
-modifier = modifier.weight(weight)
-)
-}
-
-    `}
+`}
 
 />

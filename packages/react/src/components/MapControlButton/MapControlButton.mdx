@@ -164,8 +164,6 @@ struct LayersToggle: View {
 }
   `}
   kotlin={`
-package com.kozmos.example
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.Icon
@@ -174,7 +172,9 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 
 // A map toggle: grey while off, the theme's blue and navy while on. It rests
-// icon-only and says its new state for a moment when it changes.
+// icon-only and says its new state for a moment when it changes. KozmosIcon
+// names no layers glyph (React's LayersThree01 is not in its registry), so
+// the slot draws Material's Layers outline: a gap, not Kozmos's artwork.
 @Composable
 fun LayersToggle(showsLayers: Boolean, onShowsLayersChange: (Boolean) -> Unit) {
     KozmosMapControlButton(
