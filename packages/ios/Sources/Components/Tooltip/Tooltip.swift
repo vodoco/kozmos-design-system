@@ -15,24 +15,36 @@ public struct KozmosTooltip: ViewModifier {
     /// label, or VoiceOver reads it twice; the bubble still shows.
     let isAccessibilityHint: Bool
 
-    @State private var isPresented = false
+    @State private var isPresented: Bool
 
     public init(text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) {
+        self.init(text: text, side: side, isAccessibilityHint: isAccessibilityHint, isPresented: false)
+    }
+
+    /// Shown from the start, so a test can draw it without pressing anything.
+    init(text: String, side: KozmosTooltipSide, isAccessibilityHint: Bool, isPresented: Bool) {
         self.text = text
         self.side = side
         self.isAccessibilityHint = isAccessibilityHint
+        _isPresented = State(initialValue: isPresented)
     }
 
     public func body(content: Content) -> some View {
         content
             .overlay(alignment: overlayAlignment) {
-                if isPresented {
-                    KozmosTooltipBubble(text: text, side: side)
-                        .fixedSize()
-                        .modifier(KozmosTooltipPosition(side: side))
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                        .allowsHitTesting(false)
+                // The guides that put the bubble beside the view are set on a
+                // container round the conditional bubble: set on the bubble
+                // inside it they were lost, and the bubble was drawn over
+                // the view, against its edge, until 2026-10-21.
+                ZStack {
+                    if isPresented {
+                        KozmosTooltipBubble(text: text, side: side)
+                            .fixedSize()
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    }
                 }
+                .modifier(KozmosTooltipPosition(side: side))
+                .allowsHitTesting(false)
             }
             .onHover { hovering in
                 withAnimation(.easeOut(duration: 0.12)) {
@@ -93,31 +105,20 @@ private struct KozmosTooltipHint: ViewModifier {
     }
 }
 
+/// Puts the bubble beside the view, 4 from it, on its side. Every guide is
+/// set, each for its own side, as the location pin's label sets them: a
+/// guide set inside a `switch` is lost, as one set inside the conditional
+/// bubble is.
 private struct KozmosTooltipPosition: ViewModifier {
     let side: KozmosTooltipSide
 
-    @ViewBuilder
     func body(content: Content) -> some View {
         let gap = KozmosDimensions.primitivesLayoutSpacing50
-
-        switch side {
-        case .top:
-            content.alignmentGuide(.top) { dimensions in
-                dimensions[.bottom] + gap
-            }
-        case .right:
-            content.alignmentGuide(.trailing) { dimensions in
-                dimensions[.leading] - gap
-            }
-        case .bottom:
-            content.alignmentGuide(.bottom) { dimensions in
-                dimensions[.top] - gap
-            }
-        case .left:
-            content.alignmentGuide(.leading) { dimensions in
-                dimensions[.trailing] + gap
-            }
-        }
+        return content
+            .alignmentGuide(.top) { side == .top ? $0[.bottom] + gap : $0[.top] }
+            .alignmentGuide(.bottom) { side == .bottom ? $0[.top] - gap : $0[.bottom] }
+            .alignmentGuide(.leading) { side == .left ? $0[.trailing] + gap : $0[.leading] }
+            .alignmentGuide(.trailing) { side == .right ? $0[.leading] - gap : $0[.trailing] }
     }
 }
 
