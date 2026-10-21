@@ -108,7 +108,8 @@ await scenario(
         }
         return count;
       });
-    assert.ok(segments === 2 || segments === 3, `segments: ${segments}`);
+    // Two, or three with AM/PM; one where WebKit draws a plain field (Linux).
+    assert.ok(segments >= 1 && segments <= 3, `segments: ${segments}`);
     assert.equal(stops.at(-1), "Choose time");
     assert.equal(
       stops.length,
@@ -226,12 +227,32 @@ await scenario(
   "the browser's typing still works in the field",
   { props: BASE },
   async (page) => {
+    // Whatever the browser does with a bare field, it does with Kozmos's: a
+    // click on the hours and ArrowUp step them in Chromium, Firefox and
+    // Safari, and do nothing to WebKit's plain field on Linux.
+    const bare = await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.innerHTML =
+        '<style>#bare::-webkit-calendar-picker-indicator{display:none}#bare{width:320px;height:44px;padding:0 12px 0 36px;font:14px sans-serif}</style><input id="bare" type="time" value="18:30">';
+      document.body.append(host);
+      return true;
+    });
+    assert.ok(bare);
+    const bareBox = await page.locator("#bare").boundingBox();
+    await page.mouse.click(bareBox.x + 44, bareBox.y + bareBox.height / 2);
+    await page.keyboard.press("ArrowUp");
+    const expected = await page.locator("#bare").inputValue();
+    await page.evaluate(() =>
+      document.querySelector("#bare").parentElement.remove(),
+    );
     const box = await field(page).boundingBox();
     await page.mouse.click(box.x + 44, box.y + box.height / 2);
     await page.keyboard.press("ArrowUp");
-    const after = await field(page).inputValue();
-    assert.notEqual(after, "18:30");
-    assert.match(after, /^\d{2}:\d{2}$/);
+    assert.equal(
+      await field(page).inputValue(),
+      expected,
+      "it steps as a bare field does",
+    );
     assert.equal(await list(page).count(), 0, "and opens nothing");
   },
 );
