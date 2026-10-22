@@ -208,8 +208,9 @@ dependencies are overridden: the four public packages ship the dependency ranges
   `unplugin-dts` rolls the declarations with, asks for it through `@rushstack/ts-command-line`
   in every release up to 7.59.4. `@changesets/cli` asks for it through js-yaml 3
   (`@manypkg/get-packages` 1.1.3, `read-yaml-file` 1.1.0) in every 2.x up to 2.31.1; 3.x drops
-  it, but supports only Node ^22.11 and pnpm 10, and CI and releases run Node 20 and pnpm 9. The
-  DoS needs an attacker-controlled format string; these tools format only their own help text.
+  it, but its engines ask for Node 22.11 or later and pnpm 10 or later, and CI and releases run
+  Node 20 and pnpm 9. The DoS needs an attacker-controlled format string; these tools format only
+  their own help text.
 - **`vue-template-compiler` (alert 20) left with `vite-plugin-dts` 3.9.1**, which `unplugin-dts`
   1.1.2 replaced: its `@vue/language-core` is an optional peer it loads only for `.vue` files.
   `vite-plugin-dts` 4 would only have renamed it: its `@vue/language-core` 2 pulls
