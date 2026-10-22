@@ -63,6 +63,9 @@ public struct KozmosRadioGroupItem: View {
             .frame(minHeight: 44, alignment: .center)
         }
         .buttonStyle(PlainButtonStyle())
+        // The chosen radio is selected, as React's `aria-checked`: VoiceOver
+        // heard only the name, and the state only the dot showed.
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .disabled(disabled)
     }
 
