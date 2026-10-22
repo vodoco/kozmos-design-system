@@ -63,19 +63,30 @@ There is no shared setup action. Each job checks out the repository, sets up pnp
 itself and installs with `pnpm install --frozen-lockfile` (Lighthouse CI and the bundle check run a
 plain `pnpm install`; the release jobs add `--ignore-scripts`).
 
+Every job that runs a browser runs in the Playwright image
+(`mcr.microsoft.com/playwright:v1.58.2-noble`, the lockfile's Playwright), which holds the browsers
+and the libraries they load, so no job installs anything from apt: CI's web job, its twelve browser
+shards and its core pipeline, Site, and Visual Review. `playwright install` finds the image's builds
+and downloads nothing. Except in Visual Review, the runner's DejaVu and Lato fonts are mounted into
+the container read-only: the layout checks were tuned on the runner, where the system stack draws in
+DejaVu Sans, and the image alone draws it in WenQuanYi Zen Hei. `scripts/ci/check-runner-fonts.sh`
+fails a job whose browsers do not have them, and `scripts/ci/playwright-image.test.mjs`
+(`pnpm test:ci`) fails a browser job outside the image, an image other than the lockfile's
+Playwright, and any `--with-deps` or apt install.
+
 ### CI (`ci.yml`)
 
 Runs on every pull request and on pushes to `main`. A newer push to the same branch cancels the run
 in progress, which a job reports as "The operation was canceled".
 
-| Job (check name)              | Runner                            | What it runs                                                                                                                                                                                                                                                                                        |
-| ----------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Web Build & Test`            | ubuntu-latest                     | `pnpm test:release`; `pnpm test:ci`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
-| Twelve browser shards         | ubuntu-latest                     | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                          |
-| `Core Pipeline & POI Gallery` | ubuntu-latest                     | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                           |
-| `Changes`                     | ubuntu-latest                     | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                           |
-| `iOS Build`                   | macos-26 with Xcode 26.6 (pinned) | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                 |
-| `Android Build`               | ubuntu-latest                     | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                          |
+| Job (check name)              | Runner                                 | What it runs                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Web Build & Test`            | ubuntu-latest, in the Playwright image | `pnpm test:release`; `pnpm test:ci`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
+| Twelve browser shards         | ubuntu-latest, in the Playwright image | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                          |
+| `Core Pipeline & POI Gallery` | ubuntu-latest, in the Playwright image | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                           |
+| `Changes`                     | ubuntu-latest                          | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                           |
+| `iOS Build`                   | macos-26 with Xcode 26.6 (pinned)      | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                 |
+| `Android Build`               | ubuntu-latest                          | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                          |
 
 `iOS Build` names its image (`macos-26`) and its Xcode (`DEVELOPER_DIR`, Xcode 26.6) rather than following
 `macos-latest`, so a new Xcode reaches CI only through a pull request that moves the two. The
