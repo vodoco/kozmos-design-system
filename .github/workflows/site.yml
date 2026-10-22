@@ -54,6 +54,18 @@ jobs:
   site:
     name: Build & Test
     runs-on: ubuntu-latest
+    # In the Playwright image, with the runner's fonts and shell, as ci.yml's
+    # browser jobs are (its web job says why): the browsers and what they load
+    # come with the image, and nothing is installed from apt.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
     steps:
       - uses: actions/checkout@v5
 
@@ -96,8 +108,13 @@ jobs:
       - name: Every component page's Storybook link lands
         run: pnpm --filter @kozmos-ds/site exec node scripts/check-storybook-links.mjs
 
+      # The image's own builds, so this downloads nothing in CI.
       - name: Install the browsers
-        run: pnpm --filter @kozmos-ds/site exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @kozmos-ds/site exec playwright install chromium firefox webkit
+
+      - name: The browsers have the runner's fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
 
       - name: End to end, in three engines
         run: pnpm --filter @kozmos-ds/site test:e2e
