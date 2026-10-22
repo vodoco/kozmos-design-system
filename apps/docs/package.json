@@ -38,7 +38,7 @@
     "chromatic": "16.0.0",
     "concurrently": "9.2.5",
     "react-docgen-typescript": "2.4.0",
-    "storybook": "8.6.18",
+    "storybook": "8.6.19",
     "storybook-addon-performance": "0.17.3",
     "vite": "^6.4.3",
     "vue": "^3.5.42"
