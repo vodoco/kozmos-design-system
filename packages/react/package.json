@@ -109,6 +109,7 @@
   },
   "devDependencies": {
     "@figma/code-connect": "1.4.2",
+    "@microsoft/api-extractor": "7.43.0",
     "@pact-foundation/pact": "16.3.0",
     "@playwright/experimental-ct-react": "1.58.2",
     "@playwright/test": "1.58.2",
@@ -133,8 +134,8 @@
     "tailwindcss-animate": "1.0.7",
     "tsx": "^4.22.0",
     "typescript": "^5.2.2",
+    "unplugin-dts": "1.1.2",
     "vite": "^6.4.3",
-    "vite-plugin-dts": "^3.9.1",
     "vitest": "^4.1.11",
     "vitest-axe": "0.1.0"
   }

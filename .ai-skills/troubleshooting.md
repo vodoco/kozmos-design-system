@@ -237,7 +237,7 @@ SyntaxError: Cannot use import statement outside a module
    (types `dist/index.d.cts`).
 
 2. **Verify the Vite output:** `packages/react/vite.config.mts` builds an ES output (one file per
-   module under `dist/esm/`) and a UMD CommonJS bundle; `vite-plugin-dts` writes the declarations.
+   module under `dist/esm/`) and a UMD CommonJS bundle; `unplugin-dts` writes the declarations.
 
 3. **Prefer `import`:** the CommonJS bundle is one file, which a bundler cannot tree-shake.
 
