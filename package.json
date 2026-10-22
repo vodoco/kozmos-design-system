@@ -34,6 +34,7 @@
     "test:sdk-density": "node --test scripts/lib/sdk-density-static.test.mjs && node scripts/check-sdk-density.mjs",
     "test:direction-css": "node scripts/check-direction-rules.mjs",
     "test:token-alpha": "node scripts/check-token-alpha.mjs",
+    "test:compiler-defaults": "node scripts/check-compiler-defaults.mjs",
     "test:temporal-css": "node scripts/check-temporal-css.mjs",
     "test:storybook-regressions": "node scripts/check-storybook-regressions.mjs",
     "test:storybook-security": "node --test scripts/storybook/dev-server-security.test.mjs",
