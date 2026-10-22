@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-10-06): in use; React 0.9.0 is published (evidence below).
+Status (2026-10-22): in use; React 0.12.2 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -577,3 +577,62 @@ Compose's format row and palette field at large text (#298, #299); `KozmosIcon` 
 (#297); and POI detail tags drawing Kozmos icons, with the additive `iconName` (#300). The native Code Connect,
 with the library icons (#293), was published and read back on 17 Oct (SwiftUI 214, Compose 209 mappings). External
 Claude Design artifacts and product deployments are separate.
+
+### 0.12.2
+
+Published on 2026-10-22 from `afcc2fbdc3d6324e9cc0d3c24a9e7d87670b0bd7`, the version merge
+[#374](https://github.com/vodoco/kozmos-design-system/pull/374). It carries four React patches:
+
+- a framed `MapView` has the control radius, 16, as the natives do
+  ([#338](https://github.com/vodoco/kozmos-design-system/pull/338));
+- POIDetailPanel draws an item's `iconName` icon when its `iconUrl` is unsafe or fails to load (GAP-178,
+  [#349](https://github.com/vodoco/kozmos-design-system/pull/349));
+- POI detail tags draw every name `KozmosIcon` draws on iOS and Android
+  ([#308](https://github.com/vodoco/kozmos-design-system/pull/308));
+- Stepper marks its current step ([#335](https://github.com/vodoco/kozmos-design-system/pull/335)).
+
+React alone moves; tokens 0.8.0, icons 0.6.0 and product-contracts 0.9.1 are unchanged and not planned. At Olcay's
+request (21 Oct: a full release once #335 merged) Claude merged the version PR, ran the pre-flight, dispatched the
+release and approved the protected `npm-release` deployment, as `vodoco`, for this release only.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Versions                | React 0.12.2 on npm `latest`; it pins tokens 0.8.0, icons 0.6.0 and product-contracts 0.9.1 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Exact main-push CI      | [39743530429](https://github.com/vodoco/kozmos-design-system/actions/runs/39743530429): all 17 jobs succeeded on the first attempt, including web, iOS and Android. It waited about 8 minutes while the workflow's concurrency cancelled the main run for #335's merge (#337 stops main runs cancelling each other). Bundle Size Analysis, Visual Regression, Lighthouse CI, Pages and Site succeeded on the merge.                                                                                                                                          |
+| Preflight / publication | `pnpm release:preflight` against that run passed on 22 Oct (credential placement, request, evidence and plan; 0.12.2 not on npm). [39821259752](https://github.com/vodoco/kozmos-design-system/actions/runs/39821259752) succeeded (guard, prepare, publish).                                                                                                                                                                                                                                                                                                |
+| Registry readback       | 0.12.2 is on `latest` with SLSA v1 provenance (Sigstore log index 3394851033). Its SHA-512 integrity equals the one the publish job printed, and the job verified the approved tarball in the registry.                                                                                                                                                                                                                                                                                                                                                      |
+| Installed consumer      | A fresh npm installation of React 0.12.2, lifecycle scripts off, with React 19.3.1 resolved tokens 0.8.0, icons 0.6.0 and contracts 0.9.1 and exposed 271 exports from CJS and from the ESM entry. Server-rendered: Stepper marks one step `aria-current="step"`, and a framed MapView is `rounded-control` (0.12.1, installed the same way, gave none and `rounded-container`). The same with React 18.3.1. The ESM bundle names the POI tags' wayfinding glyphs (`elevator-up`, `follow-the-line`, `security-control`, `log-in-01`), which 0.12.1's lacks. |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/react@0.12.2` at `afcc2fbd`, and a second dry-run found it in place. React 0.12.2 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Website / Storybook     | [Pages 39743530550](https://github.com/vodoco/kozmos-design-system/actions/runs/39743530550) built and deployed this exact SHA. The live Storybook's `index.json` (609 entries) lists MapView, Stepper and POIDetailPanel. Read in Chromium, MapView Default draws a 16px corner and Stepper Default marks one step current.                                                                                                                                                                                                                                 |
+
+Change details: [React](../packages/react/CHANGELOG.md#0122) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.12.1, with no API change:
+
+- **A framed MapView's corners are 16, not 20.** A frame of yours that clips a framed MapView at its corners takes
+  the control radius, or it cuts the map's border. A map that is the screen, inside `AdaptiveMapShell`, is
+  `variant="fill"`, with no border and no corners.
+- **POIDetailPanel's artwork falls back:** an item whose `iconUrl` is unsafe or fails to load draws its `iconName`'s
+  icon, and a summary fact its kind's glyph, where it drew nothing.
+- **POI detail tags draw 27 more names,** the wayfinding glyphs and four outlines, where they drew only the label.
+- **Stepper's current step is `aria-current="step"`,** so a screen reader hears it.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry (see their CHANGELOGs):
+
+- the SwiftUI batching analytics modifier delivers as React's provider does (#307);
+- a service's POI tag draws its own artwork on iOS (#309);
+- the breadcrumb's current page (#322) and the toast's announcement (#334), on both;
+- Dynamic Type headings (#331), radios' and toggle buttons' state (#332) and NavigationItem's icon colour (#333) on
+  iOS;
+- on Compose:
+  - the backdrop leaves the focus order (#314);
+  - pagination says its words once (#321);
+  - FileUpload shows the file's name (#323);
+  - Avatar's initials (#324);
+  - MapView's fill corners (#325);
+  - Popover's side (#326);
+  - SplitButton's (#327) and WayfindingCard's (#329) radii;
+  - the table header's line (#328);
+- POI artwork's fallback (#349) and Stepper's current step (#335) on both.
+
+Every component page's SwiftUI and Compose tabs show the compiled, real API (#310, #312, #315, #317). Figma, Code
+Connect, external Claude Design artifacts and product deployments are separate.
