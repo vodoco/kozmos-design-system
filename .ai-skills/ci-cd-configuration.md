@@ -85,8 +85,15 @@ in progress, which a job reports as "The operation was canceled".
 | Twelve browser shards         | ubuntu-latest, in the Playwright image | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                          |
 | `Core Pipeline & POI Gallery` | ubuntu-latest, in the Playwright image | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                           |
 | `Changes`                     | ubuntu-latest                          | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                           |
-| `iOS Build`                   | macos-latest                           | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                 |
+| `iOS Build`                   | macos-26 with Xcode 26.6 (pinned)      | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                 |
 | `Android Build`               | ubuntu-latest                          | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                          |
+
+`iOS Build` names its image (`macos-26`) and its Xcode (`DEVELOPER_DIR`, Xcode 26.6) rather than following
+`macos-latest`, so a new Xcode reaches CI only through a pull request that moves the two. The
+`iOS on the newest Xcode` workflow (`ios-next-xcode.yml`, every Monday and on demand, never required) runs the
+same iOS steps on the newest Xcode the image has: read it before moving the pin. A pull request's older
+run is cancelled by its newer push; a run on `main` never is, so every commit on `main` has a finished
+run.
 
 `node scripts/ci-local.mjs --job <job>` runs one of `ci.yml`'s jobs on your machine: `web` (the
 default), `browsers`, `pipeline`, `ios` or `android`. `--job browsers` runs the twelve shards one
