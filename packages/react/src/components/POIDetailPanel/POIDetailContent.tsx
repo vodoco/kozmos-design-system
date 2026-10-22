@@ -36,20 +36,27 @@ const summaryIcons = {
   property: null,
 };
 
-/** Images are decorative and never replace the readable label. Do not inline remote SVG. */
+/**
+ * Images are decorative and never replace the readable label. Do not inline
+ * remote SVG. An asset that is unsafe, or fails to load, draws `fallback`
+ * instead: the glyph the item's `iconName` or kind draws, as on iOS and
+ * Android (GAP-178, the owner's rule of 21 Oct). It drew nothing until then.
+ */
 export function POIDetailAssetIcon({
   src,
   size = 16,
   monochrome = false,
+  fallback = null,
 }: {
   src: string;
   size?: number;
   monochrome?: boolean;
+  fallback?: React.ReactNode;
 }) {
   const [failed, setFailed] = React.useState<string>();
   const safe =
     !src.includes("\\") && (/^https:\/\//i.test(src) || /^\/(?!\/)/.test(src));
-  if (!safe || failed === src) return null;
+  if (!safe || failed === src) return <>{fallback}</>;
   const image = (
     <img
       className="kozmos-poi-property-icon"
@@ -84,15 +91,21 @@ export function POIDetailAssetIcon({
 
 export function POIDetailAttribute({ item }: { item: POIServicePresentation }) {
   const iconName = tagIconName(item.iconName);
+  // The glyph the name draws, which an unsafe or failed `iconUrl` falls
+  // back to (GAP-178), and which a tag with no `iconUrl` draws.
+  const glyph = iconName ? (
+    <Icon name={iconName} size="sm" width={16} height={16} />
+  ) : null;
   return (
     <>
       {item.iconUrl ? (
         <POIDetailAssetIcon
           src={item.iconUrl}
           monochrome={item.iconMonochrome}
+          fallback={glyph}
         />
       ) : (
-        iconName && <Icon name={iconName} size="sm" width={16} height={16} />
+        glyph
       )}
       <span>{item.label}</span>
     </>
@@ -108,7 +121,7 @@ export function POIDetailSummaryStrip({
   return (
     <MetaStrip className="kozmos-poi-summary" tabIndex={undefined}>
       {details.summary.slice(0, 3).map((item) => {
-        const Icon = summaryIcons[item.kind];
+        const KindIcon = summaryIcons[item.kind];
         return (
           <MetaStripItem
             className="kozmos-poi-summary-item"
@@ -121,9 +134,10 @@ export function POIDetailSummaryStrip({
                   src={item.iconUrl}
                   size={20}
                   monochrome={item.iconMonochrome}
+                  fallback={KindIcon ? <KindIcon size={20} /> : null}
                 />
-              ) : Icon ? (
-                <Icon size={20} />
+              ) : KindIcon ? (
+                <KindIcon size={20} />
               ) : undefined
             }
           >

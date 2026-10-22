@@ -540,6 +540,9 @@ async function clippedEdges(page: Page) {
           Math.max(width(style, vertical), width(style, horizontal));
         if (clip < 2) continue;
         for (const child of Array.from(box.querySelectorAll("*"))) {
+          // Nor a child in an inert miniature: a picture of a page checked on
+          // its own, drawn scaled, so its own radius is not the one on screen.
+          if (child.closest("[inert]")) continue;
           const at = child.getBoundingClientRect();
           if (at.width === 0 || at.height === 0) continue;
           const key = {
@@ -2261,7 +2264,7 @@ test.describe("design-system gaps, measured", () => {
         "top bar",
         app.getByRole("searchbox", { name: "Search Riverside Centre" }),
       ],
-      ["controls", app.getByRole("group", { name: "Floor" })],
+      ["controls", app.getByRole("group", { name: "Floor", exact: true })],
     ] as const) {
       const fit = await inside.evaluate((start) => {
         // The shell's box: the nearest ancestor that scrolls.
@@ -2378,7 +2381,7 @@ test.describe("design-system gaps, measured", () => {
       await page.locator(frame).scrollIntoViewIfNeeded();
       await page
         .locator(".site-example-canvas")
-        .getByRole("group", { name: "Floor" })
+        .getByRole("group", { name: "Floor", exact: true })
         .getByRole("button")
         .click();
       const column = page.getByRole("dialog", { name: "Floor" });
@@ -2897,7 +2900,7 @@ test.describe("every example", () => {
       await hydrated(page);
       const levels = page
         .locator(".site-example-canvas")
-        .getByRole("group", { name: "Floor" })
+        .getByRole("group", { name: "Floor", exact: true })
         .getByRole("button");
       if (switcher) {
         await expect(levels, `${path}: one tile`).toHaveCount(1);
@@ -3286,7 +3289,7 @@ test.describe("venue explorer example", () => {
       await page.goto("/examples/venue-explorer");
       await hydrated(page);
       const app = explorer(page);
-      const floors = app.getByRole("group", { name: "Floor" });
+      const floors = app.getByRole("group", { name: "Floor", exact: true });
       const focus = app
         .getByRole("group", { name: "Map controls" })
         .getByRole("button", { name: /^Focus/ });
@@ -3360,7 +3363,7 @@ test.describe("wayfinding example", () => {
     await hydrated(page);
     const example = app(page);
     const controls = example.getByRole("group", { name: "Map controls" });
-    const floors = example.getByRole("group", { name: "Floor" });
+    const floors = example.getByRole("group", { name: "Floor", exact: true });
 
     // Planning: the location control, and no step-free.
     await expect(
@@ -3424,7 +3427,7 @@ test.describe("wayfinding example", () => {
 
     // The level switcher's tile shows the ground floor, the visitor's.
     const floorTile = example
-      .getByRole("group", { name: "Floor" })
+      .getByRole("group", { name: "Floor", exact: true })
       .getByRole("button");
     await expect(floorTile).toHaveAccessibleName("Ground floor, your level");
 
@@ -3521,7 +3524,7 @@ test.describe("phone search example", () => {
     await hydrated(page);
     const example = phone(page);
     const tile = example
-      .getByRole("group", { name: "Floor" })
+      .getByRole("group", { name: "Floor", exact: true })
       .getByRole("button");
     const dot = "[data-floor-selector-user-level]";
     // The tile's mark is the short label; its name, which the map control
@@ -3562,7 +3565,7 @@ test.describe("phone search example", () => {
     await expect(mark).toHaveText("1");
     await expect(tile.locator(dot)).toHaveCount(0);
     await expect(
-      example.getByRole("region", {
+      example.getByRole("group", {
         name: "Riverside Centre, First floor. Illustrative map",
       }),
     ).toBeVisible();
