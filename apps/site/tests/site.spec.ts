@@ -465,7 +465,11 @@ async function overriddenSiteCss(page: Page) {
  * that clips, drawn with a smaller radius than the box clips at. The clip
  * takes its border off along the curve and leaves the corner unedged —
  * hidden by a shadow in the light theme, plain on a dark page. Content in an
- * inert miniature is a picture of a page that is checked itself.
+ * inert miniature is a picture of a page that is checked itself, drawn
+ * scaled, so its own radius is not the one on screen: it is left out, as a
+ * clipping box and as what one holds. Other inert content is what a page
+ * shows under a covering part (the kiosk's attract screen, the phone's
+ * assistant) and is checked like the rest.
  */
 async function clippedEdges(page: Page) {
   const found = await page.evaluate(() => {
@@ -511,8 +515,9 @@ async function clippedEdges(page: Page) {
       return `${element.localName}${classes.map((name) => `.${name}`).join("")}${role ? `[role=${role}]` : ""}`;
     };
     const lines = new Set<string>();
+    const miniature = ".site-miniature-canvas[inert]";
     for (const box of Array.from(document.querySelectorAll("body *"))) {
-      if (box.closest("[inert]")) continue;
+      if (box.closest(miniature)) continue;
       const style = getComputedStyle(box);
       // A box cuts its corners when its overflow is not visible — or when
       // paint containment cuts them for it, which leaves `overflow` visible:
@@ -540,9 +545,7 @@ async function clippedEdges(page: Page) {
           Math.max(width(style, vertical), width(style, horizontal));
         if (clip < 2) continue;
         for (const child of Array.from(box.querySelectorAll("*"))) {
-          // Nor a child in an inert miniature: a picture of a page checked on
-          // its own, drawn scaled, so its own radius is not the one on screen.
-          if (child.closest("[inert]")) continue;
+          if (child.closest(miniature)) continue;
           const at = child.getBoundingClientRect();
           if (at.width === 0 || at.height === 0) continue;
           const key = {
