@@ -39,7 +39,7 @@ const MapView = React.forwardRef<HTMLDivElement, MapViewProps>(
         className={cn(
           "relative h-full w-full overflow-hidden bg-muted",
           variant === "framed" &&
-            "min-h-[400px] rounded-container border border-border",
+            "min-h-[400px] rounded-control border border-border",
           className,
         )}
         // A filling map is inside a shell that has already named the map area a

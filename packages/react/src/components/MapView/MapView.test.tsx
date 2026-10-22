@@ -23,12 +23,17 @@ describe("MapView", () => {
     // it again has a screen reader announce the same surface twice.
     const { container, rerender } = render(<MapView mapLabel="Venue map" />);
     const framed = container.firstElementChild as HTMLElement;
-    expect(framed).toHaveClass("rounded-container", "border", "min-h-[400px]");
+    // The control radius, 16, as SwiftUI's and Compose's MapView: a framed map
+    // is a control-sized surface in page flow (the owner, 21 Oct). It was the
+    // container radius, 20, on the web only.
+    expect(framed).toHaveClass("rounded-control", "border", "min-h-[400px]");
+    expect(framed).not.toHaveClass("rounded-container");
     expect(framed).toHaveAttribute("role", "region");
 
     rerender(<MapView mapLabel="Venue map" variant="fill" />);
     const filled = container.firstElementChild as HTMLElement;
     expect(filled).not.toHaveClass("rounded-container");
+    expect(filled).not.toHaveClass("rounded-control");
     expect(filled).not.toHaveClass("border");
     expect(filled).not.toHaveClass("min-h-[400px]");
     expect(filled).toHaveAttribute("role", "group");
