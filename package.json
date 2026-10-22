@@ -140,7 +140,7 @@
     "@axe-core/playwright": "4.11.1",
     "@changesets/cli": "^2.27.0",
     "@playwright/test": "1.58.2",
-    "@storybook/blocks": "8.6.18",
+    "@storybook/blocks": "8.6.19",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "8.56.1",
     "dotenv": "17.2.4",
