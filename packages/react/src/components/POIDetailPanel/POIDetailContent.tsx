@@ -18,10 +18,11 @@ import { MetaStrip, MetaStripItem } from "../MetaStrip";
 /**
  * A tag's icon name, or none for a name Kozmos does not know: the label
  * stands alone, never beside a stand-in. The registry knows every name
- * SwiftUI's and Compose's tags draw, the wayfinding glyphs and the four
- * outlines beyond the curated library included (GAP-179): POIDetailPanel kept
- * a map of its own for them until 2026-10-21. An inherited name such as
- * `constructor` draws nothing.
+ * SwiftUI's and Compose's tags draw, the wayfinding glyphs, the four
+ * outlines and the map controls' layers glyph and walking figure beyond the
+ * curated library included (GAP-179, GAP-181): POIDetailPanel kept a map of
+ * its own for them until 2026-10-22. An inherited name such as `constructor`
+ * draws nothing.
  */
 function tagIconName(name: string | undefined): KozmosIconKey | undefined {
   return name && isKozmosIconKey(name) ? name : undefined;

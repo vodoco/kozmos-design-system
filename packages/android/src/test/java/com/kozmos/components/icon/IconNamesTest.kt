@@ -195,6 +195,40 @@ class IconNamesTest {
         }
     }
 
+    /**
+     * GAP-181: the map control's layers glyph and the status pill's walking
+     * figure, which React draws with `LayersThree01` and `Walking` from
+     * @kozmos-ds/icons, are drawn by name: `layers-three-01`, Pointr's
+     * outline stroked 2 on the 24 grid, and `walking`, the SDK's figure,
+     * solid on its own squared viewBox. Neither is mirrored, and neither is a
+     * Material stand-in. Compose drew nothing for either name.
+     */
+    @Test
+    fun theLayersAndWalkingGlyphsAreDrawnByName() {
+        val layers = knownIconVector("layers-three-01")
+        assertEquals("layers-three-01 is not Pointr's LayersThree01", "LayersThree01", layers?.name)
+        assertEquals(false, layers!!.autoMirror)
+        assertEquals(24f, layers.viewportWidth)
+        val outline = layers.root.filterIsInstance<VectorPath>()
+        assertTrue("layers-three-01 draws no path", outline.isNotEmpty())
+        for (path in outline) {
+            assertNull("layers-three-01 is filled", path.fill)
+            assertEquals("layers-three-01 is not stroked 2", 2f, path.strokeLineWidth)
+        }
+
+        val walking = knownIconVector("walking")
+        assertEquals("walking is not the SDK's Walking figure", "Walking", walking?.name)
+        assertEquals(false, walking!!.autoMirror)
+        assertEquals("walking is not on its own squared viewBox", walking.viewportWidth, walking.viewportHeight)
+        val solid = walking.root.filterIsInstance<androidx.compose.ui.graphics.vector.VectorGroup>()
+            .flatMap { group -> group.filterIsInstance<VectorPath>() }
+        assertTrue("walking draws no path", solid.isNotEmpty())
+        for (path in solid) {
+            assertTrue("walking is not filled", path.fill is SolidColor)
+            assertNull("walking is stroked", path.stroke)
+        }
+    }
+
     /** The name a glyph is drawn by: its export name in kebab case, ElevatorUpAndDown as elevator-up-and-down. */
     private fun iconName(exportName: String): String = exportName.replace(Regex("(?<=[a-z0-9])([A-Z])"), "-$1").lowercase()
 
