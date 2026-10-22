@@ -2792,9 +2792,15 @@ test.describe("foundations", () => {
     const rows = page
       .getByRole("table", { name: "Icon names beyond the library" })
       .getByRole("row");
-    // The header, and one row for each of the 27 names.
-    await expect(rows).toHaveCount(28);
-    for (const name of ["elevator-up", "shuttle", "log-in-01"]) {
+    // The header, and one row for each of the 29 names.
+    await expect(rows).toHaveCount(30);
+    for (const name of [
+      "elevator-up",
+      "shuttle",
+      "log-in-01",
+      "layers-three-01",
+      "walking",
+    ]) {
       const row = rows.filter({ hasText: `<Icon name="${name}" />` });
       await expect(row).toHaveCount(1);
       // Icon draws nothing for a name it does not take: the glyph is the proof.

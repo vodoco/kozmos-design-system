@@ -34,6 +34,7 @@ import {
   Heart,
   HomeLine,
   InfoCircle,
+  LayersThree01,
   LayoutAlt02,
   Loading01,
   Lock01,
@@ -88,6 +89,7 @@ import {
   StairsUp,
   TurnBack,
 } from "./owned/navigation.generated";
+import { Walking } from "./owned/icons";
 
 export const kozmosIconNames = [
   "activity",
@@ -698,10 +700,12 @@ export type KozmosIconAlias = keyof typeof kozmosIconAliases;
 /**
  * The names drawn beyond the curated library above (GAP-179, the owner's
  * approval of 21 Oct): the 23 wayfinding glyphs of Pointr Maps - Express, by
- * the kebab case of the names this package exports them under, and four
- * outlines of the Pointr Icon Library. SwiftUI's and Compose's `KozmosIcon`
- * draw the same names, and so did POIDetailPanel's tags, through a map of
- * their own until this list replaced it.
+ * the kebab case of the names this package exports them under, four outlines
+ * of the Pointr Icon Library, and the map controls' layers glyph and walking
+ * figure (GAP-181): `layers-three-01` by its Pointr name, `walking` by the
+ * kebab case of its export. SwiftUI's and Compose's `KozmosIcon` draw the
+ * same names, and so did POIDetailPanel's tags, through a map of their own
+ * until this list replaced it.
  *
  * They are not in `kozmosIconNames`: that list is the curated set the Figma
  * plugin's Icons page and Code Connect pair with the Pointr Icon Library, name
@@ -737,6 +741,8 @@ export const kozmosIconNamesBeyondTheLibrary = [
   "log-out-01",
   "arrow-up-right",
   "arrow-down-right",
+  "layers-three-01",
+  "walking",
 ] as const;
 
 export type KozmosIconNameBeyondTheLibrary =
@@ -773,6 +779,8 @@ const kozmosIconsBeyondTheLibrary: Readonly<
   "log-out-01": LogOut01,
   "arrow-up-right": ArrowUpRight,
   "arrow-down-right": ArrowDownRight,
+  "layers-three-01": LayersThree01,
+  walking: Walking,
 };
 
 export type KozmosIconKey =

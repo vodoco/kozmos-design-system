@@ -172,7 +172,7 @@ export default function Icons() {
 
       <Section
         title="Names beyond the library"
-        lead={`Icon also takes ${kozmosIconNamesBeyondTheLibrary.length} names that SwiftUI’s and Compose’s KozmosIcon draw by the same names: the wayfinding glyphs of Pointr Maps - Express, in the kebab case of their export names, and four Pointr outlines. They sit outside the named set above, which the Figma icons page pairs with the Pointr icon library.`}
+        lead={`Icon also takes ${kozmosIconNamesBeyondTheLibrary.length} names that SwiftUI’s and Compose’s KozmosIcon draw by the same names: the wayfinding glyphs of Pointr Maps - Express, in the kebab case of their export names, four Pointr outlines, and the map controls’ layers glyph and walking figure. They sit outside the named set above, which the Figma icons page pairs with the Pointr icon library.`}
       >
         <Table aria-label="Icon names beyond the library">
           <TableHeader>

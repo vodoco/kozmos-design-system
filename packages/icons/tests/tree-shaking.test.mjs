@@ -26,8 +26,8 @@ import { gzipSync } from "node:zlib";
 
 // Measured on 2026-09-29, each of the 1,180 icons bundled alone, factory included: median
 // 0.58 KB gzip, the heaviest (Settings01) 1.88 KB, Check 0.38 KB. A lookup by name keeps all
-// 57 of the registry's: 11.8 KB. From 2026-10-21 it also keeps the 27 the natives draw beyond
-// the registry (kozmosIconNamesBeyondTheLibrary, GAP-179): 84 icons, 18.8 KB.
+// 57 of the registry's: 11.8 KB. From 2026-10-21 it also keeps the 29 the natives draw beyond
+// the registry (kozmosIconNamesBeyondTheLibrary, GAP-179 and GAP-181): 86 icons, 19.9 KB.
 const MAX_ONE_ICON_GZIP_KB = 2;
 
 const PACKAGE_DIR = path.resolve(
@@ -220,7 +220,7 @@ for (const [bundler, bundle] of Object.entries(bundlers)) {
     }
 
     // The control: a lookup by name needs every icon it can name, so these survive by design:
-    // the registry's, and the 27 drawn beyond it by name. It also proves the count above can
+    // the registry's, and the 29 drawn beyond it by name. It also proves the count above can
     // see icons when they are there.
     test("import { getIconComponent } keeps every icon a name can reach, by design", async () => {
       const kept = survivors(await bundleOf(["getIconComponent"]));

@@ -145,7 +145,8 @@ class IconNamesTest {
     /**
      * GAP-179: every name the web draws beyond its curated library, Compose
      * draws with the artwork the web draws it with: the wayfinding glyphs of
-     * Pointr Maps - Express and the four Pointr outlines, held to one list,
+     * Pointr Maps - Express, the four Pointr outlines and the map controls'
+     * layers glyph and walking figure (GAP-181), held to one list,
      * `kozmosIconNamesBeyondTheLibrary`. A name renamed or dropped on either
      * side fails here, and in the SwiftUI suite alike.
      */
@@ -153,7 +154,7 @@ class IconNamesTest {
     fun everyNameTheWebDrawsBeyondItsLibraryComposeDraws() {
         val names = webNamesBeyondTheLibrary()
         val exports = webExportsBeyondTheLibrary()
-        assertTrue("the web lists ${names.size} names beyond its library; the list was not read", names.size >= 27)
+        assertTrue("the web lists ${names.size} names beyond its library; the list was not read", names.size >= 29)
         assertEquals("the web's names beyond its library are not unique", names.size, names.toSet().size)
         assertEquals("the web draws other names than it lists", names.toSet(), exports.keys)
         val registry = webRegistryNames().toSet()
