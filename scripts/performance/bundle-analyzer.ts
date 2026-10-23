@@ -54,7 +54,13 @@ import { gzipSync } from "zlib";
 // guard still catches an export that pulls in more than it should.
 const MAX_EXPORT_GZIP_KB = 8.5;
 const MAX_BUTTON_GZIP_KB = 2;
-const MAX_TOTAL_GZIP_KB = 88;
+// Olcay approved 92 KB on 2026-10-21 (decision 114) for the web's own date and time panels
+// (decision 104): Calendar (#352), DatePicker's (#361), DateRangePicker's (#366) and
+// TimePicker's list (#369) together take Everything from 82.95 to about 87.93 KB on CI, leaving
+// nothing for the next feature. Their agent found no lossless trim in their code (sharing the
+// pickers' button code shrank the minified bundle but not the gzipped one). The per-export,
+// Button, CSS and module-count guards stay.
+const MAX_TOTAL_GZIP_KB = 92;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.

@@ -72,6 +72,25 @@
     @apply block h-4 w-4 shrink-0;
     color: var(--primitives-colors-theme-600);
   }
+  /* Forced colours (Windows' high contrast) drop the rows' fills and the
+     keyboard's ring, so the active row, under the pointer or the keyboard,
+     draws an inset outline in the system's Highlight; inset, so nothing
+     moves. Every row's outline-none is a transparent outline, which forced
+     colours would paint round every row: only the active row keeps one.
+     The check takes CanvasText: Chromium keeps an SVG's own colour there. */
+  @media (forced-colors: active) {
+    .kozmos-option {
+      outline-style: none;
+    }
+    .kozmos-option[data-active="true"],
+    .kozmos-option[data-highlighted] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+    .kozmos-option-check {
+      color: CanvasText;
+    }
+  }
   .kozmos-multiselect-input {
     @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
     /* The field less its padding and border, so the field keeps its density's
