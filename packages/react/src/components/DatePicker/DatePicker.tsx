@@ -1,9 +1,13 @@
 import React from "react";
-import { Calendar } from "@kozmos-ds/icons";
+import { Anchor as PopoverAnchor } from "@radix-ui/react-popover";
+import { Calendar, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { Calendar as MonthCalendar } from "../Calendar/Calendar";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/Input";
+import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
+import { typeInto, useCanReplaceDatePicker } from "./date-picker-engine";
 
 export interface DatePickerProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -15,6 +19,28 @@ export interface DatePickerProps extends Omit<
   label?: string;
   status?: InputStatus;
   wrapperClassName?: string;
+  /**
+   * Whether Kozmos's calendar is open, with `onOpenChange`. It opens from the
+   * field's button, or Alt+Down Arrow or F4 in the field, where the browser's
+   * own picker button can be hidden (Chromium, Edge, Safari). Where it cannot
+   * (Firefox 146), the field is the browser's, its picker with it, and these
+   * do nothing; once it can, the same props open Kozmos's.
+   */
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Names the button that opens the calendar, and the calendar. */
+  chooseDateLabel?: string;
+  /** The calendar's locale; the browser's still formats the typed date. */
+  locale?: string;
+  /** Days the calendar shows but cannot choose. Typing is the caller's to check. */
+  isDateUnavailable?: (date: string) => boolean;
+  /** The day the calendar draws as today, `YYYY-MM-DD`. */
+  today?: string;
+  /** The calendar's previous-month button's name. */
+  previousMonthLabel?: string;
+  /** The calendar's next-month button's name. */
+  nextMonthLabel?: string;
 }
 
 export interface DateRangeValue {
@@ -77,16 +103,27 @@ function fieldDescriptionIds({
 const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
   (
     {
+      chooseDateLabel = "Choose date",
       className,
+      defaultOpen,
       description,
       disabled,
       error,
       helperText,
       id,
+      isDateUnavailable,
       label,
+      locale,
+      nextMonthLabel,
       onChange,
+      onKeyDown,
+      onOpenChange,
+      open: openProp,
+      previousMonthLabel,
+      readOnly,
       required,
       status = "default",
+      today,
       wrapperClassName,
       "aria-describedby": ariaDescribedBy,
       "aria-invalid": ariaInvalid,
@@ -110,6 +147,95 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       helperId,
       helperText,
     });
+    const kozmos = useCanReplaceDatePicker();
+    const input = React.useRef<HTMLInputElement | null>(null);
+    const content = React.useRef<HTMLDivElement>(null);
+    const [uncontrolledOpen, setUncontrolledOpen] =
+      React.useState(!!defaultOpen);
+    const locked = disabled || readOnly;
+    const open = kozmos && !locked && (openProp ?? uncontrolledOpen);
+    const setOpen = (next: boolean) => {
+      if (openProp === undefined) setUncontrolledOpen(next);
+      onOpenChange?.(next);
+    };
+    const setRef = (node: HTMLInputElement | null) => {
+      input.current = node;
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    };
+
+    const field = (
+      <div className="kozmos-reset kozmos-temporal-field">
+        <Calendar
+          aria-hidden="true"
+          className="kozmos-reset kozmos-temporal-icon"
+        />
+        <input
+          ref={setRef}
+          id={inputId}
+          type="date"
+          aria-describedby={mergeAriaIds(ariaDescribedBy, describedBy)}
+          aria-invalid={resolvedStatus === "error" ? true : ariaInvalid}
+          className={cn(
+            inputVariants({ status: resolvedStatus }),
+            "kozmos-temporal-input",
+            // Room for the button, as PasswordInput keeps for its toggle.
+            kozmos &&
+              "kozmos-date-input pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+            className,
+          )}
+          data-picker={kozmos ? "kozmos" : undefined}
+          disabled={disabled}
+          readOnly={readOnly}
+          required={required}
+          onChange={(event) => {
+            trackEvent("DatePicker", "date_selected", {
+              value: event.target.value,
+            });
+            onChange?.(event);
+          }}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            // Chromium opens its own picker on these, button hidden or not.
+            if (
+              kozmos &&
+              !locked &&
+              !event.defaultPrevented &&
+              ((event.altKey && event.key === "ArrowDown") ||
+                event.key === "F4")
+            ) {
+              event.preventDefault();
+              setOpen(true);
+            }
+          }}
+          {...props}
+        />
+        {kozmos && (
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={chooseDateLabel}
+              className="kozmos-reset kozmos-field-action kozmos-date-picker-trigger"
+              disabled={locked}
+            >
+              {open ? (
+                <ChevronUp
+                  aria-hidden="true"
+                  className="kozmos-reset kozmos-field-action-icon"
+                />
+              ) : (
+                <ChevronDown
+                  aria-hidden="true"
+                  className="kozmos-reset kozmos-field-action-icon"
+                />
+              )}
+            </button>
+          </PopoverTrigger>
+        )}
+      </div>
+    );
+    const current =
+      input.current?.value ?? String(props.value ?? props.defaultValue ?? "");
 
     return (
       <FieldWrapper
@@ -125,33 +251,47 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
         required={required}
         status={resolvedStatus}
       >
-        <div className="kozmos-reset kozmos-temporal-field">
-          <Calendar
-            aria-hidden="true"
-            className="kozmos-reset kozmos-temporal-icon"
-          />
-          <input
-            ref={ref}
-            id={inputId}
-            type="date"
-            aria-describedby={mergeAriaIds(ariaDescribedBy, describedBy)}
-            aria-invalid={resolvedStatus === "error" ? true : ariaInvalid}
-            className={cn(
-              inputVariants({ status: resolvedStatus }),
-              "kozmos-temporal-input",
-              className,
-            )}
-            disabled={disabled}
-            required={required}
-            onChange={(event) => {
-              trackEvent("DatePicker", "date_selected", {
-                value: event.target.value,
-              });
-              onChange?.(event);
-            }}
-            {...props}
-          />
-        </div>
+        {kozmos ? (
+          // A modal dialog, as the WAI-ARIA date picker dialog is: focus goes
+          // to the chosen day, or today, stays in the calendar, and returns
+          // to the button on Escape or a choice.
+          <Popover open={open} onOpenChange={setOpen} modal>
+            <PopoverAnchor asChild>{field}</PopoverAnchor>
+            <PopoverContent
+              ref={content}
+              align="start"
+              sideOffset={6}
+              aria-label={label || chooseDateLabel}
+              aria-modal="true"
+              className="kozmos-date-picker-panel"
+              onOpenAutoFocus={(event) => {
+                const day = content.current?.querySelector<HTMLElement>(
+                  '[data-day][tabindex="0"]',
+                );
+                if (!day) return;
+                event.preventDefault();
+                day.focus();
+              }}
+            >
+              <MonthCalendar
+                value={current || null}
+                min={typeof props.min === "string" ? props.min : undefined}
+                max={typeof props.max === "string" ? props.max : undefined}
+                isDateUnavailable={isDateUnavailable}
+                locale={locale}
+                today={today}
+                previousMonthLabel={previousMonthLabel}
+                nextMonthLabel={nextMonthLabel}
+                onValueChange={(value) => {
+                  if (input.current) typeInto(input.current, value);
+                  setOpen(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        ) : (
+          field
+        )}
       </FieldWrapper>
     );
   },

@@ -342,7 +342,7 @@
       "id": "components-datepicker",
       "title": "Core/Inputs/DatePicker",
       "component": "DatePicker",
-      "exports": ["Default", "DateRange", "ValidationStates"]
+      "exports": ["Default", "Open", "DateRange", "ValidationStates"]
     },
     {
       "file": "packages/react/src/components/DateRangePicker/DateRangePicker.stories.tsx",

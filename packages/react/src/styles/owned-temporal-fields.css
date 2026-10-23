@@ -1,5 +1,6 @@
-/* Native date/time controls stay native. Only the owned composition is styled;
-   logical padding and icon placement follow the module provider's direction. */
+/* The browser's date and time fields keep their typing; DatePicker's button
+   opens Kozmos's calendar where the browser's own button can give way.
+   Logical padding and icon placement follow the module provider's direction. */
 @kozmos-owned {
   .kozmos-temporal-field {
     @apply relative min-w-0;
@@ -26,6 +27,22 @@
   }
   .kozmos-temporal-input.kozmos-input-error:focus {
     @apply ring-destructive;
+  }
+  /* DatePicker's button opens Kozmos's calendar (decision 105), so the
+     browser's own gives way. A rule of its own: an engine without the
+     pseudo-element (Firefox 146) drops every selector listed beside it. */
+  .kozmos-date-input[data-picker="kozmos"]::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+  /* The button is as tall as the field, at its end, as PasswordInput's is. */
+  .kozmos-date-picker-trigger {
+    top: 0;
+  }
+  /* The calendar's panel is Figma's (2262:43097): 12 inside, as wide as the
+     calendar. */
+  .kozmos-popover.kozmos-date-picker-panel {
+    width: auto;
+    padding: calc(var(--primitives-layout-spacing-150) * 1px);
   }
   .kozmos-date-range {
     @apply grid min-w-0 gap-3;
