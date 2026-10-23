@@ -20,13 +20,47 @@ on:
   # its checks have run against the main it merges into.
 
 concurrency:
+  # A pull request's older run gives way to its newer push; main's never does,
+  # so every commit on main has a finished run. A run cancelled on main left
+  # that commit with no green run to release from (release/policy.mjs wants the
+  # main-push run's jobs), as #310's and #311's merges were on 20 Oct.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   web:
     name: Web Build & Test
     runs-on: ubuntu-latest
+    # Every job here that runs a browser runs in the Playwright image Visual
+    # Review draws in (visual.yml), tagged with the lockfile's Playwright: the
+    # browsers and every library they load are in it, so no job installs
+    # anything from apt. `playwright install --with-deps` fetched about 180
+    # packages from the runner's Ubuntu mirror in each of them, and on 22 Oct
+    # 2026 the mirror served a few KB/s: eight jobs of #376 ran out their 45
+    # minutes in it. scripts/ci/playwright-image.test.mjs holds the rule.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      # The image's pwuser is uid 1001, the runner's own, which owns the
+      # workspace and HOME. --ipc=host gives Chromium the shared memory it
+      # needs, as in visual.yml.
+      options: --user 1001 --ipc=host
+      # The runner's own fonts that the image lacks, read-only. Every layout
+      # check was tuned on the runner, whose sans-serif and system-ui are
+      # DejaVu Sans; the image alone draws the system stack in WenQuanYi Zen
+      # Hei, a Latin line about 15% narrower. Measured on 22 Oct, ten font
+      # stacks at two sizes over six strings (Latin, digits, Turkish, Arabic,
+      # CJK, emoji) in all three engines: with the runner's DejaVu, all 360
+      # drew at the runner's width and height; without it, 244 did not. Lato
+      # is the rest of the runner's own fonts, so the browsers see the 90
+      # faces they saw on the runner.
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    # A container job's steps run in sh unless told otherwise; on the runner
+    # they ran in `bash -e`, and they still do.
+    defaults:
+      run:
+        shell: bash -e {0}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
@@ -293,8 +327,19 @@ jobs:
           fi
           pnpm figma:publish:linked:dry
 
+      # The image holds these exact builds, so in CI this finds them and
+      # downloads nothing; on a machine without them (`pnpm ci:local`) it
+      # fetches the browsers alone. Their system libraries come with the image.
       - name: Install Playwright
-        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @kozmos-ds/react exec playwright install chromium firefox webkit
+
+      # The layout checks measure text, and were tuned on the runner's fonts.
+      # Fail here, by name, rather than as a layout that moved, if the volumes
+      # above stop bringing them into the container. Linux only: `pnpm
+      # ci:local` on a Mac reports it skipped, since a Mac has other fonts.
+      - name: Verify The Browsers Have The Runner's Fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
 
       - name: Verify Installed Product Consumer (offline, no authentication)
         run: pnpm product:consumer:check --browser
@@ -307,6 +352,9 @@ jobs:
           ADAPTIVE_BROWSER=firefox pnpm test:token-alpha
           ADAPTIVE_BROWSER=webkit pnpm test:token-alpha
           ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities
+          pnpm test:compiler-defaults
+          ADAPTIVE_BROWSER=firefox pnpm test:compiler-defaults
+          ADAPTIVE_BROWSER=webkit pnpm test:compiler-defaults
 
       - name: Verify Built Adaptive Layout Geometry
         run: |
@@ -330,7 +378,12 @@ jobs:
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
       # What only a real browser proves, on the built package in each engine:
-      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs).
+      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
+      # and Calendar's geometry, colours, keyboard and locales as Figma draws
+      # its panels (scripts/check-calendar.mjs), and DatePicker opening it
+      # where the browser's own button can give way (check-date-picker.mjs),
+      # and DateRangePicker its range (check-date-range-picker.mjs), and
+      # TimePicker's list of times (check-time-picker.mjs).
       - name: Verify Built Focus, Keyboard and Scrolling
         run: |
           pnpm test:react-interactions
@@ -504,6 +557,16 @@ jobs:
           - name: Map, Search & Navigation (webkit)
             port: 6112
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation && ADAPTIVE_BROWSER=webkit pnpm -w test:sdk-density
+    # The web job's container, fonts and shell: why is written there.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
@@ -523,8 +586,13 @@ jobs:
       - name: Build Web
         run: pnpm build
 
+      # As in the web job: the image's own builds, nothing from apt.
       - name: Install Playwright
-        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps
+        run: pnpm --filter @kozmos-ds/react exec playwright install
+
+      - name: Verify The Browsers Have The Runner's Fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
 
       # Every shard gets its own port. They are separate runners today, but a
       # fixed port is the kind of thing that only breaks once two of these ever
@@ -558,6 +626,16 @@ jobs:
     name: Core Pipeline & POI Gallery
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # The web job's container, fonts and shell: why is written there.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
@@ -577,8 +655,13 @@ jobs:
       - name: Build Web
         run: pnpm build
 
+      # As in the web job: the image's own builds, nothing from apt.
       - name: Install Playwright
-        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps
+        run: pnpm --filter @kozmos-ds/react exec playwright install
+
+      - name: Verify The Browsers Have The Runner's Fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
 
       - name: Core Pipeline - Storybook E2E & A11y Verification
         run: |
@@ -648,8 +731,24 @@ jobs:
       ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       needs.changes.result != 'success' ||
       needs.changes.outputs.ios == 'true') }}
-    runs-on: macos-latest
+    # The image and Xcode are named, not "latest": macos-latest moves to a new
+    # Xcode when GitHub decides, and Xcode 27.1 fails three tests that 26.6
+    # passes (measured 21 Oct). A new Xcode arrives as a pull request that moves
+    # these two lines; ios-next-xcode.yml runs the same tests on the newest
+    # Xcode every week, so the move is known about before it is made. The
+    # simulator check-ios-poi.mjs pins has to exist on this image too.
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
+      - name: Use Xcode 26.6
+        run: |
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "::error::Xcode 26.6 is not on this runner image. Installed: $(ls -d /Applications/Xcode*.app | tr '\n' ' ')"
+            exit 1
+          fi
+          xcodebuild -version
+
       - name: Checkout Repo
         uses: actions/checkout@v5
 
