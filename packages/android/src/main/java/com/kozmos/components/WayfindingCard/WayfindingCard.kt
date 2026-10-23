@@ -62,6 +62,9 @@ fun KozmosWayfindingCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
+        // The container radius, 20, as React's Card and SwiftUI's card: given
+        // no shape, Material's Card took its medium shape, 12.
+        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = KozmosShadows.semanticsElevationFloating),
         colors = CardDefaults.cardColors(containerColor = KozmosThemeTokens.primitivesColorsBackground0)
     ) {

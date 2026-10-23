@@ -25,8 +25,13 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               {/* A step can shrink below its label, which then truncates: the
                   row fits any width without widening the page. The label's
                   text stays whole for assistive technology, and the title
-                  shows it on hover. */}
-              <div className="flex min-w-0 flex-col items-center gap-2">
+                  shows it on hover. The current step is `aria-current="step"`,
+                  so a screen reader hears which step the visitor is on: it
+                  set none until 2026-10-21. */}
+              <div
+                className="flex min-w-0 flex-col items-center gap-2"
+                aria-current={isCurrent ? "step" : undefined}
+              >
                 <div
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-pill border text-sm font-medium transition-colors",

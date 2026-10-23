@@ -8,6 +8,7 @@ import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
+import { useInputModality } from "../../utils/input-modality";
 
 const SelectPortal = createThemePortal(SelectPrimitive.Portal);
 
@@ -53,6 +54,8 @@ const SelectTrigger = React.forwardRef<
     const errorId = React.useId();
     const hasError = !!error;
     const isStringError = typeof error === "string";
+    // Listening before the list opens: the key that opens it comes first.
+    useInputModality();
 
     return (
       <FieldWrapper
@@ -134,6 +137,9 @@ const SelectContent = React.forwardRef<
     ref,
   ) => {
     const release = React.useRef<(() => void) | undefined>();
+    // Radix focuses its items under the pointer too, so the row's keyboard
+    // ring reads which hand moved last (owned-selection.css).
+    const modality = useInputModality();
     const contentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         release.current?.();
@@ -154,6 +160,7 @@ const SelectContent = React.forwardRef<
             className,
           )}
           position={position}
+          data-modality={modality}
           {...props}
         >
           <SelectScrollUpButton />
@@ -180,7 +187,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
+    className={cn("px-3 py-1.5 text-sm font-semibold", className)}
     {...props}
   />
 ));
@@ -190,21 +197,22 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, ...props }, ref) => (
+  // Combobox's row (owned-selection.css): the words, then the check at the
+  // end, a light row under the pointer or the keyboard.
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-marker py-1.5 ps-8 pe-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
       className,
     )}
     {...props}
   >
-    <span className="absolute start-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
+    <span className="kozmos-reset kozmos-option-content">
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </span>
-
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    <SelectPrimitive.ItemIndicator asChild>
+      <Check aria-hidden="true" className="kozmos-reset kozmos-option-check" />
+    </SelectPrimitive.ItemIndicator>
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;
