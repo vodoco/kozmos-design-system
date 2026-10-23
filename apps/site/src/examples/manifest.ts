@@ -54,7 +54,7 @@ export const examples: readonly ExampleEntry[] = [
       "GAP-17 · The map shell’s panel is an aside, a landmark that should not sit inside the page’s main.",
       "GAP-29 · A phone app’s tab bar is missing: BottomNavigation pins itself to the browser’s viewport and cannot sit in the frame.",
       "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
-      "GAP-53 · The phone’s rounded corners cut the sheet’s: the sheet keeps square, bordered bottom corners, and the shell has no edge-to-edge form.",
+      "GAP-53 · The phone’s rounded corners cut the sheet’s: the sheet keeps square, bordered bottom corners, and has no edge-to-edge form.",
       "GAP-91 · The map shell’s top bar and controls sit in boxes that scroll, which cut their shadows off at the box’s edge.",
       "GAP-83 · The assistant’s thread scrolls and takes no focus of its own, so the example gives it a tab stop.",
       "GAP-88 · The title over an answer’s places is a paragraph, not a heading, so heading navigation passes them by.",
