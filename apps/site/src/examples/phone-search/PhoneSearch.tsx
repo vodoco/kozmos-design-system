@@ -269,6 +269,7 @@ export default function PhoneSearch() {
 
   const map = (
     <MapView
+      variant="fill"
       mapLabel={`${venueName}, ${floorLabel(floorId)}. Illustrative map`}
     >
       <Box className="ex-phone-layer">
