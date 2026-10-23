@@ -31,7 +31,8 @@
   /* DatePicker's button opens Kozmos's calendar (decision 105), so the
      browser's own gives way. A rule of its own: an engine without the
      pseudo-element (Firefox 146) drops every selector listed beside it. */
-  .kozmos-date-input[data-picker="kozmos"]::-webkit-calendar-picker-indicator {
+  .kozmos-date-input[data-picker="kozmos"]::-webkit-calendar-picker-indicator,
+  .kozmos-time-input[data-picker="kozmos"]::-webkit-calendar-picker-indicator {
     display: none;
   }
   /* The button is as tall as the field, at its end, as PasswordInput's is. */
@@ -43,6 +44,24 @@
   .kozmos-popover.kozmos-date-picker-panel {
     width: auto;
     padding: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  /* TimePicker's list is Combobox's (Figma's 2262:49480): the Listbox draws
+     the surface, as wide as the field, 16rem tall or the room there is. */
+  .kozmos-popover.kozmos-time-picker-panel {
+    width: var(--radix-popover-trigger-width);
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+  /* 2 between the times, Figma's TimePicker/listbox/gap (Combobox's), where
+     the standalone Listbox keeps its own 4 (Listbox/gap). */
+  .kozmos-time-picker-panel > .kozmos-listbox {
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+    max-height: min(
+      16rem,
+      var(--radix-popover-content-available-height, 16rem)
+    );
   }
   .kozmos-date-range {
     @apply grid min-w-0 gap-3;

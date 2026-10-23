@@ -15,7 +15,8 @@
     @apply relative flex items-center;
   }
   .kozmos-password-with-toggle,
-  .kozmos-date-input {
+  .kozmos-date-input,
+  .kozmos-time-input[data-picker] {
     /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
        44 in compact. The input carries it as a utility too, which beats a
        caller's px-*; this is the room where no @scope rule reaches the input

@@ -204,6 +204,9 @@ const PROMISES = [
   { part: "date-range-picker", field: ALL, picker: null, paddingEnd: 12 },
   { part: "date-range-picker", field: ALL, paddingStart: 36 },
   { part: "time-picker", field: 0, paddingStart: 36 },
+  // TimePicker's list button, in every engine: none draws a time picker
+  // button a page cannot hide (Chromium's is hidden).
+  { part: "time-picker", field: 0, paddingEnd: [48, 44] },
   // The room for the buttons at the end, each as tall as the field.
   // Disabled, the clear goes, and its room with it.
   { part: "combobox", field: 0, enabled: true, paddingEnd: [96, 88] },
@@ -510,8 +513,8 @@ try {
       if (ownPadding && PADDINGS.includes(name)) expected = ownPadding[name];
       // DatePicker keeps the browser's field where the browser's own picker
       // button cannot be hidden (Firefox 146): no button, so no room for one
-      // at the end. Its end is then TimePicker's, the same field recipe
-      // under the same caller's class.
+      // at the end. Its end is then Input's, the same field recipe under the
+      // same caller's class (TimePicker has a button of its own now).
       const endSide = board.includes(" rtl") ? "paddingLeft" : "paddingRight";
       if (
         name === endSide &&
@@ -521,7 +524,7 @@ try {
         // DateRangePicker's fields take no caller's class: the field's own 12.
         expected = key.includes("| date-range-picker #")
           ? "12px"
-          : ref.rest[key.replace("| date-picker #", "| time-picker #")][name];
+          : ref.rest[key.replace("| date-picker #", "| input #")][name];
       reads += 1;
       let same;
       if (LENGTHS.includes(name))

@@ -151,7 +151,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Tag](components/Tag.md): A compact label for metadata or status, with variant and emotion colours and an optional remove action.
 - [Textarea](components/Textarea.md): A multiline text field with a label, validation message and optional character count.
 - [Timeline](components/Timeline.md): Displays ordered events with composed time, title, and description primitives.
-- [TimePicker](components/TimePicker.md): TimePicker retains native time-entry behavior.
+- [TimePicker](components/TimePicker.md): A time field: the browser's own, with its segmented typing in the reader's clock, and a button at its end that opens a list of times (decision 104), Combobox's list as Figma's Open variant (`444:11455`) draws it.
 - [Toast](components/Toast.md): A succinct message that is displayed temporarily.
 - [ToggleButton](components/ToggleButton.md): A button that maintains a pressed/unpressed choice, with default or outline styling.
 - [Tooltip](components/Tooltip.md): A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.

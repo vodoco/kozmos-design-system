@@ -52,4 +52,14 @@ describe("Listbox", () => {
       "route-listbox-option-1",
     );
   });
+
+  it("starts on the chosen option, as the WAI-ARIA listbox does", () => {
+    // TimePicker's list opens on the field's time; with nothing chosen, on
+    // the first option.
+    render(<Listbox id="times" options={options} value="gamma" />);
+    expect(screen.getByRole("listbox")).toHaveAttribute(
+      "aria-activedescendant",
+      "times-option-2",
+    );
+  });
 });
