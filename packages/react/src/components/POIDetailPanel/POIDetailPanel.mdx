@@ -54,6 +54,10 @@ names `KozmosIcon` draws on iOS and Android, so a tag draws the same artwork on 
 three. Icons are decorative, 16px, and explicitly assigned by the adapter;
 the component does not infer them from translated text. Unknown icons leave
 the full label visible, with no icon. No external image URL or raw SVG is accepted by this field.
+An item may also carry an `iconUrl`, decorative artwork drawn in its `iconName`'s place: HTTPS or a
+root-relative path on the web, HTTPS on iOS and Android. Where the address is unsafe, or the artwork
+fails to load, the item draws its `iconName`'s icon instead, on all three platforms (GAP-178), and with
+no name Kozmos draws, the label stands alone. A summary fact falls back to its kind's glyph the same way.
 
 Summary facts use the shared `MetaStrip`: exactly one row of cells, with local
 horizontal scrolling when the host is too narrow. Facts never move to a second
