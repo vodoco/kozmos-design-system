@@ -54,7 +54,10 @@
     background-color: transparent;
     box-shadow: none;
   }
+  /* 2 between the times, Figma's TimePicker/listbox/gap (Combobox's), where
+     the standalone Listbox keeps its own 4 (Listbox/gap). */
   .kozmos-time-picker-panel > .kozmos-listbox {
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
     max-height: min(
       16rem,
       var(--radix-popover-content-available-height, 16rem)

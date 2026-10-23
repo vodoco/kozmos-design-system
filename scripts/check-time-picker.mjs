@@ -7,8 +7,9 @@
  *   Kozmos's button ends the field everywhere, and the browser's typing
  *   stays.
  * - The list is Combobox's Listbox, Figma's 2262:49480: 6 under the field,
- *   as wide as it, the Control corner, 16rem tall or the room there is; it
- *   opens on the field's time, in view, and takes focus.
+ *   as wide as it, the Control corner, 2 between the times
+ *   (TimePicker/listbox/gap), 16rem tall or the room there is; it opens on
+ *   the field's time, in view, and takes focus.
  * - A time chosen by key or pointer is typed into the field and closes it,
  *   focus back on the button; Escape changes nothing; Alt+Down Arrow and F4
  *   in the field open it, refused to the browser.
@@ -156,7 +157,13 @@ await scenario(
       const r = node.getBoundingClientRect();
       const option = node.querySelector('[data-active="true"]');
       const o = option.getBoundingClientRect();
+      const rows = [...node.querySelectorAll('[role="option"]')].map((row) =>
+        row.getBoundingClientRect(),
+      );
       return {
+        gaps: rows
+          .slice(1)
+          .map((row, i) => Math.round((row.top - rows[i].bottom) * 100) / 100),
         x: r.x,
         y: r.y,
         width: r.width,
@@ -178,6 +185,13 @@ await scenario(
       "as wide as the field",
     );
     assert.equal(geometry.radius, "16px");
+    // Figma's TimePicker/listbox/gap, Combobox's 2, where the standalone
+    // Listbox keeps its own 4.
+    assert.deepEqual(
+      [...new Set(geometry.gaps)],
+      [2],
+      `2 between the times (${[...new Set(geometry.gaps)].join(", ")})`,
+    );
     assert.ok(geometry.height <= 256, "16rem at most");
     assert.ok(geometry.inView, "the field's time is in view");
   },
