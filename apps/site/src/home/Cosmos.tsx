@@ -245,7 +245,11 @@ export function Cosmos() {
                   {travellers.map((traveller, index) => (
                     <Box
                       key={`track-${index}`}
-                      className="site-cosmos-track"
+                      className={
+                        traveller.backwards
+                          ? "site-cosmos-track site-cosmos-track-backwards"
+                          : "site-cosmos-track"
+                      }
                       style={{
                         "--size": traveller.orbit.size,
                         "--tilt": `${traveller.orbit.tilt}deg`,
@@ -255,7 +259,6 @@ export function Cosmos() {
                         "--lap": traveller.lap,
                         "--start": `${traveller.start}turn`,
                         "--start-share": traveller.start,
-                        "--way": traveller.backwards ? "reverse" : "normal",
                       }}
                     >
                       <Box className="site-cosmos-loop site-cosmos-arm">
