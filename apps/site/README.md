@@ -603,9 +603,12 @@ script finds it.
   preflight zeroes it (GAP-52). An edge is a Kozmos part: a `Surface` (its
   solid surface has the subtle border; fill a colour from a `Box` inside), or
   a `Separator` for a hairline.
-- **A rounded frame that clips takes its corners from what it holds.** A
-  `MapView` is `rounded-container`; a frame of any other radius cuts the
-  map's border (`clippedEdges` says where).
+- **A rounded frame that clips takes its corners from what it holds.** A map
+  that is the screen, inside `AdaptiveMapShell`, is `MapView`'s `fill`: no
+  border and no corners, so the frame's own radius is its outline. A framed
+  `MapView` is `rounded-control`; a frame that clips one at its corners
+  needs that radius, or it cuts the map's border (`clippedEdges` says
+  where).
 - **Single-column grids say `grid-template-columns: minmax(0, 1fr)`.** An
   implicit column grows to its widest child's minimum width — a row of tabs,
   a line of code — and pushes the page sideways on a phone.

@@ -98,7 +98,6 @@ function collectErrors(page: Page) {
 /**
  * The site mirrors the provider's theme onto <html> once it has hydrated.
  * A pre-rendered page starts in the light theme (GAPS.md, GAP-03), and the
- * components' colour transitions then run into the visitor's theme, so the
  * page is only measured once no animation is still running.
  */
 async function hydrated(page: Page) {
@@ -515,7 +514,11 @@ async function backwardsLoops(page: Page) {
  * that clips, drawn with a smaller radius than the box clips at. The clip
  * takes its border off along the curve and leaves the corner unedged —
  * hidden by a shadow in the light theme, plain on a dark page. Content in an
- * inert miniature is a picture of a page that is checked itself.
+ * inert miniature is a picture of a page that is checked itself, drawn
+ * scaled, so its own radius is not the one on screen: it is left out, as a
+ * clipping box and as what one holds. Other inert content is what a page
+ * shows under a covering part (the kiosk's attract screen, the phone's
+ * assistant) and is checked like the rest.
  */
 async function clippedEdges(page: Page) {
   const found = await page.evaluate(() => {
@@ -561,8 +564,9 @@ async function clippedEdges(page: Page) {
       return `${element.localName}${classes.map((name) => `.${name}`).join("")}${role ? `[role=${role}]` : ""}`;
     };
     const lines = new Set<string>();
+    const miniature = ".site-miniature-canvas[inert]";
     for (const box of Array.from(document.querySelectorAll("body *"))) {
-      if (box.closest("[inert]")) continue;
+      if (box.closest(miniature)) continue;
       const style = getComputedStyle(box);
       // A box cuts its corners when its overflow is not visible — or when
       // paint containment cuts them for it, which leaves `overflow` visible:
@@ -590,9 +594,7 @@ async function clippedEdges(page: Page) {
           Math.max(width(style, vertical), width(style, horizontal));
         if (clip < 2) continue;
         for (const child of Array.from(box.querySelectorAll("*"))) {
-          // Nor a child in an inert miniature: a picture of a page checked on
-          // its own, drawn scaled, so its own radius is not the one on screen.
-          if (child.closest("[inert]")) continue;
+          if (child.closest(miniature)) continue;
           const at = child.getBoundingClientRect();
           if (at.width === 0 || at.height === 0) continue;
           const key = {
@@ -920,6 +922,78 @@ test("the theme choice is kept across a reload", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
+
+// GAP-96: a theme switch snaps. Every Kozmos part with a colour transition
+// would otherwise fade into the new theme, hundreds of them at once on the
+// home page, a frame of restyling and repainting for each step of the fade.
+// No frame after a switch may draw a colour mid-fade. Under reduced motion
+// too: the parts' colour transitions run whatever the preference.
+for (const motion of ["no-preference", "reduce"] as const) {
+  test(`a theme switch snaps${motion === "reduce" ? " under reduced motion" : ""}: no frame draws a colour mid-fade`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: motion });
+    await page.addInitScript(() => {
+      const frames: number[] = [];
+      (window as unknown as { fadingFrames: number[] }).fadingFrames = frames;
+      const sample = () => {
+        let fading = 0;
+        for (const animation of document.getAnimations()) {
+          if (!(animation instanceof CSSTransition)) continue;
+          // Under way: a fade that has not started yet draws its start.
+          if (animation.playState !== "running") continue;
+          if (!(Number(animation.currentTime) > 0)) continue;
+          if (
+            !/color|shadow|^fill$|^stroke$/.test(animation.transitionProperty)
+          )
+            continue;
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          // The menu's own items fade their highlight as the pointer moves.
+          if (target?.closest('[role="menu"]')) continue;
+          fading++;
+        }
+        frames.push(fading);
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    // The most colour fades any frame drew since the last look.
+    const fadingSince = () =>
+      page.evaluate(() => {
+        const frames = (window as unknown as { fadingFrames: number[] })
+          .fadingFrames;
+        return Math.max(0, ...frames.splice(0, frames.length));
+      });
+    const settled = async () => {
+      await page.waitForTimeout(400);
+      return fadingSince();
+    };
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+    await hydrated(page);
+    await page.getByRole("button", { name: "Theme: System" }).click();
+    await page.getByRole("menuitemradio", { name: "Dark" }).waitFor();
+    await settled();
+    // A choice in the menu.
+    await page.getByRole("menuitemradio", { name: "Dark" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades after choosing Dark").toBe(0);
+    // The stored choice, applied as the next load hydrates.
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the stored choice applies").toBe(
+      0,
+    );
+    // The device's, followed under System.
+    await page.getByRole("button", { name: "Theme: Dark" }).click();
+    await page.getByRole("menuitemradio", { name: "System" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await settled();
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the device turns dark").toBe(0);
+  });
+}
 
 test("site navigation stays in the page and moves focus to the content", async ({
   page,
@@ -1340,6 +1414,45 @@ test.describe("home", () => {
     await expect(pause).toBeHidden();
     // The travellers rest where their laps start, still round.
     expect(Math.abs((await place()).round)).toBeLessThan(1);
+  });
+
+  test("each traveller rests where its lap starts", async ({ page }) => {
+    // Under reduced motion a traveller rests at --start of its lap; moving,
+    // its lap starts there, so the first frame of the cover and the still
+    // cover agree. The one that goes the other way started at 1 - --start
+    // (0.65 of a turn where it rested at 0.35) until 22 October.
+    const riders = () =>
+      page.locator(".site-cosmos-rider").evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const box = node.getBoundingClientRect();
+          return [box.left + box.width / 2, box.top + box.height / 2];
+        }),
+      );
+    await page.goto("/");
+    await hydrated(page);
+    // Every lap at its first moment, as the page starts it.
+    await page.evaluate(() => {
+      for (const animation of document.getAnimations()) {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        if (!target?.closest(".site-cosmos-track")) continue;
+        animation.pause();
+        animation.currentTime = 0;
+      }
+    });
+    const starts = await riders();
+    expect(starts).toHaveLength(3);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await hydrated(page);
+    const rests = await riders();
+    expect(rests).toHaveLength(3);
+    for (const [index, [x, y]] of rests.entries()) {
+      const [startX, startY] = starts[index]!;
+      expect(
+        Math.hypot(x - startX, y - startY),
+        `traveller ${index + 1} rests ${Math.round(Math.hypot(x - startX, y - startY))}px from where its lap starts`,
+      ).toBeLessThan(1);
+    }
   });
 
   test("the live tiles respond", async ({ page }) => {

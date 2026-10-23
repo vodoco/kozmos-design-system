@@ -720,10 +720,13 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   inline-size: calc(var(--size) * 100% + var(--site-cosmos-room) * 2);
 }
 
-/* One that goes the other way takes the other keyframes; see the laps'. */
+/* One that goes the other way takes the other keyframes; see the laps'.
+   On the back lap the arm's turn is --start at 1 - --start of the lap, so
+   that is where it starts, and where it rests is where it starts. */
 .site-cosmos-track-backwards {
   --site-cosmos-arm-lap: site-cosmos-lap-back;
   --site-cosmos-rider-lap: site-cosmos-lap;
+  --site-cosmos-lap-share: calc(1 - var(--start-share));
 }
 
 .site-cosmos-arm {
@@ -735,7 +738,8 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
     cubic-bezier(var(--primitives-ease-linear)) infinite
     var(--site-cosmos-play, running);
   animation-delay: calc(
-    var(--site-cosmos-beat) * var(--lap) * var(--start-share) * -1
+    var(--site-cosmos-beat) * var(--lap) *
+      var(--site-cosmos-lap-share, var(--start-share)) * -1
   );
 }
 
@@ -752,7 +756,8 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
     cubic-bezier(var(--primitives-ease-linear)) infinite
     var(--site-cosmos-play, running);
   animation-delay: calc(
-    var(--site-cosmos-beat) * var(--lap) * var(--start-share) * -1
+    var(--site-cosmos-beat) * var(--lap) *
+      var(--site-cosmos-lap-share, var(--start-share)) * -1
   );
 }
 
