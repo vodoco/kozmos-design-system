@@ -4,6 +4,7 @@ import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
 import { FieldWrapper } from "../FieldWrapper";
 import {
@@ -109,6 +110,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // The active row's keyboard ring (owned-selection.css), as Combobox's.
+    const modality = useInputModality();
     const rootRef = React.useRef<HTMLDivElement>(null);
     // The popup is in a portal, outside the root: a press or focus inside
     // it is still inside the field.
@@ -456,6 +459,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     ref={popupRef}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}
                     id={listboxOpen ? listboxId : undefined}
+                    data-modality={modality}
                     role={listboxOpen ? "listbox" : "status"}
                     aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
