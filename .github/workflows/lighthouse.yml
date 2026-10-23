@@ -14,8 +14,12 @@ on:
       - "LICENSE"
 
 concurrency:
+  # A pull request's older run gives way to its newer push; main's never does,
+  # so every commit on main has a finished run. A run cancelled on main left
+  # that commit with no green run to release from (release/policy.mjs wants the
+  # main-push run's jobs), as #310's and #311's merges were on 20 Oct.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   lighthouse:

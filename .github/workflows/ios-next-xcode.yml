@@ -1,0 +1,109 @@
+# The iOS tests on the newest Xcode the runner image has: an early warning,
+# never a required check.
+#
+# CI's iOS job names its image and its Xcode (ci.yml: macos-26, Xcode 26.6),
+# so a new Xcode reaches main only through a pull request that moves them.
+# This workflow runs the same steps on the newest Xcode installed on the newest
+# macOS image, every Monday and on demand, so what that move will break is
+# known before it is made. On 21 Oct, Xcode 27.1 failed three tests that 26.6
+# passes. A failure here blocks nothing; read its summary and the result
+# bundle it keeps.
+#
+# Nothing here reads event data, so there is no untrusted input to quote.
+name: iOS on the newest Xcode
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-next-xcode
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    name: iOS on the newest Xcode
+    runs-on: macos-latest
+    steps:
+      - name: Use the newest Xcode
+        run: |
+          newest=$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_[0-9]+(\.[0-9]+)*\.app$' | sort -V | tail -1)
+          if [ -z "$newest" ]; then
+            echo "::error::No Xcode_<version>.app on this image: $(ls -d /Applications/Xcode*.app | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$newest/Contents/Developer" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$newest/Contents/Developer" xcodebuild -version
+          {
+            echo "### iOS on the newest Xcode"
+            echo
+            echo "Image \`$ImageOS\` $ImageVersion; $(DEVELOPER_DIR="$newest/Contents/Developer" xcodebuild -version | tr '\n' ' ')"
+            echo "(CI's iOS job pins Xcode 26.6.)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install JS Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Design Tokens
+        run: pnpm --filter @kozmos-ds/tokens build
+
+      - name: Build iOS Package
+        working-directory: packages/ios
+        run: swift build
+
+      - name: Test iOS Package
+        working-directory: packages/ios
+        run: swift test
+
+      # check-ios-poi.mjs pins an iPhone 17 Pro on iOS 26.5 because the button's
+      # image snapshots were recorded there. Where the newest Xcode's image no
+      # longer has that runtime, the run uses the newest iPhone 17 Pro it has,
+      # and says so: then the button's image snapshots are expected to differ.
+      - name: Choose the simulator
+        run: |
+          node --input-type=module -e '
+            import { spawnSync } from "node:child_process";
+            import { appendFileSync } from "node:fs";
+            const list = JSON.parse(spawnSync("xcrun", ["simctl", "list", "devices", "available", "--json"], { encoding: "utf8" }).stdout).devices;
+            const pinned = Object.entries(list).some(([runtime, devices]) => runtime.endsWith(".iOS-26-5") && devices.some((d) => d.name === "iPhone 17 Pro"));
+            if (pinned) { console.log("The pinned iPhone 17 Pro on iOS 26.5 is here."); process.exit(0); }
+            const version = (runtime) => (runtime.match(/iOS-(\d+)-(\d+)/) ?? [0, 0, 0]).slice(1).map(Number);
+            const candidates = Object.entries(list)
+              .filter(([runtime]) => /\.iOS-\d+-\d+$/.test(runtime))
+              .sort(([a], [b]) => { const [x, y] = [version(a), version(b)]; return x[0] - y[0] || x[1] - y[1]; })
+              .flatMap(([runtime, devices]) => devices.filter((d) => d.name === "iPhone 17 Pro").map((d) => ({ runtime, d })));
+            const pick = candidates.at(-1);
+            if (!pick) { console.log("::error::No iPhone 17 Pro simulator on this image."); process.exit(1); }
+            const destination = `platform=iOS Simulator,id=${pick.d.udid}`;
+            appendFileSync(process.env.GITHUB_ENV, `KOZMOS_IOS_TEST_DESTINATION=${destination}\n`);
+            const note = `No iOS 26.5 runtime: using an iPhone 17 Pro on ${pick.runtime.split(".").pop()}. The button image snapshots are expected to differ there.`;
+            console.log(`::warning::${note}`);
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${note}\n`);
+          '
+
+      - name: Test the iOS Package on the Simulator
+        run: node scripts/check-ios-poi.mjs
+
+      - name: Keep the result bundles
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-next-xcode-results
+          path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
+          if-no-files-found: warn
