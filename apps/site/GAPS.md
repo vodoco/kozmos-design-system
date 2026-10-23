@@ -135,6 +135,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | fixed        |
 | GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
 | GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
+| GAP-96 | A theme switch fades every part's colours                        | Core                   | composed     |
 
 ---
 
@@ -178,8 +179,9 @@ keep the table's four columns and its statuses as they are.
 - **What:** on a server, or when pre-rendering, `ThemeProvider` renders
   `defaultSystemTheme` (light) and only reads the stored choice and the system
   preference after hydration. A visitor whose system is dark sees the light page
-  first, and the components' colour transitions then animate the change. The
-  React README says so ("An initial colour change is possible").
+  first, then the dark one (the components' colour transitions animated the
+  change until the site ended them, GAP-96). The React README says so ("An
+  initial colour change is possible").
 - **Tried:** there is no pre-paint hook. The provider's element is Kozmos's own,
   so the site cannot mark it before hydration without editing the component's
   DOM behind React's back, which it will not do.
@@ -2007,3 +2009,28 @@ Text"])`) and the Get started page shows — touches it.
 - **Fix in Kozmos:** a collision boundary for the column (Radix's
   `collisionBoundary`), which `AdaptiveMapShell` can fill with its map's
   bounds, or the shell as the default boundary for what floats on it.
+
+## GAP-96 · A theme switch fades every part's colours
+
+- **What:** a Kozmos part with a colour transition (`transition-colors`, or
+  an owned rule's) fades into a new theme like any other change of colour,
+  and `ThemeProvider` has no way to change theme without it. On the home
+  page, choosing Dark started 584 to 624 colour fades at once (Firefox,
+  Chromium, WebKit), the stored choice applied on load 233 to 266, each
+  fading over 150ms, so the page drew several frames of half-changed colours
+  and restyled the fading parts in each. Reduced motion stops none of them:
+  521 to 690 started under it. In WebKit, 23 frames were drawn in
+  the 1.5s after the choice with the cover's loops paused, 9 with the fades
+  ended.
+- **Now:** composed. `DocumentTheme` (`src/root.tsx`) settles the new
+  theme's styles in the commit that changes it, before paint, and ends every
+  colour fade that started; it ends those that start in the frames after
+  too, until a frame starts none, since an engine can settle a style later
+  (WebKit, after the device's scheme changes). A fade that is not a colour,
+  a band revealed or a lap, is left alone. "a theme switch snaps: no frame
+  draws a colour mid-fade" samples every frame after a choice, a stored
+  choice and the device's change.
+- **Lane:** Core.
+- **Fix in Kozmos:** `ThemeProvider` changes theme without its parts'
+  colour transitions, or offers to, as next-themes'
+  `disableTransitionOnChange` does.

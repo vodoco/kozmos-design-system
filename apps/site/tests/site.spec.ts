@@ -98,7 +98,6 @@ function collectErrors(page: Page) {
 /**
  * The site mirrors the provider's theme onto <html> once it has hydrated.
  * A pre-rendered page starts in the light theme (GAPS.md, GAP-03), and the
- * components' colour transitions then run into the visitor's theme, so the
  * page is only measured once no animation is still running.
  */
 async function hydrated(page: Page) {
@@ -923,6 +922,78 @@ test("the theme choice is kept across a reload", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
+
+// GAP-96: a theme switch snaps. Every Kozmos part with a colour transition
+// would otherwise fade into the new theme, hundreds of them at once on the
+// home page, a frame of restyling and repainting for each step of the fade.
+// No frame after a switch may draw a colour mid-fade. Under reduced motion
+// too: the parts' colour transitions run whatever the preference.
+for (const motion of ["no-preference", "reduce"] as const) {
+  test(`a theme switch snaps${motion === "reduce" ? " under reduced motion" : ""}: no frame draws a colour mid-fade`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: motion });
+    await page.addInitScript(() => {
+      const frames: number[] = [];
+      (window as unknown as { fadingFrames: number[] }).fadingFrames = frames;
+      const sample = () => {
+        let fading = 0;
+        for (const animation of document.getAnimations()) {
+          if (!(animation instanceof CSSTransition)) continue;
+          // Under way: a fade that has not started yet draws its start.
+          if (animation.playState !== "running") continue;
+          if (!(Number(animation.currentTime) > 0)) continue;
+          if (
+            !/color|shadow|^fill$|^stroke$/.test(animation.transitionProperty)
+          )
+            continue;
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          // The menu's own items fade their highlight as the pointer moves.
+          if (target?.closest('[role="menu"]')) continue;
+          fading++;
+        }
+        frames.push(fading);
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    // The most colour fades any frame drew since the last look.
+    const fadingSince = () =>
+      page.evaluate(() => {
+        const frames = (window as unknown as { fadingFrames: number[] })
+          .fadingFrames;
+        return Math.max(0, ...frames.splice(0, frames.length));
+      });
+    const settled = async () => {
+      await page.waitForTimeout(400);
+      return fadingSince();
+    };
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+    await hydrated(page);
+    await page.getByRole("button", { name: "Theme: System" }).click();
+    await page.getByRole("menuitemradio", { name: "Dark" }).waitFor();
+    await settled();
+    // A choice in the menu.
+    await page.getByRole("menuitemradio", { name: "Dark" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades after choosing Dark").toBe(0);
+    // The stored choice, applied as the next load hydrates.
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the stored choice applies").toBe(
+      0,
+    );
+    // The device's, followed under System.
+    await page.getByRole("button", { name: "Theme: Dark" }).click();
+    await page.getByRole("menuitemradio", { name: "System" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await settled();
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the device turns dark").toBe(0);
+  });
+}
 
 test("site navigation stays in the page and moves focus to the content", async ({
   page,

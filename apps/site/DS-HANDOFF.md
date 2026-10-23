@@ -625,6 +625,7 @@ border-primary-foreground/20`.
 | GAP-79 | Icons by name: the registry `Icon` reads holds 57 names (56 in 0.4.0), against 1,179 icon components exported in 0.4.0                                                                                                    | Put the Pointr set in the registry with names, categories and aliases (see GAP-07, GAP-15, GAP-69)               |
 | GAP-86 | A speaker for a read-aloud control, by name: the voice control has its marks since #140 (fixed), but `Icon name` cannot reach `VolumeMax`                                                                                 | Put the Pointr set in the registry (GAP-79)                                                                      |
 | GAP-80 | Row actions: `Tree` fades its own in on hover, nothing else can                                                                                                                                                           | An actions slot any row can take, with an overflow button, on hover, focus and selection                         |
+| GAP-96 | A theme switch without the parts' colour transitions: hundreds fade at once, and the site ends them itself (`DocumentTheme`)                                                                                              | `ThemeProvider` changes theme without them, or offers to (`disableTransitionOnChange`)                           |
 
 ## Also found, outside the components
 
