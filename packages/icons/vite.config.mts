@@ -1,11 +1,16 @@
 import { defineConfig } from "vite";
 import path from "node:path";
-import dts from "vite-plugin-dts";
+import dts from "unplugin-dts/vite";
 
 const externals = ["react", "react/jsx-runtime"];
 
 export default defineConfig({
-  plugins: [dts({ insertTypesEntry: true, rollupTypes: true })],
+  // API Extractor rolls the declarations into dist/index.d.ts. Left unset,
+  // unplugin-dts hands it `bundledPackages: undefined`, which API Extractor
+  // 7.43's config schema refuses.
+  plugins: [
+    dts({ insertTypesEntry: true, bundleTypes: { bundledPackages: [] } }),
+  ],
   build: {
     sourcemap: true,
     lib: {
