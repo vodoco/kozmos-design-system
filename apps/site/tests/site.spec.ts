@@ -117,15 +117,34 @@ async function hydrated(page: Page) {
   );
 }
 
-/** Scrolls the whole page once, so revealed sections and miniatures mount. */
+/**
+ * Scrolls the whole page once, so revealed sections and miniatures mount,
+ * and waits for every band to have been shown before `hydrated` looks for
+ * running fades. A band reveals when its intersection observer reports it
+ * in view and React renders it shown, a task or two after the frame that
+ * measured it; one shown after that look fades in under axe and the
+ * site-CSS check, as the home page's did in WebKit on CI, several at once.
+ * And a band the observer never measured in view on the way down, which a
+ * loaded runner's late frames allow, stays unshown: it is brought back into
+ * view until it shows. The observers start once the page has hydrated; a
+ * scroll before that reveals nothing.
+ */
 async function scrolled(page: Page) {
+  await hydrated(page);
   await page.evaluate(async () => {
     for (let y = 0; y < document.body.scrollHeight; y += 500) {
       window.scrollTo(0, y);
       await new Promise((resolve) => setTimeout(resolve, 40));
     }
-    window.scrollTo(0, 0);
   });
+  await page.waitForFunction(() => {
+    const band = document.querySelector(
+      '.site-reveal:not([data-shown="true"])',
+    );
+    band?.scrollIntoView({ block: "center" });
+    return !band;
+  });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await hydrated(page);
 }
 
@@ -461,6 +480,37 @@ async function overriddenSiteCss(page: Page) {
 }
 
 /**
+ * Every loop on the page that runs backwards. WebKit never hands an
+ * animation whose direction is reverse or alternate-reverse to the
+ * compositor, so a loop that runs backwards has it restyle and repaint the
+ * page on every frame for as long as the page is open, where a forwards one
+ * costs the page nothing. The home page's cover had one, a traveller going
+ * round its orbit the other way: sixty frames a second at rest, its ring and
+ * stars repainted in each. A loop that goes the other way runs other
+ * keyframes forwards.
+ */
+async function backwardsLoops(page: Page) {
+  return page.evaluate(() =>
+    document.getAnimations().flatMap((animation) => {
+      const timing = animation.effect?.getTiming();
+      if (timing?.iterations !== Infinity) return [];
+      if (!String(timing.direction).endsWith("reverse")) return [];
+      const target =
+        animation.effect instanceof KeyframeEffect
+          ? animation.effect.target
+          : null;
+      const name =
+        animation instanceof CSSAnimation
+          ? animation.animationName
+          : "a script's animation";
+      return [
+        `${name} on ${target ? `${target.tagName.toLowerCase()}.${[...target.classList].join(".")}` : "nothing"}`,
+      ];
+    }),
+  );
+}
+
+/**
  * Edges a rounded box cuts short: a bordered element in the corner of a box
  * that clips, drawn with a smaller radius than the box clips at. The clip
  * takes its border off along the curve and leaves the corner unedged —
@@ -720,6 +770,8 @@ for (const colorScheme of ["light", "dark"] as const) {
         expect(await overriddenSiteCss(page)).toEqual([]);
         // No rounded box cuts the edge of what sits in its corner.
         expect(await clippedEdges(page)).toEqual([]);
+        // Nothing keeps WebKit drawing every frame on the main thread.
+        expect(await backwardsLoops(page)).toEqual([]);
         expect(errors).toEqual([]);
       });
     }
@@ -839,7 +891,25 @@ test("the theme choice is kept across a reload", async ({
   await page.getByRole("button", { name: "Theme: System" }).click();
   await page.getByRole("menuitemradio", { name: "Dark" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible();
+  // The button says the choice in the commit that makes the page dark. Until
+  // the menu has finished closing (its exit animation, the frame that ends
+  // it, React taking it out), Radix keeps everything outside it hidden from
+  // assistive technology, the button too, so it is looked for among hidden
+  // elements here; after the reload, with no menu closing, assistive
+  // technology finds it by the same name. Re-theming the home page is
+  // WebKit's slowest frame on CI: measured there, the header came back 2.2
+  // to 2.8s after the choice (run 39650530076), and not within 5s, the
+  // expect's limit, on a loaded runner (run 39620687342, both tries).
+  await expect(
+    page.getByRole("button", { name: "Theme: Dark", includeHidden: true }),
+  ).toBeVisible();
+  // And once closed, the menu gives the header back to assistive technology:
+  // one that kept the page hidden would leave the button out of reach until
+  // a reload. This waits for that alone, three times the 5s a loaded runner
+  // went past, and not for how fast the menu closes.
+  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.reload();
   await hydrated(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -4054,6 +4124,14 @@ test.describe("dashboard example", () => {
       example.getByText("Pier Market was added as a draft."),
     ).toBeVisible();
     await expect(example.getByText("13 venues · page 1 of 3")).toBeVisible();
+    // The dashboard is audited once the dialog has gone. Until its exit
+    // animation has ended and React has taken it out, Radix keeps the page
+    // under it hidden from assistive technology, and no animation need be
+    // running for that: in WebKit on CI (run 39620687342, 21 October)
+    // `hydrated` found none 0.18s after the close, and axe then measured the
+    // closing dialog's own fields at a fifth of their opacity and missed the
+    // Sidebar's known landmark finding under it.
+    await expect(dialog).toBeHidden();
     await hydrated(page);
     expect(await axeViolations(page)).toEqual([]);
   });
