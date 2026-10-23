@@ -19,29 +19,58 @@
   .kozmos-listbox[aria-disabled="true"] {
     @apply cursor-not-allowed opacity-60;
   }
+  /* A list row as Figma's painters draw Combobox's, MultiSelect's,
+     TimePicker's and Select's (owner, 21 Oct 2026): 44 tall
+     (Combobox/option/height, Button/height/default), so the density's
+     control height, 40 compact (decision 82); 12 at the sides, the Marker
+     corner, the words 14/20 regular in full ink. Select's Radix items take
+     the same class. */
   .kozmos-option {
-    @apply flex cursor-pointer items-start gap-2 rounded-marker px-3 py-2 text-sm outline-none;
+    @apply flex cursor-pointer items-center gap-2 rounded-marker px-3 py-2 text-sm outline-none;
+    min-height: var(--density-control-height-md, 2.75rem);
+  }
+  /* 2 between rows (Combobox/listbox/gap); the standalone Listbox keeps its
+     grid's 4 (Listbox/gap). */
+  :not(.kozmos-listbox) > .kozmos-option + .kozmos-option {
+    margin-top: calc(var(--primitives-layout-spacing-25) * 1px);
   }
   .kozmos-option-content {
     @apply min-w-0 flex-1;
   }
   .kozmos-option-label {
-    @apply block truncate font-medium;
+    @apply block truncate;
   }
   .kozmos-option-description {
     @apply block truncate text-xs text-muted-foreground;
   }
-  .kozmos-option[data-active="true"] {
-    @apply bg-accent text-accent-foreground;
+  /* The row under the pointer or the keyboard is a light row, background/50,
+     in full ink; the chosen row is background/100 and wins. */
+  .kozmos-option[data-active="true"],
+  .kozmos-option[data-highlighted] {
+    background-color: var(--primitives-colors-background-50);
+    color: var(--primitives-colors-foreground-0);
   }
-  .kozmos-option[data-active="true"] .kozmos-option-description {
-    color: inherit;
+  .kozmos-option[aria-selected="true"],
+  .kozmos-option[data-state="checked"] {
+    background-color: var(--primitives-colors-background-100);
   }
-  .kozmos-option[aria-disabled="true"] {
+  /* Reached by the keyboard (decision 26), the active row also draws a 2px
+     inset ring in theme 600, 4.9:1 or more against it in both themes, where
+     the light row alone reads 1.1:1; under the pointer it draws none. Inset,
+     so nothing moves. The list says which hand moved last
+     (utils/input-modality.ts): Radix Select focuses its items under the
+     pointer too, and Combobox's rows never take focus. */
+  [data-modality="keyboard"] .kozmos-option[data-active="true"],
+  [data-modality="keyboard"] .kozmos-option[data-highlighted] {
+    box-shadow: inset 0 0 0 2px var(--primitives-colors-theme-600);
+  }
+  .kozmos-option[aria-disabled="true"],
+  .kozmos-option[data-disabled] {
     @apply cursor-not-allowed text-muted-foreground opacity-60;
   }
   .kozmos-option-check {
-    @apply block mt-0.5 h-4 w-4 shrink-0;
+    @apply block h-4 w-4 shrink-0;
+    color: var(--primitives-colors-theme-600);
   }
   .kozmos-multiselect-input {
     @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;

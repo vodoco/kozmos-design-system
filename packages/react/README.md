@@ -64,6 +64,14 @@ module. Ordinary host resets/utilities are covered; this is not Shadow DOM isola
 against arbitrary high-specificity or `!important` host rules. `rem` units still
 follow the host document's root font size.
 
+The stylesheet registers the Tailwind compiler variables its utilities read
+(`--tw-translate-x`, `--tw-ring-color` and so on, 38 of them) with `@property`
+and `inherits: false`, rather than declaring their defaults on every element. A
+registration applies to the whole document. Each name is registered as Tailwind 4
+registers the same name, so a host page that runs Tailwind 4 gets the same
+registrations whichever stylesheet loads last. On a host running Tailwind 3, the
+host's own reset still declares the defaults on every element, as before.
+
 ## Browsers
 
 **Since 0.8.0, Firefox requires 146 or newer.** The 0.7.0 manifest incorrectly declared 128;
