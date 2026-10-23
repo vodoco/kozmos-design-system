@@ -61,60 +61,62 @@ import { KozmosButton } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-struct KozmosToast: View {
-    let title: String
-    let description: String?
-    
+// The toast draws itself at the bottom of the space it is given, so it goes
+// over the screen's content. It closes after 3 seconds (autoDismissAfter) or
+// at its close button, which is always named "Dismiss notification".
+struct LocationSavedToast: View {
+    @State private var isPresented = false
+
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                if let description = description {
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                }
-            }
-            Spacer()
+        ZStack {
+            KozmosButton("Show toast") { isPresented = true }
+            KozmosToast(
+                isPresented: $isPresented,
+                title: "Location saved",
+                description: "Find it in your saved places."
+            )
         }
-        .padding()
-        .background(KozmosColors.primitivesColorsBackground0)
-        .cornerRadius(8)
-        .kozmosElevation(KozmosShadows.semanticsElevationFloating)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
-        )
     }
 }
-// Note: In SwiftUI, this would typically be used with an overlay modifier
-    `}
+`}
     kotlin={`
-package com.kozmos.components.toast
-
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.toast.KozmosToast
+import com.kozmos.tokens.KozmosDimensions
 
+// This KozmosToast draws where you put it and stays until its close button,
+// named "Dismiss notification", calls onDismiss: it does not time out.
+// KozmosToast(hostState) draws a SnackbarHostState's snackbars the same way,
+// with a message, an action and a close button, but no description.
 @Composable
-fun KozmosToast(
-    hostState: SnackbarHostState,
-    modifier: Modifier = Modifier
-) {
-    SnackbarHost(
-        hostState = hostState,
-        modifier = modifier
-    ) { data ->
-        Snackbar(
-            snackbarData = data
-        )
+fun LocationSavedToast() {
+    var isOpen by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        KozmosButton(onClick = { isOpen = true }) { Text("Show toast") }
+        if (isOpen) {
+            KozmosToast(
+                title = "Location saved",
+                description = "Find it in your saved places.",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(KozmosDimensions.primitivesLayoutSpacing300),
+                onDismiss = { isOpen = false }
+            )
+        }
     }
 }
-
-    `}
+`}
 />

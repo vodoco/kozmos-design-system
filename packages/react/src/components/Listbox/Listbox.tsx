@@ -1,6 +1,7 @@
 import React from "react";
 import { OptionRow } from "./OptionRow";
 import { cn } from "../../utils";
+import { useInputModality } from "../../utils/input-modality";
 import { type ComboboxOption } from "../Combobox";
 
 export interface ListboxProps extends Omit<
@@ -48,6 +49,8 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       disabled,
       id,
       multiple,
+      onBlur,
+      onFocus,
       onKeyDown,
       onValueChange,
       options,
@@ -57,6 +60,10 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
     ref,
   ) => {
     const defaultListboxId = React.useId();
+    // The active row's keyboard ring (owned-selection.css), while the list
+    // has focus: its active row stays marked when it has not.
+    const modality = useInputModality();
+    const [focused, setFocused] = React.useState(false);
     const listboxId = id || defaultListboxId;
     const rootRef = React.useRef<HTMLDivElement | null>(null);
     const setRef = React.useCallback(
@@ -123,7 +130,16 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         aria-disabled={disabled || undefined}
         aria-multiselectable={multiple || undefined}
         tabIndex={disabled ? -1 : 0}
+        data-modality={focused ? modality : undefined}
         className={cn("kozmos-reset kozmos-listbox", className)}
+        onFocus={(event) => {
+          onFocus?.(event);
+          setFocused(true);
+        }}
+        onBlur={(event) => {
+          onBlur?.(event);
+          setFocused(false);
+        }}
         onKeyDown={(event) => {
           onKeyDown?.(event);
           if (event.defaultPrevented || disabled) return;

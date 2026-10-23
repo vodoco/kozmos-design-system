@@ -42,138 +42,34 @@ import { KozmosToggleButton } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosToggleButton(
-isOn: .constant(false),
-label: "Notifications"
-)
+// The label is required, and it is what VoiceOver says: there is no
+// separate name. The state is yours to hold, and VoiceOver hears the button
+// as selected while it is on.
+struct ShowLabelsToggle: View {
+    @Binding var showLabels: Bool
+
+    var body: some View {
+        KozmosToggleButton(isOn: $showLabels, label: "Labels")
+    }
+}
 `}
     kotlin={`
-package com.kozmos.components.togglebutton
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosThemeTokens
-import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.components.togglebutton.KozmosToggleButton
 
-enum class KozmosToggleButtonVariant {
-Default, Outline
-}
-
-enum class KozmosToggleButtonSize {
-Small, Default, Large
-}
-
+// The label is what TalkBack says: there is no separate name. The state is
+// yours to hold. An icon is an ImageVector, and an icon-only button has no
+// name at all, as the icon is drawn without a description.
 @Composable
-fun KozmosToggleButton(
-checked: Boolean,
-onCheckedChange: (Boolean) -> Unit,
-modifier: Modifier = Modifier,
-label: String? = null,
-icon: ImageVector? = null,
-variant: KozmosToggleButtonVariant = KozmosToggleButtonVariant.Default,
-size: KozmosToggleButtonSize = KozmosToggleButtonSize.Default
-) {
-val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-val hPadding = when (size) {
-KozmosToggleButtonSize.Small -> KozmosDimensions.primitivesLayoutSpacing150
-KozmosToggleButtonSize.Default -> KozmosDimensions.primitivesLayoutSpacing200
-KozmosToggleButtonSize.Large -> KozmosDimensions.primitivesLayoutSpacing300
+fun ShowLabelsToggle(showLabels: Boolean, onShowLabelsChange: (Boolean) -> Unit) {
+    KozmosToggleButton(
+        checked = showLabels,
+        onCheckedChange = onShowLabelsChange,
+        label = "Labels"
+    )
 }
-
-    val vPadding = when (size) {
-        KozmosToggleButtonSize.Small -> KozmosDimensions.primitivesLayoutSpacing50
-        KozmosToggleButtonSize.Default -> KozmosDimensions.primitivesLayoutSpacing100
-        KozmosToggleButtonSize.Large -> KozmosDimensions.primitivesLayoutSpacing150
-    }
-
-    val minHeight = when (size) {
-        KozmosToggleButtonSize.Small -> 32.dp
-        KozmosToggleButtonSize.Default -> 36.dp
-        KozmosToggleButtonSize.Large -> 40.dp
-    }
-
-    val backgroundColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsBackground200 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
-    } else {
-        if (variant == KozmosToggleButtonVariant.Outline) Color.Transparent else KozmosColors.primitivesColorsBackground100
-    }
-
-    val contentColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosColors.primitivesColorsForeground100 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-    } else {
-        KozmosColors.primitivesColorsForeground100
-    }
-
-    Surface(
-        checked = checked,
-        onCheckedChange = {
-            trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "ToggleButton", eventName = "toggle_pressed", properties = mapOf("pressed" to it.toString())))
-            onCheckedChange(it)
-        },
-        shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100),
-        color = backgroundColor,
-        modifier = modifier
-            .defaultMinSize(minHeight = minHeight)
-            .then(
-                if (variant == KozmosToggleButtonVariant.Outline) {
-                    Modifier.border(
-                        1.dp,
-                        if (checked) KozmosColors.primitivesColorsBackground400 else KozmosColors.primitivesColorsBackground300,
-                        RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100)
-                    )
-                } else Modifier
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = hPadding, vertical = vPadding)
-        ) {
-            if (icon != null) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = contentColor
-                )
-                if (label != null) {
-                    Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
-                }
-            }
-            if (label != null) {
-                Text(
-                    text = label,
-                    color = contentColor,
-                    style = when (size) {
-                        KozmosToggleButtonSize.Small -> MaterialTheme.typography.labelMedium
-                        KozmosToggleButtonSize.Default -> MaterialTheme.typography.labelLarge
-                        KozmosToggleButtonSize.Large -> MaterialTheme.typography.titleMedium
-                    }
-                )
-            }
-        }
-    }
-
-}
-
-    `}
+`}
 
 />
