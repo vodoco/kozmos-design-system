@@ -937,10 +937,10 @@ Error: The operation was canceled.
 
 **Solutions:**
 
-1. **Check for a newer push:** CI cancels its run in progress when the same branch is pushed again
-   (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is the one that
-   counts.
-2. **Know what `iOS Build` runs:** the only macOS job (`macos-latest`) builds and tests
+1. **Check for a newer push:** on a pull request, CI cancels its run in progress when the branch is
+   pushed again (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is
+   the one that counts. On `main` nothing is cancelled: every commit there gets a finished run.
+2. **Know what `iOS Build` runs:** the only macOS job (`macos-26`, Xcode 26.6, both pinned) builds and tests
    `packages/ios` with SwiftPM (`swift build`, `swift test`), then runs the whole test target on
    the pinned simulator (`node scripts/check-ios-poi.mjs`). There is no CocoaPods to cache.
 3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
