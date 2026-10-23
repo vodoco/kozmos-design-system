@@ -19,6 +19,10 @@
  *   keyboard after the pointer brings it back; the chosen row takes it too;
  *   nothing moves.
  *
+ * - In forced colours (Windows' high contrast), where fills and the ring
+ *   are dropped, the active row draws an inset outline in Highlight, no
+ *   other row draws one, and the check and the words stay in CanvasText.
+ *
  * Combobox, MultiSelect, Select, the standalone Listbox and the SDK's
  * LanguageSwitcher (Select's items, touch at any density, decision 89), in
  * light and dark, at touch and compact. Run with ADAPTIVE_BROWSER=firefox
@@ -319,6 +323,178 @@ for (const part of [
         await page.close();
       }
     }
+
+// Forced colours (Windows' high contrast) drop every fill and the keyboard's
+// ring, a box-shadow, so the active row, under the pointer or the keyboard,
+// draws an inset outline in the system's Highlight instead; no other row
+// draws one (each row's outline-none is a transparent outline, which forced
+// colours would paint); the check and the words stay in CanvasText, visible
+// on the list. Chromium and Firefox emulate the forced palette; WebKit
+// matches the media query but repaints nothing (Safari has no forced
+// colours), so there it checks only the rule.
+for (const part of [
+  "combobox",
+  "multiselect",
+  "select",
+  "listbox",
+  "languageswitcher",
+])
+  for (const theme of ["light", "dark"]) {
+    const name = `${part}, ${theme}, forced colours`;
+    const page = await browser.newPage({
+      viewport: { width: 480, height: 480 },
+    });
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    try {
+      await page.emulateMedia({ forcedColors: "active" });
+      await page.setContent(
+        `<!doctype html><html lang="en"><head><title>Rows</title><style>body{margin:0}</style><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
+      );
+      await page.addScriptTag({ content: code });
+      await page.evaluate((mount) => window.listRows.mount(mount), {
+        part,
+        theme,
+        density: "touch",
+      });
+      await settleLayout(page);
+      await open(page, part);
+      if (part === "listbox") await page.getByRole("listbox").focus();
+      await page
+        .getByRole("option", { name: "Lisbon Oriente", exact: true })
+        .hover();
+      await settle(page);
+      const look = () =>
+        page.evaluate(() => {
+          // A system colour resolves in its place's color-scheme: the dark
+          // theme's root says dark, so read it beside the rows.
+          const host = document.querySelector('[role="option"]').parentElement;
+          const system = (name) => {
+            const probe = document.createElement("i");
+            probe.style.color = name;
+            host.append(probe);
+            const value = getComputedStyle(probe).color;
+            probe.remove();
+            return value;
+          };
+          const under = (el) => {
+            for (let node = el; node; node = node.parentElement) {
+              const bg = getComputedStyle(node).backgroundColor;
+              if (!/rgba\(.*,\s*0\)$/.test(bg) && bg !== "transparent")
+                return bg;
+            }
+            return system("Canvas");
+          };
+          return {
+            matches: matchMedia("(forced-colors: active)").matches,
+            highlight: system("Highlight"),
+            canvasText: system("CanvasText"),
+            rows: [...document.querySelectorAll('[role="option"]')].map(
+              (row) => {
+                const s = getComputedStyle(row);
+                const words = row.querySelector(
+                  ".kozmos-option-label, [data-radix-select-item-text], span",
+                );
+                const check = row.querySelector("svg");
+                const box = row.getBoundingClientRect();
+                return {
+                  text: row.textContent.trim(),
+                  active:
+                    row.getAttribute("data-active") === "true" ||
+                    row.hasAttribute("data-highlighted"),
+                  outline: {
+                    style: s.outlineStyle,
+                    width: s.outlineWidth,
+                    color: s.outlineColor,
+                    offset: s.outlineOffset,
+                  },
+                  under: under(row),
+                  words: getComputedStyle(words ?? row).color,
+                  check: check
+                    ? {
+                        color: getComputedStyle(check).color,
+                        stroke: getComputedStyle(check).stroke,
+                        width: check.getBoundingClientRect().width,
+                      }
+                    : null,
+                  top: Math.round(box.top * 100) / 100,
+                  height: Math.round(box.height * 100) / 100,
+                };
+              },
+            ),
+          };
+        });
+      const problems = [];
+      const visible = (o) =>
+        o.style !== "none" &&
+        o.width !== "0px" &&
+        !/rgba\(.*,\s*0\)$/.test(o.color) &&
+        o.color !== "transparent";
+      const inspect = (state, step) => {
+        if (!state.matches) problems.push(`${step}: the media query is off`);
+        const active = state.rows.find((row) => row.active);
+        if (!active) {
+          problems.push(`${step}: no row is active`);
+          return;
+        }
+        const o = active.outline;
+        if (
+          !(
+            o.style === "solid" &&
+            o.width === "2px" &&
+            o.color === state.highlight &&
+            o.offset === "-2px"
+          )
+        )
+          problems.push(
+            `${step}: ${active.text} is outlined "${o.style} ${o.width} ${o.color} ${o.offset}", not "solid 2px ${state.highlight} -2px" (Highlight, inset)`,
+          );
+        for (const row of state.rows)
+          if (!row.active && visible(row.outline))
+            problems.push(
+              `${step}: ${row.text}, not active, is outlined "${row.outline.style} ${row.outline.width} ${row.outline.color} ${row.outline.offset}"`,
+            );
+        for (const row of state.rows) {
+          const ratio = contrast(row.words, row.under);
+          if (ratio < 4.5)
+            problems.push(
+              `${step}: ${row.text}'s words ${ratio.toFixed(2)}:1 on the list`,
+            );
+        }
+        const chosen = state.rows.find((row) => row.text === "Lisbon");
+        if (!chosen?.check || chosen.check.width < 1)
+          problems.push(`${step}: the chosen row's check is missing`);
+        else if (
+          chosen.check.color !== state.canvasText ||
+          contrast(chosen.check.color, chosen.under) < 3
+        )
+          problems.push(
+            `${step}: the check is ${chosen.check.color}, not CanvasText ${state.canvasText} (${contrast(chosen.check.color, chosen.under).toFixed(2)}:1 on the list)`,
+          );
+      };
+      const pointer = await look();
+      inspect(pointer, "under the pointer");
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+      const keyboard = await look();
+      inspect(keyboard, "by the keyboard");
+      if (
+        JSON.stringify(
+          keyboard.rows.map(({ top, height }) => [top, height]),
+        ) !==
+        JSON.stringify(pointer.rows.map(({ top, height }) => [top, height]))
+      )
+        problems.push("by the keyboard: a row moved");
+      assert.deepEqual(errors, [], "no page errors");
+      assert.deepEqual(problems, [], `${name}:\n  ${problems.join("\n  ")}`);
+      console.log(`PASS ${name}`);
+    } catch (error) {
+      failures.push(name);
+      console.error(`FAIL ${name}\n${error.message ?? error}`);
+    } finally {
+      await page.close();
+    }
+  }
 
 await browser.close();
 if (failures.length) {
