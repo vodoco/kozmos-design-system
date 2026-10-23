@@ -654,49 +654,59 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
    it dims where its orbit's line does. */
 .site-cosmos-orbit,
 .site-cosmos-track {
-  --site-cosmos-fade: conic-gradient(
-    from var(--from),
-    transparent,
-    var(--primitives-colors-foreground-0) var(--fade),
-    var(--primitives-colors-foreground-0) calc(100% - var(--fade)),
-    transparent
-  );
   left: 50%;
   top: 50%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%) rotate(var(--tilt)) scaleY(var(--squash));
 }
 
+/* A track fades where its orbit's line does. Its fade stays a mask: what it
+   fades moves through it. */
 .site-cosmos-track {
-  mask: var(--site-cosmos-fade);
+  mask: conic-gradient(
+    from var(--from),
+    transparent,
+    var(--primitives-colors-foreground-0) var(--fade),
+    var(--primitives-colors-foreground-0) calc(100% - var(--fade)),
+    transparent
+  );
 }
 
-/* The line is the tone, painted through a circle's stroke (cosmos-line.svg,
-   1.5px at any size) and the fade: an SVG stroke is smooth in every engine,
-   where WebKit draws a gradient's thin edge in steps. */
+/* The line is an image of its own (src/home/cosmos/orbit-<n>.svg, drawn by
+   scripts/generate-cosmos.mjs from the orbit and its tone's token): an SVG
+   stroke 1.5px at any size, smooth in every engine where WebKit draws a
+   gradient's thin edge in steps, with its fade drawn in. It was a tone
+   painted through two masks, the line and the fade, which a browser that
+   draws in software applies again every frame anything on the cover moves:
+   CI's Firefox drew the cover 16 to 19 times a second with the cover's
+   masks, WebKit 8, and 61 and 35 without them. An image is drawn once. */
 .site-cosmos-orbit {
   inline-size: calc(var(--size) * 100%);
-  background: var(--site-tone);
-  mask:
-    url("../home/cosmos-line.svg") center / 100% 100% no-repeat,
-    var(--site-cosmos-fade);
-  mask-composite: intersect;
+  background: var(--site-orbit-line) center / 100% 100% no-repeat;
 }
 
-.site-cosmos-tone-violet {
-  --site-tone: var(--primitives-colors-theme-variant-2-600);
+.site-cosmos-orbit-0 {
+  --site-orbit-line: url("../home/cosmos/orbit-0.svg");
 }
 
-.site-cosmos-tone-lilac {
-  --site-tone: var(--primitives-colors-theme-variant-1-700);
+.site-cosmos-orbit-1 {
+  --site-orbit-line: url("../home/cosmos/orbit-1.svg");
 }
 
-.site-cosmos-tone-amber {
-  --site-tone: var(--primitives-colors-emotional-alert-500);
+.site-cosmos-orbit-2 {
+  --site-orbit-line: url("../home/cosmos/orbit-2.svg");
 }
 
-.site-cosmos-tone-faint {
-  --site-tone: var(--primitives-colors-transparent-inverted-25);
+.site-cosmos-orbit-3 {
+  --site-orbit-line: url("../home/cosmos/orbit-3.svg");
+}
+
+.site-cosmos-orbit-4 {
+  --site-orbit-line: url("../home/cosmos/orbit-4.svg");
+}
+
+.site-cosmos-orbit-5 {
+  --site-orbit-line: url("../home/cosmos/orbit-5.svg");
 }
 
 /* A traveller: the arm turns a lap round the orbit's circle, carrying its
@@ -790,31 +800,19 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
 
 /* The ring: its colour turns from the violet ramp's palest steps at the top
    through the amber and rose of its right-hand arc, and back through violet
-   and the first ramp's indigo. Drawn through a 3px circle's stroke at the
-   square's edge (cosmos-ring.svg), smooth in every engine; the glow is the
-   same ring, blurred, and it breathes. */
+   and the first ramp's indigo. An image (src/home/cosmos/ring.svg, drawn by
+   scripts/generate-cosmos.mjs): a circle's stroke 3px wide at the square's
+   edge, painted with those colours, smooth in every engine. The glow is a
+   second ring over the first, and it breathes. It was the ring blurred
+   12px, but a filter is applied before a mask, so what it drew was the
+   masked line again, sharp: that is what it still draws, without the blur
+   it paid for in every frame. */
 .site-cosmos-ring {
   inset: 0;
-  border-radius: var(--primitives-radius-full);
-  background: conic-gradient(
-    from -8deg,
-    var(--primitives-colors-theme-variant-2-900),
-    var(--primitives-colors-theme-variant-2-700) 6%,
-    var(--primitives-colors-emotional-danger-600) 14%,
-    var(--primitives-colors-emotional-alert-500) 22%,
-    var(--primitives-colors-emotional-danger-500) 30%,
-    var(--primitives-colors-theme-variant-2-400) 40%,
-    var(--primitives-colors-theme-variant-2-200) 50%,
-    var(--primitives-colors-theme-variant-2-300) 62%,
-    var(--primitives-colors-theme-variant-2-500) 76%,
-    var(--primitives-colors-theme-variant-1-600) 88%,
-    var(--primitives-colors-theme-variant-2-900)
-  );
-  mask: url("../home/cosmos-ring.svg") center / 100% 100% no-repeat;
+  background: url("../home/cosmos/ring.svg") center / 100% 100% no-repeat;
 }
 
 .site-cosmos-ring-glow {
-  filter: blur(var(--site-space-150));
   animation: site-cosmos-breathe calc(var(--site-cosmos-beat) * 12)
     cubic-bezier(var(--primitives-ease-in-out)) infinite
     var(--site-cosmos-play, running);
@@ -863,52 +861,15 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   transform: translate(-50%, -50%) scaleY(0.13);
 }
 
+/* The rings, the core and the arms are one image (src/home/cosmos/galaxy.svg,
+   drawn by scripts/generate-cosmos.mjs): four gradients seen through two
+   masks, a fall to the edge and the arms' brightness round it, which a
+   browser that draws in software applied again every frame the galaxy
+   turned. The image turns instead. */
 .site-cosmos-arms {
   position: absolute;
   inset: 0;
-  border-radius: var(--primitives-radius-full);
-  background:
-    radial-gradient(
-      closest-side,
-      var(--primitives-colors-foreground-0),
-      var(--primitives-colors-emotional-alert-700) 3%,
-      var(--primitives-colors-emotional-danger-600) 8%,
-      transparent 22%
-    ),
-    repeating-radial-gradient(
-      closest-side,
-      transparent 0 3%,
-      var(--primitives-colors-theme-variant-2-700) 3.6%,
-      transparent 4.6% 7%
-    ),
-    repeating-radial-gradient(
-      closest-side,
-      transparent 0 1.2%,
-      var(--primitives-colors-theme-variant-2-500) 1.6%,
-      transparent 2.2% 4.4%
-    ),
-    radial-gradient(
-      closest-side,
-      var(--primitives-colors-theme-variant-2-400),
-      transparent 75%
-    );
-  mask:
-    radial-gradient(
-      closest-side,
-      var(--primitives-colors-foreground-0) 10%,
-      var(--primitives-colors-transparent-inverted-50) 40%,
-      transparent 100%
-    ),
-    conic-gradient(
-      var(--primitives-colors-foreground-0),
-      var(--primitives-colors-transparent-inverted-25) 12%,
-      var(--primitives-colors-foreground-0) 30%,
-      var(--primitives-colors-transparent-inverted-25) 45%,
-      var(--primitives-colors-foreground-0) 62%,
-      var(--primitives-colors-transparent-inverted-50) 80%,
-      var(--primitives-colors-foreground-0)
-    );
-  mask-composite: intersect;
+  background: url("../home/cosmos/galaxy.svg") center / 100% 100% no-repeat;
   animation: site-cosmos-turn calc(var(--site-cosmos-beat) * 260)
     cubic-bezier(var(--primitives-ease-linear)) infinite
     var(--site-cosmos-play, running);
@@ -983,56 +944,44 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   content: "";
   position: absolute;
   inset: -6%;
-  border-radius: var(--primitives-radius-full);
-  background: radial-gradient(
-    closest-side,
-    transparent 86%,
-    var(--site-planet-rim) 92%,
-    transparent 100%
-  );
-  mask: conic-gradient(
-    from -60deg,
-    transparent,
-    var(--primitives-colors-foreground-0) 18%,
-    var(--primitives-colors-foreground-0) 26%,
-    transparent 48%
-  );
+  background: var(--site-planet-air) center / 100% 100% no-repeat;
   opacity: var(--primitives-opacity-50);
 }
 
+/* The air is an image (src/home/cosmos/planet-air-*.svg): the rim colour in
+   a thin ring, seen through the lit side's arc. */
 .site-cosmos-planet-violet {
   --site-planet-body: var(--primitives-colors-theme-variant-2-100);
   --site-planet-rim: var(--primitives-colors-theme-variant-2-700);
+  --site-planet-air: url("../home/cosmos/planet-air-violet.svg");
 }
 
 .site-cosmos-planet-blue {
   --site-planet-body: var(--primitives-colors-theme-variant-1-300);
   --site-planet-rim: var(--primitives-colors-theme-variant-1-800);
+  --site-planet-air: url("../home/cosmos/planet-air-blue.svg");
 }
 
 /* A diamond: an amber square's outline, turned an eighth. The outline is
-   the square with its padding box cut out, since a box's own border never
-   draws inside the provider (GAP-52). */
+   drawn inside the square, since a box's own border never draws inside the
+   provider (GAP-52). */
 .site-cosmos-diamond {
   --site-cosmos-angle: 45deg;
   inline-size: calc(var(--d) * 100%);
   aspect-ratio: 1;
-  padding: var(--primitives-border-width-md);
-  background: var(--primitives-colors-emotional-alert-500);
-  mask:
-    linear-gradient(var(--primitives-colors-foreground-0) 0 0) content-box,
-    linear-gradient(var(--primitives-colors-foreground-0) 0 0);
-  mask-composite: exclude;
+  outline: var(--primitives-border-width-md) solid
+    var(--primitives-colors-emotional-alert-500);
+  outline-offset: calc(var(--primitives-border-width-md) * -1);
 }
 
 /* A star, in the shape of the logo's own (src/brand/kozmos-star.svg, made
-   from the logo by the brand script), a step or two of the sizing scale.
-   Each twinkles, out of step with the others. */
+   from the logo by the brand script), in the cover's violet
+   (src/home/cosmos/spark.svg), a step or two of the sizing scale. Each
+   twinkles, out of step with the others. */
 .site-cosmos-spark {
   inline-size: calc(var(--primitives-layout-sizing-100) * var(--k) * 1px);
   aspect-ratio: 1;
-  background: var(--primitives-colors-theme-variant-2-900);
-  mask: url("../brand/kozmos-star.svg") center / contain no-repeat;
+  background: url("../home/cosmos/spark.svg") center / contain no-repeat;
   animation: site-cosmos-twinkle calc(var(--site-cosmos-beat) * 9)
     cubic-bezier(var(--primitives-ease-in-out)) infinite
     var(--site-cosmos-play, running);
