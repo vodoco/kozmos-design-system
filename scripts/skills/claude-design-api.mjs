@@ -70,12 +70,17 @@ function renamer(dts) {
       .replace(/\b[A-Za-z]\w*_\d+\b/g, (name) => renames.get(name) ?? name);
 }
 
-/** A type on one line: comments dropped, whitespace collapsed. */
+/**
+ * A type on one line: comments dropped, whitespace collapsed, and none left
+ * just inside a `<`. unplugin-dts writes `Omit< X` where it turns
+ * `Omit<import("x").X` into a static import; the type is the same.
+ */
 const oneLine = (text) =>
   text
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\s+/g, " ")
     .replace(/;\s*}/g, " }")
+    .replace(/< /g, "<")
     .trim();
 
 /** A declaration as written, with its doc comment and without `export declare`. */
