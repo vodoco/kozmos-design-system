@@ -12,6 +12,7 @@ import {
   type IconProps,
 } from "@kozmos-ds/react";
 import { LOGO_TEXT, PACKAGES_PUBLISHED } from "../lib/site";
+import orbitList from "./cosmos-orbits.json";
 import { ButtonLink } from "../site/links";
 
 /*
@@ -38,16 +39,13 @@ type Orbit = {
   tone: Tone;
 };
 
-/** Orbits, back to front: a circle `size` times the ring, tilted and flattened. */
-const orbits: Orbit[] = [
-  { size: 2.9, tilt: -14, squash: 0.36, from: 200, fade: 18, tone: "violet" },
-  { size: 2.2, tilt: 24, squash: 0.42, from: 20, fade: 30, tone: "amber" },
-  { size: 1.7, tilt: -32, squash: 0.62, from: 120, fade: 22, tone: "lilac" },
-  // The ring's halo: three close circles, fading out along the left.
-  { size: 1.08, tilt: 0, squash: 1, from: 150, fade: 30, tone: "faint" },
-  { size: 1.16, tilt: 0, squash: 1, from: 170, fade: 34, tone: "faint" },
-  { size: 1.26, tilt: 0, squash: 1, from: 190, fade: 40, tone: "violet" },
-];
+/**
+ * Orbits, back to front: a circle `size` times the ring, tilted and
+ * flattened. The last three are the ring's halo, fading out along the left.
+ * The cover script draws each line from the same list
+ * (scripts/generate-cosmos.mjs: src/home/cosmos/orbit-<n>.svg).
+ */
+const orbits = orbitList as Orbit[];
 
 /**
  * Bodies that travel an orbit, fading where its line fades: which orbit, a
@@ -201,13 +199,11 @@ export function Cosmos() {
                   {orbits.map((orbit, index) => (
                     <Box
                       key={`orbit-${index}`}
-                      className={`site-cosmos-orbit site-cosmos-tone-${orbit.tone}`}
+                      className={`site-cosmos-orbit site-cosmos-orbit-${index}`}
                       style={{
                         "--size": orbit.size,
                         "--tilt": `${orbit.tilt}deg`,
                         "--squash": orbit.squash,
-                        "--from": `${orbit.from}deg`,
-                        "--fade": `${orbit.fade}%`,
                       }}
                     />
                   ))}

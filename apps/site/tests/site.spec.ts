@@ -1174,42 +1174,77 @@ test.describe("home", () => {
     const shape = await drawnShape(logo);
     expect(shape.decoded).toBe(true);
     expect(shape.ratio).toBeCloseTo(1605.6736 / 442.27, 1);
-    // The ring and the orbits are drawn through SVG strokes; one that does
-    // not decode paints nothing, and says nothing.
-    for (const line of [
-      ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
-      ".site-cosmos-orbit",
-    ]) {
-      expect(
-        (await drawnShape(cover.locator(line).first())).decoded,
-        line,
-      ).toBe(true);
-    }
-    // Painted from the dark theme's ramps on a light page: the ring's
-    // palest violet is the second brand ramp's 900 as the cover's provider
-    // resolves it, not as the page's light theme does.
-    const paint = await cover.evaluate((band) => {
+    // The ring, the orbits, the galaxy, the stars and the planets' air are
+    // images (src/home/cosmos/, drawn by scripts/generate-cosmos.mjs); one
+    // that does not decode paints nothing, and says nothing.
+    const images = await coverImages(cover);
+    expect(images.length).toBe(COVER_IMAGES);
+    for (const image of images) expect(image.decoded, image.part).toBe(true);
+    // Painted from the dark theme's ramps on a light page: the stars are
+    // the second brand ramp's 900 as the cover's provider resolves it, not
+    // as the page's light theme does. The script reads the dark stylesheet;
+    // this holds it to what the provider draws.
+    const paint = await cover.evaluate(async (band) => {
       const resolve = (host: Element, name: string) => {
         const probe = document.createElement("div");
         probe.style.color = `var(${name})`;
         host.append(probe);
         const colour = getComputedStyle(probe).color;
         probe.remove();
-        return colour;
+        return `#${(colour.match(/\d+/g) ?? [])
+          .slice(0, 3)
+          .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+          .join("")}`;
       };
       const provider = band.querySelector("[data-kozmos-root]")!;
-      const ring = band.querySelector(
-        ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
-      )!;
+      const spark = band.querySelector(".site-cosmos-spark")!;
+      const url =
+        getComputedStyle(spark).backgroundImage.match(
+          /url\("?([^")]+)"?\)/,
+        )?.[1];
       return {
-        ring: getComputedStyle(ring).backgroundImage,
+        spark: url ? await (await fetch(url)).text() : "",
         cover: resolve(provider, "--primitives-colors-theme-variant-2-900"),
         page: resolve(document.body, "--primitives-colors-theme-variant-2-900"),
       };
     });
     expect(paint.cover).not.toBe(paint.page);
-    expect(paint.ring).toContain(paint.cover);
-    expect(paint.ring).not.toContain(paint.page);
+    expect(paint.spark).toContain(paint.cover);
+    expect(paint.spark).not.toContain(paint.page);
+  });
+
+  test("the cover's picture is drawn without masks, but where what a mask fades moves", async ({
+    page,
+  }) => {
+    // A mask is applied again whenever what it covers is drawn, and a
+    // browser that draws in software, as CI's do, draws the cover every
+    // frame it moves: with its lines, its galaxy, its stars and its planets'
+    // air cut by masks, CI's Firefox drew it 16 to 19 times a second, and
+    // WebKit 8. They are images now. A track's fade stays a mask, because
+    // what it fades moves through it; the logo and the scrim never move.
+    await page.goto("/");
+    await hydrated(page);
+    const masked = await page
+      .locator("section[aria-labelledby='home-title']")
+      .evaluate((band) => {
+        const parts = new Set<string>();
+        for (const element of band.querySelectorAll("*"))
+          for (const pseudo of [null, "::before", "::after"]) {
+            const style = getComputedStyle(element, pseudo);
+            const mask =
+              style.maskImage || style.getPropertyValue("-webkit-mask-image");
+            if (mask && mask !== "none")
+              parts.add(`${element.className}${pseudo ?? ""}`);
+          }
+        return [...parts].sort();
+      });
+    const still = /\bsite-cosmos-(track|logo|scrim)\b/;
+    expect(masked.filter((part) => !still.test(part))).toEqual([]);
+    for (const part of ["track", "logo", "scrim"])
+      expect(
+        masked.some((masks) => masks.includes(`site-cosmos-${part}`)),
+        part,
+      ).toBe(true);
   });
 
   for (const viewport of [
@@ -1589,6 +1624,42 @@ async function paintedOverHeader(page: Page) {
 
 /** What the logo shows, and so its name and the home link's (src/lib/site.ts). */
 const LOGO = "Kozmos UI Design Systems";
+
+/**
+ * The cover's images: six orbits, the ring, the galaxy, the stars and two
+ * planets' air (src/home/cosmos/). The ring's glow is the ring again.
+ */
+const COVER_IMAGES = 11;
+
+/**
+ * Every image the cover's parts are painted with, decoded as the browser
+ * would decode it. The build inlines a small SVG into the stylesheet, so an
+ * image is known by the part that draws it, not by its file's name.
+ */
+async function coverImages(cover: Locator) {
+  return cover.evaluate(async (band) => {
+    const found = new Map<string, string>();
+    for (const element of band.querySelectorAll("[class*='site-cosmos-']"))
+      for (const pseudo of [null, "::after"]) {
+        const url = getComputedStyle(element, pseudo).backgroundImage.match(
+          /url\("?([^")]+)"?\)/,
+        )?.[1];
+        if (url && !found.has(url))
+          found.set(url, `${element.className}${pseudo ?? ""}`);
+      }
+    return Promise.all(
+      [...found].map(async ([url, part]) => {
+        const image = new Image();
+        image.src = url;
+        const decoded = await image.decode().then(
+          () => true,
+          () => false,
+        );
+        return { part, decoded };
+      }),
+    );
+  });
+}
 
 /**
  * The artwork a logo Box is painted through, decoded as the browser would
