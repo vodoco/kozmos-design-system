@@ -710,12 +710,19 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   inline-size: calc(var(--size) * 100% + var(--site-cosmos-room) * 2);
 }
 
+/* One that goes the other way takes the other keyframes; see the laps'. */
+.site-cosmos-track-backwards {
+  --site-cosmos-arm-lap: site-cosmos-lap-back;
+  --site-cosmos-rider-lap: site-cosmos-lap;
+}
+
 .site-cosmos-arm {
   position: absolute;
   inset: var(--site-cosmos-room);
   rotate: var(--start);
-  animation: site-cosmos-lap calc(var(--site-cosmos-beat) * var(--lap))
-    cubic-bezier(var(--primitives-ease-linear)) infinite var(--way)
+  animation: var(--site-cosmos-arm-lap, site-cosmos-lap)
+    calc(var(--site-cosmos-beat) * var(--lap))
+    cubic-bezier(var(--primitives-ease-linear)) infinite
     var(--site-cosmos-play, running);
   animation-delay: calc(
     var(--site-cosmos-beat) * var(--lap) * var(--start-share) * -1
@@ -730,8 +737,9 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   rotate: calc(var(--start) * -1);
   transform: scaleY(calc(1 / var(--squash))) rotate(calc(var(--tilt) * -1))
     rotate(var(--site-cosmos-angle, 0deg));
-  animation: site-cosmos-lap-back calc(var(--site-cosmos-beat) * var(--lap))
-    cubic-bezier(var(--primitives-ease-linear)) infinite var(--way)
+  animation: var(--site-cosmos-rider-lap, site-cosmos-lap-back)
+    calc(var(--site-cosmos-beat) * var(--lap))
+    cubic-bezier(var(--primitives-ease-linear)) infinite
     var(--site-cosmos-play, running);
   animation-delay: calc(
     var(--site-cosmos-beat) * var(--lap) * var(--start-share) * -1
@@ -740,7 +748,13 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
 
 /* Constant laps, started part-way through by a negative delay: keyframes
    that read a custom property are worked out on the main thread every
-   frame, where these run on the compositor. */
+   frame, where these run on the compositor. And every lap runs forwards:
+   WebKit never hands an animation whose direction is reverse or
+   alternate-reverse to the compositor, so the one traveller that goes
+   backwards kept it drawing the cover on the main thread sixty times a
+   second, the ring and the stars repainted in every frame, for as long as
+   the page was open. That traveller takes the other keyframes instead (the
+   arm the back lap, the rider the lap): the same turn at every moment. */
 @keyframes site-cosmos-lap {
   from {
     rotate: 0turn;
