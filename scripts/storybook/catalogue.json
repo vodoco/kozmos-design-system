@@ -323,6 +323,21 @@
       "exports": ["Default", "Brand", "Small", "Destructive", "Emotions"]
     },
     {
+      "file": "packages/react/src/components/Calendar/Calendar.stories.tsx",
+      "id": "components-calendar",
+      "title": "Core/Inputs/Calendar",
+      "component": "Calendar",
+      "exports": [
+        "Default",
+        "Range",
+        "TwoMonths",
+        "Bounds",
+        "Unavailable",
+        "RightToLeft",
+        "Locale"
+      ]
+    },
+    {
       "file": "packages/react/src/components/DatePicker/DatePicker.stories.tsx",
       "id": "components-datepicker",
       "title": "Core/Inputs/DatePicker",

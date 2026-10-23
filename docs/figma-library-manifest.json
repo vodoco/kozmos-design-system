@@ -14538,10 +14538,10 @@
   },
   "components": {
     "summary": {
-      "total": 120,
-      "stories": 120,
-      "tests": 120,
-      "exported": 120,
+      "total": 121,
+      "stories": 121,
+      "tests": 121,
+      "exported": 121,
       "codeConnectFiles": 98,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 98
@@ -15328,6 +15328,51 @@
             "secondary"
           ]
         }
+      },
+      {
+        "name": "Calendar",
+        "source": "packages/react/src/components/Calendar/Calendar.tsx",
+        "story": "packages/react/src/components/Calendar/Calendar.stories.tsx",
+        "test": "packages/react/src/components/Calendar/Calendar.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "autoFocus",
+          "children",
+          "defaultMonth",
+          "defaultValue",
+          "disabled",
+          "id",
+          "isDateUnavailable",
+          "locale",
+          "max",
+          "min",
+          "mode",
+          "month",
+          "months",
+          "nextMonthLabel",
+          "previousMonthLabel",
+          "readOnly",
+          "role",
+          "tabIndex",
+          "title",
+          "today",
+          "value"
+        ],
+        "variants": {}
       },
       {
         "name": "Card",
