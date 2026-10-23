@@ -75,7 +75,39 @@ export interface DateRangePickerProps extends Omit<
   status?: InputStatus;
   value?: DateRangeValue;
   wrapperClassName?: string;
+  /**
+   * The start and end fields' labels are read, not shown: the range's one
+   * `label` names it, for a one-line filter bar (GAP-051).
+   */
+  hideFieldLabels?: boolean;
+  /**
+   * Whether Kozmos's range calendar is open, with `onOpenChange`. Each
+   * field's button opens it, as Alt+Down Arrow or F4 in a field do, where the
+   * browser's own picker button can give way (Chromium, Edge, Safari); where
+   * it cannot (Firefox 146), the fields are the browser's and these do
+   * nothing.
+   */
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Names each field's button, which the field's label describes. */
+  chooseDatesLabel?: string;
+  /** Two months side by side, or one; by default two where the window has room. */
+  months?: 1 | 2;
+  /** The calendar's locale; the browser's still formats the typed dates. */
+  locale?: string;
+  /** Days the calendar shows but cannot start or end the range on. */
+  isDateUnavailable?: (date: string) => boolean;
+  /** The day the calendar draws as today, `YYYY-MM-DD`. */
+  today?: string;
+  /** The calendar's previous-month button's name. */
+  previousMonthLabel?: string;
+  /** The calendar's next-month button's name. */
+  nextMonthLabel?: string;
 }
+
+/** The two months the range panel shows side by side, 12 apart, 12 inside. */
+const TWO_MONTHS_WIDTH = 2 * (7 * 40 + 6 * 4) + 12 + 2 * 12 + 2;
 
 function fieldDescriptionIds({
   description,
@@ -304,6 +336,8 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
     {
       className,
       autoFocus,
+      chooseDatesLabel = "Choose dates",
+      defaultOpen,
       defaultValue,
       description,
       disabled,
@@ -313,12 +347,20 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
       endValue,
       error,
       helperText,
+      hideFieldLabels,
       id,
+      isDateUnavailable,
       label,
+      locale,
       max,
       min,
+      months: monthsProp,
+      nextMonthLabel,
+      onOpenChange,
       onRangeChange,
       onValueChange,
+      open: openProp,
+      previousMonthLabel,
       readOnly,
       required,
       startLabel = "Start date",
@@ -326,6 +368,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
       startPlaceholder,
       startValue,
       status = "default",
+      today,
       value,
       wrapperClassName,
       ...props
@@ -339,6 +382,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
     const helperId = React.useId();
     const startId = React.useId();
     const endId = React.useId();
+    const labelIds = { start: React.useId(), end: React.useId() };
     const fieldId = id || defaultFieldId;
     const resolvedStatus: InputStatus = error ? "error" : status;
     const describedBy = fieldDescriptionIds({
@@ -371,6 +415,166 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
       onRangeChange?.(next);
     };
 
+    const kozmos = useCanReplaceDatePicker();
+    const group = React.useRef<HTMLDivElement | null>(null);
+    const content = React.useRef<HTMLDivElement>(null);
+    const [uncontrolledOpen, setUncontrolledOpen] =
+      React.useState(!!defaultOpen);
+    // The field whose button or keys opened it, which focus returns to.
+    const [from, setFrom] = React.useState<"start" | "end">("start");
+    const [roomy, setRoomy] = React.useState(true);
+    const locked = disabled || readOnly;
+    const open = kozmos && !locked && (openProp ?? uncontrolledOpen);
+    const setOpen = (next: boolean) => {
+      if (next)
+        setRoomy(
+          (group.current?.ownerDocument.defaultView?.innerWidth ?? Infinity) >=
+            TWO_MONTHS_WIDTH + 16,
+        );
+      if (openProp === undefined) setUncontrolledOpen(next);
+      onOpenChange?.(next);
+    };
+    const months = monthsProp ?? (roomy ? 2 : 1);
+    const setRefs = (node: HTMLDivElement | null) => {
+      group.current = node;
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    };
+
+    const field = (end: boolean) => {
+      const which = end ? "end" : "start";
+      const fieldLabel = end ? endLabel : startLabel;
+      const inputId = end ? endId : startId;
+      const input = (
+        <input
+          id={inputId}
+          type="date"
+          aria-describedby={describedBy || undefined}
+          aria-invalid={resolvedStatus === "error" || undefined}
+          className={cn(
+            inputVariants({ status: resolvedStatus }),
+            "kozmos-temporal-input",
+            kozmos &&
+              "kozmos-date-input pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+          )}
+          data-picker={kozmos ? "kozmos" : undefined}
+          disabled={disabled}
+          max={
+            end
+              ? max
+              : range.end && max
+                ? range.end < max
+                  ? range.end
+                  : max
+                : range.end || max
+          }
+          min={
+            end
+              ? range.start && min
+                ? range.start > min
+                  ? range.start
+                  : min
+                : range.start || min
+              : min
+          }
+          name={end ? endName : startName}
+          placeholder={end ? endPlaceholder : startPlaceholder}
+          readOnly={readOnly}
+          required={required}
+          autoFocus={end ? undefined : autoFocus}
+          value={end ? range.end : range.start}
+          onChange={(event) =>
+            setRange({ ...range, [which]: event.target.value })
+          }
+          onKeyDown={(event) => {
+            // Chromium opens its own picker on these, button hidden or not.
+            if (
+              kozmos &&
+              !locked &&
+              ((event.altKey && event.key === "ArrowDown") ||
+                event.key === "F4")
+            ) {
+              event.preventDefault();
+              setFrom(which);
+              setOpen(true);
+            }
+          }}
+        />
+      );
+      const box = (
+        <div className="kozmos-reset kozmos-temporal-field">
+          <Calendar
+            aria-hidden="true"
+            className="kozmos-reset kozmos-temporal-icon"
+          />
+          {input}
+          {kozmos && (
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={chooseDatesLabel}
+                aria-describedby={labelIds[which]}
+                className="kozmos-reset kozmos-field-action kozmos-date-picker-trigger"
+                disabled={locked}
+                // Radix toggles on click; the field it opened from is the
+                // one focus returns to.
+                onPointerDown={() => setFrom(which)}
+                onKeyDown={() => setFrom(which)}
+              >
+                {open && from === which ? (
+                  <ChevronUp
+                    aria-hidden="true"
+                    className="kozmos-reset kozmos-field-action-icon"
+                  />
+                ) : (
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="kozmos-reset kozmos-field-action-icon"
+                  />
+                )}
+              </button>
+            </PopoverTrigger>
+          )}
+        </div>
+      );
+      // Hidden, the label is out of the grid's rows, so no gap stays above
+      // the field. The browser's fields (Firefox) keep the markup they
+      // always had; a button cannot sit inside a <label>, so Kozmos's fields
+      // label their input beside it.
+      const hidden = cn("kozmos-reset", hideFieldLabels && "sr-only");
+      return kozmos ? (
+        <div className="kozmos-reset kozmos-date-range-label">
+          <label id={labelIds[which]} className={hidden} htmlFor={inputId}>
+            {fieldLabel}
+          </label>
+          {box}
+        </div>
+      ) : (
+        <label
+          className="kozmos-reset kozmos-date-range-label"
+          htmlFor={inputId}
+        >
+          <span id={labelIds[which]} className={hidden}>
+            {fieldLabel}
+          </span>
+          {box}
+        </label>
+      );
+    };
+
+    const fields = (
+      <div
+        ref={setRefs}
+        id={fieldId}
+        className={cn("kozmos-reset kozmos-date-range", className)}
+        {...props}
+      >
+        {field(false)}
+        {field(true)}
+      </div>
+    );
+    const opened = from === "end" ? range.end : range.start;
+
     return (
       <FieldWrapper
         className={wrapperClassName}
@@ -385,92 +589,67 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
         required={required}
         status={resolvedStatus}
       >
-        <div
-          ref={ref}
-          id={fieldId}
-          className={cn("kozmos-reset kozmos-date-range", className)}
-          {...props}
-        >
-          <label
-            className="kozmos-reset kozmos-date-range-label"
-            htmlFor={startId}
-          >
-            <span className="kozmos-reset">{startLabel}</span>
-            <div className="kozmos-reset kozmos-temporal-field">
-              <Calendar
-                aria-hidden="true"
-                className="kozmos-reset kozmos-temporal-icon"
-              />
-              <input
-                id={startId}
-                type="date"
-                aria-describedby={describedBy || undefined}
-                aria-invalid={resolvedStatus === "error" || undefined}
-                className={cn(
-                  inputVariants({ status: resolvedStatus }),
-                  "kozmos-temporal-input",
-                )}
-                disabled={disabled}
-                max={
-                  range.end && max
-                    ? range.end < max
-                      ? range.end
-                      : max
-                    : range.end || max
+        {kozmos ? (
+          <Popover open={open} onOpenChange={setOpen} modal>
+            <PopoverAnchor asChild>{fields}</PopoverAnchor>
+            <PopoverContent
+              ref={content}
+              align="start"
+              sideOffset={6}
+              aria-label={label || chooseDatesLabel}
+              aria-modal="true"
+              className="kozmos-date-picker-panel"
+              onOpenAutoFocus={(event) => {
+                // The day of the field it opened from, else the range's
+                // tab stop.
+                const day =
+                  content.current?.querySelector<HTMLElement>(
+                    `[data-day="${opened}"]`,
+                  ) ??
+                  content.current?.querySelector<HTMLElement>(
+                    '[data-day][tabindex="0"]',
+                  );
+                if (!day) return;
+                event.preventDefault();
+                day.focus();
+              }}
+              onCloseAutoFocus={(event) => {
+                // Back to the button of the field it opened from.
+                const button = group.current?.querySelectorAll<HTMLElement>(
+                  ".kozmos-date-picker-trigger",
+                )[from === "end" ? 1 : 0];
+                if (!button) return;
+                event.preventDefault();
+                button.focus();
+              }}
+            >
+              <MonthCalendar
+                mode="range"
+                months={months}
+                value={{
+                  start: range.start || undefined,
+                  end: range.end || undefined,
+                }}
+                defaultMonth={
+                  months === 1 && opened ? opened.slice(0, 7) : undefined
                 }
                 min={min}
-                name={startName}
-                placeholder={startPlaceholder}
-                readOnly={readOnly}
-                required={required}
-                autoFocus={autoFocus}
-                value={range.start}
-                onChange={(event) =>
-                  setRange({ ...range, start: event.target.value })
-                }
-              />
-            </div>
-          </label>
-          <label
-            className="kozmos-reset kozmos-date-range-label"
-            htmlFor={endId}
-          >
-            <span className="kozmos-reset">{endLabel}</span>
-            <div className="kozmos-reset kozmos-temporal-field">
-              <Calendar
-                aria-hidden="true"
-                className="kozmos-reset kozmos-temporal-icon"
-              />
-              <input
-                id={endId}
-                type="date"
-                aria-describedby={describedBy || undefined}
-                aria-invalid={resolvedStatus === "error" || undefined}
-                className={cn(
-                  inputVariants({ status: resolvedStatus }),
-                  "kozmos-temporal-input",
-                )}
-                disabled={disabled}
                 max={max}
-                min={
-                  range.start && min
-                    ? range.start > min
-                      ? range.start
-                      : min
-                    : range.start || min
-                }
-                name={endName}
-                placeholder={endPlaceholder}
-                readOnly={readOnly}
-                required={required}
-                value={range.end}
-                onChange={(event) =>
-                  setRange({ ...range, end: event.target.value })
-                }
+                isDateUnavailable={isDateUnavailable}
+                locale={locale}
+                today={today}
+                previousMonthLabel={previousMonthLabel}
+                nextMonthLabel={nextMonthLabel}
+                onValueChange={(next) => {
+                  setRange({ start: next.start ?? "", end: next.end ?? "" });
+                  if (next.end) setOpen(false);
+                }}
               />
-            </div>
-          </label>
-        </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          fields
+        )}
       </FieldWrapper>
     );
   },

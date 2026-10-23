@@ -349,7 +349,14 @@
       "id": "components-daterangepicker",
       "title": "Core/Inputs/DateRangePicker",
       "component": "DateRangePicker",
-      "exports": ["Default", "ResponsiveStack", "ValidationStates"]
+      "exports": [
+        "Default",
+        "Open",
+        "OneMonth",
+        "OneLabel",
+        "ResponsiveStack",
+        "ValidationStates"
+      ]
     },
     {
       "file": "packages/react/src/components/Dialog/Dialog.stories.tsx",
