@@ -114,28 +114,85 @@ test("conditioned keyframes keep their media condition", async () => {
   });
 });
 
-test("Tailwind defaults are initialized only on owned elements outside scope", async () => {
-  const root = await compile(
-    "*,\n::before,\n::after {--tw-translate-x:0; --tw-ring-offset-width:0px; box-sizing:border-box}",
-  );
-  root.walkAtRules("scope", (r) => r.remove());
-  assert.match(root.toString(), /\.kozmos-reset::before/);
-  assert.match(root.toString(), /--tw-ring-offset-width:0px/);
-  assert.doesNotMatch(root.toString(), /box-sizing/);
+// Tailwind 3 declares its compiler variables' defaults on every element.
+// Kozmos registers them instead (inherits: false), as Tailwind 4 registers
+// the same names, and a read of one with no initial value falls back to
+// Tailwind 3's default.
+const TAILWIND_DEFAULTS =
+  "*,\n::before,\n::after {--tw-translate-x:0; --tw-skew-x:0; --tw-blur: ; --tw-ring-offset-width:0px; --tw-ring-color:rgb(59 130 246 / .5); --tw-shadow-colored:0 0 #0000; --tw-contain-size: } ::backdrop {--tw-translate-x:0; --tw-skew-x:0; --tw-blur: ; --tw-ring-offset-width:0px; --tw-ring-color:rgb(59 130 246 / .5); --tw-shadow-colored:0 0 #0000; --tw-contain-size: } *, ::before, ::after {box-sizing:border-box; border-width:0}";
+const USES =
+  ".translate {transform:translateX(var(--tw-translate-x)) skewX(var(--tw-skew-x))} .blur {filter:var(--tw-blur) blur(1px)} .ring {box-shadow:0 0 0 var(--tw-ring-offset-width) var(--tw-ring-color)} @kozmos-owned {.kozmos-ring {--tw-ring-offset-width:2px; box-shadow:0 0 0 var(--tw-ring-offset-width, 1px) red}}";
+
+test("Tailwind's compiler defaults are declared on no element, inside a root or out", async () => {
+  const root = await compile(TAILWIND_DEFAULTS + USES);
+  const declared = [];
+  root.walkDecls(/^--tw-/, (d) => declared.push([d.parent.selector, d.prop]));
+  assert.deepEqual(declared, [[".kozmos-ring", "--tw-ring-offset-width"]]);
+  // Tailwind's reset keeps its place (and GAP-52's weight); only the
+  // initialisers go.
+  const reset = [];
+  root.walkDecls("box-sizing", (d) => reset.push(d.parent.selector));
+  assert.equal(reset.length, 1);
+  assert.match(reset[0], /^:scope \*:not\(:where\(\.kozmos-reset\)\)/);
 });
 
-test("legacy compiler defaults cannot reset owned transform and ring variables", async () => {
-  const root = await compile(
-    "*,::before,::after {--tw-translate-y:0;--tw-ring-offset-width:0px}",
+test("every compiler variable read is registered as Tailwind 4 registers it, at the top level", async () => {
+  const root = await compile(TAILWIND_DEFAULTS + USES);
+  const registered = {};
+  root.walkAtRules("property", (rule) => {
+    assert.equal(rule.parent, root, `${rule.params} is registered globally`);
+    registered[rule.params] = Object.fromEntries(
+      rule.nodes.map((d) => [d.prop, d.value]),
+    );
+  });
+  assert.deepEqual(registered, {
+    "--tw-translate-x": {
+      syntax: '"*"',
+      inherits: "false",
+      "initial-value": "0",
+    },
+    // Tailwind 4 has no initial value for these: Kozmos's reads fall back.
+    "--tw-skew-x": { syntax: '"*"', inherits: "false" },
+    "--tw-blur": { syntax: '"*"', inherits: "false" },
+    "--tw-ring-color": { syntax: '"*"', inherits: "false" },
+    "--tw-ring-offset-width": {
+      syntax: '"<length>"',
+      inherits: "false",
+      "initial-value": "0px",
+    },
+  });
+  // Unread defaults are neither declared nor registered.
+  assert.doesNotMatch(root.toString(), /--tw-shadow-colored|--tw-contain-size/);
+  // Registrations come before everything else.
+  assert.equal(root.first.type, "atrule");
+  assert.equal(root.first.name, "property");
+});
+
+test("a read of a variable registered without an initial value falls back to Tailwind 3's default", async () => {
+  const root = await compile(TAILWIND_DEFAULTS + USES);
+  const values = {};
+  root.walkDecls(/^(transform|filter|box-shadow)$/, (d) => {
+    values[d.parent.selector] = d.value;
+  });
+  assert.deepEqual(values, {
+    // A registered initial value is the default; no fallback is needed.
+    ":scope .translate":
+      "translateX(var(--tw-translate-x)) skewX(var(--tw-skew-x, 0))",
+    ":scope .blur": "var(--tw-blur,) blur(1px)",
+    ":scope .ring":
+      "0 0 0 var(--tw-ring-offset-width) var(--tw-ring-color, rgb(59 130 246 / .5))",
+    // A read with its own fallback keeps it.
+    ".kozmos-ring": "0 0 0 var(--tw-ring-offset-width, 1px) red",
+  });
+});
+
+test("a compiler default the registration table does not know stops the build", async () => {
+  await assert.rejects(
+    compile(
+      "*, ::before, ::after {--tw-new-thing:0} .x {width:var(--tw-new-thing)}",
+    ),
+    /--tw-new-thing is a Tailwind default the registration table does not know/,
   );
-  const scope = root.nodes.find(
-    (n) => n.type === "atrule" && n.name === "scope",
-  );
-  assert.deepEqual(scope.first.selectors, [
-    ":scope *:not(:where(.kozmos-reset))",
-    ":scope :not(:where(.kozmos-reset))::before",
-    ":scope :not(:where(.kozmos-reset))::after",
-  ]);
 });
 
 test("owned CSS rejects a native scope dependency", async () => {

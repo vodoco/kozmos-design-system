@@ -98,7 +98,6 @@ function collectErrors(page: Page) {
 /**
  * The site mirrors the provider's theme onto <html> once it has hydrated.
  * A pre-rendered page starts in the light theme (GAPS.md, GAP-03), and the
- * components' colour transitions then run into the visitor's theme, so the
  * page is only measured once no animation is still running.
  */
 async function hydrated(page: Page) {
@@ -117,15 +116,34 @@ async function hydrated(page: Page) {
   );
 }
 
-/** Scrolls the whole page once, so revealed sections and miniatures mount. */
+/**
+ * Scrolls the whole page once, so revealed sections and miniatures mount,
+ * and waits for every band to have been shown before `hydrated` looks for
+ * running fades. A band reveals when its intersection observer reports it
+ * in view and React renders it shown, a task or two after the frame that
+ * measured it; one shown after that look fades in under axe and the
+ * site-CSS check, as the home page's did in WebKit on CI, several at once.
+ * And a band the observer never measured in view on the way down, which a
+ * loaded runner's late frames allow, stays unshown: it is brought back into
+ * view until it shows. The observers start once the page has hydrated; a
+ * scroll before that reveals nothing.
+ */
 async function scrolled(page: Page) {
+  await hydrated(page);
   await page.evaluate(async () => {
     for (let y = 0; y < document.body.scrollHeight; y += 500) {
       window.scrollTo(0, y);
       await new Promise((resolve) => setTimeout(resolve, 40));
     }
-    window.scrollTo(0, 0);
   });
+  await page.waitForFunction(() => {
+    const band = document.querySelector(
+      '.site-reveal:not([data-shown="true"])',
+    );
+    band?.scrollIntoView({ block: "center" });
+    return !band;
+  });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await hydrated(page);
 }
 
@@ -461,11 +479,46 @@ async function overriddenSiteCss(page: Page) {
 }
 
 /**
+ * Every loop on the page that runs backwards. WebKit never hands an
+ * animation whose direction is reverse or alternate-reverse to the
+ * compositor, so a loop that runs backwards has it restyle and repaint the
+ * page on every frame for as long as the page is open, where a forwards one
+ * costs the page nothing. The home page's cover had one, a traveller going
+ * round its orbit the other way: sixty frames a second at rest, its ring and
+ * stars repainted in each. A loop that goes the other way runs other
+ * keyframes forwards.
+ */
+async function backwardsLoops(page: Page) {
+  return page.evaluate(() =>
+    document.getAnimations().flatMap((animation) => {
+      const timing = animation.effect?.getTiming();
+      if (timing?.iterations !== Infinity) return [];
+      if (!String(timing.direction).endsWith("reverse")) return [];
+      const target =
+        animation.effect instanceof KeyframeEffect
+          ? animation.effect.target
+          : null;
+      const name =
+        animation instanceof CSSAnimation
+          ? animation.animationName
+          : "a script's animation";
+      return [
+        `${name} on ${target ? `${target.tagName.toLowerCase()}.${[...target.classList].join(".")}` : "nothing"}`,
+      ];
+    }),
+  );
+}
+
+/**
  * Edges a rounded box cuts short: a bordered element in the corner of a box
  * that clips, drawn with a smaller radius than the box clips at. The clip
  * takes its border off along the curve and leaves the corner unedged —
  * hidden by a shadow in the light theme, plain on a dark page. Content in an
- * inert miniature is a picture of a page that is checked itself.
+ * inert miniature is a picture of a page that is checked itself, drawn
+ * scaled, so its own radius is not the one on screen: it is left out, as a
+ * clipping box and as what one holds. Other inert content is what a page
+ * shows under a covering part (the kiosk's attract screen, the phone's
+ * assistant) and is checked like the rest.
  */
 async function clippedEdges(page: Page) {
   const found = await page.evaluate(() => {
@@ -511,8 +564,9 @@ async function clippedEdges(page: Page) {
       return `${element.localName}${classes.map((name) => `.${name}`).join("")}${role ? `[role=${role}]` : ""}`;
     };
     const lines = new Set<string>();
+    const miniature = ".site-miniature-canvas[inert]";
     for (const box of Array.from(document.querySelectorAll("body *"))) {
-      if (box.closest("[inert]")) continue;
+      if (box.closest(miniature)) continue;
       const style = getComputedStyle(box);
       // A box cuts its corners when its overflow is not visible — or when
       // paint containment cuts them for it, which leaves `overflow` visible:
@@ -540,9 +594,7 @@ async function clippedEdges(page: Page) {
           Math.max(width(style, vertical), width(style, horizontal));
         if (clip < 2) continue;
         for (const child of Array.from(box.querySelectorAll("*"))) {
-          // Nor a child in an inert miniature: a picture of a page checked on
-          // its own, drawn scaled, so its own radius is not the one on screen.
-          if (child.closest("[inert]")) continue;
+          if (child.closest(miniature)) continue;
           const at = child.getBoundingClientRect();
           if (at.width === 0 || at.height === 0) continue;
           const key = {
@@ -717,6 +769,8 @@ for (const colorScheme of ["light", "dark"] as const) {
         expect(await overriddenSiteCss(page)).toEqual([]);
         // No rounded box cuts the edge of what sits in its corner.
         expect(await clippedEdges(page)).toEqual([]);
+        // Nothing keeps WebKit drawing every frame on the main thread.
+        expect(await backwardsLoops(page)).toEqual([]);
         expect(errors).toEqual([]);
       });
     }
@@ -836,7 +890,25 @@ test("the theme choice is kept across a reload", async ({
   await page.getByRole("button", { name: "Theme: System" }).click();
   await page.getByRole("menuitemradio", { name: "Dark" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible();
+  // The button says the choice in the commit that makes the page dark. Until
+  // the menu has finished closing (its exit animation, the frame that ends
+  // it, React taking it out), Radix keeps everything outside it hidden from
+  // assistive technology, the button too, so it is looked for among hidden
+  // elements here; after the reload, with no menu closing, assistive
+  // technology finds it by the same name. Re-theming the home page is
+  // WebKit's slowest frame on CI: measured there, the header came back 2.2
+  // to 2.8s after the choice (run 39650530076), and not within 5s, the
+  // expect's limit, on a loaded runner (run 39620687342, both tries).
+  await expect(
+    page.getByRole("button", { name: "Theme: Dark", includeHidden: true }),
+  ).toBeVisible();
+  // And once closed, the menu gives the header back to assistive technology:
+  // one that kept the page hidden would leave the button out of reach until
+  // a reload. This waits for that alone, three times the 5s a loaded runner
+  // went past, and not for how fast the menu closes.
+  await expect(page.getByRole("button", { name: "Theme: Dark" })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.reload();
   await hydrated(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -850,6 +922,78 @@ test("the theme choice is kept across a reload", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
+
+// GAP-96: a theme switch snaps. Every Kozmos part with a colour transition
+// would otherwise fade into the new theme, hundreds of them at once on the
+// home page, a frame of restyling and repainting for each step of the fade.
+// No frame after a switch may draw a colour mid-fade. Under reduced motion
+// too: the parts' colour transitions run whatever the preference.
+for (const motion of ["no-preference", "reduce"] as const) {
+  test(`a theme switch snaps${motion === "reduce" ? " under reduced motion" : ""}: no frame draws a colour mid-fade`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: motion });
+    await page.addInitScript(() => {
+      const frames: number[] = [];
+      (window as unknown as { fadingFrames: number[] }).fadingFrames = frames;
+      const sample = () => {
+        let fading = 0;
+        for (const animation of document.getAnimations()) {
+          if (!(animation instanceof CSSTransition)) continue;
+          // Under way: a fade that has not started yet draws its start.
+          if (animation.playState !== "running") continue;
+          if (!(Number(animation.currentTime) > 0)) continue;
+          if (
+            !/color|shadow|^fill$|^stroke$/.test(animation.transitionProperty)
+          )
+            continue;
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          // The menu's own items fade their highlight as the pointer moves.
+          if (target?.closest('[role="menu"]')) continue;
+          fading++;
+        }
+        frames.push(fading);
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    // The most colour fades any frame drew since the last look.
+    const fadingSince = () =>
+      page.evaluate(() => {
+        const frames = (window as unknown as { fadingFrames: number[] })
+          .fadingFrames;
+        return Math.max(0, ...frames.splice(0, frames.length));
+      });
+    const settled = async () => {
+      await page.waitForTimeout(400);
+      return fadingSince();
+    };
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+    await hydrated(page);
+    await page.getByRole("button", { name: "Theme: System" }).click();
+    await page.getByRole("menuitemradio", { name: "Dark" }).waitFor();
+    await settled();
+    // A choice in the menu.
+    await page.getByRole("menuitemradio", { name: "Dark" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades after choosing Dark").toBe(0);
+    // The stored choice, applied as the next load hydrates.
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the stored choice applies").toBe(
+      0,
+    );
+    // The device's, followed under System.
+    await page.getByRole("button", { name: "Theme: Dark" }).click();
+    await page.getByRole("menuitemradio", { name: "System" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await settled();
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await settled(), "colour fades as the device turns dark").toBe(0);
+  });
+}
 
 test("site navigation stays in the page and moves focus to the content", async ({
   page,
@@ -1030,42 +1174,77 @@ test.describe("home", () => {
     const shape = await drawnShape(logo);
     expect(shape.decoded).toBe(true);
     expect(shape.ratio).toBeCloseTo(1605.6736 / 442.27, 1);
-    // The ring and the orbits are drawn through SVG strokes; one that does
-    // not decode paints nothing, and says nothing.
-    for (const line of [
-      ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
-      ".site-cosmos-orbit",
-    ]) {
-      expect(
-        (await drawnShape(cover.locator(line).first())).decoded,
-        line,
-      ).toBe(true);
-    }
-    // Painted from the dark theme's ramps on a light page: the ring's
-    // palest violet is the second brand ramp's 900 as the cover's provider
-    // resolves it, not as the page's light theme does.
-    const paint = await cover.evaluate((band) => {
+    // The ring, the orbits, the galaxy, the stars and the planets' air are
+    // images (src/home/cosmos/, drawn by scripts/generate-cosmos.mjs); one
+    // that does not decode paints nothing, and says nothing.
+    const images = await coverImages(cover);
+    expect(images.length).toBe(COVER_IMAGES);
+    for (const image of images) expect(image.decoded, image.part).toBe(true);
+    // Painted from the dark theme's ramps on a light page: the stars are
+    // the second brand ramp's 900 as the cover's provider resolves it, not
+    // as the page's light theme does. The script reads the dark stylesheet;
+    // this holds it to what the provider draws.
+    const paint = await cover.evaluate(async (band) => {
       const resolve = (host: Element, name: string) => {
         const probe = document.createElement("div");
         probe.style.color = `var(${name})`;
         host.append(probe);
         const colour = getComputedStyle(probe).color;
         probe.remove();
-        return colour;
+        return `#${(colour.match(/\d+/g) ?? [])
+          .slice(0, 3)
+          .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+          .join("")}`;
       };
       const provider = band.querySelector("[data-kozmos-root]")!;
-      const ring = band.querySelector(
-        ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
-      )!;
+      const spark = band.querySelector(".site-cosmos-spark")!;
+      const url =
+        getComputedStyle(spark).backgroundImage.match(
+          /url\("?([^")]+)"?\)/,
+        )?.[1];
       return {
-        ring: getComputedStyle(ring).backgroundImage,
+        spark: url ? await (await fetch(url)).text() : "",
         cover: resolve(provider, "--primitives-colors-theme-variant-2-900"),
         page: resolve(document.body, "--primitives-colors-theme-variant-2-900"),
       };
     });
     expect(paint.cover).not.toBe(paint.page);
-    expect(paint.ring).toContain(paint.cover);
-    expect(paint.ring).not.toContain(paint.page);
+    expect(paint.spark).toContain(paint.cover);
+    expect(paint.spark).not.toContain(paint.page);
+  });
+
+  test("the cover's picture is drawn without masks, but where what a mask fades moves", async ({
+    page,
+  }) => {
+    // A mask is applied again whenever what it covers is drawn, and a
+    // browser that draws in software, as CI's do, draws the cover every
+    // frame it moves: with its lines, its galaxy, its stars and its planets'
+    // air cut by masks, CI's Firefox drew it 16 to 19 times a second, and
+    // WebKit 8. They are images now. A track's fade stays a mask, because
+    // what it fades moves through it; the logo and the scrim never move.
+    await page.goto("/");
+    await hydrated(page);
+    const masked = await page
+      .locator("section[aria-labelledby='home-title']")
+      .evaluate((band) => {
+        const parts = new Set<string>();
+        for (const element of band.querySelectorAll("*"))
+          for (const pseudo of [null, "::before", "::after"]) {
+            const style = getComputedStyle(element, pseudo);
+            const mask =
+              style.maskImage || style.getPropertyValue("-webkit-mask-image");
+            if (mask && mask !== "none")
+              parts.add(`${element.className}${pseudo ?? ""}`);
+          }
+        return [...parts].sort();
+      });
+    const still = /\bsite-cosmos-(track|logo|scrim)\b/;
+    expect(masked.filter((part) => !still.test(part))).toEqual([]);
+    for (const part of ["track", "logo", "scrim"])
+      expect(
+        masked.some((masks) => masks.includes(`site-cosmos-${part}`)),
+        part,
+      ).toBe(true);
   });
 
   for (const viewport of [
@@ -1237,6 +1416,45 @@ test.describe("home", () => {
     expect(Math.abs((await place()).round)).toBeLessThan(1);
   });
 
+  test("each traveller rests where its lap starts", async ({ page }) => {
+    // Under reduced motion a traveller rests at --start of its lap; moving,
+    // its lap starts there, so the first frame of the cover and the still
+    // cover agree. The one that goes the other way started at 1 - --start
+    // (0.65 of a turn where it rested at 0.35) until 22 October.
+    const riders = () =>
+      page.locator(".site-cosmos-rider").evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const box = node.getBoundingClientRect();
+          return [box.left + box.width / 2, box.top + box.height / 2];
+        }),
+      );
+    await page.goto("/");
+    await hydrated(page);
+    // Every lap at its first moment, as the page starts it.
+    await page.evaluate(() => {
+      for (const animation of document.getAnimations()) {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        if (!target?.closest(".site-cosmos-track")) continue;
+        animation.pause();
+        animation.currentTime = 0;
+      }
+    });
+    const starts = await riders();
+    expect(starts).toHaveLength(3);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await hydrated(page);
+    const rests = await riders();
+    expect(rests).toHaveLength(3);
+    for (const [index, [x, y]] of rests.entries()) {
+      const [startX, startY] = starts[index]!;
+      expect(
+        Math.hypot(x - startX, y - startY),
+        `traveller ${index + 1} rests ${Math.round(Math.hypot(x - startX, y - startY))}px from where its lap starts`,
+      ).toBeLessThan(1);
+    }
+  });
+
   test("the live tiles respond", async ({ page }) => {
     await page.goto("/");
     await scrolled(page);
@@ -1406,6 +1624,42 @@ async function paintedOverHeader(page: Page) {
 
 /** What the logo shows, and so its name and the home link's (src/lib/site.ts). */
 const LOGO = "Kozmos UI Design Systems";
+
+/**
+ * The cover's images: six orbits, the ring, the galaxy, the stars and two
+ * planets' air (src/home/cosmos/). The ring's glow is the ring again.
+ */
+const COVER_IMAGES = 11;
+
+/**
+ * Every image the cover's parts are painted with, decoded as the browser
+ * would decode it. The build inlines a small SVG into the stylesheet, so an
+ * image is known by the part that draws it, not by its file's name.
+ */
+async function coverImages(cover: Locator) {
+  return cover.evaluate(async (band) => {
+    const found = new Map<string, string>();
+    for (const element of band.querySelectorAll("[class*='site-cosmos-']"))
+      for (const pseudo of [null, "::after"]) {
+        const url = getComputedStyle(element, pseudo).backgroundImage.match(
+          /url\("?([^")]+)"?\)/,
+        )?.[1];
+        if (url && !found.has(url))
+          found.set(url, `${element.className}${pseudo ?? ""}`);
+      }
+    return Promise.all(
+      [...found].map(async ([url, part]) => {
+        const image = new Image();
+        image.src = url;
+        const decoded = await image.decode().then(
+          () => true,
+          () => false,
+        );
+        return { part, decoded };
+      }),
+    );
+  });
+}
 
 /**
  * The artwork a logo Box is painted through, decoded as the browser would
@@ -4051,6 +4305,14 @@ test.describe("dashboard example", () => {
       example.getByText("Pier Market was added as a draft."),
     ).toBeVisible();
     await expect(example.getByText("13 venues · page 1 of 3")).toBeVisible();
+    // The dashboard is audited once the dialog has gone. Until its exit
+    // animation has ended and React has taken it out, Radix keeps the page
+    // under it hidden from assistive technology, and no animation need be
+    // running for that: in WebKit on CI (run 39620687342, 21 October)
+    // `hydrated` found none 0.18s after the close, and axe then measured the
+    // closing dialog's own fields at a fifth of their opacity and missed the
+    // Sidebar's known landmark finding under it.
+    await expect(dialog).toBeHidden();
     await hydrated(page);
     expect(await axeViolations(page)).toEqual([]);
   });
