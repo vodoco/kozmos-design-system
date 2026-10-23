@@ -1307,6 +1307,45 @@ test.describe("home", () => {
     expect(Math.abs((await place()).round)).toBeLessThan(1);
   });
 
+  test("each traveller rests where its lap starts", async ({ page }) => {
+    // Under reduced motion a traveller rests at --start of its lap; moving,
+    // its lap starts there, so the first frame of the cover and the still
+    // cover agree. The one that goes the other way started at 1 - --start
+    // (0.65 of a turn where it rested at 0.35) until 22 October.
+    const riders = () =>
+      page.locator(".site-cosmos-rider").evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const box = node.getBoundingClientRect();
+          return [box.left + box.width / 2, box.top + box.height / 2];
+        }),
+      );
+    await page.goto("/");
+    await hydrated(page);
+    // Every lap at its first moment, as the page starts it.
+    await page.evaluate(() => {
+      for (const animation of document.getAnimations()) {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        if (!target?.closest(".site-cosmos-track")) continue;
+        animation.pause();
+        animation.currentTime = 0;
+      }
+    });
+    const starts = await riders();
+    expect(starts).toHaveLength(3);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await hydrated(page);
+    const rests = await riders();
+    expect(rests).toHaveLength(3);
+    for (const [index, [x, y]] of rests.entries()) {
+      const [startX, startY] = starts[index]!;
+      expect(
+        Math.hypot(x - startX, y - startY),
+        `traveller ${index + 1} rests ${Math.round(Math.hypot(x - startX, y - startY))}px from where its lap starts`,
+      ).toBeLessThan(1);
+    }
+  });
+
   test("the live tiles respond", async ({ page }) => {
     await page.goto("/");
     await scrolled(page);
