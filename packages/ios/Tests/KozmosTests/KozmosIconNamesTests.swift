@@ -166,6 +166,53 @@ final class KozmosIconNamesTests: XCTestCase {
         }
     }
 
+    /// GAP-181: the map control's layers glyph and the status pill's walking
+    /// figure, which React draws with `LayersThree01` and `Walking` from
+    /// @kozmos-ds/icons, are drawn by name. `layers-three-01` is Pointr's
+    /// outline, stroked 2 on the 24 grid; `walking` is the SDK's figure, solid,
+    /// its own squared viewBox fitted to the icon's box. Neither mirrors, and
+    /// each takes the icon's colour. SwiftUI drew the stand-in for both.
+    @MainActor func testTheLayersAndWalkingGlyphsAreDrawnByName() throws {
+        let layersData = try Self.pointrPathData("LayersThree01")
+        let layers = try XCTUnwrap(KozmosPointrGlyph.outline(layersData.joined(separator: " ")))
+        let walkingSource = try Self.repositoryFile("packages/icons/src/owned/icons.ts")
+        let walkingDeclaration = try XCTUnwrap(walkingSource.range(of: "export const Walking = "))
+        let walkingRest = String(walkingSource[walkingDeclaration.upperBound...])
+        let quoted = walkingRest.components(separatedBy: "\"")
+        // "Walking", then the viewBox, then each path's d.
+        let viewBox = quoted[3].split(separator: " ").compactMap { Double($0) }
+        XCTAssertEqual(viewBox.count, 4)
+        let walkingData = quoted[5]
+        let walkingPath = try XCTUnwrap(KozmosPointrGlyph.outline(walkingData)?.canonicalPath)
+        let fitted = walkingPath.applying(CGAffineTransform(translationX: -viewBox[0], y: -viewBox[1])
+            .concatenating(CGAffineTransform(scaleX: 24 / viewBox[2], y: 24 / viewBox[3])))
+        let walking = KozmosPointrGlyph(runs: [], canonicalPath: fitted, isFilled: true)
+
+        // The figure's own viewBox squares its bounding box so that its longer
+        // side spans 20 of 24, the live area (owned/icons.ts): measured, not
+        // only drawn the way the test reads it.
+        let figure = try XCTUnwrap(DrawnPixels.draw(KozmosIcon("walking", size: .xl), scale: 3).boundingBox { _, _, _, a in a > 128 })
+        XCTAssertEqual(max(figure.width, figure.height), 20 * 32 / 24, accuracy: 1, "walking spans \(figure) of 32")
+
+        for (name, glyph) in [("layers-three-01", layers), ("walking", walking)] {
+            XCTAssertTrue(KozmosIcon.drawsArtwork(for: name), "\(name) draws the stand-in")
+            for size in [KozmosIconSize.sm, .xl] {
+                let side = size.pointSize
+                let expected = try DrawnPixels.draw(
+                    glyph.painted(size: side)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                        .frame(width: side, height: side), scale: 3)
+                let drawn = try DrawnPixels.draw(KozmosIcon(name, size: size), scale: 3)
+                XCTAssertTrue(alike(drawn, expected), "\(name) at \(side) is not the web's artwork")
+                let rtl = try DrawnPixels.draw(KozmosIcon(name, size: size).environment(\.layoutDirection, .rightToLeft), scale: 3)
+                XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "\(name) mirrors right to left")
+            }
+            let danger = try DrawnPixels.draw(KozmosIcon(name, size: .xl, color: .destructive), scale: 3)
+            let red = try DrawnPixels.resolved(KozmosColors.primitivesColorsEmotionalDanger600, in: .light)
+            XCTAssertNotNil(danger.boundingBox(where: DrawnPixels.matches(red, tolerance: 12)), "\(name) is not drawn in the icon's colour")
+        }
+    }
+
     /// An outline's line is 2 × size / 24 across, measured: arrow-down's
     /// shaft, M12 5V19, at y = 8 on the grid, clear of its head.
     @MainActor func testArrowDownIsStrokedAtTwoOnTheGridAtAnySize() throws {
