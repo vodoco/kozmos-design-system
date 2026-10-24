@@ -46,7 +46,13 @@ public struct KozmosCheckbox: View {
                         .foregroundColor(labelColor)
                 }
             }
-            .frame(minHeight: 44, alignment: .center)
+            // A 44pt target, all of it hittable, with a label or without
+            // one: a plain button's frame adds nothing without a content
+            // shape, and the checkbox took a tap only on its box and its
+            // label's words. Without a label the mark stays at the leading
+            // edge of its 44pt square.
+            .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(disabled)

@@ -23,7 +23,7 @@ public struct KozmosBreadcrumb: View {
                 }) {
                     Text(items[index])
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(index == items.count - 1 ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(index == items.count - 1 ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground400)
                 }
                 .disabled(index == items.count - 1)
                 // The page the visitor is on, as React's `aria-current="page"`:
@@ -36,7 +36,7 @@ public struct KozmosBreadcrumb: View {
                     // read the symbol's own "Forward" between the crumbs.
                     Image(systemName: "chevron.forward")
                         .font(KozmosTypography.caption)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .accessibilityHidden(true)
                 }
             }

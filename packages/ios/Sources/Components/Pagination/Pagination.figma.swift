@@ -69,7 +69,7 @@ struct KozmosPaginationCompactConnect: FigmaConnect {
             KozmosPaginationPrevious(action: {})
             Text(self.compactText)
                 .font(KozmosTypography.subheadline)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
             KozmosPaginationNext(action: {})
         }
     }

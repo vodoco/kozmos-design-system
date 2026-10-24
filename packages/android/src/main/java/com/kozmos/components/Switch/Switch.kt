@@ -47,7 +47,14 @@ fun KozmosSwitch(
     } else {
         KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     }
-    val uncheckedTrackColor = KozmosThemeTokens.primitivesColorsForeground500
+    // Unchecked, the track is the muted colour, foreground/400, as React's
+    // `border-muted-foreground bg-muted-foreground` is (owner, 24 Oct); it was
+    // foreground/500, which a disabled switch keeps.
+    val uncheckedTrackColor = if (enabled) {
+        KozmosThemeTokens.primitivesColorsForeground400
+    } else {
+        KozmosThemeTokens.primitivesColorsForeground500
+    }
     val trackColor = if (checked) checkedTrackColor else uncheckedTrackColor
     val trackBorderColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
