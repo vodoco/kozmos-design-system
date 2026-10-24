@@ -71,7 +71,36 @@ assert.deepEqual(
   [],
   "a variable with no initial value is read with a fallback",
 );
-assert.ok(registered.size >= 30, `${registered.size} variables registered`);
+// What registration is for: a variable a utility sets on a parent is never
+// what its child reads. So every compiler variable that is both set and read
+// is registered. One with no initial value that nothing sets has no value
+// anywhere: the stylesheet writes its reads as their fallbacks instead
+// (scoped-css.cjs), and registers it no longer.
+const set = new Set();
+stylesheet.walkDecls(/^--tw-/, (decl) => set.add(decl.prop));
+const readNames = new Set();
+stylesheet.walkDecls((decl) => {
+  for (const [, name] of decl.value.matchAll(/var\(\s*(--tw-[\w-]+)/g))
+    readNames.add(name);
+});
+assert.deepEqual(
+  [...set].filter(
+    (name) =>
+      compilerVariables.has(name) &&
+      readNames.has(name) &&
+      !registered.has(name),
+  ),
+  [],
+  "every compiler variable a utility sets and another reads is registered",
+);
+assert.deepEqual(
+  [...registered]
+    .filter(([name, d]) => d["initial-value"] === undefined && !set.has(name))
+    .map(([name]) => name),
+  [],
+  "a variable registered with no initial value is set somewhere",
+);
+assert.ok(registered.size > 0, "the stylesheet registers its variables");
 console.log(
   `PASS stylesheet: ${registered.size} compiler variables registered, none declared on every element`,
 );

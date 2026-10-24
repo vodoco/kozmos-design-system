@@ -154,9 +154,78 @@ function isCompilerDefaults(rule) {
   );
 }
 
-// Registers every compiler variable the stylesheet reads, and gives each read
+// Whitespace a value-parser list keeps after nodes have gone from it: no
+// space at either end, none twice, none beside a comma.
+function tidySpaces(nodes) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const node = nodes[i];
+    if (node.nodes) tidySpaces(node.nodes);
+    if (node.type !== "space") continue;
+    const previous = nodes[i - 1];
+    const next = nodes[i + 1];
+    if (
+      !previous ||
+      !next ||
+      next.type === "space" ||
+      previous.type === "div" ||
+      next.type === "div"
+    )
+      nodes.splice(i, 1);
+  }
+}
+
+// A transform term that does nothing: rotate or skew by zero.
+const IDENTITY_TERM = /^(?:rotate|skew|skewX|skewY)$/;
+function dropIdentityTerms(nodes) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const node = nodes[i];
+    if (
+      node.type === "function" &&
+      IDENTITY_TERM.test(node.value) &&
+      /^0(?:deg)?$/.test(valueParser.stringify(node.nodes).trim())
+    )
+      nodes.splice(i, 1);
+  }
+}
+
+// Replaces each read of a variable `isUnset` names by what it always gives,
+// its fallback, or `fallbackOf(name)` when it has none. Returns the names it
+// replaced.
+function inlineUnsetReads(nodes, isUnset, fallbackOf, replaced = new Set()) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node.type !== "function") continue;
+    const name = node.value === "var" ? node.nodes[0]?.value : undefined;
+    if (name && isUnset(name)) {
+      const comma = node.nodes.findIndex(
+        (child) => child.type === "div" && child.value === ",",
+      );
+      const fallback =
+        comma < 0
+          ? fallbackOf(name)
+          : valueParser.stringify(node.nodes.slice(comma + 1)).trim();
+      nodes.splice(i, 1, ...valueParser(fallback || "").nodes);
+      replaced.add(name);
+      i--;
+    } else inlineUnsetReads(node.nodes, isUnset, fallbackOf, replaced);
+  }
+  return replaced;
+}
+
+// Registers the compiler variables the stylesheet reads, and gives each read
 // of one registered without an initial value Tailwind 3's default as its
 // fallback. Unread defaults are dropped.
+//
+// A variable with no initial value that no declaration sets has no value
+// anywhere, so every read of it gives its fallback: the skews, the filter
+// and backdrop terms Kozmos never sets, three numeric terms. Those reads are
+// written as their fallbacks, a transform term left rotating or skewing by
+// zero goes, and the variable is not registered. One that is set later, by a
+// utility a component starts using, is read and registered again.
+//
+// A read whose fallback is the registered initial value never falls back (a
+// registered variable always has a value), so its fallback goes:
+// `var(--tw-shadow, 0 0 #0000)` is `var(--tw-shadow)`.
 function registerCompilerDefaults(root, defaults) {
   if (!defaults.size) return;
   const initialOf = (name) => {
@@ -165,34 +234,217 @@ function registerCompilerDefaults(root, defaults) {
       ? defaults.get(name) || undefined
       : registration.initial;
   };
+  const set = new Set();
+  root.walkDecls(/^--tw-/, (decl) => set.add(decl.prop));
+  const isUnset = (name) =>
+    defaults.has(name) && initialOf(name) === undefined && !set.has(name);
   const read = new Set();
+  const spaces = (text) => text.trim().replace(/\s+/g, " ");
   root.walkDecls((decl) => {
     if (!decl.value.includes("var(--tw-")) return;
-    decl.value = decl.value.replace(
-      /var\(\s*(--tw-[\w-]+)\s*(,|\))/g,
-      (whole, name, next) => {
-        if (!defaults.has(name)) return whole;
-        read.add(name);
-        if (next === "," || initialOf(name) !== undefined) return whole;
-        const fallback = defaults.get(name);
-        return `var(${name},${fallback ? ` ${fallback}` : ""})`;
-      },
+    let parsed = valueParser(decl.value);
+    let changed = false;
+    const replaced = inlineUnsetReads(parsed.nodes, isUnset, (name) =>
+      defaults.get(name),
     );
+    if (replaced.size) {
+      if (/(?:^|-)transform$/.test(decl.prop)) dropIdentityTerms(parsed.nodes);
+      tidySpaces(parsed.nodes);
+      // Nothing left would be no declaration at all: keep the reads, which
+      // keep their registrations.
+      if (parsed.toString().trim()) changed = true;
+      else parsed = valueParser(decl.value);
+    }
+    parsed.walk((node) => {
+      if (node.type !== "function" || node.value !== "var") return;
+      const name = node.nodes[0]?.value;
+      if (!defaults.has(name)) return;
+      read.add(name);
+      const comma = node.nodes.findIndex(
+        (child) => child.type === "div" && child.value === ",",
+      );
+      const initial = initialOf(name);
+      if (initial !== undefined) {
+        const fallback = valueParser.stringify(node.nodes.slice(comma + 1));
+        if (comma >= 0 && spaces(fallback) === spaces(initial)) {
+          node.nodes = node.nodes.slice(0, 1);
+          node.after = "";
+          changed = true;
+        }
+      } else if (comma < 0) {
+        const standard = defaults.get(name);
+        node.nodes = [
+          node.nodes[0],
+          { type: "div", value: ",", before: "", after: standard ? " " : "" },
+          ...(standard ? [{ type: "word", value: standard }] : []),
+        ];
+        node.after = "";
+        changed = true;
+      }
+      return false;
+    });
+    if (changed) decl.value = parsed.toString().trim();
   });
+  // Printed as a minifier would: esbuild leaves an @property's descriptors
+  // as they are written.
+  const descriptor = (prop, value) =>
+    postcss.decl({ prop, value, raws: { before: "", between: ":" } });
   const properties = [];
   for (const name of defaults.keys()) {
     if (!read.has(name)) continue;
     const syntax = TAILWIND_4_REGISTRATION[name]?.syntax ?? "*";
     const nodes = [
-      postcss.decl({ prop: "syntax", value: `"${syntax}"` }),
-      postcss.decl({ prop: "inherits", value: "false" }),
+      descriptor("syntax", `"${syntax}"`),
+      descriptor("inherits", "false"),
     ];
     const initial = initialOf(name);
-    if (initial !== undefined)
-      nodes.push(postcss.decl({ prop: "initial-value", value: initial }));
-    properties.push(postcss.atRule({ name: "property", params: name, nodes }));
+    if (initial !== undefined) nodes.push(descriptor("initial-value", initial));
+    properties.push(
+      postcss.atRule({
+        name: "property",
+        params: name,
+        nodes,
+        raws: { between: "", semicolon: false, after: "" },
+      }),
+    );
   }
   root.prepend(...properties);
+}
+
+// tailwindcss-animate's variables are not registered, and `animate-in`
+// resets each to `initial` for the utility that sets it to read. One that
+// only ever is reset (no `spin-in-*` utility is generated, so the rotation)
+// never has a value: every read of it gives its fallback. Those reads are
+// written as their fallbacks, a rotation by zero goes from the transform,
+// and the resets go with them. A variable read anywhere without a fallback
+// is left as it is.
+function inlineResetOnlyVariables(root) {
+  const registered = new Set();
+  root.walkAtRules("property", (rule) => registered.add(rule.params.trim()));
+  const values = new Map();
+  root.walkDecls(/^--tw-/, (decl) => {
+    if (registered.has(decl.prop)) return;
+    if (!values.has(decl.prop)) values.set(decl.prop, new Set());
+    values.get(decl.prop).add(decl.value.trim());
+  });
+  const resetOnly = new Set(
+    [...values]
+      .filter(([, set]) => set.size === 1 && set.has("initial"))
+      .map(([name]) => name),
+  );
+  root.walkDecls((decl) => {
+    valueParser(decl.value).walk((node) => {
+      if (
+        node.type === "function" &&
+        node.value === "var" &&
+        !node.nodes.some((child) => child.type === "div" && child.value === ",")
+      )
+        resetOnly.delete(node.nodes[0]?.value);
+    });
+  });
+  if (!resetOnly.size) return;
+  const resets = [];
+  root.walkDecls((decl) => {
+    if (resetOnly.has(decl.prop)) {
+      resets.push(decl);
+      return;
+    }
+    if (!decl.value.includes("var(--tw-")) return;
+    const parsed = valueParser(decl.value);
+    const isReset = (name) => resetOnly.has(name);
+    if (!inlineUnsetReads(parsed.nodes, isReset, () => "").size) return;
+    if (/(?:^|-)transform$/.test(decl.prop)) dropIdentityTerms(parsed.nodes);
+    tidySpaces(parsed.nodes);
+    const value = parsed.toString().trim();
+    if (value) decl.value = value;
+  });
+  for (const decl of resets) {
+    const parent = decl.parent;
+    decl.remove();
+    if (!parent.nodes.length) parent.remove();
+  }
+}
+
+// Tailwind 3 writes `--tw-bg-opacity: 1` (and text, border, ring, divide,
+// placeholder) beside every colour a utility sets, for a colour of the form
+// `rgb(r g b / var(--tw-bg-opacity))` to read. Kozmos's colours are roles,
+// `var(--…)`, which read nothing, so in all but a handful of utilities with a
+// literal colour the variable is set and never read. Each is dropped where
+// the rule sets the colour it belongs to and none of its declarations reads
+// it. A rule that sets the variable alone (Tailwind's legacy `bg-opacity-50`,
+// read by another rule on the same element) is left alone, and so is any
+// value but 1.
+const COLOUR_OF_OPACITY = {
+  "--tw-text-opacity": /^color$/,
+  "--tw-placeholder-opacity": /^color$/,
+  "--tw-bg-opacity": /^background-color$/,
+  "--tw-border-opacity": /^border(?:-[a-z]+)*-color$/,
+  "--tw-divide-opacity": /^border(?:-[a-z]+)*-color$/,
+  "--tw-ring-opacity": /^--tw-ring-color$/,
+};
+function dropUnreadColourOpacity(root) {
+  root.walkDecls(/^--tw-[a-z]+-opacity$/, (decl) => {
+    const colour = COLOUR_OF_OPACITY[decl.prop];
+    if (!colour || decl.value.trim() !== "1") return;
+    const siblings = decl.parent.nodes.filter(
+      (node) => node.type === "decl" && node !== decl,
+    );
+    if (!siblings.some((node) => colour.test(node.prop))) return;
+    if (siblings.some((node) => node.value.includes(`var(${decl.prop}`)))
+      return;
+    decl.remove();
+  });
+}
+
+// A compound selector: one element's conditions, no combinator outside
+// brackets or parentheses.
+function isCompound(selector) {
+  let depth = 0;
+  for (const char of selector) {
+    if (char === "(" || char === "[") depth++;
+    else if (char === ")" || char === "]") depth--;
+    else if (depth === 0 && /[\s>+~]/.test(char)) return false;
+  }
+  return true;
+}
+
+// Tailwind's preflight, inside a root, as a fallback that weighs nothing:
+// each rule keeps @scope's boundary and skips migrated components
+// (.kozmos-reset), but contributes zero specificity, because with :scope's
+// weight it overrode product heading and spacing classes. Its compound
+// selectors are written as one `:where(:scope :is(…):not(.kozmos-reset))`,
+// which matches what one :where() per selector matched: :where() and :is()
+// are both forgiving, so a selector one engine does not know
+// (`:-moz-focusring`) still drops only itself.
+//
+// A selector with a pseudo-element goes: a pseudo-element is not allowed
+// inside :where(), so `:where(:scope input::placeholder)` never matched, in
+// any engine, and turning those rules on now would give every root
+// Tailwind's placeholder colour and file-button font. Tailwind's reset,
+// `*, ::before, ::after`, is not preflight here: it keeps :scope's weight
+// and its pseudo-elements (GAP-52).
+function scopePreflight(rule) {
+  const kept = [];
+  const compounds = [];
+  let at = -1;
+  for (const selector of rule.selectors) {
+    if (selector === ":root" || selector === "html" || selector === ":host")
+      kept.push(":scope");
+    else if (/^\[data-theme=['"]dark['"]\]$/.test(selector))
+      kept.push(':scope[data-theme="dark"]');
+    else if (selector.includes("::")) continue;
+    else if (isCompound(selector)) {
+      if (at < 0) at = kept.length;
+      compounds.push(selector);
+    } else kept.push(`:where(:scope ${selector}:not(.kozmos-reset))`);
+  }
+  if (compounds.length) {
+    const inner =
+      compounds.length === 1 ? compounds[0] : `:is(${compounds.join(",")})`;
+    kept.splice(at, 0, `:where(:scope ${inner}:not(.kozmos-reset))`);
+  }
+  if (kept.length) rule.selectors = kept;
+  else rule.remove();
 }
 
 // Run after token imports and Tailwind expansion. Do not rewrite generated
@@ -278,6 +530,10 @@ module.exports = () => ({
       // GAP-52, the border a caller's class cannot set (apps/site/GAPS.md).
       const compilerDefaults =
         rule.selector.replace(/\s/g, "") === "*,::before,::after";
+      if (rule.raws.tailwind?.layer === "base" && !compilerDefaults) {
+        scopePreflight(rule);
+        return;
+      }
       rule.selectors = rule.selectors.map((selector) => {
         if (selector === ":root" || selector === "html" || selector === ":host")
           return ":scope";
@@ -285,16 +541,12 @@ module.exports = () => ({
           return ':scope[data-theme="dark"]';
         // @scope supplies the boundary; :scope supplies predictable precedence
         // over generic host reset/utility rules without using !important.
-        if (rule.raws.tailwind?.layer === "base" || compilerDefaults) {
-          // The legacy preflight must not reset a migrated component. Keep
+        if (compilerDefaults) {
+          // The legacy reset must not reset a migrated component. Keep
           // utilities active so existing consumer overrides still work.
           const pseudo = selector.indexOf("::");
           const at = pseudo < 0 ? selector.length : pseudo;
           selector = `${selector.slice(0, at)}:not(:where(.kozmos-reset))${selector.slice(at)}`;
-          // A reset is a fallback, not a component style. Giving preflight
-          // :scope specificity made it override product heading/spacing classes.
-          // Keep its boundary and exclusions, but contribute zero specificity.
-          if (!compilerDefaults) return `:where(:scope ${selector})`;
         }
         return `:scope ${selector}`;
       });
@@ -335,6 +587,8 @@ module.exports = () => ({
       }
     }
     registerCompilerDefaults(root, tailwindDefaults);
+    inlineResetOnlyVariables(root);
+    dropUnreadColourOpacity(root);
     root.walkDecls(/^(?:-webkit-)?animation(?:-name)?$/, (decl) => {
       const value = valueParser(decl.value);
       value.walk((node) => {
