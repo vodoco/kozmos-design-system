@@ -13,6 +13,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -22,6 +27,8 @@ fun KozmosTimePicker(
     time: LocalTime?,
     onTimeSelected: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
+    // The product passes its own, translated words; the English default is
+    // the repo's convention for a label parameter (as Dialog's closeLabel).
     label: String = "Select Time"
 ) {
     val context = LocalContext.current
@@ -42,21 +49,34 @@ fun KozmosTimePicker(
         false // is24HourView
     )
 
+    val shown = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: ""
+
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: "",
+            value = shown,
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
             trailingIcon = {
-                Icon(Icons.Default.AccessTime, contentDescription = "Select Time")
+                // Decoration, as React's aria-hidden clock: the label names
+                // the field. It was described by a fixed English "Select Time".
+                Icon(Icons.Default.AccessTime, contentDescription = null)
             },
-            modifier = Modifier.fillMaxWidth()
+            // A drawing of the value: TalkBack is told about it by the box a
+            // tap opens the dialog on, so the field is one control. It was a
+            // second stop, which a double tap only focused.
+            modifier = Modifier.fillMaxWidth().clearAndSetSemantics {}
         )
-         Box(
+        // What a tap opens the dialog on: a button, named by the label, its
+        // time its state. It had no role and no name.
+        Box(
             modifier = Modifier
                 .matchParentSize()
-                .clickable { timePickerDialog.show() }
+                .clickable(role = Role.Button) { timePickerDialog.show() }
+                .semantics {
+                    contentDescription = label
+                    if (shown.isNotEmpty()) stateDescription = shown
+                }
         )
     }
 }
