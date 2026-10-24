@@ -73,6 +73,9 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
             if let icon = icon {
                 icon
                     .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                    // A KozmosIcon takes the muted colour too, as React's icon
+                    // is currentColor: it kept its own foreground/100.
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground300)
             }
             
             VStack(spacing: 4) {
