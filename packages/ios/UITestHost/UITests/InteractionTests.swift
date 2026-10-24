@@ -32,7 +32,18 @@ final class InteractionTests: XCTestCase {
             received("route_requested|route")
             remove.tap()
             received("route_requested|route|save_toggled false|toggle")
-            app.buttons["Edit location note"].tap()
+            // The pencil is a target at least 44pt square, all of it hittable, as
+            // React's icon Button (44px) and Compose's IconButton (48dp) are. The tap
+            // lands 18pt left of and above its centre, inside the target. At the
+            // default text size that is well off the 13.7pt glyph, so a pencil with no
+            // content shape misses it (seen to fail). At accessibility3 the glyph grows
+            // to about 31pt and the tap can land on it, so there the size check is
+            // what proves the target.
+            let edit = app.buttons["Edit location note"]
+            assertTouchTarget(edit)
+            XCTAssertGreaterThanOrEqual(edit.frame.minX, 0)
+            XCTAssertLessThanOrEqual(edit.frame.maxX, app.frame.maxX)
+            edit.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: -18, dy: -18)).tap()
             received("route_requested|route|save_toggled false|toggle|edit")
             app.terminate()
         }
@@ -306,6 +317,16 @@ final class InteractionTests: XCTestCase {
         let screenshot = app.screenshot().image
         let pixelsPerPoint = screenshot.size.width * screenshot.scale / app.frame.width
         XCTAssertGreaterThanOrEqual(button.frame.height + 1 / pixelsPerPoint, 44)
+    }
+
+    /// At least 44 × 44pt, within one physical pixel, as `assertEndpointAccessibilityHeight`
+    /// allows for AX's rounding of a frame's edges: the card's pencil sits on third-point
+    /// positions and reads 43.99999 tall. Unfixed, it read 13.7 wide.
+    private func assertTouchTarget(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let screenshot = app.screenshot().image
+        let pixel = app.frame.width / (screenshot.size.width * screenshot.scale)
+        XCTAssertGreaterThanOrEqual(element.frame.width + pixel, 44, "width", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(element.frame.height + pixel, 44, "height", file: file, line: line)
     }
 
     func testHostFilteredRouteLocationSelectsSynonymButLoadingAndLocalDoNot() {
