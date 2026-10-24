@@ -10,9 +10,9 @@ import com.kozmos.components.alert.KozmosAlertDescription
 import com.kozmos.components.alert.KozmosAlertIcon
 import com.kozmos.components.alert.KozmosAlertTitle
 
-// KozmosAlertIcon draws its status's icon. The alert's own status colours
-// only its edge, so a warning passes AlertStatus.Warning to both. It
-// announces nothing: it is part of the page, as React's is by default.
+// The icon, title and description take the alert's status: its icon and
+// its colour. It announces nothing: it is part of the page, as React's is
+// by default.
 @Composable
 fun ClosingTimeAlert() {
     KozmosAlert {

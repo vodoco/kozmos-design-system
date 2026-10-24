@@ -54,15 +54,27 @@ jobs:
   site:
     name: Build & Test
     runs-on: ubuntu-latest
+    # In the Playwright image, with the runner's fonts and shell, as ci.yml's
+    # browser jobs are (its web job says why): the browsers and what they load
+    # come with the image, and nothing is installed from apt.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # No `version`: pnpm/action-setup v4.4 and later refuse to run when the
       # action and package.json's `packageManager` both name one, so pnpm is
       # the manifest's, as in release.yml.
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -96,8 +108,13 @@ jobs:
       - name: Every component page's Storybook link lands
         run: pnpm --filter @kozmos-ds/site exec node scripts/check-storybook-links.mjs
 
+      # The image's own builds, so this downloads nothing in CI.
       - name: Install the browsers
-        run: pnpm --filter @kozmos-ds/site exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @kozmos-ds/site exec playwright install chromium firefox webkit
+
+      - name: The browsers have the runner's fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
 
       - name: End to end, in three engines
         run: pnpm --filter @kozmos-ds/site test:e2e
@@ -129,7 +146,7 @@ jobs:
 
       - name: Keep the failures
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: site-test-results
           path: apps/site/test-results/

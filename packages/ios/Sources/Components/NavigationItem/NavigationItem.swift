@@ -196,6 +196,10 @@ public struct KozmosNavigationItem: View {
             .frame(minHeight: minHeight)
             .background(backgroundColor)
             .foregroundColor(foregroundColor)
+            // A KozmosIcon in the item is drawn in the item's colour, as
+            // React's icon is currentColor and Compose's follows
+            // LocalContentColor: it kept its own foreground/100.
+            .environment(\.kozmosIconHostInk, foregroundColor)
             .clipShape(shape)
             // The selected rail item's 2pt bar, down its trailing edge: the
             // right, and the left in a right-to-left layout.
@@ -218,7 +222,11 @@ public struct KozmosNavigationItem: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .accessibilityLabel(label ?? "")
-        .accessibilityValue(isSelected ? "Selected" : "")
+        // The selected item has the platform's selected state, which
+        // VoiceOver says in the person's language, as React's item is
+        // aria-current. It had the value "Selected", English in every
+        // language, and no state.
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var rowContent: some View {
@@ -253,6 +261,7 @@ public struct KozmosNavigationItem: View {
             if shouldRenderTrailing, let trailing = trailing {
                 trailing
                     .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground500)
             }
         }
     }

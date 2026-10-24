@@ -1,8 +1,11 @@
 // Exercise the installed development server, not a version-string allowlist.
 // Regression for GHSA-mjf5-7g4m-gx5w and the 8.6.18 Host validation hardening.
 // No story-writing messages are sent: these probes stop at HTTP/WS admission.
+// The channel URL each client opens comes from the installed client, so the
+// probes follow it: 8.6.19 made the server require the client's `page` role,
+// and a URL written out here stopped being the one the client opens.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { once } from "node:events";
 import fs from "node:fs";
@@ -16,6 +19,38 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const docs = path.join(root, "apps/docs");
 const require = createRequire(path.join(docs, "package.json"));
+
+// Storybook's own browser client (createBrowserChannel from the installed
+// storybook/internal/channels), started for one role with the globals that
+// role's page sets. It runs in a child process, so the browser globals it
+// reads stay out of this one, and its WebSocket only records the URL.
+const CLIENT = `
+const [role, configType, channelOptions, port] = process.argv.slice(1);
+const opened = [];
+Object.assign(globalThis, {
+  CONFIG_TYPE: configType,
+  CHANNEL_OPTIONS: JSON.parse(channelOptions),
+  location: { protocol: "http:", hostname: "127.0.0.1", port },
+  WebSocket: class { constructor(url) { opened.push(url); } },
+});
+globalThis.window = globalThis;
+require("storybook/internal/channels").createBrowserChannel({ page: role });
+process.stdout.write(JSON.stringify(opened));
+process.exit(0);
+`;
+
+// A global a Storybook page sets inline: the manager writes
+// window['NAME'] = value; and the preview writes window.NAME = value;
+function pageGlobal(body, name) {
+  const value = body.match(
+    new RegExp(
+      `window(?:\\.${name}|\\['${name}'\\])\\s*=\\s*(.+?);?\\s*$`,
+      "m",
+    ),
+  )?.[1];
+  assert.ok(value, `the page sets no ${name}`);
+  return value;
+}
 
 function request(port, route, headers = {}, upgrade = false) {
   return new Promise((resolve, reject) => {
@@ -167,63 +202,120 @@ test(
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
     assert.ok(page, `Storybook did not become ready\n${output}`);
-    const token = page.body.match(
-      /["']?wsToken["']?\s*:\s*["']([^"']+)["']/,
-    )?.[1];
     const ownOrigin = `http://127.0.0.1:${port}`;
-    const channel = "/storybook-server-channel";
-    const authenticatedChannel = token
-      ? `${channel}?token=${encodeURIComponent(token)}`
-      : channel;
+    // The dev server's two browser clients, each from the page that starts
+    // it: the manager at / and the preview in its iframe.
+    const pages = { manager: "/", preview: "/iframe.html" };
+    const token = JSON.parse(pageGlobal(page.body, "CHANNEL_OPTIONS")).wsToken;
+    assert.ok(token, "the manager page carries no server channel token");
+    const channels = {};
+    for (const [role, pagePath] of Object.entries(pages)) {
+      const response =
+        role === "manager" ? page : await request(port, pagePath);
+      assert.equal(response.status, 200, `the ${role} page did not load`);
+      const channelOptions = pageGlobal(response.body, "CHANNEL_OPTIONS");
+      assert.equal(
+        JSON.parse(channelOptions).wsToken,
+        token,
+        `the ${role} page carries another token`,
+      );
+      const configType = pageGlobal(response.body, "CONFIG_TYPE").replace(
+        /^(["'])(.*)\1$/,
+        "$2",
+      );
+      const opened = JSON.parse(
+        execFileSync(
+          process.execPath,
+          ["--eval", CLIENT, role, configType, channelOptions, String(port)],
+          { cwd: docs, encoding: "utf8" },
+        ),
+      );
+      assert.equal(
+        opened.length,
+        1,
+        `the ${role} opened ${opened.length} sockets`,
+      );
+      const url = new URL(opened[0]);
+      assert.equal(
+        url.host,
+        `127.0.0.1:${port}`,
+        `the ${role} left this server`,
+      );
+      channels[role] = url;
+    }
+    // The same URL with every parameter that carries the token taken out.
+    const withoutToken = (url) => {
+      const stripped = new URL(url);
+      for (const [name, value] of [...stripped.searchParams]) {
+        if (value === token) stripped.searchParams.delete(name);
+      }
+      assert.notEqual(stripped.search, url.search, "the client sent no token");
+      return stripped;
+    };
+    const route = (url) => url.pathname + url.search;
 
     await t.test(
       "the normal local client can open its server channel",
       async () => {
-        assert.equal(
-          (
-            await request(
-              port,
-              authenticatedChannel,
-              { Origin: ownOrigin },
-              true,
-            )
-          ).status,
-          101,
-        );
+        for (const [role, url] of Object.entries(channels)) {
+          assert.equal(
+            (await request(port, route(url), { Origin: ownOrigin }, true))
+              .status,
+            101,
+            `the ${role}'s channel was refused`,
+          );
+        }
       },
     );
     await t.test(
       "a foreign origin is rejected even with a valid token",
       async () => {
-        assert.equal(
-          (
-            await request(
-              port,
-              authenticatedChannel,
-              { Origin: "https://untrusted.invalid" },
-              true,
-            )
-          ).status,
-          403,
-        );
+        for (const [role, url] of Object.entries(channels)) {
+          assert.equal(
+            (
+              await request(
+                port,
+                route(url),
+                { Origin: "https://untrusted.invalid" },
+                true,
+              )
+            ).status,
+            403,
+            `the ${role}'s channel opened for a foreign origin`,
+          );
+        }
       },
     );
     await t.test(
       "an unauthenticated local-origin channel is rejected",
       async () => {
-        assert.equal(
-          (await request(port, channel, { Origin: ownOrigin }, true)).status,
-          403,
-        );
+        for (const [role, url] of Object.entries(channels)) {
+          assert.equal(
+            (
+              await request(
+                port,
+                route(withoutToken(url)),
+                { Origin: ownOrigin },
+                true,
+              )
+            ).status,
+            403,
+            `the ${role}'s channel opened without its token`,
+          );
+        }
       },
     );
     await t.test(
-      "an untrusted Host header cannot read the manager or its token",
+      "an untrusted Host header cannot read the manager, the preview or the token",
       async () => {
-        assert.equal(
-          (await request(port, "/", { Host: "untrusted.invalid" })).status,
-          403,
-        );
+        for (const [role, pagePath] of Object.entries(pages)) {
+          assert.equal(
+            (await request(port, pagePath, { Host: "untrusted.invalid" }))
+              .status,
+            403,
+            `the ${role} page was served to an untrusted Host`,
+          );
+        }
       },
     );
   },
