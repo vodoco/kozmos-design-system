@@ -34,7 +34,13 @@ fun KozmosSplitButton(
     // The presses, focus and hover each half answers, as Material's own
     // parameter. Last, so a call by position still compiles.
     mainInteractionSource: MutableInteractionSource? = null,
-    menuInteractionSource: MutableInteractionSource? = null
+    menuInteractionSource: MutableInteractionSource? = null,
+    /**
+     * What TalkBack calls the menu half, which shows only an arrow. "More
+     * options" by default, as React's `menuLabel`; a product that translates
+     * passes its own. Last, so a call by position still compiles.
+     */
+    menuLabel: String = "More options"
 ) {
     var expanded by remember { mutableStateOf(false) }
     // Both halves are a filled Button: the theme fill with the theme
@@ -70,7 +76,7 @@ fun KozmosSplitButton(
             fill = KozmosFillStates.themed,
             interactionSource = menuSource
         ) {
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "More actions")
+            Icon(Icons.Default.ArrowDropDown, contentDescription = menuLabel)
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
