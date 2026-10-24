@@ -58,6 +58,49 @@ It forwards its ref to `HTMLDivElement`. Its props are `DateRangePickerProps`, w
 - `status`: `InputStatus`, optional, default `"default"`.
 - `value`: `DateRangeValue`, optional.
 - `wrapperClassName`: `string`, optional.
+- `hideFieldLabels`: `boolean`, optional.
+
+  The start and end fields' labels are read, not shown: the range's one
+  `label` names it, for a one-line filter bar (GAP-051).
+
+- `open`: `boolean`, optional.
+
+  Whether Kozmos's range calendar is open, with `onOpenChange`. Each
+  field's button opens it, as Alt+Down Arrow or F4 in a field do, where the
+  browser's own picker button can give way (Chromium, Edge, Safari); where
+  it cannot (Firefox 146), the fields are the browser's and these do
+  nothing.
+
+- `defaultOpen`: `boolean`, optional.
+- `onOpenChange`: `(open: boolean) => void`, optional.
+- `chooseDatesLabel`: `string`, optional, default `"Choose dates"`.
+
+  Names each field's button, which the field's label describes.
+
+- `months`: `1 | 2`, optional.
+
+  Two months side by side, or one; by default two where the window has room.
+
+- `locale`: `string`, optional.
+
+  The calendar's locale; the browser's still formats the typed dates.
+
+- `isDateUnavailable`: `(date: string) => boolean`, optional.
+
+  Days the calendar shows but cannot start or end the range on.
+
+- `today`: `string`, optional.
+
+  The day the calendar draws as today, `YYYY-MM-DD`.
+
+- `previousMonthLabel`: `string`, optional.
+
+  The calendar's previous-month button's name.
+
+- `nextMonthLabel`: `string`, optional.
+
+  The calendar's next-month button's name.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

@@ -39,7 +39,7 @@ public struct KozmosSearchBar<Trailing: View>: View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 // Decoration: the field says what it is. Left audible, the
                 // symbol read "Search" before it.
                 .accessibilityHidden(true)
@@ -58,7 +58,7 @@ public struct KozmosSearchBar<Trailing: View>: View {
                     // A 24 grey circle to see; the 44 button around it to hit.
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .frame(width: KozmosDimensions.primitivesLayoutSizing300, height: KozmosDimensions.primitivesLayoutSizing300)
                         .background(Circle().fill(KozmosColors.primitivesColorsBackground300))
                         .frame(width: 44, height: 44)

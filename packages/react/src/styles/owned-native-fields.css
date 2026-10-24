@@ -14,14 +14,17 @@
   .kozmos-password-field {
     @apply relative flex items-center;
   }
-  .kozmos-password-with-toggle {
+  .kozmos-password-with-toggle,
+  .kozmos-date-input,
+  .kozmos-time-input[data-picker] {
     /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
        44 in compact. The input carries it as a utility too, which beats a
        caller's px-*; this is the room where no @scope rule reaches the input
        (WebKit, GAP-20, and a browser without @scope). */
     padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
-  .kozmos-password-toggle {
+  .kozmos-password-toggle,
+  .kozmos-date-picker-trigger {
     @apply absolute end-0 rounded-e-control bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:text-muted-foreground;
   }
   .kozmos-number-field {
