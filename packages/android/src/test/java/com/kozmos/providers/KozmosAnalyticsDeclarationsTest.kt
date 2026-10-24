@@ -7,7 +7,9 @@ import org.junit.Test
 /**
  * Compose has one analytics pipeline: `LocalKozmosAnalytics` in
  * `com.kozmos.providers`, which every component reads, with its
- * `KozmosAnalyticsEvent` and `KozmosAnalyticsTracker`. Until 17 Oct
+ * `KozmosAnalyticsEvent` and `KozmosAnalyticsTracker`, and the batching
+ * `KozmosAnalyticsProvider` (public, and on a test's clock) that puts its
+ * tracker there, with its `KozmosAnalyticsBatcher` (GAP-177). Until 17 Oct
  * `com.kozmos.utils` declared a second, no-op `LocalKozmosAnalytics`, a second
  * event and tracker, and an `object KozmosAnalytics`. Kotlin allows the same
  * name in two packages, so it compiled, and a product that provided its
@@ -48,7 +50,10 @@ class KozmosAnalyticsDeclarationsTest {
         }.sorted()
         assertEquals(
             listOf(
+                "KozmosAnalyticsBatcher in com/kozmos/providers/KozmosAnalyticsProvider.kt",
                 "KozmosAnalyticsEvent in com/kozmos/providers/LocalKozmosAnalytics.kt",
+                "KozmosAnalyticsProvider in com/kozmos/providers/KozmosAnalyticsProvider.kt",
+                "KozmosAnalyticsProvider in com/kozmos/providers/KozmosAnalyticsProvider.kt",
                 "KozmosAnalyticsTracker in com/kozmos/providers/LocalKozmosAnalytics.kt",
                 "LocalKozmosAnalytics in com/kozmos/providers/LocalKozmosAnalytics.kt",
             ),
