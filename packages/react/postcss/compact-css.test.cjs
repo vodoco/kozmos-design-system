@@ -230,6 +230,75 @@ test("an at-rule a merge leaves empty goes", async () => {
   );
 });
 
+test("an empty @layer or @keyframes stays: each still means something", async () => {
+  const root = await compile(
+    [
+      // An empty @layer a still puts layer a before layer b.
+      "@layer a {} @layer b {.x {color: red}}",
+      // A merge that empties a layer's block leaves the block.
+      "@layer c {.p {opacity: 1}} @layer c {.q {opacity: 1}}",
+      // An empty @keyframes still names an animation.
+      "@keyframes noop {} .y {animation: noop 1s}",
+      // An empty condition means nothing.
+      "@media (min-width: 1px) {}",
+    ].join(" "),
+  );
+  const atRules = [];
+  root.walkAtRules((rule) =>
+    atRules.push(`@${rule.name} ${rule.params} ${rule.nodes.length}`),
+  );
+  assert.deepEqual(atRules, [
+    "@layer a 0",
+    "@layer b 1",
+    "@layer c 0",
+    "@layer c 1",
+    "@keyframes noop 0",
+  ]);
+});
+
+test("a var() in a string or a url() is text, not a var()", async () => {
+  const root = await compile(
+    [
+      '.a {content: "var(--x, y)"; background: url("var(--x, y).png") no-repeat; width: var(--w, 1px)}',
+      // A later declaration holding var() only as text is no proof it applies.
+      '.b {content: counter(c); content: "var(--x)"}',
+      '.c {cursor: pointer; cursor: url("var(--x).svg"), auto}',
+    ].join(" "),
+  );
+  assert.deepEqual(declarations(root, /^(content|background|width|cursor)$/), [
+    '.a "var(--x, y)"',
+    '.a url("var(--x, y).png") no-repeat',
+    ".a var(--w,1px)",
+    ".b counter(c)",
+    '.b "var(--x)"',
+    ".c pointer",
+    '.c url("var(--x).svg"), auto',
+  ]);
+});
+
+test("a merge joins only selectors every floor engine parses", async () => {
+  const root = await compile(
+    [
+      ".a:hover {color: red} .b::placeholder {color: red}",
+      // A newer pseudo-element, and a vendor's, are never joined.
+      ".c::checkmark {opacity: 0} .d::checkmark {opacity: 0}",
+      ".e:open {margin: 0} .f:open {margin: 0}",
+      // An escaped colon in a class name is not a pseudo-class.
+      ".hover\\:g:hover {padding: 0} .h {padding: 0}",
+    ].join(" "),
+  );
+  const rules = [];
+  root.walkRules((rule) => rules.push(rule.selector));
+  assert.deepEqual(rules, [
+    ".a:hover,.b::placeholder",
+    ".c::checkmark",
+    ".d::checkmark",
+    ".e:open",
+    ".f:open",
+    ".hover\\:g:hover,.h",
+  ]);
+});
+
 test("a second pass changes nothing", async () => {
   const source = [
     "/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com */",

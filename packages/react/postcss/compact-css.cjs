@@ -33,6 +33,20 @@ function contextOf(node) {
 const inKeyframes = (rule) =>
   rule.parent?.type === "atrule" && /keyframes$/.test(rule.parent.name);
 
+// Whether a value calls var(): a function, not the letters in a string or
+// a url() (`content: "var(--x)"` reads nothing).
+function readsVar(value) {
+  if (!/var\(/i.test(value)) return false;
+  let found = false;
+  valueParser(value).walk((node) => {
+    if (node.type === "function" && node.value.toLowerCase() === "url")
+      return false;
+    if (node.type === "function" && node.value.toLowerCase() === "var")
+      found = true;
+  });
+  return found;
+}
+
 // A declaration a later one of the same property always overrides. Only a
 // later declaration that every engine accepts counts: a custom property, or
 // a value holding var(), which is valid until it is computed. A later
@@ -46,7 +60,7 @@ const inKeyframes = (rule) =>
 // `animate-in` resets `--tw-enter-opacity` that `fade-in-0` sets next.
 function dropOverridden(root) {
   const alwaysValid = (decl) =>
-    decl.prop.startsWith("--") || decl.value.includes("var(");
+    decl.prop.startsWith("--") || readsVar(decl.value);
   const beaten = (decl, later) =>
     later.prop === decl.prop && (!decl.important || later.important);
   const drop = new Set();
@@ -151,12 +165,31 @@ function customPropertyHex(root) {
 
 // `var(--x, 1)` is `var(--x,1)` in an ordinary property, whose value the
 // engine parses after substitution: esbuild prints var() as it is written.
-// Custom properties are left alone (their text is what getPropertyValue()
+// A var() inside a string or a url() is text, and stays as it is. Custom
+// properties are left alone (their text is what getPropertyValue()
 // returns).
 function varFallbackSpace(root) {
   root.walkDecls((decl) => {
-    if (decl.prop.startsWith("--") || !decl.value.includes("var(")) return;
-    decl.value = decl.value.replace(/var\((--[\w-]+),\s+/g, "var($1,");
+    if (decl.prop.startsWith("--") || !readsVar(decl.value)) return;
+    const parsed = valueParser(decl.value);
+    let changed = false;
+    parsed.walk((node) => {
+      if (node.type !== "function") return;
+      if (node.value.toLowerCase() === "url") return false;
+      if (node.value.toLowerCase() !== "var" || node.before) return;
+      const [name, comma] = node.nodes;
+      if (
+        name?.type === "word" &&
+        comma?.type === "div" &&
+        comma.value === "," &&
+        !comma.before &&
+        comma.after
+      ) {
+        comma.after = "";
+        changed = true;
+      }
+    });
+    if (changed) decl.value = parsed.toString();
   });
 }
 
@@ -230,10 +263,91 @@ function familyOf(prop) {
   if (name.startsWith("--")) return name;
   return FAMILIES.find(([pattern]) => pattern.test(name))?.[1] ?? name;
 }
-// A selector a floor browser might not know, or one only some engines read:
-// in a selector list, one selector an engine drops takes the whole rule.
-const RISKY_SELECTOR =
-  /-webkit-|-moz-|-ms-|:dir\(|:user-|:popover|:open|::details|::picker|:state\(|::scroll|::view-transition|:host|::part|::slotted|::file-selector|::target-text|::spelling|::grammar|::highlight|:modal|:fullscreen|:autofill|:playing|:paused|:has-slotted|::backdrop/;
+// In a selector list, one selector an engine cannot parse drops the whole
+// rule, so a merge joins only selectors every floor engine parses (Chrome
+// and Edge 118, Safari 17.4, Firefox 146): classes, ids, types, attributes,
+// combinators, and the pseudo-classes and pseudo-elements below, each
+// older than all three. An allow-list, so a new one (`::checkmark`, `:open`)
+// or a vendor's (`::-webkit-scrollbar`) is never merged until it is added
+// here. Nesting (`&`) is not floor CSS either.
+const FLOOR_PSEUDO_CLASSES = new Set([
+  "active",
+  "any-link",
+  "checked",
+  "default",
+  "defined",
+  "disabled",
+  "empty",
+  "enabled",
+  "first-child",
+  "first-of-type",
+  "focus",
+  "focus-visible",
+  "focus-within",
+  "has",
+  "hover",
+  "in-range",
+  "indeterminate",
+  "invalid",
+  "is",
+  "lang",
+  "last-child",
+  "last-of-type",
+  "link",
+  "not",
+  "nth-child",
+  "nth-last-child",
+  "nth-last-of-type",
+  "nth-of-type",
+  "only-child",
+  "only-of-type",
+  "optional",
+  "out-of-range",
+  "placeholder-shown",
+  "read-only",
+  "read-write",
+  "required",
+  "root",
+  "scope",
+  "target",
+  "valid",
+  "visited",
+  "where",
+]);
+const FLOOR_PSEUDO_ELEMENTS = new Set([
+  "after",
+  "before",
+  "first-letter",
+  "first-line",
+  "marker",
+  "placeholder",
+  "selection",
+]);
+// CSS 2's single-colon pseudo-elements.
+const LEGACY_PSEUDO_ELEMENTS = new Set([
+  "after",
+  "before",
+  "first-letter",
+  "first-line",
+]);
+function parsedEverywhere(selector) {
+  const bare = selector
+    .replace(/\\./g, "_")
+    .replace(/"[^"]*"|'[^']*'/g, '""')
+    .replace(/\[[^\]]*\]/g, "[]");
+  if (bare.includes("&")) return false;
+  for (const [, colons, name] of bare.matchAll(/(::?)(-?[a-zA-Z][\w-]*)/g)) {
+    const pseudo = name.toLowerCase();
+    if (
+      colons === "::"
+        ? !FLOOR_PSEUDO_ELEMENTS.has(pseudo)
+        : !FLOOR_PSEUDO_CLASSES.has(pseudo) &&
+          !LEGACY_PSEUDO_ELEMENTS.has(pseudo)
+    )
+      return false;
+  }
+  return true;
+}
 
 // Rules with the same declarations in the same parent become one rule with a
 // selector list, where the last of them stands. Each selector keeps its own
@@ -276,7 +390,8 @@ function mergeIdenticalRules(root) {
   for (const group of groups.values()) {
     if (group.length < 2 || new Set(group.map((r) => r.selector)).size < 2)
       continue;
-    if (group.some((rule) => RISKY_SELECTOR.test(rule.selector))) continue;
+    if (!group.every((rule) => rule.selectors.every(parsedEverywhere)))
+      continue;
     let chain = [group[0]];
     const flush = () => {
       if (chain.length < 2) return;
@@ -302,12 +417,16 @@ function mergeIdenticalRules(root) {
   }
 }
 
-// A block at-rule left with nothing in it (a merge can empty an @media).
+// A conditional group left with nothing in it: a merge can empty an
+// @media. Only these mean nothing empty. An empty `@layer a {}` still puts
+// layer a before the layers after it, and an empty `@keyframes` still names
+// an animation, so they stay.
+const CONDITIONAL_GROUP = /^(?:media|supports|container|scope)$/i;
 function dropEmptyAtRules(root) {
   let again = true;
   while (again) {
     again = false;
-    root.walkAtRules((rule) => {
+    root.walkAtRules(CONDITIONAL_GROUP, (rule) => {
       if (rule.nodes && rule.nodes.length === 0) {
         rule.remove();
         again = true;
