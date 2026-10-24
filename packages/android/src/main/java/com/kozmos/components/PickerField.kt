@@ -143,9 +143,12 @@ internal fun KozmosPickerField(
                 text = helperText,
                 style = MaterialTheme.typography.bodyMedium,
                 color = when {
+                    // Disabled, the disabled text's colour, never darker than
+                    // the words beside it; else the muted colour, as
+                    // KozmosFieldWrapper's helper.
                     !enabled -> KozmosThemeTokens.primitivesColorsForeground500
                     statusColor != null -> statusColor
-                    else -> KozmosThemeTokens.primitivesColorsForeground500
+                    else -> KozmosThemeTokens.primitivesColorsForeground400
                 }
             )
         }

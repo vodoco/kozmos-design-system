@@ -126,6 +126,89 @@ class KozmosPickerFieldsTest {
         assertTrue(wrong.joinToString("; "), wrong.isEmpty())
     }
 
+    /**
+     * The colour [helper] is drawn in, and the swatches of foreground/400 and
+     * foreground/500 in the same theme. Drawn on the page, background/0, at
+     * twice the density, so a stroke covers whole pixels; the colour is the
+     * opaque pixel furthest from the page inside the box TalkBack is told the
+     * helper is in: where the text is solid, never an edge.
+     */
+    private fun helperInk(dark: Boolean, helper: String, content: @Composable () -> Unit): Triple<Int?, Int, Int> {
+        var canvas = IntSize(1, 1)
+        var muted = 0
+        var disabled = 0
+        val tree = paparazzi.readSemantics {
+            val base = LocalDensity.current
+            CompositionLocalProvider(
+                LocalKozmosUseDarkTokens provides dark,
+                LocalDensity provides Density(base.density * 2f, base.fontScale)
+            ) {
+                muted = KozmosThemeTokens.primitivesColorsForeground400.toArgb()
+                disabled = KozmosThemeTokens.primitivesColorsForeground500.toArgb()
+                KozmosMaterialTheme {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(KozmosThemeTokens.primitivesColorsBackground0)
+                            .onGloballyPositioned { canvas = it.size }
+                    ) {
+                        Column(Modifier.padding(16.dp).width(320.dp)) { content() }
+                    }
+                }
+            }
+        }
+        val drawn = DrawnPixels(checkNotNull(frames.last))
+        val box = tree.unmerged.firstOrNull { it.texts == listOf(helper) }?.frame ?: return Triple(null, muted, disabled)
+        val scale = drawn.width.toFloat() / canvas.width
+        // Light, the darkest pixel; dark, on black, the lightest.
+        fun depth(argb: Int) = DrawnPixels.lightness(argb).let { if (dark) it else 765 - it }
+        var found: Int? = null
+        for (y in (box.top * scale).toInt().coerceAtLeast(0)..(box.bottom * scale).toInt().coerceAtMost(drawn.height - 1)) {
+            for (x in (box.left * scale).toInt().coerceAtLeast(0)..(box.right * scale).toInt().coerceAtMost(drawn.width - 1)) {
+                val argb = drawn.argb(x, y)
+                if (argb ushr 24 <= 240) continue
+                if (found == null || depth(argb) > depth(found)) found = argb
+            }
+        }
+        return Triple(found, muted, disabled)
+    }
+
+    /**
+     * The helper text is the muted colour, foreground/400, as React draws a
+     * field's helper (`text-muted-foreground`) and KozmosFieldWrapper draws
+     * its own; it was foreground/500, #747B8B in light, 4.24:1 on white.
+     * Disabled, it is the disabled text's foreground/500, never darker than
+     * the dimmed words beside it. Each is held to its token within 10 a
+     * channel, in both themes: foreground/500 is 23 to 28 a channel from 400.
+     */
+    @Test fun theHelperTextIsTheMutedColourAndDisabledTheDisabledTextsInBothThemes() {
+        val wrong = mutableListOf<String>()
+        val helper = "Bitte ein Datum wählen"
+        for (dark in listOf(false, true)) {
+            for (enabled in listOf(true, false)) {
+                val pickers: List<Pair<String, @Composable () -> Unit>> = listOf(
+                    "KozmosDatePicker" to {
+                        KozmosDatePicker(date = day, onDateSelected = {}, label = "Datum", helperText = helper, enabled = enabled)
+                    },
+                    "KozmosTimePicker" to {
+                        KozmosTimePicker(time = time, onTimeSelected = {}, label = "Zeit", helperText = helper, enabled = enabled)
+                    }
+                )
+                for ((name, picker) in pickers) {
+                    val (ink, muted, disabled) = helperInk(dark, helper, picker)
+                    val expected = if (enabled) muted else disabled
+                    val step = if (enabled) "foreground/400" else "foreground/500"
+                    val mode = (if (dark) "dark" else "light") + if (enabled) "" else ", disabled"
+                    println("Picker helper, $name, $mode: ${ink?.let(DrawnPixels::hex) ?: "nothing"}, $step ${DrawnPixels.hex(expected)}")
+                    if (ink == null || !DrawnPixels.matches(ink, expected, tolerance = 10)) {
+                        wrong += "$name, $mode: the helper drew ${ink?.let(DrawnPixels::hex) ?: "nothing"}, not $step ${DrawnPixels.hex(expected)}"
+                    }
+                }
+            }
+        }
+        assertTrue(wrong.joinToString("; "), wrong.isEmpty())
+    }
+
     @Test fun readOnlyItShowsItsValueAndOpensNothingDisabledItIsReadAsDisabled() {
         var background100 = 0
         val (_, readOnlyFill, readOnly) = drawnField(dark = false, label = "Zeit") {
