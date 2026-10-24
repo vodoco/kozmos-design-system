@@ -50,10 +50,13 @@ the npm credential exists; it checks out the same SHA and revalidates live
 CI/environment/main evidence. It downloads the exact artifact ID
 from its own prepare job, checks hashes and packed manifests, and does not rebuild
 or repack. Install scripts are disabled in both jobs' dependency installation;
-the npm token is supplied only to the final publishing step. Third-party actions
-in the release workflow are pinned to commit SHAs, and CI's `pnpm release:pins:check`
-asks GitHub that each one is a commit: until 17 Oct 2026 `pnpm/action-setup`'s pin was
-the `v4` tag's own object, which resolved only while the tag stayed put. The GitHub token has read-only
+the npm token is supplied only to the final publishing step. Every action in every
+workflow, the release workflow's among them, is pinned to a release's commit SHA with a
+`# vX.Y.Z` comment naming that release, and CI's `pnpm release:pins:check` asks GitHub
+that each SHA is a commit and the one that release's tag points at: until 17 Oct 2026
+`pnpm/action-setup`'s pin was the `v4` tag's own object, which resolved only while the tag
+stayed put. The release workflow's actions are their Node 24 builds, and its setup-node
+restores no cache (`package-manager-cache: false`). The GitHub token has read-only
 contents/actions permissions and checkout does not persist it.
 
 Before the first write, the publisher checks registry availability, version
