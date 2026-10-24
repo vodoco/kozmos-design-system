@@ -1169,17 +1169,6 @@
     min-width: 0;
     gap: calc(var(--primitives-layout-spacing-100) * 1px);
   }
-  .kozmos-search-row-field {
-    /* The field takes what is left, and may be narrower than the text inside
-       it: without `min-width: 0` a long placeholder pushes the row wider than
-       its container and the wrap comes back by another door. */
-    flex: 1 1 0%;
-    width: auto;
-    min-width: 0;
-  }
-  .kozmos-search-row-end {
-    flex: none;
-  }
   .kozmos-ai-search-ring {
     background: conic-gradient(
       from 0deg,
