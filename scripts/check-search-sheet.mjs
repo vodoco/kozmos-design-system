@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import { styleChanged } from "./lib/motion-waits.mjs";
 
 const base = process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006";
 const engine = process.env.ADAPTIVE_BROWSER ?? "chromium";
@@ -154,7 +155,7 @@ try {
     // is its rotated bounds, up to 66 x root two.
     const ring = await page.locator(".kozmos-ai-search-ring").evaluate((node) => {
       const s = getComputedStyle(node);
-      return { width: node.offsetWidth, height: node.offsetHeight, animationName: s.animationName, animationDuration: s.animationDuration, background: s.backgroundImage };
+      return { width: node.offsetWidth, height: node.offsetHeight, animationName: s.animationName, animationDuration: s.animationDuration, animationIterationCount: s.animationIterationCount, animationDelay: s.animationDelay, background: s.backgroundImage };
     });
     near(ring.width, 48, 1, "the ring is not the button's 48");
     near(ring.height, 48, 1, "the ring is not the button's 48");
@@ -201,15 +202,19 @@ try {
     assert.ok(disc.beforeTheRing, "the disc is not painted behind the ring");
     assert.equal(ring.animationName, "kozmos-ai-search-spin", `the ring does not turn: ${ring.animationName}`);
     assert.equal(ring.animationDuration, "3.6s", `the ring's turn is not the prototype's 3.6 seconds: ${ring.animationDuration}`);
+    // For ever, from the start: a turn that waited seconds, or stopped after a
+    // few, would still change within the bound below.
+    assert.equal(ring.animationIterationCount, "infinite", `the ring does not turn for ever: ${ring.animationIterationCount}`);
+    assert.equal(ring.animationDelay, "0s", `the ring waits ${ring.animationDelay} to turn`);
     assert.match(ring.background, /conic-gradient/, `the ring is not the conic gradient: ${ring.background}`);
     // The rainbow's stops resolve to the data colours: red first and last, blue among them.
     assert.match(ring.background, /rgb\(220, 38, 38\)/, `the ring's red is not the data red: ${ring.background}`);
     assert.match(ring.background, /rgb\(37, 99, 235\)/, `the ring's blue is not the data blue: ${ring.background}`);
-    // It turns: the transform differs a moment later.
-    const first = await page.locator(".kozmos-ai-search-ring").evaluate((node) => getComputedStyle(node).transform);
-    await page.waitForTimeout(400);
-    const later = await page.locator(".kozmos-ai-search-ring").evaluate((node) => getComputedStyle(node).transform);
-    assert.notEqual(first, later, `the ring's transform did not change over 400 ms: ${first}`);
+    // It turns: the transform moves, read until it has rather than after a
+    // fixed 400 ms. A turn that had not started when WebKit stopped rendering
+    // holds its first frame until it renders again.
+    const turned = await styleChanged(page.locator(".kozmos-ai-search-ring"), "transform");
+    assert.ok(turned.changed, turned.detached ? `the ring was replaced ${turned.after} ms in, before it turned` : `the ring's transform did not change over ${turned.after} ms and ${turned.frames} frames: ${turned.from}`);
   });
 
   await finish(await open("product-sdk-categoryfield--in-the-search-row"), "category-field-in-the-row", async (page) => {
