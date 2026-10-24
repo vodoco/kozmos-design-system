@@ -7,6 +7,7 @@
   "scripts": {
     "generate": "node scripts/generate-reference.mjs && node scripts/generate-roadmap.mjs",
     "brand": "node scripts/generate-brand.mjs",
+    "cosmos": "node scripts/generate-cosmos.mjs",
     "dev": "pnpm generate && react-router dev",
     "build": "pnpm generate && react-router typegen && tsc && react-router build",
     "preview": "node scripts/serve-static.mjs",

@@ -1,8 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 import * as React from "react";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { Combobox } from "../Combobox";
+import {
+  FIELD_ACTION,
+  FIELD_ACTIONS_ROW,
+  fieldActionsRoom,
+} from "../Combobox/field-actions";
 import { MultiSelect } from "./MultiSelect";
 
 const options = [
@@ -226,6 +232,95 @@ describe("MultiSelect", () => {
       expect(
         screen.getByRole("button", { name: "Remove Layers" }),
       ).toBeInTheDocument();
+    });
+  });
+
+  // The owner's decision of 24 Oct: MultiSelect's clear and open are
+  // Combobox's (Combobox/field-actions.ts), each as tall as the field.
+  // scripts/check-density.mjs measures them, and check-field-actions.mjs
+  // hovers and focuses them, in a browser; these hold what they do.
+  describe("its clear and open buttons", () => {
+    const renderTools = (chosen: string[] = ["filters"]) => {
+      const field = React.createRef<HTMLDivElement>();
+      render(
+        <MultiSelect
+          ref={field}
+          defaultValue={chosen}
+          label="Tools"
+          options={options}
+        />,
+      );
+      return field;
+    };
+
+    it("sit inside the field the caller's ref reaches", () => {
+      const field = renderTools();
+      expect(field.current).toContainElement(
+        screen.getByRole("button", { name: "Clear selected options" }),
+      );
+      expect(field.current).toContainElement(
+        screen.getByRole("button", { name: "Open options" }),
+      );
+    });
+
+    it("name what they do, the open button as the list changes", async () => {
+      const user = userEvent.setup();
+      renderTools();
+      await user.click(screen.getByRole("button", { name: "Open options" }));
+      expect(screen.getByRole("combobox", { name: "Tools" })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      await user.click(screen.getByRole("button", { name: "Close options" }));
+      expect(screen.getByRole("combobox", { name: "Tools" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      expect(
+        screen.getByRole("button", { name: "Open options" }),
+      ).toBeInTheDocument();
+    });
+
+    it("follow the input in Tab order: the clear, then the open", async () => {
+      const user = userEvent.setup();
+      renderTools();
+      screen.getByRole("combobox", { name: "Tools" }).focus();
+      await user.tab();
+      expect(
+        screen.getByRole("button", { name: "Clear selected options" }),
+      ).toHaveFocus();
+      await user.tab();
+      expect(
+        screen.getByRole("button", { name: /^(Open|Close) options$/ }),
+      ).toHaveFocus();
+      await user.tab({ shift: true });
+      await user.tab({ shift: true });
+      expect(screen.getByRole("combobox", { name: "Tools" })).toHaveFocus();
+    });
+
+    it("are Combobox's, from the one module both draw from", () => {
+      const field = renderTools();
+      const open = screen.getByRole("button", { name: "Open options" });
+      expect(open.className).toBe(FIELD_ACTION);
+      expect(
+        screen.getByRole("button", { name: "Clear selected options" })
+          .className,
+      ).toBe(FIELD_ACTION);
+      expect(open.parentElement?.className).toBe(FIELD_ACTIONS_ROW);
+      expect(field.current).toHaveClass(fieldActionsRoom(true));
+      cleanup();
+      render(
+        <Combobox
+          clearable
+          defaultValue="filters"
+          label="View"
+          options={options}
+        />,
+      );
+      const comboboxOpen = screen.getByRole("button", { name: "Open options" });
+      expect(comboboxOpen.className).toBe(FIELD_ACTION);
+      expect(comboboxOpen.parentElement?.className).toBe(FIELD_ACTIONS_ROW);
+      expect(screen.getByRole("combobox")).toHaveClass(fieldActionsRoom(true));
     });
   });
 });
