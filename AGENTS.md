@@ -81,7 +81,7 @@ testing what uses it, and restart Storybook after a rebuild.
   Mac. Build its image once with `pnpm android:paparazzi build`, record one class with
   `pnpm android:paparazzi recordPaparazziDebug --tests '<class>'`, verify with
   `pnpm android:paparazzi verifyPaparazziDebug`, and read the JUnit XML by name in the output
-  folder it prints. CI's Linux verify is the verdict; it never records.
+  folder it prints. CI never records; its Linux verify is the verdict.
   [`.ai-skills/testing-patterns.md`](.ai-skills/testing-patterns.md) §4 has the steps and traps.
 - **Native tests are proven by name.** A green run can have run nothing: `swift test` on macOS
   compiles the iOS-only tests out, and `-only-testing` with a wrong class passes. On iOS,
