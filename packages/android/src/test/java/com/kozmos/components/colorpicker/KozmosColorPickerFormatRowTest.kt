@@ -177,7 +177,11 @@ class KozmosColorPickerFormatRowTest {
         return problems.map { "$case: $it" }
     }
 
-    /** What TalkBack reads, and in what order: the parts' words, the menu alone taking a press. */
+    /**
+     * What TalkBack reads, and in what order: the parts' words, the menu
+     * alone taking a press and alone named, "Color format", as React's select
+     * is (`aria-label`); the values are their words alone.
+     */
     private fun readingProblems(case: Case): List<String> {
         val row = case.row
         val expected = words(row.format, case.value)
@@ -187,7 +191,8 @@ class KozmosColorPickerFormatRowTest {
         if (read != expected) problems += "read by place as $read"
         if (row.spoken.map { it.words } != expected) problems += "TalkBack is given ${row.spoken.map { it.words }}"
         if (row.spoken.map { it.clickable } != expected.indices.map { it == 0 }) problems += "presses ${row.spoken.map { it.clickable }}"
-        if (row.spoken.any { it.description != null }) problems += "descriptions ${row.spoken.map { it.description }}"
+        val named = expected.indices.map { if (it == 0) "Color format" else null }
+        if (row.spoken.map { it.description } != named) problems += "descriptions ${row.spoken.map { it.description }}"
         return problems.map { "$case: $it" }
     }
 
