@@ -28,17 +28,22 @@ struct KozmosPaginationRowLayout: Layout {
     var spacing: CGFloat
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }
-        let sizes = measure(subviews, width: width)
-        let rows = rows(sizes, width: width)
+        let rows = arrange(width: proposal.width, subviews).1
         let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
         return CGSize(width: rows.map(\.width).max() ?? 0, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let sizes = measure(subviews, width: bounds.width)
+        // Arranged for the width offered, as the size was, so both passes
+        // come out the same by construction: the bounds are the widest row's
+        // width rounded to the screen's pixels, and arranged again for them
+        // a part alone on that row could be measured narrower than it asks
+        // to be, or the last part of a row pushed onto the next. With no
+        // width offered the size was one row, and so is this. The bounds
+        // give only the origin and the centre.
+        let (sizes, rows) = arrange(width: proposal.width, subviews)
         var y = bounds.minY
-        for row in rows(sizes, width: bounds.width) {
+        for row in rows {
             var x = bounds.minX + (bounds.width - row.width) / 2
             for index in row.indices {
                 let size = sizes[index]
@@ -56,11 +61,19 @@ struct KozmosPaginationRowLayout: Layout {
         var height: CGFloat = 0
     }
 
+    /// Each part's size and the rows they make, for a width offered (none,
+    /// or an infinite one, is one row).
+    private func arrange(width: CGFloat?, _ subviews: Subviews) -> ([CGSize], [Row]) {
+        let offered = width.flatMap { $0.isFinite ? $0 : nil }
+        let sizes = measure(subviews, width: offered)
+        return (sizes, rows(sizes, width: offered))
+    }
+
     /// Each part's own size, or, for one wider than `width`, its size at `width`.
     private func measure(_ subviews: Subviews, width: CGFloat?) -> [CGSize] {
         subviews.map { subview in
             let ideal = subview.sizeThatFits(.unspecified)
-            guard let width, ideal.width > width else { return ideal }
+            guard let width, ideal.width > width + 0.25 else { return ideal }
             return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
         }
     }

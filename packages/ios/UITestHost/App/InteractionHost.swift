@@ -40,6 +40,7 @@ private struct InteractionFixture: View {
     @State private var accordionOpen: String?
     @State private var thumbs = 0
     @State private var colour = "#135BEC"
+    @State private var multiLocked = false
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -351,14 +352,21 @@ private struct InteractionFixture: View {
         // Plain buttons whose labels draw nothing where a finger may land:
         // each control is placed so a tap can fall inside it, off its words
         // and marks. The large variants are accessibility3, right to left.
-        case "multiselect-readonly":
+        case "multiselect-readonly", "multiselect-disabled", "multiselect-lock":
+            // Opened by default; read-only, disabled, or read-only while
+            // "Toggle read-only" says so.
             KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
                     multiSelection = $0
                     events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
                 }),
                 options: [.init(value: "lift", label: "Lift"), .init(value: "ramp", label: "Ramp")], label: "Access",
-                readOnly: true, defaultOpen: true)
+                disabled: scenario == "multiselect-disabled",
+                readOnly: scenario == "multiselect-readonly" || (scenario == "multiselect-lock" && multiLocked),
+                defaultOpen: true)
                 .frame(width: 320)
+            if scenario == "multiselect-lock" {
+                Button("Toggle read-only") { multiLocked.toggle() }
+            }
         case "multiselect", "multiselect-large-rtl":
             KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
                     multiSelection = $0

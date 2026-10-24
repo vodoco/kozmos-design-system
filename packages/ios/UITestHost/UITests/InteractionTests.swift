@@ -912,10 +912,13 @@ final class InteractionTests: XCTestCase {
     /// 402pt phone. It wraps, as React's flex-wrap row does, rather than
     /// squeeze Previous and Next: each keeps the size it has on its own, so
     /// its word stays on one line, and every part stays inside the column.
-    /// At accessibility3 right to left too.
+    /// Next goes on a second row, no two parts overlap, the rows stay inside
+    /// the size the row reports (16pt above the next part of the host), and
+    /// the parts keep their reading order. At accessibility3 right to left too.
     func testPaginationWrapsRatherThanSqueezingPreviousAndNext() {
         for scenario in ["pagination-ellipsis", "pagination-ellipsis-large-rtl"] {
             launch(scenario)
+            let rtl = scenario == "pagination-ellipsis-large-rtl"
             let column = (minX: app.frame.midX - 185, maxX: app.frame.midX + 185)
             for end in ["previous", "next"] {
                 let inRow = app.buttons["row-\(end)"]
@@ -924,10 +927,27 @@ final class InteractionTests: XCTestCase {
                 XCTAssertEqual(inRow.frame.width, alone.frame.width, accuracy: 0.5, "\(scenario): \(end) was squeezed")
                 XCTAssertEqual(inRow.frame.height, alone.frame.height, accuracy: 0.5, "\(scenario): \(end)'s word wrapped")
             }
-            for name in ["row-previous", "1", "2", "3", "10", "row-next"] {
-                let part = app.buttons[name]
-                XCTAssertGreaterThanOrEqual(part.frame.minX, column.minX - 0.5, "\(scenario): \(name) \(part.frame)")
-                XCTAssertLessThanOrEqual(part.frame.maxX, column.maxX + 0.5, "\(scenario): \(name) \(part.frame)")
+            let names = ["row-previous", "1", "2", "3", "10", "row-next"]
+            let frames = names.map { app.buttons[$0].frame }
+            for (name, frame) in zip(names, frames) {
+                XCTAssertGreaterThanOrEqual(frame.minX, column.minX - 0.5, "\(scenario): \(name) \(frame)")
+                XCTAssertLessThanOrEqual(frame.maxX, column.maxX + 0.5, "\(scenario): \(name) \(frame)")
+            }
+            for i in frames.indices {
+                for j in frames.indices where j > i {
+                    XCTAssertFalse(frames[i].insetBy(dx: 0.5, dy: 0.5).intersects(frames[j].insetBy(dx: 0.5, dy: 0.5)),
+                                   "\(scenario): \(names[i]) \(frames[i]) overlaps \(names[j]) \(frames[j])")
+                }
+            }
+            let previous = app.buttons["row-previous"].frame, next = app.buttons["row-next"].frame
+            XCTAssertGreaterThan(next.minY, previous.maxY, "\(scenario): Next is not on a second row")
+            XCTAssertLessThanOrEqual(next.maxY, app.buttons["alone-previous"].frame.minY - 16 + 0.5,
+                                     "\(scenario): the rows pass the size the row reports")
+            let one = app.buttons["1"].frame
+            if rtl {
+                XCTAssertGreaterThan(previous.minX, one.maxX, "\(scenario): Previous is not first, right to left")
+            } else {
+                XCTAssertLessThan(previous.maxX, one.minX, "\(scenario): Previous is not first, left to right")
             }
             app.terminate()
         }
@@ -1048,13 +1068,17 @@ final class InteractionTests: XCTestCase {
     /// 56 by 18pt, the word, in a 72 by 36pt box.
     func testTheColourFormatBoxTakesATapAcrossItsWidth() {
         launch("color-format")
-        let format = app.buttons["HEX"]
+        // Named as React's select is, its format its value.
+        let format = app.buttons["Color format"]
         XCTAssertTrue(format.waitForExistence(timeout: 3))
+        XCTAssertEqual(format.value as? String, "HEX")
         // React's box is h-9, 36px, a compact control in the panel: within a pixel.
         XCTAssertGreaterThanOrEqual(format.frame.height + 0.5, 36, "\(format.frame)")
         XCTAssertGreaterThanOrEqual(format.frame.width + 0.5, 72, "\(format.frame)")
         tap(format, dx: -30, dy: 0)
         XCTAssertTrue(app.buttons["RGB"].waitForExistence(timeout: 3), "the format menu did not open")
+        app.buttons["RGB"].tap()
+        XCTAssertEqual(format.value as? String, "RGB")
     }
 
     /// A disabled or read-only picker opened by default shows its panel, but
@@ -1063,7 +1087,7 @@ final class InteractionTests: XCTestCase {
     func testADisabledOrReadOnlyColourPickersFormatBoxOpensNoMenu() {
         for scenario in ["color-format-disabled", "color-format-readonly"] {
             launch(scenario)
-            let format = app.buttons["HEX"]
+            let format = app.buttons["Color format"]
             XCTAssertTrue(format.waitForExistence(timeout: 3), scenario)
             XCTAssertFalse(format.isEnabled, "\(scenario): the format box is enabled")
             format.tap()
@@ -1072,14 +1096,38 @@ final class InteractionTests: XCTestCase {
         }
     }
 
-    /// A read-only MultiSelect opened by default shows no list, as React's
-    /// closes, and a tap where its rows would be changes nothing.
-    func testAReadOnlyMultiSelectOpenedByDefaultKeepsItsSelection() {
-        launch("multiselect-readonly")
-        let ramp = app.buttons["Ramp"]
-        XCTAssertFalse(ramp.exists, "a read-only MultiSelect shows its list")
-        if ramp.exists { ramp.tap() }
-        received("none")
+    /// A read-only or disabled MultiSelect opened by default shows its chip
+    /// and a closed chevron it cannot open, and no list, as React's closes;
+    /// a tap where the list's second row, Ramp, was drawn changes nothing.
+    func testAReadOnlyOrDisabledMultiSelectOpenedByDefaultShowsNoList() {
+        for scenario in ["multiselect-readonly", "multiselect-disabled"] {
+            launch(scenario)
+            let chevron = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open options", "Close options"])).firstMatch
+            XCTAssertTrue(chevron.waitForExistence(timeout: 3), "\(scenario): no chevron")
+            XCTAssertEqual(chevron.label, "Open options", "\(scenario): the list is open")
+            XCTAssertFalse(chevron.isEnabled, "\(scenario): the chevron can be used")
+            XCTAssertTrue(app.staticTexts["Lift"].exists, "\(scenario): the chosen option's chip")
+            XCTAssertFalse(app.buttons["Ramp"].exists, "\(scenario): the list is shown")
+            tap(atX: app.frame.midX, y: chevron.frame.maxY + 80)
+            received("none")
+            XCTAssertTrue(app.staticTexts["Lift"].exists, scenario)
+            app.terminate()
+        }
+    }
+
+    /// A list closed by read-only stays closed when the field can be used
+    /// again, as React's does: it opens again only when the visitor opens it.
+    func testAMultiSelectClosedByReadOnlyStaysClosedAfterwards() {
+        launch("multiselect-lock")
+        XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "the list was not open to begin with")
+        let toggle = app.buttons["Toggle read-only"]
+        toggle.tap()
+        XCTAssertFalse(app.buttons["Ramp"].exists, "a read-only MultiSelect shows its list")
+        toggle.tap()
+        XCTAssertTrue(app.buttons["Open options"].waitForExistence(timeout: 3), "the list opened again by itself")
+        XCTAssertFalse(app.buttons["Ramp"].exists, "the list opened again by itself")
+        app.buttons["Open options"].tap()
+        XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "the chevron does not open it")
     }
 
     /// A tap `dx`, `dy` from `element`'s centre.

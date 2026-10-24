@@ -170,6 +170,11 @@ public struct KozmosMultiSelect: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Closed when it stops being usable, so it does not open again by
+        // itself when it is usable again, as React's closes.
+        .onChange(of: disabled || readOnly) { locked in
+            if locked { internalOpen = false }
+        }
     }
 
     private var selectedOptions: [KozmosListboxOption] {

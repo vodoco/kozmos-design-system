@@ -242,8 +242,11 @@ public struct KozmosColorPicker: View {
                     .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             }
             .buttonStyle(.plain)
-            // Disabled with the picker, as React's select is.
+            // Disabled with the picker, and named, as React's select is
+            // (`aria-label="Color format"`): VoiceOver heard only the format.
             .disabled(disabled || readOnly)
+            .accessibilityLabel("Color format")
+            .accessibilityValue(currentFormat.label)
             .background(KozmosColors.primitivesColorsBackground0)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             .overlay(
