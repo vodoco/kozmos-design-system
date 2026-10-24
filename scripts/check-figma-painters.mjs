@@ -139,6 +139,7 @@ function pages() {
     "heart",
     "shopping-bag-02",
     "user-01",
+    "check",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -6302,6 +6303,248 @@ section("Decision 65: Tabs draw React's raised segment");
     ) && boundColours(focused).indexOf("Colors/theme/500") === -1,
     `focused, the only theme colour is the ring's 600 (${boundColours(focused).join(", ")})`,
   );
+}
+
+section("Decisions 115 and 26: the list rows draw React's rows");
+{
+  // Figma comes from the developed components: Combobox's, MultiSelect's,
+  // TimePicker's and the standalone Listbox's rows are #372's .kozmos-option.
+  // 44 tall, the Button's default height (40 at compact density, decision
+  // 82; Figma has no Density modes yet, GAP-146), 12 at the sides, the Marker
+  // corner, 2 between rows (the standalone Listbox 4), the words 14/20
+  // regular in full ink; the active row background/50, the chosen row
+  // background/100 with its check at the end in theme 600; and, reached by
+  // the keyboard (State=Focus), the active row's 2px inset theme-600 ring.
+  // A bound property shows its variable's value, not the painter's write, so
+  // every size is read through its binding.
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const payloadValue = new Map(
+    payload.variables.map((variable) => [
+      variable.figmaName,
+      variable.values.light,
+    ]),
+  );
+  const byCanonical = new Map(
+    payload.variables.map((variable) => [
+      variable.canonicalName,
+      variable.figmaName,
+    ]),
+  );
+  // A float variable's value and the names its aliases pass through.
+  const resolve = (name, chain = []) => {
+    if (!name || chain.length > 8) return { value: undefined, chain };
+    const token = floats.get(name);
+    if (token)
+      return token.alias
+        ? resolve(token.alias, chain.concat(name))
+        : { value: token.value, chain: chain.concat(name) };
+    const value = payloadValue.get(name);
+    if (value && value.kind === "alias")
+      return resolve(byCanonical.get(value.path), chain.concat(name));
+    return { value: value && value.value, chain: chain.concat(name) };
+  };
+  const boundName = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  // What Figma shows for a size: its variable's value when bound.
+  const shown = (node, field) => {
+    const name = boundName(node, field);
+    return name ? resolve(name).value : node[field];
+  };
+  // A text's size and leading, through their bindings when bound.
+  const type = (text) => {
+    const leading = shown(text, "lineHeight");
+    return `${shown(text, "fontSize")}/${typeof leading === "number" ? leading : leading && leading.value}`;
+  };
+  const tokens = payloadVariables(
+    [...floats.keys()].concat([...variableByName.keys()]),
+  );
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await plugin[fn](component, {
+      ...props,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const colours = (node) =>
+    [node]
+      .concat(node.findAll ? node.findAll(() => true) : [])
+      .flatMap((n) => [].concat(n.fills || [], n.strokes || []))
+      .map(boundVariableName)
+      .filter(Boolean);
+  const fill = (node) =>
+    node.fills && node.fills.length ? boundVariableName(node.fills[0]) : null;
+
+  const parts = [
+    {
+      name: "Combobox",
+      fn: "updateComboboxVariant",
+      props: (state) => ({ state, status: "Default", content: "Open" }),
+      list: "Combobox Listbox",
+      row: 44,
+      gap: 2,
+    },
+    {
+      name: "MultiSelect",
+      fn: "updateMultiSelectVariant",
+      props: (state) => ({ state, status: "Default", content: "Open" }),
+      list: "MultiSelect Listbox",
+      row: 44,
+      gap: 2,
+    },
+    {
+      name: "TimePicker",
+      fn: "updateTimePickerVariant",
+      props: (state) => ({ state, status: "Default", content: "Open" }),
+      list: "TimePicker Listbox",
+      row: 44,
+      gap: 2,
+    },
+    {
+      // The standalone Listbox draws a description under each label: 8 +
+      // 20 + 16 + 8, as React's row measures with one, at either density.
+      name: "Listbox",
+      fn: "updateListboxVariant",
+      props: (state) => ({ selection: "Single", state }),
+      list: null,
+      row: 52,
+      gap: 4,
+      restingActive: 0,
+    },
+  ];
+  for (const part of parts) {
+    const heights = {};
+    for (const state of ["Default", "Focus"]) {
+      const label = `${part.name} ${state}`;
+      const component = await draw(part.fn, part.props(state));
+      const list = part.list ? named(component, part.list) : component;
+      const rows = component.findAll(
+        (node) => node.type === "FRAME" && / Option \d+$/.test(node.name),
+      );
+      ok(list && rows.length >= 3, `${label}: the list and its rows`);
+      if (!list || rows.length < 3) continue;
+      ok(
+        shown(list, "itemSpacing") === part.gap,
+        `${label}: ${part.gap} between rows (${boundName(list, "itemSpacing")} = ${shown(list, "itemSpacing")})`,
+      );
+      heights[state] = rows.map((row) => shown(row, "height"));
+      for (const row of rows) {
+        const at = `${label}, ${row.name}`;
+        ok(
+          shown(row, "height") === part.row,
+          `${at}: ${part.row} tall (${boundName(row, "height")} = ${shown(row, "height")}; the painter writes ${row.height})`,
+        );
+        if (part.row === 44)
+          ok(
+            resolve(boundName(row, "height")).chain.indexOf(
+              "Button/height/default",
+            ) !== -1,
+            `${at}: the height is the Button's default, so compact draws 40 (${resolve(boundName(row, "height")).chain.join(" > ")})`,
+          );
+        ok(
+          shown(row, "paddingLeft") === 12 && shown(row, "paddingRight") === 12,
+          `${at}: 12 at the sides (${shown(row, "paddingLeft")}/${shown(row, "paddingRight")})`,
+        );
+        ok(
+          shown(row, "cornerRadius") === 4,
+          `${at}: the Marker corner, 4 (${shown(row, "cornerRadius")})`,
+        );
+        const words = row.findOne(
+          (node) => node.type === "TEXT" && / Text$/.test(node.name),
+        );
+        ok(
+          words &&
+            type(words) === "14/20" &&
+            words.fontName.style === "Regular" &&
+            fill(words) === "Colors/foreground/0",
+          `${at}: the words 14/20 regular in foreground/0 (${words && `${type(words)} ${words.fontName.style} ${fill(words)}`})`,
+        );
+        const description = row.findOne(
+          (node) => node.type === "TEXT" && / Description$/.test(node.name),
+        );
+        if (description)
+          ok(
+            type(description) === "12/16" &&
+              description.fontName.style === "Regular" &&
+              fill(description) === "Colors/foreground/400",
+            `${at}: the description 12/16 regular in foreground/400 (${type(description)} ${description.fontName.style} ${fill(description)})`,
+          );
+        if (part.name === "Listbox")
+          ok(
+            shown(row, "paddingTop") === 8 && shown(row, "paddingBottom") === 8,
+            `${at}: 8 above and below (${shown(row, "paddingTop")}/${shown(row, "paddingBottom")})`,
+          );
+      }
+      const chosen = rows.filter((row) => named(row, "Icon"));
+      ok(chosen.length >= 1, `${label}: a chosen row`);
+      for (const row of chosen) {
+        ok(
+          fill(row) === "Colors/background/100",
+          `${label}, ${row.name}: chosen, background/100 (${fill(row)})`,
+        );
+        const icon = named(row, "Icon");
+        ok(
+          row.children[row.children.length - 1] === icon &&
+            row.primaryAxisAlignItems === "SPACE_BETWEEN",
+          `${label}, ${row.name}: the check ends the row`,
+        );
+        ok(
+          colours(icon).indexOf("Colors/theme/600") !== -1,
+          `${label}, ${row.name}: the check is theme 600 (${colours(icon).join(", ")})`,
+        );
+      }
+      const active = rows.filter((row) => fill(row) === "Colors/background/50");
+      const wantActive =
+        state === "Default" && part.restingActive !== undefined
+          ? part.restingActive
+          : 1;
+      ok(
+        active.length === wantActive &&
+          active.every((row) => !named(row, "Icon")),
+        `${label}: ${wantActive} active row on background/50 (${active.map((row) => row.name).join(", ") || "none"})`,
+      );
+      const ringed = rows.filter((row) => (row.strokes || []).length > 0);
+      if (state === "Default")
+        ok(
+          ringed.length === 0,
+          `${label}: under the pointer no row is ringed (${ringed.map((row) => row.name).join(", ") || "none"})`,
+        );
+      else {
+        const ring = active[0];
+        ok(
+          ring &&
+            ringed.length === 1 &&
+            ringed[0] === ring &&
+            ring.strokes.length === 1 &&
+            boundVariableName(ring.strokes[0]) === "Colors/theme/600" &&
+            ring.strokeAlign === "INSIDE" &&
+            shown(ring, "strokeWeight") === 2 &&
+            boundName(ring, "strokeWeight") === "Border Width/md",
+          `${label}: reached by the keyboard, the active row draws a 2px inset theme-600 ring, the Focused row (${ring ? `${(ring.strokes || []).map(boundVariableName).join(",") || "no stroke"} ${ring.strokeAlign} ${shown(ring, "strokeWeight")} ${boundName(ring, "strokeWeight")}` : "no active row"}; ringed: ${ringed.map((row) => row.name).join(", ") || "none"})`,
+        );
+        ok(
+          !ring || ring.strokesIncludedInLayout !== true,
+          `${label}: the ring is no part of the layout`,
+        );
+      }
+    }
+    ok(
+      JSON.stringify(heights.Focus) === JSON.stringify(heights.Default),
+      `${part.name}: the ring moves nothing (${JSON.stringify(heights.Default)} / ${JSON.stringify(heights.Focus)})`,
+    );
+  }
 }
 
 // --- Summary ---------------------------------------------------------------------

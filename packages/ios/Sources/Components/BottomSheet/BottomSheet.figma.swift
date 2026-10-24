@@ -19,7 +19,7 @@ struct KozmosBottomSheetBasicConnect: FigmaConnect {
                     Text(self.title)
                         .font(KozmosTypography.headline)
                     Text(self.description)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
                 .padding(KozmosDimensions.primitivesLayoutSpacing400)
             )
@@ -45,7 +45,7 @@ struct KozmosBottomSheetFormConnect: FigmaConnect {
                     Text(self.title)
                         .font(KozmosTypography.headline)
                     Text(self.description)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     TextField("Search places", text: .constant(""))
                     TextField("Optional context", text: .constant(""))
                 }
@@ -73,7 +73,7 @@ struct KozmosBottomSheetFooterConnect: FigmaConnect {
                     Text(self.title)
                         .font(KozmosTypography.headline)
                     Text(self.description)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     HStack {
                         Button("Cancel") {}
                         Button("Apply") {}

@@ -2,7 +2,7 @@
 
 # TimePicker
 
-TimePicker retains native time-entry behavior. External `aria-describedby` IDs merge with helper/error guidance, and an explicit component error remains invalid. The owned field layout follows module direction and exposes a focus indicator for native segments, including engines that do not match them with `:focus-visible`.
+A time field: the browser's own, with its segmented typing in the reader's clock, and a button at its end that opens a list of times (decision 104), Combobox's list as Figma's Open variant (`444:11455`) draws it. The value is an `HH:MM` string, as `<input type="time">`'s is, through the input's own `value`, `defaultValue` and `onChange`; a time chosen from the list is typed into the field, so `onChange` and a form's change listeners hear it as typing.
 
 - **Import:** `import { TimePicker } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -37,6 +37,26 @@ It forwards its ref to `HTMLInputElement`. Its props are `TimePickerProps`, whic
 - `label`: `string`, optional.
 - `status`: `InputStatus`, optional, default `"default"`.
 - `wrapperClassName`: `string`, optional.
+- `open`: `boolean`, optional.
+
+  Whether Kozmos's list of times is open, with `onOpenChange`. The field's
+  button opens it, as Alt+Down Arrow or F4 in the field do, in every
+  engine: none draws a time picker button a page cannot hide.
+
+- `defaultOpen`: `boolean`, optional.
+- `onOpenChange`: `(open: boolean) => void`, optional.
+- `chooseTimeLabel`: `string`, optional, default `"Choose time"`.
+
+  Names the button that opens the list, and the list.
+
+- `hourCycle`: `"h12" | "h23"`, optional.
+
+  The list's clock, 12 or 24 hours; by default the locale's.
+
+- `locale`: `string`, optional.
+
+  The list's locale; the browser's still formats the typed time.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

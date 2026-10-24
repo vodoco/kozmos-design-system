@@ -106,7 +106,7 @@ public struct KozmosCombobox: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .accessibilityLabel(clearLabel)
                 }
 
@@ -119,7 +119,7 @@ public struct KozmosCombobox: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(disabled || readOnly)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 .accessibilityLabel(isOpen ? closeLabel : openLabel)
             }
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
@@ -135,7 +135,7 @@ public struct KozmosCombobox: View {
                     if emptyText != supportingText {
                         Text(emptyText)
                             .font(KozmosTypography.subheadline)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
                             .padding(KozmosDimensions.primitivesLayoutSpacing150)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(KozmosColors.primitivesColorsBackground0)
@@ -279,7 +279,7 @@ public struct KozmosCombobox: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

@@ -113,8 +113,10 @@ What the workflows do today ([ci-cd-configuration.md](./ci-cd-configuration.md))
 - The npm credential, `NPM_TOKEN`, is an environment secret that only the publish job in
   `release.yml` can read, after Olcay approves the deployment; it is never a repository secret.
 - The publish job alone may mint an OIDC token, for npm provenance (from the release after 0.5.0).
-- `release.yml` pins its third-party actions to commit SHAs, gives the GitHub token read-only
-  permissions and never persists it at checkout.
+- Every workflow pins each action to a release's commit SHA, with a `# vX.Y.Z` comment naming the
+  release; `pnpm release:pins:check` asks GitHub that each SHA is that release's commit.
+- `release.yml` gives the GitHub token read-only permissions, never persists it at checkout and
+  restores no dependency cache.
 - Nothing generates an SBOM.
 
 ---

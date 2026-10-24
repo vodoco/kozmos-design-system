@@ -141,7 +141,7 @@ public struct KozmosDrawer<Content: View>: View {
                 if let description {
                     Text(description)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -154,7 +154,7 @@ public struct KozmosDrawer<Content: View>: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Close drawer")
