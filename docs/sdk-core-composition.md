@@ -343,7 +343,8 @@ under `packages/android/build/test-results/testDebugUnitTest`. The Core growth
 and pointer tests, POI list action tests and native adapter composition guard
 are distinct checks: source composition alone does not prove runtime behavior.
 Do not accept changed Android goldens on macOS just to make verification green;
-review the changed geometry and record on the canonical Linux renderer.
+review the changed geometry and record on the canonical Linux renderer, the
+container `pnpm android:paparazzi` runs (`.ai-skills/testing-patterns.md` §4).
 
 ## Editing and checking
 

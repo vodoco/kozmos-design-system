@@ -77,8 +77,12 @@ testing what uses it, and restart Storybook after a rebuild.
   Docker: build Storybook, then `pnpm test:visual:update --grep <story>`, or use the Visual
   Regression workflow's record run. Never record on a bare Mac: it draws text differently.
   [`docs/visual-review.md`](docs/visual-review.md) has the steps.
-- **Compose's Paparazzi goldens** are recorded on a Mac, one class at a time, and verified on CI's
-  Linux, which never records and is the verdict; `.ai-skills/testing-patterns.md` §4 has the steps.
+- **Compose's Paparazzi goldens** are recorded only in the Linux amd64 container, never on a bare
+  Mac. Build its image once with `pnpm android:paparazzi build`, record one class with
+  `pnpm android:paparazzi recordPaparazziDebug --tests '<class>'`, verify with
+  `pnpm android:paparazzi verifyPaparazziDebug`, and read the JUnit XML by name in the output
+  folder it prints. CI's Linux verify is the verdict; it never records.
+  [`.ai-skills/testing-patterns.md`](.ai-skills/testing-patterns.md) §4 has the steps and traps.
 - **Native tests are proven by name.** A green run can have run nothing: `swift test` on macOS
   compiles the iOS-only tests out, and `-only-testing` with a wrong class passes. On iOS,
   `node scripts/check-ios-poi.mjs` runs the whole target on the pinned simulator; read the names
