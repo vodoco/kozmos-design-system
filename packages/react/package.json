@@ -47,7 +47,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD-PARTY-NOTICES"
   ],
   "//browserslist": "Declared browser minimums, not whole-library or embedded-WebView certification. Remaining utility styles require native CSS @scope. Firefox enabled it by default in 146 (https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146); the earlier 128 declaration was incorrect. Supporting older Firefox requires the owned-CSS migration. See README migration guidance and the scoped-utility regression checks.",
   "browserslist": [
