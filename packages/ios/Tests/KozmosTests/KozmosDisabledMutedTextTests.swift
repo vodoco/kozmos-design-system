@@ -111,5 +111,52 @@ final class KozmosDisabledMutedTextTests: XCTestCase {
         }
         XCTAssertEqual(wrong, [])
     }
+
+    /// The date range's preview is the locale's interval in one text, in the
+    /// dates' colour: foreground/0, and disabled foreground/500, as its
+    /// disabled dates were. The muted "to" that stood between the dates is
+    /// gone, so no word in it is muted. The range is drawn with and without
+    /// its preview: the pixels that differ are the preview's box, and its
+    /// words are the pixels 8pt or more inside that box, clear of its rounded
+    /// border. Their colour is the pixel furthest from the page, held to the
+    /// token within 10 a channel; foreground/400 is 23 to 28 from 500.
+    @MainActor func testADateRangesSummaryIsTheDatesColourEnabledAndDisabled() async throws {
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            for disabled in [false, true] {
+                let step = disabled ? "foreground/500" : "foreground/0"
+                let swatch = try DrawnPixels.resolved(
+                    disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0, in: scheme)
+                let token: RGB = (swatch.r, swatch.g, swatch.b)
+                let name = "DateRangePicker\(disabled ? " disabled" : "")'s summary, \(scheme)"
+                let with = try await render(KozmosDateRangePicker(disabled: disabled, showsCalendarPreview: true), scheme)
+                let without = try await render(KozmosDateRangePicker(disabled: disabled, showsCalendarPreview: false), scheme)
+                var minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
+                for y in 0..<with.height {
+                    for x in 0..<with.width {
+                        let a = pixel(with, x, y), b = pixel(without, x, y)
+                        guard abs(Int(a.r) - Int(b.r)) > 8 || abs(Int(a.g) - Int(b.g)) > 8 || abs(Int(a.b) - Int(b.b)) > 8 else { continue }
+                        minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                    }
+                }
+                let inset = Int(8 * with.scale)
+                guard maxX >= 0, maxX - minX > 2 * inset, maxY - minY > 2 * inset else {
+                    wrong.append("\(name): no preview box drawn")
+                    continue
+                }
+                let s = with.scale
+                print("Disabled muted iOS, \(name): the preview's box \(Int(CGFloat(minX) / s)),\(Int(CGFloat(minY) / s)) to \(Int(CGFloat(maxX) / s)),\(Int(CGFloat(maxY) / s))")
+                guard let words = ink(with, scheme, xs: (minX + inset)..<(maxX - inset), ys: (minY + inset)..<(maxY - inset)) else {
+                    wrong.append("\(name): nothing drawn")
+                    continue
+                }
+                print("Disabled muted iOS, \(name): \(hex(words)), \(step) \(hex(token))")
+                if abs(Int(words.r) - Int(token.r)) > 10 || abs(Int(words.g) - Int(token.g)) > 10 || abs(Int(words.b) - Int(token.b)) > 10 {
+                    wrong.append("\(name): drew \(hex(words)), not \(step) \(hex(token))")
+                }
+            }
+        }
+        XCTAssertEqual(wrong, [])
+    }
 }
 #endif
