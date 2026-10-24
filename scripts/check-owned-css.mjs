@@ -1766,7 +1766,12 @@ try {
         )
         .then(
           () => true,
-          () => false,
+          // Only the bound running out is the button's answer: anything else
+          // (a closed page, a predicate that threw) is the check's own fault.
+          (error) => {
+            if (error.name === "TimeoutError") return false;
+            throw error;
+          },
         );
       if (!hovered) {
         const seen = await button.evaluate((node) => ({

@@ -690,7 +690,10 @@ const cases = [
       for (let step = 1; step <= 10; step++)
         await page.mouse.move(x, y + step * 25);
       await page.mouse.up();
-      await page.waitForTimeout(600);
+      // No fixed wait: under reduced motion the sheet has no transition, and
+      // the release sets its height from the pointer event, so it is in place
+      // when mouse.up resolves, in all three engines and with WebKit's frames
+      // held.
       await settleLayout(page);
       const sheetAfter = await page.locator("aside").boundingBox();
       assert(
