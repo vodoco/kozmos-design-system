@@ -72,33 +72,54 @@ assert.deepEqual(
   "a variable with no initial value is read with a fallback",
 );
 // What registration is for: a variable a utility sets on a parent is never
-// what its child reads. So every compiler variable that is both set and read
-// is registered. One with no initial value that nothing sets has no value
-// anywhere: the stylesheet writes its reads as their fallbacks instead
-// (scoped-css.cjs), and registers it no longer.
+// what its child reads. So every compiler variable read is registered: one
+// that is not, and is not set, has no value, and a read of it with no
+// fallback (`skewX(var(--tw-skew-x))`) makes its whole declaration invalid
+// on a page without Tailwind.
 const set = new Set();
 stylesheet.walkDecls(/^--tw-/, (decl) => set.add(decl.prop));
-const readNames = new Set();
+const unregisteredReads = [];
 stylesheet.walkDecls((decl) => {
   for (const [, name] of decl.value.matchAll(/var\(\s*(--tw-[\w-]+)/g))
-    readNames.add(name);
+    if (compilerVariables.has(name) && !registered.has(name))
+      unregisteredReads.push(`${name} in ${decl.prop}: ${decl.value}`);
 });
 assert.deepEqual(
-  [...set].filter(
-    (name) =>
-      compilerVariables.has(name) &&
-      readNames.has(name) &&
-      !registered.has(name),
-  ),
+  unregisteredReads,
   [],
-  "every compiler variable a utility sets and another reads is registered",
+  "every compiler variable read is registered",
 );
-assert.deepEqual(
+// One with no initial value that nothing sets has no value anywhere, so
+// scoped-css.cjs writes its reads as their fallbacks and does not register
+// it. It keeps a read, and the registration, only where that would leave
+// the declaration empty (`filter: var(--tw-blur,)`): written as their
+// fallbacks, with a rotation or skew by zero gone from a transform, the
+// reads must leave nothing.
+const unsetRegistered = new Set(
   [...registered]
     .filter(([name, d]) => d["initial-value"] === undefined && !set.has(name))
     .map(([name]) => name),
+);
+const inlinable = [];
+stylesheet.walkDecls((decl) => {
+  const reads = [...decl.value.matchAll(/var\(\s*(--tw-[\w-]+)/g)];
+  if (!reads.some(([, name]) => unsetRegistered.has(name))) return;
+  let written = decl.value.replace(
+    /var\(\s*(--tw-[\w-]+)\s*(?:,([^()]*))?\)/g,
+    (whole, name, fallback) =>
+      unsetRegistered.has(name) ? (fallback ?? "") : whole,
+  );
+  if (/transform$/.test(decl.prop))
+    written = written.replace(
+      /\b(?:rotate|skew|skewX|skewY)\(\s*0(?:deg)?\s*\)/g,
+      "",
+    );
+  if (written.trim()) inlinable.push(`${decl.prop}: ${decl.value}`);
+});
+assert.deepEqual(
+  inlinable,
   [],
-  "a variable registered with no initial value is set somewhere",
+  "a variable registered with no initial value is set, or read only where its fallback would leave nothing",
 );
 assert.ok(registered.size > 0, "the stylesheet registers its variables");
 console.log(
