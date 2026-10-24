@@ -8,13 +8,22 @@ public struct KozmosPOICard<ImageContent: View, DescriptionContent: View, Action
     let descriptionContent: DescriptionContent?
     let actionsContent: ActionsContent?
     let onClose: (() -> Void)?
+    let closeLabel: String?
     
+    /// `closeLabel` is what VoiceOver calls the close button drawn when
+    /// `onClose` is set; a product that translates passes its own. Left out,
+    /// the button keeps its symbol's own name, which the system says in the
+    /// reader's language: "Close" in English, "Schließen" in German. A fixed
+    /// English default would have lost that. Before `onClose`, as
+    /// `KozmosTag`'s `removeLabel` is before `onRemove`, so a trailing
+    /// closure binds as it did.
     public init(
         title: String,
         category: String? = nil,
         @ViewBuilder imageContent: () -> ImageContent? = { AnyView?(nil) },
         @ViewBuilder descriptionContent: () -> DescriptionContent? = { AnyView?(nil) },
         @ViewBuilder actionsContent: () -> ActionsContent? = { AnyView?(nil) },
+        closeLabel: String? = nil,
         onClose: (() -> Void)? = nil
     ) {
         self.title = title
@@ -23,6 +32,7 @@ public struct KozmosPOICard<ImageContent: View, DescriptionContent: View, Action
         self.descriptionContent = descriptionContent()
         self.actionsContent = actionsContent()
         self.onClose = onClose
+        self.closeLabel = closeLabel
     }
     
     public var body: some View {
@@ -53,6 +63,7 @@ public struct KozmosPOICard<ImageContent: View, DescriptionContent: View, Action
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(KozmosColors.primitivesColorsForeground400.opacity(0.6))
                         }
+                        .modifier(KozmosPOICardCloseName(label: closeLabel))
                     }
                 }
                 
@@ -71,5 +82,19 @@ public struct KozmosPOICard<ImageContent: View, DescriptionContent: View, Action
         .cornerRadius(KozmosDimensions.primitivesLayoutSpacing150)
         .kozmosElevation(KozmosShadows.semanticsElevationFloating)
         .frame(width: 300)
+    }
+}
+
+/// The close button's name: the product's words when it passes them, and
+/// otherwise the symbol's own, which the system says in the reader's language.
+private struct KozmosPOICardCloseName: ViewModifier {
+    let label: String?
+
+    func body(content: Content) -> some View {
+        if let label {
+            content.accessibilityLabel(Text(verbatim: label))
+        } else {
+            content
+        }
     }
 }
