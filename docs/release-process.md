@@ -55,8 +55,8 @@ workflow, the release workflow's among them, is pinned to a release's commit SHA
 `# vX.Y.Z` comment naming that release, and CI's `pnpm release:pins:check` asks GitHub
 that each SHA is a commit and the one that release's tag points at: until 17 Oct 2026
 `pnpm/action-setup`'s pin was the `v4` tag's own object, which resolved only while the tag
-stayed put. The release workflow's actions are their Node 24 builds, and its setup-node
-restores no cache (`package-manager-cache: false`). The GitHub token has read-only
+stayed put. The release workflow keeps the v4 builds that published 0.12.2 until
+the release after 0.13.0, which moves them to Node 24 in its own change. The GitHub token has read-only
 contents/actions permissions and checkout does not persist it.
 
 Before the first write, the publisher checks registry availability, version
