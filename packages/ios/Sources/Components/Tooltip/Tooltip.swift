@@ -121,7 +121,9 @@ private struct KozmosTooltipPosition: ViewModifier {
     }
 }
 
-private struct KozmosTooltipBubble: View {
+/// The bubble the tooltip shows, with its tip toward the view it explains.
+/// Internal so a test can draw it without pressing anything.
+struct KozmosTooltipBubble: View {
     let text: String
     let side: KozmosTooltipSide
 
@@ -171,9 +173,10 @@ private struct KozmosTooltipBubble: View {
 
 private struct KozmosTooltipTip: View {
     let side: KozmosTooltipSide
+    @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
-        KozmosTooltipTipShape(side: side)
+        KozmosTooltipTipShape(side: side, rightToLeft: layoutDirection == .rightToLeft)
             .fill(KozmosColors.primitivesColorsBackground0)
             .frame(width: tipWidth, height: tipHeight)
     }
@@ -187,11 +190,18 @@ private struct KozmosTooltipTip: View {
     }
 }
 
-private struct KozmosTooltipTipShape: Shape {
+/// The tip, pointing at the view the bubble explains. A side tip sits at the
+/// bubble's leading end (`.right`) or trailing end (`.left`), which a
+/// right-to-left layout puts on the other side, so the tip mirrors itself
+/// there, and SwiftUI must not mirror it again: unset, a shape mirrors itself
+/// right to left in an app that deploys to iOS 17 or later and not in one
+/// that deploys to iOS 16, where a side tip pointed into its own bubble.
+struct KozmosTooltipTipShape: Shape {
     let side: KozmosTooltipSide
+    var rightToLeft = false
 
     func path(in rect: CGRect) -> Path {
-        Path { path in
+        let path = Path { path in
             switch side {
             case .top:
                 path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
@@ -212,7 +222,11 @@ private struct KozmosTooltipTipShape: Shape {
             }
             path.closeSubpath()
         }
+        return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
     }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
 public extension View {
