@@ -270,6 +270,46 @@ verifyPaparazziDebug` in `packages/android` compares the snapshots, as CI's Andr
 the test names back from the JUnit XML under `build/test-results/`. The tests written before the
 code are kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
+### Recording a golden
+
+Paparazzi 1.3.5 (`packages/android/build.gradle.kts`) keeps one PNG per snapshot in
+`packages/android/src/test/snapshots/images/`. Record only the class whose drawing you changed, on
+a Mac, then verify it:
+
+```bash
+cd packages/android
+./gradlew recordPaparazziDebug --tests 'com.kozmos.components.button.KozmosButtonPaparazziTest'
+./gradlew verifyPaparazziDebug --tests 'com.kozmos.components.button.KozmosButtonPaparazziTest'
+```
+
+Both run the JVM test task, `testDebugUnitTest`; `--tests` narrows it to the class. A recording
+keeps whatever the code drew, so open each PNG it wrote and compare it with the one it replaces.
+Commit only the goldens you meant to change, and `git restore` any other the run rewrote. CI never
+records: its Android job runs `./gradlew verifyPaparazziDebug` on Linux
+(`.github/workflows/ci.yml`), and when it fails it uploads Paparazzi's delta images as the
+`paparazzi-failures` artifact.
+
+- **A Mac and CI's Linux round differently.** `CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE`, 0.0001 %
+  (`PaparazziTolerance.kt`, whose comment gives the measurement), lets that rounding through. A
+  test that passes at 0.0 on both keeps 0.0. Where they still disagree, CI's run is the verdict:
+  `KozmosWayfindingInputRowPaparazziTest.theRowInDarkMode` fails on a Mac by 0.000001 %, with or
+  without a change, and passes on CI's Linux, which its comment names its reference renderer.
+- **Paparazzi's own window is dark.** A translucent or host-dependent part snapshotted with nothing
+  under it reads on that dark window, which hides a colour that depends on its host. Draw it on its
+  host's surface and snapshot Dark explicitly, as `categoryfield/KozmosCategoryFieldPaparazziTest.kt`
+  does with `KozmosThemeTokens.semanticsSurface0` and `LocalKozmosUseDarkTokens provides true`.
+- **Paparazzi drops writes to `Settings.Global.ANIMATOR_DURATION_SCALE`**, so a test that writes it
+  still draws with animations on. Say the scale through `LocalKozmosAnimatorScale`
+  (`src/main/java/com/kozmos/components/Motion/SystemAnimations.kt`), as
+  `navigation/KozmosProgressMotionTest.kt` does.
+- **CI's Linux anti-aliases edges differently,** so a test that counts a colour's pixels never
+  asserts a count of 0. It allows the unwanted colour up to 1 % of the expected colour's pixels,
+  as `theme/KozmosMaterialSchemeTest.kt` does for a resting date field's edge
+  (`materialEdge * 100 <= edge`), and the unfixed code must still fail that bound.
+- **Read the results back by name** from the JUnit XML under
+  `packages/android/build/test-results/testDebugUnitTest/`. A green task does not say which tests
+  ran.
+
 ---
 
 ## 5. React Native Testing
