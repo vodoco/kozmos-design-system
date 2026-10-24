@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "1c974d16d110";
+const PLUGIN_BUILD = "7fed66ff6208";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -7445,8 +7445,9 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["STROKE_FLOAT"],
   },
   {
+    // React's row with a description: 8 + 20 + 16 + 8, at either density.
     name: "Listbox/option/height",
-    value: 56,
+    value: 52,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -67192,6 +67193,8 @@ async function syncComboboxVariantChildren({
         index,
         text: optionLabels[index],
         selected: index === 0,
+        active: index === 1,
+        focused: state === "Focus",
         disabled,
         variableByName,
         fonts,
@@ -67250,10 +67253,41 @@ async function syncComboboxVariantChildren({
   normalizeInputFamilyChildSizing(component);
 }
 
+// Reached by the keyboard (decision 26, 21 Oct 2026), the active row draws a
+// 2px inset ring in theme 600 over its background/50, as React's
+// .kozmos-option does under [data-modality="keyboard"]: an inside stroke, out
+// of the layout, so the row keeps its size. The pointer's row draws none.
+// State=Focus is the keyboard's: its list was reached with the keys.
+function applyOptionFocusRing(option, focused, variableByName, stats) {
+  if (!focused) {
+    option.strokes = [];
+    return;
+  }
+  option.strokes = [
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+  ];
+  option.strokeAlign = "INSIDE";
+  option.strokeWeight = 2;
+  try {
+    option.strokesIncludedInLayout = false;
+  } catch (_error) {
+    // Older runtimes keep strokes out of the layout and expose no setter.
+  }
+  bindFloatVariable(
+    option,
+    "strokeWeight",
+    "Border Width/md",
+    variableByName,
+    stats,
+  );
+}
+
 async function createComboboxOption({
   index,
   text,
   selected,
+  active,
+  focused,
   disabled,
   variableByName,
   fonts,
@@ -67276,6 +67310,8 @@ async function createComboboxOption({
   option.cornerRadius = KOZMOS_RADIUS.marker;
   option.clipsContent = false;
   option.setSharedPluginData(RUN_NAMESPACE, "kind", "combobox-option");
+  // The chosen row is background/100 and wins; the active row, under the
+  // pointer or the keyboard, is the light background/50 (decision 115).
   option.fills = selected
     ? [
         paintFromVariable(
@@ -67285,8 +67321,22 @@ async function createComboboxOption({
           stats,
         ),
       ]
-    : [];
-  option.strokes = [];
+    : active && !disabled
+      ? [
+          paintFromVariable(
+            "Colors/background/50",
+            "#F1F2F4",
+            variableByName,
+            stats,
+          ),
+        ]
+      : [];
+  applyOptionFocusRing(
+    option,
+    focused && active && !disabled,
+    variableByName,
+    stats,
+  );
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;
@@ -67551,6 +67601,7 @@ async function syncMultiSelectVariantChildren({
         text: optionLabels[index],
         selected: index < 2,
         active: index === 2,
+        focused: state === "Focus",
         disabled,
         variableByName,
         fonts,
@@ -67724,6 +67775,7 @@ async function createMultiSelectOption({
   text,
   selected,
   active,
+  focused,
   disabled,
   variableByName,
   fonts,
@@ -67773,7 +67825,12 @@ async function createMultiSelectOption({
           ),
         ]
       : [];
-  option.strokes = [];
+  applyOptionFocusRing(
+    option,
+    focused && active && !selected && !disabled,
+    variableByName,
+    stats,
+  );
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;
@@ -67858,6 +67915,7 @@ async function syncListboxVariantChildren({
       description: descriptions[index],
       selected,
       active: state === "Focus" && index === 1,
+      focused: state === "Focus",
       multiple,
       disabled,
       variableByName,
@@ -67897,6 +67955,7 @@ async function createListboxOption({
   description,
   selected,
   active,
+  focused,
   multiple,
   disabled,
   variableByName,
@@ -67914,8 +67973,8 @@ async function createListboxOption({
   option.itemSpacing = 8;
   option.paddingLeft = 12;
   option.paddingRight = 12;
-  option.paddingTop = 6;
-  option.paddingBottom = 6;
+  option.paddingTop = 8;
+  option.paddingBottom = 8;
   option.resizeWithoutConstraints(312, 52);
   option.cornerRadius = KOZMOS_RADIUS.marker;
   option.clipsContent = false;
@@ -67947,7 +68006,12 @@ async function createListboxOption({
           ),
         ]
       : [];
-  option.strokes = [];
+  applyOptionFocusRing(
+    option,
+    focused && active && !selected && !disabled,
+    variableByName,
+    stats,
+  );
 
   const textStack = figma.createFrame();
   textStack.name = "Listbox Option Text";
@@ -69502,6 +69566,7 @@ async function syncTimePickerVariantChildren({
         text: optionLabels[index],
         selected: index === 3,
         active: index === 2,
+        focused: state === "Focus",
         disabled,
         variableByName,
         fonts,
@@ -69565,6 +69630,7 @@ async function createTimePickerOption({
   text,
   selected,
   active,
+  focused,
   disabled,
   variableByName,
   fonts,
@@ -69614,7 +69680,12 @@ async function createTimePickerOption({
           ),
         ]
       : [];
-  option.strokes = [];
+  applyOptionFocusRing(
+    option,
+    focused && active && !selected && !disabled,
+    variableByName,
+    stats,
+  );
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;

@@ -25,6 +25,26 @@ export const Default: Story = {
   ),
 };
 
+/**
+ * Figma's Open variant (438:2392): the field's button opens Kozmos's
+ * calendar, on the field's day, where the browser's own button can give way
+ * (Chromium, Edge, Safari). In Firefox the field stays the browser's.
+ */
+export const Open: Story = {
+  render: (args) => (
+    <div className="w-80" style={{ height: 440 }}>
+      <DatePicker
+        label="Date"
+        defaultValue="2026-05-25"
+        locale="en-US"
+        today="2026-05-22"
+        defaultOpen
+        {...args}
+      />
+    </div>
+  ),
+};
+
 export const DateRange: Story = {
   render: () => (
     <div className="w-[520px]">

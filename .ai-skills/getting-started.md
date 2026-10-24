@@ -540,7 +540,7 @@ Linting: ✅ Clean
 
 [`packages/react/package.json`](../packages/react/package.json) is the React package's manifest.
 It builds with Vite in library mode (`packages/react/vite.config.mts`: ES modules and a UMD
-CommonJS bundle, declarations by `vite-plugin-dts`), tests with Vitest
+CommonJS bundle, declarations by `unplugin-dts`), tests with Vitest
 (`pnpm --filter @kozmos-ds/react test`), and takes `@kozmos-ds/tokens`, `@kozmos-ds/icons` and
 `@kozmos-ds/product-contracts` through `workspace:*`. Storybook is not the React package's: it
 lives in `apps/docs`.
