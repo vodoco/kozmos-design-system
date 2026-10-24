@@ -102,6 +102,12 @@ figma.connect(
         Warning: "warning",
         Success: "success",
       }),
+      // The open range calendar, where the browser's own button gives way
+      // (decision 105); Firefox keeps the browser's.
+      defaultOpen: figma.enum("Content", {
+        Closed: false,
+        Open: true,
+      }),
       label: figma.string("Label Text"),
       startLabel: figma.string("Start Label Text"),
       endLabel: figma.string("End Label Text"),
@@ -114,6 +120,7 @@ figma.connect(
     },
     example: ({
       autoFocus,
+      defaultOpen,
       disabled,
       endLabel,
       endValue,
@@ -126,6 +133,7 @@ figma.connect(
     }) => (
       <DateRangePicker
         autoFocus={autoFocus}
+        defaultOpen={defaultOpen}
         defaultValue={{
           end: dateTextToIso(endValue, "2026-05-25"),
           start: dateTextToIso(startValue, "2026-05-21"),

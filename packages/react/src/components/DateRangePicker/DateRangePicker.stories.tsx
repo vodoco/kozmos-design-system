@@ -26,6 +26,57 @@ export const Default: Story = {
   ),
 };
 
+/**
+ * Figma's Open variant (443:7567): either field's button opens one panel for
+ * the range, two months where the window has room, on that field's day.
+ */
+export const Open: Story = {
+  render: (args) => (
+    <div className="w-[520px]" style={{ height: 520 }}>
+      <DateRangePicker
+        label="Date range"
+        defaultValue={{ start: "2026-05-21", end: "2026-05-25" }}
+        locale="en-US"
+        today="2026-05-22"
+        defaultOpen
+        {...args}
+      />
+    </div>
+  ),
+};
+
+/** One month, as it opens where the window has no room for two. */
+export const OneMonth: Story = {
+  render: () => (
+    <div className="w-80" style={{ height: 480 }}>
+      <DateRangePicker
+        label="Date range"
+        defaultValue={{ start: "2026-05-21", end: "2026-05-25" }}
+        locale="en-US"
+        today="2026-05-22"
+        months={1}
+        defaultOpen
+      />
+    </div>
+  ),
+};
+
+/**
+ * One label for the range, for a one-line filter bar (GAP-051): the fields'
+ * labels are read, not shown.
+ */
+export const OneLabel: Story = {
+  render: () => (
+    <div className="w-[520px]">
+      <DateRangePicker
+        label="Time period"
+        defaultValue={{ start: "2026-05-01", end: "2026-05-31" }}
+        hideFieldLabels
+      />
+    </div>
+  ),
+};
+
 export const ResponsiveStack: Story = {
   render: () => (
     <div className="w-80">

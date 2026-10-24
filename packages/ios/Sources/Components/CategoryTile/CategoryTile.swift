@@ -54,6 +54,10 @@ public struct KozmosCategoryTile<Icon: View>: View {
                     // With no tint the accent is the theme's 600, an icon and
                     // a border on a surface (decision 59).
                     .foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme600)
+                    // A KozmosIcon takes the accent too, as React's icon is
+                    // currentColor and Compose's follows LocalContentColor: it
+                    // kept its own foreground/100.
+                    .environment(\.kozmosIconHostInk, tint?.accent ?? KozmosColors.primitivesColorsTheme600)
                     .frame(width: KozmosDimensions.primitivesLayoutSizing800, height: KozmosDimensions.primitivesLayoutSizing800)
                     .background(
                         category.selected

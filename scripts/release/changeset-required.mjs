@@ -42,7 +42,7 @@ const NOT_SHIPPED =
 // Beside src/, the files that decide what dist holds: the build configs, the
 // PostCSS plugins react's build runs over every rule it ships
 // (postcss/scoped-css.cjs, postcss/token-alpha.cjs), and tsconfig, whose
-// `exclude` is what vite-plugin-dts publishes. tsconfig.node.json only types
+// `exclude` is what unplugin-dts publishes. tsconfig.node.json only types
 // the build config itself.
 const BUILD_FILES =
   /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;

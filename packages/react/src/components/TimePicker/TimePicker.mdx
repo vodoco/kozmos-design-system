@@ -7,19 +7,38 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # TimePicker
 
-TimePicker retains native time-entry behavior. External `aria-describedby` IDs
-merge with helper/error guidance, and an explicit component error remains invalid.
-The owned field layout follows module direction and exposes a focus indicator for
-native segments, including engines that do not match them with `:focus-visible`.
+A time field: the browser's own, with its segmented typing in the reader's clock, and a button at
+its end that opens a list of times (decision 104), Combobox's list as Figma's Open variant
+(`444:11455`) draws it. The value is an `HH:MM` string, as `<input type="time">`'s is, through the
+input's own `value`, `defaultValue` and `onChange`; a time chosen from the list is typed into the
+field, so `onChange` and a form's change listeners hear it as typing.
 
-Uses the browser's time input with Kozmos field styling, labels and validation feedback.
-The browser supplies the picker interaction; the host owns any time-zone or scheduling rules.
+External `aria-describedby` IDs merge with helper/error guidance, and an explicit component error
+remains invalid. The owned field layout follows module direction and exposes a focus indicator for
+native segments, including engines that do not match them with `:focus-visible`. The host owns any
+time-zone or scheduling rules.
 
 <Canvas>
   <Story of={TimePickerStories.Default} />
 </Canvas>
 
 <Controls />
+
+## The list of times
+
+The button, and Alt+Down Arrow or F4 in the field, open the list under the field, as wide as it, on
+the field's time; the list takes focus, and the arrows, Home and End move in it. A time chosen by
+Enter, Space or the pointer is typed into the field; that or Escape closes the list and returns focus
+to the button. It works in every engine: Chromium's own clock button gives way to Kozmos's, and
+Safari and Firefox draw none, so for the first time they offer a list.
+
+The times run from `min` to `max` (the input's own, `00:00` to `23:59` by default) every `step`
+seconds, or every 30 minutes when `step` asks for less than a minute or nothing. They read in
+`locale`'s own short time (`09:30`, `9:30 AM`), by default the document's language, and `hourCycle`
+sets 12 or 24 hours; the typed field keeps the browser's clock. `chooseTimeLabel` names the button
+and, with no `label`, the list (`"Choose time"` by default). `open` with `onOpenChange` controls it,
+and `defaultOpen` opens it at first; Storybook's `Open` story draws it open. Disabled or read only,
+the button cannot open it.
 
 ## Implementation
 
@@ -47,78 +66,34 @@ import { KozmosTimePicker } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosTimePicker(
-selection: .constant(Date()),
-label: "Time"
-)
-`}
-    kotlin={`
-package com.kozmos.components.timepicker
+// The picker hides its label, which VoiceOver still says: KozmosFieldWrapper
+// shows it above the field, as React's label is. There is always a time.
+struct ArrivalTime: View {
+@Binding var time: Date
 
-import android.app.TimePickerDialog
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
-
-@Composable
-fun KozmosTimePicker(
-time: LocalTime?,
-onTimeSelected: (LocalTime) -> Unit,
-modifier: Modifier = Modifier,
-label: String = "Select Time"
-) {
-val context = LocalContext.current
-val calendar = Calendar.getInstance()
-
-    if (time != null) {
-        calendar.set(Calendar.HOUR_OF_DAY, time.hour)
-        calendar.set(Calendar.MINUTE, time.minute)
-    }
-
-    val timePickerDialog = TimePickerDialog(
-        context,
-        { _, hourOfDay, minute ->
-            onTimeSelected(LocalTime.of(hourOfDay, minute))
-        },
-        calendar.get(Calendar.HOUR_OF_DAY),
-        calendar.get(Calendar.MINUTE),
-        false // is24HourView
-    )
-
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: "",
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            trailingIcon = {
-                Icon(Icons.Default.AccessTime, contentDescription = "Select Time")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { timePickerDialog.show() }
-        )
+    var body: some View {
+        KozmosFieldWrapper(label: "Arrival time") {
+            KozmosTimePicker(selection: $time, label: "Arrival time")
+        }
     }
 
 }
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.timepicker.KozmosTimePicker
+import java.time.LocalTime
 
-    `}
+// A read-only field, labelled inside, that opens the system's time dialog.
+// time is null until one is chosen, and the dialog and the field keep a
+// 12-hour clock in every locale.
+@Composable
+fun ArrivalTime(time: LocalTime?, onTimeChange: (LocalTime) -> Unit) {
+KozmosTimePicker(time = time, onTimeSelected = onTimeChange, label = "Arrival time")
+}
+`}
 
 />
 

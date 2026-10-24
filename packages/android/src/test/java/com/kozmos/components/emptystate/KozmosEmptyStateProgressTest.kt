@@ -3,6 +3,7 @@ package com.kozmos.components.emptystate
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import com.kozmos.docsnippets.AssistantDownloading
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -12,15 +13,10 @@ import org.junit.Test
 class KozmosEmptyStateProgressTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
 
+    // EmptyState.mdx's Compose snippet, docsnippets/AssistantDownloading.kt.
     @Test fun theBarIsOneNodeNamedByItsLabelWithItsValue() {
         val tree = paparazzi.readSemantics {
-            KozmosMaterialTheme {
-                KozmosEmptyState(
-                    title = "The assistant isn't downloaded yet",
-                    description = "It works offline once it's on this device.",
-                    progress = KozmosEmptyStateProgress(0.4f, "Downloading the assistant", "12 of 30 MB")
-                )
-            }
+            KozmosMaterialTheme { AssistantDownloading() }
         }
         val bar = tree.named("Downloading the assistant")
         assertEquals("12 of 30 MB", bar.stateDescription)
