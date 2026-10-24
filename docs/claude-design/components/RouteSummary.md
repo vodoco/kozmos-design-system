@@ -39,7 +39,7 @@ export function RouteSummaryExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `RouteSummaryProps`, which is `RouteSummaryEstimateProps | RouteSummaryNavigationProps`.
 
 - `distanceText`: `string`, optional.
-- `destination`: `undefined`, optional.
+- `destination`: `undefined | string`, optional.
 - `onEndRoute`: `() => void`, optional.
 
   Ends the route: required in the estimate layout, optional in the navigation layout.

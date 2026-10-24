@@ -115,11 +115,14 @@ fun PlaceActions() {
 
 ## Accessibility
 
-- Saved changes the glyph and the label, not just the tint, so the state is
-  never carried by colour alone.
-- The toggle exposes its pressed state to assistive technology rather than
-  relying on the label change alone.
-- All three actions keep a 44px target.
+- Saved changes the toggle's words, from Save Location to Remove Location, its
+  style, from filled to outlined, and the disc's fill, so the state is never
+  carried by colour alone.
+- The toggle names the action it will take, so assistive technology reads the
+  state in its label. It does not also expose a pressed state: with a label
+  that changes, a pressed state would contradict it.
+- All three actions keep a 44px target: the card keeps touch density under any
+  density (decision 89).
 
 ## Stories
 
