@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
-// API Extractor (via vite-plugin-dts) rolls the public graph into index.d.ts.
+// API Extractor (via unplugin-dts) rolls the public graph into index.d.ts.
 // Its named API is identical in both runtime builds, but TypeScript requires
 // independent module-format identities. Never point both conditions at one file.
 export function emitFormatDeclarations(directory) {

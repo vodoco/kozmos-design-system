@@ -70,12 +70,17 @@ function renamer(dts) {
       .replace(/\b[A-Za-z]\w*_\d+\b/g, (name) => renames.get(name) ?? name);
 }
 
-/** A type on one line: comments dropped, whitespace collapsed. */
+/**
+ * A type on one line: comments dropped, whitespace collapsed, and none left
+ * just inside a `<`. unplugin-dts writes `Omit< X` where it turns
+ * `Omit<import("x").X` into a static import; the type is the same.
+ */
 const oneLine = (text) =>
   text
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\s+/g, " ")
     .replace(/;\s*}/g, " }")
+    .replace(/< /g, "<")
     .trim();
 
 /** A declaration as written, with its doc comment and without `export declare`. */
@@ -342,7 +347,20 @@ export function describeComponent(api, name, defaults = new Map()) {
       continue;
     }
     let type;
-    if (
+    // A prop of a union of props (Calendar's single or range) is declared
+    // once in each: it takes any of their types.
+    const each = declarations.filter(
+      (d) =>
+        originOf(d.getSourceFile().fileName) === "kozmos" &&
+        (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
+        d.type,
+    );
+    const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
+    if (texts.length > 1)
+      type = texts
+        .map((text) => (/=>/.test(text) ? `(${text})` : text))
+        .join(" | ");
+    else if (
       own &&
       (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
       own.type

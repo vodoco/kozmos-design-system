@@ -275,6 +275,20 @@ test("AdaptiveMapShell's card goes on past onPanelDetentChange, to the last prop
   assert.match(props.get("map"), /\*\*required\*\*/);
 });
 
+test("a part whose props are a union lists each member's type for a prop", () => {
+  // Calendar's props are its single or its range props; the card gave only
+  // the first one's types, so it told a reader that mode takes "single" and
+  // value a string, and never the range (21 Oct 2026).
+  const props = cards.get("Calendar")?.parts.get("Calendar");
+  assert.ok(props, "the Calendar card or its section is missing");
+  assert.match(props.get("mode"), /`"single" \| "range"`/);
+  assert.match(props.get("value"), /`string \| null \| DateRangeValue`/);
+  assert.match(
+    props.get("onValueChange"),
+    /`\(\(value: string\) => void\) \| \(\(value: DateRangeValue\) => void\)`/,
+  );
+});
+
 test("no card counts the attributes it inherits from React or framer-motion", () => {
   // Those counts are facts about whichever @types/react and framer-motion a
   // machine resolves, not about Kozmos: on 2026-09-29 one tree gave

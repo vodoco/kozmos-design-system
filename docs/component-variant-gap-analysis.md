@@ -34,17 +34,17 @@ token was declined, so this is not a gap to close.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 120    |
-| Declaring at least one React variant axis | 57     |
+| Components scanned                        | 121    |
+| Declaring at least one React variant axis | 58     |
 | Variations that are compositional only    | 63     |
-| Components with variant gaps — iOS        | 14/57  |
-| Components with variant gaps — Android    | 14/57  |
-| Components with variant gaps — Figma      | 23/57  |
-| Components with variant gaps — Vue        | 12/57  |
-| Components absent entirely — iOS          | 9/120  |
-| Components absent entirely — Android      | 8/120  |
-| Components absent entirely — Figma        | 21/120 |
-| Components absent entirely — Vue          | 23/120 |
+| Components with variant gaps — iOS        | 15/58  |
+| Components with variant gaps — Android    | 15/58  |
+| Components with variant gaps — Figma      | 24/58  |
+| Components with variant gaps — Vue        | 12/58  |
+| Components absent entirely — iOS          | 10/121 |
+| Components absent entirely — Android      | 9/121  |
+| Components absent entirely — Figma        | 22/121 |
+| Components absent entirely — Vue          | 24/121 |
 
 <!-- /generated:headline -->
 
@@ -151,6 +151,10 @@ ThemeProvider
   - ios missing axes -> dir (ltr, rtl)
   - android missing axes -> dir (ltr, rtl)
   - figma: component/set absent
+TimePicker
+  - ios missing axes -> hourCycle (h12, h23)
+  - android missing axes -> hourCycle (h12, h23)
+  - figma missing axes -> hourCycle (h12, h23)
 Tree
   - ios missing axes -> activationMode (select, toggle, select-toggle)
   - android missing axes -> activationMode (select, toggle, select-toggle)
@@ -223,21 +227,21 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 9 of 120
+### iOS — 10 of 121
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, Surface, UserMessage.
 
-### Android — 8 of 120
+### Android — 9 of 121
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 21 of 120
+### Figma — 22 of 121
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
-### Vue — 23 of 120
+### Vue — 24 of 121
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
 
 <!-- /generated:absent -->
 

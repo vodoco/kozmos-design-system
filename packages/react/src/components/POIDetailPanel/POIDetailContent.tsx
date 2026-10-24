@@ -104,20 +104,27 @@ const summaryIcons = {
   property: null,
 };
 
-/** Images are decorative and never replace the readable label. Do not inline remote SVG. */
+/**
+ * Images are decorative and never replace the readable label. Do not inline
+ * remote SVG. An asset that is unsafe, or fails to load, draws `fallback`
+ * instead: the glyph the item's `iconName` or kind draws, as on iOS and
+ * Android (GAP-178, the owner's rule of 21 Oct). It drew nothing until then.
+ */
 export function POIDetailAssetIcon({
   src,
   size = 16,
   monochrome = false,
+  fallback = null,
 }: {
   src: string;
   size?: number;
   monochrome?: boolean;
+  fallback?: React.ReactNode;
 }) {
   const [failed, setFailed] = React.useState<string>();
   const safe =
     !src.includes("\\") && (/^https:\/\//i.test(src) || /^\/(?!\/)/.test(src));
-  if (!safe || failed === src) return null;
+  if (!safe || failed === src) return <>{fallback}</>;
   const image = (
     <img
       className="kozmos-poi-property-icon"
@@ -152,15 +159,17 @@ export function POIDetailAssetIcon({
 
 export function POIDetailAttribute({ item }: { item: POIServicePresentation }) {
   const Icon = tagIcon(item.iconName);
+  const glyph = Icon ? <Icon aria-hidden="true" size={16} /> : null;
   return (
     <>
       {item.iconUrl ? (
         <POIDetailAssetIcon
           src={item.iconUrl}
           monochrome={item.iconMonochrome}
+          fallback={glyph}
         />
       ) : (
-        Icon && <Icon aria-hidden="true" size={16} />
+        glyph
       )}
       <span>{item.label}</span>
     </>
@@ -189,6 +198,7 @@ export function POIDetailSummaryStrip({
                   src={item.iconUrl}
                   size={20}
                   monochrome={item.iconMonochrome}
+                  fallback={Icon ? <Icon size={20} /> : null}
                 />
               ) : Icon ? (
                 <Icon size={20} />
