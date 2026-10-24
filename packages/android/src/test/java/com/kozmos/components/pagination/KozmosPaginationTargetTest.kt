@@ -25,9 +25,10 @@ import org.junit.Test
  * Pagination's targets are React's touch size. A page link is Button's icon
  * size, `h-icon-control w-icon-control`, and Previous and Next its `sm`, as
  * tall as the links (decision 82): 44 in touch, as #392 makes SwiftUI's.
- * Compose's were 36dp, the link a 36dp square. The words, the chevrons and
- * the active page's edge and tint keep their sizes and colours; the
- * ellipsis, which takes no press, keeps React's 36 (`h-9 w-9`).
+ * Compose's were 36dp, the link a 36dp square. The words and the chevrons
+ * keep their sizes and colours; the active page's edge and tint keep theirs
+ * round the 44dp square, as React's outline link draws them; the ellipsis,
+ * which takes no press, keeps React's 36 (`h-9 w-9`).
  *
  * Presses 1dp inside each edge of a 44dp square on a link's centre, off its
  * digit, and 1dp inside the top and bottom of a 44dp row on Previous and

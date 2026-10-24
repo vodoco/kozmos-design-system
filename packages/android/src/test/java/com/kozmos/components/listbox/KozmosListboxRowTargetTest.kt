@@ -27,8 +27,9 @@ import kotlin.math.abs
  * makes SwiftUI's rows 44. Compose's were 35dp, 8 above and below a 19dp
  * line. The row's words stay on its middle line, as React's `items-center`
  * keeps them; a row with a description, 51.3dp, is as tall as before. The
- * words, the check and the fills keep their sizes and colours. Combobox's
- * and MultiSelect's lists are this list.
+ * words and the check keep their sizes and colours, and a row's fill its
+ * colour, across the taller row. Combobox's and MultiSelect's lists are this
+ * list.
  *
  * Presses 1dp inside the top and bottom of a 44dp row on a row's middle
  * line, and 1dp inside its start and end, off its words and its check: by a
