@@ -59,8 +59,8 @@ public struct KozmosProgressTrack: View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let x: (Double) -> CGFloat = { CGFloat(self.direction == .rightToLeft ? 1 - $0 : $0) * width }
-            let line: (Double, Double) -> Path = { start, end in
-                Path { path in path.move(to: CGPoint(x: x(start), y: 5)); path.addLine(to: CGPoint(x: x(end), y: 5)) }
+            let line: (Double, Double) -> KozmosProgressTrackLine = { start, end in
+                KozmosProgressTrackLine(start: x(start), end: x(end))
             }
             ZStack {
                 line(0, 1).stroke(KozmosColors.primitivesColorsBackground300, style: StrokeStyle(lineWidth: 6, lineCap: .round))
@@ -80,6 +80,24 @@ public struct KozmosProgressTrack: View {
             }
         }
     }
+}
+
+/// A stretch of the track's line, between two points already placed for the
+/// layout direction: the track mirrors them itself, so SwiftUI must not
+/// mirror the line again. A `Path` mirrors itself in a right-to-left layout
+/// in an app that deploys to iOS 17 or later and not in one that deploys to
+/// iOS 16, so in the first the fill was drawn from the end, in the gradient's
+/// last colour.
+private struct KozmosProgressTrackLine: Shape {
+    let start: CGFloat
+    let end: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path { path in path.move(to: CGPoint(x: start, y: 5)); path.addLine(to: CGPoint(x: end, y: 5)) }
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
 public struct KozmosProgress: View {

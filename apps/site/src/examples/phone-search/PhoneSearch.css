@@ -25,9 +25,9 @@
   inline-size: min(100%, 24.375rem);
   block-size: 100%;
   overflow: hidden;
-  /* The map's own corners (MapView is rounded-container), so its edge is the
-     screen's outline. The sheet keeps square bottom corners, which the
-     screen cuts (GAP-53). */
+  /* The map fills the screen (MapView's fill: no border or corners of its
+     own), so the screen's corners are its outline. The sheet keeps square
+     bottom corners, which the screen cuts (GAP-53). */
   border-radius: calc(var(--semantics-radius-container) * 1px);
   background: var(--primitives-colors-background-0);
 }

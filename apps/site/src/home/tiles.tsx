@@ -168,7 +168,7 @@ export function AdaptiveTile() {
           mapLabel="Map area"
           panelLabel="Selected place"
           map={
-            <MapView mapLabel="Map engine slot">
+            <MapView variant="fill" mapLabel="Map engine slot">
               <Box className="site-adaptive-map">
                 <Text size="sm" color="muted">
                   Map engine
