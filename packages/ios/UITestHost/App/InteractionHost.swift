@@ -351,6 +351,14 @@ private struct InteractionFixture: View {
         // Plain buttons whose labels draw nothing where a finger may land:
         // each control is placed so a tap can fall inside it, off its words
         // and marks. The large variants are accessibility3, right to left.
+        case "multiselect-readonly":
+            KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
+                    multiSelection = $0
+                    events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
+                }),
+                options: [.init(value: "lift", label: "Lift"), .init(value: "ramp", label: "Ramp")], label: "Access",
+                readOnly: true, defaultOpen: true)
+                .frame(width: 320)
         case "multiselect", "multiselect-large-rtl":
             KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
                     multiSelection = $0
@@ -376,6 +384,25 @@ private struct InteractionFixture: View {
                 KozmosPaginationLink(text: "3") { events.append("page 3") }
             }
             .largeRightToLeft(true)
+        case "pagination-ellipsis", "pagination-ellipsis-large-rtl":
+            // Code Connect's Content=Ellipsis composition in the 370pt column
+            // a 402pt phone leaves inside 16pt margins, and Previous and Next
+            // on their own, at the width they ask for.
+            VStack(spacing: 16) {
+                KozmosPagination {
+                    KozmosPaginationPrevious { events.append("previous") }.accessibilityIdentifier("row-previous")
+                    KozmosPaginationLink(text: "1") { events.append("page 1") }
+                    KozmosPaginationLink(text: "2", isActive: true) { events.append("page 2") }
+                    KozmosPaginationLink(text: "3") { events.append("page 3") }
+                    KozmosPaginationEllipsis()
+                    KozmosPaginationLink(text: "10") { events.append("page 10") }
+                    KozmosPaginationNext { events.append("next") }.accessibilityIdentifier("row-next")
+                }
+                .frame(width: 370)
+                KozmosPaginationPrevious {}.accessibilityIdentifier("alone-previous").fixedSize()
+                KozmosPaginationNext {}.accessibilityIdentifier("alone-next").fixedSize()
+            }
+            .largeRightToLeft(scenario == "pagination-ellipsis-large-rtl")
         case "segmented", "segmented-large-rtl":
             KozmosSegmentedControl(selection: Binding(get: { segment }, set: { segment = $0; events.append("segment \($0)") }),
                 items: ["Walk", "Lift", "Ramp"])
@@ -439,8 +466,9 @@ private struct InteractionFixture: View {
             .largeRightToLeft(scenario == "accordion-large-rtl")
         case "rating-thumbs":
             KozmosRating(value: Binding(get: { thumbs }, set: { thumbs = $0; events.append("rating \($0)") }), variant: .thumbs)
-        case "color-format":
-            KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true)
+        case "color-format", "color-format-disabled", "color-format-readonly":
+            KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true,
+                disabled: scenario == "color-format-disabled", readOnly: scenario == "color-format-readonly")
                 .frame(width: 320)
         default:
             Text("Unknown fixture: \(scenario)")

@@ -242,6 +242,8 @@ public struct KozmosColorPicker: View {
                     .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             }
             .buttonStyle(.plain)
+            // Disabled with the picker, as React's select is.
+            .disabled(disabled || readOnly)
             .background(KozmosColors.primitivesColorsBackground0)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             .overlay(

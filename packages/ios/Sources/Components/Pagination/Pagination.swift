@@ -7,10 +7,82 @@ public struct KozmosPagination<Content: View>: View {
         self.content = content()
     }
     
+    /// One row that wraps, as React's `flex-wrap` row does: Code Connect's
+    /// Ellipsis composition is 385pt with 44pt links, wider than the 370pt
+    /// column of a 402pt phone, and a row that cannot wrap squeezed
+    /// "Previous" until its word broke.
     public var body: some View {
-        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+        KozmosPaginationRowLayout(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
             content
         }
+    }
+}
+
+/// React's PaginationContent, `flex flex-row flex-wrap justify-center
+/// items-center gap-1`: each part keeps the size it asks for, a part that
+/// would pass the end of the row starts the next one, and each row is
+/// centred, its parts on its middle line, `spacing` apart both ways. A part
+/// wider than the whole row is offered the row's width. Placement is
+/// logical; SwiftUI mirrors it right to left.
+struct KozmosPaginationRowLayout: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }
+        let sizes = measure(subviews, width: width)
+        let rows = rows(sizes, width: width)
+        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: rows.map(\.width).max() ?? 0, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = measure(subviews, width: bounds.width)
+        var y = bounds.minY
+        for row in rows(sizes, width: bounds.width) {
+            var x = bounds.minX + (bounds.width - row.width) / 2
+            for index in row.indices {
+                let size = sizes[index]
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                                      proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    /// Each part's own size, or, for one wider than `width`, its size at `width`.
+    private func measure(_ subviews: Subviews, width: CGFloat?) -> [CGSize] {
+        subviews.map { subview in
+            let ideal = subview.sizeThatFits(.unspecified)
+            guard let width, ideal.width > width else { return ideal }
+            return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        }
+    }
+
+    private func rows(_ sizes: [CGSize], width: CGFloat?) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        for (index, size) in sizes.enumerated() {
+            let extended = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            // A quarter point of slack: the row's own width, rounded to the
+            // screen's pixels, comes back as its bounds.
+            if let width, extended > width + 0.25, !current.indices.isEmpty {
+                rows.append(current)
+                current = Row(indices: [index], width: size.width, height: size.height)
+            } else {
+                current.indices.append(index)
+                current.width = extended
+                current.height = max(current.height, size.height)
+            }
+        }
+        if !current.indices.isEmpty { rows.append(current) }
+        return rows
     }
 }
 

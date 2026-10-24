@@ -856,14 +856,20 @@ final class InteractionTests: XCTestCase {
     // there the size check is what proves the target. Each failed on the
     // unfixed parts, which measured as the comments say.
 
-    /// The clear and the chevron are 44pt targets, as Combobox's are.
-    /// Unfixed: the chevron 13.3 by 8pt, the clear 12.3pt square.
+    /// The clear and the chevron are 44pt targets, as Combobox's are, and
+    /// the chevron's runs to the field's end, as Combobox's does: the field
+    /// is the fixture's 320pt, centred. Unfixed: the chevron 13.3 by 8pt,
+    /// the clear 12.3pt square.
     func testAMultiSelectsClearAndChevronAre44PointTargets() {
         for scenario in ["multiselect", "multiselect-large-rtl"] {
             launch(scenario)
             let open = app.buttons["Open options"]
             assertTouchTarget(open)
-            tap(open, dx: 18 * outward(open), dy: -18)
+            let fieldEnd = scenario == "multiselect-large-rtl" ? app.frame.midX - 160 : app.frame.midX + 160
+            let targetEnd = scenario == "multiselect-large-rtl" ? open.frame.minX : open.frame.maxX
+            XCTAssertEqual(targetEnd, fieldEnd, accuracy: 1, "\(scenario): the chevron's target stops short of the field's end")
+            // Inward, clear of the field's rounded corner.
+            tap(open, dx: -18 * outward(open), dy: -18)
             XCTAssertTrue(app.buttons["Close options"].waitForExistence(timeout: 3), "\(scenario): the chevron missed")
             let clear = app.buttons["Clear selected options"]
             assertTouchTarget(clear)
@@ -899,6 +905,32 @@ final class InteractionTests: XCTestCase {
             tap(link, dx: -18, dy: 0)
         }
         received("page 1|page 3")
+    }
+
+    /// Code Connect's Ellipsis composition (Previous, 1, 2, 3, the ellipsis,
+    /// 10, Next) is 385pt with 44pt links, wider than the 370pt column of a
+    /// 402pt phone. It wraps, as React's flex-wrap row does, rather than
+    /// squeeze Previous and Next: each keeps the size it has on its own, so
+    /// its word stays on one line, and every part stays inside the column.
+    /// At accessibility3 right to left too.
+    func testPaginationWrapsRatherThanSqueezingPreviousAndNext() {
+        for scenario in ["pagination-ellipsis", "pagination-ellipsis-large-rtl"] {
+            launch(scenario)
+            let column = (minX: app.frame.midX - 185, maxX: app.frame.midX + 185)
+            for end in ["previous", "next"] {
+                let inRow = app.buttons["row-\(end)"]
+                let alone = app.buttons["alone-\(end)"]
+                XCTAssertTrue(inRow.exists && alone.exists, "\(scenario): \(end)")
+                XCTAssertEqual(inRow.frame.width, alone.frame.width, accuracy: 0.5, "\(scenario): \(end) was squeezed")
+                XCTAssertEqual(inRow.frame.height, alone.frame.height, accuracy: 0.5, "\(scenario): \(end)'s word wrapped")
+            }
+            for name in ["row-previous", "1", "2", "3", "10", "row-next"] {
+                let part = app.buttons[name]
+                XCTAssertGreaterThanOrEqual(part.frame.minX, column.minX - 0.5, "\(scenario): \(name) \(part.frame)")
+                XCTAssertLessThanOrEqual(part.frame.maxX, column.maxX + 0.5, "\(scenario): \(name) \(part.frame)")
+            }
+            app.terminate()
+        }
     }
 
     /// An unselected segment takes a tap anywhere across it, not just on its
@@ -1023,6 +1055,31 @@ final class InteractionTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(format.frame.width + 0.5, 72, "\(format.frame)")
         tap(format, dx: -30, dy: 0)
         XCTAssertTrue(app.buttons["RGB"].waitForExistence(timeout: 3), "the format menu did not open")
+    }
+
+    /// A disabled or read-only picker opened by default shows its panel, but
+    /// its format box is disabled and opens no menu, as React's select is
+    /// disabled with the picker.
+    func testADisabledOrReadOnlyColourPickersFormatBoxOpensNoMenu() {
+        for scenario in ["color-format-disabled", "color-format-readonly"] {
+            launch(scenario)
+            let format = app.buttons["HEX"]
+            XCTAssertTrue(format.waitForExistence(timeout: 3), scenario)
+            XCTAssertFalse(format.isEnabled, "\(scenario): the format box is enabled")
+            format.tap()
+            XCTAssertFalse(app.buttons["RGB"].waitForExistence(timeout: 2), "\(scenario): the format menu opened")
+            app.terminate()
+        }
+    }
+
+    /// A read-only MultiSelect opened by default shows no list, as React's
+    /// closes, and a tap where its rows would be changes nothing.
+    func testAReadOnlyMultiSelectOpenedByDefaultKeepsItsSelection() {
+        launch("multiselect-readonly")
+        let ramp = app.buttons["Ramp"]
+        XCTAssertFalse(ramp.exists, "a read-only MultiSelect shows its list")
+        if ramp.exists { ramp.tap() }
+        received("none")
     }
 
     /// A tap `dx`, `dy` from `element`'s centre.
