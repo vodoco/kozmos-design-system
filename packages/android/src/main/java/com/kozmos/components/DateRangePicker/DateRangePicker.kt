@@ -216,10 +216,11 @@ private fun DateRangePreview(value: KozmosDateRangeValue, enabled: Boolean) {
             style = MaterialTheme.typography.bodySmall,
             color = textColor
         )
+        // Muted; disabled, the dates' disabled colour, never darker than them.
         Text(
             text = "to",
             style = MaterialTheme.typography.bodySmall,
-            color = KozmosThemeTokens.primitivesColorsForeground400
+            color = if (enabled) KozmosThemeTokens.primitivesColorsForeground400 else KozmosThemeTokens.primitivesColorsForeground500
         )
         Text(
             text = value.end?.format(displayDateFormatter) ?: "End",

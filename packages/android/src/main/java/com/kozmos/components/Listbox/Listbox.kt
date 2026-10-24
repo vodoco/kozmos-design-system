@@ -116,10 +116,16 @@ fun KozmosListbox(
                         maxLines = 1
                     )
                     if (!option.description.isNullOrBlank()) {
+                        // Muted; on a disabled option, the disabled label's
+                        // colour, never darker than it.
                         Text(
                             text = option.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = KozmosThemeTokens.primitivesColorsForeground400,
+                            color = if (option.disabled) {
+                                KozmosThemeTokens.primitivesColorsForeground500
+                            } else {
+                                KozmosThemeTokens.primitivesColorsForeground400
+                            },
                             maxLines = 1
                         )
                     }
