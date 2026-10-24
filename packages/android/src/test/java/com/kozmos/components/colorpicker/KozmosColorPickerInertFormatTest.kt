@@ -2,7 +2,9 @@ package com.kozmos.components.colorpicker
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.runtime.CompositionLocalProvider
+import com.kozmos.components.LiveSemantics
 import com.kozmos.components.Press
+import com.kozmos.components.ReadNode
 import com.kozmos.components.UnpaintedIndication
 import com.kozmos.components.live
 import com.kozmos.components.press
@@ -45,12 +47,39 @@ class KozmosColorPickerInertFormatTest {
                 }
             }
         }) {
-            val box = read().saying("HSL")
+            val box = formatBox()
             boxEnabled = box.enabled
             press(box.frame.center, Press.Finger)
-            shown = read().merged.mapNotNull { it.words }.single { it in formats }
+            shown = formatBox().texts.single()
         }
         return shown to boxEnabled
+    }
+
+    /** The format box: the one node whose words are a format's, whatever it is named. */
+    private fun LiveSemantics.formatBox(): ReadNode = read().merged.single { node -> node.texts.any { it in formats } }
+
+    /**
+     * React's select is named "Color format" (`aria-label`), and the format
+     * chosen is its value; #392 names SwiftUI's menu so. Compose's box was
+     * read only as its word, "HSL". It is named "Color format", and its value,
+     * the format, follows a tap.
+     */
+    @Test fun theFormatBoxIsNamedColorFormatWithItsFormatAsItsValue() {
+        val heard = mutableListOf<String>()
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                CompositionLocalProvider(LocalIndication provides UnpaintedIndication) {
+                    KozmosColorPicker(value = "#135BEC", onValueChange = {}, defaultExpanded = true)
+                }
+            }
+        }) {
+            for (tap in 0..1) {
+                val box = formatBox()
+                heard += "${box.description}, ${box.stateDescription}"
+                if (tap == 0) press(box.frame.center, Press.Finger)
+            }
+        }
+        assertEquals("what TalkBack is told of the format box, before and after a tap", listOf("Color format, HSL", "Color format, HEX"), heard)
     }
 
     @Test fun aTapOnTheFormatBoxOfAUsablePickerMovesToTheNextFormat() {

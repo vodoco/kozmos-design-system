@@ -166,7 +166,9 @@ fun KozmosMultiSelect(
                 // 36. Each reaches 4dp above and below the 36dp row, into the
                 // 6dp over it and the field's padding under it, so the field
                 // keeps its height; the chevron also takes the field's 8dp end
-                // padding, so it runs to the field's end.
+                // padding, so it runs to the field's end. The field is 48dp
+                // tall, where React and Figma draw 44: a parity gap of its
+                // own, as #392 records it on iOS, left as it is here.
                 if (clearable && selectedValues.isNotEmpty() && enabled && !readOnly) {
                     IconButton(
                         onClick = {

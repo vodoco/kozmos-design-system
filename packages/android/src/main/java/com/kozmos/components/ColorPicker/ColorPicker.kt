@@ -40,6 +40,9 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -265,15 +268,21 @@ private fun FormatControls(
         minimumColumn = if (format == KozmosColorPickerFormat.Hex) 96.dp else 56.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
+        val formatLabel = when (format) {
+            KozmosColorPickerFormat.Hex -> "HEX"
+            KozmosColorPickerFormat.Rgb -> "RGB"
+            KozmosColorPickerFormat.Hsl -> "HSL"
+        }
         CompactValueBox(
-            text = when (format) {
-                KozmosColorPickerFormat.Hex -> "HEX"
-                KozmosColorPickerFormat.Rgb -> "RGB"
-                KozmosColorPickerFormat.Hsl -> "HSL"
-            },
-            // Disabled with the picker, as React's format select is
+            text = formatLabel,
+            // Named "Color format", the format its value, as React's select
+            // is (`aria-label="Color format"`); TalkBack heard only "HSL".
+            // Disabled with the picker, as React's select is
             // (`pickerDisabled`) and the sliders and presets beside it are.
-            modifier = Modifier.clickable(enabled = enabled) {
+            modifier = Modifier.semantics {
+                contentDescription = "Color format"
+                stateDescription = formatLabel
+            }.clickable(enabled = enabled) {
                 onFormatChange(
                     when (format) {
                         KozmosColorPickerFormat.Hex -> KozmosColorPickerFormat.Rgb

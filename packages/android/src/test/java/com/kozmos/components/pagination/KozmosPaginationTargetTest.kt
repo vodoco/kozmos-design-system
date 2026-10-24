@@ -45,9 +45,10 @@ class KozmosPaginationTargetTest {
         density = LocalDensity.current.density
         KozmosMaterialTheme {
             CompositionLocalProvider(LocalIndication provides UnpaintedIndication) {
-                // Code Connect's Basic composition, 345dp with 44dp links: on
-                // this 393dp screen it fits on its line. Compose's row does not
-                // wrap, so a row too wide for its line squeezes its last part.
+                // Code Connect's Basic composition, 346.3dp with 44dp links,
+                // on Paparazzi's 360dp Nexus 5 less 16dp each side: a 328dp
+                // line, so Next goes on a second line (KozmosPaginationWrapTest
+                // reads the lines).
                 Box(Modifier.padding(16.dp)) {
                     KozmosPagination {
                         KozmosPaginationPrevious(onClick = { pressed += "Previous" })
