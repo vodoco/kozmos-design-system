@@ -92,7 +92,7 @@ class KozmosPaginationCompactConnect {
             KozmosPaginationPrevious(onClick = {}, label = previousText)
             Text(
                 text = compactText,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 style = MaterialTheme.typography.bodyMedium
             )
             KozmosPaginationNext(onClick = {}, label = nextText)

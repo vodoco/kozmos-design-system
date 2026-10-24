@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import dts from "vite-plugin-dts";
+import dts from "unplugin-dts/vite";
 import path from "path";
 import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
@@ -47,6 +47,34 @@ function resolvePreflightTheme(css: string) {
   return resolved;
 }
 
+/**
+ * The stylesheet is minified for the browsers package.json declares, not for
+ * Vite's default target (Chrome 87, Safari 14, Firefox 78), for which esbuild
+ * split every `inset` into four longhands and wrote prefixed copies of
+ * `appearance` and `tab-size` that no declared browser reads. Android's
+ * WebView is Chrome's engine at the same version. An entry this does not
+ * understand stops the build rather than leaving a browser out.
+ */
+function cssTargetFrom(browserslist: string[]) {
+  const engines: Record<string, string> = {
+    chrome: "chrome",
+    edge: "edge",
+    firefox: "firefox",
+    safari: "safari",
+    android: "chrome",
+  };
+  return [
+    ...new Set(
+      browserslist.map((query) => {
+        const match = /^(\w+) >= ([\d.]+)$/.exec(query.trim());
+        if (!match || !engines[match[1]])
+          throw new Error(`cssTarget: cannot read browserslist "${query}"`);
+        return `${engines[match[1]]}${match[2]}`;
+      }),
+    ),
+  ];
+}
+
 export default defineConfig(async () => {
   let visualizerPlugin = null;
   if (process.env.ANALYZE) {
@@ -75,13 +103,20 @@ export default defineConfig(async () => {
       },
       dts({
         insertTypesEntry: true,
-        rollupTypes: true,
+        // API Extractor rolls the declarations into dist/index.d.ts. Left
+        // unset, unplugin-dts hands it `bundledPackages: undefined`, which
+        // API Extractor 7.43's config schema refuses.
+        bundleTypes: { bundledPackages: [] },
         // The Code Connect files are type-checked (they are in tsconfig's
         // include since 2026-09-14) but they are not part of the package: each
         // one describes a Figma mapping, not an export. Without this the dts
         // plugin followed tsconfig and emitted 92 `*.figma.d.ts` files of
         // `export {}` into dist, which `files: ["dist"]` would then publish.
-        exclude: ["src/**/*.figma.ts", "src/**/*.figma.tsx"],
+        // src/figma.d.ts is their augmentation of @figma/code-connect.
+        // unplugin-dts copies every `declare module` it finds into the bundle,
+        // and a product that uses Code Connect itself would then be told its
+        // FigmaConnectAPI has a `number()` that only Kozmos's checks declare.
+        exclude: ["src/**/*.figma.ts", "src/**/*.figma.tsx", "src/figma.d.ts"],
       }),
       visualizerPlugin,
     ].filter(Boolean),
@@ -96,10 +131,13 @@ export default defineConfig(async () => {
           require("./postcss/shadow-reach.cjs")(),
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           require("./postcss/scoped-css.cjs")(),
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require("./postcss/compact-css.cjs")(),
         ],
       },
     },
     build: {
+      cssTarget: cssTargetFrom(packageJson.browserslist),
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "KozmosReact",

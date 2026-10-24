@@ -33,8 +33,8 @@ fun KozmosSearch(
             focusedBorderColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
             unfocusedBorderColor = KozmosThemeTokens.semanticsBorderInput,
             cursorColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsTheme600,
-            focusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground500,
-            unfocusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground500
+            focusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground400,
+            unfocusedLeadingIconColor = com.kozmos.tokens.KozmosThemeTokens.primitivesColorsForeground400
         )
     )
 }

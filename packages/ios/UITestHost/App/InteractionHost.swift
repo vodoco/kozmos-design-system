@@ -27,6 +27,20 @@ private struct InteractionFixture: View {
     @State private var routeLocation: KozmosListboxOption?
     @State private var routeLocationEditing = false
     @State private var pickerExpanded = true
+    // The plain-button target scenarios: what each control holds.
+    @State private var multiSelection = ["lift"]
+    @State private var segment = 0
+    @State private var listSelection: [String] = []
+    @State private var bottomSelection = 0
+    @State private var radioChoice = "lift"
+    @State private var checkboxOn = false
+    @State private var bareCheckboxOn = false
+    @State private var switchOn = false
+    @State private var bareSwitchOn = false
+    @State private var accordionOpen: String?
+    @State private var thumbs = 0
+    @State private var colour = "#135BEC"
+    @State private var multiLocked = false
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -335,9 +349,146 @@ private struct InteractionFixture: View {
             KozmosTag("Vegan") { events.append("remove") }
         case "tag-remove-localized":
             KozmosTag("Vegan", removeLabel: "Vegan entfernen") { events.append("remove") }
+        // Plain buttons whose labels draw nothing where a finger may land:
+        // each control is placed so a tap can fall inside it, off its words
+        // and marks. The large variants are accessibility3, right to left.
+        case "multiselect-readonly", "multiselect-disabled", "multiselect-lock":
+            // Opened by default; read-only, disabled, or read-only while
+            // "Toggle read-only" says so.
+            KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
+                    multiSelection = $0
+                    events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
+                }),
+                options: [.init(value: "lift", label: "Lift"), .init(value: "ramp", label: "Ramp")], label: "Access",
+                disabled: scenario == "multiselect-disabled",
+                readOnly: scenario == "multiselect-readonly" || (scenario == "multiselect-lock" && multiLocked),
+                defaultOpen: true)
+                .frame(width: 320)
+            if scenario == "multiselect-lock" {
+                Button("Toggle read-only") { multiLocked.toggle() }
+            }
+        case "multiselect", "multiselect-large-rtl":
+            KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
+                    multiSelection = $0
+                    events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
+                }),
+                options: [.init(value: "lift", label: "Lift"), .init(value: "ramp", label: "Ramp")], label: "Access")
+                .frame(width: 320)
+                .largeRightToLeft(scenario == "multiselect-large-rtl")
+        case "pagination":
+            KozmosPagination {
+                KozmosPaginationPrevious { events.append("previous") }
+                KozmosPaginationLink(text: "1") { events.append("page 1") }
+                KozmosPaginationLink(text: "2", isActive: true) { events.append("page 2") }
+                KozmosPaginationLink(text: "3") { events.append("page 3") }
+                KozmosPaginationNext { events.append("next") }
+            }
+        case "pagination-large-rtl":
+            // The page links alone: Previous and Next would not fit beside
+            // them at accessibility3.
+            KozmosPagination {
+                KozmosPaginationLink(text: "1") { events.append("page 1") }
+                KozmosPaginationLink(text: "2", isActive: true) { events.append("page 2") }
+                KozmosPaginationLink(text: "3") { events.append("page 3") }
+            }
+            .largeRightToLeft(true)
+        case "pagination-ellipsis", "pagination-ellipsis-large-rtl":
+            // Code Connect's Content=Ellipsis composition in the 370pt column
+            // a 402pt phone leaves inside 16pt margins, and Previous and Next
+            // on their own, at the width they ask for.
+            VStack(spacing: 16) {
+                KozmosPagination {
+                    KozmosPaginationPrevious { events.append("previous") }.accessibilityIdentifier("row-previous")
+                    KozmosPaginationLink(text: "1") { events.append("page 1") }
+                    KozmosPaginationLink(text: "2", isActive: true) { events.append("page 2") }
+                    KozmosPaginationLink(text: "3") { events.append("page 3") }
+                    KozmosPaginationEllipsis()
+                    KozmosPaginationLink(text: "10") { events.append("page 10") }
+                    KozmosPaginationNext { events.append("next") }.accessibilityIdentifier("row-next")
+                }
+                .frame(width: 370)
+                KozmosPaginationPrevious {}.accessibilityIdentifier("alone-previous").fixedSize()
+                KozmosPaginationNext {}.accessibilityIdentifier("alone-next").fixedSize()
+            }
+            .largeRightToLeft(scenario == "pagination-ellipsis-large-rtl")
+        case "segmented", "segmented-large-rtl":
+            KozmosSegmentedControl(selection: Binding(get: { segment }, set: { segment = $0; events.append("segment \($0)") }),
+                items: ["Walk", "Lift", "Ramp"])
+                .largeRightToLeft(scenario == "segmented-large-rtl")
+        case "listbox", "listbox-large-rtl":
+            KozmosListbox(options: [.init(value: "lobby", label: "Lobby"),
+                                    .init(value: "gate", label: "Gate 12", description: "Level 1")],
+                selectedValues: $listSelection, onValueChange: { _, option in events.append("choose \(option.value)") })
+                .frame(width: 320)
+                .largeRightToLeft(scenario == "listbox-large-rtl")
+        case "navigation-items", "navigation-items-large-rtl":
+            VStack(spacing: 8) {
+                KozmosNavigationItem(label: "Settings", placement: .side, action: { events.append("side") }) {
+                    Image(systemName: "gearshape")
+                }
+                KozmosNavigationItem(label: "Home", placement: .top, action: { events.append("top") }) {
+                    Image(systemName: "house")
+                }
+                KozmosNavigationItem(label: "Maps", placement: .rail, action: { events.append("rail") }) {
+                    Image(systemName: "map")
+                }
+                .frame(width: 96)
+            }
+            .frame(width: 320)
+            .largeRightToLeft(scenario == "navigation-items-large-rtl")
+        case "bottom-navigation", "bottom-navigation-large-rtl":
+            KozmosBottomNavigation(selection: $bottomSelection,
+                items: [(icon: "map", title: "Map"), (icon: "magnifyingglass", title: "Search"), (icon: "person", title: "Profile")],
+                onSelect: { events.append("tab \($0)") })
+                .largeRightToLeft(scenario == "bottom-navigation-large-rtl")
+        case "selection-controls", "selection-controls-large-rtl":
+            // A radio, a checkbox and a switch with a label and without one;
+            // without, the product names it, as it would.
+            let radio = Binding(get: { radioChoice }, set: { radioChoice = $0; events.append("radio \($0)") })
+            VStack(alignment: .leading, spacing: 0) {
+                KozmosRadioGroup {
+                    KozmosRadioGroupItem(value: "lift", label: "Lift", selection: radio)
+                    KozmosRadioGroupItem(value: "ramp", label: "Ramp", selection: radio)
+                    KozmosRadioGroupItem(value: "stairs", selection: radio).accessibilityLabel("Stairs")
+                }
+                KozmosCheckbox(checked: Binding(get: { checkboxOn }, set: { checkboxOn = $0; events.append("checkbox \($0)") }),
+                    label: "Step-free")
+                KozmosCheckbox(checked: Binding(get: { bareCheckboxOn }, set: { bareCheckboxOn = $0; events.append("bare checkbox \($0)") }))
+                    .accessibilityLabel("Bare checkbox")
+                KozmosSwitch(checked: Binding(get: { switchOn }, set: { switchOn = $0; events.append("switch \($0)") }),
+                    label: "Announce turns")
+                KozmosSwitch(checked: Binding(get: { bareSwitchOn }, set: { bareSwitchOn = $0; events.append("bare switch \($0)") }))
+                    .accessibilityLabel("Bare switch")
+            }
+            .frame(width: 320, alignment: .leading)
+            .largeRightToLeft(scenario == "selection-controls-large-rtl")
+        case "accordion", "accordion-large-rtl":
+            let open = Binding(get: { accordionOpen }, set: { accordionOpen = $0; events.append("open \($0 ?? "none")") })
+            KozmosAccordion {
+                KozmosAccordionItem {
+                    KozmosAccordionTrigger(value: "hours", title: "Hours", selection: open)
+                    KozmosAccordionContent(value: "hours", selection: open) { Text("Open 06:00 to 22:00") }
+                }
+            }
+            .frame(width: 320)
+            .largeRightToLeft(scenario == "accordion-large-rtl")
+        case "rating-thumbs":
+            KozmosRating(value: Binding(get: { thumbs }, set: { thumbs = $0; events.append("rating \($0)") }), variant: .thumbs)
+        case "color-format", "color-format-disabled", "color-format-readonly":
+            KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true,
+                disabled: scenario == "color-format-disabled", readOnly: scenario == "color-format-readonly")
+                .frame(width: 320)
         default:
             Text("Unknown fixture: \(scenario)")
         }
+    }
+}
+
+private extension View {
+    /// A scenario's large variant: accessibility3, right to left.
+    func largeRightToLeft(_ on: Bool) -> some View {
+        environment(\.layoutDirection, on ? .rightToLeft : .leftToRight)
+            .environment(\.dynamicTypeSize, on ? .accessibility3 : .large)
     }
 }
 
