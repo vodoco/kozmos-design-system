@@ -47,6 +47,34 @@ function resolvePreflightTheme(css: string) {
   return resolved;
 }
 
+/**
+ * The stylesheet is minified for the browsers package.json declares, not for
+ * Vite's default target (Chrome 87, Safari 14, Firefox 78), for which esbuild
+ * split every `inset` into four longhands and wrote prefixed copies of
+ * `appearance` and `tab-size` that no declared browser reads. Android's
+ * WebView is Chrome's engine at the same version. An entry this does not
+ * understand stops the build rather than leaving a browser out.
+ */
+function cssTargetFrom(browserslist: string[]) {
+  const engines: Record<string, string> = {
+    chrome: "chrome",
+    edge: "edge",
+    firefox: "firefox",
+    safari: "safari",
+    android: "chrome",
+  };
+  return [
+    ...new Set(
+      browserslist.map((query) => {
+        const match = /^(\w+) >= ([\d.]+)$/.exec(query.trim());
+        if (!match || !engines[match[1]])
+          throw new Error(`cssTarget: cannot read browserslist "${query}"`);
+        return `${engines[match[1]]}${match[2]}`;
+      }),
+    ),
+  ];
+}
+
 export default defineConfig(async () => {
   let visualizerPlugin = null;
   if (process.env.ANALYZE) {
@@ -107,6 +135,7 @@ export default defineConfig(async () => {
       },
     },
     build: {
+      cssTarget: cssTargetFrom(packageJson.browserslist),
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "KozmosReact",
