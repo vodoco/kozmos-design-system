@@ -231,13 +231,22 @@ public struct KozmosColorPicker: View {
                 Button("RGB") { currentFormat = .rgb }
                 Button("HSL") { currentFormat = .hsl }
             } label: {
+                // The whole box opens the menu, as React's select does. The
+                // frame and padding were the menu's, outside its label, so it
+                // took a tap only on the format's word.
                 Text(currentFormat.label)
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: 36)
+                    .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
+                    .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             }
             .buttonStyle(.plain)
-            .frame(minHeight: 36)
-            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
+            // Disabled with the picker, and named, as React's select is
+            // (`aria-label="Color format"`): VoiceOver heard only the format.
+            .disabled(disabled || readOnly)
+            .accessibilityLabel("Color format")
+            .accessibilityValue(currentFormat.label)
             .background(KozmosColors.primitivesColorsBackground0)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             .overlay(
