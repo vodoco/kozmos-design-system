@@ -35,19 +35,29 @@ data class KozmosToastContent(
     val title: String,
     val description: String? = null,
     val actionText: String? = null,
-    val showCloseButton: Boolean = true
+    val showCloseButton: Boolean = true,
+    /**
+     * The close button's spoken name, as React's ToastClose `aria-label`.
+     * English by default; a product that translates passes its own.
+     */
+    val closeLabel: String = "Dismiss notification"
 )
 
 @Composable
 fun KozmosToast(
     hostState: SnackbarHostState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * The spoken name of each snackbar's close button. English by default; a
+     * product that translates passes its own.
+     */
+    closeLabel: String = "Dismiss notification"
 ) {
     SnackbarHost(
         hostState = hostState,
         modifier = modifier
     ) { data ->
-        KozmosSnackbarToast(data)
+        KozmosSnackbarToast(data, closeLabel)
     }
 }
 
@@ -59,14 +69,20 @@ fun KozmosToast(
     actionText: String? = null,
     showCloseButton: Boolean = true,
     onAction: (() -> Unit)? = null,
-    onDismiss: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null,
+    /**
+     * The close button's spoken name. English by default; a product that
+     * translates passes its own. Last, so a call by position still compiles.
+     */
+    closeLabel: String = "Dismiss notification"
 ) {
     KozmosToast(
         content = KozmosToastContent(
             title = title,
             description = description,
             actionText = actionText,
-            showCloseButton = showCloseButton
+            showCloseButton = showCloseButton,
+            closeLabel = closeLabel
         ),
         modifier = modifier,
         onAction = onAction,
@@ -159,7 +175,7 @@ private fun KozmosToastSurface(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss notification",
+                        contentDescription = content.closeLabel,
                         tint = KozmosThemeTokens.primitivesColorsForeground500
                     )
                 }
@@ -169,14 +185,15 @@ private fun KozmosToastSurface(
 }
 
 @Composable
-private fun KozmosSnackbarToast(data: SnackbarData) {
+private fun KozmosSnackbarToast(data: SnackbarData, closeLabel: String) {
     val visuals = data.visuals
     KozmosToastSurface(
         modifier = Modifier,
         content = KozmosToastContent(
             title = visuals.message,
             actionText = visuals.actionLabel,
-            showCloseButton = visuals.withDismissAction
+            showCloseButton = visuals.withDismissAction,
+            closeLabel = closeLabel
         ),
         onAction = if (visuals.actionLabel == null) null else data::performAction,
         onDismiss = if (visuals.withDismissAction) data::dismiss else null
