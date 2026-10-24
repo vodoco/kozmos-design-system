@@ -105,9 +105,11 @@ enum KozmosTemporalFieldColors {
         return emotion(status) ?? KozmosColors.primitivesColorsForeground100
     }
 
+    /// The muted colour, as `KozmosFieldWrapper`'s helper; disabled, the
+    /// disabled text's colour, never darker than the dimmed words beside it.
     static func helper(status: KozmosInputStatus, disabled: Bool) -> Color {
         if disabled { return KozmosColors.primitivesColorsForeground500 }
-        return emotion(status) ?? KozmosColors.primitivesColorsForeground500
+        return emotion(status) ?? KozmosColors.primitivesColorsForeground400
     }
 
     static func border(status: KozmosInputStatus) -> Color {
