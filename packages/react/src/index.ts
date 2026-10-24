@@ -90,6 +90,7 @@ export * from "./components/BottomSheet/BottomSheet";
 export * from "./components/OTPInput/OTPInput";
 export * from "./components/Rating/Rating";
 export * from "./components/FileUpload/FileUpload";
+export * from "./components/Calendar";
 export * from "./components/DatePicker/DatePicker";
 export * from "./components/DateRangePicker/DateRangePicker";
 export * from "./components/TimePicker/TimePicker";

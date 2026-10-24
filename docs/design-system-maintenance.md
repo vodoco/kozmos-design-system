@@ -203,14 +203,21 @@ dependencies are overridden: the four public packages ship the dependency ranges
   fails the same way in `node:20`; npm 11 installs it, and macOS npm 10 did too, so a local run
   passes. Before raising this range, install the consumer in `node:20` (linux/amd64) with npm
   10.8.2. 8.1.6 is patched for every Vite 8 alert open in October 2026 (8.0.16 is the first).
-- **Two alerts stay open: no patched release exists.**
-  - `sprintf-js` 1.0.3 (alert 198): through argparse 1.x, which API Extractor (via
-    `vite-plugin-dts`) and js-yaml 3 (via `@changesets/cli`) require. The DoS needs an
-    attacker-controlled format string; these tools format only their own help text.
-  - `vue-template-compiler` 2.7.16 (alert 20): through `vite-plugin-dts` 3.9.1, at build time only;
-    the XSS is in compiling templates in a browser, and these packages have no `.vue` files.
-    `vite-plugin-dts` 4 drops it, but it changes how the published packages' declarations are
-    emitted, so it needs a change of its own that compares `dist` before and after.
+- **One alert stays open: no patched release exists.** `sprintf-js` 1.0.3 (alert 198) comes
+  through argparse 1.0.10, which two build-time tools still require. API Extractor, which
+  `unplugin-dts` rolls the declarations with, asks for it through `@rushstack/ts-command-line`
+  in every release up to 7.59.4. `@changesets/cli` asks for it through js-yaml 3
+  (`@manypkg/get-packages` 1.1.3, `read-yaml-file` 1.1.0) in every 2.x up to 2.31.1; 3.x drops
+  it, but its engines ask for Node 22.11 or later and pnpm 10 or later, and CI and releases run
+  Node 20 and pnpm 9. The DoS needs an attacker-controlled format string; these tools format only
+  their own help text.
+- **`vue-template-compiler` (alert 20) left with `vite-plugin-dts` 3.9.1**, which `unplugin-dts`
+  1.1.2 replaced: its `@vue/language-core` is an optional peer it loads only for `.vue` files.
+  `vite-plugin-dts` 4 would only have renamed it: its `@vue/language-core` 2 pulls
+  `@vue/compiler-vue2`, the same Vue 2 compiler republished, which no advisory names. That
+  package still arrives at build time through `@storybook/vue3-vite` (vue-component-meta 2) and
+  `packages/vue`'s vue-tsc 2.2.12. The replacement left every published declaration
+  token-for-token identical: only the spaces between tokens moved.
 - **Verify a dependency change by its output**, not only by green checks: build tokens, icons,
   product-contracts and react before and after and compare `dist` byte for byte, then explain
   each difference (#283's were two parentheses in react's UMD file and the spaces inside 25

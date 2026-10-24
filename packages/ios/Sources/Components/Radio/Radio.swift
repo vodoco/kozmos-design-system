@@ -60,9 +60,18 @@ public struct KozmosRadioGroupItem: View {
                         .foregroundColor(labelColor)
                 }
             }
-            .frame(minHeight: 44, alignment: .center)
+            // A 44pt target, all of it hittable, with a label or without
+            // one: a plain button's frame adds nothing without a content
+            // shape, and the radio took a tap only on its ring and its
+            // label's words. Without a label the mark stays at the leading
+            // edge of its 44pt square.
+            .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        // The chosen radio is selected, as React's `aria-checked`: VoiceOver
+        // heard only the name, and the state only the dot showed.
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .disabled(disabled)
     }
 

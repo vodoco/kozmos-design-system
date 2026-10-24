@@ -53,6 +53,10 @@ public struct KozmosCategoryField<Icon: View>: View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             icon
                 .frame(width: Self.iconSize, height: Self.iconSize)
+                // A KozmosIcon takes the accent too, as React's icon is
+                // currentColor and Compose's follows LocalContentColor: it
+                // kept its own foreground/100.
+                .environment(\.kozmosIconHostInk, tint.accent)
                 .foregroundColor(tint.accent)
                 .accessibilityHidden(true)
             Text(label)

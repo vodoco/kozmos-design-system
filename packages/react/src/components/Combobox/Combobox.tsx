@@ -7,6 +7,11 @@ import {
   FieldPopupRoot,
 } from "./field-popup";
 import {
+  FIELD_ACTION,
+  FIELD_ACTIONS_ROW,
+  fieldActionsRoom,
+} from "./field-actions";
+import {
   MapShellPresentationContext,
   scrollbarFor,
 } from "../AdaptiveMapShell/map-shell-presentation";
@@ -14,6 +19,7 @@ import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/Input";
 
@@ -173,6 +179,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // The active row's keyboard ring (owned-selection.css): its rows never
+    // take focus (aria-activedescendant), so the list reads which hand moved.
+    const modality = useInputModality();
     const rootRef = React.useRef<HTMLDivElement>(null);
     // The overlay popup is in a portal, outside the root: a press or focus
     // inside it is still inside the field.
@@ -426,9 +435,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     // gives way to a caller's pe-*; the owned rule holds it
                     // where no @scope rule reaches an <input> (WebKit).
                     "kozmos-combobox-input",
-                    canClear
-                      ? "pe-[calc(var(--density-field-height-md,2.75rem)_*_2_+_0.5rem)]"
-                      : "pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+                    fieldActionsRoom(canClear),
                     className,
                   )}
                   data-clearable={canClear ? "" : undefined}
@@ -481,11 +488,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   }}
                   {...props}
                 />
-                <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center">
+                <div className={FIELD_ACTIONS_ROW}>
                   {canClear && (
                     <button
                       type="button"
-                      className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className={FIELD_ACTION}
                       aria-label={clearLabel}
                       onClick={clearSelection}
                     >
@@ -494,7 +501,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   )}
                   <button
                     type="button"
-                    className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={FIELD_ACTION}
                     aria-label={open ? closeLabel : openLabel}
                     disabled={disabled || readOnly}
                     onClick={() => setOpen((current) => !current)}
@@ -543,6 +550,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     <div
                       id={listboxOpen ? listboxId : undefined}
                       className="min-h-0 overflow-y-auto"
+                      data-modality={modality}
                       data-kozmos-scrollbar={scrollbarFor(presentation)}
                       role={
                         listboxOpen
@@ -577,7 +585,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                                       : undefined
                                   }
                                   className={cn(
-                                    "kozmos-reset kozmos-option min-h-11 items-center",
+                                    "kozmos-reset kozmos-option",
                                     index === filteredOptions.length &&
                                       "border-t border-border",
                                   )}

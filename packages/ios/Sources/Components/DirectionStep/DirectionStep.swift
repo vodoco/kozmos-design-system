@@ -90,7 +90,7 @@ public struct KozmosDirectionStep: View {
                 if !metrics.isEmpty {
                     Text(metrics)
                         .font(KozmosTypography.caption)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
             }
             Spacer()

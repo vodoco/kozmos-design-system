@@ -83,8 +83,10 @@ const FORBIDDEN = [
 // What a package may contain at all, by kind. FORBIDDEN names the leaks we know
 // about; this catches the ones nobody thought to name — a stats.html from a
 // bundle analyser, a stray .ts source, an image.
+// THIRD-PARTY-NOTICES carries the licences of what a package's build copies
+// into it (React's stylesheets hold Tailwind CSS's preflight and utilities).
 const ALLOWED =
-  /^package\/(package\.json|README\.md|LICENSE)$|\.(d\.ts|d\.mts|d\.cts|mjs|cjs|js|map|css|swift|kt|xml)$/;
+  /^package\/(package\.json|README\.md|LICENSE|THIRD-PARTY-NOTICES)$|\.(d\.ts|d\.mts|d\.cts|mjs|cjs|js|map|css|swift|kt|xml)$/;
 
 // All package declarations now match their ESM/CJS runtime format. Keep this
 // zero baseline: any new resolver problem fails publication checks.
@@ -197,6 +199,10 @@ for (const { dir, manifest } of publishable) {
     "package/package.json",
     "package/README.md",
     "package/LICENSE",
+    // npm packs a listed file only if it is there, and says nothing if not.
+    ...(manifest.files ?? [])
+      .filter((entry) => entry === "THIRD-PARTY-NOTICES")
+      .map((entry) => `package/${entry}`),
   ]) {
     if (!files.includes(required)) {
       fail(

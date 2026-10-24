@@ -34,7 +34,7 @@ fun KozmosFieldWrapper(
     val supportingText = errorMessage ?: helperText
     val statusColor = fieldStatusColor(effectiveStatus)
     val labelColor = statusColor ?: MaterialTheme.colorScheme.onSurface
-    val metaColor = KozmosThemeTokens.primitivesColorsForeground500
+    val metaColor = KozmosThemeTokens.primitivesColorsForeground400
     val optionalDisplayText = optionalText?.takeUnless { required || it.isBlank() }
     val showLabelRow = !hideLabel && (!label.isNullOrBlank() || optionalDisplayText != null)
 
