@@ -52,7 +52,10 @@ fun KozmosPaginationLink(
     Box(
         modifier = modifier
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50)
-            .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
+            // A 44dp square, as React's link is Button's icon size in touch
+            // (`h-icon-control w-icon-control`), and all of it takes a press.
+            // It was 36.
+            .defaultMinSize(minWidth = PaginationTarget, minHeight = PaginationTarget)
             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             // Active, the page is theme/600 text and edge on a 10% tint of it,
             // as React's is (decision 59); it was theme/500.
@@ -83,7 +86,8 @@ fun KozmosPaginationPrevious(
     Box(
         modifier = modifier
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50)
-            .defaultMinSize(minHeight = 36.dp)
+            // As tall as the page links, as React's is (decision 82). It was 36.
+            .defaultMinSize(minHeight = PaginationTarget)
             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .clickable(onClick = onClick)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing100),
@@ -107,7 +111,8 @@ fun KozmosPaginationNext(
     Box(
         modifier = modifier
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50)
-            .defaultMinSize(minHeight = 36.dp)
+            // As tall as the page links, as React's is (decision 82). It was 36.
+            .defaultMinSize(minHeight = PaginationTarget)
             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .clickable(onClick = onClick)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing100),
@@ -123,8 +128,12 @@ fun KozmosPaginationNext(
     }
 }
 
+/** A page link's side, and Previous's and Next's height: React's touch size, 44. */
+private val PaginationTarget = 44.dp
+
 @Composable
 fun KozmosPaginationEllipsis(modifier: Modifier = Modifier) {
+    // React's 36 (`h-9 w-9`): it takes no press.
     Box(
         modifier = modifier.defaultMinSize(minWidth = 36.dp, minHeight = 36.dp),
         contentAlignment = Alignment.Center

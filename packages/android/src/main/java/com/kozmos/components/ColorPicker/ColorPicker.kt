@@ -171,7 +171,8 @@ fun KozmosColorPicker(
                     onFormatChange = { currentFormat = it },
                     value = normalizedValue,
                     alpha = alpha,
-                    hsl = hsl
+                    hsl = hsl,
+                    enabled = enabled && !readOnly
                 )
 
                 PaletteSelector(label = paletteLabel)
@@ -255,7 +256,8 @@ private fun FormatControls(
     onFormatChange: (KozmosColorPickerFormat) -> Unit,
     value: String,
     alpha: Float,
-    hsl: HslColor
+    hsl: HslColor,
+    enabled: Boolean
 ) {
     FormatRowLayout(
         spacing = KozmosDimensions.primitivesLayoutSpacing75,
@@ -269,7 +271,9 @@ private fun FormatControls(
                 KozmosColorPickerFormat.Rgb -> "RGB"
                 KozmosColorPickerFormat.Hsl -> "HSL"
             },
-            modifier = Modifier.clickable {
+            // Disabled with the picker, as React's format select is
+            // (`pickerDisabled`) and the sliders and presets beside it are.
+            modifier = Modifier.clickable(enabled = enabled) {
                 onFormatChange(
                     when (format) {
                         KozmosColorPickerFormat.Hex -> KozmosColorPickerFormat.Rgb
