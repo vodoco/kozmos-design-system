@@ -7,18 +7,48 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # DatePicker
 
-DatePicker retains the browser's native date input. External `aria-describedby`
-IDs are merged with helper/error guidance; explicit error state cannot be hidden
-by `aria-invalid={false}`. The decorative icon follows the module's text direction.
+A date field: the browser's own, with its segmented typing in the reader's format, and a button at
+its end that opens Kozmos's calendar (decisions 104 and 105), drawn as Figma's Open variant
+(`438:2392`). The value is a `YYYY-MM-DD` string, as `<input type="date">`'s is, through the
+input's own `value`, `defaultValue` and `onChange`; a day chosen in the calendar is typed into the
+field, so `onChange` and a form's change listeners hear it as they hear typing.
 
-DatePicker uses the browser's date input; DateRangePicker composes start and end fields.
-Provide field labels, constraints and validation feedback; browser-localized entry is distinct from the stored date string.
+External `aria-describedby` IDs are merged with helper/error guidance; explicit error state cannot
+be hidden by `aria-invalid={false}`. The decorative icon follows the module's text direction.
+DateRangePicker composes start and end fields. Provide field labels, constraints and validation
+feedback; browser-localized entry is distinct from the stored date string.
 
 <Canvas>
   <Story of={DatePickerStories.Default} />
 </Canvas>
 
 <Controls />
+
+## The calendar
+
+The button, and Alt+Down Arrow or F4 in the field, open the calendar in a modal Popover under the
+field, on the field's day, else today. Focus goes to that day and stays in the calendar; a day
+chosen there, by Enter, Space or the pointer, is typed into the field, and that or Escape closes it
+and returns focus to the button, as the WAI-ARIA date picker dialog does. `min`, `max` and
+`isDateUnavailable` bound the calendar's days; typing is the browser's, so a typed day out of them
+is yours to check, as it always was. `open` with `onOpenChange` controls it, and `defaultOpen` opens
+it at first. The calendar is modal, so this page shows it closed; Storybook's `Open` story draws it
+open.
+
+`chooseDateLabel` names the button and, with no `label`, the calendar (`"Choose date"` by default);
+`previousMonthLabel` and `nextMonthLabel` name the month buttons, `locale` the calendar's months
+and days, and `today` the day it draws as today. The browser's own format and first day still
+shape the typed field. Disabled or read only, the button cannot open it.
+
+### Where the browser's own button stays
+
+The calendar takes the place of the browser's own picker only where that picker's button can give
+way. DatePicker reads that from what the engine's CSS supports, never from its name: Chromium and
+Edge draw the button as `::-webkit-calendar-picker-indicator`, which Kozmos hides, and Safari's
+segmented editor (`::-webkit-datetime-edit`) draws none. Firefox 146 draws one that no page can
+hide, so in Firefox the field is the browser's, untouched, its own button and calendar with it, and
+the props above do nothing. When Firefox supports the pseudo-element (Mozilla bug 2051201), it
+takes Kozmos's calendar with no change to your code.
 
 ## Implementation
 
@@ -30,7 +60,12 @@ import { DatePicker } from "@kozmos-ds/react";
 export function Example() {
   return (
     <>
-      <DatePicker label="Visit date" />
+      <DatePicker
+        label="Visit date"
+        min="2026-05-01"
+        isDateUnavailable={(date) => date.endsWith("-01")}
+        onChange={(event) => console.log(event.target.value)}
+      />
     </>
   );
 }
@@ -51,13 +86,14 @@ import Kozmos
 // The picker hides its label, which VoiceOver still says: KozmosFieldWrapper
 // shows it above the field, as React's label is. There is always a date.
 struct VisitDate: View {
-    @Binding var date: Date
+@Binding var date: Date
 
     var body: some View {
         KozmosFieldWrapper(label: "Visit date") {
             KozmosDatePicker(selection: $date, label: "Visit date")
         }
     }
+
 }
 `}
     kotlin={`
@@ -69,7 +105,7 @@ import java.time.LocalDate
 // date is null until one is chosen.
 @Composable
 fun VisitDate(date: LocalDate?, onDateChange: (LocalDate) -> Unit) {
-    KozmosDatePicker(date = date, onDateSelected = onDateChange, label = "Visit date")
+KozmosDatePicker(date = date, onDateSelected = onDateChange, label = "Visit date")
 }
 `}
 

@@ -29,6 +29,14 @@ private struct POIResultTabShape: Shape {
         }
         return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
     }
+
+    /// The tab mirrors itself, above, so SwiftUI must not mirror it again.
+    /// Unset, a shape mirrors itself in a right-to-left layout in an app that
+    /// deploys to iOS 17 or later and not in one that deploys to iOS 16, so
+    /// in the first the tab was mirrored twice: its start corner rounded and
+    /// its end corner square.
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
 /// Characters `encodeURIComponent` leaves untouched. Matching the web escaping
