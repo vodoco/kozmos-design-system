@@ -300,7 +300,7 @@ final class KozmosMapShellGlassTextTests: XCTestCase {
         var wrong: [String] = []
         for scheme in [ColorScheme.light, .dark] {
             let swatch = try await render(
-                KozmosColors.primitivesColorsForeground500.environment(\.colorScheme, scheme), "decision-48-muted-swatch-\(scheme)")
+                KozmosColors.primitivesColorsForeground400.environment(\.colorScheme, scheme), "decision-48-muted-swatch-\(scheme)")
                 .color(at: CGPoint(x: phone.width / 2, y: phone.height / 2))
             let empty = try await render(shell(scheme, amberFirst: false, surface: .solid) { Color.clear }, "decision-48-empty-solid-\(scheme)")
             let drawn = try await render(shell(scheme, amberFirst: false, surface: .solid) { route() }, "decision-48-To-solid-\(scheme)")
@@ -353,7 +353,7 @@ final class KozmosMapShellGlassTextTests: XCTestCase {
         for scheme in [ColorScheme.light, .dark] {
             let centre = CGPoint(x: phone.width / 2, y: phone.height / 2)
             let muted = try await render(
-                KozmosColors.primitivesColorsForeground500.environment(\.colorScheme, scheme),
+                KozmosColors.primitivesColorsForeground400.environment(\.colorScheme, scheme),
                 "decision-48-body-muted-swatch-\(scheme)").color(at: centre)
             let ink = try await render(
                 KozmosColors.primitivesColorsForeground100.environment(\.colorScheme, scheme),

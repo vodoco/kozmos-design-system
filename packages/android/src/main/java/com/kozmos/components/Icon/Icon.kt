@@ -193,8 +193,9 @@ internal fun knownIconVector(rawName: String): ImageVector? {
     }
 }
 
+/** The colour [color] draws an icon in; internal so the muted contrast test reads it. */
 @Composable
-private fun resolveIconTint(color: KozmosIconColor): Color = when (color) {
+internal fun resolveIconTint(color: KozmosIconColor): Color = when (color) {
     KozmosIconColor.Default -> LocalContentColor.current
     KozmosIconColor.Muted -> KozmosThemeTokens.primitivesColorsForeground500
     // An icon on a surface is theme/600, as React's text-primary is (decision 59).

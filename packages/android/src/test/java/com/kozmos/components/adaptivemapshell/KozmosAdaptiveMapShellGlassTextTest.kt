@@ -258,7 +258,7 @@ class KozmosAdaptiveMapShellGlassTextTest {
             }
             return drawn.argb(drawn.width / 2, drawn.height / 2)
         }
-        val muted = swatch { KozmosThemeTokens.primitivesColorsForeground500 }
+        val muted = swatch { KozmosThemeTokens.primitivesColorsForeground400 }
         val ink = swatch { KozmosThemeTokens.primitivesColorsForeground100 }
         val drawn = shell(dark, amberFirst = false, surface = surface, panel = part(null))
         val found = texts
