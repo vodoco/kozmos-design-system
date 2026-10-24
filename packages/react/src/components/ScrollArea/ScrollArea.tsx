@@ -48,8 +48,11 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
             orientation === "horizontal" &&
               "overflow-x-auto overflow-y-hidden text-nowrap",
             orientation === "both" && "overflow-auto",
+            // The standard property, and the WebKit pseudo-element for the
+            // floor's Chromium before 121 and Safari before 18.2. (IE's
+            // -ms-overflow-style is gone: no browser that runs @scope read it.)
             hideScrollbar &&
-              "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+              "[&::-webkit-scrollbar]:hidden [scrollbar-width:none]",
             snap === "x" && "snap-x snap-mandatory",
             snap === "y" && "snap-y snap-mandatory",
             snap === "both" && "snap-both snap-mandatory",
