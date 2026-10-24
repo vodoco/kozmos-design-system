@@ -3,6 +3,7 @@ package com.kozmos.components.tooltip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -59,7 +61,7 @@ fun KozmosTooltip(
 }
 
 @Composable
-private fun TooltipBubble(
+internal fun TooltipBubble(
     text: String,
     side: KozmosTooltipSide,
     modifier: Modifier = Modifier
@@ -77,14 +79,19 @@ private fun TooltipBubble(
                 TooltipSurface(text)
             }
         }
+        // A side tooltip sits on its trigger's physical side, and its tip,
+        // drawn in physical coordinates, points at the trigger: laid out from
+        // the physical left in either reading direction. Right to left, a
+        // Row put the tip at its start, the right: on the far side, pointing
+        // into the bubble. The text inside still reads right to left.
         KozmosTooltipSide.Right -> {
-            Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                 TooltipTip(side)
                 TooltipSurface(text)
             }
         }
         KozmosTooltipSide.Left -> {
-            Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                 TooltipSurface(text)
                 TooltipTip(side)
             }
@@ -112,7 +119,10 @@ private fun TooltipSurface(text: String) {
 @Composable
 private fun TooltipTip(side: KozmosTooltipSide) {
     val color = KozmosThemeTokens.primitivesColorsBackground0
-    Canvas(modifier = Modifier.size(width = tipWidth(side), height = tipHeight(side))) {
+    // Above its bubble, as React's arrow is drawn above the content's shadow:
+    // where the tip came before the bubble (Right, Bottom), the bubble's
+    // shadow fell over it, greying it (#E0E0E0 on a #FFFFFF bubble).
+    Canvas(modifier = Modifier.zIndex(1f).size(width = tipWidth(side), height = tipHeight(side))) {
         drawPath(tooltipTipPath(side), color = color)
     }
 }
