@@ -290,6 +290,14 @@ jobs:
       - name: Verify Motion Parity
         run: pnpm tokens:motion:check
 
+      # SwiftUI mirrors a Shape right to left by itself only in an app that
+      # deploys to iOS 17 or later, so a shape that does not say how it reads
+      # draws differently by the app, and by which Xcode's test host runs it:
+      # five drawings were wrong in one kind of app or the other until
+      # 2026-10-21 (#348, #356), and no simulator run could see both kinds.
+      - name: Verify SwiftUI Shapes Say How They Read Right To Left
+        run: node --test scripts/ci/ios-shape-direction.test.mjs && pnpm ios:shapes:check
+
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
 
