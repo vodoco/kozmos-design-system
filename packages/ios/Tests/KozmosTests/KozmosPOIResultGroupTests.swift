@@ -26,6 +26,36 @@ final class KozmosPOIResultGroupTests: XCTestCase {
         XCTAssertEqual(single.hiddenCount, 0)
     }
 
+    /// The tab's corners follow the reading direction whatever the app
+    /// deploys to. A shape mirrors itself in a right-to-left layout when the
+    /// app deploys to iOS 17 or macOS 14 or later, and not when it deploys to
+    /// iOS 16. The tab mirrors itself, so in such an app it was mirrored
+    /// twice: its start corner rounded and its end corner square. Xcode 27's
+    /// simulator host deploys to iOS 17, where the hosted test below saw it.
+    /// Drawn without a window, so `swift test` runs this on a Mac as well,
+    /// whose host deploys to macOS 14.
+    @MainActor func testTheTabsCornersFollowTheReadingDirectionWhateverTheAppDeploysTo() throws {
+        let fill = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
+        var wrong: [String] = []
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let group = KozmosPOIResultGroup(items: items, expanded: true, selectedPoiId: "3", numbered: true, onSelect: { _ in })
+                .frame(width: 320, height: 450)
+                .environment(\.layoutDirection, direction)
+                .environment(\.colorScheme, .light)
+            let drawn = try DrawnPixels.draw(group, scale: 3)
+            // The selected number tab is the theme fill (decisions 55 and 59).
+            let tab = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(fill, tolerance: 3)), "no tab \(direction)")
+            let start = direction == .leftToRight ? tab.minX + 2 : tab.maxX - 2
+            let end = direction == .leftToRight ? tab.maxX - 2 : tab.minX + 2
+            let isFill = DrawnPixels.matches(fill, tolerance: 3)
+            let topStart = drawn.pixel(at: CGPoint(x: start, y: tab.minY + 2))
+            let bottomEnd = drawn.pixel(at: CGPoint(x: end, y: tab.maxY - 2))
+            if !isFill(topStart.r, topStart.g, topStart.b, topStart.a) { wrong.append("\(direction): the top-start corner is rounded") }
+            if isFill(bottomEnd.r, bottomEnd.g, bottomEnd.b, bottomEnd.a) { wrong.append("\(direction): the bottom-end corner is square") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
     #if os(iOS)
     @MainActor func testGroupRendersSquareInteriorStartsAndRoundedTabEnds() async throws {
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
