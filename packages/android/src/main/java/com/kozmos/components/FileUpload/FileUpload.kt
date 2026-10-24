@@ -126,13 +126,13 @@ fun KozmosFileUpload(
                 Icons.Default.UploadFile, 
                 contentDescription = null, 
                 modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing400),
-                tint = KozmosThemeTokens.primitivesColorsForeground500
+                tint = KozmosThemeTokens.primitivesColorsForeground400
             )
             Spacer(modifier = Modifier.height(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
                 text = "Tap to upload file",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = KozmosThemeTokens.primitivesColorsForeground500
+                color = KozmosThemeTokens.primitivesColorsForeground400
             )
         }
     }

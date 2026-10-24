@@ -179,7 +179,7 @@ fun KozmosMultiSelect(
                         modifier = Modifier
                             .reachingPastTheRow(vertical = TargetReach)
                             .size(TargetSize),
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground500)
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground400)
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Clear selected options", modifier = Modifier.size(16.dp))
                     }
@@ -192,7 +192,7 @@ fun KozmosMultiSelect(
                         .reachingPastTheRow(vertical = TargetReach, end = KozmosDimensions.primitivesLayoutSpacing100)
                         .size(TargetSize),
                     colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = KozmosThemeTokens.primitivesColorsForeground500,
+                        contentColor = KozmosThemeTokens.primitivesColorsForeground400,
                         disabledContentColor = KozmosThemeTokens.primitivesColorsForeground500
                     )
                 ) {
@@ -212,7 +212,7 @@ fun KozmosMultiSelect(
                 Text(
                     text = emptyText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
+                    color = KozmosThemeTokens.primitivesColorsForeground400,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(KozmosThemeTokens.primitivesColorsBackground0, fieldShape)

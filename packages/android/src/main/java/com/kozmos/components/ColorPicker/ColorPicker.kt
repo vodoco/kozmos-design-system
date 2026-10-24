@@ -133,7 +133,7 @@ fun KozmosColorPicker(
             androidx.compose.material3.Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = if (isExpanded) "Close color picker" else "Open color picker",
-                tint = KozmosThemeTokens.primitivesColorsForeground500,
+                tint = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier
                     .size(20.dp)
                     .rotate(if (isExpanded) 180f else 0f)
@@ -192,7 +192,7 @@ fun KozmosColorPicker(
             Text(
                 text = helperText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = statusColor(status) ?: KozmosThemeTokens.primitivesColorsForeground500
+                color = statusColor(status) ?: KozmosThemeTokens.primitivesColorsForeground400
             )
         }
     }
@@ -241,7 +241,7 @@ private fun LabeledKozmosSlider(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = KozmosThemeTokens.primitivesColorsForeground500
+            color = KozmosThemeTokens.primitivesColorsForeground400
         )
         KozmosSlider(
             value = value.coerceIn(range.start, range.endInclusive),
@@ -312,7 +312,7 @@ private fun FormatControls(
         CompactValueBox(text = alpha.coerceIn(0f, 100f).toInt().toString())
         Text(
             text = "%",
-            color = KozmosThemeTokens.primitivesColorsForeground500,
+            color = KozmosThemeTokens.primitivesColorsForeground400,
             modifier = Modifier.layoutId(FormatRowUnit)
         )
     }

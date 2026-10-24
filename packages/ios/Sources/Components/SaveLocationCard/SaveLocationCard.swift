@@ -66,7 +66,7 @@ public struct KozmosSaveLocationCard: View {
                     // grows with the glyph at the largest text sizes.
                     Button(action: onEditNote) {
                         Image(systemName: "pencil")
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
                     }
