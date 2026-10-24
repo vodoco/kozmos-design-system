@@ -29,10 +29,13 @@ public struct KozmosStepper: View {
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         
                         if index < currentStep {
+                            // Decoration, as React's check: VoiceOver read the
+                            // symbol's own name, "Selected", on every done step.
                             Image(systemName: "checkmark")
                                 .font(KozmosTypography.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+                                .accessibilityHidden(true)
                         } else {
                             Text("\(index + 1)")
                                 .font(KozmosTypography.caption)
@@ -49,6 +52,12 @@ public struct KozmosStepper: View {
                         .fontWeight(index == currentStep ? .medium : .regular)
                         .foregroundColor(index == currentStep ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
                 }
+                // One element a step, its number and name together, and the
+                // current step selected, as React's is `aria-current="step"`:
+                // VoiceOver walked every number, then every name, and heard
+                // nothing of which step was current.
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(index == currentStep ? .isSelected : [])
                 
                 if index < steps.count - 1 {
                     Rectangle()

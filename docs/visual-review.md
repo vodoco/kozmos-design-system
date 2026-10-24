@@ -25,7 +25,8 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
 - **Blind to Medium against Semibold.** The image's sans draws weights 500 and 600 alike (measured on
   16 Oct: LocationPin's label read the same pixels at both), so a change between them shows no
   difference here. Read a weight with `getComputedStyle`, as `check-location-pin` does, and check
-  the layout in a wide sans: CI's runner, outside the image, draws 600 wider.
+  the layout in a wide sans: CI's other browser jobs, in the same image with the runner's DejaVu
+  Sans, draw 600 wider.
 - **Sensitive to token changes.** Colours are compared at `threshold: 0.02`: this permits tiny
   anti-aliasing rounding differences. Playwright's default tolerance passed a whole token step
   (the Skeleton's move from background/100 to /200) as unchanged. See the configuration's

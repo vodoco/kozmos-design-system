@@ -56,6 +56,145 @@ function shareThemeTokens(foundations) {
   );
 }
 
+// Tailwind 3 declares its compiler variables' defaults on every element
+// (`*, ::before, ::after` and `::backdrop`, 51 of them), so that none
+// inherits a value an ancestor's utility set. Declared there, they gave every
+// element inside a root its own copy of them, which WebKit rebuilds whenever
+// a root's theme changes: on a Mac, re-theming the site's home page
+// restyled it in 124ms in WebKit with them, 100ms without (Chromium 19 and
+// 22, Firefox 13 and 11). Registered with `inherits: false` instead, an
+// element that sets none starts at the initial value without declaring
+// anything, and still inherits nothing (Chrome 85, Safari 16.4, Firefox 128;
+// Kozmos's floor is above all three).
+//
+// A registration applies to the whole document, and Tailwind 4 registers
+// many of the same names, so each is registered as Tailwind 4.3.3 registers
+// it, with its syntax and its initial value or none: on a page with both, it
+// does not matter which stylesheet comes last. `null`: Tailwind 4 has no such
+// variable, so it takes Tailwind 3's default. Where a name is registered
+// without an initial value, as Tailwind 4 registers the filters, the ring's
+// colour and inset, the skews and the rest, Kozmos's reads of it carry
+// Tailwind 3's default as their fallback.
+const TAILWIND_4_REGISTRATION = {
+  "--tw-border-spacing-x": { initial: "0", syntax: "<length>" },
+  "--tw-border-spacing-y": { initial: "0", syntax: "<length>" },
+  "--tw-translate-x": { initial: "0" },
+  "--tw-translate-y": { initial: "0" },
+  "--tw-rotate": null,
+  "--tw-skew-x": {},
+  "--tw-skew-y": {},
+  "--tw-scale-x": { initial: "1" },
+  "--tw-scale-y": { initial: "1" },
+  "--tw-pan-x": {},
+  "--tw-pan-y": {},
+  "--tw-pinch-zoom": {},
+  "--tw-scroll-snap-strictness": { initial: "proximity" },
+  "--tw-gradient-from-position": {
+    initial: "0%",
+    syntax: "<length-percentage>",
+  },
+  "--tw-gradient-via-position": {
+    initial: "50%",
+    syntax: "<length-percentage>",
+  },
+  "--tw-gradient-to-position": {
+    initial: "100%",
+    syntax: "<length-percentage>",
+  },
+  "--tw-ordinal": {},
+  "--tw-slashed-zero": {},
+  "--tw-numeric-figure": {},
+  "--tw-numeric-spacing": {},
+  "--tw-numeric-fraction": {},
+  "--tw-ring-inset": {},
+  "--tw-ring-offset-width": { initial: "0px", syntax: "<length>" },
+  "--tw-ring-offset-color": { initial: "#fff" },
+  "--tw-ring-color": {},
+  "--tw-ring-offset-shadow": { initial: "0 0 #0000" },
+  "--tw-ring-shadow": { initial: "0 0 #0000" },
+  "--tw-shadow": { initial: "0 0 #0000" },
+  "--tw-shadow-colored": null,
+  "--tw-blur": {},
+  "--tw-brightness": {},
+  "--tw-contrast": {},
+  "--tw-grayscale": {},
+  "--tw-hue-rotate": {},
+  "--tw-invert": {},
+  "--tw-saturate": {},
+  "--tw-sepia": {},
+  "--tw-drop-shadow": {},
+  "--tw-backdrop-blur": {},
+  "--tw-backdrop-brightness": {},
+  "--tw-backdrop-contrast": {},
+  "--tw-backdrop-grayscale": {},
+  "--tw-backdrop-hue-rotate": {},
+  "--tw-backdrop-invert": {},
+  "--tw-backdrop-opacity": {},
+  "--tw-backdrop-saturate": {},
+  "--tw-backdrop-sepia": {},
+  "--tw-contain-size": {},
+  "--tw-contain-layout": {},
+  "--tw-contain-paint": {},
+  "--tw-contain-style": {},
+};
+
+// The compiler-variable initialiser: a `*, ::before, ::after` or
+// `::backdrop` rule that declares nothing but --tw-* custom properties.
+// Tailwind's own reset shares the first selector and declares more.
+function isCompilerDefaults(rule) {
+  const selector = rule.selector.replace(/\s/g, "");
+  if (selector !== "*,::before,::after" && selector !== "::backdrop")
+    return false;
+  const declarations = rule.nodes.filter((node) => node.type !== "comment");
+  return (
+    declarations.length > 0 &&
+    declarations.every(
+      (node) => node.type === "decl" && node.prop.startsWith("--tw-"),
+    )
+  );
+}
+
+// Registers every compiler variable the stylesheet reads, and gives each read
+// of one registered without an initial value Tailwind 3's default as its
+// fallback. Unread defaults are dropped.
+function registerCompilerDefaults(root, defaults) {
+  if (!defaults.size) return;
+  const initialOf = (name) => {
+    const registration = TAILWIND_4_REGISTRATION[name];
+    return registration === null
+      ? defaults.get(name) || undefined
+      : registration.initial;
+  };
+  const read = new Set();
+  root.walkDecls((decl) => {
+    if (!decl.value.includes("var(--tw-")) return;
+    decl.value = decl.value.replace(
+      /var\(\s*(--tw-[\w-]+)\s*(,|\))/g,
+      (whole, name, next) => {
+        if (!defaults.has(name)) return whole;
+        read.add(name);
+        if (next === "," || initialOf(name) !== undefined) return whole;
+        const fallback = defaults.get(name);
+        return `var(${name},${fallback ? ` ${fallback}` : ""})`;
+      },
+    );
+  });
+  const properties = [];
+  for (const name of defaults.keys()) {
+    if (!read.has(name)) continue;
+    const syntax = TAILWIND_4_REGISTRATION[name]?.syntax ?? "*";
+    const nodes = [
+      postcss.decl({ prop: "syntax", value: `"${syntax}"` }),
+      postcss.decl({ prop: "inherits", value: "false" }),
+    ];
+    const initial = initialOf(name);
+    if (initial !== undefined)
+      nodes.push(postcss.decl({ prop: "initial-value", value: initial }));
+    properties.push(postcss.atRule({ name: "property", params: name, nodes }));
+  }
+  root.prepend(...properties);
+}
+
 // Run after token imports and Tailwind expansion. Do not rewrite generated
 // selectors indiscriminately: roots, variants and keyframes have different semantics.
 module.exports = () => ({
@@ -72,6 +211,7 @@ module.exports = () => ({
       rule.remove();
     });
     const foundations = [];
+    const tailwindDefaults = new Map();
     // Density (decision 82): @kozmos-ds/tokens/css/density.css sets the
     // control sizes on `:root, [data-kozmos-density='touch']` and on
     // `[data-kozmos-density='compact']`. A provider marks its own root, so
@@ -115,28 +255,27 @@ module.exports = () => ({
             : '[data-kozmos-root][data-theme="dark"]';
         foundations.push(copy);
         rule.remove();
-      } else if (rule.selector.replace(/\s/g, "") === "*,::before,::after") {
-        // Tailwind's ring/transform/animation initial values are local too.
-        // Copy only the compiler's --tw-* defaults, never its universal reset.
-        const defaults = rule.nodes.filter(
-          (node) => node.type === "decl" && node.prop.startsWith("--tw-"),
-        );
-        if (defaults.length)
-          foundations.push(
-            postcss.rule({
-              selector:
-                ".kozmos-reset, .kozmos-reset::before, .kozmos-reset::after",
-              nodes: defaults.map((node) => node.clone()),
-            }),
-          );
+      } else if (isCompilerDefaults(rule)) {
+        // Registered at the end (registerCompilerDefaults), never declared on
+        // every element, inside a root or on an owned part.
+        for (const node of rule.nodes) {
+          if (node.type !== "decl") continue;
+          if (!(node.prop in TAILWIND_4_REGISTRATION))
+            throw node.error(
+              `${node.prop} is a Tailwind default the registration table does not know: add how Tailwind 4 registers it`,
+            );
+          tailwindDefaults.set(node.prop, node.value.trim());
+        }
+        rule.remove();
       }
     });
     root.walkRules((rule) => {
       if (rule.parent.type === "atrule" && /keyframes$/.test(rule.parent.name))
         return;
-      // Tailwind's compiler-variable initializer is not tagged as base-layer
-      // preflight. Its scoped specificity/proximity would otherwise overwrite
-      // owned --tw-* values (transforms, ring widths, etc.) with defaults.
+      // Tailwind's reset is matched here by its selector, which it shares
+      // with the compiler-variable initialiser removed above, and so keeps
+      // :scope's weight where the rest of the preflight weighs nothing:
+      // GAP-52, the border a caller's class cannot set (apps/site/GAPS.md).
       const compilerDefaults =
         rule.selector.replace(/\s/g, "") === "*,::before,::after";
       rule.selectors = rule.selectors.map((selector) => {
@@ -195,6 +334,7 @@ module.exports = () => ({
         root.append(rule);
       }
     }
+    registerCompilerDefaults(root, tailwindDefaults);
     root.walkDecls(/^(?:-webkit-)?animation(?:-name)?$/, (decl) => {
       const value = valueParser(decl.value);
       value.walk((node) => {
@@ -206,3 +346,5 @@ module.exports = () => ({
   },
 });
 module.exports.postcss = true;
+// Read by scripts/check-compiler-defaults.mjs.
+module.exports.TAILWIND_4_REGISTRATION = TAILWIND_4_REGISTRATION;
