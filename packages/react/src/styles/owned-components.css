@@ -340,8 +340,11 @@
   .kozmos-textarea-error {
     @apply border-destructive text-destructive-text focus-visible:ring-destructive;
   }
+  /* text-sm's size with leading-none's line height: `text-sm` would set a
+     line height of its own for leading-none to overwrite. */
   .kozmos-label {
-    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50;
+    font-size: theme(fontSize.sm);
+    @apply font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50;
   }
   .kozmos-field {
     @apply relative flex w-full flex-col gap-1.5;
@@ -707,7 +710,7 @@
      (GAP-100); the ring is drawn inside it, where the card's edge cannot
      cut it. */
   .kozmos-manoeuvre-itinerary:focus-visible {
-    @apply outline outline-2 outline-ring;
+    @apply outline outline-2;
     outline-color: var(
       --kozmos-guidance-foreground,
       var(--primitives-colors-theme-600)
@@ -1168,17 +1171,6 @@
     width: 100%;
     min-width: 0;
     gap: calc(var(--primitives-layout-spacing-100) * 1px);
-  }
-  .kozmos-search-row-field {
-    /* The field takes what is left, and may be narrower than the text inside
-       it: without `min-width: 0` a long placeholder pushes the row wider than
-       its container and the wrap comes back by another door. */
-    flex: 1 1 0%;
-    width: auto;
-    min-width: 0;
-  }
-  .kozmos-search-row-end {
-    flex: none;
   }
   .kozmos-ai-search-ring {
     background: conic-gradient(
