@@ -42,7 +42,7 @@ class KozmosMutedForegroundContrastTest {
 
     /** The contract's muted pairs: every pair whose name starts "muted foreground". */
     private fun mutedPairs(): List<ContractPair> {
-        var directory: File? = File(System.getProperty("user.dir")).absoluteFile
+        var directory: File? = File(checkNotNull(System.getProperty("user.dir"))).absoluteFile
         while (directory != null) {
             val candidate = File(directory, "packages/tokens/src/contrast-contract.json")
             if (candidate.isFile) {
