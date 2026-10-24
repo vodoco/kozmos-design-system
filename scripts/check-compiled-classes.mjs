@@ -222,9 +222,82 @@ if (worse) {
   );
 }
 
-if (current.occurrences > 0) console.log(
-  "  Check token-alpha.cjs and the authoring contract before adding per-component workarounds.",
+if (current.occurrences > 0)
+  console.log(
+    "  Check token-alpha.cjs and the authoring contract before adding per-component workarounds.",
+  );
+
+// The words the build is told never to generate: tailwind.config.js's
+// `blocklist` (`hidden`, `static`, `transform` and the rest, which are words
+// in the source and not classes) and `container`, whose plugin it turns off.
+// One of them written as a class compiles to nothing, so none may be: a
+// string in a class position — a `…className` attribute, an argument to cn,
+// cva or clsx, a `…className` or `…classes` name — holding one as a whole
+// class fails here. A variant (`md:hidden`) is another class, and compiles.
+const config = createRequire(import.meta.url)(
+  path.join(ROOT, "packages/react/tailwind.config.js"),
 );
+const blocked = new Set([
+  ...(config.blocklist ?? []),
+  ...(config.corePlugins?.container === false ? ["container"] : []),
+]);
+const CLASS_CALLS = new Set(["cn", "cva", "clsx", "cx", "twMerge"]);
+const CLASS_NAME = /class(?:Name)?(?:es)?$/i;
+function inClassPosition(node) {
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    if (ts.isJsxAttribute(parent))
+      return CLASS_NAME.test(parent.name.getText());
+    if (ts.isCallExpression(parent))
+      return CLASS_CALLS.has(parent.expression.getText().split(".").pop());
+    if (
+      ts.isPropertyAssignment(parent) &&
+      CLASS_NAME.test(parent.name.getText())
+    )
+      return true;
+    if (ts.isVariableDeclaration(parent))
+      return CLASS_NAME.test(parent.name.getText());
+    if (ts.isStatement(parent) || ts.isFunctionLike(parent)) return false;
+  }
+  return false;
+}
+const blockedUses = [];
+for (const file of sources) {
+  const relative = path.relative(ROOT, file);
+  if (FIXTURE.test(relative) || !/\.[jt]sx?$/.test(file)) continue;
+  const source = ts.createSourceFile(
+    file,
+    fs.readFileSync(file, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+  const visit = (node) => {
+    const pieces =
+      ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
+        ? [node.text]
+        : ts.isTemplateExpression(node)
+          ? [node.head.text, ...node.templateSpans.map((s) => s.literal.text)]
+          : [];
+    if (pieces.length && inClassPosition(node)) {
+      for (const word of pieces.join(" ").split(/\s+/)) {
+        if (!blocked.has(word)) continue;
+        const { line } = source.getLineAndCharacterOfPosition(node.getStart());
+        blockedUses.push(`${word} at ${relative}:${line + 1}`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
+if (blockedUses.length) {
+  fail(
+    `${blockedUses.length} class(es) the build is told never to generate: ${blockedUses.join(", ")}.\n          Take the word out of tailwind.config.js's blocklist (or corePlugins) if a component now draws with it.`,
+  );
+} else {
+  ok(
+    `none of the ${blocked.size} blocked words (${[...blocked].join(", ")}) is written as a class`,
+  );
+}
 
 console.log(
   `\n${problems.length === 0 ? "ok    no new class compiles to nothing" : `${problems.length} change(s) to the backlog`}`,
