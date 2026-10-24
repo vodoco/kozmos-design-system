@@ -95,6 +95,21 @@ function Controls({ board }: { board: string }) {
       <div data-measure-within="multi-select">
         <MultiSelect label="Tools" options={options} />
       </div>
+      {/* With a choice, its clear beside its open; and with a caller's px-4
+          and a width narrower than the board, which the buttons follow (a
+          percentage, so it leaves the board's own width as it was). */}
+      <div data-measure-within="multi-select-chosen">
+        <MultiSelect label="Kit" options={options} defaultValue={["one"]} />
+      </div>
+      <div data-measure-within="multi-select-chosen-px">
+        <MultiSelect
+          label="Gear"
+          options={options}
+          defaultValue={["one"]}
+          className="px-4"
+          style={{ maxWidth: "75%" }}
+        />
+      </div>
       <div data-measure-within="number-input">
         <NumberInput label="Capacity" defaultValue={2} showSteppers />
       </div>

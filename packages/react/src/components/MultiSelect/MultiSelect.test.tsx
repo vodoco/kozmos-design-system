@@ -3,6 +3,7 @@ import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { Combobox } from "../Combobox";
 import { MultiSelect } from "./MultiSelect";
 
 const options = [
@@ -226,6 +227,62 @@ describe("MultiSelect", () => {
       expect(
         screen.getByRole("button", { name: "Remove Layers" }),
       ).toBeInTheDocument();
+    });
+  });
+
+  // The owner's decision of 24 Oct: MultiSelect's clear and open are
+  // Combobox's, each as tall as the field (decision 82), 44 in touch and 40
+  // in compact, where they were 28 at both; and the field leaves Combobox's
+  // room for them at its end. scripts/check-density.mjs measures them in a
+  // browser, at both densities and right to left.
+  describe("its clear and open buttons, drawn as Combobox's", () => {
+    const room = (element: Element) =>
+      [...element.classList].filter((name) => name.startsWith("pe-"));
+
+    it.each([
+      ["with a choice to clear", true],
+      ["with nothing to clear", false],
+    ])("%s", (_, chosen) => {
+      const { unmount } = render(
+        <Combobox
+          clearable
+          defaultValue={chosen ? "filters" : undefined}
+          label="View"
+          options={options}
+        />,
+      );
+      const comboboxOpen = screen.getByRole("button", { name: "Open options" });
+      const combobox = {
+        room: room(screen.getByRole("combobox")),
+        open: comboboxOpen.className,
+        clear: screen.queryByRole("button", { name: "Clear selection" })
+          ?.className,
+        actions: comboboxOpen.parentElement?.className,
+      };
+      unmount();
+
+      const field = React.createRef<HTMLDivElement>();
+      render(
+        <MultiSelect
+          ref={field}
+          defaultValue={chosen ? ["filters"] : []}
+          label="Tools"
+          options={options}
+        />,
+      );
+      const open = screen.getByRole("button", { name: "Open options" });
+      const clear = screen.queryByRole("button", {
+        name: "Clear selected options",
+      });
+      // Soft, so a failure lists every difference from Combobox.
+      expect(combobox.room).toHaveLength(1);
+      expect.soft(room(field.current!)).toEqual(combobox.room);
+      expect.soft(open.className).toBe(combobox.open);
+      expect.soft(clear?.className).toBe(combobox.clear);
+      expect.soft(open.parentElement?.className).toBe(combobox.actions);
+      // They stay inside the field the caller's ref and className reach.
+      expect.soft(field.current).toContainElement(open);
+      if (chosen) expect.soft(field.current).toContainElement(clear);
     });
   });
 });
