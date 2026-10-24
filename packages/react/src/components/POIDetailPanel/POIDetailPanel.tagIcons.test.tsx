@@ -10,8 +10,10 @@ import type {
 import {
   ArrowDownRight,
   ArrowUpRight,
+  LayersThree01,
   LogIn01,
   LogOut01,
+  Walking,
   getIconComponent,
   kozmosIconAliases,
   kozmosIconNames,
@@ -19,6 +21,7 @@ import {
   type KozmosIconKey,
 } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
+import { Icon } from "../Icon";
 import { POIDetailPanel } from "./POIDetailPanel";
 
 // Paths from this file, not `new URL(literal, import.meta.url)`: Vite rewrites
@@ -67,10 +70,22 @@ const pointrOutlines: Record<string, KozmosIconComponent> = {
 };
 
 /**
+ * The map controls' layers glyph and walking figure, which both natives'
+ * `KozmosIcon` draw by name (GAP-181): the outline by its Pointr name, the
+ * solid figure by the kebab case of its export, each from the export of
+ * `@kozmos-ds/icons` the native copy is generated from.
+ */
+const mapControlGlyphs: Record<string, KozmosIconComponent> = {
+  "layers-three-01": LayersThree01,
+  walking: Walking,
+};
+
+/**
  * Every name SwiftUI's `KozmosIcon` draws artwork for, which its POI detail
  * tag asks before drawing one (`KozmosIcon.drawsArtwork(for:)`): the SF
- * Symbols it maps, Pointr's outlines and wayfinding artwork, and each alias
- * of a name it draws. Read from the sources as text, never compiled.
+ * Symbols it maps, Pointr's outlines, solid marks and wayfinding artwork,
+ * and each alias of a name it draws. Read from the sources as text, never
+ * compiled.
  */
 function namesSwiftUIDraws(): Set<string> {
   const icon = read("packages/ios/Sources/Components/Icon/Icon.swift");
@@ -94,6 +109,11 @@ function namesSwiftUIDraws(): Set<string> {
     ...captures(
       between(generated, "static func data", "default:"),
       /case "([^"]+)": return \[/g,
+    ),
+    // The solid marks `KozmosPointrGlyph.named` fits to the grid.
+    ...captures(
+      between(generated, "static func symbol", "default:"),
+      /case "([^"]+)": return \(/g,
     ),
   ]);
   const aliases = between(
@@ -201,9 +221,15 @@ function renderTags(names: readonly string[]) {
   };
 }
 
-/** The markup an icon draws at a tag's size and decoration. */
-function drawn(Icon: KozmosIconComponent): string {
-  const { container, unmount } = render(<Icon aria-hidden="true" size={16} />);
+/**
+ * The markup an icon draws at a tag's size and decoration: through `Icon`, at
+ * its small size and 16 across, as a tag draws it since its names come from
+ * the registry (GAP-179).
+ */
+function drawn(Component: KozmosIconComponent): string {
+  const { container, unmount } = render(
+    <Icon icon={Component} size="sm" width={16} height={16} />,
+  );
   const markup = container.querySelector("svg")!.outerHTML;
   unmount();
   return markup;
@@ -236,6 +262,14 @@ describe("POIDetailPanel tag icons", () => {
     const iconOf = renderTags(names);
     for (const name of names) {
       expect(iconOf(name)?.outerHTML, name).toBe(drawn(pointrOutlines[name]));
+    }
+  });
+
+  it("draws the layers glyph and the walking figure iOS and Android draw by name (GAP-181)", () => {
+    const names = Object.keys(mapControlGlyphs);
+    const iconOf = renderTags(names);
+    for (const name of names) {
+      expect(iconOf(name)?.outerHTML, name).toBe(drawn(mapControlGlyphs[name]));
     }
   });
 
@@ -275,6 +309,7 @@ describe("POIDetailPanel tag icons", () => {
         ...Object.keys(kozmosIconAliases),
         ...glyphs.map((glyph) => glyph.iconName),
         ...Object.keys(pointrOutlines),
+        ...Object.keys(mapControlGlyphs),
         ...swiftUI,
         ...compose,
         ...notIconNames,

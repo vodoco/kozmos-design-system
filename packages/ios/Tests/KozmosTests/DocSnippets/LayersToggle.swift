@@ -13,13 +13,13 @@ struct LayersToggle: View {
     var body: some View {
         KozmosMapControlButton(
             label: String(localized: "Layers"),
-            systemImage: "square.3.layers.3d",
             stateLabel: showsLayers ? String(localized: "On") : String(localized: "Off"),
             labelPlacement: .stacked,
             revealOnChange: true,
-            pressed: showsLayers
+            pressed: showsLayers,
+            action: { showsLayers.toggle() }
         ) {
-            showsLayers.toggle()
+            KozmosIcon("layers-three-01", size: .lg)
         }
     }
 }
