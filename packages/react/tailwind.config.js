@@ -274,6 +274,14 @@ module.exports = {
         // The map controls' own, three layers: the SDK's (decision 40).
         "map-control": "var(--semantics-elevation-map-control)",
       },
+      // Tailwind's own list, with the prefixed backdrop-filter beside the
+      // standard one. Given only the standard one, autoprefixer wrote the
+      // declaration three times (prefixed, standard, both), and only the
+      // last ever applied.
+      transitionProperty: {
+        DEFAULT:
+          "color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter",
+      },
       transitionDuration: {
         DEFAULT: "calc(150ms * var(--semantics-motion-duration-scale, 1))", // Updated to semantics
         75: "calc(75ms * var(--semantics-motion-duration-scale, 1))",

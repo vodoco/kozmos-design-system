@@ -131,6 +131,8 @@ export default defineConfig(async () => {
           require("./postcss/shadow-reach.cjs")(),
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           require("./postcss/scoped-css.cjs")(),
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require("./postcss/compact-css.cjs")(),
         ],
       },
     },

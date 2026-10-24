@@ -3717,10 +3717,13 @@ assertContains(
   "kozmos-reset kozmos-label",
   "React Label owned recipe",
 );
+// text-sm's size and leading-none's line height, written as the size alone
+// so no line height is set for another to overwrite.
+const labelRecipe = ownedCss.match(/\.kozmos-label\s*\{([^}]*)\}/)?.[1] ?? "";
 assertContains(
   ownedCssPath,
-  ownedCss.match(/\.kozmos-label\s*\{([^}]*)\}/)?.[1] ?? "",
-  "text-sm font-medium",
+  labelRecipe,
+  /font-size:\s*theme\(fontSize\.sm\);[\s\S]*@apply font-medium leading-none\b/,
   "React Label typography",
 );
 assertContains(
