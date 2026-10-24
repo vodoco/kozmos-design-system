@@ -103,9 +103,13 @@ public struct KozmosListbox: View {
                         }
                         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                         .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // 44pt tall at least, as React's rows are (decision 115),
+                        // and all of the row takes a tap: on its clear fill an
+                        // unselected row took one only on its words.
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         .background(rowBackground(for: option))
                         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+                        .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
                     }
                     .buttonStyle(.plain)
                     .disabled(disabled || option.disabled)

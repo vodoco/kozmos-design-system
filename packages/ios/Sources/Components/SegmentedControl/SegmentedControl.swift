@@ -46,6 +46,9 @@ public struct KozmosSegmentedControl: View {
                         )
                         .background(index == selection ? selectedBackground : Color.clear)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        // The whole segment takes a tap: on its clear fill an
+                        // unselected segment took one only on its word.
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(disabled)
