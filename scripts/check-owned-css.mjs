@@ -1746,14 +1746,53 @@ try {
           "--components-primary-buttons-themed-button-background-idle",
         ),
       );
+      // Read once the hover's transition has ended, not after a fixed 250 ms:
+      // a transition that starts while WebKit renders nothing holds at the
+      // idle colour, or a frame's step from it, until it renders again.
       await button.hover();
-      await page.waitForTimeout(250);
-      assert.equal(
-        (await measure(button)).backgroundColor,
-        await value(
+      const hovered = await page
+        .waitForFunction(
+          (testId) => {
+            const node = document.querySelector(`[data-testid="${testId}"]`);
+            return (
+              node.matches(":hover") &&
+              !node
+                .getAnimations()
+                .some((animation) => animation.playState === "running")
+            );
+          },
           `${id}-button`,
-          "--components-primary-buttons-themed-button-background-hover",
-        ),
+          { timeout: 10_000 },
+        )
+        .then(
+          () => true,
+          () => false,
+        );
+      if (!hovered) {
+        const seen = await button.evaluate((node) => ({
+          hover: node.matches(":hover"),
+          running: node
+            .getAnimations()
+            .filter((animation) => animation.playState === "running")
+            .map(
+              (animation) =>
+                animation.transitionProperty ?? animation.animationName,
+            ),
+          backgroundColor: getComputedStyle(node).backgroundColor,
+        }));
+        assert.fail(
+          `${mode}, ${id}: 10 s after the hover, the button ${seen.hover ? `was still running ${seen.running.join(", ")}` : "was not hovered"}, at ${seen.backgroundColor}`,
+        );
+      }
+      const hoverDrawn = (await measure(button)).backgroundColor;
+      const hoverColor = await value(
+        `${id}-button`,
+        "--components-primary-buttons-themed-button-background-hover",
+      );
+      assert.equal(
+        hoverDrawn,
+        hoverColor,
+        `${mode}, ${id}: hovered, the button draws ${hoverDrawn}, not its hover background ${hoverColor}`,
       );
       assert.equal(
         (await measure(page.getByTestId(`${id}-outline`))).color,

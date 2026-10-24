@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import { styleChanged } from "./lib/motion-waits.mjs";
 import {
   sanitize,
   storyNameFromExport,
@@ -321,14 +322,13 @@ try {
     await flow.evaluate((el) => getComputedStyle(el).animationName),
     "kozmos-track-flow",
   );
-  const phase = await flow.evaluate(
-    (el) => getComputedStyle(el).backgroundPositionX,
-  );
-  await page.waitForTimeout(250);
-  assert.notEqual(
-    await flow.evaluate((el) => getComputedStyle(el).backgroundPositionX),
-    phase,
-    "Direction hint actually animates",
+  // Read until the cue has moved, not after a fixed 250 ms: it starts here,
+  // and while WebKit renders nothing an animation that has just started holds
+  // its first frame, and a background-position one holds even once running.
+  const flowed = await styleChanged(flow, "backgroundPositionX");
+  assert.ok(
+    flowed.changed,
+    `Direction hint does not animate: background-position-x held ${flowed.from} for ${flowed.after} ms and ${flowed.frames} frames`,
   );
   await page
     .getByRole("button", { name: "Directional motion", exact: true })
