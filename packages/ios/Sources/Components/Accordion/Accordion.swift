@@ -44,6 +44,9 @@ public struct KozmosAccordionTrigger: View {
                     .foregroundColor(KozmosColors.primitivesColorsForeground500)
             }
             .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing200)
+            // The whole row takes a tap, as React's trigger does: with no
+            // fill, the trigger took one only on its title and its chevron.
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         Divider().overlay(KozmosColors.semanticsBorderSubtle)
