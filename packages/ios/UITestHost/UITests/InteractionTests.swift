@@ -844,4 +844,200 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Image 1 of 3"].exists)
         XCTAssertFalse(app.buttons["Previous image"].isEnabled)
     }
+
+    // A plain button takes a tap only where its label draws something: a
+    // frame or padding over a clear background adds nothing to its target,
+    // or to the frame VoiceOver outlines, without a content shape. Each test
+    // below checks the target's size, and taps inside the control where it
+    // draws nothing, at the default text size well clear of its words and
+    // marks: SwiftUI's own touch tolerance reaches a few points round them,
+    // and a tap 7pt from an outlined part's edge and glyph still lands. At
+    // accessibility3 the words and marks grow and a tap can land on them, so
+    // there the size check is what proves the target. Each failed on the
+    // unfixed parts, which measured as the comments say.
+
+    /// The clear and the chevron are 44pt targets, as Combobox's are.
+    /// Unfixed: the chevron 13.3 by 8pt, the clear 12.3pt square.
+    func testAMultiSelectsClearAndChevronAre44PointTargets() {
+        for scenario in ["multiselect", "multiselect-large-rtl"] {
+            launch(scenario)
+            let open = app.buttons["Open options"]
+            assertTouchTarget(open)
+            tap(open, dx: 18 * outward(open), dy: -18)
+            XCTAssertTrue(app.buttons["Close options"].waitForExistence(timeout: 3), "\(scenario): the chevron missed")
+            let clear = app.buttons["Clear selected options"]
+            assertTouchTarget(clear)
+            tap(clear, dx: 18 * outward(clear), dy: -18)
+            received("values none")
+            app.terminate()
+        }
+    }
+
+    /// A page link is 44pt square, as React's touch link is, and Previous
+    /// and Next are as tall as the links. Unfixed: the link "1" 7 by 18pt,
+    /// its tap reached Previous; Previous and Next 36pt tall.
+    func testPaginationLinksAre44PointTargets() {
+        launch("pagination")
+        for page in ["1", "3"] {
+            let link = app.buttons[page]
+            assertTouchTarget(link)
+            tap(link, dx: -18, dy: 0)
+        }
+        received("page 1|page 3")
+        for name in ["Previous", "Next"] {
+            let end = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+            XCTAssertTrue(end.exists, name)
+            assertTouchTarget(end)
+        }
+        app.terminate()
+        launch("pagination-large-rtl")
+        for page in ["1", "3"] {
+            let link = app.buttons[page]
+            assertTouchTarget(link)
+            XCTAssertGreaterThanOrEqual(link.frame.minX, 0)
+            XCTAssertLessThanOrEqual(link.frame.maxX, app.frame.maxX)
+            tap(link, dx: -18, dy: 0)
+        }
+        received("page 1|page 3")
+    }
+
+    /// An unselected segment takes a tap anywhere across it, not just on its
+    /// word. Unfixed: "Ramp" 38 by 17pt in its 117 by 44pt segment.
+    func testAnUnselectedSegmentTakesATapAcrossItsWidth() {
+        for scenario in ["segmented", "segmented-large-rtl"] {
+            launch(scenario)
+            let ramp = app.buttons["Ramp"]
+            assertTouchTarget(ramp)
+            tap(ramp, dx: 40 * outward(ramp), dy: 0)
+            received("segment 2")
+            XCTAssertTrue(ramp.isSelected, scenario)
+            app.terminate()
+        }
+    }
+
+    /// A row is 44pt tall at least, as React's list rows are (decision 115),
+    /// and takes a tap across its width, 20pt in from its trailing end.
+    /// Unfixed: "Lobby" 43.3 by 18pt in a 312 by 34pt row.
+    func testAListboxRowTakesATapAcrossItsWidth() {
+        for scenario in ["listbox", "listbox-large-rtl"] {
+            launch(scenario)
+            let list = app.scrollViews.firstMatch
+            let trailingEnd = scenario == "listbox-large-rtl" ? list.frame.minX + 20 : list.frame.maxX - 20
+            for name in ["Lobby", "Gate 12, Level 1"] {
+                let row = app.buttons[name]
+                assertTouchTarget(row)
+                tap(atX: trailingEnd, y: row.frame.midY)
+            }
+            received("choose lobby|choose gate")
+            app.terminate()
+        }
+    }
+
+    /// An idle item takes a tap across its shape: a side item 16pt in from
+    /// its trailing end (the fixture is 320pt wide, centred), a rail item
+    /// 36pt from its middle. Unfixed: the side item 85.7 by 18pt of 320 by
+    /// 44pt, the rail item 28.7 by 39.7pt of 96 by 75.3pt.
+    func testAnIdleNavigationItemTakesATapAcrossItsShape() {
+        for scenario in ["navigation-items", "navigation-items-large-rtl"] {
+            launch(scenario)
+            let rtl = scenario == "navigation-items-large-rtl"
+            let side = app.buttons["Settings"]
+            assertTouchTarget(side)
+            tap(atX: rtl ? app.frame.midX - 144 : app.frame.midX + 144, y: side.frame.midY)
+            assertTouchTarget(app.buttons["Home"])
+            let rail = app.buttons["Maps"]
+            assertTouchTarget(rail)
+            tap(rail, dx: rtl ? -36 : 36, dy: 0)
+            received("side|rail")
+            app.terminate()
+        }
+    }
+
+    /// An unselected tile takes a tap across its 64pt square, 24pt above and
+    /// before its middle. Unfixed: 38.3 by 37.7pt; at accessibility3 its
+    /// words alone are taller than 44pt.
+    func testAnUnselectedBottomNavigationTileTakesATapAcrossItsShape() {
+        for scenario in ["bottom-navigation", "bottom-navigation-large-rtl"] {
+            launch(scenario)
+            let search = app.buttons["Search"]
+            assertTouchTarget(search)
+            tap(search, dx: -24, dy: -24)
+            received("tab 1")
+            XCTAssertTrue(search.isSelected, scenario)
+            app.terminate()
+        }
+    }
+
+    /// A radio, a checkbox and a switch are 44pt targets, with a label or
+    /// without one. Without one, a radio's and a checkbox's target reaches
+    /// past the 20pt mark: a tap 36pt in from the leading edge chooses it.
+    /// Unfixed: 21pt tall with a label, 21pt square without; a switch 26pt.
+    func testSelectionControlsAre44PointTargets() {
+        for scenario in ["selection-controls", "selection-controls-large-rtl"] {
+            launch(scenario)
+            let rtl = scenario == "selection-controls-large-rtl"
+            for name in ["Ramp", "Stairs", "Step-free", "Bare checkbox", "Announce turns", "Bare switch"] {
+                assertTouchTarget(app.buttons[name])
+            }
+            for name in ["Stairs", "Bare checkbox"] {
+                app.buttons[name].coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
+                    .withOffset(CGVector(dx: rtl ? -36 : 36, dy: 0)).tap()
+            }
+            received("radio stairs|bare checkbox true")
+            app.terminate()
+        }
+    }
+
+    /// The trigger takes a tap across its row, between its title and its
+    /// chevron. Unfixed: 318 by 18pt, the title and the chevron, in a 50pt row.
+    func testAnAccordionTriggerTakesATapAcrossItsRow() {
+        for scenario in ["accordion", "accordion-large-rtl"] {
+            launch(scenario)
+            let trigger = app.buttons["Hours"]
+            assertTouchTarget(trigger)
+            tap(atX: app.frame.midX, y: trigger.frame.midY)
+            received("open hours")
+            XCTAssertTrue(app.staticTexts["Open 06:00 to 22:00"].waitForExistence(timeout: 3), scenario)
+            app.terminate()
+        }
+    }
+
+    /// A thumb is a 44pt target round its 40pt circle, as React's is.
+    /// Unfixed: the 40pt circle.
+    func testARatingsThumbsAre44PointTargets() {
+        launch("rating-thumbs")
+        for name in ["Poor", "Good"] { assertTouchTarget(app.buttons[name]) }
+        app.buttons["Good"].tap()
+        received("rating 2")
+    }
+
+    /// The colour format box opens its menu from anywhere in it, as React's
+    /// select does: 30pt before its middle, 6pt in from its end. Unfixed:
+    /// 56 by 18pt, the word, in a 72 by 36pt box.
+    func testTheColourFormatBoxTakesATapAcrossItsWidth() {
+        launch("color-format")
+        let format = app.buttons["HEX"]
+        XCTAssertTrue(format.waitForExistence(timeout: 3))
+        // React's box is h-9, 36px, a compact control in the panel: within a pixel.
+        XCTAssertGreaterThanOrEqual(format.frame.height + 0.5, 36, "\(format.frame)")
+        XCTAssertGreaterThanOrEqual(format.frame.width + 0.5, 72, "\(format.frame)")
+        tap(format, dx: -30, dy: 0)
+        XCTAssertTrue(app.buttons["RGB"].waitForExistence(timeout: 3), "the format menu did not open")
+    }
+
+    /// A tap `dx`, `dy` from `element`'s centre.
+    private func tap(_ element: XCUIElement, dx: CGFloat, dy: CGFloat) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: dx, dy: dy)).tap()
+    }
+
+    /// A tap at a point in the window.
+    private func tap(atX x: CGFloat, y: CGFloat) {
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)).tap()
+    }
+
+    /// 1 where `element` is right of the window's middle, -1 where it is left
+    /// of it: the way out of a row of parts, whichever way the row reads.
+    private func outward(_ element: XCUIElement) -> CGFloat {
+        element.frame.midX > app.frame.midX ? 1 : -1
+    }
 }

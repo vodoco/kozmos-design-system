@@ -10299,8 +10299,15 @@ assertContains(
 assertContains(
   files.iosCheckbox,
   source.iosCheckbox,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Checkbox 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content shape.
+assertContains(
+  files.iosCheckbox,
+  source.iosCheckbox,
+  ".contentShape(Rectangle())",
+  "iOS Checkbox row target takes a tap across it",
 );
 assertContains(
   files.iosCheckbox,
@@ -10323,8 +10330,15 @@ assertContains(
 assertContains(
   files.iosRadio,
   source.iosRadio,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Radio 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content shape.
+assertContains(
+  files.iosRadio,
+  source.iosRadio,
+  ".contentShape(Rectangle())",
+  "iOS Radio row target takes a tap across it",
 );
 assertContains(
   files.iosRadio,
@@ -10353,8 +10367,15 @@ assertContains(
 assertContains(
   files.iosSwitch,
   source.iosSwitch,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Switch 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content shape.
+assertContains(
+  files.iosSwitch,
+  source.iosSwitch,
+  ".contentShape(Rectangle())",
+  "iOS Switch row target takes a tap across it",
 );
 assertContains(
   files.iosSwitch,

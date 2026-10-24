@@ -231,13 +231,17 @@ public struct KozmosColorPicker: View {
                 Button("RGB") { currentFormat = .rgb }
                 Button("HSL") { currentFormat = .hsl }
             } label: {
+                // The whole box opens the menu, as React's select does. The
+                // frame and padding were the menu's, outside its label, so it
+                // took a tap only on the format's word.
                 Text(currentFormat.label)
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: 36)
+                    .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
+                    .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             }
             .buttonStyle(.plain)
-            .frame(minHeight: 36)
-            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
             .background(KozmosColors.primitivesColorsBackground0)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
             .overlay(

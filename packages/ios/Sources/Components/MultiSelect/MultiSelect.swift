@@ -85,13 +85,21 @@ public struct KozmosMultiSelect: View {
                             if !disabled && !readOnly { isOpen = true }
                         }
 
+                    // The clear and the chevron are 44pt targets, all of them
+                    // hittable, as Combobox's are: a plain button's frame adds
+                    // nothing without a content shape, and each took a tap only
+                    // on its glyph, 13.3 by 8pt for the chevron. Each reaches
+                    // 4pt into the field's 6pt padding above and below, so the
+                    // row keeps its 36pt and the field its 48pt.
                     if clearable && !selectedValues.isEmpty && !disabled && !readOnly {
                         Button(action: clearSelection) {
                             Image(systemName: "xmark")
                                 .font(.subheadline.weight(.semibold))
-                                .frame(width: 36, height: 36)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .padding(.vertical, -4)
                         .foregroundColor(KozmosColors.primitivesColorsForeground500)
                         .accessibilityLabel("Clear selected options")
                     }
@@ -100,9 +108,11 @@ public struct KozmosMultiSelect: View {
                         Image(systemName: "chevron.down")
                             .font(.subheadline.weight(.semibold))
                             .rotationEffect(.degrees(isOpen ? 180 : 0))
-                            .frame(width: 36, height: 36)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .padding(.vertical, -4)
                     .disabled(disabled || readOnly)
                     .foregroundColor(KozmosColors.primitivesColorsForeground500)
                     .accessibilityLabel(isOpen ? "Close options" : "Open options")
