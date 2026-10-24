@@ -4,9 +4,9 @@
 import SwiftUI
 import Kozmos
 
-// KozmosAlertIcon draws its variant's symbol. The alert's own variant
-// colours only its edge, so a warning passes .warning to both. It
-// announces nothing: it is part of the page, as React's is by default.
+// The icon, title and description take the alert's variant: its symbol and
+// its colour. It announces nothing: it is part of the page, as React's is
+// by default.
 struct ClosingTimeAlert: View {
     var body: some View {
         KozmosAlert {

@@ -11,8 +11,12 @@ public enum KozmosEmptyStateSize: Sendable, Hashable, CaseIterable {
     case `default`
     case compact
 
-    var padding: CGFloat { self == .compact ? 16 : 24 }
+    /// React's `p-8` and `p-4`, and Figma's 32 and 16: it was 24 and 16.
+    var padding: CGFloat { self == .compact ? 16 : 32 }
     var stackSpacing: CGFloat { self == .compact ? 8 : 16 }
+    /// The muted circle the icon sits on: React's `w-16 h-16`, `h-10 w-10`
+    /// compact.
+    var iconCircle: CGFloat { self == .compact ? 40 : 64 }
 }
 
 /// A long wait the empty state is explaining, such as a download, and how
@@ -71,20 +75,30 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
     public var body: some View {
         VStack(spacing: size.stackSpacing) {
             if let icon = icon {
+                // In the muted foreground on a muted circle, as React's
+                // `text-muted-foreground` on `bg-muted` and Figma's are: it was
+                // foreground/300, with no circle. A KozmosIcon takes the
+                // colour too, as React's icon is currentColor.
                 icon
-                    .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
+                    .frame(width: size.iconCircle, height: size.iconCircle)
+                    .background(Circle().fill(KozmosColors.primitivesColorsBackground100))
             }
             
             VStack(spacing: 4) {
+                // The foreground, React's `text-foreground` and Figma's
+                // Colors/foreground/0: it was foreground/100.
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground0)
                     .multilineTextAlignment(.center)
                 
                 if let description = description {
+                    // The muted foreground, React's `text-muted-foreground`.
                     Text(description)
                         .font(.system(size: 14))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -92,12 +106,15 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
             if let progress {
                 VStack(spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        // What is in progress in the foreground, and how far in
+                        // the muted foreground, as React's `text-foreground` and
+                        // `text-muted-foreground`: they were foreground/100 and 300.
                         Text(progress.label)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground0)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if let valueText = progress.valueText {
                             Text(valueText)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         }
                     }
                     .font(KozmosTypography.subheadline)

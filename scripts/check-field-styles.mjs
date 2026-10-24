@@ -190,8 +190,23 @@ const PROMISES = [
   // The text clears the magnifier, and the date fields' icon, at the start.
   { part: "search", field: 0, paddingStart: 36, paddingEnd: 12 },
   { part: "date-picker", field: 0, paddingStart: 36 },
+  // DatePicker's button, where it replaces the browser's (decision 105), has
+  // the room PasswordInput's toggle has; where the browser's own cannot be
+  // hidden (Firefox 146) the field is the browser's, with the field's own 12.
+  { part: "date-picker", field: 0, picker: "kozmos", paddingEnd: [48, 44] },
+  { part: "date-picker", field: 0, picker: null, paddingEnd: 12 },
+  {
+    part: "date-range-picker",
+    field: ALL,
+    picker: "kozmos",
+    paddingEnd: [48, 44],
+  },
+  { part: "date-range-picker", field: ALL, picker: null, paddingEnd: 12 },
   { part: "date-range-picker", field: ALL, paddingStart: 36 },
   { part: "time-picker", field: 0, paddingStart: 36 },
+  // TimePicker's list button, in every engine: none draws a time picker
+  // button a page cannot hide (Chromium's is hidden).
+  { part: "time-picker", field: 0, paddingEnd: [48, 44] },
   // The room for the buttons at the end, each as tall as the field.
   // Disabled, the clear goes, and its room with it.
   { part: "combobox", field: 0, enabled: true, paddingEnd: [96, 88] },
@@ -326,6 +341,8 @@ async function measure(browser, stylesheet) {
         const read = {
           what: `${field.tagName.toLowerCase()}${field.tagName === "INPUT" ? `[type=${field.type}]` : ""}${field.getAttribute("aria-label") ? ` "${field.getAttribute("aria-label")}"` : ""}`,
           disabled: field.disabled,
+          // DatePicker's mark where its button replaces the browser's.
+          picker: field.getAttribute("data-picker"),
           width: `${box.width}px`,
           height: `${box.height}px`,
           placeholder: field.placeholder
@@ -494,6 +511,20 @@ try {
         if (engine === "webkit") continue;
       }
       if (ownPadding && PADDINGS.includes(name)) expected = ownPadding[name];
+      // DatePicker keeps the browser's field where the browser's own picker
+      // button cannot be hidden (Firefox 146): no button, so no room for one
+      // at the end. Its end is then Input's, the same field recipe under the
+      // same caller's class (TimePicker has a button of its own now).
+      const endSide = board.includes(" rtl") ? "paddingLeft" : "paddingRight";
+      if (
+        name === endSide &&
+        want.picker === "kozmos" &&
+        have.picker !== "kozmos"
+      )
+        // DateRangePicker's fields take no caller's class: the field's own 12.
+        expected = key.includes("| date-range-picker #")
+          ? "12px"
+          : ref.rest[key.replace("| date-picker #", "| input #")][name];
       reads += 1;
       let same;
       if (LENGTHS.includes(name))
@@ -588,9 +619,10 @@ try {
         promise.field === ALL ? null : [promise.field].flat().map(String);
       if (fields && !fields.includes(index)) continue;
       if (promise.enabled && have.disabled) continue;
+      if ("picker" in promise && promise.picker !== have.picker) continue;
       const rtl = board.includes(" rtl");
       for (const [name, value] of Object.entries(promise)) {
-        if (["part", "field", "enabled"].includes(name)) continue;
+        if (["part", "field", "enabled", "picker"].includes(name)) continue;
         // A disabled field fades or fills as its part says; the rest holds.
         if (have.disabled && /Color$|opacity/.test(name)) continue;
         const want = Array.isArray(value) ? value[column] : value;

@@ -78,8 +78,9 @@ public struct KozmosDateRangePicker: View {
     private var rangePreview: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Text(Self.displayFormatter.string(from: startDate))
+            // Muted; disabled, the dates' disabled colour, never darker than them.
             Text("to")
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
             Text(Self.displayFormatter.string(from: endDate))
         }
         .font(.caption.weight(.semibold))
@@ -118,7 +119,7 @@ public struct KozmosDateRangePicker: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 
