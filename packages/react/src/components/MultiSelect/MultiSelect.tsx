@@ -14,6 +14,11 @@ import {
   FieldPopupRoot,
 } from "../Combobox/field-popup";
 import {
+  FIELD_ACTION,
+  FIELD_ACTIONS_ROW,
+  fieldActionsRoom,
+} from "../Combobox/field-actions";
+import {
   MapShellPresentationContext,
   scrollbarFor,
 } from "../AdaptiveMapShell/map-shell-presentation";
@@ -318,14 +323,12 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               <div
                 ref={setRefs}
                 className={cn(
-                  "relative flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-                  // Combobox's room for its buttons, each as tall as the field
-                  // (decision 82; owner, 24 Oct): 96 or 48 in touch, 88 or 44
-                  // in compact. After px-2, so a caller's px-* sets the start
-                  // and this end stays; a caller's pe-* still wins.
-                  canClear
-                    ? "pe-[calc(var(--density-field-height-md,2.75rem)_*_2_+_0.5rem)]"
-                    : "pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+                  // kozmos-multiselect-field: the field rings for its input
+                  // alone, as Combobox's input does (owned-selection.css).
+                  "kozmos-multiselect-field relative flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                  // Combobox's room for its buttons (field-actions.ts): 96 or
+                  // 48 in touch, 88 or 44 in compact, after px-2.
+                  fieldActionsRoom(canClear),
                   resolvedStatus === "error" &&
                     "border-destructive focus-within:ring-destructive",
                   resolvedStatus === "warning" &&
@@ -412,20 +415,16 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     }}
                   />
                 </ChipGroup>
-                {/* Combobox's clear and open, each as tall as the field: 44 in
-                    touch, 40 in compact. Out of the line, so the field keeps
-                    its height. They sit in the field, so a caller's ref and
-                    width still hold them; the style moves their end across
-                    the field's 1px border to its outer edge, where
-                    Combobox's end. */}
-                <div
-                  className="pointer-events-none absolute inset-y-0 end-0 flex items-center"
-                  style={{ insetInlineEnd: "-1px" }}
-                >
+                {/* Combobox's clear and open (field-actions.ts), each as tall
+                    as the field: 44 in touch, 40 in compact. Out of the line,
+                    so the field keeps its height, and in the field, inside
+                    its border, so a caller's ref, width and border hold
+                    them and a hover fill never crosses the border. */}
+                <div className={FIELD_ACTIONS_ROW}>
                   {canClear && (
                     <button
                       type="button"
-                      className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className={FIELD_ACTION}
                       aria-label="Clear selected options"
                       onClick={(event) => {
                         event.stopPropagation();
@@ -437,7 +436,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   )}
                   <button
                     type="button"
-                    className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={FIELD_ACTION}
                     aria-label={open ? "Close options" : "Open options"}
                     disabled={disabled || readOnly}
                     onClick={(event) => {

@@ -95,9 +95,10 @@ function Controls({ board }: { board: string }) {
       <div data-measure-within="multi-select">
         <MultiSelect label="Tools" options={options} />
       </div>
-      {/* With a choice, its clear beside its open; and with a caller's px-4
-          and a width narrower than the board, which the buttons follow (a
-          percentage, so it leaves the board's own width as it was). */}
+      {/* With a choice, its clear beside its open; and with a caller's px-4,
+          a 2px border and a width narrower than the board, which the buttons
+          follow (a percentage, so it leaves the board's own width as it
+          was). */}
       <div data-measure-within="multi-select-chosen">
         <MultiSelect label="Kit" options={options} defaultValue={["one"]} />
       </div>
@@ -106,7 +107,7 @@ function Controls({ board }: { board: string }) {
           label="Gear"
           options={options}
           defaultValue={["one"]}
-          className="px-4"
+          className="border-2 px-4"
           style={{ maxWidth: "75%" }}
         />
       </div>
