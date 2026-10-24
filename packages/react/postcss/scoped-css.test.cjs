@@ -233,6 +233,15 @@ test("a fallback equal to the registered initial value goes; any other stays", a
   });
 });
 
+test("a compiler variable read only in another's fallback is registered", async () => {
+  const root = await compile(
+    "*, ::before, ::after {--tw-shadow:0 0 #0000; --tw-ring-color:rgb(59 130 246 / .5)} .ring-red {--tw-ring-color:red} .shadow {--tw-shadow:0 1px red; box-shadow:var(--tw-shadow, var(--tw-ring-color))}",
+  );
+  const registered = [];
+  root.walkAtRules("property", (rule) => registered.push(rule.params));
+  assert.deepEqual(registered.sort(), ["--tw-ring-color", "--tw-shadow"]);
+});
+
 test("registrations are written as a minifier writes them", async () => {
   const css = (
     await postcss([plugin()]).process(TAILWIND_DEFAULTS + USES, {

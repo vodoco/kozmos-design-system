@@ -281,7 +281,8 @@ function registerCompilerDefaults(root, defaults) {
         node.after = "";
         changed = true;
       }
-      return false;
+      // On into the fallback, which can read another compiler variable:
+      // `var(--tw-shadow, var(--tw-ring-color))`.
     });
     if (changed) decl.value = parsed.toString().trim();
   });
