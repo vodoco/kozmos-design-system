@@ -75,6 +75,9 @@ private struct KozmosBottomNavigationTile: View {
             // Selected, theme 600, the theme's text role (decision 59).
             .foregroundColor(selected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+            // The whole tile takes a tap: on its clear fill an unselected
+            // tile took one only on its icon and label.
+            .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
