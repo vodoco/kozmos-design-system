@@ -263,8 +263,8 @@ public struct KozmosNavigationItem: View {
 
             if shouldRenderTrailing, let trailing = trailing {
                 trailing
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
             }
         }
     }

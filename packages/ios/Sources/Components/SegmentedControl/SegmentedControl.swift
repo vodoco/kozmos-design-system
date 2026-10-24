@@ -113,7 +113,7 @@ public struct KozmosSegmentedControl: View {
     }
 
     private var idleForeground: Color {
-        KozmosColors.primitivesColorsForeground500
+        KozmosColors.primitivesColorsForeground400
     }
 
     private struct Metrics {

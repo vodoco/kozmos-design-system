@@ -134,7 +134,7 @@ private fun KozmosToastSurface(
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = KozmosThemeTokens.primitivesColorsForeground400
                     )
                 }
             }

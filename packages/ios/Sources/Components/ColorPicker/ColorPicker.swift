@@ -88,7 +88,7 @@ public struct KozmosColorPicker: View {
                     Image(systemName: "chevron.down")
                         .font(.subheadline.weight(.semibold))
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
@@ -211,7 +211,7 @@ public struct KozmosColorPicker: View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
             Text(label)
                 .font(KozmosTypography.caption)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
             KozmosSlider(value: value, range: range)
                 .disabled(disabled || readOnly)
         }
@@ -397,7 +397,7 @@ public struct KozmosColorPicker: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

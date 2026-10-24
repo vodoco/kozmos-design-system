@@ -131,7 +131,7 @@ fun KozmosPopover(
                 Box(modifier = Modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing100)) {
                     Text(
                         text = description,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = KozmosThemeTokens.primitivesColorsForeground400
                     )
                 }
             }

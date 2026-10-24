@@ -122,7 +122,7 @@ public struct KozmosTimelineTime: View {
     public var body: some View {
         Text(time)
             .font(KozmosTypography.caption)
-            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            .foregroundColor(KozmosColors.primitivesColorsForeground400)
     }
 }
 
@@ -150,7 +150,7 @@ public struct KozmosTimelineDescription: View {
     public var body: some View {
         Text(description)
             .font(KozmosTypography.body)
-            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            .foregroundColor(KozmosColors.primitivesColorsForeground400)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

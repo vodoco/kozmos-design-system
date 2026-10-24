@@ -107,7 +107,7 @@ public struct KozmosMultiSelect: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.vertical, -4)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .accessibilityLabel("Clear selected options")
                     }
 
@@ -122,7 +122,7 @@ public struct KozmosMultiSelect: View {
                     .padding(.vertical, -4)
                     .padding(.trailing, -KozmosDimensions.primitivesLayoutSpacing100)
                     .disabled(disabled || readOnly)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .accessibilityLabel(isOpen ? "Close options" : "Open options")
                 }
             }
@@ -140,7 +140,7 @@ public struct KozmosMultiSelect: View {
                 if filteredOptions.isEmpty {
                     Text(emptyText)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .padding(KozmosDimensions.primitivesLayoutSpacing150)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(KozmosColors.primitivesColorsBackground0)
@@ -255,7 +255,7 @@ public struct KozmosMultiSelect: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

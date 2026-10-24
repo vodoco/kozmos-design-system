@@ -73,7 +73,7 @@ fun KozmosListbox(
     ) {
         if (options.isEmpty() && emptyText != null) {
             Text(emptyText, style = MaterialTheme.typography.bodyMedium,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing150))
         }
         options.forEach { option ->
@@ -121,10 +121,16 @@ fun KozmosListbox(
                         maxLines = 1
                     )
                     if (!option.description.isNullOrBlank()) {
+                        // Muted; on a disabled option, the disabled label's
+                        // colour, never darker than it.
                         Text(
                             text = option.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = KozmosThemeTokens.primitivesColorsForeground500,
+                            color = if (option.disabled) {
+                                KozmosThemeTokens.primitivesColorsForeground500
+                            } else {
+                                KozmosThemeTokens.primitivesColorsForeground400
+                            },
                             maxLines = 1
                         )
                     }
