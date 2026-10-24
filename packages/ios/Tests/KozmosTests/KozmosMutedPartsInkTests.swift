@@ -45,8 +45,8 @@ final class KozmosMutedPartsInkTests: XCTestCase {
              AnyView(KozmosSegmentedControl(selection: .constant(0), items: ["Walk", "Lift"], fullWidth: true)
                 .environment(\.layoutDirection, .leftToRight)),
              240, CGRect(x: 124, y: 0, width: 112, height: 60)),
-            // The pencil, 36 square at the end of the first row, inside the
-            // card's 24 of padding; the title is at the start.
+            // The pencil, its 44pt target at the end of the first row, inside
+            // the card's 24 of padding; the title is at the start.
             ("SaveLocationCard's edit pencil",
              AnyView(KozmosSaveLocationCard(title: "Gate 12", description: "Terminal 2", isSaved: true, onEditNote: {})
                 .environment(\.layoutDirection, .leftToRight)),
