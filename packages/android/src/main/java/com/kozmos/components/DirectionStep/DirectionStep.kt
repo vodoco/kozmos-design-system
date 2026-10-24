@@ -125,7 +125,7 @@ fun KozmosDirectionStep(
                 Text(
                     text = metrics,
                     style = MaterialTheme.typography.bodySmall,
-                    color = KozmosThemeTokens.primitivesColorsForeground500
+                    color = KozmosThemeTokens.primitivesColorsForeground400
                 )
             }
         }
