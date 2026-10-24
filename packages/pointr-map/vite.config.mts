@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import path from "node:path";
-import dts from "vite-plugin-dts";
+import dts from "unplugin-dts/vite";
 
 // Nothing of the Pointr Web SDK is bundled: the browser loads it from Pointr's
 // CDN at run time (src/sdk-loader.ts). React, Kozmos and the contracts are the
@@ -13,7 +13,12 @@ const externals = [
 ];
 
 export default defineConfig({
-  plugins: [dts({ insertTypesEntry: true, rollupTypes: true })],
+  // API Extractor rolls the declarations into dist/index.d.ts. Left unset,
+  // unplugin-dts hands it `bundledPackages: undefined`, which API Extractor
+  // 7.43's config schema refuses (as #380 set it for the other packages).
+  plugins: [
+    dts({ insertTypesEntry: true, bundleTypes: { bundledPackages: [] } }),
+  ],
   esbuild: { jsx: "automatic" },
   build: {
     sourcemap: true,
