@@ -18,6 +18,11 @@ Use its callbacks to receive files and perform uploads in the host; selecting a 
 
 ## Implementation
 
+SwiftUI's and Compose's FileUpload hold one file. Picking one calls `onFileSelected`, and removing
+it calls `onFileRemoved` with the same file, where React calls `onFilesChange` with the files left.
+Their drop area says `browseLabel`, "Tap to upload file" by default, and their remove button is
+named `removeLabel`, "Remove"; a product that translates passes its own.
+
 <div className="subheading">Code</div>
 
 <PlatformSnippets
@@ -48,13 +53,15 @@ import Kozmos
 // names (any, unless it says otherwise): no drag and drop, no second file, no
 // size limit and no message. The part draws no label, so KozmosFieldWrapper
 // puts one above it. Picking a file hands you its URL and uploads nothing;
-// removing it tells you nothing.
+// removing it hands you the same URL. browseLabel and removeLabel are its
+// words, "Tap to upload file" and "Remove" unless you pass your own.
 struct DocumentUpload: View {
     let receive: (URL) -> Void
+    let drop: (URL) -> Void
 
     var body: some View {
         KozmosFieldWrapper(label: "Documents") {
-            KozmosFileUpload(onFileSelected: receive)
+            KozmosFileUpload(onFileSelected: receive, onFileRemoved: drop)
         }
     }
 }
@@ -68,11 +75,13 @@ import com.kozmos.components.fileupload.KozmosFileUpload
 // One file of any type, picked with the system's picker: no drag and drop, no
 // second file, no type or size limit and no message. The part draws no label,
 // so KozmosFieldWrapper puts one above it. Picking a file hands you its Uri
-// and uploads nothing; removing it tells you nothing.
+// and uploads nothing; removing it hands you the same Uri. browseLabel and
+// removeLabel are its words, "Tap to upload file" and "Remove" unless you
+// pass your own.
 @Composable
-fun DocumentUpload(receive: (Uri) -> Unit) {
+fun DocumentUpload(receive: (Uri) -> Unit, drop: (Uri) -> Unit) {
     KozmosFieldWrapper(label = "Documents") {
-        KozmosFileUpload(onFileSelected = receive)
+        KozmosFileUpload(onFileRemoved = drop, onFileSelected = receive)
     }
 }
 `}
