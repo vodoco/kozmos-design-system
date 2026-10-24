@@ -41,7 +41,7 @@ fun KozmosLabel(
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = optionalText,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 style = MaterialTheme.typography.labelSmall
             )
         }

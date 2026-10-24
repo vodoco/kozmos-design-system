@@ -197,7 +197,7 @@ internal fun knownIconVector(rawName: String): ImageVector? {
 @Composable
 internal fun resolveIconTint(color: KozmosIconColor): Color = when (color) {
     KozmosIconColor.Default -> LocalContentColor.current
-    KozmosIconColor.Muted -> KozmosThemeTokens.primitivesColorsForeground500
+    KozmosIconColor.Muted -> KozmosThemeTokens.primitivesColorsForeground400
     // An icon on a surface is theme/600, as React's text-primary is (decision 59).
     KozmosIconColor.Primary -> KozmosThemeTokens.primitivesColorsTheme600
     KozmosIconColor.Destructive -> KozmosThemeTokens.primitivesColorsEmotionalDanger600

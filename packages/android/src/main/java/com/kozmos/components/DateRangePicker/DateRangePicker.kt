@@ -55,7 +55,7 @@ fun KozmosDateRangePicker(
     val helperColor = when {
         !enabled -> KozmosThemeTokens.primitivesColorsForeground500
         statusColor != null -> statusColor
-        else -> KozmosThemeTokens.primitivesColorsForeground500
+        else -> KozmosThemeTokens.primitivesColorsForeground400
     }
 
     Column(
@@ -219,7 +219,7 @@ private fun DateRangePreview(value: KozmosDateRangeValue, enabled: Boolean) {
         Text(
             text = "to",
             style = MaterialTheme.typography.bodySmall,
-            color = KozmosThemeTokens.primitivesColorsForeground500
+            color = KozmosThemeTokens.primitivesColorsForeground400
         )
         Text(
             text = value.end?.format(displayDateFormatter) ?: "End",

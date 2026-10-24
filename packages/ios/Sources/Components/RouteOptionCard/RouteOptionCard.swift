@@ -57,7 +57,7 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
 
                     Text(option.distanceLabel)
                         .font(KozmosTypography.caption)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
                 .padding(.top, KozmosDimensions.primitivesLayoutSpacing150)
 

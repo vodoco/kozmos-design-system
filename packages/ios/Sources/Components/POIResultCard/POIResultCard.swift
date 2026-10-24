@@ -286,7 +286,7 @@ public struct KozmosPOIResultCard: View {
         case .openingSoon, .closingSoon:
             return sdk ? KozmosColors.semanticsEmotionAlertText : KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle
         default:
-            return sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 
@@ -403,7 +403,7 @@ public struct KozmosPOIResultCard: View {
                         if let categoryLabel = poi.categoryLabel {
                             Text(categoryLabel)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                                 .lineLimit(1)
                         }
 
@@ -420,7 +420,7 @@ public struct KozmosPOIResultCard: View {
                                 .font(KozmosTypography.subheadline)
                                 .lineLimit(1)
                         }
-                        .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
 
                         if let summaryText {
                             // One generated line about this result, as on the
@@ -428,7 +428,7 @@ public struct KozmosPOIResultCard: View {
                             // grows moves the results below it (GAP-029).
                             Text(summaryText)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.top, KozmosDimensions.primitivesLayoutSpacing25)
@@ -489,7 +489,7 @@ public struct KozmosPOIResultCard: View {
             if let languageDisclosure {
                 Text(languageDisclosure)
                     .font(KozmosTypography.subheadline)
-                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
@@ -521,7 +521,7 @@ public struct KozmosPOIResultCard: View {
 
                 Text(unavailableReason)
                     .font(KozmosTypography.caption)
-                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
             }

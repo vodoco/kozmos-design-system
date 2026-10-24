@@ -86,12 +86,12 @@ fun KozmosPasswordInput(
     val helperColor = when {
         !enabled -> KozmosThemeTokens.primitivesColorsForeground500
         statusColor != null -> statusColor
-        else -> KozmosThemeTokens.primitivesColorsForeground500
+        else -> KozmosThemeTokens.primitivesColorsForeground400
     }
     val toggleColor = when {
         !enabled || readOnly -> KozmosThemeTokens.primitivesColorsForeground500
         statusColor != null -> statusColor
-        else -> KozmosThemeTokens.primitivesColorsForeground500
+        else -> KozmosThemeTokens.primitivesColorsForeground400
     }
 
     Column(

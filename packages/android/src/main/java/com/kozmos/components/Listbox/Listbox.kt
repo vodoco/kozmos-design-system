@@ -73,7 +73,7 @@ fun KozmosListbox(
     ) {
         if (options.isEmpty() && emptyText != null) {
             Text(emptyText, style = MaterialTheme.typography.bodyMedium,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing150))
         }
         options.forEach { option ->
@@ -119,7 +119,7 @@ fun KozmosListbox(
                         Text(
                             text = option.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = KozmosThemeTokens.primitivesColorsForeground500,
+                            color = KozmosThemeTokens.primitivesColorsForeground400,
                             maxLines = 1
                         )
                     }

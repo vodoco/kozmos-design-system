@@ -72,7 +72,7 @@ public struct KozmosListbox: View {
             LazyVStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 if options.isEmpty, let emptyText {
                     Text(emptyText).font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .padding(KozmosDimensions.primitivesLayoutSpacing150)
                 }
                 ForEach(options) { option in
@@ -87,7 +87,7 @@ public struct KozmosListbox: View {
                                 if let description = option.description, !description.isEmpty {
                                     Text(description)
                                         .font(KozmosTypography.caption)
-                                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                                         .lineLimit(1)
                                 }
                             }

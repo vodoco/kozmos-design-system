@@ -32,7 +32,7 @@ public struct KozmosLabel: View {
             } else if let optionalText {
                 Text(optionalText)
                     .font(KozmosTypography.caption)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
             }
         }
         .accessibilityElement(children: .combine)
