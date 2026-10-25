@@ -15,7 +15,10 @@ public struct KozmosMultiSelect: View {
     public let emptyText: String
     public let clearable: Bool
 
-    @State private var isOpen: Bool
+    @State private var internalOpen: Bool
+    /// Shown only while the field can be used: a disabled or read-only
+    /// field shows no list, and closes it, as React's and Combobox's do.
+    private var isOpen: Bool { internalOpen && !disabled && !readOnly }
 
     public init(
         selectedValues: Binding<[String]> = .constant([]),
@@ -46,7 +49,7 @@ public struct KozmosMultiSelect: View {
         self.errorMessage = errorMessage
         self.emptyText = emptyText
         self.clearable = clearable
-        self._isOpen = State(initialValue: defaultOpen)
+        self._internalOpen = State(initialValue: defaultOpen)
     }
 
     public var body: some View {
@@ -79,20 +82,32 @@ public struct KozmosMultiSelect: View {
                         .foregroundColor(textColor)
                         .frame(height: 36)
                         .onTapGesture {
-                            if !disabled && !readOnly { isOpen = true }
+                            if !disabled && !readOnly { internalOpen = true }
                         }
                         .onChange(of: searchValue) { _ in
-                            if !disabled && !readOnly { isOpen = true }
+                            if !disabled && !readOnly { internalOpen = true }
                         }
 
+                    // The clear and the chevron are 44pt targets, all of them
+                    // hittable, as Combobox's are: a plain button's frame adds
+                    // nothing without a content shape, and each took a tap only
+                    // on its glyph, 13.3 by 8pt for the chevron. Each reaches
+                    // 4pt into the 6pt above the row (the field's padding, or the
+                    // gap under the chips) and into the field's padding below, so
+                    // the row keeps its 36pt. The chevron's also takes the field's
+                    // 8pt end padding, so it runs to the field's end, as
+                    // Combobox's does. The field is 48pt tall, where Figma and
+                    // React draw 44: a parity gap of its own.
                     if clearable && !selectedValues.isEmpty && !disabled && !readOnly {
                         Button(action: clearSelection) {
                             Image(systemName: "xmark")
                                 .font(.subheadline.weight(.semibold))
-                                .frame(width: 36, height: 36)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .padding(.vertical, -4)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .accessibilityLabel("Clear selected options")
                     }
 
@@ -100,11 +115,14 @@ public struct KozmosMultiSelect: View {
                         Image(systemName: "chevron.down")
                             .font(.subheadline.weight(.semibold))
                             .rotationEffect(.degrees(isOpen ? 180 : 0))
-                            .frame(width: 36, height: 36)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .padding(.vertical, -4)
+                    .padding(.trailing, -KozmosDimensions.primitivesLayoutSpacing100)
                     .disabled(disabled || readOnly)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .accessibilityLabel(isOpen ? "Close options" : "Open options")
                 }
             }
@@ -122,7 +140,7 @@ public struct KozmosMultiSelect: View {
                 if filteredOptions.isEmpty {
                     Text(emptyText)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         .padding(KozmosDimensions.primitivesLayoutSpacing150)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(KozmosColors.primitivesColorsBackground0)
@@ -136,11 +154,11 @@ public struct KozmosMultiSelect: View {
                         options: filteredOptions,
                         selectedValues: $selectedValues,
                         multiple: true,
-                        disabled: disabled,
+                        disabled: disabled || readOnly,
                         maxHeight: 256
                     ) { _, _ in
                         searchValue = ""
-                        isOpen = true
+                        internalOpen = true
                     }
                 }
             }
@@ -152,6 +170,16 @@ public struct KozmosMultiSelect: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Closed while it cannot be used, from its first appearance and
+        // whenever it stops being usable, so it does not open by itself when
+        // it is usable again: React's closes on mount and on change, through
+        // an effect. `onChange` does not run on appearance, so a field that
+        // started disabled or read-only with `defaultOpen` stayed open
+        // underneath its hidden list.
+        .onAppear { if disabled || readOnly { internalOpen = false } }
+        .onChange(of: disabled || readOnly) { locked in
+            if locked { internalOpen = false }
+        }
     }
 
     private var selectedOptions: [KozmosListboxOption] {
@@ -175,12 +203,12 @@ public struct KozmosMultiSelect: View {
     private func clearSelection() {
         selectedValues = []
         searchValue = ""
-        isOpen = false
+        internalOpen = false
     }
 
     private func toggleOpen() {
         guard !disabled, !readOnly else { return }
-        isOpen.toggle()
+        internalOpen.toggle()
     }
 
     private var effectiveStatus: KozmosInputStatus {
@@ -232,7 +260,7 @@ public struct KozmosMultiSelect: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

@@ -46,17 +46,26 @@ public struct KozmosSwitch: View {
                         .foregroundColor(labelColor)
                 }
             }
-            .frame(minHeight: 44, alignment: .center)
+            // A 44pt target, all of it hittable, with a label or without
+            // one: a plain button's frame adds nothing without a content
+            // shape, and the switch took a tap only on its track, 26pt tall
+            // with its edge, and its label's words. Without a label it is as
+            // wide as its track.
+            .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(disabled)
     }
 
     /// Decision 59: checked, the track is a prominent fill, the theme fill.
+    /// Unchecked, it is the muted colour, foreground/400, as React's
+    /// `border-muted-foreground bg-muted-foreground` is (owner, 24 Oct); it was
+    /// foreground/500, which a disabled switch keeps.
     private var trackColor: Color {
         if error && checked { return KozmosColors.primitivesColorsEmotionalDanger600 }
         if checked { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle }
-        return KozmosColors.primitivesColorsForeground500
+        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400
     }
 
     /// Whether the track is the theme fill, which the thumb then sits on.

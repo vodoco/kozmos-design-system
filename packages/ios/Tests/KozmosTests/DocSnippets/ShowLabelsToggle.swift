@@ -5,8 +5,8 @@ import SwiftUI
 import Kozmos
 
 // The label is required, and it is what VoiceOver says: there is no
-// separate name. The state is yours to hold, and VoiceOver is not told
-// whether the button is on.
+// separate name. The state is yours to hold, and VoiceOver hears the button
+// as selected while it is on.
 struct ShowLabelsToggle: View {
     @Binding var showLabels: Bool
 

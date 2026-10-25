@@ -202,7 +202,7 @@ fun KozmosPOIResultCard(
         null
     }
     val sdk = presentationStyle == KozmosPOIResultPresentationStyle.Sdk
-    val secondaryText = if (sdk) KozmosThemeTokens.primitivesColorsForeground400 else KozmosThemeTokens.primitivesColorsForeground500
+    val secondaryText = KozmosThemeTokens.primitivesColorsForeground400
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val tab = kozmosPOIResultTab(result, numbered, featuredLabel, presentationStyle)
