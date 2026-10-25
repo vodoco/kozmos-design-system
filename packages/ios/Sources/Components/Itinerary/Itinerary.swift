@@ -139,7 +139,7 @@ public struct KozmosItinerary: View {
     private func endpointName(_ name: String, emphasised: Bool) -> some View {
         Text(name)
             .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-            .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+            .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground400)
             .fixedSize(horizontal: false, vertical: true)
             .alignmentGuide(.kozmosItineraryName) { $0[.firstTextBaseline] }
     }
@@ -147,7 +147,7 @@ public struct KozmosItinerary: View {
     private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             KozmosDirectionGlyph(type: step.type, size: 14)
-                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground500))
+                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground400))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                 KozmosInstructionText(parts: step.instructionParts)

@@ -72,7 +72,7 @@ public struct KozmosPopover<PopoverContent: View>: ViewModifier {
                 if let description {
                     Text(description)
                         .font(KozmosTypography.footnote)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
             }
             .padding(KozmosDimensions.primitivesLayoutSpacing200)

@@ -24,6 +24,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -78,6 +81,23 @@ fun KozmosToast(
     onAction: (() -> Unit)? = null,
     onDismiss: (() -> Unit)? = null
 ) {
+    // Laid out in place, the toast announces itself: an assertive live
+    // region, as React's default (foreground) Radix toast. TalkBack said
+    // nothing when it appeared until 2026-10-21.
+    KozmosToastSurface(content, modifier.semantics { liveRegion = LiveRegionMode.Assertive }, onAction, onDismiss)
+}
+
+/**
+ * The toast as it is drawn. Through a host, Material's `SnackbarHost`
+ * already makes each toast a live region, so the surface adds none there.
+ */
+@Composable
+private fun KozmosToastSurface(
+    content: KozmosToastContent,
+    modifier: Modifier,
+    onAction: (() -> Unit)?,
+    onDismiss: (() -> Unit)?
+) {
     Surface(
         modifier = modifier.widthIn(min = 320.dp, max = 420.dp),
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
@@ -114,7 +134,7 @@ fun KozmosToast(
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = KozmosThemeTokens.primitivesColorsForeground400
                     )
                 }
             }
@@ -151,7 +171,8 @@ fun KozmosToast(
 @Composable
 private fun KozmosSnackbarToast(data: SnackbarData) {
     val visuals = data.visuals
-    KozmosToast(
+    KozmosToastSurface(
+        modifier = Modifier,
         content = KozmosToastContent(
             title = visuals.message,
             actionText = visuals.actionLabel,

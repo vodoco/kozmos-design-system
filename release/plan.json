@@ -1,5 +1,5 @@
 {
   "schemaVersion": 1,
   "tag": "latest",
-  "packages": [{ "name": "@kozmos-ds/react", "version": "0.12.1" }]
+  "packages": [{ "name": "@kozmos-ds/react", "version": "0.12.2" }]
 }

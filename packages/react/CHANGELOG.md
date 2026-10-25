@@ -1,5 +1,14 @@
 # @kozmos-ds/react
 
+## 0.12.2
+
+### Patch Changes
+
+- 9017b62: A framed `MapView` has the control radius, 16, as SwiftUI's and Compose's `KozmosMapView` have; it was the container radius, 20, on the web only. A `fill` MapView, the map that is the screen inside `AdaptiveMapShell`, still has no corners, and the map controls keep the control radius they had.
+- 7109aa3: POIDetailPanel falls back to an item's `iconName` icon when its `iconUrl` is unsafe or fails to load, as iOS and Android do (GAP-178, the owner's rule): a service, a group's item and a tag draw the glyph their name draws, and a summary fact its kind's glyph, where they drew no icon at all. With no name Kozmos draws, the label still stands alone. A safe asset that loads draws as before, and root-relative URLs are still accepted on the web.
+- 9a9605b: POIDetailPanel's tags, services and group items draw every icon name `KozmosIcon` draws on iOS and Android, so a tag draws the same icon on all three. The web looked a tag's `iconName` up in the `Icon` registry alone, so 27 names drew an icon in the SwiftUI and Compose tags and only the label on the web: the 23 wayfinding glyphs of Pointr Maps - Express by the kebab case of their export names (`elevator-up`, `elevator-down`, `stairs-up`, `stairs-down`, `escalator-up`, `escalator-down`, `ramp-up`, `ramp-down`, `route-enter`, `route-exit`, `elevator-up-and-down`, `escalator-no-direction`, `stairs-no-direction`, `ramp-no-direction`, `route-entrance-exit`, `hard-left`, `hard-right`, `turn-back`, `follow-the-line`, `arriving`, `custom-transition`, `security-control` and `shuttle`), and the Pointr outlines `log-in-01`, `log-out-01`, `arrow-up-right` and `arrow-down-right`. Each draws `@kozmos-ds/icons`' own artwork, the source the natives' copies are generated or taken from, at 16px in the label's colour. The registry's 57 names and 17 aliases draw as before, and a name Kozmos does not know still draws only the label. `Icon`, its `name` prop and the `KozmosIconKey` type are unchanged.
+- a8b92cb: Stepper marks its current step `aria-current="step"`, so a screen reader hears which step the visitor is on; it set none, and the steps were heard in order with nothing of the progress. No other step carries it, and once `currentStep` is past the last step none does. The look, the props and the markup are otherwise unchanged.
+
 ## 0.12.1
 
 ### Patch Changes

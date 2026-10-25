@@ -11,9 +11,17 @@ public struct KozmosSplitButton: View {
         self.menuItems = menuItems
     }
     
-    /// The action half's shape: rounded at the leading end only.
-    private var actionShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomTrailingRadius: KozmosDimensions.semanticsRadiusNone, topTrailingRadius: KozmosDimensions.semanticsRadiusNone)
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    /// The action half's shape: rounded at the leading end only, as React's
+    /// half is `rounded-e-none`: the right end, right to left.
+    private var actionShape: KozmosEndRoundedRectangle {
+        KozmosEndRoundedRectangle(radius: KozmosDimensions.semanticsRadiusControl, roundsLeft: layoutDirection == .leftToRight)
+    }
+
+    /// The menu half's: rounded at the trailing end only.
+    private var menuShape: KozmosEndRoundedRectangle {
+        KozmosEndRoundedRectangle(radius: KozmosDimensions.semanticsRadiusControl, roundsLeft: layoutDirection == .rightToLeft)
     }
 
     public var body: some View {
@@ -46,7 +54,29 @@ public struct KozmosSplitButton: View {
                     .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
                     .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
             }
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusNone, bottomLeadingRadius: KozmosDimensions.semanticsRadiusNone, bottomTrailingRadius: KozmosDimensions.semanticsRadiusControl, topTrailingRadius: KozmosDimensions.semanticsRadiusControl))
+            .clipShape(menuShape)
         }
     }
+}
+
+/// A rectangle rounded at one end, the left or the right as drawn: the split
+/// button says which from its layout direction. `UnevenRoundedRectangle`
+/// names its corners leading and trailing, but draws them left and right
+/// unless SwiftUI mirrors it, and SwiftUI mirrors a shape right to left only
+/// in an app that deploys to iOS 17 or later: in one that deploys to iOS 16,
+/// a split button right to left was rounded where its halves meet and square
+/// at its ends. So this places its corners itself, and is never mirrored.
+struct KozmosEndRoundedRectangle: Shape {
+    var radius: CGFloat
+    var roundsLeft: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let left = roundsLeft ? radius : 0, right = roundsLeft ? 0 : radius
+        // Drawn as it is, its leading corners are its left ones.
+        return UnevenRoundedRectangle(topLeadingRadius: left, bottomLeadingRadius: left,
+                                      bottomTrailingRadius: right, topTrailingRadius: right).path(in: rect)
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }

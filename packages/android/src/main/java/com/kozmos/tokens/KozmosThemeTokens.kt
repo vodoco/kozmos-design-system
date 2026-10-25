@@ -947,12 +947,12 @@ object KozmosThemeTokens {
         )
 
     /**
-     * Container edges: cards, popovers, menus, dialogs, drawers, toasts, list
-     * rows, the file dropzone. Soft on purpose, about 1.6:1 against the page
-     * in both modes, because a container is told apart by its surface and
-     * shadow, not its outline. Until 2026-09-03 Figma painted these with
-     * foreground/500 and the web with background/200; this alias is now the
-     * only place the colour lives.
+     * Container edges: cards, popovers, menus, dialogs, drawers, toasts,
+     * tooltips and listboxes, and the dividers in menus and tables. Soft on
+     * purpose, about 1.6:1 against the page in both modes, because a container
+     * is told apart by its surface and shadow, not its outline. Until
+     * 2026-09-03 Figma painted these with foreground/500 and the web with
+     * background/200; this alias is now the only place the colour lives.
      */
     val semanticsBorderSubtle: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -961,12 +961,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * Boundaries of things you interact with: inputs, checkboxes, radios,
-     * switch, slider and progress tracks, swatches, the toast action. Held to
-     * WCAG 1.4.11's 3:1 against the page: 4.2:1 light, 5.7:1 dark.
-     * background/400 reads 2.997 and fails by three thousandths, which is why
-     * this is foreground/500. The web used background/200 here before
-     * 2026-09-03 and did not meet 3:1.
+     * Boundaries of things you interact with: fields (text, search, password,
+     * number, one-time code, combobox, multi-select, date, time and colour), a
+     * select's trigger, checkboxes, radios, the slider's track and the colour
+     * picker's swatches. Held to WCAG 1.4.11's 3:1 against the page: 4.2:1
+     * light, 5.7:1 dark. background/400 reads 2.997 and fails by three
+     * thousandths, which is why this is foreground/500. The web used
+     * background/200 here before 2026-09-03 and did not meet 3:1.
      */
     val semanticsBorderInput: Color
         @Composable @ReadOnlyComposable get() = themed(

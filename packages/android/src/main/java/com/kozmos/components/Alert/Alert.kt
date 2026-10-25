@@ -17,10 +17,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,24 +41,37 @@ fun KozmosAlert(
 ) {
     val borderColor = alertBorderColor(status)
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-            .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-            .padding(KozmosDimensions.primitivesLayoutSpacing200),
-        verticalAlignment = Alignment.Top
-    ) {
-        content()
+    // The icon, title and description inside take the alert's status, as
+    // React's inherit its colour and Figma binds them to it.
+    CompositionLocalProvider(LocalKozmosAlertStatus provides status) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                .padding(KozmosDimensions.primitivesLayoutSpacing200),
+            verticalAlignment = Alignment.Top
+        ) {
+            content()
+        }
     }
 }
 
+/** The status of the alert a part is in: [AlertStatus.Default] outside one. */
+internal val LocalKozmosAlertStatus = staticCompositionLocalOf { AlertStatus.Default }
+
+/**
+ * [status] null, the default, draws the glyph and colour of the alert the
+ * icon is in. It drew the default's info glyph in foreground/0 unless given
+ * the alert's status again, until 2026-10-20.
+ */
 @Composable
 fun KozmosAlertIcon(
-    status: AlertStatus = AlertStatus.Default,
+    status: AlertStatus? = null,
     modifier: Modifier = Modifier,
     customIcon: ImageVector? = null
 ) {
+    val status = status ?: LocalKozmosAlertStatus.current
     val icon = when (status) {
         AlertStatus.Default -> Icons.Default.Info
         AlertStatus.Info -> Icons.Default.Info
@@ -81,31 +97,42 @@ fun KozmosAlertContent(
     }
 }
 
+/**
+ * [color] unspecified, the default, is the colour of the alert the title is
+ * in, as Figma draws it: foreground/0 in a default alert. It was
+ * foreground/100 in every alert until 2026-10-20.
+ */
 @Composable
 fun KozmosAlertTitle(
     title: String,
     modifier: Modifier = Modifier,
-    color: Color = KozmosThemeTokens.primitivesColorsForeground100
+    color: Color = Color.Unspecified
 ) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = color,
+        color = color.takeOrElse { alertForegroundColor(LocalKozmosAlertStatus.current) },
         modifier = modifier
     )
 }
 
+/**
+ * [color] unspecified, the default, is the colour of the alert the
+ * description is in, as Figma draws it and React's inherits it:
+ * foreground/0 in a default alert. It was foreground/500 in every alert
+ * until 2026-10-20.
+ */
 @Composable
 fun KozmosAlertDescription(
     description: String,
     modifier: Modifier = Modifier,
-    color: Color = KozmosThemeTokens.primitivesColorsForeground500
+    color: Color = Color.Unspecified
 ) {
     Text(
         text = description,
         style = MaterialTheme.typography.bodyMedium,
-        color = color,
+        color = color.takeOrElse { alertForegroundColor(LocalKozmosAlertStatus.current) },
         modifier = modifier
     )
 }

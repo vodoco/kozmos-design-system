@@ -29,6 +29,14 @@ private struct POIResultTabShape: Shape {
         }
         return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
     }
+
+    /// The tab mirrors itself, above, so SwiftUI must not mirror it again.
+    /// Unset, a shape mirrors itself in a right-to-left layout in an app that
+    /// deploys to iOS 17 or later and not in one that deploys to iOS 16, so
+    /// in the first the tab was mirrored twice: its start corner rounded and
+    /// its end corner square.
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
 /// Characters `encodeURIComponent` leaves untouched. Matching the web escaping
@@ -278,7 +286,7 @@ public struct KozmosPOIResultCard: View {
         case .openingSoon, .closingSoon:
             return sdk ? KozmosColors.semanticsEmotionAlertText : KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle
         default:
-            return sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 
@@ -395,7 +403,7 @@ public struct KozmosPOIResultCard: View {
                         if let categoryLabel = poi.categoryLabel {
                             Text(categoryLabel)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                                 .lineLimit(1)
                         }
 
@@ -412,7 +420,7 @@ public struct KozmosPOIResultCard: View {
                                 .font(KozmosTypography.subheadline)
                                 .lineLimit(1)
                         }
-                        .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
 
                         if let summaryText {
                             // One generated line about this result, as on the
@@ -420,7 +428,7 @@ public struct KozmosPOIResultCard: View {
                             // grows moves the results below it (GAP-029).
                             Text(summaryText)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.top, KozmosDimensions.primitivesLayoutSpacing25)
@@ -481,7 +489,7 @@ public struct KozmosPOIResultCard: View {
             if let languageDisclosure {
                 Text(languageDisclosure)
                     .font(KozmosTypography.subheadline)
-                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
@@ -513,7 +521,7 @@ public struct KozmosPOIResultCard: View {
 
                 Text(unavailableReason)
                     .font(KozmosTypography.caption)
-                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
             }
