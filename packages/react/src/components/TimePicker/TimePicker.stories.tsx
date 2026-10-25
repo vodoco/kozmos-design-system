@@ -21,6 +21,26 @@ export const Default: Story = {
   ),
 };
 
+/**
+ * Figma's Open variant (444:11455): the field's button opens Combobox's
+ * list of times, on the field's time: 08:00 to 09:30 here, as Figma draws.
+ */
+export const Open: Story = {
+  render: (args) => (
+    <div className="w-80" style={{ height: 320 }}>
+      <TimePicker
+        label="Time"
+        defaultValue="09:30"
+        min="08:00"
+        max="09:30"
+        locale="en-GB"
+        defaultOpen
+        {...args}
+      />
+    </div>
+  ),
+};
+
 export const Error: Story = {
   render: () => (
     <div className="w-80">

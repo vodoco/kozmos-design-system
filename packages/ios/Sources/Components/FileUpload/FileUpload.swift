@@ -41,6 +41,9 @@ public struct KozmosFileUpload: View {
                         Text("Tap to upload file")
                             .font(KozmosTypography.body)
                     }
+                    // Muted, as React's `text-muted-foreground` mark and words
+                    // and Compose's are; it was the button's default tint.
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .frame(maxWidth: .infinity)
                     .frame(height: 120)
                     .background(

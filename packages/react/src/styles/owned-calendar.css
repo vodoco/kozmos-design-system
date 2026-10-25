@@ -1,0 +1,127 @@
+/* Calendar (decision 104), drawn as Figma draws the open panels: DatePicker's
+   month (438:4292, its panel 2262:43097) with 36 days, and DateRangePicker's
+   two months (443:10939, 2262:45377) with 40. A 32 header holds the month
+   and the 32 previous and next buttons, 8 above the weekdays (12/16, ink
+   400) and 8 above six weeks of days 4 apart, each with the Control corner.
+   Months sit 12 apart. Owned, logical sides only, so it holds without @scope
+   and mirrors right to left; the surface is the host's (DatePicker's
+   Popover). */
+@kozmos-owned {
+  .kozmos-calendar {
+    --kozmos-calendar-day: 2.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-calendar[data-mode="range"] {
+    --kozmos-calendar-day: 2.5rem;
+  }
+  .kozmos-calendar[data-disabled] {
+    opacity: var(--primitives-opacity-50);
+  }
+  .kozmos-calendar-month {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-calendar-header,
+  .kozmos-calendar-nav {
+    display: flex;
+    align-items: center;
+    min-height: 2rem;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-calendar-nav {
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
+  .kozmos-calendar-title {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+  .kozmos-calendar-nav-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background-color: transparent;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-calendar-nav-button:hover {
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-calendar-nav-button:disabled {
+    cursor: not-allowed;
+    opacity: var(--primitives-opacity-50);
+  }
+  .kozmos-calendar-nav-icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+  }
+  /* The table's spacing is the 4 between days; the margin takes it off the
+     outer edges. */
+  .kozmos-calendar-grid {
+    border-collapse: separate;
+    border-spacing: calc(var(--primitives-layout-spacing-50) * 1px);
+    margin: calc(var(--primitives-layout-spacing-50) * 1px * -1);
+    table-layout: fixed;
+  }
+  .kozmos-calendar-weekday {
+    width: var(--kozmos-calendar-day);
+    /* A 20 row and 4 more under it than between the weeks: 8 to the days. */
+    height: calc(1.25rem + var(--primitives-layout-spacing-50) * 1px);
+    padding-bottom: calc(var(--primitives-layout-spacing-50) * 1px);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-calendar-day {
+    width: var(--kozmos-calendar-day);
+    height: var(--kozmos-calendar-day);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: center;
+  }
+  .kozmos-calendar-day,
+  .kozmos-calendar-nav-button {
+    cursor: pointer;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+  }
+  .kozmos-calendar-day:focus-visible,
+  .kozmos-calendar-nav-button:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  .kozmos-calendar-day[data-today],
+  .kozmos-calendar-day[tabindex]:not(
+      [aria-disabled],
+      [data-selected],
+      [data-in-range]
+    ):hover {
+    background-color: var(--primitives-colors-background-100);
+  }
+  .kozmos-calendar-day[data-in-range] {
+    background-color: var(--primitives-colors-theme-100);
+  }
+  /* Decision 59: the theme fill, theme 500, under the theme foreground. */
+  .kozmos-calendar-day[data-selected] {
+    background-color: var(--primitives-colors-theme-500);
+    color: var(
+      --components-primary-buttons-themed-button-foreground-content-idle
+    );
+  }
+  .kozmos-calendar-day[data-outside],
+  .kozmos-calendar-day[aria-disabled] {
+    cursor: default;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-calendar[data-disabled] .kozmos-calendar-day {
+    cursor: not-allowed;
+  }
+}

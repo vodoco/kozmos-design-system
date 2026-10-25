@@ -13,6 +13,26 @@
       var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
     );
   }
+  /* Combobox's and MultiSelect's clear and open (field-actions.ts) lie over
+     their field's edge. Forced colours (Windows' high contrast) repaint a
+     hover fill in the page's Canvas, which erased that edge, so there they
+     hover with no fill. Two classes and the element: the scoped hover
+     utility weighs three classes with its :scope, and a scoped rule wins a
+     tie with an owned one. */
+  @media (forced-colors: active) {
+    .kozmos-combobox-actions > button.kozmos-combobox-action:hover {
+      background-color: transparent;
+    }
+  }
+  /* MultiSelect's field rings for its input, as Combobox's input does: with
+     its clear or open focused, the button rings alone, not inside the
+     field's ring too. Its focus-within and :has() outweigh the field's
+     scoped focus-within utilities; the outline is the one forced colours
+     paint for its transparent outline-none. */
+  .kozmos-multiselect-field:focus-within:has(.kozmos-combobox-action:focus) {
+    box-shadow: none;
+    outline-style: none;
+  }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
@@ -72,6 +92,25 @@
     @apply block h-4 w-4 shrink-0;
     color: var(--primitives-colors-theme-600);
   }
+  /* Forced colours (Windows' high contrast) drop the rows' fills and the
+     keyboard's ring, so the active row, under the pointer or the keyboard,
+     draws an inset outline in the system's Highlight; inset, so nothing
+     moves. Every row's outline-none is a transparent outline, which forced
+     colours would paint round every row: only the active row keeps one.
+     The check takes CanvasText: Chromium keeps an SVG's own colour there. */
+  @media (forced-colors: active) {
+    .kozmos-option {
+      outline-style: none;
+    }
+    .kozmos-option[data-active="true"],
+    .kozmos-option[data-highlighted] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+    .kozmos-option-check {
+      color: CanvasText;
+    }
+  }
   .kozmos-multiselect-input {
     @apply min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:text-muted-foreground;
     /* The field less its padding and border, so the field keeps its density's
@@ -79,5 +118,16 @@
     height: calc(var(--density-field-height-md, 2.75rem) - 0.75rem);
     width: 6rem;
     max-width: 100%;
+  }
+  /* The input's outline-none hides the browser's focus ring: the field
+     rings for it. It is a transparent outline at rest too, which forced
+     colours (Windows' high contrast) paint, so the input drew a 2px box of
+     its own inside the field. There it draws none. Its focus is still
+     marked: the field's focus-within outline-none is the outline forced
+     colours paint round the field, as round Combobox's input. */
+  @media (forced-colors: active) {
+    .kozmos-multiselect-input {
+      outline-style: none;
+    }
   }
 }

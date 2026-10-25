@@ -9,16 +9,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import com.kozmos.components.input.KozmosInput
 import com.kozmos.components.select.KozmosSelect
 import com.kozmos.components.select.KozmosSelectItem
+import com.kozmos.components.select.KozmosSelectTrigger
 
-// KozmosSelect draws the menu, not the field: the trigger is yours, and
-// menuAnchor() opens the menu from it. Compose has no closed select field:
-// a read-only KozmosInput stands in, with the read-only fill and no caret,
-// as it takes no trailing icon. An item hands on its value, then asks for
-// the menu to close.
+// KozmosSelectTrigger is the closed field: the choice, or the placeholder
+// until there is one, beside a caret. It anchors the menu, which
+// KozmosSelect draws. An item hands on its value, then asks for the menu to
+// close.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
@@ -28,13 +26,7 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
         expanded = expanded,
         onExpandedChange = { expanded = it },
         trigger = {
-            KozmosInput(
-                value = themes[theme] ?: "",
-                onValueChange = {},
-                placeholder = "Theme",
-                readOnly = true,
-                modifier = Modifier.menuAnchor()
-            )
+            KozmosSelectTrigger(value = themes[theme], placeholder = "Theme")
         }
     ) {
         themes.forEach { (value, label) ->

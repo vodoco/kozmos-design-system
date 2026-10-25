@@ -39,9 +39,14 @@ fun KozmosLabel(
             )
         } else if (optionalText != null) {
             Spacer(modifier = Modifier.width(4.dp))
+            // Muted; disabled, the disabled label's colour, never darker than it.
             Text(
                 text = optionalText,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = if (enabled) {
+                    KozmosThemeTokens.primitivesColorsForeground400
+                } else {
+                    KozmosThemeTokens.primitivesColorsForeground500
+                },
                 style = MaterialTheme.typography.labelSmall
             )
         }
