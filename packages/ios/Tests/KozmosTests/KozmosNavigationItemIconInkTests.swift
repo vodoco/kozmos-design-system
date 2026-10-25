@@ -57,7 +57,7 @@ final class KozmosNavigationItemIconInkTests: XCTestCase {
                                             trailing: { KozmosIcon("chevron-right", size: .md) })
         // The trailing chevron, at the item's trailing edge.
         let chevron = try darkest(trailing, width: 240, in: CGRect(x: 200, y: 8, width: 32, height: 28))
-        let muted = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground500, in: .light)
-        XCTAssertTrue(close(chevron, muted), "the trailing icon is \(hex(chevron)), not foreground/500 \(hex(muted))")
+        let muted = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground400, in: .light)
+        XCTAssertTrue(close(chevron, muted), "the trailing icon is \(hex(chevron)), not foreground/400 \(hex(muted))")
     }
 }

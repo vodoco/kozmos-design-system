@@ -55,13 +55,17 @@ internal val LocalKozmosGuidanceForeground = compositionLocalOf<Color?> { null }
  * Text that is muted elsewhere, as it is drawn on [surface] (decision 48): on
  * glass the foreground colour, so it reads at 4.5:1 over any map, where muted
  * it read under 3:1 over a saturated one; elsewhere the muted colour.
+ *
+ * The muted colour is foreground/400, as the contrast contract pairs it and
+ * React's `text-muted-foreground` draws it: 6.10:1 on background/0 in light.
+ * It was foreground/500 until 2026-10-24, 4.24:1 on white, under AA.
  */
 @Composable
 internal fun kozmosMutedForeground(surface: KozmosSurfaceStyle? = LocalKozmosSurfaceStyle.current): Color =
     LocalKozmosGuidanceForeground.current ?: if (surface == KozmosSurfaceStyle.Glass) {
         KozmosThemeTokens.primitivesColorsForeground100
     } else {
-        KozmosThemeTokens.primitivesColorsForeground500
+        KozmosThemeTokens.primitivesColorsForeground400
     }
 
 /**

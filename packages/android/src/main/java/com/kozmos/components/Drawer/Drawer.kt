@@ -98,7 +98,7 @@ fun KozmosDrawer(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close drawer",
-                        tint = KozmosThemeTokens.primitivesColorsForeground500
+                        tint = KozmosThemeTokens.primitivesColorsForeground400
                     )
                 }
             }
@@ -184,7 +184,7 @@ fun DrawerHeader(
                 Spacer(modifier = Modifier.defaultMinSize(minHeight = KozmosDimensions.primitivesLayoutSpacing100))
                 Text(
                     text = it,
-                    color = KozmosThemeTokens.primitivesColorsForeground500
+                    color = KozmosThemeTokens.primitivesColorsForeground400
                 )
             }
         }
@@ -197,7 +197,7 @@ fun DrawerHeader(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close drawer",
-                    tint = KozmosThemeTokens.primitivesColorsForeground500
+                    tint = KozmosThemeTokens.primitivesColorsForeground400
                 )
             }
         }

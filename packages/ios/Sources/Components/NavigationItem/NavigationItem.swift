@@ -201,6 +201,9 @@ public struct KozmosNavigationItem: View {
             // LocalContentColor: it kept its own foreground/100.
             .environment(\.kozmosIconHostInk, foregroundColor)
             .clipShape(shape)
+            // The whole item takes a tap: on its clear fill an idle item took
+            // one only on its icon and label.
+            .contentShape(shape)
             // The selected rail item's 2pt bar, down its trailing edge: the
             // right, and the left in a right-to-left layout.
             .overlay(alignment: .trailing) {
@@ -222,7 +225,11 @@ public struct KozmosNavigationItem: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .accessibilityLabel(label ?? "")
-        .accessibilityValue(isSelected ? "Selected" : "")
+        // The selected item has the platform's selected state, which
+        // VoiceOver says in the person's language, as React's item is
+        // aria-current. It had the value "Selected", English in every
+        // language, and no state.
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var rowContent: some View {
@@ -256,8 +263,8 @@ public struct KozmosNavigationItem: View {
 
             if shouldRenderTrailing, let trailing = trailing {
                 trailing
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
             }
         }
     }

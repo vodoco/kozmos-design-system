@@ -84,6 +84,10 @@ public struct KozmosChip<Icon: View>: View {
         .padding(.vertical, verticalPadding)
         .frame(minHeight: minHeight)
         .foregroundColor(foregroundColor)
+        // A KozmosIcon in the chip is drawn in the chip's colour, as React's
+        // icon is currentColor and Compose's follows LocalContentColor: it
+        // kept its own foreground/100, near-black on a selected chip's fill.
+        .environment(\.kozmosIconHostInk, foregroundColor)
         .background(backgroundColor)
         .clipShape(Capsule())
         .overlay(

@@ -123,12 +123,12 @@ public struct KozmosFieldWrapper<Content: View>: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 
     private var metaColor: Color {
-        KozmosColors.primitivesColorsForeground500
+        KozmosColors.primitivesColorsForeground400
     }
 }
 
