@@ -2,7 +2,7 @@
 
 # SplitButton
 
-Pairs a primary action with a separate dropdown of related actions. Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers.
+Pairs a primary action with a separate dropdown of related actions. Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers. The menu half shows only a chevron and is named by `menuLabel`, "More options" by default, on the web, SwiftUI and Compose; a product that translates passes its own.
 
 - **Import:** `import { SplitButton } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -42,6 +42,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `SplitButtonProps`, which
 - `size`: `ButtonProps["size"]`, optional, default `"default"`.
 - `disabled`: `boolean`, optional.
 - `children`: `React.ReactNode`, optional.
+- `menuLabel`: `string`, optional, default `"More options"`.
+
+  The menu half's accessible name: it shows only a chevron. "More options"
+  by default; a product that translates passes its own.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 

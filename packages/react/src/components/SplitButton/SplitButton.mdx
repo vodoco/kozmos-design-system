@@ -9,6 +9,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 Pairs a primary action with a separate dropdown of related actions.
 Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers.
+The menu half shows only a chevron and is named by `menuLabel`, "More options" by default, on the web, SwiftUI and
+Compose; a product that translates passes its own.
 
 Both halves are the theme fill, and each draws the pressed token, `#0D44C2`, while it is held, on
 the web and in Compose. On iOS the menu half keeps SwiftUI's own press: it is a `Menu`, which does
@@ -64,7 +66,8 @@ import SwiftUI
 import Kozmos
 
 // The label is a String, and each menu item a title and what it does; the
-// menu half is the system's Menu. There is no disabled state.
+// menu half is the system's Menu, named by menuLabel, "More options" unless
+// you pass your own. There is no disabled state.
 struct PublishOrSaveDraft: View {
     let publish: () -> Void
     let saveDraft: () -> Void
@@ -85,7 +88,7 @@ import com.kozmos.components.splitbutton.SplitContextMenuItem
 
 // The label is a String, and each menu item a SplitContextMenuItem: its
 // label and what it does. There is no disabled state, and TalkBack names the
-// menu half "More actions", in fixed English.
+// menu half menuLabel, "More options" unless you pass your own.
 @Composable
 fun PublishOrSaveDraft(publish: () -> Unit, saveDraft: () -> Unit) {
     KozmosSplitButton(
