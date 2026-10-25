@@ -166,6 +166,10 @@ public struct KozmosMapControlsGroup: View {
                     action: onCompassReset
                 )
                 .rotationEffect(.degrees(compassBearing))
+                // The map's bearing, the same in every language, as Compose's
+                // rotate() is: right to left, SwiftUI turns a rotation the
+                // other way, and the compass turned against the map.
+                .environment(\.layoutDirection, .leftToRight)
                 .background(surfaceColor)
                 .clipShape(controlShape)
                 .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: controlShape, fill: surfaceColor)
