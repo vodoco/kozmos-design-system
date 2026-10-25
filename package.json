@@ -131,6 +131,7 @@
     "tokens:raw:check": "node scripts/check-raw-values.mjs",
     "tokens:unitless:check": "node scripts/check-unitless-tokens.mjs",
     "components:classes:check": "node scripts/check-compiled-classes.mjs",
+    "ios:shapes:check": "node scripts/check-ios-shape-direction.mjs",
     "packages:install:check": "node scripts/check-package-install.mjs",
     "packages:scope:check": "node scripts/check-package-scope.mjs",
     "product:consumer:check": "node scripts/check-product-consumer.mjs",
