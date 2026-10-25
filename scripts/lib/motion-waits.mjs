@@ -201,8 +201,10 @@ export async function glideEnded(
  * ends, and read as still while it runs.
  *
  * Resolves `{ settled, why, moved, from, to, frames, timeline }`: `to` is the
- * last reading, `timeline` lists each change with when and on which frame,
- * and when `act` returned. Not settled within `limit` ms of `act` returning,
+ * last reading, though it may be less than 0.05 from the last change (in
+ * Firefox, a 300 ms ease read 199.97 on its last frame and 200 on the next);
+ * `timeline` lists each change with when and on which frame, when `act`
+ * returned, and ends with `to`. Not settled within `limit` ms of `act` returning,
  * `why` says what was missing, and says so when the page drew too few frames
  * to tell. Rejects if the page has not answered `limit` ms and 5 s after `act`.
  */
@@ -247,7 +249,10 @@ export async function readingSettled(
           );
         const from = read(node, arg);
         const timeline = [`0 ms ${show(from)}`];
+        // `last` is the last change, what each reading is compared with;
+        // `latest` is the last reading, which may differ from it by less.
         let last = from;
+        let latest = from;
         let moved = false;
         let animating = false;
         let armed = false;
@@ -274,7 +279,7 @@ export async function readingSettled(
         const finish = (settled, why) => {
           if (done) return;
           end();
-          timeline.push(`${at()} ms, ${frames} frames`);
+          timeline.push(`${at()} ms ${show(latest)}, ${frames} frames`);
           const lines =
             timeline.length <= 16
               ? timeline
@@ -288,7 +293,7 @@ export async function readingSettled(
             why,
             moved,
             from,
-            to: last,
+            to: latest,
             frames,
             timeline: lines.join(", "),
           });
@@ -303,6 +308,7 @@ export async function readingSettled(
             reject(error);
             return;
           }
+          latest = value;
           const now = performance.now();
           const running =
             animations &&

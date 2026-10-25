@@ -1139,8 +1139,10 @@ final class InteractionTests: XCTestCase {
         launch("multiselect-lock")
         XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "the list was not open to begin with")
         let toggle = app.buttons["Toggle read-only"]
+        let toggleFrame = toggle.frame
         toggle.tap()
         XCTAssertFalse(app.buttons["Ramp"].exists, "a read-only MultiSelect shows its list")
+        XCTAssertEqual(toggle.frame, toggleFrame, "the list's closing moved the toggle: the next tap may land where it was")
         toggle.tap()
         XCTAssertTrue(app.buttons["Open options"].waitForExistence(timeout: 3), "the list opened again by itself")
         XCTAssertFalse(app.buttons["Ramp"].exists, "the list opened again by itself")
@@ -1190,12 +1192,20 @@ final class InteractionTests: XCTestCase {
     /// A Combobox list closed by read-only stays closed when the field can be
     /// used again, as React's does: it opens again only when the visitor
     /// opens it.
+    ///
+    /// The toggle is tapped twice and must not move between the taps. Under
+    /// the field, the list's closing moved it up 106pt, and SwiftUI slid it
+    /// there for about 300ms after XCTest found the app idle. The second tap
+    /// read it at 207.3, 35pt below where it came to rest, and the touch
+    /// landed on the events line (run 40213559266).
     func testAComboboxClosedByReadOnlyStaysClosedAfterwards() {
         launch("combobox-lock")
         XCTAssertTrue(app.buttons["Lobby"].waitForExistence(timeout: 3), "the list was not open to begin with")
         let toggle = app.buttons["Toggle read-only"]
+        let toggleFrame = toggle.frame
         toggle.tap()
         XCTAssertFalse(app.buttons["Lobby"].exists, "a read-only Combobox shows its list")
+        XCTAssertEqual(toggle.frame, toggleFrame, "the list's closing moved the toggle: the next tap may land where it was")
         toggle.tap()
         let chevron = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open options", "Close options"])).firstMatch
         XCTAssertTrue(chevron.waitForExistence(timeout: 3), "no chevron")
