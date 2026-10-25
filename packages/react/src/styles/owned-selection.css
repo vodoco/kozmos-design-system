@@ -119,4 +119,15 @@
     width: 6rem;
     max-width: 100%;
   }
+  /* The input's outline-none hides the browser's focus ring: the field
+     rings for it. It is a transparent outline at rest too, which forced
+     colours (Windows' high contrast) paint, so the input drew a 2px box of
+     its own inside the field. There it draws none. Its focus is still
+     marked: the field's focus-within outline-none is the outline forced
+     colours paint round the field, as round Combobox's input. */
+  @media (forced-colors: active) {
+    .kozmos-multiselect-input {
+      outline-style: none;
+    }
+  }
 }

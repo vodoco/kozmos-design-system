@@ -81,6 +81,10 @@ public struct KozmosSpinner: View {
             .trim(from: 0, to: 0.75)
             .stroke(color, style: StrokeStyle(lineWidth: size.lineWidth, lineCap: .round))
             .rotationEffect(.degrees(-90 + angle))
+            // Drawn and turned as it is in every language, as React's arc is:
+            // right to left, SwiftUI turns a rotation the other way, so the
+            // gap sat at the bottom right and the arc turned anticlockwise.
+            .environment(\.layoutDirection, .leftToRight)
             .frame(width: size.points, height: size.points)
             .onAppear {
                 guard !reduceMotion else { return }
