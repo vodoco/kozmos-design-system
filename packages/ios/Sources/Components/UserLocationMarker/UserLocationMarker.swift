@@ -62,6 +62,11 @@ public struct KozmosUserLocationMarker: View {
                     )
                     .frame(width: 64, height: 64)
                     .rotationEffect(.degrees(heading))
+                    // A heading is a compass bearing, the same in every
+                    // language, as React's rotate() is: right to left,
+                    // SwiftUI turns a rotation the other way, and the cone
+                    // pointed west for a heading of east.
+                    .environment(\.layoutDirection, .leftToRight)
             }
 
             // The dot: 18, with a 3 ring inside it: the map marker's white, the

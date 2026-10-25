@@ -180,6 +180,17 @@ public struct KozmosCombobox: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Closed while it cannot be used, from its first appearance and
+        // whenever it stops being usable, so it does not open by itself when
+        // it is usable again: React's closes on mount and on change, through
+        // an effect. Hidden but left open, a field that started disabled or
+        // read-only with `defaultOpen`, or was made so while open, showed its
+        // list again by itself. A host's `expanded` is the host's: hidden
+        // while the field cannot be used, never written here.
+        .onAppear { if disabled || readOnly { internalOpen = false } }
+        .onChange(of: disabled || readOnly) { locked in
+            if locked { internalOpen = false }
+        }
         .onChange(of: isOpen) { open in
             if open { restoresInputFocus = inputFocused }
         }
