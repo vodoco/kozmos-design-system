@@ -52,7 +52,7 @@ fun KozmosSegmentedControl(
             .border(1.dp, KozmosThemeTokens.primitivesColorsBackground200, containerShape),
         shape = containerShape,
         color = KozmosThemeTokens.primitivesColorsBackground100,
-        contentColor = KozmosThemeTokens.primitivesColorsForeground500
+        contentColor = KozmosThemeTokens.primitivesColorsForeground400
     ) {
         Row(
             modifier = Modifier.padding(4.dp),
@@ -90,7 +90,7 @@ fun KozmosSegmentedControl(
                         color = if (selected) {
                             KozmosThemeTokens.primitivesColorsForeground0
                         } else {
-                            KozmosThemeTokens.primitivesColorsForeground500
+                            KozmosThemeTokens.primitivesColorsForeground400
                         },
                         fontSize = metrics.fontSize,
                         fontWeight = FontWeight.Medium,

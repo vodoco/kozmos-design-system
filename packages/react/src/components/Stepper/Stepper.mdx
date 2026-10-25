@@ -9,6 +9,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 Shows progress through a labelled sequence, marking earlier steps complete and one step current.
 `currentStep` is zero-based; it displays progress rather than providing navigation or form validation.
+A screen reader hears which step is current: it is `aria-current="step"` on the web, and selected,
+the platform's own word, in VoiceOver and TalkBack, where each step is read as one item, its number and name together.
 
 <Canvas>
   <Story of={StepperStories.Default} />

@@ -56,7 +56,7 @@ fun KozmosMapInfoPanel(content: KozmosMapInfoContent, onClose: () -> Unit, modif
             }
             KozmosIconButton(Icons.Outlined.Close, onClick = onClose, contentDescription = closeLabel)
         }
-        content.introduction?.takeIf { it.isNotEmpty() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = KozmosThemeTokens.primitivesColorsForeground500) }
+        content.introduction?.takeIf { it.isNotEmpty() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = KozmosThemeTokens.primitivesColorsForeground400) }
         if (content.faqs.isNotEmpty()) {
             Text(faqLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
             KozmosAccordion {
@@ -84,7 +84,7 @@ fun KozmosMapInfoPanel(content: KozmosMapInfoContent, onClose: () -> Unit, modif
                     content.credits.forEach { InfoEntry(it) }
                 }
                 content.links.forEach { InfoEntry(it) }
-                content.versions.forEach { Text("${it.label}: ${it.value}", style = MaterialTheme.typography.bodySmall, color = KozmosThemeTokens.primitivesColorsForeground500) }
+                content.versions.forEach { Text("${it.label}: ${it.value}", style = MaterialTheme.typography.bodySmall, color = KozmosThemeTokens.primitivesColorsForeground400) }
             }
         }
     }
