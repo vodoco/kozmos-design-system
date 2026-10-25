@@ -27,7 +27,7 @@ public enum KozmosIconColor {
     var swiftUIColor: Color {
         switch self {
         case .default: return KozmosColors.primitivesColorsForeground100
-        case .muted: return KozmosColors.primitivesColorsForeground500
+        case .muted: return KozmosColors.primitivesColorsForeground400
         // A theme-coloured icon on a surface: theme 600 (decision 59).
         case .primary: return KozmosColors.primitivesColorsTheme600
         case .destructive: return KozmosColors.primitivesColorsEmotionalDanger600

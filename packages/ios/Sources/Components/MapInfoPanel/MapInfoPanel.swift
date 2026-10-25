@@ -70,7 +70,7 @@ public struct KozmosMapInfoPanel: View {
                     .keyboardShortcut(.cancelAction)
             }
             if let introduction = content.introduction, !introduction.isEmpty {
-                Text(verbatim: introduction).font(KozmosTypography.subheadline).foregroundColor(KozmosColors.primitivesColorsForeground500)
+                Text(verbatim: introduction).font(KozmosTypography.subheadline).foregroundColor(KozmosColors.primitivesColorsForeground400)
             }
             if !content.faqs.isEmpty {
                 Text(verbatim: faqLabel).font(KozmosTypography.subheadline.weight(.semibold)).accessibilityAddTraits(.isHeader)
@@ -95,7 +95,7 @@ public struct KozmosMapInfoPanel: View {
                     }
                     ForEach(content.links) { entry in entryView(entry) }
                     ForEach(content.versions) { version in
-                        Text(verbatim: "\(version.label): \(version.value)").font(KozmosTypography.caption).foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        Text(verbatim: "\(version.label): \(version.value)").font(KozmosTypography.caption).foregroundColor(KozmosColors.primitivesColorsForeground400)
                     }
                 }
             }

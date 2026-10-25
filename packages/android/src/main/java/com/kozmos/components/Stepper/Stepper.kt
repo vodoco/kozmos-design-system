@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -42,6 +44,11 @@ fun KozmosStepper(
             val isCurrent = index == currentStep
             
             Column(
+                // One node a step, its number and name together, and the
+                // current step selected, as React's is `aria-current="step"`:
+                // TalkBack walked each number and name apart, and heard
+                // nothing of which step was current.
+                modifier = Modifier.semantics(mergeDescendants = true) { if (isCurrent) selected = true },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
             ) {

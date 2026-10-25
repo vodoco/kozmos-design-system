@@ -15,24 +15,36 @@ public struct KozmosTooltip: ViewModifier {
     /// label, or VoiceOver reads it twice; the bubble still shows.
     let isAccessibilityHint: Bool
 
-    @State private var isPresented = false
+    @State private var isPresented: Bool
 
     public init(text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) {
+        self.init(text: text, side: side, isAccessibilityHint: isAccessibilityHint, isPresented: false)
+    }
+
+    /// Shown from the start, so a test can draw it without pressing anything.
+    init(text: String, side: KozmosTooltipSide, isAccessibilityHint: Bool, isPresented: Bool) {
         self.text = text
         self.side = side
         self.isAccessibilityHint = isAccessibilityHint
+        _isPresented = State(initialValue: isPresented)
     }
 
     public func body(content: Content) -> some View {
         content
             .overlay(alignment: overlayAlignment) {
-                if isPresented {
-                    KozmosTooltipBubble(text: text, side: side)
-                        .fixedSize()
-                        .modifier(KozmosTooltipPosition(side: side))
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                        .allowsHitTesting(false)
+                // The guides that put the bubble beside the view are set on a
+                // container round the conditional bubble: set on the bubble
+                // inside it they were lost, and the bubble was drawn over
+                // the view, against its edge, until 2026-10-21.
+                ZStack {
+                    if isPresented {
+                        KozmosTooltipBubble(text: text, side: side)
+                            .fixedSize()
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    }
                 }
+                .modifier(KozmosTooltipPosition(side: side))
+                .allowsHitTesting(false)
             }
             .onHover { hovering in
                 withAnimation(.easeOut(duration: 0.12)) {
@@ -93,35 +105,26 @@ private struct KozmosTooltipHint: ViewModifier {
     }
 }
 
+/// Puts the bubble beside the view, 4 from it, on its side. Every guide is
+/// set, each for its own side, as the location pin's label sets them: a
+/// guide set inside a `switch` is lost, as one set inside the conditional
+/// bubble is.
 private struct KozmosTooltipPosition: ViewModifier {
     let side: KozmosTooltipSide
 
-    @ViewBuilder
     func body(content: Content) -> some View {
         let gap = KozmosDimensions.primitivesLayoutSpacing50
-
-        switch side {
-        case .top:
-            content.alignmentGuide(.top) { dimensions in
-                dimensions[.bottom] + gap
-            }
-        case .right:
-            content.alignmentGuide(.trailing) { dimensions in
-                dimensions[.leading] - gap
-            }
-        case .bottom:
-            content.alignmentGuide(.bottom) { dimensions in
-                dimensions[.top] - gap
-            }
-        case .left:
-            content.alignmentGuide(.leading) { dimensions in
-                dimensions[.trailing] + gap
-            }
-        }
+        return content
+            .alignmentGuide(.top) { side == .top ? $0[.bottom] + gap : $0[.top] }
+            .alignmentGuide(.bottom) { side == .bottom ? $0[.top] - gap : $0[.bottom] }
+            .alignmentGuide(.leading) { side == .left ? $0[.trailing] + gap : $0[.leading] }
+            .alignmentGuide(.trailing) { side == .right ? $0[.leading] - gap : $0[.trailing] }
     }
 }
 
-private struct KozmosTooltipBubble: View {
+/// The bubble the tooltip shows, with its tip toward the view it explains.
+/// Internal so a test can draw it without pressing anything.
+struct KozmosTooltipBubble: View {
     let text: String
     let side: KozmosTooltipSide
 
@@ -171,9 +174,10 @@ private struct KozmosTooltipBubble: View {
 
 private struct KozmosTooltipTip: View {
     let side: KozmosTooltipSide
+    @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
-        KozmosTooltipTipShape(side: side)
+        KozmosTooltipTipShape(side: side, rightToLeft: layoutDirection == .rightToLeft)
             .fill(KozmosColors.primitivesColorsBackground0)
             .frame(width: tipWidth, height: tipHeight)
     }
@@ -187,11 +191,18 @@ private struct KozmosTooltipTip: View {
     }
 }
 
-private struct KozmosTooltipTipShape: Shape {
+/// The tip, pointing at the view the bubble explains. A side tip sits at the
+/// bubble's leading end (`.right`) or trailing end (`.left`), which a
+/// right-to-left layout puts on the other side, so the tip mirrors itself
+/// there, and SwiftUI must not mirror it again: unset, a shape mirrors itself
+/// right to left in an app that deploys to iOS 17 or later and not in one
+/// that deploys to iOS 16, where a side tip pointed into its own bubble.
+struct KozmosTooltipTipShape: Shape {
     let side: KozmosTooltipSide
+    var rightToLeft = false
 
     func path(in rect: CGRect) -> Path {
-        Path { path in
+        let path = Path { path in
             switch side {
             case .top:
                 path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
@@ -212,7 +223,11 @@ private struct KozmosTooltipTipShape: Shape {
             }
             path.closeSubpath()
         }
+        return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
     }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
 public extension View {

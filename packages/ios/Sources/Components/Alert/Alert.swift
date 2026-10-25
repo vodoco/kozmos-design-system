@@ -44,6 +44,9 @@ public struct KozmosAlert<Content: View>: View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             content
         }
+        // The icon, title and description inside take the alert's variant,
+        // as React's inherit its colour and Figma binds them to it.
+        .environment(\.kozmosAlertVariant, variant.shared)
         .padding()
         .background(KozmosColors.semanticsSurface0)
         .cornerRadius(KozmosDimensions.semanticsRadiusControl)
@@ -54,16 +57,48 @@ public struct KozmosAlert<Content: View>: View {
     }
 }
 
-public struct KozmosAlertIcon: View {
-    let variant: KozmosAlert<AnyView>.KozmosAlertVariant
+extension KozmosAlert.KozmosAlertVariant {
+    /// The same variant as the parts take it, whatever the alert holds: a
+    /// variant nested in the generic alert is a type of its own for each
+    /// content.
+    var shared: KozmosAlert<AnyView>.KozmosAlertVariant {
+        switch self {
+        case .default: return .default
+        case .info: return .info
+        case .success: return .success
+        case .warning: return .warning
+        case .destructive: return .destructive
+        }
+    }
+}
 
-    public init(variant: KozmosAlert<AnyView>.KozmosAlertVariant = .default) {
+private struct KozmosAlertVariantKey: EnvironmentKey {
+    static let defaultValue: KozmosAlert<AnyView>.KozmosAlertVariant = .default
+}
+
+extension EnvironmentValues {
+    /// The variant of the alert a part is in: `.default` outside one.
+    var kozmosAlertVariant: KozmosAlert<AnyView>.KozmosAlertVariant {
+        get { self[KozmosAlertVariantKey.self] }
+        set { self[KozmosAlertVariantKey.self] = newValue }
+    }
+}
+
+public struct KozmosAlertIcon: View {
+    let variant: KozmosAlert<AnyView>.KozmosAlertVariant?
+    @Environment(\.kozmosAlertVariant) private var alertVariant
+
+    /// `variant` nil, the default, draws the symbol and colour of the alert
+    /// the icon is in. It drew the default's info symbol in foreground/0
+    /// unless given the alert's variant again, until 2026-10-20.
+    public init(variant: KozmosAlert<AnyView>.KozmosAlertVariant? = nil) {
         self.variant = variant
     }
 
     public var body: some View {
-        Image(systemName: variant.icon)
-            .foregroundColor(variant.foregroundColor)
+        let shown = variant ?? alertVariant
+        Image(systemName: shown.icon)
+            .foregroundColor(shown.foregroundColor)
             .font(KozmosTypography.title3)
     }
 }
@@ -84,9 +119,13 @@ public struct KozmosAlertContent<Content: View>: View {
 
 public struct KozmosAlertTitle: View {
     let title: String
-    let color: Color
+    let color: Color?
+    @Environment(\.kozmosAlertVariant) private var alertVariant
 
-    public init(_ title: String, color: Color = KozmosColors.primitivesColorsForeground0) {
+    /// `color` nil, the default, is the colour of the alert the title is in,
+    /// as Figma draws it: foreground/0 in a default alert. It was
+    /// foreground/0 in every alert until 2026-10-20.
+    public init(_ title: String, color: Color? = nil) {
         self.title = title
         self.color = color
     }
@@ -95,15 +134,19 @@ public struct KozmosAlertTitle: View {
         Text(title)
             .font(KozmosTypography.headline)
             .bold()
-            .foregroundColor(color)
+            .foregroundColor(color ?? alertVariant.foregroundColor)
     }
 }
 
 public struct KozmosAlertDescription: View {
     let description: String
-    let color: Color
+    let color: Color?
+    @Environment(\.kozmosAlertVariant) private var alertVariant
 
-    public init(_ description: String, color: Color = KozmosColors.primitivesColorsForeground500) {
+    /// `color` nil, the default, is the colour of the alert the description
+    /// is in, as Figma draws it and React's inherits it: foreground/0 in a
+    /// default alert. It was foreground/500 in every alert until 2026-10-20.
+    public init(_ description: String, color: Color? = nil) {
         self.description = description
         self.color = color
     }
@@ -111,6 +154,6 @@ public struct KozmosAlertDescription: View {
     public var body: some View {
         Text(description)
             .font(KozmosTypography.subheadline)
-            .foregroundColor(color)
+            .foregroundColor(color ?? alertVariant.foregroundColor)
     }
 }

@@ -57,7 +57,7 @@ import Kozmos
 
 // Each option draws its own label, and every option shares your selection:
 // the group only stacks them, and takes no name (React's aria-label has no
-// counterpart). VoiceOver is not told which option is selected.
+// counterpart). VoiceOver hears the chosen option as selected.
 struct ChooseAnOption: View {
     @State private var selection = "option-one"
 
