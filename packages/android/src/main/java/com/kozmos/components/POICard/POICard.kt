@@ -76,7 +76,7 @@ fun KozmosPOICard(
                             Text(
                                 text = category,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = KozmosThemeTokens.primitivesColorsForeground500
+                                color = KozmosThemeTokens.primitivesColorsForeground400
                             )
                         }
                     }

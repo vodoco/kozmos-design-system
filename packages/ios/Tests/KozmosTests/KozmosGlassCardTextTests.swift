@@ -179,7 +179,7 @@ final class KozmosGlassCardTextTests: XCTestCase {
         for scheme in [ColorScheme.light, .dark] {
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
             let muted = try await render(
-                KozmosColors.primitivesColorsForeground500.environment(\.colorScheme, scheme),
+                KozmosColors.primitivesColorsForeground400.environment(\.colorScheme, scheme),
                 "decision-48-card-muted-swatch-\(scheme)").color(at: centre)
             let ink = try await render(
                 KozmosColors.primitivesColorsForeground100.environment(\.colorScheme, scheme),

@@ -106,7 +106,7 @@ public struct KozmosCombobox: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     .accessibilityLabel(clearLabel)
                 }
 
@@ -119,7 +119,7 @@ public struct KozmosCombobox: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(disabled || readOnly)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 .accessibilityLabel(isOpen ? closeLabel : openLabel)
             }
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
@@ -135,7 +135,7 @@ public struct KozmosCombobox: View {
                     if emptyText != supportingText {
                         Text(emptyText)
                             .font(KozmosTypography.subheadline)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
                             .padding(KozmosDimensions.primitivesLayoutSpacing150)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(KozmosColors.primitivesColorsBackground0)
@@ -180,6 +180,17 @@ public struct KozmosCombobox: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Closed while it cannot be used, from its first appearance and
+        // whenever it stops being usable, so it does not open by itself when
+        // it is usable again: React's closes on mount and on change, through
+        // an effect. Hidden but left open, a field that started disabled or
+        // read-only with `defaultOpen`, or was made so while open, showed its
+        // list again by itself. A host's `expanded` is the host's: hidden
+        // while the field cannot be used, never written here.
+        .onAppear { if disabled || readOnly { internalOpen = false } }
+        .onChange(of: disabled || readOnly) { locked in
+            if locked { internalOpen = false }
+        }
         .onChange(of: isOpen) { open in
             if open { restoresInputFocus = inputFocused }
         }
@@ -279,7 +290,7 @@ public struct KozmosCombobox: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

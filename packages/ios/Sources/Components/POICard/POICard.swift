@@ -52,7 +52,7 @@ public struct KozmosPOICard<ImageContent: View, DescriptionContent: View, Action
                         if let category = category {
                             Text(category)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
                         }
                     }
                     

@@ -55,15 +55,77 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 }
 
+/** A transition of a colour: what a theme switch starts in every part. */
+const COLOUR = /color|shadow|^fill$|^stroke$/;
+
 /**
  * Mirrors the provider's resolved theme onto <html>, before paint, so the
  * document canvas and native scrollbars match the components. The provider
  * itself never touches <html> by design.
+ *
+ * A change of theme then snaps (GAPS.md, GAP-96). Every Kozmos part with a
+ * colour transition would fade into the new theme, hundreds of them at once
+ * on the home page, a frame of restyling and repainting for each step of the
+ * fade. So the new theme's styles are settled here, before paint, and every
+ * colour fade that started ends at once; so does every colour fade that
+ * starts in the frames after, until a frame starts none (a style an engine
+ * settles later, as WebKit does after the device's scheme changes).
+ * Anything else moving, a band fading in or a lap, is left alone. The first
+ * theme, set as the page hydrates, is no change.
  */
 function DocumentTheme() {
   const { resolvedTheme } = useTheme();
   useLayoutEffect(() => {
-    document.documentElement.dataset.theme = resolvedTheme;
+    const html = document.documentElement;
+    const switching =
+      html.dataset.theme !== undefined && html.dataset.theme !== resolvedTheme;
+    html.dataset.theme = resolvedTheme;
+    if (!switching) return;
+    // getAnimations() settles pending styles first, so the fades exist:
+    // here, and again once the commit's other effects have run.
+    const finishFades = () => {
+      for (const animation of document.getAnimations()) {
+        if (
+          animation instanceof CSSTransition &&
+          COLOUR.test(animation.transitionProperty)
+        )
+          animation.finish();
+      }
+    };
+    finishFades();
+    queueMicrotask(finishFades);
+    // A fade's transitionrun is sent as the next frame starts, before it
+    // draws: ended there, it is never drawn part-way.
+    let ended = 0;
+    const end = (event: TransitionEvent) => {
+      if (!COLOUR.test(event.propertyName)) return;
+      for (const animation of (event.target as Element).getAnimations())
+        if (
+          animation instanceof CSSTransition &&
+          animation.transitionProperty === event.propertyName
+        ) {
+          animation.finish();
+          ended++;
+        }
+    };
+    document.addEventListener("transitionrun", end, true);
+    let frame = 0;
+    let frames = 0;
+    // Four frames at least, then until a frame ends none, twenty at most.
+    const watch = () => {
+      frames++;
+      if (frames > 20 || (frames > 4 && ended === 0)) {
+        document.removeEventListener("transitionrun", end, true);
+        return;
+      }
+      ended = 0;
+      frame = requestAnimationFrame(watch);
+    };
+    frame = requestAnimationFrame(watch);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("transitionrun", end, true);
+    };
   }, [resolvedTheme]);
   return null;
 }

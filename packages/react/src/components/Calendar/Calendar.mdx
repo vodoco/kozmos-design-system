@@ -1,0 +1,130 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as CalendarStories from "./Calendar.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={CalendarStories} />
+
+# Calendar
+
+A month grid to choose a day or a range in, one month or two side by side (decision 104). It is
+the panel Figma draws open under DatePicker (`438:4292`) and DateRangePicker (`443:10939`): a
+36px day in one month and a 40px day in a range, four apart, with the Control corner; the chosen
+day in the theme fill under the theme foreground (decision 59), today on background/100, a
+range's days on theme/100, and another month's days in ink 400.
+
+Days are `YYYY-MM-DD` strings, as DatePicker's value is, and a month is `YYYY-MM`. Calendar draws
+no surface of its own: DatePicker opens it in a Popover, and a page can set it on a Card.
+
+<Canvas>
+  <Story of={CalendarStories.Default} />
+</Canvas>
+
+<Controls />
+
+## A day or a range
+
+`mode="single"` (the default) calls `onValueChange` with the day each time one is chosen, the
+chosen one included, so a picker can close on it. `mode="range"` calls it with `{ start }` when
+the first day is chosen and `{ start, end }`, in order, when the second is; the next choice starts
+a new range. While a range has a start and no end, the day under the pointer or the focus shows
+where it would end. `value` with `onValueChange` controls it; `defaultValue` leaves it to the
+calendar.
+
+<Canvas>
+  <Story of={CalendarStories.TwoMonths} />
+</Canvas>
+
+`months={2}` shows two months side by side, 12 apart, and wraps them under each other where they do
+not fit. The first month shown is the value's, else today's; `month` with `onMonthChange` controls
+it, and `defaultMonth` sets the first. `today` names the day drawn as today, by default the
+reader's own: a venue in another time zone can pass its own.
+
+## Days that cannot be chosen
+
+`min` and `max` bound the days: those outside are muted, cannot be chosen, and the keyboard stops at
+the bound. `isDateUnavailable` closes any day a product decides, such as a venue's closed days:
+those are muted too, and the keyboard still reaches them, so a reader hears that they exist and
+that they are unavailable. A range may cross a closed day; only its ends must be open.
+
+<Canvas>
+  <Story of={CalendarStories.Unavailable} />
+</Canvas>
+
+## The keyboard
+
+The grid is one tab stop, after the previous- and next-month buttons, on the chosen day, else today,
+else the month's first. It follows the WAI-ARIA date picker dialog's grid:
+
+| Key                      | Moves to                                               |
+| ------------------------ | ------------------------------------------------------ |
+| Left and Right arrows    | the day before and after, as the page reads            |
+| Up and Down arrows       | the same day a week before and after                   |
+| Home and End             | the week's first and last day, from the locale's start |
+| Page Up and Page Down    | the same date a month before and after                 |
+| Shift+Page Up, Page Down | the same date a year before and after                  |
+| Enter and Space          | chooses the day                                        |
+
+Where a month is shorter, the date is its last day. Leaving the months shown shows the next.
+
+## Locale and direction
+
+`locale` names the months and the days and picks the first day of the week; by default it is the
+document's language, then the browser's. The weekdays are the locale's short names, and the days
+are in its digits. The first day of the week is `Intl.Locale`'s, and CLDR's where an engine has
+none (Firefox). Pass `locale` when you render on the server, where there is no document.
+
+Right to left, the week starts at the right, the arrows follow the page and the chevrons turn.
+
+<Canvas>
+  <Story of={CalendarStories.RightToLeft} />
+</Canvas>
+
+## Accessibility
+
+Each month is a grid named by its title, and the title is a polite live region, so a new month is
+read out. Each day is named by its full date in the locale (`Monday, May 25, 2026`) and says
+whether it is chosen, today (`aria-current="date"`) or unavailable (`aria-disabled`). Days of
+another month are drawn for the eye only. The weekday row is hidden from readers, since every day's
+name says its weekday. `previousMonthLabel` and `nextMonthLabel` name the buttons, `"Previous
+month"` and `"Next month"` by default (decision 100). `disabled` takes the grid out of the tab order
+and turns the buttons off; `readOnly` keeps it reachable and chooses nothing.
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Calendar, type DateRangeValue } from "@kozmos-ds/react";
+
+export function Example() {
+  const [day, setDay] = useState("2026-05-25");
+  const [stay, setStay] = useState<DateRangeValue>({});
+  return (
+    <>
+      <Calendar value={day} onValueChange={setDay} min="2026-05-01" />
+      <Calendar
+        mode="range"
+        months={2}
+        value={stay}
+        onValueChange={setStay}
+        isDateUnavailable={(date) => date.endsWith("-01")}
+      />
+    </>
+  );
+}
+    `}
+    swift={`
+// SwiftUI has no Calendar of its own (decision 104): iOS keeps the system's
+// date picker, its platform convention. KozmosDatePicker opens it in a
+// Kozmos field; the locale's names and first day are the device's.
+`}
+    kotlin={`
+// Compose has no Calendar of its own (decision 104): Android keeps the
+// system's date picker, its platform convention. KozmosDatePicker opens it
+// in a Kozmos field; the locale's names and first day are the device's.
+`}
+
+/>
