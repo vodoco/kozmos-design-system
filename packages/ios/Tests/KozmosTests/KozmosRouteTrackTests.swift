@@ -38,12 +38,19 @@ final class KozmosRouteTrackTests: XCTestCase {
         let coincident = [KozmosRouteProgressWaypoint(id: "turn", position: 0.4, type: .right, label: "Right"), points[1]]
         XCTAssertEqual(KozmosRouteProgressRail.visibleRouteWaypoints(coincident, width: 320, activeEnd: 0.4, activeWaypointId: "lift").map(\.id), ["lift"])
     }
-    #if os(iOS)
     /// The dot, the waypoint and the fill share one axis in both reading
     /// directions. SwiftUI mirrors `.position` itself in right-to-left, so a
     /// position flipped by hand as well landed back at its left-to-right place,
-    /// away from the fill the track draws. iOS only: on macOS, ImageRenderer
-    /// mirrors drawn paths as well (measured), which iOS does not.
+    /// away from the fill the track draws.
+    ///
+    /// This ran on iOS only, because on macOS the fill was drawn from the end
+    /// ("ImageRenderer mirrors drawn paths"). That was not macOS: a shape or a
+    /// path mirrors itself in a right-to-left layout when the app deploys to
+    /// iOS 17 or macOS 14 or later, and not when it deploys to iOS 16, and
+    /// `swift test`'s host deploys to macOS 14. Xcode 27's simulator host
+    /// deploys to iOS 17, and drew it so too. The track places its line for
+    /// the direction itself, so in such an app the line was mirrored twice;
+    /// it now tells SwiftUI not to mirror it, and this runs everywhere.
     @MainActor func testDotAndWaypointFollowTheFillInBothDirections() throws {
         let blue = try DrawnPixels.resolved(KozmosColors.semanticsMapMarkerDot, in: .light)
         let ring = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground400, in: .light)
@@ -73,6 +80,7 @@ final class KozmosRouteTrackTests: XCTestCase {
             XCTAssertEqual(pixels.count(in: ahead, where: DrawnPixels.matches(fill)), 0, "fill \(direction)")
         }
     }
+    #if os(iOS)
     @MainActor func testBackgroundKeepsDirectionalCueStationary() async throws {
         for phase in [ScenePhase.inactive, .background] {
             let view = KozmosProgressTrack(activeRange: .init(start: 0, end: 0.8), value: 0.2,

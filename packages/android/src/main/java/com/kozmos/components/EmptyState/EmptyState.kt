@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -73,7 +75,13 @@ fun KozmosEmptyState(
         verticalArrangement = Arrangement.Center
     ) {
         if (icon != null) {
-            icon()
+            // The caller's icon in the muted colour, as React's is
+            // currentColor in text-muted-foreground and Figma's is
+            // foreground/400: a KozmosIcon or an Icon at its default colour
+            // takes it. It got none, and drew black, unseen in the dark.
+            CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
+                icon()
+            }
             Spacer(modifier = Modifier.height(size.gap))
         }
         

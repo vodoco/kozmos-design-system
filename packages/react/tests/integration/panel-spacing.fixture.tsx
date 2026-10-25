@@ -17,6 +17,15 @@ type Config = {
   instance?: string;
   /** The assistant as the panel's content (GAP-121). */
   assistant?: boolean;
+  /**
+   * The sheet rests at medium, with large too under a grip, rather than
+   * fitting its content. The assistant fills its panel, so a sheet fitted to
+   * it has no height of its own: Chromium and Firefox keep the 160 they first
+   * measured, while WebKit 26.0 grows it 16px a measurement to its largest
+   * height, where the fitted and large detents fold into one and the grip
+   * goes.
+   */
+  medium?: boolean;
   /** The assistant alone, outside any shell. */
   standalone?: boolean;
   /** The category browser, a part with an end padding of its own. */
@@ -46,8 +55,16 @@ window.renderPanelSpacing = (config) =>
           style={{ width: config.side ? 900 : 390, height: 800 }}
           map={<div>Map</div>}
           panelPresentation={config.side ? "side" : "bottom"}
-          panelDetents={config.grip ? ["content", "large"] : ["content"]}
-          panelDetent="content"
+          panelDetents={
+            config.medium
+              ? config.grip
+                ? ["medium", "large"]
+                : ["medium"]
+              : config.grip
+                ? ["content", "large"]
+                : ["content"]
+          }
+          panelDetent={config.medium ? "medium" : "content"}
           panelHeader={
             config.header ? (
               <div data-spacing-header style={{ height: 44 }}>

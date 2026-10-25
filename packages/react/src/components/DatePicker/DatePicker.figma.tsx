@@ -30,15 +30,30 @@ figma.connect(
         Warning: "warning",
         Success: "success",
       }),
+      // The open calendar, where the browser's own button gives way
+      // (decision 105); Firefox keeps the browser's.
+      defaultOpen: figma.enum("Content", {
+        Closed: false,
+        Open: true,
+      }),
       label: figma.string("Label Text"),
       helperText: figma.boolean("Show Helper Text", {
         true: figma.string("Helper Text"),
         false: undefined,
       }),
     },
-    example: ({ autoFocus, disabled, helperText, label, readOnly, status }) => (
+    example: ({
+      autoFocus,
+      defaultOpen,
+      disabled,
+      helperText,
+      label,
+      readOnly,
+      status,
+    }) => (
       <DatePicker
         autoFocus={autoFocus}
+        defaultOpen={defaultOpen}
         defaultValue="2026-05-25"
         disabled={disabled}
         helperText={helperText}

@@ -9,7 +9,7 @@ import com.kozmos.components.splitbutton.SplitContextMenuItem
 
 // The label is a String, and each menu item a SplitContextMenuItem: its
 // label and what it does. There is no disabled state, and TalkBack names the
-// menu half "More actions", in fixed English.
+// menu half menuLabel, "More options" unless you pass your own.
 @Composable
 fun PublishOrSaveDraft(publish: () -> Unit, saveDraft: () -> Unit) {
     KozmosSplitButton(

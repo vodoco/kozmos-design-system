@@ -1,4 +1,14 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+
+/// What a toast tells VoiceOver as it appears.
+struct KozmosToastAnnouncement: Equatable {
+    let message: String
+    /// Queued behind current speech (polite), or said over it (assertive).
+    let queued: Bool
+}
 
 public struct KozmosToast: View {
     @Binding var isPresented: Bool
@@ -45,7 +55,10 @@ public struct KozmosToast: View {
                         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing300)
                         .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing600)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .onAppear(perform: scheduleAutoDismiss)
+                        .onAppear {
+                            Self.post(Self.announcement(title: title, description: description))
+                            scheduleAutoDismiss()
+                        }
                 }
                 .edgesIgnoringSafeArea(.bottom)
                 .zIndex(1)
@@ -64,7 +77,7 @@ public struct KozmosToast: View {
                 if let description {
                     Text(description)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,6 +119,29 @@ public struct KozmosToast: View {
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
         .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+    }
+
+    /// What VoiceOver is told as the toast appears: its title and its
+    /// description, a line apart, said over what VoiceOver is saying rather
+    /// than queued behind it, as React's default (foreground) Radix toast is
+    /// announced through an assertive live region. It posted nothing until
+    /// 2026-10-21, so a toast came and went in silence.
+    static func announcement(title: String, description: String?) -> KozmosToastAnnouncement {
+        let words = [title, description].compactMap { $0 }.filter { !$0.isEmpty }
+        return KozmosToastAnnouncement(message: words.joined(separator: "\n"), queued: false)
+    }
+
+    /// Where the announcement goes: VoiceOver, or a test's record of it.
+    @MainActor static var post: (KozmosToastAnnouncement) -> Void = { announcement in
+        #if canImport(UIKit)
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: NSAttributedString(
+                string: announcement.message,
+                attributes: [.accessibilitySpeechQueueAnnouncement: announcement.queued]
+            )
+        )
+        #endif
     }
 
     private func scheduleAutoDismiss() {

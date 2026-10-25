@@ -4,6 +4,7 @@ import {
   launchFixtureBrowser,
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
+import { readingSettled } from "./lib/motion-waits.mjs";
 
 const fixture = await buildReactFixture("panel-spacing.fixture.tsx");
 const browser = await launchFixtureBrowser();
@@ -187,60 +188,99 @@ try {
   // header's search field does: under a grip (the grip's row and its 4px
   // clearance), in a gripless sheet and in a side panel. Outside a shell it
   // keeps its 12.
-  const fromPanelTop = (selector) =>
-    page.evaluate((selector) => {
-      const panel = document.querySelector("aside");
-      return (
-        document.querySelector(selector).getBoundingClientRect().top -
-        (panel.getBoundingClientRect().top + panel.clientTop)
-      );
-    }, selector);
+  //
+  // Each is read once the panel has come to rest, not three frames on. The
+  // shell lays its panel out again after it measures what it holds, and not
+  // always on a frame: its root's style changing re-measures it too. In a
+  // sheet fitted to the assistant, WebKit 26.0 read the content 16px taller
+  // than its box at every measurement, so the sheet grew 16px at a time
+  // until it reached its largest height, where its fitted and large detents
+  // folded into one and the grip went. Three frames read it on the way up,
+  // or at the top with no grip: 16 where the search field sat at 20 (CI run
+  // 40122692499). The assistant fills its panel, so a fitted sheet has no
+  // height to give it; these sheets rest at medium, whose height is the
+  // shell's, and the grip each case assumes is checked too.
+  const placed = async (config, box, target) => {
+    const rest = await readingSettled(
+      page.locator("#root"),
+      (root, { box, target }) => {
+        const frame = root.querySelector(box);
+        const node = frame && root.querySelector(target);
+        if (!node) return null;
+        const rect = frame.getBoundingClientRect();
+        return {
+          top: node.getBoundingClientRect().top - (rect.top + frame.clientTop),
+          height: rect.height,
+          grip: Boolean(frame.querySelector(".kozmos-map-sheet-grip")),
+        };
+      },
+      {
+        arg: { box, target },
+        act: () =>
+          page.evaluate((config) => window.renderPanelSpacing(config), config),
+        moves: true,
+      },
+    );
+    assert.ok(
+      rest.settled,
+      `${JSON.stringify(config)}: ${target} ${rest.why}: ${rest.timeline}`,
+    );
+    return rest.to;
+  };
   for (const [side, grip] of [
     [false, true],
     [false, false],
     [true, false],
   ]) {
-    const base = { side, grip, long: false, rtl: false, details: false };
-    await page.evaluate((config) => window.renderPanelSpacing(config), {
-      ...base,
-      header: true,
-    });
-    await settleLayout(page);
-    const search = await fromPanelTop("[data-spacing-header]");
-    await page.evaluate((config) => window.renderPanelSpacing(config), {
-      ...base,
-      header: false,
-      assistant: true,
-    });
-    await settleLayout(page);
-    near(
-      await fromPanelTop('button[aria-label="Close assistant"]'),
-      search,
-      `the assistant's header sits where the search field does: ${JSON.stringify(base)}`,
-    );
-  }
-  await page.evaluate(() =>
-    window.renderPanelSpacing({
-      standalone: true,
-      side: false,
-      header: false,
-      grip: false,
+    const base = {
+      side,
+      grip,
+      medium: !side,
       long: false,
       rtl: false,
       details: false,
-    }),
-  );
-  await settleLayout(page);
+    };
+    const search = await placed(
+      { ...base, header: true },
+      "aside",
+      "[data-spacing-header]",
+    );
+    const close = await placed(
+      { ...base, header: false, assistant: true },
+      "aside",
+      'button[aria-label="Close assistant"]',
+    );
+    for (const [name, at] of [
+      ["search field", search],
+      ["assistant", close],
+    ])
+      assert.equal(
+        at.grip,
+        grip,
+        `${JSON.stringify(base)}: the ${name}'s panel ${grip ? "drew no grip" : "drew a grip"} once it came to rest`,
+      );
+    near(
+      close.top,
+      search.top,
+      `the assistant's header sits where the search field does: ${JSON.stringify(base)}`,
+    );
+  }
   near(
-    await page.evaluate(
-      () =>
-        document
-          .querySelector(
-            '[data-standalone] button[aria-label="Close assistant"]',
-          )
-          .getBoundingClientRect().top -
-        document.querySelector("[data-standalone]").getBoundingClientRect().top,
-    ),
+    (
+      await placed(
+        {
+          standalone: true,
+          side: false,
+          header: false,
+          grip: false,
+          long: false,
+          rtl: false,
+          details: false,
+        },
+        "[data-standalone]",
+        '[data-standalone] button[aria-label="Close assistant"]',
+      )
+    ).top,
     12,
     "outside a shell the assistant's header keeps its 12",
   );

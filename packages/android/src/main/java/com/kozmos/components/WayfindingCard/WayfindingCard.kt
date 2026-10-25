@@ -58,10 +58,20 @@ fun KozmosWayfindingCard(
     modifier: Modifier = Modifier,
     title: String = "Navigation",
     onClose: (() -> Unit)? = null,
+    /**
+     * The close button's spoken name, drawn when [onClose] is set, as
+     * SwiftUI's and React's `closeLabel`. "Close navigation" by default, as
+     * theirs; a product that translates passes its own. Before [content], so
+     * a trailing lambda still compiles.
+     */
+    closeLabel: String = "Close navigation",
     content: @Composable () -> Unit
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
+        // The container radius, 20, as React's Card and SwiftUI's card: given
+        // no shape, Material's Card took its medium shape, 12.
+        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = KozmosShadows.semanticsElevationFloating),
         colors = CardDefaults.cardColors(containerColor = KozmosThemeTokens.primitivesColorsBackground0)
     ) {
@@ -76,7 +86,7 @@ fun KozmosWayfindingCard(
                 )
                 if (onClose != null) {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = closeLabel)
                     }
                 }
             }

@@ -10,12 +10,13 @@ import com.kozmos.components.pagination.KozmosPaginationNext
 
 // Each page is pressable text, not a link: there is no href, and where a
 // press goes is yours. TalkBack is told no role and not which page is
-// current, and Previous and Next are fixed English words.
+// current. Previous and Next draw and say label, "Previous" and "Next"
+// unless you pass your own.
 @Composable
-fun ResultPages(page: Int, goTo: (Int) -> Unit) {
+fun ResultPages(page: Int, nextLabel: String, goTo: (Int) -> Unit) {
     KozmosPagination {
         KozmosPaginationLink(text = "1", isActive = page == 1, onClick = { goTo(1) })
         KozmosPaginationLink(text = "2", isActive = page == 2, onClick = { goTo(2) })
-        KozmosPaginationNext(onClick = { goTo(page + 1) })
+        KozmosPaginationNext(onClick = { goTo(page + 1) }, label = nextLabel)
     }
 }
