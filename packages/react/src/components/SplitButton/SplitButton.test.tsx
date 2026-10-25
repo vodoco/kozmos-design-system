@@ -19,4 +19,25 @@ describe("SplitButton", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons.length).toBeGreaterThan(1);
   });
+
+  // GAP-168, GAP-182: the menu half shows only a chevron, and was named
+  // "More options" in fixed English.
+  it("names the menu half in a product's own words", () => {
+    render(
+      <SplitButton menuLabel="Weitere Optionen">Veröffentlichen</SplitButton>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Weitere Optionen" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "More options" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("names the menu half More options when a product passes no name", () => {
+    render(<SplitButton>Publish</SplitButton>);
+    expect(
+      screen.getByRole("button", { name: "More options" }),
+    ).toBeInTheDocument();
+  });
 });
