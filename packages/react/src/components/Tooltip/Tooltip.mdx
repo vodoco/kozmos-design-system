@@ -85,7 +85,9 @@ import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.tooltip.KozmosTooltip
 
 // Compose's tooltip shows only while visible is true: it watches nothing
-// itself, so this one follows the button's press.
+// itself, so this one follows the button's press. Its side is Top by
+// default; Top, Right, Bottom and Left are physical, as React's are, and
+// Leading and Trailing follow the reading direction.
 @Composable
 fun AddToLibrary(add: () -> Unit) {
     val interactions = remember { MutableInteractionSource() }
