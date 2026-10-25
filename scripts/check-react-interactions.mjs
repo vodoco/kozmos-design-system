@@ -10,6 +10,7 @@ import {
   launchFixtureBrowser,
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
+import { glideEnded } from "./lib/motion-waits.mjs";
 
 const { code, css } = await buildReactFixture("interactions-host.tsx");
 const browser = await launchFixtureBrowser();
@@ -64,28 +65,23 @@ const selectedCardView = (page) =>
   });
 
 /**
- * The selected card's place once the box has stopped moving: ten frames with
- * no change, or three seconds. A smooth scroll takes its time; a check that
- * never scrolled then fails on the assertion that follows, not on a timeout.
+ * Runs `act` and waits for the box's glide to end (glideEnded, in
+ * lib/motion-waits.mjs), failing with its scrollTop at every change if it has
+ * not in 10 s. It waited for ten still frames or three seconds, then measured
+ * whatever the box showed: a WebKit that renders nothing for three seconds on
+ * a loaded runner would have been measured at its first frame after, mid-glide
+ * or not. `moves: false` is for a box that must stay put.
  */
-const settledCardView = async (page) => {
-  await page.getByTestId("scroller").evaluate(
-    (scroller) =>
-      new Promise((resolve) => {
-        const start = performance.now();
-        let last = scroller.scrollTop;
-        let still = 0;
-        const frame = () => {
-          const now = scroller.scrollTop;
-          still = now === last ? still + 1 : 0;
-          last = now;
-          if (still >= 10 || performance.now() - start > 3000) resolve();
-          else requestAnimationFrame(frame);
-        };
-        requestAnimationFrame(frame);
-      }),
+const settledCardView = async (page, act, { moves = true } = {}) => {
+  const glide = await glideEnded(page.getByTestId("scroller"), act, {
+    card: '[data-poi-id="poi-9"]',
+    moves,
+  });
+  assert.ok(
+    glide.settled,
+    `10 s on, the result box ${glide.why}: ${glide.timeline}`,
   );
-  return selectedCardView(page);
+  return { ...(await selectedCardView(page)), timeline: glide.timeline };
 };
 
 const call = (page, handle, ...args) =>
@@ -166,12 +162,17 @@ for (const reducedMotion of [true, false]) {
       assert.equal((await selectedCardView(page)).scrollTop, 0);
 
       // The batch with it: the list brings it into the box's view.
-      await call(page, "deliver");
-      await page.waitForFunction(
-        () => document.querySelectorAll("[data-poi-id]").length === 12,
+      const shown = await settledCardView(page, async () => {
+        await call(page, "deliver");
+        await page.waitForFunction(
+          () => document.querySelectorAll("[data-poi-id]").length === 12,
+        );
+      });
+      assert.equal(
+        shown.inView,
+        true,
+        `the selected card is in view once the box's scroll ended: ${shown.timeline}`,
       );
-      const shown = await settledCardView(page);
-      assert.equal(shown.inView, true, "the selected card is in view");
       assert.ok(shown.scrollTop > 0, "the box scrolled to it");
 
       // The visitor scrolls back up; a new array of the same results must
@@ -183,12 +184,13 @@ for (const reducedMotion of [true, false]) {
         () =>
           document.querySelector('[data-testid="scroller"]').scrollTop === 0,
       );
-      await call(page, "rebuild");
-      await settleLayout(page);
+      const rebuilt = await settledCardView(page, () => call(page, "rebuild"), {
+        moves: false,
+      });
       assert.equal(
-        (await settledCardView(page)).scrollTop,
+        rebuilt.scrollTop,
         0,
-        "a new array of the same results moved the list",
+        `a new array of the same results moved the list: ${rebuilt.timeline}`,
       );
     },
     { reducedMotion },
@@ -206,10 +208,12 @@ await scenario(
     await settleLayout(page);
     assert.equal((await selectedCardView(page)).scrollTop, 0);
 
-    await call(page, "reveal", true);
-    await settleLayout(page);
-    const shown = await settledCardView(page);
-    assert.equal(shown.inView, true, "the selected card is in view");
+    const shown = await settledCardView(page, () => call(page, "reveal", true));
+    assert.equal(
+      shown.inView,
+      true,
+      `the selected card is in view once the box's scroll ended: ${shown.timeline}`,
+    );
     assert.ok(shown.scrollTop > 0, "the box scrolled to it");
   },
   { reducedMotion: true },

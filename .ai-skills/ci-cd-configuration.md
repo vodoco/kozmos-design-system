@@ -63,6 +63,12 @@ There is no shared setup action. Each job checks out the repository, sets up pnp
 itself and installs with `pnpm install --frozen-lockfile` (Lighthouse CI and the bundle check run a
 plain `pnpm install`; the release jobs add `--ignore-scripts`).
 
+Every `uses:` names a commit, never a tag: `actions/checkout@<40-character SHA> # v5.1.0`, the
+comment naming the release that commit is. CI's web job fails on a tag, a SHA without its release,
+or a SHA that is not the commit that release's tag points at (`pnpm release:pins:check`). To move
+an action, resolve the new release's tag to its commit (`gh api repos/<owner>/<repo>/git/ref/tags/<tag>`,
+then `git/tags/<sha>` when the tag is annotated) and change the SHA and the comment together.
+
 Every job that runs a browser runs in the Playwright image
 (`mcr.microsoft.com/playwright:v1.58.2-noble`, the lockfile's Playwright), which holds the browsers
 and the libraries they load, so no job installs anything from apt: CI's web job, its twelve browser

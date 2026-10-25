@@ -58,10 +58,17 @@ public struct KozmosSaveLocationCard: View {
                 Spacer()
 
                 if isSaved, let onEditNote {
+                    // A target at least 44pt square, all of it hittable, as React's icon
+                    // Button (44px: the card keeps touch density, decision 89) and Compose's
+                    // IconButton (48dp) are. A plain button's frame adds nothing without a
+                    // content shape: VoiceOver outlined only the 13.7pt glyph, and a finger
+                    // hit only the glyph and SwiftUI's touch tolerance around it. The frame
+                    // grows with the glyph at the largest text sizes.
                     Button(action: onEditNote) {
                         Image(systemName: "pencil")
-                            .frame(width: 36, height: 36)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Edit location note")

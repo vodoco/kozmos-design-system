@@ -369,7 +369,7 @@ struct POIMediaTile: View {
     private func unavailable(retryable: Bool) -> some View {
         let content = Text(unavailableLabel)
             .font(KozmosTypography.subheadline)
-            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            .foregroundColor(KozmosColors.primitivesColorsForeground400)
             .multilineTextAlignment(.center)
             .padding(KozmosDimensions.primitivesLayoutSpacing200)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

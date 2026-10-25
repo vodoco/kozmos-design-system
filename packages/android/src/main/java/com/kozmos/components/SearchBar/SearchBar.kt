@@ -93,7 +93,7 @@ fun KozmosSearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
-                tint = KozmosThemeTokens.primitivesColorsForeground500,
+                tint = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier.size(18.dp)
             )
             BasicTextField(
@@ -143,7 +143,7 @@ fun KozmosSearchBar(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Clear search",
-                            tint = KozmosThemeTokens.primitivesColorsForeground500,
+                            tint = KozmosThemeTokens.primitivesColorsForeground400,
                             modifier = Modifier.size(14.dp)
                         )
                     }
