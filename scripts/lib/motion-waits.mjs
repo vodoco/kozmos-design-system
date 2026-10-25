@@ -175,6 +175,228 @@ export async function glideEnded(
 }
 
 /**
+ * Waits for a reading of the page to stop changing once `act` has run: a
+ * layout the page is still measuring, or a sheet coming to rest.
+ *
+ * `read(node, arg)` runs in the page on `locator`'s node, and returns what
+ * JSON can hold; numbers in it change when they move by 0.05 or more. It uses
+ * nothing from outside itself but `arg`, since it is sent to the page as its
+ * source. It is read before `act`, then on every frame and every 50 ms.
+ *
+ * It has settled once the reading has held for `frames` frames (3) and
+ * `quiet` ms (150), counted from its last change or from when `act` returned,
+ * whichever is later. Frames as well as time: with its frames held (WebKit
+ * rendering nothing, #394), a layout that changes only as the page renders
+ * holds still on a timer, and a wait on time alone settles in the stall.
+ *
+ * - `moves: true`: it must have changed from what it read before `act` (at
+ *   any time since, so a sheet that springs back counts) before it settles.
+ * - `moves: false`: it should not change. It holds for 13 frames, as
+ *   glideEnded does, so a change set off a frame or two late is seen; one that
+ *   came all the same is waited out, and resolves with `moved`.
+ * - Left out, either will do.
+ *
+ * `animations: true`: the node's own animations and transitions must also
+ * have ended. A slow ease can move less than 0.05 a frame as it starts or
+ * ends, and read as still while it runs.
+ *
+ * Resolves `{ settled, why, moved, from, to, frames, timeline }`: `to` is the
+ * last reading, `timeline` lists each change with when and on which frame,
+ * and when `act` returned. Not settled within `limit` ms of `act` returning,
+ * `why` says what was missing, and says so when the page drew too few frames
+ * to tell. Rejects if the page has not answered `limit` ms and 5 s after `act`.
+ */
+export async function readingSettled(
+  locator,
+  read,
+  {
+    act = async () => {},
+    arg,
+    moves,
+    animations = false,
+    frames,
+    quiet = 150,
+    limit = 10_000,
+  } = {},
+) {
+  const reader = await locator.page().evaluateHandle(`(${read})`);
+  const hold = frames ?? (moves === false ? 13 : 3);
+  let watch;
+  try {
+    watch = await locator.evaluateHandle(
+      (node, { read, arg, moves, animations, hold, quiet, limit }) => {
+        const t0 = performance.now();
+        const at = () => Math.round(performance.now() - t0);
+        const same = (a, b) => {
+          if (typeof a === "number" && typeof b === "number")
+            return (
+              Math.abs(a - b) < 0.05 || (Number.isNaN(a) && Number.isNaN(b))
+            );
+          if (a && b && typeof a === "object" && typeof b === "object") {
+            const keys = Object.keys(a);
+            return (
+              keys.length === Object.keys(b).length &&
+              keys.every((key) => same(a[key], b[key]))
+            );
+          }
+          return a === b;
+        };
+        const show = (value) =>
+          JSON.stringify(value, (_, v) =>
+            typeof v === "number" ? Math.round(v * 100) / 100 : v,
+          );
+        const from = read(node, arg);
+        const timeline = [`0 ms ${show(from)}`];
+        let last = from;
+        let moved = false;
+        let animating = false;
+        let armed = false;
+        let armedFrames = 0;
+        let changedAt = t0;
+        let changedFrames = 0;
+        let quietSince = t0;
+        let still = 0;
+        let frames = 0;
+        let done = false;
+        let timer;
+        let limitTimer;
+        let resolve;
+        let reject;
+        const result = new Promise((settle, fail) => {
+          resolve = settle;
+          reject = fail;
+        });
+        const end = () => {
+          done = true;
+          clearInterval(timer);
+          clearTimeout(limitTimer);
+        };
+        const finish = (settled, why) => {
+          if (done) return;
+          end();
+          timeline.push(`${at()} ms, ${frames} frames`);
+          const lines =
+            timeline.length <= 16
+              ? timeline
+              : [
+                  ...timeline.slice(0, 8),
+                  `… ${timeline.length - 16} more`,
+                  ...timeline.slice(-8),
+                ];
+          resolve({
+            settled,
+            why,
+            moved,
+            from,
+            to: last,
+            frames,
+            timeline: lines.join(", "),
+          });
+        };
+        const sample = (onFrame) => {
+          if (done) return;
+          let value;
+          try {
+            value = read(node, arg);
+          } catch (error) {
+            end();
+            reject(error);
+            return;
+          }
+          const now = performance.now();
+          const running =
+            animations &&
+            node
+              .getAnimations()
+              .some((animation) => animation.playState === "running");
+          if (running !== animating)
+            timeline.push(
+              `${at()} ms f${frames} ${running ? "animating" : "animations ended"}`,
+            );
+          animating = running;
+          const changed = !same(value, last);
+          if (changed) {
+            timeline.push(`${at()} ms f${frames} ${show(value)}`);
+            last = value;
+            changedAt = now;
+            changedFrames = frames;
+          }
+          if (changed || running) {
+            quietSince = Math.max(quietSince, now);
+            still = 0;
+          } else if (onFrame) still++;
+          if (!same(value, from)) moved = true;
+          if (
+            armed &&
+            (moves !== true || moved) &&
+            still >= hold &&
+            now - quietSince >= quiet
+          )
+            finish(true, "");
+        };
+        const frame = () => {
+          if (done) return;
+          frames++;
+          sample(true);
+          requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+        timer = setInterval(() => sample(false), 50);
+        return {
+          // Once `act` has returned: the hold and the limit start here.
+          arm() {
+            armed = true;
+            armedFrames = frames;
+            quietSince = performance.now();
+            still = 0;
+            timeline.push(`${at()} ms act done`);
+            limitTimer = setTimeout(() => {
+              // Frames drawn since `act` returned, and since the reading
+              // last changed: a page that drew too few has not shown whether
+              // it has come to rest, and the reading is not to blame.
+              const drawn = frames - armedFrames;
+              const heldMs = Math.round(performance.now() - quietSince);
+              const heldFrames = frames - Math.max(changedFrames, armedFrames);
+              const stalled =
+                drawn < hold || (heldMs >= quiet && heldFrames < hold)
+                  ? `: the page drew too few frames to tell`
+                  : "";
+              finish(
+                false,
+                moves === true && !moved
+                  ? `never changed in ${limit} ms and ${drawn} frames${stalled}`
+                  : animating
+                    ? `was still animating ${limit} ms on, its reading last changed ${Math.round(performance.now() - changedAt)} ms ago`
+                    : heldMs >= quiet
+                      ? `held still for ${heldMs} ms but only ${heldFrames} frames${stalled}`
+                      : `was still changing ${limit} ms on, its last change ${Math.round(performance.now() - changedAt)} ms ago${stalled}`,
+              );
+            }, limit);
+            return result;
+          },
+          stop() {
+            end();
+          },
+        };
+      },
+      { read: reader, arg, moves, animations, hold, quiet, limit },
+    );
+    await act();
+    return await withinLimit(
+      watch.evaluate((watching) => watching.arm()),
+      limit,
+    );
+  } finally {
+    // As in glideEnded: stopped and released without waiting on the page.
+    watch
+      ?.evaluate((watching) => watching.stop())
+      .then(() => watch.dispose())
+      .catch(() => {});
+    reader.dispose().catch(() => {});
+  }
+}
+
+/**
  * Whether an animation that never ends is moving: reads the node's computed
  * `property` now, then on every frame and every 50 ms, until it reads
  * something else or `limit` ms have passed. A fixed wait asks this of
