@@ -1,6 +1,7 @@
 package com.kozmos.components.timepicker
 
 import android.app.TimePickerDialog
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -21,6 +24,13 @@ import androidx.compose.ui.semantics.stateDescription
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
+
+/**
+ * The device's 24-hour setting, when a test sets it: layoutlib, which
+ * Paparazzi draws with, answers `DateFormat.is24HourFormat` with false
+ * whatever the setting and the locale. Unset, the device decides.
+ */
+internal val LocalKozmosClockIs24Hour = staticCompositionLocalOf<Boolean?> { null }
 
 @Composable
 fun KozmosTimePicker(
@@ -32,6 +42,10 @@ fun KozmosTimePicker(
     label: String = "Select Time"
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    // The device's clock: its 24-hour setting, or else its locale's own. The
+    // dialog and the field both keep it. It was a 12-hour clock everywhere.
+    val is24Hour = LocalKozmosClockIs24Hour.current ?: DateFormat.is24HourFormat(context)
     val calendar = Calendar.getInstance()
     
     if (time != null) {
@@ -46,10 +60,13 @@ fun KozmosTimePicker(
         },
         calendar.get(Calendar.HOUR_OF_DAY),
         calendar.get(Calendar.MINUTE),
-        false // is24HourView
+        is24Hour
     )
 
-    val shown = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: ""
+    // The locale's own short time on that clock, as Android's TextClock
+    // makes it: "9:30 PM", "21:30". It was "hh:mm a" in every locale.
+    val pattern = DateFormat.getBestDateTimePattern(locale, if (is24Hour) "Hm" else "hm")
+    val shown = time?.format(DateTimeFormatter.ofPattern(pattern, locale)) ?: ""
 
     Box(modifier = modifier) {
         OutlinedTextField(

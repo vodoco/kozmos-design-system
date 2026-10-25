@@ -55,7 +55,6 @@ import com.kozmos.components.adaptivemapshell.LocalMapPopupRegion
 import kotlin.math.roundToInt
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -124,6 +123,14 @@ enum class KozmosFloorSelectorVariant(val value: String) {
  * shown and said as-is. Pass [KozmosFloorPresentation]s for a short label on
  * the button, the full one for TalkBack, closed levels and result counts.
  */
+/**
+ * Where a level's hint opens: before the selector, on the side reading starts
+ * on, away from the screen edge the selector keeps to. It was Left or Right
+ * picked by the layout direction here; the tooltip's Leading side is the
+ * same.
+ */
+internal val FloorHintSide = KozmosTooltipSide.Leading
+
 @Composable
 fun KozmosFloorSelector(
     floors: List<String>,
@@ -512,7 +519,7 @@ internal fun KozmosFloorSwitcher(
     val hoverSource = remember { MutableInteractionSource() }
     val hovered by hoverSource.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
-    val hintSide = if (LocalLayoutDirection.current == LayoutDirection.Rtl) KozmosTooltipSide.Right else KozmosTooltipSide.Left
+    val hintSide = FloorHintSide
 
     // Closes the column. From a keyboard, focus goes back to the tile, which
     // names the level now shown; a touch leaves focus where the visitor put it.
@@ -658,7 +665,7 @@ internal fun KozmosFloorSwitcherColumn(
             val hoverSource = remember(floor.id) { MutableInteractionSource() }
             val hovered by hoverSource.collectIsHoveredAsState()
             var focused by remember(floor.id) { mutableStateOf(false) }
-            val hintSide = if (LocalLayoutDirection.current == LayoutDirection.Rtl) KozmosTooltipSide.Right else KozmosTooltipSide.Left
+            val hintSide = FloorHintSide
             // The marks lie over the level rather than in it, so its round
             // clip does not take their corners off, as the lists' markers do.
             KozmosTooltip(tooltip = floor.label, side = hintSide, visible = hovered || focused) {
