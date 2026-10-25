@@ -239,7 +239,7 @@ fun KozmosCombobox(
                         setExpanded(false)
                     },
                     modifier = Modifier.size(48.dp),
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground500)
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground400)
                 ) {
                     Icon(Icons.Default.Close, contentDescription = controlLabels.clear, modifier = Modifier.size(16.dp))
                 }
@@ -250,7 +250,7 @@ fun KozmosCombobox(
                 enabled = enabled && !readOnly,
                 modifier = Modifier.size(48.dp),
                 colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = KozmosThemeTokens.primitivesColorsForeground500,
+                    contentColor = KozmosThemeTokens.primitivesColorsForeground400,
                     disabledContentColor = KozmosThemeTokens.primitivesColorsForeground500
                 )
             ) {
@@ -269,7 +269,7 @@ fun KozmosCombobox(
                 if (emptyText != supportingText) Text(
                     text = emptyText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
+                    color = KozmosThemeTokens.primitivesColorsForeground400,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(KozmosThemeTokens.primitivesColorsBackground0, fieldShape)
@@ -348,7 +348,7 @@ internal fun selectionFieldColors(
         helper = when {
             !enabled -> KozmosThemeTokens.primitivesColorsForeground500
             statusColor != null -> statusColor
-            else -> KozmosThemeTokens.primitivesColorsForeground500
+            else -> KozmosThemeTokens.primitivesColorsForeground400
         }
     )
 }

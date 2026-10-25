@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import { styleChanged } from "./lib/motion-waits.mjs";
 import {
   sanitize,
   storyNameFromExport,
@@ -321,14 +322,32 @@ try {
     await flow.evaluate((el) => getComputedStyle(el).animationName),
     "kozmos-track-flow",
   );
-  const phase = await flow.evaluate(
-    (el) => getComputedStyle(el).backgroundPositionX,
+  // It loops for ever and starts at once: a cue that waited seconds to start,
+  // or ran a few times and stopped, would still move within the bound below.
+  const timing = await flow.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      count: style.animationIterationCount,
+      delay: style.animationDelay,
+    };
+  });
+  assert.equal(
+    timing.count,
+    "infinite",
+    `The direction hint does not loop: ${timing.count}`,
   );
-  await page.waitForTimeout(250);
-  assert.notEqual(
-    await flow.evaluate((el) => getComputedStyle(el).backgroundPositionX),
-    phase,
-    "Direction hint actually animates",
+  assert.equal(
+    timing.delay,
+    "0s",
+    `The direction hint waits ${timing.delay} to start`,
+  );
+  // Read until the cue has moved, not after a fixed 250 ms: it starts here,
+  // and while WebKit renders nothing an animation that has just started holds
+  // its first frame, and a background-position one holds even once running.
+  const flowed = await styleChanged(flow, "backgroundPositionX");
+  assert.ok(
+    flowed.changed,
+    `Direction hint does not animate: ${flowed.detached ? `the cue was replaced ${flowed.after} ms in, before it moved` : `background-position-x held ${flowed.from} for ${flowed.after} ms and ${flowed.frames} frames`}`,
   );
   await page
     .getByRole("button", { name: "Directional motion", exact: true })

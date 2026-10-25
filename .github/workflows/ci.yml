@@ -63,7 +63,7 @@ jobs:
         shell: bash -e {0}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -71,10 +71,10 @@ jobs:
       # action and package.json's `packageManager` both name one, so pnpm is
       # the manifest's, as in release.yml.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -85,10 +85,12 @@ jobs:
       - name: Verify Release Safeguards
         run: pnpm test:release
 
-      # release.yml pins each action by SHA; the test above holds the form, not
-      # that the SHA is a commit. pnpm/action-setup's pin was v4's annotated tag
-      # object until 17 Oct 2026, which resolved only while the tag stayed put.
-      - name: Verify Release Action Pins Are Commits
+      # Every workflow pins each action to a release's commit, with a comment
+      # naming the release. The test above holds that form; this asks GitHub
+      # that each SHA is a commit, and the commit that release's tag points at.
+      # pnpm/action-setup's pin in release.yml was v4's annotated tag object
+      # until 17 Oct 2026, which resolved only while the tag stayed put.
+      - name: Verify Every Action Is Pinned To A Release Commit
         run: pnpm release:pins:check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -290,6 +292,14 @@ jobs:
       - name: Verify Motion Parity
         run: pnpm tokens:motion:check
 
+      # SwiftUI mirrors a Shape right to left by itself only in an app that
+      # deploys to iOS 17 or later, so a shape that does not say how it reads
+      # draws differently by the app, and by which Xcode's test host runs it:
+      # five drawings were wrong in one kind of app or the other until
+      # 2026-10-21 (#348, #356), and no simulator run could see both kinds.
+      - name: Verify SwiftUI Shapes Say How They Read Right To Left
+        run: node --test scripts/ci/ios-shape-direction.test.mjs && pnpm ios:shapes:check
+
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
 
@@ -378,7 +388,12 @@ jobs:
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
       # What only a real browser proves, on the built package in each engine:
-      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs).
+      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
+      # and Calendar's geometry, colours, keyboard and locales as Figma draws
+      # its panels (scripts/check-calendar.mjs), and DatePicker opening it
+      # where the browser's own button can give way (check-date-picker.mjs),
+      # and DateRangePicker its range (check-date-range-picker.mjs), and
+      # TimePicker's list of times (check-time-picker.mjs).
       - name: Verify Built Focus, Keyboard and Scrolling
         run: |
           pnpm test:react-interactions
@@ -442,6 +457,9 @@ jobs:
       # every field computes as in Chromium, light and dark, both directions,
       # touch and compact, disabled and focused, and a caller's padding class
       # wins where @scope reaches a field (scripts/check-field-styles.mjs).
+      # Combobox's and MultiSelect's clear and open keep the field's edge
+      # drawn on hover, in forced colours too, and a focused one rings alone
+      # (scripts/check-field-actions.mjs).
       - name: Verify Field Styles
         run: |
           pnpm test:field-styles
@@ -470,7 +488,7 @@ jobs:
 
       - name: Preserve Storybook Audit Evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: storybook-audit
           path: test-results/storybook-*.json
@@ -564,13 +582,13 @@ jobs:
         shell: bash -e {0}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -600,7 +618,7 @@ jobs:
 
       - name: Preserve Evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: browser-evidence-${{ strategy.job-index }}
           path: |
@@ -633,13 +651,13 @@ jobs:
         shell: bash -e {0}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -674,7 +692,7 @@ jobs:
 
       - name: Preserve POI Reference Evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: poi-gallery
           path: test-results/poi-gallery
@@ -696,7 +714,7 @@ jobs:
       ios: ${{ steps.diff.outputs.ios }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -745,13 +763,13 @@ jobs:
           xcodebuild -version
 
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -775,7 +793,7 @@ jobs:
 
       - name: Preserve Native POI Render Evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: native-poi-test-results
           path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
@@ -802,13 +820,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -820,7 +838,7 @@ jobs:
         run: pnpm --filter @kozmos-ds/tokens build
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: "zulu"
           java-version: "17"
@@ -837,7 +855,7 @@ jobs:
       # A green task alone does not prove which native tests actually ran.
       - name: Upload Android Test Results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: android-test-results
           path: packages/android/build/test-results/testDebugUnitTest/TEST-*.xml
@@ -848,7 +866,7 @@ jobs:
       # delta images Paparazzi writes show what moved, and by how much.
       - name: Upload Paparazzi Failures
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: paparazzi-failures
           path: packages/android/build/paparazzi/failures/
