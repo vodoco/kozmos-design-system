@@ -1,11 +1,7 @@
 package com.kozmos.components.select
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
@@ -23,23 +19,24 @@ class KozmosSelectConnect {
         "Disabled" to "disabled"
     )
 
+    @FigmaProperty(FigmaType.Enum, "Status")
+    val error: Boolean = Figma.mapping(
+        "Default" to false,
+        "Error" to true
+    )
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ComponentExample() {
         KozmosSelect(
             expanded = false,
             onExpandedChange = {},
-            trigger = { expanded ->
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    readOnly = true,
+            trigger = {
+                KozmosSelectTrigger(
+                    value = null,
+                    placeholder = placeholder,
                     enabled = state != "disabled",
-                    placeholder = { Text(placeholder) },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier.menuAnchor()
+                    error = error
                 )
             }
         ) {
