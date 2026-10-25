@@ -1,0 +1,50 @@
+[
+  {
+    "size": 2.9,
+    "tilt": -14,
+    "squash": 0.36,
+    "from": 200,
+    "fade": 18,
+    "tone": "violet"
+  },
+  {
+    "size": 2.2,
+    "tilt": 24,
+    "squash": 0.42,
+    "from": 20,
+    "fade": 30,
+    "tone": "amber"
+  },
+  {
+    "size": 1.7,
+    "tilt": -32,
+    "squash": 0.62,
+    "from": 120,
+    "fade": 22,
+    "tone": "lilac"
+  },
+  {
+    "size": 1.08,
+    "tilt": 0,
+    "squash": 1,
+    "from": 150,
+    "fade": 30,
+    "tone": "faint"
+  },
+  {
+    "size": 1.16,
+    "tilt": 0,
+    "squash": 1,
+    "from": 170,
+    "fade": 34,
+    "tone": "faint"
+  },
+  {
+    "size": 1.26,
+    "tilt": 0,
+    "squash": 1,
+    "from": 190,
+    "fade": 40,
+    "tone": "violet"
+  }
+]

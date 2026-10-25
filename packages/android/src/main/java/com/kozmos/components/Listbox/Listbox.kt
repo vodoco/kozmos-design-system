@@ -73,7 +73,7 @@ fun KozmosListbox(
     ) {
         if (options.isEmpty() && emptyText != null) {
             Text(emptyText, style = MaterialTheme.typography.bodyMedium,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing150))
         }
         options.forEach { option ->
@@ -82,6 +82,10 @@ fun KozmosListbox(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // At least 44dp, as React's rows are (decision 115): the
+                    // density's control height, 44 in touch. It was 35, 8 above
+                    // and below a line.
+                    .heightIn(min = 44.dp)
                     .clip(rowShape)
                     .background(if (selected) KozmosThemeTokens.primitivesColorsBackground100 else Color.Transparent)
                     .selectable(selected = selected, enabled = enabled && !option.disabled) {
@@ -101,7 +105,8 @@ fun KozmosListbox(
                         vertical = KozmosDimensions.primitivesLayoutSpacing100
                     ),
                 horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
-                verticalAlignment = Alignment.Top
+                // On the row's middle line, as React's `items-center`.
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -116,10 +121,16 @@ fun KozmosListbox(
                         maxLines = 1
                     )
                     if (!option.description.isNullOrBlank()) {
+                        // Muted; on a disabled option, the disabled label's
+                        // colour, never darker than it.
                         Text(
                             text = option.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = KozmosThemeTokens.primitivesColorsForeground500,
+                            color = if (option.disabled) {
+                                KozmosThemeTokens.primitivesColorsForeground500
+                            } else {
+                                KozmosThemeTokens.primitivesColorsForeground400
+                            },
                             maxLines = 1
                         )
                     }

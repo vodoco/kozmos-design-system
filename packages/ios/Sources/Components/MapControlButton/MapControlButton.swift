@@ -309,6 +309,11 @@ public struct KozmosMapControlButton<Icon: View>: View {
                             }
                         }
                         .foregroundColor(color(appearance.icon))
+                        // A KozmosIcon takes the mark's tone too, as React's
+                        // mark is currentColor and Compose's follows
+                        // LocalContentColor: it kept its own foreground/100,
+                        // the ink, whether the control was off or on.
+                        .environment(\.kozmosIconHostInk, color(appearance.icon))
                         .accessibilityHidden(true)
 
                     labelContent

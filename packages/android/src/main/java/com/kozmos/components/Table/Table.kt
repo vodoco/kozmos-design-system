@@ -15,10 +15,19 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
+
+/**
+ * True inside a table's header: the table draws the line under its header, so
+ * a [KozmosTableRow] there draws none of its own. With both, the header had
+ * two lines, one on the other, twice as thick as a body row's.
+ */
+private val LocalKozmosTableHeader = staticCompositionLocalOf { false }
 
 @Composable
 fun KozmosTable(
@@ -33,7 +42,7 @@ fun KozmosTable(
             .border(1.dp, KozmosThemeTokens.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
     ) {
         if (header != null) {
-            header()
+            CompositionLocalProvider(LocalKozmosTableHeader provides true) { header() }
             Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
         }
         content()
@@ -45,6 +54,7 @@ fun KozmosTableRow(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
+    val inHeader = LocalKozmosTableHeader.current
     Column {
         Row(
             modifier = modifier
@@ -52,7 +62,9 @@ fun KozmosTableRow(
                 .padding(KozmosDimensions.primitivesLayoutSpacing200),
             content = content
         )
-        Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
+        // One line under each row, as React's border-b; the table draws the
+        // header's.
+        if (!inHeader) Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
     }
 }
 
@@ -78,7 +90,7 @@ fun RowScope.KozmosTableHeaderCell(
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
-        color = KozmosThemeTokens.primitivesColorsForeground500,
+        color = KozmosThemeTokens.primitivesColorsForeground400,
         modifier = modifier.weight(weight)
     )
 }

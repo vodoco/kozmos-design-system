@@ -26,18 +26,31 @@ struct POIDetailIcon: View {
                             .renderingMode(monochrome ? .template : .original)
                             .scaledToFit()
                             .frame(width: size.pointSize, height: size.pointSize)
+                    } else if case .failure = phase {
+                        // An asset that fails to load falls back as an
+                        // unsafe one does, on all three platforms (GAP-178,
+                        // the owner's rule of 21 Oct). It left no icon until
+                        // then. While it loads, nothing is drawn.
+                        fallback
                     }
                 }
-            } else if let iconName, KozmosIcon.drawsArtwork(for: iconName) {
-                // Its SF Symbols at the regular weight this part always drew.
-                KozmosIcon(iconName, size: size, symbolWeight: .regular)
-            } else if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: size.pointSize))
-                    .frame(width: size.pointSize, height: size.pointSize)
+            } else {
+                fallback
             }
         }
         .accessibilityHidden(true)
+    }
+
+    /// The icon's name, else its SF Symbol, else nothing: the label stands alone.
+    @ViewBuilder private var fallback: some View {
+        if let iconName, KozmosIcon.drawsArtwork(for: iconName) {
+            // Its SF Symbols at the regular weight this part always drew.
+            KozmosIcon(iconName, size: size, symbolWeight: .regular)
+        } else if let systemImage {
+            Image(systemName: systemImage)
+                .font(.system(size: size.pointSize))
+                .frame(width: size.pointSize, height: size.pointSize)
+        }
     }
 }
 
