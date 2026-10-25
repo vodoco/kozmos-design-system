@@ -139,9 +139,14 @@ public struct KozmosPaginationLink: View {
 }
 
 public struct KozmosPaginationPrevious: View {
+    let label: String
     let action: () -> Void
     
-    public init(action: @escaping () -> Void) {
+    /// `label` is the word drawn beside the chevron, and what VoiceOver says:
+    /// "Previous" by default, as React's; a product that translates passes
+    /// its own. Before `action`, so a trailing closure still compiles.
+    public init(label: String = "Previous", action: @escaping () -> Void) {
+        self.label = label
         self.action = action
     }
     
@@ -150,7 +155,7 @@ public struct KozmosPaginationPrevious: View {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Image(systemName: "chevron.backward")
                     .font(KozmosTypography.caption)
-                Text("Previous")
+                Text(label)
                     .font(KozmosTypography.subheadline)
             }
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
@@ -163,16 +168,21 @@ public struct KozmosPaginationPrevious: View {
 }
 
 public struct KozmosPaginationNext: View {
+    let label: String
     let action: () -> Void
     
-    public init(action: @escaping () -> Void) {
+    /// `label` is the word drawn beside the chevron, and what VoiceOver says:
+    /// "Next" by default, as React's; a product that translates passes its
+    /// own. Before `action`, so a trailing closure still compiles.
+    public init(label: String = "Next", action: @escaping () -> Void) {
+        self.label = label
         self.action = action
     }
     
     public var body: some View {
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                Text("Next")
+                Text(label)
                     .font(KozmosTypography.subheadline)
                 Image(systemName: "chevron.forward")
                     .font(KozmosTypography.caption)
