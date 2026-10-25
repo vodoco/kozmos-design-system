@@ -12,7 +12,8 @@ import SwiftUI
 ///   deploys to iOS 16. So a part whose drawing turns with the reading
 ///   direction places it itself and says `.fixed`, or it draws differently
 ///   in different apps: the tooltip's side tip and the split button's
-///   halves were right only in the first. `swift test`'s host deploys to
+///   halves were right only in the first. (The tooltip's sides are drawn as
+///   named now; `KozmosTooltipSideTests` holds them.) `swift test`'s host deploys to
 ///   macOS 14 and Xcode 27's simulator host to iOS 17, where SwiftUI
 ///   mirrors; Xcode 26's simulator host deploys lower, where it does not. So
 ///   each such part is checked twice: by its drawing, which an iOS 16 host
@@ -34,35 +35,12 @@ final class KozmosRightToLeftDrawingTests: XCTestCase {
 
     // MARK: Shapes that turn with the reading direction
 
-    /// React's tooltip is Radix's, whose arrow points at the trigger. A side
-    /// tip sits at the bubble's leading end (`.right`) or trailing end
-    /// (`.left`): right to left, it is on the other side, and must point the
-    /// other way. In an app that deploys to iOS 16 it pointed into its bubble.
-    @MainActor func testATooltipsSideTipPointsAtItsTriggerInBothDirections() throws {
-        var wrong: [String] = []
-        for side in [KozmosTooltipSide.right, .left] {
-            for direction in Self.directions {
-                let drawn = try draw(KozmosTooltipBubble(text: "Hours", side: side).fixedSize().background(Color.black), direction)
-                // The tip is white on black: count it in the bubble's outer
-                // half-point column, and 3pt in, at the tip's end.
-                let atLeft = (side == .right) == (direction == .leftToRight)
-                let outer = CGRect(x: atLeft ? 0 : drawn.size.width - 0.34, y: 0, width: 0.34, height: drawn.size.height)
-                let inner = CGRect(x: atLeft ? 3 : drawn.size.width - 3.34, y: 0, width: 0.34, height: drawn.size.height)
-                let white = DrawnPixels.matches((255, 255, 255, 255), tolerance: 25)
-                let tipOut = drawn.count(in: outer, where: white), tipIn = drawn.count(in: inner, where: white)
-                if tipOut >= tipIn {
-                    wrong.append(".\(side) \(Self.name(direction)): the tip points into its bubble (\(tipOut) px at its edge, \(tipIn) 3pt in)")
-                }
-            }
-        }
-        XCTAssertEqual(wrong, [])
-    }
-
-    /// The tip mirrors itself, so SwiftUI must not mirror it again, in any app.
+    /// The tip points as drawn, so SwiftUI must not mirror it, in any app.
+    /// `KozmosTooltipSideTests` draws it, and the bubble, on every side.
     func testATooltipsTipIsNeverMirroredBySwiftUI() throws {
         guard #available(iOS 17.0, macOS 14.0, *) else { throw XCTSkip("layoutDirectionBehavior is iOS 17 and macOS 14") }
-        for side in [KozmosTooltipSide.top, .right, .bottom, .left] {
-            XCTAssertEqual(KozmosTooltipTipShape(side: side).layoutDirectionBehavior, .fixed, ".\(side)")
+        for edge in [KozmosTooltipEdge.top, .right, .bottom, .left] {
+            XCTAssertEqual(KozmosTooltipTipShape(edge: edge).layoutDirectionBehavior, .fixed, ".\(edge)")
         }
     }
 
