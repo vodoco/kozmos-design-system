@@ -1054,6 +1054,24 @@ final class InteractionTests: XCTestCase {
         }
     }
 
+    /// The trigger is one button, closed and open. From iOS 18 VoiceOver
+    /// reads a UIKit element laid over it, which says whether its panel is
+    /// open. Unfixed: two buttons named "Hours", that element and the SwiftUI
+    /// button under it, which `.accessibilityHidden(true)` hid from VoiceOver
+    /// but not from XCUITest.
+    func testAnAccordionTriggerIsOneButton() {
+        let named = NSPredicate(format: "label == %@", "Hours")
+        for scenario in ["accordion", "accordion-large-rtl"] {
+            launch(scenario)
+            XCTAssertEqual(app.buttons.matching(named).count, 1, "closed, \(scenario)")
+            app.buttons["Hours"].tap()
+            received("open hours")
+            XCTAssertTrue(app.staticTexts["Open 06:00 to 22:00"].waitForExistence(timeout: 3), scenario)
+            XCTAssertEqual(app.buttons.matching(named).count, 1, "open, \(scenario)")
+            app.terminate()
+        }
+    }
+
     /// A thumb is a 44pt target round its 40pt circle, as React's is.
     /// Unfixed: the 40pt circle.
     func testARatingsThumbsAre44PointTargets() {
