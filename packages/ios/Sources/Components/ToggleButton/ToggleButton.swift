@@ -59,5 +59,9 @@ public struct KozmosToggleButton: View {
             )
             .cornerRadius(KozmosDimensions.semanticsRadiusControl)
         }
+        // On, the toggle is selected, as React's `aria-pressed` and the chip's
+        // own state: VoiceOver heard only the name, and the state only the
+        // fill showed.
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

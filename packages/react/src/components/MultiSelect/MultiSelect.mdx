@@ -29,6 +29,14 @@ the field: the button pressed goes with what it removed. After a clear the
 field's list stays closed, since the visitor cleared the choice and did not ask
 for options; typing or an arrow key opens it.
 
+The clear and open buttons are Combobox's: each as tall as the field, 44 at
+touch density and 40 at compact, at the field's end in either direction. On
+one line the field keeps its height. The buttons keep the field's end free, so
+each line has 16px less room for chips than it had with the older 28px buttons
+(4px less without the clear), and chips wrap that much sooner. A `className`
+with `p-*` or `pe-*` replaces that space, and the chips and text then run
+under the buttons, as text does on Combobox.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';

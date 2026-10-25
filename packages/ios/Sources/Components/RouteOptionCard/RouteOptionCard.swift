@@ -37,9 +37,11 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                     if let icon {
-                        // Theme 600 on a surface (decision 59).
+                        // Theme 600 on a surface (decision 59), a KozmosIcon
+                        // as well: it kept its own foreground/100.
                         icon
                             .foregroundColor(KozmosColors.primitivesColorsTheme600)
+                            .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsTheme600)
                             .accessibilityHidden(true)
                     }
 
@@ -57,7 +59,7 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
 
                     Text(option.distanceLabel)
                         .font(KozmosTypography.caption)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
                 }
                 .padding(.top, KozmosDimensions.primitivesLayoutSpacing150)
 

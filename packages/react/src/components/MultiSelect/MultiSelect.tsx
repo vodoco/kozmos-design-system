@@ -4,6 +4,7 @@ import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
 import { FieldWrapper } from "../FieldWrapper";
 import {
@@ -12,6 +13,11 @@ import {
   FieldPopupContent,
   FieldPopupRoot,
 } from "../Combobox/field-popup";
+import {
+  FIELD_ACTION,
+  FIELD_ACTIONS_ROW,
+  fieldActionsRoom,
+} from "../Combobox/field-actions";
 import {
   MapShellPresentationContext,
   scrollbarFor,
@@ -109,6 +115,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // The active row's keyboard ring (owned-selection.css), as Combobox's.
+    const modality = useInputModality();
     const rootRef = React.useRef<HTMLDivElement>(null);
     // The popup is in a portal, outside the root: a press or focus inside
     // it is still inside the field.
@@ -315,7 +323,12 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               <div
                 ref={setRefs}
                 className={cn(
-                  "flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                  // kozmos-multiselect-field: the field rings for its input
+                  // alone, as Combobox's input does (owned-selection.css).
+                  "kozmos-multiselect-field relative flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                  // Combobox's room for its buttons (field-actions.ts): 96 or
+                  // 48 in touch, 88 or 44 in compact, after px-2.
+                  fieldActionsRoom(canClear),
                   resolvedStatus === "error" &&
                     "border-destructive focus-within:ring-destructive",
                   resolvedStatus === "warning" &&
@@ -402,39 +415,46 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     }}
                   />
                 </ChipGroup>
-                {canClear && (
+                {/* Combobox's clear and open (field-actions.ts), each as tall
+                    as the field: 44 in touch, 40 in compact. Out of the line,
+                    so the field keeps its height, and in the field, inside
+                    its border, so a caller's ref, width and border hold
+                    them and a hover fill never crosses the border. */}
+                <div className={FIELD_ACTIONS_ROW}>
+                  {canClear && (
+                    <button
+                      type="button"
+                      className={FIELD_ACTION}
+                      aria-label="Clear selected options"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        clearSelection();
+                      }}
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    aria-label="Clear selected options"
+                    className={FIELD_ACTION}
+                    aria-label={open ? "Close options" : "Open options"}
+                    disabled={disabled || readOnly}
                     onClick={(event) => {
                       event.stopPropagation();
-                      clearSelection();
+                      const nextOpen = !open;
+                      inputRef.current?.focus();
+                      setOpen(nextOpen);
                     }}
                   >
-                    <X className="h-4 w-4" aria-hidden="true" />
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        open && "rotate-180",
+                      )}
+                      aria-hidden="true"
+                    />
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={open ? "Close options" : "Open options"}
-                  disabled={disabled || readOnly}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    const nextOpen = !open;
-                    inputRef.current?.focus();
-                    setOpen(nextOpen);
-                  }}
-                >
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      open && "rotate-180",
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
+                </div>
               </div>
             </FieldPopupAnchor>
             {open && (
@@ -456,6 +476,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     ref={popupRef}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}
                     id={listboxOpen ? listboxId : undefined}
+                    data-modality={modality}
                     role={listboxOpen ? "listbox" : "status"}
                     aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}

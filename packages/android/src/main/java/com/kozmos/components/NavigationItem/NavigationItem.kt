@@ -244,7 +244,7 @@ private fun RowNavigationItemContent(
         }
 
         if (content == KozmosNavigationItemContent.Trailing && trailing != null) {
-            CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground500) {
+            CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
                 trailing()
             }
         }

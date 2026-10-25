@@ -82,7 +82,7 @@ public struct KozmosDialog<Content: View>: View {
                     if let description {
                         Text(description)
                             .font(KozmosTypography.subheadline)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

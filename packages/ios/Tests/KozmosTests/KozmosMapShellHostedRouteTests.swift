@@ -125,7 +125,7 @@ final class KozmosMapShellHostedRouteTests: XCTestCase {
         let size = CGSize(width: 200, height: 60)
         let view = Text("TO")
             .font(.caption.weight(.semibold))
-            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            .foregroundColor(KozmosColors.primitivesColorsForeground400)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .frame(width: size.width, height: size.height, alignment: .top)
