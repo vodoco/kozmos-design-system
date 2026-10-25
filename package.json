@@ -22,6 +22,7 @@
     "test:visual": "bash scripts/visual/docker.sh",
     "test:visual:update": "bash scripts/visual/update.sh",
     "test:visual:report": "playwright show-report visual-report",
+    "android:paparazzi": "bash scripts/paparazzi/run.sh",
     "test:browser-selection": "node --test scripts/lib/built-react-fixture.test.mjs scripts/lib/firefox-support.test.mjs scripts/lib/motion-waits.test.mjs",
     "test:scoped-utilities": "node scripts/check-scoped-utilities.mjs",
     "test:browser-compatibility": "node scripts/check-browser-compatibility.mjs",
