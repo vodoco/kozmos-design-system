@@ -1,6 +1,7 @@
 package com.kozmos.components.timepicker
 
 import android.app.TimePickerDialog
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,20 +12,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
+
+/**
+ * The device's 24-hour setting, when a test sets it: layoutlib, which
+ * Paparazzi draws with, answers `DateFormat.is24HourFormat` with false
+ * whatever the setting and the locale. Unset, the device decides.
+ */
+internal val LocalKozmosClockIs24Hour = staticCompositionLocalOf<Boolean?> { null }
 
 @Composable
 fun KozmosTimePicker(
     time: LocalTime?,
     onTimeSelected: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
+    // The product passes its own, translated words; the English default is
+    // the repo's convention for a label parameter (as Dialog's closeLabel).
     label: String = "Select Time"
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    // The device's clock: its 24-hour setting, or else its locale's own. The
+    // dialog and the field both keep it. It was a 12-hour clock everywhere.
+    val is24Hour = LocalKozmosClockIs24Hour.current ?: DateFormat.is24HourFormat(context)
     val calendar = Calendar.getInstance()
     
     if (time != null) {
@@ -39,24 +60,40 @@ fun KozmosTimePicker(
         },
         calendar.get(Calendar.HOUR_OF_DAY),
         calendar.get(Calendar.MINUTE),
-        false // is24HourView
+        is24Hour
     )
+
+    // The locale's own short time on that clock, as Android's TextClock
+    // makes it: "9:30 PM", "21:30". It was "hh:mm a" in every locale.
+    val pattern = DateFormat.getBestDateTimePattern(locale, if (is24Hour) "Hm" else "hm")
+    val shown = time?.format(DateTimeFormatter.ofPattern(pattern, locale)) ?: ""
 
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = time?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: "",
+            value = shown,
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
             trailingIcon = {
-                Icon(Icons.Default.AccessTime, contentDescription = "Select Time")
+                // Decoration, as React's aria-hidden clock: the label names
+                // the field. It was described by a fixed English "Select Time".
+                Icon(Icons.Default.AccessTime, contentDescription = null)
             },
-            modifier = Modifier.fillMaxWidth()
+            // A drawing of the value: TalkBack is told about it by the box a
+            // tap opens the dialog on, so the field is one control. It was a
+            // second stop, which a double tap only focused.
+            modifier = Modifier.fillMaxWidth().clearAndSetSemantics {}
         )
-         Box(
+        // What a tap opens the dialog on: a button, named by the label, its
+        // time its state. It had no role and no name.
+        Box(
             modifier = Modifier
                 .matchParentSize()
-                .clickable { timePickerDialog.show() }
+                .clickable(role = Role.Button) { timePickerDialog.show() }
+                .semantics {
+                    contentDescription = label
+                    if (shown.isNotEmpty()) stateDescription = shown
+                }
         )
     }
 }

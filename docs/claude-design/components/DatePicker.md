@@ -2,7 +2,7 @@
 
 # DatePicker
 
-DatePicker retains the browser's native date input. External `aria-describedby` IDs are merged with helper/error guidance; explicit error state cannot be hidden by `aria-invalid={false}`. The decorative icon follows the module's text direction.
+A date field: the browser's own, with its segmented typing in the reader's format, and a button at its end that opens Kozmos's calendar (decisions 104 and 105), drawn as Figma's Open variant (`438:2392`). The value is a `YYYY-MM-DD` string, as `<input type="date">`'s is, through the input's own `value`, `defaultValue` and `onChange`; a day chosen in the calendar is typed into the field, so `onChange` and a form's change listeners hear it as they hear typing.
 
 - **Import:** `import { DatePicker } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -37,6 +37,40 @@ It forwards its ref to `HTMLInputElement`. Its props are `DatePickerProps`, whic
 - `label`: `string`, optional.
 - `status`: `InputStatus`, optional, default `"default"`.
 - `wrapperClassName`: `string`, optional.
+- `open`: `boolean`, optional.
+
+  Whether Kozmos's calendar is open, with `onOpenChange`. It opens from the
+  field's button, or Alt+Down Arrow or F4 in the field, where the browser's
+  own picker button can be hidden (Chromium, Edge, Safari). Where it cannot
+  (Firefox 146), the field is the browser's, its picker with it, and these
+  do nothing; once it can, the same props open Kozmos's.
+
+- `defaultOpen`: `boolean`, optional.
+- `onOpenChange`: `(open: boolean) => void`, optional.
+- `chooseDateLabel`: `string`, optional, default `"Choose date"`.
+
+  Names the button that opens the calendar, and the calendar.
+
+- `locale`: `string`, optional.
+
+  The calendar's locale; the browser's still formats the typed date.
+
+- `isDateUnavailable`: `(date: string) => boolean`, optional.
+
+  Days the calendar shows but cannot choose. Typing is the caller's to check.
+
+- `today`: `string`, optional.
+
+  The day the calendar draws as today, `YYYY-MM-DD`.
+
+- `previousMonthLabel`: `string`, optional.
+
+  The calendar's previous-month button's name.
+
+- `nextMonthLabel`: `string`, optional.
+
+  The calendar's next-month button's name.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

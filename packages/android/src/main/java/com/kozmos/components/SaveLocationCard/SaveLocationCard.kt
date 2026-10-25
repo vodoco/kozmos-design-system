@@ -102,7 +102,7 @@ fun KozmosSaveLocationCard(
                         onClick = onEditNote,
                         modifier = Modifier.semantics { contentDescription = "Edit location note" }
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsForeground500)
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsForeground400)
                     }
                 }
             }

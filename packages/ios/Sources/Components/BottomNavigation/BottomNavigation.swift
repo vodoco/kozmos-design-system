@@ -75,9 +75,15 @@ private struct KozmosBottomNavigationTile: View {
             // Selected, theme 600, the theme's text role (decision 59).
             .foregroundColor(selected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+            // The whole tile takes a tap: on its clear fill an unselected
+            // tile took one only on its icon and label.
+            .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         }
         .buttonStyle(.plain)
+        // Selected is said by the selected state the bar gives the tile,
+        // which VoiceOver says in the person's language, as React's tile is
+        // aria-current. The tile also had the value "Selected", English in
+        // every language, said after it.
         .accessibilityLabel(title)
-        .accessibilityValue(selected ? "Selected" : "")
     }
 }

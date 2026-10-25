@@ -182,7 +182,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Symptoms:**
 
 ```
-❌ ERROR: everything costs 88.20 KB, over 88 KB
+❌ ERROR: everything costs 92.20 KB, over 92 KB
 ```
 
 **Solutions:**
@@ -211,7 +211,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
    ```
 
 A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
-everything at once to 68 KB; it has been 88 KB since 2026-10-06, decision 56; one export alone has
+everything at once to 68 KB; it has been 92 KB since 2026-10-21, decision 114; one export alone has
 been held to 8.5 KB since 2026-10-16, decision 90).
 
 ---
@@ -237,7 +237,7 @@ SyntaxError: Cannot use import statement outside a module
    (types `dist/index.d.cts`).
 
 2. **Verify the Vite output:** `packages/react/vite.config.mts` builds an ES output (one file per
-   module under `dist/esm/`) and a UMD CommonJS bundle; `vite-plugin-dts` writes the declarations.
+   module under `dist/esm/`) and a UMD CommonJS bundle; `unplugin-dts` writes the declarations.
 
 3. **Prefer `import`:** the CommonJS bundle is one file, which a bundler cannot tree-shake.
 
@@ -937,10 +937,10 @@ Error: The operation was canceled.
 
 **Solutions:**
 
-1. **Check for a newer push:** CI cancels its run in progress when the same branch is pushed again
-   (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is the one that
-   counts.
-2. **Know what `iOS Build` runs:** the only macOS job (`macos-latest`) builds and tests
+1. **Check for a newer push:** on a pull request, CI cancels its run in progress when the branch is
+   pushed again (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is
+   the one that counts. On `main` nothing is cancelled: every commit there gets a finished run.
+2. **Know what `iOS Build` runs:** the only macOS job (`macos-26`, Xcode 26.6, both pinned) builds and tests
    `packages/ios` with SwiftPM (`swift build`, `swift test`), then runs the whole test target on
    the pinned simulator (`node scripts/check-ios-poi.mjs`). There is no CocoaPods to cache.
 3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
@@ -1261,7 +1261,7 @@ tween(
 | ----------------------------------------------- | ------------------------------------------------- | ------------------ |
 | `Some token references (1) could not be found`  | A reference to a token that does not exist        | Section 1.1        |
 | `Add the "use client" directive`                | A hook in a file of your own without it           | Section 2.1        |
-| `everything costs … KB, over 88 KB`             | A bundle budget exceeded                          | Section 2.2        |
+| `everything costs … KB, over 92 KB`             | A bundle budget exceeded                          | Section 2.2        |
 | `require() of ES Module`                        | CJS/ESM conflict                                  | Section 2.3        |
 | `Cannot find module '@kozmos-ds/…'`             | The package is not built                          | Section 2.4        |
 | `Hydration mismatch`, or a flash of light theme | The first render uses `defaultSystemTheme`        | Section 3.2        |

@@ -102,8 +102,7 @@ From `@kozmos-ds/react`.
  * fields 44, the large icon button 48. `compact` is for pointer-first desktop
  * tools such as Pointr Cloud: 32, 40 and 48 buttons, 28, 32 and 40 icon
  * buttons, and 40 fields. Parts with a smaller size of their own keep it at
- * both: MultiSelect's clear and open buttons and the small Chip are 28. It is
- * web only; SwiftUI and Compose stay touch.
+ * both: the small Chip is 28. It is web only; SwiftUI and Compose stay touch.
  */
 type ThemeDensity = "touch" | "compact";
 ```

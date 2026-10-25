@@ -24,7 +24,36 @@ const DENSITY_SIZES = {
 module.exports = {
   // Keep utility overrides available during migration, including utilities
   // now consumed by @apply recipes instead of JSX class strings.
-  content: ["./src/**/*.{js,ts,jsx,tsx,css}"],
+  //
+  // Tests are not scanned: a class a test names (`ml-2`, `rounded-lg`, a
+  // regex like `rounded-[lr]`) is a string the test looks for, not one the
+  // package draws, and 21 utilities shipped for no other reason. A class a
+  // component uses is in the component, so it is still generated.
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,css}",
+    "!./src/**/*.test.{js,ts,jsx,tsx}",
+  ],
+  // Words Tailwind finds in the source that are never classes here: `hidden`
+  // and `visible` in comments and style values, `static` in position types,
+  // `transform` and `filter` in style keys and array methods, `blur` and
+  // `resize` as event names. Each would otherwise ship a utility nothing
+  // draws with. A list, because these are ordinary words in shipped code that
+  // no content rule can tell from a class. It is not self-correcting: a
+  // component that one day writes one of them as a class gets nothing, so
+  // components:classes:check fails on any of them in a class string.
+  blocklist: [
+    "blur",
+    "filter",
+    "hidden",
+    "resize",
+    "static",
+    "transform",
+    "visible",
+  ],
+  // Tailwind's breakpoint-width `container`: Kozmos lays out with its own
+  // parts and never offers it, and `container` is a word the tests and
+  // components use for other things.
+  corePlugins: { container: false },
   darkMode: [
     "variant",
     '@scope (:scope[data-theme="dark"]) to ([data-kozmos-root]) { & }',
@@ -244,6 +273,14 @@ module.exports = {
         overlay: "var(--semantics-elevation-overlay)",
         // The map controls' own, three layers: the SDK's (decision 40).
         "map-control": "var(--semantics-elevation-map-control)",
+      },
+      // Tailwind's own list, with the prefixed backdrop-filter beside the
+      // standard one. Given only the standard one, autoprefixer wrote the
+      // declaration three times (prefixed, standard, both), and only the
+      // last ever applied.
+      transitionProperty: {
+        DEFAULT:
+          "color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter",
       },
       transitionDuration: {
         DEFAULT: "calc(150ms * var(--semantics-motion-duration-scale, 1))", // Updated to semantics

@@ -71,13 +71,15 @@ try {
       "true",
     );
     assert.equal(await menu.getByText("العربية").getAttribute("lang"), "ar");
+    // The check ends the chosen row, as every Kozmos list row's does (the
+    // owner's 21 Oct ruling on Figma's rows), and mirrors right to left.
     const current = menu.getByRole("option", { name: "English" });
-    const marker = await current.locator(":scope > span").first().boundingBox();
+    const marker = await current.locator("svg").first().boundingBox();
     const row = await current.boundingBox();
     assert.ok(
       dir === "ltr"
-        ? marker.x < row.x + row.width / 2
-        : marker.x > row.x + row.width / 2,
+        ? marker.x > row.x + row.width / 2
+        : marker.x < row.x + row.width / 2,
       "selection mark mirrors",
     );
     await page.waitForFunction(
