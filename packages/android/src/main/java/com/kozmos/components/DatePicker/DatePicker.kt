@@ -14,9 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Calendar
 
 @Composable
@@ -29,6 +31,7 @@ fun KozmosDatePicker(
     label: String = "Select Date"
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
     val calendar = Calendar.getInstance()
     
     if (date != null) {
@@ -47,7 +50,10 @@ fun KozmosDatePicker(
 
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = date?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "",
+            // The app's locale's own medium date, as React's native input
+            // writes it: "May 25, 2026", "25.05.2026". It was "MMM dd, yyyy",
+            // US order in every locale.
+            value = date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)) ?: "",
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
