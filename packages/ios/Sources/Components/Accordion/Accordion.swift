@@ -20,10 +20,11 @@ public struct KozmosAccordionTrigger: View {
     let identifier: String?
     @Environment(\.kozmosAnalytics) var trackEvent
 
-    /// `accessibilityIdentifier` is set on the element VoiceOver and XCUITest
-    /// read: from iOS 18 the UIKit element laid over the trigger, which a
-    /// SwiftUI `.accessibilityIdentifier` applied to the trigger never
-    /// reaches, and before iOS 18 the button.
+    /// `accessibilityIdentifier` is set on the trigger's one button alone:
+    /// from iOS 18 the UIKit element laid over the trigger, and before iOS 18
+    /// the button. A SwiftUI `.accessibilityIdentifier` applied to the
+    /// trigger from outside does not set the UIKit element's own: XCUITest
+    /// finds it on that button, but on the rule under the trigger as well.
     public init(value: String, title: String, selection: Binding<String?>, accessibilityIdentifier: String? = nil) {
         self.value = value
         self.title = title
@@ -67,8 +68,15 @@ public struct KozmosAccordionTrigger: View {
             // SwiftUI has no modifier for. Touches still reach the button
             // underneath. Before iOS 18 UIKit has no such status either, and
             // VoiceOver hears the button itself, as it always has.
+            //
+            // The button's accessibility is replaced by nothing, so the
+            // element is the trigger's one button for VoiceOver and for
+            // XCUITest alike. `.accessibilityHidden(true)` hid it from
+            // VoiceOver only: XCUITest still found it, with its title and
+            // its chevron, beside the element, and `app.buttons["Hours"]`
+            // matched two (measured, iOS 26.5).
             button
-                .accessibilityHidden(true)
+                .accessibilityRepresentation { EmptyView() }
                 .overlay(KozmosAccordionTriggerElement(label: title, identifier: identifier, isExpanded: isExpanded, toggle: toggle))
         } else {
             button.modifier(KozmosAccordionTriggerIdentifier(identifier: identifier))

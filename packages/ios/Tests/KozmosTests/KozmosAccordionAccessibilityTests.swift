@@ -103,10 +103,11 @@ final class KozmosAccordionAccessibilityTests: XCTestCase {
 
     /// A product's UI tests find the trigger by its identifier, as XCUITest
     /// looks one up: `app.buttons["faq-floors"]`. From iOS 18 VoiceOver and
-    /// XCUITest read the UIKit element over the trigger, which a SwiftUI
-    /// `.accessibilityIdentifier` on the trigger never reaches, so the
-    /// trigger takes the identifier itself and sets it on whichever element
-    /// is read: the UIKit element from iOS 18, the button before.
+    /// XCUITest read the UIKit element over the trigger, whose own identifier
+    /// a SwiftUI `.accessibilityIdentifier` on the trigger does not set (and
+    /// XCUITest finds that one on the rule under the trigger too), so the
+    /// trigger takes the identifier itself and sets it on that one element:
+    /// the UIKit element from iOS 18, the button before.
     @MainActor func testUITestsFindTheTriggerByItsIdentifier() async throws {
         try requireExpandedStatus()
         struct Identified: View {
