@@ -50,25 +50,21 @@ export const WithSelectedValues: Story = {
 
 /**
  * Options under their groups (GAP-192), the chosen ones as chips. It opens
- * with its field focused, so the list shows.
+ * with its field focused, so the list shows, except on the docs page, where
+ * the open list would sit over its text.
  */
 export const Grouped: Story = {
-  // At the top of its frame, and on the docs page in a frame of its own, so
-  // the open list drops below the field rather than over the page's text.
-  parameters: {
-    layout: "padded",
-    docs: { story: { inline: false, iframeHeight: 380 } },
-  },
+  parameters: { layout: "padded" },
   args: {
     label: "Content types",
     options: contentTypes,
     defaultValue: ["office-desk"],
   },
-  render: function Grouped(args) {
+  render: function Grouped(args, { viewMode }) {
     const field = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
-      field.current?.querySelector("input")?.focus();
-    }, []);
+      if (viewMode !== "docs") field.current?.querySelector("input")?.focus();
+    }, [viewMode]);
     return (
       <div className="w-96">
         <MultiSelect ref={field} {...args} />

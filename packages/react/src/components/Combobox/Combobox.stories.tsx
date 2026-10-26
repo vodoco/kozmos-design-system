@@ -57,19 +57,19 @@ export const WithValidation: Story = {
  * Options under their groups (GAP-192), filtered by what is typed, as
  * MAP-64's "Find and select office desk type" step shows them: "desk" keeps
  * Interior Asset's three desks and POI's Reception Desk, each under its
- * group's label. It opens focused, so the list shows.
+ * group's label. It opens focused, so the list shows, except on the docs
+ * page, where the open list would sit over its text.
  */
 export const Grouped: Story = {
-  // At the top of its frame, and on the docs page in a frame of its own, so
-  // the open list drops below the field rather than over the page's text.
-  parameters: {
-    layout: "padded",
-    docs: { story: { inline: false, iframeHeight: 380 } },
-  },
+  parameters: { layout: "padded" },
   args: {
     label: "Content type",
     options: contentTypes,
     defaultInputValue: "desk",
-    autoFocus: true,
   },
+  render: (args, { viewMode }) => (
+    <div className="w-80">
+      <Combobox {...args} autoFocus={viewMode !== "docs"} />
+    </div>
+  ),
 };
