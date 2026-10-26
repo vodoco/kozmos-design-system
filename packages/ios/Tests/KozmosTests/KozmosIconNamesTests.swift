@@ -112,6 +112,103 @@ final class KozmosIconNamesTests: XCTestCase {
         }
     }
 
+    /// The names the web draws beyond its curated library:
+    /// `kozmosIconNamesBeyondTheLibrary` in packages/icons/src/registry.ts,
+    /// read from its source as text.
+    static func webNamesBeyondTheLibrary() throws -> [String] {
+        let source = try repositoryFile("packages/icons/src/registry.ts")
+        return try lines(of: source, from: "export const kozmosIconNamesBeyondTheLibrary = [", to: "] as const;")
+            .flatMap { $0.components(separatedBy: "\"").enumerated().filter { $0.offset % 2 == 1 }.map(\.element) }
+    }
+
+    /// The export the web draws each of those names with,
+    /// `kozmosIconsBeyondTheLibrary`, read the same way.
+    static func webExportsBeyondTheLibrary() throws -> [String: String] {
+        let source = try repositoryFile("packages/icons/src/registry.ts")
+        let unquoted = CharacterSet(charactersIn: "\" ,")
+        let entries = try lines(of: source, from: "const kozmosIconsBeyondTheLibrary", to: "};")
+            .compactMap { line -> (String, String)? in
+                let parts = line.split(separator: ":", maxSplits: 1)
+                guard parts.count == 2 else { return nil }
+                let name = parts[0].trimmingCharacters(in: unquoted)
+                let exportName = parts[1].trimmingCharacters(in: unquoted)
+                guard !name.isEmpty, exportName.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+                return (name, exportName)
+            }
+        return Dictionary(entries, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// GAP-179: every name the web draws beyond its curated library, SwiftUI
+    /// draws with the artwork the web draws it with, held to one list,
+    /// `kozmosIconNamesBeyondTheLibrary`: a wayfinding glyph as the artwork
+    /// navigation-glyphs.json gives the web's export, filled; a solid mark
+    /// (GAP-181's walking figure) as owned/icons.ts draws it, fitted to the
+    /// grid and filled; and a Pointr outline as the export's own path, stroked
+    /// 2 on the grid. A name renamed or dropped on either side fails here, as
+    /// it fails Compose's IconNamesTest.
+    @MainActor func testEveryNameTheWebDrawsBeyondItsLibrarySwiftUIDraws() throws {
+        let names = try Self.webNamesBeyondTheLibrary()
+        let exports = try Self.webExportsBeyondTheLibrary()
+        XCTAssertGreaterThanOrEqual(names.count, 29, "the web lists \(names.count) names beyond its library; the list was not read")
+        XCTAssertEqual(names.count, Set(names).count, "the web's names beyond its library are not unique")
+        XCTAssertEqual(Set(names), Set(exports.keys), "the web draws other names than it lists")
+        let registry = Set(try Self.webRegistryNames())
+        XCTAssertEqual(names.filter(registry.contains), [], "a name beyond the library is in kozmosIconNames")
+
+        let kinds = Dictionary(uniqueKeysWithValues: try KozmosIconTests.wayfindingGlyphs().map { ($0.name, $0.kind) })
+        let standIn = try DrawnPixels.draw(KozmosIcon("no-such-kozmos-name", size: .xl), scale: 3)
+        let side = KozmosIconSize.xl.pointSize
+        var wrong: [String] = []
+        for name in names {
+            let exportName = try XCTUnwrap(exports[name], "the web draws \(name) with nothing")
+            let artwork: AnyView
+            if let kind = kinds[exportName] {
+                let path = try XCTUnwrap(KozmosNavigationGlyphPaths.path(kind), "no artwork for \(kind)")
+                artwork = AnyView(ExpressArtwork(path: path).fill())
+            } else if let solid = try Self.ownedSolidGlyph(exportName) {
+                artwork = AnyView(solid.painted(size: side))
+            } else {
+                let data = try Self.pointrPathData(exportName)
+                let outline = try XCTUnwrap(KozmosPointrGlyph.outline(data.joined(separator: " ")),
+                                            "\(exportName)'s path data does not parse")
+                artwork = AnyView(outline.stroke(style: StrokeStyle(lineWidth: 2 * side / 24, lineCap: .round, lineJoin: .round)))
+            }
+            let expected = try DrawnPixels.draw(
+                artwork.foregroundColor(KozmosColors.primitivesColorsForeground100).frame(width: side, height: side), scale: 3)
+            let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
+            if alike(drawn, standIn) || !alike(drawn, expected) {
+                wrong.append("\(name) (not \(exportName))")
+            }
+        }
+        XCTAssertTrue(wrong.isEmpty,
+                      "SwiftUI does not draw \(wrong.count) of the web's \(names.count) names beyond its library as the web does: \(wrong)")
+    }
+
+    /// A solid mark `@kozmos-ds/icons` declares in
+    /// packages/icons/src/owned/icons.ts (`createTaxonomyIcon`), read from its
+    /// source as text: its one path, on its own squared viewBox fitted to the
+    /// 24 grid, filled. Nil when the export is not declared there.
+    static func ownedSolidGlyph(_ exportName: String) throws -> KozmosPointrGlyph? {
+        let source = try repositoryFile("packages/icons/src/owned/icons.ts")
+        guard let declaration = source.range(of: "export const \(exportName) = ") else { return nil }
+        let end = source.range(of: "\nexport const ", range: declaration.upperBound..<source.endIndex)?.lowerBound
+            ?? source.endIndex
+        let block = String(source[declaration.upperBound..<end])
+        XCTAssertTrue(block.hasPrefix("/* @__PURE__ */ createTaxonomyIcon("), "\(exportName) is not a solid mark")
+        XCTAssertEqual(block.components(separatedBy: "d: \"").count - 1, 1, "\(exportName) is not one path")
+        // The export's name, then the viewBox, then its path's d.
+        let quoted = block.components(separatedBy: "\"")
+        guard quoted.count > 5 else { return nil }
+        let viewBox = quoted[3].split(separator: " ").compactMap { Double($0) }
+        XCTAssertEqual(viewBox.count, 4, "\(exportName)'s viewBox does not parse")
+        guard viewBox.count == 4, viewBox[2] > 0, viewBox[2] == viewBox[3] else { return nil }
+        let path = try XCTUnwrap(KozmosPointrGlyph.outline(quoted[5])?.canonicalPath,
+                                 "\(exportName)'s path data does not parse")
+        let fitted = path.applying(CGAffineTransform(translationX: -viewBox[0], y: -viewBox[1])
+            .concatenating(CGAffineTransform(scaleX: 24 / viewBox[2], y: 24 / viewBox[3])))
+        return KozmosPointrGlyph(runs: [], canonicalPath: fitted, isFilled: true)
+    }
+
     /// The path data `@kozmos-ds/icons` draws an export with, read from
     /// packages/icons/src/pointr/icons.generated.ts as text: each `d`.
     static func pointrPathData(_ exportName: String) throws -> [String] {
