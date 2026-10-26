@@ -21,7 +21,7 @@ surrounding form.
 
 ## Implementation
 
-Close and swap use actual 44px/44pt targets on web/iOS and 48dp on Android. The input text reserves space beside the enlarged swap control. SwiftUI also accepts `closeLabel`; Compose currently uses its built-in Close label.
+Close and swap use actual 44px/44pt targets on web/iOS and 48dp on Android. The input text reserves space beside the enlarged swap control. SwiftUI and Compose take `closeLabel` too, "Close navigation" by default on all three.
 
 <div className="subheading">Code</div>
 
@@ -67,8 +67,8 @@ import androidx.compose.runtime.Composable
 import com.kozmos.components.text.KozmosText
 import com.kozmos.components.wayfindingcard.KozmosWayfindingCard
 
-// The card draws its title and, given an onClose, a close button TalkBack
-// names "Close", in fixed English: it takes no closeLabel. Your content goes
+// The card draws its title and, given an onClose, a close button named by
+// closeLabel, "Close navigation" unless you pass your own; your content goes
 // under them. KozmosWayfindingInputRow is the origin and destination row it
 // often holds.
 @Composable

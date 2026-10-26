@@ -46,7 +46,12 @@ fun KozmosPOICard(
     description: (@Composable () -> Unit)? = null,
     imageContent: (@Composable () -> Unit)? = null,
     actions: (@Composable androidx.compose.foundation.layout.RowScope.() -> Unit)? = null,
-    onClose: (() -> Unit)? = null
+    onClose: (() -> Unit)? = null,
+    /**
+     * The close button's spoken name, drawn when [onClose] is set. "Close" by
+     * default; a product that translates passes its own.
+     */
+    closeLabel: String = "Close"
 ) {
     Card(
         modifier = modifier.width(300.dp),
@@ -77,7 +82,7 @@ fun KozmosPOICard(
                     }
                     if (onClose != null) {
                         IconButton(onClick = onClose, modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)) {
-                            Icon(Icons.Default.Close, contentDescription = "Close")
+                            Icon(Icons.Default.Close, contentDescription = closeLabel)
                         }
                     }
                 }

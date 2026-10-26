@@ -6,8 +6,9 @@ package com.kozmos.docsnippets
 import androidx.compose.runtime.Composable
 import com.kozmos.components.text.KozmosText
 
-// Body text. Compose's KozmosText takes the words and a modifier, nothing
-// else: it has no style, tone or truncation, and draws in the ambient style.
+// Body text. style names a step on the type ramp, such as
+// KozmosTextStyle.Footnote, as SwiftUI's does; left out, the words draw in
+// the style around them. Compose's KozmosText has no tone or truncation.
 @Composable
 fun ReceptionHint() {
     KozmosText(text = "Find your way to reception.")

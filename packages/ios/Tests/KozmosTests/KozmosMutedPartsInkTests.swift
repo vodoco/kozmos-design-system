@@ -66,4 +66,56 @@ final class KozmosMutedPartsInkTests: XCTestCase {
         }
         XCTAssertEqual(wrong, [])
     }
+
+    /// The colour of the text that `blank` draws as spaces: of the pixels where
+    /// the two drawings differ, which are only its glyphs, the opaque one
+    /// furthest from the page, where a stroke covers it whole.
+    @MainActor private func glyphInk<A: View, B: View>(_ drawn: A, blank: B, width: CGFloat, _ scheme: ColorScheme) throws -> Ink? {
+        func draw<V: View>(_ view: V) throws -> DrawnPixels {
+            try DrawnPixels.draw(
+                view.frame(width: width).background(KozmosColors.primitivesColorsBackground0).environment(\.colorScheme, scheme),
+                scale: 3)
+        }
+        let a = try draw(drawn), b = try draw(blank)
+        XCTAssertEqual(a.size, b.size, "the text as spaces moved the drawing")
+        guard a.size == b.size else { return nil }
+        var found: Ink?
+        var furthest = -1
+        for y in 0..<a.height {
+            for x in 0..<a.width {
+                let point = CGPoint(x: (CGFloat(x) + 0.5) / a.scale, y: (CGFloat(y) + 0.5) / a.scale)
+                let c = a.pixel(at: point), d = b.pixel(at: point)
+                guard c.a > 240, abs(Int(c.r) - Int(d.r)) > 8 || abs(Int(c.g) - Int(d.g)) > 8 || abs(Int(c.b) - Int(d.b)) > 8 else { continue }
+                let sum = Int(c.r) + Int(c.g) + Int(c.b)
+                let depth = scheme == .dark ? sum : 765 - sum
+                if depth > furthest { furthest = depth; found = c }
+            }
+        }
+        return found
+    }
+
+    /// The date and time pickers' helper text, in the Kozmos field around the
+    /// system picker, is the muted colour too, as React's pickers draw their
+    /// helper in `FieldWrapper` and `KozmosFieldWrapper` draws its own. The
+    /// system picker is not SwiftUI's to draw, so ImageRenderer draws a
+    /// placeholder for it; the helper is told from it by drawing the field
+    /// again with the helper as spaces. Light and dark, each on its page.
+    @MainActor func testAPickersHelperTextIsTheMutedColour() throws {
+        let day = Date(timeIntervalSince1970: 1_769_299_200)
+        let helper = "Weekdays only", spaces = String(repeating: " ", count: 13)
+        let pickers: [(String, (String) -> AnyView)] = [
+            ("KozmosDatePicker", { AnyView(KozmosDatePicker(selection: .constant(day), label: "Visit date", helperText: $0)) }),
+            ("KozmosTimePicker", { AnyView(KozmosTimePicker(selection: .constant(day), label: "Arrival time", helperText: $0)) }),
+        ]
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let muted = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground400, in: scheme)
+            for (name, picker) in pickers {
+                let ink = try glyphInk(picker(helper), blank: picker(spaces), width: 320, scheme)
+                print("Muted iOS, \(name)'s helper text, \(scheme): \(hex(ink)), foreground/400 \(hex(muted))")
+                if !close(ink, muted) { wrong.append("\(name)'s helper text, \(scheme): drew \(hex(ink)), not foreground/400 \(hex(muted))") }
+            }
+        }
+        XCTAssertEqual(wrong, [])
+    }
 }

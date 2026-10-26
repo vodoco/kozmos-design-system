@@ -49,9 +49,9 @@ They are not 44px action targets.
 Group items, services and tags accept optional `iconName`: a name or alias in the
 Kozmos icon registry, a wayfinding glyph by the kebab case of its export name
 (`elevator-up`, `security-control`, `shuttle`: all 23 in DirectionStep's Glyph Atlas),
-or `log-in-01`, `log-out-01`, `arrow-up-right` and `arrow-down-right`. These are the
-names `KozmosIcon` draws on iOS and Android, so a tag draws the same artwork on all
-three. Icons are decorative, 16px, and explicitly assigned by the adapter;
+`log-in-01`, `log-out-01`, `arrow-up-right` and `arrow-down-right`, or the map controls'
+`layers-three-01` and `walking`. These are the names `KozmosIcon` draws on iOS and Android,
+so a tag draws the same artwork on all three. Icons are decorative, 16px, and explicitly assigned by the adapter;
 the component does not infer them from translated text. Unknown icons leave
 the full label visible, with no icon. No external image URL or raw SVG is accepted by this field.
 An item may also carry an `iconUrl`, decorative artwork drawn in its `iconName`'s place: HTTPS or a
