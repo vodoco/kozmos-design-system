@@ -2,7 +2,10 @@ import type React from "react";
 
 /**
  * Backdrop's cut-out (GAP-189): what a target can be, where it is, and the
- * scrim's clip-path that leaves it out of the dim.
+ * scrim's clip-path that leaves it out of the dim. While a backdrop lights a
+ * target it reads it every frame, as Floating UI's autoUpdate can, so a
+ * target moved by layout above it or by a transform is followed, and a ref
+ * filled later is lit; it writes only when the cut-out moves.
  */
 
 /** A box in the viewport's coordinates, as `getBoundingClientRect()` gives one. */
@@ -75,8 +78,12 @@ function resolve(target: BackdropTarget): Source[] {
   return sources;
 }
 
-const box = (rect: BackdropRect | null): Box | null =>
-  rect && (rect.width > 0 || rect.height > 0)
+/**
+ * A box from a rect. An element's empty box is no box (`display: none`); a
+ * virtual element's or a rect's is a point, lit by the padding round it.
+ */
+const box = (rect: BackdropRect, point: boolean): Box | null =>
+  rect.width > 0 || rect.height > 0 || point
     ? {
         l: rect.left,
         t: rect.top,
@@ -100,20 +107,10 @@ const unite = (boxes: (Box | null)[]) =>
   );
 
 /**
- * A source's box. An element that draws no box of its own
- * (`display: contents`, as the Vue harness's wrappers are) is the box round
- * its children; one with no box at all (`display: none`) lights nothing.
+ * The elements that draw an element's box: an element with
+ * `display: contents` (as the Vue harness's wrappers are) has none of its
+ * own, so its children's are read.
  */
-function boxOf(source: Source): Box | null {
-  if (isElement(source)) {
-    const view = source.ownerDocument.defaultView;
-    if (view?.getComputedStyle(source).display === "contents")
-      return unite(Array.from(source.children).map(boxOf));
-  }
-  return box(measures(source) ? source.getBoundingClientRect() : source);
-}
-
-/** The elements that draw a source's box: a `display: contents` one's children. */
 const drawers = (element: Element, view: Window): Element[] =>
   view.getComputedStyle(element).display === "contents"
     ? Array.from(element.children).flatMap((child) => drawers(child, view))
@@ -181,29 +178,26 @@ const token = (style: CSSStyleDeclaration, name: string, fallback: number) => {
   return Number.isFinite(value) ? value : fallback;
 };
 
-const same = (a: Source, b: Source) =>
-  a === b ||
-  (!isElement(a) &&
-    !isElement(b) &&
-    ["top", "left", "width", "height"].every(
-      (key) =>
-        (measures(a) ? a.getBoundingClientRect() : a)[key as "top"] ===
-        (measures(b) ? b.getBoundingClientRect() : b)[key as "top"],
-    ));
+const KEYS = ["x", "y", "w", "h", "r"] as const;
 
 /**
- * One backdrop's cut-out: it reads the target, draws the scrim's clip-path
- * and the ring, and listens where the target can move. A new target is
- * glided to from where the cut-out was, over the standard duration, unless
- * motion is reduced or the cut-out has not been painted yet; a scroll, a
- * resize or a render draws it where the target is at once.
+ * One backdrop's cut-out. While it lights a target it reads it every frame
+ * and on each render, scroll and resize, and redraws the scrim's clip-path
+ * and the ring only when the cut-out moves. A glide is for the tour moving on:
+ * when the elements lit change, the cut-out glides from where it was over the
+ * standard duration, unless motion is reduced or it has not been painted
+ * yet. A rect or a virtual element that moves is followed, never glided to.
  */
 export function createCutout() {
   let root: HTMLElement | null = null;
+  let scrim: HTMLElement | null = null;
   let ring: HTMLElement | null = null;
-  let sources: Source[] = [];
-  let padding: number | undefined;
-  let radius: number | undefined;
+  let target: BackdropTarget;
+  let padding = 8;
+  let radius = 16;
+  // What is lit, by identity: the elements, and the elements that draw them.
+  let elements: Element[] = [];
+  let boxes: Element[] = [];
   let drawn: Hole | null = null;
   let glide: {
     from: Hole;
@@ -212,52 +206,32 @@ export function createCutout() {
     ease: (t: number) => number;
   } | null = null;
   let frame = 0;
-  // Whether a frame has painted the cut-out: only then is it glided from.
-  let seen = false;
-  let seeing = 0;
+  let frames = 0;
+  // The frame the cut-out appeared in: two frames on, it has been painted.
+  let shown = 0;
   let unlisten: (() => void) | null = null;
 
   const view = () => root?.ownerDocument.defaultView ?? null;
 
-  const measure = (): Hole | null => {
-    const lit = unite(sources.map(boxOf));
-    const win = view();
-    if (!root || !win || !lit) return null;
-    const style = win.getComputedStyle(root);
-    const p = padding ?? token(style, "--primitives-layout-spacing-100", 8);
-    const origin = root.getBoundingClientRect();
-    return {
-      x: lit.l - origin.left - p,
-      y: lit.t - origin.top - p,
-      w: lit.r - lit.l + 2 * p,
-      h: lit.b - lit.t + 2 * p,
-      r: radius ?? token(style, "--semantics-radius-control", 16),
-    };
-  };
-
   const paint = (hole: Hole | null) => {
-    const win = view();
-    const appearing = !drawn;
+    if (
+      hole === drawn ||
+      (hole &&
+        drawn &&
+        KEYS.every((key) => Math.abs(hole[key] - drawn![key]) < 0.01))
+    )
+      return;
+    if (!drawn) shown = frames;
     drawn = hole;
-    if (!root || !win) return;
+    if (!root || !scrim) return;
     if (!hole) {
-      win.cancelAnimationFrame(seeing);
-      seen = false;
-      seeing = 0;
-      root.style.removeProperty("clip-path");
+      scrim.style.removeProperty("clip-path");
       root.removeAttribute("data-lit");
       return;
     }
-    if (appearing && !seen && !seeing)
-      seeing = win.requestAnimationFrame(() => {
-        seeing = win.requestAnimationFrame(() => {
-          seen = true;
-          seeing = 0;
-        });
-      });
     const r = Math.max(0, Math.min(hole.r, hole.w / 2, hole.h / 2));
     const origin = root.getBoundingClientRect();
-    root.style.setProperty(
+    scrim.style.setProperty(
       "clip-path",
       clipPath(origin.width, origin.height, { ...hole, r }),
     );
@@ -271,84 +245,16 @@ export function createCutout() {
       });
   };
 
-  const stop = () => {
-    view()?.cancelAnimationFrame(frame);
-    glide = null;
-  };
-
-  /** One frame of a glide: from where it began to where the target is now. */
-  const step = () => {
-    const win = view();
-    const to = measure();
-    if (!glide || !win || !to) {
-      stop();
-      if (!to) paint(null);
-      return;
-    }
-    const progress = Math.min(
-      1,
-      (win.performance.now() - glide.start) / glide.ms,
-    );
-    const e = glide.ease(progress);
-    const from = glide.from;
-    const mix = (key: keyof Hole) => from[key] + (to[key] - from[key]) * e;
-    paint({ x: mix("x"), y: mix("y"), w: mix("w"), h: mix("h"), r: mix("r") });
-    if (progress < 1) frame = win.requestAnimationFrame(step);
-    else glide = null;
-  };
-
-  const update = (retarget: boolean) => {
-    const win = view();
-    const hole = measure();
-    if (!root || !win || !hole) {
-      stop();
-      if (drawn) paint(null);
-      return;
-    }
-    if (retarget && drawn && seen) {
-      const style = win.getComputedStyle(root);
-      const time = style
-        .getPropertyValue("--semantics-motion-duration-standard")
-        .trim();
-      const ms =
-        (time ? parseFloat(time) * (time.endsWith("ms") ? 1 : 1000) : 280) *
-        token(style, "--semantics-motion-duration-scale", 1);
-      const reduced =
-        !!root.closest('[data-kozmos-motion="reduced"]') ||
-        !!win.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      if (!reduced && ms > 0) {
-        stop();
-        glide = {
-          from: drawn,
-          start: win.performance.now(),
-          ms,
-          ease: easing(
-            style.getPropertyValue("--semantics-motion-easing-standard"),
-          ),
-        };
-        frame = win.requestAnimationFrame(step);
-        return;
-      }
-    }
-    // A glide in flight reads the target every frame.
-    if (!glide) paint(hole);
-  };
-
   /** Listen where the target can move: its scrollers, its size, the window's. */
-  const listen = () => {
+  const listen = (win: Window & typeof globalThis) => {
     unlisten?.();
-    unlisten = null;
-    const win = view() as (Window & typeof globalThis) | null;
-    if (!root || !win || !sources.length) return;
-    const move = () => update(false);
+    const move = () => update();
     const scrolled = new Set<Element | Window>([win]);
     const observer = win.ResizeObserver ? new win.ResizeObserver(move) : null;
-    observer?.observe(root);
-    for (const source of sources)
-      if (isElement(source)) {
-        for (const drawer of drawers(source, win)) observer?.observe(drawer);
-        for (const scroller of scrollers(source, win)) scrolled.add(scroller);
-      }
+    boxes = elements.flatMap((element) => drawers(element, win));
+    for (const element of [root!, ...boxes]) observer?.observe(element);
+    for (const element of elements)
+      for (const scroller of scrollers(element, win)) scrolled.add(scroller);
     for (const scroller of scrolled)
       scroller.addEventListener("scroll", move, { passive: true });
     win.addEventListener("resize", move);
@@ -360,41 +266,132 @@ export function createCutout() {
     };
   };
 
+  /** Read the target and redraw the cut-out where it belongs. */
+  const update = () => {
+    const win = view() as (Window & typeof globalThis) | null;
+    if (!root || !win) return;
+    // A ref is read as it stands, so one filled later is lit.
+    const sources = resolve(target);
+    const next = sources.filter(isElement);
+    const moved =
+      next.length !== elements.length ||
+      next.some((element, index) => element !== elements[index]) ||
+      boxes.some((element) => !element.isConnected);
+    if (moved) {
+      elements = next;
+      listen(win);
+    }
+    const lit = unite([
+      ...boxes.map((element) => box(element.getBoundingClientRect(), false)),
+      ...sources
+        .filter((source) => !isElement(source))
+        .map((source) =>
+          box(
+            measures(source)
+              ? source.getBoundingClientRect()
+              : (source as BackdropRect),
+            true,
+          ),
+        ),
+    ]);
+    if (!lit) {
+      glide = null;
+      paint(null);
+      return;
+    }
+    const origin = root.getBoundingClientRect();
+    const hole: Hole = {
+      x: lit.l - origin.left - padding,
+      y: lit.t - origin.top - padding,
+      w: lit.r - lit.l + 2 * padding,
+      h: lit.b - lit.t + 2 * padding,
+      r: radius,
+    };
+    if (moved && drawn && frames - shown > 1) {
+      const style = win.getComputedStyle(root);
+      const time = style
+        .getPropertyValue("--semantics-motion-duration-standard")
+        .trim();
+      const ms =
+        (time ? parseFloat(time) * (time.endsWith("ms") ? 1 : 1000) : 280) *
+        token(style, "--semantics-motion-duration-scale", 1);
+      const reduced =
+        !!root.closest('[data-kozmos-motion="reduced"]') ||
+        !!win.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      glide =
+        !reduced && ms > 0
+          ? {
+              from: drawn,
+              start: win.performance.now(),
+              ms,
+              ease: easing(
+                style.getPropertyValue("--semantics-motion-easing-standard"),
+              ),
+            }
+          : null;
+    }
+    if (glide) {
+      // From where the glide began to where the target is now.
+      const progress = Math.min(
+        1,
+        (win.performance.now() - glide.start) / glide.ms,
+      );
+      const e = glide.ease(progress);
+      const from = glide.from;
+      const mixed = { ...hole };
+      for (const key of KEYS)
+        mixed[key] = from[key] + (hole[key] - from[key]) * e;
+      if (progress >= 1) glide = null;
+      paint(mixed);
+      return;
+    }
+    paint(hole);
+  };
+
+  const loop = () => {
+    frames += 1;
+    update();
+    frame = view()?.requestAnimationFrame(loop) ?? 0;
+  };
+
   const release = () => {
-    stop();
+    view()?.cancelAnimationFrame(frame);
+    frame = 0;
     unlisten?.();
     unlisten = null;
-    sources = [];
+    elements = [];
+    boxes = [];
+    glide = null;
     paint(null);
   };
 
   return {
     /**
-     * After every render: read the target again (a ref is read as it
-     * stands), listen afresh if it names other things, and redraw. With no
-     * target to light, the cut-out is let go.
+     * After every render: take the target and the options, read the token
+     * defaults, redraw at once, and read the target every frame while it is
+     * lit. With nothing to light, the cut-out is let go.
      */
     sync(
       nextRoot: HTMLElement | null,
+      nextScrim: HTMLElement | null,
       nextRing: HTMLElement | null,
-      target: BackdropTarget,
+      nextTarget: BackdropTarget,
       nextPadding?: number,
       nextRadius?: number,
     ) {
-      if (nextRoot !== root) release();
+      if (nextRoot !== root || !nextScrim) release();
       root = nextRoot;
+      scrim = nextScrim;
       ring = nextRing;
-      padding = nextPadding;
-      radius = nextRadius;
-      const next = nextRoot && nextRing ? resolve(target) : [];
-      const changed =
-        next.length !== sources.length ||
-        next.some((source, index) => !same(source, sources[index]));
-      if (changed) {
-        sources = next;
-        listen();
-      }
-      update(changed);
+      target = nextTarget;
+      const win = view();
+      if (!root || !scrim || !win) return;
+      const style = win.getComputedStyle(root);
+      padding =
+        nextPadding ?? token(style, "--primitives-layout-spacing-100", 8);
+      radius = nextRadius ?? token(style, "--semantics-radius-control", 16);
+      update();
+      if (!frame) frame = win.requestAnimationFrame(loop);
     },
     release,
   };

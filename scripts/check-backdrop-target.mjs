@@ -71,6 +71,7 @@ async function open({
   forced,
   reduced = "no-preference",
   visible = true,
+  child = false,
 }) {
   const page = await browser.newPage({
     viewport: { width: 480, height: 720 },
@@ -90,6 +91,7 @@ async function open({
     theme,
     target,
     visible,
+    child,
   });
   await settleLayout(page);
   return { page, errors };
@@ -102,7 +104,7 @@ const box = (page, selector) =>
     const r = node.getBoundingClientRect();
     return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
   }, selector);
-const ring = (page) => box(page, "#backdrop > .kozmos-backdrop-ring");
+const ring = (page) => box(page, "#backdrop .kozmos-backdrop-ring");
 const centre = (b) => [(b.left + b.right) / 2, (b.top + b.bottom) / 2];
 // A pixel of a part's own flat fill: inside its rounded corner, clear of its
 // label, whose glyphs draw differently in each engine.
@@ -149,7 +151,9 @@ async function clickAt(page, selector) {
   await page.mouse.click(x, y);
   const after = await counts(page);
   const hit = await page.evaluate(
-    ([x, y]) => document.elementFromPoint(x, y)?.id || "(none)",
+    // The nearest element with an id: the backdrop's dim is a part of it.
+    ([x, y]) =>
+      document.elementFromPoint(x, y)?.closest("[id]")?.id || "(none)",
     [x, y],
   );
   return {
@@ -242,7 +246,7 @@ for (const forced of ["none", "active"])
         const shot = await page.screenshot();
         const ringColour = await page.evaluate(() => {
           const ring = document.querySelector(
-            "#backdrop > .kozmos-backdrop-ring",
+            "#backdrop .kozmos-backdrop-ring",
           );
           const style = getComputedStyle(ring);
           // The system's Highlight, resolved where the ring is: a system
@@ -457,10 +461,17 @@ for (const forced of ["none", "active"])
           const { page, errors } = await open({ theme, target, forced });
           const state = await page.evaluate(() => {
             const backdrop = document.getElementById("backdrop");
+            const scrim = backdrop.querySelector(".kozmos-backdrop-scrim");
             return {
-              clip: getComputedStyle(backdrop).clipPath,
+              clip:
+                [backdrop, scrim]
+                  .filter(Boolean)
+                  .map((node) => getComputedStyle(node).clipPath)
+                  .find((clip) => clip !== "none") ?? "none",
               lit: backdrop.hasAttribute("data-lit"),
               rings: backdrop.querySelectorAll(".kozmos-backdrop-ring").length,
+              // With no target, the one element Backdrop always drew.
+              markup: backdrop.outerHTML,
             };
           });
           reads += 1;
@@ -471,6 +482,14 @@ for (const forced of ["none", "active"])
           if (target === "none" && state.rings !== 0)
             problems.push(
               `with no target, Backdrop draws ${state.rings} ring(s)`,
+            );
+          if (
+            target === "none" &&
+            state.markup !==
+              '<div class="fixed inset-0 z-50 bg-overlay-scrim" id="backdrop"></div>'
+          )
+            problems.push(
+              `with no target, Backdrop is not the element it was: ${state.markup}`,
             );
           if ((await ring(page)) !== null)
             problems.push(`${target}: a ring is drawn`);
@@ -499,6 +518,116 @@ for (const forced of ["none", "active"])
     );
   }
 
+for (const theme of ["light", "dark"]) {
+  await scenario(
+    `normal colours, ${theme}: a target moved with no resize or scroll, by content above it and by a transform, keeps the ring and the click`,
+    async (problems) => {
+      const { page, errors } = await open({
+        theme,
+        target: "update",
+        forced: "none",
+      });
+      for (const [name, move] of [
+        [
+          "content inserted above it",
+          () => {
+            const above = document.createElement("div");
+            above.style.height = "32px";
+            const update = document.getElementById("update");
+            update.parentElement.insertBefore(above, update);
+          },
+        ],
+        [
+          "a transform on it",
+          () => {
+            document.getElementById("update").style.transform =
+              "translateX(40px)";
+          },
+        ],
+      ]) {
+        const before = await box(page, "#update");
+        await page.evaluate(move);
+        await settleLayout(page);
+        const after = await box(page, "#update");
+        reads += 1;
+        if (
+          Math.abs(after.top - before.top) +
+            Math.abs(after.left - before.left) <
+          20
+        )
+          problems.push(
+            `${name}: the target did not move (${fmt(before)} to ${fmt(after)})`,
+          );
+        sameBox(problems, `after ${name}`, await ring(page), ringFor(after));
+        const click = await clickAt(page, "#update");
+        reads += 1;
+        if (
+          click.hit !== "update" ||
+          click.delta.update !== 1 ||
+          click.delta.backdrop !== 0
+        )
+          problems.push(
+            `after ${name}, a click on the target reached ${click.hit} (${JSON.stringify(click.delta)})`,
+          );
+      }
+      if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+      await page.close();
+    },
+  );
+
+  await scenario(
+    `normal colours, ${theme}: a child of the backdrop over the cut-out's padding is drawn and takes the click`,
+    async (problems) => {
+      const { page, errors } = await open({
+        theme,
+        target: "update",
+        forced: "none",
+        child: true,
+      });
+      const update = await box(page, "#update");
+      const child = await box(page, "#child");
+      // Inside the cut-out's padding, on its straight edge, under the child.
+      const point = [update.left - 4, (child.top + child.bottom) / 2];
+      reads += 1;
+      if (
+        !(
+          point[0] > child.left &&
+          point[0] < child.right &&
+          point[1] > update.top &&
+          point[1] < update.bottom
+        )
+      )
+        problems.push(
+          `the probe ${point} is not under the child in the cut-out (${fmt(child)})`,
+        );
+      const [drawn] = await pixels(await page.screenshot(), [point]);
+      reads += 1;
+      if (distance(drawn, [255, 0, 255]) > 3)
+        problems.push(
+          `the child is not drawn over the cut-out: rgb(${drawn.slice(0, 3)}), not #ff00ff`,
+        );
+      const hit = await page.evaluate(
+        ([x, y]) => document.elementFromPoint(x, y)?.id,
+        point,
+      );
+      const before = await counts(page);
+      await page.mouse.click(point[0], point[1]);
+      const after = await counts(page);
+      reads += 1;
+      if (
+        hit !== "child" ||
+        after.child - before.child !== 1 ||
+        after.update !== before.update
+      )
+        problems.push(
+          `a click on the child over the cut-out reached ${hit} (child ${after.child - before.child}, update ${after.update - before.update})`,
+        );
+      if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+      await page.close();
+    },
+  );
+}
+
 await scenario(
   "motion: a new target is glided to, and under reduced motion moved to at once",
   async (problems) => {
@@ -515,7 +644,7 @@ await scenario(
       const first = await page.evaluate(() => {
         window.backdropTarget.retarget("publish");
         const r = document
-          .querySelector("#backdrop > .kozmos-backdrop-ring")
+          .querySelector("#backdrop .kozmos-backdrop-ring")
           .getBoundingClientRect();
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
       });

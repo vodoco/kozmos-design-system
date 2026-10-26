@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { flushSync } from "react-dom";
 import { Backdrop } from "./Backdrop";
@@ -53,7 +53,11 @@ function ringOf(root: Element) {
  * after the first, which is the scrim's own outline.
  */
 function holeOf(root: HTMLElement) {
-  const clip = root.style.getPropertyValue("clip-path");
+  // The dim and its cut-out are the inner scrim's, so the backdrop's own
+  // children are never clipped.
+  const scrim =
+    root.querySelector<HTMLElement>(".kozmos-backdrop-scrim") ?? root;
+  const clip = scrim.style.getPropertyValue("clip-path");
   const body = clip.match(/path\("([^"]*)"\)/)?.[1];
   if (!body) return null;
   const subpaths = body.split(/(?=M)/).slice(1);
@@ -155,7 +159,10 @@ describe("Backdrop target (GAP-189)", () => {
       height: 64,
       radius: 18,
     });
-    expect(ringOf(root)!.element).toHaveAttribute("aria-hidden", "true");
+    // The ring is drawn in the scrim, which assistive technology never reads.
+    expect(ringOf(root)!.element.closest('[aria-hidden="true"]')).toBe(
+      root.querySelector(".kozmos-backdrop-scrim"),
+    );
   });
 
   it("takes targetPadding and targetRadius in pixels", () => {
@@ -418,7 +425,12 @@ describe("Backdrop target (GAP-189)", () => {
   it("glides to a new target over the standard duration", () => {
     stubMotion(false);
     vi.useFakeTimers({
-      toFake: ["requestAnimationFrame", "performance", "Date"],
+      toFake: [
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+        "Date",
+      ],
     });
     const { getByTestId, rerender } = render(<Steps step={0} />);
     const root = getByTestId("backdrop");
@@ -445,7 +457,12 @@ describe("Backdrop target (GAP-189)", () => {
   it("draws a target that arrives before the first cut-out is painted where it is, with no glide", () => {
     stubMotion(false);
     vi.useFakeTimers({
-      toFake: ["requestAnimationFrame", "performance", "Date"],
+      toFake: [
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+        "Date",
+      ],
     });
     const { getByTestId, rerender } = render(<Steps step={0} />);
     flushSync(() => rerender(<Steps step={1} />));
@@ -461,7 +478,12 @@ describe("Backdrop target (GAP-189)", () => {
   it("under reduced motion moves to a new target at once", () => {
     stubMotion(true);
     vi.useFakeTimers({
-      toFake: ["requestAnimationFrame", "performance", "Date"],
+      toFake: [
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+        "Date",
+      ],
     });
     const { getByTestId, rerender } = render(<Steps step={0} />);
     act(() => vi.advanceTimersByTime(40));
@@ -478,7 +500,12 @@ describe("Backdrop target (GAP-189)", () => {
   it("under the config's reduced motion moves at once too", () => {
     stubMotion(false);
     vi.useFakeTimers({
-      toFake: ["requestAnimationFrame", "performance", "Date"],
+      toFake: [
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+        "Date",
+      ],
     });
     const { getByTestId, rerender } = render(
       <div data-kozmos-motion="reduced">
@@ -500,6 +527,237 @@ describe("Backdrop target (GAP-189)", () => {
       bottom: 340,
     });
     vi.unstubAllGlobals();
+  });
+
+  // #408's review: what the cut-out must follow, and what it must not hide.
+  const frames = (count: number) =>
+    act(() => {
+      for (let i = 0; i < count; i += 1) vi.advanceTimersByTime(16);
+    });
+  const fakeFrames = () =>
+    vi.useFakeTimers({
+      toFake: [
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+        "performance",
+        "Date",
+      ],
+    });
+
+  it("with no target renders exactly what it did: one scrim, its children inside", () => {
+    const { container, rerender } = render(<Backdrop />);
+    expect(container.innerHTML).toBe(
+      '<div class="fixed inset-0 z-50 bg-overlay-scrim"></div>',
+    );
+    rerender(
+      <Backdrop className="absolute">
+        <p>Step</p>
+      </Backdrop>,
+    );
+    expect(container.innerHTML).toBe(
+      '<div class="inset-0 z-50 bg-overlay-scrim absolute"><p>Step</p></div>',
+    );
+  });
+
+  it("cuts the dim on an inner scrim, so its own children are never clipped", () => {
+    const { getByTestId, getByText } = render(
+      <Tour>
+        <button>Next</button>
+      </Tour>,
+    );
+    const root = getByTestId("backdrop");
+    const scrim = root.querySelector<HTMLElement>(".kozmos-backdrop-scrim")!;
+    expect(scrim).not.toBeNull();
+    expect(scrim.style.getPropertyValue("clip-path")).toMatch(/^path\(/);
+    expect(root.style.getPropertyValue("clip-path")).toBe("");
+    const next = getByText("Next");
+    expect(scrim.contains(next)).toBe(false);
+    expect(next.parentElement).toBe(root);
+    const onClick = vi.fn();
+    next.addEventListener("click", onClick);
+    fireEvent.click(next);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows an element that moves with no render, scroll or resize, by reading it every frame", () => {
+    fakeFrames();
+    let target: HTMLButtonElement | null = null;
+    const { getByTestId } = render(
+      <Tour onTarget={(node) => (target = node)} targetPadding={0} />,
+    );
+    const root = getByTestId("backdrop");
+    // Pushed down by content inserted above it, then moved by a transform.
+    place(target!, 100, 80, 120, 44);
+    frames(1);
+    expect(holeOf(root)).toEqual({
+      left: 100,
+      top: 80,
+      right: 220,
+      bottom: 124,
+    });
+    place(target!, 140, 80, 120, 44);
+    frames(1);
+    expect(holeOf(root)).toEqual({
+      left: 140,
+      top: 80,
+      right: 260,
+      bottom: 124,
+    });
+  });
+
+  it("follows a virtual element passed as the same object every frame", () => {
+    fakeFrames();
+    let left = 10;
+    const virtual = {
+      getBoundingClientRect: () => new DOMRect(left, 20, 30, 10),
+    };
+    const { getByTestId } = render(
+      <Backdrop data-testid="backdrop" target={virtual} targetPadding={0} />,
+    );
+    left = 90;
+    frames(1);
+    expect(holeOf(getByTestId("backdrop"))).toEqual({
+      left: 90,
+      top: 20,
+      right: 120,
+      bottom: 30,
+    });
+  });
+
+  it("follows a rect whose numbers change every render, with no glide (a map point as the map moves)", () => {
+    stubMotion(false);
+    fakeFrames();
+    const at = (x: number) => (
+      <Backdrop
+        data-testid="backdrop"
+        target={{ top: 50, left: x, width: 10, height: 10 }}
+        targetPadding={0}
+      />
+    );
+    const { getByTestId, rerender } = render(at(0));
+    frames(3);
+    for (let x = 4; x <= 240; x += 4) {
+      rerender(at(x));
+      frames(1);
+    }
+    expect(holeOf(getByTestId("backdrop"))).toEqual({
+      left: 240,
+      top: 50,
+      right: 250,
+      bottom: 60,
+    });
+    vi.unstubAllGlobals();
+  });
+
+  function LaterRef() {
+    const ref = React.useRef<HTMLButtonElement>(null);
+    return (
+      <>
+        <Backdrop data-testid="backdrop" target={ref} targetPadding={0} />
+        <button
+          ref={(node) => {
+            (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+              node;
+            if (node) place(node, 30, 40, 50, 20);
+          }}
+        >
+          Later
+        </button>
+      </>
+    );
+  }
+
+  it("lights a ref whose element comes after it in the tree, StrictMode too", () => {
+    fakeFrames();
+    for (const strict of [false, true]) {
+      const { getByTestId, unmount } = render(
+        strict ? (
+          <React.StrictMode>
+            <LaterRef />
+          </React.StrictMode>
+        ) : (
+          <LaterRef />
+        ),
+      );
+      frames(1);
+      const root = getByTestId("backdrop");
+      expect(root).toHaveAttribute("data-lit");
+      expect(holeOf(root)).toEqual({
+        left: 30,
+        top: 40,
+        right: 80,
+        bottom: 60,
+      });
+      unmount();
+    }
+  });
+
+  it("keeps reading a ref to nothing while open, and lights its element when it comes", () => {
+    fakeFrames();
+    const ref: { current: Element | null } = { current: null };
+    const { getByTestId } = render(
+      <Backdrop data-testid="backdrop" target={ref} targetPadding={0} />,
+    );
+    frames(5);
+    expect(getByTestId("backdrop")).not.toHaveAttribute("data-lit");
+    const late = document.createElement("div");
+    document.body.append(late);
+    place(late, 5, 6, 7, 8);
+    ref.current = late;
+    frames(1);
+    expect(holeOf(getByTestId("backdrop"))).toEqual({
+      left: 5,
+      top: 6,
+      right: 12,
+      bottom: 14,
+    });
+    late.remove();
+  });
+
+  it("reads every frame but writes nothing while the target stays put", () => {
+    fakeFrames();
+    const { getByTestId } = render(<Tour />);
+    frames(3);
+    const scrim = getByTestId("backdrop").querySelector<HTMLElement>(
+      ".kozmos-backdrop-scrim",
+    )!;
+    const write = vi.spyOn(scrim.style, "setProperty");
+    frames(30);
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it("stops reading once it lights nothing, is hidden or is gone", () => {
+    fakeFrames();
+    const { rerender, unmount } = render(<Tour />);
+    frames(2);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    rerender(<Tour target={undefined} />);
+    expect(vi.getTimerCount()).toBe(0);
+    rerender(<Tour />);
+    frames(2);
+    rerender(<Tour visible={false} />);
+    expect(vi.getTimerCount()).toBe(0);
+    rerender(<Tour />);
+    frames(2);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("lights a 0 by 0 target as a point: the padding round it, its radius half the hole", () => {
+    const point = { getBoundingClientRect: () => new DOMRect(100, 50, 0, 0) };
+    const { getByTestId } = render(
+      <Backdrop data-testid="backdrop" target={point} />,
+    );
+    const root = getByTestId("backdrop");
+    expect(root).toHaveAttribute("data-lit");
+    expect(holeOf(root)).toEqual({ left: 92, top: 42, right: 108, bottom: 58 });
+    expect(ringOf(root)).toMatchObject({
+      left: 90,
+      top: 40,
+      width: 20,
+      height: 20,
+      radius: 10,
+    });
   });
 
   it("still forwards its ref, and renders nothing while hidden", () => {

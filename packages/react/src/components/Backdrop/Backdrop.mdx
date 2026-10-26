@@ -26,12 +26,20 @@ the viewport's coordinates, or a list of them lit as the one box round them all.
   8, by default) and rounded by `targetRadius` (radius.control, 16), and ringed 2px outside it in
   the focus colour. In forced colours the ring is a border in the system's Highlight.
 - Pointer events pass through the cut-out, so the control can be pressed; the dim catches them
-  everywhere else.
-- The control stays where it is, in the DOM and in its own stacking context: nothing re-parents it
-  or changes its z-index. The cut-out follows it as it or the window resizes and as anything that
-  scrolls it scrolls.
-- A new target is glided to over the standard duration, from where the cut-out was; under reduced
-  motion it moves at once.
+  everywhere else. The backdrop's own children, a step card, are never clipped by the cut-out and
+  take the pointer over it too.
+- The control is never moved or re-stacked: it stays where it is in the DOM and in its own
+  stacking context, and nothing changes its z-index or style.
+- The cut-out follows it as it resizes, as anything that scrolls it scrolls and as the window
+  resizes, and, while it is lit, every frame: a control pushed by layout above it, or moved by a
+  transform (a sheet still sliding in), is followed too, and a virtual element is read again each
+  frame. It writes only when the cut-out moves. A ref is read every frame while the backdrop is
+  open, so a control that comes later in the tree is lit once it is there.
+- When the tour moves on to another control, the cut-out glides there over the standard duration,
+  from where it was; under reduced motion it moves at once. A rect or virtual element that moves,
+  a map point as the map moves, is followed, never glided to.
+- A 0 by 0 virtual element or rect, a point on a map, is lit as a point: the cut-out is the
+  padding round it, rounded to a circle.
 - With no target, or one that is not there (a ref to nothing, an element with no box), the whole
   page is dimmed, as without `target`.
 

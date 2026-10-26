@@ -44,10 +44,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `BackdropProps`, which ex
   (anything with `getBoundingClientRect()`), a rect in the viewport's
   coordinates, or a list of them lit as the one box round them all. The
   dim covers everything else, the cut-out is ringed in the focus colour,
-  and pointer events pass through it to what it shows. The target stays
-  where it is, in the DOM and in its stacking context, and the cut-out
-  follows it as it scrolls and resizes. With no target, or one that is not
-  there, the whole page is dimmed.
+  and pointer events pass through it to what it shows. The target is never
+  moved or re-stacked; the cut-out follows it as it scrolls, resizes or
+  moves, read every frame while it is lit. A 0 by 0 virtual element or
+  rect is lit as a point. With no target, or one that is not there, the
+  whole page is dimmed.
 
 - `targetPadding`: `number`, optional.
 

@@ -17,10 +17,11 @@ export interface BackdropProps extends React.HTMLAttributes<HTMLDivElement> {
    * (anything with `getBoundingClientRect()`), a rect in the viewport's
    * coordinates, or a list of them lit as the one box round them all. The
    * dim covers everything else, the cut-out is ringed in the focus colour,
-   * and pointer events pass through it to what it shows. The target stays
-   * where it is, in the DOM and in its stacking context, and the cut-out
-   * follows it as it scrolls and resizes. With no target, or one that is not
-   * there, the whole page is dimmed.
+   * and pointer events pass through it to what it shows. The target is never
+   * moved or re-stacked; the cut-out follows it as it scrolls, resizes or
+   * moves, read every frame while it is lit. A 0 by 0 virtual element or
+   * rect is lit as a point. With no target, or one that is not there, the
+   * whole page is dimmed.
    */
   target?: BackdropTarget;
   /** Room between the target and the cut-out's edge, in pixels. Defaults to layout.spacing.100 (8). */
@@ -46,16 +47,18 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     ref,
   ) => {
     const root = React.useRef<HTMLDivElement | null>(null);
+    const scrim = React.useRef<HTMLDivElement | null>(null);
     const ring = React.useRef<HTMLDivElement | null>(null);
     const [cutout] = React.useState(createCutout);
     React.useImperativeHandle(ref, () => root.current as HTMLDivElement, [
       visible,
+      target === undefined,
     ]);
-    // After every render: a ref is read as it stands, so one filled later is
-    // lit, and a target that moved is drawn where it is.
+    // After every render, and every frame while a target is lit.
     useIsomorphicLayoutEffect(() => {
       cutout.sync(
         root.current,
+        scrim.current,
         ring.current,
         target,
         targetPadding,
@@ -65,18 +68,29 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     useIsomorphicLayoutEffect(() => cutout.release, [cutout]);
 
     if (!visible) return null;
+    // With no target, the one scrim it always was, its children inside.
+    if (target === undefined)
+      return (
+        <div
+          ref={root}
+          className={cn("fixed inset-0 z-50 bg-overlay-scrim", className)}
+          {...props}
+        >
+          {children}
+        </div>
+      );
+    // With one, the dim is an inner scrim that the cut-out is cut from and
+    // that takes the pointer outside it; the backdrop's own children sit
+    // beside it, never clipped, and take the pointer as they always did.
     return (
       <div
         ref={root}
-        className={cn(
-          "kozmos-backdrop fixed inset-0 z-50 bg-overlay-scrim",
-          className,
-        )}
+        className={cn("kozmos-backdrop fixed inset-0 z-50", className)}
         {...props}
       >
-        {target !== undefined && (
-          <div ref={ring} aria-hidden="true" className="kozmos-backdrop-ring" />
-        )}
+        <div ref={scrim} aria-hidden="true" className="kozmos-backdrop-scrim">
+          <div ref={ring} className="kozmos-backdrop-ring" />
+        </div>
         {children}
       </div>
     );

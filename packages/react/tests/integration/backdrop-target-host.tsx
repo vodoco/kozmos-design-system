@@ -24,9 +24,11 @@ interface Mount {
   theme: "light" | "dark";
   target: TargetName;
   visible?: boolean;
+  /** A child of the backdrop, a step card's corner, over the cut-out's padding. */
+  child?: boolean;
 }
 
-const counts = { update: 0, publish: 0, decoy: 0, backdrop: 0 };
+const counts = { update: 0, publish: 0, decoy: 0, backdrop: 0, child: 0 };
 const flat = (background: string) => ({
   display: "block",
   width: 160,
@@ -40,7 +42,12 @@ const flat = (background: string) => ({
 
 let setTarget: (name: TargetName) => void = () => {};
 
-function Page({ theme, target: initial, visible = true }: Mount) {
+function Page({
+  theme,
+  target: initial,
+  visible = true,
+  child = false,
+}: Mount) {
   const [target, choose] = useState<TargetName>(initial);
   setTarget = choose;
   const update = useRef<HTMLButtonElement>(null);
@@ -120,7 +127,27 @@ function Page({ theme, target: initial, visible = true }: Mount) {
         visible={visible}
         target={target === "none" ? undefined : lit}
         onClick={() => (counts.backdrop += 1)}
-      />
+      >
+        {child && (
+          // Over the cut-out's padding beside Update (116, 104): the backdrop
+          // is fixed at 0, 0, so these are the viewport's coordinates.
+          <button
+            id="child"
+            aria-label="Step card"
+            style={{
+              position: "absolute",
+              left: 100,
+              top: 110,
+              width: 30,
+              height: 30,
+              border: 0,
+              padding: 0,
+              background: "#ff00ff",
+            }}
+            onClick={() => (counts.child += 1)}
+          />
+        )}
+      </Backdrop>
     </ThemeProvider>
   );
 }
@@ -129,6 +156,7 @@ let root: Root | null = null;
 function mount(props: Mount) {
   root?.unmount();
   counts.update = counts.publish = counts.decoy = counts.backdrop = 0;
+  counts.child = 0;
   root = createRoot(document.getElementById("fixture")!);
   flushSync(() => root!.render(<Page {...props} />));
 }
