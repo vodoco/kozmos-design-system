@@ -834,6 +834,15 @@ camera control, branding/provider policy and product ranking in their host adapt
     The per-export, Button and stylesheet budgets are unchanged.
   - **115, list rows:** Combobox's, Select's and TimePicker's rows are 44 tall with a light active
     row, as Figma draws them, not 36 with a filled one.
+- **Decisions 116–117 (owner, 2026-10-26, MAP-64 Tutorials & Hints):**
+  - **116, MAP-64's five parts are approved as API:** Backdrop lights a target through a cut-out
+    (GAP-189, #408), a popover the product opens beside any element or rect, `PopoverAnchor` (GAP-190,
+    #410), Stepper's dots (GAP-191, #409), options under their groups in Combobox, Listbox and
+    MultiSelect (GAP-192, #411), and a tour step, `TourStep`, composed from them (GAP-188). Web and
+    Figma first; SwiftUI and Compose later. They ship together as 0.14.0.
+  - **117, the whole library may cost 94 KB:** the budget moves from 92 to 94 KB for MAP-64's tour
+    family (decision 116). With #408–#411, everything measures about 91.2 KB on CI, leaving too
+    little for `TourStep`. The per-export, Button and stylesheet budgets are unchanged.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;
