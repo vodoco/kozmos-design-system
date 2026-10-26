@@ -450,3 +450,28 @@ test("a transition is waited out to its end with animations", async () => {
     assert.match(rest.timeline, /animations ended/, engine);
   });
 });
+
+// The wait settles on its last reading, not on the last one it counted as a
+// change. Firefox can draw the ease above for the last time a few hundredths
+// of a millisecond before its end: 199.97 (run 40233030897), or 199.98 at
+// 299.96 ms of 300 locally, then 200 from the next frame on. That is less
+// than 0.05 apart, so no change, and the wait settled on 199.97. Here a step
+// under 0.05 comes after a change, in every engine.
+test("a reading settles on its last value, though that moved less than 0.05", async () => {
+  await inEachEngine(SIZED, async (page, engine) => {
+    const box = page.locator("#box");
+    const rest = await readingSettled(box, height, {
+      act: () =>
+        page.evaluate(() => {
+          const box = document.getElementById("box");
+          setTimeout(() => (box.style.height = "150px"), 30);
+          setTimeout(() => (box.style.height = "150.03px"), 100);
+        }),
+      moves: true,
+    });
+    assert.ok(rest.settled, `${engine}: ${rest.why}: ${rest.timeline}`);
+    const after = await box.evaluate(height);
+    assert.ok(after > 150 && after < 150.05, `${engine}: laid out at ${after}`);
+    assert.equal(rest.to, after, `${engine}: ${rest.timeline}`);
+  });
+});

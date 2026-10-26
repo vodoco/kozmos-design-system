@@ -59,7 +59,13 @@ export function PaginationExample() {
 
 ## Pagination
 
-Its props are `React.ComponentProps<"nav">`.
+Its props are `PaginationProps`, which is `React.ComponentProps<"nav"> & { "aria-label"?: string }`.
+
+- `aria-label`: `string`, optional, default `"pagination"`.
+
+  Defines a string value that labels the current element.
+  The navigation landmark's accessible name. "pagination" by default; a
+  product that translates passes its own.
 
 - `children`: `ReactNode`, optional.
 
@@ -93,20 +99,44 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## PaginationPrevious
 
-Its props are `React.ComponentProps<typeof PaginationLink>`.
+Its props are `PaginationPreviousProps`, which is `React.ComponentProps<typeof PaginationLink> & { label?: string; "aria-label"?: string }`.
 
 - `isActive`: `boolean`, optional.
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional.
+- `aria-label`: `string`, optional, default `"Go to previous page"`.
+
+  Defines a string value that labels the current element.
+  The link's accessible name, which a screen reader says in place of
+  `label`. "Go to previous page" by default; a product that translates
+  passes its own, one that contains `label`'s word.
+
+- `label`: `string`, optional, default `"Previous"`.
+
+  The word drawn beside the chevron. "Previous" by default; a product that
+  translates passes its own, and an `aria-label` in the same language.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationNext
 
-Its props are `React.ComponentProps<typeof PaginationLink>`.
+Its props are `PaginationNextProps`, which is `React.ComponentProps<typeof PaginationLink> & { label?: string; "aria-label"?: string }`.
 
 - `isActive`: `boolean`, optional.
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional.
+- `aria-label`: `string`, optional, default `"Go to next page"`.
+
+  Defines a string value that labels the current element.
+  The link's accessible name, which a screen reader says in place of
+  `label`. "Go to next page" by default; a product that translates passes
+  its own, one that contains `label`'s word.
+
+- `label`: `string`, optional, default `"Next"`.
+
+  The word drawn beside the chevron. "Next" by default; a product that
+  translates passes its own, and an `aria-label` in the same language.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

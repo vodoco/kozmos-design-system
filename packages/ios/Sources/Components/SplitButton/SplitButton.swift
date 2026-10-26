@@ -4,11 +4,16 @@ public struct KozmosSplitButton: View {
     let label: String
     let mainAction: () -> Void
     let menuItems: [(String, () -> Void)]
+    let menuLabel: String
     
-    public init(label: String, mainAction: @escaping () -> Void, menuItems: [(String, () -> Void)] = []) {
+    /// `menuLabel` is what VoiceOver calls the menu half, which shows only a
+    /// chevron: "More options" by default, as React's `menuLabel`; a product
+    /// that translates passes its own.
+    public init(label: String, mainAction: @escaping () -> Void, menuItems: [(String, () -> Void)] = [], menuLabel: String = "More options") {
         self.label = label
         self.mainAction = mainAction
         self.menuItems = menuItems
+        self.menuLabel = menuLabel
     }
     
     @Environment(\.layoutDirection) private var layoutDirection
@@ -55,6 +60,8 @@ public struct KozmosSplitButton: View {
                     .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
             }
             .clipShape(menuShape)
+            // The chevron's own name was all VoiceOver had for it.
+            .accessibilityLabel(Text(verbatim: menuLabel))
         }
     }
 }

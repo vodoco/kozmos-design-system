@@ -32,4 +32,24 @@ class KozmosPaginationWordsTest {
             tree.merged.filter { it.click != null }.map { listOfNotNull(it.description) + it.texts }
         )
     }
+
+    /**
+     * GAP-182: the two words were fixed English. `label` replaces each, as
+     * React's `label` prop does; left out, they are the words above.
+     */
+    @Test fun previousAndNextSayAProductsOwnWords() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosPagination {
+                    KozmosPaginationPrevious(onClick = {}, label = "Zurück")
+                    KozmosPaginationLink(text = "2", isActive = true, onClick = {})
+                    KozmosPaginationNext(onClick = {}, label = "Weiter")
+                }
+            }
+        }
+        assertEquals(
+            listOf(listOf("Zurück"), listOf("2"), listOf("Weiter")),
+            tree.merged.filter { it.click != null }.map { listOfNotNull(it.description) + it.texts }
+        )
+    }
 }

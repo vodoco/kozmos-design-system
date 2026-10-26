@@ -7,8 +7,9 @@ import androidx.compose.runtime.Composable
 import com.kozmos.components.datepicker.KozmosDatePicker
 import java.time.LocalDate
 
-// A read-only field, labelled inside, that opens the system's date dialog.
-// date is null until one is chosen, and is written in the locale's style.
+// A Kozmos field, its label above, that opens Material's date picker in a
+// dialog, in the Kozmos theme's colours. date is null until one is chosen,
+// and is written in the locale's style.
 @Composable
 fun VisitDate(date: LocalDate?, onDateChange: (LocalDate) -> Unit) {
     KozmosDatePicker(date = date, onDateSelected = onDateChange, label = "Visit date")
