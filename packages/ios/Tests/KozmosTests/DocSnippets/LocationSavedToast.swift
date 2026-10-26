@@ -6,7 +6,8 @@ import Kozmos
 
 // The toast draws itself at the bottom of the space it is given, so it goes
 // over the screen's content. It closes after 3 seconds (autoDismissAfter) or
-// at its close button, which is always named "Dismiss notification".
+// at its close button, named by closeLabel, "Dismiss notification" unless you
+// pass your own.
 struct LocationSavedToast: View {
     @State private var isPresented = false
 
