@@ -19,6 +19,16 @@ figma.connect(
         Single: "metro-station",
         Multiple: ["metro-station", "bus-stop"],
       }),
+      // GAP-192: Show Group Labels draws Group 1 over options 1 and 2 and
+      // Group 2 over option 3; off, the options have no group.
+      group1: figma.boolean("Show Group Labels", {
+        true: figma.string("Group 1 Text"),
+        false: undefined,
+      }),
+      group2: figma.boolean("Show Group Labels", {
+        true: figma.string("Group 2 Text"),
+        false: undefined,
+      }),
       option1: figma.string("Option 1 Text"),
       option1Description: figma.string("Option 1 Description"),
       option2: figma.string("Option 2 Text"),
@@ -29,6 +39,8 @@ figma.connect(
     example: ({
       defaultValue,
       disabled,
+      group1,
+      group2,
       multiple,
       option1,
       option1Description,
@@ -44,16 +56,19 @@ figma.connect(
         options={[
           {
             description: option1Description,
+            group: group1,
             label: option1,
             value: "metro-station",
           },
           {
             description: option2Description,
+            group: group1,
             label: option2,
             value: "bus-stop",
           },
           {
             description: option3Description,
+            group: group2,
             label: option3,
             value: "bike-parking",
           },

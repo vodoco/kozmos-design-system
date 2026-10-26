@@ -306,7 +306,7 @@
       "id": "components-combobox",
       "title": "Core/Inputs/Combobox",
       "component": "Combobox",
-      "exports": ["Default", "WithValidation"]
+      "exports": ["Default", "WithValidation", "Grouped"]
     },
     {
       "file": "packages/react/src/components/Container/Container.stories.tsx",
@@ -530,7 +530,7 @@
       "id": "components-listbox",
       "title": "Core/Inputs/Listbox",
       "component": "Listbox",
-      "exports": ["Single", "Multiple"]
+      "exports": ["Single", "Multiple", "Grouped"]
     },
     {
       "file": "packages/react/src/components/LocationPin/LocationPin.stories.tsx",
@@ -688,7 +688,7 @@
       "id": "components-multiselect",
       "title": "Core/Inputs/MultiSelect",
       "component": "MultiSelect",
-      "exports": ["Default", "WithSelectedValues"]
+      "exports": ["Default", "WithSelectedValues", "Grouped"]
     },
     {
       "file": "packages/react/src/components/Navbar/Navbar.stories.tsx",

@@ -54,6 +54,56 @@ compatibility. Set `includeValueInAnalytics={false}` for sensitive values. Route
 does this automatically, so place IDs and search text are not sent in that event. Native
 Combobox does not emit automatic selection-value analytics.
 
+## Groups
+
+Give options a `group` and they are listed under their groups (GAP-192), as MAP-64's
+content type picker lists types under their families. The groups come in the order
+they first appear in `options`, each group's options together in their own order, under
+the group's label, drawn as `SelectLabel` draws its own. An option with no `group` is
+listed on its own, as before. Filtering keeps a group's label while any of its options
+matches and drops it when none does: typing "desk" below keeps Interior Asset's three
+desks and POI's Reception Desk, each under its label.
+
+<Canvas of={ComboboxStories.Grouped} />
+
+Each group is a `role="group"` named by its label (`aria-labelledby`); the label is not
+an option, so a screen reader is told the group as it enters it, and the arrow keys, Home
+and End move through the options in the order they are drawn and never stop on a label.
+Filtering, the first match made active and `aria-activedescendant` are unchanged. Listbox
+and MultiSelect take the same `group`. SwiftUI and Compose do not group yet: they list
+the options in the order given.
+
+<PlatformSnippets
+    react={`
+import { Combobox } from "@kozmos-ds/react";
+
+const contentTypes = [
+  { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+  { value: "hot-desk", label: "Hot Desk", group: "Interior Asset" },
+  { value: "reception-desk", label: "Reception Desk", group: "POI" },
+];
+
+export function ContentTypePicker() {
+  return <Combobox label="Content type" options={contentTypes} />;
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosCombobox } from "@kozmos-ds/vue"
+
+const contentTypes = [
+  { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+  { value: "hot-desk", label: "Hot Desk", group: "Interior Asset" },
+  { value: "reception-desk", label: "Reception Desk", group: "POI" },
+]
+</script>
+
+<template>
+  <KozmosCombobox label="Content type" :options="contentTypes" />
+</template>
+    `}
+/>
+
 ## Implementation
 
 ### React popup commands
@@ -233,6 +283,8 @@ var query by remember { mutableStateOf("") }
   explicit choice.
 - `emptyText` is announced when filtering empties the list, so the absence of
   results is not conveyed only by an empty box.
+- Grouped options sit in a `role="group"` named by its label, so the group is announced
+  as the active option enters it; the label itself is never an option.
 
 ## In Safari
 

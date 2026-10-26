@@ -92,6 +92,16 @@ From `@kozmos-ds/react`.
 interface ComboboxOption {
   description?: string;
   disabled?: boolean;
+  /**
+   * The group the option is listed under (GAP-192). Options are grouped in
+   * the order their groups first appear, each under its group's label, a
+   * `role="group"` named by it; the arrow keys move through the options as
+   * they are drawn and never stop on a label. While the list is filtered, a
+   * group's label stays as long as any of its options matches. Combobox,
+   * Listbox and MultiSelect all take it; an option with none is listed on its
+   * own, as before.
+   */
+  group?: string;
   label: string;
   value: string;
 }

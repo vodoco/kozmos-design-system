@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { MultiSelect } from "./MultiSelect";
 
@@ -6,6 +7,16 @@ const options = [
   { value: "layers", label: "Layers", description: "Map and data layers" },
   { value: "routes", label: "Routes", description: "Route overlays" },
   { value: "alerts", label: "Alerts", description: "Operational notices" },
+];
+
+// GAP-192: MAP-64's Map Content type picker, its types under their families.
+// Given in any order: the groups come in the order they first appear.
+const contentTypes = [
+  { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+  { value: "reception-desk", label: "Reception Desk", group: "POI" },
+  { value: "hot-desk", label: "Hot Desk", group: "Interior Asset" },
+  { value: "standing-desk", label: "Standing Desk", group: "Interior Asset" },
+  { value: "meeting-room", label: "Meeting Room", group: "POI" },
 ];
 
 const meta = {
@@ -34,5 +45,34 @@ export const WithSelectedValues: Story = {
     defaultValue: ["filters", "routes"],
     helperText: "Choose up to three layers.",
     maxSelected: 3,
+  },
+};
+
+/**
+ * Options under their groups (GAP-192), the chosen ones as chips. It opens
+ * with its field focused, so the list shows.
+ */
+export const Grouped: Story = {
+  // At the top of its frame, and on the docs page in a frame of its own, so
+  // the open list drops below the field rather than over the page's text.
+  parameters: {
+    layout: "padded",
+    docs: { story: { inline: false, iframeHeight: 380 } },
+  },
+  args: {
+    label: "Content types",
+    options: contentTypes,
+    defaultValue: ["office-desk"],
+  },
+  render: function Grouped(args) {
+    const field = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+      field.current?.querySelector("input")?.focus();
+    }, []);
+    return (
+      <div className="w-96">
+        <MultiSelect ref={field} {...args} />
+      </div>
+    );
   },
 };

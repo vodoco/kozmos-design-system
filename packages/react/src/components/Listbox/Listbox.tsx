@@ -1,5 +1,6 @@
 import React from "react";
 import { OptionRow } from "./OptionRow";
+import { orderByGroup, renderOptionGroups } from "./option-groups";
 import { cn } from "../../utils";
 import { useInputModality } from "../../utils/input-modality";
 import { type ComboboxOption } from "../Combobox";
@@ -57,12 +58,17 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       onFocus,
       onKeyDown,
       onValueChange,
-      options,
+      options: givenOptions,
       value,
       ...props
     },
     ref,
   ) => {
+    // In the order they are drawn: under their groups (GAP-192).
+    const options = React.useMemo(
+      () => orderByGroup(givenOptions),
+      [givenOptions],
+    );
     const defaultListboxId = React.useId();
     // The active row's keyboard ring (owned-selection.css), while the list
     // has focus: its active row stays marked when it has not.
@@ -168,30 +174,37 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         }}
         {...props}
       >
-        {options.map((option, index) => {
-          const selected = selectedSet.has(option.value);
-          const active = index === activeIndex;
+        {renderOptionGroups(
+          options,
+          (option) => option.group,
+          listboxId,
+          (option, index) => {
+            const selected = selectedSet.has(option.value);
+            const active = index === activeIndex;
 
-          return (
-            <OptionRow
-              key={option.value}
-              id={`${listboxId}-option-${index}`}
-              option={option}
-              selected={selected}
-              active={active}
-              disabled={disabled || option.disabled}
-              onMouseEnter={() => {
-                if (!disabled && !option.disabled) setActiveIndex(index);
-              }}
-              onClick={(event) => {
-                if (disabled || option.disabled) return;
-                event.currentTarget.parentElement?.focus();
-                setActiveIndex(index);
-                commitOption(option);
-              }}
-            />
-          );
-        })}
+            return (
+              <OptionRow
+                key={option.value}
+                id={`${listboxId}-option-${index}`}
+                option={option}
+                selected={selected}
+                active={active}
+                disabled={disabled || option.disabled}
+                onMouseEnter={() => {
+                  if (!disabled && !option.disabled) setActiveIndex(index);
+                }}
+                onClick={() => {
+                  if (disabled || option.disabled) return;
+                  // The list, not the row's parent: in a group that is the
+                  // group.
+                  rootRef.current?.focus();
+                  setActiveIndex(index);
+                  commitOption(option);
+                }}
+              />
+            );
+          },
+        )}
       </div>
     );
   },

@@ -3,6 +3,7 @@ import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
+import { orderByGroup, renderOptionGroups } from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
@@ -140,9 +141,13 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const [uncontrolledSearchValue, setUncontrolledSearchValue] =
       React.useState(defaultSearchValue);
     const visibleSearchValue = searchValue ?? uncontrolledSearchValue;
+    // In the order they are drawn: under their groups (GAP-192).
     const filteredOptions = React.useMemo(
       () =>
-        options.filter((option) => filterOption(option, visibleSearchValue)),
+        orderByGroup(
+          options.filter((option) => filterOption(option, visibleSearchValue)),
+          options,
+        ),
       [filterOption, options, visibleSearchValue],
     );
     const [activeIndex, setActiveIndex] = React.useState(() =>
@@ -489,30 +494,37 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                         {emptyText}
                       </div>
                     ) : (
-                      filteredOptions.map((option, index) => {
-                        const selected = selectedSet.has(option.value);
-                        const disabledOption =
-                          option.disabled || (!selected && atSelectionLimit);
-                        const active = index === activeIndex;
+                      renderOptionGroups(
+                        filteredOptions,
+                        (option) => option.group,
+                        inputId,
+                        (option, index) => {
+                          const selected = selectedSet.has(option.value);
+                          const disabledOption =
+                            option.disabled || (!selected && atSelectionLimit);
+                          const active = index === activeIndex;
 
-                        return (
-                          <OptionRow
-                            key={option.value}
-                            id={`${inputId}-option-${index}`}
-                            option={option}
-                            selected={selected}
-                            active={active}
-                            disabled={disabledOption}
-                            onMouseEnter={() => {
-                              if (!disabledOption) setActiveIndex(index);
-                            }}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() =>
-                              !disabledOption ? toggleOption(option) : undefined
-                            }
-                          />
-                        );
-                      })
+                          return (
+                            <OptionRow
+                              key={option.value}
+                              id={`${inputId}-option-${index}`}
+                              option={option}
+                              selected={selected}
+                              active={active}
+                              disabled={disabledOption}
+                              onMouseEnter={() => {
+                                if (!disabledOption) setActiveIndex(index);
+                              }}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() =>
+                                !disabledOption
+                                  ? toggleOption(option)
+                                  : undefined
+                              }
+                            />
+                          );
+                        },
+                      )
                     )}
                   </div>
                 </DismissableLayer>

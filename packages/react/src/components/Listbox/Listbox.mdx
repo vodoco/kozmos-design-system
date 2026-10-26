@@ -32,6 +32,36 @@ Combobox, rather than Listbox itself, owns closing and input-focus requests.
 including when long results are replaced by a short or empty set. Long lists keep
 their scrolling viewport and their commands remain reachable by scrolling.
 
+## Groups
+
+Give options a `group` and they are listed under their groups (GAP-192), each group's
+options together under its label, drawn as `SelectLabel` draws its own, in the order the
+groups first appear in `options`. Each group is a `role="group"` named by its label; the
+label is not an option, and the arrow keys, Home and End move through the options in the
+order they are drawn, never onto a label. An option with no `group` is listed on its own.
+Combobox and MultiSelect take the same `group`; SwiftUI and Compose do not group yet.
+
+<Canvas of={ListboxStories.Grouped} />
+
+<PlatformSnippets
+    react={`
+import { Listbox } from "@kozmos-ds/react";
+
+export function ContentTypeList() {
+  return (
+    <Listbox
+      aria-label="Content type"
+      options={[
+        { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+        { value: "hot-desk", label: "Hot Desk", group: "Interior Asset" },
+        { value: "reception-desk", label: "Reception Desk", group: "POI" },
+      ]}
+    />
+  );
+}
+    `}
+/>
+
 ## Implementation
 
 import { PlatformSnippets } from "../PlatformSnippets";

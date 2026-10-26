@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "7fed66ff6208";
+const PLUGIN_BUILD = "649776caafa0";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -3552,12 +3552,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open listbox anatomy examples.",
       "Label Text, Placeholder Text, Helper Text, option text properties, and Show Helper Text map to Combobox props and children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
       "Field height and listbox options meet the 44px minimum target.",
@@ -3582,12 +3583,13 @@ const COMPONENT_DOCS = [
       "Content maps to empty, selected, and open multiselect examples.",
       "Selected values compose live Chip instances for visual and token parity.",
       "Label Text, Placeholder Text, Helper Text, and option text properties map to MultiSelect props and children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Content: Empty, Selected, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
       "Field controls and listbox options meet the 44px minimum target.",
@@ -3610,12 +3612,13 @@ const COMPONENT_DOCS = [
       "Selection maps to Listbox.multiple.",
       "State maps to focus and disabled examples.",
       "Option text and description properties map to Listbox option children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
       "Focus Visible controls the generated listbox focus ring.",
     ],
     properties: [
       "Selection: Single, Multiple",
       "State: Default, Focus, Disabled",
-      "Option 1 Text, Option 1 Description, Option 2 Text, Option 2 Description, Option 3 Text, Option 3 Description, Focus Visible",
+      "Option 1 Text, Option 1 Description, Option 2 Text, Option 2 Description, Option 3 Text, Option 3 Description, Group 1 Text, Group 2 Text, Show Group Labels, Focus Visible",
     ],
     accessibility: [
       "Listbox and option rows preserve visible focus and active descendant states.",
@@ -43246,6 +43249,53 @@ function configureOTPInputProperties(componentSet, stats) {
   configureFocusVisibleProperty(componentSet, stats);
 }
 
+// GAP-192: the group labels the option lists draw (createOptionGroupLabel):
+// a Show Group Labels boolean that shows both, off by default, and their
+// words, Group 1 Text and Group 2 Text.
+function configureOptionGroupProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Group 1 Text",
+    "Group 1 Text",
+    "Transit",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Group 2 Text",
+    "Group 2 Text",
+    "Cycling",
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    "Show Group Labels",
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+
+  function walk(node) {
+    if (
+      node.type === "FRAME" &&
+      node.getSharedPluginData &&
+      node.getSharedPluginData(RUN_NAMESPACE, "kind") === "option-group-label"
+    ) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  }
+
+  walk(componentSet);
+  stats.optionGroupVisibilityBindings = boundCount;
+}
+
 function configureComboboxProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Combobox", stats);
   configurePlaceholderTextProperty(componentSet, "Search or select", stats);
@@ -43270,6 +43320,7 @@ function configureComboboxProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(componentSet, "Choose one option.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
@@ -43321,6 +43372,7 @@ function configureMultiSelectProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(
     componentSet,
     "Choose one or more options.",
@@ -43373,6 +43425,7 @@ function configureListboxProperties(componentSet, stats) {
     "Secure cycle storage",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -67033,6 +67086,8 @@ async function syncComboboxVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Group 1 Text",
+    "Group 2 Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -67189,6 +67244,15 @@ async function syncComboboxVariantChildren({
       preservedText["Option 3 Text"] || "Bike Parking",
     ];
     for (let index = 0; index < optionLabels.length; index += 1) {
+      await appendOptionGroupLabels(
+        listbox,
+        index,
+        "Combobox",
+        preservedText,
+        variableByName,
+        fonts,
+        stats,
+      );
       const option = await createComboboxOption({
         index,
         text: optionLabels[index],
@@ -67280,6 +67344,106 @@ function applyOptionFocusRing(option, focused, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// GAP-192: a group's label in Combobox's, MultiSelect's and Listbox's lists,
+// as React's .kozmos-option-group-label draws it, which is SelectLabel's:
+// 14/20 semibold in full ink, 6 above and below, 12 at the sides. Group 1
+// heads options 1 and 2, Group 2 option 3. Hidden until Show Group Labels is
+// on (configureOptionGroupProperties), so the lists draw as they did.
+const OPTION_GROUP_LABELS = [
+  { before: 0, text: "Group 1 Text", fallback: "Transit" },
+  { before: 2, text: "Group 2 Text", fallback: "Cycling" },
+];
+
+async function appendOptionGroupLabels(
+  list,
+  optionIndex,
+  tokenPrefix,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+) {
+  for (let index = 0; index < OPTION_GROUP_LABELS.length; index += 1) {
+    const group = OPTION_GROUP_LABELS[index];
+    if (group.before !== optionIndex) continue;
+    const row = await createOptionGroupLabel({
+      index,
+      text: preservedText[group.text] || group.fallback,
+      tokenPrefix,
+      variableByName,
+      fonts,
+      stats,
+    });
+    list.appendChild(row);
+    setLayoutSizingHorizontal(row, "FILL");
+  }
+}
+
+async function createOptionGroupLabel({
+  index,
+  text,
+  tokenPrefix,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const row = figma.createFrame();
+  row.name = `Group ${index + 1} Label`;
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "AUTO";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 0;
+  row.paddingLeft = 12;
+  row.paddingRight = 12;
+  row.paddingTop = 6;
+  row.paddingBottom = 6;
+  row.resizeWithoutConstraints(312, 32);
+  // At the sides, where the rows' words start: their padding's variable. Six
+  // above and below is SelectLabel's py-1.5, which no token names.
+  bindFloatVariable(
+    row,
+    "paddingLeft",
+    `${tokenPrefix}/option/padding/x`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    row,
+    "paddingRight",
+    `${tokenPrefix}/option/padding/x`,
+    variableByName,
+    stats,
+  );
+  row.cornerRadius = KOZMOS_RADIUS.none;
+  row.clipsContent = false;
+  row.fills = [];
+  row.strokes = [];
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "option-group-label");
+
+  const label = figma.createText();
+  label.name = `Group ${index + 1} Text`;
+  await applyTextTypography(
+    label,
+    "Small",
+    "Semibold",
+    fonts,
+    variableByName,
+    stats,
+  );
+  label.characters = text;
+  label.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  label.textAlignVertical = "CENTER";
+  row.appendChild(label);
+  setHorizontalFillTextSizing(label);
+  setTextAutoResize(label, "TRUNCATE");
+  row.visible = false;
+  return row;
 }
 
 async function createComboboxOption({
@@ -67397,6 +67561,8 @@ async function syncMultiSelectVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Group 1 Text",
+    "Group 2 Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -67596,6 +67762,15 @@ async function syncMultiSelectVariantChildren({
       preservedText["Option 3 Text"] || "Bike Parking",
     ];
     for (let index = 0; index < optionLabels.length; index += 1) {
+      await appendOptionGroupLabels(
+        listbox,
+        index,
+        "MultiSelect",
+        preservedText,
+        variableByName,
+        fonts,
+        stats,
+      );
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
@@ -67886,6 +68061,8 @@ async function syncListboxVariantChildren({
     "Option 2 Description",
     "Option 3 Text",
     "Option 3 Description",
+    "Group 1 Text",
+    "Group 2 Text",
   ]);
   const existingChildren = Array.from(component.children || []);
   for (const child of existingChildren) {
@@ -67908,6 +68085,15 @@ async function syncListboxVariantChildren({
   const icons = [];
 
   for (let index = 0; index < labels.length; index += 1) {
+    await appendOptionGroupLabels(
+      component,
+      index,
+      "Listbox",
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    );
     const selected = multiple ? index !== 1 : index === 0;
     const option = await createListboxOption({
       index,
