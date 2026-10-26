@@ -9,6 +9,30 @@ const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
+/**
+ * What a popover sits beside when no trigger opens it (GAP-190): any element,
+ * or a rect.
+ *
+ * With `asChild` it anchors to its child, a button, link or field the product
+ * already draws, and adds nothing to it: no `aria-haspopup`, no
+ * `aria-expanded`, no click that toggles. The control keeps its own role, and
+ * the product opens the popover itself, as a tour opens its step: a
+ * controlled `<Popover open={open} onOpenChange={setOpen}>` holding
+ * `<PopoverAnchor asChild>` around the control and a `PopoverContent`, with
+ * no `PopoverTrigger`. Escape and a press outside still ask to close it,
+ * through `onOpenChange(false)`. With `virtualRef`, a ref to
+ * anything with a `getBoundingClientRect()` (a point on a map, a text
+ * selection), it draws no element at all, and `PopoverContent` places itself
+ * by that rect; pass `updatePositionStrategy="always"` when the rect moves
+ * with nothing else on the page. `PopoverContent`'s `side`, `align`,
+ * `sideOffset` and collision handling work as they do beside a trigger.
+ *
+ * With no trigger, a closing popover has nothing to give focus back to:
+ * return it with `onCloseAutoFocus`, focusing the target and calling
+ * `event.preventDefault()`.
+ */
+const PopoverAnchor = PopoverPrimitive.Anchor;
+
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & {
@@ -61,4 +85,4 @@ const PopoverArrow = React.forwardRef<
 ));
 PopoverArrow.displayName = PopoverPrimitive.Arrow.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverArrow };
+export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent, PopoverArrow };

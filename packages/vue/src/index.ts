@@ -47,6 +47,8 @@ import {
   Timeline,
   Tooltip,
   Popover,
+  PopoverAnchor,
+  PopoverContent,
   Accordion,
   Separator,
   MapView,
@@ -210,6 +212,49 @@ const WayfindingInputRowAdapter = ({
     },
   });
 
+// GAP-190: a popover the product opens beside an element or rect it does not
+// own. One part, not a PopoverAnchor of its own: every wrapper mounts its own
+// React root, and Radix's anchor must share its Popover's. `anchor` is an
+// element (a template ref) or anything with a getBoundingClientRect(); the
+// rest go to PopoverContent, v-model:open to `open` and `onOpenChange`. With
+// no trigger to return to, focus goes back to an element anchor on close.
+const AnchoredPopoverAdapter = ({
+  anchor,
+  open,
+  defaultOpen,
+  onOpenChange,
+  modal,
+  onCloseAutoFocus,
+  children,
+  ...contentProps
+}: any) => {
+  const virtualRef = React.useMemo(
+    () => ({ current: anchor ?? null }),
+    [anchor],
+  );
+  return React.createElement(
+    Popover,
+    { open, defaultOpen, onOpenChange, modal },
+    React.createElement(PopoverAnchor, { virtualRef }),
+    React.createElement(
+      PopoverContent,
+      {
+        ...contentProps,
+        onCloseAutoFocus: (event: Event) => {
+          onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          if (anchor instanceof HTMLElement) {
+            event.preventDefault();
+            anchor.focus();
+          }
+        },
+      },
+      children,
+    ),
+  );
+};
+AnchoredPopoverAdapter.displayName = "AnchoredPopover";
+
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
@@ -264,6 +309,7 @@ export const KozmosTree = createVueWrapper(Tree);
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
+export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
 export const KozmosAccordion = createVueWrapper(Accordion);
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);

@@ -1,0 +1,5 @@
+---
+"@kozmos-ds/react": minor
+---
+
+`PopoverAnchor` is exported (GAP-190): Radix's anchor, so a `PopoverContent` can sit beside any element or rect while the product opens it itself, with no `PopoverTrigger`, as a tour opens its step beside the control it points at. `PopoverAnchor asChild` anchors to its child and adds nothing to it, no `aria-haspopup`, no `aria-expanded` and no click that toggles, so a button, link or field keeps its own role; `virtualRef`, a ref to anything with a `getBoundingClientRect()`, anchors to a rect, such as a point on a map, and draws no element. The product opens and closes it through `Popover`'s `open` and `onOpenChange`; `PopoverContent`'s `side`, `align`, `sideOffset` and collision handling place it as beside a trigger, and it follows its anchor as the page scrolls and the window resizes (`updatePositionStrategy="always"` for a rect that moves on its own). With no trigger to give focus back to, `onCloseAutoFocus` returns it to the control, as the Popover docs and API card show. `Popover`, `PopoverTrigger`, `PopoverContent` and `PopoverArrow` are unchanged.

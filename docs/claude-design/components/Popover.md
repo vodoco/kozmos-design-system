@@ -2,9 +2,9 @@
 
 # Popover
 
-An anchored surface for supporting content or small interactions, composed from a trigger and content. An optional PopoverArrow connects it visually to its anchor; owned portals retain the enclosing Kozmos theme.
+An anchored surface for supporting content or small interactions, composed from a trigger and content, or opened by the product beside any element or rect through PopoverAnchor. An optional PopoverArrow connects it visually to its anchor; owned portals retain the enclosing Kozmos theme.
 
-- **Import:** `import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from "@kozmos-ds/react";`
+- **Import:** `import { Popover, PopoverAnchor, PopoverArrow, PopoverContent, PopoverTrigger } from "@kozmos-ds/react";`
 - **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/overlay-popover--docs>
@@ -60,6 +60,37 @@ Its props are `PopoverPrimitive.PopoverProps`.
 It forwards its ref to `HTMLButtonElement`. Its props are `PopoverPrimitive.PopoverTriggerProps`.
 
 - `asChild`: `boolean`, optional.
+- `children`: `ReactNode`, optional.
+
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## PopoverAnchor
+
+What a popover sits beside when no trigger opens it (GAP-190): any element,
+or a rect.
+
+With `asChild` it anchors to its child, a button, link or field the product
+already draws, and adds nothing to it: no `aria-haspopup`, no
+`aria-expanded`, no click that toggles. The control keeps its own role, and
+the product opens the popover itself, as a tour opens its step: a
+controlled `<Popover open={open} onOpenChange={setOpen}>` holding
+`<PopoverAnchor asChild>` around the control and a `PopoverContent`, with
+no `PopoverTrigger`. Escape and a press outside still ask to close it,
+through `onOpenChange(false)`. With `virtualRef`, a ref to
+anything with a `getBoundingClientRect()` (a point on a map, a text
+selection), it draws no element at all, and `PopoverContent` places itself
+by that rect; pass `updatePositionStrategy="always"` when the rect moves
+with nothing else on the page. `PopoverContent`'s `side`, `align`,
+`sideOffset` and collision handling work as they do beside a trigger.
+
+With no trigger, a closing popover has nothing to give focus back to:
+return it with `onCloseAutoFocus`, focusing the target and calling
+`event.preventDefault()`.
+
+It forwards its ref to `HTMLDivElement`. Its props are `PopoverPrimitive.PopoverAnchorProps`.
+
+- `asChild`: `boolean`, optional.
+- `virtualRef`: `React.RefObject<Measurable>`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

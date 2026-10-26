@@ -7,7 +7,7 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Popover
 
-An anchored surface for supporting content or small interactions, composed from a trigger and content.
+An anchored surface for supporting content or small interactions, composed from a trigger and content, or opened by the product beside any element or rect through PopoverAnchor.
 An optional PopoverArrow connects it visually to its anchor; owned portals retain the enclosing Kozmos theme.
 
 <Canvas>
@@ -94,4 +94,72 @@ fun OpeningHoursPopover() {
 }
 `}
 
+/>
+
+## Anchored to another control
+
+A popover the product opens, rather than one a trigger toggles, sits beside any element or rect through `PopoverAnchor` (GAP-190): a tour's step beside the control it points at, a hint beside a field. `PopoverAnchor asChild` anchors to its child and adds nothing to it, no `aria-haspopup`, no `aria-expanded` and no click that toggles, so a button stays a button, a link a link and a field a field. Leave `PopoverTrigger` out, and open and close the popover through `Popover`'s `open` and `onOpenChange`: Escape and a press outside still ask to close it, through `onOpenChange(false)`.
+
+`PopoverContent`'s `side`, `align`, `sideOffset` and collision handling place it as they do beside a trigger, and it follows its anchor as the page scrolls and the window resizes. With no trigger, a closing popover has nothing to give focus back to: return it to the control with `onCloseAutoFocus`, focusing it and calling `event.preventDefault()`.
+
+<Canvas of={PopoverStories.AnchoredToAControl} />
+
+`virtualRef` anchors it to a rect instead, anything with a `getBoundingClientRect()`, such as a point on a map or a text selection, and `PopoverAnchor` then draws no element at all. A rect that moves with nothing else on the page, as a map feature does when the map pans, needs `updatePositionStrategy="always"` on the content, which places it again every frame.
+
+<Canvas of={PopoverStories.AnchoredToARect} />
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import {
+  Button,
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@kozmos-ds/react";
+
+export function AddDeskStep() {
+  const target = React.useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = React.useState(true);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        <Button ref={target}>Add desk</Button>
+      </PopoverAnchor>
+      <PopoverContent
+        side="bottom"
+        aria-label="Step 2 of 5"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          target.current?.focus();
+        }}
+      >
+        <p>Press Add desk, then choose where it goes.</p>
+        <Button size="sm" onClick={() => setOpen(false)}>
+          Got it
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosAnchoredPopover } from "@kozmos-ds/vue"
+
+// The harness mounts one React root per component, so the anchored popover
+// is one part: anchor takes the element (or anything with a
+// getBoundingClientRect()), and focus goes back to an element when it closes.
+const target = ref(null)
+const open = ref(true)
+</script>
+
+<template>
+  <button ref="target" type="button">Add desk</button>
+  <KozmosAnchoredPopover v-model:open="open" :anchor="target" side="bottom" aria-label="Step 2 of 5">
+    <p>Press Add desk, then choose where it goes.</p>
+  </KozmosAnchoredPopover>
+</template>
+    `}
 />

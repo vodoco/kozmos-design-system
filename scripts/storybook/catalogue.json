@@ -851,7 +851,7 @@
       "id": "overlay-popover",
       "title": "Core/Overlays/Popover",
       "component": "Popover",
-      "exports": ["Default"]
+      "exports": ["AnchoredToAControl", "AnchoredToARect", "Default"]
     },
     {
       "file": "packages/react/src/components/Progress/Progress.stories.tsx",
