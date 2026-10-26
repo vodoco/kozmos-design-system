@@ -1,0 +1,5 @@
+// Keeps the container's build out of the checkout's build folder, which the Mac's own Gradle uses.
+// run.sh mounts the folder it builds into at /build-out.
+allprojects {
+    layout.buildDirectory.set(file("/build-out/${project.name}"))
+}

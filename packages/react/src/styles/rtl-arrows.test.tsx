@@ -34,6 +34,7 @@ import {
   PaginationPrevious,
 } from "../components/Pagination/Pagination";
 import { Tree } from "../components/Tree/Tree";
+import { Calendar } from "../components/Calendar/Calendar";
 
 // Right to left, an arrow that means back, forward or inside points to the
 // start or the end edge, as SwiftUI's .backward and .forward symbols and
@@ -134,6 +135,20 @@ describe.each(["ltr", "rtl"] as const)("arrows and sides, %s", (dir) => {
       expectMirrored(link.querySelector("svg"), name);
       expectNoPhysicalSide(link, name);
     }
+  });
+
+  it("the calendar's previous and next month", () => {
+    const { container } = render(
+      <div dir={dir}>
+        <Calendar locale="en-US" today="2026-05-22" months={2} mode="range" />
+      </div>,
+    );
+    for (const name of ["Previous month", "Next month"]) {
+      const button = screen.getByRole("button", { name });
+      expectMirrored(button.querySelector("svg"), name);
+    }
+    for (const node of container.querySelectorAll(".kozmos-calendar *"))
+      expectNoPhysicalSide(node, `calendar ${node.tagName}`);
   });
 
   it("the breadcrumb's separator", () => {

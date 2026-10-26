@@ -31,8 +31,12 @@ public extension EnvironmentValues {
 /// on glass the foreground colour, so it reads at 4.5:1 over any map, where
 /// muted it read under 3:1 over a saturated one; elsewhere `muted`, the
 /// muted colour unless the text has its own.
+///
+/// The muted colour is foreground/400, as the contrast contract pairs it and
+/// React's `text-muted-foreground` draws it: 6.10:1 on background/0 in light.
+/// It was foreground/500 until 2026-10-24, 4.24:1 on white, under AA.
 func kozmosMutedForeground(
-    on surface: KozmosSurfaceStyle?, muted: Color = KozmosColors.primitivesColorsForeground500
+    on surface: KozmosSurfaceStyle?, muted: Color = KozmosColors.primitivesColorsForeground400
 ) -> Color {
     surface == .glass ? KozmosColors.primitivesColorsForeground100 : muted
 }
@@ -53,8 +57,9 @@ struct KozmosMutedText: ViewModifier {
 
 extension View {
     /// Draws this text muted, or in the foreground colour on glass (decision
-    /// 48). `muted` is its colour elsewhere.
-    func kozmosMutedText(_ muted: Color = KozmosColors.primitivesColorsForeground500) -> some View {
+    /// 48). `muted` is its colour elsewhere: foreground/400 unless the text
+    /// has its own.
+    func kozmosMutedText(_ muted: Color = KozmosColors.primitivesColorsForeground400) -> some View {
         modifier(KozmosMutedText(muted: muted))
     }
 }

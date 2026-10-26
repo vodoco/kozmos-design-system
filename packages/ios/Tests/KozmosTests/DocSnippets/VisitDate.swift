@@ -4,14 +4,19 @@
 import SwiftUI
 import Kozmos
 
-// The picker hides its label, which VoiceOver still says: KozmosFieldWrapper
-// shows it above the field, as React's label is. There is always a date.
+// A Kozmos field around the system picker, which opens the system calendar:
+// the label above it names the picker for VoiceOver, the helper is its hint,
+// and the bounds are React's min and max. There is always a date.
 struct VisitDate: View {
     @Binding var date: Date
 
     var body: some View {
-        KozmosFieldWrapper(label: "Visit date") {
-            KozmosDatePicker(selection: $date, label: "Visit date")
-        }
+        KozmosDatePicker(
+            selection: $date,
+            label: "Visit date",
+            helperText: "Within the next 30 days",
+            minimumDate: .now,
+            maximumDate: .now.addingTimeInterval(30 * 24 * 60 * 60)
+        )
     }
 }

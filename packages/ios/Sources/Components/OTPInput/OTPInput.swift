@@ -187,7 +187,7 @@ public struct KozmosOTPInput: View {
         case .success:
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
-            return KozmosColors.primitivesColorsForeground500
+            return KozmosColors.primitivesColorsForeground400
         }
     }
 

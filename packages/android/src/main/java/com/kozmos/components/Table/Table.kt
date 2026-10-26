@@ -90,7 +90,7 @@ fun RowScope.KozmosTableHeaderCell(
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
-        color = KozmosThemeTokens.primitivesColorsForeground500,
+        color = KozmosThemeTokens.primitivesColorsForeground400,
         modifier = modifier.weight(weight)
     )
 }

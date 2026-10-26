@@ -4458,7 +4458,7 @@ test.describe("booking example", () => {
     await example.getByRole("button", { name: "Next" }).click();
     await expect(example.getByText("Choose a date.")).toBeVisible();
     await expect(example.getByText("Choose a start time.")).toBeVisible();
-    await example.getByLabel("Date").fill("2026-10-05");
+    await example.getByLabel("Date", { exact: true }).fill("2026-10-05");
     await example.getByLabel("Start").fill("14:00");
     await example.getByRole("radio", { name: /Boardroom/ }).click();
     await example.getByRole("button", { name: "Next" }).click();

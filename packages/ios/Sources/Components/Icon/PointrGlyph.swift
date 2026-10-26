@@ -184,6 +184,14 @@ struct KozmosPointrGlyph: Shape {
         return path
     }
 
+    /// Pointr's artwork is physical, as React's is: an arrow up and to the
+    /// right points there in every language. `KozmosIcon` and
+    /// `KozmosDirectionGlyph` draw it in a left-to-right environment; this
+    /// says the same of the shape, which SwiftUI would otherwise mirror right
+    /// to left in an app that deploys to iOS 17 or later.
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
+
     /// The glyph as its artwork is drawn at a size: a solid shape filled, an
     /// outline stroked 2 on the grid.
     @ViewBuilder func painted(size: CGFloat) -> some View {

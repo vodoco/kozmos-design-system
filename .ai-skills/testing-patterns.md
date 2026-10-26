@@ -264,11 +264,61 @@ class KozmosButtonPaparazziTest {
 }
 ```
 
-A snapshot allows no difference, or, where a golden recorded on macOS is verified on CI's Linux,
-`CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE` from `PaparazziTolerance.kt`. `./gradlew
-verifyPaparazziDebug` in `packages/android` compares the snapshots, as CI's Android job does; read
-the test names back from the JUnit XML under `build/test-results/`. The tests written before the
-code are kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
+A snapshot allows no difference, or `CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE` from
+`PaparazziTolerance.kt` where a golden was recorded on a Mac (below). CI's Android job runs `./gradlew
+verifyPaparazziDebug` in `packages/android`; read the test names back from the JUnit XML. The tests
+written before the code are kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
+
+### Recording a golden
+
+Compose's goldens are recorded only in a Linux amd64 container like CI's Android job (ubuntu-latest,
+Zulu 17), never on a bare Mac (owner, 2026-10-24). `scripts/paparazzi/` builds it and runs Gradle in
+it on the checkout. Paparazzi 1.3.5 keeps one PNG per snapshot in
+`packages/android/src/test/snapshots/images/`. With Docker running, from the checkout:
+
+```bash
+pnpm android:paparazzi build
+pnpm android:paparazzi recordPaparazziDebug --tests 'com.kozmos.components.button.KozmosButtonPaparazziTest'
+pnpm android:paparazzi verifyPaparazziDebug
+```
+
+- **`build`** builds the image, `kozmos-paparazzi:17`, from `scripts/paparazzi/Dockerfile` for
+  `linux/amd64`: once, and again when the Dockerfile changes. It copies in the Android SDK licences
+  already accepted on the machine, from `ANDROID_HOME` or `packages/android/local.properties`'s
+  `sdk.dir`.
+- **`recordPaparazziDebug --tests '<class>'`** records one class's goldens into the checkout.
+  Record only the class whose drawing you changed.
+- **`verifyPaparazziDebug`** checks them, as CI does. Both tasks run the JVM test task,
+  `testDebugUnitTest`, so with no `--tests` it runs every JVM test.
+- **Read the results by name** from the JUnit XML under
+  `<output>/android/test-results/testDebugUnitTest/`, where `<output>` is the folder the run prints
+  (`PAPARAZZI_OUT` sets it). Gradle builds there, not in `packages/android/build/`, so a Mac's own
+  build is left alone. A green task does not say which tests ran.
+
+A recording keeps whatever the code drew, so open each PNG it wrote and compare it with the one it
+replaces. Commit only the goldens you meant to change, and `git restore` any other the run rewrote.
+CI never records: its Android job runs `./gradlew verifyPaparazziDebug` on Linux
+(`.github/workflows/ci.yml`), and its verdict is the one that counts. When it fails, it uploads
+Paparazzi's delta images as the `paparazzi-failures` artifact.
+
+- **Older goldens were recorded on a Mac.** They pass on Linux within
+  `CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE`, 0.0001 % (`PaparazziTolerance.kt`, whose comment gives
+  the measurement), which is why that file exists. Once every golden of a class is re-recorded in
+  the container, its test may tighten to `maxPercentDifference = 0.0`. A Mac's own Gradle does not
+  draw as CI does: `KozmosWayfindingInputRowPaparazziTest.theRowInDarkMode` fails there by
+  0.000001 %, with or without a change, and passes on CI's Linux.
+- **Paparazzi's own window is dark.** A translucent or host-dependent part snapshotted with nothing
+  under it reads on that dark window, which hides a colour that depends on its host. Draw it on its
+  host's surface and snapshot Dark explicitly, as `categoryfield/KozmosCategoryFieldPaparazziTest.kt`
+  does with `KozmosThemeTokens.semanticsSurface0` and `LocalKozmosUseDarkTokens provides true`.
+- **Paparazzi drops writes to `Settings.Global.ANIMATOR_DURATION_SCALE`**, so a test that writes it
+  still draws with animations on. Say the scale through `LocalKozmosAnimatorScale`
+  (`src/main/java/com/kozmos/components/Motion/SystemAnimations.kt`), as
+  `navigation/KozmosProgressMotionTest.kt` does.
+- **CI's Linux anti-aliases edges differently from a Mac,** so a test that counts a colour's pixels
+  never asserts a count of 0. It allows the unwanted colour up to 1 % of the expected colour's
+  pixels, as `theme/KozmosMaterialSchemeTest.kt` does for a resting date field's edge
+  (`materialEdge * 100 <= edge`), and the unfixed code must still fail that bound.
 
 ---
 

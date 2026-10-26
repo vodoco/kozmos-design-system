@@ -3717,10 +3717,13 @@ assertContains(
   "kozmos-reset kozmos-label",
   "React Label owned recipe",
 );
+// text-sm's size and leading-none's line height, written as the size alone
+// so no line height is set for another to overwrite.
+const labelRecipe = ownedCss.match(/\.kozmos-label\s*\{([^}]*)\}/)?.[1] ?? "";
 assertContains(
   ownedCssPath,
-  ownedCss.match(/\.kozmos-label\s*\{([^}]*)\}/)?.[1] ?? "",
-  "text-sm font-medium",
+  labelRecipe,
+  /font-size:\s*theme\(fontSize\.sm\);[\s\S]*@apply font-medium leading-none\b/,
   "React Label typography",
 );
 assertContains(
@@ -10299,8 +10302,17 @@ assertContains(
 assertContains(
   files.iosCheckbox,
   source.iosCheckbox,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Checkbox 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content
+// shape, and a shape set before the frame covers only the mark and label.
+assertOrder(
+  files.iosCheckbox,
+  source.iosCheckbox,
+  ".frame(minWidth: 44, minHeight: 44",
+  ".contentShape(Rectangle())",
+  "iOS Checkbox content shape covers its 44pt frame",
 );
 assertContains(
   files.iosCheckbox,
@@ -10323,8 +10335,17 @@ assertContains(
 assertContains(
   files.iosRadio,
   source.iosRadio,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Radio 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content
+// shape, and a shape set before the frame covers only the mark and label.
+assertOrder(
+  files.iosRadio,
+  source.iosRadio,
+  ".frame(minWidth: 44, minHeight: 44",
+  ".contentShape(Rectangle())",
+  "iOS Radio content shape covers its 44pt frame",
 );
 assertContains(
   files.iosRadio,
@@ -10353,8 +10374,17 @@ assertContains(
 assertContains(
   files.iosSwitch,
   source.iosSwitch,
-  ".frame(minHeight: 44",
+  ".frame(minWidth: 44, minHeight: 44",
   "iOS Switch 44px row target",
+);
+// A plain button's frame adds nothing to its target without a content
+// shape, and a shape set before the frame covers only the mark and label.
+assertOrder(
+  files.iosSwitch,
+  source.iosSwitch,
+  ".frame(minWidth: 44, minHeight: 44",
+  ".contentShape(Rectangle())",
+  "iOS Switch content shape covers its 44pt frame",
 );
 assertContains(
   files.iosSwitch,
