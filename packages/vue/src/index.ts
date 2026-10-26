@@ -313,7 +313,12 @@ export const KozmosTree = createVueWrapper(Tree);
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
-export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
+// Its attrs are React's alone: a component given as `anchor` cannot be set
+// as an attribute on the wrapper's own box, where Vue would put it.
+export const KozmosAnchoredPopover = Object.assign(
+  createVueWrapper(AnchoredPopoverAdapter),
+  { inheritAttrs: false },
+);
 export const KozmosAccordion = createVueWrapper(Accordion);
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);
