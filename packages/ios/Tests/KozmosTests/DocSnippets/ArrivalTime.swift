@@ -4,14 +4,13 @@
 import SwiftUI
 import Kozmos
 
-// The picker hides its label, which VoiceOver still says: KozmosFieldWrapper
-// shows it above the field, as React's label is. There is always a time.
+// A Kozmos field around the system picker, which opens the system time
+// wheels in the device's 12- or 24-hour clock: the label above it names the
+// picker for VoiceOver. There is always a time.
 struct ArrivalTime: View {
     @Binding var time: Date
 
     var body: some View {
-        KozmosFieldWrapper(label: "Arrival time") {
-            KozmosTimePicker(selection: $time, label: "Arrival time")
-        }
+        KozmosTimePicker(selection: $time, label: "Arrival time")
     }
 }

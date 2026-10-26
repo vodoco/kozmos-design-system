@@ -239,7 +239,7 @@ class KozmosGlassCardTextTest {
                 }
                 return drawn.argb(drawn.width / 2, drawn.height / 2)
             }
-            val muted = swatch { KozmosThemeTokens.primitivesColorsForeground500 }
+            val muted = swatch { KozmosThemeTokens.primitivesColorsForeground400 }
             val ink = swatch { KozmosThemeTokens.primitivesColorsForeground100 }
             val theme = if (dark) "dark" else "light"
             for (card in Card.values()) {

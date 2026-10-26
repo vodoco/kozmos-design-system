@@ -4,15 +4,15 @@
 package com.kozmos.docsnippets
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import com.kozmos.providers.KozmosAnalyticsEvent
-import com.kozmos.providers.LocalKozmosAnalytics
+import com.kozmos.providers.KozmosAnalyticsProvider
 
-// Compose has no batching provider: the tracker gets each event of the
-// parts inside as it happens.
+// The events of the parts inside arrive in batches, each 2000ms after its
+// first event by default, and what is left when this leaves the
+// composition. onDispatch is called on the main thread.
 @Composable
-fun TrackedApp(send: (KozmosAnalyticsEvent) -> Unit, content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalKozmosAnalytics provides { event -> send(event) }) {
+fun TrackedApp(send: (List<KozmosAnalyticsEvent>) -> Unit, content: @Composable () -> Unit) {
+    KozmosAnalyticsProvider(onDispatch = send) {
         content()
     }
 }

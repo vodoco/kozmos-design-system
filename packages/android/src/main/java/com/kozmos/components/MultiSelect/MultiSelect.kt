@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,7 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
 import com.kozmos.components.chip.ChipSize
 import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.chip.KozmosChipGroup
@@ -64,10 +70,17 @@ fun KozmosMultiSelect(
     onExpandedChange: ((Boolean) -> Unit)? = null
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
-    val isExpanded = expanded ?: internalExpanded
+    // Shown only while the field can be used, as Combobox's list is: a
+    // disabled or read-only field shows no list, whatever `expanded` says.
+    val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
     val setExpanded: (Boolean) -> Unit = { next ->
         if (expanded == null) internalExpanded = next
         onExpandedChange?.invoke(next)
+    }
+    // And closed as either turns on, as React's MultiSelect closes its list,
+    // so it does not open again by itself when the field can be used again.
+    LaunchedEffect(enabled, readOnly) {
+        if ((!enabled || readOnly) && (expanded ?: internalExpanded)) setExpanded(false)
     }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
@@ -148,6 +161,14 @@ fun KozmosMultiSelect(
                     }
                 )
 
+                // The clear and the chevron are 44dp targets, as React's
+                // Combobox's are (`h-field w-field`, 44 in touch): they were
+                // 36. Each reaches 4dp above and below the 36dp row, into the
+                // 6dp over it and the field's padding under it, so the field
+                // keeps its height; the chevron also takes the field's 8dp end
+                // padding, so it runs to the field's end. The field is 48dp
+                // tall, where React and Figma draw 44: a parity gap of its
+                // own, as #392 records it on iOS, left as it is here.
                 if (clearable && selectedValues.isNotEmpty() && enabled && !readOnly) {
                     IconButton(
                         onClick = {
@@ -155,8 +176,10 @@ fun KozmosMultiSelect(
                             onSearchValueChange("")
                             setExpanded(false)
                         },
-                        modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground500)
+                        modifier = Modifier
+                            .reachingPastTheRow(vertical = TargetReach)
+                            .size(TargetSize),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground400)
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Clear selected options", modifier = Modifier.size(16.dp))
                     }
@@ -165,9 +188,11 @@ fun KozmosMultiSelect(
                 IconButton(
                     onClick = { if (enabled && !readOnly) setExpanded(!isExpanded) },
                     enabled = enabled && !readOnly,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier
+                        .reachingPastTheRow(vertical = TargetReach, end = KozmosDimensions.primitivesLayoutSpacing100)
+                        .size(TargetSize),
                     colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = KozmosThemeTokens.primitivesColorsForeground500,
+                        contentColor = KozmosThemeTokens.primitivesColorsForeground400,
                         disabledContentColor = KozmosThemeTokens.primitivesColorsForeground500
                     )
                 ) {
@@ -187,7 +212,7 @@ fun KozmosMultiSelect(
                 Text(
                     text = emptyText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
+                    color = KozmosThemeTokens.primitivesColorsForeground400,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(KozmosThemeTokens.primitivesColorsBackground0, fieldShape)
@@ -199,11 +224,13 @@ fun KozmosMultiSelect(
                     options = filteredOptions,
                     selectedValues = selectedValues,
                     onSelectionChange = { nextValues, _ ->
-                        onValueChange(nextValues)
-                        onSearchValueChange("")
+                        if (enabled && !readOnly) {
+                            onValueChange(nextValues)
+                            onSearchValueChange("")
+                        }
                     },
                     multiple = true,
-                    enabled = enabled
+                    enabled = enabled && !readOnly
                 )
             }
         }
@@ -211,5 +238,31 @@ fun KozmosMultiSelect(
         if (!supportingText.isNullOrBlank()) {
             Text(text = supportingText, style = MaterialTheme.typography.bodyMedium, color = colors.helper)
         }
+    }
+}
+
+/** The clear's and the chevron's side: React's touch field height, `h-field`. */
+private val TargetSize = 44.dp
+
+/** How far each target reaches above and below the field's 36dp row. */
+private val TargetReach = (TargetSize - 36.dp) / 2
+
+/**
+ * Lays its node out [vertical] shorter above and below, and [end] narrower
+ * at the inline end, than what follows in the chain, the target, which is
+ * placed over the room it gives up. The row and the field are laid out as
+ * they were around 36dp buttons, and the target takes a press across all of
+ * its size. Placed relative, so right to left the target reaches past the
+ * left.
+ */
+private fun Modifier.reachingPastTheRow(vertical: Dp, end: Dp = 0.dp): Modifier = layout { measurable, constraints ->
+    val above = vertical.roundToPx()
+    val past = end.roundToPx()
+    val placeable = measurable.measure(constraints.offset(horizontal = past, vertical = 2 * above))
+    layout(
+        constraints.constrainWidth(placeable.width - past),
+        constraints.constrainHeight(placeable.height - 2 * above)
+    ) {
+        placeable.placeRelative(0, -above)
     }
 }

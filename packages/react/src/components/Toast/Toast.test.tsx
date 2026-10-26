@@ -35,6 +35,42 @@ describe("Toast", () => {
     expect(toast).toHaveClass("bg-background", "text-foreground");
   });
 
+  // GAP-182: the close shows only a cross. SwiftUI and Compose name theirs
+  // "Dismiss notification" and take a product's own words; React's had no
+  // name of its own unless the caller passed one.
+  it("names the close Dismiss notification when a product passes no name", () => {
+    render(
+      <ToastProvider>
+        <Toast open={true}>
+          <ToastTitle>Saved</ToastTitle>
+          <ToastClose />
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Dismiss notification" }),
+    ).toBeInTheDocument();
+  });
+
+  it("names the close in a product's own words", () => {
+    render(
+      <ToastProvider>
+        <Toast open={true}>
+          <ToastTitle>Gespeichert</ToastTitle>
+          <ToastClose aria-label="Mitteilung schließen" />
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Mitteilung schließen" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Dismiss notification" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("draws a destructive toast's controls in Kozmos roles, not Tailwind's red", () => {
     render(
       <ToastProvider>

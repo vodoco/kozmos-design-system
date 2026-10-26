@@ -13,6 +13,26 @@
       var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
     );
   }
+  /* Combobox's and MultiSelect's clear and open (field-actions.ts) lie over
+     their field's edge. Forced colours (Windows' high contrast) repaint a
+     hover fill in the page's Canvas, which erased that edge, so there they
+     hover with no fill. Two classes and the element: the scoped hover
+     utility weighs three classes with its :scope, and a scoped rule wins a
+     tie with an owned one. */
+  @media (forced-colors: active) {
+    .kozmos-combobox-actions > button.kozmos-combobox-action:hover {
+      background-color: transparent;
+    }
+  }
+  /* MultiSelect's field rings for its input, as Combobox's input does: with
+     its clear or open focused, the button rings alone, not inside the
+     field's ring too. Its focus-within and :has() outweigh the field's
+     scoped focus-within utilities; the outline is the one forced colours
+     paint for its transparent outline-none. */
+  .kozmos-multiselect-field:focus-within:has(.kozmos-combobox-action:focus) {
+    box-shadow: none;
+    outline-style: none;
+  }
   .kozmos-listbox {
     @apply grid max-h-64 min-w-0 gap-1 overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
@@ -98,5 +118,16 @@
     height: calc(var(--density-field-height-md, 2.75rem) - 0.75rem);
     width: 6rem;
     max-width: 100%;
+  }
+  /* The input's outline-none hides the browser's focus ring: the field
+     rings for it. It is a transparent outline at rest too, which forced
+     colours (Windows' high contrast) paint, so the input drew a 2px box of
+     its own inside the field. There it draws none. Its focus is still
+     marked: the field's focus-within outline-none is the outline forced
+     colours paint round the field, as round Combobox's input. */
+  @media (forced-colors: active) {
+    .kozmos-multiselect-input {
+      outline-style: none;
+    }
   }
 }
