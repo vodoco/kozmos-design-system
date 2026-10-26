@@ -44,15 +44,13 @@ export const Default: Story = {
  * GAP-190: a popover the product opens beside a control it does not own, as
  * a tour opens its step. "Add desk" is a plain button: PopoverAnchor adds no
  * popover attributes to it and no click that toggles. Open from the start, so
- * the step shows beside it; "Show the step" opens it again once closed.
+ * the step shows beside it (on the docs page, shut); "Show the step" opens it.
  */
 export const AnchoredToAControl: Story = {
-  // On the docs page in a frame of its own, so the open step stays in its
-  // canvas rather than over the page's text.
-  parameters: { docs: { story: { inline: false, iframeHeight: 280 } } },
-  render: function AnchoredToAControl() {
+  render: function AnchoredToAControl(_args, { viewMode }) {
     const target = React.useRef<HTMLButtonElement>(null);
-    const [open, setOpen] = React.useState(true);
+    // Shut on the docs page, where an open step would sit over its text.
+    const [open, setOpen] = React.useState(viewMode !== "docs");
     return (
       <div className="flex min-h-36 items-start gap-4">
         <Popover open={open} onOpenChange={setOpen}>
@@ -98,7 +96,6 @@ export const AnchoredToAControl: Story = {
  * point that moves with the map needs.
  */
 export const AnchoredToARect: Story = {
-  parameters: { docs: { story: { inline: false, iframeHeight: 320 } } },
   render: function AnchoredToARect() {
     const map = React.useRef<HTMLDivElement>(null);
     const feature = React.useRef({
