@@ -7,6 +7,11 @@ import {
   FieldPopupRoot,
 } from "./field-popup";
 import {
+  FIELD_ACTION,
+  FIELD_ACTIONS_ROW,
+  fieldActionsRoom,
+} from "./field-actions";
+import {
   MapShellPresentationContext,
   scrollbarFor,
 } from "../AdaptiveMapShell/map-shell-presentation";
@@ -430,9 +435,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     // gives way to a caller's pe-*; the owned rule holds it
                     // where no @scope rule reaches an <input> (WebKit).
                     "kozmos-combobox-input",
-                    canClear
-                      ? "pe-[calc(var(--density-field-height-md,2.75rem)_*_2_+_0.5rem)]"
-                      : "pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+                    fieldActionsRoom(canClear),
                     className,
                   )}
                   data-clearable={canClear ? "" : undefined}
@@ -485,11 +488,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   }}
                   {...props}
                 />
-                <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center">
+                <div className={FIELD_ACTIONS_ROW}>
                   {canClear && (
                     <button
                       type="button"
-                      className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className={FIELD_ACTION}
                       aria-label={clearLabel}
                       onClick={clearSelection}
                     >
@@ -498,7 +501,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   )}
                   <button
                     type="button"
-                    className="pointer-events-auto inline-flex h-field w-field items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={FIELD_ACTION}
                     aria-label={open ? closeLabel : openLabel}
                     disabled={disabled || readOnly}
                     onClick={() => setOpen((current) => !current)}

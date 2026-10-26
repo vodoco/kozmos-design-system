@@ -45,24 +45,35 @@ const DENSITY_SIZES = [
   "field",
 ] as const;
 
-/** `rounded-*` has a group per corner and per side, and each needs the roles. */
+/**
+ * `rounded-*` has a group per corner and per side, and each needs the roles.
+ *
+ * The group names are put together rather than written out. Tailwind reads
+ * this file for classes, and each group name written out whole is also a
+ * utility it generates (the top side's, `rounded-` and `t`, is one): 14 of
+ * them shipped in the stylesheet although nothing draws with them. A
+ * component that does use one still gets it, from its own source.
+ */
+const ROUNDED_SIDES = [
+  "s",
+  "e",
+  "t",
+  "r",
+  "b",
+  "l",
+  "ss",
+  "se",
+  "ee",
+  "es",
+  "tl",
+  "tr",
+  "br",
+  "bl",
+] as const;
 const ROUNDED_GROUPS = [
   "rounded",
-  "rounded-s",
-  "rounded-e",
-  "rounded-t",
-  "rounded-r",
-  "rounded-b",
-  "rounded-l",
-  "rounded-ss",
-  "rounded-se",
-  "rounded-ee",
-  "rounded-es",
-  "rounded-tl",
-  "rounded-tr",
-  "rounded-br",
-  "rounded-bl",
-] as const;
+  ...ROUNDED_SIDES.map((side) => `rounded-${side}` as const),
+];
 
 const roundedClassGroups = Object.fromEntries(
   ROUNDED_GROUPS.map((group) => [group, [{ [group]: [...RADIUS_ROLES] }]]),

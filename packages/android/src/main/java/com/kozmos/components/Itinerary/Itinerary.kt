@@ -216,7 +216,7 @@ private fun StepRow(step: KozmosItineraryStep, isCurrent: Boolean) {
         Icon(
             imageVector = step.type.icon(),
             contentDescription = null,
-            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground500,
+            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground400,
             modifier = Modifier
                 .width(KozmosDimensions.primitivesLayoutSizing500)
                 .height(20.dp)

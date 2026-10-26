@@ -10,11 +10,13 @@ export const MapShellPanelContext = React.createContext(false);
 
 /**
  * Set for the panel's content: a part that fills its panel (AICompanionPanel,
- * whose header and input stay put while its thread scrolls) calls it while it
- * is mounted. Beside the map, where the panel otherwise hugs its content, the
- * shell then gives the panel its full height, so the part's own height
- * resolves (GAP-124). Returns the release. Internal, never a product prop.
+ * whose header and input stay put while its thread scrolls) calls it with its
+ * root while it is mounted. Beside the map, where the panel otherwise hugs its
+ * content, the shell then gives the panel its full height, so the part's own
+ * height resolves (GAP-124). A sheet fitted to its content measures that root
+ * as it lays out unstretched. Returns the release. Internal, never a product
+ * prop.
  */
 export const MapShellPanelFillContext = React.createContext<
-  (() => () => void) | null
+  ((root: HTMLElement) => () => void) | null
 >(null);

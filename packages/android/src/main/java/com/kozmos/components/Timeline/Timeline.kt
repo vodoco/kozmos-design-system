@@ -128,7 +128,7 @@ fun KozmosTimelineTime(
     Text(
         text = time,
         style = MaterialTheme.typography.labelMedium,
-        color = KozmosThemeTokens.primitivesColorsForeground500,
+        color = KozmosThemeTokens.primitivesColorsForeground400,
         modifier = modifier
     )
 }
@@ -155,7 +155,7 @@ fun KozmosTimelineDescription(
     Text(
         text = description,
         style = MaterialTheme.typography.bodyMedium,
-        color = KozmosThemeTokens.primitivesColorsForeground500,
+        color = KozmosThemeTokens.primitivesColorsForeground400,
         modifier = modifier
     )
 }

@@ -5,9 +5,11 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowDown,
+  ArrowDownRight,
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  ArrowUpRight,
   Bell01,
   BluetoothOff,
   Bookmark,
@@ -32,9 +34,12 @@ import {
   Heart,
   HomeLine,
   InfoCircle,
+  LayersThree01,
   LayoutAlt02,
   Loading01,
   Lock01,
+  LogIn01,
+  LogOut01,
   Mail01,
   Map01,
   MarkerPin01,
@@ -59,6 +64,32 @@ import {
   Wifi,
   XClose,
 } from "./pointr/icons.generated";
+import {
+  Arriving,
+  CustomTransition,
+  ElevatorDown,
+  ElevatorUp,
+  ElevatorUpAndDown,
+  EscalatorDown,
+  EscalatorNoDirection,
+  EscalatorUp,
+  FollowTheLine,
+  HardLeft,
+  HardRight,
+  RampDown,
+  RampNoDirection,
+  RampUp,
+  RouteEnter,
+  RouteEntranceExit,
+  RouteExit,
+  SecurityControl,
+  Shuttle,
+  StairsDown,
+  StairsNoDirection,
+  StairsUp,
+  TurnBack,
+} from "./owned/navigation.generated";
+import { Walking } from "./owned/icons";
 
 export const kozmosIconNames = [
   "activity",
@@ -665,16 +696,120 @@ export const kozmosIconAliases = {
 } as const satisfies Record<string, KozmosIconName>;
 
 export type KozmosIconAlias = keyof typeof kozmosIconAliases;
-export type KozmosIconKey = KozmosIconName | KozmosIconAlias;
 
-export function resolveIconName(name: KozmosIconKey): KozmosIconName {
+/**
+ * The names drawn beyond the curated library above (GAP-179, the owner's
+ * approval of 21 Oct): the 23 wayfinding glyphs of Pointr Maps - Express, by
+ * the kebab case of the names this package exports them under, four outlines
+ * of the Pointr Icon Library, and the map controls' layers glyph and walking
+ * figure (GAP-181): `layers-three-01` by its Pointr name, `walking` by the
+ * kebab case of its export. SwiftUI's and Compose's `KozmosIcon` draw the
+ * same names, and so did POIDetailPanel's tags, through a map of their own
+ * until this list replaced it.
+ *
+ * They are not in `kozmosIconNames`: that list is the curated set the Figma
+ * plugin's Icons page and Code Connect pair with the Pointr Icon Library, name
+ * for name and key for key (scripts/check-component-contracts.mjs), and the
+ * wayfinding glyphs come from another file. `kozmosIconDefinitions` describes
+ * only the curated set.
+ */
+export const kozmosIconNamesBeyondTheLibrary = [
+  "elevator-up",
+  "elevator-down",
+  "stairs-up",
+  "stairs-down",
+  "escalator-up",
+  "escalator-down",
+  "ramp-up",
+  "ramp-down",
+  "route-enter",
+  "route-exit",
+  "elevator-up-and-down",
+  "escalator-no-direction",
+  "stairs-no-direction",
+  "ramp-no-direction",
+  "route-entrance-exit",
+  "hard-left",
+  "hard-right",
+  "turn-back",
+  "follow-the-line",
+  "arriving",
+  "custom-transition",
+  "security-control",
+  "shuttle",
+  "log-in-01",
+  "log-out-01",
+  "arrow-up-right",
+  "arrow-down-right",
+  "layers-three-01",
+  "walking",
+] as const;
+
+export type KozmosIconNameBeyondTheLibrary =
+  (typeof kozmosIconNamesBeyondTheLibrary)[number];
+
+/** Each name beyond the curated library and the component it draws. */
+const kozmosIconsBeyondTheLibrary: Readonly<
+  Record<KozmosIconNameBeyondTheLibrary, KozmosIconComponent>
+> = {
+  "elevator-up": ElevatorUp,
+  "elevator-down": ElevatorDown,
+  "stairs-up": StairsUp,
+  "stairs-down": StairsDown,
+  "escalator-up": EscalatorUp,
+  "escalator-down": EscalatorDown,
+  "ramp-up": RampUp,
+  "ramp-down": RampDown,
+  "route-enter": RouteEnter,
+  "route-exit": RouteExit,
+  "elevator-up-and-down": ElevatorUpAndDown,
+  "escalator-no-direction": EscalatorNoDirection,
+  "stairs-no-direction": StairsNoDirection,
+  "ramp-no-direction": RampNoDirection,
+  "route-entrance-exit": RouteEntranceExit,
+  "hard-left": HardLeft,
+  "hard-right": HardRight,
+  "turn-back": TurnBack,
+  "follow-the-line": FollowTheLine,
+  arriving: Arriving,
+  "custom-transition": CustomTransition,
+  "security-control": SecurityControl,
+  shuttle: Shuttle,
+  "log-in-01": LogIn01,
+  "log-out-01": LogOut01,
+  "arrow-up-right": ArrowUpRight,
+  "arrow-down-right": ArrowDownRight,
+  "layers-three-01": LayersThree01,
+  walking: Walking,
+};
+
+export type KozmosIconKey =
+  | KozmosIconName
+  | KozmosIconAlias
+  | KozmosIconNameBeyondTheLibrary;
+
+/**
+ * The name a key draws: an alias's name, or the key itself. A name beyond the
+ * curated library resolves to itself.
+ */
+export function resolveIconName(
+  name: KozmosIconKey,
+): KozmosIconName | KozmosIconNameBeyondTheLibrary {
   return kozmosIconAliases[name as KozmosIconAlias] ?? (name as KozmosIconName);
 }
 
 export function getIconComponent(
   name: KozmosIconKey,
 ): KozmosIconComponent | undefined {
-  return kozmosIconRegistry[resolveIconName(name)];
+  const resolved = resolveIconName(name);
+  // Only the list's own keys: an inherited name such as `constructor` draws nothing.
+  if (
+    Object.prototype.hasOwnProperty.call(kozmosIconsBeyondTheLibrary, resolved)
+  )
+    return kozmosIconsBeyondTheLibrary[
+      resolved as KozmosIconNameBeyondTheLibrary
+    ];
+  return kozmosIconRegistry[resolved as KozmosIconName];
 }
 
 export function getIconDefinition(

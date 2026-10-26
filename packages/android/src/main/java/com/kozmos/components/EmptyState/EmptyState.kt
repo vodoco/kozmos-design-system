@@ -1,6 +1,8 @@
 package com.kozmos.components.emptystate
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,8 +10,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -23,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.progress.KozmosProgress
+import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import kotlin.math.roundToInt
 
@@ -42,6 +49,10 @@ enum class KozmosEmptyStateSize {
     val padding: Dp get() = if (this == Compact) 16.dp else 24.dp
     val gap: Dp get() = if (this == Compact) 8.dp else 16.dp
 }
+
+/** The circle behind the icon: React's `w-16 h-16`, `h-10 w-10` compact, the sizing scale's 800 and 500. */
+private val KozmosEmptyStateSize.iconCircle: Dp
+    get() = if (this == KozmosEmptyStateSize.Compact) KozmosDimensions.primitivesLayoutSizing500 else KozmosDimensions.primitivesLayoutSizing800
 
 /**
  * A long wait the empty state is explaining, such as a download, and how far
@@ -73,13 +84,31 @@ fun KozmosEmptyState(
         verticalArrangement = Arrangement.Center
     ) {
         if (icon != null) {
-            icon()
+            // The caller's icon in the muted colour, as React's is
+            // currentColor in text-muted-foreground and Figma's is
+            // foreground/400: a KozmosIcon or an Icon at its default colour
+            // takes it. It got none, and drew black, unseen in the dark.
+            // React's and Figma's circle behind it: `w-16 h-16 rounded-pill
+            // bg-muted`, 64 across (40 compact) of background/100. The icon
+            // stood on the page.
+            Box(
+                modifier = Modifier
+                    .size(size.iconCircle)
+                    .background(KozmosThemeTokens.primitivesColorsBackground100, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
+                    icon()
+                }
+            }
             Spacer(modifier = Modifier.height(size.gap))
         }
         
         Text(
             text = title,
-            color = KozmosThemeTokens.primitivesColorsForeground100,
+            // React's text-foreground and Figma's Colors/foreground/0; it was
+            // foreground/100.
+            color = KozmosThemeTokens.primitivesColorsForeground0,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
@@ -89,7 +118,9 @@ fun KozmosEmptyState(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                color = KozmosThemeTokens.primitivesColorsForeground300,
+                // The muted colour, as React's text-muted-foreground and
+                // Figma's foreground/400; it was foreground/300.
+                color = KozmosThemeTokens.primitivesColorsForeground400,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
@@ -112,14 +143,17 @@ fun KozmosEmptyState(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = progress.label,
-                        color = KozmosThemeTokens.primitivesColorsForeground100,
+                        // React's text-foreground, as the title; it was foreground/100.
+                        color = KozmosThemeTokens.primitivesColorsForeground0,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
                     if (progress.valueText != null) {
                         Text(
                             text = progress.valueText,
-                            color = KozmosThemeTokens.primitivesColorsForeground300,
+                            // Muted, as React's text-muted-foreground: foreground/400.
+                            // It was foreground/300.
+                            color = KozmosThemeTokens.primitivesColorsForeground400,
                             fontSize = 14.sp
                         )
                     }

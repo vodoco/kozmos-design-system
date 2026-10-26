@@ -169,10 +169,14 @@ const AICompanionPanel = React.forwardRef<
     const closeAutoFocus = React.useRef(onCloseAutoFocus);
     // It fills its panel. Beside the map, where a shell's panel hugs its
     // content, it asks the shell for the panel's whole height, so its header
-    // and input stay put and only the thread scrolls (GAP-124).
+    // and input stay put and only the thread scrolls (GAP-124). A sheet fitted
+    // to its content measures this root unstretched.
     const claimPanelFill = React.useContext(MapShellPanelFillContext);
     useLayoutEffect(
-      () => (open && claimPanelFill ? claimPanelFill() : undefined),
+      () =>
+        open && claimPanelFill && root.current
+          ? claimPanelFill(root.current)
+          : undefined,
       [open, claimPanelFill],
     );
     React.useEffect(() => {

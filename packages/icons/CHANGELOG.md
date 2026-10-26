@@ -1,5 +1,11 @@
 # @kozmos-ds/icons
 
+## 0.7.0
+
+### Minor Changes
+
+- 273a44f: `Icon` and `KozmosIconKey` take the 29 names SwiftUI's and Compose's `KozmosIcon` draw beyond the curated library (GAP-179): the 23 wayfinding glyphs of Pointr Maps - Express by the kebab case of their export names (`elevator-up`, `stairs-no-direction`, `route-entrance-exit`, `security-control`, `shuttle` and the rest), the Pointr outlines `log-in-01`, `log-out-01`, `arrow-up-right` and `arrow-down-right`, and the map controls' layers glyph and walking figure, `layers-three-01` (`LayersThree01`) and `walking` (`Walking`, GAP-181). `<Icon name="elevator-up" />` drew nothing; it now draws the `ElevatorUp` artwork. `@kozmos-ds/icons` exports them as `kozmosIconNamesBeyondTheLibrary`, `getIconComponent` and `isKozmosIconKey` accept them, `resolveIconName` returns them as themselves, and `getIconDefinition` returns `undefined` for them, as they have no definition. `kozmosIconNames` and `kozmosIconDefinitions`, the curated set the Figma Icons page pairs with the Pointr Icon Library, are unchanged. POIDetailPanel's tags draw their icons through `Icon` and the registry, where they kept a map of their own: they draw what they drew. An app that looks an icon up by name now ships the 29 too: `getIconComponent`, `isKozmosIconKey` and `Icon` bring in 19.9 KB gzip of icons where they brought in 11.8 KB. A named export still brings in its icon alone. Code that switches exhaustively over `KozmosIconKey`, or over what `resolveIconName` returns, now sees these 29 names too.
+
 ## 0.6.0
 
 ### Minor Changes

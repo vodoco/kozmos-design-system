@@ -39,14 +39,7 @@ public struct KozmosAISearchButton: View {
     public var body: some View {
         Button(action: action) {
             ZStack {
-                // The gradient turns; the circle it fills does not move.
-                // The prototype's rainbow, from the system's own data colours
-                // and its success green: red, yellow, green, teal, blue, purple
-                // and round to red.
-                Circle()
-                    .fill(AngularGradient(colors: Self.rainbow, center: .center))
-                    .frame(width: Self.ring, height: Self.ring)
-                    .rotationEffect(.degrees(ringAngle))
+                KozmosAISearchRing(angle: ringAngle)
                 Circle()
                     .fill(KozmosColors.primitivesColorsBackground0)
                     .frame(width: Self.disc, height: Self.disc)
@@ -68,5 +61,25 @@ public struct KozmosAISearchButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+    }
+}
+
+/// The ring at one point of its turn: `angle` degrees clockwise from rest.
+///
+/// The gradient turns; the circle it fills does not move. The prototype's
+/// rainbow, from the system's own data colours and its success green: red,
+/// yellow, green, teal, blue, purple and round to red. It turns clockwise in
+/// every language, as React's `rotate(360deg)` does: right to left, SwiftUI
+/// turns a rotation the other way, so it is drawn in a left-to-right
+/// environment, as the spinner is.
+struct KozmosAISearchRing: View {
+    let angle: Double
+
+    var body: some View {
+        Circle()
+            .fill(AngularGradient(colors: KozmosAISearchButton.rainbow, center: .center))
+            .frame(width: KozmosAISearchButton.ring, height: KozmosAISearchButton.ring)
+            .rotationEffect(.degrees(angle))
+            .environment(\.layoutDirection, .leftToRight)
     }
 }
