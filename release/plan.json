@@ -1,5 +1,9 @@
 {
   "schemaVersion": 1,
   "tag": "latest",
-  "packages": [{ "name": "@kozmos-ds/react", "version": "0.12.2" }]
+  "packages": [
+    { "name": "@kozmos-ds/icons", "version": "0.7.0" },
+    { "name": "@kozmos-ds/react", "version": "0.13.0" },
+    { "name": "@kozmos-ds/tokens", "version": "0.8.1" }
+  ]
 }
