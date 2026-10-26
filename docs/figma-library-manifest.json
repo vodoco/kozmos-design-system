@@ -15058,7 +15058,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Backdrop"],
-          "mappedProps": ["visible"],
+          "mappedProps": ["target", "visible"],
           "unmappedProps": []
         },
         "props": [
@@ -15069,6 +15069,9 @@
           "id",
           "role",
           "tabIndex",
+          "target",
+          "targetPadding",
+          "targetRadius",
           "title",
           "visible"
         ],
