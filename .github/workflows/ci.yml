@@ -399,6 +399,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:backdrop-target
           ADAPTIVE_BROWSER=firefox pnpm test:backdrop-target
 
+      # GAP-191: Stepper's dots. Every dot, done, current and pending, is 3:1
+      # or more on the page, a popover and the muted fill, light and dark,
+      # from the colours each engine resolves; the group is named by the
+      # position and each dot by its step, with aria-current on the current
+      # one; forced colours keep them (scripts/check-stepper-dots.mjs).
+      - name: Verify Stepper Dots
+        run: |
+          pnpm test:stepper-dots
+          ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
+          ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws
