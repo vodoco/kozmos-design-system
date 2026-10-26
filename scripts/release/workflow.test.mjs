@@ -57,7 +57,7 @@ test("pnpm version is declared once, in the manifest", () => {
   // pnpm/action-setup v4 refuses to run when the action and package.json both
   // name a version: "Multiple versions of pnpm specified". On 2026-09-23 that
   // killed a release dispatch at step 3, before any validation ran, because CI
-  // pinned v3 then — which has no such check — and this workflow pins v4.
+  // pinned v3 then — which has no such check — and this workflow pinned v4.
   const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
   assert.match(manifest.packageManager ?? "", /^pnpm@\d+\.\d+\.\d+$/);
   for (const [name, job] of Object.entries(workflow.jobs)) {
@@ -71,6 +71,29 @@ test("pnpm version is declared once, in the manifest", () => {
       );
     }
   }
+});
+
+test("a release installs from the lockfile, never from a cache", () => {
+  // actions/setup-node 5 restores a dependency cache by itself whenever
+  // package.json names a package manager (ours names pnpm), unless
+  // `package-manager-cache` is false. Other runs write that cache; what a
+  // release installs comes from the lockfile alone.
+  let checked = 0;
+  for (const [name, job] of Object.entries(workflow.jobs)) {
+    for (const step of (job.steps ?? []).filter((s) =>
+      s.uses?.startsWith("actions/setup-node@"),
+    )) {
+      checked += 1;
+      assert.equal(
+        step.with?.["package-manager-cache"],
+        false,
+        `${name} lets setup-node restore a cache`,
+      );
+      assert.equal(step.with?.cache, undefined, `${name} asks for a cache`);
+    }
+  }
+  assert.equal(checked, 2, "prepare and publish each set up Node once");
+  assert.doesNotMatch(source, /actions\/cache@/);
 });
 
 test("a dispatch that is not main HEAD cannot conclude as success", () => {
