@@ -38,6 +38,24 @@ describe("BottomNavigation", () => {
     );
   });
 
+  it("is as tall as its items, at either density (site GAP-68)", () => {
+    // A fixed 64 held the default density's 72 items spilling out over its
+    // top edge. scripts/check-site-gaps.mjs measures the items inside the
+    // bar in every engine.
+    for (const density of ["compact", "default"] as const) {
+      const { unmount } = render(
+        <BottomNavigation
+          density={density}
+          items={[{ icon: <Home />, label: "Home" }]}
+        />,
+      );
+      const bar = screen.getByRole("navigation", { name: "Bottom navigation" });
+      expect(bar, density).toHaveClass("min-h-16");
+      expect(bar, density).not.toHaveClass("h-16");
+      unmount();
+    }
+  });
+
   it("keeps its own items, not the rail's", () => {
     // Decision 42: the rail took the dashboard side menu's design, and the
     // bar keeps its own. Its items share the bar, 6px in from their edges,

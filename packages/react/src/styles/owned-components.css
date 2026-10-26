@@ -1220,6 +1220,12 @@
     text-transform: none;
     -webkit-appearance: button;
     background-image: none;
+    /* A Button drawn on a link (buttonVariants on an anchor, Pagination's
+       pages) is not underlined: kozmos-reset opts it out of the scoped
+       preflight, which is what took the browser's underline off a plain link
+       (site GAP-09). The link variant underlines on hover, and a caller's
+       utility still outweighs this. */
+    text-decoration-line: none;
   }
   /* A filled Button reads its tier's four backgrounds: idle, hover, focus
      from the keyboard, and pressed while the pointer holds it, which wins
@@ -1370,9 +1376,14 @@
   .kozmos-popover {
     @apply z-50 w-72 rounded-control border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
   }
+  /* PopoverArrow's tip overlaps the body by 1px, as Tooltip's does and as
+     Figma's tip does: it covers the body's border where the two meet, so no
+     line runs across it (site GAP-74). "Up" in the tip's own frame is into
+     the body on every side. */
   .kozmos-popover-arrow {
     @apply fill-popover;
     display: block;
+    transform: translateY(-1px);
   }
   /* Logical map corners follow the owning interface direction. Insets remain
      physical renderer clearances: RTL start uses the right-hand clearance. */

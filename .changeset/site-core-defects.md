@@ -1,0 +1,15 @@
+---
+"@kozmos-ds/react": patch
+---
+
+Seven defects the website found and recorded in its own register (`apps/site/GAPS.md`, the site's GAP-nn), each read in Chromium, Firefox and WebKit by `scripts/check-site-gaps.mjs`:
+
+- **`MapView` is its own stacking context** (site GAP-40), framed or filling. A `MapOverlay` is z-index 50, as a sticky `Navbar` is, so a map the page scrolled under its header drew its overlays over it; inside `AdaptiveMapShell`, anything the map drew with a z-index of its own, as a map engine's layers have, drew over the shell's top bar, controls and panel. What the map draws now stacks inside the map. The shell's controls, sheet, attribution and floor popups are its own layers or portals, outside the map, and draw as they did.
+- **A Button drawn on a link has no underline** (site GAP-09). `buttonVariants` on an anchor, the README's pattern for navigation, and `Pagination`'s page, Previous and Next links drew the browser's underline: `kozmos-reset` opts them out of the scoped preflight, which is what takes it off a plain link. The link variant still underlines on hover, and a caller's `underline` still wins. Owned CSS, so it holds without `@scope`.
+- **`Listbox`'s one column is the list's width** (site GAP-55). A long label or description widened every option past the list, which scrolled sideways (658px in a 280px list) with the words cut at its edge; now they end in their ellipsis. Owned CSS.
+- **`BottomNavigation`'s bar is as tall as its items** (site GAP-68), 64 at least. A fixed 64 held the default density's 72px items spilling 4.5px over its top border and under its bottom, and the compact density's 64px items half a pixel each way. With its 1px top border the bar is now 65 compact and 73 default, where it was 64 at both.
+- **`SplitButton`'s outline variant keeps its outline** (site GAP-73). The seam's tint was a colour on all four sides of the main part, over the outline's own, so its edge was white at a fifth over the fill: 1.00:1 in light and 1.66:1 in dark. It tints the inline-end side alone now, on the right left to right and on the left right to left, and the outline reads 8.01:1 and 8.39:1.
+- **`Tooltip`'s tip, and `PopoverArrow`'s, overlap the body by 1px** (site GAP-74), as Figma's tip does. Flush against the bordered body, the border ran across the tail. The tip's box, which places the tooltip, is the same 8 by 4, so the tooltip sits where it did; its tip reaches 3px past the body, where it reached 4.
+- **A muted `Text` follows a glass surface** (site GAP-94), as Kozmos's own muted text does (decision 48): the foreground on glass, and the muted grey on a solid card inside the glass and everywhere else, as before. Over the eight category fills, a muted `Text` on glass read 3.61:1 at worst in light (over red) and 4.38:1 in dark (over yellow) in Chromium, 3.76 and 4.39:1 in Firefox and WebKit; it reads 12.44 and 11.85:1, and 12.96 and 11.88:1. Owned CSS. SwiftUI's `KozmosText` with `tone: .muted` does not follow glass yet.
+
+The props are unchanged.
