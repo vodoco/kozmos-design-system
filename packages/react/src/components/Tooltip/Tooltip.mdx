@@ -16,6 +16,10 @@ A popup that displays information related to an element when the element receive
 
 <Controls />
 
+## Sides
+
+`side` names the side of its trigger the tooltip opens on: top, right, bottom or left, the trigger's own sides in every language, as Radix's `side` and Figma's Side property are. In a right-to-left layout `side="right"` still opens on the trigger's right. SwiftUI also takes `.leading` and `.trailing`, which follow the reading direction: `.trailing` is the trigger's right left to right and its left right to left. The tip points at the trigger on every side.
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -59,13 +63,14 @@ import Kozmos
 
 // The bubble shows on hover, or when a finger holds the view down. Its text
 // is VoiceOver's hint too; pass isAccessibilityHint: false where it repeats
-// the view's own label.
+// the view's own label. side: .right is the view's right in every language,
+// as React's side is; .trailing is after it in the reading direction.
 struct AddToLibrary: View {
     let add: () -> Void
 
     var body: some View {
         KozmosButton("Hover", action: add)
-            .kozmosTooltip("Add to library")
+            .kozmosTooltip("Add to library", side: .trailing)
     }
 }
 `}
@@ -80,7 +85,9 @@ import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.tooltip.KozmosTooltip
 
 // Compose's tooltip shows only while visible is true: it watches nothing
-// itself, so this one follows the button's press.
+// itself, so this one follows the button's press. Its side is Top by
+// default; Top, Right, Bottom and Left are physical, as React's are, and
+// Leading and Trailing follow the reading direction.
 @Composable
 fun AddToLibrary(add: () -> Unit) {
     val interactions = remember { MutableInteractionSource() }

@@ -138,7 +138,14 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## ToastClose
 
-It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.ToastCloseProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.ToastCloseProps & React.RefAttributes<HTMLButtonElement>, "ref"> & { "aria-label"?: string }`.
+
+- `aria-label`: `string`, optional, default `"Dismiss notification"`.
+
+  Defines a string value that labels the current element.
+  The close button's accessible name: it shows only a cross. "Dismiss
+  notification" by default, as SwiftUI's and Compose's `closeLabel`; a
+  product that translates passes its own.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
