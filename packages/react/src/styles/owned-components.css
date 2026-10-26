@@ -1883,4 +1883,33 @@
     margin-top: -3px;
     background-color: var(--primitives-colors-emotional-success-800);
   }
+  /* Backdrop's cut-out (GAP-189). The scrim's clip-path leaves the target
+     out, so the page shows through and takes the pointer there. The ring
+     is the focus ring's 2 outside the cut-out, drawn as a border, which
+     forced colours keep (a box-shadow they drop) and repaint in the
+     system's Highlight. Its box is placed in the backdrop's physical
+     coordinates, as getBoundingClientRect() measures the target, so it is
+     pinned to the top left in either direction. Two classes: the scoped
+     preflight's border reset weighs one and wins a tie on proximity. */
+  .kozmos-backdrop[data-lit] {
+    overflow: hidden;
+  }
+  .kozmos-backdrop .kozmos-backdrop-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    box-sizing: border-box;
+    border: 2px solid var(--primitives-colors-theme-600);
+    pointer-events: none;
+  }
+  .kozmos-backdrop[data-lit] > .kozmos-backdrop-ring {
+    display: block;
+  }
+  @media (forced-colors: active) {
+    .kozmos-backdrop .kozmos-backdrop-ring {
+      forced-color-adjust: none;
+      border-color: Highlight;
+    }
+  }
 }

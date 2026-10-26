@@ -16,28 +16,71 @@ Use `visible` to toggle it; dialog semantics, focus management and dismissal bel
 
 <Controls />
 
+## Target
+
+A tour dims the page and lights the one control its step points at. Give `target` that control:
+an element, a ref to one, a virtual element (anything with `getBoundingClientRect()`), a rect in
+the viewport's coordinates, or a list of them lit as the one box round them all.
+
+- The dim covers everything but the cut-out, which is padded by `targetPadding` (layout.spacing.100,
+  8, by default) and rounded by `targetRadius` (radius.control, 16), and ringed 2px outside it in
+  the focus colour. In forced colours the ring is a border in the system's Highlight.
+- Pointer events pass through the cut-out, so the control can be pressed; the dim catches them
+  everywhere else.
+- The control stays where it is, in the DOM and in its own stacking context: nothing re-parents it
+  or changes its z-index. The cut-out follows it as it or the window resizes and as anything that
+  scrolls it scrolls.
+- A new target is glided to over the standard duration, from where the cut-out was; under reduced
+  motion it moves at once.
+- With no target, or one that is not there (a ref to nothing, an element with no box), the whole
+  page is dimmed, as without `target`.
+
+Nothing in the dim is focusable, and the ring is hidden from assistive technology: saying which
+step this is, and what it lights, is the step card's job.
+
+<Canvas>
+  <Story of={BackdropStories.Target} />
+</Canvas>
+
+<Canvas>
+  <Story of={BackdropStories.TargetList} />
+</Canvas>
+
+<Canvas>
+  <Story of={BackdropStories.MovingTarget} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>
 
 <PlatformSnippets
     react={`
-import { Backdrop } from "@kozmos-ds/react";
+import { Backdrop, Button } from "@kozmos-ds/react";
+import { useRef } from "react";
+
 export function Example() {
+  const update = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <Backdrop />
+      <Button ref={update}>Update</Button>
+      <Backdrop target={update} />
     </>
   );
 }
     `}
     vue={`
 <script setup>
-import { KozmosBackdrop } from "@kozmos-ds/vue"
+import { ref } from "vue"
+import { KozmosBackdrop, KozmosButton } from "@kozmos-ds/vue"
+
+// A template ref: the harness lights the component's element.
+const update = ref(null)
 </script>
 
 <template>
-  <KozmosBackdrop />
+  <KozmosButton ref="update">Update</KozmosButton>
+  <KozmosBackdrop :target="update" />
 </template>
     `}
     swift={`

@@ -32,9 +32,82 @@ export function BackdropExample() {
 
 ## Backdrop
 
-It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTMLDivElement> & { visible?: boolean }`.
+It forwards its ref to `HTMLDivElement`. Its props are `BackdropProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
 - `visible`: `boolean`, optional, default `true`.
+
+  Whether the scrim is drawn. Hidden, it renders nothing.
+
+- `target`: `BackdropTarget`, optional.
+
+  What to light (GAP-189): an element, a ref to one, a virtual element
+  (anything with `getBoundingClientRect()`), a rect in the viewport's
+  coordinates, or a list of them lit as the one box round them all. The
+  dim covers everything else, the cut-out is ringed in the focus colour,
+  and pointer events pass through it to what it shows. The target stays
+  where it is, in the DOM and in its stacking context, and the cut-out
+  follows it as it scrolls and resizes. With no target, or one that is not
+  there, the whole page is dimmed.
+
+- `targetPadding`: `number`, optional.
+
+  Room between the target and the cut-out's edge, in pixels. Defaults to layout.spacing.100 (8).
+
+- `targetRadius`: `number`, optional.
+
+  The cut-out's corner radius, in pixels. Defaults to radius.control (16).
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### BackdropTarget
+
+From `@kozmos-ds/react`.
+
+```ts
+/** What to light: one thing, or a list lit as the one box round them all. */
+type BackdropTarget = BackdropTargetItem | readonly BackdropTargetItem[];
+```
+
+### BackdropTargetItem
+
+From `@kozmos-ds/react`.
+
+```ts
+/** One thing to light. */
+type BackdropTargetItem =
+  | Element
+  | React.RefObject<Element | null>
+  | BackdropVirtualElement
+  | BackdropRect
+  | null
+  | undefined;
+```
+
+### BackdropVirtualElement
+
+From `@kozmos-ds/react`.
+
+```ts
+/** Something that says where it is when asked: a virtual element. */
+interface BackdropVirtualElement {
+  getBoundingClientRect(): BackdropRect;
+}
+```
+
+### BackdropRect
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A box in the viewport's coordinates, as `getBoundingClientRect()` gives one. */
+interface BackdropRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+```
