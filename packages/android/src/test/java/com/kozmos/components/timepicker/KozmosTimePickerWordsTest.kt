@@ -58,10 +58,10 @@ class KozmosTimePickerWordsTest {
             locale = LocalConfiguration.current.locales[0]
             KozmosTimePicker(time = time, onTimeSelected = {}, label = "Ankunftszeit")
         }
-        // The time as the field writes it, in the locale's short style on the
+        // The time, as the words the field shows, in the locale's short style on the
         // device's clock (12-hour under layoutlib); KozmosPickerLocaleTest
         // holds the format to the locale.
         val shown = time.format(DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "hm"), locale))
-        assertEquals(listOf("role=Button description=Ankunftszeit state=$shown texts=[] click=true"), stops)
+        assertEquals(listOf("role=Button description=Ankunftszeit state=null texts=[$shown] click=true"), stops)
     }
 }
