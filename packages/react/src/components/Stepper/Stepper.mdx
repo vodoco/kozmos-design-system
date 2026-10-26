@@ -26,6 +26,10 @@ it as well as its colour, and pending ones are foreground 500, 3:1 or more again
 popover and the muted fill in both themes. In forced colours, done and current are the system's
 Highlight and pending ones an outline.
 
+Put a tour's dots on the page, a popover or the muted fill: those are the surfaces they are
+measured on. On background-200 (`bg-secondary`) they fall under 3:1: the light theme's pending
+dots read 2.59:1 there, and the dark theme's done and current ones 2.32:1.
+
 The dots are a group whose name is the position, "Step 2 of 5" by default: give `positionLabel`
 the product's words, as a function of the step (from 1) and the count, or as a template with
 `{step}` and `{count}`. Each dot is a list item named by its step, and the current one is
@@ -62,12 +66,11 @@ export function Example() {
 <script setup>
 import { KozmosStepper } from "@kozmos-ds/vue"
 
-const steps = ["Choose a floor", "Draw a room", "Name it", "Check the route", "Publish"]
-const position = "Step {step} of {count}"
+const steps = ["Choose destination", "Review route", "Navigate"]
 </script>
 
 <template>
-  <KozmosStepper variant="dots" :steps="steps" :currentStep="1" :positionLabel="position" />
+  <KozmosStepper :steps="steps" :currentStep="1" />
 </template>
     `}
     swift={`

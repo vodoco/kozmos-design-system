@@ -40,7 +40,21 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
   ) => {
     if (variant === "dots") {
       const count = steps.length;
-      const step = Math.min(Math.max(currentStep + 1, 1), count);
+      // No steps, no tour: the root alone, as the numbered stepper draws it,
+      // with no group to name and no list.
+      if (count === 0)
+        return (
+          <div
+            ref={ref}
+            className={cn("kozmos-stepper-dots", className)}
+            {...props}
+          />
+        );
+      // A step that is not a number is before the first, as the numbered
+      // stepper reads it: nothing done and nothing current. The position
+      // names the first step then, and the last once every step is done.
+      const at = Number.isFinite(currentStep) ? currentStep : -1;
+      const step = Math.min(Math.max(Math.floor(at) + 1, 1), count);
       const position =
         typeof positionLabel === "function"
           ? positionLabel(step, count)
@@ -63,11 +77,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           <ol className="kozmos-stepper-dots-list">
             {steps.map((name, index) => {
               const state =
-                index < currentStep
-                  ? "done"
-                  : index === currentStep
-                    ? "current"
-                    : "pending";
+                index < at ? "done" : index === at ? "current" : "pending";
               return (
                 <li
                   key={index}

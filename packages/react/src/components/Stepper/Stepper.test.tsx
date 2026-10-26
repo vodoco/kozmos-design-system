@@ -104,6 +104,55 @@ describe('Stepper variant="dots"', () => {
     ).toBeInTheDocument();
   });
 
+  // As the numbered stepper reads them: no steps draws the root alone, and a
+  // step before the first, or one that is not a number, has nothing done and
+  // nothing current.
+  it("draws the root alone for no steps, with no group, list or position", () => {
+    const { container } = render(
+      <Stepper variant="dots" steps={[]} currentStep={0} data-testid="dots" />,
+    );
+    const root = screen.getByTestId("dots");
+    expect(root).toBeEmptyDOMElement();
+    expect(root).not.toHaveAttribute("role");
+    expect(root).not.toHaveAttribute("aria-label");
+    expect(container.querySelector("ol")).toBeNull();
+    const numbered = render(<Stepper steps={[]} currentStep={0} />);
+    expect(numbered.container.firstElementChild).toBeEmptyDOMElement();
+  });
+
+  it("before the first step, marks nothing done or current and names the first", () => {
+    const { container } = render(
+      <Stepper variant="dots" steps={["A", "B", "C"]} currentStep={-1} />,
+    );
+    expect(
+      screen.getByRole("group", { name: "Step 1 of 3" }),
+    ).toBeInTheDocument();
+    expect(container.querySelectorAll("[aria-current]")).toHaveLength(0);
+    expect(
+      Array.from(container.querySelectorAll("li")).map((dot) =>
+        dot.getAttribute("data-state"),
+      ),
+    ).toEqual(["pending", "pending", "pending"]);
+  });
+
+  it("reads a step that is not a number as before the first, never Step NaN", () => {
+    for (const currentStep of [NaN, Infinity * 0, Number("x")]) {
+      const { container, unmount } = render(
+        <Stepper
+          variant="dots"
+          steps={["A", "B", "C"]}
+          currentStep={currentStep}
+        />,
+      );
+      expect(
+        screen.getByRole("group", { name: "Step 1 of 3" }),
+      ).toBeInTheDocument();
+      expect(container.querySelectorAll("[aria-current]")).toHaveLength(0);
+      expect(container.textContent).not.toContain("NaN");
+      unmount();
+    }
+  });
+
   it("draws the numbered stepper by default, as before", () => {
     const { container } = render(<Stepper steps={steps} currentStep={1} />);
     expect(container.querySelector("ol")).toBeNull();

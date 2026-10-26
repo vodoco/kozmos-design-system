@@ -13,6 +13,8 @@ interface Mount {
   surface: "page" | "popover" | "muted";
   currentStep?: number;
   positionLabel?: StepperProps["positionLabel"] | "function";
+  /** Inside the config's reduced motion, as a DesignConfig provider marks it. */
+  configReduced?: boolean;
 }
 
 const surfaces = {
@@ -22,7 +24,13 @@ const surfaces = {
 };
 
 let root: Root | null = null;
-function mount({ theme, surface, currentStep = 1, positionLabel }: Mount) {
+function mount({
+  theme,
+  surface,
+  currentStep = 1,
+  positionLabel,
+  configReduced = false,
+}: Mount) {
   root?.unmount();
   root = createRoot(document.getElementById("fixture")!);
   flushSync(() =>
@@ -32,6 +40,7 @@ function mount({ theme, surface, currentStep = 1, positionLabel }: Mount) {
           id="surface"
           className={surfaces[surface]}
           style={{ padding: 24, width: 320 }}
+          data-kozmos-motion={configReduced ? "reduced" : undefined}
         >
           <Stepper
             id="stepper"

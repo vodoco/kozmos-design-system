@@ -11,7 +11,9 @@
  *   Each colour is also read back as a pixel at the dot's centre, so a class
  *   that compiles to nothing cannot pass on its computed value.
  * - Shape: done and pending dots are 8 by 8, the current one 20 by 8, 6
- *   apart; under reduced motion the current dot's width does not animate.
+ *   apart; under reduced motion, the media query's or the config's
+ *   ([data-kozmos-motion="reduced"]), the current dot's width does not
+ *   animate.
  * - Name: the dots are a group named "Step 2 of 5", from positionLabel (a
  *   function and a template are both read), a list whose items are named by
  *   the steps, and the current item, and only it, is aria-current="step". In
@@ -357,28 +359,37 @@ await scenario(
 );
 
 await scenario(
-  "under reduced motion the current dot's width does not animate",
+  "under reduced motion, the media query's or the config's, the current dot's width does not animate",
   async (problems) => {
-    for (const reduced of ["no-preference", "reduce"]) {
-      const { page } = await open({ theme: "light", surface: "page", reduced });
+    for (const [name, options] of [
+      ["with motion", { reduced: "no-preference" }],
+      ["under prefers-reduced-motion", { reduced: "reduce" }],
+      // The config's reduced motion, as DesignConfig marks its scope, with
+      // the media query saying nothing.
+      [
+        'inside [data-kozmos-motion="reduced"]',
+        { reduced: "no-preference", configReduced: true },
+      ],
+    ]) {
+      const { page } = await open({
+        theme: "light",
+        surface: "page",
+        ...options,
+      });
       const state = await read(page);
       const current = state.dots.find((dot) => dot.state === "current");
       reads += 1;
       if (!current) {
-        problems.push(`${reduced}: no current dot`);
+        problems.push(`${name}: no current dot`);
         await page.close();
         continue;
       }
       const moving = current.transition
         .split(",")
         .some((t) => parseFloat(t) > 0);
-      if (reduced === "reduce" && moving)
+      if (moving !== (name === "with motion"))
         problems.push(
-          `under reduced motion it still transitions (${current.transition})`,
-        );
-      if (reduced === "no-preference" && !moving)
-        problems.push(
-          `with motion it does not transition (${current.transition})`,
+          `${name}: the current dot ${moving ? "transitions" : "does not transition"} (${current.transition})`,
         );
       await page.close();
     }
@@ -394,5 +405,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS stepper dots: ${reads} reads; every dot, done, current and pending, is 3:1 or more on the page, a popover and the muted fill in light and dark, computed and drawn; done and pending are 8 by 8, the current 20 by 8, 6 apart; the dots are a group named by positionLabel (its default, a function and a template), a list named by the steps, with aria-current="step" on the current one alone; forced colours keep every dot; reduced motion stills the current dot's width`,
+  `\nPASS stepper dots: ${reads} reads; every dot, done, current and pending, is 3:1 or more on the page, a popover and the muted fill in light and dark, computed and drawn; done and pending are 8 by 8, the current 20 by 8, 6 apart; the dots are a group named by positionLabel (its default, a function and a template), a list named by the steps, with aria-current="step" on the current one alone; forced colours keep every dot; reduced motion, the media query's or the config's, stills the current dot's width`,
 );

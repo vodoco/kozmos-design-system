@@ -1893,6 +1893,64 @@ section("Stepper dots, and Count to 8 (GAP-191)");
       overlaps.length === 0,
       `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
     );
+
+    // Update, run over the set as it is in the file today: main's nine
+    // variants, named before the Variant axis existed. Each must be renamed
+    // in place, its node id kept (Code Connect pins the set, and instances
+    // pin their variant), and the other 61 created beside them.
+    const oldNames = [];
+    for (const count of [2, 3, 4])
+      for (let current = 1; current <= count; current += 1)
+        oldNames.push(`Count=${count}, Current=${current}`);
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Stepper");
+    const oldIds = {};
+    for (const name of oldNames) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      // The file's variables and fonts stand in as they do elsewhere here;
+      // what is measured is which nodes Update keeps, renames and adds.
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateStepperComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const renamed = oldNames.map((name) => byId.get(oldIds[name]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 9 &&
+        updated.variantsCreated === 61 &&
+        liveSet.children.length === 70 &&
+        new Set(names).size === 70,
+      `Update keeps the set and its 9 variants, and adds 61: 70 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      renamed.every(
+        (variant, i) =>
+          variant && variant.name === `Variant=Numbered, ${oldNames[i]}`,
+      ),
+      `each of the 9 keeps its node id and is renamed Variant=Numbered (${renamed.map((v) => (v ? v.name : "gone")).join("; ")})`,
+    );
+    const fourth = byId.get(oldIds["Count=4, Current=3"]);
+    ok(
+      fourth &&
+        fourth.children.filter((child) => /^Step \d+$/.test(child.name))
+          .length === 4,
+      "a renamed variant is repainted in place: Count=4 still draws its 4 steps",
+    );
   }
 }
 
