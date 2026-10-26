@@ -19,7 +19,8 @@ import com.kozmos.components.toast.KozmosToast
 import com.kozmos.tokens.KozmosDimensions
 
 // This KozmosToast draws where you put it and stays until its close button,
-// named "Dismiss notification", calls onDismiss: it does not time out.
+// named by closeLabel ("Dismiss notification" unless you pass your own),
+// calls onDismiss: it does not time out.
 // KozmosToast(hostState) draws a SnackbarHostState's snackbars the same way,
 // with a message, an action and a close button, but no description.
 @Composable

@@ -64,26 +64,43 @@ const ToastAction = React.forwardRef<
 ));
 ToastAction.displayName = ToastPrimitive.Action.displayName;
 
+type ToastCloseProps = React.ComponentPropsWithoutRef<
+  typeof ToastPrimitive.Close
+> & {
+  /**
+   * The close button's accessible name: it shows only a cross. "Dismiss
+   * notification" by default, as SwiftUI's and Compose's `closeLabel`; a
+   * product that translates passes its own.
+   */
+  "aria-label"?: string;
+};
+
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitive.Close>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitive.Close>
->(({ className, ...props }, ref) => (
-  <ToastPrimitive.Close
-    ref={ref}
-    // At the inline end, and on a toast the caller marks `destructive` (and
-    // paints with the destructive fill, as ToastAction's hooks assume), the
-    // fill's own ink and the fill, never Tailwind's red-300 to red-600 — fixed
-    // colours a re-themed product never reached.
-    className={cn(
-      "absolute end-2 top-2 rounded-control p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-destructive-foreground/70 group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive-foreground group-[.destructive]:focus:ring-offset-destructive",
-      className,
-    )}
-    toast-close=""
-    {...props}
-  >
-    <X className="h-4 w-4" />
-  </ToastPrimitive.Close>
-));
+  ToastCloseProps
+>(
+  (
+    { className, "aria-label": ariaLabel = "Dismiss notification", ...props },
+    ref,
+  ) => (
+    <ToastPrimitive.Close
+      ref={ref}
+      aria-label={ariaLabel}
+      // At the inline end, and on a toast the caller marks `destructive` (and
+      // paints with the destructive fill, as ToastAction's hooks assume), the
+      // fill's own ink and the fill, never Tailwind's red-300 to red-600 — fixed
+      // colours a re-themed product never reached.
+      className={cn(
+        "absolute end-2 top-2 rounded-control p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-destructive-foreground/70 group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive-foreground group-[.destructive]:focus:ring-offset-destructive",
+        className,
+      )}
+      toast-close=""
+      {...props}
+    >
+      <X className="h-4 w-4" />
+    </ToastPrimitive.Close>
+  ),
+);
 ToastClose.displayName = ToastPrimitive.Close.displayName;
 
 const ToastTitle = React.forwardRef<

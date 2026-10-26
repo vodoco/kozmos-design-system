@@ -80,7 +80,10 @@ private struct KozmosBottomNavigationTile: View {
             .contentShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         }
         .buttonStyle(.plain)
+        // Selected is said by the selected state the bar gives the tile,
+        // which VoiceOver says in the person's language, as React's tile is
+        // aria-current. The tile also had the value "Selected", English in
+        // every language, said after it.
         .accessibilityLabel(title)
-        .accessibilityValue(selected ? "Selected" : "")
     }
 }

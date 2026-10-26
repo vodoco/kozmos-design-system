@@ -17,7 +17,7 @@ public struct KozmosMultiSelect: View {
 
     @State private var internalOpen: Bool
     /// Shown only while the field can be used: a disabled or read-only
-    /// field shows no list, as React's closes and Combobox's hides.
+    /// field shows no list, and closes it, as React's and Combobox's do.
     private var isOpen: Bool { internalOpen && !disabled && !readOnly }
 
     public init(
@@ -170,8 +170,13 @@ public struct KozmosMultiSelect: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Closed when it stops being usable, so it does not open again by
-        // itself when it is usable again, as React's closes.
+        // Closed while it cannot be used, from its first appearance and
+        // whenever it stops being usable, so it does not open by itself when
+        // it is usable again: React's closes on mount and on change, through
+        // an effect. `onChange` does not run on appearance, so a field that
+        // started disabled or read-only with `defaultOpen` stayed open
+        // underneath its hidden list.
+        .onAppear { if disabled || readOnly { internalOpen = false } }
         .onChange(of: disabled || readOnly) { locked in
             if locked { internalOpen = false }
         }

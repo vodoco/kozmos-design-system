@@ -1054,6 +1054,24 @@ final class InteractionTests: XCTestCase {
         }
     }
 
+    /// The trigger is one button, closed and open. From iOS 18 VoiceOver
+    /// reads a UIKit element laid over it, which says whether its panel is
+    /// open. Unfixed: two buttons named "Hours", that element and the SwiftUI
+    /// button under it, which `.accessibilityHidden(true)` hid from VoiceOver
+    /// but not from XCUITest.
+    func testAnAccordionTriggerIsOneButton() {
+        let named = NSPredicate(format: "label == %@", "Hours")
+        for scenario in ["accordion", "accordion-large-rtl"] {
+            launch(scenario)
+            XCTAssertEqual(app.buttons.matching(named).count, 1, "closed, \(scenario)")
+            app.buttons["Hours"].tap()
+            received("open hours")
+            XCTAssertTrue(app.staticTexts["Open 06:00 to 22:00"].waitForExistence(timeout: 3), scenario)
+            XCTAssertEqual(app.buttons.matching(named).count, 1, "open, \(scenario)")
+            app.terminate()
+        }
+    }
+
     /// A thumb is a 44pt target round its 40pt circle, as React's is.
     /// Unfixed: the 40pt circle.
     func testARatingsThumbsAre44PointTargets() {
@@ -1121,13 +1139,81 @@ final class InteractionTests: XCTestCase {
         launch("multiselect-lock")
         XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "the list was not open to begin with")
         let toggle = app.buttons["Toggle read-only"]
+        let toggleFrame = toggle.frame
         toggle.tap()
         XCTAssertFalse(app.buttons["Ramp"].exists, "a read-only MultiSelect shows its list")
+        XCTAssertEqual(toggle.frame, toggleFrame, "the list's closing moved the toggle: the next tap may land where it was")
         toggle.tap()
         XCTAssertTrue(app.buttons["Open options"].waitForExistence(timeout: 3), "the list opened again by itself")
         XCTAssertFalse(app.buttons["Ramp"].exists, "the list opened again by itself")
         app.buttons["Open options"].tap()
         XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "the chevron does not open it")
+    }
+
+    /// A MultiSelect opened by default while read-only or disabled stays
+    /// closed when it can be used, as React's, which closes its list on mount
+    /// when the field cannot be used: it opens when the visitor opens it.
+    func testAMultiSelectOpenedByDefaultWhileUnusableStaysClosedWhenUsable() {
+        for scenario in ["multiselect-unlock-readonly", "multiselect-unlock-disabled"] {
+            launch(scenario)
+            let chevron = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open options", "Close options"])).firstMatch
+            XCTAssertTrue(chevron.waitForExistence(timeout: 3), "\(scenario): no chevron")
+            XCTAssertFalse(chevron.isEnabled, "\(scenario): the chevron can be used before the field can")
+            app.buttons["Make usable"].tap()
+            XCTAssertTrue(chevron.isEnabled, "\(scenario): the field cannot be used")
+            XCTAssertEqual(chevron.label, "Open options", "\(scenario): the list opened by itself")
+            XCTAssertFalse(app.buttons["Ramp"].exists, "\(scenario): the list opened by itself")
+            chevron.tap()
+            XCTAssertTrue(app.buttons["Ramp"].waitForExistence(timeout: 3), "\(scenario): the chevron does not open it")
+            app.terminate()
+        }
+    }
+
+    /// A Combobox opened by default while read-only or disabled stays closed
+    /// when it can be used, as React's, which closes its list on mount when
+    /// the field cannot be used: it opens when the visitor opens it.
+    func testAComboboxOpenedByDefaultWhileUnusableStaysClosedWhenUsable() {
+        for scenario in ["combobox-unlock-readonly", "combobox-unlock-disabled"] {
+            launch(scenario)
+            let chevron = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open options", "Close options"])).firstMatch
+            XCTAssertTrue(chevron.waitForExistence(timeout: 3), "\(scenario): no chevron")
+            XCTAssertFalse(chevron.isEnabled, "\(scenario): the chevron can be used before the field can")
+            XCTAssertFalse(app.buttons["Lobby"].exists, "\(scenario): an unusable Combobox shows its list")
+            app.buttons["Make usable"].tap()
+            XCTAssertTrue(chevron.isEnabled, "\(scenario): the field cannot be used")
+            XCTAssertEqual(chevron.label, "Open options", "\(scenario): the list opened by itself")
+            XCTAssertFalse(app.buttons["Lobby"].exists, "\(scenario): the list opened by itself")
+            chevron.tap()
+            XCTAssertTrue(app.buttons["Lobby"].waitForExistence(timeout: 3), "\(scenario): the chevron does not open it")
+            app.terminate()
+        }
+    }
+
+    /// A Combobox list closed by read-only stays closed when the field can be
+    /// used again, as React's does: it opens again only when the visitor
+    /// opens it.
+    ///
+    /// The toggle is tapped twice and must not move between the taps. Under
+    /// the field, the list's closing moved it up 106pt, and SwiftUI slid it
+    /// there for about 300ms after XCTest found the app idle. The second tap
+    /// read it at 207.3, 35pt below where it came to rest, and the touch
+    /// landed on the events line (run 40213559266).
+    func testAComboboxClosedByReadOnlyStaysClosedAfterwards() {
+        launch("combobox-lock")
+        XCTAssertTrue(app.buttons["Lobby"].waitForExistence(timeout: 3), "the list was not open to begin with")
+        let toggle = app.buttons["Toggle read-only"]
+        let toggleFrame = toggle.frame
+        toggle.tap()
+        XCTAssertFalse(app.buttons["Lobby"].exists, "a read-only Combobox shows its list")
+        XCTAssertEqual(toggle.frame, toggleFrame, "the list's closing moved the toggle: the next tap may land where it was")
+        toggle.tap()
+        let chevron = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open options", "Close options"])).firstMatch
+        XCTAssertTrue(chevron.waitForExistence(timeout: 3), "no chevron")
+        XCTAssertTrue(chevron.isEnabled, "the field cannot be used again")
+        XCTAssertEqual(chevron.label, "Open options", "the list opened again by itself")
+        XCTAssertFalse(app.buttons["Lobby"].exists, "the list opened again by itself")
+        chevron.tap()
+        XCTAssertTrue(app.buttons["Lobby"].waitForExistence(timeout: 3), "the chevron does not open it")
     }
 
     /// A tap `dx`, `dy` from `element`'s centre.

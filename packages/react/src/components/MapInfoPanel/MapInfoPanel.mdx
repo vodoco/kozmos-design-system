@@ -83,9 +83,9 @@ corners, or compose MapInfoPanel into your application's own coordinated present
 The entire panel scrolls when necessary, including its close button. Legal/version content
 rests at the bottom when content is short and follows the content when it is long. It is
 never absolutely pinned over FAQs. Long text wraps, type scaling is preserved, and the
-existing Kozmos Accordion supplies disclosure behavior. SwiftUI's expandedLabel and
-collapsedLabel are host-localizable accessibility values; web/Android expose native
-expanded/collapsed semantics. No entrance animation is added on web; mobile never slides
+existing Kozmos Accordion supplies disclosure behavior. Web, Android and SwiftUI from iOS 18
+expose native expanded/collapsed semantics; before iOS 18, SwiftUI's expandedLabel and
+collapsedLabel are host-localizable accessibility values. No entrance animation is added on web; mobile never slides
 from the right. Native system presentations respect platform motion settings.
 
 ## Native usage
