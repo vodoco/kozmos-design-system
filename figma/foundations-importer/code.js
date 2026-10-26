@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "7fed66ff6208";
+const PLUGIN_BUILD = "f59f51dd207f";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -314,8 +314,25 @@ const RATING_THUMB_VALUES = ["0", "1", "2"];
 function ratingValuesForScale(scale) {
   return scale === "Thumbs" ? RATING_THUMB_VALUES : RATING_VALUES;
 }
-const STEPPER_COUNTS = ["2", "3", "4"];
-const STEPPER_CURRENT = ["1", "2", "3", "4"];
+// How the steps are drawn (GAP-191): Numbered, a numbered circle over each
+// label, or Dots, a tour's progress, one dot per step with no label shown.
+// Count reaches 8: a tour has five steps or more, and Numbered draws them too.
+const STEPPER_VARIANTS = ["Numbered", "Dots"];
+const STEPPER_COUNTS = ["2", "3", "4", "5", "6", "7", "8"];
+const STEPPER_CURRENT = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const STEPPER_MAX_COUNT = 8;
+// The dots: done and pending 8 by 8, the current one 20 by 8, 6 apart.
+const STEPPER_DOT = { size: 8, current: 20, gap: 6 };
+const STEPPER_LABELS = [
+  "Details",
+  "Shipping",
+  "Payment",
+  "Confirm",
+  "Review",
+  "Schedule",
+  "Notify",
+  "Done",
+];
 const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
@@ -3072,19 +3089,23 @@ const COMPONENT_DOCS = [
       "Use Progress for measurable task completion rather than navigable steps.",
     ],
     api: [
-      "Count maps to the number of rendered steps.",
+      "Variant maps to Stepper.variant: Numbered draws a numbered circle over each label, Dots one dot per step, as a tour's progress.",
+      "Count maps to the number of rendered steps, 2 to 8.",
       "Current maps to Stepper.currentStep in Code Connect.",
-      "Step 1 Text through Step 4 Text map to the steps array.",
+      "Step 1 Text through Step 8 Text map to the steps array: Numbered's labels, and each dot's name in code.",
       "Completed, current, and upcoming states remain derived from Current.",
     ],
     properties: [
-      "Count: 2, 3, 4",
-      "Current: 1, 2, 3, 4",
-      "Step 1 Text, Step 2 Text, Step 3 Text, Step 4 Text",
+      "Variant: Numbered, Dots",
+      "Count: 2, 3, 4, 5, 6, 7, 8",
+      "Current: 1, 2, 3, 4, 5, 6, 7, 8",
+      "Step 1 Text through Step 8 Text",
     ],
     accessibility: [
-      "Product code should expose the current step to assistive technology.",
-      "Step labels remain visible beside the visual indicators.",
+      'Product code should expose the current step to assistive technology: aria-current="step" on the web.',
+      "Numbered keeps the step labels visible beside the indicators.",
+      'Dots are named in code: the group by its position ("Step 2 of 5", positionLabel) and each dot by its step.',
+      "Pending dots are foreground/500, 3:1 or more on the page, a popover and the muted fill in Light and Dark; the current dot is the long one.",
       "Stepper is non-interactive unless individual steps are composed as controls.",
     ],
   },
@@ -17824,6 +17845,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Stepper") {
     return {
+      Variant: STEPPER_VARIANTS,
       Count: STEPPER_COUNTS,
       Current: STEPPER_CURRENT,
     };
@@ -43590,7 +43612,7 @@ function configureSliderProperties(componentSet, stats) {
 function configureRatingProperties(_componentSet, _stats) {}
 
 function configureStepperProperties(componentSet, stats) {
-  for (let index = 1; index <= 4; index += 1) {
+  for (let index = 1; index <= STEPPER_MAX_COUNT; index += 1) {
     configureNamedTextProperty(
       componentSet,
       `Step ${index} Text`,
@@ -43853,20 +43875,17 @@ async function buildStepperComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  for (const count of STEPPER_COUNTS) {
-    for (const current of STEPPER_CURRENT) {
-      if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
-
-      const component = await createStepperVariant({
-        count,
-        current,
-        variableByName,
-        fonts,
-        stats,
-      });
-      page.appendChild(component);
-      components.push(component);
-    }
+  for (const props of stepperVariantCombinations()) {
+    const component = await createStepperVariant({
+      variant: props.variant,
+      count: props.count,
+      current: props.current,
+      variableByName,
+      fonts,
+      stats,
+    });
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
@@ -43878,9 +43897,10 @@ async function buildStepperComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
   applyComponentSetDescription(componentSet, "Stepper", false, [
     "Kozmos Stepper component set generated from React Stepper API.",
-    "Count maps to the rendered steps array length.",
+    "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
-    "Step text properties map to the steps array.",
+    "Step text properties map to the steps array; Dots names each dot by them in code.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutStepperVariants(componentSet);
@@ -43930,9 +43950,10 @@ async function updateStepperComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
   applyComponentSetDescription(existing, "Stepper", true, [
     "Kozmos Stepper component set generated from React Stepper API.",
-    "Count maps to the rendered steps array length.",
+    "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
-    "Step text properties map to the steps array.",
+    "Step text properties map to the steps array; Dots names each dot by them in code.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -43948,9 +43969,13 @@ async function updateStepperComponent() {
       continue;
     }
 
-    const key = `${props.count}/${props.current}`;
+    // A variant built before the Variant axis existed is named
+    // "Count=3, Current=2" and parses as Numbered, so Update renames it
+    // rather than replacing it, and the node ids Code Connect pins survive.
+    const key = stepperVariantKey(props);
     seenKeys[key] = true;
     await updateStepperVariant(child, {
+      variant: props.variant,
       count: props.count,
       current: props.current,
       variableByName,
@@ -43960,24 +43985,21 @@ async function updateStepperComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const count of STEPPER_COUNTS) {
-    for (const current of STEPPER_CURRENT) {
-      if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
+  for (const props of stepperVariantCombinations()) {
+    const key = stepperVariantKey(props);
+    if (seenKeys[key]) continue;
 
-      const key = `${count}/${current}`;
-      if (seenKeys[key]) continue;
-
-      const component = await createStepperVariant({
-        count,
-        current,
-        variableByName,
-        fonts,
-        stats,
-      });
-      existing.appendChild(component);
-      seenKeys[key] = true;
-      stats.variantsCreated += 1;
-    }
+    const component = await createStepperVariant({
+      variant: props.variant,
+      count: props.count,
+      current: props.current,
+      variableByName,
+      fonts,
+      stats,
+    });
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutStepperVariants(existing);
@@ -60050,7 +60072,30 @@ function layoutRatingVariants(componentSet) {
   resizeComponentSetToContainChildren(componentSet);
 }
 
+/**
+ * Every Stepper variant: each Variant, each Count, and each Current up to
+ * its Count. The set skips a Current past its Count rather than drawing
+ * variants that mean nothing.
+ */
+function stepperVariantCombinations() {
+  const combinations = [];
+  for (const variant of STEPPER_VARIANTS) {
+    for (const count of STEPPER_COUNTS) {
+      for (const current of STEPPER_CURRENT) {
+        if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
+        combinations.push({ variant, count, current });
+      }
+    }
+  }
+  return combinations;
+}
+
+function stepperVariantKey(props) {
+  return `${props.variant}/${props.count}/${props.current}`;
+}
+
 async function createStepperVariant({
+  variant = "Numbered",
   count,
   current,
   variableByName,
@@ -60059,6 +60104,7 @@ async function createStepperVariant({
 }) {
   const component = figma.createComponent();
   await updateStepperVariant(component, {
+    variant,
     count,
     current,
     variableByName,
@@ -60080,10 +60126,12 @@ function parseStepperVariantName(name) {
     values[key] = value;
   }
 
+  const variant = values.Variant || "Numbered";
   const count = values.Count;
   const current = values.Current || "1";
 
   if (
+    STEPPER_VARIANTS.indexOf(variant) === -1 ||
     STEPPER_COUNTS.indexOf(count) === -1 ||
     STEPPER_CURRENT.indexOf(current) === -1 ||
     stepperCurrentIndex(current) >= stepperCountNumber(count)
@@ -60091,17 +60139,26 @@ function parseStepperVariantName(name) {
     return null;
   }
 
-  return { count, current };
+  return { variant, count, current };
 }
 
 async function updateStepperVariant(
   component,
-  { count, current, variableByName, fonts, stats },
+  { variant = "Numbered", count, current, variableByName, fonts, stats },
 ) {
+  if (variant === "Dots") {
+    updateStepperDotsVariant(component, {
+      count,
+      current,
+      variableByName,
+      stats,
+    });
+    return;
+  }
   const countNumber = stepperCountNumber(count);
   const width = stepperWidth(countNumber);
 
-  component.name = `Count=${count}, Current=${current}`;
+  component.name = `Variant=Numbered, Count=${count}, Current=${current}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(width, 72);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -60130,13 +60187,98 @@ function layoutStepperVariants(componentSet) {
     const props = parseStepperVariantName(child.name);
     if (!props) continue;
 
+    // A column per Count, as wide as Numbered's widest, and under the
+    // Numbered rows, a band of Dots rows: the set never overlaps itself.
     const countIndex = STEPPER_COUNTS.indexOf(props.count);
+    let x = 0;
+    for (let index = 0; index < countIndex; index += 1) {
+      x += stepperWidth(stepperCountNumber(STEPPER_COUNTS[index])) + 80;
+    }
     const currentIndex = STEPPER_CURRENT.indexOf(props.current);
-    child.x = countIndex * 760;
-    child.y = currentIndex * 116;
+    child.x = x;
+    child.y =
+      props.variant === "Dots"
+        ? STEPPER_CURRENT.length * 116 + currentIndex * 48
+        : currentIndex * 116;
   }
 
   resizeComponentSetToContainChildren(componentSet);
+}
+
+/**
+ * Dots: one per step, done and pending 8 by 8 and the current one 20 by 8,
+ * 6 apart, hugged by the variant. Done and current are the theme fill
+ * (decision 59), pending foreground/500, as React draws them; each dot is
+ * named by its step, as the step text properties name the labels.
+ */
+function updateStepperDotsVariant(
+  component,
+  { count, current, variableByName, stats },
+) {
+  const countNumber = stepperCountNumber(count);
+  const currentIndex = stepperCurrentIndex(current);
+  component.name = `Variant=Dots, Count=${count}, Current=${current}`;
+  for (const child of Array.from(component.children || [])) {
+    child.remove();
+  }
+  // Fixed at the row's own size, which is what hugging it would give: the
+  // other dots and the long current one, and the gaps between them.
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "FIXED";
+  component.resizeWithoutConstraints(
+    (countNumber - 1) * (STEPPER_DOT.size + STEPPER_DOT.gap) +
+      STEPPER_DOT.current,
+    STEPPER_DOT.size,
+  );
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = STEPPER_DOT.gap;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
+
+  for (let index = 0; index < countNumber; index += 1) {
+    const state =
+      index < currentIndex
+        ? "Done"
+        : index === currentIndex
+          ? "Current"
+          : "Pending";
+    const dot = figma.createRectangle();
+    dot.name = `Step ${index + 1} Dot`;
+    dot.resizeWithoutConstraints(
+      state === "Current" ? STEPPER_DOT.current : STEPPER_DOT.size,
+      STEPPER_DOT.size,
+    );
+    dot.cornerRadius = KOZMOS_RADIUS.pill;
+    dot.fills = [
+      state === "Pending"
+        ? paintFromVariable(
+            "Colors/foreground/500",
+            "#747B8B",
+            variableByName,
+            stats,
+          )
+        : paintFromVariable(
+            THEME_FILL.name,
+            THEME_FILL.fallback,
+            variableByName,
+            stats,
+          ),
+    ];
+    dot.strokes = [];
+    dot.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-dot");
+    dot.setSharedPluginData(RUN_NAMESPACE, "state", state);
+    component.appendChild(dot);
+  }
 }
 
 async function syncRatingVariantChildren({
@@ -60359,7 +60501,7 @@ async function syncStepperVariantChildren({
   const currentIndex = stepperCurrentIndex(current);
   const stepWidth = 88;
   const connectorWidth = 92;
-  const stepLabels = ["Details", "Shipping", "Payment", "Confirm"];
+  const stepLabels = STEPPER_LABELS;
 
   for (let index = 0; index < countNumber; index += 1) {
     const step = await createStepperStepItem({
