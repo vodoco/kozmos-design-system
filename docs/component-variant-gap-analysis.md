@@ -35,12 +35,12 @@ token was declined, so this is not a gap to close.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 121    |
-| Declaring at least one React variant axis | 58     |
-| Variations that are compositional only    | 63     |
-| Components with variant gaps — iOS        | 15/58  |
-| Components with variant gaps — Android    | 15/58  |
-| Components with variant gaps — Figma      | 24/58  |
-| Components with variant gaps — Vue        | 12/58  |
+| Declaring at least one React variant axis | 59     |
+| Variations that are compositional only    | 62     |
+| Components with variant gaps — iOS        | 16/59  |
+| Components with variant gaps — Android    | 16/59  |
+| Components with variant gaps — Figma      | 24/59  |
+| Components with variant gaps — Vue        | 12/59  |
 | Components absent entirely — iOS          | 10/121 |
 | Components absent entirely — Android      | 9/121  |
 | Components absent entirely — Figma        | 22/121 |
@@ -143,6 +143,9 @@ RouteProgressRail
 RouteSetupPanel
   - figma: component/set absent
   - vue: component absent
+Stepper
+  - ios missing axes -> variant (numbered, dots)
+  - android missing axes -> variant (numbered, dots)
 Surface
   - ios: component/set absent
   - figma: component/set absent
