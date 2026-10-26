@@ -18713,7 +18713,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Stepper"],
-          "mappedProps": ["currentStep", "steps"],
+          "mappedProps": ["currentStep", "steps", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -18723,10 +18723,12 @@
           "children",
           "currentStep",
           "id",
+          "positionLabel",
           "role",
           "steps",
           "tabIndex",
-          "title"
+          "title",
+          "variant"
         ],
         "variants": {}
       },

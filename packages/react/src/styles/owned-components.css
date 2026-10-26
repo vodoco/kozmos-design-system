@@ -1925,4 +1925,64 @@
       border-color: Highlight;
     }
   }
+  /* Stepper's dots (GAP-191): a tour's progress. Done and pending dots are 8,
+     the current one 20 wide, 6 apart. Done and current are the theme fill
+     (decision 59); pending are foreground 500, 3:1 or more on the page, a
+     popover and the muted fill in both themes (WCAG 1.4.11), where the
+     wireframe's #D5DAE3 read 1.4:1 on white. Forced colours repaint fills to
+     the page's own, so there done and current are Highlight and a pending
+     dot is an outline in CanvasText. Two classes: a list's scoped preflight
+     weighs one and wins a tie on proximity. */
+  .kozmos-stepper-dots .kozmos-stepper-dots-list {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-75) * 1px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: calc(var(--semantics-radius-pill) * 1px);
+    background-color: var(--primitives-colors-foreground-500);
+    transition:
+      width var(--semantics-motion-duration-standard)
+        var(--semantics-motion-easing-standard),
+      background-color var(--semantics-motion-duration-quick)
+        var(--semantics-motion-easing-standard);
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="done"],
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+    background-color: var(--primitives-colors-theme-500);
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+    width: 20px;
+  }
+  /* Each dot's name: read by a screen reader, never drawn. */
+  .kozmos-stepper-dot-name {
+    @apply sr-only;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-stepper-dots .kozmos-stepper-dot {
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-stepper-dots .kozmos-stepper-dot {
+    transition: none;
+  }
+  @media (forced-colors: active) {
+    .kozmos-stepper-dots .kozmos-stepper-dot {
+      forced-color-adjust: none;
+      background-color: Canvas;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+    .kozmos-stepper-dots .kozmos-stepper-dot[data-state="done"],
+    .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+      background-color: Highlight;
+      outline: none;
+    }
+  }
 }

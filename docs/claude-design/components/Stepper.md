@@ -33,7 +33,40 @@ export function StepperExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `StepperProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
 - `steps`: `string[]`, **required**.
+
+  Each step's name: the numbered variant's labels, and each dot's name.
+
 - `currentStep`: `number`, **required**.
+
+  The current step, from 0. Earlier steps are done; at `steps.length`, every one is.
+
+- `variant`: `StepperVariant`, optional, default `"numbered"`.
+
+  `numbered` (the default) or `dots` (GAP-191).
+
+- `positionLabel`: `string | ((step: number, count: number) => string)`, optional, default `"Step {step} of {count}"`.
+
+  The dots' position, read as the group's name: a function of the step
+  (from 1) and the count, or a template with `{step}` and `{count}`.
+  English by default, "Step 2 of 5". Once every step is done, the step is
+  the last.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### StepperVariant
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How the steps are drawn: `numbered`, a numbered circle over each step's
+ * label, or `dots`, one dot per step with no label shown, as a tour's
+ * progress is. The indicator style only: an orientation, and a status for
+ * each step, would sit beside it (GAP-173).
+ */
+type StepperVariant = "numbered" | "dots";
+```
