@@ -1748,6 +1748,154 @@ section("Stepper accent");
   );
 }
 
+// GAP-191: Stepper's Variant axis and a Count to 8. Dots draws a tour's
+// progress as React does: one dot per step, done and pending 8 by 8 and the
+// current one 20 by 8, 6 apart, done and current the theme fill and pending
+// foreground/500. Numbered draws five to eight steps as it drew four. A
+// variant named before the axis existed parses as Numbered, so Update
+// renames it; a Current past its Count is skipped; the set never overlaps.
+section("Stepper dots, and Count to 8 (GAP-191)");
+{
+  const ready =
+    Array.isArray(plugin.STEPPER_VARIANTS) &&
+    typeof plugin.stepperVariantCombinations === "function" &&
+    typeof plugin.updateStepperDotsVariant === "function";
+  ok(ready, "Stepper has a Variant axis, its combinations and a dots painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const combinations = plugin.stepperVariantCombinations();
+    const counts = [...new Set(combinations.map((c) => c.count))];
+    ok(
+      JSON.stringify(plugin.STEPPER_VARIANTS) ===
+        JSON.stringify(["Numbered", "Dots"]) &&
+        JSON.stringify(counts) ===
+          JSON.stringify(["2", "3", "4", "5", "6", "7", "8"]) &&
+        combinations.length === 70 &&
+        combinations.every((c) => Number(c.current) <= Number(c.count)),
+      `Numbered and Dots, each at Count 2 to 8 with every Current up to it: 70 variants (${combinations.length}, counts ${counts.join(" ")})`,
+    );
+    const parsed = [
+      "Count=3, Current=2",
+      "Variant=Dots, Count=5, Current=2",
+      "Variant=Dots, Count=5, Current=6",
+      "Variant=Bars, Count=3, Current=1",
+    ].map((name) => plugin.parseStepperVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { variant: "Numbered", count: "3", current: "2" },
+          { variant: "Dots", count: "5", current: "2" },
+          null,
+          null,
+        ]),
+      `a variant from before the axis parses as Numbered; a Current past its Count, or an unknown Variant, is not one (${JSON.stringify(parsed)})`,
+    );
+
+    const dots = await plugin.createStepperVariant({
+      variant: "Dots",
+      count: "5",
+      current: "2",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const marks = dots.children || [];
+    ok(
+      dots.name === "Variant=Dots, Count=5, Current=2" &&
+        dots.layoutMode === "HORIZONTAL" &&
+        dots.itemSpacing === 6 &&
+        dots.counterAxisAlignItems === "CENTER" &&
+        dots.fills.length === 0 &&
+        dots.width === 4 * 8 + 4 * 6 + 20 &&
+        dots.height === 8 &&
+        marks.length === 5,
+      `Dots is a row of 5, 6 apart, 76 by 8, with no fill of its own (${dots.name}, ${dots.layoutMode}, ${dots.itemSpacing}, ${dots.width} by ${dots.height}, ${marks.length} dots)`,
+    );
+    ok(
+      JSON.stringify(marks.map((m) => [m.width, m.height])) ===
+        JSON.stringify([
+          [8, 8],
+          [20, 8],
+          [8, 8],
+          [8, 8],
+          [8, 8],
+        ]) && marks.every((m) => m.cornerRadius === 9999),
+      `done and pending dots are 8 by 8 and the current one 20 by 8, all pills (${JSON.stringify(marks.map((m) => [m.width, m.height]))})`,
+    );
+    const paints = marks.map((m) => boundVariableName(m.fills[0]));
+    ok(
+      JSON.stringify(paints) ===
+        JSON.stringify([
+          "Primary Buttons/themed/button/background/idle",
+          "Primary Buttons/themed/button/background/idle",
+          "Colors/foreground/500",
+          "Colors/foreground/500",
+          "Colors/foreground/500",
+        ]),
+      `done and current are the theme fill, pending foreground/500 (${paints.join(", ")})`,
+    );
+    ok(
+      marks.map((m) => m.name).join() ===
+        "Step 1 Dot,Step 2 Dot,Step 3 Dot,Step 4 Dot,Step 5 Dot",
+      "each dot is named by its step",
+    );
+
+    const eight = await plugin.createStepperVariant({
+      variant: "Numbered",
+      count: "8",
+      current: "5",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const items = (eight.children || []).filter((c) =>
+      /^Step \d+$/.test(c.name),
+    );
+    const labels = items.map((item) =>
+      (item.children || []).find((c) => /Text$/.test(c.name)),
+    );
+    ok(
+      eight.name === "Variant=Numbered, Count=8, Current=5" &&
+        items.length === 8 &&
+        labels.every(
+          (label, i) => label && label.name === `Step ${i + 1} Text`,
+        ) &&
+        eight.width === 8 * 88 + 7 * 92,
+      `Numbered draws 8 steps, each with its Step N Text, ${8 * 88 + 7 * 92} wide (${eight.name}, ${items.length} steps, ${eight.width})`,
+    );
+
+    const set = new MockNode("COMPONENT_SET", "Stepper");
+    for (const props of combinations) {
+      const variant = await plugin.createStepperVariant({
+        ...props,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      set.appendChild(variant);
+    }
+    plugin.layoutStepperVariants(set);
+    const boxes = set.children.map((c) => [
+      c.x,
+      c.y,
+      c.x + c.width,
+      c.y + c.height,
+      c.name,
+    ]);
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1)
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const [a, b] = [boxes[i], boxes[j]];
+        if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+          overlaps.push(`${a[4]} / ${b[4]}`);
+      }
+    ok(
+      overlaps.length === 0,
+      `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary

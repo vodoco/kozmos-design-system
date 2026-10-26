@@ -1067,7 +1067,7 @@
       "id": "navigation-stepper",
       "title": "Core/Layout/Stepper",
       "component": "Stepper",
-      "exports": ["Default", "Interactive"]
+      "exports": ["Default", "Interactive", "Dots", "DotsInteractive"]
     },
     {
       "file": "packages/react/src/components/Surface/Surface.stories.tsx",

@@ -18,6 +18,30 @@ the platform's own word, in VoiceOver and TalkBack, where each step is read as o
 
 <Controls />
 
+## Dots
+
+A tour shows its progress as dots: `variant="dots"` draws one dot per step and no label. Done
+dots are filled with the theme fill, the current one is the long one (20 by 8), so its shape says
+it as well as its colour, and pending ones are foreground 500, 3:1 or more against the page, a
+popover and the muted fill in both themes. In forced colours, done and current are the system's
+Highlight and pending ones an outline.
+
+The dots are a group whose name is the position, "Step 2 of 5" by default: give `positionLabel`
+the product's words, as a function of the step (from 1) and the count, or as a template with
+`{step}` and `{count}`. Each dot is a list item named by its step, and the current one is
+`aria-current="step"`, as in the numbered stepper.
+
+`variant` is the indicator's style alone; an orientation, and a status for each step, would sit
+beside it (GAP-173).
+
+<Canvas>
+  <Story of={StepperStories.Dots} />
+</Canvas>
+
+<Canvas>
+  <Story of={StepperStories.DotsInteractive} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -37,10 +61,13 @@ export function Example() {
     vue={`
 <script setup>
 import { KozmosStepper } from "@kozmos-ds/vue"
+
+const steps = ["Choose a floor", "Draw a room", "Name it", "Check the route", "Publish"]
+const position = "Step {step} of {count}"
 </script>
 
 <template>
-  <KozmosStepper />
+  <KozmosStepper variant="dots" :steps="steps" :currentStep="1" :positionLabel="position" />
 </template>
     `}
     swift={`

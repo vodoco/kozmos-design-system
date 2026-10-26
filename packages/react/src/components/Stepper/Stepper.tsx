@@ -2,13 +2,87 @@ import React from "react";
 import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
+/**
+ * How the steps are drawn: `numbered`, a numbered circle over each step's
+ * label, or `dots`, one dot per step with no label shown, as a tour's
+ * progress is. The indicator style only: an orientation, and a status for
+ * each step, would sit beside it (GAP-173).
+ */
+export type StepperVariant = "numbered" | "dots";
+
 export interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Each step's name: the numbered variant's labels, and each dot's name. */
   steps: string[];
+  /** The current step, from 0. Earlier steps are done; at `steps.length`, every one is. */
   currentStep: number;
+  /** `numbered` (the default) or `dots` (GAP-191). */
+  variant?: StepperVariant;
+  /**
+   * The dots' position, read as the group's name: a function of the step
+   * (from 1) and the count, or a template with `{step}` and `{count}`.
+   * English by default, "Step 2 of 5". Once every step is done, the step is
+   * the last.
+   */
+  positionLabel?: string | ((step: number, count: number) => string);
 }
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({ className, steps, currentStep, ...props }, ref) => {
+  (
+    {
+      className,
+      steps,
+      currentStep,
+      variant = "numbered",
+      positionLabel = "Step {step} of {count}",
+      ...props
+    },
+    ref,
+  ) => {
+    if (variant === "dots") {
+      const count = steps.length;
+      const step = Math.min(Math.max(currentStep + 1, 1), count);
+      const position =
+        typeof positionLabel === "function"
+          ? positionLabel(step, count)
+          : positionLabel
+              .replace(/\{step\}/g, String(step))
+              .replace(/\{count\}/g, String(count));
+      // The dots draw no label, so the group says where the tour is and each
+      // dot is named by its step, in text a screen reader reads and the page
+      // never shows. The current dot is the long one, so its shape says it
+      // as well as its colour; the pending ones are foreground 500, 3:1 or
+      // more on the page, a popover and the muted fill in both themes.
+      return (
+        <div
+          ref={ref}
+          role="group"
+          aria-label={position}
+          className={cn("kozmos-stepper-dots", className)}
+          {...props}
+        >
+          <ol className="kozmos-stepper-dots-list">
+            {steps.map((name, index) => {
+              const state =
+                index < currentStep
+                  ? "done"
+                  : index === currentStep
+                    ? "current"
+                    : "pending";
+              return (
+                <li
+                  key={index}
+                  className="kozmos-stepper-dot"
+                  data-state={state}
+                  aria-current={state === "current" ? "step" : undefined}
+                >
+                  <span className="kozmos-stepper-dot-name">{name}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      );
+    }
     return (
       <div
         ref={ref}
