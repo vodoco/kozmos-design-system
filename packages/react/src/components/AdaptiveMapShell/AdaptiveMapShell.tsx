@@ -114,7 +114,9 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   /**
    * A single-detent shorthand: fitted to its content — as tall as what it
    * holds, between collapsed and large — for a sheet that holds a summary and
-   * a row of buttons and nothing to scroll.
+   * a row of buttons and nothing to scroll. A part that fills its panel
+   * (AICompanionPanel) is measured as it lays out unstretched, its header,
+   * whole conversation and input, and then fills the sheet.
    */
   panelSizing?: "fraction" | "content";
   /** What the panel sits on: solid by default, glass where the product asks for it. */
@@ -209,6 +211,55 @@ function measureHeaderBottom(header: HTMLElement | null): number {
     sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
+
+/**
+ * What the panel's content holds, not what it was given, for a sheet fitted
+ * to it: its scroll height. Not so for a part that fills its panel
+ * (AICompanionPanel): its height is `100%` of the box, so its scroll height
+ * was the box's own, and the sheet was fitted to itself. In standards mode
+ * the sheet kept whatever height it was first measured at. In WebKit in
+ * quirks mode the part's `100%` resolves against the panel rather than the
+ * content box, so it read the grip's row, or the content's top padding, more
+ * at every measurement, and the sheet grew until it was the large detent and
+ * its grip went.
+ *
+ * So such a part is read as content with a height of its own: laid out
+ * unstretched, `height: auto` for the length of the reading, which no frame
+ * sees, to its end and the content's bottom padding.
+ */
+function measurePanelContent(
+  content: HTMLElement | null,
+  fillRoots: ReadonlySet<HTMLElement>,
+): number {
+  if (!content) return 0;
+  const fills = [...fillRoots].filter((node) => content.contains(node));
+  if (fills.length === 0) return content.scrollHeight;
+  const scrollTop = content.scrollTop;
+  const saved = fills.map((node) => ({
+    node,
+    hadStyle: node.hasAttribute("style"),
+    value: node.style.getPropertyValue("height"),
+    priority: node.style.getPropertyPriority("height"),
+  }));
+  for (const { node } of saved)
+    node.style.setProperty("height", "auto", "important");
+  const top =
+    content.getBoundingClientRect().top + content.clientTop - content.scrollTop;
+  const end = Math.max(
+    ...fills.map((node) => node.getBoundingClientRect().bottom),
+  );
+  for (const { node, hadStyle, value, priority } of saved) {
+    if (value) node.style.setProperty("height", value, priority);
+    else node.style.removeProperty("height");
+    if (!hadStyle && !node.getAttribute("style")) node.removeAttribute("style");
+  }
+  // A shorter part may have pulled a scrolled box back while it was read.
+  if (content.scrollTop !== scrollTop) content.scrollTop = scrollTop;
+  const height =
+    end - top + (parseFloat(getComputedStyle(content).paddingBottom) || 0);
+  return Number.isFinite(height) && height > 0 ? height : 0;
+}
+
 /**
  * The attribution's height with its brand, and with its credits alone. A
  * brand that MapAttribution has given way is still laid out, out of flow,
@@ -311,10 +362,17 @@ const AdaptiveMapShell = React.forwardRef<
     const panelElement = React.useRef<HTMLElement>(null);
     // How many mounted parts fill their panel (AICompanionPanel): beside the
     // map such a panel takes its full height rather than hugging (GAP-124).
+    // Their roots too, which a sheet fitted to its content measures
+    // unstretched (`measurePanelContent`).
     const [panelFillClaims, setPanelFillClaims] = React.useState(0);
-    const claimPanelFill = React.useCallback(() => {
+    const panelFillRoots = React.useRef(new Set<HTMLElement>());
+    const claimPanelFill = React.useCallback((fillRoot: HTMLElement) => {
+      panelFillRoots.current.add(fillRoot);
       setPanelFillClaims((count) => count + 1);
-      return () => setPanelFillClaims((count) => count - 1);
+      return () => {
+        panelFillRoots.current.delete(fillRoot);
+        setPanelFillClaims((count) => count - 1);
+      };
     }, []);
     const panelFills = panelFillClaims > 0;
     const [measured, setMeasured] = React.useState({
@@ -372,6 +430,8 @@ const AdaptiveMapShell = React.forwardRef<
     useLayoutEffect(() => {
       const element = root.current!;
       const observer = new ResizeObserver(() => measure());
+      // The peek anchor moves when the sheet's content changes shape.
+      const contentObserver = new MutationObserver(() => measure());
       const measure = () => {
         const safeStyle = getComputedStyle(safeArea.current!);
         const [attributionFullHeight, attributionCreditsHeight] =
@@ -405,8 +465,10 @@ const AdaptiveMapShell = React.forwardRef<
             buttons.current?.offsetHeight ?? 0,
             buttons.current?.scrollHeight ?? 0,
           ),
-          // What the panel holds, not what it was given: the scroll height.
-          panelContentHeight: panelContent.current?.scrollHeight ?? 0,
+          panelContentHeight: measurePanelContent(
+            panelContent.current,
+            panelFillRoots.current,
+          ),
           panelHeaderHeight: panelHeaderElement.current?.offsetHeight ?? 0,
           panelBorderHeight: panelStyle
             ? (parseFloat(panelStyle.borderTopWidth) || 0) +
@@ -426,6 +488,9 @@ const AdaptiveMapShell = React.forwardRef<
             left: parseFloat(safeStyle.paddingLeft) || 0,
           },
         };
+        // The reading's own style writes, made and undone above, are not a
+        // change in what the content holds.
+        contentObserver.takeRecords();
         setMeasured((previous) =>
           JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
         );
@@ -444,8 +509,6 @@ const AdaptiveMapShell = React.forwardRef<
       ].forEach((node) => {
         if (node) observer.observe(node);
       });
-      // The peek anchor moves when the sheet's content changes shape.
-      const contentObserver = new MutationObserver(measure);
       for (const node of [panelContent.current, panelHeaderElement.current])
         if (node)
           contentObserver.observe(node, {

@@ -346,7 +346,18 @@ They reserve the bottom control row plus one 16-unit gap. Registered
 bottom-start/end controls stay at the map's outer edges, not beside the panel;
 placement mirrors in RTL. A corner popup uses the space below a short panel,
 or the clear map beside a long panel when the lower band cannot hold a usable menu.
-Bottom-sheet detents and separated/hinge layouts keep their existing sizing policy.
+Separated/hinge layouts keep their existing sizing policy.
+
+A bottom sheet rests at its detents as before. One fitted to its content (`"content"` in
+`panelDetents`, or `panelSizing="content"`) measures a part that fills its panel as content
+with a height of its own: as tall as the part lays out unstretched, which for the assistant is its
+header, its whole conversation and its input, between collapsed and large. The part then fills the
+sheet: at the collapsed floor its input sits on the sheet's bottom edge, and at large only its
+thread scrolls. The sheet grows with the conversation, and fits the same height whichever detent
+it comes from, in every engine. It used to measure the part at the height it had been given, so it
+kept its first height; in WebKit, on a page with no doctype, it grew to large and lost its grip.
+Content of your own that takes its height from the panel (`height: 100%`) has no height of its own
+to fit: give it one.
 
 SwiftUI mirrors this through `KozmosPanelScrollView`, which fits its content when
 hosted in a side panel. Compose content must retain bounded scrolling (for example,

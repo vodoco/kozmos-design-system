@@ -135,7 +135,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
 
   A single-detent shorthand: fitted to its content — as tall as what it
   holds, between collapsed and large — for a sheet that holds a summary and
-  a row of buttons and nothing to scroll.
+  a row of buttons and nothing to scroll. A part that fills its panel
+  (AICompanionPanel) is measured as it lays out unstretched, its header,
+  whole conversation and input, and then fills the sheet.
 
 - `panelSurface`: `SurfaceVariant`, optional, default `"solid"`.
 
@@ -220,7 +222,11 @@ type PanelDetent =
   | "medium"
   /** Nearly the whole shell, for reading a long sheet. */
   | "large"
-  /** As tall as the sheet's content, between collapsed and large. */
+  /**
+   * As tall as the sheet's content, between collapsed and large. A part that
+   * fills its panel (AICompanionPanel) is measured as it lays out
+   * unstretched, and then fills the sheet.
+   */
   | "content"
   /** A share of the shell's height. */
   | {
