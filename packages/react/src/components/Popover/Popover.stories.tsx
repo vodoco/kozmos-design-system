@@ -45,29 +45,24 @@ export const Default: Story = {
  * a tour opens its step. "Add desk" is a plain button: PopoverAnchor adds no
  * popover attributes to it and no click that toggles. Open from the start, so
  * the step shows beside it (on the docs page, shut); "Show the step" opens it.
+ * It needs no focus handling of its own: closed, it gives focus back to what
+ * had it as it opened, or else to "Add desk".
  */
 export const AnchoredToAControl: Story = {
   render: function AnchoredToAControl(_args, { viewMode }) {
-    const target = React.useRef<HTMLButtonElement>(null);
     // Shut on the docs page, where an open step would sit over its text.
     const [open, setOpen] = React.useState(viewMode !== "docs");
     return (
       <div className="flex min-h-36 items-start gap-4">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverAnchor asChild>
-            <Button ref={target}>Add desk</Button>
+            <Button>Add desk</Button>
           </PopoverAnchor>
           <PopoverContent
             side="bottom"
             align="start"
             sideOffset={8}
             aria-label="Step 2 of 5"
-            // No trigger to give focus back to: the step returns it to the
-            // control it points at.
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              target.current?.focus();
-            }}
           >
             <div className="grid gap-3">
               <Heading level={4}>Add a desk</Heading>
@@ -91,9 +86,13 @@ export const AnchoredToAControl: Story = {
 
 /**
  * PopoverAnchor's `virtualRef`: anchored to a rect rather than an element,
- * here a point on a map, so it draws nothing of its own. The content
- * recomputes its place every frame (`updatePositionStrategy="always"`), as a
- * point that moves with the map needs.
+ * here a point on a map, so it draws nothing of its own. The rect names the
+ * map's canvas as its `contextElement`, so the popover follows the canvas
+ * when a box it sits in scrolls, and `hideWhenDetached` hides it once the
+ * point is out of that box; it places itself again every frame
+ * (`updatePositionStrategy="always"`), as a point that moves with the map
+ * needs. It takes no focus as it opens, so a screen reader is not told of
+ * it: a product announces it through a live region, or lets it take focus.
  */
 export const AnchoredToARect: Story = {
   render: function AnchoredToARect() {
@@ -108,6 +107,9 @@ export const AnchoredToARect: Story = {
           height: 0,
         });
       },
+      get contextElement() {
+        return map.current ?? undefined;
+      },
     });
     return (
       <Popover open>
@@ -117,6 +119,7 @@ export const AnchoredToARect: Story = {
           side="top"
           sideOffset={8}
           updatePositionStrategy="always"
+          hideWhenDetached
           onOpenAutoFocus={(event) => event.preventDefault()}
           aria-label="Reception desk"
           className="w-auto"

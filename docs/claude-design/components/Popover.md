@@ -75,19 +75,26 @@ already draws, and adds nothing to it: no `aria-haspopup`, no
 the product opens the popover itself, as a tour opens its step: a
 controlled `<Popover open={open} onOpenChange={setOpen}>` holding
 `<PopoverAnchor asChild>` around the control and a `PopoverContent`, with
-no `PopoverTrigger`. Escape and a press outside still ask to close it,
-through `onOpenChange(false)`. With `virtualRef`, a ref to
-anything with a `getBoundingClientRect()` (a point on a map, a text
-selection), it draws no element at all, and `PopoverContent` places itself
-by that rect; pass `updatePositionStrategy="always"` when the rect moves
-with nothing else on the page. `PopoverContent`'s `side`, `align`,
-`sideOffset` and collision handling work as they do beside a trigger.
+no `PopoverTrigger`. Escape, a press outside and Tab out of a non-modal
+popover still ask to close it, through `onOpenChange(false)`;
+`onInteractOutside` with `event.preventDefault()` keeps it open instead.
 
-With no trigger, a closing popover has nothing to give focus back to:
-return it with `onCloseAutoFocus`, focusing the target and calling
-`event.preventDefault()`.
+With `virtualRef`, a ref to anything with a `getBoundingClientRect()` (a
+point on a map, a text selection), it draws no element at all, and
+`PopoverContent` places itself by that rect. Give the rect a
+`contextElement`, the element it is drawn in (the map's canvas): the
+popover then follows it when a box the canvas sits in scrolls, and
+`hideWhenDetached` hides it when the rect is scrolled out of that box. Pass
+`updatePositionStrategy="always"` when the rect moves with nothing else on
+the page, as a map's point does while the map pans.
 
-It forwards its ref to `HTMLDivElement`. Its props are `PopoverPrimitive.PopoverAnchorProps`.
+Closing with focus lost, as when Escape or a button in it closes it,
+`PopoverContent` gives focus back to what had it when it opened, or, when
+that is gone or had none, to the anchor's element. A rect has nothing to
+focus: give focus back to what drew it, the map, through
+`onCloseAutoFocus` with `event.preventDefault()`.
+
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<PopoverPrimitive.PopoverAnchorProps & React.RefAttributes<HTMLDivElement>, "ref">`.
 
 - `asChild`: `boolean`, optional.
 - `virtualRef`: `React.RefObject<Measurable>`, optional.
@@ -96,6 +103,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `PopoverPrimitive.Popover
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PopoverContent
+
+The popover's panel, in the theme's portal.
+
+Closed with focus lost (Escape, or a button in it that closes it), it gives
+focus back to what had focus as it opened, or, when that is gone or nothing
+had focus, to its `PopoverAnchor`'s element. It acts only when focus was
+lost: a `PopoverTrigger` gets its own focus back as before, a next popover
+that took focus keeps it, and a press outside leaves focus where it landed.
+`onCloseAutoFocus` with `event.preventDefault()` takes it over.
 
 It forwards its ref to `HTMLDivElement`. Its props are `Omit<PopoverPrimitive.PopoverContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { portalContainer?: React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Portal>["container"] }`.
 
