@@ -102,15 +102,11 @@ A popover the product opens, rather than one a trigger toggles, sits beside any 
 
 `PopoverContent`'s `side`, `align`, `sideOffset` and collision handling place it as they do beside a trigger, and it follows its anchor as the page scrolls and the window resizes. With no trigger, a closing popover has nothing to give focus back to: return it to the control with `onCloseAutoFocus`, focusing it and calling `event.preventDefault()`.
 
-<Canvas>
-  <Story of={PopoverStories.AnchoredToAControl} />
-</Canvas>
+<Canvas of={PopoverStories.AnchoredToAControl} />
 
 `virtualRef` anchors it to a rect instead, anything with a `getBoundingClientRect()`, such as a point on a map or a text selection, and `PopoverAnchor` then draws no element at all. A rect that moves with nothing else on the page, as a map feature does when the map pans, needs `updatePositionStrategy="always"` on the content, which places it again every frame.
 
-<Canvas>
-  <Story of={PopoverStories.AnchoredToARect} />
-</Canvas>
+<Canvas of={PopoverStories.AnchoredToARect} />
 
 <PlatformSnippets
     react={`

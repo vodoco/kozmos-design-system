@@ -47,6 +47,9 @@ export const Default: Story = {
  * the step shows beside it; "Show the step" opens it again once closed.
  */
 export const AnchoredToAControl: Story = {
+  // On the docs page in a frame of its own, so the open step stays in its
+  // canvas rather than over the page's text.
+  parameters: { docs: { story: { inline: false, iframeHeight: 280 } } },
   render: function AnchoredToAControl() {
     const target = React.useRef<HTMLButtonElement>(null);
     const [open, setOpen] = React.useState(true);
@@ -95,6 +98,7 @@ export const AnchoredToAControl: Story = {
  * point that moves with the map needs.
  */
 export const AnchoredToARect: Story = {
+  parameters: { docs: { story: { inline: false, iframeHeight: 320 } } },
   render: function AnchoredToARect() {
     const map = React.useRef<HTMLDivElement>(null);
     const feature = React.useRef({
