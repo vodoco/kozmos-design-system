@@ -40,8 +40,8 @@ keep the table's four columns and its statuses as they are.
 
 | ID     | What                                                             | Lane                   | Status       |
 | ------ | ---------------------------------------------------------------- | ---------------------- | ------------ |
-| GAP-01 | `NavigationItem` `asChild` throws                                | Core                   | open         |
-| GAP-02 | `reset.css` ships raw Tailwind `theme()` calls                   | Core                   | open         |
+| GAP-01 | `NavigationItem` `asChild` throws                                | Core                   | fixed        |
+| GAP-02 | `reset.css` ships raw Tailwind `theme()` calls                   | Core                   | fixed        |
 | GAP-03 | A pre-rendered page starts in the light theme                    | Core                   | left visible |
 | GAP-04 | `Grid` cannot reflow, and a caller cannot make it                | Core                   | composed     |
 | GAP-05 | No code block; `Text` has no monospace option                    | Core                   | composed     |
@@ -64,7 +64,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open         |
 | GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | fixed        |
 | GAP-24 | `DynamicIsland` pins itself to the viewport                      | Platform / form factor | open         |
-| GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | composed     |
+| GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | fixed        |
 | GAP-26 | `Text` cannot inherit its colour                                 | Core                   | open         |
 | GAP-27 | `useTheme` does not report the direction                         | Core                   | composed     |
 | GAP-28 | `SearchBar`'s search landmark cannot be named                    | Product / SDK          | open         |
@@ -88,7 +88,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-46 | `Stepper` has no narrow form                                     | Core                   | composed     |
 | GAP-47 | `Sidebar` has no narrow-screen form                              | Core                   | composed     |
 | GAP-48 | A `Tree` row's meta never shrinks                                | Core                   | composed     |
-| GAP-49 | `SearchBar` drops its analytics when a caller handles keys       | Product / SDK          | open         |
+| GAP-49 | `SearchBar` drops its analytics when a caller handles keys       | Product / SDK          | fixed        |
 | GAP-50 | Spinner, Skeleton and the loading Button ignore reduced motion   | Core                   | fixed        |
 | GAP-51 | No polite announcer                                              | Core                   | composed     |
 | GAP-52 | The provider's preflight zeroes a caller's border                | Core                   | composed     |
@@ -97,11 +97,11 @@ keep the table's four columns and its statuses as they are.
 | GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | composed     |
 | GAP-56 | `Button` puts no space between an icon and its label             | Core                   | fixed        |
 | GAP-57 | A `Button`'s label cannot wrap                                   | Core                   | composed     |
-| GAP-58 | `Toast` draws no background of its own                           | Core                   | open         |
+| GAP-58 | `Toast` draws no background of its own                           | Core                   | fixed        |
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | open         |
 | GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | open         |
 | GAP-61 | No glyph mirrors for right to left                               | Core                   | fixed        |
-| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | open         |
+| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | fixed        |
 | GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | open         |
 | GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | open         |
 | GAP-65 | `Textarea`'s resize grip paints outside its rounded corner       | Core                   | left visible |
@@ -114,7 +114,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
 | GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | open         |
 | GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | open         |
-| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | composed     |
+| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | fixed        |
 | GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible |
 | GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open         |
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
@@ -123,10 +123,10 @@ keep the table's four columns and its statuses as they are.
 | GAP-81 | Components carried placeholder documentation                     | Core                   | fixed        |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
 | GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
-| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
+| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | fixed        |
 | GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | open         |
 | GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | fixed        |
-| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | open         |
+| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | fixed        |
 | GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible |
 | GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | open         |
 | GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
@@ -136,6 +136,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
 | GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
 | GAP-96 | A theme switch fades every part's colours                        | Core                   | composed     |
+| GAP-97 | A date range is two fields; no time range and no closed hours    | Core                   | open         |
 
 ---
 
@@ -151,9 +152,17 @@ keep the table's four columns and its statuses as they are.
   element child."_ `href` alone renders.
 - **Lane:** Core. The same defect `Button` had before its `asChild` was removed
   (the React README records that).
-- **Now:** the site passes `href` plus React Router's `useLinkClickHandler` as
-  `onClick` (`src/site/links.tsx`). That is the router's documented API for
-  custom links, so navigation stays client-side without the prop.
+- **Now:** fixed in 0.10.0 (#266, `3dae9d5`). With `asChild` the one child,
+  such as a router's link, becomes the item: it takes the item's props, and
+  the icon, label and badge are drawn inside it
+  (`NavigationItem.tsx:167–179`, `:276`). The two `asChild` tests in
+  `NavigationItem.test.tsx` threw before the fix. The site has not moved: it
+  still passes `href` plus React Router's `useLinkClickHandler` as `onClick`
+  (`src/site/links.tsx`), the router's documented API for custom links, which
+  its `SiteLink` uses for Kozmos's `Link` too. That file's comment still says
+  `asChild` throws (`links.tsx:26–27`); correcting it, and moving the
+  navigation items to `asChild` if that reads better, is a site follow-up. No
+  site test pinned the throw.
 - **Fix in Kozmos:** either implement `asChild` with `Slottable` around the
   label, or remove the prop, as was done for `Button`.
 
@@ -169,8 +178,14 @@ keep the table's four columns and its statuses as they are.
   (`scripts/check-theme-isolation.mjs`) asserts a heading's margin, which does
   not use `theme()`, so it passes.
 - **Lane:** Core (build).
-- **Now:** the site does not import `reset.css`; the provider's scoped preflight
-  covers everything inside it, and `site.css` sets `body { margin: 0 }`.
+- **Now:** fixed in 0.10.0 (#266, `3dae9d5`). The build gives each `theme()`
+  call the default it names — the system sans and monospace stacks,
+  `currentColor` borders, `#9ca3af` placeholders — and fails if one is left
+  (`resolvePreflightTheme`, `packages/react/vite.config.mts:42–45`).
+  `scripts/check-theme-isolation.mjs:186–190` asserts the shipped reset has
+  no `theme()` left (`pnpm test:themes`). The site still does not import
+  `reset.css`: the provider's scoped preflight covers everything inside it,
+  and `site.css` sets `body { margin: 0 }`. No site check pinned it.
 - **Fix in Kozmos:** run the reset through PostCSS with the Tailwind config,
   like `style.css`, and assert a `theme()`-dependent value in the test.
 
@@ -593,8 +608,15 @@ keep the table's four columns and its statuses as they are.
 - **What:** `MapView` carries `min-h-[400px]` in its own classes, and a
   caller's class cannot lower it (GAP-04). A small map — a tile, a thumbnail,
   a phone in landscape — is not possible.
-- **Now:** the adaptive tile and the examples' canvases give their maps
-  400px or more.
+- **Now:** fixed in 0.5.0 (`1696ec2b`, #90, 2026-09-27). `MapView` takes
+  `variant="fill"`, a map that is its surface, with no border, corner or
+  400px floor; the default, `framed`, keeps all three on purpose, as a map in
+  page flow with a height to stand up in (`MapView.tsx:5–13`, `:40–43`). So a
+  small map is a `fill` map in a box of the size wanted. The home page's
+  adaptive tile and the phone search draw `fill` maps
+  (`src/home/tiles.tsx:171`, `PhoneSearch.tsx:271–272`); the kiosk, venue
+  explorer and wayfinding maps are framed, in canvases of 400px or more. No
+  site check pinned the floor.
 - **Lane:** Product / SDK.
 
 ## GAP-26 · `Text` cannot inherit its colour
@@ -957,9 +979,20 @@ isolate` on the example canvases, as on the component pages' demo stages and
   margins between them, and no orientation or compact option. Five labelled
   steps need about 24rem; on a phone the card holding them overflows its
   frame and cuts its own text.
-- **Now:** the onboarding example hides the `Stepper` below 30rem, in a
-  wrapper `Box`; the `Progress` bar under it, labelled "Step n of 5", carries
-  the step on its own.
+- **Now:** composed. The onboarding example hides the `Stepper` below 30rem,
+  in a wrapper `Box`; the `Progress` bar under it, labelled "Step n of 5",
+  carries the step on its own (`Onboarding.tsx:103–108`,
+  `Onboarding.css:16–22`). The overflow itself is gone since 0.1.0
+  (`3610636e`, #56): a step can shrink below its label, which then truncates,
+  whole in its `title` and to assistive technology, and the connectors are
+  8px a side below `sm` (`Stepper.tsx:109–116`, `:144`, `:158`), so five
+  steps fit a 288px row. That is neither fix asked for below: every label
+  still shows, cut short, and there is no vertical form, which is the change
+  list's GAP-173, still a decision. #409 (on `main`, for 0.14.0) adds
+  `variant="dots"`, one dot per step and no label shown, a tour's progress.
+  Whether truncated labels or the dots are narrow form enough to drop the
+  wrapper, whose comments still say Kozmos has no narrower form, is the
+  site's to decide; the wrapper stays until then.
 - **Lane:** Core.
 - **Fix in Kozmos:** a vertical orientation, or labels that give way to the
   current step's alone when the row is too narrow.
@@ -1002,8 +1035,9 @@ isolate` on the example canvases, as on the component pages' demo stages and
   wrong.
 - **Now:** fixed in 0.9.0 (#193). `SearchBar` takes `onKeyDown` as its own
   prop and calls it first, then sends `search_initiated` on Enter unless the
-  caller prevented the default or an input method is composing. The site has
-  no analytics provider, so it reports nothing either way.
+  caller prevented the default or an input method is composing
+  (`SearchBar.tsx:123–130`). The site has no analytics provider, so it
+  reports nothing either way, and no site check pinned it.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** spread the props first and compose the handlers, as the
   `onChange` beside it already is.
@@ -1228,8 +1262,12 @@ Text"])`) and the Get started page shows — touches it.
   the toast's background on the Toast page. The site only saw it once the
   toast stopped floating over an empty page: the screen that contains the
   viewport (GAP-36) puts the app's own list behind it.
-- **Now:** open. Only the Toast page's demo showed a toast (GAP-36), and it
-  moved to Storybook with the demos on 2026-09-28.
+- **Now:** fixed in 0.10.0 (#266, `3dae9d5`). The root draws on the
+  background under the foreground ink, `bg-background` and `text-foreground`
+  (`Toast.tsx:43`), the colours SwiftUI and Compose draw it in; a test in
+  `Toast.test.tsx` failed without the classes. There is no site check to
+  flip: only the Toast page's demo showed a toast (GAP-36), and it moved to
+  Storybook with its check on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** `bg-background` on the toast's root, beside its border
   and shadow, as `Card`, `Dialog` and `Menu` have. A `destructive` variant, if
@@ -1362,8 +1400,14 @@ Text"])`) and the Get started page shows — touches it.
   every option after the first, is cut**. Nothing in the site's demo clips:
   the card and its stage are ordinary host chrome, which is what any product
   card would be.
-- **Now:** open. The Combobox and MultiSelect pages' demos showed it until the
-  demos moved to Storybook on 2026-09-28.
+- **Now:** fixed in 0.11.0 (#270, `da7c7a7`). Both open their list in the
+  theme's portal, `createThemePortal`, positioned under the field by Radix's
+  popper (`Combobox/field-popup.tsx:7–44`; `Combobox.tsx:134`,
+  `MultiSelect.tsx:461`), so a panel, sheet or card that clips its overflow
+  no longer cuts the list off; focus and the keyboard stay in the field.
+  Neither takes a `portalContainer`, as `SelectContent` does. There is no
+  site check to flip: the Combobox and MultiSelect pages' demos showed it
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** portal the list as the other six do, with the same
   provider-aware portal, and keep it positioned against the field.
@@ -1621,9 +1665,14 @@ Text"])`) and the Get started page shows — touches it.
   at 394.00 and the label's text box starts at 394.00: **0px**, with 2px of
   apparent space that is only the glyph's ink inset. `column-gap` computes
   `normal`.
-- **Now:** composed on the site's own toggle, the cover's pause button, which
-  carries `site-button-icon`. The ToggleButton page's demo showed the gap
-  until the demos moved to Storybook on 2026-09-28.
+- **Now:** fixed in 0.1.0 (`550b5618`, #58, 2026-09-23). The base classes
+  take `gap-2`, the spacing scale's 100, as SwiftUI's and Compose's toggles
+  already drew it (`ToggleButton.tsx:31–43`, whose comment names this gap);
+  `Tag` keeps 4. The site's `site-button-icon` class went on 2026-09-24
+  (`d7c8bbfe`, GAP-56), and the cover's pause button is a label alone now
+  (`src/home/Cosmos.tsx:371–378`), so no site toggle or check holds an icon
+  beside a label. The ToggleButton page's demo showed the gap until the demos
+  moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** the spacing scale's 100, as GAP-56 asks for `Button`.
   Fix both together, and check `Chip`, `Tag` and `SegmentedControl` for the
@@ -1647,9 +1696,12 @@ Text"])`) and the Get started page shows — touches it.
   through `isDateUnavailable`), and TimePicker opens a Kozmos list of times,
   all in the tokens. The booking example's date and time draw them in
   Chromium, Edge and Safari. Left visible in Firefox 146, which keeps the
-  browser's date fields because no page can hide its picker button (Mozilla
-  bug 2048623). Still missing: a range in one field (DateRangePicker is two
-  fields under one panel), a time range, and hours a product can close. The
+  browser's date fields because no page can hide its picker button (decision
+  108): Mozilla's webcompat bug 2048623 records that, and waits on platform
+  bug 2051201, support for `::-webkit-calendar-picker-indicator`. The shapes
+  still missing — a range in one field, a time range, and hours a product can
+  close — are GAP-97 since 2026-10-26; what this entry still shows is
+  Firefox's. The
   DatePicker, TimePicker and DateRangePicker pages showed the browser's panels
   until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
@@ -1797,8 +1849,13 @@ Text"])`) and the Get started page shows — touches it.
   `hideLabel`, `expanded` or `onExpandedChange` — while the component's own
   docs tell a product to hand groups straight to the list. So inside a list
   the group says "Show 3 more" in English, and a product cannot drive it.
-- **Now:** open. The POIResultGroup page showed both the standalone group and
-  one inside a list until the demos moved to Storybook on 2026-09-28.
+- **Now:** fixed in 0.5.0 (`d1f9dc65`, #87, 2026-09-27; the change list's
+  GAP-066). The list takes a group's two words once, `showMoreLabel` and
+  `hideLabel`, and `onGroupExpandedChange(groupId, expanded)`, and hands
+  them, with each entry's `expanded`, to every group
+  (`POIResultList.tsx:168–176`, `:403–428`). There is no site check to flip:
+  the POIResultGroup page showed both the standalone group and one inside a
+  list until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** forward the rest of the group's props.
 
@@ -1839,8 +1896,13 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** `disabled` stops the field and the send button
   (`AIInputBar.tsx:61`) and leaves whatever sits in `trailing` live, so a bar
   that looks disabled still takes a press. Undocumented.
-- **Now:** open. The AIInputBar page's demo said it until the demos moved to
-  Storybook on 2026-09-28.
+- **Now:** fixed in 0.5.0 (`52ccad48`, #103, 2026-09-27; the change list's
+  GAP-060) by the second of the fixes below: `disabled`'s documentation says
+  `trailing` is the product's, to disable with the same flag
+  (`AIInputBar.tsx:50–57`), and the field now draws the Input family's
+  disabled look as well as the send button. The slot itself is still not
+  disabled for the caller. There is no site check to flip: the AIInputBar
+  page's demo said it until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** pass the state to the slot, or document that a caller
   must disable its own control.
@@ -2046,3 +2108,30 @@ Text"])`) and the Get started page shows — touches it.
 - **Fix in Kozmos:** `ThemeProvider` changes theme without its parts'
   colour transitions, or offers to, as next-themes'
   `disableTransitionOnChange` does.
+
+## GAP-97 · A date range is two fields; no time range and no closed hours
+
+- **What:** what GAP-76 asked for that 0.13.0's pickers do not draw.
+  `DateRangePicker` is two date fields, a start and an end, under one range
+  calendar (`DatePicker.tsx:51–100`, its `startValue` and `endValue`): the
+  calendar shows the range, but a visitor types and reads it in two fields.
+  `TimePicker` takes one time (`TimePicker.tsx:13–37`), so a booking's start
+  and end are two pickers, or a time and a length, with nothing holding them
+  together. Its list runs every `step` from the field's `min` to its `max`
+  (`TimePicker.tsx:128–134`), so a product can bound the day but cannot close
+  hours inside it, a break or a booked slot, as `isDateUnavailable` closes
+  days.
+- **Evidence:** read from `main`'s source on 2026-10-26 (`d17854ce`), when
+  this was split from GAP-76.
+- **Now:** open. The booking example asks for a start and a number of hours
+  (`Booking.tsx:196–210`, a `TimePicker` and a `NumberInput`), which asks
+  for a time and a length rather than a range, and it closes no hours. No
+  site page needs a range in one field.
+- **Lane:** Core.
+- **Note:** a range in one field cannot keep the browser's typing, which
+  decision 105 keeps: `<input type="date">` holds one date. It would take a
+  typed field of Kozmos's own, which is the owner's call. The change list's
+  GAP-186, which these pickers answer, does not ask for one.
+- **Fix in Kozmos:** a time range, a start and an end that cannot cross;
+  hours a product can close in TimePicker's list, as `isDateUnavailable`
+  closes days; and a decision on a date range in one field.

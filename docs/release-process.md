@@ -674,8 +674,8 @@ Upgrading from 0.12.2:
 
 - **The date and time pickers open Kozmos's panels** in Chromium, Edge and Safari: a button at each field's end
   opens a Calendar, or for TimePicker a list of times, in a Popover. The value APIs are unchanged, and the new props
-  are optional. Firefox 146 keeps the browser's date fields, as no page can hide its picker button (Mozilla bug
-  2048623); it gets TimePicker's list. DateRangePicker's two fields are labelled beside their inputs, not around them.
+  are optional. Firefox 146 keeps the browser's date fields, as no page can hide its picker button (Mozilla's
+  webcompat bug 2048623, which waits on platform bug 2051201); it gets TimePicker's list. DateRangePicker's two fields are labelled beside their inputs, not around them.
 - **List rows are 44 tall** (40 at compact density), with a light active row and the chosen row's check at the
   end, in Combobox, MultiSelect, Select and Listbox. A screen that fitted a list to 36px rows shows fewer rows.
 - **MultiSelect's clear and open are 44px buttons,** so its chips wrap 16px sooner.
