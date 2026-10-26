@@ -468,10 +468,11 @@ public struct KozmosFloorSelector: View {
             //
             // The map control's accessibility is replaced by nothing, so the
             // element is the tile's one button for VoiceOver and for XCUITest
-            // alike. `.accessibilityHidden(true)` hid it from VoiceOver only:
-            // XCUITest still found it, with its short label and its two
-            // chevrons, beside the element at the same frame, and
-            // `app.buttons["First floor"]` matched two (measured, iOS 26.5).
+            // alike. `.accessibilityHidden(true)` hid it from assistive
+            // technologies but not from XCUITest, which still found it, with
+            // its short label and its two chevrons, beside the element at the
+            // same frame, so `app.buttons["First floor"]` matched two
+            // (measured on iOS 26.5; earlier iOS versions were not measured).
             .accessibilityRepresentation { EmptyView() }
             .overlay(
                 KozmosFloorSwitcherElement(

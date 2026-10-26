@@ -925,7 +925,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// element laid over it, which says whether its column is open. The map
     /// control under it gave UI tests a second, at the same frame, with its
     /// short label and its two chevrons: `.accessibilityHidden(true)` hid it
-    /// from VoiceOver only, and `automationElements`, which XCUITest reads,
+    /// from assistive technologies, but `automationElements`, which XCUITest reads,
     /// lists hidden nodes too. Its accessibility is now replaced by nothing.
     /// The open column's levels sit in a scroll view, which no walk in a test
     /// process can read on iOS 26.5 (KozmosManoeuvreCardTests; measured again
