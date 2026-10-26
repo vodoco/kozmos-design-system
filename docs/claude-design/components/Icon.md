@@ -62,7 +62,10 @@ type KozmosIconComponent =
 From `@kozmos-ds/icons`.
 
 ```ts
-type KozmosIconKey = KozmosIconName | KozmosIconAlias;
+type KozmosIconKey =
+  | KozmosIconName
+  | KozmosIconAlias
+  | KozmosIconNameBeyondTheLibrary;
 ```
 
 ### KozmosIconName
@@ -79,4 +82,13 @@ From `@kozmos-ds/icons`.
 
 ```ts
 type KozmosIconAlias = keyof typeof kozmosIconAliases;
+```
+
+### KozmosIconNameBeyondTheLibrary
+
+From `@kozmos-ds/icons`.
+
+```ts
+type KozmosIconNameBeyondTheLibrary =
+  (typeof kozmosIconNamesBeyondTheLibrary)[number];
 ```

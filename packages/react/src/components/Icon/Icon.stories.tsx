@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Icon } from "./Icon";
-import { kozmosIconDefinitions, kozmosIconNames } from "@kozmos-ds/icons";
+import {
+  kozmosIconDefinitions,
+  kozmosIconNames,
+  kozmosIconNamesBeyondTheLibrary,
+} from "@kozmos-ds/icons";
 import { Settings01 as Settings } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Icon> = {
@@ -8,7 +12,10 @@ const meta: Meta<typeof Icon> = {
   title: "Foundations/Icons/Icon",
   component: Icon,
   argTypes: {
-    name: { control: "select", options: kozmosIconNames },
+    name: {
+      control: "select",
+      options: [...kozmosIconNames, ...kozmosIconNamesBeyondTheLibrary],
+    },
     size: { control: "select", options: ["xs", "sm", "md", "lg", "xl"] },
     color: {
       control: "select",

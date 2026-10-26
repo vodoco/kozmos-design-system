@@ -82,6 +82,25 @@ function renderPanel() {
 
 const rowOf = (label: string) => screen.getByText(label).parentElement!;
 
+/**
+ * The markup of the glyph a tag draws for `iconName` with no `iconUrl`: since
+ * GAP-179, through `Icon` and the registry, a name beyond the curated library
+ * included.
+ */
+function glyphOf(iconName: string): string {
+  const { unmount } = render(
+    <POIDetailPanel
+      poi={{ ...poi, services: undefined }}
+      actionLabels={labels}
+      onAction={vi.fn()}
+      details={{ tags: [{ id: "plain", label: "Plain tag", iconName }] }}
+    />,
+  );
+  const markup = rowOf("Plain tag").querySelector("svg")!.outerHTML;
+  unmount();
+  return markup;
+}
+
 describe("POIDetailPanel icon fallback (GAP-178)", () => {
   it("draws the iconName's icon where the iconUrl is unsafe", () => {
     renderPanel();
@@ -115,6 +134,19 @@ describe("POIDetailPanel icon fallback (GAP-178)", () => {
     expect(
       container.querySelectorAll(".kozmos-poi-property-icon"),
     ).toHaveLength(0);
+  });
+
+  it("falls back to the very glyph its name draws with no iconUrl, a name beyond the curated library included", () => {
+    const expected: Record<string, string> = {
+      "Lift to every floor": glyphOf("elevator-up"),
+      "Phone charging": glyphOf("phone"),
+      "Wireless network": glyphOf("wifi"),
+    };
+    renderPanel();
+    for (const label of ["Phone charging", "Wireless network"])
+      fireEvent.error(rowOf(label).querySelector("img")!);
+    for (const [label, markup] of Object.entries(expected))
+      expect(rowOf(label).querySelector("svg")?.outerHTML, label).toBe(markup);
   });
 
   it("draws a summary fact's kind glyph where its iconUrl is unsafe", () => {
