@@ -648,8 +648,10 @@ product-contracts 0.9.1 is unchanged and not planned. It carries the web's own d
 (decisions 104 and 105, GAP-186): `Calendar` (#352), and DatePicker (#361), DateRangePicker (#366) and TimePicker
 (#369) opening it; the 29 icon names the natives draw beyond the library (GAP-179, #364); the product's words on
 Pagination, SplitButton and the toast's close (GAP-182, GAP-168); list rows drawn as Figma draws them (#372, #386);
-MultiSelect's 44px buttons (#397, #401); a sheet fitted to the assistant (#404); and a stylesheet of 30.14 KB gzip,
-down from 31.77 (#381, #395).
+MultiSelect's 44px buttons (#397) and its forced-colours input (#401); a sheet fitted to the assistant (#404); and a
+smaller stylesheet: 20 measured trims (#395), and Tailwind's compiler defaults registered rather than declared on
+every element (#381). The published `style.css` is 30,539 bytes gzip, down from 0.12.2's 31,414 (`gzip -9`), with
+Calendar's and the pickers' panels in it.
 
 Claude dispatched the release after the pre-flight passed (Olcay, 25 Oct). Olcay then asked Claude in chat to
 approve the protected `npm-release` deployment for him, and Claude approved it, as `vodoco`, for this release only,

@@ -1641,9 +1641,17 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** on the DateRangePicker page in the light theme, opening a
   field brings up the browser's dark panel, which also overlaps the demo
   below it. Nothing in the DOM belongs to Kozmos.
-- **Now:** left visible in the booking example's date and time; the site does
-  not hand-build a calendar. The DatePicker, TimePicker and DateRangePicker
-  pages showed it until the demos moved to Storybook on 2026-09-28.
+- **Now:** mostly fixed in Kozmos 0.13.0 (decisions 104 and 105, product
+  GAP-186): `Calendar` is new, DatePicker and DateRangePicker open it from a
+  button at the field's end (two months for a range, a product's closed days
+  through `isDateUnavailable`), and TimePicker opens a Kozmos list of times,
+  all in the tokens. The booking example's date and time draw them in
+  Chromium, Edge and Safari. Left visible in Firefox 146, which keeps the
+  browser's date fields because no page can hide its picker button (Mozilla
+  bug 2048623). Still missing: a range in one field (DateRangePicker is two
+  fields under one panel), a time range, and hours a product can close. The
+  DatePicker, TimePicker and DateRangePicker pages showed the browser's panels
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a calendar and a clock of Kozmos's own, in the tokens,
   with the shapes a product needs: a range in one field, a two-month panel,
@@ -1690,8 +1698,12 @@ Text"])`) and the Get started page shows — touches it.
   definitions (General 20, Arrows 10, Maps & travel 7, Time 4, and a tail of
   ones and twos — no Taxonomy category any more) against 1,174 generated
   Pointr components.
-- **Now:** open. GAP-07 and GAP-15 list the particular glyphs the site and the
-  examples went without.
+- **Now:** open. Kozmos 0.13.0 (icons 0.7.0, product GAP-179) adds 29 names:
+  the 23 wayfinding glyphs, `log-in-01`, `log-out-01`, `arrow-up-right`,
+  `arrow-down-right`, `layers-three-01` and `walking`. So `Icon name` reaches
+  103 keys (57 names, 17 aliases and the 29) against about 1,200 icon
+  components; the venue categories are still components only. GAP-07 and
+  GAP-15 list the particular glyphs the site and the examples went without.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** put the generated Pointr icons in the registry with
   their names, categories and aliases, so `Icon name="…"` reaches them and one
