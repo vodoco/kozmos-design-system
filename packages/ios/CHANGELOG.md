@@ -4,7 +4,11 @@ Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` 
 
 ## Unreleased — repository source
 
-Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is tagged.
+Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
+
+## 0.13.0 — repository snapshot
+
+Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).
 
 ### Fixed
 
