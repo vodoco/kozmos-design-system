@@ -4,9 +4,6 @@
 // MapStatusPillDocSnippetsTest. Change the two together.
 package com.kozmos.docsnippets
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import com.kozmos.components.icon.KozmosIcon
 import com.kozmos.components.icon.KozmosIconSize
@@ -32,12 +29,12 @@ fun BluetoothStatus() {
     )
 }
 
-// Material's walking figure, in the progress tone's blue.
+// The SDK's walking figure, by its Kozmos name, in the progress tone's blue.
 @Composable
 fun WalkingStatus() {
     KozmosMapStatusPill(
         text = "Walking improves accuracy",
         tone = KozmosMapStatusPillTone.Progress,
-        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null) }
+        icon = { KozmosIcon(name = "walking", size = KozmosIconSize.Lg) }
     )
 }

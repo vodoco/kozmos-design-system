@@ -40,10 +40,24 @@ struct KozmosPointrGlyph: Shape {
             // Node 1007:9283.
             return outline("M7 7L17 17M7 17H17V7")
         default:
-            // The web registry's names SF Symbols has no symbol for, generated
-            // from packages/icons into PointrIcons.generated.swift.
-            return KozmosPointrIconPaths.data(name).flatMap { outline($0.joined(separator: " ")) }
+            // The web registry's names SF Symbols has no symbol for, and the
+            // layers glyph and walking figure the map controls draw by name
+            // (GAP-181), generated from packages/icons into
+            // PointrIcons.generated.swift.
+            if let data = KozmosPointrIconPaths.data(name) { return outline(data.joined(separator: " ")) }
+            return KozmosPointrIconPaths.symbol(name).flatMap { symbol in
+                solid(symbol.paths.joined(separator: " "), x: symbol.x, y: symbol.y, side: symbol.side)
+            }
         }
+    }
+
+    /// A solid mark from its path data on its own squared viewBox, fitted to
+    /// the 24 grid and filled with the nonzero rule, as React fills a taxonomy
+    /// symbol.
+    static func solid(_ data: String, x: Double, y: Double, side: Double) -> KozmosPointrGlyph? {
+        guard side > 0, let path = outline(data)?.canonicalPath else { return nil }
+        let fit = CGAffineTransform(translationX: -x, y: -y).concatenating(CGAffineTransform(scaleX: 24 / side, y: 24 / side))
+        return KozmosPointrGlyph(runs: [], canonicalPath: path.applying(fit), isFilled: true)
     }
 
     /// Pointr's wayfinding artwork, by its kind in the generated paths:
