@@ -12,6 +12,12 @@ public struct KozmosDateRangePicker: View {
     public let readOnly: Bool
     public let status: KozmosInputStatus
     public let showsCalendarPreview: Bool
+    /// The earliest and latest days either end may take, as React's `min` and `max`.
+    public let minimumDate: Date?
+    public let maximumDate: Date?
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
+    @Environment(\.timeZone) private var timeZone
 
     public init(
         startDate: Binding<Date> = .constant(Date(timeIntervalSince1970: 1_769_299_200)),
@@ -23,7 +29,9 @@ public struct KozmosDateRangePicker: View {
         disabled: Bool = false,
         readOnly: Bool = false,
         status: KozmosInputStatus = .default,
-        showsCalendarPreview: Bool = false
+        showsCalendarPreview: Bool = false,
+        minimumDate: Date? = nil,
+        maximumDate: Date? = nil
     ) {
         self._startDate = startDate
         self._endDate = endDate
@@ -35,6 +43,8 @@ public struct KozmosDateRangePicker: View {
         self.readOnly = readOnly
         self.status = status
         self.showsCalendarPreview = showsCalendarPreview
+        self.minimumDate = minimumDate
+        self.maximumDate = maximumDate
     }
 
     public var body: some View {
@@ -46,19 +56,19 @@ public struct KozmosDateRangePicker: View {
             }
 
             HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                KozmosDateRangeField(
-                    date: $startDate,
-                    label: startLabel,
-                    disabled: disabled,
-                    readOnly: readOnly,
-                    status: status
+                // Each end bounds the other, as React's do: the start no
+                // later than the end, the end no earlier than the start.
+                KozmosTemporalField(
+                    selection: $startDate, label: startLabel, helperText: nil, status: status,
+                    disabled: disabled, readOnly: readOnly,
+                    minimumDate: minimumDate, maximumDate: Self.earlier(endDate, maximumDate),
+                    components: .date, iconName: "calendar"
                 )
-                KozmosDateRangeField(
-                    date: $endDate,
-                    label: endLabel,
-                    disabled: disabled,
-                    readOnly: readOnly,
-                    status: status
+                KozmosTemporalField(
+                    selection: $endDate, label: endLabel, helperText: nil, status: status,
+                    disabled: disabled, readOnly: readOnly,
+                    minimumDate: Self.later(startDate, minimumDate), maximumDate: maximumDate,
+                    components: .date, iconName: "calendar"
                 )
             }
 
@@ -75,24 +85,21 @@ public struct KozmosDateRangePicker: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The range as the locale writes an interval, its own separator and
+    /// order: it was `en_US_POSIX` "MMM d, yyyy" with a fixed English "to"
+    /// until 2026-10-21.
     private var rangePreview: some View {
-        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-            Text(Self.displayFormatter.string(from: startDate))
-            // Muted; disabled, the dates' disabled colour, never darker than them.
-            Text("to")
-                .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
-            Text(Self.displayFormatter.string(from: endDate))
-        }
-        .font(.caption.weight(.semibold))
-        .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0)
-        .padding(KozmosDimensions.primitivesLayoutSpacing150)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(KozmosColors.primitivesColorsBackground0)
-        .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
-        .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
-        )
+        Text(summary)
+            .font(.caption.weight(.semibold))
+            .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0)
+            .padding(KozmosDimensions.primitivesLayoutSpacing150)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KozmosColors.primitivesColorsBackground0)
+            .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+            .overlay(
+                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+                    .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
+            )
     }
 
     private var labelColor: Color {
@@ -123,69 +130,14 @@ public struct KozmosDateRangePicker: View {
         }
     }
 
-    private static let displayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
-}
-
-private struct KozmosDateRangeField: View {
-    @Binding var date: Date
-
-    let label: String
-    let disabled: Bool
-    let readOnly: Bool
-    let status: KozmosInputStatus
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
-            Text(label)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100)
-
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                Image(systemName: "calendar")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(iconColor)
-
-                DatePicker("", selection: $date, displayedComponents: .date)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .disabled(disabled || readOnly)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
-            .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44, alignment: .center)
-            .background(fieldBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
-            .overlay(
-                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                    .stroke(fieldBorderColor, lineWidth: 1)
-            )
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    var summary: String {
+        var style = Date.IntervalFormatStyle(date: .abbreviated, time: .omitted)
+        style.locale = locale
+        style.calendar = calendar
+        style.timeZone = timeZone
+        return (min(startDate, endDate)..<max(startDate, endDate)).formatted(style)
     }
 
-    private var fieldBackgroundColor: Color {
-        (disabled || readOnly) ? KozmosColors.primitivesColorsBackground100 : KozmosColors.primitivesColorsBackground0
-    }
-
-    private var fieldBorderColor: Color {
-        switch status {
-        case .error:
-            return KozmosColors.primitivesColorsEmotionalDanger600
-        case .warning:
-            return KozmosColors.primitivesColorsEmotionalAlert600
-        case .success:
-            return KozmosColors.primitivesColorsEmotionalSuccess600
-        case .default:
-            return KozmosColors.primitivesColorsForeground500
-        }
-    }
-
-    private var iconColor: Color {
-        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400
-    }
+    static func earlier(_ a: Date, _ b: Date?) -> Date { b.map { min(a, $0) } ?? a }
+    static func later(_ a: Date, _ b: Date?) -> Date { b.map { max(a, $0) } ?? a }
 }

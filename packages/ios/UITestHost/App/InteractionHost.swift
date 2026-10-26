@@ -41,6 +41,8 @@ private struct InteractionFixture: View {
     @State private var thumbs = 0
     @State private var colour = "#135BEC"
     @State private var multiLocked = false
+    /// A field that starts disabled or read-only becomes usable on "Make usable".
+    @State private var fieldUsable = false
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -173,6 +175,21 @@ private struct InteractionFixture: View {
         case "picker-long":
             KozmosListbox(options: replaced ? [] : (0..<30).map { .init(value: "\($0)", label: "Place \($0)") },
                 actions: [.init(id: "map", label: "Map") { replaced = true; events.append("map") }], emptyText: "No matches")
+        case "combobox-unlock-readonly", "combobox-unlock-disabled", "combobox-lock":
+            // Opened by default; read-only or disabled until "Make usable", or
+            // read-only while "Toggle read-only" says so. The toggle sits above
+            // the field, where the list's closing cannot move it between taps.
+            if scenario == "combobox-lock" {
+                Button("Toggle read-only") { multiLocked.toggle() }
+            }
+            KozmosCombobox(options: [.init(value: "lobby", label: "Lobby"), .init(value: "gate", label: "Gate 12")],
+                label: "From",
+                disabled: scenario == "combobox-unlock-disabled" && !fieldUsable,
+                readOnly: (scenario == "combobox-unlock-readonly" && !fieldUsable) || (scenario == "combobox-lock" && multiLocked),
+                defaultOpen: true)
+            if scenario != "combobox-lock" {
+                Button("Make usable") { fieldUsable = true }
+            }
         case "combobox-locked-readonly", "combobox-locked-disabled":
             KozmosCombobox(options: [.init(value: "lobby", label: "Lobby")], label: "From",
                 disabled: scenario == "combobox-locked-disabled", readOnly: scenario == "combobox-locked-readonly",
@@ -354,7 +371,11 @@ private struct InteractionFixture: View {
         // and marks. The large variants are accessibility3, right to left.
         case "multiselect-readonly", "multiselect-disabled", "multiselect-lock":
             // Opened by default; read-only, disabled, or read-only while
-            // "Toggle read-only" says so.
+            // "Toggle read-only" says so. The toggle sits above the field, where
+            // the list's closing cannot move it between taps.
+            if scenario == "multiselect-lock" {
+                Button("Toggle read-only") { multiLocked.toggle() }
+            }
             KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
                     multiSelection = $0
                     events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
@@ -364,9 +385,18 @@ private struct InteractionFixture: View {
                 readOnly: scenario == "multiselect-readonly" || (scenario == "multiselect-lock" && multiLocked),
                 defaultOpen: true)
                 .frame(width: 320)
-            if scenario == "multiselect-lock" {
-                Button("Toggle read-only") { multiLocked.toggle() }
-            }
+        case "multiselect-unlock-readonly", "multiselect-unlock-disabled":
+            // Opened by default while read-only or disabled, until "Make usable".
+            KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
+                    multiSelection = $0
+                    events.append("values \($0.isEmpty ? "none" : $0.joined(separator: ","))")
+                }),
+                options: [.init(value: "lift", label: "Lift"), .init(value: "ramp", label: "Ramp")], label: "Access",
+                disabled: scenario == "multiselect-unlock-disabled" && !fieldUsable,
+                readOnly: scenario == "multiselect-unlock-readonly" && !fieldUsable,
+                defaultOpen: true)
+                .frame(width: 320)
+            Button("Make usable") { fieldUsable = true }
         case "multiselect", "multiselect-large-rtl":
             KozmosMultiSelect(selectedValues: Binding(get: { multiSelection }, set: {
                     multiSelection = $0

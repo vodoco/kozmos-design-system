@@ -19,6 +19,7 @@ import {
   FollowTheLine,
   HardLeft,
   HardRight,
+  LayersThree01,
   LogIn01,
   LogOut01,
   RampDown,
@@ -33,6 +34,7 @@ import {
   StairsNoDirection,
   StairsUp,
   TurnBack,
+  Walking,
   getIconComponent,
   isKozmosIconKey,
   type KozmosIconComponent,
@@ -46,9 +48,11 @@ import { MetaStrip, MetaStripItem } from "../MetaStrip";
  * The names a tag draws that `Icon`'s registry does not know, which
  * `KozmosIcon` on iOS and Android draws, and so their tags: each wayfinding
  * glyph of Pointr Maps - Express (navigation-glyphs.json) by the kebab case
- * of its export name, and the four Pointr Icon Library outlines the natives
- * keep by name. The artwork is `@kozmos-ds/icons`' own, the source the
- * natives' copies are generated or taken from. The registry's names and
+ * of its export name, the four Pointr Icon Library outlines the natives
+ * keep by name, and the map controls' layers glyph and walking figure
+ * (GAP-181: `layers-three-01` by its Pointr name, `walking` by the kebab
+ * case of its export). The artwork is `@kozmos-ds/icons`' own, the source
+ * the natives' copies are generated or taken from. The registry's names and
  * aliases resolve through the registry first; none of them is here.
  */
 const tagIconsBeyondTheRegistry: Readonly<Record<string, KozmosIconComponent>> =
@@ -80,6 +84,8 @@ const tagIconsBeyondTheRegistry: Readonly<Record<string, KozmosIconComponent>> =
     "log-out-01": LogOut01,
     "arrow-up-right": ArrowUpRight,
     "arrow-down-right": ArrowDownRight,
+    "layers-three-01": LayersThree01,
+    walking: Walking,
   };
 
 /**

@@ -8,7 +8,7 @@ import { PlatformSnippets } from "../components/PlatformSnippets";
 Kozmos parts report what people do with them, such as a switch being toggled or a result being opened.
 A provider collects those events and hands them to your `onDispatch` in batches, for you to send where
 you like. In React it is `AnalyticsProvider`; in SwiftUI, the `.kozmosAnalytics(batchDelayMs:onDispatch:)`
-modifier.
+modifier; in Compose, `KozmosAnalyticsProvider(onDispatch, batchDelayMs)`.
 
 ## Batches
 
@@ -16,14 +16,15 @@ modifier.
   sent meanwhile, in the order they were sent. A later event does not move the delivery, so a steady
   stream arrives every `batchDelayMs`, not when it stops.
 - What is still waiting when the provider goes away is delivered then: when `AnalyticsProvider` unmounts,
-  and when the view with `.kozmosAnalytics` leaves the hierarchy. Neither delivers early when the page is
-  hidden or the app moves to the background.
+  when the view with `.kozmosAnalytics` leaves the hierarchy, and when `KozmosAnalyticsProvider` leaves the
+  composition. None delivers early when the page is hidden or the app moves to the background.
 - A provider takes the events of the parts inside it. A nested provider takes its own subtree's, and the
   one above it gets none of them.
 - An event carries `component`, `eventName`, `properties` and `timestamp`: milliseconds since 1970 in
-  React, seconds in SwiftUI.
-- SwiftUI calls `onDispatch` on the main thread. A SwiftUI product can add its own events to the batches
-  through `@EnvironmentObject var analytics: KozmosAnalytics` and its `trackEvent`.
+  React and Compose, seconds in SwiftUI.
+- SwiftUI and Compose call `onDispatch` on the main thread. A SwiftUI product can add its own events to the
+  batches through `@EnvironmentObject var analytics: KozmosAnalytics` and its `trackEvent`; a Compose
+  product, by calling the tracker in `LocalKozmosAnalytics.current` inside the provider.
 
 With no provider, React drops the events and warns once in a development build, and SwiftUI prints each
 one. A SwiftUI tracker set with `.environment(\.kozmosAnalytics) { event in … }` gets each event as it
@@ -31,9 +32,9 @@ happens, unbatched.
 
 ## Compose
 
-Compose has no batching provider. A tracker provided through `LocalKozmosAnalytics` gets each event as it
-happens; a product that wants batches collects them itself. Its event has no `timestamp`, and its
-`properties` are strings.
+`KozmosAnalyticsProvider` batches as React's and SwiftUI's do. Its event's `properties` are strings, where
+React's and SwiftUI's take any value. With no provider, Compose prints each event; a tracker provided
+through `LocalKozmosAnalytics` itself gets each event as it happens, unbatched.
 
 ## Implementation
 
@@ -73,15 +74,15 @@ struct TrackedApp<Content: View>: View {
     `}
     kotlin={`
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import com.kozmos.providers.KozmosAnalyticsEvent
-import com.kozmos.providers.LocalKozmosAnalytics
+import com.kozmos.providers.KozmosAnalyticsProvider
 
-// Compose has no batching provider: the tracker gets each event of the
-// parts inside as it happens.
+// The events of the parts inside arrive in batches, each 2000ms after its
+// first event by default, and what is left when this leaves the
+// composition. onDispatch is called on the main thread.
 @Composable
-fun TrackedApp(send: (KozmosAnalyticsEvent) -> Unit, content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalKozmosAnalytics provides { event -> send(event) }) {
+fun TrackedApp(send: (List<KozmosAnalyticsEvent>) -> Unit, content: @Composable () -> Unit) {
+    KozmosAnalyticsProvider(onDispatch = send) {
         content()
     }
 }

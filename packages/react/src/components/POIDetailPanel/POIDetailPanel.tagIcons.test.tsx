@@ -10,8 +10,10 @@ import type {
 import {
   ArrowDownRight,
   ArrowUpRight,
+  LayersThree01,
   LogIn01,
   LogOut01,
+  Walking,
   getIconComponent,
   kozmosIconAliases,
   kozmosIconNames,
@@ -67,10 +69,22 @@ const pointrOutlines: Record<string, KozmosIconComponent> = {
 };
 
 /**
+ * The map controls' layers glyph and walking figure, which both natives'
+ * `KozmosIcon` draw by name (GAP-181): the outline by its Pointr name, the
+ * solid figure by the kebab case of its export, each from the export of
+ * `@kozmos-ds/icons` the native copy is generated from.
+ */
+const mapControlGlyphs: Record<string, KozmosIconComponent> = {
+  "layers-three-01": LayersThree01,
+  walking: Walking,
+};
+
+/**
  * Every name SwiftUI's `KozmosIcon` draws artwork for, which its POI detail
  * tag asks before drawing one (`KozmosIcon.drawsArtwork(for:)`): the SF
- * Symbols it maps, Pointr's outlines and wayfinding artwork, and each alias
- * of a name it draws. Read from the sources as text, never compiled.
+ * Symbols it maps, Pointr's outlines, solid marks and wayfinding artwork,
+ * and each alias of a name it draws. Read from the sources as text, never
+ * compiled.
  */
 function namesSwiftUIDraws(): Set<string> {
   const icon = read("packages/ios/Sources/Components/Icon/Icon.swift");
@@ -94,6 +108,11 @@ function namesSwiftUIDraws(): Set<string> {
     ...captures(
       between(generated, "static func data", "default:"),
       /case "([^"]+)": return \[/g,
+    ),
+    // The solid marks `KozmosPointrGlyph.named` fits to the grid.
+    ...captures(
+      between(generated, "static func symbol", "default:"),
+      /case "([^"]+)": return \(/g,
     ),
   ]);
   const aliases = between(
@@ -239,6 +258,14 @@ describe("POIDetailPanel tag icons", () => {
     }
   });
 
+  it("draws the layers glyph and the walking figure iOS and Android draw by name (GAP-181)", () => {
+    const names = Object.keys(mapControlGlyphs);
+    const iconOf = renderTags(names);
+    for (const name of names) {
+      expect(iconOf(name)?.outerHTML, name).toBe(drawn(mapControlGlyphs[name]));
+    }
+  });
+
   it("still draws every registry name and alias with the registry's artwork", () => {
     const names: KozmosIconKey[] = [
       ...kozmosIconNames,
@@ -275,6 +302,7 @@ describe("POIDetailPanel tag icons", () => {
         ...Object.keys(kozmosIconAliases),
         ...glyphs.map((glyph) => glyph.iconName),
         ...Object.keys(pointrOutlines),
+        ...Object.keys(mapControlGlyphs),
         ...swiftUI,
         ...compose,
         ...notIconNames,

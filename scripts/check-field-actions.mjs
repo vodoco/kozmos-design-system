@@ -17,12 +17,19 @@
  *   MultiSelect as on Combobox; with the input focused, the field rings. In
  *   forced colours, where a ring (a box-shadow) is dropped, the mark is the
  *   outline they paint for a transparent outline-none, and the same holds.
+ * - MultiSelect's input draws no box of its own inside the field, at rest or
+ *   focused, in normal or forced colours: the field draws the edge, and the
+ *   outline that marks the input's focus. Forced colours paint a transparent
+ *   outline-none, so an input that kept one at rest drew a 2px box inside the
+ *   field. Combobox's input is its field: at rest it paints no outline.
  *
  * The edges are read as pixels from screenshots, at rest and hovered, each at
  * the pixel nearest the edge that differs most from the field's inside.
  * Chromium and Firefox emulate the forced palette; WebKit matches the media
  * query but repaints nothing (Safari has no forced colours), so there the
- * hover fill itself must stand aside.
+ * hover fill itself must stand aside. The input's box is read as pixels
+ * inside the field where forced colours repaint, and in forced colours, in
+ * every engine, as the outline they paint, from computed styles.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-field-actions.mjs
@@ -37,6 +44,8 @@ const { code, css } = await buildReactFixture("field-actions-host.tsx");
 const browser = await launchFixtureBrowser({ pointer: "mouse" });
 const failures = [];
 let reads = 0;
+// Set when forced colours match but nothing repaints (WebKit).
+let noForcedPalette = false;
 
 // Screenshots are decoded on a page of their own, through a canvas.
 const decoder = await browser.newPage();
@@ -188,6 +197,125 @@ async function hoverKeepsEdges(page, part, edgesWanted, step, problems) {
   await page.mouse.move(1, 1);
 }
 
+/**
+ * The part's input draws no box of its own. MultiSelect's input sits inside
+ * the field: the pixels 1 to 5px outside its top, bottom and end, inside the
+ * field's border and short of its buttons, where forced colours paint a
+ * transparent outline-none (2px wide, 2px out), must match the input's empty
+ * inside. Read where the engine repaints forced colours; in forced colours,
+ * in every engine, the input must also paint no outline. Combobox's input is
+ * its field: only the outline is read, at rest.
+ */
+async function inputDrawsNoBox(page, part, state, mode, step, problems) {
+  const at = await page.evaluate((part) => {
+    const host = document.querySelector(`[data-part="${part}"]`);
+    const input = host.querySelector('[role="combobox"]');
+    let field = input;
+    while (field && parseFloat(getComputedStyle(field).borderTopWidth) === 0)
+      field = field.parentElement;
+    const box = (el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    };
+    const f = getComputedStyle(field);
+    const outer = box(field);
+    const i = getComputedStyle(input);
+    return {
+      own: field === input,
+      outline: i.outlineStyle === "none" ? 0 : parseFloat(i.outlineWidth),
+      input: box(input),
+      field: outer,
+      inner: {
+        left: outer.left + parseFloat(f.borderLeftWidth),
+        top: outer.top + parseFloat(f.borderTopWidth),
+        right: outer.right - parseFloat(f.borderRightWidth),
+        bottom: outer.bottom - parseFloat(f.borderBottomWidth),
+      },
+      rtl: f.direction === "rtl",
+      buttons: [...field.querySelectorAll("button[aria-label]")]
+        .filter((b) => /^(Clear|Open|Close)/.test(b.getAttribute("aria-label")))
+        .map(box),
+    };
+  }, part);
+  if (mode.forced) {
+    reads += 1;
+    if (at.outline > 0)
+      problems.push(
+        at.own
+          ? `${step}: ${part}'s input paints an outline ${at.outline}px ${state}, which forced colours draw round its edge`
+          : `${step}: ${part}'s input paints an outline ${at.outline}px ${state}, which forced colours draw as a box of its own inside the field`,
+      );
+  }
+  if (at.own || !mode.repaints) return;
+  const { input, field, inner, rtl, buttons } = at;
+  const x0 = Math.floor(field.left) - 2;
+  const y0 = Math.floor(field.top) - 2;
+  const shot = await page.screenshot({
+    clip: {
+      x: x0,
+      y: y0,
+      width: Math.ceil(field.right) + 2 - x0,
+      height: Math.ceil(field.bottom) + 2 - y0,
+    },
+  });
+  const cx = Math.round((input.left + input.right) / 2);
+  const cy = Math.round((input.top + input.bottom) / 2);
+  // The buttons' start: the end side stops short of them.
+  const stop = rtl
+    ? Math.max(...buttons.map((b) => b.right))
+    : Math.min(...buttons.map((b) => b.left));
+  const inField = ([x, y]) =>
+    x >= Math.ceil(inner.left) &&
+    x < Math.floor(inner.right) &&
+    y >= Math.ceil(inner.top) &&
+    y < Math.floor(inner.bottom) &&
+    (rtl ? x >= Math.ceil(stop) : x < Math.floor(stop));
+  // Each side's pixels, d px out from the input, kept inside the field.
+  const sides = { top: [], bottom: [], end: [] };
+  for (let d = 1; d <= 5; d += 1) {
+    sides.top.push({ d, x: cx, y: Math.floor(input.top) - d });
+    sides.bottom.push({ d, x: cx, y: Math.ceil(input.bottom) - 1 + d });
+    sides.end.push({
+      d,
+      x: rtl ? Math.floor(input.left) - d : Math.ceil(input.right) - 1 + d,
+      y: cy,
+    });
+  }
+  const spots = Object.entries(sides).map(([side, points]) => ({
+    side,
+    points: points.filter(({ x, y }) => inField([x, y])),
+  }));
+  const read = await pixels(
+    shot,
+    [{ x: cx, y: cy }, ...spots.flatMap((spot) => spot.points)].map(
+      ({ x, y }) => [x - x0, y - y0],
+    ),
+  );
+  const inside = read[0];
+  let n = 1;
+  for (const spot of spots) {
+    reads += 1;
+    const values = read.slice(n, n + spot.points.length);
+    n += spot.points.length;
+    if (spot.points.length < 3) {
+      problems.push(
+        `${step}: ${part}'s input leaves ${spot.points.length}px inside the field at its ${spot.side}, too few to read`,
+      );
+      continue;
+    }
+    let worst = { contrast: -1 };
+    for (const [k, pixel] of values.entries()) {
+      const contrast = distance(pixel, inside);
+      if (contrast > worst.contrast)
+        worst = { contrast, pixel, d: spot.points[k].d };
+    }
+    if (worst.contrast >= 24)
+      problems.push(
+        `${step}: ${part}'s input draws a box of its own inside the field ${state}: its ${spot.side} edge reads rgb(${worst.pixel.slice(0, 3)}) ${worst.d}px out, ${worst.contrast} from the input's inside`,
+      );
+  }
+}
+
 /** A box-shadow's rings: layers with a spread and some colour. */
 const ringed = (shadow) =>
   shadow !== "none" &&
@@ -221,10 +349,10 @@ const rings = (page, part) =>
     };
   }, part);
 
-async function focusRings(page, part, forced, step, problems) {
+async function focusRings(page, part, mode, step, problems) {
+  const { forced } = mode;
   // Forced colours drop the ring and paint the transparent outline instead.
-  const marked = (look) =>
-    forced ? look.outline > 0 : ringed(look.shadow);
+  const marked = (look) => (forced ? look.outline > 0 : ringed(look.shadow));
   const describe = (look) =>
     forced ? `an outline ${look.outline}px` : look.shadow;
   await page.locator(`[data-part="${part}"] [role="combobox"]`).focus();
@@ -233,6 +361,9 @@ async function focusRings(page, part, forced, step, problems) {
   reads += 1;
   if (!marked(atInput.field))
     problems.push(`${step}: ${part}'s field draws no ring for its input`);
+  // The field marks the input's focus; the input draws no box inside it.
+  if (part !== "combobox")
+    await inputDrawsNoBox(page, part, "focused", mode, step, problems);
   // The open button reads "Close options" while the list is open.
   for (const [label, name] of [
     ["clear", /^Clear /],
@@ -288,6 +419,24 @@ for (const forced of ["none", "active"])
           );
           if (matches !== (forced === "active"))
             problems.push(`forced-colors matches ${matches}`);
+          // Whether the engine repaints in the forced palette: WebKit
+          // matches the media query and keeps the page's colours.
+          const mode = {
+            forced: forced === "active",
+            repaints:
+              forced !== "active" ||
+              (await page.evaluate(() => {
+                const probe = document.createElement("div");
+                probe.style.color = "rgb(1, 2, 3)";
+                document.body.append(probe);
+                const color = getComputedStyle(probe).color;
+                probe.remove();
+                return color !== "rgb(1, 2, 3)";
+              })),
+          };
+          if (mode.forced && !mode.repaints) noForcedPalette = true;
+          for (const part of ["combobox", "multiselect", "multiselect-wrapped"])
+            await inputDrawsNoBox(page, part, "at rest", mode, name, problems);
           if (forced === "active") {
             for (const part of [
               "combobox",
@@ -306,7 +455,7 @@ for (const forced of ["none", "active"])
               await hoverKeepsEdges(page, part, ["end"], name, problems);
           }
           for (const part of ["combobox", "multiselect"])
-            await focusRings(page, part, forced === "active", name, problems);
+            await focusRings(page, part, mode, name, problems);
           if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
         } catch (error) {
           problems.push(String(error.message ?? error));
@@ -327,5 +476,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS field actions: ${reads} reads; hovering Combobox's and MultiSelect's clear and open leaves the field's top, bottom and end edges drawn in forced colours, and MultiSelect's end edge in normal colours with its chips wrapped; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; light and dark, touch and compact, both directions`,
+  `\nPASS field actions: ${reads} reads; hovering Combobox's and MultiSelect's clear and open leaves the field's top, bottom and end edges drawn in forced colours, and MultiSelect's end edge in normal colours with its chips wrapped; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; MultiSelect's input draws no box of its own inside the field, at rest or focused, and Combobox's paints no outline at rest${noForcedPalette ? " (forced colours repaint nothing in this engine: there the input's box was read from computed styles only)" : ""}; light and dark, touch and compact, both directions`,
 );
