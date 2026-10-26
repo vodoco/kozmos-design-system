@@ -47,7 +47,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD-PARTY-NOTICES"
   ],
   "//browserslist": "Declared browser minimums, not whole-library or embedded-WebView certification. Remaining utility styles require native CSS @scope. Firefox enabled it by default in 146 (https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146); the earlier 128 declaration was incorrect. Supporting older Firefox requires the owned-CSS migration. See README migration guidance and the scoped-utility regression checks.",
   "browserslist": [
@@ -109,11 +110,12 @@
   },
   "devDependencies": {
     "@figma/code-connect": "1.4.2",
+    "@microsoft/api-extractor": "7.43.0",
     "@pact-foundation/pact": "16.3.0",
     "@playwright/experimental-ct-react": "1.58.2",
     "@playwright/test": "1.58.2",
-    "@storybook/react": "8.6.18",
-    "@storybook/test": "8.6.18",
+    "@storybook/react": "8.6.19",
+    "@storybook/test": "8.6.19",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
@@ -128,13 +130,13 @@
     "postcss": "^8.5.23",
     "postcss-value-parser": "4.2.0",
     "rollup-plugin-visualizer": "7.0.1",
-    "storybook": "8.6.18",
+    "storybook": "8.6.19",
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "1.0.7",
     "tsx": "^4.22.0",
     "typescript": "^5.2.2",
+    "unplugin-dts": "1.1.2",
     "vite": "^6.4.3",
-    "vite-plugin-dts": "^3.9.1",
     "vitest": "^4.1.11",
     "vitest-axe": "0.1.0"
   }

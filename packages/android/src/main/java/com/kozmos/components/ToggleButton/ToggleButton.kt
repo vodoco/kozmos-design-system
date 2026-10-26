@@ -38,7 +38,13 @@ fun KozmosToggleButton(
     label: String? = null,
     icon: ImageVector? = null,
     variant: KozmosToggleButtonVariant = KozmosToggleButtonVariant.Default,
-    size: KozmosToggleButtonSize = KozmosToggleButtonSize.Default
+    size: KozmosToggleButtonSize = KozmosToggleButtonSize.Default,
+    // What TalkBack calls the icon, in the product's words, as
+    // KozmosIconButton's. A toggle with only an icon needs it, as React's
+    // needs an `aria-label`: without it the toggle has no name. Beside a
+    // label, leave it out: the label names the toggle, and TalkBack would say
+    // both. Last, so a call by position still compiles.
+    contentDescription: String? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     val hPadding = when (size) {
@@ -102,7 +108,7 @@ fun KozmosToggleButton(
             if (icon != null) {
                 Icon(
                     icon,
-                    contentDescription = null,
+                    contentDescription = contentDescription,
                     tint = contentColor
                 )
                 if (label != null) {

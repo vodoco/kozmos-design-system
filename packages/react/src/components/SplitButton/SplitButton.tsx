@@ -18,6 +18,11 @@ interface SplitButtonProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: ButtonProps["size"];
   disabled?: boolean;
   children?: React.ReactNode;
+  /**
+   * The menu half's accessible name: it shows only a chevron. "More options"
+   * by default; a product that translates passes its own.
+   */
+  menuLabel?: string;
 }
 
 const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
@@ -30,6 +35,7 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
       variant = "default",
       size = "default",
       disabled,
+      menuLabel = "More options",
       ...props
     },
     ref,
@@ -62,7 +68,7 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
               variant={variant}
               size={size}
               disabled={disabled}
-              aria-label="More options"
+              aria-label={menuLabel}
             >
               <ChevronDown className="h-4 w-4" />
             </Button>

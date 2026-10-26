@@ -30,9 +30,10 @@ public struct KozmosLabel: View {
                     .foregroundColor(KozmosColors.primitivesColorsEmotionalDanger600)
                     .accessibilityHidden(true)
             } else if let optionalText {
+                // Muted; disabled, the disabled label's colour, never darker than it.
                 Text(optionalText)
                     .font(KozmosTypography.caption)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
             }
         }
         .accessibilityElement(children: .combine)

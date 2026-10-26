@@ -119,7 +119,7 @@ fun KozmosDialog(
                             Spacer(modifier = Modifier.defaultMinSize(minHeight = KozmosDimensions.primitivesLayoutSpacing100))
                             Text(
                                 text = description,
-                                color = KozmosThemeTokens.primitivesColorsForeground500
+                                color = KozmosThemeTokens.primitivesColorsForeground400
                             )
                         }
                     }

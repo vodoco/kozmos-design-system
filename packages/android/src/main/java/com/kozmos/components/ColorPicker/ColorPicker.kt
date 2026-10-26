@@ -40,6 +40,9 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -130,7 +133,7 @@ fun KozmosColorPicker(
             androidx.compose.material3.Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = if (isExpanded) "Close color picker" else "Open color picker",
-                tint = KozmosThemeTokens.primitivesColorsForeground500,
+                tint = KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier
                     .size(20.dp)
                     .rotate(if (isExpanded) 180f else 0f)
@@ -171,7 +174,8 @@ fun KozmosColorPicker(
                     onFormatChange = { currentFormat = it },
                     value = normalizedValue,
                     alpha = alpha,
-                    hsl = hsl
+                    hsl = hsl,
+                    enabled = enabled && !readOnly
                 )
 
                 PaletteSelector(label = paletteLabel)
@@ -188,7 +192,7 @@ fun KozmosColorPicker(
             Text(
                 text = helperText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = statusColor(status) ?: KozmosThemeTokens.primitivesColorsForeground500
+                color = statusColor(status) ?: KozmosThemeTokens.primitivesColorsForeground400
             )
         }
     }
@@ -237,7 +241,7 @@ private fun LabeledKozmosSlider(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = KozmosThemeTokens.primitivesColorsForeground500
+            color = KozmosThemeTokens.primitivesColorsForeground400
         )
         KozmosSlider(
             value = value.coerceIn(range.start, range.endInclusive),
@@ -255,7 +259,8 @@ private fun FormatControls(
     onFormatChange: (KozmosColorPickerFormat) -> Unit,
     value: String,
     alpha: Float,
-    hsl: HslColor
+    hsl: HslColor,
+    enabled: Boolean
 ) {
     FormatRowLayout(
         spacing = KozmosDimensions.primitivesLayoutSpacing75,
@@ -263,13 +268,21 @@ private fun FormatControls(
         minimumColumn = if (format == KozmosColorPickerFormat.Hex) 96.dp else 56.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
+        val formatLabel = when (format) {
+            KozmosColorPickerFormat.Hex -> "HEX"
+            KozmosColorPickerFormat.Rgb -> "RGB"
+            KozmosColorPickerFormat.Hsl -> "HSL"
+        }
         CompactValueBox(
-            text = when (format) {
-                KozmosColorPickerFormat.Hex -> "HEX"
-                KozmosColorPickerFormat.Rgb -> "RGB"
-                KozmosColorPickerFormat.Hsl -> "HSL"
-            },
-            modifier = Modifier.clickable {
+            text = formatLabel,
+            // Named "Color format", the format its value, as React's select
+            // is (`aria-label="Color format"`); TalkBack heard only "HSL".
+            // Disabled with the picker, as React's select is
+            // (`pickerDisabled`) and the sliders and presets beside it are.
+            modifier = Modifier.semantics {
+                contentDescription = "Color format"
+                stateDescription = formatLabel
+            }.clickable(enabled = enabled) {
                 onFormatChange(
                     when (format) {
                         KozmosColorPickerFormat.Hex -> KozmosColorPickerFormat.Rgb
@@ -299,7 +312,7 @@ private fun FormatControls(
         CompactValueBox(text = alpha.coerceIn(0f, 100f).toInt().toString())
         Text(
             text = "%",
-            color = KozmosThemeTokens.primitivesColorsForeground500,
+            color = KozmosThemeTokens.primitivesColorsForeground400,
             modifier = Modifier.layoutId(FormatRowUnit)
         )
     }

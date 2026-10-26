@@ -30,6 +30,11 @@ figma.connect(
         Warning: "warning",
         Success: "success",
       }),
+      // The open list of times (decision 104), in every engine.
+      defaultOpen: figma.enum("Content", {
+        Closed: false,
+        Open: true,
+      }),
       label: figma.string("Label Text"),
       value: figma.string("Value Text"),
       helperText: figma.boolean("Show Helper Text", {
@@ -39,6 +44,7 @@ figma.connect(
     },
     example: ({
       autoFocus,
+      defaultOpen,
       disabled,
       helperText,
       label,
@@ -48,6 +54,7 @@ figma.connect(
     }) => (
       <TimePicker
         autoFocus={autoFocus}
+        defaultOpen={defaultOpen}
         defaultValue={value}
         disabled={disabled}
         helperText={helperText}
