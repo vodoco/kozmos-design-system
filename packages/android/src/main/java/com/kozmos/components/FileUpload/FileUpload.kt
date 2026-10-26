@@ -49,8 +49,25 @@ import kotlinx.coroutines.withContext
 @Composable
 fun KozmosFileUpload(
     modifier: Modifier = Modifier,
+    /**
+     * The drop area's words. "Tap to upload file" by default, as React's
+     * `browseLabel`; a product that translates passes its own.
+     */
+    browseLabel: String = "Tap to upload file",
+    /**
+     * The remove button's spoken name. "Remove" by default; a product that
+     * translates passes its own.
+     */
+    removeLabel: String = "Remove",
+    /**
+     * Told the file the visitor removed, as React's `onFilesChange` is told
+     * the files left. The new parameters come before [onFileSelected], so a
+     * trailing lambda is still [onFileSelected].
+     */
+    onFileRemoved: ((Uri) -> Unit)? = null,
     onFileSelected: (Uri) -> Unit
 ) {
+    var file by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -69,6 +86,7 @@ fun KozmosFileUpload(
             // neither, nothing, as React shows a nameless File: the fixed
             // English "Selected File" it fell back to is gone.
             val pick = latest.incrementAndGet()
+            file = it
             fileName = it.lastPathSegment.orEmpty()
             onFileSelected(it)
             val resolver = context.contentResolver
@@ -100,9 +118,12 @@ fun KozmosFileUpload(
             )
             IconButton(onClick = {
                 latest.incrementAndGet()
+                val removed = file
+                file = null
                 fileName = null
+                removed?.let { onFileRemoved?.invoke(it) }
             }) {
-                Icon(Icons.Default.Close, contentDescription = "Remove")
+                Icon(Icons.Default.Close, contentDescription = removeLabel)
             }
         }
     } else {
@@ -130,7 +151,7 @@ fun KozmosFileUpload(
             )
             Spacer(modifier = Modifier.height(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
-                text = "Tap to upload file",
+                text = browseLabel,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 color = KozmosThemeTokens.primitivesColorsForeground400
             )
