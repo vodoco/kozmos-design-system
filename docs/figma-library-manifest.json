@@ -18652,6 +18652,7 @@
           "disabled",
           "id",
           "menuItems",
+          "menuLabel",
           "role",
           "size",
           "tabIndex",

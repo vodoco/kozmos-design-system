@@ -16,6 +16,15 @@ The host supplies destinations, the active page and pagination logic; the compon
 
 <Controls />
 
+## Words in the product's language
+
+`PaginationPrevious` and `PaginationNext` draw `label`, "Previous" and "Next" by default, and are
+named by `aria-label`, "Go to previous page" and "Go to next page", which a screen reader says in
+place of the word. `Pagination`'s landmark is named by `aria-label`, "pagination". A product that
+translates passes all of them, each name containing its word. SwiftUI's and Compose's Previous and
+Next take `label` too, the word drawn and the one VoiceOver and TalkBack say. The app supplies the
+translation; Kozmos does not choose a locale.
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -63,17 +72,18 @@ import SwiftUI
 import Kozmos
 
 // Each page is a button, not a link: there is no href, and where a press goes
-// is yours. The current page is drawn, not told to VoiceOver, and Previous and
-// Next take no words of yours.
+// is yours. The current page is drawn, not told to VoiceOver. Previous and
+// Next draw and say label, "Previous" and "Next" unless you pass your own.
 struct ResultPages: View {
     let page: Int
+    let nextLabel: String
     let goTo: (Int) -> Void
 
     var body: some View {
         KozmosPagination {
             KozmosPaginationLink(text: "1", isActive: page == 1) { goTo(1) }
             KozmosPaginationLink(text: "2", isActive: page == 2) { goTo(2) }
-            KozmosPaginationNext { goTo(page + 1) }
+            KozmosPaginationNext(label: nextLabel) { goTo(page + 1) }
         }
     }
 }
@@ -86,13 +96,14 @@ import com.kozmos.components.pagination.KozmosPaginationNext
 
 // Each page is pressable text, not a link: there is no href, and where a
 // press goes is yours. TalkBack is told no role and not which page is
-// current, and Previous and Next are fixed English words.
+// current. Previous and Next draw and say label, "Previous" and "Next"
+// unless you pass your own.
 @Composable
-fun ResultPages(page: Int, goTo: (Int) -> Unit) {
+fun ResultPages(page: Int, nextLabel: String, goTo: (Int) -> Unit) {
     KozmosPagination {
         KozmosPaginationLink(text = "1", isActive = page == 1, onClick = { goTo(1) })
         KozmosPaginationLink(text = "2", isActive = page == 2, onClick = { goTo(2) })
-        KozmosPaginationNext(onClick = { goTo(page + 1) })
+        KozmosPaginationNext(onClick = { goTo(page + 1) }, label = nextLabel)
     }
 }
 `}

@@ -201,6 +201,9 @@ public struct KozmosNavigationItem: View {
             // LocalContentColor: it kept its own foreground/100.
             .environment(\.kozmosIconHostInk, foregroundColor)
             .clipShape(shape)
+            // The whole item takes a tap: on its clear fill an idle item took
+            // one only on its icon and label.
+            .contentShape(shape)
             // The selected rail item's 2pt bar, down its trailing edge: the
             // right, and the left in a right-to-left layout.
             .overlay(alignment: .trailing) {
@@ -260,8 +263,8 @@ public struct KozmosNavigationItem: View {
 
             if shouldRenderTrailing, let trailing = trailing {
                 trailing
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
             }
         }
     }

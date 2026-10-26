@@ -414,8 +414,10 @@ public struct KozmosFloorSelector: View {
         if let shown = selectedPresentation {
             tile(shown)
                 // The tile is called by this name already: as a hint too,
-                // it would be read twice.
-                .kozmosTooltip(shown.label, side: .left, isAccessibilityHint: false)
+                // it would be read twice. Before the tile in the reading
+                // direction, toward the map, as React's is (`left`, `right`
+                // right to left).
+                .kozmosTooltip(shown.label, side: .leading, isAccessibilityHint: false)
                  .overlay(alignment: .top) {
                     column
                         .offset(x: columnFrameOverTile.midX - tileSize.width / 2,
@@ -574,7 +576,7 @@ public struct KozmosFloorSelector: View {
         .accessibilityLabel(spokenLabel(floor))
         // The label starts with this name: as a hint too, VoiceOver read
         // every level twice.
-        .kozmosTooltip(floor.label, side: .left, isAccessibilityHint: false)
+        .kozmosTooltip(floor.label, side: .leading, isAccessibilityHint: false)
         .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
         #if os(iOS)
         // VoiceOver lands on the current level when the column opens. iOS

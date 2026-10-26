@@ -4,95 +4,28 @@ import type {
   POIServicePresentation,
 } from "@kozmos-ds/product-contracts";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Arriving,
   ClockPlus,
-  CustomTransition,
-  ElevatorDown,
-  ElevatorUp,
-  ElevatorUpAndDown,
-  EscalatorDown,
-  EscalatorNoDirection,
-  EscalatorUp,
   Feather,
-  FollowTheLine,
-  HardLeft,
-  HardRight,
-  LogIn01,
-  LogOut01,
-  RampDown,
-  RampNoDirection,
-  RampUp,
-  RouteEnter,
-  RouteEntranceExit,
-  RouteExit,
-  SecurityControl,
-  Shuttle,
-  StairsDown,
-  StairsNoDirection,
-  StairsUp,
-  TurnBack,
-  getIconComponent,
   isKozmosIconKey,
-  type KozmosIconComponent,
+  type KozmosIconKey,
 } from "@kozmos-ds/icons";
 import { Star01 as Star } from "@kozmos-ds/icons";
 import { Accessibility } from "@kozmos-ds/icons";
 import { Button } from "../Button";
+import { Icon } from "../Icon";
 import { MetaStrip, MetaStripItem } from "../MetaStrip";
 
 /**
- * The names a tag draws that `Icon`'s registry does not know, which
- * `KozmosIcon` on iOS and Android draws, and so their tags: each wayfinding
- * glyph of Pointr Maps - Express (navigation-glyphs.json) by the kebab case
- * of its export name, and the four Pointr Icon Library outlines the natives
- * keep by name. The artwork is `@kozmos-ds/icons`' own, the source the
- * natives' copies are generated or taken from. The registry's names and
- * aliases resolve through the registry first; none of them is here.
+ * A tag's icon name, or none for a name Kozmos does not know: the label
+ * stands alone, never beside a stand-in. The registry knows every name
+ * SwiftUI's and Compose's tags draw, the wayfinding glyphs, the four
+ * outlines and the map controls' layers glyph and walking figure beyond the
+ * curated library included (GAP-179, GAP-181): POIDetailPanel kept a map of
+ * its own for them until 2026-10-22. An inherited name such as `constructor`
+ * draws nothing.
  */
-const tagIconsBeyondTheRegistry: Readonly<Record<string, KozmosIconComponent>> =
-  {
-    "elevator-up": ElevatorUp,
-    "elevator-down": ElevatorDown,
-    "stairs-up": StairsUp,
-    "stairs-down": StairsDown,
-    "escalator-up": EscalatorUp,
-    "escalator-down": EscalatorDown,
-    "ramp-up": RampUp,
-    "ramp-down": RampDown,
-    "route-enter": RouteEnter,
-    "route-exit": RouteExit,
-    "elevator-up-and-down": ElevatorUpAndDown,
-    "escalator-no-direction": EscalatorNoDirection,
-    "stairs-no-direction": StairsNoDirection,
-    "ramp-no-direction": RampNoDirection,
-    "route-entrance-exit": RouteEntranceExit,
-    "hard-left": HardLeft,
-    "hard-right": HardRight,
-    "turn-back": TurnBack,
-    "follow-the-line": FollowTheLine,
-    arriving: Arriving,
-    "custom-transition": CustomTransition,
-    "security-control": SecurityControl,
-    shuttle: Shuttle,
-    "log-in-01": LogIn01,
-    "log-out-01": LogOut01,
-    "arrow-up-right": ArrowUpRight,
-    "arrow-down-right": ArrowDownRight,
-  };
-
-/**
- * A tag's icon for its `iconName`, or none for a name Kozmos does not know:
- * the label stands alone, never beside a stand-in. Only the map's own keys
- * count, so an inherited name such as `constructor` draws nothing.
- */
-function tagIcon(name: string | undefined): KozmosIconComponent | undefined {
-  if (!name) return undefined;
-  if (isKozmosIconKey(name)) return getIconComponent(name);
-  return Object.prototype.hasOwnProperty.call(tagIconsBeyondTheRegistry, name)
-    ? tagIconsBeyondTheRegistry[name]
-    : undefined;
+function tagIconName(name: string | undefined): KozmosIconKey | undefined {
+  return name && isKozmosIconKey(name) ? name : undefined;
 }
 
 const summaryIcons = {
@@ -158,8 +91,12 @@ export function POIDetailAssetIcon({
 }
 
 export function POIDetailAttribute({ item }: { item: POIServicePresentation }) {
-  const Icon = tagIcon(item.iconName);
-  const glyph = Icon ? <Icon aria-hidden="true" size={16} /> : null;
+  const iconName = tagIconName(item.iconName);
+  // The glyph the name draws, which an unsafe or failed `iconUrl` falls
+  // back to (GAP-178), and which a tag with no `iconUrl` draws.
+  const glyph = iconName ? (
+    <Icon name={iconName} size="sm" width={16} height={16} />
+  ) : null;
   return (
     <>
       {item.iconUrl ? (
@@ -185,7 +122,7 @@ export function POIDetailSummaryStrip({
   return (
     <MetaStrip className="kozmos-poi-summary" tabIndex={undefined}>
       {details.summary.slice(0, 3).map((item) => {
-        const Icon = summaryIcons[item.kind];
+        const KindIcon = summaryIcons[item.kind];
         return (
           <MetaStripItem
             className="kozmos-poi-summary-item"
@@ -198,10 +135,10 @@ export function POIDetailSummaryStrip({
                   src={item.iconUrl}
                   size={20}
                   monochrome={item.iconMonochrome}
-                  fallback={Icon ? <Icon size={20} /> : null}
+                  fallback={KindIcon ? <KindIcon size={20} /> : null}
                 />
-              ) : Icon ? (
-                <Icon size={20} />
+              ) : KindIcon ? (
+                <KindIcon size={20} />
               ) : undefined
             }
           >

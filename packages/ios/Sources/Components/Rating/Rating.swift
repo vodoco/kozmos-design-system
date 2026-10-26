@@ -117,8 +117,11 @@ public struct KozmosRating: View {
                         lineWidth: 2
                     )
                 )
-                // 44 is the target even though the circle is 40.
+                // 44 is the target even though the circle is 40, as React's
+                // 44px button round its 40px face: without a content shape
+                // the frame added nothing, and the target was the circle.
                 .frame(width: 44, height: 44)
+                .contentShape(Circle())
         }
     }
 }

@@ -36,7 +36,7 @@ fun KozmosBreadcrumb(
             Text(
                 text = item,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isLast) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500,
+                color = if (isLast) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground400,
                 modifier = Modifier
                     .clickable(enabled = !isLast) { onItemClick(index) }
                     // The page the visitor is on, as React's
@@ -52,7 +52,7 @@ fun KozmosBreadcrumb(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = KozmosThemeTokens.primitivesColorsForeground500,
+                    tint = KozmosThemeTokens.primitivesColorsForeground400,
                     modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing0)
                 )
             }

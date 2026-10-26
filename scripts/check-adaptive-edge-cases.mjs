@@ -6,6 +6,7 @@ import {
   launchFixtureBrowser,
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
+import { glideEnded } from "./lib/motion-waits.mjs";
 
 // axe-core, the version @axe-core/playwright runs, read once and put in a
 // page once: AxeBuilder injects all of it again on every run, and a hundred
@@ -689,7 +690,10 @@ const cases = [
       for (let step = 1; step <= 10; step++)
         await page.mouse.move(x, y + step * 25);
       await page.mouse.up();
-      await page.waitForTimeout(600);
+      // No fixed wait: under reduced motion the sheet has no transition, and
+      // the release sets its height from the pointer event, so it is in place
+      // when mouse.up resolves, in all three engines and with WebKit's frames
+      // held.
       await settleLayout(page);
       const sheetAfter = await page.locator("aside").boundingBox();
       assert(
@@ -765,105 +769,26 @@ const cases = [
       assert.equal(after.page, 0, "the page does not scroll");
 
       // And back up, gliding this time: motion is the default. Measured once
-      // the glide has ended, not after a fixed wait: Linux WebKit moves a
-      // smooth scroll only when it renders, and it can render nothing for
-      // over a second on a loaded runner (22 Oct, a 1.5 s wait measured the
-      // result at 182, mid-glide). It has ended when the list has moved, a
-      // scrollend has fired where it now rests, and it has held still, with
-      // the selected card done animating, for 150 ms and three frames: the
-      // card's action row brings it in again as it ends, and Chromium shows
-      // that glide two frames after it starts. Not ended in 10 s fails, with
-      // the list's scrollTop at every change.
+      // the glide has ended (glideEnded, in lib/motion-waits.mjs), not after
+      // a fixed wait: Linux WebKit moves a smooth scroll only when it
+      // renders, and it can render nothing for over a second on a loaded
+      // runner (22 Oct, a 1.5 s wait measured the result at 182, mid-glide).
+      // Not ended in 10 s fails, with the list's scrollTop at every change.
       assert(!inView(after.first, after), "the first result is out of sight");
       await page.emulateMedia({ reducedMotion: "no-preference" });
-      const glide = await page.evaluate(
-        (limit) =>
-          new Promise((resolve) => {
-            const scroller = document.querySelector(
-              'section[aria-label="Points of interest"]',
-            ).parentElement;
-            const t0 = performance.now();
-            const at = () => Math.round(performance.now() - t0);
-            const fires = "onscrollend" in scroller;
-            const from = scroller.scrollTop;
-            const timeline = [`0 ms ${from}`];
-            let last = from;
-            let moved = false;
-            let endedAt;
-            let ended = !fires;
-            let animating = false;
-            let quietSince = t0;
-            let still = 0;
-            let frames = 0;
-            let done = false;
-            // A scrollend counts only while the list rests where it fired: a
-            // glide that the next one cuts short fires one too. Where, not
-            // whether a scroll event followed it: loaded, Linux WebKit 26.0
-            // fired scroll events after the scrollend, at the same place.
-            const onEnd = () => {
-              endedAt = scroller.scrollTop;
-              timeline.push(`${at()} ms scrollend at ${endedAt}`);
-            };
-            const finish = (settled) => {
-              if (done) return;
-              done = true;
-              scroller.removeEventListener("scrollend", onEnd);
-              timeline.push(
-                `${at()} ms ${scroller.scrollTop}, ${frames} frames`,
-              );
-              resolve({
-                settled,
-                why: !moved
-                  ? "never scrolled"
-                  : !ended
-                    ? "had no scrollend where it rested"
-                    : animating
-                      ? "held a selected card still animating"
-                      : "had not held still for 150 ms",
-                timeline,
-              });
-            };
-            scroller.addEventListener("scrollend", onEnd);
-            // A timer, as well as the frames: a WebKit that stops rendering
-            // stops calling them too.
-            setTimeout(() => finish(false), limit);
-            const frame = () => {
-              if (done) return;
-              frames++;
-              const now = performance.now();
-              const top = scroller.scrollTop;
-              if (top !== last) timeline.push(`${at()} ms ${top}`);
-              if (top !== from) moved = true;
-              if (fires) ended = top === endedAt;
-              animating =
-                document
-                  .querySelector('[data-poi-id="result-0"]')
-                  ?.getAnimations({ subtree: true })
-                  .some((animation) => animation.playState === "running") ??
-                false;
-              if (top !== last || animating) {
-                quietSince = now;
-                still = 0;
-              } else still++;
-              last = top;
-              if (moved && ended && still >= 3 && now - quietSince >= 150)
-                finish(true);
-              else requestAnimationFrame(frame);
-            };
-            window.showResults("result-0");
-            requestAnimationFrame(frame);
-          }),
-        10_000,
+      const glide = await glideEnded(
+        page.locator('section[aria-label="Points of interest"]').locator(".."),
+        () => page.evaluate(() => window.showResults("result-0")),
+        { card: '[data-poi-id="result-0"]' },
       );
-      const scrolled = glide.timeline.join(", ");
       assert(
         glide.settled,
-        `10 s after the selection, the list ${glide.why}: ${scrolled}`,
+        `10 s after the selection, the list ${glide.why}: ${glide.timeline}`,
       );
       const back = await measure();
       assert(
         inView(back.first, back),
-        `result at ${back.first.top}–${back.first.bottom}, view ${back.viewTop}–${back.viewBottom}, once the list's scroll ended: ${scrolled}`,
+        `result at ${back.first.top}–${back.first.bottom}, view ${back.viewTop}–${back.viewBottom}, once the list's scroll ended: ${glide.timeline}`,
       );
     },
   ],

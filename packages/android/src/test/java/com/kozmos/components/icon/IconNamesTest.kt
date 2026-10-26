@@ -105,6 +105,68 @@ class IconNamesTest {
         assertTrue("Compose draws nothing for ${missing.size} of the web registry's ${names.size} names: $missing", missing.isEmpty())
     }
 
+    /** packages/icons/src/registry.ts, found by walking up from the directory Gradle runs the tests in. */
+    private fun webRegistrySource(): String {
+        var directory: File? = File(System.getProperty("user.dir")).absoluteFile
+        while (directory != null) {
+            val candidate = File(directory, "packages/icons/src/registry.ts")
+            if (candidate.isFile) return candidate.readText()
+            directory = directory.parentFile
+        }
+        error("no packages/icons/src/registry.ts above ${System.getProperty("user.dir")}")
+    }
+
+    /**
+     * The names the web draws beyond its curated library
+     * (`kozmosIconNamesBeyondTheLibrary` in packages/icons/src/registry.ts),
+     * read from its source as text.
+     */
+    private fun webNamesBeyondTheLibrary(): List<String> {
+        val list = webRegistrySource().substringAfter("export const kozmosIconNamesBeyondTheLibrary = [", "")
+            .substringBefore("] as const;", "")
+        check(list.isNotEmpty()) { "no kozmosIconNamesBeyondTheLibrary list in registry.ts" }
+        return list.lines()
+            .map { it.substringBefore("//").trim() }
+            .flatMap { line -> Regex("\"([a-z0-9-]+)\"").findAll(line).map { it.groupValues[1] }.toList() }
+    }
+
+    /** The export the web draws each of those names with: `kozmosIconsBeyondTheLibrary`, read the same way. */
+    private fun webExportsBeyondTheLibrary(): Map<String, String> {
+        val map = webRegistrySource().substringAfter("const kozmosIconsBeyondTheLibrary", "")
+            .substringAfter("= {", "")
+            .substringBefore("};", "")
+        check(map.isNotEmpty()) { "no kozmosIconsBeyondTheLibrary map in registry.ts" }
+        val entry = Regex("^\\s*\"?([a-z0-9-]+)\"?\\s*:\\s*([A-Za-z0-9]+),?\\s*$")
+        return map.lines().mapNotNull { line ->
+            entry.find(line.substringBefore("//"))?.let { it.groupValues[1] to it.groupValues[2] }
+        }.toMap()
+    }
+
+    /**
+     * GAP-179: every name the web draws beyond its curated library, Compose
+     * draws with the artwork the web draws it with: the wayfinding glyphs of
+     * Pointr Maps - Express, the four Pointr outlines and the map controls'
+     * layers glyph and walking figure (GAP-181), held to one list,
+     * `kozmosIconNamesBeyondTheLibrary`. A name renamed or dropped on either
+     * side fails here, and in the SwiftUI suite alike.
+     */
+    @Test
+    fun everyNameTheWebDrawsBeyondItsLibraryComposeDraws() {
+        val names = webNamesBeyondTheLibrary()
+        val exports = webExportsBeyondTheLibrary()
+        assertTrue("the web lists ${names.size} names beyond its library; the list was not read", names.size >= 29)
+        assertEquals("the web's names beyond its library are not unique", names.size, names.toSet().size)
+        assertEquals("the web draws other names than it lists", names.toSet(), exports.keys)
+        val registry = webRegistryNames().toSet()
+        assertEquals("a name beyond the library is in kozmosIconNames", emptyList<String>(), names.filter { it in registry })
+        val wrong = names.filter { knownIconVector(it)?.name != exports.getValue(it) }
+            .map { "$it (${knownIconVector(it)?.name ?: "nothing"}, not ${exports.getValue(it)})" }
+        assertTrue(
+            "Compose does not draw ${wrong.size} of the web's ${names.size} names beyond its library as the web does: $wrong",
+            wrong.isEmpty(),
+        )
+    }
+
     /**
      * The names Compose lacked until 2026-10-07 are Pointr's own outlines,
      * from packages/icons, unmirrored and stroked 2 on the 24 grid, as React
@@ -131,6 +193,40 @@ class IconNamesTest {
                 assertNull("$name is filled", path.fill)
                 assertEquals("$name is not stroked 2", 2f, path.strokeLineWidth)
             }
+        }
+    }
+
+    /**
+     * GAP-181: the map control's layers glyph and the status pill's walking
+     * figure, which React draws with `LayersThree01` and `Walking` from
+     * @kozmos-ds/icons, are drawn by name: `layers-three-01`, Pointr's
+     * outline stroked 2 on the 24 grid, and `walking`, the SDK's figure,
+     * solid on its own squared viewBox. Neither is mirrored, and neither is a
+     * Material stand-in. Compose drew nothing for either name.
+     */
+    @Test
+    fun theLayersAndWalkingGlyphsAreDrawnByName() {
+        val layers = knownIconVector("layers-three-01")
+        assertEquals("layers-three-01 is not Pointr's LayersThree01", "LayersThree01", layers?.name)
+        assertEquals(false, layers!!.autoMirror)
+        assertEquals(24f, layers.viewportWidth)
+        val outline = layers.root.filterIsInstance<VectorPath>()
+        assertTrue("layers-three-01 draws no path", outline.isNotEmpty())
+        for (path in outline) {
+            assertNull("layers-three-01 is filled", path.fill)
+            assertEquals("layers-three-01 is not stroked 2", 2f, path.strokeLineWidth)
+        }
+
+        val walking = knownIconVector("walking")
+        assertEquals("walking is not the SDK's Walking figure", "Walking", walking?.name)
+        assertEquals(false, walking!!.autoMirror)
+        assertEquals("walking is not on its own squared viewBox", walking.viewportWidth, walking.viewportHeight)
+        val solid = walking.root.filterIsInstance<androidx.compose.ui.graphics.vector.VectorGroup>()
+            .flatMap { group -> group.filterIsInstance<VectorPath>() }
+        assertTrue("walking draws no path", solid.isNotEmpty())
+        for (path in solid) {
+            assertTrue("walking is not filled", path.fill is SolidColor)
+            assertNull("walking is stroked", path.stroke)
         }
     }
 

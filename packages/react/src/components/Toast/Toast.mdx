@@ -18,6 +18,11 @@ A succinct message that is displayed temporarily.
 
 ## Implementation
 
+The close shows only a cross and is named "Dismiss notification" on all three platforms. A product
+that translates passes its own words: `aria-label` on React's `ToastClose`, `closeLabel` on
+SwiftUI's and Compose's `KozmosToast` (and on Compose's `KozmosToast(hostState)`, for every
+snackbar it draws).
+
 <div className="subheading">Code</div>
 
 <PlatformSnippets
@@ -65,7 +70,8 @@ import Kozmos
 
 // The toast draws itself at the bottom of the space it is given, so it goes
 // over the screen's content. It closes after 3 seconds (autoDismissAfter) or
-// at its close button, which is always named "Dismiss notification".
+// at its close button, named by closeLabel, "Dismiss notification" unless you
+// pass your own.
 struct LocationSavedToast: View {
     @State private var isPresented = false
 
@@ -98,7 +104,8 @@ import com.kozmos.components.toast.KozmosToast
 import com.kozmos.tokens.KozmosDimensions
 
 // This KozmosToast draws where you put it and stays until its close button,
-// named "Dismiss notification", calls onDismiss: it does not time out.
+// named by closeLabel ("Dismiss notification" unless you pass your own),
+// calls onDismiss: it does not time out.
 // KozmosToast(hostState) draws a SnackbarHostState's snackbars the same way,
 // with a message, an action and a close button, but no description.
 @Composable
