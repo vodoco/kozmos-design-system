@@ -3,6 +3,10 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  OverlayContainerContext,
+  useOverlayContainer,
+} from "../../theme/overlay-container";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export type DrawerSide = "left" | "right" | "top" | "bottom";
@@ -78,32 +82,39 @@ const DrawerContent = React.forwardRef<
       ...props
     },
     ref,
-  ) => (
-    <DrawerPortal container={portalContainer}>
-      <DrawerOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          "fixed z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
-          "border-border",
-          drawerSideClasses[side],
-          className,
-        )}
-        data-side={side}
-        {...props}
-      >
-        {children}
-        {showClose ? (
-          // The icon button's size, its centre where touch's 44 puts it, on
-          // the title (decision 82): 16 from the top at 44, 22 at 32.
-          <DialogPrimitive.Close className="absolute right-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
-            <X aria-hidden="true" className="h-4 w-4" />
-            <span className="sr-only">Close drawer</span>
-          </DialogPrimitive.Close>
-        ) : null}
-      </DialogPrimitive.Content>
-    </DrawerPortal>
-  ),
+  ) => {
+    // A Backdrop rendered inside is drawn in this content, not beside it,
+    // where the modal would make it inert (OverlayContainerContext).
+    const [contentRef, container] = useOverlayContainer(ref);
+    return (
+      <DrawerPortal container={portalContainer}>
+        <DrawerOverlay />
+        <DialogPrimitive.Content
+          ref={contentRef}
+          className={cn(
+            "fixed z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
+            "border-border",
+            drawerSideClasses[side],
+            className,
+          )}
+          data-side={side}
+          {...props}
+        >
+          <OverlayContainerContext.Provider value={container}>
+            {children}
+          </OverlayContainerContext.Provider>
+          {showClose ? (
+            // The icon button's size, its centre where touch's 44 puts it, on
+            // the title (decision 82): 16 from the top at 44, 22 at 32.
+            <DialogPrimitive.Close className="absolute right-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+              <X aria-hidden="true" className="h-4 w-4" />
+              <span className="sr-only">Close drawer</span>
+            </DialogPrimitive.Close>
+          ) : null}
+        </DialogPrimitive.Content>
+      </DrawerPortal>
+    );
+  },
 );
 DrawerContent.displayName = DialogPrimitive.Content.displayName;
 

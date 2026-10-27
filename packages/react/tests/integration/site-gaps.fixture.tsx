@@ -42,8 +42,9 @@ type View =
   | "parts"
   | "stacking"
   | "shell"
+  | "stacking-fixed"
   | "stacking-portalled"
-  | "stacking-trapped";
+  | "stacking-backdrop";
 
 declare global {
   interface Window {
@@ -376,26 +377,34 @@ function Stacking() {
   );
 }
 
-/* GAP-40 and what MapView now holds: a fixed overlay rendered inside the
-   map, a Backdrop here, stacks inside the map too, so it draws under the
-   page's sticky Navbar; portalled out of the map, into a provider of its
-   own, it covers the page as before. */
-function StackingOverlay({ portalled }: { portalled: boolean }) {
-  const backdrop = (
-    <Backdrop data-testid="gap40-backdrop">
-      <span>Backdrop</span>
-    </Backdrop>
+/* GAP-40 and what MapView now holds: a fixed element of a product's own
+   (z-index 50, as a sticky Navbar is), rendered inside the map, stacks
+   inside the map too, so it draws under the page's Navbar; portalled out of
+   the map it covers the page. A Backdrop rendered inside the map, at its
+   default placement, is drawn in the theme's portal (#419), so it covers
+   the page too. */
+type Overlay = "fixed" | "portalled" | "backdrop";
+
+function StackingOverlay({ overlay }: { overlay: Overlay }) {
+  const fixed = (
+    <div
+      data-testid="gap40-overlay"
+      style={{ position: "fixed", inset: 0, zIndex: 50 }}
+    >
+      {"A product's own fixed overlay"}
+    </div>
   );
   return (
     <ThemeProvider theme="light">
       <Navbar data-testid="gap40-navbar" logo={<strong>Kozmos</strong>} />
       <MapView data-testid="gap40-framed" mapLabel="Framed map">
-        {portalled
-          ? createPortal(
-              <ThemeProvider theme="light">{backdrop}</ThemeProvider>,
-              document.body,
-            )
-          : backdrop}
+        {overlay === "fixed" && fixed}
+        {overlay === "portalled" && createPortal(fixed, document.body)}
+        {overlay === "backdrop" && (
+          <Backdrop data-testid="gap40-overlay">
+            <span>Backdrop</span>
+          </Backdrop>
+        )}
       </MapView>
       <div style={{ height: 1200 }} />
     </ThemeProvider>
@@ -443,8 +452,11 @@ function Shell() {
 
 function Fixture({ view }: { view: View }) {
   if (view === "stacking") return <Stacking />;
-  if (view === "stacking-portalled") return <StackingOverlay portalled />;
-  if (view === "stacking-trapped") return <StackingOverlay portalled={false} />;
+  if (view === "stacking-fixed") return <StackingOverlay overlay="fixed" />;
+  if (view === "stacking-portalled")
+    return <StackingOverlay overlay="portalled" />;
+  if (view === "stacking-backdrop")
+    return <StackingOverlay overlay="backdrop" />;
   if (view === "shell") return <Shell />;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>

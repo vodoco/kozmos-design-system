@@ -12,8 +12,10 @@
  *   MapOverlay's z-index 50 no longer draws over a sticky Navbar's (also 50)
  *   when the page scrolls the map under it; and inside AdaptiveMapShell
  *   whatever the map draws, at any z-index, stays under the shell's top bar,
- *   controls and panel. A fixed Backdrop rendered inside the map is held
- *   there too; portalled out, it covers the page, as the docs say to do.
+ *   controls and panel. A fixed element of a product's own rendered inside
+ *   the map is held there too, and portalled out it covers the page; a
+ *   Backdrop, which portals itself since #419, covers it from inside the
+ *   map.
  * - GAP-55: a Listbox's column is the list's width, so a long option ends in
  *   an ellipsis instead of widening the list until it scrolls sideways, in a
  *   group that is a grid of its own too (#411's option groups).
@@ -753,14 +755,22 @@ async function gap40(page) {
   }
   await page.evaluate(() => window.scrollTo(0, 0));
 
-  // A fixed overlay rendered inside the map stacks inside it now, under the
-  // page's sticky Navbar; portalled out of the map it covers the page, as
-  // MapView's and Backdrop's docs say to render one.
-  for (const [view, covers] of [
-    ["stacking-portalled", true],
-    ["stacking-trapped", false],
+  // A fixed element rendered inside the map, one that does not portal (a
+  // product's own; FloatingActionButton and DynamicIsland are the same),
+  // stacks inside it now, under the page's sticky Navbar; portalled out of
+  // the map it covers the page, as MapView's docs say to render one. A
+  // Backdrop at its default placement portals itself (#419), so rendered
+  // inside the map it covers the page.
+  for (const [view, covers, name] of [
+    ["stacking-fixed", false, "A fixed element rendered inside the map"],
+    ["stacking-portalled", true, "A fixed element portalled out of the map"],
+    [
+      "stacking-backdrop",
+      true,
+      "A Backdrop rendered inside the map, at its default placement,",
+    ],
   ]) {
-    await render(page, view, "gap40-backdrop");
+    await render(page, view, "gap40-overlay");
     const at = await page.evaluate(() => {
       const navbar = document.querySelector(".kozmos-navbar");
       const r = navbar.getBoundingClientRect();
@@ -769,15 +779,15 @@ async function gap40(page) {
         r.top + r.height / 2,
       );
       return {
-        backdrop: Boolean(hit?.closest('[data-testid="gap40-backdrop"]')),
+        overlay: Boolean(hit?.closest('[data-testid="gap40-overlay"]')),
         navbar: Boolean(hit?.closest(".kozmos-navbar")),
       };
     });
     expect(
-      covers ? at.backdrop : at.navbar && !at.backdrop,
+      covers ? at.overlay : at.navbar && !at.overlay,
       covers
-        ? `GAP-40: a Backdrop portalled out of the map does not cover the sticky Navbar (${JSON.stringify(at)}); expected it on top`
-        : `GAP-40: a Backdrop rendered inside the map draws over the sticky Navbar (${JSON.stringify(at)}); expected it inside the map's stacking context, under the Navbar`,
+        ? `GAP-40: ${name} does not cover the sticky Navbar (${JSON.stringify(at)}); expected it on top`
+        : `GAP-40: ${name} draws over the sticky Navbar (${JSON.stringify(at)}); expected it inside the map's stacking context, under the Navbar`,
     );
   }
 
@@ -865,5 +875,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, Kozmos's own underline utility); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell, and a portalled Backdrop still covers the page; GAP-55 a Listbox's long options end in an ellipsis, in a group too; GAP-68 BottomNavigation's bar is its items' height at both densities, its line drawn inside, in forced colours too, its items above the bottom safe area; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark, and its own theme's muted in a nested provider of the other theme or on an opaque Card — owned rules with and without @scope`,
+  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, Kozmos's own underline utility); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell, and what portals out, a Backdrop included, still covers the page; GAP-55 a Listbox's long options end in an ellipsis, in a group too; GAP-68 BottomNavigation's bar is its items' height at both densities, its line drawn inside, in forced colours too, its items above the bottom safe area; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark, and its own theme's muted in a nested provider of the other theme or on an opaque Card — owned rules with and without @scope`,
 );
