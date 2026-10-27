@@ -478,6 +478,9 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     id={listboxOpen ? listboxId : undefined}
                     data-modality={modality}
                     role={listboxOpen ? "listbox" : "status"}
+                    // A status says its liveness as well (GAP-193); a
+                    // listbox is no live region.
+                    aria-live={listboxOpen ? undefined : "polite"}
                     aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     aria-multiselectable={listboxOpen ? true : undefined}
