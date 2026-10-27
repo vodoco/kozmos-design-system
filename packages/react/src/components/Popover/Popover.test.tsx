@@ -50,12 +50,13 @@ describe("Popover", () => {
 // GAP-190: a popover the product opens, beside a control it does not own.
 function TourStep({
   onOpenChange,
-  returnFocus = true,
+  onCloseAutoFocus,
+  showStart = true,
 }: {
   onOpenChange?: (open: boolean) => void;
-  returnFocus?: boolean;
+  onCloseAutoFocus?: (event: Event) => void;
+  showStart?: boolean;
 }) {
-  const target = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
   return (
     <Popover
@@ -66,29 +67,68 @@ function TourStep({
       }}
     >
       <PopoverAnchor asChild>
-        <button ref={target} type="button">
-          Add desk
-        </button>
+        <button type="button">Add desk</button>
       </PopoverAnchor>
-      <button type="button" onClick={() => setOpen(true)}>
-        Start tour
-      </button>
+      {showStart && (
+        <button type="button" onClick={() => setOpen(true)}>
+          Start tour
+        </button>
+      )}
       <PopoverContent
         aria-label="Step 1 of 3"
-        onCloseAutoFocus={
-          returnFocus
-            ? (event) => {
-                event.preventDefault();
-                target.current?.focus();
-              }
-            : undefined
-        }
+        onCloseAutoFocus={onCloseAutoFocus}
       >
         <button type="button">Next</button>
       </PopoverContent>
     </Popover>
   );
 }
+
+// Two steps, one Popover each, as a tour composes them: step 1's Next closes
+// it and opens step 2 in the same update.
+function TwoStepTour({
+  onOpenChange,
+}: {
+  onOpenChange: (step: number, open: boolean) => void;
+}) {
+  const [step, setStep] = React.useState(0);
+  const steps = [
+    { target: "Add desk", label: "Step 1 of 2", action: "Next" },
+    { target: "Choose a floor", label: "Step 2 of 2", action: "Done" },
+  ];
+  return (
+    <>
+      <button type="button" onClick={() => setStep(1)}>
+        Start tour
+      </button>
+      {steps.map(({ target, label, action }, index) => (
+        <Popover
+          key={label}
+          open={step === index + 1}
+          onOpenChange={(open) => {
+            onOpenChange(index + 1, open);
+            if (!open) setStep(0);
+          }}
+        >
+          <PopoverAnchor asChild>
+            <button type="button">{target}</button>
+          </PopoverAnchor>
+          <PopoverContent aria-label={label}>
+            <button
+              type="button"
+              onClick={() => setStep(index + 2 > steps.length ? 0 : index + 2)}
+            >
+              {action}
+            </button>
+          </PopoverContent>
+        </Popover>
+      ))}
+    </>
+  );
+}
+
+/** Radix hands focus over after the content unmounts, on a timer. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 describe("PopoverAnchor (GAP-190)", () => {
   it("is exported from the package", async () => {
@@ -126,28 +166,98 @@ describe("PopoverAnchor (GAP-190)", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("gives focus back to the target through onCloseAutoFocus", async () => {
+  it("gives focus back to what had it when it opened, with no handler", async () => {
     render(<TourStep />);
+    const start = screen.getByRole("button", { name: "Start tour" });
+    start.focus();
+    fireEvent.click(start);
+    const step = await screen.findByRole("dialog", { name: "Step 1 of 3" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Next" })).toHaveFocus(),
+    );
+    fireEvent.keyDown(step, { key: "Escape" });
+    await waitFor(() => expect(start).toHaveFocus());
+  });
+
+  it("gives focus to its anchor when nothing had it as it opened", async () => {
+    render(<TourStep />);
+    // Opened by the product, not from a focused control.
+    expect(document.body).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Start tour" }));
     const step = await screen.findByRole("dialog", { name: "Step 1 of 3" });
     fireEvent.keyDown(step, { key: "Escape" });
-    // Radix hands focus over after the content unmounts, on a timer.
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Add desk" })).toHaveFocus(),
     );
   });
 
-  it("has nothing to give focus back to without onCloseAutoFocus", async () => {
-    // Why the docs ask for the handler: there is no trigger to return to.
-    render(<TourStep returnFocus={false} />);
+  it("gives focus to its anchor when what opened it is gone", async () => {
+    const { rerender } = render(<TourStep />);
+    const start = screen.getByRole("button", { name: "Start tour" });
+    start.focus();
+    fireEvent.click(start);
+    const step = await screen.findByRole("dialog", { name: "Step 1 of 3" });
+    rerender(<TourStep showStart={false} />);
+    fireEvent.keyDown(step, { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Add desk" })).toHaveFocus(),
+    );
+  });
+
+  it("leaves focus alone when onCloseAutoFocus prevents the default", async () => {
+    render(<TourStep onCloseAutoFocus={(event) => event.preventDefault()} />);
     fireEvent.click(screen.getByRole("button", { name: "Start tour" }));
     const step = await screen.findByRole("dialog", { name: "Step 1 of 3" });
     fireEvent.keyDown(step, { key: "Escape" });
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(screen.getByRole("button", { name: "Add desk" })).not.toHaveFocus();
+    await settle();
+    expect(document.body).toHaveFocus();
+  });
+
+  it("keeps a two-step tour's next step open, with focus on it", async () => {
+    const changes: string[] = [];
+    render(
+      <TwoStepTour
+        onOpenChange={(step, open) => changes.push(`${step} ${open}`)}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start tour" }));
+    await screen.findByRole("dialog", { name: "Step 1 of 2" });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    const second = await screen.findByRole("dialog", { name: "Step 2 of 2" });
+    await settle();
+    // Step 1's closing gave focus back to nothing: step 2 had taken it.
+    expect(second).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Step 1 of 2" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Done" })).toHaveFocus();
+    expect(changes).toEqual([]);
+    // The tour's end gives focus to the last step's control.
+    fireEvent.keyDown(second, { key: "Escape" });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Choose a floor" }),
+      ).toHaveFocus(),
+    );
+    expect(changes).toEqual(["2 false"]);
+  });
+
+  it("keeps PopoverTrigger's own return of focus", async () => {
+    render(
+      <Popover>
+        <PopoverTrigger>Open</PopoverTrigger>
+        <PopoverContent aria-label="Panel">
+          <button type="button">Inside</button>
+        </PopoverContent>
+      </Popover>,
+    );
+    const trigger = screen.getByRole("button", { name: "Open" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const panel = await screen.findByRole("dialog", { name: "Panel" });
+    fireEvent.keyDown(panel, { key: "Escape" });
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("anchors to a rect through virtualRef, drawing no element", async () => {
@@ -169,5 +279,49 @@ describe("PopoverAnchor (GAP-190)", () => {
     expect(
       await screen.findByRole("dialog", { name: "Feature" }),
     ).toBeInTheDocument();
+  });
+
+  it("has nothing to give focus to beside a rect, so leaves it", async () => {
+    const rect = { getBoundingClientRect: () => DOMRect.fromRect({}) };
+    function MapHint() {
+      const [open, setOpen] = React.useState(true);
+      return (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverAnchor virtualRef={{ current: rect }} />
+          <PopoverContent aria-label="Reception desk">
+            <button type="button">Directions</button>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+    render(<MapHint />);
+    const hint = await screen.findByRole("dialog", { name: "Reception desk" });
+    fireEvent.keyDown(hint, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await settle();
+    expect(document.body).toHaveFocus();
+  });
+
+  it("gives focus to an element given as its virtualRef", async () => {
+    // What the Vue harness passes: an element outside React's tree.
+    const outside = document.createElement("button");
+    outside.textContent = "Map pin";
+    document.body.append(outside);
+    function Hint() {
+      const [open, setOpen] = React.useState(true);
+      return (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverAnchor virtualRef={{ current: outside }} />
+          <PopoverContent aria-label="Pin">
+            <button type="button">Close</button>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+    render(<Hint />);
+    const hint = await screen.findByRole("dialog", { name: "Pin" });
+    fireEvent.keyDown(hint, { key: "Escape" });
+    await waitFor(() => expect(outside).toHaveFocus());
+    outside.remove();
   });
 });

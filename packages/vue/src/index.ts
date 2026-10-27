@@ -229,42 +229,62 @@ const WayfindingInputRowAdapter = ({
 // GAP-190: a popover the product opens beside an element or rect it does not
 // own. One part, not a PopoverAnchor of its own: every wrapper mounts its own
 // React root, and Radix's anchor must share its Popover's. `anchor` is an
-// element (a template ref) or anything with a getBoundingClientRect(); the
-// rest go to PopoverContent, v-model:open to `open` and `onOpenChange`. With
-// no trigger to return to, focus goes back to an element anchor on close.
+// element, a Vue component (a template ref on KozmosButton: its element), or
+// anything with a getBoundingClientRect(); the rest go to PopoverContent,
+// v-model:open to `open` and `onOpenChange`. Focus is React's: a close that
+// loses it gives it back to what had it, else to an element anchor.
+type Rect = { getBoundingClientRect(): DOMRect };
+
+/** The element or rect `anchor` names, or null while it has none yet. */
+function resolveAnchor(anchor: unknown): Element | Rect | null {
+  let node: unknown =
+    anchor && typeof anchor === "object" && "$el" in anchor
+      ? (anchor as { $el: unknown }).$el
+      : anchor;
+  // A wrapper's own box draws nothing (display: contents): its element is
+  // the first one inside it, once React has drawn it.
+  while (
+    node instanceof Element &&
+    node.ownerDocument.defaultView?.getComputedStyle(node).display ===
+      "contents"
+  ) {
+    node = node.firstElementChild;
+  }
+  if (node instanceof Element) return node;
+  return node && typeof (node as Rect).getBoundingClientRect === "function"
+    ? (node as Rect)
+    : null;
+}
+
 const AnchoredPopoverAdapter = ({
   anchor,
   open,
   defaultOpen,
   onOpenChange,
   modal,
-  onCloseAutoFocus,
   children,
   ...contentProps
 }: any) => {
-  const virtualRef = React.useMemo(
-    () => ({ current: anchor ?? null }),
-    [anchor],
-  );
+  const [, redraw] = React.useReducer((count: number) => count + 1, 0);
+  const resolved = resolveAnchor(anchor);
+  // A component's element arrives when its own React root draws it: watch
+  // its box until then.
+  const box =
+    anchor && typeof anchor === "object" && "$el" in anchor
+      ? (anchor as { $el: unknown }).$el
+      : null;
+  React.useEffect(() => {
+    if (!(box instanceof Element)) return undefined;
+    const observer = new MutationObserver(redraw);
+    observer.observe(box, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [box]);
+  const virtualRef = React.useMemo(() => ({ current: resolved }), [resolved]);
   return React.createElement(
     Popover,
     { open, defaultOpen, onOpenChange, modal },
-    React.createElement(PopoverAnchor, { virtualRef }),
-    React.createElement(
-      PopoverContent,
-      {
-        ...contentProps,
-        onCloseAutoFocus: (event: Event) => {
-          onCloseAutoFocus?.(event);
-          if (event.defaultPrevented) return;
-          if (anchor instanceof HTMLElement) {
-            event.preventDefault();
-            anchor.focus();
-          }
-        },
-      },
-      children,
-    ),
+    resolved ? React.createElement(PopoverAnchor, { virtualRef } as any) : null,
+    React.createElement(PopoverContent, contentProps, children),
   );
 };
 AnchoredPopoverAdapter.displayName = "AnchoredPopover";
@@ -323,7 +343,12 @@ export const KozmosTree = createVueWrapper(Tree);
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
-export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
+// Its attrs are React's alone: a component given as `anchor` cannot be set
+// as an attribute on the wrapper's own box, where Vue would put it.
+export const KozmosAnchoredPopover = Object.assign(
+  createVueWrapper(AnchoredPopoverAdapter),
+  { inheritAttrs: false },
+);
 export const KozmosTourStep = createVueWrapper(TourStepAdapter);
 // Declared as props, so Vue never writes them onto the wrapper's element as
 // attributes: a component instance or a function cannot be written as one.
