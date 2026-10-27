@@ -181,14 +181,36 @@ export function DesignConfigProvider({
       return next;
     });
   }, []);
+  // Reduced motion, for the rules that cannot read a duration scale: an
+  // animation that loops has to be told to stop, not run a thousand times
+  // faster (GAP-50). This config's, or an enclosing provider's: it carries
+  // downward, as the rules that read the mark by ancestor see it, so a
+  // provider inside a reduced one cannot turn motion back on. Marked on this
+  // scope, and through MotionContext on the portal of every ThemeProvider
+  // inside it.
+  const inheritedMotion = useContext(MotionContext);
+  const motion =
+    config.accessibility.reduceMotion || config.motion === "reduced"
+      ? "reduced"
+      : inheritedMotion;
+  // The tokens follow it too: a provider inside a reduced one draws with the
+  // reduced motion scale and effects, whatever its own config says, while
+  // useDesignConfig() still reads its own config.
+  const tokenConfig = useMemo(
+    () =>
+      motion === "reduced" && config.motion !== "reduced"
+        ? normalizeDesignConfig({ motion: "reduced" }, config)
+        : config,
+    [config, motion],
+  );
   const values = useMemo(
     () => ({
-      ...designConfigTokens(config, id),
+      ...designConfigTokens(tokenConfig, id),
       ...runtimeTokens,
       ...normalizeRuntimeTokens(tokens),
       "--kozmos-design-id": id,
     }),
-    [config, id, runtimeTokens, tokens],
+    [tokenConfig, id, runtimeTokens, tokens],
   );
   const context = useMemo(
     () => ({
@@ -224,8 +246,7 @@ export function DesignConfigProvider({
       !config.spotlight ||
       !config.glass.enabled ||
       config.accessibility.reduceTransparency ||
-      config.accessibility.reduceMotion ||
-      config.motion === "reduced"
+      motion === "reduced"
     )
       return;
     const surface = spotlightSurface(event);
@@ -254,14 +275,6 @@ export function DesignConfigProvider({
     surface.style.removeProperty("--spotlight-y");
   }
 
-  // The config's own reduced motion, for the rules that cannot read a
-  // duration scale: an animation that loops has to be told to stop, not run
-  // a thousand times faster (GAP-50). Marked on this scope, and through
-  // MotionContext on the portal of every ThemeProvider inside it.
-  const motion =
-    config.accessibility.reduceMotion || config.motion === "reduced"
-      ? "reduced"
-      : undefined;
   const inheritPreference =
     theme === undefined &&
     defaultTheme === undefined &&

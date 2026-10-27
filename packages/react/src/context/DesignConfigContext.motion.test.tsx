@@ -84,24 +84,54 @@ describe("the config's reduced motion in the theme portal", () => {
     expect(portals().map(motionOf)).toEqual([null]);
   });
 
-  it("marks the portal of a ThemeProvider inside it; a provider inside says its own config's", () => {
+  it("marks the portal of a ThemeProvider inside it, and of a provider inside, whose fluid config cannot turn motion back on", () => {
     render(
       <DesignConfigProvider persistKey={null} config={{ motion: "reduced" }}>
         <ThemeProvider theme="light">
           <span />
         </ThemeProvider>
         <DesignConfigProvider persistKey={null} config={{ motion: "fluid" }}>
-          <span />
+          <span data-testid="inner" />
+          <Popover open>
+            <PopoverTrigger>Open</PopoverTrigger>
+            <PopoverContent data-testid="inner-popover">Inside</PopoverContent>
+          </Popover>
         </DesignConfigProvider>
       </DesignConfigProvider>,
     );
-    // The outer provider's portal and the ThemeProvider's are reduced; the
-    // inner provider's, fluid, is not.
+    // Reduced motion carries downward, as the ancestor rules read it: what
+    // the inner provider draws in place is under the outer scope's mark, and
+    // what it draws in its portal is marked as well.
+    expect(portals().map(motionOf)).toEqual(["reduced", "reduced", "reduced"]);
+    for (const id of ["inner", "inner-popover"])
+      expect(
+        screen.getByTestId(id).closest('[data-kozmos-motion="reduced"]'),
+      ).not.toBeNull();
+    // Its tokens follow: the reduced motion scale, in place and in its portal.
+    const scale = (id: string) =>
+      (
+        screen.getByTestId(id).closest("[data-kozmos-root]") as HTMLElement
+      ).style.getPropertyValue("--semantics-motion-duration-scale");
+    expect(scale("inner")).toBe("0.001");
+    expect(scale("inner-popover")).toBe("0.001");
+  });
+
+  it("lets a fluid provider stay fluid beside a reduced one", () => {
+    render(
+      <>
+        <DesignConfigProvider persistKey={null} config={{ motion: "reduced" }}>
+          <span />
+        </DesignConfigProvider>
+        <DesignConfigProvider persistKey={null} config={{ motion: "fluid" }}>
+          <span />
+        </DesignConfigProvider>
+      </>,
+    );
     expect(
       portals()
         .map((portal) => String(motionOf(portal)))
         .sort(),
-    ).toEqual(["null", "reduced", "reduced"]);
+    ).toEqual(["null", "reduced"]);
   });
 
   it("puts what a Popover draws in the portal under the mark", () => {

@@ -56,7 +56,8 @@ type Part =
   | "menu"
   | "combobox"
   | "toast"
-  | "nested";
+  | "nested"
+  | "nestedConfig";
 
 interface Mount {
   part: Part;
@@ -162,6 +163,14 @@ function Open({ part }: { part: Part }) {
           </Toast>
           <ToastViewport />
         </ToastProvider>
+      );
+    case "nestedConfig":
+      // A provider inside the reduced one, fluid: reduced motion carries
+      // downward, so its portal is reduced as well.
+      return (
+        <DesignConfigProvider persistKey={null} config={{ motion: "fluid" }}>
+          <Open part="popover" />
+        </DesignConfigProvider>
       );
     case "nested":
       // A ThemeProvider inside the config's provider has a portal of its

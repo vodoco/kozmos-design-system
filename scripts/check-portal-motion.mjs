@@ -22,7 +22,9 @@
  *   when it is reduced.
  *
  * Toast draws in place, so it is a control; a ThemeProvider inside the
- * config's provider has a portal of its own, under the same config.
+ * config's provider has a portal of its own, under the same config; and a
+ * provider inside it whose config is fluid is reduced too, since reduced
+ * motion carries downward.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-portal-motion.mjs
@@ -124,6 +126,7 @@ const PORTALLED = [
   ["menu", true],
   ["combobox", false],
   ["nested", true],
+  ["nestedConfig", true],
 ];
 
 for (const [part, hasLoop] of PORTALLED) {
