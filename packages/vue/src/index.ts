@@ -353,7 +353,8 @@ export const KozmosAnchoredPopover = Object.assign(
 // write each onto the wrapper's own box, where a component given as target
 // or a function as positionLabel cannot be written, and title would be a
 // native tooltip. The two are declared as props as well, as Backdrop's is.
-export const KozmosTourStep = Object.assign(createVueWrapper(TourStepAdapter), {
+export const KozmosTourStep = createVueWrapper(TourStepAdapter);
+Object.assign(KozmosTourStep, {
   inheritAttrs: false,
   props: { target: null, positionLabel: null },
 });
