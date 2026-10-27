@@ -18,6 +18,9 @@ import {
   weekdayOf,
 } from "./calendar-dates";
 
+const useLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
 interface CalendarBaseProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "defaultValue" | "onChange"
@@ -217,7 +220,7 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
       start === null ? null : Math.max(start, end ?? previewEnd ?? start);
 
     const moveFocus = React.useRef(false);
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
       if (!moveFocus.current) return;
       moveFocus.current = false;
       root.current
