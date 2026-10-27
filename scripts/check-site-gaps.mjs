@@ -15,7 +15,10 @@
  *   controls and panel.
  * - GAP-55: a Listbox's column is the list's width, so a long option ends in
  *   an ellipsis instead of widening the list until it scrolls sideways.
- * - GAP-68: BottomNavigation's items fit inside their bar at both densities.
+ * - GAP-68: BottomNavigation's bar is as tall as its items at both
+ *   densities, 64 and 72, as Figma's is, and nothing spills out of it; its
+ *   top line is drawn inside, over the items, as Figma's inside stroke is,
+ *   and forced colours still draw it.
  * - GAP-73: SplitButton's outline variant keeps its outline: the seam tints
  *   only the main part's inline-end side, in both directions.
  * - GAP-74: Tooltip's tail covers the body's border where the two meet, as
@@ -219,33 +222,60 @@ async function gap55(page, mode, theme) {
   );
 }
 
+/**
+ * A BottomNavigation as drawn: the bar's box and its items', the colour its
+ * top line is drawn in (the subtle border role), and two pixels down the
+ * selected item's middle: the bar's top row, and one inside the item, under
+ * where the line is.
+ */
+async function barAsDrawn(page, id) {
+  const bar = page.getByTestId(id);
+  await bar.scrollIntoViewIfNeeded();
+  await settleLayout(page);
+  const drawn = await bar.evaluate((nav) => {
+    const box = nav.getBoundingClientRect();
+    const items = [
+      ...nav.querySelectorAll('[data-slot="bottom-navigation-item"]'),
+    ];
+    const selected = nav.querySelector(
+      '[data-slot="bottom-navigation-item"][data-selected]',
+    );
+    const probe = document.createElement("span");
+    probe.style.borderTop = "1px solid var(--semantics-border-subtle)";
+    nav.append(probe);
+    const role = getComputedStyle(probe).borderTopColor;
+    probe.remove();
+    const s = selected.getBoundingClientRect();
+    return {
+      bar: { top: box.top, bottom: box.bottom, height: box.height },
+      items: items.map((item) => {
+        const r = item.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, height: r.height };
+      }),
+      role,
+      x: s.left + s.width / 2,
+    };
+  });
+  const pixel = async (y) =>
+    meanColour(
+      page,
+      await page.screenshot({
+        clip: { x: Math.floor(drawn.x), y: Math.floor(y), width: 1, height: 1 },
+      }),
+    );
+  return {
+    ...drawn,
+    topRow: await pixel(drawn.bar.top),
+    inside: await pixel(drawn.bar.top + 6),
+  };
+}
+
 async function gap68(page, theme) {
   for (const density of ["compact", "default"]) {
     const where = `${theme} GAP-68 ${density}`;
-    const drawn = await page
-      .getByTestId(`${theme}-gap68-${density}`)
-      .evaluate((bar) => {
-        const s = getComputedStyle(bar);
-        const box = bar.getBoundingClientRect();
-        const top = box.top + parseFloat(s.borderTopWidth);
-        const bottom =
-          box.bottom -
-          parseFloat(s.borderBottomWidth) -
-          parseFloat(s.paddingBottom);
-        return {
-          bar: box.height,
-          items: [
-            ...bar.querySelectorAll('[data-slot="bottom-navigation-item"]'),
-          ].map((item) => {
-            const r = item.getBoundingClientRect();
-            return {
-              height: r.height,
-              above: top - r.top,
-              below: r.bottom - bottom,
-            };
-          }),
-        };
-      });
+    const drawn = await barAsDrawn(page, `${theme}-gap68-${density}`);
+    // Figma's bar is its items' height, 64, with its 1px line drawn inside,
+    // over the items; the default density's items are 72, so its bar is.
     const want = density === "compact" ? 64 : 72;
     expect(
       drawn.items.length === 3,
@@ -256,12 +286,72 @@ async function gap68(page, theme) {
         Math.abs(item.height - want) < 0.5,
         `${where}: item ${index} is ${item.height}px tall; expected ${want}`,
       );
+      const above = drawn.bar.top - item.top;
+      const below = item.bottom - drawn.bar.bottom;
       expect(
-        item.above <= 0.01 && item.below <= 0.01,
-        `${where}: item ${index} spills ${item.above.toFixed(1)}px above the bar's content and ${item.below.toFixed(1)}px below it (bar ${drawn.bar}px); expected 0`,
+        above <= 0.01 && below <= 0.01,
+        `${where}: item ${index} spills ${above.toFixed(1)}px above the bar and ${below.toFixed(1)}px below it; expected 0`,
       );
     }
-    notes.push(`${where}: bar ${drawn.bar}px, items ${want}px`);
+    expect(
+      Math.abs(drawn.bar.height - want) < 0.5,
+      `${where}: the bar is ${drawn.bar.height}px tall, its items ${want}; expected the bar as tall as its items, its line drawn inside`,
+    );
+    const [role] = await page.evaluate(channelsInPage, [drawn.role]);
+    expect(
+      near(drawn.topRow, role, 12) && !near(drawn.topRow, drawn.inside, 12),
+      `${where}: the bar's top row over the selected item draws rgb(${drawn.topRow.join(", ")}), the item under it rgb(${drawn.inside.join(", ")}); expected the line, rgb(${role.slice(0, 3).join(", ")}), drawn over the item`,
+    );
+    notes.push(`${where}: bar ${drawn.bar.height}px, items ${want}px`);
+  }
+}
+
+/**
+ * GAP-68 in forced colours (Windows' high contrast): the line is a border,
+ * which the engine repaints in the system's colours, where a shadow or a
+ * fill would vanish. WebKit matches the media query and repaints nothing,
+ * so there the page's own colours are read, as above.
+ */
+async function gap68Forced(browser, stylesheet) {
+  const page = await browser.newPage({
+    viewport: { width: 1400, height: 2600 },
+    reducedMotion: "reduce",
+  });
+  try {
+    await page.emulateMedia({ forcedColors: "active" });
+    await page.setContent(
+      '<!doctype html><html><head></head><body style="margin:0"><div id="fixture"></div></body></html>',
+    );
+    await page.addStyleTag({ content: stylesheet });
+    await page.addScriptTag({ content: code });
+    await render(page, "parts", "dark-gap94-page");
+    const repaints = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.color = "rgb(1, 2, 3)";
+      document.body.append(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color !== "rgb(1, 2, 3)";
+    });
+    if (!repaints) {
+      notes.push(
+        "forced colours GAP-68: this engine keeps the page's colours; read in normal colours",
+      );
+      return;
+    }
+    for (const density of ["compact", "default"]) {
+      const drawn = await barAsDrawn(page, `light-gap68-${density}`);
+      const ratio = contrast(drawn.topRow, drawn.inside);
+      expect(
+        ratio >= 3,
+        `forced colours GAP-68 ${density}: the bar's top row draws rgb(${drawn.topRow.join(", ")}) over the item's rgb(${drawn.inside.join(", ")}), ${ratio.toFixed(2)}:1; expected the line at 3:1 or more`,
+      );
+      notes.push(
+        `forced colours GAP-68 ${density}: the line reads ${ratio.toFixed(2)}:1 on the item`,
+      );
+    }
+  } finally {
+    await page.close();
   }
 }
 
@@ -591,7 +681,10 @@ try {
         await gap73(page, theme);
       }
     }
-    if (mode === "full") await gap40(page);
+    if (mode === "full") {
+      await gap40(page);
+      await gap68Forced(browser, stylesheet);
+    }
     expect(
       errors.length === 0,
       `${mode}: the page threw: ${errors.join("; ")}`,
@@ -610,5 +703,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, a caller's class); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell; GAP-55 a Listbox's long options end in an ellipsis; GAP-68 BottomNavigation's items fit their bar at both densities; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark — owned rules with and without @scope`,
+  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, a caller's class); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell; GAP-55 a Listbox's long options end in an ellipsis; GAP-68 BottomNavigation's bar is its items' height at both densities, its line drawn inside, in forced colours too; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark — owned rules with and without @scope`,
 );

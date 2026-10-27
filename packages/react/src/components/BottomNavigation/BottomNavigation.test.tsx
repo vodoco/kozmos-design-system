@@ -38,10 +38,12 @@ describe("BottomNavigation", () => {
     );
   });
 
-  it("is as tall as its items, at either density (site GAP-68)", () => {
-    // A fixed 64 held the default density's 72 items spilling out over its
-    // top edge. scripts/check-site-gaps.mjs measures the items inside the
-    // bar in every engine.
+  it("is as tall as its items, its line drawn inside (site GAP-68)", () => {
+    // As Figma's bar: its items' height, with the top line inside, over
+    // them (.kozmos-bottom-navigation's ::before), not a border that adds
+    // a pixel. A fixed 64 held the default density's 72 items spilling out
+    // over its top edge. scripts/check-site-gaps.mjs measures the bar, its
+    // items and the line in every engine, in forced colours too.
     for (const density of ["compact", "default"] as const) {
       const { unmount } = render(
         <BottomNavigation
@@ -50,8 +52,9 @@ describe("BottomNavigation", () => {
         />,
       );
       const bar = screen.getByRole("navigation", { name: "Bottom navigation" });
-      expect(bar, density).toHaveClass("min-h-16");
+      expect(bar, density).toHaveClass("kozmos-bottom-navigation", "min-h-16");
       expect(bar, density).not.toHaveClass("h-16");
+      expect(bar, density).not.toHaveClass("border-t");
       unmount();
     }
   });

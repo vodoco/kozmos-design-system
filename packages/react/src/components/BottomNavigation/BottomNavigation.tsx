@@ -65,11 +65,13 @@ const BottomNavigation = React.forwardRef<HTMLElement, BottomNavigationProps>(
         ref={ref}
         aria-label={ariaLabel}
         data-slot="bottom-navigation"
-        // The bar is as tall as its items, 64 at least: a fixed 64 held the
-        // default density's 72 items spilling out of it, over its top edge
-        // (site GAP-68), and the compact 64 ones over it by half a pixel.
+        // As Figma's bar: as tall as its items, 64 compact and 72 at the
+        // default density, with its top line drawn inside, over the items
+        // (.kozmos-bottom-navigation). A fixed 64 with a border on top held
+        // the default density's 72 items spilling out of it, over its top
+        // edge, and the compact 64 ones by half a pixel (site GAP-68).
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-center justify-around gap-1 border-t bg-background px-2 pb-safe",
+          "kozmos-bottom-navigation fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-center justify-around gap-1 bg-background px-2 pb-safe",
           className,
         )}
         {...props}

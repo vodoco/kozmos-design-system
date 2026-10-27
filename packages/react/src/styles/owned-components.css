@@ -1376,6 +1376,21 @@
   .kozmos-popover {
     @apply z-50 w-72 rounded-control border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
   }
+  /* BottomNavigation's top line, drawn inside the bar, over its items, as
+     Figma's inside stroke is: the bar is as tall as its items, where a
+     border on top made it a pixel taller (site GAP-68). A border on a
+     pseudo-element, not an inset shadow or a fill, so forced colours
+     repaint it in the system's colours instead of dropping it. The element
+     in the selector outweighs the scoped preflight's ::before reset. */
+  nav.kozmos-bottom-navigation::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 1;
+    border-top: 1px solid var(--semantics-border-subtle);
+    pointer-events: none;
+  }
   /* PopoverArrow's tip overlaps the body by 1px, as Tooltip's does and as
      Figma's tip does: it covers the body's border where the two meet, so no
      line runs across it (site GAP-74). "Up" in the tip's own frame is into

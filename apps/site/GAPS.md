@@ -1486,12 +1486,13 @@ Text"])`) and the Get started page shows — touches it.
   padding 8 — 3.5px above the bar's top border and 4.5px below it, with the
   selected item's fill crossing the border. Nothing else changes: icon 24,
   label 12/16, gap 4, badge 12, bar 64 in both.
-- **Fixed** in the design system on 2026-10-26 (#416): the bar is `min-h-16`,
-  as tall as its items: 65 with its top border at `compact` and 73 at
-  `default`, every item inside it. The `w-auto` half went with decision 42:
-  the bar's items are its own, sharing its width. No site check pinned it
-  since the demos left; `scripts/check-site-gaps.mjs` measures it in Chromium,
-  Firefox and WebKit.
+- **Fixed** in the design system on 2026-10-26 (#416): the bar is as tall as
+  its items, as Figma's is: 64 at `compact` and 72 at `default`, every item
+  inside it, with its 1px top line drawn inside, over the items, as Figma's
+  inside stroke is (a border on the bar's `::before`, so forced colours still
+  draw it). The `w-auto` half went with decision 42: the bar's items are its
+  own, sharing its width. No site check pinned it since the demos left;
+  `scripts/check-site-gaps.mjs` measures it in Chromium, Firefox and WebKit.
 - **Was:** open; the BottomNavigation page's demo showed it until the demos
   moved to Storybook on 2026-09-28.
 - **Lane:** Core.
