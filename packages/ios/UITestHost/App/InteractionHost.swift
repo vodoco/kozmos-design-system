@@ -22,7 +22,6 @@ private struct InteractionFixture: View {
     @State private var controlAccessibilityReport = "not inspected"
     @State private var fieldAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
-    @State private var spokenManoeuvreExpanded = false
     @State private var groupedSelection: String?
     @State private var locationQuery = "Lobby"
     @State private var routeLocation: KozmosListboxOption?
@@ -316,20 +315,25 @@ private struct InteractionFixture: View {
             // Each part takes the path that says a name in its own language:
             // a UIKit element laid over the part, with each phrase's speech
             // language (SpeechLanguage.swift). A result named and summarised
-            // in French, a step and a manoeuvre with a German landmark.
+            // in French; a step, a manoeuvre and an itinerary's current row
+            // with a German landmark.
             KozmosPOIResultList(items: [.init(poi: bakery, result: .init(poiId: "bakery", resultIndex: 0,
                                     nameLanguage: "fr", summary: "Croissants chauds toute la journée",
                                     actions: [go], summaryLanguage: "fr"))],
                                resultCountLabel: "1 result", selectedPoiId: groupedSelection,
                                onSelect: { groupedSelection = $0; select($0) }, onAction: action,
                                onOpen: { events.append("open \($0)") })
+            // Found by the product's identifier, as a UI test finds a step.
             KozmosDirectionStep(type: .liftUp, instruction: platformInstruction, distance: "20 m", duration: "1 min")
+                .accessibilityIdentifier("spoken-step")
             KozmosManoeuvreCard(type: .liftUp, instruction: platformInstruction, detail: "Then 40 m",
-                                isExpanded: spokenManoeuvreExpanded,
-                                onToggle: { spokenManoeuvreExpanded.toggle(); events.append("toggle") },
+                                isExpanded: false, onToggle: { events.append("toggle") },
                                 manoeuvreLabel: "Spoken manoeuvre") {
                 Text("Continue to the platform")
             }
+            KozmosItinerary(origin: "Main entrance", steps: [
+                .init(id: "lift", instruction: platformInstruction, type: .liftUp, isCurrent: true, distance: "30 m", duration: "2 min"),
+            ], destination: "Platform 3")
             Button("Inspect spoken elements") {
                 controlAccessibilityReport = spokenElements(["Boulangerie Paul", "Take the lift"], report: "spoken-report")
             }
