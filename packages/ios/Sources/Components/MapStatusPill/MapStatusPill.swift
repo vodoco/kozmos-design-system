@@ -146,8 +146,8 @@ public struct KozmosMapStatusPill: View {
     }
 
     /// The product's own mark in place of the tone's — "No Bluetooth" draws
-    /// `KozmosIcon("bluetooth-off")`, and "Walking improves accuracy" the
-    /// system's `figure.walk`. It is drawn at 24 in the tone's colour, which a
+    /// `KozmosIcon("bluetooth-off")`, and "Walking improves accuracy"
+    /// `KozmosIcon("walking")`. It is drawn at 24 in the tone's colour, which a
     /// `KozmosIcon` at its default colour takes too, and hidden from
     /// VoiceOver: the words say it.
     public init<Icon: View>(
