@@ -387,6 +387,18 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:select-accessibility
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
+      # GAP-189: Backdrop's target. The cut-out shows the target as the page
+      # draws it and the ring is drawn, in forced colours too; a click reaches
+      # the target through it and the backdrop elsewhere; the target keeps
+      # its place and stacking; the cut-out follows a scroll, a resize and
+      # the window; reduced motion moves it at once
+      # (scripts/check-backdrop-target.mjs).
+      - name: Verify Backdrop Target
+        run: |
+          pnpm test:backdrop-target
+          ADAPTIVE_BROWSER=webkit pnpm test:backdrop-target
+          ADAPTIVE_BROWSER=firefox pnpm test:backdrop-target
+
       # GAP-191: Stepper's dots. Every dot, done, current and pending, is 3:1
       # or more on the page, a popover and the muted fill, light and dark,
       # from the colours each engine resolves; the group is named by the

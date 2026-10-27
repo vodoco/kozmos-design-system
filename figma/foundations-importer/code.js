@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "f59f51dd207f";
+const PLUGIN_BUILD = "a4b178d76a19";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -627,6 +627,22 @@ const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
+// Whether the scrim lights a target (GAP-189): Cut-out leaves an example
+// control's place out of the dim and rings it in the focus colour, as
+// Backdrop's `target` does. A hidden backdrop lights nothing, so the set skips
+// Hidden with a Cut-out, as Stepper skips a Current past its Count.
+const BACKDROP_TARGETS = ["None", "Cut-out"];
+// The example cut-out in the 320 by 180 variant: a 120 by 44 control in its
+// middle, padded by layout.spacing.100 (8) and rounded by radius.control
+// (16), ringed by the focus ring's 2 outside it.
+const BACKDROP_CUTOUT = {
+  width: 320,
+  height: 180,
+  target: { x: 100, y: 68, width: 120, height: 44 },
+  padding: 8,
+  radius: 16,
+  ring: 2,
+};
 const BOTTOM_SHEET_CONTENT = ["Basic", "Form", "Footer"];
 const BOTTOM_SHEET_CONTENT_SLOT_HEIGHT = 44;
 const BOTTOM_SHEET_FORM_INPUTS = [
@@ -3152,12 +3168,14 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Visibility maps to Backdrop.visible in code.",
+      "Target maps to Backdrop.target: Cut-out lights an example control, ringed in the focus colour; in code the cut-out follows the element, ref, rect or list it is given.",
       "Backdrop does not expose text or icon properties.",
       "Runtime code owns portal placement, animation, and outside-click dismissal.",
     ],
-    properties: ["Visibility: Visible, Hidden"],
+    properties: ["Visibility: Visible, Hidden", "Target: None, Cut-out"],
     accessibility: [
       "Backdrop is not interactive by itself and should not receive focus.",
+      "Pointer events pass through the cut-out to the lit control; the dim catches them elsewhere.",
       "Modal primitives own focus trapping and dismiss behavior.",
       "Scrim color uses shared overlay variables for Light and Dark modes.",
     ],
@@ -17636,6 +17654,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Backdrop") {
     return {
       Visibility: BACKDROP_VISIBILITY,
+      Target: BACKDROP_TARGETS,
     };
   }
 
@@ -38324,6 +38343,7 @@ function backdropComponentConfig() {
       "Kozmos Backdrop component set generated from React Backdrop API.",
       "Visibility maps to Backdrop.visible.",
       "Visibility=Hidden is empty in Figma because runtime code renders nothing.",
+      "Target maps to Backdrop.target: Cut-out leaves an example control out of the dim, padded 8, rounded 16 and ringed 2 in theme/600.",
       "Backdrop is a non-interactive composition layer behind modal content.",
       "Runtime code owns portal placement and dismiss behavior.",
     ],
@@ -38631,23 +38651,38 @@ function parseSidebarVariantName(name) {
 }
 
 function backdropVariantCombinations() {
-  return BACKDROP_VISIBILITY.map((visibility) => ({ visibility }));
+  const combinations = [];
+  for (const visibility of BACKDROP_VISIBILITY) {
+    for (const target of BACKDROP_TARGETS) {
+      if (visibility === "Hidden" && target !== "None") continue;
+      combinations.push({ visibility, target });
+    }
+  }
+  return combinations;
 }
 
 function backdropVariantKey(props) {
-  return props.visibility;
+  return `${props.visibility}/${props.target}`;
 }
 
+// A variant built before the Target axis existed is named "Visibility=Visible"
+// and parses as Target=None, so Update renames it rather than replacing it,
+// and the node ids Code Connect pins survive.
 function parseBackdropVariantName(name) {
   const values = parseVariantValueMap(name);
+  let visibility = null;
   if (BACKDROP_VISIBILITY.indexOf(values.Visibility) !== -1) {
-    return { visibility: values.Visibility };
+    visibility = values.Visibility;
+  } else if (values.Visible === "True" || values.State === "Visible") {
+    visibility = "Visible";
+  } else if (values.Visible === "False" || values.State === "Hidden") {
+    visibility = "Hidden";
   }
-  if (values.Visible === "True") return { visibility: "Visible" };
-  if (values.Visible === "False") return { visibility: "Hidden" };
-  if (values.State === "Visible") return { visibility: "Visible" };
-  if (values.State === "Hidden") return { visibility: "Hidden" };
-  return null;
+  if (!visibility) return null;
+  const target = values.Target || "None";
+  if (BACKDROP_TARGETS.indexOf(target) === -1) return null;
+  if (visibility === "Hidden" && target !== "None") return null;
+  return { visibility, target };
 }
 
 function bottomSheetVariantCombinations() {
@@ -41613,19 +41648,110 @@ async function updateBackdropVariant(
   { props, variableByName, stats },
 ) {
   const visible = props.visibility === "Visible";
-  component.name = `Visibility=${props.visibility}`;
+  const target = props.target || "None";
+  const cutout = visible && target === "Cut-out";
+  component.name = `Visibility=${props.visibility}, Target=${target}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(320, 180);
+  component.resizeWithoutConstraints(
+    BACKDROP_CUTOUT.width,
+    BACKDROP_CUTOUT.height,
+  );
   component.cornerRadius = 12;
-  component.clipsContent = false;
-  component.fills = visible
-    ? [paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats)]
-    : [];
+  component.clipsContent = cutout;
+  // With a cut-out the scrim is a layer of its own, with a hole in it; the
+  // variant itself draws nothing, so what is under an instance shows there.
+  component.fills =
+    visible && !cutout
+      ? [paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats)]
+      : [];
   component.strokes = [];
   component.strokeWeight = 0;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Backdrop");
   removeDirectChildren(component);
+  if (!cutout) return;
+
+  const hole = backdropCutoutHole();
+  const scrim = figma.createVector();
+  scrim.name = "Scrim";
+  scrim.vectorPaths = [
+    {
+      windingRule: "EVENODD",
+      data: backdropCutoutPathData(
+        BACKDROP_CUTOUT.width,
+        BACKDROP_CUTOUT.height,
+        hole,
+      ),
+    },
+  ];
+  scrim.fills = [
+    paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats),
+  ];
+  scrim.strokes = [];
+  scrim.setSharedPluginData(RUN_NAMESPACE, "kind", "backdrop-scrim");
+  component.appendChild(scrim);
+  scrim.x = 0;
+  scrim.y = 0;
+
+  // The ring: the focus colour, 2 outside the cut-out, its radius the
+  // cut-out's and its own 2, as React's border draws it.
+  const ring = figma.createRectangle();
+  ring.name = "Cut-out Ring";
+  ring.resizeWithoutConstraints(
+    hole.width + 2 * BACKDROP_CUTOUT.ring,
+    hole.height + 2 * BACKDROP_CUTOUT.ring,
+  );
+  ring.cornerRadius = hole.radius + BACKDROP_CUTOUT.ring;
+  ring.fills = [];
+  ring.strokes = [
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+  ];
+  ring.strokeWeight = BACKDROP_CUTOUT.ring;
+  ring.strokeAlign = "INSIDE";
+  ring.setSharedPluginData(RUN_NAMESPACE, "kind", "backdrop-cutout-ring");
+  component.appendChild(ring);
+  ring.x = hole.x - BACKDROP_CUTOUT.ring;
+  ring.y = hole.y - BACKDROP_CUTOUT.ring;
+}
+
+/** The example cut-out: the target padded 8, rounded 16. */
+function backdropCutoutHole() {
+  const t = BACKDROP_CUTOUT.target;
+  const p = BACKDROP_CUTOUT.padding;
+  return {
+    x: t.x - p,
+    y: t.y - p,
+    width: t.width + 2 * p,
+    height: t.height + 2 * p,
+    radius: BACKDROP_CUTOUT.radius,
+  };
+}
+
+/**
+ * The scrim's outline and its cut-out, for an even-odd vector: Figma's path
+ * data takes M, L, C and Z only, so each rounded corner is a cubic.
+ */
+function backdropCutoutPathData(width, height, hole) {
+  const k = 0.5522847498;
+  const r = Math.min(hole.radius, hole.width / 2, hole.height / 2);
+  const c = r * (1 - k);
+  const x0 = hole.x;
+  const y0 = hole.y;
+  const x1 = hole.x + hole.width;
+  const y1 = hole.y + hole.height;
+  const n = (value) => String(Math.round(value * 1000) / 1000);
+  return [
+    `M 0 0 L ${n(width)} 0 L ${n(width)} ${n(height)} L 0 ${n(height)} Z`,
+    `M ${n(x0 + r)} ${n(y0)}`,
+    `L ${n(x1 - r)} ${n(y0)}`,
+    `C ${n(x1 - c)} ${n(y0)} ${n(x1)} ${n(y0 + c)} ${n(x1)} ${n(y0 + r)}`,
+    `L ${n(x1)} ${n(y1 - r)}`,
+    `C ${n(x1)} ${n(y1 - c)} ${n(x1 - c)} ${n(y1)} ${n(x1 - r)} ${n(y1)}`,
+    `L ${n(x0 + r)} ${n(y1)}`,
+    `C ${n(x0 + c)} ${n(y1)} ${n(x0)} ${n(y1 - c)} ${n(x0)} ${n(y1 - r)}`,
+    `L ${n(x0)} ${n(y0 + r)}`,
+    `C ${n(x0)} ${n(y0 + c)} ${n(x0 + c)} ${n(y0)} ${n(x0 + r)} ${n(y0)} Z`,
+  ].join(" ");
 }
 
 async function createBottomSheetVariant({
@@ -41972,7 +42098,7 @@ function layoutBackdropVariants(componentSet) {
     const props = parseBackdropVariantName(child.name);
     if (!props) continue;
     child.x = BACKDROP_VISIBILITY.indexOf(props.visibility) * 360;
-    child.y = 0;
+    child.y = BACKDROP_TARGETS.indexOf(props.target) * 220;
   }
 
   resizeComponentSetToContainChildren(componentSet);
