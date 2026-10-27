@@ -1,4 +1,6 @@
 import React from "react";
+import { Portal } from "@radix-ui/react-portal";
+import { createThemePortal } from "../../theme/ThemePortal";
 import { cn } from "../../utils";
 import { createCutout, type BackdropTarget } from "./cutout";
 
@@ -28,7 +30,34 @@ export interface BackdropProps extends React.HTMLAttributes<HTMLDivElement> {
   targetPadding?: number;
   /** The cut-out's corner radius, in pixels. Defaults to radius.control (16). */
   targetRadius?: number;
+  /**
+   * Where the dim is drawn. `"fixed"`, the default, covers the window and is
+   * drawn in the theme's portal, as Popover and Dialog are, so no box it is
+   * rendered in (a map, a panel that clips, transforms or isolates its
+   * stacking) can cut it off or stack it under the page. `"inline"` covers
+   * the nearest positioned box it is rendered in, in place: one region's dim
+   * (site GAP-34).
+   */
+  placement?: "fixed" | "inline";
 }
+
+/**
+ * The theme's portal, holding the backdrop's own element and adding none: a
+ * product's styles and attributes stay on the element it renders.
+ */
+const BackdropPortal = createThemePortal(function BackdropPortalRoot({
+  children,
+  container,
+}: {
+  children?: React.ReactNode;
+  container?: Element | DocumentFragment | null;
+}) {
+  return (
+    <Portal asChild container={container}>
+      {children}
+    </Portal>
+  );
+});
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -41,23 +70,24 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
       target,
       targetPadding,
       targetRadius,
+      placement = "fixed",
       children,
       ...props
     },
     ref,
   ) => {
-    const root = React.useRef<HTMLDivElement | null>(null);
+    // The root as state: in the portal, it arrives a render later than the
+    // backdrop (once the provider's portal exists), and the cut-out is
+    // drawn again when it does.
+    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
     const scrim = React.useRef<HTMLDivElement | null>(null);
     const ring = React.useRef<HTMLDivElement | null>(null);
     const [cutout] = React.useState(createCutout);
-    React.useImperativeHandle(ref, () => root.current as HTMLDivElement, [
-      visible,
-      target === undefined,
-    ]);
+    React.useImperativeHandle(ref, () => root as HTMLDivElement, [root]);
     // After every render, and every frame while a target is lit.
     useIsomorphicLayoutEffect(() => {
       cutout.sync(
-        root.current,
+        root,
         scrim.current,
         ring.current,
         target,
@@ -68,31 +98,36 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     useIsomorphicLayoutEffect(() => cutout.release, [cutout]);
 
     if (!visible) return null;
+    const position = placement === "inline" ? "absolute" : "fixed";
     // With no target, the one scrim it always was, its children inside.
-    if (target === undefined)
-      return (
+    // With one, the dim is an inner scrim that the cut-out is cut from and
+    // that takes the pointer outside it; the backdrop's own children sit
+    // beside it, never clipped, and take the pointer as they always did.
+    const element =
+      target === undefined ? (
         <div
-          ref={root}
-          className={cn("fixed inset-0 z-50 bg-overlay-scrim", className)}
+          ref={setRoot}
+          className={cn(position, "inset-0 z-50 bg-overlay-scrim", className)}
           {...props}
         >
           {children}
         </div>
-      );
-    // With one, the dim is an inner scrim that the cut-out is cut from and
-    // that takes the pointer outside it; the backdrop's own children sit
-    // beside it, never clipped, and take the pointer as they always did.
-    return (
-      <div
-        ref={root}
-        className={cn("kozmos-backdrop fixed inset-0 z-50", className)}
-        {...props}
-      >
-        <div ref={scrim} aria-hidden="true" className="kozmos-backdrop-scrim">
-          <div ref={ring} className="kozmos-backdrop-ring" />
+      ) : (
+        <div
+          ref={setRoot}
+          className={cn("kozmos-backdrop", position, "inset-0 z-50", className)}
+          {...props}
+        >
+          <div ref={scrim} aria-hidden="true" className="kozmos-backdrop-scrim">
+            <div ref={ring} className="kozmos-backdrop-ring" />
+          </div>
+          {children}
         </div>
-        {children}
-      </div>
+      );
+    return placement === "inline" ? (
+      element
+    ) : (
+      <BackdropPortal>{element}</BackdropPortal>
     );
   },
 );

@@ -23,7 +23,7 @@ export function BackdropExample() {
         <div className="absolute inset-0 flex items-center justify-center">
           Content behind backdrop
         </div>
-        <Backdrop className="absolute" />
+        <Backdrop placement="inline" />
       </div>
     </ThemeProvider>
   );
@@ -57,6 +57,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `BackdropProps`, which ex
 - `targetRadius`: `number`, optional.
 
   The cut-out's corner radius, in pixels. Defaults to radius.control (16).
+
+- `placement`: `"fixed" | "inline"`, optional, default `"fixed"`.
+
+  Where the dim is drawn. `"fixed"`, the default, covers the window and is
+  drawn in the theme's portal, as Popover and Dialog are, so no box it is
+  rendered in (a map, a panel that clips, transforms or isolates its
+  stacking) can cut it off or stack it under the page. `"inline"` covers
+  the nearest positioned box it is rendered in, in place: one region's dim
+  (site GAP-34).
 
 - `children`: `ReactNode`, optional.
 
