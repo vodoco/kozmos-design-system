@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "86be4eeb8560";
+const PLUGIN_BUILD = "7a59d7815cf0";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -28293,13 +28293,7 @@ function bindComboboxGeometryVariables(
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      field,
-      "paddingRight",
-      "Combobox/field/padding/x",
-      variableByName,
-      stats,
-    );
+    // paddingRight is the room for the field's actions (appendFieldActions).
     bindFloatVariable(
       field,
       "paddingTop",
@@ -28485,13 +28479,7 @@ function bindMultiSelectGeometryVariables(
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      field,
-      "paddingRight",
-      "MultiSelect/field/padding/x",
-      variableByName,
-      stats,
-    );
+    // paddingRight is the room for the field's actions (appendFieldActions).
     bindFloatVariable(
       field,
       "paddingTop",
@@ -67329,16 +67317,17 @@ async function syncComboboxVariantChildren({
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
 
-  const trailingIcon = await createFixedIconInstance(
-    isOpen ? "chevron-up" : "chevron-down",
-    config.placeholder,
-    config.placeholderFallback,
+  // The clear, as MultiSelect's: with a value (Open, as Code Connect's
+  // defaultInputValue has it), and neither disabled nor read only.
+  const actionIcons = await appendFieldActions(field, {
+    tokenPrefix: "Combobox",
+    sizeToken: "Combobox/field/height",
+    showClear: isOpen && !disabled && state !== "Readonly",
+    isOpen,
+    config,
     variableByName,
     stats,
-    16,
-    "Combobox/icon/size",
-  );
-  field.appendChild(trailingIcon);
+  });
 
   syncFocusRing(field, {
     enabled: state !== "Disabled",
@@ -67443,7 +67432,7 @@ async function syncComboboxVariantChildren({
     field,
     listbox,
     optionNodes,
-    [leadingIcon, trailingIcon].concat(optionIcons),
+    [leadingIcon].concat(actionIcons, optionIcons),
     variableByName,
     stats,
   );
@@ -67486,6 +67475,89 @@ function applyOptionFocusRing(option, focused, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// Since #397 React draws Combobox's and MultiSelect's clear and open as
+// buttons at the field's end (field-actions.ts): each as tall and wide as the
+// field, 44 at touch (40 compact once Figma has density modes: bound to the
+// field's height), the 16px icon centred, out of the field's line and inside
+// its border, the open button last. The field keeps the room at its end that
+// React's does: 44 and 4 for the open button, 88 and 8 with the clear.
+const FIELD_ACTION_SIZE = 44;
+
+async function appendFieldActions(
+  field,
+  { tokenPrefix, sizeToken, showClear, isOpen, config, variableByName, stats },
+) {
+  const actions = [];
+  if (showClear) actions.push({ name: "Clear Button", icon: "x-close" });
+  actions.push({
+    name: "Open Button",
+    icon: isOpen ? "chevron-up" : "chevron-down",
+  });
+  const row = figma.createFrame();
+  row.name = "Field Actions";
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "FIXED";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 0;
+  row.paddingLeft = 0;
+  row.paddingRight = 0;
+  row.paddingTop = 0;
+  row.paddingBottom = 0;
+  row.resizeWithoutConstraints(
+    FIELD_ACTION_SIZE * actions.length,
+    FIELD_ACTION_SIZE,
+  );
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "field-actions");
+  const icons = [];
+  for (const action of actions) {
+    const button = figma.createFrame();
+    button.name = action.name;
+    button.layoutMode = "HORIZONTAL";
+    button.primaryAxisSizingMode = "FIXED";
+    button.counterAxisSizingMode = "FIXED";
+    button.primaryAxisAlignItems = "CENTER";
+    button.counterAxisAlignItems = "CENTER";
+    button.itemSpacing = 0;
+    button.paddingLeft = 0;
+    button.paddingRight = 0;
+    button.paddingTop = 0;
+    button.paddingBottom = 0;
+    button.resizeWithoutConstraints(FIELD_ACTION_SIZE, FIELD_ACTION_SIZE);
+    button.cornerRadius = KOZMOS_RADIUS.control;
+    button.fills = [];
+    button.strokes = [];
+    button.clipsContent = false;
+    button.setSharedPluginData(RUN_NAMESPACE, "kind", "field-action");
+    bindFloatVariable(button, "width", sizeToken, variableByName, stats);
+    bindFloatVariable(button, "height", sizeToken, variableByName, stats);
+    const icon = await createFixedIconInstance(
+      action.icon,
+      config.placeholder,
+      config.placeholderFallback,
+      variableByName,
+      stats,
+      16,
+      `${tokenPrefix}/icon/size`,
+    );
+    button.appendChild(icon);
+    icons.push(icon);
+    row.appendChild(button);
+  }
+  field.appendChild(row);
+  row.layoutPositioning = "ABSOLUTE";
+  row.x = field.width - row.width;
+  row.y = Math.max(0, (field.height - row.height) / 2);
+  row.constraints = { horizontal: "MAX", vertical: "CENTER" };
+  field.paddingRight =
+    actions.length === 2 ? FIELD_ACTION_SIZE * 2 + 8 : FIELD_ACTION_SIZE + 4;
+  return icons;
 }
 
 // GAP-192: a group's label in Combobox's, MultiSelect's and Listbox's lists,
@@ -67833,31 +67905,16 @@ async function syncMultiSelectVariantChildren({
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
 
-  if (hasSelections && !disabled && !readonly) {
-    const clearIcon = await createFixedIconInstance(
-      "x-close",
-      config.placeholder,
-      config.placeholderFallback,
-      variableByName,
-      stats,
-      16,
-      "MultiSelect/icon/size",
-    );
-    icons.push(clearIcon);
-    field.appendChild(clearIcon);
-  }
-
-  const trailingIcon = await createFixedIconInstance(
-    isOpen ? "chevron-up" : "chevron-down",
-    config.placeholder,
-    config.placeholderFallback,
+  const actionIcons = await appendFieldActions(field, {
+    tokenPrefix: "MultiSelect",
+    sizeToken: "MultiSelect/field/min-height",
+    showClear: hasSelections && !disabled && !readonly,
+    isOpen,
+    config,
     variableByName,
     stats,
-    16,
-    "MultiSelect/icon/size",
-  );
-  icons.push(trailingIcon);
-  field.appendChild(trailingIcon);
+  });
+  for (const icon of actionIcons) icons.push(icon);
 
   syncFocusRing(field, {
     enabled: state !== "Disabled",
@@ -77026,9 +77083,11 @@ function createSpinnerGlyph(
  * Border colours come from two roles, never from a primitive:
  *
  *   "Border/Subtle"  #C7CAD1  container edges — cards, popovers, menus, dialogs,
- *                             drawers, toasts, list rows, dividers, the dropzone
- *   "Border/Input"   #747B8B  control boundaries — fields, checkboxes, radios,
- *                             switch and slider tracks, swatches, a toast action
+ *                             drawers, toasts, list rows, dividers, a file row
+ *   "Border/Input"   #747B8B  control boundaries — fields, FileUpload's
+ *                             dropzone (the field's stroke, theme 600 while
+ *                             dragging), checkboxes, radios, switch and slider
+ *                             tracks, swatches, a toast action
  *
  * Both are Semantics.Border in packages/tokens; scripts/check-border-parity.mjs
  * fails the build if a stroke here reaches for foreground/500 or background/200

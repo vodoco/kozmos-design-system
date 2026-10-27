@@ -6941,6 +6941,118 @@ section("GAP-192: the option lists draw their groups' labels");
   }
 }
 
+section("Since #397: Combobox's and MultiSelect's field actions are React's buttons");
+{
+  // React draws the clear and open at the field's end as buttons
+  // (field-actions.ts): each as tall and wide as the field, 44 at touch (40
+  // compact once Figma has density modes: bound to the field's height), the
+  // 16px icon centred, out of the field's line, inside its border, the open
+  // button last; the field keeps the room at its end. Combobox draws a clear
+  // as MultiSelect does, with a value and not disabled or read only, and
+  // keeps its leading search icon, which React does not draw.
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const valueOf = (name) => {
+    for (let hops = 0; name && hops < 8; hops += 1) {
+      const token = floats.get(name);
+      if (!token) return undefined;
+      if (!token.alias || !floats.has(token.alias)) return token.value;
+      name = token.alias;
+    }
+    return undefined;
+  };
+  const boundName = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const shown = (node, field) =>
+    boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
+  const cases = [
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Default", status: "Default", content: "Closed" }, ["Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Focus", status: "Default", content: "Open" }, ["Clear Button", "Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Disabled", status: "Default", content: "Open" }, ["Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Readonly", status: "Default", content: "Open" }, ["Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Empty" }, ["Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Selected" }, ["Clear Button", "Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Disabled", status: "Default", content: "Selected" }, ["Open Button"]],
+  ];
+  for (const [part, fn, sizeToken, props, expected] of cases) {
+    const label = `${part} ${props.state}/${props.content}`;
+    const component = figma.createComponent();
+    await plugin[fn](
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const field = named(component, `${part} Field`);
+    const row = field && named(field, "Field Actions");
+    ok(row, `${label}: the field draws its actions`);
+    if (!row) continue;
+    ok(
+      row.layoutPositioning === "ABSOLUTE" &&
+        row.constraints &&
+        row.constraints.horizontal === "MAX",
+      `${label}: out of the field's line, held at its end (${row.layoutPositioning}, ${row.constraints && row.constraints.horizontal})`,
+    );
+    ok(
+      Math.abs(row.x + row.width - field.width) <= 0.5 && row.y >= 0,
+      `${label}: at the field's end, inside it (x ${row.x} + ${row.width} of ${field.width})`,
+    );
+    const buttons = row.children.filter((child) => child.type === "FRAME");
+    ok(
+      JSON.stringify(buttons.map((button) => button.name)) ===
+        JSON.stringify(expected),
+      `${label}: ${expected.join(", ")} (${buttons.map((button) => button.name).join(", ")})`,
+    );
+    for (const button of buttons) {
+      ok(
+        boundName(button, "width") === sizeToken &&
+          boundName(button, "height") === sizeToken &&
+          shown(button, "width") === 44 &&
+          shown(button, "height") === 44,
+        `${label}, ${button.name}: as tall and wide as the field, 44, bound to ${sizeToken} (${boundName(button, "width")} ${shown(button, "width")}x${shown(button, "height")})`,
+      );
+      ok(
+        button.primaryAxisAlignItems === "CENTER" &&
+          button.counterAxisAlignItems === "CENTER" &&
+          (button.fills || []).length === 0 &&
+          (button.strokes || []).length === 0,
+        `${label}, ${button.name}: the icon centred, on no fill`,
+      );
+      const icons = button.children.filter((child) => child.type === "INSTANCE");
+      ok(
+        icons.length === 1 && icons[0].width === 16 && icons[0].height === 16,
+        `${label}, ${button.name}: one 16px icon (${icons.map((icon) => `${icon.width}x${icon.height}`).join(", ")})`,
+      );
+    }
+    const room = expected.length === 2 ? 96 : 48;
+    ok(
+      field.paddingRight === room && !boundName(field, "paddingRight"),
+      `${label}: the field keeps ${room} at its end for them (${field.paddingRight}, bound ${boundName(field, "paddingRight")})`,
+    );
+    ok(
+      !field.children.some(
+        (child) => child.type === "INSTANCE" && child !== field.children[0] && /chevron|close/i.test(child.name),
+      ),
+      `${label}: no bare icon left in the field's line`,
+    );
+    if (part === "Combobox")
+      ok(
+        field.children[0] && field.children[0].type === "INSTANCE",
+        `${label}: the leading search icon is kept`,
+      );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
