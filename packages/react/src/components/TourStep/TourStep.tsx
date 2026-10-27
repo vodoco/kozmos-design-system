@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { X } from "@kozmos-ds/icons";
-import { createThemePortal } from "../../theme/ThemePortal";
 import { cn } from "../../utils";
 import {
   Backdrop,
@@ -115,8 +114,6 @@ const RING_GAP = 12;
 const TARGET_OFFSET = CUTOUT_PADDING + CUTOUT_RING + RING_GAP;
 // From the window's edges, the card keeps layout.spacing.200.
 const EDGE_PADDING = 16;
-
-const BackdropPortal = createThemePortal(PopoverPrimitive.Portal);
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -364,12 +361,13 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
         }}
       >
         <PopoverAnchor virtualRef={anchorRef} />
-        <BackdropPortal>
-          <Backdrop
-            className="kozmos-tour-step-backdrop"
-            target={target ?? null}
-          />
-        </BackdropPortal>
+        {/* Drawn in the theme's portal by Backdrop itself, beside the card,
+            one layer under it. */}
+        <Backdrop
+          className="kozmos-tour-step-backdrop"
+          visible={open}
+          target={target ?? null}
+        />
         <PopoverContent
           // Each step is a dialog of its own, so moving on is heard as a
           // dialog opening, its title, position and status read again.

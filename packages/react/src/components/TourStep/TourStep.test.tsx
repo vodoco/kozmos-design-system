@@ -482,7 +482,16 @@ describe("TourStep (GAP-188)", () => {
 
   it("passes its own attributes and a ref to the card", async () => {
     const ref = React.createRef<HTMLDivElement>();
-    render(<Step ref={ref} id="step" className="mine" data-step="two" />);
+    render(
+      <TourStep
+        ref={ref}
+        id="step"
+        className="mine"
+        data-step="two"
+        title="Open a site"
+        onClose={() => {}}
+      />,
+    );
     const dialog = await screen.findByRole("dialog");
     expect(ref.current).toBe(dialog);
     expect(dialog).toHaveAttribute("id", "step");

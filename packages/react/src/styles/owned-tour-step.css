@@ -12,11 +12,12 @@
 @kozmos-owned {
   /* 340 wide, the boards' card, in rem so it follows the reader's text size,
      and never wider than the room beside the target. Above its own Backdrop
-     whatever the order the two reach the portal in: both are the overlay
-     layer's 50, and a backdrop drawn anew (a target arriving) lands after the
-     card. Radix copies the card's z-index to the wrapper it places. */
+     whatever the order the two reach the portal in: both are drawn there at
+     the overlay layer (layer 50), and a backdrop drawn anew (a target
+     arriving) lands after the card, so the card is one layer above it. Radix
+     copies the card's z-index to the wrapper it places. */
   .kozmos-popover.kozmos-tour-step {
-    z-index: 51;
+    z-index: calc(var(--primitives-layer-50) + 1);
     display: flex;
     flex-direction: column;
     gap: calc(var(--primitives-layout-spacing-150) * 1px);
@@ -48,7 +49,7 @@
      opens above the dim. Radix writes each wrapper's z-index inline. */
   [data-radix-popper-content-wrapper]:has(> .kozmos-tour-step)
     ~ [data-radix-popper-content-wrapper] {
-    z-index: 52 !important;
+    z-index: calc(var(--primitives-layer-50) + 2) !important;
   }
 
   /* The tour's name and position, the title beside them, and Close at the
