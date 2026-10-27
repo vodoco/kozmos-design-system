@@ -184,7 +184,7 @@
       "id": "feedback-backdrop",
       "title": "Core/Feedback/Backdrop",
       "component": "Backdrop",
-      "exports": ["Default"]
+      "exports": ["Default", "Target", "TargetList", "MovingTarget"]
     },
     {
       "file": "packages/react/src/components/Badge/Badge.stories.tsx",
