@@ -145,7 +145,7 @@ private val MapStatusPillMaxWidth = 256.dp
  *
  * [icon] replaces the tone's own mark — "No Bluetooth" passes
  * `KozmosIcon(name = "bluetooth-off")`, and "Walking improves accuracy"
- * Material's `DirectionsWalk` — drawn at 24 in the tone's colour and never
+ * `KozmosIcon(name = "walking")` — drawn at 24 in the tone's colour and never
  * announced: the words say it. `null` draws no mark.
  *
  * It is a live region: TalkBack says its words when they change, politely
