@@ -1511,6 +1511,19 @@
       animation: none;
     }
   }
+  /* Accordion's content opens and closes at once under reduced motion,
+     the media query's or the design config's: its animation, a scoped
+     utility, runs over the content's height. The element and the two
+     attributes Radix always sets outweigh the utility's class, attribute
+     and :scope. */
+  @media (prefers-reduced-motion: reduce) {
+    div.kozmos-accordion-content[data-state][data-orientation] {
+      animation: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] div.kozmos-accordion-content[data-state] {
+    animation: none;
+  }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a
      `@apply animate-spin` declared later would simply win. */

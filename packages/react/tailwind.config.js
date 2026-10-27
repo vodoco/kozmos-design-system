@@ -293,6 +293,28 @@ module.exports = {
         700: "calc(700ms * var(--semantics-motion-duration-scale, 1))",
         1000: "calc(1000ms * var(--semantics-motion-duration-scale, 1))",
       },
+      // Accordion opens and closes over its content's height, which Radix
+      // measures into --radix-accordion-content-height. Its content carried
+      // animate-accordion-down and -up from the start, and with no keyframes
+      // here they compiled to nothing: it opened and closed at once. 200ms,
+      // as its chevron turns; reduced motion stops it in owned CSS
+      // (.kozmos-accordion-content).
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down":
+          "accordion-down calc(200ms * var(--semantics-motion-duration-scale, 1)) ease-out",
+        "accordion-up":
+          "accordion-up calc(200ms * var(--semantics-motion-duration-scale, 1)) ease-out",
+      },
       width: {
         ...DENSITY_SIZES,
         "touch-min": "var(--primitives-touch-min)",
