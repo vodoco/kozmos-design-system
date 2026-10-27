@@ -441,6 +441,20 @@ const html = renderToStaticMarkup(
 );
 results.push([html.includes("<button") && html.includes("Save") && html.includes("<svg"), "renders a Button with an Icon on the server"]);
 
+// React prints its server-render warnings, such as a layout effect's under
+// React 18 (0.13.0's Calendar), through console.error.
+const serverErrors = [];
+const consoleError = console.error;
+console.error = (...args) => serverErrors.push(String(args[0]).split("\\n")[0]);
+const calendar = renderToStaticMarkup(
+  createElement(kozmos.Calendar, { defaultMonth: "2026-10", locale: "en-GB" }),
+);
+console.error = consoleError;
+results.push([
+  calendar.includes('role="grid"') && calendar.includes("October 2026") && serverErrors.length === 0,
+  "renders a Calendar on the server without a warning" + (serverErrors.length ? " — " + serverErrors[0] : ""),
+]);
+
 process.stdout.write(JSON.stringify(results));
 `;
 
@@ -503,7 +517,7 @@ for (const major of REACT_MAJORS) {
     for (const [, what] of failed) fail(`React ${major}: ${what}`);
     if (failed.length === 0) {
       ok(
-        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requirable.length} CommonJS entr(y/ies) load, a Button renders on the server`,
+        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requirable.length} CommonJS entr(y/ies) load, a Button and a Calendar render on the server, the Calendar with no warning`,
       );
     }
   } catch (error) {

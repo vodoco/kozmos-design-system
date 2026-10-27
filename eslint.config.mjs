@@ -37,6 +37,28 @@ export default tseslint.config(
     }
   },
   {
+    // A server render runs no layout effect, and React 18 warns for each one it
+    // meets. A part's layout effect goes through its file's
+    // `typeof window === "undefined" ? React.useEffect : React.useLayoutEffect`.
+    files: ['packages/react/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='React'][callee.property.name='useLayoutEffect']",
+          message:
+            'React 18 warns on every server render that meets React.useLayoutEffect: call the file\'s `typeof window === "undefined" ? React.useEffect : React.useLayoutEffect` instead.'
+        },
+        {
+          selector: "ImportSpecifier[imported.name='useLayoutEffect']",
+          message:
+            'React 18 warns on every server render that meets useLayoutEffect: call the file\'s `typeof window === "undefined" ? React.useEffect : React.useLayoutEffect` instead.'
+        }
+      ]
+    }
+  },
+  {
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
