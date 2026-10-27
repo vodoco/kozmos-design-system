@@ -10,6 +10,19 @@ import { PlatformSnippets } from "../PlatformSnippets";
 A full-viewport scrim that visually separates foreground content from the page.
 Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
 
+## Where it is drawn
+
+Backdrop is drawn in the theme's portal, as Popover and Dialog are, so it covers the window
+whatever box it is rendered in: a map, which isolates its stacking, or a panel that clips or
+transforms what it holds, cannot cut it off or stack it under the page's bar. Its children, a
+step card, are drawn with it in the portal, and React still carries their events up the tree the
+backdrop is rendered in. A product that looked for the backdrop inside its own markup finds it in
+the provider's portal.
+
+`placement="inline"` draws it in place instead, `absolute` over the nearest positioned box: one
+region's dim, a panel while it loads or a map behind a step. The stories on this page are inline,
+so each dims its own frame.
+
 <Canvas>
   <Story of={BackdropStories.Default} />
 </Canvas>

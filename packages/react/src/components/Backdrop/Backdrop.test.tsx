@@ -2,13 +2,17 @@ import { act, fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { flushSync } from "react-dom";
 import { Backdrop } from "./Backdrop";
+import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 describe("Backdrop", () => {
-  it("renders correctly", () => {
-    const { container } = render(<Backdrop />);
-    expect(container.firstChild).toHaveClass("fixed inset-0");
+  it("renders correctly, in the portal, not in the tree it is rendered in", () => {
+    const { container } = render(<Backdrop data-testid="backdrop" />);
+    expect(container).toBeEmptyDOMElement();
+    expect(document.querySelector('[data-testid="backdrop"]')).toHaveClass(
+      "fixed inset-0",
+    );
   });
 
   it("does not render when not visible", () => {
@@ -106,8 +110,10 @@ describe("Backdrop target (GAP-189)", () => {
   });
 
   it("with no target dims the whole page, as it did: no cut-out and no ring", () => {
-    const { container } = render(<Backdrop />);
-    const root = container.firstChild as HTMLElement;
+    render(<Backdrop data-testid="backdrop" />);
+    const root = document.querySelector<HTMLElement>(
+      '[data-testid="backdrop"]',
+    )!;
     expect(root).toHaveClass("fixed inset-0 z-50 bg-overlay-scrim");
     expect(root.style.getPropertyValue("clip-path")).toBe("");
     expect(root.querySelector(".kozmos-backdrop-ring")).toBeNull();
@@ -353,7 +359,7 @@ describe("Backdrop target (GAP-189)", () => {
     let target: HTMLButtonElement | null = null;
     const { getByTestId } = render(
       <section data-testid="host">
-        <Tour onTarget={(node) => (target = node)} />
+        <Tour onTarget={(node) => (target = node)} placement="inline" />
       </section>,
     );
     expect(target!.parentElement).toBe(getByTestId("host"));
@@ -388,7 +394,13 @@ describe("Backdrop target (GAP-189)", () => {
     );
   }
 
-  function Steps({ step }: { step: number }) {
+  function Steps({
+    step,
+    placement,
+  }: {
+    step: number;
+    placement?: "fixed" | "inline";
+  }) {
     const first = React.useRef<HTMLButtonElement>(null);
     const second = React.useRef<HTMLButtonElement>(null);
     return (
@@ -417,6 +429,7 @@ describe("Backdrop target (GAP-189)", () => {
           data-testid="backdrop"
           target={step === 0 ? first : second}
           targetPadding={0}
+          placement={placement}
         />
       </>
     );
@@ -507,16 +520,18 @@ describe("Backdrop target (GAP-189)", () => {
         "Date",
       ],
     });
+    // Inline, inside the mark. Drawn in the portal, it reads the mark the
+    // config's provider puts on its portal (#418).
     const { getByTestId, rerender } = render(
       <div data-kozmos-motion="reduced">
-        <Steps step={0} />
+        <Steps step={0} placement="inline" />
       </div>,
     );
     act(() => vi.advanceTimersByTime(40));
     flushSync(() =>
       rerender(
         <div data-kozmos-motion="reduced">
-          <Steps step={1} />
+          <Steps step={1} placement="inline" />
         </div>,
       ),
     );
@@ -544,18 +559,20 @@ describe("Backdrop target (GAP-189)", () => {
       ],
     });
 
-  it("with no target renders exactly what it did: one scrim, its children inside", () => {
+  it("with no target renders what it did, one scrim with its children inside, in the portal", () => {
     const { container, rerender } = render(<Backdrop />);
-    expect(container.innerHTML).toBe(
+    expect(container).toBeEmptyDOMElement();
+    expect(document.body.lastElementChild!.outerHTML).toBe(
       '<div class="fixed inset-0 z-50 bg-overlay-scrim"></div>',
     );
+    // Inline, it is drawn in place, absolute in the box it is rendered in.
     rerender(
-      <Backdrop className="absolute">
+      <Backdrop placement="inline">
         <p>Step</p>
       </Backdrop>,
     );
     expect(container.innerHTML).toBe(
-      '<div class="inset-0 z-50 bg-overlay-scrim absolute"><p>Step</p></div>',
+      '<div class="absolute inset-0 z-50 bg-overlay-scrim"><p>Step</p></div>',
     );
   });
 
@@ -777,5 +794,125 @@ describe("Backdrop target (GAP-189)", () => {
       />,
     );
     expect(container.firstChild).toBeNull();
+  });
+});
+
+// A backdrop rendered inside a box that clips, transforms or isolates its
+// stacking (a map, since MapView isolates: site GAP-40) was trapped in it,
+// drawn under a sticky bar or a shell's panel. It is drawn in the theme's
+// portal now, as Popover and Dialog are (scripts/check-backdrop-portal.mjs
+// measures what it covers in three engines).
+describe("Backdrop in the theme's portal", () => {
+  beforeEach(() => {
+    boxes.clear();
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: Element) {
+        return boxes.get(this) ?? new DOMRect(0, 0, 1024, 768);
+      },
+    );
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("is drawn in the provider's portal, outside the box it is rendered in, at its density", () => {
+    const { getByTestId } = render(
+      <ThemeProvider theme="dark" density="compact">
+        <div data-testid="map" style={{ isolation: "isolate" }}>
+          <Backdrop data-testid="backdrop" />
+        </div>
+      </ThemeProvider>,
+    );
+    const backdrop = document.querySelector('[data-testid="backdrop"]')!;
+    const portal = backdrop.closest("[data-kozmos-portal]");
+    expect(portal).not.toBeNull();
+    expect(portal).toHaveAttribute("data-theme", "dark");
+    expect(getByTestId("map").contains(backdrop)).toBe(false);
+    expect(backdrop).toHaveAttribute("data-kozmos-density", "compact");
+    // One element of its own: the portal adds no wrapper round it.
+    expect(backdrop.parentElement).toBe(portal);
+  });
+
+  it("is drawn in place, absolute in its box, when its placement is inline", () => {
+    const { getByTestId } = render(
+      <ThemeProvider>
+        <div data-testid="panel" style={{ position: "relative" }}>
+          <Backdrop data-testid="backdrop" placement="inline" />
+        </div>
+      </ThemeProvider>,
+    );
+    const backdrop = getByTestId("backdrop");
+    expect(backdrop.parentElement).toBe(getByTestId("panel"));
+    expect(backdrop).toHaveClass("absolute inset-0 z-50");
+    expect(backdrop).not.toHaveClass("fixed");
+  });
+
+  it("draws its cut-out once the portal it is drawn in exists", async () => {
+    function Lit() {
+      const ref = React.useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button
+            ref={(node) => {
+              (
+                ref as React.MutableRefObject<HTMLButtonElement | null>
+              ).current = node;
+              if (node) place(node, 100, 50, 120, 44);
+            }}
+          >
+            Update
+          </button>
+          <Backdrop data-testid="backdrop" target={ref} />
+        </>
+      );
+    }
+    render(
+      <ThemeProvider>
+        <Lit />
+      </ThemeProvider>,
+    );
+    const backdrop = document.querySelector<HTMLElement>(
+      '[data-testid="backdrop"]',
+    )!;
+    expect(backdrop.closest("[data-kozmos-portal]")).not.toBeNull();
+    expect(backdrop).toHaveAttribute("data-lit");
+    expect(holeOf(backdrop)).toEqual({
+      left: 92,
+      top: 42,
+      right: 228,
+      bottom: 102,
+    });
+  });
+
+  it("keeps its children, a step card, which take focus and whose events reach the tree it is rendered in", () => {
+    const pressed = vi.fn();
+    const keys: string[] = [];
+    const ref = React.createRef<HTMLDivElement>();
+    const { getByRole } = render(
+      <ThemeProvider>
+        <div onKeyDown={(event) => keys.push(event.key)}>
+          <Backdrop
+            ref={ref}
+            target={{ top: 0, left: 0, width: 10, height: 10 }}
+          >
+            <section role="dialog" aria-label="Step 1 of 3">
+              <button type="button" onClick={pressed}>
+                Next
+              </button>
+            </section>
+          </Backdrop>
+        </div>
+      </ThemeProvider>,
+    );
+    const next = getByRole("button", { name: "Next" });
+    expect(ref.current?.contains(next)).toBe(true);
+    expect(ref.current?.closest("[data-kozmos-portal]")).not.toBeNull();
+    act(() => next.focus());
+    expect(next).toHaveFocus();
+    fireEvent.click(next);
+    expect(pressed).toHaveBeenCalledTimes(1);
+    // React carries the event up its own tree, through the portal.
+    fireEvent.keyDown(next, { key: "Escape" });
+    expect(keys).toEqual(["Escape"]);
   });
 });

@@ -392,7 +392,9 @@ jobs:
       # the target through it and the backdrop elsewhere; the target keeps
       # its place and stacking; the cut-out follows a scroll, a resize and
       # the window; reduced motion moves it at once
-      # (scripts/check-backdrop-target.mjs).
+      # (scripts/check-backdrop-target.mjs). Drawn in the theme's portal, it
+      # covers the page from inside a map that isolates its stacking, and
+      # inline it covers the map alone (scripts/check-backdrop-portal.mjs).
       - name: Verify Backdrop Target
         run: |
           pnpm test:backdrop-target
