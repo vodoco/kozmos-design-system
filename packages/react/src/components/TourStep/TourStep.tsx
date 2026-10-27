@@ -358,8 +358,9 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
     return (
       <Popover
         open={open}
-        onOpenChange={(next) => {
-          if (!next) onClose();
+        onOpenChange={(isOpen) => {
+          // Escape: a press outside never asks (onInteractOutside below).
+          if (!isOpen) onClose();
         }}
       >
         <PopoverAnchor virtualRef={anchorRef} />
