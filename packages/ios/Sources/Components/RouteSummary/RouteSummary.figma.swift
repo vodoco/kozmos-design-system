@@ -2,7 +2,7 @@ import SwiftUI
 import Figma
 
 struct KozmosRouteSummaryConnect: FigmaConnect {
-    let component = KozmosRouteSummary<Image>.self
+    let component = KozmosRouteSummary<KozmosIcon>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1351-8296"
 
     @FigmaString("ETA Text")
@@ -28,7 +28,7 @@ struct KozmosRouteSummaryConnect: FigmaConnect {
             onEndRoute: {},
             onStartNavigation: {}
         ) {
-            Image(systemName: "figure.walk")
+            KozmosIcon("walking")
         }
     }
 }
