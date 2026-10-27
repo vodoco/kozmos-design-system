@@ -3,6 +3,9 @@ import React from "react";
 import { flushSync } from "react-dom";
 import { Backdrop } from "./Backdrop";
 import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
+import { Dialog, DialogContent, DialogTitle } from "../Dialog/Dialog";
+import { Drawer, DrawerContent, DrawerTitle } from "../Drawer/Drawer";
+import { BottomSheet, BottomSheetContent } from "../BottomSheet/BottomSheet";
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
@@ -914,5 +917,132 @@ describe("Backdrop in the theme's portal", () => {
     // React carries the event up its own tree, through the portal.
     fireEvent.keyDown(next, { key: "Escape" });
     expect(keys).toEqual(["Escape"]);
+  });
+});
+
+// #419's review: a modal makes everything outside its content inert, so a
+// Backdrop opened inside one is drawn in its content
+// (scripts/check-backdrop-portal.mjs presses, tabs and reads it in three
+// engines).
+describe("Backdrop inside a modal", () => {
+  const modals: [string, (children: React.ReactNode) => React.ReactElement][] =
+    [
+      [
+        "Dialog",
+        (children) => (
+          <Dialog open>
+            <DialogContent data-testid="modal">
+              <DialogTitle>Add a desk</DialogTitle>
+              {children}
+            </DialogContent>
+          </Dialog>
+        ),
+      ],
+      [
+        "Drawer",
+        (children) => (
+          <Drawer open>
+            <DrawerContent data-testid="modal">
+              <DrawerTitle>Filters</DrawerTitle>
+              {children}
+            </DrawerContent>
+          </Drawer>
+        ),
+      ],
+      [
+        "BottomSheet",
+        (children) => (
+          <BottomSheet open>
+            <BottomSheetContent data-testid="modal" title="Place">
+              {children}
+            </BottomSheetContent>
+          </BottomSheet>
+        ),
+      ],
+    ];
+
+  for (const [name, modal] of modals) {
+    it(`is drawn in the ${name}'s content, never hidden from readers, its card's Next keeping focus`, async () => {
+      const { findByTestId, getByRole } = render(
+        <ThemeProvider>
+          {modal(
+            <Backdrop
+              data-testid="backdrop"
+              target={{ top: 0, left: 0, width: 10, height: 10 }}
+            >
+              <section role="dialog" aria-label="Step 1 of 3">
+                <button type="button">Next</button>
+              </section>
+            </Backdrop>,
+          )}
+        </ThemeProvider>,
+      );
+      const content = await findByTestId("modal");
+      const backdrop = await findByTestId("backdrop");
+      expect(content.contains(backdrop)).toBe(true);
+      expect(backdrop.closest('[aria-hidden="true"]')).toBeNull();
+      const next = getByRole("button", { name: "Next" });
+      act(() => next.focus());
+      expect(next).toHaveFocus();
+    });
+  }
+
+  it("is drawn in the theme's portal outside a modal", () => {
+    render(
+      <ThemeProvider>
+        <Backdrop data-testid="backdrop" />
+      </ThemeProvider>,
+    );
+    expect(
+      document
+        .querySelector('[data-testid="backdrop"]')!
+        .closest("[data-kozmos-portal]"),
+    ).not.toBeNull();
+  });
+});
+
+describe("Backdrop's ref and its position", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function Parent({
+    placement,
+    seen,
+  }: {
+    placement: "fixed" | "inline";
+    seen: (node: HTMLDivElement | null) => void;
+  }) {
+    const ref = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => seen(ref.current), [seen]);
+    return <Backdrop ref={ref} placement={placement} />;
+  }
+
+  it("hands its element to a parent's mount effect, inline and in a portal that exists", () => {
+    const inline = vi.fn();
+    render(<Parent placement="inline" seen={inline} />);
+    expect(inline).toHaveBeenCalledWith(expect.any(HTMLDivElement));
+    // A backdrop opened once the provider's portal is there, as a tour
+    // starts on a page already drawn.
+    const fixed = vi.fn();
+    const { rerender } = render(<ThemeProvider>{null}</ThemeProvider>);
+    rerender(
+      <ThemeProvider>
+        <Parent placement="fixed" seen={fixed} />
+      </ThemeProvider>,
+    );
+    expect(fixed).toHaveBeenCalledWith(expect.any(HTMLDivElement));
+  });
+
+  it("warns once, in development, when a fixed backdrop is given a position", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { rerender } = render(<Backdrop className="absolute" />);
+    rerender(<Backdrop className="absolute" />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/placement="inline"/);
+    warn.mockClear();
+    render(<Backdrop className="absolute" placement="inline" />);
+    render(<Backdrop className="bg-overlay-dim absolute-ish" />);
+    expect(warn).not.toHaveBeenCalled();
   });
 });

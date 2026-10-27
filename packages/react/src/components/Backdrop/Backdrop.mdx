@@ -8,20 +8,36 @@ import { PlatformSnippets } from "../PlatformSnippets";
 # Backdrop
 
 A full-viewport scrim that visually separates foreground content from the page.
-Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
+Use `visible` to toggle it. It draws the dim and takes the pointer on it; it moves no focus, traps
+none and names nothing. What it holds, a step card, is in the tab order as any content is, and its
+dialog semantics, focus and dismissal are the card's or the enclosing overlay's to give.
 
 ## Where it is drawn
 
-Backdrop is drawn in the theme's portal, as Popover and Dialog are, so it covers the window
-whatever box it is rendered in: a map, which isolates its stacking, or a panel that clips or
-transforms what it holds, cannot cut it off or stack it under the page's bar. Its children, a
-step card, are drawn with it in the portal, and React still carries their events up the tree the
+`placement="fixed"`, the default, draws it in the theme's portal, as Popover and Dialog are, so it
+covers the window whatever box it is rendered in: a map, which isolates its stacking, or a panel
+that clips or transforms what it holds, cannot cut it off or stack it under the page's bar. Its
+children are drawn with it in the portal, and React still carries their events up the tree the
 backdrop is rendered in. A product that looked for the backdrop inside its own markup finds it in
-the provider's portal.
+the provider's portal. Inside a modal (Dialog, Drawer, BottomSheet), which makes everything outside
+its content inert, it is drawn in the modal's content instead, so it blocks presses on what it
+dims, its card takes focus inside the modal's focus trap, and neither is hidden from readers.
 
-`placement="inline"` draws it in place instead, `absolute` over the nearest positioned box: one
-region's dim, a panel while it loads or a map behind a step. The stories on this page are inline,
-so each dims its own frame.
+`placement="inline"` draws it in place, `absolute` over the nearest positioned box: one region's
+dim, a panel while it loads or a map behind a step. Unlike FloatingActionButton's `inline`, which
+puts the button in the flow, an inline backdrop takes no room in the flow. The stories on this page
+are inline, so each dims its own frame. A fixed backdrop given a position by its class
+(`className="absolute"`, the way one was kept to a box before it was portalled) warns in development
+and points here.
+
+A fixed backdrop is drawn once the provider's portal exists, so it is not in the server's HTML: it
+appears a render or two after hydration. An inline one is rendered on the server as before.
+
+A fixed backdrop and the popovers are drawn at the same layer in the same portal, so whichever
+opened last is on top: a Backdrop opened while a Popover, Menu or Tooltip is open dims it, as a
+Dialog opened then does, and a popover opened while the backdrop is up is drawn above it. Before
+the backdrop was portalled it was drawn in the page, under every popover. A tour's step card
+(TourStep) sits a layer above its own backdrop.
 
 <Canvas>
   <Story of={BackdropStories.Default} />

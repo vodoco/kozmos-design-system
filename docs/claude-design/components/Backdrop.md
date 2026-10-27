@@ -2,7 +2,7 @@
 
 # Backdrop
 
-A full-viewport scrim that visually separates foreground content from the page. Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
+A full-viewport scrim that visually separates foreground content from the page. Use `visible` to toggle it. It draws the dim and takes the pointer on it; it moves no focus, traps none and names nothing. What it holds, a step card, is in the tab order as any content is, and its dialog semantics, focus and dismissal are the card's or the enclosing overlay's to give.
 
 - **Import:** `import { Backdrop } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -63,9 +63,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `BackdropProps`, which ex
   Where the dim is drawn. `"fixed"`, the default, covers the window and is
   drawn in the theme's portal, as Popover and Dialog are, so no box it is
   rendered in (a map, a panel that clips, transforms or isolates its
-  stacking) can cut it off or stack it under the page. `"inline"` covers
-  the nearest positioned box it is rendered in, in place: one region's dim
-  (site GAP-34).
+  stacking) can cut it off or stack it under the page; inside a modal
+  (Dialog, Drawer, BottomSheet) it is drawn in the modal's content, which
+  makes everything outside it inert. Not in the server's HTML: it is drawn
+  once the provider's portal exists. `"inline"` covers the nearest
+  positioned box it is rendered in, `absolute`, in place: one region's dim
+  (site GAP-34). A fixed backdrop given a position by its class warns in
+  development.
 
 - `children`: `ReactNode`, optional.
 
