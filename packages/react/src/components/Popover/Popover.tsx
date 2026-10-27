@@ -11,14 +11,17 @@ const PopoverPortal = createThemePortal(PopoverPrimitive.Portal);
 const AnchorElementContext =
   React.createContext<React.MutableRefObject<HTMLElement | null> | null>(null);
 
-function Popover(props: PopoverPrimitive.PopoverProps) {
+// Typed as a component, not a function with a displayName set on it: a
+// function's added property emits a namespace beside it, and the bundled
+// declarations then held two `Popover`s, one exported and one local (TS2395).
+const Popover: React.FC<PopoverPrimitive.PopoverProps> = (props) => {
   const anchor = React.useRef<HTMLElement | null>(null);
   return (
     <AnchorElementContext.Provider value={anchor}>
       <PopoverPrimitive.Root {...props} />
     </AnchorElementContext.Provider>
   );
-}
+};
 Popover.displayName = "Popover";
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
