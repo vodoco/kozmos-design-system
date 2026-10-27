@@ -14538,10 +14538,10 @@
   },
   "components": {
     "summary": {
-      "total": 121,
-      "stories": 121,
-      "tests": 121,
-      "exported": 121,
+      "total": 122,
+      "stories": 122,
+      "tests": 122,
+      "exported": 122,
       "codeConnectFiles": 98,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 98
@@ -19196,6 +19196,48 @@
           "sideOffset",
           "tabIndex",
           "title"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "TourStep",
+        "source": "packages/react/src/components/TourStep/TourStep.tsx",
+        "story": "packages/react/src/components/TourStep/TourStep.stories.tsx",
+        "test": "packages/react/src/components/TourStep/TourStep.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "align",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "backLabel",
+          "children",
+          "closeLabel",
+          "hint",
+          "id",
+          "instruction",
+          "nextLabel",
+          "open",
+          "positionLabel",
+          "role",
+          "side",
+          "step",
+          "stepCount",
+          "tabIndex",
+          "target",
+          "title",
+          "tourLabel"
         ],
         "variants": {}
       },

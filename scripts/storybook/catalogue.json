@@ -854,6 +854,21 @@
       "exports": ["AnchoredToAControl", "AnchoredToARect", "Default"]
     },
     {
+      "file": "packages/react/src/components/TourStep/TourStep.stories.tsx",
+      "id": "overlay-tour-step",
+      "title": "Core/Overlays/TourStep",
+      "component": "TourStep",
+      "exports": [
+        "Default",
+        "Step",
+        "WithContent",
+        "NoTarget",
+        "Coachmark",
+        "RightToLeft",
+        "Compact"
+      ]
+    },
+    {
       "file": "packages/react/src/components/Progress/Progress.stories.tsx",
       "id": "feedback-progress",
       "title": "Core/Feedback/Progress",

@@ -107,6 +107,7 @@ import {
   PasswordInput,
   RouteOptionCard,
   RoutePreviewPanel,
+  TourStep,
 } from "@kozmos-ds/react";
 
 import { toReactTarget } from "./targets";
@@ -156,6 +157,19 @@ const BackdropAdapter = ({ target, ...props }: any) =>
     target: target === undefined ? undefined : toReactTarget(target),
   });
 BackdropAdapter.displayName = "Backdrop";
+
+// TourStep's target is read as Backdrop's is: a template ref on a component
+// is its element (GAP-188). One part, so the card, its Backdrop and its
+// anchor share one React root. Named slots reach React as the props of
+// their names (#title, #hint, #instruction, #tourLabel), and @back, @next
+// and @close as onBack, onNext and onClose: without @back or @next there is
+// no Back or Next.
+const TourStepAdapter = ({ target, ...props }: any) =>
+  React.createElement(TourStep, {
+    ...props,
+    target: target === undefined ? undefined : toReactTarget(target),
+  });
+TourStepAdapter.displayName = "TourStep";
 
 const CheckboxAdapter = ({
   modelValue,
@@ -310,6 +324,10 @@ export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
 export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
+export const KozmosTourStep = createVueWrapper(TourStepAdapter);
+// Declared as props, so Vue never writes them onto the wrapper's element as
+// attributes: a component instance or a function cannot be written as one.
+Object.assign(KozmosTourStep, { props: { target: null, positionLabel: null } });
 export const KozmosAccordion = createVueWrapper(Accordion);
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);

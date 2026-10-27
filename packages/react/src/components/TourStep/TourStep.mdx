@@ -1,0 +1,173 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as TourStepStories from "./TourStep.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={TourStepStories} />
+
+# TourStep
+
+One step of a product tour (GAP-188, decision 116): a card beside the control the step points at,
+which Backdrop's cut-out lights while the rest of the page is dimmed. It carries the tour's name
+and its position ("Step 2 of 5"), a title, any body, a hint, the live status of what completes the
+step ("Go ahead and open a site to proceed to the next step."), the progress as Stepper's dots,
+Back, Next and Close. It is the MAP-64 boards' card in Kozmos's tokens: Popover's surface, the
+Control corner, 16 inside, a 4 top edge of the theme fill, 340 wide.
+
+TourStep is one step, and it is controlled: which step shows, and pausing and resuming the tour,
+are the product's. On the docs page each example starts shut; its button opens it.
+
+<Canvas of={TourStepStories.Default} />
+
+<Controls />
+
+## A tour
+
+Keep one TourStep and change its props as the tour moves on: `step`, `title`, the body, and
+`target`. The cut-out glides to the next target, and the card is drawn anew for each `step`, so a
+reader hears the new step as a dialog opening, and focus is on its Next. Pass `onBack` from the
+second step on, and `nextLabel="Finish"` on the last; `onNext` on the last step is where the tour
+ends. A step past `stepCount` draws every dot done, for a closing card, with `positionLabel="Done"`.
+
+<Canvas of={TourStepStories.Step} />
+
+## Where it sits
+
+`target` is an element, a ref to one, a virtual element (anything with `getBoundingClientRect()`,
+such as a point on a map) or a rect in the viewport's coordinates. The card sits 12 past the
+cut-out's ring on its `side` (`"bottom"` by default), at `align` along it (`"center"`), flips to
+the other side where there is no room, and keeps 16 from the window's edges. It is read every
+frame, as Backdrop reads its target, so the card and the cut-out move together, whatever moves the
+target, and a ref filled after the step opens is found.
+
+With no target, or one that is not on the page (a ref to nothing, an element with no box), the
+whole page is dimmed and the card places itself in the middle of the window: the boards' "Step
+can’t be pointed to".
+
+<Canvas of={TourStepStories.NoTarget} />
+
+## The body
+
+`children` takes any content: the boards put a row of Tags in it and a Table. `hint` is a tip
+under it, on the themed surface, and `instruction` is what completes the step, beside a pulsing
+marker. The marker holds still when motion is reduced, by the system or by the design config.
+
+<Canvas of={TourStepStories.WithContent} />
+
+## A single hint (coachmark)
+
+With no `stepCount`, no `onBack` and no `onNext`, TourStep is a coachmark (GAP-157): a title and a
+body beside the control it teaches, with no position and no dots, closed by its button and by
+Escape. It takes focus on itself when it opens, so it is read out. Name its button with
+`closeLabel`, "Dismiss" for example. For an action as well, pass `onNext` with `nextLabel="Got it"`.
+There is no separate Coachmark part.
+
+<Canvas of={TourStepStories.Coachmark} />
+
+## Pressing outside, and closing
+
+Escape and Close call `onClose`. A press on the dim or on the lit target does not: the dim and the
+target are part of the tour, and the target takes the press through the cut-out, as "Go ahead and
+open a site" asks. `onInteractOutside` is called on each such press, and when focus moves outside
+the card; to close on one, call `onClose` from there. `open={false}` lets the step leave as a
+popover does; the product may also stop rendering it.
+
+## Stacking
+
+The card is drawn in the provider's portal with its Backdrop, one above it whatever the order the
+two arrive in, so a backdrop drawn anew never covers the card. A popover opened while the step is
+open, from the body or by the lit target (a field's list, a tooltip), opens above both.
+
+## Accessibility
+
+TourStep is a non-modal dialog named by its title and described by its tour, its position, its
+body, its hint and its status, so a reader hears "Open a site, dialog, How Pointr Cloud is
+organised, Step 2 of 5, …" when it opens. It takes focus when it opens, on Next, or on itself when
+it has no Next, whether a press opened it or the page did. The page stays reachable: Tab leaves the
+card for the lit target, and the target keeps its own role. The status is a polite live region,
+mounted with each step, so a status that arrives or changes while the step is open is read out.
+The dots are drawn for the eye only, since the position is in words.
+
+When the step closes, `PopoverContent` gives focus back if focus was lost with it (GAP-190). The
+labels have English defaults (decision 100): `backLabel` "Back", `nextLabel` "Next", `closeLabel`
+"Close" and `positionLabel` "Step {step} of {count}", a template or a function of the step and the
+count.
+
+Right to left, the card, its sections and the dots mirror, as the provider's direction says. At
+compact density (Pointr Cloud's), Close is 32 and Back and Next 40.
+
+<Canvas of={TourStepStories.RightToLeft} />
+
+<Canvas of={TourStepStories.Compact} />
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import { Button, TourStep } from "@kozmos-ds/react";
+
+export function SitesTour() {
+  const site = React.useRef<HTMLButtonElement>(null);
+  const [step, setStep] = React.useState<number | null>(1);
+  return (
+    <>
+      <Button ref={site} variant="outline">
+        Healthcare Center
+      </Button>
+      <TourStep
+        open={step !== null}
+        target={site}
+        tourLabel="How Pointr Cloud is organised"
+        step={step ?? 1}
+        stepCount={5}
+        title="Open a site"
+        instruction="Go ahead and open a site to proceed to the next step."
+        onBack={step && step > 1 ? () => setStep(step - 1) : undefined}
+        onNext={() => setStep((current) => (current ?? 1) + 1)}
+        onClose={() => setStep(null)}
+      >
+        Each site in this client is listed here. Open one to see its buildings.
+      </TourStep>
+    </>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosButton, KozmosTourStep } from "@kozmos-ds/vue"
+
+const site = ref(null)
+const step = ref(1)
+</script>
+
+<template>
+  <KozmosButton ref="site" variant="outline">Healthcare Center</KozmosButton>
+  <KozmosTourStep
+    v-if="step"
+    :target="site"
+    tourLabel="How Pointr Cloud is organised"
+    :step="step"
+    :stepCount="5"
+    title="Open a site"
+    instruction="Go ahead and open a site to proceed to the next step."
+    @next="step = step + 1"
+    @close="step = 0"
+  >
+    Each site in this client is listed here. Open one to see its buildings.
+  </KozmosTourStep>
+</template>
+    `}
+    swift={`
+// SwiftUI has no TourStep yet (decision 116): it ships on the web and in
+// Figma first, and comes to SwiftUI later.
+`}
+    kotlin={`
+// Compose has no TourStep yet (decision 116): it ships on the web and in
+// Figma first, and comes to Compose later.
+`}
+
+/>

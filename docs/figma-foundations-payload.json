@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-14T19:15:11.577Z",
+  "generatedAt": "2026-10-26T22:50:56.433Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -7284,7 +7284,7 @@
         "ios": "semanticsEmotionThemedOnsurface",
         "android": "semanticsEmotionThemedOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "alias",

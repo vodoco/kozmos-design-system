@@ -1,0 +1,206 @@
+/* TourStep (GAP-188): a product tour's step card, on Popover's surface (the
+   popover fill, the subtle edge, the Control corner, the overlay elevation)
+   with a 4 theme edge along its top, the theme fill (decision 59), as the
+   MAP-64 boards draw it.
+
+   Owned rather than utilities: a host without @scope drops the utility layer,
+   and the card's width, its order above the dim, its sections and the
+   marker's motion are what the step promises. Two classes where a rule meets
+   the popover's own or the scoped preflight, which weighs one and wins a tie
+   on proximity. Every side is logical, so a right-to-left interface mirrors
+   it. Imported after the popover's rules. */
+@kozmos-owned {
+  /* 340 wide, the boards' card, in rem so it follows the reader's text size,
+     and never wider than the room beside the target. Above its own Backdrop
+     whatever the order the two reach the portal in: both are the overlay
+     layer's 50, and a backdrop drawn anew (a target arriving) lands after the
+     card. Radix copies the card's z-index to the wrapper it places. */
+  .kozmos-popover.kozmos-tour-step {
+    z-index: 51;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    box-sizing: border-box;
+    inline-size: min(
+      21.25rem,
+      var(--radix-popover-content-available-width, 100vw)
+    );
+    max-block-size: var(--radix-popover-content-available-height, 100dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(var(--primitives-layout-spacing-200) * 1px);
+    border-block-start: calc(var(--primitives-layout-spacing-50) * 1px) solid
+      var(--primitives-colors-theme-500);
+    text-align: start;
+    overflow-wrap: anywhere;
+  }
+  /* With nothing to point at, it places itself in the middle of the window:
+     Radix sets its top at the window's middle, and it moves up by half its
+     own height. The whole window is its room then. */
+  .kozmos-popover.kozmos-tour-step[data-placement="centre"] {
+    translate: 0 -50%;
+    max-block-size: calc(
+      100dvh - 2 * var(--primitives-layout-spacing-200) * 1px
+    );
+  }
+  /* A popover opened from inside the card, or by the lit target while the
+     step is open (a field's list, a tooltip), opens above the card, as it
+     opens above the dim. Radix writes each wrapper's z-index inline. */
+  [data-radix-popper-content-wrapper]:has(> .kozmos-tour-step)
+    ~ [data-radix-popper-content-wrapper] {
+    z-index: 52 !important;
+  }
+
+  /* The tour's name and position, the title beside them, and Close at the
+     end. The heading is as tall as Close at least, so a title alone sits on
+     its middle, as Dialog's does. */
+  .kozmos-tour-step .kozmos-tour-step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-tour-step .kozmos-tour-step-heading {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-inline-size: 0;
+    min-block-size: var(--density-icon-control-size-md, 2.75rem);
+  }
+  .kozmos-tour-step .kozmos-tour-step-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wide text-primary;
+    margin: 0;
+  }
+  .kozmos-tour-step .kozmos-tour-step-title {
+    @apply text-base font-semibold text-foreground;
+    margin: 0;
+  }
+  .kozmos-tour-step .kozmos-tour-step-close {
+    flex: none;
+  }
+  .kozmos-tour-step .kozmos-tour-step-body {
+    @apply text-sm text-muted-foreground;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-inline-size: 0;
+  }
+
+  /* The hint: the themed surface and its ink, with a 4 bar of the theme
+     colour at its start, which forced colours keep as a line. */
+  .kozmos-tour-step .kozmos-tour-step-hint {
+    @apply text-sm;
+    padding-block: calc(var(--primitives-layout-spacing-100) * 1px);
+    padding-inline: calc(var(--primitives-layout-spacing-150) * 1px);
+    border-inline-start: calc(var(--primitives-layout-spacing-50) * 1px) solid
+      var(--primitives-colors-theme-600);
+    border-radius: calc(var(--semantics-radius-marker) * 1px);
+    background-color: var(--semantics-emotion-themed-surface);
+    color: var(--semantics-emotion-themed-on-surface);
+  }
+
+  /* The status is mounted with each step, empty or not, so what arrives in
+     it is read out. Empty, it takes no place in the column: out of the flow,
+     the card's gap passes it by. */
+  .kozmos-tour-step .kozmos-tour-step-status:empty {
+    position: absolute;
+  }
+  .kozmos-tour-step .kozmos-tour-step-instruction {
+    @apply bg-muted text-sm text-foreground;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    padding-block: calc(var(--primitives-layout-spacing-75) * 1px);
+    padding-inline: calc(var(--primitives-layout-spacing-150) * 1px);
+    border-radius: calc(var(--semantics-radius-marker) * 1px);
+  }
+  .kozmos-tour-step .kozmos-tour-step-instruction-text {
+    min-inline-size: 0;
+  }
+  /* The marker: an 8 dot of the theme fill in a 4 halo of it, and a ring
+     that swells from it and fades, every 1.38 seconds (three deliberate
+     durations), while the tour waits. The time is divided by the config's
+     motion scale, which reaches the provider's portal where its reduced-motion
+     mark does not: reduced (0.001), a pulse takes 23 minutes and holds still;
+     snappy (0.5), it is slower, never a strobe. */
+  .kozmos-tour-step .kozmos-tour-step-marker {
+    position: relative;
+    flex: none;
+    inline-size: calc(var(--primitives-layout-spacing-100) * 1px);
+    block-size: calc(var(--primitives-layout-spacing-100) * 1px);
+    border-radius: calc(var(--semantics-radius-pill) * 1px);
+    background-color: var(--primitives-colors-theme-500);
+    box-shadow: 0 0 0 calc(var(--primitives-layout-spacing-50) * 1px)
+      color-mix(in srgb, var(--primitives-colors-theme-500) 20%, transparent);
+  }
+  .kozmos-tour-step .kozmos-tour-step-marker::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: var(--primitives-colors-theme-500);
+    animation: tour-step-pulse
+      calc(
+        var(--semantics-motion-duration-deliberate) * 3 /
+          var(--semantics-motion-duration-scale, 1)
+      )
+      var(--semantics-motion-easing-standard) infinite;
+  }
+  /* The build prefixes keyframe names with kozmos-. */
+  @keyframes tour-step-pulse {
+    from {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(3);
+    }
+  }
+
+  /* The dots at the start, Back and Next at the end; on a narrow card or in
+     a longer language, the buttons wrap under the dots, still at the end. */
+  .kozmos-tour-step .kozmos-tour-step-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-tour-step .kozmos-tour-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    margin-inline-start: auto;
+  }
+
+  /* Motion reduced, by the system or by the design config: the step arrives
+     and leaves without the popover's zoom and fade, and the marker holds
+     still, its halo kept. A loop is stopped, never scaled (GAP-50). */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-popover.kozmos-tour-step,
+    .kozmos-tour-step .kozmos-tour-step-marker::after {
+      animation: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-popover.kozmos-tour-step,
+  [data-kozmos-motion="reduced"]
+    .kozmos-tour-step
+    .kozmos-tour-step-marker::after {
+    animation: none;
+  }
+
+  /* Forced colours drop the fills: the edges stay as lines in the system's
+     colours, and the marker, drawn for the eye, is the system's Highlight. */
+  @media (forced-colors: active) {
+    .kozmos-tour-step .kozmos-tour-step-marker,
+    .kozmos-tour-step .kozmos-tour-step-marker::after {
+      forced-color-adjust: none;
+      background-color: Highlight;
+      box-shadow: none;
+    }
+  }
+}
