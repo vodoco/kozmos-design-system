@@ -26,7 +26,7 @@ first:
 | GAP-56         | `Button`                           | One declaration: a gap, and the loader's margin off.                      |
 | GAP-57         | `Button`                           | Two declarations: let a label that cannot fit wrap.                       |
 | GAP-58         | `Toast`                            | One class: the root has no fill.                                          |
-| GAP-73 (fixed) | `SplitButton`                      | One utility: `border-r-…/20`, so the outline survives.                    |
+| GAP-73 (fixed) | `SplitButton`                      | One utility: `border-e-…/20`, so the outline survives.                    |
 | GAP-75         | `ToggleButton`                     | One declaration: a gap, with GAP-56.                                      |
 | GAP-67         | `Menu`                             | One prop default: `align="start"`.                                        |
 | GAP-66         | `EmptyState`                       | Two props: `align="center"` on its title and description.                 |
@@ -159,12 +159,14 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
   MapOverlay reference page and the kiosk example (and on the home page's
   map scene, before the cover replaced it); `AdaptiveMapShell` is safe
   because its root is `isolate`.
-- **Change:** `isolate` on `MapView`'s root. Then give the layers an order
-  in the tokens (`--primitives-layer-*`) in which a page's sticky
-  navigation sits above a map's own overlays.
-- **Proof:** "GAP-40: MapView does not isolate its overlays" (it reads the
-  kiosk directory's map) fails; flip it to expect `isolate`. The site's own `isolation: isolate` on its frames can
-  then go (`src/styles/site.css`, the comments name GAP-40).
+- **Change:** `isolate` on `MapView`'s root, framed or filling. The layer
+  order in the tokens was not needed once the map isolates. A fixed overlay
+  rendered inside the map (a `Backdrop`) now stacks inside it too, under
+  the header: MapView's and Backdrop's docs say to render one outside the
+  map, or portal it out.
+- **Proof:** fixed on 2026-10-26 (#416). "GAP-40 is fixed: MapView isolates
+  its overlays" reads the kiosk directory's map. The site's frames keep their
+  `isolation: isolate` for the examples' own sticky Navbar (GAP-19).
 
 ## P1 — visible on the site's first screens, or failing WCAG AA
 
@@ -190,9 +192,12 @@ border-primary-foreground/20`.
   `.kozmos-button-outline`'s own. On the outline variant that paints white at
   20% over a white fill: the control's boundary measures **1.00:1**, so the
   button has no visible edge at all — WCAG 1.4.11 wants 3:1.
-- **Change:** tint the seam with a side-specific colour
-  (`border-r-primary-foreground/20`).
-- **Proof:** measured on `/components/split-button`; not pinned by a test yet.
+- **Change:** tint the seam with a side-specific colour: the inline-end
+  side's, `border-e-theme-fill-foreground/20`, so it mirrors right to left.
+- **Proof:** fixed on 2026-10-26 (#416): the outline reads 8.01:1 on its fill
+  in light and 8.39:1 in dark. No site check pins it since the demos left;
+  `scripts/check-site-gaps.mjs` reads every side in Chromium, Firefox and
+  WebKit.
 
 ### GAP-75 · `ToggleButton` puts no space between icon and label
 
@@ -278,10 +283,12 @@ border-primary-foreground/20`.
 - **Why it breaks:** the implicit column sizes to the widest option's
   content; `truncate` on the label and description never engages, and the
   list scrolls sideways (676px options in the site search's 462px list).
-- **Change:** `grid-template-columns: minmax(0, 1fr)`.
-- **Proof:** "GAP-55: a Listbox's column is as wide as its widest option"
-  fails (the list no longer overflows without the site's class); remove
-  that test's expectation and the site's `site-search-list` class.
+- **Change:** `grid-template-columns: minmax(0, 1fr)`, and `min-width: 0` on
+  `.kozmos-option`, so a row truncates inside a group that is a grid of its
+  own too.
+- **Proof:** fixed on 2026-10-26 (#416). The site's `site-search-list` class
+  is gone, and "GAP-55 is fixed: a Listbox's options take the list's width"
+  reads the search's list without it.
 
 ### GAP-82 · A category pill's fill is 2.52:1 on its own field
 
@@ -348,10 +355,12 @@ border-primary-foreground/20`.
 
 - **Where:** `styles/owned-components.css:261`, `.kozmos-button`; the React
   README tells consumers to put `buttonVariants` on their router's link.
-- **Change:** `text-decoration: none` on `.kozmos-button` (and its hover and
-  focus states).
-- **Proof:** "GAP-09: a link drawn as a button keeps its underline" fails;
-  flip it to expect `none`.
+- **Change:** `text-decoration-line: none` on `.kozmos-button`; the link
+  variant still underlines on hover. Kozmos's own `underline` utility
+  outweighs it; a host's utility in a cascade layer never does, and an
+  unlayered one only when it loads after Kozmos's stylesheet.
+- **Proof:** fixed on 2026-10-26 (#416). "GAP-09 is fixed: a link drawn as a
+  button draws no underline" reads the home page's hero buttons.
 
 ### GAP-03 · A dark-mode visitor sees a white page first
 
@@ -528,7 +537,7 @@ border-primary-foreground/20`.
 | GAP-91 the shell cuts its boxes' shadows             | `AdaptiveMapShell/AdaptiveMapShell.tsx:827,842`                                            | The top bar's and controls' boxes scroll and are the size of what they hold, so every shadow in them is cut. Pad them by the shadows' reach, as `MapOverlay`'s stack is now. | "GAP-91: the map shell's boxes cut the shadows of what they hold" fails once there is room.                                                      |
 | GAP-92 the shell hides its controls' edge            | `AdaptiveMapShell/AdaptiveMapShell.tsx:485`                                                | It anchors the controls at the inline start or end and says neither. Publish the edge on the controls' box, or line what it holds up on it.                                  | The venue explorer and the wayfinding can drop `controls-edge.ts`.                                                                               |
 | GAP-93 AI panel covered controls in reach (fixed)    | `AICompanionPanel/AICompanionPanel.tsx:176`                                                | Covering the frame, it leaves the frame's controls in the tab order (WCAG 2.4.11). Make what it covers inert while open, as `Select` does (`utils/modal-inert`).             | Fixed (2026-09-29): the panel makes the box it fills inert; the phone search dropped its own `inert`.                                            |
-| GAP-94 Text's muted ignores glass (fixed)            | `styles/owned-typography.css:64`                                                           | `.kozmos-text-muted` keeps the muted grey on glass, where decision 48 asks the foreground. Read `--kozmos-surface-muted-foreground`, as `.kozmos-muted-text` does.           | "GAP-94: Text's muted colour stays grey on a glass Surface", on the elevation page's glass card.                                                 |
+| GAP-94 Text's muted ignores glass (fixed)            | `styles/owned-typography.css:64`                                                           | `.kozmos-text-muted` keeps the muted grey on glass, where decision 48 asks the foreground. Read `--kozmos-surface-muted-foreground`, as `.kozmos-muted-text` does.           | "GAP-94 is fixed: Text's muted colour follows a glass Surface", on the elevation page's glass card.                                              |
 | GAP-95 the switcher's column leaves its map          | `FloorSelector/FloorSelector.tsx` (the collapsible's `PopoverContent`)                     | Placed against the window alone, so a map smaller than the window cannot keep the column in. Take a `collisionBoundary` the shell can fill with its map.                     | "GAP-95: the level switcher's column grows out of the phone's frame" fails once it stays in.                                                     |
 
 ### GAP-59 · `DynamicIsland` is its own dark theme, so a dark page hides it

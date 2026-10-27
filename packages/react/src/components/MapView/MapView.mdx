@@ -16,6 +16,16 @@ Use `framed` for a map in page flow or `fill` inside AdaptiveMapShell for an edg
 
 <Controls />
 
+## Stacking
+
+MapView is its own stacking context, framed or filling (the site's GAP-40): what the map draws, a
+`MapOverlay`'s z-index 50 or a map engine's own layers, stacks inside the map. It cannot draw over
+a page's sticky header, which is z-index 50 too, or over AdaptiveMapShell's top bar, controls and
+panel. A fixed overlay rendered inside the map, a `Backdrop`, a fixed `FloatingActionButton` or a
+`DynamicIsland`, is held there too, under the header and the shell's chrome. Render fixed overlays
+outside the map, or portal them out of it (React's `createPortal`, into a `ThemeProvider` of their
+own). Popovers, tooltips, dialogs and menus already portal out.
+
 ## Implementation
 
 <div className="subheading">Code</div>

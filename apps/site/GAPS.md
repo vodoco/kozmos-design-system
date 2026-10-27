@@ -295,11 +295,13 @@ keep the table's four columns and its statuses as they are.
   `text-decoration-line: underline` on `a.kozmos-button` and `none` on
   `button.kozmos-button`. Visible on the home page's two hero buttons.
 - **Fixed** in the design system on 2026-10-26 (#416): `.kozmos-button` takes
-  the underline off, in owned CSS so it holds without `@scope`.
-  `buttonVariants` on an anchor, and `Pagination`'s page, Previous and Next
-  links, draw none at rest; the link variant still underlines on hover, and a
-  caller's `underline` still wins. "GAP-09 is fixed: a link drawn as a button
-  draws no underline" reads the home page's hero buttons.
+  the underline off, in owned CSS so it holds without `@scope`. `buttonVariants`
+  on an anchor, and `Pagination`'s page, Previous and Next links, draw none at
+  rest; the link variant still underlines on hover. Kozmos's own `underline`
+  utility outweighs the rule; a host's own utility in a cascade layer
+  (Tailwind 4's) never does, and an unlayered one only when it loads after
+  Kozmos's stylesheet. "GAP-09 is fixed: a link drawn as a button draws no
+  underline" reads the home page's hero buttons.
 - **Was:** left visible on purpose on the home page's two hero buttons.
 - **Lane:** Core.
 - **Fix in Kozmos:** `text-decoration: none` on `.kozmos-button` (and the link
@@ -856,7 +858,9 @@ keep the table's four columns and its statuses as they are.
   map. The site's example canvases keep `isolation: isolate` for their own
   sticky Navbar (GAP-19), and the kiosk's attract screen keeps the top layer
   token. The layer scale this row also asked for was not needed once the map
-  isolates, and was not made.
+  isolates, and was not made. A fixed overlay rendered inside the map, a
+  `Backdrop`, now stacks inside it too; MapView's and Backdrop's docs say to
+  render one outside the map, or portal it out.
 - **Was:** composed: the site isolated every frame that hosts a map.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
@@ -1157,8 +1161,9 @@ keep the table's four columns and its statuses as they are.
   options in a 462px list. "GAP-55: a Listbox's column is as wide as its
   widest option" measures it with the site's fix taken off.
 - **Fixed** in the design system on 2026-10-26 (#416): `.kozmos-listbox` has
-  one column, `minmax(0, 1fr)`, so an option takes the list's width and its
-  words end in their ellipsis. The site's `site-search-list` class is gone,
+  one column, `minmax(0, 1fr)`, and `.kozmos-option` is `min-width: 0`, so an
+  option takes the list's width, in a group that is a grid of its own too,
+  and its words end in their ellipsis. The site's `site-search-list` class is gone,
   and "GAP-55 is fixed: a Listbox's options take the list's width" reads the
   search's list without it.
 - **Was:** composed: the search's `Listbox` took a site class that set the
@@ -1490,7 +1495,8 @@ Text"])`) and the Get started page shows — touches it.
   its items, as Figma's is: 64 at `compact` and 72 at `default`, every item
   inside it, with its 1px top line drawn inside, over the items, as Figma's
   inside stroke is (a border on the bar's `::before`, so forced colours still
-  draw it). The `w-auto` half went with decision 42: the bar's items are its
+  draw it). Its items now sit above the bottom safe area: the `pb-safe` it
+  carried compiled to nothing. The `w-auto` half went with decision 42: the bar's items are its
   own, sharing its width. No site check pinned it since the demos left;
   `scripts/check-site-gaps.mjs` measures it in Chromium, Firefox and WebKit.
 - **Was:** open; the BottomNavigation page's demo showed it until the demos
@@ -2012,8 +2018,9 @@ Text"])`) and the Get started page shows — touches it.
   glass read 3.61:1 at worst in light and 4.38:1 in dark in Chromium (3.76 and
   4.39 in Firefox and WebKit); it reads 12.44 and 11.85:1 (12.96 and 11.88).
   "GAP-94 is fixed: Text's muted colour follows a glass Surface" reads it on
-  the elevation page's card. SwiftUI's `KozmosText` with `tone: .muted` does
-  not follow glass yet.
+  the elevation page's card. A solid surface, an opaque `Card` and a nested
+  provider of the other theme on the glass keep their own muted colour.
+  SwiftUI's `KozmosText` with `tone: .muted` does not follow glass yet.
 - **Was:** open.
 - **Lane:** Core.
 - **Fix in Kozmos:** let `.kozmos-text-muted` read the surface's property, as

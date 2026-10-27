@@ -1,9 +1,14 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import {
   AdaptiveMapShell,
+  Backdrop,
   BottomNavigation,
   Button,
+  Card,
+  CardContent,
+  CardDescription,
   buttonVariants,
   Listbox,
   MapOverlay,
@@ -33,7 +38,12 @@ import { Home01, SearchMd, Settings01 } from "@kozmos-ds/icons";
    scripts/check-site-gaps.mjs reads each one here, in every engine. */
 
 type Theme = "light" | "dark";
-type View = "parts" | "stacking" | "shell";
+type View =
+  | "parts"
+  | "stacking"
+  | "shell"
+  | "stacking-portalled"
+  | "stacking-trapped";
 
 declare global {
   interface Window {
@@ -117,6 +127,38 @@ function Parts({ theme }: { theme: Theme }) {
             { value: "described", label: "Pharmacy", description: LONG },
           ]}
         />
+      </div>
+      {/* GAP-55 whatever wraps the option: a group of options, as #411's
+          option groups draw one, a grid of its own (`display: grid; gap:
+          inherit`) whose implicit column sizes to its widest option. The
+          group's own rule is #411's; it is written here as that markup. */}
+      <div style={{ width: 280 }}>
+        <div
+          aria-label="Grouped results"
+          className="kozmos-reset kozmos-listbox"
+          data-testid={id("gap55-group")}
+          role="listbox"
+        >
+          <div
+            aria-label="Places"
+            className="kozmos-option-group"
+            role="group"
+            style={{ display: "grid", gap: "inherit" }}
+          >
+            <div
+              aria-selected="false"
+              className="kozmos-reset kozmos-option"
+              role="option"
+            >
+              <span className="kozmos-reset kozmos-option-content">
+                <span className="kozmos-reset kozmos-option-label">{LONG}</span>
+                <span className="kozmos-reset kozmos-option-description">
+                  {LONG}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* GAP-68: BottomNavigation at both densities, as its story holds it. */}
@@ -248,6 +290,52 @@ function Parts({ theme }: { theme: Theme }) {
         <Text color="muted" data-testid={id("gap94-page")}>
           Off the glass
         </Text>
+        {/* A provider nested on the glass: one of the other theme (as
+            DynamicIsland nests a dark one, on its own capsule) takes its own
+            muted colour; one of the same theme still reads the glass. And an
+            opaque Card on the glass is a card of its own, as CardDescription
+            beside the Text says. */}
+        <div
+          style={{
+            background: "var(--semantics-category-fill-turquoise)",
+            padding: 24,
+          }}
+        >
+          <Surface variant="glass" style={{ padding: 16, borderRadius: 16 }}>
+            <ThemeProvider theme={theme === "light" ? "dark" : "light"}>
+              <div
+                style={{
+                  background: "var(--primitives-colors-background-0)",
+                  padding: 8,
+                }}
+              >
+                <Text color="muted" data-testid={id("gap94-nested-other")}>
+                  In the other theme
+                </Text>
+              </div>
+            </ThemeProvider>
+            <ThemeProvider theme={theme} density="compact">
+              <Text color="muted" data-testid={id("gap94-nested-same")}>
+                In the same theme
+              </Text>
+            </ThemeProvider>
+            <Card style={{ marginTop: 8 }}>
+              <CardContent style={{ paddingTop: 16 }}>
+                <Text color="muted" data-testid={id("gap94-card-text")}>
+                  On an opaque card
+                </Text>
+                <CardDescription data-testid={id("gap94-card-description")}>
+                  Its description
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Surface>
+        </div>
+        <ThemeProvider theme={theme === "light" ? "dark" : "light"}>
+          <Text color="muted" data-testid={id("gap94-other-page")}>
+            The other theme, off the glass
+          </Text>
+        </ThemeProvider>
       </div>
     </div>
   );
@@ -283,6 +371,32 @@ function Stacking() {
           </MapOverlay>
         </MapView>
       </div>
+      <div style={{ height: 1200 }} />
+    </ThemeProvider>
+  );
+}
+
+/* GAP-40 and what MapView now holds: a fixed overlay rendered inside the
+   map, a Backdrop here, stacks inside the map too, so it draws under the
+   page's sticky Navbar; portalled out of the map, into a provider of its
+   own, it covers the page as before. */
+function StackingOverlay({ portalled }: { portalled: boolean }) {
+  const backdrop = (
+    <Backdrop data-testid="gap40-backdrop">
+      <span>Backdrop</span>
+    </Backdrop>
+  );
+  return (
+    <ThemeProvider theme="light">
+      <Navbar data-testid="gap40-navbar" logo={<strong>Kozmos</strong>} />
+      <MapView data-testid="gap40-framed" mapLabel="Framed map">
+        {portalled
+          ? createPortal(
+              <ThemeProvider theme="light">{backdrop}</ThemeProvider>,
+              document.body,
+            )
+          : backdrop}
+      </MapView>
       <div style={{ height: 1200 }} />
     </ThemeProvider>
   );
@@ -329,6 +443,8 @@ function Shell() {
 
 function Fixture({ view }: { view: View }) {
   if (view === "stacking") return <Stacking />;
+  if (view === "stacking-portalled") return <StackingOverlay portalled />;
+  if (view === "stacking-trapped") return <StackingOverlay portalled={false} />;
   if (view === "shell") return <Shell />;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>

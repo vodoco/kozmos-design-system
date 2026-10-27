@@ -10,6 +10,11 @@ import { PlatformSnippets } from "../PlatformSnippets";
 A full-viewport scrim that visually separates foreground content from the page.
 Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
 
+It is fixed and z-index 50, and it renders where it is placed: it does not portal itself. Inside
+a `MapView`, which is its own stacking context, it covers the viewport but stacks inside the map,
+under a sticky header and AdaptiveMapShell's chrome. Render it outside the map, or portal it out
+(React's `createPortal`, into a `ThemeProvider` of its own).
+
 <Canvas>
   <Story of={BackdropStories.Default} />
 </Canvas>

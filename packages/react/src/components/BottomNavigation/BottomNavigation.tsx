@@ -69,9 +69,10 @@ const BottomNavigation = React.forwardRef<HTMLElement, BottomNavigationProps>(
         // default density, with its top line drawn inside, over the items
         // (.kozmos-bottom-navigation). A fixed 64 with a border on top held
         // the default density's 72 items spilling out of it, over its top
-        // edge, and the compact 64 ones by half a pixel (site GAP-68).
+        // edge, and the compact 64 ones by half a pixel (site GAP-68). The
+        // same rule keeps the items above the bottom safe area.
         className={cn(
-          "kozmos-bottom-navigation fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-center justify-around gap-1 bg-background px-2 pb-safe",
+          "kozmos-bottom-navigation fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-center justify-around gap-1 bg-background px-2",
           className,
         )}
         {...props}

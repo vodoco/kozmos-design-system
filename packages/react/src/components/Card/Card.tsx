@@ -34,8 +34,9 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         data-padding={padding}
+        // kozmos-card: an opaque card of its own, on glass too (site GAP-94).
         className={cn(
-          "rounded-container border bg-card text-card-foreground shadow-raised",
+          "kozmos-card rounded-container border bg-card text-card-foreground shadow-raised",
           className,
         )}
         {...props}

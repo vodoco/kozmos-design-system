@@ -53,6 +53,10 @@
   .kozmos-option {
     @apply flex cursor-pointer items-center gap-2 rounded-marker px-3 py-2 text-sm outline-none;
     min-height: var(--density-control-height-md, 2.75rem);
+    /* Its words truncate whatever holds the row: a grid item's automatic
+       minimum is its content's width, so in a group that is a grid of its
+       own the row widened its column past the list (site GAP-55). */
+    min-width: 0;
   }
   /* 2 between rows (Combobox/listbox/gap); the standalone Listbox keeps its
      grid's 4 (Listbox/gap). */

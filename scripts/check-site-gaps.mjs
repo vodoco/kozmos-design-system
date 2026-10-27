@@ -4,21 +4,24 @@
  *
  * - GAP-09: a Button drawn on a link (`buttonVariants` on an anchor, the
  *   README's navigation pattern, and Pagination's page links) draws no
- *   underline at rest; the link variant still underlines on hover, and a
- *   caller's `underline` still wins.
+ *   underline at rest; the link variant still underlines on hover, and
+ *   Kozmos's own `underline` utility still wins.
  *   `.kozmos-reset` opts the element out of the scoped preflight, which is
  *   what took the browser's underline off a plain link.
  * - GAP-40: MapView, framed or filling, is its own stacking context, so a
  *   MapOverlay's z-index 50 no longer draws over a sticky Navbar's (also 50)
  *   when the page scrolls the map under it; and inside AdaptiveMapShell
  *   whatever the map draws, at any z-index, stays under the shell's top bar,
- *   controls and panel.
+ *   controls and panel. A fixed Backdrop rendered inside the map is held
+ *   there too; portalled out, it covers the page, as the docs say to do.
  * - GAP-55: a Listbox's column is the list's width, so a long option ends in
- *   an ellipsis instead of widening the list until it scrolls sideways.
+ *   an ellipsis instead of widening the list until it scrolls sideways, in a
+ *   group that is a grid of its own too (#411's option groups).
  * - GAP-68: BottomNavigation's bar is as tall as its items at both
  *   densities, 64 and 72, as Figma's is, and nothing spills out of it; its
  *   top line is drawn inside, over the items, as Figma's inside stroke is,
- *   and forced colours still draw it.
+ *   and forced colours still draw it; its items sit above the bottom safe
+ *   area.
  * - GAP-73: SplitButton's outline variant keeps its outline: the seam tints
  *   only the main part's inline-end side, in both directions.
  * - GAP-74: Tooltip's tail covers the body's border where the two meet, as
@@ -26,8 +29,9 @@
  *   side, light or dark. PopoverArrow, whose defaults match it, too.
  * - GAP-94: Text's muted colour follows a glass surface, as Kozmos's own
  *   muted text does (decision 48): the foreground on the glass, the muted
- *   grey on a solid card inside it and off it. Measured against the glass
- *   as drawn over every category fill, in both themes.
+ *   grey on a solid surface or an opaque Card inside it and off it, and its
+ *   own theme's muted in a nested provider of the other theme. Measured
+ *   against the glass as drawn over every category fill, in both themes.
  *
  * The owned rules (GAP-09, 55, 94 and PopoverArrow's) are read with and without every @scope
  * rule, as check-owned-css.mjs reads its own: they must hold in a host whose
@@ -177,49 +181,65 @@ async function gap09(page, mode, theme) {
 }
 
 async function gap55(page, mode, theme) {
-  const where = `${mode} ${theme} GAP-55`;
-  const drawn = await page.getByTestId(`${theme}-gap55`).evaluate((list) => {
-    const s = getComputedStyle(list);
-    const box = list.getBoundingClientRect();
-    const inner =
-      box.right - parseFloat(s.borderRightWidth) - parseFloat(s.paddingRight);
-    const options = [...list.querySelectorAll('[role="option"]')];
-    const label = options[1]?.querySelector(".kozmos-option-label");
-    const description = options[2]?.querySelector(".kozmos-option-description");
-    return {
-      sideways: list.scrollWidth - list.clientWidth,
-      past: Math.max(
-        ...options.map(
-          (option) => option.getBoundingClientRect().right - inner,
+  // The Listbox as it draws its options, and a long option inside a group
+  // that is a grid of its own (#411's option groups), so the truncation is
+  // seen to hold whatever wraps the option.
+  for (const [list, name] of [
+    ["gap55", "a Listbox"],
+    ["gap55-group", "a Listbox's group"],
+  ]) {
+    const where = `${mode} ${theme} GAP-55 ${name}`;
+    const drawn = await page.getByTestId(`${theme}-${list}`).evaluate((box) => {
+      const s = getComputedStyle(box);
+      const rect = box.getBoundingClientRect();
+      const inner =
+        rect.right -
+        parseFloat(s.borderRightWidth) -
+        parseFloat(s.paddingRight);
+      const options = [...box.querySelectorAll('[role="option"]')];
+      const long = options.find(
+        (option) =>
+          option.querySelector(".kozmos-option-label").textContent.length > 40,
+      );
+      const label = long?.querySelector(".kozmos-option-label");
+      const description = [
+        ...box.querySelectorAll(".kozmos-option-description"),
+      ].at(-1);
+      return {
+        sideways: box.scrollWidth - box.clientWidth,
+        past: Math.max(
+          ...options.map(
+            (option) => option.getBoundingClientRect().right - inner,
+          ),
         ),
-      ),
-      label: label
-        ? {
-            cut: label.scrollWidth > label.clientWidth,
-            overflow: getComputedStyle(label).textOverflow,
-          }
-        : null,
-      description: description
-        ? { cut: description.scrollWidth > description.clientWidth }
-        : null,
-    };
-  });
-  expect(
-    drawn.sideways <= 0,
-    `${where}: the list scrolls ${drawn.sideways}px sideways; expected 0`,
-  );
-  expect(
-    drawn.past <= 0.5,
-    `${where}: an option runs ${drawn.past.toFixed(1)}px past the list's content box; expected none`,
-  );
-  expect(
-    drawn.label?.cut === true && drawn.label.overflow === "ellipsis",
-    `${where}: the long label ${JSON.stringify(drawn.label)}; expected it cut, with an ellipsis`,
-  );
-  expect(
-    drawn.description?.cut === true,
-    `${where}: the long description ${JSON.stringify(drawn.description)}; expected it cut`,
-  );
+        label: label
+          ? {
+              cut: label.scrollWidth > label.clientWidth,
+              overflow: getComputedStyle(label).textOverflow,
+            }
+          : null,
+        description: description
+          ? { cut: description.scrollWidth > description.clientWidth }
+          : null,
+      };
+    });
+    expect(
+      drawn.sideways <= 0,
+      `${where}: the list scrolls ${drawn.sideways}px sideways; expected 0`,
+    );
+    expect(
+      drawn.past <= 0.5,
+      `${where}: an option runs ${drawn.past.toFixed(1)}px past the list's content box; expected none`,
+    );
+    expect(
+      drawn.label?.cut === true && drawn.label.overflow === "ellipsis",
+      `${where}: the long label ${JSON.stringify(drawn.label)}; expected it cut, with an ellipsis`,
+    );
+    expect(
+      drawn.description?.cut === true,
+      `${where}: the long description ${JSON.stringify(drawn.description)}; expected it cut`,
+    );
+  }
 }
 
 /**
@@ -303,6 +323,90 @@ async function gap68(page, theme) {
       `${where}: the bar's top row over the selected item draws rgb(${drawn.topRow.join(", ")}), the item under it rgb(${drawn.inside.join(", ")}); expected the line, rgb(${role.slice(0, 3).join(", ")}), drawn over the item`,
     );
     notes.push(`${where}: bar ${drawn.bar.height}px, items ${want}px`);
+  }
+}
+
+/**
+ * BottomNavigation keeps its items out of the bottom safe area, the iPhone's
+ * home indicator: the bar pads its bottom by `env(safe-area-inset-bottom)`.
+ * `pb-safe`, which it carried, compiled to nothing. Chromium can set the
+ * inset (DevTools' Emulation.setSafeAreaInsetsOverride), so there the bar
+ * is measured with a 34px one; elsewhere the rule that pads it is read.
+ */
+async function gap68SafeArea(browser, stylesheet) {
+  const page = await browser.newPage({
+    viewport: { width: 1400, height: 2600 },
+    reducedMotion: "reduce",
+  });
+  try {
+    let inset = 0;
+    if (browser.browserType().name() === "chromium") {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Emulation.setSafeAreaInsetsOverride", {
+        insets: { bottom: 34, bottomMax: 34 },
+      });
+      inset = 34;
+    }
+    await page.setContent(
+      '<!doctype html><html><head></head><body style="margin:0"><div id="fixture"></div></body></html>',
+    );
+    await page.addStyleTag({ content: stylesheet });
+    await page.addScriptTag({ content: code });
+    await render(page, "parts", "dark-gap94-page");
+    for (const density of ["compact", "default"]) {
+      const where = `GAP-68 ${density} safe area`;
+      const drawn = await page
+        .getByTestId(`light-gap68-${density}`)
+        .evaluate((nav) => {
+          const declared = [];
+          const walk = (rules) => {
+            for (const rule of rules) {
+              if (rule.cssRules) walk(rule.cssRules);
+              if (!rule.selectorText || !rule.style) continue;
+              let matches = false;
+              try {
+                matches = nav.matches(rule.selectorText);
+              } catch {
+                matches = false;
+              }
+              if (!matches) continue;
+              for (const property of ["padding-bottom", "padding-block-end"]) {
+                const value = rule.style.getPropertyValue(property);
+                if (value) declared.push(value);
+              }
+            }
+          };
+          for (const sheet of document.styleSheets) walk(sheet.cssRules);
+          const box = nav.getBoundingClientRect();
+          const item = nav
+            .querySelector('[data-slot="bottom-navigation-item"]')
+            .getBoundingClientRect();
+          return {
+            declared,
+            bar: box.height,
+            item: item.height,
+            under: box.bottom - item.bottom,
+          };
+        });
+      expect(
+        drawn.declared.some((value) =>
+          /env\(\s*safe-area-inset-bottom/.test(value),
+        ),
+        `${where}: no rule pads the bar's bottom by env(safe-area-inset-bottom) (it declares ${JSON.stringify(drawn.declared)})`,
+      );
+      if (inset)
+        expect(
+          Math.abs(drawn.under - inset) < 0.5 &&
+            Math.abs(drawn.bar - drawn.item - inset) < 0.5,
+          `${where}: with a ${inset}px inset the bar is ${drawn.bar}px over ${drawn.item}px items, ${drawn.under}px under them; expected the items ${inset}px above the bar's bottom`,
+        );
+    }
+    if (inset)
+      notes.push(
+        `GAP-68 safe area: a ${inset}px bottom inset keeps the items ${inset}px above the bar's bottom`,
+      );
+  } finally {
+    await page.close();
   }
 }
 
@@ -569,6 +673,35 @@ async function gap94(page, mode, theme) {
     worst >= 4.5,
     `${where}: a muted Text on the glass reads ${worst.toFixed(2)}:1 at worst (over ${worstFill}); expected 4.5:1`,
   );
+  // A provider of the other theme nested on the glass (DynamicIsland nests a
+  // dark one on its capsule) takes its own muted colour, not the outer
+  // theme's foreground, which the glass resolved where it was set; one of the
+  // same theme still reads the glass. An opaque Card on the glass is a card
+  // of its own: its muted Text is grey, as its CardDescription is.
+  const [nestedOther, otherPage, nestedSame, glassOwned, cardText, cardDesc] =
+    await Promise.all(
+      [
+        "nested-other",
+        "other-page",
+        "nested-same",
+        "turquoise-owned",
+        "card-text",
+        "card-description",
+      ].map(colour),
+    );
+  expect(
+    nestedOther === otherPage,
+    `${where}: a muted Text in a nested provider of the other theme, on the glass, draws ${nestedOther}; expected that theme's muted ${otherPage}`,
+  );
+  expect(
+    nestedSame === glassOwned,
+    `${where}: a muted Text in a nested provider of the same theme, on the glass, draws ${nestedSame}; expected the glass's ${glassOwned}`,
+  );
+  // CardDescription is a utility, gone without @scope; the Text is owned.
+  expect(
+    cardText === pageMuted && (mode !== "full" || cardDesc === pageMuted),
+    `${where}: a muted Text on an opaque Card on the glass draws ${cardText}, its CardDescription ${cardDesc}; expected both the muted ${pageMuted}`,
+  );
   notes.push(
     `${where}: a muted Text on the glass reads ${worst.toFixed(2)}:1 at worst, over ${worstFill}`,
   );
@@ -619,6 +752,34 @@ async function gap40(page) {
     );
   }
   await page.evaluate(() => window.scrollTo(0, 0));
+
+  // A fixed overlay rendered inside the map stacks inside it now, under the
+  // page's sticky Navbar; portalled out of the map it covers the page, as
+  // MapView's and Backdrop's docs say to render one.
+  for (const [view, covers] of [
+    ["stacking-portalled", true],
+    ["stacking-trapped", false],
+  ]) {
+    await render(page, view, "gap40-backdrop");
+    const at = await page.evaluate(() => {
+      const navbar = document.querySelector(".kozmos-navbar");
+      const r = navbar.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        r.left + r.width / 2,
+        r.top + r.height / 2,
+      );
+      return {
+        backdrop: Boolean(hit?.closest('[data-testid="gap40-backdrop"]')),
+        navbar: Boolean(hit?.closest(".kozmos-navbar")),
+      };
+    });
+    expect(
+      covers ? at.backdrop : at.navbar && !at.backdrop,
+      covers
+        ? `GAP-40: a Backdrop portalled out of the map does not cover the sticky Navbar (${JSON.stringify(at)}); expected it on top`
+        : `GAP-40: a Backdrop rendered inside the map draws over the sticky Navbar (${JSON.stringify(at)}); expected it inside the map's stacking context, under the Navbar`,
+    );
+  }
 
   await render(page, "shell", "gap40-shell-panel");
   const isolation = await page
@@ -684,6 +845,7 @@ try {
     if (mode === "full") {
       await gap40(page);
       await gap68Forced(browser, stylesheet);
+      await gap68SafeArea(browser, stylesheet);
     }
     expect(
       errors.length === 0,
@@ -703,5 +865,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, a caller's class); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell; GAP-55 a Listbox's long options end in an ellipsis; GAP-68 BottomNavigation's bar is its items' height at both densities, its line drawn inside, in forced colours too; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark — owned rules with and without @scope`,
+  `PASS site gaps (${engine}): ${reads} reads — GAP-09 a Button on a link draws no underline (the link variant on hover, Kozmos's own underline utility); GAP-40 MapView isolates, framed and filling, under a sticky Navbar and inside the shell, and a portalled Backdrop still covers the page; GAP-55 a Listbox's long options end in an ellipsis, in a group too; GAP-68 BottomNavigation's bar is its items' height at both densities, its line drawn inside, in forced colours too, its items above the bottom safe area; GAP-73 SplitButton's outline keeps its edge, the seam on the inline end; GAP-74 Tooltip's tail, and PopoverArrow's, covers the body's border on every side; GAP-94 a muted Text takes the glass's foreground, 4.5:1 or more over every category fill, light and dark, and its own theme's muted in a nested provider of the other theme or on an opaque Card — owned rules with and without @scope`,
 );
