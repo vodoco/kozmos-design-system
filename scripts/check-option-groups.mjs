@@ -367,6 +367,40 @@ try {
         count++;
         await context.close();
       }
+  // A long option in a group, in a 280 Listbox: the group's grid column is
+  // the list's width, so the option truncates and nothing scrolls sideways.
+  for (const [mode, stylesheet] of [
+    ["full", css],
+    ["without-scope", unscoped.toString()],
+  ]) {
+    const { context, page, errors } = await open("listbox-long", "light", stylesheet);
+    const list = page.getByRole("listbox");
+    await list.waitFor();
+    await settleLayout(page);
+    const read = await list.evaluate((node) => {
+      // The grouped one: Lift, with no group, comes first.
+      const option = node.querySelector('[role="group"] [role="option"]');
+      const label = option.querySelector(".kozmos-option-label");
+      return {
+        overflow: node.scrollWidth - node.clientWidth,
+        option: option.getBoundingClientRect().width,
+        list: node.clientWidth,
+        clipped: label.scrollWidth > label.clientWidth,
+      };
+    });
+    assert.ok(
+      read.overflow <= 1,
+      `${mode}: a long grouped option scrolls the list sideways by ${read.overflow}px (${JSON.stringify(read)})`,
+    );
+    assert.ok(
+      read.option <= read.list + 0.5 && read.clipped,
+      `${mode}: the long grouped option truncates in the list's width (${JSON.stringify(read)})`,
+    );
+    assert.deepEqual(errors, [], `${mode}: long: no page errors`);
+    console.log(`PASS ${mode}/listbox-long`);
+    count++;
+    await context.close();
+  }
   console.log(`Option groups: ${count} passes`);
 } finally {
   await browser.close();

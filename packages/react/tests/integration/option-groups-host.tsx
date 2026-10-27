@@ -31,6 +31,23 @@ const part = root.dataset.part;
 
 function Part() {
   if (part === "listbox") return <Listbox aria-label="Type" options={types} />;
+  // A long option in a group, in a 280 list: it truncates, as outside one.
+  if (part === "listbox-long")
+    return (
+      <Listbox
+        aria-label="Type"
+        style={{ width: 280 }}
+        options={[
+          {
+            value: "long",
+            label:
+              "Height-adjustable standing desk with a monitor arm and cable tray",
+            group: "Interior Asset",
+          },
+          { value: "lift", label: "Lift" },
+        ]}
+      />
+    );
   if (part === "multiselect")
     return <MultiSelect label="Types" options={types} />;
   if (part === "select")
