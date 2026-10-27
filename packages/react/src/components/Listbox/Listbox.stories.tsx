@@ -52,3 +52,18 @@ export const Grouped: Story = {
     options: contentTypes,
   },
 };
+
+/**
+ * An option with no group (Lift) comes first, unlabelled, before every
+ * group, so it never reads as part of the group above it (GAP-192).
+ */
+export const GroupedAndUngrouped: Story = {
+  args: {
+    "aria-label": "Content type",
+    options: [
+      { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+      { value: "lift", label: "Lift" },
+      { value: "reception-desk", label: "Reception Desk", group: "POI" },
+    ],
+  },
+};

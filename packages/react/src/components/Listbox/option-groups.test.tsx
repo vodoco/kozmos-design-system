@@ -1,15 +1,15 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Combobox, type ComboboxOption } from "../Combobox";
 import { Listbox } from "./Listbox";
 import { MultiSelect } from "../MultiSelect";
 
 // GAP-192: options under their groups, as MAP-64's type picker draws them.
-// The list is given out of order on purpose: the groups come in the order
-// they first appear, each group's options together, and an option with no
-// group is a group with no label.
+// The list is given out of order on purpose: options with no group come
+// first, unlabelled; then the groups, in the order they first appear, each
+// group's options together.
 const types: ComboboxOption[] = [
   { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
   { value: "reception-desk", label: "Reception Desk", group: "POI" },
@@ -18,11 +18,11 @@ const types: ComboboxOption[] = [
   { value: "standing-desk", label: "Standing Desk", group: "Interior Asset" },
 ];
 const VISUAL_ORDER = [
+  "Lift",
   "Office Desk",
   "Hot Desk",
   "Standing Desk",
   "Reception Desk",
-  "Lift",
 ];
 
 /** Each group's accessible name and the names of the options in it. */
@@ -128,13 +128,13 @@ describe("Option groups (GAP-192)", () => {
       }
       expect(seen).toEqual([...VISUAL_ORDER, VISUAL_ORDER[0]]);
       await user.keyboard("{ArrowUp}");
-      expect(activeName(input)).toBe("Lift");
+      expect(activeName(input)).toBe("Reception Desk");
       await user.keyboard("{Home}");
-      expect(activeName(input)).toBe("Office Desk");
-      await user.keyboard("{End}");
       expect(activeName(input)).toBe("Lift");
+      await user.keyboard("{End}");
+      expect(activeName(input)).toBe("Reception Desk");
       await user.keyboard("{ArrowUp}{Enter}");
-      expect(onValueChange).toHaveBeenCalledWith("reception-desk", types[1]);
+      expect(onValueChange).toHaveBeenCalledWith("standing-desk", types[4]);
     });
 
     it("types to filter as before: the first match drawn is active", async () => {
@@ -182,7 +182,6 @@ describe("Option groups (GAP-192)", () => {
     });
 
     it("keeps focus on the list when an option in a group is pressed", async () => {
-      const user = userEvent.setup();
       const onValueChange = vi.fn();
       render(
         <Listbox
@@ -191,7 +190,9 @@ describe("Option groups (GAP-192)", () => {
           onValueChange={onValueChange}
         />,
       );
-      await user.click(screen.getByRole("option", { name: "Hot Desk" }));
+      // A click alone, with no pointerdown before it: a pointerdown focuses
+      // the list by itself, and would pass with the row focusing its group.
+      fireEvent.click(screen.getByRole("option", { name: "Hot Desk" }));
       expect(screen.getByRole("listbox")).toHaveFocus();
       expect(onValueChange).toHaveBeenCalledWith("hot-desk", types[2]);
       expect(activeName(screen.getByRole("listbox"))).toBe("Hot Desk");
@@ -222,4 +223,110 @@ describe("Option groups (GAP-192)", () => {
       ).toEqual([["POI", ["Reception Desk"]]]);
     });
   });
+});
+
+describe("Option groups (GAP-192), the edges", () => {
+  afterEach(() => {
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+  });
+
+  it("lists options with no group first, unlabelled, before every group", async () => {
+    const user = userEvent.setup();
+    render(<Combobox label="Type" options={types} />);
+    await user.click(screen.getByRole("combobox"));
+    const listbox = screen.getByRole("listbox");
+    const lift = within(listbox).getByRole("option", { name: "Lift" });
+    // Not under a group's label: in no group, and before the first label.
+    expect(lift.closest('[role="group"]')).toBeNull();
+    const firstGroup = within(listbox).getAllByRole("group")[0];
+    expect(
+      lift.compareDocumentPosition(firstGroup) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("trims a group's name, and a blank one is no group", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        label="Type"
+        options={[
+          { value: "a", label: "Reception Desk", group: " POI " },
+          { value: "b", label: "Meeting Room", group: "POI" },
+          { value: "c", label: "Lift", group: "   " },
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    const listbox = screen.getByRole("listbox");
+    expect(groupsIn(listbox).map((g) => [g.name, g.options])).toEqual([
+      ["POI", ["Reception Desk", "Meeting Room"]],
+    ]);
+    expect(
+      within(listbox)
+        .getByRole("option", { name: "Lift" })
+        .closest('[role="group"]'),
+    ).toBeNull();
+  });
+
+  it("keeps a group's element and label id while filtering moves it", async () => {
+    const user = userEvent.setup();
+    render(<Combobox label="Type" options={types} />);
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    const poi = within(screen.getByRole("listbox")).getByRole("group", {
+      name: "POI",
+    });
+    const labelId = poi.getAttribute("aria-labelledby");
+    // "recep" leaves POI first in the list, where Lift and Interior Asset
+    // were before it.
+    await user.type(input, "recep");
+    const after = within(screen.getByRole("listbox")).getByRole("group", {
+      name: "POI",
+    });
+    expect(after).toBe(poi);
+    expect(after.getAttribute("aria-labelledby")).toBe(labelId);
+  });
+
+  it.each([
+    ["Combobox", () => <Combobox label="Type" options={types} />],
+    ["MultiSelect", () => <MultiSelect label="Types" options={types} />],
+  ])(
+    "%s keeps its list open when a group's label is pressed",
+    async (_, part) => {
+      const user = userEvent.setup();
+      render(part());
+      await user.click(screen.getByRole("combobox"));
+      const listbox = screen.getByRole("listbox");
+      const label = within(listbox).getByText("POI");
+      // The press takes no focus from the field, so its list stays open.
+      expect(fireEvent.mouseDown(label)).toBe(false);
+      expect(fireEvent.mouseDown(listbox)).toBe(false);
+    },
+  );
+
+  it.each([
+    ["Combobox", () => <Combobox label="Type" options={types} />],
+    ["MultiSelect", () => <MultiSelect label="Types" options={types} />],
+    ["Listbox", () => <Listbox aria-label="Type" options={types} />],
+  ])(
+    "%s brings a group's label into view with the group's first option",
+    async (name, part) => {
+      const scrolled: string[] = [];
+      Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+        scrolled.push(this.textContent ?? "");
+      });
+      const user = userEvent.setup();
+      render(part());
+      if (name === "Listbox") screen.getByRole("listbox").focus();
+      else await user.click(screen.getByRole("combobox"));
+      scrolled.length = 0;
+      // Lift, with no group, then Office Desk, the first of Interior Asset.
+      await user.keyboard(name === "Listbox" ? "{ArrowDown}" : "{ArrowDown}");
+      const label = scrolled.indexOf("Interior Asset");
+      const option = scrolled.indexOf("Office Desk");
+      expect(label).toBeGreaterThanOrEqual(0);
+      expect(option).toBeGreaterThan(label);
+    },
+  );
 });

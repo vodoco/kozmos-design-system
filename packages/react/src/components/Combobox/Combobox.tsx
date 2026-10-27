@@ -5,6 +5,7 @@ import {
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
+  keepFieldFocus,
 } from "./field-popup";
 import {
   FIELD_ACTION,
@@ -18,7 +19,12 @@ import {
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
-import { orderByGroup, renderOptionGroups } from "../Listbox/option-groups";
+import {
+  groupOf,
+  orderByGroup,
+  renderOptionGroups,
+  scrollOptionIntoView,
+} from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper } from "../FieldWrapper";
@@ -28,13 +34,13 @@ export interface ComboboxOption {
   description?: string;
   disabled?: boolean;
   /**
-   * The group the option is listed under (GAP-192). Options are grouped in
-   * the order their groups first appear, each under its group's label, a
-   * `role="group"` named by it; the arrow keys move through the options as
-   * they are drawn and never stop on a label. While the list is filtered, a
-   * group's label stays as long as any of its options matches. Combobox,
-   * Listbox and MultiSelect all take it; an option with none is listed on its
-   * own, as before.
+   * The group the option is listed under (GAP-192). Options with no group
+   * come first, unlabelled; then the groups, in the order they first appear,
+   * each under its group's label, a `role="group"` named by it. The arrow
+   * keys move through the options as they are drawn and never stop on a
+   * label. While the list is filtered, a group's label stays as long as any
+   * of its options matches. The name is trimmed, and a blank one is no group.
+   * Combobox, Listbox and MultiSelect all take it.
    */
   group?: string;
   label: string;
@@ -288,9 +294,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
 
     React.useEffect(() => {
       if (activeOptionId)
-        rootRef.current?.ownerDocument
-          .getElementById(activeOptionId)
-          ?.scrollIntoView?.({ block: "nearest" });
+        scrollOptionIntoView(
+          rootRef.current?.ownerDocument.getElementById(activeOptionId),
+        );
     }, [activeOptionId]);
     const canClear =
       clearable && !disabled && !readOnly && Boolean(visibleInputValue);
@@ -596,6 +602,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   <div
                     ref={popupRef}
                     data-combobox-popup=""
+                    onMouseDown={keepFieldFocus}
                     className={cn(
                       // The frame does not scroll: the listbox in it does (GAP-137),
                       // so the scroll region is the widget the input controls.
@@ -644,7 +651,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                               entries.slice(0, filteredOptions.length),
                               (entry) =>
                                 entry.kind === "value"
-                                  ? entry.option.group
+                                  ? groupOf(entry.option)
                                   : undefined,
                               inputId,
                               renderEntry,

@@ -59,10 +59,12 @@ Combobox does not emit automatic selection-value analytics.
 Give options a `group` and they are listed under their groups (GAP-192), as MAP-64's
 content type picker lists types under their families. The groups come in the order
 they first appear in `options`, each group's options together in their own order, under
-the group's label, drawn as `SelectLabel` draws its own. An option with no `group` is
-listed on its own, as before. Filtering keeps a group's label while any of its options
-matches and drops it when none does: typing "desk" below keeps Interior Asset's three
-desks and POI's Reception Desk, each under its label.
+the group's label, drawn as `SelectLabel` draws its own. Options with no `group` come
+first, unlabelled, before every group, so none reads as part of the group above it. A
+group's name is trimmed, and a blank one is no group. Filtering keeps a group's label while
+any of its options matches and drops it when none does: typing "desk" below keeps Interior
+Asset's three desks and POI's Reception Desk, each under its label. Pressing a label, or
+the list's padding, leaves the list open and focus in the field.
 
 <Canvas of={ComboboxStories.Grouped} />
 

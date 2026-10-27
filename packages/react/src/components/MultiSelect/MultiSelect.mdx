@@ -40,11 +40,13 @@ under the buttons, as text does on Combobox.
 ## Groups
 
 Give options a `group` and they are listed under their groups (GAP-192), as Combobox
-lists them: in the order the groups first appear, each under its label, drawn as
-`SelectLabel` draws its own. Filtering keeps a group's label while any of its options
-matches and drops it when none does. Each group is a `role="group"` named by its label;
-the label is not an option, and the arrow keys move through the options in the order they
-are drawn, never onto a label. SwiftUI and Compose do not group yet.
+lists them: options with no `group` first, unlabelled, then the groups in the order they
+first appear, each under its label, drawn as `SelectLabel` draws its own. Filtering keeps
+a group's label while any of its options matches and drops it when none does. Each group
+is a `role="group"` named by its label; the label is not an option, and the arrow keys
+move through the options in the order they are drawn, never onto a label. MultiSelect has
+no Home or End. Pressing a label, or the list's padding, leaves the list open and focus in
+the field. SwiftUI and Compose do not group yet.
 
 <Canvas of={MultiSelectStories.Grouped} />
 

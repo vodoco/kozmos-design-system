@@ -38,10 +38,14 @@ Give options a `group` and they are listed under their groups (GAP-192), each gr
 options together under its label, drawn as `SelectLabel` draws its own, in the order the
 groups first appear in `options`. Each group is a `role="group"` named by its label; the
 label is not an option, and the arrow keys, Home and End move through the options in the
-order they are drawn, never onto a label. An option with no `group` is listed on its own.
-Combobox and MultiSelect take the same `group`; SwiftUI and Compose do not group yet.
+order they are drawn, never onto a label, and a group's label comes into view with its
+first option. Options with no `group` come first, unlabelled, before every group; a group's
+name is trimmed, and a blank one is no group. Combobox and MultiSelect take the same
+`group`; SwiftUI and Compose do not group yet.
 
 <Canvas of={ListboxStories.Grouped} />
+
+<Canvas of={ListboxStories.GroupedAndUngrouped} />
 
 <PlatformSnippets
     react={`

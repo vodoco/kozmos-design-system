@@ -530,7 +530,7 @@
       "id": "components-listbox",
       "title": "Core/Inputs/Listbox",
       "component": "Listbox",
-      "exports": ["Single", "Multiple", "Grouped"]
+      "exports": ["Single", "Multiple", "Grouped", "GroupedAndUngrouped"]
     },
     {
       "file": "packages/react/src/components/LocationPin/LocationPin.stories.tsx",

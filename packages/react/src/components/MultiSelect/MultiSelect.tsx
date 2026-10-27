@@ -3,7 +3,12 @@ import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
-import { orderByGroup, renderOptionGroups } from "../Listbox/option-groups";
+import {
+  groupOf,
+  orderByGroup,
+  renderOptionGroups,
+  scrollOptionIntoView,
+} from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
@@ -13,6 +18,7 @@ import {
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
+  keepFieldFocus,
 } from "../Combobox/field-popup";
 import {
   FIELD_ACTION,
@@ -167,9 +173,9 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
     React.useEffect(() => {
       if (activeOptionId)
-        rootRef.current?.ownerDocument
-          .getElementById(activeOptionId)
-          ?.scrollIntoView?.({ block: "nearest" });
+        scrollOptionIntoView(
+          rootRef.current?.ownerDocument.getElementById(activeOptionId),
+        );
     }, [activeOptionId]);
     const selectedSet = React.useMemo(
       () => new Set(selectedValues),
@@ -479,6 +485,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 >
                   <div
                     ref={popupRef}
+                    onMouseDown={keepFieldFocus}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}
                     id={listboxOpen ? listboxId : undefined}
                     data-modality={modality}
@@ -496,7 +503,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     ) : (
                       renderOptionGroups(
                         filteredOptions,
-                        (option) => option.group,
+                        groupOf,
                         inputId,
                         (option, index) => {
                           const selected = selectedSet.has(option.value);

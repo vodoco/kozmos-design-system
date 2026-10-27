@@ -24,12 +24,13 @@ const unscoped = postcss.parse(css);
 // rules alone.
 unscoped.walkAtRules("scope", (rule) => rule.remove());
 
+// Options with no group first, unlabelled; then the groups.
 const VISUAL_ORDER = [
+  "Lift",
   "Office Desk",
   "Hot Desk",
   "Standing Desk",
   "Reception Desk",
-  "Lift",
 ];
 const GROUPS = [
   ["Interior Asset", ["Office Desk", "Hot Desk", "Standing Desk"]],
@@ -97,8 +98,12 @@ function readList(page, owner) {
           };
         },
       );
+      const ungrouped = [...list.querySelectorAll('[role="option"]')]
+        .filter((option) => !option.closest('[role="group"]'))
+        .map(rect);
       return {
         groups,
+        ungrouped,
         options: [...list.querySelectorAll('[role="option"]')].map(
           (option) => option.textContent,
         ),
@@ -204,6 +209,22 @@ try {
               `${label}: ${group.name}'s rows ${i - 1} and ${i} are ${part === "listbox" ? 4 : 2} apart, read ${group.rows[i].top - group.rows[i - 1].bottom}`,
             );
         }
+        // And at every join: a label and its first row, the rows with no
+        // group and the first label, a group's last row and the next label.
+        const gap = part === "listbox" ? 4 : 2;
+        const joins = [];
+        list.groups.forEach((group, i) => {
+          joins.push([`${group.name}'s label and its first row`, group.rows[0].top - group.label.bottom]);
+          const before = i === 0 ? list.ungrouped.at(-1) : list.groups[i - 1].rows.at(-1);
+          if (before)
+            joins.push([`the row before ${group.name}'s label and the label`, group.label.top - before.bottom]);
+        });
+        for (const [what, read] of joins)
+          assert.ok(Math.abs(read - gap) <= 0.5, `${label}: ${what} are ${gap} apart, read ${read}`);
+        assert.ok(
+          list.ungrouped.length === 1 && list.ungrouped[0].bottom <= list.groups[0].label.top + 0.5,
+          `${label}: Lift, with no group, comes before every group`,
+        );
 
         // The real keys: down through every option as drawn, and round.
         const seen = [];
@@ -229,6 +250,84 @@ try {
           VISUAL_ORDER.concat(VISUAL_ORDER[0]),
           `${label}: the arrow keys follow the options as drawn`,
         );
+
+        // To the last option, POI's only one, and up into Interior Asset:
+        // each time the group's label comes into view with its first option.
+        const labelInView = (name) =>
+          page.evaluate((name) => {
+            const label = [...document.querySelectorAll(".kozmos-option-group-label")].find(
+              (node) => node.textContent === name,
+            );
+            let scroller = label.parentElement;
+            while (scroller && getComputedStyle(scroller).overflowY === "visible")
+              scroller = scroller.parentElement;
+            const l = label.getBoundingClientRect();
+            const box = scroller.getBoundingClientRect();
+            return l.top >= box.top - 0.5 && l.bottom <= box.bottom + 0.5;
+          }, name);
+        const moveTo = async (key, name) => {
+          await page.keyboard.press(key);
+          await page.waitForFunction(
+            ({ owner, name }) => {
+              const id = document.querySelector(owner).getAttribute("aria-activedescendant");
+              return document.getElementById(id)?.textContent === name;
+            },
+            { owner, name },
+            { polling: 50, timeout: 5000 },
+          );
+        };
+        // MultiSelect has no Home or End: up from the first wraps to the last.
+        await moveTo(part === "multiselect" ? "ArrowUp" : "End", "Reception Desk");
+        assert.ok(await labelInView("POI"), `${label}: at the last option, POI's label is in view`);
+        await moveTo("ArrowUp", "Standing Desk");
+        await moveTo("ArrowUp", "Hot Desk");
+        await moveTo("ArrowUp", "Office Desk");
+        assert.ok(
+          await labelInView("Interior Asset"),
+          `${label}: up into Interior Asset, its label is in view`,
+        );
+        if (part !== "multiselect") {
+          await moveTo("Home", "Lift");
+          await moveTo("End", "Reception Desk");
+          assert.ok(await labelInView("POI"), `${label}: Home, then End, POI's label is in view`);
+        }
+
+        if (part !== "listbox") {
+          // A press on a group's label, or on the list's padding, takes no
+          // focus from the field, so its list stays open.
+          const input = page.getByRole("combobox");
+          await page.locator(".kozmos-option-group-label", { hasText: "POI" }).click();
+          await page.waitForTimeout(100);
+          assert.equal(await page.getByRole("listbox").count(), 1, `${label}: a press on a label keeps the list open`);
+          assert.equal(
+            await input.evaluate((node) => document.activeElement === node),
+            true,
+            `${label}: a press on a label keeps focus in the field`,
+          );
+          // Combobox's frame holds its list; MultiSelect's list is its frame.
+          // Its padding is a utility, gone without @scope: press it where
+          // it has some.
+          const frame = await page.evaluate(() => {
+            const node =
+              document.querySelector("[data-combobox-popup]") ??
+              document.querySelector('[role="listbox"]');
+            const r = node.getBoundingClientRect();
+            const style = getComputedStyle(node);
+            return {
+              x: r.left + parseFloat(style.paddingLeft) / 2,
+              y: r.top + parseFloat(style.paddingTop) / 2,
+              padded: parseFloat(style.paddingTop) >= 4,
+            };
+          });
+          if (frame.padded) await page.mouse.click(frame.x, frame.y);
+          await page.waitForTimeout(100);
+          assert.equal(await page.getByRole("listbox").count(), 1, `${label}: a press on a label or the padding keeps the list open`);
+          assert.equal(
+            await input.evaluate((node) => document.activeElement === node),
+            true,
+            `${label}: and focus in the field`,
+          );
+        }
 
         const violations = (
           await new AxeBuilder({ page })

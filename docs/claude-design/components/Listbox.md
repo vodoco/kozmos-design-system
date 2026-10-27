@@ -60,13 +60,13 @@ interface ComboboxOption {
   description?: string;
   disabled?: boolean;
   /**
-   * The group the option is listed under (GAP-192). Options are grouped in
-   * the order their groups first appear, each under its group's label, a
-   * `role="group"` named by it; the arrow keys move through the options as
-   * they are drawn and never stop on a label. While the list is filtered, a
-   * group's label stays as long as any of its options matches. Combobox,
-   * Listbox and MultiSelect all take it; an option with none is listed on its
-   * own, as before.
+   * The group the option is listed under (GAP-192). Options with no group
+   * come first, unlabelled; then the groups, in the order they first appear,
+   * each under its group's label, a `role="group"` named by it. The arrow
+   * keys move through the options as they are drawn and never stop on a
+   * label. While the list is filtered, a group's label stays as long as any
+   * of its options matches. The name is trimmed, and a blank one is no group.
+   * Combobox, Listbox and MultiSelect all take it.
    */
   group?: string;
   label: string;
