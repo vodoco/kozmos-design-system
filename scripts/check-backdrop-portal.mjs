@@ -41,13 +41,15 @@ async function scenario(name, mount, run) {
     );
     await page.addScriptTag({ content: code });
     await page.evaluate((mount) => window.backdropPortal.mount(mount), mount);
-    await page.locator("#backdrop").waitFor();
+    if (!mount.layers)
+      await page.locator("#backdrop").waitFor({ state: "attached" });
     // The cut-out is drawn on the next frames.
-    await page.waitForFunction(
-      () => document.getElementById("backdrop")?.hasAttribute("data-lit"),
-      undefined,
-      { timeout: 5000 },
-    );
+    if (mount.withTarget !== false && !mount.layers)
+      await page.waitForFunction(
+        () => document.getElementById("backdrop")?.hasAttribute("data-lit"),
+        undefined,
+        { timeout: 5000 },
+      );
     await settleLayout(page);
     await run(page);
     assert.deepEqual(errors, [], "no page errors");
@@ -113,7 +115,10 @@ for (const isolate of [true, false]) {
       await page.mouse.click(...(await centre(page, "#next")));
       await page.mouse.click(...(await centre(page, "#navbar")));
       assert.deepEqual(
-        await page.evaluate(() => ({ ...window.backdropPortal.counts })),
+        await page.evaluate(() => ({
+          target: window.backdropPortal.counts.target,
+          card: window.backdropPortal.counts.card,
+        })),
         { target: 1, card: 1 },
         "the target took the press through the cut-out, the card its own",
       );
@@ -136,12 +141,124 @@ await scenario(
     await page.mouse.click(...(await centre(page, "#target")));
     await page.mouse.click(...(await centre(page, "#next")));
     assert.deepEqual(
-      await page.evaluate(() => ({ ...window.backdropPortal.counts })),
+      await page.evaluate(() => ({
+        target: window.backdropPortal.counts.target,
+        card: window.backdropPortal.counts.card,
+      })),
       { target: 1, card: 1 },
       "the target and the card take their presses",
     );
   },
 );
+
+// Drawn at the same layer in the same portal as the popovers, whichever
+// opened last is on top (Backdrop.mdx says so).
+for (const first of ["popover", "backdrop"]) {
+  await scenario(
+    `a ${first} opened first is under the other`,
+    { layers: true, withTarget: false },
+    async (page) => {
+      const second = first === "popover" ? "backdrop" : "popover";
+      await page.evaluate(
+        (name) => window.backdropPortal.open[name](true),
+        first,
+      );
+      await page.locator(`#${first}`).waitFor();
+      await page.evaluate(
+        (name) => window.backdropPortal.open[name](true),
+        second,
+      );
+      await page.locator(`#${second}`).waitFor();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const top = await page.evaluate(() => {
+        const r = document.getElementById("popover").getBoundingClientRect();
+        const at = document.elementFromPoint(
+          r.left + r.width / 2,
+          r.top + r.height / 2,
+        );
+        return at?.closest("#popover")
+          ? "popover"
+          : at?.closest("#backdrop")
+            ? "backdrop"
+            : at?.id || at?.tagName;
+      });
+      assert.equal(top, second, `the one opened last is on top (${top})`);
+    },
+  );
+}
+
+// #419's review: inside a modal, which makes everything outside its content
+// inert, the backdrop is drawn in the content.
+for (const modal of ["dialog", "drawer", "bottomsheet"]) {
+  await scenario(
+    `inside a ${modal}, with no target, the scrim blocks a press on the ${modal}'s button`,
+    { modal, withTarget: false },
+    async (page) => {
+      // Once the modal has finished entering.
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const hit = await page.evaluate(() => {
+        const r = document.getElementById("save").getBoundingClientRect();
+        const at = document.elementFromPoint(
+          r.left + r.width / 2,
+          r.top + r.height / 2,
+        );
+        return {
+          dim: !!at && document.getElementById("backdrop").contains(at),
+          at: at?.id || at?.tagName,
+        };
+      });
+      assert.equal(hit.dim, true, `the dim is over Save (${hit.at})`);
+      await page.mouse.click(...(await centre(page, "#save")));
+      assert.equal(
+        await page.evaluate(() => window.backdropPortal.counts.save),
+        0,
+        "Save took no press",
+      );
+    },
+  );
+  await scenario(
+    `inside a ${modal}, with a target, Tab reaches the card's Next and focus stays there; nothing is hidden from readers`,
+    { modal, withTarget: true },
+    async (page) => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      let reached = false;
+      for (let i = 0; i < 12 && !reached; i += 1) {
+        await page.keyboard.press("Tab");
+        reached = await page.evaluate(
+          () => document.activeElement?.id === "next",
+        );
+      }
+      assert.equal(reached, true, "Tab reaches Next");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      assert.equal(
+        await page.evaluate(() => document.activeElement?.id),
+        "next",
+        "focus stays on Next",
+      );
+      const hidden = await page.evaluate(() =>
+        ["backdrop", "card", "next"].filter((id) =>
+          document.getElementById(id).closest('[aria-hidden="true"]'),
+        ),
+      );
+      assert.deepEqual(
+        hidden,
+        [],
+        "neither the backdrop nor its card is hidden from readers",
+      );
+      assert.equal(
+        await page.getByRole("button", { name: "Next" }).count(),
+        1,
+        "Next is a button a reader finds",
+      );
+      await page.keyboard.press("Enter");
+      assert.equal(
+        await page.evaluate(() => window.backdropPortal.counts.card),
+        1,
+        "Next takes Enter",
+      );
+    },
+  );
+}
 
 await browser.close();
 if (failures.length) {

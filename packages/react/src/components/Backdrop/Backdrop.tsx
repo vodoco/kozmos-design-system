@@ -1,6 +1,7 @@
 import React from "react";
 import { Portal } from "@radix-ui/react-portal";
 import { createThemePortal } from "../../theme/ThemePortal";
+import { OverlayContainerContext } from "../../theme/overlay-container";
 import { cn } from "../../utils";
 import { createCutout, type BackdropTarget } from "./cutout";
 
@@ -34,9 +35,13 @@ export interface BackdropProps extends React.HTMLAttributes<HTMLDivElement> {
    * Where the dim is drawn. `"fixed"`, the default, covers the window and is
    * drawn in the theme's portal, as Popover and Dialog are, so no box it is
    * rendered in (a map, a panel that clips, transforms or isolates its
-   * stacking) can cut it off or stack it under the page. `"inline"` covers
-   * the nearest positioned box it is rendered in, in place: one region's dim
-   * (site GAP-34).
+   * stacking) can cut it off or stack it under the page; inside a modal
+   * (Dialog, Drawer, BottomSheet) it is drawn in the modal's content, which
+   * makes everything outside it inert. Not in the server's HTML: it is drawn
+   * once the provider's portal exists. `"inline"` covers the nearest
+   * positioned box it is rendered in, `absolute`, in place: one region's dim
+   * (site GAP-34). A fixed backdrop given a position by its class warns in
+   * development.
    */
   placement?: "fixed" | "inline";
 }
@@ -58,6 +63,30 @@ const BackdropPortal = createThemePortal(function BackdropPortalRoot({
     </Portal>
   );
 });
+
+// A class that positions it: the way a backdrop was kept to one box before
+// it was portalled (className="absolute"), which, drawn in the portal,
+// positions it against the document instead.
+const POSITIONING = /(?:^|\s)(?:absolute|relative|static|sticky)(?:\s|$)/;
+
+/** Warns once, in development, when a fixed backdrop is given a position. */
+function useWarnPositioned(placement: string, className: string | undefined) {
+  const warned = React.useRef(false);
+  React.useEffect(() => {
+    if (
+      process.env.NODE_ENV === "production" ||
+      warned.current ||
+      placement !== "fixed" ||
+      !className ||
+      !POSITIONING.test(className)
+    )
+      return;
+    warned.current = true;
+    console.warn(
+      `Backdrop: className "${className}" positions a backdrop drawn in the theme's portal, against the document. To dim one box, pass placement="inline".`,
+    );
+  }, [placement, className]);
+}
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -83,7 +112,20 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     const scrim = React.useRef<HTMLDivElement | null>(null);
     const ring = React.useRef<HTMLDivElement | null>(null);
     const [cutout] = React.useState(createCutout);
-    React.useImperativeHandle(ref, () => root as HTMLDivElement, [root]);
+    // The forwarded ref is set with the element, in the commit it arrives
+    // in, as it was before the backdrop was portalled.
+    const setRef = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        setRoot(node);
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+    // Inside a modal (Dialog, Drawer, BottomSheet), drawn in its content:
+    // beside it, the modal would make it inert.
+    const overlay = React.useContext(OverlayContainerContext);
+    useWarnPositioned(placement, className);
     // After every render, and every frame while a target is lit.
     useIsomorphicLayoutEffect(() => {
       cutout.sync(
@@ -106,7 +148,7 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     const element =
       target === undefined ? (
         <div
-          ref={setRoot}
+          ref={setRef}
           className={cn(position, "inset-0 z-50 bg-overlay-scrim", className)}
           {...props}
         >
@@ -114,7 +156,7 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
         </div>
       ) : (
         <div
-          ref={setRoot}
+          ref={setRef}
           className={cn("kozmos-backdrop", position, "inset-0 z-50", className)}
           {...props}
         >
@@ -124,11 +166,10 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
           {children}
         </div>
       );
-    return placement === "inline" ? (
-      element
-    ) : (
-      <BackdropPortal>{element}</BackdropPortal>
-    );
+    if (placement === "inline") return element;
+    // A modal whose content is still mounting: drawn there once it is.
+    if (overlay === null) return null;
+    return <BackdropPortal container={overlay}>{element}</BackdropPortal>;
   },
 );
 Backdrop.displayName = "Backdrop";

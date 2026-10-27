@@ -4,6 +4,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "@kozmos-ds/icons";
 
 import { cn } from "../../utils";
+import {
+  OverlayContainerContext,
+  useOverlayContainer,
+} from "../../theme/overlay-container";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { IconButton } from "../IconButton";
 import { WithoutGenericClick } from "../../utils/generic-click";
@@ -58,35 +62,42 @@ const DialogContent = React.forwardRef<
   (
     { className, children, portalContainer, closeLabel = "Close", ...props },
     ref,
-  ) => (
-    <DialogPortal container={portalContainer}>
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-6 border bg-background p-6 shadow-overlay transition-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-container",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {/* The close centres on the title's first line, 44 tall, at any
+  ) => {
+    // A Backdrop rendered inside is drawn in this content, not beside it,
+    // where the modal would make it inert (OverlayContainerContext).
+    const [contentRef, container] = useOverlayContainer(ref);
+    return (
+      <DialogPortal container={portalContainer}>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          ref={contentRef}
+          className={cn(
+            "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-6 border bg-background p-6 shadow-overlay transition-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-container",
+            className,
+          )}
+          {...props}
+        >
+          <OverlayContainerContext.Provider value={container}>
+            {children}
+          </OverlayContainerContext.Provider>
+          {/* The close centres on the title's first line, 44 tall, at any
             density (decision 82): 24 from the top at 44, 30 at 32. */}
-        <WithoutGenericClick>
-          <DialogPrimitive.Close asChild>
-            <IconButton
-              type="button"
-              variant="outline"
-              className="absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)]"
-              aria-label={closeLabel}
-            >
-              <X aria-hidden="true" />
-            </IconButton>
-          </DialogPrimitive.Close>
-        </WithoutGenericClick>
-      </DialogPrimitive.Content>
-    </DialogPortal>
-  ),
+          <WithoutGenericClick>
+            <DialogPrimitive.Close asChild>
+              <IconButton
+                type="button"
+                variant="outline"
+                className="absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)]"
+                aria-label={closeLabel}
+              >
+                <X aria-hidden="true" />
+              </IconButton>
+            </DialogPrimitive.Close>
+          </WithoutGenericClick>
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    );
+  },
 );
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
