@@ -160,10 +160,11 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
   map scene, before the cover replaced it); `AdaptiveMapShell` is safe
   because its root is `isolate`.
 - **Change:** `isolate` on `MapView`'s root, framed or filling. The layer
-  order in the tokens was not needed once the map isolates. A fixed overlay
-  rendered inside the map (a `Backdrop`) now stacks inside it too, under
-  the header: MapView's and Backdrop's docs say to render one outside the
-  map, or portal it out.
+  order in the tokens was not needed once the map isolates. A fixed element
+  rendered inside the map that does not portal (a fixed FloatingActionButton,
+  DynamicIsland, a product's own) now stacks inside it too, under the header:
+  MapView's docs say to render one outside the map, or portal it out. A
+  Backdrop portals itself since #419.
 - **Proof:** fixed on 2026-10-26 (#416). "GAP-40 is fixed: MapView isolates
   its overlays" reads the kiosk directory's map. The site's frames keep their
   `isolation: isolate` for the examples' own sticky Navbar (GAP-19).

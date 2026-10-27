@@ -858,9 +858,10 @@ keep the table's four columns and its statuses as they are.
   map. The site's example canvases keep `isolation: isolate` for their own
   sticky Navbar (GAP-19), and the kiosk's attract screen keeps the top layer
   token. The layer scale this row also asked for was not needed once the map
-  isolates, and was not made. A fixed overlay rendered inside the map, a
-  `Backdrop`, now stacks inside it too; MapView's and Backdrop's docs say to
-  render one outside the map, or portal it out.
+  isolates, and was not made. A fixed element rendered inside the map that
+  does not portal (a fixed FloatingActionButton, DynamicIsland, a product's
+  own) now stacks inside it too; MapView's docs say to render one outside the
+  map, or portal it out. A `Backdrop` portals itself since #419.
 - **Was:** composed: the site isolated every frame that hosts a map.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
