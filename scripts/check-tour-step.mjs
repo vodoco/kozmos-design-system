@@ -25,7 +25,8 @@
  * - The status: a live region in the card from the start, the same element
  *   as its text changes, and no room in the column while empty.
  * - Motion: the marker pulses, and holds still under reduced motion, the
- *   system's or the config's; forced colours draw it in Highlight.
+ *   system's or the config's mark in the portal; forced colours draw it in
+ *   Highlight.
  * - Right to left and compact density.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
@@ -796,8 +797,19 @@ await scenario(
   async (page) => {
     await placement(page);
     const p = await pulse(page);
-    // 1.38 s divided by the config's 0.001: one pulse in 23 minutes.
-    assert.ok(parseFloat(p.duration) >= 1000, `a pulse takes ${p.duration}`);
+    // The config's mark reaches the portal the card is drawn in (#418).
+    assert.equal(
+      await page.evaluate(
+        () =>
+          !!document
+            .getElementById("step")
+            .closest('[data-kozmos-motion="reduced"]'),
+      ),
+      true,
+      "the card is under the config's mark",
+    );
+    assert.equal(p.name, "none", "the marker holds still");
+    assert.equal(p.card, "none", "the card arrives at once");
   },
 );
 

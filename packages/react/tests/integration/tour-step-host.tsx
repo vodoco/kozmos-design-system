@@ -34,10 +34,7 @@ interface Mount {
   coachmark?: boolean;
   /** The coachmark's one action, "Got it", with no dots beside it. */
   coachmarkAction?: boolean;
-  /**
-   * Under a DesignConfigProvider whose config reduces motion: its mark does
-   * not reach the provider's portal, its motion scale does.
-   */
+  /** Under a DesignConfigProvider whose config reduces motion. */
   configReduced?: boolean;
   /** A popover the body opens, to stack above the card. */
   bodyPopover?: boolean;

@@ -120,10 +120,9 @@
   }
   /* The marker: an 8 dot of the theme fill in a 4 halo of it, and a ring
      that swells from it and fades, every 1.38 seconds (three deliberate
-     durations), while the tour waits. The time is divided by the config's
-     motion scale, which reaches the provider's portal where its reduced-motion
-     mark does not: reduced (0.001), a pulse takes 23 minutes and holds still;
-     snappy (0.5), it is slower, never a strobe. */
+     durations), while the tour waits. It stops, as every Kozmos loop does,
+     under reduced motion: the system's, or the config's mark, which reaches
+     the provider's portal where the card is drawn (GAP-50). */
   .kozmos-tour-step .kozmos-tour-step-marker {
     position: relative;
     flex: none;
@@ -141,10 +140,7 @@
     border-radius: inherit;
     background-color: var(--primitives-colors-theme-500);
     animation: tour-step-pulse
-      calc(
-        var(--semantics-motion-duration-deliberate) * 3 /
-          var(--semantics-motion-duration-scale, 1)
-      )
+      calc(var(--semantics-motion-duration-deliberate) * 3)
       var(--semantics-motion-easing-standard) infinite;
   }
   /* The build prefixes keyframe names with kozmos-. */
