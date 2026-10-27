@@ -128,7 +128,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [OTPInput](components/OTPInput.md): A segmented numeric code field with configurable length, paste handling and field feedback.
 - [Pagination](components/Pagination.md): Composes page navigation from numbered links, previous/next controls and ellipses.
 - [PasswordInput](components/PasswordInput.md): A text input for secrets, with a toggle that reveals what has been typed.
-- [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content.
+- [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content, or opened by the product beside any element or rect through PopoverAnchor.
 - [Progress](components/Progress.md): Communicates progress with an accessible name.
 - [Radio](components/Radio.md): A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
 - [Rating](components/Rating.md): Collects or displays a rating using stars or a thumbs-up/down choice.

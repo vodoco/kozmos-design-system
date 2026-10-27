@@ -431,6 +431,10 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:themes
           ADAPTIVE_BROWSER=firefox pnpm test:themes
 
+      # The config scoped to its provider (scripts/check-config-isolation.mjs),
+      # and its reduced motion reaching the theme's portal, so a loop in a
+      # Popover, Dialog, Drawer, Tooltip, Select, Menu or Combobox list stops
+      # as one in place does (scripts/check-portal-motion.mjs).
       - name: Verify Scoped Runtime Configuration
         run: |
           pnpm test:config
