@@ -85,13 +85,13 @@ export const WithoutHeader: Story = {
   render: () => (
     <div className="flex flex-wrap gap-6">
       {(["default", "compact"] as const).map((padding) => (
-        <div key={padding} className="flex flex-col gap-6">
-          <Card padding={padding} className="w-[320px] max-w-full">
+        <div key={padding} className="flex w-[320px] max-w-full flex-col gap-6">
+          <Card padding={padding} className="w-full">
             <CardContent className="text-sm text-muted-foreground">
               Content alone — {padding === "default" ? 24 : 16}px on every side.
             </CardContent>
           </Card>
-          <Card padding={padding} className="w-[320px] max-w-full">
+          <Card padding={padding} className="w-full">
             <CardContent className="text-sm text-muted-foreground">
               Content above a footer.
             </CardContent>
