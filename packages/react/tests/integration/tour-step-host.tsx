@@ -4,6 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import {
   Button,
   DesignConfigProvider,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -38,6 +41,10 @@ interface Mount {
   configReduced?: boolean;
   /** A popover the body opens, to stack above the card. */
   bodyPopover?: boolean;
+  /** The page inside an open modal Dialog. */
+  inDialog?: boolean;
+  /** A Popover open on the page before the tour starts. */
+  pagePopover?: boolean;
 }
 
 const STEPS = [
@@ -72,6 +79,7 @@ function Page({
   coachmark = false,
   coachmarkAction = false,
   bodyPopover = false,
+  pagePopover = false,
 }: Mount) {
   const site = React.useRef<HTMLButtonElement>(null);
   const nothing = React.useRef<HTMLButtonElement>(null);
@@ -128,6 +136,21 @@ function Page({
         <Button id="start" variant="ghost" onClick={() => controls?.open()}>
           Start tour
         </Button>
+        {pagePopover ? (
+          <Popover open>
+            <PopoverTrigger asChild>
+              <Button id="hours">Opening hours</Button>
+            </PopoverTrigger>
+            <PopoverContent
+              id="page-popover"
+              side="bottom"
+              align="start"
+              aria-label="Opening hours"
+            >
+              Monday to Friday
+            </PopoverContent>
+          </Popover>
+        ) : null}
       </div>
       <div style={{ position: "absolute", insetInlineStart: 420, top: 360 }}>
         <Button
@@ -221,7 +244,20 @@ function mount(options: Mount) {
         </DesignConfigProvider>
       ) : (
         <ThemeProvider theme={theme} dir={dir} density={density}>
-          <Page {...options} />
+          {options.inDialog ? (
+            <Dialog open>
+              <DialogContent
+                id="modal"
+                aria-describedby={undefined}
+                className="max-w-3xl"
+              >
+                <DialogTitle>Settings</DialogTitle>
+                <Page {...options} />
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <Page {...options} />
+          )}
         </ThemeProvider>
       ),
     ),

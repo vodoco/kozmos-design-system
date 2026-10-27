@@ -2,6 +2,7 @@ import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { OverlayContainerContext } from "../../theme/overlay-container";
 import {
   Backdrop,
   type BackdropRect,
@@ -321,6 +322,11 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
       return () => window.cancelAnimationFrame(frame);
     }, [open, resolve]);
     const placed = anchor === middle;
+    // Inside a modal (Dialog, Drawer, BottomSheet) whose content is still
+    // mounting, the card waits for it: opened after the modal's own layer,
+    // focus trap and hiding of the rest, it is above them, takes focus from
+    // the trap and is not hidden, as a popover opened in a modal is.
+    const modal = React.useContext(OverlayContainerContext);
 
     const count =
       typeof stepCount === "number" && Number.isFinite(stepCount)
@@ -368,115 +374,124 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
           visible={open}
           target={target ?? null}
         />
-        <PopoverContent
-          // Each step is a dialog of its own, so moving on is heard as a
-          // dialog opening, its title, position and status read again.
-          key={at}
-          ref={setCard}
-          aria-labelledby={titleId}
-          aria-describedby={describedBy}
-          data-placement={placed ? "centre" : "target"}
-          side={placed ? "bottom" : side}
-          align={placed ? "center" : align}
-          sideOffset={placed ? 0 : TARGET_OFFSET}
-          avoidCollisions={!placed}
-          collisionPadding={EDGE_PADDING}
-          // The target is read every frame, as Backdrop reads it, so the card
-          // and the cut-out move together, whatever moves the target.
-          updatePositionStrategy="always"
-          className={cn("kozmos-tour-step", className)}
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            (next.current ?? card.current)?.focus({ preventScroll: true });
-          }}
-          onInteractOutside={(event) => {
-            onInteractOutside?.(event);
-            event.preventDefault();
-          }}
-          {...props}
-        >
-          <div className="kozmos-tour-step-header">
-            <div className="kozmos-tour-step-heading">
-              {hasTour || position ? (
-                <p className="kozmos-tour-step-eyebrow">
-                  {hasTour ? <span id={tourId}>{tourLabel}</span> : null}
-                  {hasTour && position ? (
-                    <>
-                      {" "}
-                      <span aria-hidden="true">·</span>{" "}
-                    </>
-                  ) : null}
-                  {position ? <span id={positionId}>{position}</span> : null}
-                </p>
-              ) : null}
-              <h2 id={titleId} className="kozmos-tour-step-title">
-                {title}
-              </h2>
+        {modal === null ? null : (
+          <PopoverContent
+            // Each step is a dialog of its own, so moving on is heard as a
+            // dialog opening, its title, position and status read again.
+            key={at}
+            ref={setCard}
+            aria-labelledby={titleId}
+            aria-describedby={describedBy}
+            data-placement={placed ? "centre" : "target"}
+            side={placed ? "bottom" : side}
+            align={placed ? "center" : align}
+            sideOffset={placed ? 0 : TARGET_OFFSET}
+            avoidCollisions={!placed}
+            collisionPadding={EDGE_PADDING}
+            // The target is read every frame, as Backdrop reads it, so the card
+            // and the cut-out move together, whatever moves the target.
+            updatePositionStrategy="always"
+            className={cn("kozmos-tour-step", className)}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              (next.current ?? card.current)?.focus({ preventScroll: true });
+            }}
+            onInteractOutside={(event) => {
+              onInteractOutside?.(event);
+              event.preventDefault();
+            }}
+            {...props}
+          >
+            <div className="kozmos-tour-step-header">
+              <div className="kozmos-tour-step-heading">
+                {hasTour || position ? (
+                  <p className="kozmos-tour-step-eyebrow">
+                    {hasTour ? <span id={tourId}>{tourLabel}</span> : null}
+                    {hasTour && position ? (
+                      <>
+                        {" "}
+                        <span aria-hidden="true">·</span>{" "}
+                      </>
+                    ) : null}
+                    {position ? <span id={positionId}>{position}</span> : null}
+                  </p>
+                ) : null}
+                <h2 id={titleId} className="kozmos-tour-step-title">
+                  {title}
+                </h2>
+              </div>
+              <IconButton
+                type="button"
+                variant="outline"
+                className="kozmos-tour-step-close"
+                aria-label={closeLabel}
+                onClick={onClose}
+              >
+                <X aria-hidden="true" />
+              </IconButton>
             </div>
-            <IconButton
-              type="button"
-              variant="outline"
-              className="kozmos-tour-step-close"
-              aria-label={closeLabel}
-              onClick={onClose}
-            >
-              <X aria-hidden="true" />
-            </IconButton>
-          </div>
-          {hasBody ? (
-            <div id={bodyId} className="kozmos-tour-step-body">
-              {children}
-            </div>
-          ) : null}
-          {hasHint ? (
-            <div id={hintId} className="kozmos-tour-step-hint">
-              {hint}
-            </div>
-          ) : null}
-          {/* Mounted with each step, empty or not, so a status that arrives
-              or changes while the step is open is read out; the one it opens
-              with is read in the dialog's description. */}
-          <div id={statusId} role="status" className="kozmos-tour-step-status">
-            {hasInstruction ? (
-              <div className="kozmos-tour-step-instruction">
-                <span className="kozmos-tour-step-marker" aria-hidden="true" />
-                <span className="kozmos-tour-step-instruction-text">
-                  {instruction}
-                </span>
+            {hasBody ? (
+              <div id={bodyId} className="kozmos-tour-step-body">
+                {children}
               </div>
             ) : null}
-          </div>
-          {count > 0 || onBack || onNext ? (
-            <div className="kozmos-tour-step-footer">
-              {count > 0 ? (
-                // The position is the eyebrow's words, so the dots are for
-                // the eye only.
-                <Stepper
-                  variant="dots"
-                  steps={dots}
-                  currentStep={at - 1}
-                  positionLabel={positionLabel}
-                  aria-hidden="true"
-                  className="kozmos-tour-step-dots"
-                />
-              ) : null}
-              {onBack || onNext ? (
-                <div className="kozmos-tour-step-actions">
-                  {onBack ? (
-                    <Button type="button" variant="ghost" onClick={onBack}>
-                      {backLabel}
-                    </Button>
-                  ) : null}
-                  {onNext ? (
-                    <Button ref={next} type="button" onClick={onNext}>
-                      {nextLabel}
-                    </Button>
-                  ) : null}
+            {hasHint ? (
+              <div id={hintId} className="kozmos-tour-step-hint">
+                {hint}
+              </div>
+            ) : null}
+            {/* Mounted with each step, empty or not, so a status that arrives
+              or changes while the step is open is read out; the one it opens
+              with is read in the dialog's description. */}
+            <div
+              id={statusId}
+              role="status"
+              className="kozmos-tour-step-status"
+            >
+              {hasInstruction ? (
+                <div className="kozmos-tour-step-instruction">
+                  <span
+                    className="kozmos-tour-step-marker"
+                    aria-hidden="true"
+                  />
+                  <span className="kozmos-tour-step-instruction-text">
+                    {instruction}
+                  </span>
                 </div>
               ) : null}
             </div>
-          ) : null}
-        </PopoverContent>
+            {count > 0 || onBack || onNext ? (
+              <div className="kozmos-tour-step-footer">
+                {count > 0 ? (
+                  // The position is the eyebrow's words, so the dots are for
+                  // the eye only.
+                  <Stepper
+                    variant="dots"
+                    steps={dots}
+                    currentStep={at - 1}
+                    positionLabel={positionLabel}
+                    aria-hidden="true"
+                    className="kozmos-tour-step-dots"
+                  />
+                ) : null}
+                {onBack || onNext ? (
+                  <div className="kozmos-tour-step-actions">
+                    {onBack ? (
+                      <Button type="button" variant="ghost" onClick={onBack}>
+                        {backLabel}
+                      </Button>
+                    ) : null}
+                    {onNext ? (
+                      <Button ref={next} type="button" onClick={onNext}>
+                        {nextLabel}
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </PopoverContent>
+        )}
       </Popover>
     );
   },

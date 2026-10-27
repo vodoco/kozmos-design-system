@@ -9,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
+import { Dialog, DialogContent, DialogTitle } from "../Dialog/Dialog";
 import { TourStep, type TourStepProps } from "./TourStep";
 
 // GAP-188: one step of a product tour. jsdom lays nothing out, so where the
@@ -497,6 +498,30 @@ describe("TourStep (GAP-188)", () => {
     expect(dialog).toHaveAttribute("id", "step");
     expect(dialog).toHaveClass("kozmos-tour-step", "mine");
     expect(dialog).toHaveAttribute("data-step", "two");
+  });
+
+  it("opened with a modal Dialog it sits in, takes focus from the dialog's trap and is not hidden", async () => {
+    render(
+      <ThemeProvider>
+        <Dialog open>
+          <DialogContent aria-describedby={undefined}>
+            <DialogTitle>Settings</DialogTitle>
+            <button type="button">First in the dialog</button>
+            <Step />
+          </DialogContent>
+        </Dialog>
+      </ThemeProvider>,
+    );
+    const step = await screen.findByRole("dialog", { name: "Open a site" });
+    expect(step.closest('[aria-hidden="true"]')).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Next" })).toHaveFocus(),
+    );
+    // Its dim is drawn in the dialog's content, where the modal leaves it live.
+    const backdrop = document.querySelector(".kozmos-tour-step-backdrop");
+    expect(
+      backdrop?.closest('[role="dialog"][data-state="open"]'),
+    ).not.toBeNull();
   });
 
   it("has no axe violations open", async () => {

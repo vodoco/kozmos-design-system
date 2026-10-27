@@ -694,6 +694,98 @@ await scenario(
   },
 );
 
+await scenario(
+  "started while a Popover is open: the dim is over the popover and the card above both",
+  { mount: { open: false, pagePopover: true } },
+  async (page) => {
+    await page.locator("#page-popover").waitFor();
+    await page.evaluate(() => window.tourStep.open());
+    await placement(page);
+    const tops = await page.evaluate(() => {
+      const top = (id) => {
+        const r = document.getElementById(id).getBoundingClientRect();
+        const at = document.elementFromPoint(r.left + 8, r.top + 8);
+        return at?.closest("#step")
+          ? "card"
+          : at?.closest(".kozmos-tour-step-backdrop")
+            ? "dim"
+            : at?.closest("#page-popover")
+              ? "popover"
+              : at?.id || at?.tagName;
+      };
+      return { popover: top("page-popover"), card: top("step") };
+    });
+    assert.deepEqual(tops, { popover: "dim", card: "card" });
+  },
+);
+
+await scenario(
+  "inside a modal Dialog: its card works over the dialog, Next moves it on, and Escape closes the step, not the dialog",
+  { mount: { inDialog: true } },
+  async (page) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await placement(page);
+    const read = () =>
+      page.evaluate(() => {
+        const card = document.getElementById("step");
+        const backdrop = document.querySelector(".kozmos-tour-step-backdrop");
+        const modal = document.getElementById("modal");
+        const r = card?.getBoundingClientRect();
+        const hit = r && document.elementFromPoint(r.left + 20, r.top + 20);
+        return {
+          open: !!card,
+          active: card?.contains(document.activeElement)
+            ? document.activeElement.textContent
+            : document.activeElement?.id,
+          hidden: [card, backdrop].filter((node) =>
+            node?.closest('[aria-hidden="true"]'),
+          ).length,
+          backdropInModal: !!backdrop && modal.contains(backdrop),
+          cardOnTop: !!hit && card.contains(hit),
+          dialogOpen: !!modal,
+        };
+      });
+    let r = await read();
+    assert.deepEqual(
+      r,
+      {
+        open: true,
+        active: "Next",
+        hidden: 0,
+        backdropInModal: true,
+        cardOnTop: true,
+        dialogOpen: true,
+      },
+      "open on Next, readable, the dim in the dialog, the card on top",
+    );
+    await page.mouse.click(
+      ...(await (async () => {
+        const box = await page
+          .getByRole("button", { name: "Next" })
+          .boundingBox();
+        return [box.x + box.width / 2, box.y + box.height / 2];
+      })()),
+    );
+    await page.getByRole("dialog", { name: "Open a building" }).waitFor();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    r = await read();
+    assert.equal(
+      r.active,
+      "Finish",
+      "a press on Next moved it on, focus on the next step's Next",
+    );
+    await page.keyboard.press("Escape");
+    await page.locator("#step").waitFor({ state: "detached" });
+    r = await read();
+    assert.equal(r.dialogOpen, true, "the dialog stays open");
+    assert.equal(
+      await page.evaluate(() => window.tourStep.closes()),
+      1,
+      "the step closed once",
+    );
+  },
+);
+
 await scenario("axe finds nothing while it is open", {}, async (page) => {
   await placement(page);
   const violations = (

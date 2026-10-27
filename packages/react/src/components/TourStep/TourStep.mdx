@@ -74,9 +74,15 @@ popover does; the product may also stop rendering it.
 
 ## Stacking
 
-The card is drawn in the provider's portal with its Backdrop, one above it whatever the order the
-two arrive in, so a backdrop drawn anew never covers the card. A popover opened while the step is
-open, from the body or by the lit target (a field's list, a tooltip), opens above both.
+The card is drawn in the provider's portal, one layer above its Backdrop, whatever the order the
+two arrive in, so a backdrop drawn anew never covers the card. Started while a popover is open, its
+dim covers the popover and the card is above both; a popover opened while the step is open, from
+the body or by the lit target (a field's list, a tooltip), opens above them.
+
+Inside a modal (Dialog, Drawer, BottomSheet), its dim is drawn in the modal's content, where the
+modal leaves it live, and the card waits for the modal's content to mount: opened after the
+modal's own layer, it is above the modal, takes focus from its trap and is read, as a popover
+opened in a modal is. Escape closes the step, not the modal.
 
 ## Accessibility
 
