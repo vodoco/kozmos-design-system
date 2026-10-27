@@ -107,6 +107,8 @@ import {
   RoutePreviewPanel,
 } from "@kozmos-ds/react";
 
+import { toReactTarget } from "./targets";
+
 // Core Translation Engine
 export * from "./react-adapter";
 
@@ -143,6 +145,15 @@ const AlertAdapter = ({
       ? React.createElement(AlertDescription, null, description)
       : null,
   );
+
+// Backdrop's target may be a template ref on a component, or a ref() in a
+// list: React is handed the element each names (GAP-189).
+const BackdropAdapter = ({ target, ...props }: any) =>
+  React.createElement(Backdrop, {
+    ...props,
+    target: target === undefined ? undefined : toReactTarget(target),
+  });
+BackdropAdapter.displayName = "Backdrop";
 
 const CheckboxAdapter = ({
   modelValue,
@@ -239,7 +250,12 @@ export const KozmosAlert = createVueWrapper(AlertAdapter);
 export const KozmosProgress = createVueWrapper(Progress);
 export const KozmosSpinner = createVueWrapper(Spinner);
 export const KozmosSkeleton = createVueWrapper(Skeleton);
-export const KozmosBackdrop = createVueWrapper(Backdrop);
+export const KozmosBackdrop = createVueWrapper(BackdropAdapter);
+// `target` is declared as a prop, so Vue never writes it onto the wrapper's
+// element as an attribute: it does that with every undeclared attribute, and
+// a component instance cannot be written as one ("Cannot convert object to
+// primitive value"). The wrapper hands its props to React with its attrs.
+Object.assign(KozmosBackdrop, { props: { target: null } });
 export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
