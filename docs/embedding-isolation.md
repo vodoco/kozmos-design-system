@@ -194,7 +194,11 @@ are not supported by this pointer-effect calculation. No document style or globa
 pointer state is written. The old dark glass selector now uses the actual nearest
 theme scope. Depth and bevel compose rather than one hiding the other. Disabling
 glass/reducing transparency removes its texture, noise, bevel and spotlight; reduced
-motion removes its magnification/spotlight and scales token-based transitions.
+motion removes its magnification/spotlight and scales token-based transitions. It also
+marks the provider's scope `data-kozmos-motion="reduced"`, where every looping animation
+(a Spinner, a Skeleton) stops, and the portal root of every ThemeProvider inside it carries
+the same mark, kept in step with the config, so a loop in a Popover, Dialog, Drawer,
+Tooltip, Select, Menu or Combobox list stops too (`scripts/check-portal-motion.mjs`).
 
 Do not overstate the result: experimental effects are **not** semantic design tokens
 or native/Figma visual parity. `preset`/`splay` remain deprecated, non-rendering legacy

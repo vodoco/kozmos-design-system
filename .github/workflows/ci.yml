@@ -392,7 +392,9 @@ jobs:
       # the target through it and the backdrop elsewhere; the target keeps
       # its place and stacking; the cut-out follows a scroll, a resize and
       # the window; reduced motion moves it at once
-      # (scripts/check-backdrop-target.mjs).
+      # (scripts/check-backdrop-target.mjs). Drawn in the theme's portal, it
+      # covers the page from inside a map that isolates its stacking, and
+      # inline it covers the map alone (scripts/check-backdrop-portal.mjs).
       - name: Verify Backdrop Target
         run: |
           pnpm test:backdrop-target
@@ -440,6 +442,10 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:themes
           ADAPTIVE_BROWSER=firefox pnpm test:themes
 
+      # The config scoped to its provider (scripts/check-config-isolation.mjs),
+      # and its reduced motion reaching the theme's portal, so a loop in a
+      # Popover, Dialog, Drawer, Tooltip, Select, Menu or Combobox list stops
+      # as one in place does (scripts/check-portal-motion.mjs).
       - name: Verify Scoped Runtime Configuration
         run: |
           pnpm test:config

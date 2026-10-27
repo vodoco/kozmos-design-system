@@ -117,6 +117,13 @@ const INTENTIONAL = {
     figma:
       "Label placement is a layout concern owned by the map renderer, which positions the marker and its label against collision boxes.",
   },
+  "Backdrop.placement": {
+    figma:
+      "Where the web draws the dim: in the theme's portal over the window (fixed), or in place over the box it is rendered in (inline). The dim itself is the same either way, and that is what the set draws.",
+    ios: "Placement is the parent's job on native: a backdrop covers the screen or a region by where the view is put (an overlay, a ZStack), not by a parameter. The web's values exist because a DOM element is trapped by the box it is rendered in unless it is portalled.",
+    android:
+      "Placement is the parent's job on native: a backdrop covers the screen or a region by where the composable is put (a Box over the region), not by a parameter. The web's values exist because a DOM element is trapped by the box it is rendered in unless it is portalled.",
+  },
   "FloatingActionButton.placement": {
     figma:
       "Positioning is the parent's job on native: a FAB is placed by a ZStack alignment or Scaffold's floatingActionButton slot, not by a variant on the button. The React values are CSS position classes with no visual difference.",
