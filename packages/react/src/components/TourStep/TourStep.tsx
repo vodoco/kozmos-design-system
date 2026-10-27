@@ -213,8 +213,10 @@ function formatPosition(
  * named by its title and described by its tour, position, body, hint and
  * status, it takes focus when it opens, on Next (else on itself). Escape and
  * Close call `onClose`; a press on the dim or on the lit target does not.
- * PopoverContent gives focus back when the step closes, if focus was lost
- * with it.
+ * Closed with focus lost, PopoverContent gives focus back (GAP-190): to
+ * what had it as the step opened, the button that started the tour, or,
+ * once that is gone or a step opened with focus on the last one's Next, to
+ * the step's target; a virtual element or a rect has none.
  *
  * With no `stepCount`, no Back and no Next, it is a coachmark (GAP-157): a
  * single hint beside a control, closed by its button and by Escape.
@@ -266,10 +268,11 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
     );
 
     // The anchor Radix places the card by. An element with a box of its own
-    // is handed over as itself, so it is the anchor focus can go back to; a
-    // virtual element, a rect, or an element drawn by its children, through
-    // one measuring stand-in that reads the target as it is now; nothing, or
-    // a target with no box, through a point in the middle of the window.
+    // is handed over as itself, so it is the anchor focus can go back to, as
+    // is the one element a display: contents wrapper draws; a virtual
+    // element, a rect, or an element drawn by several children, through one
+    // measuring stand-in that reads the target as it is now; nothing, or a
+    // target with no box, through a point in the middle of the window.
     const latest = React.useRef(target);
     latest.current = target;
     const [measured] = React.useState<Measurable>(() => ({
@@ -292,8 +295,12 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
       if (typeof window === "undefined") return middle;
       const source = read(latest.current);
       if (!boxOf(source)) return middle;
-      if (isElement(source) && drawers(source)[0] === source)
-        return source as unknown as Measurable;
+      if (isElement(source)) {
+        // One element draws it (itself, or the one child of a wrapper with
+        // display: contents, as a Vue component's is): that element.
+        const drawn = drawers(source);
+        if (drawn.length === 1) return drawn[0] as unknown as Measurable;
+      }
       return measured;
     }, [measured, middle]);
     const [anchor, setAnchor] = React.useState<Measurable>(middle);

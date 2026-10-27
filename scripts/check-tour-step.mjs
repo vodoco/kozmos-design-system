@@ -655,10 +655,13 @@ await scenario(
 );
 
 await scenario(
-  "Escape closes it, and focus goes back to what opened it",
+  "Escape closes it, and focus goes back to the button that opened it",
   { mount: { open: false } },
   async (page) => {
-    await page.locator("#start").click();
+    // From the keyboard: WebKit gives a button no focus when it is clicked,
+    // so there a click leaves nothing to go back to but the target.
+    await page.locator("#start").focus();
+    await page.keyboard.press("Enter");
     await placement(page);
     await page.keyboard.press("Escape");
     await page.locator("#step").waitFor({ state: "detached" });

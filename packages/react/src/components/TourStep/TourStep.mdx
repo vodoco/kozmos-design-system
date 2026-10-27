@@ -88,10 +88,15 @@ card for the lit target, and the target keeps its own role. The status is a poli
 mounted with each step, so a status that arrives or changes while the step is open is read out.
 The dots are drawn for the eye only, since the position is in words.
 
-When the step closes, `PopoverContent` gives focus back if focus was lost with it (GAP-190). The
-labels have English defaults (decision 100): `backLabel` "Back", `nextLabel` "Next", `closeLabel`
-"Close" and `positionLabel` "Step {step} of {count}", a template or a function of the step and the
-count.
+When the step closes with focus lost (Escape, Close, Finish), `PopoverContent` gives focus back
+(GAP-190): to what had focus as the step opened, such as the button that started the tour, or,
+when that is gone or the step opened with focus on the previous step's Next, to the step's target.
+A virtual element or a rect has nothing to take it. A step's own Next keeps focus as the next step
+opens.
+
+The labels have English defaults (decision 100): `backLabel` "Back", `nextLabel` "Next",
+`closeLabel` "Close" and `positionLabel` "Step {step} of {count}", a template or a function of the
+step and the count.
 
 Right to left, the card, its sections and the dots mirror, as the provider's direction says. At
 compact density (Pointr Cloud's), Close is 32 and Back and Next 40.

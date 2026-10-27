@@ -286,6 +286,57 @@ describe("TourStep (GAP-188)", () => {
     );
   });
 
+  // PopoverContent's focus model (GAP-190, #410): closing with focus lost
+  // gives it back to what had it as the step opened, else to the target.
+  it("gives focus back to what opened it on Escape, else to its target", async () => {
+    function Page() {
+      const target = React.useRef<HTMLButtonElement>(null);
+      const [open, setOpen] = React.useState(false);
+      const [step, setStep] = React.useState(1);
+      // A target with a box, so it is the anchor focus can go back to.
+      React.useEffect(() => boxed(target.current));
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Start tour
+          </button>
+          <button ref={target} type="button">
+            Sites
+          </button>
+          <Step
+            open={open}
+            step={step}
+            target={target}
+            onNext={() => setStep(2)}
+            onClose={() => setOpen(false)}
+          />
+        </>
+      );
+    }
+    render(<Page />);
+    const start = screen.getByRole("button", { name: "Start tour" });
+    act(() => start.focus());
+    fireEvent.click(start);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Next" })).toHaveFocus(),
+    );
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() => expect(start).toHaveFocus());
+
+    // Opened again and moved on: the second step opened with focus on the
+    // first's Next, which left with it, so focus goes to the target.
+    fireEvent.click(start);
+    fireEvent.click(await screen.findByRole("button", { name: "Next" }));
+    await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Next" })).toHaveFocus(),
+    );
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sites" })).toHaveFocus(),
+    );
+  });
+
   it("sits beside an element target, and places itself in the window with none", async () => {
     function Page({ point }: { point: boolean }) {
       const target = React.useRef<HTMLButtonElement>(null);
@@ -338,6 +389,38 @@ describe("TourStep (GAP-188)", () => {
     );
   });
 
+  it("gives focus back to the control a display: contents wrapper draws, as a Vue component's is", async () => {
+    function Page() {
+      const wrapper = React.useRef<HTMLSpanElement>(null);
+      const [open, setOpen] = React.useState(true);
+      React.useEffect(() =>
+        boxed(wrapper.current!.firstElementChild as HTMLElement),
+      );
+      return (
+        <>
+          <span ref={wrapper} style={{ display: "contents" }}>
+            <button type="button">Sites</button>
+          </span>
+          <Step target={wrapper} onClose={() => setOpen(false)} open={open} />
+        </>
+      );
+    }
+    render(<Page />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Next" })).toHaveFocus(),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("dialog")).toHaveAttribute(
+        "data-placement",
+        "target",
+      ),
+    );
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sites" })).toHaveFocus(),
+    );
+  });
+
   it("sits beside a virtual element or a rect", async () => {
     const point = {
       getBoundingClientRect: () =>
@@ -359,7 +442,7 @@ describe("TourStep (GAP-188)", () => {
   it("lights its target with Backdrop's cut-out, in the theme's portal", async () => {
     function Page() {
       const target = React.useRef<HTMLButtonElement>(null);
-      React.useLayoutEffect(() => boxed(target.current));
+      React.useEffect(() => boxed(target.current));
       return (
         <ThemeProvider theme="light">
           <button ref={target} type="button">
