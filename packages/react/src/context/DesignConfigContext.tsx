@@ -15,6 +15,7 @@ import {
   type ThemeProviderProps,
 } from "../components/ThemeProvider/ThemeProvider";
 import { ThemeProviderContext } from "../theme/theme-context";
+import { MotionContext } from "../theme/motion-context";
 import {
   DEFAULT_CONFIG,
   designConfigTokens,
@@ -180,14 +181,36 @@ export function DesignConfigProvider({
       return next;
     });
   }, []);
+  // Reduced motion, for the rules that cannot read a duration scale: an
+  // animation that loops has to be told to stop, not run a thousand times
+  // faster (GAP-50). This config's, or an enclosing provider's: it carries
+  // downward, as the rules that read the mark by ancestor see it, so a
+  // provider inside a reduced one cannot turn motion back on. Marked on this
+  // scope, and through MotionContext on the portal of every ThemeProvider
+  // inside it.
+  const inheritedMotion = useContext(MotionContext);
+  const motion =
+    config.accessibility.reduceMotion || config.motion === "reduced"
+      ? "reduced"
+      : inheritedMotion;
+  // The tokens follow it too: a provider inside a reduced one draws with the
+  // reduced motion scale and effects, whatever its own config says, while
+  // useDesignConfig() still reads its own config.
+  const tokenConfig = useMemo(
+    () =>
+      motion === "reduced" && config.motion !== "reduced"
+        ? normalizeDesignConfig({ motion: "reduced" }, config)
+        : config,
+    [config, motion],
+  );
   const values = useMemo(
     () => ({
-      ...designConfigTokens(config, id),
+      ...designConfigTokens(tokenConfig, id),
       ...runtimeTokens,
       ...normalizeRuntimeTokens(tokens),
       "--kozmos-design-id": id,
     }),
-    [config, id, runtimeTokens, tokens],
+    [tokenConfig, id, runtimeTokens, tokens],
   );
   const context = useMemo(
     () => ({
@@ -223,8 +246,7 @@ export function DesignConfigProvider({
       !config.spotlight ||
       !config.glass.enabled ||
       config.accessibility.reduceTransparency ||
-      config.accessibility.reduceMotion ||
-      config.motion === "reduced"
+      motion === "reduced"
     )
       return;
     const surface = spotlightSurface(event);
@@ -259,79 +281,75 @@ export function DesignConfigProvider({
     storageKey === undefined;
   return (
     <DesignConfigContext.Provider value={context}>
-      <ThemeProvider
-        theme={inheritPreference ? parentTheme?.theme : theme}
-        defaultTheme={defaultTheme}
-        defaultSystemTheme={defaultSystemTheme ?? parentTheme?.resolvedTheme}
-        onThemeChange={
-          inheritPreference && parentTheme
-            ? (next) => {
-                parentTheme.setTheme(next);
-                onThemeChange?.(next);
-              }
-            : onThemeChange
-        }
-        dir={dir}
-        density={density}
-        storageKey={storageKey}
-        tokens={values}
-      >
-        <div
-          ref={wrapper}
-          data-kozmos-design-scope={id}
-          // The config's own reduced motion, for the rules that cannot read a
-          // duration scale: an animation that loops has to be told to stop,
-          // not run a thousand times faster (GAP-50).
-          data-kozmos-motion={
-            config.accessibility.reduceMotion || config.motion === "reduced"
-              ? "reduced"
-              : undefined
+      <MotionContext.Provider value={motion}>
+        <ThemeProvider
+          theme={inheritPreference ? parentTheme?.theme : theme}
+          defaultTheme={defaultTheme}
+          defaultSystemTheme={defaultSystemTheme ?? parentTheme?.resolvedTheme}
+          onThemeChange={
+            inheritPreference && parentTheme
+              ? (next) => {
+                  parentTheme.setTheme(next);
+                  onThemeChange?.(next);
+                }
+              : onThemeChange
           }
-          style={{ display: "contents" }}
-          onPointerMove={onPointerMove}
-          onPointerOut={onPointerOut}
+          dir={dir}
+          density={density}
+          storageKey={storageKey}
+          tokens={values}
         >
-          {children}
-          {config.glass.enabled && !config.accessibility.reduceTransparency && (
-            <svg
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                width: 0,
-                height: 0,
-                pointerEvents: "none",
-                visibility: "hidden",
-              }}
-            >
-              <defs>
-                <filter
-                  id={`${id}-surface`}
-                  x="0%"
-                  y="0%"
-                  width="100%"
-                  height="100%"
+          <div
+            ref={wrapper}
+            data-kozmos-design-scope={id}
+            data-kozmos-motion={motion}
+            style={{ display: "contents" }}
+            onPointerMove={onPointerMove}
+            onPointerOut={onPointerOut}
+          >
+            {children}
+            {config.glass.enabled &&
+              !config.accessibility.reduceTransparency && (
+                <svg
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    width: 0,
+                    height: 0,
+                    pointerEvents: "none",
+                    visibility: "hidden",
+                  }}
                 >
-                  <feTurbulence
-                    type="fractalNoise"
-                    baseFrequency="0.5"
-                    numOctaves="2"
-                    result="noise"
-                  />
-                  <feColorMatrix
-                    type="saturate"
-                    values="0"
-                    in="noise"
-                    result="monoNoise"
-                  />
-                  <feComponentTransfer in="monoNoise" result="smoothNoise">
-                    <feFuncA type="linear" slope="0.1" />
-                  </feComponentTransfer>
-                </filter>
-              </defs>
-            </svg>
-          )}
-        </div>
-      </ThemeProvider>
+                  <defs>
+                    <filter
+                      id={`${id}-surface`}
+                      x="0%"
+                      y="0%"
+                      width="100%"
+                      height="100%"
+                    >
+                      <feTurbulence
+                        type="fractalNoise"
+                        baseFrequency="0.5"
+                        numOctaves="2"
+                        result="noise"
+                      />
+                      <feColorMatrix
+                        type="saturate"
+                        values="0"
+                        in="noise"
+                        result="monoNoise"
+                      />
+                      <feComponentTransfer in="monoNoise" result="smoothNoise">
+                        <feFuncA type="linear" slope="0.1" />
+                      </feComponentTransfer>
+                    </filter>
+                  </defs>
+                </svg>
+              )}
+          </div>
+        </ThemeProvider>
+      </MotionContext.Provider>
     </DesignConfigContext.Provider>
   );
 }
