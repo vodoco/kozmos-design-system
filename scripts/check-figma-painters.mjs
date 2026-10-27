@@ -1748,6 +1748,212 @@ section("Stepper accent");
   );
 }
 
+// GAP-191: Stepper's Variant axis and a Count to 8. Dots draws a tour's
+// progress as React does: one dot per step, done and pending 8 by 8 and the
+// current one 20 by 8, 6 apart, done and current the theme fill and pending
+// foreground/500. Numbered draws five to eight steps as it drew four. A
+// variant named before the axis existed parses as Numbered, so Update
+// renames it; a Current past its Count is skipped; the set never overlaps.
+section("Stepper dots, and Count to 8 (GAP-191)");
+{
+  const ready =
+    Array.isArray(plugin.STEPPER_VARIANTS) &&
+    typeof plugin.stepperVariantCombinations === "function" &&
+    typeof plugin.updateStepperDotsVariant === "function";
+  ok(ready, "Stepper has a Variant axis, its combinations and a dots painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const combinations = plugin.stepperVariantCombinations();
+    const counts = [...new Set(combinations.map((c) => c.count))];
+    ok(
+      JSON.stringify(plugin.STEPPER_VARIANTS) ===
+        JSON.stringify(["Numbered", "Dots"]) &&
+        JSON.stringify(counts) ===
+          JSON.stringify(["2", "3", "4", "5", "6", "7", "8"]) &&
+        combinations.length === 70 &&
+        combinations.every((c) => Number(c.current) <= Number(c.count)),
+      `Numbered and Dots, each at Count 2 to 8 with every Current up to it: 70 variants (${combinations.length}, counts ${counts.join(" ")})`,
+    );
+    const parsed = [
+      "Count=3, Current=2",
+      "Variant=Dots, Count=5, Current=2",
+      "Variant=Dots, Count=5, Current=6",
+      "Variant=Bars, Count=3, Current=1",
+    ].map((name) => plugin.parseStepperVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { variant: "Numbered", count: "3", current: "2" },
+          { variant: "Dots", count: "5", current: "2" },
+          null,
+          null,
+        ]),
+      `a variant from before the axis parses as Numbered; a Current past its Count, or an unknown Variant, is not one (${JSON.stringify(parsed)})`,
+    );
+
+    const dots = await plugin.createStepperVariant({
+      variant: "Dots",
+      count: "5",
+      current: "2",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const marks = dots.children || [];
+    ok(
+      dots.name === "Variant=Dots, Count=5, Current=2" &&
+        dots.layoutMode === "HORIZONTAL" &&
+        dots.itemSpacing === 6 &&
+        dots.counterAxisAlignItems === "CENTER" &&
+        dots.fills.length === 0 &&
+        dots.width === 4 * 8 + 4 * 6 + 20 &&
+        dots.height === 8 &&
+        marks.length === 5,
+      `Dots is a row of 5, 6 apart, 76 by 8, with no fill of its own (${dots.name}, ${dots.layoutMode}, ${dots.itemSpacing}, ${dots.width} by ${dots.height}, ${marks.length} dots)`,
+    );
+    ok(
+      JSON.stringify(marks.map((m) => [m.width, m.height])) ===
+        JSON.stringify([
+          [8, 8],
+          [20, 8],
+          [8, 8],
+          [8, 8],
+          [8, 8],
+        ]) && marks.every((m) => m.cornerRadius === 9999),
+      `done and pending dots are 8 by 8 and the current one 20 by 8, all pills (${JSON.stringify(marks.map((m) => [m.width, m.height]))})`,
+    );
+    const paints = marks.map((m) => boundVariableName(m.fills[0]));
+    ok(
+      JSON.stringify(paints) ===
+        JSON.stringify([
+          "Primary Buttons/themed/button/background/idle",
+          "Primary Buttons/themed/button/background/idle",
+          "Colors/foreground/500",
+          "Colors/foreground/500",
+          "Colors/foreground/500",
+        ]),
+      `done and current are the theme fill, pending foreground/500 (${paints.join(", ")})`,
+    );
+    ok(
+      marks.map((m) => m.name).join() ===
+        "Step 1 Dot,Step 2 Dot,Step 3 Dot,Step 4 Dot,Step 5 Dot",
+      "each dot is named by its step",
+    );
+
+    const eight = await plugin.createStepperVariant({
+      variant: "Numbered",
+      count: "8",
+      current: "5",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const items = (eight.children || []).filter((c) =>
+      /^Step \d+$/.test(c.name),
+    );
+    const labels = items.map((item) =>
+      (item.children || []).find((c) => /Text$/.test(c.name)),
+    );
+    ok(
+      eight.name === "Variant=Numbered, Count=8, Current=5" &&
+        items.length === 8 &&
+        labels.every(
+          (label, i) => label && label.name === `Step ${i + 1} Text`,
+        ) &&
+        eight.width === 8 * 88 + 7 * 92,
+      `Numbered draws 8 steps, each with its Step N Text, ${8 * 88 + 7 * 92} wide (${eight.name}, ${items.length} steps, ${eight.width})`,
+    );
+
+    const set = new MockNode("COMPONENT_SET", "Stepper");
+    for (const props of combinations) {
+      const variant = await plugin.createStepperVariant({
+        ...props,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      set.appendChild(variant);
+    }
+    plugin.layoutStepperVariants(set);
+    const boxes = set.children.map((c) => [
+      c.x,
+      c.y,
+      c.x + c.width,
+      c.y + c.height,
+      c.name,
+    ]);
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1)
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const [a, b] = [boxes[i], boxes[j]];
+        if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+          overlaps.push(`${a[4]} / ${b[4]}`);
+      }
+    ok(
+      overlaps.length === 0,
+      `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+
+    // Update, run over the set as it is in the file today: main's nine
+    // variants, named before the Variant axis existed. Each must be renamed
+    // in place, its node id kept (Code Connect pins the set, and instances
+    // pin their variant), and the other 61 created beside them.
+    const oldNames = [];
+    for (const count of [2, 3, 4])
+      for (let current = 1; current <= count; current += 1)
+        oldNames.push(`Count=${count}, Current=${current}`);
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Stepper");
+    const oldIds = {};
+    for (const name of oldNames) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      // The file's variables and fonts stand in as they do elsewhere here;
+      // what is measured is which nodes Update keeps, renames and adds.
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateStepperComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const renamed = oldNames.map((name) => byId.get(oldIds[name]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 9 &&
+        updated.variantsCreated === 61 &&
+        liveSet.children.length === 70 &&
+        new Set(names).size === 70,
+      `Update keeps the set and its 9 variants, and adds 61: 70 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      renamed.every(
+        (variant, i) =>
+          variant && variant.name === `Variant=Numbered, ${oldNames[i]}`,
+      ),
+      `each of the 9 keeps its node id and is renamed Variant=Numbered (${renamed.map((v) => (v ? v.name : "gone")).join("; ")})`,
+    );
+    const fourth = byId.get(oldIds["Count=4, Current=3"]);
+    ok(
+      fourth &&
+        fourth.children.filter((child) => /^Step \d+$/.test(child.name))
+          .length === 4,
+      "a renamed variant is repainted in place: Count=4 still draws its 4 steps",
+    );
+  }
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
@@ -4480,6 +4686,125 @@ section("A translucent token rides on the paint");
       recorded === 1,
     "the mock keeps a token's own alpha on the paint and drops a laid-on strength",
   );
+}
+
+// GAP-189: Backdrop's Target axis. Cut-out leaves an example control out of
+// the dim, as React's `target` does: the scrim is an even-odd vector whose
+// hole is the 120 by 44 control padded 8 (layout.spacing.100) and rounded 16
+// (radius.control), and the ring is theme/600, 2 outside it, its radius 18.
+// The variant draws no fill of its own, so what is under an instance shows
+// through the hole. A variant named before the axis existed parses as
+// Target=None, so Update renames it; Hidden has no Cut-out.
+section("Backdrop cut-out (GAP-189)");
+{
+  const ready =
+    typeof plugin.createBackdropVariant === "function" &&
+    typeof plugin.parseBackdropVariantName === "function" &&
+    typeof plugin.backdropVariantCombinations === "function" &&
+    Array.isArray(plugin.BACKDROP_TARGETS);
+  ok(ready, "Backdrop has a Target axis and a cut-out painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const paint = (props) =>
+      plugin.createBackdropVariant({
+        props,
+        variableByName: tokens.variableByName,
+        stats: freshStats(),
+      });
+    ok(
+      JSON.stringify(plugin.backdropVariantCombinations()) ===
+        JSON.stringify([
+          { visibility: "Visible", target: "None" },
+          { visibility: "Visible", target: "Cut-out" },
+          { visibility: "Hidden", target: "None" },
+        ]),
+      `the set is Visible and Hidden with no target, and Visible with a cut-out (${JSON.stringify(plugin.backdropVariantCombinations())})`,
+    );
+    const parsed = [
+      "Visibility=Visible",
+      "Visibility=Hidden",
+      "Visibility=Visible, Target=Cut-out",
+      "Visibility=Hidden, Target=Cut-out",
+    ].map((name) => plugin.parseBackdropVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { visibility: "Visible", target: "None" },
+          { visibility: "Hidden", target: "None" },
+          { visibility: "Visible", target: "Cut-out" },
+          null,
+        ]),
+      `a variant from before the axis parses as Target=None, and Hidden has no cut-out (${JSON.stringify(parsed)})`,
+    );
+
+    const plain = await paint({ visibility: "Visible", target: "None" });
+    ok(
+      plain.name === "Visibility=Visible, Target=None" &&
+        boundVariableName(plain.fills[0]) === "Overlay/Scrim" &&
+        plain.children.length === 0,
+      `with no target the variant is the scrim alone (${plain.name}, ${boundVariableName(plain.fills[0])}, ${plain.children.length} children)`,
+    );
+
+    const lit = await paint({ visibility: "Visible", target: "Cut-out" });
+    const scrim = lit.findOne((node) => node.name === "Scrim");
+    const ring = lit.findOne((node) => node.name === "Cut-out Ring");
+    ok(
+      lit.name === "Visibility=Visible, Target=Cut-out" &&
+        lit.fills.length === 0 &&
+        lit.width === 320 &&
+        lit.height === 180,
+      `a cut-out variant is 320 by 180 with no fill of its own (${lit.name}, ${lit.fills.length} fills, ${lit.width} by ${lit.height})`,
+    );
+    const path = scrim && scrim.vectorPaths && scrim.vectorPaths[0];
+    ok(
+      scrim &&
+        scrim.type === "VECTOR" &&
+        path &&
+        path.windingRule === "EVENODD" &&
+        boundVariableName(scrim.fills[0]) === "Overlay/Scrim",
+      `its scrim is an even-odd vector in Overlay/Scrim (${scrim && scrim.type}, ${path && path.windingRule}, ${scrim && boundVariableName(scrim.fills[0])})`,
+    );
+    // The hole: the box round every point after the scrim's own outline.
+    const numbers = path ? path.data.split(/ (?=M)/).map((sub) =>
+      [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])),
+    ) : [];
+    const holeXs = (numbers[1] || []).filter((_, i) => i % 2 === 0);
+    const holeYs = (numbers[1] || []).filter((_, i) => i % 2 === 1);
+    const hole = holeXs.length
+      ? [
+          Math.min(...holeXs),
+          Math.min(...holeYs),
+          Math.max(...holeXs),
+          Math.max(...holeYs),
+        ]
+      : null;
+    ok(
+      JSON.stringify(numbers[0]) === JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
+        JSON.stringify(hole) === JSON.stringify([92, 60, 228, 120]) &&
+        /^[MLCZ\d.\s-]+$/.test(path ? path.data : ""),
+      `the scrim covers the variant and its hole is the control padded 8, from 92, 60 to 228, 120, in M, L, C and Z alone (${JSON.stringify(hole)})`,
+    );
+    ok(
+      ring &&
+        ring.x === 90 &&
+        ring.y === 58 &&
+        ring.width === 140 &&
+        ring.height === 64 &&
+        ring.cornerRadius === 18 &&
+        ring.strokeWeight === 2 &&
+        ring.strokeAlign === "INSIDE" &&
+        ring.fills.length === 0 &&
+        boundVariableName(ring.strokes[0]) === "Colors/theme/600",
+      `the ring is theme/600 at 2, inside a 140 by 64 box at 90, 58 rounded 18 (${ring && [ring.x, ring.y, ring.width, ring.height, ring.cornerRadius, ring.strokeWeight, boundVariableName(ring.strokes[0])].join(", ")})`,
+    );
+    const hidden = await paint({ visibility: "Hidden", target: "None" });
+    ok(
+      hidden.name === "Visibility=Hidden, Target=None" &&
+        hidden.fills.length === 0 &&
+        hidden.children.length === 0,
+      `Hidden draws nothing (${hidden.name})`,
+    );
+  }
 }
 
 section("Surface QA specs name real variants");

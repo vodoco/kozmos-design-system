@@ -184,7 +184,7 @@
       "id": "feedback-backdrop",
       "title": "Core/Feedback/Backdrop",
       "component": "Backdrop",
-      "exports": ["Default"]
+      "exports": ["Default", "Target", "TargetList", "MovingTarget"]
     },
     {
       "file": "packages/react/src/components/Badge/Badge.stories.tsx",
@@ -1067,7 +1067,7 @@
       "id": "navigation-stepper",
       "title": "Core/Layout/Stepper",
       "component": "Stepper",
-      "exports": ["Default", "Interactive"]
+      "exports": ["Default", "Interactive", "Dots", "DotsInteractive"]
     },
     {
       "file": "packages/react/src/components/Surface/Surface.stories.tsx",
