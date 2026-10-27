@@ -2,7 +2,7 @@
 
 # Backdrop
 
-A full-viewport scrim that visually separates foreground content from the page. Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
+A full-viewport scrim that visually separates foreground content from the page. Use `visible` to toggle it. It draws the dim and takes the pointer on it; it moves no focus, traps none and names nothing. What it holds, a step card, is in the tab order as any content is, and its dialog semantics, focus and dismissal are the card's or the enclosing overlay's to give.
 
 - **Import:** `import { Backdrop } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -23,7 +23,7 @@ export function BackdropExample() {
         <div className="absolute inset-0 flex items-center justify-center">
           Content behind backdrop
         </div>
-        <Backdrop className="absolute" />
+        <Backdrop placement="inline" />
       </div>
     </ThemeProvider>
   );
@@ -32,9 +32,96 @@ export function BackdropExample() {
 
 ## Backdrop
 
-It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTMLDivElement> & { visible?: boolean }`.
+It forwards its ref to `HTMLDivElement`. Its props are `BackdropProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
 - `visible`: `boolean`, optional, default `true`.
+
+  Whether the scrim is drawn. Hidden, it renders nothing.
+
+- `target`: `BackdropTarget`, optional.
+
+  What to light (GAP-189): an element, a ref to one, a virtual element
+  (anything with `getBoundingClientRect()`), a rect in the viewport's
+  coordinates, or a list of them lit as the one box round them all. The
+  dim covers everything else, the cut-out is ringed in the focus colour,
+  and pointer events pass through it to what it shows. The target is never
+  moved or re-stacked; the cut-out follows it as it scrolls, resizes or
+  moves, read every frame while it is lit. A 0 by 0 virtual element or
+  rect is lit as a point. With no target, or one that is not there, the
+  whole page is dimmed.
+
+- `targetPadding`: `number`, optional.
+
+  Room between the target and the cut-out's edge, in pixels. Defaults to layout.spacing.100 (8).
+
+- `targetRadius`: `number`, optional.
+
+  The cut-out's corner radius, in pixels. Defaults to radius.control (16).
+
+- `placement`: `"fixed" | "inline"`, optional, default `"fixed"`.
+
+  Where the dim is drawn. `"fixed"`, the default, covers the window and is
+  drawn in the theme's portal, as Popover and Dialog are, so no box it is
+  rendered in (a map, a panel that clips, transforms or isolates its
+  stacking) can cut it off or stack it under the page; inside a modal
+  (Dialog, Drawer, BottomSheet) it is drawn in the modal's content, which
+  makes everything outside it inert. Not in the server's HTML: it is drawn
+  once the provider's portal exists. `"inline"` covers the nearest
+  positioned box it is rendered in, `absolute`, in place: one region's dim
+  (site GAP-34). A fixed backdrop given a position by its class warns in
+  development.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### BackdropTarget
+
+From `@kozmos-ds/react`.
+
+```ts
+/** What to light: one thing, or a list lit as the one box round them all. */
+type BackdropTarget = BackdropTargetItem | readonly BackdropTargetItem[];
+```
+
+### BackdropTargetItem
+
+From `@kozmos-ds/react`.
+
+```ts
+/** One thing to light. */
+type BackdropTargetItem =
+  | Element
+  | React.RefObject<Element | null>
+  | BackdropVirtualElement
+  | BackdropRect
+  | null
+  | undefined;
+```
+
+### BackdropVirtualElement
+
+From `@kozmos-ds/react`.
+
+```ts
+/** Something that says where it is when asked: a virtual element. */
+interface BackdropVirtualElement {
+  getBoundingClientRect(): BackdropRect;
+}
+```
+
+### BackdropRect
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A box in the viewport's coordinates, as `getBoundingClientRect()` gives one. */
+interface BackdropRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+```

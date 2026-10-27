@@ -43,3 +43,36 @@ export const FieldPopupContent = React.forwardRef<
   </FieldPopupPortal>
 ));
 FieldPopupContent.displayName = "FieldPopupContent";
+
+/**
+ * The popup frame's mousedown: a press on a group's label, the frame's
+ * padding or the gap between rows takes no focus from the field, so its
+ * list stays open (the rows prevent their own). A press on a scroll box's
+ * scrollbar, outside its client area, is the browser's to drag.
+ */
+export function keepFieldFocus(event: React.MouseEvent<HTMLElement>) {
+  const target = event.target;
+  if (target instanceof HTMLElement) {
+    const style = target.ownerDocument.defaultView?.getComputedStyle(target);
+    const border = (side: string) =>
+      parseFloat(style?.getPropertyValue(`border-${side}-width`) ?? "") || 0;
+    // Room a classic scrollbar takes: the box less its client area and borders.
+    const across =
+      target.offsetWidth -
+      target.clientWidth -
+      border("left") -
+      border("right");
+    const down =
+      target.offsetHeight -
+      target.clientHeight -
+      border("top") -
+      border("bottom");
+    const { offsetX, offsetY } = event.nativeEvent;
+    if (
+      (across > 0 && (offsetX < 0 || offsetX >= target.clientWidth)) ||
+      (down > 0 && (offsetY < 0 || offsetY >= target.clientHeight))
+    )
+      return;
+  }
+  event.preventDefault();
+}

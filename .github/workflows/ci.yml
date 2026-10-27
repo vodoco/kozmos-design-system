@@ -387,6 +387,20 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:select-accessibility
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
+      # GAP-189: Backdrop's target. The cut-out shows the target as the page
+      # draws it and the ring is drawn, in forced colours too; a click reaches
+      # the target through it and the backdrop elsewhere; the target keeps
+      # its place and stacking; the cut-out follows a scroll, a resize and
+      # the window; reduced motion moves it at once
+      # (scripts/check-backdrop-target.mjs). Drawn in the theme's portal, it
+      # covers the page from inside a map that isolates its stacking, and
+      # inline it covers the map alone (scripts/check-backdrop-portal.mjs).
+      - name: Verify Backdrop Target
+        run: |
+          pnpm test:backdrop-target
+          ADAPTIVE_BROWSER=webkit pnpm test:backdrop-target
+          ADAPTIVE_BROWSER=firefox pnpm test:backdrop-target
+
       # GAP-191: Stepper's dots. Every dot, done, current and pending, is 3:1
       # or more on the page, a popover and the muted fill, light and dark,
       # from the colours each engine resolves; the group is named by the
@@ -417,6 +431,10 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:themes
           ADAPTIVE_BROWSER=firefox pnpm test:themes
 
+      # The config scoped to its provider (scripts/check-config-isolation.mjs),
+      # and its reduced motion reaching the theme's portal, so a loop in a
+      # Popover, Dialog, Drawer, Tooltip, Select, Menu or Combobox list stops
+      # as one in place does (scripts/check-portal-motion.mjs).
       - name: Verify Scoped Runtime Configuration
         run: |
           pnpm test:config

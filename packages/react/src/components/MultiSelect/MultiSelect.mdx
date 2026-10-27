@@ -37,6 +37,38 @@ each line has 16px less room for chips than it had with the older 28px buttons
 with `p-*` or `pe-*` replaces that space, and the chips and text then run
 under the buttons, as text does on Combobox.
 
+## Groups
+
+Give options a `group` and they are listed under their groups (GAP-192), as Combobox
+lists them: options with no `group` first, unlabelled, then the groups in the order they
+first appear, each under its label, drawn as `SelectLabel` draws its own. Filtering keeps
+a group's label while any of its options matches and drops it when none does. Each group
+is a `role="group"` named by its label; the label is not an option, and the arrow keys
+move through the options in the order they are drawn, never onto a label. MultiSelect has
+no Home or End. Pressing a label, or the list's padding, leaves the list open and focus in
+the field. SwiftUI and Compose do not group yet.
+
+<Canvas of={MultiSelectStories.Grouped} />
+
+<PlatformSnippets
+    react={`
+import { MultiSelect } from "@kozmos-ds/react";
+
+export function ContentTypesField() {
+  return (
+    <MultiSelect
+      label="Content types"
+      options={[
+        { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
+        { value: "hot-desk", label: "Hot Desk", group: "Interior Asset" },
+        { value: "reception-desk", label: "Reception Desk", group: "POI" },
+      ]}
+    />
+  );
+}
+    `}
+/>
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';

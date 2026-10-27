@@ -15058,7 +15058,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Backdrop"],
-          "mappedProps": ["visible"],
+          "mappedProps": ["target", "visible"],
           "unmappedProps": []
         },
         "props": [
@@ -15067,8 +15067,12 @@
           "aria-label",
           "children",
           "id",
+          "placement",
           "role",
           "tabIndex",
+          "target",
+          "targetPadding",
+          "targetRadius",
           "title",
           "visible"
         ],
