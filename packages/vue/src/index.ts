@@ -349,10 +349,14 @@ export const KozmosAnchoredPopover = Object.assign(
   createVueWrapper(AnchoredPopoverAdapter),
   { inheritAttrs: false },
 );
-export const KozmosTourStep = createVueWrapper(TourStepAdapter);
-// Declared as props, so Vue never writes them onto the wrapper's element as
-// attributes: a component instance or a function cannot be written as one.
-Object.assign(KozmosTourStep, { props: { target: null, positionLabel: null } });
+// Its attrs are React's alone, as KozmosAnchoredPopover's are: Vue would
+// write each onto the wrapper's own box, where a component given as target
+// or a function as positionLabel cannot be written, and title would be a
+// native tooltip. The two are declared as props as well, as Backdrop's is.
+export const KozmosTourStep = Object.assign(createVueWrapper(TourStepAdapter), {
+  inheritAttrs: false,
+  props: { target: null, positionLabel: null },
+});
 export const KozmosAccordion = createVueWrapper(Accordion);
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);

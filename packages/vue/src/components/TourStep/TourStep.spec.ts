@@ -83,6 +83,18 @@ describe("KozmosTourStep", () => {
     );
   });
 
+  // Its attrs are React's alone: on the wrapper's box, title would be a
+  // native tooltip, and a component given as target cannot be written.
+  it("writes none of its attrs onto the wrapper's own box", async () => {
+    mountStep();
+    await nextTick();
+    await until(() => document.querySelector('[role="dialog"]'));
+    const box = document.querySelector("body > div > div");
+    expect(box?.getAttribute("title")).toBeNull();
+    expect(box?.getAttribute("tourlabel")).toBeNull();
+    expect(box?.getAttribute("steplabel")).toBeNull();
+  });
+
   it("opens as a dialog named by its title, its body and status from the slots", async () => {
     mountStep();
     await nextTick();
