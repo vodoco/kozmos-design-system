@@ -15067,6 +15067,7 @@
           "aria-label",
           "children",
           "id",
+          "placement",
           "role",
           "tabIndex",
           "target",

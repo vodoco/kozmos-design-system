@@ -20,7 +20,7 @@ export const Default: Story = {
       <div className="absolute inset-0 flex items-center justify-center">
         Content behind backdrop
       </div>
-      <Backdrop className="absolute" />
+      <Backdrop placement="inline" />
     </div>
   ),
 };
@@ -42,7 +42,7 @@ export const Target: Story = {
             <Button ref={update}>Update</Button>
           </Stack>
         </Stack>
-        <Backdrop className="absolute" target={update} />
+        <Backdrop placement="inline" target={update} />
       </div>
     );
   },
@@ -67,7 +67,7 @@ export const TargetList: Story = {
             <Button ref={update}>Update</Button>
           </Stack>
         </Stack>
-        <Backdrop className="absolute" target={[discard, update]} />
+        <Backdrop placement="inline" target={[discard, update]} />
       </div>
     );
   },
@@ -103,7 +103,7 @@ export const MovingTarget: Story = {
             </Button>
           </Stack>
         </Stack>
-        <Backdrop className="absolute" target={steps[step]} />
+        <Backdrop placement="inline" target={steps[step]} />
       </div>
     );
   },
