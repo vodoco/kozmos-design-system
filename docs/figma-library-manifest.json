@@ -15058,7 +15058,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Backdrop"],
-          "mappedProps": ["visible"],
+          "mappedProps": ["target", "visible"],
           "unmappedProps": []
         },
         "props": [
@@ -15069,6 +15069,9 @@
           "id",
           "role",
           "tabIndex",
+          "target",
+          "targetPadding",
+          "targetRadius",
           "title",
           "visible"
         ],
@@ -18710,7 +18713,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Stepper"],
-          "mappedProps": ["currentStep", "steps"],
+          "mappedProps": ["currentStep", "steps", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -18720,10 +18723,12 @@
           "children",
           "currentStep",
           "id",
+          "positionLabel",
           "role",
           "steps",
           "tabIndex",
-          "title"
+          "title",
+          "variant"
         ],
         "variants": {}
       },

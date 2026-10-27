@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "7fed66ff6208";
+const PLUGIN_BUILD = "a4b178d76a19";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -314,8 +314,25 @@ const RATING_THUMB_VALUES = ["0", "1", "2"];
 function ratingValuesForScale(scale) {
   return scale === "Thumbs" ? RATING_THUMB_VALUES : RATING_VALUES;
 }
-const STEPPER_COUNTS = ["2", "3", "4"];
-const STEPPER_CURRENT = ["1", "2", "3", "4"];
+// How the steps are drawn (GAP-191): Numbered, a numbered circle over each
+// label, or Dots, a tour's progress, one dot per step with no label shown.
+// Count reaches 8: a tour has five steps or more, and Numbered draws them too.
+const STEPPER_VARIANTS = ["Numbered", "Dots"];
+const STEPPER_COUNTS = ["2", "3", "4", "5", "6", "7", "8"];
+const STEPPER_CURRENT = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const STEPPER_MAX_COUNT = 8;
+// The dots: done and pending 8 by 8, the current one 20 by 8, 6 apart.
+const STEPPER_DOT = { size: 8, current: 20, gap: 6 };
+const STEPPER_LABELS = [
+  "Details",
+  "Shipping",
+  "Payment",
+  "Confirm",
+  "Review",
+  "Schedule",
+  "Notify",
+  "Done",
+];
 const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
@@ -610,6 +627,22 @@ const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
+// Whether the scrim lights a target (GAP-189): Cut-out leaves an example
+// control's place out of the dim and rings it in the focus colour, as
+// Backdrop's `target` does. A hidden backdrop lights nothing, so the set skips
+// Hidden with a Cut-out, as Stepper skips a Current past its Count.
+const BACKDROP_TARGETS = ["None", "Cut-out"];
+// The example cut-out in the 320 by 180 variant: a 120 by 44 control in its
+// middle, padded by layout.spacing.100 (8) and rounded by radius.control
+// (16), ringed by the focus ring's 2 outside it.
+const BACKDROP_CUTOUT = {
+  width: 320,
+  height: 180,
+  target: { x: 100, y: 68, width: 120, height: 44 },
+  padding: 8,
+  radius: 16,
+  ring: 2,
+};
 const BOTTOM_SHEET_CONTENT = ["Basic", "Form", "Footer"];
 const BOTTOM_SHEET_CONTENT_SLOT_HEIGHT = 44;
 const BOTTOM_SHEET_FORM_INPUTS = [
@@ -3072,19 +3105,23 @@ const COMPONENT_DOCS = [
       "Use Progress for measurable task completion rather than navigable steps.",
     ],
     api: [
-      "Count maps to the number of rendered steps.",
+      "Variant maps to Stepper.variant: Numbered draws a numbered circle over each label, Dots one dot per step, as a tour's progress.",
+      "Count maps to the number of rendered steps, 2 to 8.",
       "Current maps to Stepper.currentStep in Code Connect.",
-      "Step 1 Text through Step 4 Text map to the steps array.",
+      "Step 1 Text through Step 8 Text map to the steps array: Numbered's labels, and each dot's name in code.",
       "Completed, current, and upcoming states remain derived from Current.",
     ],
     properties: [
-      "Count: 2, 3, 4",
-      "Current: 1, 2, 3, 4",
-      "Step 1 Text, Step 2 Text, Step 3 Text, Step 4 Text",
+      "Variant: Numbered, Dots",
+      "Count: 2, 3, 4, 5, 6, 7, 8",
+      "Current: 1, 2, 3, 4, 5, 6, 7, 8",
+      "Step 1 Text through Step 8 Text",
     ],
     accessibility: [
-      "Product code should expose the current step to assistive technology.",
-      "Step labels remain visible beside the visual indicators.",
+      'Product code should expose the current step to assistive technology: aria-current="step" on the web.',
+      "Numbered keeps the step labels visible beside the indicators.",
+      'Dots are named in code: the group by its position ("Step 2 of 5", positionLabel) and each dot by its step.',
+      "Pending dots are foreground/500, 3:1 or more on the page, a popover and the muted fill in Light and Dark; the current dot is the long one.",
       "Stepper is non-interactive unless individual steps are composed as controls.",
     ],
   },
@@ -3131,12 +3168,14 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Visibility maps to Backdrop.visible in code.",
+      "Target maps to Backdrop.target: Cut-out lights an example control, ringed in the focus colour; in code the cut-out follows the element, ref, rect or list it is given.",
       "Backdrop does not expose text or icon properties.",
       "Runtime code owns portal placement, animation, and outside-click dismissal.",
     ],
-    properties: ["Visibility: Visible, Hidden"],
+    properties: ["Visibility: Visible, Hidden", "Target: None, Cut-out"],
     accessibility: [
       "Backdrop is not interactive by itself and should not receive focus.",
+      "Pointer events pass through the cut-out to the lit control; the dim catches them elsewhere.",
       "Modal primitives own focus trapping and dismiss behavior.",
       "Scrim color uses shared overlay variables for Light and Dark modes.",
     ],
@@ -17615,6 +17654,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Backdrop") {
     return {
       Visibility: BACKDROP_VISIBILITY,
+      Target: BACKDROP_TARGETS,
     };
   }
 
@@ -17824,6 +17864,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Stepper") {
     return {
+      Variant: STEPPER_VARIANTS,
       Count: STEPPER_COUNTS,
       Current: STEPPER_CURRENT,
     };
@@ -38302,6 +38343,7 @@ function backdropComponentConfig() {
       "Kozmos Backdrop component set generated from React Backdrop API.",
       "Visibility maps to Backdrop.visible.",
       "Visibility=Hidden is empty in Figma because runtime code renders nothing.",
+      "Target maps to Backdrop.target: Cut-out leaves an example control out of the dim, padded 8, rounded 16 and ringed 2 in theme/600.",
       "Backdrop is a non-interactive composition layer behind modal content.",
       "Runtime code owns portal placement and dismiss behavior.",
     ],
@@ -38609,23 +38651,38 @@ function parseSidebarVariantName(name) {
 }
 
 function backdropVariantCombinations() {
-  return BACKDROP_VISIBILITY.map((visibility) => ({ visibility }));
+  const combinations = [];
+  for (const visibility of BACKDROP_VISIBILITY) {
+    for (const target of BACKDROP_TARGETS) {
+      if (visibility === "Hidden" && target !== "None") continue;
+      combinations.push({ visibility, target });
+    }
+  }
+  return combinations;
 }
 
 function backdropVariantKey(props) {
-  return props.visibility;
+  return `${props.visibility}/${props.target}`;
 }
 
+// A variant built before the Target axis existed is named "Visibility=Visible"
+// and parses as Target=None, so Update renames it rather than replacing it,
+// and the node ids Code Connect pins survive.
 function parseBackdropVariantName(name) {
   const values = parseVariantValueMap(name);
+  let visibility = null;
   if (BACKDROP_VISIBILITY.indexOf(values.Visibility) !== -1) {
-    return { visibility: values.Visibility };
+    visibility = values.Visibility;
+  } else if (values.Visible === "True" || values.State === "Visible") {
+    visibility = "Visible";
+  } else if (values.Visible === "False" || values.State === "Hidden") {
+    visibility = "Hidden";
   }
-  if (values.Visible === "True") return { visibility: "Visible" };
-  if (values.Visible === "False") return { visibility: "Hidden" };
-  if (values.State === "Visible") return { visibility: "Visible" };
-  if (values.State === "Hidden") return { visibility: "Hidden" };
-  return null;
+  if (!visibility) return null;
+  const target = values.Target || "None";
+  if (BACKDROP_TARGETS.indexOf(target) === -1) return null;
+  if (visibility === "Hidden" && target !== "None") return null;
+  return { visibility, target };
 }
 
 function bottomSheetVariantCombinations() {
@@ -41591,19 +41648,110 @@ async function updateBackdropVariant(
   { props, variableByName, stats },
 ) {
   const visible = props.visibility === "Visible";
-  component.name = `Visibility=${props.visibility}`;
+  const target = props.target || "None";
+  const cutout = visible && target === "Cut-out";
+  component.name = `Visibility=${props.visibility}, Target=${target}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(320, 180);
+  component.resizeWithoutConstraints(
+    BACKDROP_CUTOUT.width,
+    BACKDROP_CUTOUT.height,
+  );
   component.cornerRadius = 12;
-  component.clipsContent = false;
-  component.fills = visible
-    ? [paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats)]
-    : [];
+  component.clipsContent = cutout;
+  // With a cut-out the scrim is a layer of its own, with a hole in it; the
+  // variant itself draws nothing, so what is under an instance shows there.
+  component.fills =
+    visible && !cutout
+      ? [paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats)]
+      : [];
   component.strokes = [];
   component.strokeWeight = 0;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Backdrop");
   removeDirectChildren(component);
+  if (!cutout) return;
+
+  const hole = backdropCutoutHole();
+  const scrim = figma.createVector();
+  scrim.name = "Scrim";
+  scrim.vectorPaths = [
+    {
+      windingRule: "EVENODD",
+      data: backdropCutoutPathData(
+        BACKDROP_CUTOUT.width,
+        BACKDROP_CUTOUT.height,
+        hole,
+      ),
+    },
+  ];
+  scrim.fills = [
+    paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats),
+  ];
+  scrim.strokes = [];
+  scrim.setSharedPluginData(RUN_NAMESPACE, "kind", "backdrop-scrim");
+  component.appendChild(scrim);
+  scrim.x = 0;
+  scrim.y = 0;
+
+  // The ring: the focus colour, 2 outside the cut-out, its radius the
+  // cut-out's and its own 2, as React's border draws it.
+  const ring = figma.createRectangle();
+  ring.name = "Cut-out Ring";
+  ring.resizeWithoutConstraints(
+    hole.width + 2 * BACKDROP_CUTOUT.ring,
+    hole.height + 2 * BACKDROP_CUTOUT.ring,
+  );
+  ring.cornerRadius = hole.radius + BACKDROP_CUTOUT.ring;
+  ring.fills = [];
+  ring.strokes = [
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+  ];
+  ring.strokeWeight = BACKDROP_CUTOUT.ring;
+  ring.strokeAlign = "INSIDE";
+  ring.setSharedPluginData(RUN_NAMESPACE, "kind", "backdrop-cutout-ring");
+  component.appendChild(ring);
+  ring.x = hole.x - BACKDROP_CUTOUT.ring;
+  ring.y = hole.y - BACKDROP_CUTOUT.ring;
+}
+
+/** The example cut-out: the target padded 8, rounded 16. */
+function backdropCutoutHole() {
+  const t = BACKDROP_CUTOUT.target;
+  const p = BACKDROP_CUTOUT.padding;
+  return {
+    x: t.x - p,
+    y: t.y - p,
+    width: t.width + 2 * p,
+    height: t.height + 2 * p,
+    radius: BACKDROP_CUTOUT.radius,
+  };
+}
+
+/**
+ * The scrim's outline and its cut-out, for an even-odd vector: Figma's path
+ * data takes M, L, C and Z only, so each rounded corner is a cubic.
+ */
+function backdropCutoutPathData(width, height, hole) {
+  const k = 0.5522847498;
+  const r = Math.min(hole.radius, hole.width / 2, hole.height / 2);
+  const c = r * (1 - k);
+  const x0 = hole.x;
+  const y0 = hole.y;
+  const x1 = hole.x + hole.width;
+  const y1 = hole.y + hole.height;
+  const n = (value) => String(Math.round(value * 1000) / 1000);
+  return [
+    `M 0 0 L ${n(width)} 0 L ${n(width)} ${n(height)} L 0 ${n(height)} Z`,
+    `M ${n(x0 + r)} ${n(y0)}`,
+    `L ${n(x1 - r)} ${n(y0)}`,
+    `C ${n(x1 - c)} ${n(y0)} ${n(x1)} ${n(y0 + c)} ${n(x1)} ${n(y0 + r)}`,
+    `L ${n(x1)} ${n(y1 - r)}`,
+    `C ${n(x1)} ${n(y1 - c)} ${n(x1 - c)} ${n(y1)} ${n(x1 - r)} ${n(y1)}`,
+    `L ${n(x0 + r)} ${n(y1)}`,
+    `C ${n(x0 + c)} ${n(y1)} ${n(x0)} ${n(y1 - c)} ${n(x0)} ${n(y1 - r)}`,
+    `L ${n(x0)} ${n(y0 + r)}`,
+    `C ${n(x0)} ${n(y0 + c)} ${n(x0 + c)} ${n(y0)} ${n(x0 + r)} ${n(y0)} Z`,
+  ].join(" ");
 }
 
 async function createBottomSheetVariant({
@@ -41950,7 +42098,7 @@ function layoutBackdropVariants(componentSet) {
     const props = parseBackdropVariantName(child.name);
     if (!props) continue;
     child.x = BACKDROP_VISIBILITY.indexOf(props.visibility) * 360;
-    child.y = 0;
+    child.y = BACKDROP_TARGETS.indexOf(props.target) * 220;
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -43590,7 +43738,7 @@ function configureSliderProperties(componentSet, stats) {
 function configureRatingProperties(_componentSet, _stats) {}
 
 function configureStepperProperties(componentSet, stats) {
-  for (let index = 1; index <= 4; index += 1) {
+  for (let index = 1; index <= STEPPER_MAX_COUNT; index += 1) {
     configureNamedTextProperty(
       componentSet,
       `Step ${index} Text`,
@@ -43853,20 +44001,17 @@ async function buildStepperComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  for (const count of STEPPER_COUNTS) {
-    for (const current of STEPPER_CURRENT) {
-      if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
-
-      const component = await createStepperVariant({
-        count,
-        current,
-        variableByName,
-        fonts,
-        stats,
-      });
-      page.appendChild(component);
-      components.push(component);
-    }
+  for (const props of stepperVariantCombinations()) {
+    const component = await createStepperVariant({
+      variant: props.variant,
+      count: props.count,
+      current: props.current,
+      variableByName,
+      fonts,
+      stats,
+    });
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
@@ -43878,9 +44023,10 @@ async function buildStepperComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
   applyComponentSetDescription(componentSet, "Stepper", false, [
     "Kozmos Stepper component set generated from React Stepper API.",
-    "Count maps to the rendered steps array length.",
+    "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
-    "Step text properties map to the steps array.",
+    "Step text properties map to the steps array; Dots names each dot by them in code.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutStepperVariants(componentSet);
@@ -43930,9 +44076,10 @@ async function updateStepperComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
   applyComponentSetDescription(existing, "Stepper", true, [
     "Kozmos Stepper component set generated from React Stepper API.",
-    "Count maps to the rendered steps array length.",
+    "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
-    "Step text properties map to the steps array.",
+    "Step text properties map to the steps array; Dots names each dot by them in code.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -43948,9 +44095,13 @@ async function updateStepperComponent() {
       continue;
     }
 
-    const key = `${props.count}/${props.current}`;
+    // A variant built before the Variant axis existed is named
+    // "Count=3, Current=2" and parses as Numbered, so Update renames it
+    // rather than replacing it, and the node ids Code Connect pins survive.
+    const key = stepperVariantKey(props);
     seenKeys[key] = true;
     await updateStepperVariant(child, {
+      variant: props.variant,
       count: props.count,
       current: props.current,
       variableByName,
@@ -43960,24 +44111,21 @@ async function updateStepperComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const count of STEPPER_COUNTS) {
-    for (const current of STEPPER_CURRENT) {
-      if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
+  for (const props of stepperVariantCombinations()) {
+    const key = stepperVariantKey(props);
+    if (seenKeys[key]) continue;
 
-      const key = `${count}/${current}`;
-      if (seenKeys[key]) continue;
-
-      const component = await createStepperVariant({
-        count,
-        current,
-        variableByName,
-        fonts,
-        stats,
-      });
-      existing.appendChild(component);
-      seenKeys[key] = true;
-      stats.variantsCreated += 1;
-    }
+    const component = await createStepperVariant({
+      variant: props.variant,
+      count: props.count,
+      current: props.current,
+      variableByName,
+      fonts,
+      stats,
+    });
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutStepperVariants(existing);
@@ -60050,7 +60198,30 @@ function layoutRatingVariants(componentSet) {
   resizeComponentSetToContainChildren(componentSet);
 }
 
+/**
+ * Every Stepper variant: each Variant, each Count, and each Current up to
+ * its Count. The set skips a Current past its Count rather than drawing
+ * variants that mean nothing.
+ */
+function stepperVariantCombinations() {
+  const combinations = [];
+  for (const variant of STEPPER_VARIANTS) {
+    for (const count of STEPPER_COUNTS) {
+      for (const current of STEPPER_CURRENT) {
+        if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
+        combinations.push({ variant, count, current });
+      }
+    }
+  }
+  return combinations;
+}
+
+function stepperVariantKey(props) {
+  return `${props.variant}/${props.count}/${props.current}`;
+}
+
 async function createStepperVariant({
+  variant = "Numbered",
   count,
   current,
   variableByName,
@@ -60059,6 +60230,7 @@ async function createStepperVariant({
 }) {
   const component = figma.createComponent();
   await updateStepperVariant(component, {
+    variant,
     count,
     current,
     variableByName,
@@ -60080,10 +60252,12 @@ function parseStepperVariantName(name) {
     values[key] = value;
   }
 
+  const variant = values.Variant || "Numbered";
   const count = values.Count;
   const current = values.Current || "1";
 
   if (
+    STEPPER_VARIANTS.indexOf(variant) === -1 ||
     STEPPER_COUNTS.indexOf(count) === -1 ||
     STEPPER_CURRENT.indexOf(current) === -1 ||
     stepperCurrentIndex(current) >= stepperCountNumber(count)
@@ -60091,17 +60265,26 @@ function parseStepperVariantName(name) {
     return null;
   }
 
-  return { count, current };
+  return { variant, count, current };
 }
 
 async function updateStepperVariant(
   component,
-  { count, current, variableByName, fonts, stats },
+  { variant = "Numbered", count, current, variableByName, fonts, stats },
 ) {
+  if (variant === "Dots") {
+    updateStepperDotsVariant(component, {
+      count,
+      current,
+      variableByName,
+      stats,
+    });
+    return;
+  }
   const countNumber = stepperCountNumber(count);
   const width = stepperWidth(countNumber);
 
-  component.name = `Count=${count}, Current=${current}`;
+  component.name = `Variant=Numbered, Count=${count}, Current=${current}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(width, 72);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -60130,13 +60313,98 @@ function layoutStepperVariants(componentSet) {
     const props = parseStepperVariantName(child.name);
     if (!props) continue;
 
+    // A column per Count, as wide as Numbered's widest, and under the
+    // Numbered rows, a band of Dots rows: the set never overlaps itself.
     const countIndex = STEPPER_COUNTS.indexOf(props.count);
+    let x = 0;
+    for (let index = 0; index < countIndex; index += 1) {
+      x += stepperWidth(stepperCountNumber(STEPPER_COUNTS[index])) + 80;
+    }
     const currentIndex = STEPPER_CURRENT.indexOf(props.current);
-    child.x = countIndex * 760;
-    child.y = currentIndex * 116;
+    child.x = x;
+    child.y =
+      props.variant === "Dots"
+        ? STEPPER_CURRENT.length * 116 + currentIndex * 48
+        : currentIndex * 116;
   }
 
   resizeComponentSetToContainChildren(componentSet);
+}
+
+/**
+ * Dots: one per step, done and pending 8 by 8 and the current one 20 by 8,
+ * 6 apart, hugged by the variant. Done and current are the theme fill
+ * (decision 59), pending foreground/500, as React draws them; each dot is
+ * named by its step, as the step text properties name the labels.
+ */
+function updateStepperDotsVariant(
+  component,
+  { count, current, variableByName, stats },
+) {
+  const countNumber = stepperCountNumber(count);
+  const currentIndex = stepperCurrentIndex(current);
+  component.name = `Variant=Dots, Count=${count}, Current=${current}`;
+  for (const child of Array.from(component.children || [])) {
+    child.remove();
+  }
+  // Fixed at the row's own size, which is what hugging it would give: the
+  // other dots and the long current one, and the gaps between them.
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "FIXED";
+  component.resizeWithoutConstraints(
+    (countNumber - 1) * (STEPPER_DOT.size + STEPPER_DOT.gap) +
+      STEPPER_DOT.current,
+    STEPPER_DOT.size,
+  );
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = STEPPER_DOT.gap;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
+
+  for (let index = 0; index < countNumber; index += 1) {
+    const state =
+      index < currentIndex
+        ? "Done"
+        : index === currentIndex
+          ? "Current"
+          : "Pending";
+    const dot = figma.createRectangle();
+    dot.name = `Step ${index + 1} Dot`;
+    dot.resizeWithoutConstraints(
+      state === "Current" ? STEPPER_DOT.current : STEPPER_DOT.size,
+      STEPPER_DOT.size,
+    );
+    dot.cornerRadius = KOZMOS_RADIUS.pill;
+    dot.fills = [
+      state === "Pending"
+        ? paintFromVariable(
+            "Colors/foreground/500",
+            "#747B8B",
+            variableByName,
+            stats,
+          )
+        : paintFromVariable(
+            THEME_FILL.name,
+            THEME_FILL.fallback,
+            variableByName,
+            stats,
+          ),
+    ];
+    dot.strokes = [];
+    dot.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-dot");
+    dot.setSharedPluginData(RUN_NAMESPACE, "state", state);
+    component.appendChild(dot);
+  }
 }
 
 async function syncRatingVariantChildren({
@@ -60359,7 +60627,7 @@ async function syncStepperVariantChildren({
   const currentIndex = stepperCurrentIndex(current);
   const stepWidth = 88;
   const connectorWidth = 92;
-  const stepLabels = ["Details", "Shipping", "Payment", "Confirm"];
+  const stepLabels = STEPPER_LABELS;
 
   for (let index = 0; index < countNumber; index += 1) {
     const step = await createStepperStepItem({

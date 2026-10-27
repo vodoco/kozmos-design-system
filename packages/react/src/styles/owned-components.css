@@ -1883,4 +1883,106 @@
     margin-top: -3px;
     background-color: var(--primitives-colors-emotional-success-800);
   }
+  /* Backdrop's cut-out (GAP-189). The dim is an inner scrim, the overlay
+     scrim token, whose clip-path leaves the target out: the page shows
+     through and takes the pointer there. The backdrop itself takes none, so
+     its own children (a step card) are never clipped and take the pointer as
+     they always did. The scrim hides the ring's overflow, so a ring at the
+     edge never scrolls a container. The ring is the focus ring's 2 outside
+     the cut-out, drawn as a border, which forced colours keep (a box-shadow
+     they drop) and repaint in the system's Highlight; it is placed in the
+     scrim's physical coordinates, as getBoundingClientRect() measures the
+     target, so it is pinned to the top left in either direction. Two
+     classes: the scoped preflight's border reset weighs one and wins a tie
+     on proximity. */
+  .kozmos-backdrop {
+    pointer-events: none;
+  }
+  .kozmos-backdrop > * {
+    pointer-events: auto;
+  }
+  .kozmos-backdrop .kozmos-backdrop-scrim {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-color: var(--semantics-overlay-scrim);
+  }
+  .kozmos-backdrop .kozmos-backdrop-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    box-sizing: border-box;
+    border: 2px solid var(--primitives-colors-theme-600);
+    pointer-events: none;
+  }
+  .kozmos-backdrop[data-lit] .kozmos-backdrop-ring {
+    display: block;
+  }
+  @media (forced-colors: active) {
+    .kozmos-backdrop .kozmos-backdrop-ring {
+      forced-color-adjust: none;
+      border-color: Highlight;
+    }
+  }
+  /* Stepper's dots (GAP-191): a tour's progress. Done and pending dots are 8,
+     the current one 20 wide, 6 apart. Done and current are the theme fill
+     (decision 59); pending are foreground 500, 3:1 or more on the page, a
+     popover and the muted fill in both themes (WCAG 1.4.11), where the
+     wireframe's #D5DAE3 read 1.4:1 on white. Forced colours repaint fills to
+     the page's own, so there done and current are Highlight and a pending
+     dot is an outline in CanvasText. Two classes: a list's scoped preflight
+     weighs one and wins a tie on proximity. */
+  .kozmos-stepper-dots .kozmos-stepper-dots-list {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-75) * 1px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: calc(var(--semantics-radius-pill) * 1px);
+    background-color: var(--primitives-colors-foreground-500);
+    transition:
+      width var(--semantics-motion-duration-standard)
+        var(--semantics-motion-easing-standard),
+      background-color var(--semantics-motion-duration-quick)
+        var(--semantics-motion-easing-standard);
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="done"],
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+    background-color: var(--primitives-colors-theme-500);
+  }
+  .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+    width: 20px;
+  }
+  /* Each dot's name: read by a screen reader, never drawn. */
+  .kozmos-stepper-dot-name {
+    @apply sr-only;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-stepper-dots .kozmos-stepper-dot {
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-stepper-dots .kozmos-stepper-dot {
+    transition: none;
+  }
+  @media (forced-colors: active) {
+    .kozmos-stepper-dots .kozmos-stepper-dot {
+      forced-color-adjust: none;
+      background-color: Canvas;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+    .kozmos-stepper-dots .kozmos-stepper-dot[data-state="done"],
+    .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
+      background-color: Highlight;
+      outline: none;
+    }
+  }
 }
