@@ -21,7 +21,7 @@ export const Target = {
           <div class="p-6">
             <KozmosButton ref="update">Update</KozmosButton>
           </div>
-          <KozmosBackdrop class="absolute" :target="update" />
+          <KozmosBackdrop placement="inline" :target="update" />
         </div>
       </KozmosThemeProvider>
     `,

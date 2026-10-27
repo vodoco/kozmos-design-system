@@ -483,10 +483,12 @@ for (const forced of ["none", "active"])
             problems.push(
               `with no target, Backdrop draws ${state.rings} ring(s)`,
             );
+          // In the theme's portal, which marks what it draws with the
+          // provider's density, as it marks a Popover's.
           if (
             target === "none" &&
             state.markup !==
-              '<div class="fixed inset-0 z-50 bg-overlay-scrim" id="backdrop"></div>'
+              '<div class="fixed inset-0 z-50 bg-overlay-scrim" id="backdrop" data-kozmos-density="touch"></div>'
           )
             problems.push(
               `with no target, Backdrop is not the element it was: ${state.markup}`,
