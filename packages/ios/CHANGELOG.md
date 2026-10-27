@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` 
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Fixed
+
+- **A part said in another language is one element to XCUITest, as it is to VoiceOver:** when a `KozmosPOIResultCard`'s name or summary has a language (`nameLanguage`, `summaryLanguage`), or a part of a `KozmosDirectionStep`, `KozmosItinerary` or `KozmosManoeuvreCard` instruction has one (`lang`), VoiceOver is given a UIKit element laid over the part, which says each phrase in its own language. The part under it was hidden with `.accessibilityHidden(true)`, which hides a view from VoiceOver but not from XCUITest: XCUITest still found it, with its texts, beside the element at the same frame. So `app.buttons["poi-result-…"]` matched two buttons and a product's UI test could not tap the result by its identifier, a step's instruction and its distance were static texts beside the step's own, and a manoeuvre's instruction was two buttons. Its accessibility is now replaced by nothing, as the accordion trigger's is, and XCUITest finds one element. VoiceOver is given what it was: the same words, speech languages, hint, identifier, traits and named actions, read in the running app before and after the fix. `InteractionTests.testAPartSaidInItsOwnLanguageIsOneElement` counts the elements of a result, a step and a manoeuvre, at rest and again with the result selected: 2, 3 and 2 before, one each now.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).
