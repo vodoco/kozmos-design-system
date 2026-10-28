@@ -85,6 +85,9 @@ const MapStatusPill = React.forwardRef<HTMLDivElement, MapStatusPillProps>(
           )}
           data-tone={tone}
           role={live === "off" ? undefined : ROLE[live]}
+          // Said as well as implied by the role: an open Select or Menu
+          // hides every box not marked aria-live (GAP-193).
+          aria-live={live === "off" ? undefined : live}
           {...props}
         >
           {says && mark != null && mark !== false && (

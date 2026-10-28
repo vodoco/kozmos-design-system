@@ -18,7 +18,7 @@ figma.connect(Card, cardUrl, {
   },
   example: ({ body }) => (
     <Card>
-      <CardContent className="p-6">{body}</CardContent>
+      <CardContent>{body}</CardContent>
     </Card>
   ),
 });
