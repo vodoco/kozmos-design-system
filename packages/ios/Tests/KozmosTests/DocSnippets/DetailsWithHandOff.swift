@@ -1,7 +1,7 @@
 // POIDetailPanel.mdx's SwiftUI snippet ("The product's own actions"), word for
 // word below this comment: compiled here, so a renamed or removed parameter
 // fails in this target rather than in a reader's project.
-// KozmosPOIHostActionsTests presses it. Change the two together.
+// Change the two together.
 import SwiftUI
 import Kozmos
 

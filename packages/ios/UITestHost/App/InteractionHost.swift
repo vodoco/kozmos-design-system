@@ -294,6 +294,27 @@ private struct InteractionFixture: View {
                 .init(action: .order, label: "Order ahead", disabled: true)]),
                 resultCountLabel: "2 results", selectedPoiId: "cafe", onSelect: select, onAction: action)
                 .environment(\.dynamicTypeSize, scenario == "result-action-targets-large" ? .accessibility3 : .large)
+        case "poi-host-actions":
+            // GAP-130: the product's own actions, last in the details card's
+            // strip, with their own words; one disabled through its state.
+            KozmosPOIDetailPanel(
+                poi: KozmosPOIPresentation(id: "trattoria", name: "Trattoria Uno", floorLabel: "Level 2",
+                                           actions: [.navigate, .share]),
+                actionLabels: [.navigate: "Go", .share: "Share"],
+                onAction: { action, id in events.append("\(action.rawValue) \(id)") },
+                details: KozmosPOIDetailsPresentation(
+                    supplementaryActions: [KozmosPOIDetailAction(action: "call", label: "Call")],
+                    hostActions: [
+                        KozmosPOIHostActionPresentation(id: "open-in-app", label: "Open in app", iconName: "map-01"),
+                        KozmosPOIHostActionPresentation(id: "feedback", label: "Report a problem")
+                    ]),
+                onSupplementaryAction: { action, id in events.append("\(action) \(id)") },
+                hostActionStates: [
+                    "feedback": KozmosPOIActionState(disabled: true),
+                    "open-in-app": KozmosPOIActionState(message: "Opening Pointr Express")
+                ],
+                onHostAction: { action, id in events.append("host \(action) \(id)") })
+                .frame(height: 420)
         case "manoeuvre-custom":
             KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: manoeuvreExpanded,
                                 onToggle: { manoeuvreExpanded.toggle(); events.append("toggle") },

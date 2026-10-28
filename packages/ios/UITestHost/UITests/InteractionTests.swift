@@ -347,6 +347,28 @@ final class InteractionTests: XCTestCase {
         }
     }
 
+    /// GAP-130: the product's own actions come last in the details card's
+    /// strip, after the place's and the supplementary ones, each a button
+    /// named by its words alone and 44 tall; a press reaches onHostAction with
+    /// its id and the POI's, never the card's own handlers; one disabled by
+    /// its state is a dimmed button that runs nothing; its message is drawn.
+    func testTheDetailsCardRunsTheProductsOwnActions() {
+        launch("poi-host-actions")
+        let handOff = app.buttons["Open in app"]
+        XCTAssertTrue(handOff.waitForExistence(timeout: 3))
+        XCTAssertGreaterThanOrEqual(handOff.frame.height, 44)
+        XCTAssertGreaterThan(handOff.frame.minX, app.buttons["Call"].frame.maxX)
+        XCTAssertGreaterThan(app.buttons["Call"].frame.minX, app.buttons["Share"].frame.maxX)
+        let feedback = app.buttons["Report a problem"]
+        XCTAssertTrue(feedback.exists)
+        XCTAssertFalse(feedback.isEnabled)
+        XCTAssertTrue(app.staticTexts["Opening Pointr Express"].exists)
+        handOff.tap()
+        received("host open-in-app trattoria")
+        if feedback.isHittable { feedback.tap() }
+        received("host open-in-app trattoria")
+    }
+
     func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
         launch("result-group")
         XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)

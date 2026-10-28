@@ -80,8 +80,7 @@ final class KozmosPOIHostActionsTests: XCTestCase {
 
     @MainActor private func host<V: View>(_ content: V) async -> UIWindow {
       let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-      window.rootViewController = UIHostingController(
-        rootView: ScrollView { content.frame(width: 390) })
+      window.rootViewController = UIHostingController(rootView: content.frame(width: 390, height: 844))
       window.makeKeyAndVisible()
       for _ in 0..<10 { try? await Task.sleep(nanoseconds: 30_000_000) }
       return window
@@ -211,85 +210,22 @@ final class KozmosPOIHostActionsTests: XCTestCase {
       }
     }
 
-    private let labels: [KozmosPOIAction: String] = [.navigate: "Go", .share: "Share"]
-    private let details = KozmosPOIDetailsPresentation(
-      supplementaryActions: [KozmosPOIDetailAction(action: "call", label: "Call")],
-      hostActions: [
-        KozmosPOIHostActionPresentation(
-          id: "open-in-app", label: "Get live directions in Pointr Express", iconName: "phone"),
-        KozmosPOIHostActionPresentation(id: "feedback", label: "Report a problem"),
-      ])
+    // The details card's strip is a scroll view, whose buttons a walk in the
+    // test process does not reach: InteractionTests'
+    // testTheDetailsCardRunsTheProductsOwnActions presses them through XCUI.
 
-    /// The details card draws them last in its strip, after the
-    /// supplementary actions, and a press reaches `onHostAction` alone.
-    @MainActor func testTheDetailsCardDrawsThemLastAndReportsTheId() async throws {
-      try await withAutomation {
-        var hosted: [[String]] = []
-        var others = 0
-        let window = await host(
-          KozmosPOIDetailPanel(
-            poi: poi, actionLabels: labels, onAction: { _, _ in others += 1 }, details: details,
-            onSupplementaryAction: { _, _ in others += 1 }, onHostAction: { hosted.append([$0, $1]) }))
-        defer { window.isHidden = true }
-        let strip = buttons(window).filter {
-          ["Go", "Share", "Call", "Get live directions in Pointr Express", "Report a problem"].contains($0)
-        }
-        XCTAssertEqual(strip, ["Go", "Share", "Call", "Get live directions in Pointr Express", "Report a problem"])
-        XCTAssertTrue(try element("Get live directions in Pointr Express", in: window).accessibilityActivate())
-        XCTAssertEqual(hosted, [["open-in-app", "trattoria"]])
-        XCTAssertEqual(others, 0)
-      }
-    }
-
-    /// Without a handler they are disabled; their state is their own, by id,
-    /// and a message is drawn under the strip.
-    @MainActor func testTheDetailsCardHonoursHandlerStateAndMessage() async throws {
-      try await withAutomation {
-        let bare = await host(
-          KozmosPOIDetailPanel(poi: poi, actionLabels: labels, onAction: { _, _ in }, details: details))
-        XCTAssertTrue(try element("Report a problem", in: bare).accessibilityTraits.contains(.notEnabled))
-        bare.isHidden = true
-        var hosted = 0
-        let window = await host(
-          KozmosPOIDetailPanel(
-            poi: poi, actionLabels: labels, onAction: { _, _ in }, details: details,
-            hostActionStates: [
-              "feedback": KozmosPOIActionState(disabled: true),
-              "open-in-app": KozmosPOIActionState(message: "Pointr Express is not installed.", messageTone: .error),
-            ],
-            onHostAction: { _, _ in hosted += 1 }))
-        defer { window.isHidden = true }
-        XCTAssertTrue(try element("Report a problem", in: window).accessibilityTraits.contains(.notEnabled))
-        XCTAssertFalse(
-          try element("Get live directions in Pointr Express", in: window).accessibilityTraits.contains(.notEnabled))
-        _ = try element("Report a problem", in: window).accessibilityActivate()
-        XCTAssertEqual(hosted, 0)
-        XCTAssertNotNil(
-          elements(window).first { $0.accessibilityLabel == "Pointr Express is not installed." },
-          "the message is drawn")
-      }
-    }
-
-    /// The docs' two examples (DocSnippets/ResultWithReservation.swift and
-    /// DetailsWithHandOff.swift), drawn and pressed: each reaches the product.
-    @MainActor func testTheDocsExamplesReachTheProduct() async throws {
+    /// The docs' example (DocSnippets/ResultWithReservation.swift), drawn
+    /// and pressed: the reservation reaches the product with the POI's ID.
+    @MainActor func testTheDocsExampleReachesTheProduct() async throws {
       try await withAutomation {
         var reserved: [String] = []
         let card = await host(
           ResultWithReservation(
             poi: poi, number: 1, reserveLabel: "Reserve a table", onSelect: { _ in },
             onReserve: { reserved.append($0) }))
+        defer { card.isHidden = true }
         XCTAssertTrue(try element("Reserve a table", in: card).accessibilityActivate())
-        card.isHidden = true
-        var handedOff: [String] = []
-        let panel = await host(
-          DetailsWithHandOff(
-            poi: poi, actionLabels: labels, handOffLabel: "Open in Pointr Express", onAction: { _, _ in },
-            onHandOff: { handedOff.append($0) }))
-        defer { panel.isHidden = true }
-        XCTAssertTrue(try element("Open in Pointr Express", in: panel).accessibilityActivate())
         XCTAssertEqual(reserved, ["trattoria"])
-        XCTAssertEqual(handedOff, ["trattoria"])
       }
     }
   #endif
