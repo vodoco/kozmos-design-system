@@ -24,6 +24,10 @@
  *   ring, in both orientations: it fell to the page's body.
  * - Connectors: the line after a done step is the theme's; after an error,
  *   though before the current step, it is the border's.
+ * - axe: no violation, contrast included, light and dark, with and without
+ *   selection. A closed step is aria-disabled, as its half opacity says: a
+ *   dimmed step that said nothing failed color-contrast, as Storybook's
+ *   audit found on 28 Oct.
  * - Status drawn: done is the theme fill and error the danger fill, each 3:1
  *   or more on the page with its glyph 3:1 or more on it; a loading step's
  *   ring is 3:1 or more and its arc turns, and stops under reduced motion,
@@ -37,6 +41,7 @@
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-stepper-steps.mjs
  */
+import AxeBuilder from "@axe-core/playwright";
 import {
   buildReactFixture,
   launchFixtureBrowser,
@@ -96,7 +101,12 @@ const contrast = (a, b) => {
 };
 
 async function open({ reduced = "no-preference", theme = "light", ...rest }) {
-  const page = await browser.newPage({ viewport: { width: 640, height: 480 } });
+  // A context of its own, as axe's Playwright builder asks.
+  const context = await browser.newContext({
+    viewport: { width: 640, height: 480 },
+  });
+  const page = await context.newPage();
+  page.on("close", () => context.close().catch(() => {}));
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.emulateMedia({ reducedMotion: reduced, colorScheme: theme });
@@ -442,6 +452,48 @@ await scenario(
 );
 
 await scenario(
+  "axe finds nothing, contrast included; a closed step is aria-disabled, as it is drawn",
+  async (problems) => {
+    for (const theme of ["light", "dark"])
+      for (const navigable of [true, false]) {
+        const { page, errors } = await open({
+          theme,
+          orientation: "vertical",
+          navigable,
+        });
+        const { violations } = await new AxeBuilder({ page })
+          .include("#stepper")
+          .analyze();
+        reads += 1;
+        if (violations.length)
+          problems.push(
+            `${theme}, ${navigable ? "with" : "without"} selection: ${violations
+              .map(
+                ({ id, nodes }) =>
+                  `${id} on ${nodes.map(({ target }) => target.join(" ")).join(", ")}`,
+              )
+              .join("; ")}`,
+          );
+        const disabled = await page.evaluate(() =>
+          [...document.querySelectorAll('#stepper [role="listitem"]')].map(
+            (item) => item.getAttribute("aria-disabled"),
+          ),
+        );
+        const expected = navigable
+          ? [null, null, null, null, "true"]
+          : [null, null, null, null, null];
+        reads += 1;
+        if (JSON.stringify(disabled) !== JSON.stringify(expected))
+          problems.push(
+            `${theme}, ${navigable ? "with" : "without"} selection: aria-disabled is ${JSON.stringify(disabled)}, not ${JSON.stringify(expected)}`,
+          );
+        if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+        await page.close();
+      }
+  },
+);
+
+await scenario(
   "the line after a done step is the theme's, and after an error the border's",
   async (problems) => {
     const { page, errors } = await open({ orientation: "vertical" });
@@ -697,5 +749,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS stepper steps: ${reads} reads; the steps are a list named "Step 3 of 5", each item its label and status in words, the current one aria-current; the open steps and the current one are buttons and Tab stops in order, Enter and Space select, focus draws a 2px ring and stays on a step selected as it becomes current; a closed step is drawn at half opacity; the line after an error is the border's; done, error and loading are each drawn 3:1 or more in light and dark, the arc turns and stops under reduced motion; vertical is a column 56 apart with centred 1 by 16 connectors, mirrored in right to left, unmoved by buttons; a step's target is 44 in touch and 32 in compact`,
+  `\nPASS stepper steps: ${reads} reads; the steps are a list named "Step 3 of 5", each item its label and status in words, the current one aria-current; the open steps and the current one are buttons and Tab stops in order, Enter and Space select, focus draws a 2px ring and stays on a step selected as it becomes current; a closed step is drawn at half opacity and is aria-disabled, and axe finds nothing, contrast included; the line after an error is the border's; done, error and loading are each drawn 3:1 or more in light and dark, the arc turns and stops under reduced motion; vertical is a column 56 apart with centred 1 by 16 connectors, mirrored in right to left, unmoved by buttons; a step's target is 44 in touch and 32 in compact`,
 );

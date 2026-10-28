@@ -85,8 +85,8 @@ left, the indicators sit at the inline start, on the right.
 With `onStepSelect`, every step the visitor may go to is a button that calls it with the step's
 index. By default those are the steps before the current one; a step's `disabled` says otherwise,
 `true` to close an earlier step and `false` to open one ahead, as a step already visited is. A step
-the visitor may not go to is drawn at half opacity, as a disabled control is, so it never looks like
-one they may.
+the visitor may not go to is drawn at half opacity and is `aria-disabled`, as a disabled control is,
+so it never looks like one they may.
 
 The current step is a button too, `aria-current="step"`, that selects nothing, as Pagination's
 current page is a link. When the product moves `currentStep` to the step selected, that button is

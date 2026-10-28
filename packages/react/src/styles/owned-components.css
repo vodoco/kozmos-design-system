@@ -2034,9 +2034,10 @@
     cursor: default;
   }
   /* A step the visitor may not go to, where others are buttons: dimmed, as
-     a disabled control is, so it never looks like one they may. */
-  [data-disabled] > .kozmos-stepper-indicator,
-  [data-disabled] > .kozmos-stepper-label {
+     a disabled control is, so it never looks like one they may; it is
+     aria-disabled, as a disabled control is too. */
+  [aria-disabled="true"] > .kozmos-stepper-indicator,
+  [aria-disabled="true"] > .kozmos-stepper-label {
     opacity: var(--primitives-opacity-50);
   }
   .kozmos-stepper-button:focus-visible {

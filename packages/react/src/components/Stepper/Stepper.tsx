@@ -225,7 +225,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           // step the visitor selects becomes current, and stays the button
           // the keyboard is on, where it was swapped for spans and the focus
           // fell to the page. Every other step is drawn disabled, so one the
-          // visitor may not go to never looks like one they may.
+          // visitor may not go to never looks like one they may, and says it
+          // is: aria-disabled, which also tells axe its dimmed label is a
+          // disabled control's, as a disabled Button's is.
           const navigable =
             !!onStepSelect &&
             (isCurrent
@@ -291,7 +293,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               <div
                 role="listitem"
                 data-status={status}
-                data-disabled={closed ? "" : undefined}
+                aria-disabled={closed ? true : undefined}
                 aria-current={isCurrent && !navigable ? "step" : undefined}
                 className={
                   !navigable ? stepClass : vertical ? undefined : "flex min-w-0"
