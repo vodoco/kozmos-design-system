@@ -16,6 +16,38 @@ Supply `href` and meaningful link text; use Button for an action that does not n
 
 <Controls />
 
+## A link that opens in a new tab
+
+`external` is for a link that leaves the product: a policy, the terms, the documentation. It opens a new
+tab (`target="_blank"`, with `rel="noopener noreferrer"`, so the new page cannot reach this one), and says
+so twice: a new-tab icon at the link's end, in its colour and size, and "opens in a new tab", read after
+the link's name. A product's own `target` or `rel` still wins.
+
+<Canvas>
+  <Story of={LinkStories.External} />
+</Canvas>
+
+- **Wrapping.** The icon is joined to the link's last word, so it never starts a line alone.
+- **Right to left.** The icon sits at the link's end and points to it, as Compose's mirrored new-tab icon
+  and SwiftUI's forward arrow do.
+- **Density.** The link is text, so touch and compact draw it the same.
+- **Words.** `externalLabel` is the announcement, English by default: pass the product's own. An
+  `aria-label` on the link replaces its content, the announcement with it, so say it there too.
+
+<Canvas>
+  <Story of={LinkStories.ExternalInText} />
+</Canvas>
+
+<Canvas>
+  <Story of={LinkStories.ExternalRightToLeft} />
+</Canvas>
+
+On iOS and Android a link that leaves the app opens the browser, not a tab. `KozmosLink`'s `external`
+draws the same icon there, and says where the link goes as each platform says what a control does:
+SwiftUI as an accessibility hint, "Opens in your browser", and Compose as the click's label, which
+TalkBack reads as "Double-tap to open in your browser". Opening is still the system's on iOS and the
+product's `onClick` on Android.
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -27,6 +59,9 @@ export function Example() {
   return (
     <>
       <Link href="/venues">Browse venues</Link>
+      <Link href="https://example.com/privacy" external>
+        Privacy Policy
+      </Link>
     </>
   );
 }
@@ -46,25 +81,38 @@ import Kozmos
 
 // SwiftUI's Link, in the theme colour: a press opens the URL through the
 // environment's openURL, as an href does, and VoiceOver hears a link. There
-// is no subtle variant.
+// is no subtle variant. A link that leaves the app is external: it draws
+// the new-tab icon at its end, and VoiceOver hints "Opens in your browser".
 struct BrowseVenuesLink: View {
     let venues: URL
+    let privacyPolicy: URL
 
     var body: some View {
-        KozmosLink("Browse venues", destination: venues)
+        VStack(alignment: .leading, spacing: 12) {
+            KozmosLink("Browse venues", destination: venues)
+            KozmosLink("Privacy Policy", destination: privacyPolicy, external: true)
+        }
     }
 }
 `}
     kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import com.kozmos.components.link.KozmosLink
 
 // Underlined text in the theme colour, with no destination: a press calls
 // onClick, and where it goes is yours. TalkBack is told no role, so it does
-// not hear a link. There is no subtle variant.
+// not hear a link. There is no subtle variant. A link that leaves the app is
+// external: it draws the new-tab icon after its last word, and TalkBack says
+// "Double-tap to open in your browser".
 @Composable
-fun BrowseVenuesLink(showVenues: () -> Unit) {
-    KozmosLink(text = "Browse venues", onClick = showVenues)
+fun BrowseVenuesLink(showVenues: () -> Unit, openPrivacyPolicy: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        KozmosLink(text = "Browse venues", onClick = showVenues)
+        KozmosLink(text = "Privacy Policy", onClick = openPrivacyPolicy, external = true)
+    }
 }
 `}
 

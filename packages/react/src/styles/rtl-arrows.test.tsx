@@ -35,6 +35,7 @@ import {
 } from "../components/Pagination/Pagination";
 import { Tree } from "../components/Tree/Tree";
 import { Calendar } from "../components/Calendar/Calendar";
+import { Link } from "../components/Link/Link";
 
 // Right to left, an arrow that means back, forward or inside points to the
 // start or the end edge, as SwiftUI's .backward and .forward symbols and
@@ -230,5 +231,19 @@ describe.each(["ltr", "rtl"] as const)("arrows and sides, %s", (dir) => {
     const style = row.getAttribute("style") ?? "";
     expect(style, "tree indent").not.toMatch(/padding-left/);
     expect(style, "tree indent").toMatch(/padding-inline-start/);
+  });
+
+  it("an external link's new-tab icon", () => {
+    render(
+      <div dir={dir}>
+        <Link href="https://example.com/privacy" external>
+          Privacy Policy
+        </Link>
+      </div>,
+    );
+    const link = screen.getByRole("link");
+    expectMirrored(link.querySelector("svg"), "new-tab icon");
+    for (const node of [link, ...link.querySelectorAll("*")])
+      expectNoPhysicalSide(node, "external link");
   });
 });

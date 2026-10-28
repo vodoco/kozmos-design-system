@@ -12,7 +12,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Pointr's own artwork, as React draws it: the web registry's names Compose's
  * hand mapping has no glyph for, the layers glyph and walking figure the map
- * controls draw by name, and the marks the details summary draws.
+ * controls draw by name, the marks the details summary draws, and Link's
+ * new-tab icon.
  * Outlines are stroked 2 with round caps and joins on the 24 grid; a solid
  * mark fills its own squared viewBox. None is mirrored.
  */
@@ -82,6 +83,9 @@ internal object KozmosPointrIcons {
 
     /** The solid mark in packages/icons/src/owned/icons.ts, on its own squared viewBox, drawn by the details summary. */
     val Accessibility: ImageVector by lazy { symbol("Accessibility", 203.8f, 9.64f, 776.13f, "M833.556,367.574c-7.753-7.955-18.586-12.155-29.656-11.549l-133.981,7.458l73.733-83.975 c10.504-11.962,13.505-27.908,9.444-42.157c-2.143-9.764-8.056-18.648-17.14-24.324c-0.279-0.199-176.247-102.423-176.247-102.423 c-14.369-8.347-32.475-6.508-44.875,4.552l-85.958,76.676c-15.837,14.126-17.224,38.416-3.097,54.254 c14.128,15.836,38.419,17.227,54.255,3.096l65.168-58.131l53.874,31.285l-95.096,108.305 c-39.433,6.431-74.913,24.602-102.765,50.801l49.66,49.66c22.449-20.412,52.256-32.871,84.918-32.871 c69.667,0,126.346,56.68,126.346,126.348c0,32.662-12.459,62.467-32.869,84.916l49.657,49.66 c33.08-35.166,53.382-82.484,53.382-134.576c0-31.035-7.205-60.384-20.016-86.482l51.861-2.889l-12.616,154.75 c-1.725,21.152,14.027,39.695,35.18,41.422c1.059,0.086,2.116,0.127,3.163,0.127c19.806,0,36.621-15.219,38.257-35.306 l16.193-198.685C845.235,386.445,841.305,375.527,833.556,367.574z", "M762.384,202.965c35.523,0,64.317-28.797,64.317-64.322c0-35.523-28.794-64.323-64.317-64.323 c-35.527,0-64.323,28.8-64.323,64.323C698.061,174.168,726.856,202.965,762.384,202.965z", "M535.794,650.926c-69.668,0-126.348-56.68-126.348-126.348c0-26.256,8.056-50.66,21.817-70.887l-50.196-50.195 c-26.155,33.377-41.791,75.393-41.791,121.082c0,108.535,87.983,196.517,196.518,196.517c45.691,0,87.703-15.636,121.079-41.792 l-50.195-50.193C586.452,642.867,562.048,650.926,535.794,650.926z") }
+
+    /** Pointr `link-external-01`, node `1007:10029`, drawn by Link, as its new-tab icon. */
+    val LinkExternal01: ImageVector by lazy { outline("LinkExternal01", "M15 3H21L21 9M21 3L13 11M10 5H7.8C6.11984 5 5.27976 5 4.63803 5.32698C4.07354 5.6146 3.6146 6.07354 3.32698 6.63803C3 7.27976 3 8.11984 3 9.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H14.2C15.8802 21 16.7202 21 17.362 20.673C17.9265 20.3854 18.3854 19.9265 18.673 19.362C19 18.7202 19 17.8802 19 16.2V14") }
 
     /** The vector for a web registry name listed in the generator, or null. */
     fun named(name: String): ImageVector? = when (name) {

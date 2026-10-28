@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added
+
+- **A link that leaves the app says so (GAP-202, decision 122):** `KozmosLink(text, onClick, modifier, external, externalLabel)`. With `external = true` it draws the new-tab icon after its last word: Pointr's `link-external-01`, the outline `@kozmos-ds/icons` exports as `LinkExternal01` and React draws at a link's end, generated into `KozmosPointrIcons.LinkExternal01` for the link alone (decision 121 keeps it out of `KozmosIcon`'s names). The icon is inline content the text's size (1em), in the link's theme/600, after a no-break space that joins it to the last word, so it stays on that word's line wherever the two fit a line together; right to left it is mirrored, to point to the link's end, as Material's AutoMirrored OpenInNew is. The click is labelled "open in your browser", or `externalLabel`, the product's own words, which TalkBack reads as "Double-tap to open in your browser"; on a phone a link that leaves the app opens the browser, not a tab. The icon has no name of its own, and stands in for a word joiner, so TalkBack reads the link's words alone. Where it goes is still `onClick`'s. Without `external` the link is drawn and read as before. `KozmosLinkExternalTest` reads what TalkBack is told and where the icon is laid out, and `KozmosLinkExternalPixelsTest` what it draws; neither compiles against the old signature, which had no `external`.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).

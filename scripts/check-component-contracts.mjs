@@ -3767,9 +3767,21 @@ assertContains(
     "Open link",
     stats,
   );
-  configureFocusVisibleProperty(componentSet, stats);
-}`,
+  configureFocusVisibleProperty(componentSet, stats);`,
   "Link Focus Visible component property binding",
+);
+// GAP-202: External, off by default, shows the new-tab icon.
+assertContains(
+  files.figma,
+  source.figma,
+  `  configureNamedBooleanProperty(
+    componentSet,
+    LINK_EXTERNAL_ICON_NAME,
+    "External",
+    false,
+    stats,
+  );`,
+  "Link External boolean binding the new-tab icon",
 );
 assertContains(
   files.figma,

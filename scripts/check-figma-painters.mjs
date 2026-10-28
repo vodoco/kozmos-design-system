@@ -7520,6 +7520,181 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
   }
 }
 
+section("GAP-202: Link's External shows the new-tab icon");
+{
+  // Each Link variant draws the new-tab icon after its words, as React draws
+  // LinkExternal01 at the link's end: the text's size, 14 (Link/icon/size,
+  // React's 1em), its outline stroked 2 × 14 / 24 with round caps and joins
+  // in the variant's colour (theme/600, or foreground/400 for Subtle), 4 after
+  // the words (Link/gap, the no-break space). Hidden until the set's External
+  // boolean, off by default, so a Link draws as it did; decorative, as the
+  // code hides it. The path is the package's, and an Update draws one icon.
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const valueOf = (name) => {
+    for (let hops = 0; name && hops < 8; hops += 1) {
+      const token = floats.get(name);
+      if (!token) return undefined;
+      if (!token.alias || !floats.has(token.alias)) return token.value;
+      name = token.alias;
+    }
+    return undefined;
+  };
+  const boundName = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const draw = async (props, component = figma.createComponent()) => {
+    await plugin.updateLinkVariant(
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+
+  // The outline is Pointr's link-external-01 as @kozmos-ds/icons exports it.
+  const icons = fs.readFileSync(
+    path.join(ROOT, "packages/icons/src/pointr/icons.generated.ts"),
+    "utf8",
+  );
+  const exported = icons.match(
+    /export const LinkExternal01 = [^(]*\(\s*"LinkExternal01",\s*\[\s*\{\s*d: "([^"]+)"/,
+  );
+  ok(
+    exported && exported[1] === plugin.LINK_EXTERNAL_ICON_PATH,
+    "the icon's path is LinkExternal01's in packages/icons",
+  );
+
+  for (const [variant, colour] of [
+    ["Default", "Colors/theme/600"],
+    ["Subtle", "Colors/foreground/400"],
+  ]) {
+    for (const state of ["Default", "Focus"]) {
+      const at = `${variant}/${state}`;
+      const component = await draw({ variant, state });
+      const order = component.children.map((child) => child.name);
+      const text = order.indexOf("Link Text");
+      const iconAt = order.indexOf("External Icon");
+      ok(
+        text >= 0 && iconAt === text + 1,
+        `${at}: the icon follows the words (${order.join(", ")})`,
+      );
+      ok(
+        order.filter((name) => name === "External Icon").length === 1,
+        `${at}: one icon`,
+      );
+      const icon = named(component, "External Icon");
+      if (!icon) continue;
+      ok(icon.visible === false, `${at}: hidden until External`);
+      ok(
+        icon.width === 14 &&
+          icon.height === 14 &&
+          boundName(icon, "width") === "Link/icon/size" &&
+          boundName(icon, "height") === "Link/icon/size" &&
+          valueOf("Link/icon/size") === 14,
+        `${at}: 14 square, Link/icon/size (${icon.width}x${icon.height}, ${boundName(icon, "width")} = ${valueOf("Link/icon/size")})`,
+      );
+      ok(
+        floats.get("Link/icon/size").alias === "Link/font-size",
+        "Link/icon/size is the text's size, Link/font-size",
+      );
+      ok(
+        component.itemSpacing === 4 &&
+          boundName(component, "itemSpacing") === "Link/gap" &&
+          valueOf("Link/gap") === 4,
+        `${at}: 4 after the words, Link/gap (${component.itemSpacing}, ${boundName(component, "itemSpacing")})`,
+      );
+      const vectors = icon.findAll((node) => node.type === "VECTOR");
+      ok(vectors.length === 1, `${at}: one outline (${vectors.length})`);
+      for (const vector of vectors) {
+        ok(
+          (vector.fills || []).length === 0 &&
+            vector.strokes.length === 1 &&
+            boundVariableName(vector.strokes[0]) === colour,
+          `${at}: stroked in ${colour}, unfilled (${boundVariableName(vector.strokes[0])})`,
+        );
+        ok(
+          Math.abs(vector.strokeWeight - (2 * 14) / 24) < 0.001 &&
+            vector.strokeCap === "ROUND" &&
+            vector.strokeJoin === "ROUND",
+          `${at}: stroke 2 × 14 / 24, round (${vector.strokeWeight}, ${vector.strokeCap}, ${vector.strokeJoin})`,
+        );
+      }
+      ok(
+        icon.getSharedPluginData(plugin.RUN_NAMESPACE, "decorative") ===
+          "label-names-it",
+        `${at}: decorative`,
+      );
+      const words = named(component, "Link Text");
+      ok(
+        words &&
+          boundVariableName(words.fills[0]) === colour &&
+          component.width === 128 &&
+          component.height === 44,
+        `${at}: the words and the 128 by 44 frame as before`,
+      );
+
+      // An Update draws the icon again, once.
+      await draw({ variant, state }, component);
+      ok(
+        component.children.filter((child) => child.name === "External Icon")
+          .length === 1 &&
+          component.children.map((child) => child.name).indexOf("External Icon") ===
+            component.children.map((child) => child.name).indexOf("Link Text") + 1,
+        `${at}: an Update keeps one icon after the words`,
+      );
+    }
+  }
+
+  // The set's External boolean, off by default, shows the icon in every
+  // variant.
+  const variants = [];
+  for (const variant of ["Default", "Subtle"])
+    for (const state of ["Default", "Focus"]) {
+      const component = await draw({ variant, state });
+      component.name = `Variant=${variant}, State=${state}`;
+      variants.push(component);
+    }
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "Link";
+  plugin.configureLinkProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const external = Object.keys(definitions).find(
+    (key) =>
+      key.split("#")[0] === "External" && definitions[key].type === "BOOLEAN",
+  );
+  ok(
+    external && definitions[external].defaultValue === false,
+    "Link: an External boolean, off by default",
+  );
+  ok(
+    variants.every((variant) => {
+      const icon = named(variant, "External Icon");
+      return (
+        icon &&
+        icon.componentPropertyReferences &&
+        icon.componentPropertyReferences.visible === external
+      );
+    }),
+    "Link: External shows the icon in all four variants",
+  );
+  ok(
+    Object.keys(definitions).some((key) => key.split("#")[0] === "Link Text"),
+    "Link: Link Text is kept",
+  );
+  set.remove();
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
