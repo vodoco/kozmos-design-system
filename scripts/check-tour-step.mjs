@@ -730,7 +730,7 @@ for (const [density, size] of [
 // --- The design's other cards ---------------------------------------------------
 
 await scenario(
-  "the welcome card: 432 wide, no Close and no progress, Don't show again at the start and Not now and Show me the tours at the end, on one line; Escape leaves it",
+  "the welcome card: 432 wide, no Close and no progress, Don't show again at the start and Not now and Show me the tours at the end, on one line where they fit; Escape leaves it",
   {
     mount: {
       welcome: true,
@@ -757,10 +757,26 @@ await scenario(
     assert.ok(next.classes.includes("kozmos-button-default"));
     assert.equal(dismiss.x, m.footer.x, "the link at the start");
     assert.equal(next.right, m.footer.right, "Next at the end");
-    assert.ok(
-      new Set(m.buttons.map((button) => button.y)).size === 1,
-      `one line (${m.buttons.map((button) => button.y)})`,
-    );
+    // One line wherever the three fit in 432, as they do in the design's
+    // font (Readex Pro) and the Mac's; in a wider one (CI's DejaVu Sans) the
+    // actions wrap under the link, still at the end, inside the card.
+    const fits =
+      m.buttons.reduce((sum, button) => sum + button.w, 0) + 2 * 8 <=
+      m.footer.w + 0.5;
+    if (fits)
+      assert.ok(
+        new Set(m.buttons.map((button) => button.y)).size === 1,
+        `one line (${m.buttons.map((button) => button.y)})`,
+      );
+    else
+      assert.ok(
+        secondary.y === next.y &&
+          secondary.y > dismiss.y &&
+          m.buttons.every(
+            (button) => button.x >= m.footer.x && button.right <= m.footer.right,
+          ),
+        `wider than 432 in this font, the actions wrap under the link, at the end (${m.buttons.map((button) => `${button.x},${button.y}`)})`,
+      );
     assert.equal(
       await page.evaluate(() => document.activeElement?.textContent),
       "Show me the tours",
