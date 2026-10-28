@@ -65,15 +65,20 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   actionsVisibility?: "auto" | "always";
   count?: React.ReactNode;
   density?: TreeDensity;
+  /** How deep the row is, 0 at the top: its indent, and its `aria-level`, one more. */
   depth?: number;
+  /** Dims the row, and is its `aria-disabled`. */
   disabled?: boolean;
+  /** Whether a row with children shows them: its `aria-expanded`. */
   expanded?: boolean;
   focusVisible?: boolean;
+  /** Draws the disclosure, and gives the row `aria-expanded`. */
   hasChildren?: boolean;
   icon?: React.ReactNode;
   indent?: number;
   meta?: React.ReactNode;
   onDisclosureClick?: (event: React.MouseEvent<HTMLSpanElement>) => void;
+  /** Its `aria-selected`, and the selected fill. */
   selected?: boolean;
 }
 
@@ -409,12 +414,10 @@ const TreeNode = ({
 
   return (
     <>
+      {/* The row is the treeitem: its level and state come from the props
+          below, as a composed row's do. */}
       <TreeItemRow
         ref={registerItem}
-        role="treeitem"
-        aria-expanded={hasChildren ? isOpen : undefined}
-        aria-selected={isSelected}
-        aria-disabled={isDisabled || undefined}
         tabIndex={isDisabled ? -1 : isFocused ? 0 : -1}
         actions={actions}
         count={count}
@@ -467,6 +470,20 @@ const TreeNode = ({
   );
 };
 
+/**
+ * One row of a tree, and its treeitem: `depth` gives its `aria-level`,
+ * `expanded` its `aria-expanded` when it has children, `selected` its
+ * `aria-selected` and `disabled` its `aria-disabled`.
+ *
+ * Tree draws these rows itself from `data`. To compose a tree, put the rows
+ * in a `Tree` with children, which is the `role="tree"` container, and a
+ * parent's children in a `<div role="group">` right after its row. A composed
+ * tree has no keyboard of its own: Tree moves focus with the arrow keys only
+ * through `data`.
+ *
+ * A caller's own `role` or `aria-*` wins. With another role, such as `"none"`
+ * inside a treeitem of the caller's own, the row adds no tree state.
+ */
 const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
   (
     {
@@ -485,6 +502,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
       meta,
       name,
       onDisclosureClick,
+      role = "treeitem",
       selected = false,
       style,
       ...props
@@ -494,10 +512,19 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     const stopActionPropagation = (event: React.SyntheticEvent) => {
       event.stopPropagation();
     };
+    // GAP-204: the row is a treeitem whose level and state are the props it
+    // already takes. A caller's own role or aria-* wins; with another role,
+    // the row adds no tree state to it.
+    const treeitem = role === "treeitem";
 
     return (
       <div
         ref={ref}
+        role={role}
+        aria-level={treeitem ? depth + 1 : undefined}
+        aria-expanded={treeitem && hasChildren ? expanded : undefined}
+        aria-selected={treeitem ? selected : undefined}
+        aria-disabled={treeitem && disabled ? true : undefined}
         data-depth={depth}
         data-expanded={hasChildren ? expanded : undefined}
         data-selected={selected || undefined}
@@ -572,6 +599,11 @@ TreeItemRow.displayName = "TreeItemRow";
 
 type TreeParentItemRowProps = Omit<TreeItemRowProps, "hasChildren">;
 
+/**
+ * A row with children, as `TreeItemRow` with `hasChildren`: a treeitem whose
+ * `expanded` is its `aria-expanded`. When it is expanded, put its children in
+ * a `<div role="group">` right after it, at `depth` one more.
+ */
 const TreeParentItemRow = React.forwardRef<
   HTMLDivElement,
   TreeParentItemRowProps
@@ -580,6 +612,10 @@ TreeParentItemRow.displayName = "TreeParentItemRow";
 
 type TreeChildItemRowProps = Omit<TreeItemRowProps, "hasChildren" | "expanded">;
 
+/**
+ * A row with no children: a treeitem with no disclosure and no
+ * `aria-expanded`.
+ */
 const TreeChildItemRow = React.forwardRef<
   HTMLDivElement,
   TreeChildItemRowProps

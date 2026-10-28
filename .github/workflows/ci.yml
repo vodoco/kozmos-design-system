@@ -583,15 +583,18 @@ jobs:
           - name: Interactions (webkit)
             port: 6103
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-interactions
+          # GAP-204: a tree composed from Tree's rows, and Tree's own, read
+          # as a tree: axe finds nothing, and every row is one treeitem with
+          # its level and state (scripts/check-tree-semantics.mjs).
           - name: Documentation (chromium)
             port: 6104
-            run: pnpm -w test:storybook-docs && pnpm -w test:storybook-audit-fixes
+            run: pnpm -w test:storybook-docs && pnpm -w test:storybook-audit-fixes && pnpm -w test:tree-semantics
           - name: Documentation (firefox)
             port: 6105
-            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes && ADAPTIVE_BROWSER=firefox pnpm -w test:tree-semantics
           - name: Documentation (webkit)
             port: 6106
-            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes && ADAPTIVE_BROWSER=webkit pnpm -w test:tree-semantics
           - name: POI Reference (chromium)
             port: 6107
             run: pnpm -w test:poi-details
