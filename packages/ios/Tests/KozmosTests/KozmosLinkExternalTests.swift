@@ -76,6 +76,11 @@ final class KozmosLinkExternalTests: XCTestCase {
         return pixels
     }
 
+    /// The box around every one of `rects`; nil for none.
+    private static func union(_ rects: [CGRect]) -> CGRect? {
+        rects.dropFirst().reduce(rects.first) { box, rect in box?.union(rect) }
+    }
+
     /// The theme-coloured shapes the link draws, its letters and its icon.
     private func ink(_ pixels: RenderedPixels) -> [CGRect] {
         pixels.shapes(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isTheme)
@@ -87,8 +92,8 @@ final class KozmosLinkExternalTests: XCTestCase {
         let name = "gap-202-link-\(direction == .leftToRight ? "ltr" : "rtl")-\(type)"
         let plain = try await render(scene(external: false, direction, type), "\(name)-plain")
         let drawn = try await render(scene(external: true, direction, type), "\(name)-external")
-        let words = ink(plain).reduce(nil as CGRect?) { $0.map { $0.union($1) } ?? $1 }
-        let all = ink(drawn).reduce(nil as CGRect?) { $0.map { $0.union($1) } ?? $1 }
+        let words = Self.union(ink(plain))
+        let all = Self.union(ink(drawn))
         guard let words, let all else { return (nil, words, drawn) }
         // The external link's words are the plain one's, moved over by the
         // icon in right to left; the icon is what lies past them.
@@ -104,8 +109,8 @@ final class KozmosLinkExternalTests: XCTestCase {
     }
 
     /// The icon follows the words, in the theme colour, about a capital's
-    /// height (Pointr's outline spans 18 of its 24, so 12.75 of 17), level
-    /// with them.
+    /// height (Pointr's outline spans 3 to 21 of its 24, and its stroke one
+    /// more each side: 20 of 24, so 14.17 of 17), level with them.
     @MainActor func testTheIconFollowsTheWordsInTheirColourAndSize() async throws {
         let (box, words, _) = try await icon(.leftToRight)
         let glyph = try XCTUnwrap(box, "no icon after the words")
@@ -113,8 +118,8 @@ final class KozmosLinkExternalTests: XCTestCase {
         print("GAP-202 iOS, left to right: words \(text), icon \(glyph)")
         XCTAssertGreaterThan(glyph.minX - text.maxX, 2, "a gap after the words")
         XCTAssertLessThan(glyph.minX - text.maxX, 10, "the icon is by the words")
-        XCTAssertEqual(glyph.height, 12.75, accuracy: 1.5, "the outline at the body text's size")
-        XCTAssertEqual(glyph.width, 12.75, accuracy: 1.5)
+        XCTAssertEqual(glyph.height, 17 * 20 / 24, accuracy: 1, "the outline at the body text's size")
+        XCTAssertEqual(glyph.width, 17 * 20 / 24, accuracy: 1)
         XCTAssertLessThan(abs(glyph.midY - text.midY), 3, "level with the words")
     }
 
@@ -157,8 +162,7 @@ final class KozmosLinkExternalTests: XCTestCase {
                 .background(Color.white)
                 .environment(\.colorScheme, .light),
             "gap-202-text-plain")
-        let union = { (shapes: [CGRect]) in shapes.reduce(nil as CGRect?) { $0.map { $0.union($1) } ?? $1 } }
-        let link = try XCTUnwrap(union(ink(plain))), words = try XCTUnwrap(union(ink(text)))
+        let link = try XCTUnwrap(Self.union(ink(plain))), words = try XCTUnwrap(Self.union(ink(text)))
         XCTAssertEqual(link.minX, words.minX, accuracy: 0.5)
         XCTAssertEqual(link.maxX, words.maxX, accuracy: 0.5, "the link draws more than its words")
     }
