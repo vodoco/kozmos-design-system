@@ -439,6 +439,16 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:tour-step
           ADAPTIVE_BROWSER=firefox pnpm test:tour-step
 
+      # GAP-205: CardTitle's heading level. `as` takes h2 to h6 and the title
+      # is an h3 without it; a page titled with an h1 and a card titled
+      # as="h2" passes axe's heading-order, and every level looks the same
+      # (scripts/check-card-title-level.mjs).
+      - name: Verify Card Title Level
+        run: |
+          pnpm test:card-title-level
+          ADAPTIVE_BROWSER=webkit pnpm test:card-title-level
+          ADAPTIVE_BROWSER=firefox pnpm test:card-title-level
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws

@@ -72,6 +72,11 @@ public struct KozmosCardHeader<Content: View>: View {
     }
 }
 
+/// The card's title, and a heading: VoiceOver says "heading" after it, and
+/// its headings rotor stops on it, as a screen reader stops on React's
+/// `CardTitle`, an `h3` (GAP-205). It was plain text, so a visitor could not
+/// move from card to card by its title. SwiftUI's header trait has no level:
+/// React's `as` sets one on the web.
 public struct KozmosCardTitle: View {
     let title: String
     
@@ -84,6 +89,7 @@ public struct KozmosCardTitle: View {
             .font(KozmosTypography.title3)
             .fontWeight(.semibold)
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

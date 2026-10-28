@@ -15,6 +15,15 @@ top. With no header, the one that is the card's first child pays the top as well
 touches the card's top edge (GAP-194). A part inside a wrapper, such as a `form` around the card's
 parts, is not the card's first child and is left as it is.
 
+`CardTitle` is a heading, and its level follows the page's outline (GAP-205): an `h3` unless `as`
+says otherwise. Under a page titled with an `h1`, a card's title is the next level down,
+`as="h2"`, or a screen reader's list of headings skips a level. `as` takes `h2` to `h6`, as
+`Heading` does; there is no `h1`, the page's own title. The level changes what a screen reader
+hears, not how the title looks. On SwiftUI and Compose `KozmosCardTitle` is a heading too, with no
+level: VoiceOver's and TalkBack's heading navigation stop on it.
+
+<Canvas of={CardStories.TitleLevel} />
+
 <Canvas>
   <Story of={CardStories.Default} />
 </Canvas>

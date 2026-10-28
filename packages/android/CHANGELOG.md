@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Fixed
+
+- **A card's title is a heading (GAP-205):** `KozmosCardTitle` was plain text, so TalkBack's headings navigation passed every card by, where a screen reader on the web stops on React's `CardTitle`, an `h3`. It now says it is a heading (`semantics { heading() }`), so TalkBack says "heading" after it and a visitor can move from card to card by its title. Compose's heading has no level, and the signature is unchanged. `KozmosCardTitleHeadingTest` reads it off the semantics tree: on each title, at both paddings, and on nothing else in the card.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).
