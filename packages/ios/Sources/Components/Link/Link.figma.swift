@@ -8,10 +8,15 @@ struct KozmosLinkConnect: FigmaConnect {
     @FigmaString("Link Text")
     var label: String = "Docs"
 
+    // GAP-202: External shows the new-tab icon.
+    @FigmaBoolean("External")
+    var external: Bool = false
+
     var body: some View {
         KozmosLink(
             self.label,
-            destination: URL(string: "https://kozmos.design")!
+            destination: URL(string: "https://kozmos.design")!,
+            external: self.external
         )
     }
 }
