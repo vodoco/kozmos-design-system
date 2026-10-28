@@ -604,11 +604,14 @@ async function leaving(page, title) {
   return read;
 }
 
-/** A pointer drag across the toast's middle, `by` pixels along x. */
+/**
+ * A pointer drag along the toast's middle, `by` pixels along x, from 40 in
+ * from the edge it moves away from, as the swipe in `closes` does.
+ */
 async function drag(page, title, by) {
   const box = await item(page, title).boundingBox();
   const y = box.y + box.height / 2;
-  const x = box.x + box.width / 2;
+  const x = by < 0 ? box.x + box.width - 40 : box.x + 40;
   await page.mouse.move(x, y);
   await page.mouse.down();
   for (let step = 1; step <= 10; step += 1)
@@ -630,6 +633,12 @@ await scenario(
     assert.match(await leaving(page, "Saved"), /^-100%$/);
     await item(page, "Saved").waitFor({ state: "detached" });
 
+    await show(page, "Swiped", { id: "Swiped", duration: Infinity });
+    await arrived(page, "Swiped");
+    await drag(page, "Swiped", -200);
+    await item(page, "Swiped").waitFor({ state: "detached" });
+
+    // The other way, last: nothing is dragged after it.
     await show(page, "Kept", { id: "Kept", duration: Infinity });
     await arrived(page, "Kept");
     await drag(page, "Kept", 200);
@@ -639,11 +648,9 @@ await scenario(
       "open",
       "a swipe to the right leaves it open",
     );
-    await drag(page, "Kept", -200);
-    await item(page, "Kept").waitFor({ state: "detached" });
     assert.deepEqual(await page.evaluate(() => window.toaster.dismissed), [
       "Saved",
-      "Kept",
+      "Swiped",
     ]);
   },
 );
