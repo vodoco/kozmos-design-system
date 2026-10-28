@@ -964,7 +964,8 @@ camera control, branding/provider policy and product ranking in their host adapt
       expanded-row surface (GAP-201), and Input's `action` (GAP-154);
     - not chosen on 26 Oct, so not now: the authored name (GAP-044), the area (GAP-046) and result groups (GAP-065).
       Still to decide: the checklist row (GAP-195), Button's subtle variant (GAP-200), content under a Stepper step
-      (GAP-173), the settings row's states (GAP-040) and Card's tinted header (GAP-169, CLOUD-UI-001).
+      (GAP-173), the settings row's states (GAP-040), Card's tinted header (GAP-169, CLOUD-UI-001), PageHeader's band
+      (GAP-036), and Cloud's font preset and type ramp (the source's GAP-189).
   - **120, Select stays modal (27 Oct):** Kozmos keeps Radix's Select, which is always modal, so with a list open
     the rest of the page is hidden from assistive technology. Boards are scanned for accessibility with lists closed,
     and the docs say why. GAP-193 fixes what is a defect: live parts hidden, and a modal Menu's page left focusable.
