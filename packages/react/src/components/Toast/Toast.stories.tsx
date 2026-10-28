@@ -114,7 +114,7 @@ export const FromACall: Story = {
 /**
  * Every tone as the Toaster draws it: the icon in the tone's text colour, on
  * the toast's own surface. They stay until closed, so the visual review sees
- * them.
+ * them; `toast.dismiss()` closes them all.
  */
 export const Tones: Story = {
   render: function Tones() {
@@ -124,6 +124,13 @@ export const Tones: Story = {
       );
       return () => ids.forEach((id) => toast.dismiss(id));
     }, []);
-    return <Toaster limit={5} />;
+    return (
+      <div>
+        <Button variant="outline" onClick={() => toast.dismiss()}>
+          Dismiss all
+        </Button>
+        <Toaster limit={5} />
+      </div>
+    );
   },
 };
