@@ -2030,9 +2030,89 @@
   .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
     width: 20px;
   }
-  /* Each dot's name: read by a screen reader, never drawn. */
-  .kozmos-stepper-dot-name {
+  /* Each dot's name, and each step's status: read by a screen reader, never
+     drawn. */
+  .kozmos-stepper-dot-name,
+  .kozmos-stepper-status {
     @apply sr-only;
+  }
+  /* A step's error (GAP-173): the danger fill with its foreground's cross,
+     as a danger Button is, the counterpart of a done step's theme fill.
+     Two classes: the scoped preflight's border colour weighs one. */
+  .kozmos-stepper-indicator.kozmos-stepper-error {
+    border-color: var(--components-primary-buttons-danger-button-background-idle);
+    background-color: var(
+      --components-primary-buttons-danger-button-background-idle
+    );
+    color: var(--components-primary-buttons-danger-button-foreground-content-idle);
+  }
+  /* The vertical stepper: a column of steps, each indicator 12 before its
+     label, and between them a 1 by 16 line 4 from each indicator, centred
+     under it in either direction. */
+  .kozmos-stepper-vertical {
+    display: flex;
+    flex-direction: column;
+  }
+  /* A step that is a button hugs its indicator and label, so its ring
+     does too, up to the column's width. */
+  .kozmos-stepper-vertical .kozmos-stepper-step {
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    text-align: start;
+  }
+  .kozmos-stepper-vertical .kozmos-stepper-label {
+    overflow-wrap: anywhere;
+  }
+  .kozmos-stepper-vertical .kozmos-stepper-connector {
+    width: 1px;
+    height: 16px;
+    margin-block: 4px;
+    margin-inline-start: 15.5px;
+  }
+  /* A step the visitor may go to. Its target is a pseudo-element, the
+     density's control height (44 in touch, 32 in compact) or the step as
+     drawn if larger, so a button moves nothing. */
+  .kozmos-stepper-button {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .kozmos-stepper-button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--density-control-height-sm, 2.75rem));
+    height: max(100%, var(--density-control-height-sm, 2.75rem));
+    transform: translate(-50%, -50%);
+  }
+  .kozmos-stepper-button:not([aria-current]):hover .kozmos-stepper-label {
+    text-decoration: underline;
+  }
+  /* The current step's button selects nothing: it keeps the keyboard where
+     a selection put it, and shows no pointer. */
+  .kozmos-stepper-button[aria-current] {
+    cursor: default;
+  }
+  /* A step the visitor may not go to, where others are buttons: dimmed, as
+     a disabled control is, so it never looks like one they may; it is
+     aria-disabled, as a disabled control is too. */
+  [aria-disabled="true"] > .kozmos-stepper-indicator,
+  [aria-disabled="true"] > .kozmos-stepper-label {
+    opacity: var(--primitives-opacity-50);
+  }
+  .kozmos-stepper-button:focus-visible {
+    outline: 2px solid var(--primitives-colors-theme-600);
+    outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
     .kozmos-stepper-dots .kozmos-stepper-dot {

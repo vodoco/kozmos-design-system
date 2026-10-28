@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Stepper } from "./Stepper";
+import { Stepper, type StepperStep } from "./Stepper";
 import { useState } from "react";
 import { Button } from "../Button/Button";
 
@@ -110,4 +110,122 @@ export const DotsInteractive: Story = {
       </div>
     );
   },
+};
+
+/**
+ * Pointr Cloud's building wizard (GAP-173): five steps in a column, each
+ * indicator beside its label. `orientation="vertical"`; the steps are the
+ * same strings or objects as in a row.
+ */
+export const Vertical: Story = {
+  render: () => (
+    <div style={{ maxWidth: 320 }}>
+      <Stepper
+        orientation="vertical"
+        steps={[
+          "Building details",
+          "Levels",
+          "Alignment",
+          "Fine-tune",
+          "Preview",
+        ]}
+        currentStep={2}
+      />
+    </div>
+  ),
+};
+
+/**
+ * A status for each step: done, current and pending follow `currentStep`
+ * unless a step says its own; `error` is the danger fill and `loading` a
+ * turning arc while the step works. Each is said after the label, "Levels,
+ * Error", in the product's words from `statusLabels`.
+ */
+export const Statuses: Story = {
+  render: () => (
+    <Stepper
+      steps={[
+        { label: "Details", status: "done" },
+        { label: "Levels", status: "error" },
+        { label: "Alignment", status: "loading" },
+        { label: "Fine-tune", status: "pending" },
+        { label: "Preview", status: "done" },
+      ]}
+      currentStep={2}
+    />
+  ),
+};
+
+const wizardSteps = [
+  "Building details",
+  "Levels",
+  "Alignment",
+  "Fine-tune",
+  "Preview",
+];
+
+/**
+ * Going back: with `onStepSelect`, every step before the current one is a
+ * button and a Tab stop, and a step ahead is one when it says
+ * `disabled: false`, as a step already visited does here. The current step
+ * is a button that selects nothing, so a step selected keeps the focus as it
+ * becomes current; a step the visitor may not go to is drawn disabled.
+ */
+export const Navigable: Story = {
+  render: () => {
+    const [currentStep, setCurrentStep] = useState(3);
+    const [reached, setReached] = useState(3);
+    const steps: StepperStep[] = wizardSteps.map((label, index) => ({
+      label,
+      status: index === 1 ? "error" : undefined,
+      disabled: index > currentStep ? index > reached : undefined,
+    }));
+    return (
+      <div style={{ maxWidth: 320 }} className="space-y-8">
+        <Stepper
+          orientation="vertical"
+          steps={steps}
+          currentStep={currentStep}
+          onStepSelect={setCurrentStep}
+        />
+        <Button
+          onClick={() => {
+            const next = Math.min(wizardSteps.length - 1, currentStep + 1);
+            setCurrentStep(next);
+            setReached((prev) => Math.max(prev, next));
+          }}
+          disabled={currentStep === wizardSteps.length - 1}
+        >
+          Continue
+        </Button>
+      </div>
+    );
+  },
+};
+
+/** Right to left, the indicators and their line sit at the inline start, on the right. */
+export const VerticalRightToLeft: Story = {
+  render: () => (
+    <div dir="rtl" lang="ar" style={{ maxWidth: 320 }}>
+      <Stepper
+        orientation="vertical"
+        steps={[
+          { label: "تفاصيل المبنى", status: "done" },
+          { label: "الطوابق", status: "loading" },
+          "المحاذاة",
+          "الضبط الدقيق",
+          "المعاينة",
+        ]}
+        currentStep={1}
+        positionLabel="الخطوة {step} من {count}"
+        statusSeparator="، "
+        statusLabels={{
+          done: "مكتملة",
+          loading: "قيد التنفيذ",
+          pending: "لم تبدأ",
+        }}
+        onStepSelect={() => {}}
+      />
+    </div>
+  ),
 };

@@ -203,6 +203,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
     MARK,
   ],
   ["Components/Primary Buttons/danger/button/foreground/content/idle", MARK],
+  // The danger fill is the edge of what it fills, as the theme fill is: a
+  // Stepper step's error (GAP-173), ring and disc.
+  ["Components/Primary Buttons/danger/button/background/idle", ["STROKE_COLOR"]],
   [
     "Components/Primary Buttons/danger/button/foreground/content/disabled",
     MARK,

@@ -71,7 +71,7 @@ Select **Card** and click **Build** after the core content/status primitives are
 
 Select **Tabs** and click **Build** after Card is stable. It creates `Tabs` with `Count`, `Active`, and `State` axes plus editable trigger labels. Use **Update** after token, copy, or focus-state changes to preserve the Code Connect node ID.
 
-Select **Stepper** and click **Build** after Tabs is stable. It creates `Stepper` with `Count` and `Current` axes plus editable step labels, using completed, current, and upcoming indicator states for short ordered flows.
+Select **Stepper** and click **Build** after Tabs is stable. It creates `Stepper` with `Variant` (Numbered, Dots), `Orientation` (Horizontal, Vertical; the dots are a row), `Count` and `Current` axes plus editable step labels, using completed, current, and upcoming indicator states for short ordered flows, and `Step N Done`, `Step N Loading` and `Step N Error` booleans that give one step its own status (GAP-173). Update renames each variant from before the Orientation axis to Horizontal in place, keeping its node ID.
 
 Select **Tooltip** and click **Build** after Tabs is stable. It creates `Tooltip` with `Side` variants, editable `Content Text`, and a side-aware triangular `Tip` layer that points toward the trigger, matching the React `TooltipContent` surface, radius, border, padding, shadow, arrow, and side offset contract. Use **Update** after token or copy changes to preserve the Code Connect node ID.
 

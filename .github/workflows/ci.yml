@@ -412,6 +412,20 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-173 (decision 119): Stepper's steps as objects, its orientation and
+      # step selection. The steps are a list named by the position, each says
+      # its status in words and the current one is aria-current; the open
+      # steps are buttons and Tab stops, Enter and Space select and focus
+      # draws a ring; done, error and loading are 3:1 or more in both themes
+      # and the arc stops under reduced motion; the column's geometry holds
+      # in both directions; a step's target is 44 in touch and 32 in compact
+      # (scripts/check-stepper-steps.mjs).
+      - name: Verify Stepper Steps
+        run: |
+          pnpm test:stepper-steps
+          ADAPTIVE_BROWSER=webkit pnpm test:stepper-steps
+          ADAPTIVE_BROWSER=firefox pnpm test:stepper-steps
+
       # GAP-194: Card's padding. Content, or a footer, that is the card's
       # first child pays the top as well as its sides and bottom, in both
       # paddings (24, and 16 compact); a header-led card is drawn as before,

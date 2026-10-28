@@ -18,6 +18,7 @@
     "test:select-accessibility": "node scripts/check-select-accessibility.mjs && node scripts/check-option-groups.mjs",
     "test:backdrop-target": "node scripts/check-backdrop-target.mjs && node scripts/check-backdrop-portal.mjs",
     "test:stepper-dots": "node scripts/check-stepper-dots.mjs",
+    "test:stepper-steps": "node scripts/check-stepper-steps.mjs",
     "test:card-padding": "node scripts/check-card-padding.mjs",
     "test:tour-step": "node scripts/check-tour-step.mjs",
     "test:react-interactions": "node scripts/check-react-interactions.mjs && node scripts/check-calendar.mjs && node scripts/check-date-picker.mjs && node scripts/check-date-range-picker.mjs && node scripts/check-time-picker.mjs && node scripts/check-accordion-motion.mjs",

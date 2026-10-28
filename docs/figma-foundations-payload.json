@@ -9972,7 +9972,7 @@
         "ios": "componentsPrimaryButtonsDangerButtonBackgroundIdle",
         "android": "componentsPrimaryButtonsDangerButtonBackgroundIdle"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",

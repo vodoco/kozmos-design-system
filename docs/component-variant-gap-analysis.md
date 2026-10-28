@@ -144,8 +144,8 @@ RouteSetupPanel
   - figma: component/set absent
   - vue: component absent
 Stepper
-  - ios missing axes -> variant (numbered, dots)
-  - android missing axes -> variant (numbered, dots)
+  - ios missing axes -> variant (numbered, dots); orientation (horizontal, vertical)
+  - android missing axes -> variant (numbered, dots); orientation (horizontal, vertical)
 Surface
   - ios: component/set absent
   - figma: component/set absent
