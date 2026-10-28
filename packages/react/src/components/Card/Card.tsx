@@ -90,19 +90,29 @@ const CardHeader = React.forwardRef<
 ));
 CardHeader.displayName = "CardHeader";
 
-const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /**
+   * The heading element the title is, as `Heading` takes it, and `h3`
+   * without it. The level follows the page's outline (GAP-205): under a page
+   * titled with an `h1`, a card's title is `h2`, or a screen reader's list of
+   * headings skips a level. It changes what a screen reader hears, not how
+   * the title looks. There is no `h1`: that is the page's own title.
+   */
+  as?: "h2" | "h3" | "h4" | "h5" | "h6";
+}
+
+const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ as: Tag = "h3", className, ...props }, ref) => (
+    <Tag
+      ref={ref}
+      className={cn(
+        "text-2xl font-semibold leading-none tracking-tight",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<

@@ -84,7 +84,15 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## CardTitle
 
-It forwards its ref to `HTMLParagraphElement`. Its props are `React.HTMLAttributes<HTMLHeadingElement>`.
+It forwards its ref to `HTMLHeadingElement`. Its props are `CardTitleProps`, which extends `React.HTMLAttributes<HTMLHeadingElement>`.
+
+- `as`: `"h2" | "h3" | "h4" | "h5" | "h6"`, optional, default `"h3"`.
+
+  The heading element the title is, as `Heading` takes it, and `h3`
+  without it. The level follows the page's outline (GAP-205): under a page
+  titled with an `h1`, a card's title is `h2`, or a screen reader's list of
+  headings skips a level. It changes what a screen reader hears, not how
+  the title looks. There is no `h1`: that is the page's own title.
 
 - `children`: `ReactNode`, optional.
 
