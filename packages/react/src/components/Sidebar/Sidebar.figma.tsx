@@ -7,6 +7,11 @@ const sidebarUrl =
 const sidebarProps = {
   footer: figma.slot("Footer Slot"),
   header: figma.slot("Header Slot"),
+  // GAP-199: Default is the default, so its snippet says nothing.
+  inset: figma.enum("Inset", {
+    Default: undefined,
+    Flush: "flush",
+  }),
   navigation: figma.slot("Navigation Slot"),
   tools: figma.slot("Tools Slot"),
 };
@@ -14,26 +19,37 @@ const sidebarProps = {
 figma.connect(Sidebar, sidebarUrl, {
   variant: { Content: "Basic" },
   props: sidebarProps,
-  example: ({ footer, header, navigation }) => (
-    <Sidebar footer={footer} header={header} navigation={navigation} />
+  example: ({ footer, header, inset, navigation }) => (
+    <Sidebar
+      footer={footer}
+      header={header}
+      inset={inset}
+      navigation={navigation}
+    />
   ),
 });
 
 figma.connect(Sidebar, sidebarUrl, {
   variant: { Content: "Sections" },
   props: sidebarProps,
-  example: ({ footer, header, navigation }) => (
-    <Sidebar footer={footer} header={header} navigation={navigation} />
+  example: ({ footer, header, inset, navigation }) => (
+    <Sidebar
+      footer={footer}
+      header={header}
+      inset={inset}
+      navigation={navigation}
+    />
   ),
 });
 
 figma.connect(Sidebar, sidebarUrl, {
   variant: { Content: "Tools" },
   props: sidebarProps,
-  example: ({ footer, header, navigation, tools }) => (
+  example: ({ footer, header, inset, navigation, tools }) => (
     <Sidebar
       footer={footer}
       header={header}
+      inset={inset}
       navigation={navigation}
       tools={tools}
     />
@@ -43,10 +59,11 @@ figma.connect(Sidebar, sidebarUrl, {
 figma.connect(Sidebar, sidebarUrl, {
   variant: { Content: "Rail" },
   props: sidebarProps,
-  example: ({ footer, header, navigation }) => (
+  example: ({ footer, header, inset, navigation }) => (
     <Sidebar
       footer={footer}
       header={header}
+      inset={inset}
       navigation={navigation}
       variant="rail"
     />

@@ -6308,8 +6308,8 @@ assertNotContains(
 assertContains(
   files.iosNavbarFigma,
   source.iosNavbarFigma,
-  /var variant = \["Content": "Basic"\][\s\S]*?var variant = \["Content": "Actions"\][\s\S]*?var variant = \["Content": "Contextual"\]/,
-  "iOS Navbar Code Connect maps static content variants",
+  /var variant = \["Content": "Basic", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Actions", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Contextual", "NavigationAlign": "Center"\]/,
+  "iOS Navbar Code Connect maps static content variants at the default NavigationAlign",
 );
 assertContains(
   files.iosNavbarFigma,
@@ -6344,8 +6344,8 @@ assertContains(
 assertContains(
   files.iosSidebarFigma,
   source.iosSidebarFigma,
-  /var variant = \["Content": "Basic"\][\s\S]*?var variant = \["Content": "Sections"\][\s\S]*?var variant = \["Content": "Tools"\][\s\S]*?var variant = \["Content": "Rail"\]/,
-  "iOS Sidebar Code Connect maps static content variants",
+  /var variant = \["Content": "Basic", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Sections", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Tools", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Rail", "Inset": "Default"\]/,
+  "iOS Sidebar Code Connect maps static content variants at the default Inset",
 );
 assertNotContains(
   files.iosSidebarFigma,

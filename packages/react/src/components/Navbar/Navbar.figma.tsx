@@ -10,6 +10,12 @@ const navbarProps = {
   context: figma.slot("Context Slot"),
   logo: figma.slot("Logo Slot"),
   navigation: figma.slot("Navigation Slot"),
+  // GAP-196: Center is the default, so its snippet says nothing.
+  navigationAlign: figma.enum("NavigationAlign", {
+    Start: "start",
+    Center: undefined,
+    End: "end",
+  }),
   primaryAction: figma.slot("Primary Action Slot"),
   utilities: figma.slot("Utility Slot"),
 };
@@ -17,16 +23,25 @@ const navbarProps = {
 figma.connect(Navbar, navbarUrl, {
   variant: { Content: "Basic" },
   props: navbarProps,
-  example: ({ logo, navigation }) => (
-    <Navbar logo={logo} navigation={navigation} />
+  example: ({ logo, navigation, navigationAlign }) => (
+    <Navbar
+      logo={logo}
+      navigation={navigation}
+      navigationAlign={navigationAlign}
+    />
   ),
 });
 
 figma.connect(Navbar, navbarUrl, {
   variant: { Content: "Actions" },
   props: navbarProps,
-  example: ({ actions, logo, navigation }) => (
-    <Navbar actions={actions} logo={logo} navigation={navigation} />
+  example: ({ actions, logo, navigation, navigationAlign }) => (
+    <Navbar
+      actions={actions}
+      logo={logo}
+      navigation={navigation}
+      navigationAlign={navigationAlign}
+    />
   ),
 });
 
@@ -38,6 +53,7 @@ figma.connect(Navbar, navbarUrl, {
     context,
     logo,
     navigation,
+    navigationAlign,
     primaryAction,
     utilities,
   }) => (
@@ -46,6 +62,7 @@ figma.connect(Navbar, navbarUrl, {
       context={context}
       logo={logo}
       navigation={navigation}
+      navigationAlign={navigationAlign}
       primaryAction={primaryAction}
       utilities={utilities}
     />
