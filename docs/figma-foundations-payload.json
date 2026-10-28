@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-14T19:15:11.577Z",
+  "generatedAt": "2026-10-28T09:33:42.084Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -9972,7 +9972,7 @@
         "ios": "componentsPrimaryButtonsDangerButtonBackgroundIdle",
         "android": "componentsPrimaryButtonsDangerButtonBackgroundIdle"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",

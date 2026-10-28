@@ -307,10 +307,18 @@ export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
-// `positionLabel` may be a function: declared as a prop, it is handed to
-// React and never written onto the wrapper's element as an attribute, as Vue
-// writes every undeclared one (GAP-191).
-Object.assign(KozmosStepper, { props: { positionLabel: null } });
+// `positionLabel` and `onStepSelect` may be functions, and `steps` and
+// `statusLabels` objects: declared as props, they are handed to React and
+// never written onto the wrapper's element as attributes, as Vue writes every
+// undeclared one (GAP-191, GAP-173).
+Object.assign(KozmosStepper, {
+  props: {
+    positionLabel: null,
+    steps: null,
+    statusLabels: null,
+    onStepSelect: null,
+  },
+});
 export const KozmosAlert = createVueWrapper(AlertAdapter);
 export const KozmosProgress = createVueWrapper(Progress);
 export const KozmosSpinner = createVueWrapper(Spinner);

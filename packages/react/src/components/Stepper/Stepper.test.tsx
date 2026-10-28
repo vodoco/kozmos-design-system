@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Stepper } from "./Stepper";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { axe } from "vitest-axe";
 
 describe("Stepper", () => {
   it("renders correctly", () => {
@@ -158,5 +159,263 @@ describe('Stepper variant="dots"', () => {
     expect(container.querySelector("ol")).toBeNull();
     expect(screen.queryByRole("group")).toBeNull();
     expect(screen.getByText("Route")).toBeVisible();
+  });
+});
+
+// GAP-173 (decision 119): steps as objects, an orientation and step
+// selection, for Pointr Cloud's building wizard: five vertical steps, a status
+// each, and steps the visitor may go back to.
+// What a screen reader is given for a step: its label and status words. The
+// indicator, whose number or glyph is drawn for the eye, is aria-hidden.
+const said = (element: Element) =>
+  element.querySelector(".kozmos-stepper-label")?.textContent;
+
+describe("Stepper steps as objects, orientation and selection (GAP-173)", () => {
+  const wizard = [
+    "Building details",
+    "Levels",
+    "Alignment",
+    "Fine-tune",
+    "Preview",
+  ];
+
+  it("takes a step as an object, and draws its label as a string's", () => {
+    const strings = render(<Stepper steps={wizard} currentStep={1} />);
+    const objects = render(
+      <Stepper steps={wizard.map((label) => ({ label }))} currentStep={1} />,
+    );
+    expect(objects.container.innerHTML).toBe(strings.container.innerHTML);
+    expect(screen.getAllByText("Levels")).toHaveLength(2);
+  });
+
+  it("is a list of its steps, named by the position, Step 2 of 5", () => {
+    render(<Stepper steps={wizard} currentStep={1} />);
+    const list = screen.getByRole("list", { name: "Step 2 of 5" });
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(list).toContainElement(screen.getAllByRole("listitem")[0]);
+  });
+
+  it("names the list in the product's words from positionLabel", () => {
+    render(
+      <Stepper
+        steps={wizard}
+        currentStep={1}
+        positionLabel="Step {step}/{count}"
+      />,
+    );
+    expect(screen.getByRole("list", { name: "Step 2/5" })).toBeInTheDocument();
+  });
+
+  it("says each step's status in words: done, current, not started", () => {
+    render(<Stepper steps={wizard} currentStep={1} />);
+    expect(screen.getAllByRole("listitem").map(said)).toEqual([
+      "Building details, Done",
+      // The current step's word is aria-current's, so none is added.
+      "Levels",
+      "Alignment, Not started",
+      "Fine-tune, Not started",
+      "Preview, Not started",
+    ]);
+  });
+
+  it("draws and says a step's own status: error and loading", () => {
+    const { container } = render(
+      <Stepper
+        steps={[
+          { label: "Building details", status: "error" },
+          { label: "Levels", status: "loading" },
+          "Alignment",
+          { label: "Fine-tune", status: "done" },
+          "Preview",
+        ]}
+        currentStep={1}
+      />,
+    );
+    const items = screen.getAllByRole("listitem");
+    expect(items.map((item) => item.getAttribute("data-status"))).toEqual([
+      "error",
+      "loading",
+      "pending",
+      "done",
+      "pending",
+    ]);
+    expect(items.map(said)).toEqual([
+      "Building details, Error",
+      "Levels, In progress",
+      "Alignment, Not started",
+      "Fine-tune, Done",
+      "Preview, Not started",
+    ]);
+    // The current step stays aria-current whatever its status.
+    expect(container.querySelectorAll("[aria-current]")).toHaveLength(1);
+    expect(items[1]).toHaveAttribute("aria-current", "step");
+    // A spinner while the step works, a cross on an error, and the
+    // indicator is drawn for the eye only: the words above say it.
+    expect(items[1].querySelector(".kozmos-spinner-arc")).not.toBeNull();
+    expect(items[0].querySelector(".kozmos-stepper-error")).not.toBeNull();
+    for (const item of items)
+      expect(item.querySelector(".kozmos-stepper-indicator")).toHaveAttribute(
+        "aria-hidden",
+        "true",
+      );
+  });
+
+  it("takes the status words from statusLabels, one or all", () => {
+    render(
+      <Stepper
+        steps={[
+          { label: "Datos", status: "error" },
+          { label: "Plantas", status: "loading" },
+          "Alineación",
+        ]}
+        currentStep={1}
+        statusLabels={{
+          error: "Con errores",
+          loading: "En curso",
+          pending: "Sin empezar",
+        }}
+      />,
+    );
+    expect(screen.getAllByRole("listitem").map(said)).toEqual([
+      "Datos, Con errores",
+      "Plantas, En curso",
+      "Alineación, Sin empezar",
+    ]);
+  });
+
+  it("with onStepSelect, the steps before the current one are buttons", () => {
+    const onStepSelect = vi.fn();
+    render(
+      <Stepper steps={wizard} currentStep={2} onStepSelect={onStepSelect} />,
+    );
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toEqual([
+      screen.getByRole("button", { name: "Building details, Done" }),
+      screen.getByRole("button", { name: "Levels, Done" }),
+    ]);
+    // Tab stops, in order, as Pagination's and Breadcrumb's links are.
+    for (const button of buttons) {
+      expect(button).toHaveAttribute("type", "button");
+      expect(button).not.toHaveAttribute("tabindex");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Levels, Done" }));
+    expect(onStepSelect).toHaveBeenCalledTimes(1);
+    expect(onStepSelect).toHaveBeenCalledWith(1);
+  });
+
+  it("never makes a disabled step a button; disabled: false opens a step ahead", () => {
+    render(
+      <Stepper
+        steps={[
+          { label: "Building details", disabled: true },
+          "Levels",
+          "Alignment",
+          { label: "Fine-tune", disabled: false },
+          "Preview",
+        ]}
+        currentStep={2}
+        onStepSelect={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole("button")).toEqual([
+      screen.getByRole("button", { name: "Levels, Done" }),
+      screen.getByRole("button", { name: "Fine-tune, Not started" }),
+    ]);
+    // The current step is where the visitor is: never a button.
+    expect(
+      screen.getAllByRole("listitem")[2].querySelector("button"),
+    ).toBeNull();
+  });
+
+  it("draws no button without onStepSelect", () => {
+    render(<Stepper steps={wizard} currentStep={4} />);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("is horizontal by default and vertical when asked", () => {
+    const { rerender } = render(
+      <Stepper steps={wizard} currentStep={1} data-testid="stepper" />,
+    );
+    expect(screen.getByTestId("stepper")).not.toHaveAttribute(
+      "data-orientation",
+    );
+    rerender(
+      <Stepper
+        steps={wizard}
+        currentStep={1}
+        orientation="vertical"
+        data-testid="stepper"
+      />,
+    );
+    expect(screen.getByTestId("stepper")).toHaveAttribute(
+      "data-orientation",
+      "vertical",
+    );
+    expect(screen.getByTestId("stepper")).toHaveClass(
+      "kozmos-stepper-vertical",
+    );
+  });
+
+  it("has no axe violations, vertical, with statuses and buttons", async () => {
+    const { container } = render(
+      <Stepper
+        orientation="vertical"
+        steps={[
+          { label: "Building details", status: "done" },
+          { label: "Levels", status: "error" },
+          { label: "Alignment", status: "loading" },
+          "Fine-tune",
+          { label: "Preview", disabled: true },
+        ]}
+        currentStep={2}
+        onStepSelect={() => {}}
+      />,
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("draws the root alone for no steps, with no list or name", () => {
+    render(<Stepper steps={[]} currentStep={0} data-testid="stepper" />);
+    expect(screen.getByTestId("stepper")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("stepper")).not.toHaveAttribute("aria-label");
+  });
+
+  // The dots name each dot by its step's label; they draw the position only.
+  it("dots take objects, named by their labels", () => {
+    render(
+      <Stepper
+        variant="dots"
+        steps={[{ label: "Search" }, "Route", { label: "Go", status: "error" }]}
+        currentStep={1}
+      />,
+    );
+    expect(
+      screen.getAllByRole("listitem").map((item) => item.textContent),
+    ).toEqual(["Search", "Route", "Go"]);
+  });
+
+  // TourStep (#422) passes strings, positionLabel and aria-hidden: unchanged.
+  it("keeps the dots TourStep draws as they were", () => {
+    const { container } = render(
+      <Stepper
+        variant="dots"
+        steps={["1", "2", "3", "4", "5"]}
+        currentStep={1}
+        positionLabel="Step {step} of {count}"
+        aria-hidden="true"
+        className="kozmos-tour-step-dots"
+      />,
+    );
+    const root = container.firstElementChild!;
+    expect(root).toHaveAttribute("role", "group");
+    expect(root).toHaveAttribute("aria-label", "Step 2 of 5");
+    expect(root).toHaveAttribute("aria-hidden", "true");
+    expect(root).toHaveClass("kozmos-stepper-dots", "kozmos-tour-step-dots");
+    expect(root.querySelectorAll("button")).toHaveLength(0);
+    expect(
+      Array.from(root.querySelectorAll("li")).map((dot) =>
+        dot.getAttribute("data-state"),
+      ),
+    ).toEqual(["done", "current", "pending", "pending", "pending"]);
   });
 });

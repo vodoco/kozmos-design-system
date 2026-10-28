@@ -1765,30 +1765,56 @@ section("Stepper dots, and Count to 8 (GAP-191)");
     const tokens = payloadVariables([...variableByName.keys()]);
     const combinations = plugin.stepperVariantCombinations();
     const counts = [...new Set(combinations.map((c) => c.count))];
+    // GAP-173 adds Orientation beside Variant: Numbered draws a row and a
+    // column, the dots a row, so 35 + 35 + 35.
+    const byKind = (variant, orientation) =>
+      combinations.filter(
+        (c) => c.variant === variant && c.orientation === orientation,
+      ).length;
     ok(
       JSON.stringify(plugin.STEPPER_VARIANTS) ===
         JSON.stringify(["Numbered", "Dots"]) &&
         JSON.stringify(counts) ===
           JSON.stringify(["2", "3", "4", "5", "6", "7", "8"]) &&
-        combinations.length === 70 &&
+        combinations.length === 105 &&
+        byKind("Numbered", "Horizontal") === 35 &&
+        byKind("Numbered", "Vertical") === 35 &&
+        byKind("Dots", "Horizontal") === 35 &&
+        byKind("Dots", "Vertical") === 0 &&
         combinations.every((c) => Number(c.current) <= Number(c.count)),
-      `Numbered and Dots, each at Count 2 to 8 with every Current up to it: 70 variants (${combinations.length}, counts ${counts.join(" ")})`,
+      `Numbered in a row and a column, and Dots in a row, each at Count 2 to 8 with every Current up to it: 105 variants (${combinations.length}, counts ${counts.join(" ")})`,
     );
     const parsed = [
       "Count=3, Current=2",
       "Variant=Dots, Count=5, Current=2",
       "Variant=Dots, Count=5, Current=6",
       "Variant=Bars, Count=3, Current=1",
+      "Variant=Numbered, Orientation=Vertical, Count=5, Current=2",
+      "Variant=Dots, Orientation=Vertical, Count=5, Current=2",
+      "Variant=Numbered, Orientation=Diagonal, Count=5, Current=2",
     ].map((name) => plugin.parseStepperVariantName(name));
     ok(
       JSON.stringify(parsed) ===
         JSON.stringify([
-          { variant: "Numbered", count: "3", current: "2" },
-          { variant: "Dots", count: "5", current: "2" },
+          {
+            variant: "Numbered",
+            orientation: "Horizontal",
+            count: "3",
+            current: "2",
+          },
+          { variant: "Dots", orientation: "Horizontal", count: "5", current: "2" },
+          null,
+          null,
+          {
+            variant: "Numbered",
+            orientation: "Vertical",
+            count: "5",
+            current: "2",
+          },
           null,
           null,
         ]),
-      `a variant from before the axis parses as Numbered; a Current past its Count, or an unknown Variant, is not one (${JSON.stringify(parsed)})`,
+      `a variant from before the axes parses as a Numbered row; a Current past its Count, an unknown Variant or Orientation, or vertical Dots, is not one (${JSON.stringify(parsed)})`,
     );
 
     const dots = await plugin.createStepperVariant({
@@ -1801,7 +1827,7 @@ section("Stepper dots, and Count to 8 (GAP-191)");
     });
     const marks = dots.children || [];
     ok(
-      dots.name === "Variant=Dots, Count=5, Current=2" &&
+      dots.name === "Variant=Dots, Orientation=Horizontal, Count=5, Current=2" &&
         dots.layoutMode === "HORIZONTAL" &&
         dots.itemSpacing === 6 &&
         dots.counterAxisAlignItems === "CENTER" &&
@@ -1855,7 +1881,8 @@ section("Stepper dots, and Count to 8 (GAP-191)");
       (item.children || []).find((c) => /Text$/.test(c.name)),
     );
     ok(
-      eight.name === "Variant=Numbered, Count=8, Current=5" &&
+      eight.name ===
+        "Variant=Numbered, Orientation=Horizontal, Count=8, Current=5" &&
         items.length === 8 &&
         labels.every(
           (label, i) => label && label.name === `Step ${i + 1} Text`,
@@ -1894,10 +1921,10 @@ section("Stepper dots, and Count to 8 (GAP-191)");
       `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
     );
 
-    // Update, run over the set as it is in the file today: main's nine
-    // variants, named before the Variant axis existed. Each must be renamed
-    // in place, its node id kept (Code Connect pins the set, and instances
-    // pin their variant), and the other 61 created beside them.
+    // Update, run over the set as it was before GAP-191: nine variants,
+    // named before the Variant axis existed. Each must be renamed in place,
+    // its node id kept (Code Connect pins the set, and instances pin their
+    // variant), and the other 96 created beside them.
     const oldNames = [];
     for (const count of [2, 3, 4])
       for (let current = 1; current <= count; current += 1)
@@ -1932,17 +1959,19 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated.updated === true &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 9 &&
-        updated.variantsCreated === 61 &&
-        liveSet.children.length === 70 &&
-        new Set(names).size === 70,
-      `Update keeps the set and its 9 variants, and adds 61: 70 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 96 &&
+        liveSet.children.length === 105 &&
+        new Set(names).size === 105,
+      `Update keeps the set and its 9 variants, and adds 96: 105 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
     );
     ok(
       renamed.every(
         (variant, i) =>
-          variant && variant.name === `Variant=Numbered, ${oldNames[i]}`,
+          variant &&
+          variant.name ===
+            `Variant=Numbered, Orientation=Horizontal, ${oldNames[i]}`,
       ),
-      `each of the 9 keeps its node id and is renamed Variant=Numbered (${renamed.map((v) => (v ? v.name : "gone")).join("; ")})`,
+      `each of the 9 keeps its node id and is renamed a Numbered row (${renamed.map((v) => (v ? v.name : "gone")).join("; ")})`,
     );
     const fourth = byId.get(oldIds["Count=4, Current=3"]);
     ok(
@@ -1950,6 +1979,305 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         fourth.children.filter((child) => /^Step \d+$/.test(child.name))
           .length === 4,
       "a renamed variant is repainted in place: Count=4 still draws its 4 steps",
+    );
+  }
+}
+
+// GAP-173 (decision 119): Stepper's Orientation and a status per step. A
+// vertical Numbered variant is a column, as React draws
+// `orientation="vertical"`: each 32 indicator 12 before its label, the steps
+// 56 apart, a 1 by 16 line 4 below each indicator and centred under it. Over
+// every indicator, in both orientations, Step N Done, Step N Loading and
+// Step N Error are drawn hidden, each shown by the boolean of its name: the
+// theme fill's check, the current ring with an arc, the danger fill's cross.
+// The 24 booleans are created by name, so an Update keeps their ids; an
+// Update over the 70 variants GAP-191 drew renames each in place as a row.
+section("Stepper orientation and a status per step (GAP-173)");
+{
+  const ready =
+    Array.isArray(plugin.STEPPER_ORIENTATIONS) &&
+    Array.isArray(plugin.STEPPER_STEP_STATUSES) &&
+    typeof plugin.updateStepperVerticalVariant === "function";
+  ok(ready, "Stepper has an Orientation axis, step statuses and a vertical painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const column = await plugin.createStepperVariant({
+      variant: "Numbered",
+      orientation: "Vertical",
+      count: "5",
+      current: "3",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const rows = (column.children || []).filter((c) => /^Step \d+$/.test(c.name));
+    const lines = (column.children || []).filter((c) =>
+      /^Step \d+ Connector$/.test(c.name),
+    );
+    ok(
+      column.name ===
+        "Variant=Numbered, Orientation=Vertical, Count=5, Current=3" &&
+        column.width === 240 &&
+        column.height === 5 * 56 - 24 &&
+        rows.length === 5 &&
+        lines.length === 4,
+      `a Count=5 column is 240 by 256, 5 steps and 4 lines (${column.name}, ${column.width} by ${column.height}, ${rows.length} steps, ${lines.length} lines)`,
+    );
+    ok(
+      rows.every(
+        (row, i) =>
+          row.y === i * 56 &&
+          row.x === 0 &&
+          row.height === 32 &&
+          row.layoutMode === "HORIZONTAL" &&
+          row.itemSpacing === 12 &&
+          row.counterAxisAlignItems === "CENTER" &&
+          row.children[0] &&
+          row.children[0].name === `Step ${i + 1} Indicator` &&
+          row.children[0].width === 32 &&
+          row.children[1] &&
+          row.children[1].name === `Step ${i + 1} Text`,
+      ),
+      `each step is a row 56 below the last: its 32 indicator, then its Step N Text 12 after it (${rows.map((r) => `${r.name}@${r.y} gap ${r.itemSpacing}`).join(", ")})`,
+    );
+    const labels = rows.map((row) => row.children[1]);
+    ok(
+      labels.every(
+        (label, i) =>
+          label.fontSize === 14 &&
+          label.lineHeight.value === 20 &&
+          boundVariableName(label.fills[0]) ===
+            (i === 2 ? "Colors/foreground/0" : "Colors/foreground/400") &&
+          label.fontName.style === (i === 2 ? FONTS.medium.style : FONTS.regular.style),
+      ),
+      `labels are 14 on 20, the current one foreground/0 at medium, the others foreground/400 (${labels.map((l) => `${boundVariableName(l.fills[0])} ${l.fontName.style}`).join(", ")})`,
+    );
+    ok(
+      lines.every(
+        (line, i) =>
+          line.width === 1 &&
+          line.height === 16 &&
+          line.x === 15.5 &&
+          line.y === i * 56 + 36 &&
+          boundVariableName(line.fills[0]) ===
+            (i < 2 ? "Colors/theme/600" : "Border/Subtle"),
+      ),
+      `each line is 1 by 16, centred under its indicator at 15.5, 4 below it, theme/600 behind the current step and Border/Subtle after (${lines.map((l) => `${l.x},${l.y} ${l.width}x${l.height} ${boundVariableName(l.fills[0])}`).join("; ")})`,
+    );
+
+    // The overlays, in a row and a column alike.
+    const row = await plugin.createStepperVariant({
+      variant: "Numbered",
+      orientation: "Horizontal",
+      count: "3",
+      current: "1",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    for (const [where, variant, count] of [
+      ["the column", column, 5],
+      ["the row", row, 3],
+    ]) {
+      const overlays = [];
+      for (let n = 1; n <= count; n += 1) {
+        const indicator = variant.findOne(
+          (node) => node.name === `Step ${n} Indicator`,
+        );
+        const names = (indicator ? indicator.children : [])
+          .filter((child) => /^Step \d+ (Done|Loading|Error)$/.test(child.name))
+          .map((child) => child.name);
+        overlays.push(names.join("/"));
+      }
+      ok(
+        overlays.every(
+          (names, i) =>
+            names === `Step ${i + 1} Done/Step ${i + 1} Loading/Step ${i + 1} Error`,
+        ),
+        `${where}: every indicator carries its Done, Loading and Error, Error drawn last (${overlays.join("; ")})`,
+      );
+    }
+    const indicator = column.findOne((node) => node.name === "Step 2 Indicator");
+    const overlay = (status) =>
+      indicator.children.find((child) => child.name === `Step 2 ${status}`);
+    const [done, loading, error] = ["Done", "Loading", "Error"].map(overlay);
+    ok(
+      [done, loading, error].every(
+        (o) =>
+          o &&
+          o.visible === false &&
+          o.layoutPositioning === "ABSOLUTE" &&
+          o.x === 0 &&
+          o.y === 0 &&
+          o.width === 32 &&
+          o.height === 32 &&
+          o.cornerRadius === 9999,
+      ),
+      "each overlay is a hidden 32 circle over its indicator, absolute at 0,0",
+    );
+    ok(
+      boundVariableName(done.fills[0]) === "Primary Buttons/themed/button/background/idle" &&
+        boundVariableName(done.strokes[0]) === "Primary Buttons/themed/button/background/idle" &&
+        done.findOne((node) => node.name === "Done Icon") &&
+        done
+          .findOne((node) => node.name === "Done Icon")
+          .getSharedPluginData(plugin.RUN_NAMESPACE, "foreground-token") ===
+          "Primary Buttons/themed/button/foreground/content/idle",
+      `Done is the theme fill, ring and disc, with the theme foreground's check (${boundVariableName(done.fills[0])})`,
+    );
+    const cross = error.findOne((node) => node.name === "Error Icon");
+    ok(
+      boundVariableName(error.fills[0]) === "Primary Buttons/danger/button/background/idle" &&
+        boundVariableName(error.strokes[0]) === "Primary Buttons/danger/button/background/idle" &&
+        error.strokeWeight === 2 &&
+        cross &&
+        cross.getSharedPluginData(plugin.RUN_NAMESPACE, "foreground-token") ===
+          "Primary Buttons/danger/button/foreground/content/idle",
+      `Error is the danger fill, ring and disc, with its foreground's cross, as a danger Button is (${boundVariableName(error.fills[0])}, ${cross && cross.getSharedPluginData(plugin.RUN_NAMESPACE, "foreground-token")})`,
+    );
+    const arc = loading.findOne((node) => node.name === "Loading Arc");
+    ok(
+      boundVariableName(loading.fills[0]) === "Surface/0" &&
+        boundVariableName(loading.strokes[0]) === "Colors/theme/600" &&
+        loading.strokeWeight === 2 &&
+        arc &&
+        arc.type === "VECTOR" &&
+        arc.width === 16 &&
+        boundVariableName(arc.strokes[0]) === "Colors/theme/600" &&
+        arc.strokeCap === "ROUND" &&
+        arc.fills.length === 0 &&
+        /^M 8 2 C/.test(arc.vectorPaths[0].data),
+      `Loading is the current ring, theme/600 at 2 on the surface, with React's 16 arc in theme/600 from the top (${boundVariableName(loading.strokes[0])}, ${arc && arc.type})`,
+    );
+
+    // The booleans, on a built set: 24, off, each bound to its overlays.
+    const set = new MockNode("COMPONENT_SET", "Stepper");
+    for (const props of plugin.stepperVariantCombinations()) {
+      set.appendChild(
+        await plugin.createStepperVariant({
+          ...props,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+    }
+    plugin.configureStepperProperties(set, freshStats());
+    const booleans = Object.entries(set.componentPropertyDefinitions).filter(
+      ([, definition]) => definition.type === "BOOLEAN",
+    );
+    const expected = [];
+    for (let n = 1; n <= 8; n += 1)
+      for (const status of ["Done", "Loading", "Error"])
+        expected.push(`Step ${n} ${status}`);
+    ok(
+      JSON.stringify(booleans.map(([key]) => key.split("#")[0])) ===
+        JSON.stringify(expected) &&
+        booleans.every(([, definition]) => definition.defaultValue === false),
+      `24 booleans, Step 1 Done to Step 8 Error, each off (${booleans.length})`,
+    );
+    const unbound = [];
+    for (const [key] of booleans) {
+      const name = key.split("#")[0];
+      const nodes = set.findAll((node) => node.name === name);
+      const bound = nodes.filter(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === key,
+      );
+      if (!nodes.length || bound.length !== nodes.length)
+        unbound.push(`${name} ${bound.length}/${nodes.length}`);
+    }
+    ok(
+      unbound.length === 0,
+      `every overlay's visibility is its boolean, in every variant that draws its step (${unbound.slice(0, 4).join("; ")})`,
+    );
+    const texts = set.findAll(
+      (node) =>
+        node.type === "TEXT" &&
+        /^Step \d Text$/.test(node.name) &&
+        node.parent &&
+        node.parent.parent &&
+        /Orientation=Vertical/.test(node.parent.parent.name),
+    );
+    ok(
+      texts.length === [2, 3, 4, 5, 6, 7, 8].reduce((sum, c) => sum + c * c, 0) &&
+        texts.every(
+          (text) =>
+            text.componentPropertyReferences &&
+            text.componentPropertyReferences.characters &&
+            text.componentPropertyReferences.characters.split("#")[0] === text.name,
+        ),
+      `every vertical label is its Step N Text (${texts.length})`,
+    );
+
+    // Update over the set as GAP-191 left it: 70 variants, Numbered and Dots
+    // rows named without Orientation, with their Step N Text properties.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Stepper");
+    const oldIds = {};
+    for (const variant of ["Numbered", "Dots"])
+      for (const count of plugin.STEPPER_COUNTS)
+        for (let current = 1; current <= Number(count); current += 1) {
+          const name = `Variant=${variant}, Count=${count}, Current=${current}`;
+          const node = new MockNode("COMPONENT", name);
+          liveSet.appendChild(node);
+          oldIds[name] = node.id;
+        }
+    for (let n = 1; n <= 8; n += 1)
+      liveSet.addComponentProperty(`Step ${n} Text`, "TEXT", `Step ${n}`);
+    livePage.appendChild(liveSet);
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const before = Object.keys(liveSet.componentPropertyDefinitions).join();
+    const first = await updatePlugin.updateStepperComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const renamed = Object.entries(oldIds).map(([name, id]) => [
+      name,
+      byId.get(id),
+    ]);
+    ok(
+      first.updated === true &&
+        first.variantsUpdated === 70 &&
+        first.variantsCreated === 35 &&
+        liveSet.children.length === 105 &&
+        new Set(liveSet.children.map((c) => c.name)).size === 105,
+      `Update keeps GAP-191's 70 variants and adds the 35 columns: 105, each named once (${first.variantsUpdated} updated, ${first.variantsCreated} created)`,
+    );
+    ok(
+      renamed.every(
+        ([name, node]) =>
+          node &&
+          node.name === name.replace(", Count=", ", Orientation=Horizontal, Count="),
+      ),
+      `each of the 70 keeps its node id and is renamed a row (${renamed
+        .filter(([name, node]) => !node || !node.name.includes("Orientation=Horizontal"))
+        .slice(0, 2)
+        .map(([name]) => name)
+        .join("; ")})`,
+    );
+    const keys = Object.keys(liveSet.componentPropertyDefinitions);
+    ok(
+      before.split(",").every((key) => keys.includes(key)),
+      "the Step N Text properties keep their ids",
+    );
+    const afterFirst = keys.join();
+    await updatePlugin.updateStepperComponent();
+    ok(
+      Object.keys(liveSet.componentPropertyDefinitions).join() === afterFirst &&
+        keys.filter(
+          (key) =>
+            liveSet.componentPropertyDefinitions[key].type === "BOOLEAN",
+        ).length === 24,
+      "a second Update keeps every property's id: the 24 booleans are made once",
     );
   }
 }

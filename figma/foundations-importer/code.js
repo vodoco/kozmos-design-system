@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3fad06a52ae9";
+const PLUGIN_BUILD = "163683214a7f";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -318,6 +318,18 @@ function ratingValuesForScale(scale) {
 // label, or Dots, a tour's progress, one dot per step with no label shown.
 // Count reaches 8: a tour has five steps or more, and Numbered draws them too.
 const STEPPER_VARIANTS = ["Numbered", "Dots"];
+// GAP-173 (decision 119): a row of steps, or a column of them, as a wizard's
+// side panel lists them. Numbered draws both; the dots are a row.
+const STEPPER_ORIENTATIONS = ["Horizontal", "Vertical"];
+// A status for each step, drawn over the one its place gives it: a boolean
+// per step and status, Step 1 Done to Step 8 Loading. Done, current and
+// pending follow Current; these say otherwise for one step, as React's
+// `status` does. When more than one is on, Error is drawn over Loading, and
+// Loading over Done, as Code Connect reads them.
+const STEPPER_STEP_STATUSES = ["Done", "Loading", "Error"];
+// The column: each indicator 12 before its label, the steps 56 apart, and
+// between them a 1 by 16 line 4 from each indicator, as React draws it.
+const STEPPER_VERTICAL = { width: 240, gap: 12, pitch: 56, line: 16 };
 const STEPPER_COUNTS = ["2", "3", "4", "5", "6", "7", "8"];
 const STEPPER_CURRENT = ["1", "2", "3", "4", "5", "6", "7", "8"];
 const STEPPER_MAX_COUNT = 8;
@@ -3098,7 +3110,7 @@ const COMPONENT_DOCS = [
     componentSetName: "Stepper",
     category: "Navigation",
     summary:
-      "Stepper shows progress through a short ordered flow with completed, current, and upcoming steps.",
+      "Stepper shows progress through a short ordered flow with completed, current, and upcoming steps, a status for any step, in a row or a column.",
     usage: [
       "Use for multi-step forms, checkout flows, and setup tasks with a known sequence.",
       "Keep the number of steps short enough to scan at a glance.",
@@ -3108,21 +3120,25 @@ const COMPONENT_DOCS = [
       "Variant maps to Stepper.variant: Numbered draws a numbered circle over each label, Dots one dot per step, as a tour's progress.",
       "Count maps to the number of rendered steps, 2 to 8.",
       "Current maps to Stepper.currentStep in Code Connect.",
+      "Orientation maps to Stepper.orientation: Horizontal, a row, or Vertical, a column with each indicator beside its label (GAP-173). The dots are a row.",
       "Step 1 Text through Step 8 Text map to the steps array: Numbered's labels, and each dot's name in code.",
-      "Completed, current, and upcoming states remain derived from Current.",
+      "Completed, current, and upcoming states are derived from Current; Step N Done, Step N Loading and Step N Error give one step its own status, Stepper's steps[n].status.",
     ],
     properties: [
       "Variant: Numbered, Dots",
+      "Orientation: Horizontal, Vertical",
       "Count: 2, 3, 4, 5, 6, 7, 8",
       "Current: 1, 2, 3, 4, 5, 6, 7, 8",
       "Step 1 Text through Step 8 Text",
+      "Step 1 Done, Loading, Error through Step 8 Done, Loading, Error",
     ],
     accessibility: [
       'Product code should expose the current step to assistive technology: aria-current="step" on the web.',
       "Numbered keeps the step labels visible beside the indicators.",
       'Dots are named in code: the group by its position ("Step 2 of 5", positionLabel) and each dot by its step.',
       "Pending dots are foreground/500, 3:1 or more on the page, a popover and the muted fill in Light and Dark; the current dot is the long one.",
-      "Stepper is non-interactive unless individual steps are composed as controls.",
+      "Each status is said in words after its label in code, and drawn with its own glyph: a check, a cross on the danger fill, a turning arc.",
+      "With onStepSelect in code, the steps the visitor may go to are buttons, each a Tab stop; the current step never is.",
     ],
   },
   {
@@ -17868,6 +17884,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Stepper") {
     return {
       Variant: STEPPER_VARIANTS,
+      Orientation: STEPPER_ORIENTATIONS,
       Count: STEPPER_COUNTS,
       Current: STEPPER_CURRENT,
     };
@@ -43788,6 +43805,21 @@ function configureStepperProperties(componentSet, stats) {
       stats,
     );
   }
+  // GAP-173: a status for each step, a boolean per step and status that
+  // shows the overlay of its name, off by default, so a step is as its place
+  // gives it until a designer says otherwise. Created by name, so an Update
+  // keeps each property's id and every instance's value.
+  for (let index = 1; index <= STEPPER_MAX_COUNT; index += 1) {
+    for (const status of STEPPER_STEP_STATUSES) {
+      configureNamedBooleanProperty(
+        componentSet,
+        `Step ${index} ${status}`,
+        `Step ${index} ${status}`,
+        false,
+        stats,
+      );
+    }
+  }
 }
 
 async function rebuildTextareaComponent() {
@@ -44045,6 +44077,7 @@ async function buildStepperComponent() {
   for (const props of stepperVariantCombinations()) {
     const component = await createStepperVariant({
       variant: props.variant,
+      orientation: props.orientation,
       count: props.count,
       current: props.current,
       variableByName,
@@ -44065,9 +44098,11 @@ async function buildStepperComponent() {
   applyComponentSetDescription(componentSet, "Stepper", false, [
     "Kozmos Stepper component set generated from React Stepper API.",
     "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Orientation maps to Stepper.orientation: Horizontal or Vertical, Numbered's; the dots are a row.",
     "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
     "Step text properties map to the steps array; Dots names each dot by them in code.",
+    "Step N Done, Loading and Error map to that step's status; Error is drawn over Loading, Loading over Done.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutStepperVariants(componentSet);
@@ -44118,9 +44153,11 @@ async function updateStepperComponent() {
   applyComponentSetDescription(existing, "Stepper", true, [
     "Kozmos Stepper component set generated from React Stepper API.",
     "Variant maps to Stepper.variant: Numbered or Dots, a tour's progress.",
+    "Orientation maps to Stepper.orientation: Horizontal or Vertical, Numbered's; the dots are a row.",
     "Count maps to the rendered steps array length, 2 to 8.",
     "Current maps to Stepper.currentStep in Code Connect.",
     "Step text properties map to the steps array; Dots names each dot by them in code.",
+    "Step N Done, Loading and Error map to that step's status; Error is drawn over Loading, Loading over Done.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -44137,12 +44174,14 @@ async function updateStepperComponent() {
     }
 
     // A variant built before the Variant axis existed is named
-    // "Count=3, Current=2" and parses as Numbered, so Update renames it
-    // rather than replacing it, and the node ids Code Connect pins survive.
+    // "Count=3, Current=2" and parses as Numbered, and one built before the
+    // Orientation axis as Horizontal, so Update renames it rather than
+    // replacing it, and the node ids Code Connect pins survive.
     const key = stepperVariantKey(props);
     seenKeys[key] = true;
     await updateStepperVariant(child, {
       variant: props.variant,
+      orientation: props.orientation,
       count: props.count,
       current: props.current,
       variableByName,
@@ -44158,6 +44197,7 @@ async function updateStepperComponent() {
 
     const component = await createStepperVariant({
       variant: props.variant,
+      orientation: props.orientation,
       count: props.count,
       current: props.current,
       variableByName,
@@ -60240,17 +60280,22 @@ function layoutRatingVariants(componentSet) {
 }
 
 /**
- * Every Stepper variant: each Variant, each Count, and each Current up to
- * its Count. The set skips a Current past its Count rather than drawing
- * variants that mean nothing.
+ * Every Stepper variant: each Variant, each Orientation it draws (the dots
+ * are a row), each Count, and each Current up to its Count. The set skips a
+ * Current past its Count, and vertical dots, rather than drawing variants
+ * that mean nothing.
  */
 function stepperVariantCombinations() {
   const combinations = [];
   for (const variant of STEPPER_VARIANTS) {
-    for (const count of STEPPER_COUNTS) {
-      for (const current of STEPPER_CURRENT) {
-        if (stepperCurrentIndex(current) >= stepperCountNumber(count)) continue;
-        combinations.push({ variant, count, current });
+    for (const orientation of STEPPER_ORIENTATIONS) {
+      if (variant === "Dots" && orientation !== "Horizontal") continue;
+      for (const count of STEPPER_COUNTS) {
+        for (const current of STEPPER_CURRENT) {
+          if (stepperCurrentIndex(current) >= stepperCountNumber(count))
+            continue;
+          combinations.push({ variant, orientation, count, current });
+        }
       }
     }
   }
@@ -60258,11 +60303,12 @@ function stepperVariantCombinations() {
 }
 
 function stepperVariantKey(props) {
-  return `${props.variant}/${props.count}/${props.current}`;
+  return `${props.variant}/${props.orientation || "Horizontal"}/${props.count}/${props.current}`;
 }
 
 async function createStepperVariant({
   variant = "Numbered",
+  orientation = "Horizontal",
   count,
   current,
   variableByName,
@@ -60272,6 +60318,7 @@ async function createStepperVariant({
   const component = figma.createComponent();
   await updateStepperVariant(component, {
     variant,
+    orientation,
     count,
     current,
     variableByName,
@@ -60294,11 +60341,15 @@ function parseStepperVariantName(name) {
   }
 
   const variant = values.Variant || "Numbered";
+  // A variant named before the Orientation axis existed is a row.
+  const orientation = values.Orientation || "Horizontal";
   const count = values.Count;
   const current = values.Current || "1";
 
   if (
     STEPPER_VARIANTS.indexOf(variant) === -1 ||
+    STEPPER_ORIENTATIONS.indexOf(orientation) === -1 ||
+    (variant === "Dots" && orientation !== "Horizontal") ||
     STEPPER_COUNTS.indexOf(count) === -1 ||
     STEPPER_CURRENT.indexOf(current) === -1 ||
     stepperCurrentIndex(current) >= stepperCountNumber(count)
@@ -60306,12 +60357,20 @@ function parseStepperVariantName(name) {
     return null;
   }
 
-  return { variant, count, current };
+  return { variant, orientation, count, current };
 }
 
 async function updateStepperVariant(
   component,
-  { variant = "Numbered", count, current, variableByName, fonts, stats },
+  {
+    variant = "Numbered",
+    orientation = "Horizontal",
+    count,
+    current,
+    variableByName,
+    fonts,
+    stats,
+  },
 ) {
   if (variant === "Dots") {
     updateStepperDotsVariant(component, {
@@ -60322,10 +60381,20 @@ async function updateStepperVariant(
     });
     return;
   }
+  if (orientation === "Vertical") {
+    await updateStepperVerticalVariant(component, {
+      count,
+      current,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
   const countNumber = stepperCountNumber(count);
   const width = stepperWidth(countNumber);
 
-  component.name = `Variant=Numbered, Count=${count}, Current=${current}`;
+  component.name = `Variant=Numbered, Orientation=Horizontal, Count=${count}, Current=${current}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(width, 72);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -60354,19 +60423,24 @@ function layoutStepperVariants(componentSet) {
     const props = parseStepperVariantName(child.name);
     if (!props) continue;
 
-    // A column per Count, as wide as Numbered's widest, and under the
-    // Numbered rows, a band of Dots rows: the set never overlaps itself.
+    // A column per Count, as wide as Numbered's widest; under the Numbered
+    // rows, a band of vertical ones, each as tall as eight steps; under
+    // those, a band of Dots rows: the set never overlaps itself.
     const countIndex = STEPPER_COUNTS.indexOf(props.count);
     let x = 0;
     for (let index = 0; index < countIndex; index += 1) {
       x += stepperWidth(stepperCountNumber(STEPPER_COUNTS[index])) + 80;
     }
     const currentIndex = STEPPER_CURRENT.indexOf(props.current);
+    const rows = STEPPER_CURRENT.length * 116;
+    const columnStep = stepperVerticalHeight(STEPPER_MAX_COUNT) + 40;
     child.x = x;
     child.y =
       props.variant === "Dots"
-        ? STEPPER_CURRENT.length * 116 + currentIndex * 48
-        : currentIndex * 116;
+        ? rows + STEPPER_CURRENT.length * columnStep + currentIndex * 48
+        : props.orientation === "Vertical"
+          ? rows + currentIndex * columnStep
+          : currentIndex * 116;
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -60384,7 +60458,7 @@ function updateStepperDotsVariant(
 ) {
   const countNumber = stepperCountNumber(count);
   const currentIndex = stepperCurrentIndex(current);
-  component.name = `Variant=Dots, Count=${count}, Current=${current}`;
+  component.name = `Variant=Dots, Orientation=Horizontal, Count=${count}, Current=${current}`;
   for (const child of Array.from(component.children || [])) {
     child.remove();
   }
@@ -60445,6 +60519,126 @@ function updateStepperDotsVariant(
     dot.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-dot");
     dot.setSharedPluginData(RUN_NAMESPACE, "state", state);
     component.appendChild(dot);
+  }
+}
+
+function stepperVerticalHeight(countNumber) {
+  return countNumber * STEPPER_VERTICAL.pitch - (STEPPER_VERTICAL.pitch - 32);
+}
+
+/**
+ * Vertical (GAP-173): a column of steps, each a row of its 32 indicator and
+ * its label 12 after it, the steps 56 apart, and between them a 1 by 16 line
+ * 4 below one indicator and centred under it, as React draws
+ * `orientation="vertical"`. The current label is foreground/0 at medium, the
+ * others foreground/400, React's muted foreground; each is Step N Text.
+ */
+async function updateStepperVerticalVariant(
+  component,
+  { count, current, variableByName, fonts, stats },
+) {
+  const countNumber = stepperCountNumber(count);
+  const currentIndex = stepperCurrentIndex(current);
+  component.name = `Variant=Numbered, Orientation=Vertical, Count=${count}, Current=${current}`;
+  for (const child of Array.from(component.children || [])) {
+    child.remove();
+  }
+  component.layoutMode = "NONE";
+  component.resizeWithoutConstraints(
+    STEPPER_VERTICAL.width,
+    stepperVerticalHeight(countNumber),
+  );
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Stepper");
+
+  for (let index = 0; index < countNumber; index += 1) {
+    const isCurrent = index === currentIndex;
+    const row = figma.createFrame();
+    row.name = `Step ${index + 1}`;
+    row.layoutMode = "HORIZONTAL";
+    row.primaryAxisSizingMode = "FIXED";
+    row.counterAxisSizingMode = "FIXED";
+    row.primaryAxisAlignItems = "MIN";
+    row.counterAxisAlignItems = "CENTER";
+    row.itemSpacing = STEPPER_VERTICAL.gap;
+    row.paddingLeft = 0;
+    row.paddingRight = 0;
+    row.paddingTop = 0;
+    row.paddingBottom = 0;
+    row.resizeWithoutConstraints(STEPPER_VERTICAL.width, 32);
+    row.fills = [];
+    row.strokes = [];
+    row.clipsContent = false;
+    row.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-step");
+    row.x = 0;
+    row.y = index * STEPPER_VERTICAL.pitch;
+
+    const indicator = await createStepperIndicator({
+      index,
+      currentIndex,
+      variableByName,
+      fonts,
+      stats,
+    });
+    row.appendChild(indicator);
+
+    const text = figma.createText();
+    text.name = `Step ${index + 1} Text`;
+    text.fontName = isCurrent ? fonts.medium : fonts.regular;
+    text.fontSize = 14;
+    text.lineHeight = { unit: "PIXELS", value: 20 };
+    text.characters = STEPPER_LABELS[index] || `Step ${index + 1}`;
+    await applyTextStyleToNodeAsync(text, "fieldText", stats);
+    text.textAlignHorizontal = "LEFT";
+    text.textAlignVertical = "CENTER";
+    text.fills = [
+      isCurrent
+        ? paintFromVariable(
+            "Colors/foreground/0",
+            "#0B0D12",
+            variableByName,
+            stats,
+          )
+        : paintFromVariable(
+            "Colors/foreground/400",
+            "#5D626F",
+            variableByName,
+            stats,
+          ),
+    ];
+    text.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-label");
+    row.appendChild(text);
+    setTextAutoResize(text, "HEIGHT");
+    try {
+      text.layoutGrow = 1;
+    } catch (_error) {
+      // A runtime without auto layout keeps the text at its own width.
+    }
+    component.appendChild(row);
+
+    if (index < countNumber - 1) {
+      const line = figma.createRectangle();
+      line.name = `Step ${index + 1} Connector`;
+      line.resizeWithoutConstraints(1, STEPPER_VERTICAL.line);
+      line.cornerRadius = KOZMOS_RADIUS.none;
+      line.fills = [
+        paintFromVariable(
+          index < currentIndex ? "Colors/theme/600" : "Border/Subtle",
+          index < currentIndex ? "#1051E8" : "#C7CAD1",
+          variableByName,
+          stats,
+        ),
+      ];
+      line.strokes = [];
+      line.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-connector");
+      line.x = 15.5;
+      line.y = index * STEPPER_VERTICAL.pitch + 32 + 4;
+      component.appendChild(line);
+    }
   }
 }
 
@@ -60726,6 +60920,55 @@ async function createStepperStepItem({
   item.clipsContent = false;
   item.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-step");
 
+  const indicator = await createStepperIndicator({
+    index,
+    currentIndex,
+    variableByName,
+    fonts,
+    stats,
+  });
+
+  const text = figma.createText();
+  text.name = `Step ${index + 1} Text`;
+  text.fontName = current ? fonts.medium : fonts.regular;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  text.characters = label;
+  await applyTextStyleToNodeAsync(text, "fieldMeta", stats);
+  text.textAlignHorizontal = "CENTER";
+  text.textAlignVertical = "CENTER";
+  text.resizeWithoutConstraints(88, 32);
+  setTextAutoResize(text, "HEIGHT");
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  text.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-label");
+  setFixedChildSizing(text);
+
+  item.appendChild(indicator);
+  item.appendChild(text);
+  return item;
+}
+
+/**
+ * A step's 32 indicator, as its place gives it: done (the theme fill and its
+ * check), current (a 2 ring, theme/600) or pending (a 1 ring,
+ * foreground/500), with its number. Over it, hidden until a step's boolean
+ * shows them, its own statuses (GAP-173): Step N Done, the theme fill's
+ * check; Step N Loading, the current ring on the surface with an arc;
+ * Step N Error, the danger fill with a cross, as a danger Button is. Error is
+ * drawn over Loading and Loading over Done.
+ */
+async function createStepperIndicator({
+  index,
+  currentIndex,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const completed = index < currentIndex;
+  const current = index === currentIndex;
+
   const indicator = figma.createFrame();
   indicator.name = `Step ${index + 1} Indicator`;
   indicator.layoutMode = "HORIZONTAL";
@@ -60799,26 +61042,106 @@ async function createStepperStepItem({
     indicator.appendChild(number);
   }
 
-  const text = figma.createText();
-  text.name = `Step ${index + 1} Text`;
-  text.fontName = current ? fonts.medium : fonts.regular;
-  text.fontSize = 12;
-  text.lineHeight = { unit: "PIXELS", value: 16 };
-  text.characters = label;
-  await applyTextStyleToNodeAsync(text, "fieldMeta", stats);
-  text.textAlignHorizontal = "CENTER";
-  text.textAlignVertical = "CENTER";
-  text.resizeWithoutConstraints(88, 32);
-  setTextAutoResize(text, "HEIGHT");
-  text.fills = [
-    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
-  ];
-  text.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-label");
-  setFixedChildSizing(text);
+  for (const status of STEPPER_STEP_STATUSES) {
+    const overlay = await createStepperStatusOverlay({
+      index,
+      status,
+      variableByName,
+      stats,
+    });
+    indicator.appendChild(overlay);
+    try {
+      overlay.layoutPositioning = "ABSOLUTE";
+    } catch (_error) {
+      // A runtime without absolute children still stacks it in the frame.
+    }
+    overlay.x = 0;
+    overlay.y = 0;
+  }
+  return indicator;
+}
 
-  item.appendChild(indicator);
-  item.appendChild(text);
-  return item;
+/** One status drawn over a step's indicator, hidden until its boolean is on. */
+async function createStepperStatusOverlay({
+  index,
+  status,
+  variableByName,
+  stats,
+}) {
+  const overlay = figma.createFrame();
+  overlay.name = `Step ${index + 1} ${status}`;
+  overlay.layoutMode = "HORIZONTAL";
+  overlay.primaryAxisSizingMode = "FIXED";
+  overlay.counterAxisSizingMode = "FIXED";
+  overlay.primaryAxisAlignItems = "CENTER";
+  overlay.counterAxisAlignItems = "CENTER";
+  overlay.resizeWithoutConstraints(32, 32);
+  overlay.cornerRadius = KOZMOS_RADIUS.pill;
+  overlay.clipsContent = false;
+  overlay.strokeWeight = 2;
+  overlay.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-status");
+  overlay.setSharedPluginData(RUN_NAMESPACE, "status", status);
+  if (status === "Loading") {
+    overlay.fills = [
+      paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    ];
+    overlay.strokes = [
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    ];
+    // React's SpinnerArc at 16: three quarters of a circle of radius 6 from
+    // the top, clockwise, round caps, stroke 2 in its 24 box.
+    const arc = figma.createVector();
+    arc.name = "Loading Arc";
+    arc.resize(16, 16);
+    arc.vectorPaths = [
+      {
+        windingRule: "NONE",
+        data: "M 8 2 C 11.3137 2 14 4.6863 14 8 C 14 11.3137 11.3137 14 8 14 C 4.6863 14 2 11.3137 2 8",
+      },
+    ];
+    arc.fills = [];
+    arc.strokes = [
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    ];
+    arc.strokeWeight = 4 / 3;
+    arc.strokeCap = "ROUND";
+    arc.setSharedPluginData(RUN_NAMESPACE, "kind", "stepper-loading-arc");
+    overlay.appendChild(arc);
+  } else {
+    const fill =
+      status === "Error"
+        ? {
+            name: "Primary Buttons/danger/button/background/idle",
+            fallback: "#B01736",
+          }
+        : THEME_FILL;
+    const ink =
+      status === "Error"
+        ? {
+            name: "Primary Buttons/danger/button/foreground/content/idle",
+            fallback: "#FFFFFF",
+          }
+        : THEME_FILL_FOREGROUND;
+    overlay.fills = [
+      paintFromVariable(fill.name, fill.fallback, variableByName, stats),
+    ];
+    overlay.strokes = [
+      paintFromVariable(fill.name, fill.fallback, variableByName, stats),
+    ];
+    const glyph = await createFixedIconInstance(
+      status === "Error" ? "x-close" : "check",
+      ink.name,
+      ink.fallback,
+      variableByName,
+      stats,
+      16,
+      null,
+    );
+    glyph.name = status === "Error" ? "Error Icon" : "Done Icon";
+    overlay.appendChild(glyph);
+  }
+  overlay.visible = false;
+  return overlay;
 }
 
 function createStepperConnector({ index, active, variableByName, stats }) {

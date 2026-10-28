@@ -15,4 +15,12 @@ describe("KozmosStepper", () => {
   it("declares positionLabel as a prop", () => {
     expect(Object.keys(KozmosStepper.props ?? {})).toContain("positionLabel");
   });
+
+  // GAP-173: steps may be objects, statusLabels is one and onStepSelect a
+  // function; none is written onto the wrapper's element.
+  it("declares steps, statusLabels and onStepSelect as props", () => {
+    expect(Object.keys(KozmosStepper.props ?? {})).toEqual(
+      expect.arrayContaining(["steps", "statusLabels", "onStepSelect"]),
+    );
+  });
 });

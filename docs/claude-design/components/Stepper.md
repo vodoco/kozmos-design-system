@@ -2,7 +2,7 @@
 
 # Stepper
 
-Shows progress through a labelled sequence, marking earlier steps complete and one step current. `currentStep` is zero-based; it displays progress rather than providing navigation or form validation. A screen reader hears which step is current: it is `aria-current="step"` on the web, and selected, the platform's own word, in VoiceOver and TalkBack, where each step is read as one item, its number and name together.
+Shows progress through a labelled sequence, marking earlier steps complete and one step current. `currentStep` is zero-based. On the web the steps are a list named by the position ("Step 2 of 5", from `positionLabel`), each step says its status after its label ("Levels, Done"), and the current one is `aria-current="step"`; in VoiceOver and TalkBack the current step is selected, the platform's own word, and each step is read as one item, its number and name together. It does no form validation: a step's status is the product's to say.
 
 - **Import:** `import { Stepper } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -32,9 +32,9 @@ export function StepperExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `StepperProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
-- `steps`: `string[]`, **required**.
+- `steps`: `(string | StepperStep)[]`, **required**.
 
-  Each step's name: the numbered variant's labels, and each dot's name.
+  Each step: a string, its label, or an object with a status (GAP-173).
 
 - `currentStep`: `number`, **required**.
 
@@ -44,18 +44,58 @@ It forwards its ref to `HTMLDivElement`. Its props are `StepperProps`, which ext
 
   `numbered` (the default) or `dots` (GAP-191).
 
+- `orientation`: `StepperOrientation`, optional, default `"horizontal"`.
+
+  `horizontal` (the default), or `vertical`, each indicator beside its
+  label in a column. The numbered variant's; the dots are a row.
+
+- `onStepSelect`: `(index: number) => void`, optional.
+
+  Called with a step's index when the visitor selects it. With it, every
+  step they may go to (see `StepperStep.disabled`) is a button, a Tab stop
+  of its own; the current step never is. The numbered variant's.
+
+- `statusLabels`: `Partial<Record<StepperStepStatus, string>>`, optional.
+
+  The words for each status, said after a step's label ("Levels, Error").
+  English by default; a product that translates passes its own, for one
+  status or all five. The current step's is never said: it is
+  `aria-current="step"`.
+
 - `positionLabel`: `string | ((step: number, count: number) => string)`, optional, default `"Step {step} of {count}"`.
 
-  The dots' position, read as the group's name: a function of the step
-  (from 1) and the count, or a template with `{step}` and `{count}`.
-  English by default, "Step 2 of 5". Once every step is done, the step is
-  the last.
+  The position, read as the steps' name: a function of the step (from 1)
+  and the count, or a template with `{step}` and `{count}`. English by
+  default, "Step 2 of 5". Once every step is done, the step is the last.
 
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### StepperStep
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A step, as an object where a string is not enough. */
+interface StepperStep {
+  /** The step's name, as a string step is. */
+  label: string;
+  /**
+   * How the step is drawn and what is said of it. By default it follows
+   * `currentStep`: done before it, current at it, pending after it.
+   */
+  status?: StepperStepStatus;
+  /**
+   * Whether the visitor may not go to the step, with `onStepSelect`. By
+   * default the steps before the current one may be and those after it may
+   * not; `true` or `false` says otherwise for this step.
+   */
+  disabled?: boolean;
+}
+```
 
 ### StepperVariant
 
@@ -65,8 +105,32 @@ From `@kozmos-ds/react`.
 /**
  * How the steps are drawn: `numbered`, a numbered circle over each step's
  * label, or `dots`, one dot per step with no label shown, as a tour's
- * progress is. The indicator style only: an orientation, and a status for
- * each step, would sit beside it (GAP-173).
+ * progress is. The indicator style only: `orientation`, and a status for
+ * each step, sit beside it (GAP-173).
  */
 type StepperVariant = "numbered" | "dots";
+```
+
+### StepperOrientation
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A row of steps, or a column of them, as a wizard's side panel lists them. */
+type StepperOrientation = "horizontal" | "vertical";
+```
+
+### StepperStepStatus
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A step's status (decision 119): `done`, `current`, `pending` (not reached
+ * yet), `error`, or `loading` while the step works. The first three are
+ * Stepper's own words, as its dots name their states; `error` and `loading`
+ * are the words Kozmos's other statuses use (`MapReadiness`,
+ * `RouteLocationStatus`, `InputStatus`).
+ */
+type StepperStepStatus = "done" | "current" | "pending" | "error" | "loading";
 ```

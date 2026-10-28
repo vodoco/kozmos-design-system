@@ -8,9 +8,11 @@ import { PlatformSnippets } from "../PlatformSnippets";
 # Stepper
 
 Shows progress through a labelled sequence, marking earlier steps complete and one step current.
-`currentStep` is zero-based; it displays progress rather than providing navigation or form validation.
-A screen reader hears which step is current: it is `aria-current="step"` on the web, and selected,
-the platform's own word, in VoiceOver and TalkBack, where each step is read as one item, its number and name together.
+`currentStep` is zero-based. On the web the steps are a list named by the position ("Step 2 of 5",
+from `positionLabel`), each step says its status after its label ("Levels, Done"), and the current
+one is `aria-current="step"`; in VoiceOver and TalkBack the current step is selected, the platform's
+own word, and each step is read as one item, its number and name together. It does no form validation:
+a step's status is the product's to say.
 
 <Canvas>
   <Story of={StepperStories.Default} />
@@ -35,8 +37,8 @@ the product's words, as a function of the step (from 1) and the count, or as a t
 `{step}` and `{count}`. Each dot is a list item named by its step, and the current one is
 `aria-current="step"`, as in the numbered stepper.
 
-`variant` is the indicator's style alone; an orientation, and a status for each step, would sit
-beside it (GAP-173).
+`variant` is the indicator's style alone. The dots take a step object for its label and draw the
+position only: a status, `orientation` and `onStepSelect` are the numbered variant's.
 
 <Canvas>
   <Story of={StepperStories.Dots} />
@@ -45,6 +47,56 @@ beside it (GAP-173).
 <Canvas>
   <Story of={StepperStories.DotsInteractive} />
 </Canvas>
+
+## A status for each step
+
+A step is a string, its label, or an object: `{ label, status?, disabled? }` (GAP-173, decision 119).
+Without a `status` a step follows `currentStep`, done before it, current at it and `pending` after
+it; with one it is drawn and said as it says. `error` is the danger fill with a cross, as a danger
+Button is, the counterpart of a done step's theme fill and check; `loading` is the current ring with
+an arc that turns while the step works, and stands still under reduced motion, the media query's or
+the design config's. Every status has its own glyph or number, so none is told by colour alone, and
+a screen reader hears it in words after the label: "Done", "Not started", "Error" and "In progress"
+by default, from `statusLabels` in the product's words. The current step's word is never said: it is
+`aria-current="step"`. The fills and rings are 3:1 or more on the page in both themes.
+
+<Canvas>
+  <Story of={StepperStories.Statuses} />
+</Canvas>
+
+## Vertical
+
+`orientation="vertical"` puts the steps in a column, each indicator 12 before its label and a line
+between them, as a wizard's side panel lists them. The label wraps rather than truncating. Right to
+left, the indicators sit at the inline start, on the right.
+
+<Canvas>
+  <Story of={StepperStories.Vertical} />
+</Canvas>
+
+<Canvas>
+  <Story of={StepperStories.VerticalRightToLeft} />
+</Canvas>
+
+## Going back
+
+With `onStepSelect`, every step the visitor may go to is a button that calls it with the step's
+index. By default those are the steps before the current one; a step's `disabled` says otherwise,
+`true` to close an earlier step and `false` to open one ahead, as a step already visited is. The
+current step is never a button.
+
+Each button is a Tab stop of its own, in order, as Pagination's pages and Breadcrumb's links are.
+Kozmos gives one Tab stop and the arrow keys to composite widgets whose role promises them, Tabs,
+RadioGroup and SegmentedControl; a list of buttons is not one, so a screen reader user expects Tab
+here, and a wizard's handful of steps costs little to Tab through. A step's target is the density's
+control height, 44 in touch and 32 in compact, or the step as drawn where that is larger, so a
+button moves nothing.
+
+<Canvas>
+  <Story of={StepperStories.Navigable} />
+</Canvas>
+
+Stepper draws no content under a step.
 
 ## Implementation
 
