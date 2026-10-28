@@ -411,3 +411,22 @@ test("the consuming page names the global, the files, the provider, the cards an
       `the index does not link ${name}`,
     );
 });
+
+test("the consuming page carries the rules a design session gets wrong", () => {
+  const text = fs.readFileSync(path.join(root, OUT_DIR, "README.md"), "utf8");
+  for (const [rule, phrase] of [
+    ["icons are named imports (decision 121)", "<Icon icon={HelpCircle} />"],
+    [
+      "a Home tile is Navbar's logo",
+      "A Home tile goes in Navbar's `logo` slot",
+    ],
+    ["parts read the semantic radius roles", "`--semantics-radius-control` ("],
+    [
+      "the primitive radii do nothing",
+      "No part reads `--primitives-radius-button`",
+    ],
+    ["Select is modal (decision 120)", "Select is modal (decision 120)"],
+    ["a disabled menu item says why (decision 123)", "(decision 123)"],
+  ])
+    assert.ok(text.includes(phrase), `the consuming page does not say ${rule}`);
+});
