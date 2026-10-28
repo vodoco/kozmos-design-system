@@ -48,7 +48,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-06 | No skip link or visually-hidden text                             | Core                   | composed     |
 | GAP-07 | Icons a website needs ship, but `Icon` cannot name them          | Core                   | open         |
 | GAP-08 | No footer                                                        | Core                   | composed     |
-| GAP-09 | `buttonVariants` on a link keeps the link's underline            | Core                   | left visible |
+| GAP-09 | `buttonVariants` on a link keeps the link's underline            | Core                   | fixed        |
 | GAP-10 | No image or brand-mark primitive                                 | Core                   | composed     |
 | GAP-11 | `EmptyState`'s title is not a heading                            | Core                   | open         |
 | GAP-12 | `Alert` is always `role="alert"`, `AlertTitle` always an `h5`    | Core                   | fixed        |
@@ -79,7 +79,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-37 | `SearchBar` shows the browser's clear button beside its own      | Product / SDK          | fixed        |
 | GAP-38 | The map sheet's handle is 4px tall and its grip invisible        | Product / SDK          | fixed        |
 | GAP-39 | `RouteSummary`'s title is always an `h2`                         | Product / SDK          | left visible |
-| GAP-40 | Map overlays draw over the sticky `Navbar`                       | Product / SDK          | composed     |
+| GAP-40 | Map overlays draw over the sticky `Navbar`                       | Product / SDK          | fixed        |
 | GAP-41 | `Navbar` has no narrow-screen pattern                            | Core                   | composed     |
 | GAP-42 | `CardTitle`'s line height is 1.0                                 | Core                   | left visible |
 | GAP-43 | Controls with touch targets under 44px                           | Core                   | left visible |
@@ -94,7 +94,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-52 | The provider's preflight zeroes a caller's border                | Core                   | composed     |
 | GAP-53 | A map shell cannot fill a rounded screen                         | Product / SDK          | left visible |
 | GAP-54 | No light: glow, gradient, blur or ambient motion                 | Core                   | composed     |
-| GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | composed     |
+| GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | fixed        |
 | GAP-56 | `Button` puts no space between an icon and its label             | Core                   | fixed        |
 | GAP-57 | A `Button`'s label cannot wrap                                   | Core                   | composed     |
 | GAP-58 | `Toast` draws no background of its own                           | Core                   | fixed        |
@@ -107,13 +107,13 @@ keep the table's four columns and its statuses as they are.
 | GAP-65 | `Textarea`'s resize grip paints outside its rounded corner       | Core                   | left visible |
 | GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed        |
 | GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible |
-| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open         |
+| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | fixed        |
 | GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | fixed        |
 | GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open         |
 | GAP-71 | `AISearchButton` has no hover state                              | Core                   | open         |
 | GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
-| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | open         |
-| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | open         |
+| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | fixed        |
+| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | fixed        |
 | GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | fixed        |
 | GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible |
 | GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open         |
@@ -133,7 +133,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-91 | `AdaptiveMapShell` cuts its top bar's and controls' shadows      | Product / SDK          | left visible |
 | GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed     |
 | GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | fixed        |
-| GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
+| GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | fixed        |
 | GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
 | GAP-96 | A theme switch fades every part's colours                        | Core                   | composed     |
 | GAP-97 | A date range is two fields; no time range and no closed hours    | Core                   | open         |
@@ -311,8 +311,15 @@ keep the table's four columns and its statuses as they are.
 - **Evidence:** in Chromium, the same classes compute
   `text-decoration-line: underline` on `a.kozmos-button` and `none` on
   `button.kozmos-button`. Visible on the home page's two hero buttons.
-- **Now:** left visible on purpose. Hiding it in site CSS would be exactly the
-  workaround the rule forbids.
+- **Fixed** in the design system on 2026-10-26 (#416): `.kozmos-button` takes
+  the underline off, in owned CSS so it holds without `@scope`. `buttonVariants`
+  on an anchor, and `Pagination`'s page, Previous and Next links, draw none at
+  rest; the link variant still underlines on hover. Kozmos's own `underline`
+  utility outweighs the rule; a host's own utility in a cascade layer
+  (Tailwind 4's) never does, and an unlayered one only when it loads after
+  Kozmos's stylesheet. "GAP-09 is fixed: a link drawn as a button draws no
+  underline" reads the home page's hero buttons.
+- **Was:** left visible on purpose on the home page's two hero buttons.
 - **Lane:** Core.
 - **Fix in Kozmos:** `text-decoration: none` on `.kozmos-button` (and the link
   variant decides its own underline).
@@ -872,16 +879,19 @@ keep the table's four columns and its statuses as they are.
   it comes later in the document. Measured on the MapOverlay reference
   page and the kiosk example (and on the home page's map scene, until the
   cover replaced it on 2026-09-22).
-- **Now:** the site isolates every frame that hosts a map (`isolation:
-isolate` on the example canvases, as on the component pages' demo stages and
-  the index's previews until the demos moved to Storybook on 2026-09-28), and
-  a test scrolls each stacked element under the header and checks nothing
-  draws over it. The test that pins the gap reads the kiosk directory's map,
-  whose `MapOverlay` holds its floor list. Inside the kiosk's canvas the
-  attract screen takes the same top layer token as the overlay
-  (`--primitives-layer-50`) and covers it by coming later: solid since
-  decision 49, it drew the floor list over itself, and "the attract screen
-  covers the whole directory" reads the pixels where the list's tile is.
+- **Fixed** in the design system on 2026-10-26 (#416): `MapView`'s root is
+  `isolate`, framed or filling, so a `MapOverlay`'s z-index 50, and anything
+  else the map draws with a z-index of its own, stacks inside the map; inside
+  `AdaptiveMapShell` it stays under the shell's top bar, controls and panel.
+  "GAP-40 is fixed: MapView isolates its overlays" reads the kiosk directory's
+  map. The site's example canvases keep `isolation: isolate` for their own
+  sticky Navbar (GAP-19), and the kiosk's attract screen keeps the top layer
+  token. The layer scale this row also asked for was not needed once the map
+  isolates, and was not made. A fixed element rendered inside the map that
+  does not portal (a fixed FloatingActionButton, DynamicIsland, a product's
+  own) now stacks inside it too; MapView's docs say to render one outside the
+  map, or portal it out. A `Backdrop` portals itself since #419.
+- **Was:** composed: the site isolated every frame that hosts a map.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
   has; and a layer scale in which the page's navigation sits above a map's
@@ -1192,10 +1202,14 @@ isolate` on the example canvases, as on the component pages' demo stages and
 - **Evidence:** the site's search dialog, on the packages at `7622daf`: 676px
   options in a 462px list. "GAP-55: a Listbox's column is as wide as its
   widest option" measures it with the site's fix taken off.
-- **Now:** composed. The search's `Listbox` takes a site class that sets
-  `grid-template-columns: minmax(0, 1fr)` — a property the Listbox does not
-  set — so its options take the list's width and their text ends in an
-  ellipsis. Other Listboxes on the site hold short options.
+- **Fixed** in the design system on 2026-10-26 (#416): `.kozmos-listbox` has
+  one column, `minmax(0, 1fr)`, and `.kozmos-option` is `min-width: 0`, so an
+  option takes the list's width, in a group that is a grid of its own too,
+  and its words end in their ellipsis. The site's `site-search-list` class is gone,
+  and "GAP-55 is fixed: a Listbox's options take the list's width" reads the
+  search's list without it.
+- **Was:** composed: the search's `Listbox` took a site class that set the
+  column.
 - **Lane:** Core.
 - **Fix in Kozmos:** `grid-template-columns: minmax(0, 1fr)` in
   `.kozmos-listbox`, as the site's own single-column grids have.
@@ -1529,7 +1543,15 @@ Text"])`) and the Get started page shows — touches it.
   padding 8 — 3.5px above the bar's top border and 4.5px below it, with the
   selected item's fill crossing the border. Nothing else changes: icon 24,
   label 12/16, gap 4, badge 12, bar 64 in both.
-- **Now:** open. The BottomNavigation page's demo showed it until the demos
+- **Fixed** in the design system on 2026-10-26 (#416): the bar is as tall as
+  its items, as Figma's is: 64 at `compact` and 72 at `default`, every item
+  inside it, with its 1px top line drawn inside, over the items, as Figma's
+  inside stroke is (a border on the bar's `::before`, so forced colours still
+  draw it). Its items now sit above the bottom safe area: the `pb-safe` it
+  carried compiled to nothing. The `w-auto` half went with decision 42: the bar's items are its
+  own, sharing its width. No site check pinned it since the demos left;
+  `scripts/check-site-gaps.mjs` measures it in Chromium, Firefox and WebKit.
+- **Was:** open; the BottomNavigation page's demo showed it until the demos
   moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** let the bar take its height from its items (`min-h-16`
@@ -1637,7 +1659,12 @@ Text"])`) and the Get started page shows — touches it.
   **1.00:1** against its own white fill, while the chevron keeps its blue
   border. A pixel scan across the middle finds no edge at the left of "Save"
   and a blue line only at the seam.
-- **Now:** open. The SplitButton page's demo showed it until the demos moved
+- **Fixed** in the design system on 2026-10-26 (#416): the seam's tint is
+  `border-e-…/20`, the inline-end side alone, so the outline variant's main
+  part keeps its outline on the other three: 8.01:1 on its fill in light and
+  8.39:1 in dark, where it read 1.00 and 1.66:1. `scripts/check-site-gaps.mjs`
+  reads every side, in both directions, in Chromium, Firefox and WebKit.
+- **Was:** open; the SplitButton page's demo showed it until the demos moved
   to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** tint the seam with a side-specific colour
@@ -1654,7 +1681,13 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** measured on the Tooltip page — content bottom 538.0, arrow
   top 538.0, zero overlap; a pixel column down the arrow's centre reads a
   solid 1px `#c7cad1` band at the join, 12.8:1 against the white either side.
-- **Now:** open. The Tooltip page's demo showed it until the demos moved to
+- **Fixed** in the design system on 2026-10-26 (#416): the tip overlaps the
+  body by 1px, as Figma's Tooltip tip does, so it covers the body's border
+  where the two meet; it keeps its 8 by 4 box, so the tooltip sits where it
+  did. `PopoverArrow`, whose defaults match it, does the same. Its two slanted
+  edges carry no outline, as in Figma. `scripts/check-site-gaps.mjs` reads the
+  join's pixel on every side, light and dark, in Chromium, Firefox and WebKit.
+- **Was:** open; the Tooltip page's demo showed it until the demos moved to
   Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** draw the arrow with the body's border — an outlined
@@ -2067,9 +2100,16 @@ Text"])`) and the Get started page shows — touches it.
   each line, over the turquoise, the grey is at worst 4.51:1 in light and
   4.85:1 in dark, the foreground 15.5:1 and 13.1:1, in Chromium, Firefox and
   WebKit. #145 measured the same grey as low as 3.6:1 over a saturated map.
-- **Now:** open. No example is glass since decision 49, so none shows it.
-  "GAP-94: Text's muted colour stays grey on a glass Surface" reads it on the
-  elevation page's card, and fails once the `Text` follows the glass.
+- **Fixed** in the design system on 2026-10-26 (#416): `.kozmos-text-muted`
+  reads `--kozmos-surface-muted-foreground`, falling back to the muted colour,
+  as `.kozmos-muted-text` does. Over the category fills, a muted `Text` on
+  glass read 3.61:1 at worst in light and 4.38:1 in dark in Chromium (3.76 and
+  4.39 in Firefox and WebKit); it reads 12.44 and 11.85:1 (12.96 and 11.88).
+  "GAP-94 is fixed: Text's muted colour follows a glass Surface" reads it on
+  the elevation page's card. A solid surface, an opaque `Card` and a nested
+  provider of the other theme on the glass keep their own muted colour.
+  SwiftUI's `KozmosText` with `tone: .muted` does not follow glass yet.
+- **Was:** open.
 - **Lane:** Core.
 - **Fix in Kozmos:** let `.kozmos-text-muted` read the surface's property, as
   `.kozmos-muted-text` does, falling back to the muted colour.
