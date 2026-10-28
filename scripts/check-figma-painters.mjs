@@ -4396,6 +4396,89 @@ section("MapControlsGroup");
   }
 }
 
+section("AdaptiveMapShell's map slots (GAP-123, SDK-UI-002)");
+{
+  // Where React's shell puts what it places over the map: the top corners
+  // under the top bar, the controls column below the top end, and the bottom
+  // row with its corners and, between them, the status with the credits
+  // above it. Rows in flow, so they follow the surface's width.
+  for (const value of ["Start", "End"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateAdaptiveMapShellVariant(component, {
+      value,
+      variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const surface = named(component, "Map Surface");
+    const names = (node) => (node ? node.children.map((c) => c.name) : []);
+    ok(
+      surface &&
+        surface.layoutMode === "VERTICAL" &&
+        names(surface).join() ===
+          "Top Corners,Controls Column,Map Space,Bottom Row",
+      `${value}: the map surface stacks the top corners, the controls, the map and the bottom row`,
+    );
+    const top = surface && named(surface, "Top Corners");
+    ok(
+      top &&
+        top.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        top.layoutSizingHorizontal === "FILL" &&
+        names(top).join() === "Top Start Slot,Top End Slot",
+      `${value}: the top corners share a row, the start first and the end at the end`,
+    );
+    const column = surface && named(surface, "Controls Column");
+    ok(
+      column &&
+        column.primaryAxisAlignItems === "MAX" &&
+        names(column).join() === "Controls Slot",
+      `${value}: the controls column sits at the end, below the top corners`,
+    );
+    const space = surface && named(surface, "Map Space");
+    ok(
+      space &&
+        space.layoutSizingVertical === "FILL" &&
+        space.fills.length === 0 &&
+        space.strokes.length === 0,
+      `${value}: the map between the rows is undrawn and takes what they leave`,
+    );
+    const bottom = surface && named(surface, "Bottom Row");
+    ok(
+      bottom &&
+        bottom.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        bottom.counterAxisAlignItems === "MAX" &&
+        names(bottom).join() ===
+          "Bottom Start Slot,Status And Credits,Bottom End Slot",
+      `${value}: the bottom row puts the status between the corners, level with their bottom edge`,
+    );
+    const middle = bottom && named(bottom, "Status And Credits");
+    ok(
+      middle && names(middle).join() === "Attribution Slot,Status Slot",
+      `${value}: the credits sit directly above the status`,
+    );
+    for (const name of [
+      "Top Start Slot",
+      "Top End Slot",
+      "Bottom Start Slot",
+      "Bottom End Slot",
+      "Status Slot",
+      "Attribution Slot",
+    ]) {
+      const slot = surface && named(surface, name);
+      ok(
+        slot &&
+          slot.cornerRadius ===
+            plugin.nestedRadius(
+              plugin.KOZMOS_RADIUS.control,
+              plugin.PRODUCT_SDK_CARD_INSET,
+            ),
+        `${value}: ${name} takes the radius the map surface's inset leaves it`,
+      );
+    }
+  }
+}
+
 // --- An icon that lost its tint is repaired on Update -----------------------------
 
 section("Icon tint repair");

@@ -1,5 +1,8 @@
 import figma from "@figma/code-connect";
+import { LogOut01 } from "@kozmos-ds/icons";
+import { MapControlButton } from "../MapControlButton/MapControlButton";
 import { MapControlsGroup } from "../MapControlsGroup/MapControlsGroup";
+import { MapStatusPill } from "../MapStatusPill/MapStatusPill";
 import {
   POIDetailPanel,
   type POIDetailPanelProps,
@@ -34,6 +37,14 @@ figma.connect(AdaptiveMapShell, adaptiveMapShellUrl, {
       panelLabel={panelLabel}
       panelPlacement={panelPlacement}
       controls={<MapControlsGroup />}
+      controlsTopStart={
+        <MapControlButton
+          icon={<LogOut01 />}
+          label="Exit building"
+          presentation="labelled"
+        />
+      }
+      status={<MapStatusPill tone="progress">Calculating route</MapStatusPill>}
       topBar={<SearchBar />}
     />
   ),

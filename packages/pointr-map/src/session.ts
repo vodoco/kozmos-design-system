@@ -295,6 +295,22 @@ export class PointrMapSession {
     return true;
   }
 
+  /**
+   * Leaves the open building as the SDK's own Exit button does, which Kozmos
+   * hides: the button only emits the view's `exitClicked`, and the SDK's map
+   * controller answers it — zoomed in on a building, it scrolls out to the
+   * site's centre; nearer the site's zoom, it zooms out past it (10.13.0).
+   * The building change follows from the camera, through `onBuildingChange`.
+   */
+  exitBuilding(): boolean {
+    const widget = this.widget;
+    const view = this.view;
+    if (!widget || !this.map || !view?.emit) return false;
+    if (!(widget.getCurrentBuilding() ?? this.building)) return false;
+    view.emit(view.events?.exitClicked ?? "exit-clicked");
+    return true;
+  }
+
   flyToPoi(id: string, options: FlyToPoiOptions = {}): boolean {
     const item = this.pois.get(String(id));
     const map = this.map;

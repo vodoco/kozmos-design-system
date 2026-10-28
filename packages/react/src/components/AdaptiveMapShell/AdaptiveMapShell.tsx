@@ -68,6 +68,25 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   attribution?: React.ReactNode;
   /** Opt in to conservative bottom camera padding for the measured corner region. */
   bottomControlsPadCamera?: boolean;
+  /**
+   * The map's status, between the bottom corners and level with them
+   * (GAP-123): a MapStatusPill saying "Route updated" or "Calculating
+   * step-free route". The credits give way to it, directly above it, and both
+   * stay centred on the map. With no middle slot between the corners it rises
+   * above them, as the credits do. With no room above the sheet it is not
+   * drawn and still announces. It never pads the camera.
+   */
+  status?: React.ReactNode;
+  /**
+   * Logical top corners under the top bar, clear of the panel: Exit building
+   * at the start (SDK-UI-006), the map's information at the end. They share a
+   * row, or the start sits above the end; a `controls` column starts below
+   * them. They pad the camera only with `controlsPadCamera`.
+   */
+  controlsTopStart?: React.ReactNode;
+  controlsTopEnd?: React.ReactNode;
+  /** Accessible name shared by both top corners, distinct from the other two. */
+  topControlsLabel?: string;
   topBar?: React.ReactNode;
   panel?: React.ReactNode;
   /**
@@ -310,6 +329,10 @@ const AdaptiveMapShell = React.forwardRef<
       bottomControlsLabel = "Map corner controls",
       attribution,
       bottomControlsPadCamera = false,
+      status,
+      controlsTopStart,
+      controlsTopEnd,
+      topControlsLabel = "Map top corner controls",
       topBar,
       panel,
       panelHeader,
@@ -355,6 +378,13 @@ const AdaptiveMapShell = React.forwardRef<
       controlsBottomStart != null && typeof controlsBottomStart !== "boolean";
     const hasBottomEnd =
       controlsBottomEnd != null && typeof controlsBottomEnd !== "boolean";
+    const topControls = React.useRef<HTMLDivElement>(null);
+    const statusContent = React.useRef<HTMLDivElement>(null);
+    const hasTopStart =
+      controlsTopStart != null && typeof controlsTopStart !== "boolean";
+    const hasTopEnd =
+      controlsTopEnd != null && typeof controlsTopEnd !== "boolean";
+    const hasStatus = status != null && typeof status !== "boolean";
     const panelContent = React.useRef<HTMLDivElement>(null);
     const panelHeaderElement = React.useRef<HTMLDivElement>(null);
     const handleElement = React.useRef<HTMLDivElement>(null);
@@ -386,6 +416,8 @@ const AdaptiveMapShell = React.forwardRef<
       bottomControlsHeight: 0,
       bottomStartWidth: 0,
       bottomEndWidth: 0,
+      topControlsHeight: 0,
+      statusHeight: 0,
       /** The attribution with its brand, and with its credits alone. */
       attributionFullHeight: 0,
       attributionCreditsHeight: 0,
@@ -459,6 +491,8 @@ const AdaptiveMapShell = React.forwardRef<
           bottomControlsHeight: bottomControls.current?.offsetHeight ?? 0,
           bottomStartWidth: bottomStart.current?.offsetWidth ?? 0,
           bottomEndWidth: bottomEnd.current?.offsetWidth ?? 0,
+          topControlsHeight: topControls.current?.offsetHeight ?? 0,
+          statusHeight: statusContent.current?.offsetHeight ?? 0,
           attributionFullHeight,
           attributionCreditsHeight,
           controlsHeight: Math.max(
@@ -503,6 +537,8 @@ const AdaptiveMapShell = React.forwardRef<
         bottomControls.current,
         bottomStart.current,
         bottomEnd.current,
+        topControls.current,
+        statusContent.current,
         attributionContent.current,
         panelContent.current,
         panelHeaderElement.current,
@@ -542,6 +578,9 @@ const AdaptiveMapShell = React.forwardRef<
       Boolean(controls),
       hasBottomStart,
       hasBottomEnd,
+      hasTopStart,
+      hasTopEnd,
+      hasStatus,
       hasAttribution,
       Boolean(panel),
       hasPanelHeader,
@@ -743,22 +782,50 @@ const AdaptiveMapShell = React.forwardRef<
       width: barWidth,
       height: topBar ? Math.min(measured.barHeight, chromeHeight) : 0,
     };
-    const controlsY = barBounds.y + (topBar ? barBounds.height + gap : 0);
+    // Under the top bar: the top corners, then the legacy controls.
+    const topY = barBounds.y + (topBar ? barBounds.height + gap : 0);
     // The band the controls keep above a bottom sheet. A sheet that takes it
     // all leaves them no room: they are hidden then, not drawn under the
     // sheet where a keyboard or a screen reader would still reach them, and
     // they no longer pad the camera.
-    const footerBand = Math.max(
-      0,
-      available.y + available.height - gap - controlsY,
-    );
+    const footerBottom = available.y + available.height - gap;
+    // The top corners, at the logical start and end. They share a row, or
+    // the start sits above the end, and give way only to the credits, which
+    // are never clipped: with no room left, they stay mounted but leave the
+    // region. What follows them starts below them.
+    const topControlsHeight = measured.topControlsHeight;
+    const creditsReserve = hasAttribution
+      ? Math.min(measured.attributionCreditsHeight, attributionCap) + gap
+      : 0;
+    const topShown =
+      (hasTopStart || hasTopEnd) &&
+      topControlsHeight > 0 &&
+      topY + topControlsHeight + creditsReserve <= footerBottom;
+    const topBounds = {
+      x: available.x + gap,
+      y: topY,
+      width: chromeWidth,
+      height: topControlsHeight,
+    };
+    const controlsY = topY + (topShown ? topControlsHeight + gap : 0);
+    const footerBand = Math.max(0, footerBottom - controlsY);
+    // The status, level with the bottom corners, with the credits directly
+    // above it, this far up. It gives way only to what is above it and the
+    // credits; without room it is not drawn, and stays announced.
+    const statusHeight = hasStatus ? measured.statusHeight : 0;
+    const statusFits = statusHeight + creditsReserve <= footerBand;
+    const statusShown = statusHeight > 0 && statusFits;
+    const statusRaise = statusShown ? statusHeight + gap : 0;
     // Preserve the legacy top controls: they take what an attribution this
     // tall leaves them, and the independent bottom corners the rest. The
     // corners need no more than their own height; with less, they keep their
     // state mounted but leave the region and interaction.
     const hasBottomControls = hasBottomStart || hasBottomEnd;
     const controlsBandFor = (attribution: number) =>
-      Math.max(0, footerBand - (attribution > 0 ? attribution + gap : 0));
+      Math.max(
+        0,
+        footerBand - (attribution > 0 ? attribution + gap : 0) - statusRaise,
+      );
     const cornersFitFor = (attribution: number) =>
       measured.bottomControlsHeight <=
         Math.max(
@@ -788,14 +855,14 @@ const AdaptiveMapShell = React.forwardRef<
         : 0;
     // Decision 58: the logo gives way first. It shows only when the whole
     // attribution fits the band, lifted above the corners when they leave no
-    // middle slot. Each height is measured whatever is drawn, so this settles
-    // in one pass; leaving takes a pixel to spare, so a rounding never flips
-    // it back and forth.
+    // middle slot, and above a status. Each height is measured whatever is
+    // drawn, so this settles in one pass; leaving takes a pixel to spare, so a
+    // rounding never flips it back and forth.
     const attributionCompact =
       attributionFull >
       Math.min(
         attributionCap,
-        Math.max(0, footerBand - liftFor(attributionFull)),
+        Math.max(0, footerBand - liftFor(attributionFull) - statusRaise),
       ) -
         (attributionWasCompact.current ? 1 : 0);
     attributionWasCompact.current = attributionCompact;
@@ -807,7 +874,7 @@ const AdaptiveMapShell = React.forwardRef<
     const lift = liftFor(attributionHeight);
     const bottomControlsFit =
       cornersFitFor(attributionHeight) &&
-      (!lift || attributionHeight + lift <= footerBand);
+      (!lift || attributionHeight + statusRaise + lift <= footerBand);
     const attributionBounds = {
       x: available.x + gap,
       y: available.y + available.height - gap - attributionHeight,
@@ -858,17 +925,27 @@ const AdaptiveMapShell = React.forwardRef<
       available.height -
       gap -
       attributionLift -
+      statusRaise -
       attributionBounds.height;
-    if (
-      sidePanelCap !== undefined &&
-      layout.panelBounds &&
+    // The status shares the credits' slot, centred in it.
+    const statusBounds = {
+      ...attributionBounds,
+      y: footerBottom - attributionLift - statusHeight,
+      height: statusHeight,
+    };
+    const footerTop =
       attributionBounds.height > 0
-    ) {
+        ? attributionBounds.y
+        : statusShown
+          ? statusBounds.y
+          : 0;
+    if (sidePanelCap !== undefined && layout.panelBounds && footerTop) {
       // Keep a full-width footer band clear even with a tall side panel and no
-      // registered corner controls. The attribution must not slide sideways.
+      // registered corner controls. The attribution must not slide sideways,
+      // and the status under it keeps it clear too.
       sidePanelCap = Math.min(
         sidePanelCap,
-        Math.max(0, attributionBounds.y - gap - layout.panelBounds.y),
+        Math.max(0, footerTop - gap - layout.panelBounds.y),
       );
       layout.panelBounds = {
         ...layout.panelBounds,
@@ -889,25 +966,35 @@ const AdaptiveMapShell = React.forwardRef<
       ...(hasBottomControls && bottomControlsHeight > 0
         ? [{ kind: "controls" as const, bounds: bottomControlsBounds }]
         : []),
+      ...(topShown ? [{ kind: "controls" as const, bounds: topBounds }] : []),
+      ...(statusShown
+        ? [{ kind: "status" as const, bounds: statusBounds }]
+        : []),
     ];
     const insets = resolveMapInsets(
       layout.mapBounds,
       // The controls stay in `occlusions` whatever this says; what changes is
-      // only whether they are allowed to pad the camera.
+      // only whether they are allowed to pad the camera. A status never does:
+      // it comes and goes, and the camera would move each time (GAP-079). So
+      // the credits pad where they rest without it.
       occlusions
         .filter(
           (occlusion) =>
-            occlusion.kind !== "controls" ||
-            (occlusion.bounds === bottomControlsBounds
-              ? bottomControlsPadCamera
-              : controlsPadCamera),
+            occlusion.kind !== "status" &&
+            (occlusion.kind !== "controls" ||
+              (occlusion.bounds === bottomControlsBounds
+                ? bottomControlsPadCamera
+                : controlsPadCamera)),
         )
         .map((occlusion) => ({
-          bounds: occlusion.bounds,
+          bounds:
+            occlusion.kind === "attribution"
+              ? { ...occlusion.bounds, y: occlusion.bounds.y + statusRaise }
+              : occlusion.bounds,
           edge:
             occlusion.kind === "attribution"
               ? "bottom"
-              : occlusion.kind === "top-bar"
+              : occlusion.kind === "top-bar" || occlusion.bounds === topBounds
                 ? "top"
                 : occlusion.kind === "controls"
                   ? occlusion.bounds === bottomControlsBounds
@@ -1231,6 +1318,48 @@ const AdaptiveMapShell = React.forwardRef<
                 {controls}
               </div>
             )}
+            {(hasTopStart || hasTopEnd) && (
+              <div
+                ref={topControls}
+                role="region"
+                aria-label={topControlsLabel}
+                hidden={unavailable}
+                className="absolute z-30"
+                style={{
+                  left: topBounds.x,
+                  top: topY,
+                  width: chromeWidth,
+                  visibility: topShown ? "visible" : "hidden",
+                  // The space between the corners is the map's.
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="flex flex-wrap items-start gap-4">
+                  {hasTopStart && (
+                    <div
+                      style={{
+                        maxWidth: "100%",
+                        marginInlineEnd: "auto",
+                        pointerEvents: "auto",
+                      }}
+                    >
+                      {controlsTopStart}
+                    </div>
+                  )}
+                  {hasTopEnd && (
+                    <div
+                      style={{
+                        maxWidth: "100%",
+                        marginInlineStart: "auto",
+                        pointerEvents: "auto",
+                      }}
+                    >
+                      {controlsTopEnd}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {hasBottomControls && (
               <MapPopupRegionContext.Provider
                 value={{
@@ -1370,7 +1499,8 @@ const AdaptiveMapShell = React.forwardRef<
                     available.y -
                     available.height +
                     gap +
-                    attributionLift,
+                    attributionLift +
+                    statusRaise,
                   width: attributionBounds.width,
                 }}
               >
@@ -1387,6 +1517,37 @@ const AdaptiveMapShell = React.forwardRef<
                   >
                     {attribution}
                   </MapShellAttributionCompactContext.Provider>
+                </div>
+              </div>
+            )}
+            {hasStatus && (
+              <div
+                data-kozmos-map-status=""
+                data-settling={
+                  isSheet && settling && dragHeight === null ? "" : undefined
+                }
+                hidden={unavailable}
+                className="kozmos-map-footer absolute z-30"
+                style={{
+                  left: attributionBounds.x,
+                  bottom: measured.height - footerBottom + attributionLift,
+                  width: attributionBounds.width,
+                  pointerEvents: "none",
+                  // Not drawn without room, and still in the accessibility
+                  // tree, so what it says is still announced.
+                  clipPath: statusFits ? undefined : "inset(50%)",
+                }}
+              >
+                <div
+                  ref={statusContent}
+                  style={{
+                    width: "fit-content",
+                    maxWidth: "100%",
+                    marginInline: "auto",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  {status}
                 </div>
               </div>
             )}

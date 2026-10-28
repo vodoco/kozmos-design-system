@@ -566,7 +566,8 @@ export interface AdaptiveMapLayout {
 }
 
 export interface MapOcclusion {
-  kind: "panel" | "top-bar" | "controls" | "attribution";
+  /** `status` is the shell's map status between the bottom corners; it never pads the camera. */
+  kind: "panel" | "top-bar" | "controls" | "attribution" | "status";
   /** Shell-local bounds; intersect with mapBounds before sending to a renderer. */
   bounds: MapLayoutRect;
 }
