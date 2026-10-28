@@ -176,7 +176,7 @@ export const Step: Story = {
     return (
       <DensityScope density="compact">
         <Stack gap={4} style={{ minHeight: "26rem" }}>
-          <Stack direction="row" gap={2} justify="center">
+          <Stack direction="row" gap={2} justify="center" wrap="wrap">
             <Button variant="ghost">Maps</Button>
             <Button variant="ghost">Analytics</Button>
             <Button ref={settings} variant="ghost">
@@ -219,7 +219,7 @@ export const DoStep: Story = {
       <DensityScope density="compact">
         <Stack gap={4} justify="end" style={{ minHeight: "28rem" }}>
           <ShowStep onShow={() => setOpen(true)} />
-          <Stack direction="row" gap={2} justify="center">
+          <Stack direction="row" gap={2} justify="center" wrap="wrap">
             <Button variant="ghost">Select</Button>
             <Button ref={polygon} variant="ghost">
               Polygon
@@ -263,7 +263,7 @@ export const LastStep: Story = {
       <DensityScope density="compact">
         <Stack gap={4} justify="end" style={{ minHeight: "30rem" }}>
           <ShowStep onShow={() => setOpen(true)} />
-          <Stack direction="row" gap={2} justify="center">
+          <Stack direction="row" gap={2} justify="center" wrap="wrap">
             <Button variant="secondary">Cancel</Button>
             <Button ref={add}>Add User</Button>
           </Stack>
@@ -303,7 +303,7 @@ export const Warning: Story = {
       <DensityScope density="compact">
         <Stack gap={4} justify="end" style={{ minHeight: "30rem" }}>
           <ShowStep onShow={() => setOpen(true)} />
-          <Stack direction="row" gap={2} justify="center">
+          <Stack direction="row" gap={2} justify="center" wrap="wrap">
             <Button variant="secondary">Cancel</Button>
             <Button ref={add}>Add User</Button>
           </Stack>
