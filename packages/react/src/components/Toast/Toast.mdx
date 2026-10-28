@@ -32,8 +32,9 @@ config's reduced motion reaches it there.
   background. The parts take the same `tone`: `<Toast tone="success">`.
 - **Announced:** each toast once, by Radix's live region, with `toastLabel` ("Notification") before
   its words: a `critical` toast assertively, every other tone politely, and `live` says otherwise. The
-  region says its `aria-live`, as every Kozmos live part does, so a modal Select or Dialog that hides
-  the page from a screen reader does not silence it.
+  region says its `aria-live`, as every Kozmos live part does (GAP-193), so a modal Select, Menu or
+  Dialog that hides the page from a screen reader does not silence it; the toasts behind such a popup
+  are hidden and out of reach together until it closes.
 - **Focus:** a toast never takes it. F8 (`hotkey`) moves focus to the toasts. Escape closes the
   focused toast, or, with focus anywhere else, the newest one (Radix's layers), and leaves focus
   where it is.
