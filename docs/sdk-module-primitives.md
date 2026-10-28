@@ -571,7 +571,8 @@ coverage; they are not 58 new implementation tasks or proof of all-target comple
 - Implement shared presentation behavior on React, SwiftUI and Compose in the same work package.
   Equivalent outcomes do not require identical DOM/native APIs. Missing native components need
   an implementation plan, not a checkbox saying an equivalent prop exists. Native language
-  buttons remain intentionally absent: device/app language is the agreed policy.
+  buttons were once left out (device/app language); decision 70 (2026-10-09) replaced that, and
+  SDK-UI-003 builds the native LanguageSwitcher on native Select.
 - The host owns ranking, result indices, floor/venue data, routing state, clustering algorithms,
   provider attribution policy and SDK rendering. The DS owns presentation contracts, reusable
   components, semantics and layout. Do not move host behavior into a component to close a row.
@@ -609,16 +610,16 @@ integration candidate together before claiming that package complete.
 
 Every source-backlog row below is accounted for, but is not an unconditional coding task.
 
-| Gaps    | Disposition and recommendation                                                                                                                                                                                                                            |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GAP-086 | React divider fix already shipped. Retain its RTL regression and record any remaining consumer/native acceptance; do not reimplement it.                                                                                                                  |
-| GAP-016 | Owner/platform decision: whether to fund a public native Vue library, continue the private wrapper or use a different supported integration. No publication implied. Blocks P10 commitment, not Waves 1–2.                                                |
-| GAP-038 | No active chart criterion. Defer until a real dashboard requirement defines chart types, accessible table fallback and target framework.                                                                                                                  |
-| GAP-043 | Resolve search-microphone requirement versus the agreed keyboard-dictation policy. Preserve current SearchBar behavior meanwhile; assistant voice conversation is a different capability.                                                                 |
-| GAP-045 | Prefer OS-owned device chrome. Close as not applicable only after product-owner confirmation; keep prototype framing separate from runtime components.                                                                                                    |
-| GAP-092 | Current Search with AI uses a header Notice. Defer footer API until an active use case needs it; P07 handles the active Notice problem.                                                                                                                   |
-| GAP-099 | Current route-update design uses MapStatusPill. Defer Toast placement extension until a consumer still needs it; test status/sheet coexistence in integration.                                                                                            |
-| GAP-117 | Recommend preserving the existing button default and, if every location-mode change should reveal, adding an explicit mode-change trigger at the group level. Confirm this against decision 40; otherwise correct the wrapper's over-broad documentation. |
+| Gaps    | Disposition and recommendation                                                                                                                                                                                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GAP-086 | React divider fix already shipped. Retain its RTL regression and record any remaining consumer/native acceptance; do not reimplement it.                                                                                                                                                        |
+| GAP-016 | Decided (decisions 76, 83, 84 and 88): a public `@kozmos-ds/vue` on Vue 3 and Reka UI, built on GAP-148's foundation, with React first in each phase and Vue after it. The owner (26 Oct) confirmed Vue 3 only, whatever version Pointr Cloud runs today. Blocks P10 commitment, not Waves 1–2. |
+| GAP-038 | No active chart criterion. Defer until a real dashboard requirement defines chart types, accessible table fallback and target framework.                                                                                                                                                        |
+| GAP-043 | Resolve search-microphone requirement versus the agreed keyboard-dictation policy. Preserve current SearchBar behavior meanwhile; assistant voice conversation is a different capability.                                                                                                       |
+| GAP-045 | Prefer OS-owned device chrome. Close as not applicable only after product-owner confirmation; keep prototype framing separate from runtime components.                                                                                                                                          |
+| GAP-092 | Current Search with AI uses a header Notice. Defer footer API until an active use case needs it; P07 handles the active Notice problem.                                                                                                                                                         |
+| GAP-099 | Current route-update design uses MapStatusPill. Defer Toast placement extension until a consumer still needs it; test status/sheet coexistence in integration.                                                                                                                                  |
+| GAP-117 | Recommend preserving the existing button default and, if every location-mode change should reveal, adding an explicit mode-change trigger at the group level. Confirm this against decision 40; otherwise correct the wrapper's over-broad documentation.                                       |
 
 ### Decisions before their affected packages
 
