@@ -921,41 +921,44 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertNil(translated.accessibilityHint, "the open tile still says it shows every level")
     }
 
-    /// A level's tooltip is its name, and its button is already called by
-    /// it: given to VoiceOver as a hint too, every level in the open column
-    /// was read twice. The column's levels sit in a scroll view, which no
-    /// in-process walk can read on iOS 26.5 (KozmosManoeuvreCardTests;
-    /// measured again on 2026-10-04, with UIKit's and SwiftUI's
-    /// accessibility bundles loaded), so this reads the tile's own SwiftUI
-    /// element, which takes its tooltip the same way. VoiceOver reads it on
-    /// a Mac; on iOS it is hidden behind the UIKit element. A tooltip
-    /// elsewhere keeps its hint.
-    @MainActor func testALevelIsNotHintedWithItsOwnName() async throws {
+    /// The tile is one element to a UI test, as it is to VoiceOver: the UIKit
+    /// element laid over it, which says whether its column is open. The map
+    /// control under it gave UI tests a second, at the same frame, with its
+    /// short label and its two chevrons: `.accessibilityHidden(true)` hid it
+    /// from assistive technologies, but `automationElements`, which XCUITest reads,
+    /// lists hidden nodes too. Its accessibility is now replaced by nothing.
+    /// The open column's levels sit in a scroll view, which no walk in a test
+    /// process can read on iOS 26.5 (KozmosManoeuvreCardTests; measured again
+    /// on 2026-10-04, with UIKit's and SwiftUI's accessibility bundles
+    /// loaded): `InteractionTests` counts them as XCUITest finds them, and
+    /// reads the hint VoiceOver is given for each.
+    @MainActor func testTheTileIsOneElementToUITestsToo() async throws {
         let automationWas = try XCTUnwrap(setAutomation(1), "libAccessibility has no automation switch here")
         defer { _ = setAutomation(automationWas) }
-        let window = await host(VStack(alignment: .trailing) {
-            Button("Zoom in") {}.kozmosTooltip("Zooms the map in")
-            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible)
-        })
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
         defer { window.isHidden = true }
         let nodes = everyNode(in: window)
-        let tile = try XCTUnwrap(nodes.first { !($0 is UIView) && $0.accessibilityLabel == "First floor" },
-                                 "no SwiftUI element for the tile")
-        XCTAssertNil(tile.accessibilityHint, "the tile is hinted with its own name")
-        let zoom = try XCTUnwrap(nodes.first { $0.accessibilityLabel == "Zoom in" }, "no element for the other tooltip's button")
-        XCTAssertEqual(zoom.accessibilityHint, "Zooms the map in", "a tooltip elsewhere lost its hint")
+        let tile = nodes.filter { $0.accessibilityLabel == "First floor" }
+        XCTAssertEqual(tile.count, 1, "the tile's elements: \(tile)")
+        XCTAssertTrue(tile.first is KozmosFloorSwitcherElement.ElementView, "the tile is not the UIKit element: \(tile)")
+        let parts = nodes.compactMap(\.accessibilityLabel).filter { ["1F", "Go Up", "Go Down"].contains($0) }
+        XCTAssertEqual(parts, [], "the map control's own parts are elements")
     }
 
     /// Every node the accessibility runtime knows under `node`, hidden ones
     /// too: `automationElements` lists them, `accessibilityElements` does not.
+    /// Each once, however many ways it is reached.
     @MainActor private func everyNode(in node: NSObject) -> [NSObject] {
-        var children: [NSObject] = []
-        if #available(iOS 17.0, *), let automation = node.automationElements as? [NSObject] { children += automation }
-        children += node.accessibilityElements as? [NSObject] ?? []
-        if let view = node as? UIView { children += view.subviews }
-        var seen: [NSObject] = []
-        for child in children where !seen.contains(where: { $0 === child }) { seen.append(child) }
-        return [node] + seen.flatMap { everyNode(in: $0) }
+        var seen: Set<ObjectIdentifier> = []
+        func visit(_ node: NSObject) -> [NSObject] {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { return [] }
+            var children: [NSObject] = []
+            if #available(iOS 17.0, *), let automation = node.automationElements as? [NSObject] { children += automation }
+            children += node.accessibilityElements as? [NSObject] ?? []
+            if let view = node as? UIView { children += view.subviews }
+            return [node] + children.flatMap { visit($0) }
+        }
+        return visit(node)
     }
 
     // SwiftUI hands its elements to UIKit only while the accessibility

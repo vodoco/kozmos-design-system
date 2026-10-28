@@ -38,6 +38,7 @@ private struct InteractionFixture: View {
     @State private var switchOn = false
     @State private var bareSwitchOn = false
     @State private var accordionOpen: String?
+    @State private var shownFloor = "1"
     @State private var thumbs = 0
     @State private var colour = "#135BEC"
     @State private var multiLocked = false
@@ -84,6 +85,26 @@ private struct InteractionFixture: View {
     private func accessibleValues(named name: String) -> [String] {
         accessibleNodes().filter { $0.isAccessibilityElement && $0.accessibilityLabel == name }
             .map { $0.accessibilityValue ?? "" }
+    }
+
+    private let floorLevels = [(id: "2", label: "Second floor"), (id: "1", label: "First floor"), (id: "G", label: "Ground floor")]
+
+    /// What VoiceOver is given for the floor switcher's levels, its tile and
+    /// the Zoom in button, once its column has opened: each element's name
+    /// and hint. The column is drawn after the switcher reports it open, so
+    /// this waits, 50ms at a time, for its levels to be in the tree. XCUI
+    /// reads no hints, and no walk in a test process reaches the column's
+    /// levels, which sit in a scroll view; this app's walk does, while XCUI
+    /// drives it.
+    private func reportFloorHints(waits: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            let names = floorLevels.map(\.label) + ["Zoom in"]
+            let found = accessibleNodes().filter { $0.isAccessibilityElement && names.contains($0.accessibilityLabel ?? "") }
+            let drawn = found.contains { $0.accessibilityLabel == floorLevels[0].label }
+            guard drawn || waits == 0 else { return reportFloorHints(waits: waits - 1) }
+            controlAccessibilityReport = found.map { "\($0.accessibilityLabel ?? "")=\($0.accessibilityHint ?? "no hint")" }
+                .sorted().joined(separator: "|")
+        }
     }
 
     private func accessibleNodes() -> [NSObject] {
@@ -567,6 +588,21 @@ private struct InteractionFixture: View {
             }
             .frame(width: 320)
             .largeRightToLeft(scenario == "accordion-large-rtl")
+        case "floor-switcher", "floor-switcher-large-rtl":
+            // A tooltip that is its button's hint, so a report of no hints
+            // on the levels is not a walk that reads none.
+            Button("Zoom in") {}.kozmosTooltip("Zooms the map in")
+            // Room above the tile, so the column grows up over it, as it
+            // does parked at the foot of a map.
+            KozmosFloorSelector(floors: floorLevels.map { .init(id: $0.id, label: $0.label, shortLabel: $0.id) },
+                selectedFloor: Binding(get: { shownFloor }, set: { shownFloor = $0; events.append("floor \($0)") }),
+                variant: .collapsible)
+                .padding(.top, 200)
+                .largeRightToLeft(scenario == "floor-switcher-large-rtl")
+                .environment(\.kozmosAnalytics, { event in
+                    if event.eventName == "floor_selector_expanded" { reportFloorHints(waits: 40) }
+                })
+            Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
         case "rating-thumbs":
             KozmosRating(value: Binding(get: { thumbs }, set: { thumbs = $0; events.append("rating \($0)") }), variant: .thumbs)
         case "color-format", "color-format-disabled", "color-format-readonly":

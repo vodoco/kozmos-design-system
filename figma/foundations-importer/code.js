@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "a4b178d76a19";
+const PLUGIN_BUILD = "3fad06a52ae9";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -3591,12 +3591,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open listbox anatomy examples.",
       "Label Text, Placeholder Text, Helper Text, option text properties, and Show Helper Text map to Combobox props and children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
       "Field height and listbox options meet the 44px minimum target.",
@@ -3621,12 +3622,13 @@ const COMPONENT_DOCS = [
       "Content maps to empty, selected, and open multiselect examples.",
       "Selected values compose live Chip instances for visual and token parity.",
       "Label Text, Placeholder Text, Helper Text, and option text properties map to MultiSelect props and children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Content: Empty, Selected, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
       "Field controls and listbox options meet the 44px minimum target.",
@@ -3649,12 +3651,13 @@ const COMPONENT_DOCS = [
       "Selection maps to Listbox.multiple.",
       "State maps to focus and disabled examples.",
       "Option text and description properties map to Listbox option children.",
+      "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
       "Focus Visible controls the generated listbox focus ring.",
     ],
     properties: [
       "Selection: Single, Multiple",
       "State: Default, Focus, Disabled",
-      "Option 1 Text, Option 1 Description, Option 2 Text, Option 2 Description, Option 3 Text, Option 3 Description, Focus Visible",
+      "Option 1 Text, Option 1 Description, Option 2 Text, Option 2 Description, Option 3 Text, Option 3 Description, Group 1 Text, Group 2 Text, Show Group Labels, Focus Visible",
     ],
     accessibility: [
       "Listbox and option rows preserve visible focus and active descendant states.",
@@ -28309,13 +28312,7 @@ function bindComboboxGeometryVariables(
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      field,
-      "paddingRight",
-      "Combobox/field/padding/x",
-      variableByName,
-      stats,
-    );
+    // paddingRight is the room for the field's actions (appendFieldActions).
     bindFloatVariable(
       field,
       "paddingTop",
@@ -28501,13 +28498,7 @@ function bindMultiSelectGeometryVariables(
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      field,
-      "paddingRight",
-      "MultiSelect/field/padding/x",
-      variableByName,
-      stats,
-    );
+    // paddingRight is the room for the field's actions (appendFieldActions).
     bindFloatVariable(
       field,
       "paddingTop",
@@ -43394,6 +43385,53 @@ function configureOTPInputProperties(componentSet, stats) {
   configureFocusVisibleProperty(componentSet, stats);
 }
 
+// GAP-192: the group labels the option lists draw (createOptionGroupLabel):
+// a Show Group Labels boolean that shows both, off by default, and their
+// words, Group 1 Text and Group 2 Text.
+function configureOptionGroupProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Group 1 Text",
+    "Group 1 Text",
+    "Transit",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Group 2 Text",
+    "Group 2 Text",
+    "Cycling",
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    "Show Group Labels",
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+
+  function walk(node) {
+    if (
+      node.type === "FRAME" &&
+      node.getSharedPluginData &&
+      node.getSharedPluginData(RUN_NAMESPACE, "kind") === "option-group-label"
+    ) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  }
+
+  walk(componentSet);
+  stats.optionGroupVisibilityBindings = boundCount;
+}
+
 function configureComboboxProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Combobox", stats);
   configurePlaceholderTextProperty(componentSet, "Search or select", stats);
@@ -43418,6 +43456,7 @@ function configureComboboxProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(componentSet, "Choose one option.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
@@ -43469,6 +43508,7 @@ function configureMultiSelectProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(
     componentSet,
     "Choose one or more options.",
@@ -43521,6 +43561,7 @@ function configureListboxProperties(componentSet, stats) {
     "Secure cycle storage",
     stats,
   );
+  configureOptionGroupProperties(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -67301,6 +67342,8 @@ async function syncComboboxVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Group 1 Text",
+    "Group 2 Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -67400,16 +67443,17 @@ async function syncComboboxVariantChildren({
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
 
-  const trailingIcon = await createFixedIconInstance(
-    isOpen ? "chevron-up" : "chevron-down",
-    config.placeholder,
-    config.placeholderFallback,
+  // The clear, as MultiSelect's: with a value (Open, as Code Connect's
+  // defaultInputValue has it), and neither disabled nor read only.
+  const actionIcons = await appendFieldActions(field, {
+    tokenPrefix: "Combobox",
+    sizeToken: "Combobox/field/height",
+    showClear: isOpen && !disabled && state !== "Readonly",
+    isOpen,
+    config,
     variableByName,
     stats,
-    16,
-    "Combobox/icon/size",
-  );
-  field.appendChild(trailingIcon);
+  });
 
   syncFocusRing(field, {
     enabled: state !== "Disabled",
@@ -67457,6 +67501,15 @@ async function syncComboboxVariantChildren({
       preservedText["Option 3 Text"] || "Bike Parking",
     ];
     for (let index = 0; index < optionLabels.length; index += 1) {
+      await appendOptionGroupLabels(
+        listbox,
+        index,
+        "Combobox",
+        preservedText,
+        variableByName,
+        fonts,
+        stats,
+      );
       const option = await createComboboxOption({
         index,
         text: optionLabels[index],
@@ -67505,7 +67558,7 @@ async function syncComboboxVariantChildren({
     field,
     listbox,
     optionNodes,
-    [leadingIcon, trailingIcon].concat(optionIcons),
+    [leadingIcon].concat(actionIcons, optionIcons),
     variableByName,
     stats,
   );
@@ -67548,6 +67601,189 @@ function applyOptionFocusRing(option, focused, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// Since #397 React draws Combobox's and MultiSelect's clear and open as
+// buttons at the field's end (field-actions.ts): each as tall and wide as the
+// field, 44 at touch (40 compact once Figma has density modes: bound to the
+// field's height), the 16px icon centred, out of the field's line and inside
+// its border, the open button last. The field keeps the room at its end that
+// React's does: 44 and 4 for the open button, 88 and 8 with the clear.
+const FIELD_ACTION_SIZE = 44;
+
+async function appendFieldActions(
+  field,
+  { tokenPrefix, sizeToken, showClear, isOpen, config, variableByName, stats },
+) {
+  const actions = [];
+  if (showClear) actions.push({ name: "Clear Button", icon: "x-close" });
+  actions.push({
+    name: "Open Button",
+    icon: isOpen ? "chevron-up" : "chevron-down",
+  });
+  const row = figma.createFrame();
+  row.name = "Field Actions";
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "FIXED";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 0;
+  row.paddingLeft = 0;
+  row.paddingRight = 0;
+  row.paddingTop = 0;
+  row.paddingBottom = 0;
+  row.resizeWithoutConstraints(
+    FIELD_ACTION_SIZE * actions.length,
+    FIELD_ACTION_SIZE,
+  );
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "field-actions");
+  const icons = [];
+  for (const action of actions) {
+    const button = figma.createFrame();
+    button.name = action.name;
+    button.layoutMode = "HORIZONTAL";
+    button.primaryAxisSizingMode = "FIXED";
+    button.counterAxisSizingMode = "FIXED";
+    button.primaryAxisAlignItems = "CENTER";
+    button.counterAxisAlignItems = "CENTER";
+    button.itemSpacing = 0;
+    button.paddingLeft = 0;
+    button.paddingRight = 0;
+    button.paddingTop = 0;
+    button.paddingBottom = 0;
+    button.resizeWithoutConstraints(FIELD_ACTION_SIZE, FIELD_ACTION_SIZE);
+    button.cornerRadius = KOZMOS_RADIUS.control;
+    button.fills = [];
+    button.strokes = [];
+    button.clipsContent = false;
+    button.setSharedPluginData(RUN_NAMESPACE, "kind", "field-action");
+    bindFloatVariable(button, "width", sizeToken, variableByName, stats);
+    bindFloatVariable(button, "height", sizeToken, variableByName, stats);
+    const icon = await createFixedIconInstance(
+      action.icon,
+      config.placeholder,
+      config.placeholderFallback,
+      variableByName,
+      stats,
+      16,
+      `${tokenPrefix}/icon/size`,
+    );
+    button.appendChild(icon);
+    icons.push(icon);
+    row.appendChild(button);
+  }
+  field.appendChild(row);
+  row.layoutPositioning = "ABSOLUTE";
+  row.x = field.width - row.width;
+  row.y = Math.max(0, (field.height - row.height) / 2);
+  row.constraints = { horizontal: "MAX", vertical: "CENTER" };
+  field.paddingRight =
+    actions.length === 2 ? FIELD_ACTION_SIZE * 2 + 8 : FIELD_ACTION_SIZE + 4;
+  return icons;
+}
+
+// GAP-192: a group's label in Combobox's, MultiSelect's and Listbox's lists,
+// as React's .kozmos-option-group-label draws it, which is SelectLabel's:
+// 14/20 semibold in full ink, 6 above and below, 12 at the sides. Group 1
+// heads options 1 and 2, Group 2 option 3. Hidden until Show Group Labels is
+// on (configureOptionGroupProperties), so the lists draw as they did.
+const OPTION_GROUP_LABELS = [
+  { before: 0, text: "Group 1 Text", fallback: "Transit" },
+  { before: 2, text: "Group 2 Text", fallback: "Cycling" },
+];
+
+async function appendOptionGroupLabels(
+  list,
+  optionIndex,
+  tokenPrefix,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+) {
+  for (let index = 0; index < OPTION_GROUP_LABELS.length; index += 1) {
+    const group = OPTION_GROUP_LABELS[index];
+    if (group.before !== optionIndex) continue;
+    const row = await createOptionGroupLabel({
+      index,
+      text: preservedText[group.text] || group.fallback,
+      tokenPrefix,
+      variableByName,
+      fonts,
+      stats,
+    });
+    list.appendChild(row);
+    setLayoutSizingHorizontal(row, "FILL");
+  }
+}
+
+async function createOptionGroupLabel({
+  index,
+  text,
+  tokenPrefix,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const row = figma.createFrame();
+  row.name = `Group ${index + 1} Label`;
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "AUTO";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 0;
+  row.paddingLeft = 12;
+  row.paddingRight = 12;
+  row.paddingTop = 6;
+  row.paddingBottom = 6;
+  row.resizeWithoutConstraints(312, 32);
+  // At the sides, where the rows' words start: their padding's variable. Six
+  // above and below is SelectLabel's py-1.5, which no token names.
+  bindFloatVariable(
+    row,
+    "paddingLeft",
+    `${tokenPrefix}/option/padding/x`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    row,
+    "paddingRight",
+    `${tokenPrefix}/option/padding/x`,
+    variableByName,
+    stats,
+  );
+  row.cornerRadius = KOZMOS_RADIUS.none;
+  row.clipsContent = false;
+  row.fills = [];
+  row.strokes = [];
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "option-group-label");
+
+  const label = figma.createText();
+  label.name = `Group ${index + 1} Text`;
+  await applyTextTypography(
+    label,
+    "Small",
+    "Semibold",
+    fonts,
+    variableByName,
+    stats,
+  );
+  label.characters = text;
+  label.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  label.textAlignVertical = "CENTER";
+  row.appendChild(label);
+  setHorizontalFillTextSizing(label);
+  setTextAutoResize(label, "TRUNCATE");
+  row.visible = false;
+  return row;
 }
 
 async function createComboboxOption({
@@ -67665,6 +67901,8 @@ async function syncMultiSelectVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Group 1 Text",
+    "Group 2 Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -67793,31 +68031,16 @@ async function syncMultiSelectVariantChildren({
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
 
-  if (hasSelections && !disabled && !readonly) {
-    const clearIcon = await createFixedIconInstance(
-      "x-close",
-      config.placeholder,
-      config.placeholderFallback,
-      variableByName,
-      stats,
-      16,
-      "MultiSelect/icon/size",
-    );
-    icons.push(clearIcon);
-    field.appendChild(clearIcon);
-  }
-
-  const trailingIcon = await createFixedIconInstance(
-    isOpen ? "chevron-up" : "chevron-down",
-    config.placeholder,
-    config.placeholderFallback,
+  const actionIcons = await appendFieldActions(field, {
+    tokenPrefix: "MultiSelect",
+    sizeToken: "MultiSelect/field/min-height",
+    showClear: hasSelections && !disabled && !readonly,
+    isOpen,
+    config,
     variableByName,
     stats,
-    16,
-    "MultiSelect/icon/size",
-  );
-  icons.push(trailingIcon);
-  field.appendChild(trailingIcon);
+  });
+  for (const icon of actionIcons) icons.push(icon);
 
   syncFocusRing(field, {
     enabled: state !== "Disabled",
@@ -67864,6 +68087,15 @@ async function syncMultiSelectVariantChildren({
       preservedText["Option 3 Text"] || "Bike Parking",
     ];
     for (let index = 0; index < optionLabels.length; index += 1) {
+      await appendOptionGroupLabels(
+        listbox,
+        index,
+        "MultiSelect",
+        preservedText,
+        variableByName,
+        fonts,
+        stats,
+      );
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
@@ -68154,6 +68386,8 @@ async function syncListboxVariantChildren({
     "Option 2 Description",
     "Option 3 Text",
     "Option 3 Description",
+    "Group 1 Text",
+    "Group 2 Text",
   ]);
   const existingChildren = Array.from(component.children || []);
   for (const child of existingChildren) {
@@ -68176,6 +68410,15 @@ async function syncListboxVariantChildren({
   const icons = [];
 
   for (let index = 0; index < labels.length; index += 1) {
+    await appendOptionGroupLabels(
+      component,
+      index,
+      "Listbox",
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    );
     const selected = multiple ? index !== 1 : index === 0;
     const option = await createListboxOption({
       index,
@@ -76966,9 +77209,11 @@ function createSpinnerGlyph(
  * Border colours come from two roles, never from a primitive:
  *
  *   "Border/Subtle"  #C7CAD1  container edges — cards, popovers, menus, dialogs,
- *                             drawers, toasts, list rows, dividers, the dropzone
- *   "Border/Input"   #747B8B  control boundaries — fields, checkboxes, radios,
- *                             switch and slider tracks, swatches, a toast action
+ *                             drawers, toasts, list rows, dividers, a file row
+ *   "Border/Input"   #747B8B  control boundaries — fields, FileUpload's
+ *                             dropzone (the field's stroke, theme 600 while
+ *                             dragging), checkboxes, radios, switch and slider
+ *                             tracks, swatches, a toast action
  *
  * Both are Semantics.Border in packages/tokens; scripts/check-border-parity.mjs
  * fails the build if a stroke here reaches for foreground/500 or background/200

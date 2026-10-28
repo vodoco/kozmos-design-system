@@ -464,8 +464,16 @@ public struct KozmosFloorSelector: View {
         control
             // VoiceOver is given the UIKit element laid over the tile instead:
             // it can say whether the column is open, which SwiftUI has no
-            // modifier for.
-            .accessibilityHidden(true)
+            // modifier for. Touches still reach the map control underneath.
+            //
+            // The map control's accessibility is replaced by nothing, so the
+            // element is the tile's one button for VoiceOver and for XCUITest
+            // alike. `.accessibilityHidden(true)` hid it from assistive
+            // technologies but not from XCUITest, which still found it, with
+            // its short label and its two chevrons, beside the element at the
+            // same frame, so `app.buttons["First floor"]` matched two
+            // (measured on iOS 26.5; earlier iOS versions were not measured).
+            .accessibilityRepresentation { EmptyView() }
             .overlay(
                 KozmosFloorSwitcherElement(
                     anchor: anchor,
@@ -522,12 +530,14 @@ public struct KozmosFloorSelector: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(label)
             .accessibilityAction(.escape) { close(returningFocus: true) }
-            // Escape on a hardware keyboard, as the escape gesture above.
+            // Escape on a hardware keyboard, as the escape gesture above. No
+            // element of its own: `.accessibilityHidden(true)` left XCUITest
+            // an unnamed button in the column.
             .background(
                 Button { close(returningFocus: true) } label: { EmptyView() }
                     .keyboardShortcut(.cancelAction)
                     .opacity(0)
-                    .accessibilityHidden(true)
+                    .accessibilityRepresentation { EmptyView() }
             )
             .transition(
                 reduceMotion

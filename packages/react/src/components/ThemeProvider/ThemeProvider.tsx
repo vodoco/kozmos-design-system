@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { DensityContext } from "../../theme/density-context";
+import { MotionContext } from "../../theme/motion-context";
 import {
   ThemeProviderContext,
   type ThemeState,
@@ -79,6 +80,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const parent = useContext(ThemeProviderContext);
   const inheritedDensity = useContext(DensityContext);
+  const motion = useContext(MotionContext);
   const root = useRef<HTMLDivElement>(null);
   const [preference, setPreference] = useState<Theme>(defaultTheme);
   const [systemTheme, setSystemTheme] =
@@ -179,6 +181,9 @@ export function ThemeProvider({
               <div
                 ref={setPortalContainer}
                 data-kozmos-portal=""
+                // The config's reduced motion, which its provider marks on
+                // its own scope: the portal is outside it (MotionContext).
+                data-kozmos-motion={motion}
                 {...attributes}
               />,
               portalHost,
