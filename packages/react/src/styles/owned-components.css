@@ -83,27 +83,34 @@
       forced-color-adjust: none;
     }
   }
-  /* Progress's ring (decision 131): 48, 96 or 128 across (spacing 600, 900
-     and 1000), its label centred in the hole and kept inside the square the
-     hole holds. The arc is the
-     theme fill (decision 59) on background 100: 4.42:1 light and 3.13:1
-     dark, where on background 200 dark it read 2.32:1. */
+  /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
+     600, 900 and 1000), its label centred in the hole and kept inside the
+     square the hole holds, or beside the dial at the inline end. The arc is
+     the tone's emotion text colour, themed by default, theme 600 as the bar
+     is: every tone reads 4.8:1 or more on the background 100 track, light
+     and dark. */
   .kozmos-progress-ring {
     @apply text-xs;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    flex-shrink: 0;
+    vertical-align: middle;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-progress-ring-dial {
     position: relative;
-    display: inline-grid;
+    display: grid;
     place-items: center;
     flex-shrink: 0;
     width: calc(var(--primitives-layout-spacing-900) * 1px);
     height: calc(var(--primitives-layout-spacing-900) * 1px);
-    vertical-align: middle;
-    color: var(--primitives-colors-foreground-0);
   }
-  .kozmos-progress-ring[data-size="sm"] {
+  .kozmos-progress-ring[data-size="sm"] > .kozmos-progress-ring-dial {
     width: calc(var(--primitives-layout-spacing-600) * 1px);
     height: calc(var(--primitives-layout-spacing-600) * 1px);
   }
-  .kozmos-progress-ring[data-size="lg"] {
+  .kozmos-progress-ring[data-size="lg"] > .kozmos-progress-ring-dial {
     width: calc(var(--primitives-layout-spacing-1000) * 1px);
     height: calc(var(--primitives-layout-spacing-1000) * 1px);
   }
@@ -117,11 +124,14 @@
     stroke: var(--primitives-colors-background-100);
   }
   .kozmos-progress-ring-arc {
-    stroke: var(--primitives-colors-theme-500);
+    stroke: var(
+      --kozmos-progress-ring-tone,
+      var(--semantics-emotion-themed-text)
+    );
     transition: stroke-dasharray var(--semantics-motion-duration-standard)
       var(--semantics-motion-easing-standard);
   }
-  .kozmos-progress-ring-label {
+  .kozmos-progress-ring-dial > .kozmos-progress-ring-label {
     position: relative;
     max-width: 57%;
     text-align: center;

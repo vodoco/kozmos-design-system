@@ -19,8 +19,14 @@ interface Mount {
   size?: ProgressProps["size"];
   value: number | null;
   max?: number;
-  /** "levels" is the Level Manager's two lines; a string is drawn as given. */
-  label?: "levels" | string;
+  /**
+   * "levels" is the Level Manager's two lines in the hole; "beside" its
+   * design beside the ring, Heading 4's size over xs muted; a string is
+   * drawn as given.
+   */
+  label?: "levels" | "beside" | string;
+  labelPlacement?: ProgressProps["labelPlacement"];
+  tone?: ProgressProps["tone"];
   ariaLabel?: string;
   /** Read "11 of 15" rather than Radix's percentage. */
   countLabel?: boolean;
@@ -49,6 +55,8 @@ function Fixture({
   value,
   max = 100,
   label,
+  labelPlacement,
+  tone,
   ariaLabel,
   countLabel,
   configReduced = false,
@@ -69,6 +77,8 @@ function Fixture({
           value={value}
           max={max}
           aria-label={ariaLabel}
+          labelPlacement={labelPlacement}
+          tone={tone}
           getValueLabel={
             countLabel ? (now, total) => `${now} of ${total}` : undefined
           }
@@ -80,6 +90,15 @@ function Fixture({
                 </Text>
                 <Text size="xs" color="muted" align="center">
                   Levels Added in total
+                </Text>
+              </>
+            ) : label === "beside" ? (
+              <>
+                <Text size="xl" weight="bold">
+                  2 Levels
+                </Text>
+                <Text size="xs" color="muted">
+                  Added in total
                 </Text>
               </>
             ) : (

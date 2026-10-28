@@ -9,6 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.luminance
+import com.kozmos.tokens.KozmosColorsDark
+import com.kozmos.components.KozmosEmotion
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
@@ -60,6 +66,7 @@ class KozmosProgressRingTest {
         assertEquals(listOf(48f, 96f, 128f), KozmosProgressSize.values().map { it.diameter.value })
         assertEquals(listOf(4f, 8f, 12f), KozmosProgressSize.values().map { it.stroke.value })
         assertEquals(listOf("Linear", "Circular"), KozmosProgressShape.values().map { it.name })
+        assertEquals(listOf("Center", "End"), KozmosProgressLabelPlacement.values().map { it.name })
     }
 
     @Test fun withAnimationsOffANewValueIsDrawnAtOnce() {
@@ -82,14 +89,21 @@ class KozmosProgressRingTest {
         }
     }
 
-    private fun draw(progress: Float, size: KozmosProgressSize, direction: LayoutDirection = LayoutDirection.Ltr): Drawn {
+    private fun draw(
+        progress: Float,
+        size: KozmosProgressSize,
+        direction: LayoutDirection = LayoutDirection.Ltr,
+        tone: KozmosEmotion? = null,
+        dark: Boolean = false,
+        label: (@Composable () -> Unit)? = null
+    ): Drawn {
         var bounds = Rect.Zero
         var rootWidth = 0
         var density = 0f
         val pixels = paparazzi.drawn(frames) {
             CompositionLocalProvider(
                 LocalLayoutDirection provides direction,
-                LocalKozmosUseDarkTokens provides false,
+                LocalKozmosUseDarkTokens provides dark,
                 LocalKozmosAnimatorScale provides 0f
             ) {
                 KozmosMaterialTheme {
@@ -98,12 +112,25 @@ class KozmosProgressRingTest {
                     // A margin round the ring, so a ray read past its edge
                     // reads the page, not the frame's edge pixel again.
                     Box(Modifier.fillMaxSize().background(Color.White).padding(24.dp)) {
-                        KozmosProgress(
-                            progress,
-                            Modifier.onGloballyPositioned { bounds = it.boundsInRoot(); rootWidth = view.width },
-                            shape = KozmosProgressShape.Circular,
-                            size = size
-                        )
+                        val placed = Modifier.onGloballyPositioned { bounds = it.boundsInRoot(); rootWidth = view.width }
+                        if (tone == null) {
+                            KozmosProgress(
+                                progress,
+                                placed,
+                                shape = KozmosProgressShape.Circular,
+                                size = size,
+                                labelPlacement = KozmosProgressLabelPlacement.End,
+                                label = label
+                            )
+                        } else {
+                            KozmosProgress(
+                                progress,
+                                placed,
+                                shape = KozmosProgressShape.Circular,
+                                size = size,
+                                tone = tone
+                            )
+                        }
                     }
                 }
             }
@@ -111,7 +138,8 @@ class KozmosProgressRingTest {
         return Drawn(pixels, bounds, pixels.width.toFloat() / rootWidth, density)
     }
 
-    private val theme = KozmosColors.primitivesColorsTheme500.toArgb()
+    // Unset, the arc is the bar's own fill, theme 600 (owner, 28 Oct).
+    private val theme = KozmosColors.primitivesColorsTheme600.toArgb()
     private val track = KozmosColors.primitivesColorsBackground100.toArgb()
     private fun isArc(argb: Int) = DrawnPixels.matches(argb, theme, tolerance = 24)
 
@@ -143,14 +171,86 @@ class KozmosProgressRingTest {
         assertEquals(emptyList<String>(), wrong)
     }
 
-    /** The arc is the theme fill and the track background 100: the colours React's tokens draw. */
-    @Test fun theArcIsTheThemeFillOnBackground100() {
-        val ring = draw(0.25f, KozmosProgressSize.Lg)
-        val radius = ring.bounds.width * ring.scale * (128f - 12f) / 2f / 128f
-        val onArc = ring.at(45.0, radius)
-        val onTrack = ring.at(225.0, radius)
-        assertTrue("the arc is ${DrawnPixels.hex(onArc)}", DrawnPixels.matches(onArc, theme, tolerance = 6))
-        assertTrue("the track is ${DrawnPixels.hex(onTrack)}", DrawnPixels.matches(onTrack, track, tolerance = 6))
+    /**
+     * Owner, 28 Oct: a status ring. Unset, the arc is the bar's theme 600;
+     * each tone's is its emotion's text colour, Tag's; the track is
+     * background 100; and every arc is 3:1 or more on it, light and dark.
+     */
+    @Test fun theArcIsTheBarsFillAndEachToneItsEmotionsTextOnBackground100() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val palette = if (dark) listOf(
+                null to KozmosColorsDark.primitivesColorsTheme600,
+                KozmosEmotion.Themed to KozmosColorsDark.semanticsEmotionThemedText,
+                KozmosEmotion.Neutral to KozmosColorsDark.semanticsEmotionNeutralText,
+                KozmosEmotion.Success to KozmosColorsDark.semanticsEmotionSuccessText,
+                KozmosEmotion.Danger to KozmosColorsDark.semanticsEmotionDangerText,
+                KozmosEmotion.Informative to KozmosColorsDark.semanticsEmotionInformativeText,
+                KozmosEmotion.Alert to KozmosColorsDark.semanticsEmotionAlertText
+            ) else listOf(
+                null to KozmosColors.primitivesColorsTheme600,
+                KozmosEmotion.Themed to KozmosColors.semanticsEmotionThemedText,
+                KozmosEmotion.Neutral to KozmosColors.semanticsEmotionNeutralText,
+                KozmosEmotion.Success to KozmosColors.semanticsEmotionSuccessText,
+                KozmosEmotion.Danger to KozmosColors.semanticsEmotionDangerText,
+                KozmosEmotion.Informative to KozmosColors.semanticsEmotionInformativeText,
+                KozmosEmotion.Alert to KozmosColors.semanticsEmotionAlertText
+            )
+            val trackColour = (if (dark) KozmosColorsDark.primitivesColorsBackground100 else KozmosColors.primitivesColorsBackground100)
+            for ((tone, want) in palette) {
+                val ring = draw(0.25f, KozmosProgressSize.Lg, tone = tone, dark = dark)
+                val radius = ring.bounds.width * ring.scale * (128f - 12f) / 2f / 128f
+                val onArc = ring.at(45.0, radius)
+                val onTrack = ring.at(225.0, radius)
+                val name = "${if (dark) "dark" else "light"} ${tone ?: "unset"}"
+                if (!DrawnPixels.matches(onArc, want.toArgb(), tolerance = 6)) wrong += "$name: the arc is ${DrawnPixels.hex(onArc)}, not ${DrawnPixels.hex(want.toArgb())}"
+                if (!DrawnPixels.matches(onTrack, trackColour.toArgb(), tolerance = 6)) wrong += "$name: the track is ${DrawnPixels.hex(onTrack)}"
+                val ratio = (maxOf(want.luminance(), trackColour.luminance()) + 0.05f) / (minOf(want.luminance(), trackColour.luminance()) + 0.05f)
+                if (ratio < 3f) wrong += "$name: $ratio:1 on the track"
+            }
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /**
+     * Beside the ring at the inline end, 12 from it, centred on it: right of
+     * it left to right and left of it right to left, the ring still filling
+     * clockwise.
+     */
+    @Test fun aLabelAtTheEndSitsBesideTheRingAtTheInlineEnd() {
+        val wrong = mutableListOf<String>()
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            val drawn = draw(0.25f, KozmosProgressSize.Lg, direction) {
+                Text("2 Levels", color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+            val pixels = drawn.pixels
+            var ring = Rect.Zero
+            var words = Rect.Zero
+            fun grow(r: Rect, x: Int, y: Int) =
+                if (r == Rect.Zero) Rect(x.toFloat(), y.toFloat(), x + 1f, y + 1f)
+                else Rect(minOf(r.left, x.toFloat()), minOf(r.top, y.toFloat()), maxOf(r.right, x + 1f), maxOf(r.bottom, y + 1f))
+            for (y in 0 until pixels.height) for (x in 0 until pixels.width) {
+                val c = pixels.argb(x, y)
+                // The arc's blue, or the track's grey, which is a little blue:
+                // the label's antialiased edges are greys with none.
+                val blueish = (c and 0xFF) - (c shr 16 and 0xFF) >= 4
+                if (DrawnPixels.matches(c, theme, tolerance = 24) || (blueish && DrawnPixels.matches(c, track, tolerance = 3))) ring = grow(ring, x, y)
+                else if (DrawnPixels.lightness(c) < 150) words = grow(words, x, y)
+            }
+            val perDp = drawn.scale * drawn.density
+            val gap = (if (direction == LayoutDirection.Ltr) words.left - ring.right else ring.left - words.right) / perDp
+            if (gap < 11f || gap > 15f) wrong += "$direction: the label is $gap dp from the ring, not at its inline end"
+            if (kotlin.math.abs(words.center.y - ring.center.y) / perDp > 3f) wrong += "$direction: the label is not centred on the ring"
+            if (kotlin.math.abs(ring.width / perDp - 128f) > 2f) wrong += "$direction: the ring is ${ring.width / perDp} dp wide"
+            // A quarter: the arc at the ring's top right in both directions.
+            val r = ring.width * (128f - 12f) / 2f / 128f
+            val topRight = pixels.argb(
+                (ring.center.x + r * 0.7071f).toInt(),
+                (ring.center.y - r * 0.7071f).toInt()
+            )
+            if (!isArc(topRight)) wrong += "$direction: the arc is not at the top right (${DrawnPixels.hex(topRight)})"
+        }
+        assertEquals(emptyList<String>(), wrong)
     }
 
     /** At a full ring, along a ray every 10°, the painted band is the size's stroke, inside the box. */
@@ -200,17 +300,33 @@ class KozmosProgressRingTest {
                         },
                         shape = KozmosProgressShape.Circular
                     ) { Text("11") }
+                    KozmosProgress(
+                        2f / 6f,
+                        shape = KozmosProgressShape.Circular,
+                        labelPlacement = KozmosProgressLabelPlacement.End
+                    ) {
+                        Column {
+                            Text("2 Levels")
+                            Text("Added in total")
+                        }
+                    }
                 }
             }
         }
         val rings = read.merged.filter { it.progressRange != null }
-        assertEquals("two rings, one node each", 2, rings.size)
-        val (levels, named) = rings
+        assertEquals("three rings, one node each", 3, rings.size)
+        val (levels, named, beside) = rings
         assertEquals(listOf("11", "Levels Added in total"), levels.texts)
         assertEquals(11f / 15f, levels.progressRange!!.current, 0.0001f)
         assertEquals(0f..1f, levels.progressRange!!.range)
         val elsewhere = read.merged.filter { it.progressRange == null }.flatMap { it.texts }
-        assertTrue("the label's words are said once: $elsewhere", elsewhere.none { it == "11" || it.startsWith("Levels") })
+        assertTrue(
+            "the label's words are said once: $elsewhere",
+            elsewhere.none { it == "11" || it.startsWith("Levels") || it == "2 Levels" || it == "Added in total" }
+        )
+        // Beside the ring, its words are still the ring's own.
+        assertEquals(listOf("2 Levels", "Added in total"), beside.texts)
+        assertEquals(2f / 6f, beside.progressRange!!.current, 0.0001f)
         assertEquals("Levels", named.description)
         assertEquals("11 of 15", named.stateDescription)
     }

@@ -5,7 +5,9 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.progressSemantics
@@ -18,6 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import com.kozmos.components.motion.rememberKozmosAnimationsOn
+import com.kozmos.components.KozmosEmotion
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosMotion
 import androidx.compose.material3.MaterialTheme
@@ -137,9 +140,17 @@ enum class KozmosProgressSize(val diameter: Dp, val stroke: Dp) {
 }
 
 /**
+ * Where a ring's label is drawn, React's `labelPlacement`: in the hole, or
+ * beside the ring at the inline end, so on its left right to left.
+ */
+enum class KozmosProgressLabelPlacement { Center, End }
+
+/**
  * How far something has got: a bar, or with [shape] Circular a ring of
- * [size] with [label] in its centre. [progress] is a fraction of 1, clamped;
- * NaN is none done. A bar has no centre and draws no label.
+ * [size] whose arc is [tone]'s colour, Tag's and Button's emotions (Themed,
+ * the bar's own theme 600, by default), with [label] in its centre or, with
+ * [labelPlacement] End, beside it. [progress] is a fraction of 1, clamped;
+ * NaN is none done. A bar draws no label.
  */
 @Composable
 fun KozmosProgress(
@@ -147,10 +158,12 @@ fun KozmosProgress(
     modifier: Modifier = Modifier,
     shape: KozmosProgressShape = KozmosProgressShape.Linear,
     size: KozmosProgressSize = KozmosProgressSize.Md,
+    tone: KozmosEmotion = KozmosEmotion.Themed,
+    labelPlacement: KozmosProgressLabelPlacement = KozmosProgressLabelPlacement.Center,
     label: (@Composable () -> Unit)? = null
 ) {
     if (shape == KozmosProgressShape.Circular) {
-        KozmosProgressRing(progress, modifier, size, label)
+        KozmosProgressRing(progress, modifier, size, tone, labelPlacement, label)
         return
     }
     // React's colours: bg-primary (theme 600) on bg-secondary (background
@@ -170,47 +183,56 @@ internal fun kozmosProgressSweep(animationsOn: Boolean): AnimationSpec<Float> =
     else snap()
 
 /**
- * The track and the arc are one circle's strokes, inside the ring's box: the
- * arc is the theme fill (decision 59) on background 100, 4.42:1 light and
- * 3.13:1 dark, from 12 o'clock clockwise. A Canvas is not mirrored right to
- * left, and a progress ring does not mirror. The ring is one node: the
- * label's words, with its progress.
+ * The dial, and its label beside it at the inline end when asked: a Row, so
+ * right to left the label is on its left. The ring is one node: the label's
+ * words, with its progress.
+ *
+ * The track and the arc are one circle's strokes, inside the dial's box: the
+ * arc is the tone's emotion text colour, Themed's theme 600 by default, as
+ * the bar's fill, on background 100: 4.8:1 or more for every tone, light and
+ * dark. It runs from 12 o'clock clockwise. A Canvas is not mirrored right to
+ * left, and a progress ring does not mirror.
  */
 @Composable
 private fun KozmosProgressRing(
     progress: Float,
     modifier: Modifier,
     ringSize: KozmosProgressSize,
+    tone: KozmosEmotion,
+    labelPlacement: KozmosProgressLabelPlacement,
     label: (@Composable () -> Unit)?
 ) {
     val target = if (progress.isNaN()) 0f else progress.coerceIn(0f, 1f)
     val swept by animateFloatAsState(target, kozmosProgressSweep(rememberKozmosAnimationsOn()), label = "sweep")
     val track = KozmosThemeTokens.primitivesColorsBackground100
-    val fill = KozmosThemeTokens.primitivesColorsTheme500
-    Box(
+    val fill = tone.text
+    Row(
         modifier
-            .size(ringSize.diameter)
             .semantics(mergeDescendants = true) {}
             .progressSemantics(target),
-        contentAlignment = Alignment.Center
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Canvas(Modifier.matchParentSize()) {
-            val stroke = ringSize.stroke.toPx()
-            val corner = Offset(stroke / 2, stroke / 2)
-            val circle = Size(size.width - stroke, size.height - stroke)
-            drawArc(track, 0f, 360f, false, corner, circle, style = Stroke(stroke))
-            if (swept > 0f) {
-                drawArc(fill, -90f, 360f * swept, false, corner, circle, style = Stroke(stroke, cap = StrokeCap.Butt))
+        Box(Modifier.size(ringSize.diameter), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.matchParentSize()) {
+                val stroke = ringSize.stroke.toPx()
+                val corner = Offset(stroke / 2, stroke / 2)
+                val circle = Size(size.width - stroke, size.height - stroke)
+                drawArc(track, 0f, 360f, false, corner, circle, style = Stroke(stroke))
+                if (swept > 0f) {
+                    drawArc(fill, -90f, 360f * swept, false, corner, circle, style = Stroke(stroke, cap = StrokeCap.Butt))
+                }
+            }
+            if (label != null && labelPlacement == KozmosProgressLabelPlacement.Center) {
+                // Inside the square the hole holds, centred.
+                Box(
+                    Modifier.widthIn(max = (ringSize.diameter - ringSize.stroke * 2) * 0.7071f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ProvideTextStyle(LocalTextStyle.current.copy(textAlign = TextAlign.Center)) { label() }
+                }
             }
         }
-        if (label != null) {
-            // Inside the square the hole holds, centred.
-            Box(
-                Modifier.widthIn(max = (ringSize.diameter - ringSize.stroke * 2) * 0.7071f),
-                contentAlignment = Alignment.Center
-            ) {
-                ProvideTextStyle(LocalTextStyle.current.copy(textAlign = TextAlign.Center)) { label() }
-            }
-        }
+        if (label != null && labelPlacement == KozmosProgressLabelPlacement.End) label()
     }
 }

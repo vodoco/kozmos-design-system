@@ -14,6 +14,7 @@ final class KozmosProgressRingTests: XCTestCase {
         XCTAssertEqual(KozmosProgressSize.allCases.map(\.diameter), [48, 96, 128])
         XCTAssertEqual(KozmosProgressSize.allCases.map(\.stroke), [4, 8, 12])
         XCTAssertEqual(KozmosProgressShape.allCases.map(\.rawValue), ["linear", "circular"])
+        XCTAssertEqual(KozmosProgressLabelPlacement.allCases.map(\.rawValue), ["center", "end"])
     }
 
     func testTheValueIsItsShareOfTheTotalAndSaidAsAPercentage() {
@@ -123,6 +124,86 @@ final class KozmosProgressRingTests: XCTestCase {
         }
     }
 
+    /// Owner, 28 Oct: a status ring. Each tone's arc is its emotion's text
+    /// colour, Tag's, and unset it is `.themed`, theme 600, the bar's own
+    /// fill. Every one is 3:1 or more on the background 100 track: in light,
+    /// #E3E4E8.
+    @MainActor func testEachToneDrawsItsEmotionsTextColour() throws {
+        let light: [(KozmosEmotion?, (Int, Int, Int))] = [
+            (nil, (0x10, 0x51, 0xE8)),
+            (.themed, (0x10, 0x51, 0xE8)),
+            (.neutral, (0x5D, 0x62, 0x6F)),
+            (.success, (0x14, 0x65, 0x3D)),
+            (.danger, (0xB0, 0x17, 0x36)),
+            (.informative, (0x1C, 0x60, 0x82)),
+            (.alert, (0x74, 0x4D, 0x03)),
+        ]
+        var wrong: [String] = []
+        for (tone, want) in light {
+            let ring = tone.map { KozmosProgress(value: 0.25, shape: .circular, size: .lg, tone: $0) }
+                ?? KozmosProgress(value: 0.25, shape: .circular, size: .lg)
+            let drawn = try DrawnPixels.draw(ring.environment(\.colorScheme, .light), scale: 2)
+            let r = (128.0 - 12) / 2
+            let ink = drawn.pixel(at: CGPoint(x: 64 + r * 0.7071, y: 64 - r * 0.7071))
+            let got = (Int(ink.r), Int(ink.g), Int(ink.b))
+            if abs(got.0 - want.0) > 6 || abs(got.1 - want.1) > 6 || abs(got.2 - want.2) > 6 {
+                wrong.append("\(tone.map { "\($0)" } ?? "unset"): \(got), not \(want)")
+            }
+            if contrast(got, (0xE3, 0xE4, 0xE8)) < 3 {
+                wrong.append("\(tone.map { "\($0)" } ?? "unset"): \(contrast(got, (0xE3, 0xE4, 0xE8))):1 on the track")
+            }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    private func contrast(_ a: (Int, Int, Int), _ b: (Int, Int, Int)) -> Double {
+        func luminance(_ c: (Int, Int, Int)) -> Double {
+            let channel = { (v: Int) -> Double in
+                let x = Double(v) / 255
+                return x <= 0.04045 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4)
+            }
+            return 0.2126 * channel(c.0) + 0.7152 * channel(c.1) + 0.0722 * channel(c.2)
+        }
+        let (x, y) = (luminance(a), luminance(b))
+        return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+    }
+
+    /// Beside the ring at the inline end, 12 from it, centred on it: right of
+    /// it left to right and left of it right to left, while the ring itself
+    /// still fills clockwise.
+    @MainActor func testALabelAtTheEndSitsBesideTheRingAtTheInlineEnd() throws {
+        var wrong: [String] = []
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let drawn = try DrawnPixels.draw(
+                KozmosProgress(value: 0.25, shape: .circular, size: .lg, labelPlacement: .end) {
+                    Text("2 Levels").font(.system(size: 20, weight: .bold)).foregroundColor(.black)
+                }
+                .environment(\.layoutDirection, direction)
+                .environment(\.colorScheme, .light),
+                scale: 2)
+            let name = direction == .leftToRight ? "LTR" : "RTL"
+            // The ring is everything drawn that is not the label's black: the
+            // track's grey and the arc's blue.
+            guard let ring = drawn.boundingBox(where: { r, g, b, a in a > 200 && (r > 90 || g > 90 || b > 90) }),
+                  let words = drawn.boundingBox(where: { r, g, b, a in a > 200 && r < 60 && g < 60 && b < 60 }) else {
+                wrong.append("\(name): the ring or its label is not drawn")
+                continue
+            }
+            if direction == .leftToRight {
+                if words.minX < ring.maxX + 11 { wrong.append("LTR: the label starts at \(words.minX), not 12 past the ring's end \(ring.maxX)") }
+            } else {
+                if words.maxX > ring.minX - 11 { wrong.append("RTL: the label ends at \(words.maxX), not 12 before the ring \(ring.minX)") }
+            }
+            if abs(words.midY - drawn.size.height / 2) > 3 { wrong.append("\(name): the label is not centred on the ring") }
+            // The arc, a quarter, is at the ring's top right in both directions.
+            if ring.width < 120 { wrong.append("\(name): the ring is \(ring.width) wide") }
+            let r = (128.0 - 12) / 2
+            let topRight = drawn.pixel(at: CGPoint(x: ring.minX + 64 + r * 0.7071, y: ring.minY + 64 - r * 0.7071))
+            if !(Int(topRight.b) - Int(topRight.r) > 60) { wrong.append("\(name): the arc is not at the top right") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
     #if os(iOS)
     /// One element: the label's words with the value, said once; a value
     /// or a name of the caller's replaces Kozmos's.
@@ -140,9 +221,15 @@ final class KozmosProgressRingTests: XCTestCase {
                 ? AnyView(ring.accessibilityLabel("Levels").accessibilityValue("11 of 15"))
                 : AnyView(ring)
         }
-        for named in [false, true] {
+        let beside = AnyView(KozmosProgress(value: 2, total: 6, shape: .circular, size: .lg, labelPlacement: .end) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("2 Levels")
+                Text("Added in total")
+            }
+        })
+        for (named, view) in [(false, levels(false)), (true, levels(true)), (false, beside)] {
             let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
-            window.rootViewController = UIHostingController(rootView: levels(named))
+            window.rootViewController = UIHostingController(rootView: view)
             window.makeKeyAndVisible()
             defer { window.isHidden = true }
             try await Task.sleep(nanoseconds: 300_000_000)
@@ -154,10 +241,13 @@ final class KozmosProgressRingTests: XCTestCase {
                 XCTAssertEqual(ring.accessibilityLabel, "Levels")
                 XCTAssertEqual(ring.accessibilityValue, "11 of 15")
             } else {
+                // Its words once, wherever they are drawn: in the hole, or
+                // beside it.
                 let label = ring.accessibilityLabel ?? ""
-                XCTAssertTrue(label.contains("11") && label.contains("Levels Added in total"), label)
-                XCTAssertEqual(label.components(separatedBy: "Levels Added in total").count, 2, label)
-                XCTAssertEqual(ring.accessibilityValue, "73%")
+                let words = label.contains("2 Levels") ? "Added in total" : "Levels Added in total"
+                XCTAssertTrue(label.contains(words), label)
+                XCTAssertEqual(label.components(separatedBy: words).count, 2, label)
+                XCTAssertEqual(ring.accessibilityValue, label.contains("2 Levels") ? "33%" : "73%")
             }
             XCTAssertTrue(ring.accessibilityTraits.contains(.updatesFrequently))
         }

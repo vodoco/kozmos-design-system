@@ -11620,10 +11620,10 @@ for (const [file, symbols] of [
     "Compose Progress drawing React's track",
   );
 
-  // The ring (decision 131) is a prominent fill: the theme fill, theme 500
-  // (decision 59), on background 100, where it reads 3:1 or more in both
-  // themes (on background 200 dark it read 2.32:1). Every platform draws it
-  // so.
+  // The ring (decision 131): its arc is its tone's emotion text colour,
+  // Tag's, and unset the themed one, theme 600, the bar's own fill (owner,
+  // 28 Oct), on a background 100 track, where every tone reads 4.8:1 or
+  // more in both themes. Every platform draws it so.
   const css = read("packages/react/src/styles/owned-components.css");
   const ringCss = css.slice(css.indexOf(".kozmos-progress-ring-track {"));
   assertContains(
@@ -11635,20 +11635,26 @@ for (const [file, symbols] of [
   assertContains(
     "packages/react/src/styles/owned-components.css",
     ringCss,
-    ".kozmos-progress-ring-arc {\n    stroke: var(--primitives-colors-theme-500);",
-    "React's ring arc in the theme fill",
+    "--kozmos-progress-ring-tone,\n      var(--semantics-emotion-themed-text)",
+    "React's ring arc in its tone, themed by default",
   );
   const swiftRing = swiftContent.slice(
-    swiftContent.indexOf("private var ring"),
+    swiftContent.indexOf("private var dial"),
   );
   for (const [needle, what] of [
     [
       ".strokeBorder(KozmosColors.primitivesColorsBackground100",
       "track on background 100",
     ],
-    ["KozmosColors.primitivesColorsTheme500,", "arc in the theme fill"],
+    ["                        tone.text,", "arc in its tone's text colour"],
   ])
     assertContains(swift, swiftRing, needle, `SwiftUI Progress ring ${what}`);
+  assertContains(
+    swift,
+    swiftContent,
+    "tone: KozmosEmotion = .themed",
+    "SwiftUI Progress ring tone themed by default",
+  );
   const kotlinRing = kotlinContent.slice(
     kotlinContent.indexOf("private fun KozmosProgressRing("),
   );
@@ -11657,12 +11663,15 @@ for (const [file, symbols] of [
       "val track = KozmosThemeTokens.primitivesColorsBackground100",
       "track on background 100",
     ],
-    [
-      "val fill = KozmosThemeTokens.primitivesColorsTheme500",
-      "arc in the theme fill",
-    ],
+    ["val fill = tone.text", "arc in its tone's text colour"],
   ])
     assertContains(kotlin, kotlinRing, needle, `Compose Progress ring ${what}`);
+  assertContains(
+    kotlin,
+    kotlinContent,
+    "tone: KozmosEmotion = KozmosEmotion.Themed",
+    "Compose Progress ring tone themed by default",
+  );
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.

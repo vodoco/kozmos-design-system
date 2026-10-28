@@ -11,9 +11,13 @@
  *   the size's stroke (4, 8 or 12) everywhere, and its middle sits on the
  *   circle, at 1x and 2x. A ring of two discs, one inset in the other, was
  *   1.8 to 3.1 px where it meant 2.5 in Chromium (AISearchButton).
- * - Colour: the arc paints the theme fill and the track background 100, each
- *   as computed, and the arc is 3:1 or more on the track and on the page, in
- *   light and dark.
+ * - Colour: unset, the arc paints the bar's theme 600; each tone (Tag's and
+ *   Button's emotions) paints its emotion's text colour, on a background 100
+ *   track, each as computed, and every arc is 3:1 or more on the track and
+ *   on the page, in light and dark.
+ * - Beside: a label placed at the end sits 12 from the dial at the inline
+ *   end, right of it left to right and left of it right to left, centred on
+ *   it, and still names the bar once.
  * - Name: a progress bar named by its centre label, "11 Levels Added in
  *   total", or by aria-label with the label as its description, its value
  *   "11 of 15", and the label's words nowhere else in the tree (Playwright's
@@ -197,7 +201,11 @@ const read = (page) =>
   page.evaluate(() => {
     const ring = document.getElementById("ring");
     const [track, arc] = ring.querySelectorAll("circle");
-    const box = ring.getBoundingClientRect();
+    // The dial: the ring's own box, whatever a label beside it adds.
+    const box = ring
+      .querySelector(".kozmos-progress-ring-dial")
+      .getBoundingClientRect();
+    const label = ring.querySelector(".kozmos-progress-ring-label");
     // Inside the ring's own surface: a system colour resolves by the
     // colour scheme where it is used, and the provider sets the scheme.
     const probe = document.createElement("div");
@@ -211,6 +219,8 @@ const read = (page) =>
     probe.remove();
     return {
       box: box.toJSON(),
+      root: ring.getBoundingClientRect().toJSON(),
+      label: label ? label.getBoundingClientRect().toJSON() : null,
       svg: ring.querySelector("svg").getBoundingClientRect().toJSON(),
       track: getComputedStyle(track).stroke,
       arc: arc ? getComputedStyle(arc).stroke : null,
@@ -368,62 +378,164 @@ await scenario(
   },
 );
 
+const TONES = [
+  "themed",
+  "neutral",
+  "success",
+  "danger",
+  "informative",
+  "alert",
+];
+
 for (const theme of ["light", "dark"])
   await scenario(
-    `${theme}: the arc is the theme fill and the track background 100, as computed, and the arc is 3:1 on both`,
+    `${theme}: each tone's arc is its emotion's text colour on the background 100 track, as computed and drawn, 3:1 on both`,
     async (problems) => {
-      const { page } = await open({ theme, size: "lg", value: 25 });
+      for (const tone of [undefined, ...TONES]) {
+        const { page } = await open({ theme, size: "lg", value: 25, tone });
+        const state = await read(page);
+        const named = tone ?? "themed";
+        const tokens = await page.evaluate((named) => {
+          const style = getComputedStyle(document.getElementById("ring"));
+          return {
+            fill: style
+              .getPropertyValue(`--semantics-emotion-${named}-text`)
+              .trim(),
+            bar: style.getPropertyValue("--primitives-colors-theme-600").trim(),
+            track: style
+              .getPropertyValue("--primitives-colors-background-100")
+              .trim(),
+          };
+        }, named);
+        const hex = (c) =>
+          `#${parse(c)
+            .map((v) => Math.round(v).toString(16).padStart(2, "0"))
+            .join("")}`;
+        const where = `${tone ?? "no tone"}`;
+        if (hex(state.arc) !== tokens.fill.toLowerCase())
+          problems.push(
+            `${where}: the arc is ${state.arc}, not ${named}'s text ${tokens.fill}`,
+          );
+        // Owner, 28 Oct: unset, the ring's arc is the bar's fill.
+        if (!tone && hex(state.arc) !== tokens.bar.toLowerCase())
+          problems.push(
+            `${where}: the arc is ${state.arc}, not the bar's theme 600 ${tokens.bar}`,
+          );
+        if (hex(state.track) !== tokens.track.toLowerCase())
+          problems.push(
+            `${where}: the track is ${state.track}, not background 100 ${tokens.track}`,
+          );
+        const [diameter, stroke] = RINGS.lg;
+        const r = (diameter - stroke) / 2;
+        const cx = state.box.left + diameter / 2;
+        const cy = state.box.top + diameter / 2;
+        // 45° is on the arc, 225° on the track.
+        const [onArc, onTrack] = await analyse(await page.screenshot(), {
+          kind: "pixels",
+          cx,
+          cy,
+          scale: 1,
+          points: [
+            [cx + r * Math.SQRT1_2, cy - r * Math.SQRT1_2],
+            [cx - r * Math.SQRT1_2, cy + r * Math.SQRT1_2],
+          ],
+        });
+        reads += 2;
+        if (distance(onArc, parse(state.arc)) > 6)
+          problems.push(
+            `${where}: the arc paints rgb(${onArc}), not ${state.arc}`,
+          );
+        if (distance(onTrack, parse(state.track)) > 6)
+          problems.push(
+            `${where}: the track paints rgb(${onTrack}), not ${state.track}`,
+          );
+        const onTrackRatio = contrast(parse(state.arc), parse(state.track));
+        const onPageRatio = contrast(parse(state.arc), parse(state.surface));
+        if (tone !== undefined)
+          measured.push(
+            `${theme} ${named}: arc ${state.arc} on track ${state.track} ${onTrackRatio.toFixed(2)}:1, on the page ${onPageRatio.toFixed(2)}:1`,
+          );
+        if (onTrackRatio < 3)
+          problems.push(
+            `${where}: the arc reads ${onTrackRatio.toFixed(2)}:1 on the track`,
+          );
+        if (onPageRatio < 3)
+          problems.push(
+            `${where}: the arc reads ${onPageRatio.toFixed(2)}:1 on the page`,
+          );
+        await page.close();
+      }
+    },
+  );
+
+for (const dir of ["ltr", "rtl"])
+  await scenario(
+    `${dir}: a label placed at the end sits beside the ring at the inline end, centred on it, named once, and the ring still runs clockwise`,
+    async (problems) => {
+      const { page, errors } = await open({
+        theme: "light",
+        dir,
+        size: "lg",
+        value: 2,
+        max: 6,
+        label: "beside",
+        labelPlacement: "end",
+      });
       const state = await read(page);
-      const tokens = await page.evaluate(() => {
-        const style = getComputedStyle(document.getElementById("ring"));
-        return {
-          fill: style.getPropertyValue("--primitives-colors-theme-500").trim(),
-          track: style
-            .getPropertyValue("--primitives-colors-background-100")
-            .trim(),
-        };
-      });
-      const hex = (c) =>
-        `#${parse(c)
-          .map((v) => v.toString(16).padStart(2, "0"))
-          .join("")}`;
-      if (hex(state.arc) !== tokens.fill.toLowerCase())
-        problems.push(`the arc is ${state.arc}, not theme 500 ${tokens.fill}`);
-      if (hex(state.track) !== tokens.track.toLowerCase())
-        problems.push(
-          `the track is ${state.track}, not background 100 ${tokens.track}`,
-        );
-      const [diameter, stroke] = RINGS.lg;
-      const r = (diameter - stroke) / 2;
-      const cx = state.box.left + diameter / 2;
-      const cy = state.box.top + diameter / 2;
-      // 45° is on the arc, 225° on the track.
-      const [onArc, onTrack] = await analyse(await page.screenshot(), {
-        kind: "pixels",
-        cx,
-        cy,
-        scale: 1,
-        points: [
-          [cx + r * Math.SQRT1_2, cy - r * Math.SQRT1_2],
-          [cx - r * Math.SQRT1_2, cy + r * Math.SQRT1_2],
-        ],
-      });
-      reads += 2;
-      if (distance(onArc, parse(state.arc)) > 6)
-        problems.push(`the arc paints rgb(${onArc}), not ${state.arc}`);
-      if (distance(onTrack, parse(state.track)) > 6)
-        problems.push(`the track paints rgb(${onTrack}), not ${state.track}`);
-      const onTrackRatio = contrast(parse(state.arc), parse(state.track));
-      const onPageRatio = contrast(parse(state.arc), parse(state.surface));
+      reads += 1;
+      const dial = state.box;
+      const label = state.label;
+      if (!label) {
+        problems.push("no label is drawn");
+        await page.close();
+        return;
+      }
+      const gap =
+        dir === "ltr" ? label.left - dial.right : dial.left - label.right;
       measured.push(
-        `${theme}: arc ${state.arc} on track ${state.track} ${onTrackRatio.toFixed(2)}:1, on the page ${state.surface} ${onPageRatio.toFixed(2)}:1`,
+        `${dir} end label: ${gap.toFixed(2)} px from the dial, its middle ${(label.top + label.height / 2 - (dial.top + dial.height / 2)).toFixed(2)} px off the dial's`,
       );
-      if (onTrackRatio < 3)
+      if (Math.abs(gap - 12) > 0.5)
         problems.push(
-          `the arc reads ${onTrackRatio.toFixed(2)}:1 on the track`,
+          `the label is ${gap.toFixed(2)} px ${dir === "ltr" ? "right" : "left"} of the dial, not 12 at the inline end`,
         );
-      if (onPageRatio < 3)
-        problems.push(`the arc reads ${onPageRatio.toFixed(2)}:1 on the page`);
+      if (
+        Math.abs(label.top + label.height / 2 - (dial.top + dial.height / 2)) >
+        1
+      )
+        problems.push("the label is not centred on the dial");
+      if (Math.abs(dial.width - 128) > 0.01)
+        problems.push(`the dial is ${dial.width} wide, not 128`);
+      const name = "2 Levels Added in total";
+      const bar = page.getByRole("progressbar", { name, exact: true });
+      if ((await bar.count()) !== 1)
+        problems.push(`no progress bar is named "${name}"`);
+      const snapshot = await page.locator("#surface").ariaSnapshot();
+      reads += 1;
+      if (
+        snapshot
+          .split("\n")
+          .some(
+            (line) =>
+              line.includes("Added in total") && !line.includes("progressbar"),
+          )
+      )
+        problems.push(`the label is said twice: ${snapshot}`);
+      if (engine === "chromium") {
+        const tree = await chromiumTree(page);
+        reads += 1;
+        if (tree.name !== name)
+          problems.push(`Chromium names it "${tree.name}"`);
+        const repeated = tree.texts.filter((t) => /Levels|Added/.test(t));
+        if (repeated.length)
+          problems.push(
+            `Chromium also reads ${JSON.stringify(repeated)} as text`,
+          );
+      }
+      const got = await sweep(page, state, "lg", 1);
+      if (Math.abs(got.run - 120) > 2 || got.stray.length > 2)
+        problems.push(`the arc runs ${got.run}° from 12 o'clock, not 120°`);
+      if (errors.length) problems.push(errors.join("; "));
       await page.close();
     },
   );
@@ -661,5 +773,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS progress ring (${engine}): ${reads} reads; the arc runs clockwise from 12 o'clock for value / max of the turn, left to right and right to left, at 1x and 2x; the band is the stroke all the way round and centred, at 48, 96 and 128; the arc is the theme fill on background 100, 3:1 or more on the track and the page, light and dark; the bar is named or described by its centre label once, with its value; the label fits the hole; reduced motion stills the sweep; forced colours paint Highlight on GrayText`,
+  `\nPASS progress ring (${engine}): ${reads} reads; the arc runs clockwise from 12 o'clock for value / max of the turn, left to right and right to left, at 1x and 2x; the band is the stroke all the way round and centred, at 48, 96 and 128; unset, the arc is the bar's theme 600, and each of the six tones its emotion's text colour, on background 100, 3:1 or more on the track and the page, light and dark; a label at the end sits 12 from the dial at the inline end, centred, named once; the bar is named or described by its centre label once, with its value; the label fits the hole; reduced motion stills the sweep; forced colours paint Highlight on GrayText`,
 );

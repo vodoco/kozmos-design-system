@@ -61,8 +61,9 @@ export const CircularSizes: Story = {
   ),
 };
 
-// MAP-64's Level Manager: 11 levels added, out of 15. The centre label names
-// the ring, and the value reads as the count.
+// MAP-64's Level Manager: 11 levels added, out of 15, its label beside the
+// ring at the inline end, as the design draws it: Heading 4's size over xs
+// muted. The label names the ring, and the value reads as the count.
 export const LevelsAdded: Story = {
   render: () => (
     <Progress
@@ -70,18 +71,48 @@ export const LevelsAdded: Story = {
       size="lg"
       value={11}
       max={15}
+      labelPlacement="end"
       getValueLabel={(value, max) => `${value} of ${max}`}
       label={
         <>
-          <Text size="3xl" weight="semibold" align="center">
-            11
+          <Text size="xl" weight="bold">
+            11 Levels
           </Text>
-          <Text size="xs" color="muted" align="center">
-            Levels Added in total
+          <Text size="xs" color="muted">
+            Added in total
           </Text>
         </>
       }
     />
+  ),
+};
+
+// A status ring: its completion means something. The tones are Tag's and
+// Button's emotions; each arc is its emotion's text colour, 3:1 or more on
+// the track in both themes. Themed, the default, is the bar's own fill.
+export const Tones: Story = {
+  render: () => (
+    <Stack direction="row" gap={4} align="center" wrap="wrap">
+      {(
+        [
+          "themed",
+          "neutral",
+          "success",
+          "informative",
+          "alert",
+          "danger",
+        ] as const
+      ).map((tone) => (
+        <Progress
+          key={tone}
+          shape="circular"
+          size="sm"
+          tone={tone}
+          value={75}
+          aria-label={`${tone} progress`}
+        />
+      ))}
+    </Stack>
   ),
 };
 

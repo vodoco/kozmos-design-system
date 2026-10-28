@@ -878,6 +878,7 @@
         "Circular",
         "CircularSizes",
         "LevelsAdded",
+        "Tones",
         "SelectedSection",
         "LivePosition",
         "AnimatedUpdate"

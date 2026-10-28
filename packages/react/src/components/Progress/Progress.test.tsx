@@ -133,6 +133,86 @@ describe("Progress", () => {
       );
     });
 
+    // Owner, 28 Oct: the Level Manager's ring is a status ring.
+    it("takes its arc's colour from its tone, themed by default", () => {
+      const { rerender } = render(
+        <Progress shape="circular" value={3} max={4} aria-label="Levels" />,
+      );
+      const progress = screen.getByRole("progressbar");
+      // Themed is the emotion's text colour, theme 600: the bar's own fill.
+      expect(progress).toHaveAttribute("data-tone", "themed");
+      expect(
+        progress.style.getPropertyValue("--kozmos-progress-ring-tone"),
+      ).toBe("var(--semantics-emotion-themed-text)");
+      for (const tone of [
+        "neutral",
+        "success",
+        "danger",
+        "informative",
+        "alert",
+      ] as const) {
+        rerender(
+          <Progress
+            shape="circular"
+            value={3}
+            max={4}
+            aria-label="Levels"
+            tone={tone}
+            style={{ marginInline: 8 }}
+          />,
+        );
+        expect(progress).toHaveAttribute("data-tone", tone);
+        expect(
+          progress.style.getPropertyValue("--kozmos-progress-ring-tone"),
+        ).toBe(`var(--semantics-emotion-${tone}-text)`);
+        // The caller's own style is kept beside it.
+        expect(progress.style.marginInline).toBe("8px");
+      }
+      rerender(
+        <Progress
+          shape="circular"
+          value={3}
+          aria-label="Levels"
+          // A tone it does not know is the default one.
+          tone={"warning" as never}
+        />,
+      );
+      expect(progress).toHaveAttribute("data-tone", "themed");
+    });
+
+    it("draws its label beside the ring, still said once by reference", () => {
+      render(
+        <Progress
+          shape="circular"
+          value={2}
+          max={6}
+          labelPlacement="end"
+          label="2 Levels Added in total"
+        />,
+      );
+      const progress = screen.getByRole("progressbar", {
+        name: "2 Levels Added in total",
+      });
+      const label = screen.getByText("2 Levels Added in total");
+      expect(progress).toHaveAttribute("data-label-placement", "end");
+      // After the dial, inside the progress bar: beside it, not in its hole.
+      const dial = progress.querySelector(".kozmos-progress-ring-dial")!;
+      expect(dial).not.toContainElement(label);
+      expect(progress.lastElementChild).toBe(label);
+      expect(dial.nextElementSibling).toBe(label);
+      expect(progress).toHaveAttribute("aria-labelledby", label.id);
+      expect(label).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("draws its label in the hole by default", () => {
+      render(<Progress shape="circular" value={2} max={6} label="2 of 6" />);
+      const progress = screen.getByRole("progressbar", { name: "2 of 6" });
+      expect(progress).toHaveAttribute("data-label-placement", "center");
+      expect(
+        progress.querySelector(".kozmos-progress-ring-dial"),
+      ).toContainElement(screen.getByText("2 of 6"));
+    });
+
     it("draws the track alone while the value is unknown", () => {
       render(<Progress shape="circular" value={null} aria-label="Levels" />);
       const progress = screen.getByRole("progressbar");
@@ -148,6 +228,8 @@ describe("Progress", () => {
           aria-label="Download"
           size="lg"
           label="Never drawn"
+          labelPlacement="end"
+          tone="danger"
         />,
       );
       const progress = screen.getByRole("progressbar", { name: "Download" });
@@ -156,6 +238,8 @@ describe("Progress", () => {
       expect(progress).not.toHaveAttribute("data-shape");
       expect(progress).not.toHaveAttribute("size");
       expect(progress).not.toHaveAttribute("label");
+      expect(progress).not.toHaveAttribute("tone");
+      expect(progress).not.toHaveAttribute("labelplacement");
       expect(progress.firstElementChild).toHaveStyle({ width: "50%" });
     });
   });

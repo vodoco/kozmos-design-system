@@ -184,6 +184,14 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The themed emotion's ink is the words of a tour step's hint, on the
   // themed surface (GAP-188).
   ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
+  // A progress ring's arc is its tone's text colour, an ellipse's arc
+  // filled (decision 131, owner 28 Oct: a status ring).
+  ["Semantics/Emotion/neutral/text", ["SHAPE_FILL"]],
+  ["Semantics/Emotion/themed/text", ["SHAPE_FILL"]],
+  ["Semantics/Emotion/success/text", ["SHAPE_FILL"]],
+  ["Semantics/Emotion/danger/text", ["SHAPE_FILL"]],
+  ["Semantics/Emotion/informative/text", ["SHAPE_FILL"]],
+  ["Semantics/Emotion/alert/text", ["SHAPE_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's
   // star.

@@ -28,36 +28,55 @@ Web honours both the operating system and `DesignConfigProvider` reduced-motion 
 
 ## Circular
 
-`shape="circular"` draws a ring: the arc is the theme fill (theme 500, decision 59) on a
-background 100 track, from 12 o'clock clockwise, as far round as `value` is of `max`. `size`
-is its diameter and stroke: `sm` 48 and 4, `md` 96 and 8 (the default), `lg` 128 and 12, the
-layout spacing tokens 600, 900 and 1000, and 50, 100 and 150. The arc reads 4.42:1 on the track
-and 5.62:1 on the page in light, 3.13:1 and 3.74:1 in dark. A bar has one size and no centre:
-`size` and `label` draw nothing on it.
+`shape="circular"` draws a ring: the arc on a background 100 track, from 12 o'clock
+clockwise, as far round as `value` is of `max`. `size` is its diameter and stroke: `sm` 48
+and 4, `md` 96 and 8 (the default), `lg` 128 and 12, the layout spacing tokens 600, 900 and
+1000, and 50, 100 and 150. A bar has one size, one tone and no label: `size`, `tone`,
+`label` and `labelPlacement` draw nothing on it.
 
-`label` is what the centre shows: "11 Levels Added in total", or a percentage. It is laid out
-inside the square the hole holds, centred, 12 on 16 unless its content says otherwise. It
-stays a `progressbar` with its value, and the label is said once: it names the bar, or
-describes it when `aria-label` or `aria-labelledby` already names it, and the drawn copy is
-hidden from assistive technology. The value is Radix's percentage, "73%"; for a count, give
-`getValueLabel`, as below, and it is said "11 of 15".
+`tone` says what the ring's completion means, in Tag's and Button's emotions: `themed`
+(the default), `neutral`, `success`, `informative`, `alert` or `danger`. Its arc is the
+emotion's text colour, so `themed` is theme 600, the bar's own fill. Every tone reads 4.8:1
+or more on the track in light and 5.18:1 or more in dark:
+
+| Tone | Light, on the track | Dark, on the track |
+| --- | --- | --- |
+| `themed` | 4.91:1 | 5.18:1 |
+| `neutral` | 4.80:1 | 6.51:1 |
+| `success` | 5.59:1 | 14.83:1 |
+| `informative` | 5.43:1 | 11.34:1 |
+| `alert` | 5.89:1 | 15.40:1 |
+| `danger` | 5.47:1 | 6.76:1 |
+
+`label` is what the ring shows: "11 Levels Added in total", or a percentage.
+`labelPlacement="center"`, the default, lays it out inside the square the hole holds;
+`"end"` draws it beside the ring, 12 from it at the inline end, so on its left in Arabic and
+Hebrew, centred on it. Either way it is 12 on 16 unless its content says otherwise, and it
+stays inside the progress bar: the bar keeps its value, and the label is said once. It names
+the bar, or describes it when `aria-label` or `aria-labelledby` already names it, and the
+drawn copy is hidden from assistive technology. The value is Radix's percentage, "73%"; for
+a count, give `getValueLabel`, as below, and it is said "11 of 15".
 
 - **Direction.** A progress ring does not mirror: it fills from 12 o'clock clockwise in
   Arabic and Hebrew too, as a clock does, while the label follows the reading direction.
 - **Motion.** A new value sweeps round over the standard duration; under reduced motion,
   the system's or `DesignConfigProvider`'s, it is drawn there at once.
-- **Forced colours.** The arc is the system's Highlight on a GrayText track.
+- **Forced colours.** The arc is the system's Highlight on a GrayText track, whatever its
+  tone.
 - **No value.** With `value` null the track is drawn alone. A moving indeterminate ring is
   GAP-159's, not this form's.
 
-SwiftUI's `KozmosProgress(value:total:shape:size:label:)` and Compose's
-`KozmosProgress(progress, shape = KozmosProgressShape.Circular, size, label)` draw the same
-ring from the same tokens. Their ring is one element, named by the label's words, with its
-progress: VoiceOver says its percentage, TalkBack its progress; a value of your own
-(`accessibilityValue`, `stateDescription`) replaces it.
+SwiftUI's `KozmosProgress(value:total:shape:size:tone:labelPlacement:label:)` and Compose's
+`KozmosProgress(progress, shape = KozmosProgressShape.Circular, size, tone, labelPlacement,
+label)` draw the same ring from the same tokens, `tone` a `KozmosEmotion` and
+`labelPlacement` a `KozmosProgressLabelPlacement`. Their ring is one element, named by the
+label's words wherever it is drawn, with its progress: VoiceOver says its percentage,
+TalkBack its progress; a value of your own (`accessibilityValue`, `stateDescription`)
+replaces it.
 
 <Canvas of={ProgressStories.Circular} />
 <Canvas of={ProgressStories.CircularSizes} />
+<Canvas of={ProgressStories.Tones} />
 <Canvas of={ProgressStories.LevelsAdded} />
 
 <div className="subheading">Code</div>
@@ -72,14 +91,15 @@ export function LevelsAdded() {
       size="lg"
       value={11}
       max={15}
+      labelPlacement="end"
       getValueLabel={(value, max) => value + " of " + max}
       label={
         <>
-          <Text size="3xl" weight="semibold" align="center">
-            11
+          <Text size="xl" weight="bold">
+            11 Levels
           </Text>
-          <Text size="xs" color="muted" align="center">
-            Levels Added in total
+          <Text size="xs" color="muted">
+            Added in total
           </Text>
         </>
       }
@@ -98,6 +118,7 @@ import { KozmosProgress } from "@kozmos-ds/vue"
     size="lg"
     :value="11"
     :max="15"
+    labelPlacement="end"
     label="11 Levels Added in total"
   />
 </template>
@@ -106,14 +127,15 @@ import { KozmosProgress } from "@kozmos-ds/vue"
 import SwiftUI
 import Kozmos
 
-// A count out of a total: 11 of 15 levels. The label's words name the ring
-// for VoiceOver; it says the value as a percentage unless you give your own.
+// A count out of a total: 11 of 15 levels, the label beside the ring at
+// the inline end. The label's words name the ring for VoiceOver; it says
+// the value as a percentage unless you give your own.
 struct LevelsAdded: View {
     var body: some View {
-        KozmosProgress(value: 11, total: 15, shape: .circular, size: .lg) {
-            VStack(spacing: 0) {
-                Text("11").font(.title).fontWeight(.semibold)
-                Text("Levels Added in total").font(.caption)
+        KozmosProgress(value: 11, total: 15, shape: .circular, size: .lg, labelPlacement: .end) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("11 Levels").font(.title3).fontWeight(.bold)
+                Text("Added in total").font(.caption).foregroundStyle(.secondary)
             }
         }
         .accessibilityValue("11 of 15")
@@ -124,29 +146,31 @@ struct LevelsAdded: View {
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.progress.KozmosProgress
+import com.kozmos.components.progress.KozmosProgressLabelPlacement
 import com.kozmos.components.progress.KozmosProgressShape
 import com.kozmos.components.progress.KozmosProgressSize
 
-// A count out of a total: 11 of 15 levels, as a fraction of 1. The label's
-// words name the ring for TalkBack; stateDescription says the count.
+// A count out of a total: 11 of 15 levels, as a fraction of 1, the label
+// beside the ring at the inline end. The label's words name the ring for
+// TalkBack; stateDescription says the count.
 @Composable
 fun LevelsAdded() {
     KozmosProgress(
         progress = 11f / 15f,
         modifier = Modifier.semantics { stateDescription = "11 of 15" },
         shape = KozmosProgressShape.Circular,
-        size = KozmosProgressSize.Lg
+        size = KozmosProgressSize.Lg,
+        labelPlacement = KozmosProgressLabelPlacement.End
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("11", fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
-            Text("Levels Added in total", fontSize = 12.sp)
+        Column {
+            Text("11 Levels", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Added in total", fontSize = 12.sp)
         }
     }
 }

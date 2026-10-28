@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "cd1d759c1948";
+const PLUGIN_BUILD = "f1ab9931e617";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -334,18 +334,29 @@ const STEPPER_LABELS = [
   "Done",
 ];
 const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
-// Decision 131 (GAP-038): Progress's Shape, the bar or a ring, and a ring's
-// Size, as React's `shape` and `size`. A bar has one size, drawn as Medium.
-// Build and Update walk the bar's row, then a row of rings at each size; a
-// variant drawn before the axes is the bar.
+// Decision 131 (GAP-038): Progress's Shape, the bar or a ring, a ring's
+// Size, and its Tone (owner, 28 Oct: a status ring), as React's `shape`,
+// `size` and `tone`. The tones are Tag's and Button's emotions. A bar has one
+// size and one tone, drawn as Medium and Themed. Build and Update walk the
+// bar's row, then a row of rings at each size and tone; a variant drawn
+// before the axes is the bar, and a ring drawn before Tone is Themed.
 const PROGRESS_SHAPES = ["Linear", "Circular"];
 const PROGRESS_SIZES = ["Small", "Medium", "Large"];
-const PROGRESS_FORMS = [
-  "Linear/Medium",
-  "Circular/Small",
-  "Circular/Medium",
-  "Circular/Large",
+const PROGRESS_TONES = [
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
 ];
+// No spread: the plugin sandbox's parser refuses it.
+const PROGRESS_FORMS = ["Linear/Medium/Themed"];
+for (const size of PROGRESS_SIZES) {
+  for (const tone of PROGRESS_TONES) {
+    PROGRESS_FORMS.push(`Circular/${size}/${tone}`);
+  }
+}
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
@@ -1372,7 +1383,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Progress",
-          variantName: "Shape=Linear, Size=Medium, Value=50",
+          variantName: "Shape=Linear, Size=Medium, Tone=Themed, Value=50",
         },
         {
           componentSetName: "Spinner",
@@ -4034,18 +4045,19 @@ const COMPONENT_DOCS = [
     api: [
       "Value maps to Progress.value in Code Connect.",
       "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
-      "Shape maps to Progress.shape; Size to a ring's size; Label to its centre label.",
+      "Shape maps to Progress.shape; Size, Tone and Label to a ring's size, tone and label; Label Beside to labelPlacement end.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
     properties: [
       "Shape: Linear, Circular",
       "Size: Small, Medium, Large (a ring's; a bar is Medium)",
+      "Tone: Themed, Neutral, Success, Danger, Informative, Alert (a ring's; a bar is Themed)",
       "Value: 0, 25, 50, 75, 100",
-      "Label, Show Label",
+      "Label, Show Label, Label Beside",
     ],
     accessibility: [
       "Track and fill pass non-text contrast guidance on Surface/0.",
-      "A ring's arc is the theme fill on background/100: 4.42:1 light, 3.13:1 dark.",
+      "A ring's arc is its tone's emotion text colour on background/100: 4.8:1 or more, light and dark.",
       "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
       "Code should provide an accessible progress value; a ring's centre label names it.",
@@ -12254,7 +12266,12 @@ async function buildSdkRouteFlowExampleTemplate({
   sheet.appendChild(
     await createExampleInstance({
       componentSetName: "Progress",
-      variantProperties: { Shape: "Linear", Size: "Medium", Value: "50" },
+      variantProperties: {
+        Shape: "Linear",
+        Size: "Medium",
+        Tone: "Themed",
+        Value: "50",
+      },
       name: "Route Progress",
       width: contentWidth - 40,
       height: 16,
@@ -17958,6 +17975,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Shape: PROGRESS_SHAPES,
       Size: PROGRESS_SIZES,
+      Tone: PROGRESS_TONES,
       Value: PROGRESS_VALUES,
     };
   }
@@ -44305,7 +44323,8 @@ async function buildProgressComponent() {
       "Value maps to Progress.value in Code Connect.",
       "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
       "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
-      "Label maps to a ring's centre label.",
+      "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
+      "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -44330,7 +44349,8 @@ async function updateProgressComponent() {
       "Value maps to Progress.value in Code Connect.",
       "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
       "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
-      "Label maps to a ring's centre label.",
+      "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
+      "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -53154,13 +53174,28 @@ function layoutFloatingActionButtonVariants(componentSet) {
 }
 
 function configureProgressProperties(componentSet, stats) {
-  // A ring's centre label; a bar draws none, so the bar's variants hide it.
+  // A ring's label, one text drawn in the hole or beside the ring at the
+  // inline end; a bar draws none.
   configureNamedTextProperty(componentSet, "Label", "Label", "Label", stats);
+  configureNamedTextProperty(
+    componentSet,
+    "Label Beside",
+    "Label",
+    "Label",
+    stats,
+  );
   configureNamedBooleanProperty(
     componentSet,
     "Label",
     "Show Label",
     true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Label Beside",
+    "Label Beside",
+    false,
     stats,
   );
 }
@@ -61553,22 +61588,23 @@ async function createProgressVariant({
 function parseProgressVariantName(name) {
   const base = parseSingleAxisVariantName(name, "Value", PROGRESS_VALUES);
   if (!base) return null;
-  // A variant drawn before the Shape and Size axes is the bar, so Update
-  // renames it rather than replacing it, and the node id Code Connect pins
-  // survives.
+  // A variant drawn before the Shape, Size and Tone axes is the bar, and a
+  // ring drawn before Tone is Themed, so Update renames it rather than
+  // replacing it, and the node id Code Connect pins survives.
   const shape = variantAxisValue(name, "Shape") || "Linear";
   const size = variantAxisValue(name, "Size") || "Medium";
-  const second = `${shape}/${size}`;
+  const tone = variantAxisValue(name, "Tone") || "Themed";
+  const second = `${shape}/${size}/${tone}`;
   if (PROGRESS_FORMS.indexOf(second) === -1) return null;
   return { value: base.value, second };
 }
 
-/** A Progress form's Shape and Size, from the row it is drawn in. */
+/** A Progress form's Shape, Size and Tone, from the row it is drawn in. */
 function progressForm(second) {
   const form =
     PROGRESS_FORMS.indexOf(second) === -1 ? PROGRESS_FORMS[0] : second;
-  const [shape, size] = form.split("/");
-  return { shape, size };
+  const [shape, size, tone] = form.split("/");
+  return { shape, size, tone };
 }
 
 async function updateProgressVariant(
@@ -61580,6 +61616,7 @@ async function updateProgressVariant(
     await updateProgressRingVariant(component, {
       value,
       size: form.size,
+      tone: form.tone,
       variableByName,
       fonts,
       stats,
@@ -61588,7 +61625,7 @@ async function updateProgressVariant(
   }
   const config = progressConfig(value);
 
-  component.name = `Shape=Linear, Size=Medium, Value=${value}`;
+  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(320, 8);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -61626,34 +61663,86 @@ function progressRingMetrics(size) {
 }
 
 /**
- * Progress's ring (decision 131): a track, an arc over it and a centre label.
+ * A tone's arc colour: the emotion's text colour, Semantics/Emotion/<tone>/
+ * text, the step of each ramp that reads 4.5:1 on background/100, as React's
+ * `--semantics-emotion-<tone>-text` draws it. Themed is theme 600, the bar's
+ * own fill.
+ */
+function progressRingToneFill(tone) {
+  const fallbacks = {
+    Themed: "#1051E8",
+    Neutral: "#5D626F",
+    Success: "#14653D",
+    Danger: "#B01736",
+    Informative: "#1C6082",
+    Alert: "#744D03",
+  };
+  const named = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
+  return {
+    name: `Emotion/${named.toLowerCase()}/text`,
+    fallback: fallbacks[named],
+  };
+}
+
+/**
+ * Progress's ring (decision 131): a Dial, holding a track, an arc over it
+ * and the label in the hole, and beside it at the inline end, hidden until
+ * Label Beside, the same label. The variant hugs them in a row, 12 apart.
  * The track and the arc are ellipses whose arcs are filled, inner radius and
  * all, so neither is a disc inset in another and each binds its fill: the
- * track background/100, the arc the theme fill (decision 59), from 12
+ * track background/100, the arc its tone's emotion text colour, from 12
  * o'clock clockwise, as far round as the value. A progress ring does not
  * mirror right to left.
  */
 async function updateProgressRingVariant(
   component,
-  { value, size, variableByName, fonts, stats },
+  { value, size, tone, variableByName, fonts, stats },
 ) {
   const metrics = progressRingMetrics(size);
   const diameter = metrics.diameter;
   const innerRadius = 1 - (2 * metrics.stroke) / diameter;
   const start = -Math.PI / 2;
   const sweep = (Number(value) / 100) * 2 * Math.PI;
+  const fill = progressRingToneFill(tone);
+  const toneName = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
 
-  component.name = `Shape=Circular, Size=${size}, Value=${value}`;
-  component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(diameter, diameter);
+  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}`;
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
   component.strokes = [];
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 12;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Progress");
+
+  // A ring drawn before the Dial held its parts directly: they move in.
+  let dial = directChildNamed(component, "Dial");
+  if (dial && dial.type !== "FRAME") {
+    dial.remove();
+    dial = null;
+  }
+  if (!dial) {
+    dial = figma.createFrame();
+    dial.name = "Dial";
+  }
+  dial.layoutMode = "NONE";
+  dial.resizeWithoutConstraints(diameter, diameter);
+  dial.fills = [];
+  dial.strokes = [];
+  dial.clipsContent = false;
+  dial.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-dial");
+  component.insertChild(0, dial);
+  setFixedChildSizing(dial);
   bindSizeVariables(
-    component,
+    dial,
     metrics.sizeToken,
     metrics.sizeToken,
     variableByName,
@@ -61661,7 +61750,8 @@ async function updateProgressRingVariant(
   );
 
   const ellipse = (name) => {
-    let node = directChildNamed(component, name);
+    let node =
+      directChildNamed(dial, name) || directChildNamed(component, name);
     if (node && node.type !== "ELLIPSE") {
       node.remove();
       node = null;
@@ -61670,6 +61760,7 @@ async function updateProgressRingVariant(
       node = figma.createEllipse();
       node.name = name;
     }
+    dial.appendChild(node);
     node.resize(diameter, diameter);
     node.x = 0;
     node.y = 0;
@@ -61692,7 +61783,6 @@ async function updateProgressRingVariant(
     ),
   ];
   track.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-track");
-  component.appendChild(track);
 
   // Nothing done draws no arc: an arc whose ends meet is a whole ring.
   const arc = ellipse("Ring Arc");
@@ -61703,30 +61793,39 @@ async function updateProgressRingVariant(
   };
   arc.visible = value !== "0";
   arc.fills = [
-    paintFromVariable(
-      THEME_FILL.name,
-      THEME_FILL.fallback,
-      variableByName,
-      stats,
-    ),
+    paintFromVariable(fill.name, fill.fallback, variableByName, stats),
   ];
   arc.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-arc");
-  component.appendChild(arc);
 
-  let label = directChildNamed(component, "Label");
-  if (label && label.type !== "TEXT") {
-    label.remove();
-    label = null;
-  }
-  if (!label) {
-    label = figma.createText();
-    label.name = "Label";
-  }
-  label.fontName = fonts.regular;
-  label.fontSize = 12;
-  label.lineHeight = { unit: "PIXELS", value: 16 };
-  label.characters = "Label";
-  await applyTextStyleToNodeAsync(label, "fieldMeta", stats);
+  const text = async (parent, name) => {
+    let node =
+      directChildNamed(parent, name) || directChildNamed(component, name);
+    if (node && node.type !== "TEXT") {
+      node.remove();
+      node = null;
+    }
+    if (!node) {
+      node = figma.createText();
+      node.name = name;
+    }
+    parent.appendChild(node);
+    node.fontName = fonts.regular;
+    node.fontSize = 12;
+    node.lineHeight = { unit: "PIXELS", value: 16 };
+    node.characters = "Label";
+    await applyTextStyleToNodeAsync(node, "fieldMeta", stats);
+    node.fills = [
+      paintFromVariable(
+        "Colors/foreground/0",
+        "#000000",
+        variableByName,
+        stats,
+      ),
+    ];
+    return node;
+  };
+
+  const label = await text(dial, "Label");
   label.textAlignHorizontal = "CENTER";
   label.textAlignVertical = "CENTER";
   // Inside the square the hole holds, centred, as React's label is.
@@ -61735,11 +61834,15 @@ async function updateProgressRingVariant(
   setTextAutoResize(label, "HEIGHT");
   label.x = Math.round((diameter - width) / 2);
   label.y = Math.round((diameter - label.height) / 2);
-  label.fills = [
-    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
-  ];
   label.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
-  component.appendChild(label);
+
+  // Beside the dial, at the inline end, hidden until Label Beside: the row
+  // hugs the dial alone until then.
+  const beside = await text(component, "Label Beside");
+  beside.textAlignHorizontal = "LEFT";
+  setTextAutoResize(beside, "WIDTH_AND_HEIGHT");
+  beside.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  component.appendChild(beside);
 }
 
 async function createSpinnerVariant({ value, variableByName, stats }) {

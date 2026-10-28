@@ -133,42 +133,62 @@ public enum KozmosProgressSize: String, CaseIterable, Sendable {
     }
 }
 
+/// Where a ring's label is drawn, React's `labelPlacement`: in the hole, or
+/// beside the ring at the inline end, so on its left right to left.
+public enum KozmosProgressLabelPlacement: String, CaseIterable, Sendable {
+    case center
+    case end
+}
+
 public struct KozmosProgress: View {
     let value: Double
     let total: Double
     let shape: KozmosProgressShape
     let size: KozmosProgressSize
+    let tone: KozmosEmotion
+    let labelPlacement: KozmosProgressLabelPlacement
     let label: AnyView?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// A bar, or with `shape: .circular` a ring of `size` whose arc is
+    /// `tone`'s colour: Tag's and Button's emotions, `.themed` (the bar's
+    /// own theme 600) by default.
     public init(
         value: Double,
         total: Double = 1.0,
         shape: KozmosProgressShape = .linear,
-        size: KozmosProgressSize = .md
+        size: KozmosProgressSize = .md,
+        tone: KozmosEmotion = .themed
     ) {
         self.value = value
         self.total = total
         self.shape = shape
         self.size = size
+        self.tone = tone
+        self.labelPlacement = .center
         self.label = nil
     }
 
-    /// A ring with `label` in its centre: "11 Levels Added", or a
-    /// percentage. The label's words name the ring for VoiceOver, with its
-    /// value; an `accessibilityLabel` of the caller's replaces them. A bar
-    /// has no centre and draws no label.
+    /// A ring with `label` in its centre, or beside it with
+    /// `labelPlacement: .end`: "11 Levels Added in total", or a percentage.
+    /// The label's words name the ring for VoiceOver, with its value; an
+    /// `accessibilityLabel` of the caller's replaces them. A bar draws no
+    /// label.
     public init<Label: View>(
         value: Double,
         total: Double = 1.0,
         shape: KozmosProgressShape,
         size: KozmosProgressSize = .md,
+        tone: KozmosEmotion = .themed,
+        labelPlacement: KozmosProgressLabelPlacement = .center,
         @ViewBuilder label: () -> Label
     ) {
         self.value = value
         self.total = total
         self.shape = shape
         self.size = size
+        self.tone = tone
+        self.labelPlacement = labelPlacement
         self.label = AnyView(label())
     }
 
@@ -202,13 +222,29 @@ public struct KozmosProgress: View {
         }
     }
 
+    /// The dial, and its label beside it at the inline end when asked: an
+    /// HStack, so right to left the label is on its left. One element: the
+    /// label's words, and how far it has got.
+    private var ring: some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+            dial
+            if labelPlacement == .end, let label {
+                label.multilineTextAlignment(.leading)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(spokenValue)
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
     /// The track and the arc are one circle's strokes, drawn inside the
-    /// ring's frame: the arc is the theme fill (decision 59) on background
-    /// 100, 4.42:1 light and 3.13:1 dark, and it starts at 12 o'clock and
-    /// runs clockwise. A progress ring does not mirror, so it is drawn in a
+    /// dial's frame: the arc is the tone's emotion text colour, `.themed`'s
+    /// theme 600 by default, as the bar's fill, on background 100: 4.8:1 or
+    /// more for every tone, light and dark. It starts at 12 o'clock and runs
+    /// clockwise. A progress ring does not mirror, so it is drawn in a
     /// left-to-right environment: right to left SwiftUI turns a rotation, and
     /// a shape, the other way.
-    private var ring: some View {
+    private var dial: some View {
         ZStack {
             ZStack {
                 Circle()
@@ -217,14 +253,14 @@ public struct KozmosProgress: View {
                     .inset(by: size.stroke / 2)
                     .trim(from: 0, to: fraction)
                     .stroke(
-                        KozmosColors.primitivesColorsTheme500,
+                        tone.text,
                         style: StrokeStyle(lineWidth: size.stroke, lineCap: .butt)
                     )
                     .rotationEffect(.degrees(-90))
                     .animation(Self.sweep(reduceMotion: reduceMotion), value: fraction)
             }
             .environment(\.layoutDirection, .leftToRight)
-            if let label {
+            if labelPlacement == .center, let label {
                 // Inside the square the hole holds, centred, in the reading
                 // direction's own order.
                 label
@@ -233,9 +269,5 @@ public struct KozmosProgress: View {
             }
         }
         .frame(width: size.diameter, height: size.diameter)
-        // One element: the label's words, and how far it has got.
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(spokenValue)
-        .accessibilityAddTraits(.updatesFrequently)
     }
 }

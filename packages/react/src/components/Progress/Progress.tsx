@@ -1,6 +1,7 @@
 import React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "../../utils";
+import { EMOTIONS, type Emotion } from "../../utils/emotion";
 
 export interface ProgressProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -17,13 +18,24 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    */
   size?: "sm" | "md" | "lg";
   /**
-   * What a ring shows in its centre: "11 Levels Added", or a percentage. It
+   * What a ring shows: "11 Levels Added in total", or a percentage. It
    * names the progress bar, or describes it when `aria-label` or
    * `aria-labelledby` already names it, and the drawn copy is hidden from
-   * assistive technology, so it is heard once. A bar has no centre: a
-   * linear Progress draws none.
+   * assistive technology, so it is heard once. A bar draws none.
    */
   label?: React.ReactNode;
+  /**
+   * Where a ring's label is drawn: `"center"`, in the hole (the default),
+   * or `"end"`, beside the ring at the inline end, so on its left right to
+   * left.
+   */
+  labelPlacement?: "center" | "end";
+  /**
+   * What a ring's completion means, in Tag's and Button's emotions: its arc
+   * is the emotion's text colour, 3:1 or more on the track in both themes.
+   * `"themed"`, the default, is the bar's own fill, theme 600.
+   */
+  tone?: Emotion;
 }
 
 /**
@@ -45,6 +57,9 @@ const Progress = React.forwardRef<
       shape = "linear",
       size = "md",
       label,
+      labelPlacement = "center",
+      tone = "themed",
+      style,
       "aria-labelledby": labelledBy,
       "aria-describedby": describedBy,
       ...props
@@ -63,10 +78,22 @@ const Progress = React.forwardRef<
       const radius = (diameter - stroke) / 2;
       const circumference = 2 * Math.PI * radius;
       const labelled = label != null && label !== false && label !== "";
-      // The centre label is the ring's name, or its description when the
-      // caller has named it already; either way it is said by reference, and
-      // the drawn copy is hidden, so a screen reader hears it once.
+      // The label is the ring's name, or its description when the caller has
+      // named it already; either way it is said by reference, and the drawn
+      // copy is hidden, so a screen reader hears it once. It stays inside the
+      // progress bar wherever it is drawn.
       const named = props["aria-label"] != null || labelledBy != null;
+      const emotion = EMOTIONS.includes(tone) ? tone : "themed";
+      const beside = labelPlacement === "end";
+      const drawn = labelled && (
+        <div
+          id={labelId}
+          aria-hidden="true"
+          className="kozmos-progress-ring-label"
+        >
+          {label}
+        </div>
+      );
       return (
         <ProgressPrimitive.Root
           ref={ref}
@@ -74,7 +101,17 @@ const Progress = React.forwardRef<
           max={max}
           data-shape="circular"
           data-size={size}
+          data-tone={emotion}
+          data-label-placement={beside ? "end" : "center"}
           className={cn("kozmos-progress-ring", className)}
+          // The arc's colour, as a property the stylesheet reads, so forced
+          // colours can still replace it.
+          style={
+            {
+              "--kozmos-progress-ring-tone": `var(--semantics-emotion-${emotion}-text)`,
+              ...style,
+            } as React.CSSProperties
+          }
           aria-labelledby={labelled && !named ? labelId : labelledBy}
           aria-describedby={
             labelled && named
@@ -89,42 +126,37 @@ const Progress = React.forwardRef<
               does not mirror right to left: SVG is drawn in the page's own
               coordinates whatever the direction. With no value the track is
               drawn alone (the indeterminate ring is GAP-159's). */}
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            className="kozmos-progress-ring-svg"
-            width={diameter}
-            height={diameter}
-            viewBox={`0 0 ${diameter} ${diameter}`}
-            fill="none"
-            strokeWidth={stroke}
-          >
-            <circle
-              className="kozmos-progress-ring-track"
-              cx={centre}
-              cy={centre}
-              r={radius}
-            />
-            {known && (
+          <div className="kozmos-progress-ring-dial">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              className="kozmos-progress-ring-svg"
+              width={diameter}
+              height={diameter}
+              viewBox={`0 0 ${diameter} ${diameter}`}
+              fill="none"
+              strokeWidth={stroke}
+            >
               <circle
-                className="kozmos-progress-ring-arc"
+                className="kozmos-progress-ring-track"
                 cx={centre}
                 cy={centre}
                 r={radius}
-                strokeDasharray={`${(circumference * percentage) / 100} ${circumference}`}
-                transform={`rotate(-90 ${centre} ${centre})`}
               />
-            )}
-          </svg>
-          {labelled && (
-            <div
-              id={labelId}
-              aria-hidden="true"
-              className="kozmos-progress-ring-label"
-            >
-              {label}
-            </div>
-          )}
+              {known && (
+                <circle
+                  className="kozmos-progress-ring-arc"
+                  cx={centre}
+                  cy={centre}
+                  r={radius}
+                  strokeDasharray={`${(circumference * percentage) / 100} ${circumference}`}
+                  transform={`rotate(-90 ${centre} ${centre})`}
+                />
+              )}
+            </svg>
+            {!beside && drawn}
+          </div>
+          {beside && drawn}
         </ProgressPrimitive.Root>
       );
     }
@@ -139,6 +171,7 @@ const Progress = React.forwardRef<
         )}
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
+        style={style}
         {...props}
       >
         {/* As wide as the value, from the inline start: right to left it fills
