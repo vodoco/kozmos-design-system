@@ -33,12 +33,18 @@ export interface ToastOptions {
   action?: { label: string; onClick?: () => void; altText?: string };
   /**
    * A toast already showing with this id is replaced, in its place, and
-   * announced again: "Saving…" becomes "Saved".
+   * announced again: "Saving…" becomes "Saved". Its `onDismiss` is kept:
+   * it still runs once, when the replacement closes.
    */
   id?: string;
   /** The `id` of the Toaster that draws it, when a page has more than one. */
   toaster?: string;
-  /** Runs once when it closes, however it closes. */
+  /**
+   * Runs once when it closes, however it closes. Being replaced is not
+   * closing: a replaced toast's `onDismiss` runs when its replacement
+   * closes, before the replacement's own (one function given to both runs
+   * once).
+   */
   onDismiss?: () => void;
 }
 
@@ -48,6 +54,11 @@ export interface ToastRecord extends ToastOptions {
   key: string;
   title: ReactNode;
   open: boolean;
+  /**
+   * Every `onDismiss` given to this id while it showed, first call first,
+   * each once: they all run when it closes.
+   */
+  dismissals: (() => void)[];
 }
 
 // One queue for the page. Nothing is added on the server: there is no one
@@ -93,7 +104,9 @@ function dismiss(id?: string) {
   );
   // After the queue has changed, so a callback that shows the next toast
   // adds to it rather than being overwritten.
-  closing.forEach((record) => record.onDismiss?.());
+  closing.forEach((record) =>
+    record.dismissals.forEach((onDismiss) => onDismiss()),
+  );
 }
 
 export interface ToastFunction {
@@ -111,12 +124,19 @@ export const toast: ToastFunction = Object.assign(
   (title: ReactNode, options: ToastOptions = {}) => {
     const id = options.id ?? `kozmos-toast-${++made}`;
     if (typeof document !== "undefined") {
+      // A toast still showing keeps the callbacks it was given; one already
+      // closing has run them.
+      const replaced = records.find((other) => other.id === id && other.open);
+      const dismissals = [...(replaced?.dismissals ?? [])];
+      if (options.onDismiss && !dismissals.includes(options.onDismiss))
+        dismissals.push(options.onDismiss);
       const record = {
         ...options,
         id,
         key: `${id}:${++made}`,
         title,
         open: true,
+        dismissals,
       };
       emit(
         records.some((other) => other.id === id)
@@ -134,8 +154,18 @@ export function track(id: string, node: unknown) {
   if (node) drawn.add(id);
   else {
     drawn.delete(id);
-    if (records.some((record) => record.id === id && !record.open))
-      emit(records.filter((record) => record.id !== id));
+    // Radix's toast hands React a new ref each time it renders, and React
+    // detaches the old one (null) and attaches the new in one commit: as a
+    // toast starts to close, too. Only a toast still undrawn once that commit
+    // is done has gone; letting it go at the null took it away before its
+    // exit animation had run.
+    queueMicrotask(() => {
+      if (
+        !drawn.has(id) &&
+        records.some((record) => record.id === id && !record.open)
+      )
+        emit(records.filter((record) => record.id !== id));
+    });
   }
 }
 

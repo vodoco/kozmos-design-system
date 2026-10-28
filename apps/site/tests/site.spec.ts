@@ -2286,16 +2286,21 @@ test.describe("design-system gaps, measured", () => {
     });
   });
 
-  test("GAP-09: a link drawn as a button keeps its underline", async ({
+  test("GAP-09 is fixed: a link drawn as a button draws no underline", async ({
     page,
   }) => {
+    // Fixed in the design system on 2026-10-26: `.kozmos-button` takes the
+    // underline off, which kozmos-reset had kept from the scoped preflight.
+    // Read on the home page's hero buttons, `buttonVariants` on router links.
     await page.goto("/");
     await hydrated(page);
-    const line = await page
+    const lines = await page
       .locator('section[aria-labelledby="home-title"] .site-actions a')
-      .first()
-      .evaluate((link) => getComputedStyle(link).textDecorationLine);
-    expect(line).toBe("underline");
+      .evaluateAll((links) =>
+        links.map((link) => getComputedStyle(link).textDecorationLine),
+      );
+    expect(lines.length).toBeGreaterThan(0);
+    expect(new Set(lines)).toEqual(new Set(["none"]));
   });
 
   test("GAP-57: a Button's label cannot wrap", async ({ page }) => {
@@ -2361,9 +2366,13 @@ test.describe("design-system gaps, measured", () => {
     expect(trail.separatorTransform).toBe("matrix(-1, 0, 0, 1, 0, 0)");
   });
 
-  test("GAP-55: a Listbox's column is as wide as its widest option", async ({
+  test("GAP-55 is fixed: a Listbox's options take the list's width", async ({
     page,
   }) => {
+    // Fixed in the design system on 2026-10-26: `.kozmos-listbox` has one
+    // column, the list's width, so the site's own column class is gone. The
+    // search's long descriptions end in their ellipsis, and nothing scrolls
+    // sideways.
     await page.goto("/");
     await hydrated(page);
     await page.getByRole("button", { name: "Search the site" }).click();
@@ -2371,17 +2380,18 @@ test.describe("design-system gaps, measured", () => {
       .getByRole("dialog", { name: "Search the site" })
       .getByRole("listbox", { name: "Results" });
     await expect(list).toBeVisible();
-    // Without the site's column the options outgrow the list.
-    const overflow = await list.evaluate((element) => {
-      element.classList.remove("site-search-list");
-      const sideways = element.scrollWidth - element.clientWidth;
-      element.classList.add("site-search-list");
-      return sideways;
-    });
-    expect(overflow).toBeGreaterThan(0);
+    const drawn = await list.evaluate((element) => ({
+      sideways: element.scrollWidth - element.clientWidth,
+      cut: [...element.querySelectorAll(".kozmos-option-description")].some(
+        (description) => description.scrollWidth > description.clientWidth,
+      ),
+    }));
+    expect(drawn).toEqual({ sideways: 0, cut: true });
   });
 
-  test("GAP-40: MapView does not isolate its overlays", async ({ page }) => {
+  test("GAP-40 is fixed: MapView isolates its overlays", async ({ page }) => {
+    // Fixed in the design system on 2026-10-26: MapView's root is its own
+    // stacking context, so its MapOverlay's z-index 50 stays inside the map.
     // The kiosk directory floats a MapOverlay on its map.
     await page.goto("/examples/kiosk-directory");
     await hydrated(page);
@@ -2389,7 +2399,7 @@ test.describe("design-system gaps, measured", () => {
       .getByRole("region", { name: /Illustrative map$/ })
       .first()
       .evaluate((map) => getComputedStyle(map).isolation);
-    expect(isolation).toBe("auto");
+    expect(isolation).toBe("isolate");
   });
 
   test("GAP-66 is fixed: an empty state's wrapped description is centred", async ({
@@ -2574,17 +2584,17 @@ test.describe("design-system gaps, measured", () => {
     }
   });
 
-  test("GAP-94: Text's muted colour stays grey on a glass Surface", async ({
+  test("GAP-94 is fixed: Text's muted colour follows a glass Surface", async ({
     page,
   }) => {
     // Decision 48: on glass, text that is muted elsewhere takes the
     // foreground colour, so it reads over whatever shows through. The glass
     // says so through --kozmos-surface-muted-foreground, and Kozmos's own
-    // parts read it (.kozmos-muted-text); a Text color="muted" does not.
-    // Read on the elevation page's glass card, over the category colours,
-    // since the examples are solid (decision 49): a muted Text's own
-    // element, cloned from the page, beside an owned muted line, on the
-    // glass and off it. A fix turns the Text to the foreground on the glass.
+    // parts read it (.kozmos-muted-text); since 2026-10-26 a Text
+    // color="muted" does too. Read on the elevation page's glass card, over
+    // the category colours, since the examples are solid (decision 49): a
+    // muted Text's own element, cloned from the page, beside an owned muted
+    // line, on the glass and off it.
     await page.goto("/foundations/elevation");
     await hydrated(page);
     const drawn = await page.locator(".site-glass-card").evaluate((glass) => {
@@ -2615,9 +2625,9 @@ test.describe("design-system gaps, measured", () => {
     if (!drawn) return;
     // Off the glass the two are the same muted grey.
     expect(drawn.page.text).toBe(drawn.page.owned);
-    // On it the owned line takes the foreground colour; the Text stays grey.
+    // On it both take the foreground colour.
     expect(drawn.glass.owned).not.toBe(drawn.page.owned);
-    expect(drawn.glass.text, "a muted Text on glass").toBe(drawn.page.text);
+    expect(drawn.glass.text, "a muted Text on glass").toBe(drawn.glass.owned);
   });
 
   test("GAP-95: the level switcher's column grows out of the phone's frame", async ({
@@ -4126,8 +4136,8 @@ test.describe("kiosk directory example", () => {
   }) => {
     // Solid since decision 49, the attract screen hides what it covers, so
     // anything drawn over it shows. The map's floor list sits in a
-    // MapOverlay at z-index 50, which MapView does not contain (GAP-40), so
-    // the screen takes the top layer token over it. Read as drawn: every
+    // MapOverlay at z-index 50, which MapView contains since GAP-40 was
+    // fixed; the screen takes the top layer token over it all the same. Read as drawn: every
     // pixel where the selected floor's tile was, the theme's blue with its
     // letter, is the screen's own fill. (The tile's centre alone is its
     // white letter, which matches a white screen whatever is on top.)

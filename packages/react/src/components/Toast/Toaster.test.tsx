@@ -270,6 +270,63 @@ describe("toast() and Toaster", () => {
     );
   });
 
+  it("keeps a replaced toast's onDismiss: it runs once, when the replacement closes, before the replacement's own", async () => {
+    render(<Page />);
+    const closed = vi.fn();
+    const saving = () => closed("saving");
+    show("Saving…", { id: "save", duration: Infinity, onDismiss: saving });
+    show("Still saving…", { id: "save", duration: Infinity });
+    await screen.findByText("Still saving…");
+    expect(closed).not.toHaveBeenCalled();
+    // The same function again runs once; a new one runs after it.
+    show("Saved", {
+      id: "save",
+      duration: Infinity,
+      onDismiss: saving,
+    });
+    show("Saved", {
+      id: "save",
+      duration: Infinity,
+      onDismiss: () => closed("saved"),
+    });
+    act(() => toast.dismiss("save"));
+    expect(closed.mock.calls.flat()).toEqual(["saving", "saved"]);
+    // Shown again once it has closed, it starts afresh.
+    await waitFor(() => expect(toasts()).toHaveLength(0));
+    show("Saving…", { id: "save", duration: Infinity });
+    act(() => toast.dismiss("save"));
+    expect(closed).toHaveBeenCalledTimes(2);
+  });
+
+  it("passes its style and classes to the list, so a product can move it clear of a panel", async () => {
+    render(
+      <ThemeProvider theme="light">
+        <Toaster className="kozmos-test-list" style={{ bottom: 24 }} />
+      </ThemeProvider>,
+    );
+    show("User added", { tone: "success" });
+    const list = (await screen.findByText("User added")).closest("ol")!;
+    expect(list).toHaveClass("kozmos-test-list");
+    expect(list.style.bottom).toBe("24px");
+  });
+
+  it("is swiped toward the inline end: to the left right to left", async () => {
+    render(
+      <ThemeProvider theme="light">
+        <Toaster />
+        <ThemeProvider theme="light" dir="rtl">
+          <Toaster id="rtl" />
+        </ThemeProvider>
+      </ThemeProvider>,
+    );
+    show("Left to right");
+    show("Right to left", { toaster: "rtl" });
+    const ltr = (await screen.findByText("Left to right")).closest("li")!;
+    const rtl = (await screen.findByText("Right to left")).closest("li")!;
+    expect(ltr).toHaveAttribute("data-swipe-direction", "right");
+    expect(rtl).toHaveAttribute("data-swipe-direction", "left");
+  });
+
   it("sends a toast to the Toaster it names, in that Toaster's provider", async () => {
     render(
       <>

@@ -29,7 +29,9 @@ config's reduced motion reaches it there.
 
 - **Tones:** `neutral` (the default, no icon), `success`, `info`, `warning` and `critical`, Notice's
   tones with success. A tone is an icon at the start, in the tone's text colour; the surface stays the
-  background. The parts take the same `tone`: `<Toast tone="success">`.
+  background. The parts take the same `tone`: `<Toast tone="success">`. What was done is `success`
+  ("User added"); a state the user should know of is `info` ("Tour paused"), announced politely, as a
+  status is: `live: "assertive"` is for what cannot wait.
 - **Announced:** each toast once, by Radix's live region, with `toastLabel` ("Notification") before
   its words: a `critical` toast assertively, every other tone politely, and `live` says otherwise. The
   region says its `aria-live`, as every Kozmos live part does (GAP-193), so a modal Select, Menu or
@@ -44,8 +46,15 @@ config's reduced motion reaches it there.
 - **The queue:** `limit` (3) show at once, oldest first, and the rest wait their turn. `toast()`
   returns an id: pass it back as `id` to replace that toast where it is, announced again ("Saving…"
   becomes "Saved"), or to `toast.dismiss(id)`. `toast.dismiss()` closes them all.
-- **Closing:** its close button, a swipe toward the edge, Escape, its action, or `toast.dismiss`.
-  `onDismiss` runs once, however it closes.
+- **Closing:** its close button, a swipe toward the inline end, Escape, its action, or
+  `toast.dismiss`; it slides out toward the inline end as it goes. `onDismiss` runs once, however it
+  closes. Being replaced is not closing: a replaced toast's `onDismiss` runs when its replacement
+  closes, before the replacement's own.
+- **Where:** at the window's bottom inline end, above every Kozmos overlay: the toasts' layer is 100,
+  a Dialog's, a Drawer's or a Popover's 50, so a toast covers a Drawer open beside it, inline or not.
+  While a panel stays open there, move the list clear of it with the Toaster's `style`, logically, so
+  it mirrors: `style={{ insetInlineEnd: 468 }}` beside a 420 panel floating 16 from the edge. Right to
+  left, the list sits at the left, and a toast is swiped and leaves to the left.
 - **Reduced motion:** under `prefers-reduced-motion: reduce`, or the design config's
   `motion: "reduced"`, a toast arrives and leaves without moving; a swipe still follows the finger.
 - **Several Toasters:** a Toaster with an `id` draws the toasts whose `toaster` option names it, in

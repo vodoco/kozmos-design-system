@@ -50,6 +50,15 @@ export interface ToasterProps {
   hotkey?: string[];
   /** The list's classes, as ToastViewport's. */
   className?: string;
+  /**
+   * The list's inline style, as ToastViewport's. The toasts draw above every
+   * Kozmos overlay, an open Drawer's included (layer 100 to its 50), at the
+   * window's bottom inline end: beside a panel that stays open there, move
+   * them clear of it with a logical offset, such as
+   * `{ insetInlineEnd: 468 }` beside a 420 panel floating 16 from the edge.
+   * Pass it only while the panel is open beside them.
+   */
+  style?: React.CSSProperties;
 }
 
 function ToasterItem({
@@ -112,8 +121,8 @@ function ToasterItem({
  * that clips or isolates) can trap it, and the design config's reduced
  * motion reaches it there. The toasts queue, `limit` at a time, oldest
  * first; each pauses while the toasts are hovered or focused, closes on a
- * swipe, its close button or Escape (the newest, with focus outside the
- * toasts), and never takes focus.
+ * swipe toward the inline end, its close button or Escape (the newest, with
+ * focus outside the toasts), and never takes focus.
  */
 export function Toaster({
   id = "",
@@ -124,6 +133,7 @@ export function Toaster({
   closeLabel = "Dismiss notification",
   hotkey,
   className,
+  style,
 }: ToasterProps) {
   const records = React.useSyncExternalStore(
     subscribe,
@@ -134,10 +144,21 @@ export function Toaster({
   React.useEffect(() => claim(id, token), [id, token]);
   const theme = React.useContext(ThemeProviderContext);
   const viewport = (
-    <ToastViewport className={className} label={label} hotkey={hotkey} />
+    <ToastViewport
+      className={className}
+      style={style}
+      label={label}
+      hotkey={hotkey}
+    />
   );
   return (
-    <ToastProvider duration={duration} label={toastLabel}>
+    <ToastProvider
+      duration={duration}
+      label={toastLabel}
+      // Toward the inline end, where the list sits, so right to left a
+      // toast is swiped, and leaves, to the left.
+      swipeDirection={theme?.dir === "rtl" ? "left" : "right"}
+    >
       {owner(id) === token &&
         records
           .filter((record) => (record.toaster ?? "") === id)

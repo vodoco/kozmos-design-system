@@ -182,8 +182,8 @@ theme, direction and density, so no box it is rendered in (a map, a panel
 that clips or isolates) can trap it, and the design config's reduced
 motion reaches it there. The toasts queue, `limit` at a time, oldest
 first; each pauses while the toasts are hovered or focused, closes on a
-swipe, its close button or Escape (the newest, with focus outside the
-toasts), and never takes focus.
+swipe toward the inline end, its close button or Escape (the newest, with
+focus outside the toasts), and never takes focus.
 
 Its props are `ToasterProps`.
 
@@ -222,6 +222,15 @@ Its props are `ToasterProps`.
 - `className`: `string`, optional.
 
   The list's classes, as ToastViewport's.
+
+- `style`: `React.CSSProperties`, optional.
+
+  The list's inline style, as ToastViewport's. The toasts draw above every
+  Kozmos overlay, an open Drawer's included (layer 100 to its 50), at the
+  window's bottom inline end: beside a panel that stays open there, move
+  them clear of it with a logical offset, such as
+  `{ insetInlineEnd: 468 }` beside a 420 panel floating 16 from the edge.
+  Pass it only while the panel is open beside them.
 
 ## Types these props take
 
@@ -289,12 +298,18 @@ type ToastTone = "neutral" | "success" | "info" | "warning" | "critical";
     };
     /**
      * A toast already showing with this id is replaced, in its place, and
-     * announced again: "Saving…" becomes "Saved".
+     * announced again: "Saving…" becomes "Saved". Its `onDismiss` is kept:
+     * it still runs once, when the replacement closes.
      */
     id?: string;
     /** The `id` of the Toaster that draws it, when a page has more than one. */
     toaster?: string;
-    /** Runs once when it closes, however it closes. */
+    /**
+     * Runs once when it closes, however it closes. Being replaced is not
+     * closing: a replaced toast's `onDismiss` runs when its replacement
+     * closes, before the replacement's own (one function given to both runs
+     * once).
+     */
     onDismiss?: () => void;
   }
   ```

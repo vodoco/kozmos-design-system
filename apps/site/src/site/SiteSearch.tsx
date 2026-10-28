@@ -227,7 +227,6 @@ export function SiteSearch() {
             {options.length > 0 ? (
               <Listbox
                 aria-label="Results"
-                className="site-search-list"
                 options={options}
                 onValueChange={(value) => {
                   if (typeof value === "string") go(value);

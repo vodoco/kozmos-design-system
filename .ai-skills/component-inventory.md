@@ -17,7 +17,7 @@ These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 `@kozmos-ds/vue` exists in the workspace but is **private**: an internal
 harness, not something to install. There is no React Native package.
 
-## Components (121)
+## Components (122)
 
 A row is a directory of `packages/react/src/components`, linked to its API card,
 which lists every part to import and every prop. **iOS** and **Android** say
@@ -32,7 +32,7 @@ component has no such prop; **unknown** means the checker could not resolve it.
 
 `Radio` is a directory whose name is not an export: import the parts named in its row instead.
 
-### Core (75)
+### Core (76)
 
 | Component                                                                            | iOS | Android | Variants                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------ | :-: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -109,6 +109,7 @@ component has no such prop; **unknown** means the checker could not resolve it.
 | [**Toast**](../docs/claude-design/components/Toast.md)                               | ✅  |   ✅    | `type`: background \| foreground<br>`tone`: critical \| info \| neutral \| success \| warning<br>`ToastProvider.swipeDirection`: down \| left \| right \| up                                                                                                                                                                                                                                               |
 | [**ToggleButton**](../docs/claude-design/components/ToggleButton.md)                 | ✅  |   ✅    | `variant`: default \| outline<br>`size`: default \| lg \| sm                                                                                                                                                                                                                                                                                                                                               |
 | [**Tooltip**](../docs/claude-design/components/Tooltip.md)                           | ✅  |   ✅    | `TooltipContent.side`: bottom \| left \| right \| top<br>`TooltipContent.align`: center \| end \| start<br>`TooltipContent.sticky`: always \| partial<br>`TooltipContent.updatePositionStrategy`: always \| optimized                                                                                                                                                                                      |
+| [**TourStep**](../docs/claude-design/components/TourStep.md)                         |  —  |    —    | `side`: bottom \| left \| right \| top<br>`align`: center \| end \| start                                                                                                                                                                                                                                                                                                                                  |
 | [**Tree**](../docs/claude-design/components/Tree.md)                                 | ✅  |   ✅    | `density`: compact \| default<br>`activationMode`: select \| select-toggle \| toggle<br>`TreeChildItemRow.actionsVisibility`: always \| auto<br>`TreeChildItemRow.density`: compact \| default<br>`TreeItemRow.actionsVisibility`: always \| auto<br>`TreeItemRow.density`: compact \| default<br>`TreeParentItemRow.actionsVisibility`: always \| auto<br>`TreeParentItemRow.density`: compact \| default |
 | [**UserMessage**](../docs/claude-design/components/UserMessage.md)                   |  —  |    —    | none                                                                                                                                                                                                                                                                                                                                                                                                       |
 
