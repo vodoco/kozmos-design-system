@@ -205,7 +205,13 @@ class KozmosCardColumnTest {
 
     // Drawn as the Column it was.
 
-    private class Shape(val name: String, val leads: Boolean, val modifier: Modifier = Modifier, val content: @Composable ColumnScope.() -> Unit)
+    private class Shape(
+        val name: String,
+        val leads: Boolean,
+        val modifier: Modifier = Modifier,
+        val probes: List<String> = listOf("a", "b", "c"),
+        val content: @Composable ColumnScope.() -> Unit
+    )
 
     /**
      * The card lays its children out as the Column it was, below the top it
@@ -246,7 +252,7 @@ class KozmosCardColumnTest {
                 Box(Modifier.alignBy { it.measuredWidth / 2 }.width(40.dp).height(10.dp).testTag("b"))
                 Box(Modifier.alignBy { it.measuredWidth / 4 }.width(100.dp).height(10.dp).testTag("c"))
             },
-            Shape("header-less, text that wraps", leads = true) {
+            Shape("header-less, text that wraps", leads = true, probes = listOf("a", "b")) {
                 KozmosCardContent { Text(words, Modifier.testTag("a")) }
                 KozmosCardFooter { Text(words, Modifier.testTag("b")) }
             },
@@ -258,7 +264,7 @@ class KozmosCardColumnTest {
                 val column = measure(direction) { Reference(top, shape.modifier, content = shape.content) }
                 val state = "${shape.name}, $direction"
                 assertFrame("the card: $state", column["card"], card["card"])
-                for (probe in listOf("a", "b", "c")) {
+                for (probe in shape.probes) {
                     assertFrame("$probe: $state", column.relative(probe), card.relative(probe))
                 }
             }
