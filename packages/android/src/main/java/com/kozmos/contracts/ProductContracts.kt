@@ -521,7 +521,12 @@ data class KozmosBuildingPresentation(
      * building has no title, for the product to name it or leave it unnamed.
      */
     val label: String,
-    /** The id of the site the building is in: its [KozmosSitePresentation.id]. */
+    /**
+     * The id of the site the building is in: its [KozmosSitePresentation.id],
+     * which every building in a site's [KozmosSitePresentation.buildings]
+     * carries. Empty when the venue's data names no site for a building
+     * reported on its own.
+     */
     val siteId: String,
     /**
      * The building's levels, top floor first (decision 38), each once: the

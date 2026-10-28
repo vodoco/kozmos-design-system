@@ -538,7 +538,9 @@ public struct KozmosBuildingPresentation: Sendable, Hashable, Identifiable {
     /// the building has no title, for the product to name it or leave it
     /// unnamed.
     public let label: String
-    /// The id of the site the building is in: its `KozmosSitePresentation.id`.
+    /// The id of the site the building is in: its `KozmosSitePresentation.id`,
+    /// which every building in a site's `buildings` carries. Empty when the
+    /// venue's data names no site for a building reported on its own.
     public let siteId: String
     /// The building's levels, top floor first (decision 38), each once: the
     /// floors the floor selector takes, in the order it draws them.

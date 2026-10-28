@@ -463,7 +463,11 @@ export interface BuildingPresentation {
    * building has no title, for the product to name it or leave it unnamed.
    */
   label: string;
-  /** The id of the site the building is in: its `SitePresentation.id`. */
+  /**
+   * The id of the site the building is in: its `SitePresentation.id`, which
+   * every building in a site's `buildings` carries. Empty when the venue's
+   * data names no site for a building reported on its own.
+   */
   siteId: string;
   /**
    * The building's levels, top floor first (decision 38), each once: the

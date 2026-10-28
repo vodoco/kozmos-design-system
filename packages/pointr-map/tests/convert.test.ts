@@ -83,6 +83,23 @@ describe("buildings and sites", () => {
       buildings: [{ id: "b", label: "", siteId: "42", floors: [] }],
     });
   });
+
+  it("gives a site's buildings the site's own id, whatever their data names (GAP-175)", () => {
+    const site = toSite({
+      siteInternalIdentifier: "campus",
+      buildings: [
+        {
+          buildingInternalIdentifier: "a",
+          siteInternalIdentifier: null as never,
+        },
+        { buildingInternalIdentifier: "b", siteInternalIdentifier: "" },
+        { buildingInternalIdentifier: "c", siteInternalIdentifier: "other" },
+        { buildingInternalIdentifier: "d", siteInternalIdentifier: "campus" },
+      ],
+    });
+    expect(site?.buildings.map((b) => b.id)).toEqual(["a", "b", "c", "d"]);
+    expect(site?.buildings.every((b) => b.siteId === site.id)).toBe(true);
+  });
 });
 
 describe("POIs", () => {

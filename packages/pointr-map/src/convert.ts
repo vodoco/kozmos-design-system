@@ -77,7 +77,8 @@ export function toFloors(
 /**
  * A building as the contracts' `BuildingPresentation` (GAP-175): its label
  * the Pointr Cloud's title, empty when it has none; its floors top floor
- * first (decision 38).
+ * first (decision 38). Its `siteId` is the one its data names, and empty
+ * when it names none; `toSite` gives its buildings the site's own.
  */
 export function toBuilding(
   building: SdkBuilding | undefined,
@@ -92,7 +93,12 @@ export function toBuilding(
   };
 }
 
-/** A site as the contracts' `SitePresentation`, its buildings as `toBuilding` gives them. */
+/**
+ * A site as the contracts' `SitePresentation`, its buildings as `toBuilding`
+ * gives them, each carrying the site's id: a building is in the site that
+ * lists it, so its `siteId` is the site's `id` (GAP-175), even when its own
+ * data names no site or another.
+ */
 export function toSite(
   site: SdkSite | undefined,
 ): SitePresentation | undefined {
@@ -103,7 +109,8 @@ export function toSite(
     label: words(site.siteTitle) ?? "",
     buildings: (site.buildings ?? [])
       .map(toBuilding)
-      .filter((b): b is BuildingPresentation => b !== undefined),
+      .filter((b): b is BuildingPresentation => b !== undefined)
+      .map((building) => ({ ...building, siteId: id })),
   };
 }
 
