@@ -343,7 +343,7 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     );
     // Where the visitor is, never drawn disabled.
     expect(screen.getAllByRole("listitem")[1]).not.toHaveAttribute(
-      "data-disabled",
+      "aria-disabled",
     );
   });
 
@@ -430,10 +430,10 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     expect(
       screen
         .getAllByRole("listitem")
-        .map((item) => item.hasAttribute("data-disabled")),
+        .map((item) => item.getAttribute("aria-disabled") === "true"),
     ).toEqual([true, false, false, false, true]);
     rerender(<Stepper steps={steps} currentStep={2} />);
-    expect(document.querySelectorAll("[data-disabled]")).toHaveLength(0);
+    expect(document.querySelectorAll("[aria-disabled]")).toHaveLength(0);
   });
 
   // The line after a step is drawn as progress once that step is done, so a

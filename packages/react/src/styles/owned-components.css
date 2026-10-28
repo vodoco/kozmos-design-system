@@ -387,6 +387,20 @@
     border: 1px solid var(--semantics-border-subtle);
     --kozmos-surface-muted-foreground: initial;
   }
+  /* An opaque Card is a card of its own, as the solid surface is: muted
+     text on it keeps its muted colour on glass, as CardDescription does. */
+  .kozmos-card {
+    --kozmos-surface-muted-foreground: initial;
+  }
+  /* The glass resolves its foreground where it is set, so a provider of the
+     other theme nested on it (DynamicIsland's dark one, on its capsule)
+     would inherit the outer theme's foreground: black on black. Its muted
+     text takes its own theme's muted colour. A nested provider of the same
+     theme still reads the glass: the colour is its own. */
+  [data-kozmos-root][data-theme="light"] [data-kozmos-root][data-theme="dark"],
+  [data-kozmos-root][data-theme="dark"] [data-kozmos-root][data-theme="light"] {
+    --kozmos-surface-muted-foreground: initial;
+  }
   /* The glass surface. It says what text that is muted elsewhere draws in
      on it, --kozmos-surface-muted-foreground: the foreground colour, so it
      reads at 4.5:1 over any map (decision 48), where muted it read 3.6:1
@@ -1220,6 +1234,13 @@
     text-transform: none;
     -webkit-appearance: button;
     background-image: none;
+    /* A Button drawn on a link (buttonVariants on an anchor, Pagination's
+       pages) is not underlined: kozmos-reset opts it out of the scoped
+       preflight, which is what took the browser's underline off a plain link
+       (site GAP-09). The link variant underlines on hover. Kozmos's own
+       scoped `underline` outweighs this; a host's utility in a cascade
+       layer never does, and an unlayered one only when it comes later. */
+    text-decoration-line: none;
   }
   /* A filled Button reads its tier's four backgrounds: idle, hover, focus
      from the keyboard, and pressed while the pointer holds it, which wins
@@ -1370,9 +1391,35 @@
   .kozmos-popover {
     @apply z-50 w-72 rounded-control border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
   }
+  /* BottomNavigation's top line, drawn inside the bar, over its items, as
+     Figma's inside stroke is: the bar is as tall as its items, where a
+     border on top made it a pixel taller (site GAP-68). A border on a
+     pseudo-element, not an inset shadow or a fill, so forced colours
+     repaint it in the system's colours instead of dropping it. The element
+     in the selector outweighs the scoped preflight's ::before reset. */
+  /* The bar's items sit above the bottom safe area, the iPhone's home
+     indicator, and its fill runs under it. (`pb-safe`, which it carried,
+     compiled to nothing.) */
+  nav.kozmos-bottom-navigation {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  nav.kozmos-bottom-navigation::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 1;
+    border-top: 1px solid var(--semantics-border-subtle);
+    pointer-events: none;
+  }
+  /* PopoverArrow's tip overlaps the body by 1px, as Tooltip's does and as
+     Figma's tip does: it covers the body's border where the two meet, so no
+     line runs across it (site GAP-74). "Up" in the tip's own frame is into
+     the body on every side. */
   .kozmos-popover-arrow {
     @apply fill-popover;
     display: block;
+    transform: translateY(-1px);
   }
   /* Logical map corners follow the owning interface direction. Insets remain
      physical renderer clearances: RTL start uses the right-hand clearance. */
@@ -2034,9 +2081,10 @@
     cursor: default;
   }
   /* A step the visitor may not go to, where others are buttons: dimmed, as
-     a disabled control is, so it never looks like one they may. */
-  [data-disabled] > .kozmos-stepper-indicator,
-  [data-disabled] > .kozmos-stepper-label {
+     a disabled control is, so it never looks like one they may; it is
+     aria-disabled, as a disabled control is too. */
+  [aria-disabled="true"] > .kozmos-stepper-indicator,
+  [aria-disabled="true"] > .kozmos-stepper-label {
     opacity: var(--primitives-opacity-50);
   }
   .kozmos-stepper-button:focus-visible {
