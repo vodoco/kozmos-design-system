@@ -860,12 +860,16 @@
       "component": "TourStep",
       "exports": [
         "Default",
+        "Welcome",
         "Step",
-        "WithContent",
+        "DoStep",
+        "LastStep",
+        "Warning",
         "NoTarget",
+        "Ending",
+        "WithContent",
         "Coachmark",
-        "RightToLeft",
-        "Compact"
+        "RightToLeft"
       ]
     },
     {

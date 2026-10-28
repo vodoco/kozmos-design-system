@@ -7,15 +7,18 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # TourStep
 
-One step of a product tour (GAP-188, decision 116): a card beside the control the step points at,
-which Backdrop's cut-out lights while the rest of the page is dimmed. It carries the tour's name
-and its position ("Step 2 of 5"), a title, any body, a hint, the live status of what completes the
-step ("Go ahead and open a site to proceed to the next step."), the progress as Stepper's dots,
-Back, Next and Close. It is the MAP-64 boards' card in Kozmos's tokens: Popover's surface, the
-Control corner, 16 inside, a 4 top edge of the theme fill, 340 wide.
+One step of a product tour (GAP-188, decision 116), drawn as the MAP-64 design draws it (decision
+136): a card beside the control the step points at, its arrow pointing at it, which Backdrop's
+cut-out lights while the rest of the page is dimmed. It carries the tour's name and its position
+("Add users and assign permissions · 1 of 4"), Close, a title, a body, what to do now as a Notice
+("Open Settings, then User Management, or select Next to go there."), any further content, the
+progress as a bar, and the footer: a dismiss link at the start, then Back, a secondary action and
+Next. It is Popover's surface with the Control corner (decision 118), 16 inside, 372 wide, and 432
+with the dismiss link.
 
 TourStep is one step, and it is controlled: which step shows, and pausing and resuming the tour,
-are the product's. On the docs page each example starts shut; its button opens it.
+are the product's. On the docs page each example starts shut; its button opens it. The MAP-64
+examples are drawn at compact density, as Pointr Cloud draws its controls (decision 82).
 
 <Canvas of={TourStepStories.Default} />
 
@@ -23,41 +26,93 @@ are the product's. On the docs page each example starts shut; its button opens i
 
 ## A tour
 
-Keep one TourStep and change its props as the tour moves on: `step`, `title`, the body, and
-`target`. The cut-out glides to the next target, and the card is drawn anew for each `step`, so a
-reader hears the new step as a dialog opening, and focus is on its Next. Pass `onBack` from the
-second step on, and `nextLabel="Finish"` on the last; `onNext` on the last step is where the tour
-ends. A step past `stepCount` draws every dot done, for a closing card, with `positionLabel="Done"`.
+Keep one TourStep and change its props as the tour moves on: `step`, `title`, `body`,
+`instruction` and `target`. The cut-out glides to the next target, and the card is drawn anew for
+each `step`, so a reader hears the new step as a dialog opening, and focus is on its Next. Pass
+`onBack` from the second step on, and `nextLabel="Done"` on the last; `onNext` on the last step is
+where the tour ends.
 
 <Canvas of={TourStepStories.Step} />
+
+## The card, part by part
+
+- **The eyebrow**: `tourLabel` and the position, "{tour} · {step} of {count}", in the theme ink,
+  Text xs semibold, in sentence case. `positionLabel` writes the position: a template with `{step}`
+  and `{count}` (`"{step} of {count}"` by default) or a function of them.
+- **Close**: a ghost icon button at the end of the eyebrow's row, named by `closeLabel` ("Close").
+  It is drawn only with `onClose`, which Escape calls too; without it there is no Close, and Escape
+  leaves the step open.
+- **The title**: a level 2 heading, drawn at Heading 4's size.
+- **The body**: `body`, Text sm in the muted ink.
+- **The instruction**: what to do now, a Notice that never collapses, its icon centred on its words.
+  `instructionTone` is `"info"` (the default, with a pointer) or `"warning"` (with the warning's
+  own mark), for a step that can't go on as it should. It sits in a polite live region mounted with
+  each step, so an instruction that arrives or changes while the step is open is read out.
+- **Content**: `children`, after the instruction, in the card's own ink: Tags, a Table, a link.
+- **The progress**: with `stepCount`, a Progress bar and the position beside it ("1 of 4", Text xs
+  muted). The bar is named by `progressLabel` ("Tour progress") and says the position as its value.
+- **The footer**: `onDismiss` draws a link at the start (`dismissLabel`, "Don't show again"); then,
+  at the end, `onBack` draws Back (ghost), `onSecondary` an outline secondary action
+  (`secondaryLabel`, "Not now"), and `onNext` Next. Every button is size sm. Each is drawn only
+  with its handler.
+
+## A step its own action completes
+
+On a step whose own action moves the tour on (adding a user, drawing a desk), or one waiting for a
+valid value, pass `nextDisabled`: Next is drawn disabled, not hidden, so the footer keeps one shape
+on every step (MAP-64 D11). The card then takes focus itself.
+
+<Canvas of={TourStepStories.DoStep} />
+
+The last step may have no Next at all: `onSecondary` with `secondaryLabel="Finish without adding"`
+is then the only way on besides the step's own action (D24).
+
+<Canvas of={TourStepStories.LastStep} />
+
+## A warning
+
+`instructionTone="warning"` says the step can't go on as it should, and what to do instead.
+
+<Canvas of={TourStepStories.Warning} />
+
+## The welcome card
+
+With no `stepCount` there is no position and no progress, and with no `onClose` there is no Close.
+`onDismiss` draws "Don't show again" at the footer's start; with it, the card is 432 wide rather
+than 372, so its three actions sit on one line. The width follows the dismiss link: there is no
+width prop.
+
+<Canvas of={TourStepStories.Welcome} />
 
 ## Where it sits
 
 `target` is an element, a ref to one, a virtual element (anything with `getBoundingClientRect()`,
-such as a point on a map) or a rect in the viewport's coordinates. The card sits 12 past the
-cut-out's ring on its `side` (`"bottom"` by default), at `align` along it (`"center"`), flips to
-the other side where there is no room, and keeps 16 from the window's edges. It is read every
-frame, as Backdrop reads its target, so the card and the cut-out move together, whatever moves the
-target, and a ref filled after the step opens is found.
+such as a point on a map) or a rect in the viewport's coordinates. The card sits on its `side`
+(`"bottom"` by default), at `align` along it (`"center"`), its 24 by 12 arrow 3 past the cut-out's
+ring and the card 15 past it, as the design draws them. It flips to the other side where there is
+no room, and keeps 16 from the window's edges. It is read every frame, as Backdrop reads its
+target, so the card and the cut-out move together, whatever moves the target, and a ref filled
+after the step opens is found. To light a whole container round a control, pass the container as
+the `target`.
 
 With no target, or one that is not on the page (a ref to nothing, an element with no box), the
-whole page is dimmed and the card places itself in the middle of the window: the boards' "Step
-can’t be pointed to".
+whole page is dimmed and the card, with no arrow, places itself in the middle of the window, 420
+wide (decision 139): the design's "This step can't be shown", and a tour's ending.
 
 <Canvas of={TourStepStories.NoTarget} />
 
-## The body
+<Canvas of={TourStepStories.Ending} />
 
-`children` takes any content: the boards put a row of Tags in it and a Table. `hint` is a tip
-under it, on the themed surface, and `instruction` is what completes the step, beside a pulsing
-marker. The marker holds still when motion is reduced, by the system or by the design config.
+## Content
+
+`children` takes any content after the instruction, in the card's own ink.
 
 <Canvas of={TourStepStories.WithContent} />
 
 ## A single hint (coachmark)
 
 With no `stepCount`, no `onBack` and no `onNext`, TourStep is a coachmark (GAP-157): a title and a
-body beside the control it teaches, with no position and no dots, closed by its button and by
+body beside the control it teaches, with no position and no progress, closed by its button and by
 Escape. It takes focus on itself when it opens, so it is read out. Name its button with
 `closeLabel`, "Dismiss" for example. For an action as well, pass `onNext` with `nextLabel="Got it"`.
 There is no separate Coachmark part.
@@ -67,17 +122,17 @@ There is no separate Coachmark part.
 ## Pressing outside, and closing
 
 Escape and Close call `onClose`. A press on the dim or on the lit target does not: the dim and the
-target are part of the tour, and the target takes the press through the cut-out, as "Go ahead and
-open a site" asks. `onInteractOutside` is called on each such press, and when focus moves outside
-the card; to close on one, call `onClose` from there. `open={false}` lets the step leave as a
-popover does; the product may also stop rendering it.
+target are part of the tour, and the target takes the press through the cut-out, as "Open Settings"
+asks. `onInteractOutside` is called on each such press, and when focus moves outside the card; to
+close on one, call `onClose` from there. `open={false}` lets the step leave as a popover does; the
+product may also stop rendering it.
 
 ## Stacking
 
 The card is drawn in the provider's portal, one layer above its Backdrop, whatever the order the
 two arrive in, so a backdrop drawn anew never covers the card. Started while a popover is open, its
 dim covers the popover and the card is above both; a popover opened while the step is open, from
-the body or by the lit target (a field's list, a tooltip), opens above them.
+the card or by the lit target (a field's list, a tooltip), opens above them.
 
 Inside a modal (Dialog, Drawer, BottomSheet), its dim is drawn in the modal's content, where the
 modal leaves it live, and the card waits for the modal's content to mount: opened after the
@@ -87,29 +142,30 @@ opened in a modal is. Escape closes the step, not the modal.
 ## Accessibility
 
 TourStep is a non-modal dialog named by its title and described by its tour, its position, its
-body, its hint and its status, so a reader hears "Open a site, dialog, How Pointr Cloud is
-organised, Step 2 of 5, …" when it opens. It takes focus when it opens, on Next, or on itself when
-it has no Next, whether a press opened it or the page did. The page stays reachable: Tab leaves the
-card for the lit target, and the target keeps its own role. The status is a polite live region,
-mounted with each step, so a status that arrives or changes while the step is open is read out.
-The dots are drawn for the eye only, since the position is in words.
+body and its instruction, so a reader hears "Open User Management in Settings, dialog, Add users
+and assign permissions, 1 of 4, …" when it opens. It takes focus when it opens, on Next, or on
+itself when it has no Next or Next is disabled, whether a press opened it or the page did. The page
+stays reachable: Tab leaves the card for the lit target, and the target keeps its own role. The
+instruction's live region is mounted with each step, and its `aria-live` is written out, so it is
+still read while a modal beside the tour hides the rest of the page (GAP-193). The progress bar is
+read as the position; the words beside it, and the arrow, are drawn for the eye.
 
-When the step closes with focus lost (Escape, Close, Finish), `PopoverContent` gives focus back
+When the step closes with focus lost (Escape, Close, Done), `PopoverContent` gives focus back
 (GAP-190): to what had focus as the step opened, such as the button that started the tour, or,
 when that is gone or the step opened with focus on the previous step's Next, to the step's target.
 A virtual element or a rect has nothing to take it. A step's own Next keeps focus as the next step
 opens.
 
 The labels have English defaults (decision 100): `backLabel` "Back", `nextLabel` "Next",
-`closeLabel` "Close" and `positionLabel` `"Step {step} of {count}"`, a template or a function of the
-step and the count.
+`secondaryLabel` "Not now", `dismissLabel` "Don't show again", `closeLabel` "Close",
+`progressLabel` "Tour progress" and `positionLabel` `"{step} of {count}"`.
 
-Right to left, the card, its sections and the dots mirror, as the provider's direction says. At
-compact density (Pointr Cloud's), Close is 32 and Back and Next 40.
+Right to left, the card, its sections, the progress bar and the footer mirror, as the provider's
+direction says. At compact density (Pointr Cloud's), Close and every button are 32; at touch
+density, 44. The card arrives without its zoom when motion is reduced, and in forced colours its
+arrow is drawn in the system's text colour.
 
 <Canvas of={TourStepStories.RightToLeft} />
-
-<Canvas of={TourStepStories.Compact} />
 
 ## Implementation
 
@@ -135,13 +191,12 @@ export function SitesTour() {
         step={step ?? 1}
         stepCount={5}
         title="Open a site"
-        instruction="Go ahead and open a site to proceed to the next step."
+        body="Each site in this client is listed here. Open one to see its buildings."
+        instruction="Open a site, or select Next to open the first one."
         onBack={step && step > 1 ? () => setStep(step - 1) : undefined}
         onNext={() => setStep((current) => (current ?? 1) + 1)}
         onClose={() => setStep(null)}
-      >
-        Each site in this client is listed here. Open one to see its buildings.
-      </TourStep>
+      />
     </>
   );
 }
@@ -164,11 +219,13 @@ const step = ref(1)
     :step="step"
     :stepCount="5"
     title="Open a site"
-    instruction="Go ahead and open a site to proceed to the next step."
+    instruction="Open a site, or select Next to open the first one."
     @next="step = step + 1"
     @close="step = 0"
   >
-    Each site in this client is listed here. Open one to see its buildings.
+    <template #body>
+      Each site in this client is listed here. Open one to see its buildings.
+    </template>
   </KozmosTourStep>
 </template>
     `}
