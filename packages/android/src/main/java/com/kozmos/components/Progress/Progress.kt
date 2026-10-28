@@ -1,6 +1,25 @@
 package com.kozmos.components.progress
 
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.progressSemantics
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
+import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.tokens.KozmosMotion
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -99,11 +118,41 @@ fun KozmosProgressTrack(activeRange: KozmosProgressRange?, value: Float?, modifi
     }
 }
 
+/**
+ * The two forms of [KozmosProgress], React's `shape`: [Linear], the bar, and
+ * [Circular], a ring with a label in its centre for a count out of a total
+ * (decision 131, GAP-038).
+ */
+enum class KozmosProgressShape { Linear, Circular }
+
+/**
+ * A ring's size, React's `size`: the layout spacing tokens 600, 900 and 1000
+ * across (48, 96 and 128) and 50, 100 and 150 thick (4, 8 and 12). A bar has
+ * one size.
+ */
+enum class KozmosProgressSize(val diameter: Dp, val stroke: Dp) {
+    Sm(KozmosDimensions.primitivesLayoutSpacing600, KozmosDimensions.primitivesLayoutSpacing50),
+    Md(KozmosDimensions.primitivesLayoutSpacing900, KozmosDimensions.primitivesLayoutSpacing100),
+    Lg(KozmosDimensions.primitivesLayoutSpacing1000, KozmosDimensions.primitivesLayoutSpacing150)
+}
+
+/**
+ * How far something has got: a bar, or with [shape] Circular a ring of
+ * [size] with [label] in its centre. [progress] is a fraction of 1, clamped;
+ * NaN is none done. A bar has no centre and draws no label.
+ */
 @Composable
 fun KozmosProgress(
     progress: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    shape: KozmosProgressShape = KozmosProgressShape.Linear,
+    size: KozmosProgressSize = KozmosProgressSize.Md,
+    label: (@Composable () -> Unit)? = null
 ) {
+    if (shape == KozmosProgressShape.Circular) {
+        KozmosProgressRing(progress, modifier, size, label)
+        return
+    }
     // React's colours: bg-primary (theme 600) on bg-secondary (background
     // 200), in light and dark. Theme 500 on background 300 read 2.56:1, and
     // 1.58:1 dark, under the 3:1 a bar needs against its track.
@@ -113,4 +162,55 @@ fun KozmosProgress(
         color = KozmosThemeTokens.primitivesColorsTheme600,
         trackColor = KozmosThemeTokens.primitivesColorsBackground200,
     )
+}
+
+/** A new value sweeps round over the standard duration; with animations off it is drawn there at once. */
+internal fun kozmosProgressSweep(animationsOn: Boolean): AnimationSpec<Float> =
+    if (animationsOn) tween(KozmosMotion.semanticsMotionDurationStandard, easing = KozmosMotion.semanticsMotionEasingStandard)
+    else snap()
+
+/**
+ * The track and the arc are one circle's strokes, inside the ring's box: the
+ * arc is the theme fill (decision 59) on background 100, 4.42:1 light and
+ * 3.13:1 dark, from 12 o'clock clockwise. A Canvas is not mirrored right to
+ * left, and a progress ring does not mirror. The ring is one node: the
+ * label's words, with its progress.
+ */
+@Composable
+private fun KozmosProgressRing(
+    progress: Float,
+    modifier: Modifier,
+    ringSize: KozmosProgressSize,
+    label: (@Composable () -> Unit)?
+) {
+    val target = if (progress.isNaN()) 0f else progress.coerceIn(0f, 1f)
+    val swept by animateFloatAsState(target, kozmosProgressSweep(rememberKozmosAnimationsOn()), label = "sweep")
+    val track = KozmosThemeTokens.primitivesColorsBackground100
+    val fill = KozmosThemeTokens.primitivesColorsTheme500
+    Box(
+        modifier
+            .size(ringSize.diameter)
+            .semantics(mergeDescendants = true) {}
+            .progressSemantics(target),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val stroke = ringSize.stroke.toPx()
+            val corner = Offset(stroke / 2, stroke / 2)
+            val circle = Size(size.width - stroke, size.height - stroke)
+            drawArc(track, 0f, 360f, false, corner, circle, style = Stroke(stroke))
+            if (swept > 0f) {
+                drawArc(fill, -90f, 360f * swept, false, corner, circle, style = Stroke(stroke, cap = StrokeCap.Butt))
+            }
+        }
+        if (label != null) {
+            // Inside the square the hole holds, centred.
+            Box(
+                Modifier.widthIn(max = (ringSize.diameter - ringSize.stroke * 2) * 0.7071f),
+                contentAlignment = Alignment.Center
+            ) {
+                ProvideTextStyle(LocalTextStyle.current.copy(textAlign = TextAlign.Center)) { label() }
+            }
+        }
+    }
 }

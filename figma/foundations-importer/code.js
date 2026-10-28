@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3fad06a52ae9";
+const PLUGIN_BUILD = "394fc7856bed";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -334,6 +334,18 @@ const STEPPER_LABELS = [
   "Done",
 ];
 const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
+// Decision 131 (GAP-038): Progress's Shape, the bar or a ring, and a ring's
+// Size, as React's `shape` and `size`. A bar has one size, drawn as Medium.
+// Build and Update walk the bar's row, then a row of rings at each size; a
+// variant drawn before the axes is the bar.
+const PROGRESS_SHAPES = ["Linear", "Circular"];
+const PROGRESS_SIZES = ["Small", "Medium", "Large"];
+const PROGRESS_FORMS = [
+  "Linear/Medium",
+  "Circular/Small",
+  "Circular/Medium",
+  "Circular/Large",
+];
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
@@ -1359,7 +1371,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Progress",
-          variantName: "Value=50",
+          variantName: "Shape=Linear, Size=Medium, Value=50",
         },
         {
           componentSetName: "Spinner",
@@ -3985,19 +3997,28 @@ const COMPONENT_DOCS = [
       "Progress communicates completion for determinate loading or task state.",
     usage: [
       "Use when a task has measurable completion.",
+      "Use the Circular shape for a count out of a total, with its count in the centre label.",
       "Use Spinner instead when progress cannot be estimated.",
       "Avoid using Progress as an interactive input.",
     ],
     api: [
       "Value maps to Progress.value in Code Connect.",
       "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
+      "Shape maps to Progress.shape; Size to a ring's size; Label to its centre label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
-    properties: ["Value: 0, 25, 50, 75, 100"],
+    properties: [
+      "Shape: Linear, Circular",
+      "Size: Small, Medium, Large (a ring's; a bar is Medium)",
+      "Value: 0, 25, 50, 75, 100",
+      "Label, Show Label",
+    ],
     accessibility: [
       "Track and fill pass non-text contrast guidance on Surface/0.",
+      "A ring's arc is the theme fill on background/100: 4.42:1 light, 3.13:1 dark.",
+      "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
-      "Code should provide an accessible progress value.",
+      "Code should provide an accessible progress value; a ring's centre label names it.",
     ],
   },
   {
@@ -8302,6 +8323,26 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Border Width/sm",
     scopes: ["STROKE_FLOAT"],
   },
+  // A ring's diameter, decision 131: the layout spacing tokens 600, 900 and
+  // 1000, as React, SwiftUI and Compose size it.
+  {
+    name: "Progress/ring/size/small",
+    value: 48,
+    alias: "Layout/spacing/600",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Progress/ring/size/medium",
+    value: 96,
+    alias: "Layout/spacing/900",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Progress/ring/size/large",
+    value: 128,
+    alias: "Layout/spacing/1000",
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "Spinner/size/small",
     value: 16,
@@ -12179,7 +12220,7 @@ async function buildSdkRouteFlowExampleTemplate({
   sheet.appendChild(
     await createExampleInstance({
       componentSetName: "Progress",
-      variantProperties: { Value: "50" },
+      variantProperties: { Shape: "Linear", Size: "Medium", Value: "50" },
       name: "Route Progress",
       width: contentWidth - 40,
       height: 16,
@@ -17875,6 +17916,8 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Progress") {
     return {
+      Shape: PROGRESS_SHAPES,
+      Size: PROGRESS_SIZES,
       Value: PROGRESS_VALUES,
     };
   }
@@ -24251,6 +24294,7 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       : "accordionContent";
   }
   if (setName === "BottomNavigation") return "fieldMeta";
+  if (setName === "Progress") return "fieldMeta";
   if (setName === "NavigationItem") {
     return textStyleKeyForNavigationItemText(component, textName);
   }
@@ -44197,6 +44241,9 @@ async function buildProgressComponent() {
     componentSetName: "Progress",
     axisName: "Value",
     values: PROGRESS_VALUES,
+    axis2Name: "Shape",
+    axis2Values: PROGRESS_FORMS,
+    yStep: 152,
     x: 80,
     y: 3700,
     xStep: 360,
@@ -44205,6 +44252,9 @@ async function buildProgressComponent() {
     description: [
       "Kozmos Progress component set generated from React Progress API.",
       "Value maps to Progress.value in Code Connect.",
+      "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
+      "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
+      "Label maps to a ring's centre label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -44216,6 +44266,9 @@ async function updateProgressComponent() {
     componentSetName: "Progress",
     axisName: "Value",
     values: PROGRESS_VALUES,
+    axis2Name: "Shape",
+    axis2Values: PROGRESS_FORMS,
+    yStep: 152,
     xStep: 360,
     createVariant: createProgressVariant,
     updateVariant: updateProgressVariant,
@@ -44224,6 +44277,9 @@ async function updateProgressComponent() {
     description: [
       "Kozmos Progress component set generated from React Progress API.",
       "Value maps to Progress.value in Code Connect.",
+      "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
+      "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
+      "Label maps to a ring's centre label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -53046,7 +53102,17 @@ function layoutFloatingActionButtonVariants(componentSet) {
   resizeComponentSetToContainChildren(componentSet);
 }
 
-function configureProgressProperties(_componentSet, _stats) {}
+function configureProgressProperties(componentSet, stats) {
+  // A ring's centre label; a bar draws none, so the bar's variants hide it.
+  configureNamedTextProperty(componentSet, "Label", "Label", "Label", stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Label",
+    "Show Label",
+    true,
+    stats,
+  );
+}
 
 function configureSpinnerProperties(_componentSet, _stats) {}
 
@@ -60842,27 +60908,63 @@ function createStepperConnector({ index, active, variableByName, stats }) {
   return connector;
 }
 
-async function createProgressVariant({ value, variableByName, stats }) {
+async function createProgressVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateProgressVariant(component, {
     value,
+    second,
     variableByName,
+    fonts,
     stats,
   });
   return component;
 }
 
 function parseProgressVariantName(name) {
-  return parseSingleAxisVariantName(name, "Value", PROGRESS_VALUES);
+  const base = parseSingleAxisVariantName(name, "Value", PROGRESS_VALUES);
+  if (!base) return null;
+  // A variant drawn before the Shape and Size axes is the bar, so Update
+  // renames it rather than replacing it, and the node id Code Connect pins
+  // survives.
+  const shape = variantAxisValue(name, "Shape") || "Linear";
+  const size = variantAxisValue(name, "Size") || "Medium";
+  const second = `${shape}/${size}`;
+  if (PROGRESS_FORMS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/** A Progress form's Shape and Size, from the row it is drawn in. */
+function progressForm(second) {
+  const form =
+    PROGRESS_FORMS.indexOf(second) === -1 ? PROGRESS_FORMS[0] : second;
+  const [shape, size] = form.split("/");
+  return { shape, size };
 }
 
 async function updateProgressVariant(
   component,
-  { value, variableByName, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
+  const form = progressForm(second);
+  if (form.shape === "Circular") {
+    await updateProgressRingVariant(component, {
+      value,
+      size: form.size,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
   const config = progressConfig(value);
 
-  component.name = `Value=${value}`;
+  component.name = `Shape=Linear, Size=Medium, Value=${value}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(320, 8);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -60879,6 +60981,141 @@ async function updateProgressVariant(
     variableByName,
     stats,
   });
+}
+
+/**
+ * A ring's diameter and thickness: Small 48 and 4, Medium 96 and 8, Large 128
+ * and 12, the layout spacing tokens React, SwiftUI and Compose draw it at.
+ */
+function progressRingMetrics(size) {
+  if (size === "Small") {
+    return { diameter: 48, stroke: 4, sizeToken: "Progress/ring/size/small" };
+  }
+  if (size === "Large") {
+    return {
+      diameter: 128,
+      stroke: 12,
+      sizeToken: "Progress/ring/size/large",
+    };
+  }
+  return { diameter: 96, stroke: 8, sizeToken: "Progress/ring/size/medium" };
+}
+
+/**
+ * Progress's ring (decision 131): a track, an arc over it and a centre label.
+ * The track and the arc are ellipses whose arcs are filled, inner radius and
+ * all, so neither is a disc inset in another and each binds its fill: the
+ * track background/100, the arc the theme fill (decision 59), from 12
+ * o'clock clockwise, as far round as the value. A progress ring does not
+ * mirror right to left.
+ */
+async function updateProgressRingVariant(
+  component,
+  { value, size, variableByName, fonts, stats },
+) {
+  const metrics = progressRingMetrics(size);
+  const diameter = metrics.diameter;
+  const innerRadius = 1 - (2 * metrics.stroke) / diameter;
+  const start = -Math.PI / 2;
+  const sweep = (Number(value) / 100) * 2 * Math.PI;
+
+  component.name = `Shape=Circular, Size=${size}, Value=${value}`;
+  component.layoutMode = "NONE";
+  component.resizeWithoutConstraints(diameter, diameter);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Progress");
+  bindSizeVariables(
+    component,
+    metrics.sizeToken,
+    metrics.sizeToken,
+    variableByName,
+    stats,
+  );
+
+  const ellipse = (name) => {
+    let node = directChildNamed(component, name);
+    if (node && node.type !== "ELLIPSE") {
+      node.remove();
+      node = null;
+    }
+    if (!node) {
+      node = figma.createEllipse();
+      node.name = name;
+    }
+    node.resize(diameter, diameter);
+    node.x = 0;
+    node.y = 0;
+    node.strokes = [];
+    return node;
+  };
+
+  const track = ellipse("Ring Track");
+  track.arcData = {
+    startingAngle: 0,
+    endingAngle: 2 * Math.PI,
+    innerRadius,
+  };
+  track.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  track.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-track");
+  component.appendChild(track);
+
+  // Nothing done draws no arc: an arc whose ends meet is a whole ring.
+  const arc = ellipse("Ring Arc");
+  arc.arcData = {
+    startingAngle: start,
+    endingAngle: start + Math.max(sweep, 0.0001),
+    innerRadius,
+  };
+  arc.visible = value !== "0";
+  arc.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  arc.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-arc");
+  component.appendChild(arc);
+
+  let label = directChildNamed(component, "Label");
+  if (label && label.type !== "TEXT") {
+    label.remove();
+    label = null;
+  }
+  if (!label) {
+    label = figma.createText();
+    label.name = "Label";
+  }
+  label.fontName = fonts.regular;
+  label.fontSize = 12;
+  label.lineHeight = { unit: "PIXELS", value: 16 };
+  label.characters = "Label";
+  await applyTextStyleToNodeAsync(label, "fieldMeta", stats);
+  label.textAlignHorizontal = "CENTER";
+  label.textAlignVertical = "CENTER";
+  // Inside the square the hole holds, centred, as React's label is.
+  const width = Math.floor((diameter - 2 * metrics.stroke) * Math.SQRT1_2);
+  label.resizeWithoutConstraints(width, 16);
+  setTextAutoResize(label, "HEIGHT");
+  label.x = Math.round((diameter - width) / 2);
+  label.y = Math.round((diameter - label.height) / 2);
+  label.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  label.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  component.appendChild(label);
 }
 
 async function createSpinnerVariant({ value, variableByName, stats }) {

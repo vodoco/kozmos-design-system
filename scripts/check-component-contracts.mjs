@@ -11586,15 +11586,20 @@ for (const [file, symbols] of [
     "tint: .blue",
     "SwiftUI Progress drawing SwiftUI's blue",
   );
+  // The bar alone: the ring below it is a prominent fill, theme 500.
+  const swiftBar = swiftContent.slice(
+    swiftContent.indexOf("ProgressView(value: value, total: total)"),
+    swiftContent.indexOf("private var ring"),
+  );
   assertNotContains(
     swift,
-    swiftContent,
+    swiftBar,
     "primitivesColorsTheme500",
     "SwiftUI Progress drawing theme 500, not React's 600",
   );
   assertContains(
     swift,
-    swiftContent,
+    swiftBar,
     ".tint(KozmosColors.primitivesColorsTheme600)",
     "SwiftUI Progress drawing React's primary",
   );
@@ -11614,6 +11619,50 @@ for (const [file, symbols] of [
     "trackColor = KozmosThemeTokens.primitivesColorsBackground200",
     "Compose Progress drawing React's track",
   );
+
+  // The ring (decision 131) is a prominent fill: the theme fill, theme 500
+  // (decision 59), on background 100, where it reads 3:1 or more in both
+  // themes (on background 200 dark it read 2.32:1). Every platform draws it
+  // so.
+  const css = read("packages/react/src/styles/owned-components.css");
+  const ringCss = css.slice(css.indexOf(".kozmos-progress-ring-track {"));
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    ".kozmos-progress-ring-track {\n    stroke: var(--primitives-colors-background-100);",
+    "React's ring track on background 100",
+  );
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    ".kozmos-progress-ring-arc {\n    stroke: var(--primitives-colors-theme-500);",
+    "React's ring arc in the theme fill",
+  );
+  const swiftRing = swiftContent.slice(
+    swiftContent.indexOf("private var ring"),
+  );
+  for (const [needle, what] of [
+    [
+      ".strokeBorder(KozmosColors.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    ["KozmosColors.primitivesColorsTheme500,", "arc in the theme fill"],
+  ])
+    assertContains(swift, swiftRing, needle, `SwiftUI Progress ring ${what}`);
+  const kotlinRing = kotlinContent.slice(
+    kotlinContent.indexOf("private fun KozmosProgressRing("),
+  );
+  for (const [needle, what] of [
+    [
+      "val track = KozmosThemeTokens.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    [
+      "val fill = KozmosThemeTokens.primitivesColorsTheme500",
+      "arc in the theme fill",
+    ],
+  ])
+    assertContains(kotlin, kotlinRing, needle, `Compose Progress ring ${what}`);
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.

@@ -100,22 +100,142 @@ private struct KozmosProgressTrackLine: Shape {
     var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
 
+/// The two forms of `KozmosProgress`, React's `shape`: `linear`, the bar,
+/// and `circular`, a ring with a label in its centre for a count out of a
+/// total (decision 131, GAP-038).
+public enum KozmosProgressShape: String, CaseIterable, Sendable {
+    case linear
+    case circular
+}
+
+/// A ring's size, React's `size`: the layout spacing tokens 600, 900 and
+/// 1000 across (48, 96 and 128) and 50, 100 and 150 thick (4, 8 and 12). A
+/// bar has one size.
+public enum KozmosProgressSize: String, CaseIterable, Sendable {
+    case sm
+    case md
+    case lg
+
+    public var diameter: CGFloat {
+        switch self {
+        case .sm: return KozmosDimensions.primitivesLayoutSpacing600
+        case .md: return KozmosDimensions.primitivesLayoutSpacing900
+        case .lg: return KozmosDimensions.primitivesLayoutSpacing1000
+        }
+    }
+
+    public var stroke: CGFloat {
+        switch self {
+        case .sm: return KozmosDimensions.primitivesLayoutSpacing50
+        case .md: return KozmosDimensions.primitivesLayoutSpacing100
+        case .lg: return KozmosDimensions.primitivesLayoutSpacing150
+        }
+    }
+}
+
 public struct KozmosProgress: View {
     let value: Double
     let total: Double
-    
-    public init(value: Double, total: Double = 1.0) {
+    let shape: KozmosProgressShape
+    let size: KozmosProgressSize
+    let label: AnyView?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    public init(
+        value: Double,
+        total: Double = 1.0,
+        shape: KozmosProgressShape = .linear,
+        size: KozmosProgressSize = .md
+    ) {
         self.value = value
         self.total = total
+        self.shape = shape
+        self.size = size
+        self.label = nil
     }
-    
+
+    /// A ring with `label` in its centre: "11 Levels Added", or a
+    /// percentage. The label's words name the ring for VoiceOver, with its
+    /// value; an `accessibilityLabel` of the caller's replaces them. A bar
+    /// has no centre and draws no label.
+    public init<Label: View>(
+        value: Double,
+        total: Double = 1.0,
+        shape: KozmosProgressShape,
+        size: KozmosProgressSize = .md,
+        @ViewBuilder label: () -> Label
+    ) {
+        self.value = value
+        self.total = total
+        self.shape = shape
+        self.size = size
+        self.label = AnyView(label())
+    }
+
+    /// How much of the turn is done, from 0 to 1, as `ProgressView` clamps
+    /// it; a value that is not a number, or a total of none, is none done.
+    var fraction: Double {
+        guard total > 0, value.isFinite, total.isFinite else { return 0 }
+        return min(max(value / total, 0), 1)
+    }
+
+    /// What VoiceOver says for a ring's value: its percentage, as the bar's.
+    var spokenValue: String { "\(Int((fraction * 100).rounded()))%" }
+
+    /// A new value sweeps the arc round, over the standard duration; under
+    /// Reduce Motion it is drawn there at once.
+    static func sweep(reduceMotion: Bool) -> Animation? {
+        reduceMotion ? nil : KozmosMotion.standard
+    }
+
     public var body: some View {
-        ProgressView(value: value, total: total)
-            // The theme's primary, as React's bg-primary (theme 600, light and
-            // dark) and Compose's bar are: SwiftUI's .blue ignored the theme a
-            // Kozmos surface draws in. .tint, as LinearProgressViewStyle(tint:)
-            // is deprecated.
-            .progressViewStyle(.linear)
-            .tint(KozmosColors.primitivesColorsTheme600)
+        if shape == .circular {
+            ring
+        } else {
+            ProgressView(value: value, total: total)
+                // The theme's primary, as React's bg-primary (theme 600, light and
+                // dark) and Compose's bar are: SwiftUI's .blue ignored the theme a
+                // Kozmos surface draws in. .tint, as LinearProgressViewStyle(tint:)
+                // is deprecated.
+                .progressViewStyle(.linear)
+                .tint(KozmosColors.primitivesColorsTheme600)
+        }
+    }
+
+    /// The track and the arc are one circle's strokes, drawn inside the
+    /// ring's frame: the arc is the theme fill (decision 59) on background
+    /// 100, 4.42:1 light and 3.13:1 dark, and it starts at 12 o'clock and
+    /// runs clockwise. A progress ring does not mirror, so it is drawn in a
+    /// left-to-right environment: right to left SwiftUI turns a rotation, and
+    /// a shape, the other way.
+    private var ring: some View {
+        ZStack {
+            ZStack {
+                Circle()
+                    .strokeBorder(KozmosColors.primitivesColorsBackground100, lineWidth: size.stroke)
+                Circle()
+                    .inset(by: size.stroke / 2)
+                    .trim(from: 0, to: fraction)
+                    .stroke(
+                        KozmosColors.primitivesColorsTheme500,
+                        style: StrokeStyle(lineWidth: size.stroke, lineCap: .butt)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(Self.sweep(reduceMotion: reduceMotion), value: fraction)
+            }
+            .environment(\.layoutDirection, .leftToRight)
+            if let label {
+                // Inside the square the hole holds, centred, in the reading
+                // direction's own order.
+                label
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: (size.diameter - 2 * size.stroke) * 0.7071)
+            }
+        }
+        .frame(width: size.diameter, height: size.diameter)
+        // One element: the label's words, and how far it has got.
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(spokenValue)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }

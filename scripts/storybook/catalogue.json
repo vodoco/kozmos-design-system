@@ -860,6 +860,9 @@
       "component": "Progress",
       "exports": [
         "Default",
+        "Circular",
+        "CircularSizes",
+        "LevelsAdded",
         "SelectedSection",
         "LivePosition",
         "AnimatedUpdate"

@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added
+
+- **A circular Progress, for a count out of a total (decision 131, GAP-038):** `KozmosProgress` takes `shape = KozmosProgressShape.Circular`, `size` (`KozmosProgressSize`: `Sm` 48 and 4dp, `Md` 96 and 8, `Lg` 128 and 12, the layout spacing tokens) and a `label` drawn in its centre: MAP-64's Level Manager's "11 Levels Added in total". `shape` is `Linear` by default, the bar as it was, and a call compiles as before. The ring is drawn on a Canvas, inside its box: the arc is the theme fill (theme 500, decision 59) on background 100, from 12 o'clock clockwise, the same right to left. With animations off a new value is drawn there at once; otherwise it sweeps over the standard duration. The ring is one node, its label's words merged into it, with its progress (`progressSemantics`); a `contentDescription` or `stateDescription` of yours replaces Kozmos's. `KozmosProgressRingTest` walks the drawn ring clockwise from 12 o'clock in both directions, measures its band and colours, reads its node and counts the frames a sweep takes.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).

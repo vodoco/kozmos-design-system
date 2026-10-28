@@ -83,6 +83,73 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's ring (decision 131): 48, 96 or 128 across (spacing 600, 900
+     and 1000), its label centred in the hole and kept inside the square the
+     hole holds. The arc is the
+     theme fill (decision 59) on background 100: 4.42:1 light and 3.13:1
+     dark, where on background 200 dark it read 2.32:1. */
+  .kozmos-progress-ring {
+    @apply text-xs;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: calc(var(--primitives-layout-spacing-900) * 1px);
+    height: calc(var(--primitives-layout-spacing-900) * 1px);
+    vertical-align: middle;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-progress-ring[data-size="sm"] {
+    width: calc(var(--primitives-layout-spacing-600) * 1px);
+    height: calc(var(--primitives-layout-spacing-600) * 1px);
+  }
+  .kozmos-progress-ring[data-size="lg"] {
+    width: calc(var(--primitives-layout-spacing-1000) * 1px);
+    height: calc(var(--primitives-layout-spacing-1000) * 1px);
+  }
+  .kozmos-progress-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .kozmos-progress-ring-track {
+    stroke: var(--primitives-colors-background-100);
+  }
+  .kozmos-progress-ring-arc {
+    stroke: var(--primitives-colors-theme-500);
+    transition: stroke-dasharray var(--semantics-motion-duration-standard)
+      var(--semantics-motion-easing-standard);
+  }
+  .kozmos-progress-ring-label {
+    position: relative;
+    max-width: 57%;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  /* No animated sweep under reduced motion, the system's or the config's. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-ring-arc {
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-ring-arc {
+    transition: none;
+  }
+  /* The system's palette, as the bar's: the arc Highlight, the track
+     GrayText. Only the drawing opts out; the label's text is forced as any
+     text is. */
+  @media (forced-colors: active) {
+    .kozmos-progress-ring-svg {
+      forced-color-adjust: none;
+    }
+    .kozmos-progress-ring-track {
+      stroke: GrayText;
+    }
+    .kozmos-progress-ring-arc {
+      stroke: Highlight;
+    }
+  }
   .kozmos-route-track {
     position: relative;
     height: 48px;

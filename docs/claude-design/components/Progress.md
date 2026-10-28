@@ -27,7 +27,26 @@ export function ProgressExample() {
 
 ## Progress
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<ProgressPrimitive.ProgressProps & React.RefAttributes<HTMLDivElement>, "ref">`.
+It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which extends `React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>`.
+
+- `shape`: `"linear" | "circular"`, optional, default `"linear"`.
+
+  `"linear"`, the default, is the bar. `"circular"` is a ring with an
+  optional `label` in its centre, for a count out of a total (decision
+  131): it fills from 12 o'clock clockwise, in either reading direction.
+
+- `size`: `"sm" | "md" | "lg"`, optional, default `"md"`.
+
+  A ring's diameter and stroke: `sm` 48 and 4, `md` 96 and 8 (the
+  default), `lg` 128 and 12. A bar has one size.
+
+- `label`: `React.ReactNode`, optional.
+
+  What a ring shows in its centre: "11 Levels Added", or a percentage. It
+  names the progress bar, or describes it when `aria-label` or
+  `aria-labelledby` already names it, and the drawn copy is hidden from
+  assistive technology, so it is heard once. A bar has no centre: a
+  linear Progress draws none.
 
 - `asChild`: `boolean`, optional.
 - `value`: `number | null`, optional.

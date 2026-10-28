@@ -1954,6 +1954,246 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- Progress's ring (decision 131, GAP-038) -------------------------------------
+
+// A count out of a total: Progress gains Shape (Linear, Circular) and a ring's
+// Size (Small 48, Medium 96, Large 128). The ring is a track and an arc, each
+// an ellipse whose arc is filled, so neither is a disc inset in another; the
+// arc is the theme fill from 12 o'clock clockwise, the track background/100,
+// with a centre label in the hole.
+section("Progress's ring (decision 131, GAP-038)");
+{
+  const ready =
+    Array.isArray(plugin.PROGRESS_FORMS) &&
+    typeof plugin.updateProgressRingVariant === "function";
+  ok(ready, "Progress has Shape and Size axes and a ring painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const axes = plugin.expectedVariantAxesForComponentSetName("Progress");
+    ok(
+      JSON.stringify(axes) ===
+        JSON.stringify({
+          Shape: ["Linear", "Circular"],
+          Size: ["Small", "Medium", "Large"],
+          Value: ["0", "25", "50", "75", "100"],
+        }),
+      `the set's axes are Shape, Size and Value (${JSON.stringify(axes)})`,
+    );
+    const parsed = [
+      "Value=50",
+      "Shape=Circular, Size=Large, Value=25",
+      "Shape=Linear, Size=Large, Value=25",
+      "Shape=Oval, Size=Medium, Value=25",
+      "Shape=Circular, Size=Medium, Value=30",
+    ].map((name) => plugin.parseProgressVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "50", second: "Linear/Medium" },
+          { value: "25", second: "Circular/Large" },
+          null,
+          null,
+          null,
+        ]),
+      `a variant from before the axes parses as the bar; a sized bar, an unknown Shape or Value is not one (${JSON.stringify(parsed)})`,
+    );
+
+    const ring = async (value, size) =>
+      plugin.createProgressVariant({
+        value,
+        second: `Circular/${size}`,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    const close = (a, b) => Math.abs(a - b) < 1e-9;
+    for (const [size, diameter, stroke] of [
+      ["Small", 48, 4],
+      ["Medium", 96, 8],
+      ["Large", 128, 12],
+    ]) {
+      const variant = await ring("25", size);
+      const track = named(variant, "Ring Track");
+      const arc = named(variant, "Ring Arc");
+      const label = named(variant, "Label");
+      const inner = 1 - (2 * stroke) / diameter;
+      ok(
+        variant.name === `Shape=Circular, Size=${size}, Value=25` &&
+          variant.width === diameter &&
+          variant.height === diameter &&
+          variant.fills.length === 0 &&
+          (variant.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Label",
+        `${size}: a ${diameter} square holding the track, the arc and the label (${variant.name}, ${variant.width} by ${variant.height}, ${(variant.children || []).map((c) => c.name).join(", ")})`,
+      );
+      ok(
+        track &&
+          arc &&
+          track.type === "ELLIPSE" &&
+          arc.type === "ELLIPSE" &&
+          [track, arc].every(
+            (node) =>
+              node.width === diameter &&
+              node.height === diameter &&
+              node.x === 0 &&
+              node.y === 0 &&
+              node.strokes.length === 0 &&
+              close(node.arcData.innerRadius, inner),
+          ),
+        `${size}: the track and the arc are both the whole ${diameter} circle, ${stroke} thick (inner radius ${inner.toFixed(4)}), filled, not stroked or inset (${track && JSON.stringify(track.arcData)}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          close(track.arcData.startingAngle, 0) &&
+          close(track.arcData.endingAngle, 2 * Math.PI) &&
+          close(arc.arcData.startingAngle, -Math.PI / 2) &&
+          close(arc.arcData.endingAngle, 0) &&
+          arc.visible !== false,
+        `${size}: the track is the whole turn; at 25 the arc runs from 12 o'clock a quarter turn clockwise (${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          boundVariableName(track.fills[0]) === "Colors/background/100" &&
+          boundVariableName(arc.fills[0]) ===
+            "Primary Buttons/themed/button/background/idle",
+        `${size}: the track is background/100 and the arc the theme fill (${track && boundVariableName(track.fills[0])}, ${arc && boundVariableName(arc.fills[0])})`,
+      );
+      const width = Math.floor((diameter - 2 * stroke) * Math.SQRT1_2);
+      ok(
+        label &&
+          label.type === "TEXT" &&
+          label.width === width &&
+          label.fontSize === 12 &&
+          label.textAlignHorizontal === "CENTER" &&
+          close(label.x, Math.round((diameter - width) / 2)) &&
+          boundVariableName(label.fills[0]) === "Colors/foreground/0",
+        `${size}: the label is 12, centred, ${width} wide, inside the square the hole holds, in foreground/0 (${label && [label.width, label.fontSize, label.x, label.textAlignHorizontal].join(", ")})`,
+      );
+    }
+    for (const [value, end, visible] of [
+      ["0", null, false],
+      ["50", Math.PI / 2, true],
+      ["100", (3 * Math.PI) / 2, true],
+    ]) {
+      const arc = named(await ring(value, "Medium"), "Ring Arc");
+      ok(
+        arc &&
+          arc.visible === visible &&
+          (end === null || close(arc.arcData.endingAngle, end)),
+        `at ${value} the arc is ${visible ? `drawn to ${(end / Math.PI).toFixed(2)}π` : "hidden: an arc whose ends meet would be a whole ring"} (${arc && arc.visible}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+    }
+    const bar = await plugin.createProgressVariant({
+      value: "50",
+      second: "Linear/Medium",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      bar.name === "Shape=Linear, Size=Medium, Value=50" &&
+        named(bar, "Progress Track") &&
+        !named(bar, "Ring Track") &&
+        !named(bar, "Label"),
+      `the bar is drawn as before, named with its Shape and Size (${bar.name})`,
+    );
+
+    // Update over the set as it is in the file today: five bars, named
+    // before the axes. Each keeps its node id and is renamed the Linear,
+    // Medium bar; the 15 rings are created beside them, and the label's
+    // properties bind every ring's label and nothing else.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Progress");
+    const oldNames = ["0", "25", "50", "75", "100"].map((v) => `Value=${v}`);
+    const oldIds = {};
+    for (const name of oldNames) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateProgressComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 5 &&
+        updated.variantsCreated === 15 &&
+        liveSet.children.length === 20 &&
+        new Set(names).size === 20,
+      `Update keeps the set and its 5 bars, and adds 15 rings: 20 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      oldNames.every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return (
+          variant &&
+          variant.name === `Shape=Linear, Size=Medium, ${name}` &&
+          named(variant, "Progress Track")
+        );
+      }),
+      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+    );
+    const labels = liveSet.findAll(
+      (node) => node.type === "TEXT" && node.name === "Label",
+    );
+    const definitions = liveSet.componentPropertyDefinitions || {};
+    const textKey = Object.keys(definitions).find(
+      (key) => key.split("#")[0] === "Label" && definitions[key].type === "TEXT",
+    );
+    const showKey = Object.keys(definitions).find(
+      (key) =>
+        key.split("#")[0] === "Show Label" &&
+        definitions[key].type === "BOOLEAN",
+    );
+    ok(
+      labels.length === 15 &&
+        textKey &&
+        showKey &&
+        definitions[showKey].defaultValue === true &&
+        labels.every(
+          (label) =>
+            label.componentPropertyReferences &&
+            label.componentPropertyReferences.characters === textKey &&
+            label.componentPropertyReferences.visible === showKey,
+        ),
+      `the 15 rings' labels are bound to Label and Show Label (${labels.length} labels, ${textKey}, ${showKey})`,
+    );
+    const boxes = liveSet.children.map((c) => [
+      c.x,
+      c.y,
+      c.x + c.width,
+      c.y + c.height,
+      c.name,
+    ]);
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1)
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const [a, b] = [boxes[i], boxes[j]];
+        if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+          overlaps.push(`${a[4]} / ${b[4]}`);
+      }
+    ok(
+      overlaps.length === 0,
+      `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary

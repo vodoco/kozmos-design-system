@@ -412,6 +412,18 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-038, decision 131: Progress's ring, read from the pixels each
+      # engine paints. The arc runs clockwise from 12 o'clock for value / max
+      # of the turn, right to left too; the band is its stroke all the way
+      # round at 1x and 2x; the theme fill is 3:1 on the track and the page;
+      # the centre label names or describes the bar once; reduced motion and
+      # forced colours (scripts/check-progress-ring.mjs).
+      - name: Verify Progress Ring
+        run: |
+          pnpm test:progress-ring
+          ADAPTIVE_BROWSER=webkit pnpm test:progress-ring
+          ADAPTIVE_BROWSER=firefox pnpm test:progress-ring
+
       # GAP-194: Card's padding. Content, or a footer, that is the card's
       # first child pays the top as well as its sides and bottom, in both
       # paddings (24, and 16 compact); a header-led card is drawn as before,
