@@ -60,7 +60,11 @@ export interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Called with a step's index when the visitor selects it. With it, every
    * step they may go to (see `StepperStep.disabled`) is a button, a Tab stop
-   * of its own; the current step never is. The numbered variant's.
+   * of its own, and every step they may not go to is drawn disabled. The
+   * current step is a button too, `aria-current="step"`, that selects
+   * nothing, as Pagination's current page is a link: a step selected stays
+   * the element the keyboard is on as it becomes current. The numbered
+   * variant's.
    */
   onStepSelect?: (index: number) => void;
   /**
@@ -70,6 +74,12 @@ export interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
    * `aria-current="step"`.
    */
   statusLabels?: Partial<Record<StepperStepStatus, string>>;
+  /**
+   * What stands between a step's label and its status when it is read, so
+   * a screen reader pauses there: ", " by default, as English writes it; a
+   * product that translates passes its own, "、" in Japanese.
+   */
+  statusSeparator?: string;
   /**
    * The position, read as the steps' name: a function of the step (from 1)
    * and the count, or a template with `{step}` and `{count}`. English by
@@ -111,6 +121,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       orientation = "horizontal",
       onStepSelect,
       statusLabels,
+      statusSeparator = ", ",
       positionLabel = "Step {step} of {count}",
       ...props
     },
@@ -209,13 +220,20 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           // own, as Pagination's pages and Breadcrumb's links are: a list of
           // buttons is not a composite widget, so it takes no roving focus.
           // By default the steps before the current one, so none when the
-          // current step is not a number; `disabled` says otherwise.
+          // current step is not a number; `disabled` says otherwise. The
+          // current step is a button too, unless it says it is disabled: the
+          // step the visitor selects becomes current, and stays the button
+          // the keyboard is on, where it was swapped for spans and the focus
+          // fell to the page. Every other step is drawn disabled, so one the
+          // visitor may not go to never looks like one they may.
           const navigable =
             !!onStepSelect &&
-            !isCurrent &&
-            (item.disabled === undefined
-              ? index < currentStep
-              : !item.disabled);
+            (isCurrent
+              ? item.disabled !== true
+              : item.disabled === undefined
+                ? index < currentStep
+                : !item.disabled);
+          const closed = !!onStepSelect && !navigable && !isCurrent;
           const content = (
             <>
               <span
@@ -251,7 +269,10 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               >
                 {item.label}
                 {word ? (
-                  <span className="kozmos-stepper-status">, {word}</span>
+                  <span className="kozmos-stepper-status">
+                    {statusSeparator}
+                    {word}
+                  </span>
                 ) : null}
               </span>
             </>
@@ -265,11 +286,13 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               {/* The current step is `aria-current="step"`, so a screen
                   reader hears which step the visitor is on: it set none
                   until 2026-10-21. A step the visitor may go to is the
-                  button inside its item. */}
+                  button inside its item, and the current step's button says
+                  it, so it is heard as the keyboard reaches it. */}
               <div
                 role="listitem"
                 data-status={status}
-                aria-current={isCurrent ? "step" : undefined}
+                data-disabled={closed ? "" : undefined}
+                aria-current={isCurrent && !navigable ? "step" : undefined}
                 className={
                   !navigable ? stepClass : vertical ? undefined : "flex min-w-0"
                 }
@@ -277,8 +300,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                 {navigable ? (
                   <button
                     type="button"
+                    aria-current={isCurrent ? "step" : undefined}
                     className={`${stepClass} kozmos-stepper-button`}
-                    onClick={() => onStepSelect(index)}
+                    onClick={isCurrent ? undefined : () => onStepSelect(index)}
                   >
                     {content}
                   </button>
@@ -290,10 +314,12 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                 <div
                   aria-hidden="true"
                   // In a row, 8 a side on a phone and 16 from sm: three
-                  // connectors at 16 took 96 of a 288-wide row.
+                  // connectors at 16 took 96 of a 288-wide row. The line
+                  // after a step is drawn as progress once the step is done,
+                  // so an error or a step still working breaks it.
                   className={`kozmos-stepper-connector ${
                     vertical ? "" : "mx-2 h-[1px] flex-1 sm:mx-4 "
-                  }${index < currentStep ? "bg-primary" : "bg-border"}`}
+                  }${status === "done" ? "bg-primary" : "bg-border"}`}
                 />
               )}
             </React.Fragment>

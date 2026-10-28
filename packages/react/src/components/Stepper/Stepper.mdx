@@ -57,8 +57,10 @@ Button is, the counterpart of a done step's theme fill and check; `loading` is t
 an arc that turns while the step works, and stands still under reduced motion, the media query's or
 the design config's. Every status has its own glyph or number, so none is told by colour alone, and
 a screen reader hears it in words after the label: "Done", "Not started", "Error" and "In progress"
-by default, from `statusLabels` in the product's words. The current step's word is never said: it is
-`aria-current="step"`. The fills and rings are 3:1 or more on the page in both themes.
+by default, from `statusLabels` in the product's words, after `statusSeparator`, ", " by default
+("、" in Japanese, "، " in Arabic). The current step's word is never said: it is
+`aria-current="step"`. The fills and rings are 3:1 or more on the page in both themes. The line after
+a step is the theme's once that step is done, so an error, or a step still working, breaks it.
 
 <Canvas>
   <Story of={StepperStories.Statuses} />
@@ -82,8 +84,13 @@ left, the indicators sit at the inline start, on the right.
 
 With `onStepSelect`, every step the visitor may go to is a button that calls it with the step's
 index. By default those are the steps before the current one; a step's `disabled` says otherwise,
-`true` to close an earlier step and `false` to open one ahead, as a step already visited is. The
-current step is never a button.
+`true` to close an earlier step and `false` to open one ahead, as a step already visited is. A step
+the visitor may not go to is drawn at half opacity, as a disabled control is, so it never looks like
+one they may.
+
+The current step is a button too, `aria-current="step"`, that selects nothing, as Pagination's
+current page is a link. When the product moves `currentStep` to the step selected, that button is
+the element the keyboard is on, so the focus stays there and a screen reader hears "current step".
 
 Each button is a Tab stop of its own, in order, as Pagination's pages and Breadcrumb's links are.
 Kozmos gives one Tab stop and the arrow keys to composite widgets whose role promises them, Tabs,

@@ -53,7 +53,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `StepperProps`, which ext
 
   Called with a step's index when the visitor selects it. With it, every
   step they may go to (see `StepperStep.disabled`) is a button, a Tab stop
-  of its own; the current step never is. The numbered variant's.
+  of its own, and every step they may not go to is drawn disabled. The
+  current step is a button too, `aria-current="step"`, that selects
+  nothing, as Pagination's current page is a link: a step selected stays
+  the element the keyboard is on as it becomes current. The numbered
+  variant's.
 
 - `statusLabels`: `Partial<Record<StepperStepStatus, string>>`, optional.
 
@@ -61,6 +65,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `StepperProps`, which ext
   English by default; a product that translates passes its own, for one
   status or all five. The current step's is never said: it is
   `aria-current="step"`.
+
+- `statusSeparator`: `string`, optional, default `", "`.
+
+  What stands between a step's label and its status when it is read, so
+  a screen reader pauses there: ", " by default, as English writes it; a
+  product that translates passes its own, "、" in Japanese.
 
 - `positionLabel`: `string | ((step: number, count: number) => string)`, optional, default `"Step {step} of {count}"`.
 

@@ -18730,6 +18730,7 @@
           "positionLabel",
           "role",
           "statusLabels",
+          "statusSeparator",
           "steps",
           "tabIndex",
           "title",

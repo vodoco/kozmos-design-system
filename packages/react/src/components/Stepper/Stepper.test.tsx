@@ -1,3 +1,4 @@
+import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Stepper } from "./Stepper";
 import { describe, it, expect, vi } from "vitest";
@@ -283,7 +284,7 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     ]);
   });
 
-  it("with onStepSelect, the steps before the current one are buttons", () => {
+  it("with onStepSelect, the steps before the current one, and it, are buttons", () => {
     const onStepSelect = vi.fn();
     render(
       <Stepper steps={wizard} currentStep={2} onStepSelect={onStepSelect} />,
@@ -292,6 +293,7 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     expect(buttons).toEqual([
       screen.getByRole("button", { name: "Building details, Done" }),
       screen.getByRole("button", { name: "Levels, Done" }),
+      screen.getByRole("button", { name: "Alignment" }),
     ]);
     // Tab stops, in order, as Pagination's and Breadcrumb's links are.
     for (const button of buttons) {
@@ -319,12 +321,30 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     );
     expect(screen.getAllByRole("button")).toEqual([
       screen.getByRole("button", { name: "Levels, Done" }),
+      screen.getByRole("button", { name: "Alignment" }),
       screen.getByRole("button", { name: "Fine-tune, Not started" }),
     ]);
-    // The current step is where the visitor is: never a button.
-    expect(
-      screen.getAllByRole("listitem")[2].querySelector("button"),
-    ).toBeNull();
+  });
+
+  it("never makes a current step that says it is disabled a button", () => {
+    render(
+      <Stepper
+        steps={["Building details", { label: "Levels", disabled: true }]}
+        currentStep={1}
+        onStepSelect={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole("button")).toEqual([
+      screen.getByRole("button", { name: "Building details, Done" }),
+    ]);
+    expect(screen.getAllByRole("listitem")[1]).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+    // Where the visitor is, never drawn disabled.
+    expect(screen.getAllByRole("listitem")[1]).not.toHaveAttribute(
+      "data-disabled",
+    );
   });
 
   // A step that is not a number is before the first: no step is before it,
@@ -343,6 +363,111 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     );
     expect(screen.getAllByRole("button")).toEqual([
       screen.getByRole("button", { name: "Levels, Not started" }),
+    ]);
+  });
+
+  // A product moves `currentStep` to the step the visitor selects. The
+  // selected button stays the same element as it becomes current, so the
+  // keyboard's focus stays on it: it was swapped for spans, and the focus
+  // fell to the page's body.
+  it("keeps the focus on a selected step as it becomes the current one", () => {
+    function Wizard() {
+      const [current, setCurrent] = React.useState(2);
+      return (
+        <Stepper
+          steps={[
+            "Building details",
+            "Levels",
+            "Alignment",
+            { label: "Fine-tune", disabled: false },
+            "Preview",
+          ]}
+          currentStep={current}
+          onStepSelect={setCurrent}
+        />
+      );
+    }
+    render(<Wizard />);
+    for (const name of ["Levels, Done", "Fine-tune, Not started"]) {
+      const step = screen.getByRole("button", { name });
+      step.focus();
+      fireEvent.click(step);
+      expect(step).toBeInTheDocument();
+      expect(document.activeElement).toBe(step);
+      expect(step).toHaveAttribute("aria-current", "step");
+      expect(document.querySelectorAll("[aria-current]")).toHaveLength(1);
+    }
+  });
+
+  it("says the current step on its button, which selects nothing", () => {
+    const onStepSelect = vi.fn();
+    render(
+      <Stepper steps={wizard} currentStep={2} onStepSelect={onStepSelect} />,
+    );
+    const current = screen.getByRole("button", { name: "Alignment" });
+    expect(current).toHaveAttribute("aria-current", "step");
+    expect(screen.getAllByRole("listitem")[2]).not.toHaveAttribute(
+      "aria-current",
+    );
+    fireEvent.click(current);
+    expect(onStepSelect).not.toHaveBeenCalled();
+  });
+
+  // A step the visitor may not go to looked like one they may at rest: only
+  // a hover's underline told them apart. It is drawn disabled, as a disabled
+  // control is, where the others are buttons.
+  it("draws a step the visitor may not go to disabled, only where steps are buttons", () => {
+    const steps = [
+      { label: "Building details", disabled: true },
+      "Levels",
+      "Alignment",
+      { label: "Fine-tune", disabled: false },
+      "Preview",
+    ];
+    const { rerender } = render(
+      <Stepper steps={steps} currentStep={2} onStepSelect={() => {}} />,
+    );
+    expect(
+      screen
+        .getAllByRole("listitem")
+        .map((item) => item.hasAttribute("data-disabled")),
+    ).toEqual([true, false, false, false, true]);
+    rerender(<Stepper steps={steps} currentStep={2} />);
+    expect(document.querySelectorAll("[data-disabled]")).toHaveLength(0);
+  });
+
+  // The line after a step is drawn as progress once that step is done, so a
+  // step's error before the current one breaks it.
+  it("draws the line after a step as progress only once the step is done", () => {
+    const { container } = render(
+      <Stepper
+        steps={[
+          "Building details",
+          { label: "Levels", status: "error" },
+          "Alignment",
+        ]}
+        currentStep={2}
+      />,
+    );
+    const lines = container.querySelectorAll(".kozmos-stepper-connector");
+    expect(lines[0]).toHaveClass("bg-primary");
+    expect(lines[1]).toHaveClass("bg-border");
+    expect(lines[1]).not.toHaveClass("bg-primary");
+  });
+
+  // The words between a step's label and its status are the product's too.
+  it("takes what stands between a label and its status from statusSeparator", () => {
+    render(
+      <Stepper
+        steps={["建物", { label: "階", status: "error" }]}
+        currentStep={1}
+        statusLabels={{ done: "完了", error: "エラー" }}
+        statusSeparator="、"
+      />,
+    );
+    expect(screen.getAllByRole("listitem").map(said)).toEqual([
+      "建物、完了",
+      "階、エラー",
     ]);
   });
 

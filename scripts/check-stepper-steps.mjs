@@ -16,8 +16,14 @@
  *   names are compared with that space dropped. The current step, and only
  *   it, is aria-current="step".
  * - Selection: the steps the visitor may go to are buttons, named as their
- *   items are, and Tab stops in order; the current step and a closed one
- *   are not. Enter and Space select, and a focused step draws a 2px ring.
+ *   items are, and Tab stops in order; a closed one is not, and is drawn at
+ *   half opacity where an open one is whole. The current step is a button
+ *   too, aria-current="step", that selects nothing. Enter and Space select,
+ *   and a focused step draws a 2px ring. When the product moves the current
+ *   step to the one selected, the keyboard's focus stays on it, with its
+ *   ring, in both orientations: it fell to the page's body.
+ * - Connectors: the line after a done step is the theme's; after an error,
+ *   though before the current step, it is the border's.
  * - Status drawn: done is the theme fill and error the danger fill, each 3:1
  *   or more on the page with its glyph 3:1 or more on it; a loading step's
  *   ring is 3:1 or more and its arc turns, and stops under reduced motion,
@@ -52,7 +58,7 @@ const NAMES = [
   "Fine-tune, Not started",
   "Preview, Not started",
 ];
-const BUTTONS = [NAMES[0], NAMES[1], NAMES[3]];
+const BUTTONS = [NAMES[0], NAMES[1], NAMES[2], NAMES[3]];
 /** A name as the engines compute it: a space may stand before the comma. */
 const named = (name) => new RegExp(`^${name.replace(", ", " ?, ")}$`);
 const tidy = (text) => text.replace(/\s+/g, " ").replace(/ ,/g, ",").trim();
@@ -125,6 +131,11 @@ const read = (page) =>
       connectors: root
         ? [...root.querySelectorAll(".kozmos-stepper-connector")].map(box)
         : [],
+      lines: root
+        ? [...root.querySelectorAll(".kozmos-stepper-connector")].map(
+            (line) => getComputedStyle(line).backgroundColor,
+          )
+        : [],
       items: items.map((item) => {
         const indicator = item.querySelector(".kozmos-stepper-indicator");
         const label = item.querySelector(".kozmos-stepper-label");
@@ -136,7 +147,14 @@ const read = (page) =>
         return {
           text: label?.innerText ?? "",
           status: item.getAttribute("data-status"),
-          current: item.getAttribute("aria-current"),
+          // On the item, or on its button where the current step is one.
+          current:
+            item.getAttribute("aria-current") ??
+            button?.getAttribute("aria-current") ??
+            null,
+          opacity: indicator
+            ? [indicator, label].map((node) => getComputedStyle(node).opacity)
+            : null,
           indicator: box(indicator),
           label: box(label),
           button: box(button),
@@ -203,8 +221,18 @@ await scenario(
       }
       const buttons = await page.locator("#stepper button").count();
       reads += 1;
-      if (buttons !== 3)
-        problems.push(`${orientation}: ${buttons} buttons, not 3`);
+      if (buttons !== 4)
+        problems.push(`${orientation}: ${buttons} buttons, not 4`);
+      const said = await page.evaluate(() =>
+        [...document.querySelectorAll("#stepper [aria-current]")].map(
+          (node) => `${node.tagName}:${node.getAttribute("aria-current")}`,
+        ),
+      );
+      reads += 1;
+      if (said.join() !== "BUTTON:step")
+        problems.push(
+          `${orientation}: aria-current is on ${JSON.stringify(said)}, not the current step's button alone`,
+        );
       if (engine === "chromium") {
         const cdp = await page.context().newCDPSession(page);
         const { nodes } = await cdp.send("Accessibility.getFullAXTree");
@@ -220,7 +248,7 @@ await scenario(
             `${orientation}: Chromium's tree has ${names("listitem").length} list items, not 5`,
           );
         const buttonNames = names("button").filter((n) => BUTTONS.includes(n));
-        if (buttonNames.length !== 3)
+        if (buttonNames.length !== 4)
           problems.push(
             `${orientation}: Chromium names the buttons ${JSON.stringify(names("button"))}`,
           );
@@ -242,7 +270,7 @@ await scenario(
       });
       await page.focus("#before");
       const order = [];
-      for (let i = 0; i < 4; i += 1) {
+      for (let i = 0; i < 5; i += 1) {
         await page.keyboard.press(tabKey);
         order.push(
           tidy(
@@ -265,7 +293,10 @@ await scenario(
         );
       await page.getByRole("button", { name: named(BUTTONS[1]) }).focus();
       await page.keyboard.press("Enter");
+      // The current step's button selects nothing.
       await page.getByRole("button", { name: named(BUTTONS[2]) }).focus();
+      await page.keyboard.press("Enter");
+      await page.getByRole("button", { name: named(BUTTONS[3]) }).focus();
       await page.keyboard.press(" ");
       const selected = await page.evaluate(() => window.stepperSteps.selected);
       reads += 1;
@@ -305,6 +336,134 @@ await scenario(
       if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
       await page.close();
     }
+  },
+);
+
+await scenario(
+  "a step selected keeps the keyboard's focus, and its ring, as the product makes it current",
+  async (problems) => {
+    for (const orientation of ["horizontal", "vertical"]) {
+      const { page, errors } = await open({
+        orientation,
+        navigable: true,
+        follows: true,
+      });
+      const focused = () =>
+        page.evaluate(() => {
+          const node = document.activeElement;
+          const style = getComputedStyle(node);
+          return {
+            tag: node.tagName,
+            inside: !!node.closest("#stepper"),
+            text: (
+              node.querySelector(".kozmos-stepper-label") ?? node
+            ).innerText.replace(/\s+/g, " "),
+            current: node.getAttribute("aria-current"),
+            ring: `${style.outlineStyle} ${style.outlineWidth}`,
+            selected: window.stepperSteps.selected.join(),
+          };
+        });
+      // From the keyboard, so :focus-visible matches in every engine: Tab
+      // to "Levels" and Enter, then to "Fine-tune", open ahead, and Space.
+      await page.focus("#before");
+      await page.keyboard.press(tabKey);
+      await page.keyboard.press(tabKey);
+      await page.keyboard.press("Enter");
+      await settleLayout(page);
+      const first = await focused();
+      reads += 1;
+      if (
+        first.tag !== "BUTTON" ||
+        !first.inside ||
+        tidy(first.text) !== NAMES[1] ||
+        first.current !== "step" ||
+        first.ring !== "solid 2px" ||
+        first.selected !== "1"
+      )
+        problems.push(
+          `${orientation}: after Enter on "Levels" the focus is ${JSON.stringify(first)}, not its button, current, with its ring`,
+        );
+      // Levels is current now: Alignment, ahead, is closed; Fine-tune is open.
+      await page.keyboard.press(tabKey);
+      await page.keyboard.press(" ");
+      await settleLayout(page);
+      const second = await focused();
+      reads += 1;
+      if (
+        second.tag !== "BUTTON" ||
+        tidy(second.text) !== NAMES[3].replace(", Not started", "") ||
+        second.current !== "step" ||
+        second.ring !== "solid 2px" ||
+        second.selected !== "1,3"
+      )
+        problems.push(
+          `${orientation}: after Space on "Fine-tune" the focus is ${JSON.stringify(second)}, not its button, current, with its ring`,
+        );
+      if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+      await page.close();
+    }
+  },
+);
+
+await scenario(
+  "a closed step is drawn at half opacity where an open one is whole; none without selection",
+  async (problems) => {
+    for (const navigable of [true, false]) {
+      const { page, errors } = await open({ orientation: "vertical", navigable });
+      const state = await read(page);
+      const drawn = state.items.map((item) => item.opacity.join("/"));
+      const expected = navigable
+        ? ["1/1", "1/1", "1/1", "1/1", "0.5/0.5"]
+        : ["1/1", "1/1", "1/1", "1/1", "1/1"];
+      reads += 1;
+      if (drawn.join() !== expected.join())
+        problems.push(
+          `${navigable ? "with" : "without"} selection: the steps' indicator/label opacity is ${JSON.stringify(drawn)}, not ${JSON.stringify(expected)}`,
+        );
+      if (navigable) {
+        // The pixels: Fine-tune (open) and Preview (closed) are both pending,
+        // so their rings were one colour.
+        const shot = await page.screenshot();
+        const ring = (item) => [item.indicator.left + 0.5, item.indicator.top + 16];
+        const [open_, closed] = await pixels(shot, [
+          ring(state.items[3]),
+          ring(state.items[4]),
+        ]);
+        reads += 1;
+        if (distance(open_, closed) < 24)
+          problems.push(
+            `the open and closed rings draw rgb(${open_.slice(0, 3)}) and rgb(${closed.slice(0, 3)}), one look`,
+          );
+      }
+      if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+      await page.close();
+    }
+  },
+);
+
+await scenario(
+  "the line after a done step is the theme's, and after an error the border's",
+  async (problems) => {
+    const { page, errors } = await open({ orientation: "vertical" });
+    const state = await read(page);
+    const colours = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      document.getElementById("surface").append(probe);
+      const read = (name) => {
+        probe.className = name;
+        return getComputedStyle(probe).backgroundColor;
+      };
+      const out = { primary: read("bg-primary"), border: read("bg-border") };
+      probe.remove();
+      return out;
+    });
+    reads += 1;
+    if (state.lines[0] !== colours.primary || state.lines[1] !== colours.border)
+      problems.push(
+        `the lines after "Building details" (done) and "Levels" (error) are ${state.lines[0]} and ${state.lines[1]}, not ${colours.primary} and ${colours.border}`,
+      );
+    if (errors.length) problems.push(`page errors: ${errors.join("; ")}`);
+    await page.close();
   },
 );
 
@@ -538,5 +697,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS stepper steps: ${reads} reads; the steps are a list named "Step 3 of 5", each item its label and status in words, the current one aria-current; the open steps are buttons and Tab stops in order, Enter and Space select, focus draws a 2px ring; done, error and loading are each drawn 3:1 or more in light and dark, the arc turns and stops under reduced motion; vertical is a column 56 apart with centred 1 by 16 connectors, mirrored in right to left, unmoved by buttons; a step's target is 44 in touch and 32 in compact`,
+  `\nPASS stepper steps: ${reads} reads; the steps are a list named "Step 3 of 5", each item its label and status in words, the current one aria-current; the open steps and the current one are buttons and Tab stops in order, Enter and Space select, focus draws a 2px ring and stays on a step selected as it becomes current; a closed step is drawn at half opacity; the line after an error is the border's; done, error and loading are each drawn 3:1 or more in light and dark, the arc turns and stops under reduced motion; vertical is a column 56 apart with centred 1 by 16 connectors, mirrored in right to left, unmoved by buttons; a step's target is 44 in touch and 32 in compact`,
 );

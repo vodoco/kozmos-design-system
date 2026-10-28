@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { Stepper, ThemeProvider, type StepperProps } from "@kozmos-ds/react";
@@ -9,7 +10,8 @@ import { Stepper, ThemeProvider, type StepperProps } from "@kozmos-ds/react";
  * the second has an error, the third is current and working, the fourth is
  * ahead but open (`disabled: false`), and the fifth is ahead and closed.
  * Buttons sit before and after it, so the keyboard has somewhere to start
- * and to land.
+ * and to land. With `follows`, the host moves `currentStep` to the step
+ * selected, as a product does.
  */
 interface Mount {
   theme?: "light" | "dark";
@@ -20,6 +22,8 @@ interface Mount {
   navigable?: boolean;
   /** Inside the config's reduced motion, as a DesignConfig provider marks it. */
   configReduced?: boolean;
+  /** The selected step becomes the current one, as a product moves it. */
+  follows?: boolean;
 }
 
 export const WIZARD: StepperProps["steps"] = [
@@ -36,6 +40,30 @@ declare global {
   }
 }
 
+function Wizard({
+  orientation,
+  navigable,
+  follows,
+}: Pick<Mount, "orientation" | "navigable" | "follows">) {
+  const [current, setCurrent] = useState(2);
+  return (
+    <Stepper
+      id="stepper"
+      steps={WIZARD}
+      currentStep={current}
+      orientation={orientation}
+      onStepSelect={
+        navigable
+          ? (index) => {
+              window.stepperSteps.selected.push(index);
+              if (follows) setCurrent(index);
+            }
+          : undefined
+      }
+    />
+  );
+}
+
 let root: Root | null = null;
 function mount({
   theme = "light",
@@ -44,6 +72,7 @@ function mount({
   density = "touch",
   navigable = false,
   configReduced = false,
+  follows = false,
 }: Mount) {
   window.stepperSteps.selected = [];
   root?.unmount();
@@ -61,16 +90,10 @@ function mount({
           <button type="button" id="before">
             Before
           </button>
-          <Stepper
-            id="stepper"
-            steps={WIZARD}
-            currentStep={2}
+          <Wizard
             orientation={orientation}
-            onStepSelect={
-              navigable
-                ? (index) => window.stepperSteps.selected.push(index)
-                : undefined
-            }
+            navigable={navigable}
+            follows={follows}
           />
           <button type="button" id="after">
             After
