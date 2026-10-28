@@ -18716,7 +18716,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Stepper"],
-          "mappedProps": ["currentStep", "steps", "variant"],
+          "mappedProps": ["currentStep", "orientation", "steps", "variant"],
           "unmappedProps": []
         },
         "props": [

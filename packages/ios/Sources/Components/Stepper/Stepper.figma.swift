@@ -1,12 +1,13 @@
 import SwiftUI
 import Figma
 
-// Numbered only: SwiftUI draws no dots yet (GAP-191 is web and Figma first),
-// so a Dots instance shows no SwiftUI snippet rather than a numbered one.
+// A numbered row only: SwiftUI draws no dots and no column yet (GAP-191 and
+// GAP-173 are web and Figma first), so a Dots or vertical instance shows no
+// SwiftUI snippet rather than a numbered row.
 struct KozmosStepperConnect: FigmaConnect {
     let component = KozmosStepper.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=512-39614"
-    var variant = ["Variant": "Numbered"]
+    var variant = ["Variant": "Numbered", "Orientation": "Horizontal"]
 
     @FigmaEnum(
         "Count",
