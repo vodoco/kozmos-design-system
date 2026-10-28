@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "../Button/Button";
+import { Navbar } from "../Navbar/Navbar";
 import {
   Drawer,
   DrawerContent,
@@ -54,5 +55,36 @@ export const Default: Story = {
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+  ),
+};
+
+// GAP-198: a panel in the region under a fixed header, which it leaves
+// usable. Open from the start here, without taking focus on the docs page.
+export const Inline: Story = {
+  render: ({ side }) => (
+    <div className="flex h-[480px] flex-col overflow-hidden border">
+      <Navbar
+        logo={<div className="font-bold text-xl">Kozmos</div>}
+        actions={<Button variant="outline">Help</Button>}
+      />
+      <div className="relative min-h-0 flex-1 p-4 bg-muted/20">
+        <Drawer placement="inline" defaultOpen>
+          <DrawerTrigger asChild>
+            <Button variant="outline">Get started</Button>
+          </DrawerTrigger>
+          <DrawerContent
+            side={side}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <DrawerHeader>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>
+                Tours for this page. The header above stays usable.
+              </DrawerDescription>
+            </DrawerHeader>
+          </DrawerContent>
+        </Drawer>
+      </div>
+    </div>
   ),
 };

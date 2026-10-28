@@ -36,6 +36,14 @@
     min-inline-size: 0;
     max-inline-size: 100%;
   }
+  /* navigationAlign (GAP-196): the room the navigation grows into, from its
+     start or to its end; flex's start and end follow the direction. */
+  .kozmos-navbar-navigation[data-align="start"] {
+    justify-content: flex-start;
+  }
+  .kozmos-navbar-navigation[data-align="end"] {
+    justify-content: flex-end;
+  }
   .kozmos-navbar-navigation > * {
     min-inline-size: 0;
     max-inline-size: 100%;

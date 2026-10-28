@@ -65,4 +65,45 @@ describe("Sidebar", () => {
     expect(aside).toHaveClass("w-64", "px-4", "border-e");
     expect(aside).not.toHaveClass("border-r");
   });
+
+  it("flush starts its first slot at the top edge, and keeps the bottom's room (GAP-199)", () => {
+    const { rerender } = render(
+      <Sidebar
+        variant="rail"
+        inset="flush"
+        navigation={<span>Explore</span>}
+      />,
+    );
+    const aside = () => screen.getByText("Explore").closest("aside");
+    const navigation = () =>
+      screen.getByText("Explore").closest('[data-slot="sidebar-navigation"]');
+    // The aside's top and the navigation's own, both 0: the first item flush.
+    expect(aside()).toHaveClass("py-6", "pt-0");
+    expect(navigation()).toHaveClass("py-4", "pt-0");
+
+    // A header above: it starts at the edge, and the navigation keeps its
+    // room below it.
+    rerender(
+      <Sidebar
+        variant="rail"
+        inset="flush"
+        header={<span>Site</span>}
+        navigation={<span>Explore</span>}
+      />,
+    );
+    expect(aside()).toHaveClass("pt-0");
+    expect(navigation()).toHaveClass("py-4");
+    expect(navigation()).not.toHaveClass("pt-0");
+
+    // Expanded, its items ring outside themselves: the navigation keeps 16.
+    rerender(<Sidebar inset="flush" navigation={<span>Explore</span>} />);
+    expect(aside()).toHaveClass("pt-0");
+    expect(navigation()).not.toHaveClass("pt-0");
+
+    // The default is the sidebar as it was.
+    rerender(<Sidebar variant="rail" navigation={<span>Explore</span>} />);
+    expect(aside()).toHaveClass("py-6");
+    expect(aside()).not.toHaveClass("pt-0");
+    expect(navigation()).not.toHaveClass("pt-0");
+  });
 });

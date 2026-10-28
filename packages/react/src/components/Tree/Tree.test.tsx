@@ -194,4 +194,77 @@ describe("Tree", () => {
       screen.getByRole("treeitem", { name: /place item/i }),
     ).toHaveAttribute("data-selected", "true");
   });
+
+  it("divided draws a stroke under every row and an open parent on a surface (GAP-201)", () => {
+    const data: TreeItem[] = [
+      {
+        id: "a",
+        name: "Terminal A",
+        children: [{ id: "a1", name: "Level 1" }],
+      },
+      {
+        id: "b",
+        name: "Terminal B",
+        children: [{ id: "b1", name: "Level 1" }],
+      },
+      { id: "c", name: "Car park" },
+    ];
+    const surface = "bg-[var(--primitives-colors-background-50)]";
+    const { rerender } = render(
+      <Tree data={data} divided defaultExpandedIds={["a", "b"]} />,
+    );
+    const row = (name: string, index = 0) =>
+      screen.getAllByRole("treeitem", { name: new RegExp(name) })[index];
+
+    for (const item of screen.getAllByRole("treeitem")) {
+      expect(item).toHaveClass("border-b", "border-border", "rounded-none");
+      expect(item).not.toHaveClass("rounded-control");
+    }
+    // Open parents on the surface; a leaf and a child do not take it.
+    expect(row("Terminal A")).toHaveClass(surface);
+    expect(row("Car park")).not.toHaveClass(surface);
+    expect(row("Level 1")).not.toHaveClass(surface);
+
+    // Closed, a parent leaves the surface.
+    fireEvent.click(row("Terminal B"));
+    expect(row("Terminal B")).toHaveAttribute("aria-expanded", "false");
+    expect(row("Terminal B")).not.toHaveClass(surface);
+
+    // A selected open parent keeps the selected fill, not the surface.
+    rerender(
+      <Tree data={data} divided defaultExpandedIds={["a"]} selectedId="a" />,
+    );
+    expect(row("Terminal A")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Terminal A")).toHaveClass("bg-muted");
+    expect(row("Terminal A")).not.toHaveClass(surface);
+
+    // Not divided, the tree as it was drawn.
+    rerender(<Tree data={data} defaultExpandedIds={["a"]} />);
+    expect(row("Terminal A")).toHaveClass("rounded-control");
+    expect(row("Terminal A")).not.toHaveClass("border-b", surface);
+  });
+
+  it("gives composed rows the divided look too", () => {
+    render(
+      <Tree>
+        <TreeParentItemRow
+          role="treeitem"
+          aria-expanded
+          name="Terminal A"
+          expanded
+          divided
+        />
+        <TreeChildItemRow role="treeitem" name="Level 1" depth={1} divided />
+      </Tree>,
+    );
+    const [parent, child] = screen.getAllByRole("treeitem");
+    expect(parent).toHaveClass(
+      "border-b",
+      "bg-[var(--primitives-colors-background-50)]",
+    );
+    expect(child).toHaveClass("border-b");
+    expect(child).not.toHaveClass(
+      "bg-[var(--primitives-colors-background-50)]",
+    );
+  });
 });

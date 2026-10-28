@@ -31,6 +31,19 @@ tree container.
 
 <Controls />
 
+## Divided
+
+`divided` draws a 1px stroke under every row, edge to edge in the border role, and sets an open
+parent row on a surface of its own, background 50 (GAP-201): a tree of records, as Pointr Cloud's Map
+Content tree draws its buildings and levels, rather than a navigation tree. The rows lose their
+rounded corners. A selected row keeps the selected fill over the surface, and hover and focus draw as
+before. `TreeItemRow`, `TreeParentItemRow` and `TreeChildItemRow` take `divided` too, for a composed
+tree.
+
+<Canvas>
+  <Story of={TreeStories.Divided} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>

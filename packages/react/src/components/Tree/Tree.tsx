@@ -46,6 +46,14 @@ export interface TreeProps extends Omit<
   children?: React.ReactNode;
   ariaLabel?: string;
   density?: TreeDensity;
+  /**
+   * A stroke under every row, edge to edge, and an open parent row on a
+   * surface of its own (GAP-201): a list of records, as Pointr Cloud's Map
+   * Content tree draws its buildings and levels, rather than a navigation
+   * tree. The rows lose their rounded corners; a selected row keeps its fill
+   * over the surface.
+   */
+  divided?: boolean;
   indent?: number;
   activationMode?: TreeActivationMode;
   defaultExpandedIds?: string[];
@@ -67,6 +75,8 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   density?: TreeDensity;
   depth?: number;
   disabled?: boolean;
+  /** As Tree's `divided`: a stroke under the row, and an open parent row on a surface. */
+  divided?: boolean;
   expanded?: boolean;
   focusVisible?: boolean;
   hasChildren?: boolean;
@@ -92,6 +102,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       className,
       data = [],
       density = "default",
+      divided,
       defaultExpandedIds = [],
       expandedIds,
       indent = 20,
@@ -297,6 +308,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
               item={item}
               depth={0}
               density={density}
+              divided={divided}
               expandedSet={expandedSet}
               focusedId={focusedId}
               indent={indent}
@@ -322,6 +334,7 @@ interface TreeNodeProps {
   item: TreeItem;
   depth: number;
   density: TreeDensity;
+  divided?: boolean;
   expandedSet: Set<string>;
   focusedId?: string;
   indent: number;
@@ -344,6 +357,7 @@ const TreeNode = ({
   item,
   depth,
   density,
+  divided,
   expandedSet,
   focusedId,
   indent,
@@ -421,6 +435,7 @@ const TreeNode = ({
         density={density}
         depth={depth}
         disabled={isDisabled}
+        divided={divided}
         expanded={isOpen}
         hasChildren={hasChildren}
         icon={icon}
@@ -446,6 +461,7 @@ const TreeNode = ({
               item={child}
               depth={depth + 1}
               density={density}
+              divided={divided}
               expandedSet={expandedSet}
               focusedId={focusedId}
               indent={indent}
@@ -477,6 +493,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
       density = "default",
       depth = 0,
       disabled = false,
+      divided = false,
       expanded = false,
       focusVisible = false,
       hasChildren = false,
@@ -507,6 +524,13 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-start outline-none transition-colors",
           density === "compact" ? "min-h-8 py-1" : "min-h-10 py-1.5",
           "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          // Divided (GAP-201): edge to edge, a stroke under; an open parent
+          // on background 50, under a selected row's fill.
+          divided && "rounded-none border-b border-border",
+          divided &&
+            hasChildren &&
+            expanded &&
+            "bg-[var(--primitives-colors-background-50)]",
           selected && "bg-muted text-foreground",
           focusVisible &&
             "ring-2 ring-ring ring-offset-2 ring-offset-background",

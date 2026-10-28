@@ -105,13 +105,22 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## Drawer
 
-Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>`.
+Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> & { placement?: DrawerPlacement }`.
+
+- `placement`: `DrawerPlacement`, optional, default `"fixed"`.
+
+  Where the drawer is drawn (GAP-198), as Backdrop's `placement`.
+  `"fixed"`, the default, slides over the window from its edge, in the
+  theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
+  in place, `absolute` against the nearest positioned box, so a panel can
+  sit in the region under a fixed header instead of covering it; it is not
+  modal unless `modal` says so, so the header and the page stay usable.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
 - `defaultOpen`: `boolean`, optional.
 - `onOpenChange`: `(open: boolean) => void`, optional.
-- `modal`: `boolean`, optional.
+- `modal`: `boolean`, optional, default `placement === "fixed"`.
 
 ## DrawerTrigger
 
@@ -195,6 +204,14 @@ From `@kozmos-ds/react`.
 
 ```ts
 type DrawerSide = "left" | "right" | "top" | "bottom";
+```
+
+### DrawerPlacement
+
+From `@kozmos-ds/react`.
+
+```ts
+type DrawerPlacement = "fixed" | "inline";
 ```
 
 ## Also exported

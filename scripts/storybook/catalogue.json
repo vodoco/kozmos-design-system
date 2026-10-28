@@ -377,7 +377,7 @@
       "id": "overlay-drawer",
       "title": "Core/Overlays/Drawer",
       "component": "Drawer",
-      "exports": ["Default"]
+      "exports": ["Default", "Inline"]
     },
     {
       "file": "packages/react/src/components/DynamicIsland/DynamicIsland.stories.tsx",
@@ -695,7 +695,7 @@
       "id": "navigation-navbar",
       "title": "Core/Layout/Navbar",
       "component": "Navbar",
-      "exports": ["Default", "Contextual", "NarrowContainer"]
+      "exports": ["Default", "Contextual", "NarrowContainer", "NavigationAlign"]
     },
     {
       "file": "packages/react/src/components/NavigationAnnouncer/NavigationAnnouncer.stories.tsx",
@@ -1025,7 +1025,7 @@
       "id": "navigation-sidebar",
       "title": "Core/Layout/Sidebar",
       "component": "Sidebar",
-      "exports": ["Default", "Rail"]
+      "exports": ["Default", "Rail", "Flush"]
     },
     {
       "file": "packages/react/src/components/Skeleton/Skeleton.stories.tsx",
@@ -1165,7 +1165,7 @@
       "id": "data-display-tree",
       "title": "Core/Data display/Tree",
       "component": "Tree",
-      "exports": ["Default", "WithRowActions", "RowPrimitive"]
+      "exports": ["Default", "WithRowActions", "RowPrimitive", "Divided"]
     },
     {
       "file": "packages/react/src/components/UserLocationMarker/UserLocationMarker.stories.tsx",

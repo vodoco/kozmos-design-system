@@ -124,6 +124,10 @@ const INTENTIONAL = {
     android:
       "Placement is the parent's job on native: a backdrop covers the screen or a region by where the composable is put (a Box over the region), not by a parameter. The web's values exist because a DOM element is trapped by the box it is rendered in unless it is portalled.",
   },
+  "Drawer.placement": {
+    figma:
+      "Where the web draws the drawer: over the window in the theme's portal (fixed), or in place in the region under a fixed header (inline, GAP-198). The panel is the same either way, and that is what the set draws; its Side axis is where it opens from, a different thing that the analyser's placement alias would otherwise compare.",
+  },
   "FloatingActionButton.placement": {
     figma:
       "Positioning is the parent's job on native: a FAB is placed by a ZStack alignment or Scaffold's floatingActionButton slot, not by a variant on the button. The React values are CSS position classes with no visual difference.",

@@ -387,6 +387,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:select-accessibility
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
+      # 0.15.0's layout props, measured in each engine, light and dark, touch
+      # and compact, both directions: Navbar's navigation at the start and the
+      # end (GAP-196), Sidebar flush under a header (GAP-199), Drawer inline
+      # in the region under a header that stays usable (GAP-198) and Tree's
+      # divided rows (GAP-201) (scripts/check-layout-props.mjs).
+      - name: Verify Layout Props
+        run: |
+          pnpm test:layout-props
+          ADAPTIVE_BROWSER=webkit pnpm test:layout-props
+          ADAPTIVE_BROWSER=firefox pnpm test:layout-props
+
       # GAP-189: Backdrop's target. The cut-out shows the target as the page
       # draws it and the ring is drawn, in forced colours too; a click reaches
       # the target through it and the backdrop elsewhere; the target keeps

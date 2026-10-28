@@ -61,4 +61,18 @@ describe("Navbar", () => {
 
     expect(screen.getByText("Legacy Site")).toBeInTheDocument();
   });
+
+  it("sets its navigation at the start, the centre or the end (GAP-196)", () => {
+    const { rerender } = render(<Navbar navigation={<a href="#">Maps</a>} />);
+    const nav = () => screen.getByRole("navigation");
+    // The default keeps the bar as it was drawn: centred.
+    expect(nav()).toHaveAttribute("data-align", "center");
+    for (const align of ["start", "end", "center"] as const) {
+      rerender(
+        <Navbar navigation={<a href="#">Maps</a>} navigationAlign={align} />,
+      );
+      expect(nav()).toHaveAttribute("data-align", align);
+      expect(nav()).toHaveClass("kozmos-navbar-navigation");
+    }
+  });
 });

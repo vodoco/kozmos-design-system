@@ -49,4 +49,20 @@ describe("BottomSheet", () => {
 
     expect(screen.getByText("Visible title")).not.toHaveClass("sr-only");
   });
+
+  it("is a Drawer, so placement inline draws the sheet in its region (GAP-198)", () => {
+    render(
+      <div data-testid="region" style={{ position: "relative" }}>
+        <BottomSheet open placement="inline">
+          <BottomSheetContent title="Levels">
+            <p>Body</p>
+          </BottomSheetContent>
+        </BottomSheet>
+      </div>,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(screen.getByTestId("region")).toContainElement(dialog);
+    expect(dialog).toHaveClass("absolute");
+    expect(dialog).not.toHaveClass("fixed");
+  });
 });

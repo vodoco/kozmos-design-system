@@ -22,6 +22,21 @@ names the navigation landmark (default: “Main navigation”).
 
 <Controls />
 
+## Where the navigation sits
+
+`navigationAlign` places the navigation in the room between the leading slots (logo, context, primary
+action) and the trailing ones (actions, utilities, account). `"center"`, the default, centres it, as
+the bar has always drawn it; `"start"` sets it right after the logo; `"end"` beside the account, as
+Pointr Cloud draws its main sections (GAP-196). Start and end are logical: in
+right to left, `"end"` is the left. When the bar wraps, the navigation keeps its alignment on its
+own line. The landmark, its name and the reading and tab order stay as they are: only where the items
+are drawn changes.
+
+A Home tile belongs in the `logo` slot (an outline IconButton), not in `actions`, which sits outside
+the navigation landmark.
+
+<Canvas of={NavbarStories.NavigationAlign} />
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -59,7 +59,16 @@ export function BottomSheetExample() {
 
 ## BottomSheet
 
-Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>`.
+Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> & { placement?: DrawerPlacement }`.
+
+- `placement`: `DrawerPlacement`, optional.
+
+  Where the drawer is drawn (GAP-198), as Backdrop's `placement`.
+  `"fixed"`, the default, slides over the window from its edge, in the
+  theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
+  in place, `absolute` against the nearest positioned box, so a panel can
+  sit in the region under a fixed header instead of covering it; it is not
+  modal unless `modal` says so, so the header and the page stay usable.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
@@ -182,6 +191,14 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `Omit<DialogDescrip
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### DrawerPlacement
+
+From `@kozmos-ds/react`.
+
+```ts
+type DrawerPlacement = "fixed" | "inline";
+```
 
 ### DrawerSide
 

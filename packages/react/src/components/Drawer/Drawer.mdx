@@ -16,6 +16,27 @@ committing to a dashboard, map, or CMS-specific layout.
 
 <Controls />
 
+## Inline, under a fixed header
+
+`placement="inline"` on `Drawer` draws the drawer in place, `absolute` against the nearest
+positioned box, as Backdrop's `placement="inline"` does (GAP-198): a panel that sits in the region
+under a fixed header instead of covering it, Pointr Cloud's Get started panel. Give the region
+`position: relative`; the drawer fills its height from the side it opens on and takes no room in the
+flow, so it covers the region's content, not the header.
+
+An inline drawer is not modal unless `modal` says so: nothing outside it is inert or hidden from
+readers, the page keeps scrolling and takes presses. As any non-modal Radix dialog, it moves focus
+into itself when it opens, Tab cycles within it while it is open, and Escape closes it and returns
+focus to its trigger; a press outside it, on the header too, closes it, and `onInteractOutside` with
+`preventDefault()` keeps it open. With `modal`, its scrim is drawn over the region alone, and the
+rest of the page is inert as under any modal.
+
+`placement="fixed"`, the default, is the drawer as it was: drawn in the theme's portal over the
+window, and modal unless `modal={false}`. BottomSheet is a Drawer, so it takes `placement` too: an
+inline sheet rises from the bottom of its region.
+
+<Canvas of={DrawerStories.Inline} />
+
 ## Implementation
 
 <Source of={DrawerStories.Default} />
