@@ -244,6 +244,9 @@ describe("TourStep (GAP-188)", () => {
     const dialog = await screen.findByRole("dialog");
     const status = screen.getByRole("status");
     expect(dialog).toContainElement(status);
+    // Said, not only implied by the role: a modal opening beside the tour
+    // (Radix's Select, Dialog, Menu) hides everything but [aria-live] boxes.
+    expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toBeEmptyDOMElement();
     rerender(<Step instruction="Done: select Next." />);
     // The same region, so a reader hears what arrived in it.
@@ -522,6 +525,36 @@ describe("TourStep (GAP-188)", () => {
     expect(
       backdrop?.closest('[role="dialog"][data-state="open"]'),
     ).not.toBeNull();
+  });
+
+  it("keeps its status in reach when a modal opens beside the tour", async () => {
+    const { rerender } = render(
+      <ThemeProvider>
+        <Step instruction="Open the filters." />
+        <Dialog open={false}>
+          <DialogContent aria-describedby={undefined}>
+            <DialogTitle>Filters</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </ThemeProvider>,
+    );
+    await screen.findByRole("dialog", { name: "Open a site" });
+    rerender(
+      <ThemeProvider>
+        <Step instruction="Open the filters." />
+        <Dialog open>
+          <DialogContent aria-describedby={undefined}>
+            <DialogTitle>Filters</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </ThemeProvider>,
+    );
+    await screen.findByRole("dialog", { name: "Filters" });
+    // The modal hides the rest of the page from readers, all but its live
+    // boxes: the step's status is one, so what arrives in it is still read.
+    const status = document.querySelector(".kozmos-tour-step-status");
+    expect(status).toHaveTextContent("Open the filters.");
+    expect(status?.closest('[aria-hidden="true"]')).toBeNull();
   });
 
   it("has no axe violations open", async () => {

@@ -442,10 +442,13 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
             ) : null}
             {/* Mounted with each step, empty or not, so a status that arrives
               or changes while the step is open is read out; the one it opens
-              with is read in the dialog's description. */}
+              with is read in the dialog's description. aria-live is written
+              out, not left to the role: a modal opening beside the tour
+              (Radix's Select, Dialog, Menu) hides all but [aria-live] boxes. */}
             <div
               id={statusId}
               role="status"
+              aria-live="polite"
               className="kozmos-tour-step-status"
             >
               {hasInstruction ? (
