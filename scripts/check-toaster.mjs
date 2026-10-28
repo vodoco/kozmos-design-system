@@ -19,6 +19,13 @@
  * - Several ThemeProviders: each Toaster draws in its own provider's portal
  *   and theme, a second Toaster of one id draws nothing, and a box that
  *   isolates its stacking (a map) cannot trap it under a bar.
+ * - Beside a panel that stays open (a non-modal Drawer floating at the
+ *   inline end): the toasts draw above it, and the Toaster's `style` moves
+ *   them clear of it, as Pointr Cloud's Get started panel needs.
+ * - Right to left: the list sits at the inline end, and a toast is swiped
+ *   and leaves toward it, to the left; a swipe to the right springs back.
+ *   Left to right, the same to the right; either way a closing toast plays
+ *   its exit before it goes (it was taken away at once).
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-toaster.mjs
@@ -501,6 +508,160 @@ await scenario(
       };
     });
     assert.deepEqual(read, { onBar: true, top: "toast", inMap: false });
+  },
+);
+
+/**
+ * Where the toast and the panel are, once both have arrived, and what is
+ * drawn on top where they meet.
+ */
+const besidePanel = async (page, title) => {
+  await arrived(page, title);
+  await page
+    .locator("#panel")
+    .evaluate((panel) =>
+      Promise.all(panel.getAnimations().map((animation) => animation.finished)),
+    );
+  return item(page, title).evaluate((li) => {
+    const toast = li.getBoundingClientRect();
+    const panel = document.getElementById("panel").getBoundingClientRect();
+    const overlap = toast.right > panel.left && toast.left < panel.right;
+    const x = overlap
+      ? (Math.max(toast.left, panel.left) +
+          Math.min(toast.right, panel.right)) /
+        2
+      : null;
+    const hit =
+      x === null
+        ? null
+        : document.elementFromPoint(x, toast.top + toast.height / 2);
+    return {
+      overlap,
+      top: hit
+        ? li.contains(hit)
+          ? "toast"
+          : hit.closest("#panel")
+            ? "panel"
+            : hit.tagName
+        : null,
+      gap: Math.round(panel.left - toast.right),
+    };
+  });
+};
+
+await scenario(
+  "beside a panel that stays open: drawn above it, layer 100 to its 50",
+  { layout: "panel" },
+  async (page) => {
+    await show(page, "User added", { tone: "success", duration: Infinity });
+    await arrived(page, "User added");
+    const read = await besidePanel(page, "User added");
+    assert.deepEqual(
+      { overlap: read.overlap, top: read.top },
+      { overlap: true, top: "toast" },
+    );
+    const layers = await item(page, "User added").evaluate((li) => [
+      getComputedStyle(li.closest("ol")).zIndex,
+      getComputedStyle(document.getElementById("panel")).zIndex,
+    ]);
+    assert.deepEqual(layers, ["100", "50"]);
+  },
+);
+
+await scenario(
+  "beside a panel that stays open: the Toaster's style moves the toasts clear of it",
+  { layout: "panel", toaster: { style: { insetInlineEnd: 468 } } },
+  async (page) => {
+    await show(page, "User added", { tone: "success", duration: Infinity });
+    await arrived(page, "User added");
+    const read = await besidePanel(page, "User added");
+    assert.equal(read.overlap, false, "the toast is clear of the panel");
+    // The list ends 468 from the edge and pads its toasts 16: the toast's
+    // edge is 484 in, 48 past the panel's 436 (16 + 420), as the design.
+    assert.equal(read.gap, 48);
+  },
+);
+
+/** The way a toast leaves, read as it starts to: its exit's x translation. */
+async function leaving(page, title) {
+  const li = await item(page, title).elementHandle();
+  const read = page.evaluate(
+    (li) =>
+      new Promise((resolve) => {
+        new MutationObserver((_, observer) => {
+          if (li.getAttribute("data-state") !== "closed") return;
+          observer.disconnect();
+          resolve(
+            getComputedStyle(li)
+              .getPropertyValue("--tw-exit-translate-x")
+              .trim(),
+          );
+        }).observe(li, { attributes: true, attributeFilter: ["data-state"] });
+      }),
+    li,
+  );
+  await page.evaluate((title) => window.toaster.dismiss(title), title);
+  return read;
+}
+
+/** A pointer drag across the toast's middle, `by` pixels along x. */
+async function drag(page, title, by) {
+  const box = await item(page, title).boundingBox();
+  const y = box.y + box.height / 2;
+  const x = box.x + box.width / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let step = 1; step <= 10; step += 1)
+    await page.mouse.move(x + (step * by) / 10, y);
+  await page.mouse.up();
+}
+
+await scenario(
+  "right to left: at the inline end, swiped and leaving toward it; a swipe the other way springs back",
+  { layout: "rtl" },
+  async (page) => {
+    await show(page, "Saved", { id: "Saved", duration: Infinity });
+    await arrived(page, "Saved");
+    const read = await item(page, "Saved").evaluate((li) => ({
+      list: Math.round(li.closest("ol").getBoundingClientRect().left),
+      swipe: li.getAttribute("data-swipe-direction"),
+    }));
+    assert.deepEqual(read, { list: 0, swipe: "left" });
+    assert.match(await leaving(page, "Saved"), /^-100%$/);
+    await item(page, "Saved").waitFor({ state: "detached" });
+
+    await show(page, "Kept", { id: "Kept", duration: Infinity });
+    await arrived(page, "Kept");
+    await drag(page, "Kept", 200);
+    await page.waitForTimeout(400);
+    assert.equal(
+      await item(page, "Kept").getAttribute("data-state"),
+      "open",
+      "a swipe to the right leaves it open",
+    );
+    await drag(page, "Kept", -200);
+    await item(page, "Kept").waitFor({ state: "detached" });
+    assert.deepEqual(await page.evaluate(() => window.toaster.dismissed), [
+      "Saved",
+      "Kept",
+    ]);
+  },
+);
+
+await scenario(
+  "left to right: at the right, and a closing toast slides out to the right rather than vanishing at once",
+  {},
+  async (page) => {
+    await show(page, "Saved", { id: "Saved", duration: Infinity });
+    await arrived(page, "Saved");
+    const read = await item(page, "Saved").evaluate((li) => ({
+      list: Math.round(
+        window.innerWidth - li.closest("ol").getBoundingClientRect().right,
+      ),
+      swipe: li.getAttribute("data-swipe-direction"),
+    }));
+    assert.deepEqual(read, { list: 0, swipe: "right" });
+    assert.match(await leaving(page, "Saved"), /^100%$/);
   },
 );
 

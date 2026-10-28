@@ -445,7 +445,10 @@ jobs:
       # limit, oldest first; a toast pauses while hovered or focused and
       # closes by its button, Escape, a swipe and its action; neither reduced
       # motion moves it; each Toaster draws in its own provider's portal, once
-      # per id, untrapped by a box that isolates (scripts/check-toaster.mjs).
+      # per id, untrapped by a box that isolates; it draws above an open
+      # Drawer and its style moves it clear of one; right to left it sits,
+      # swipes and leaves toward the inline end, and a closing toast slides
+      # out before it goes (scripts/check-toaster.mjs).
       - name: Verify Toaster
         run: |
           pnpm test:toaster

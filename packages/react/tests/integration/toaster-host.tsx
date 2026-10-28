@@ -3,6 +3,9 @@ import { createRoot, type Root } from "react-dom/client";
 import {
   Button,
   DesignConfigProvider,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   Menu,
   MenuContent,
   MenuItem,
@@ -24,13 +27,16 @@ import {
  * somewhere a fixed part can be trapped (`trapped`: inside a box that isolates
  * its stacking, as a map does, under a bar fixed over it), or mounts two
  * providers (`providers`: a light page and a dark, right-to-left module with
- * a Toaster each, and a second Toaster of the page's id).
+ * a Toaster each, and a second Toaster of the page's id), or keeps a panel
+ * open at the window's inline end (`panel`: a non-modal Drawer floating 16
+ * from the edge, 420 wide, as Pointr Cloud's Get started panel is), or reads
+ * right to left (`rtl`).
  */
 interface Mount {
   toaster?: ToasterProps;
   /** The design config's reduced motion around the page. */
   configReduced?: boolean;
-  layout?: "page" | "trapped" | "providers";
+  layout?: "page" | "trapped" | "providers" | "panel" | "rtl";
 }
 
 function Field() {
@@ -77,6 +83,37 @@ function Page({ toaster, layout = "page" }: Mount) {
           <Toaster {...toaster} id="module" />
         </ThemeProvider>
       </>
+    );
+  if (layout === "panel")
+    return (
+      <ThemeProvider theme="light">
+        <Field />
+        <Drawer open modal={false}>
+          <DrawerContent
+            id="panel"
+            showClose={false}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onInteractOutside={(event) => event.preventDefault()}
+            style={{
+              width: 420,
+              top: 16,
+              right: 16,
+              bottom: 16,
+              height: "auto",
+            }}
+          >
+            <DrawerTitle>Get started</DrawerTitle>
+          </DrawerContent>
+        </Drawer>
+        <Toaster {...toaster} />
+      </ThemeProvider>
+    );
+  if (layout === "rtl")
+    return (
+      <ThemeProvider theme="light" dir="rtl">
+        <Field />
+        <Toaster {...toaster} />
+      </ThemeProvider>
     );
   if (layout === "trapped")
     return (
