@@ -11885,4 +11885,42 @@ for (const [file, symbols] of [
     assertContains(mdxPath, mdx, pattern, `RouteSummary docs: ${label}`);
 }
 
+// GAP-192: Combobox's, MultiSelect's and Listbox's Code Connect map Show
+// Group Labels as two connections, so a snippet with it off names no group
+// at all; a figma.boolean per option printed `group: undefined` on each.
+for (const filePath of [
+  "packages/react/src/components/Combobox/Combobox.figma.tsx",
+  "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
+  "packages/react/src/components/Listbox/Listbox.figma.tsx",
+]) {
+  const content = read(filePath);
+  const [plain = "", grouped = ""] = content.split(
+    /variant: \{ "Show Group Labels": true \}/,
+  );
+  assertContains(
+    filePath,
+    plain,
+    'variant: { "Show Group Labels": false }',
+    "a connection for Show Group Labels off",
+  );
+  assertNotContains(
+    filePath,
+    plain,
+    /\bgroup(?:[12]\b|\s*:)/,
+    "a group prop or key in the connection for Show Group Labels off",
+  );
+  assertContains(
+    filePath,
+    grouped,
+    'group1: figma.string("Group 1 Text")',
+    "Group 1 Text in the connection for Show Group Labels on",
+  );
+  assertNotContains(
+    filePath,
+    content,
+    "false: undefined,\n      }),\n      group",
+    "a group mapped through figma.boolean per option",
+  );
+}
+
 console.log("Component contract parity ok");

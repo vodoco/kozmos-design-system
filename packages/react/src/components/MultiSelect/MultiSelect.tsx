@@ -3,6 +3,12 @@ import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
+import {
+  groupOf,
+  orderByGroup,
+  renderOptionGroups,
+  scrollOptionIntoView,
+} from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
@@ -12,6 +18,7 @@ import {
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
+  keepFieldFocus,
 } from "../Combobox/field-popup";
 import {
   FIELD_ACTION,
@@ -140,9 +147,13 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const [uncontrolledSearchValue, setUncontrolledSearchValue] =
       React.useState(defaultSearchValue);
     const visibleSearchValue = searchValue ?? uncontrolledSearchValue;
+    // In the order they are drawn: under their groups (GAP-192).
     const filteredOptions = React.useMemo(
       () =>
-        options.filter((option) => filterOption(option, visibleSearchValue)),
+        orderByGroup(
+          options.filter((option) => filterOption(option, visibleSearchValue)),
+          options,
+        ),
       [filterOption, options, visibleSearchValue],
     );
     const [activeIndex, setActiveIndex] = React.useState(() =>
@@ -162,9 +173,9 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
     React.useEffect(() => {
       if (activeOptionId)
-        rootRef.current?.ownerDocument
-          .getElementById(activeOptionId)
-          ?.scrollIntoView?.({ block: "nearest" });
+        scrollOptionIntoView(
+          rootRef.current?.ownerDocument.getElementById(activeOptionId),
+        );
     }, [activeOptionId]);
     const selectedSet = React.useMemo(
       () => new Set(selectedValues),
@@ -474,10 +485,14 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 >
                   <div
                     ref={popupRef}
+                    onMouseDown={keepFieldFocus}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}
                     id={listboxOpen ? listboxId : undefined}
                     data-modality={modality}
                     role={listboxOpen ? "listbox" : "status"}
+                    // A status says its liveness as well (GAP-193); a
+                    // listbox is no live region.
+                    aria-live={listboxOpen ? undefined : "polite"}
                     aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     aria-multiselectable={listboxOpen ? true : undefined}
@@ -489,30 +504,37 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                         {emptyText}
                       </div>
                     ) : (
-                      filteredOptions.map((option, index) => {
-                        const selected = selectedSet.has(option.value);
-                        const disabledOption =
-                          option.disabled || (!selected && atSelectionLimit);
-                        const active = index === activeIndex;
+                      renderOptionGroups(
+                        filteredOptions,
+                        groupOf,
+                        inputId,
+                        (option, index) => {
+                          const selected = selectedSet.has(option.value);
+                          const disabledOption =
+                            option.disabled || (!selected && atSelectionLimit);
+                          const active = index === activeIndex;
 
-                        return (
-                          <OptionRow
-                            key={option.value}
-                            id={`${inputId}-option-${index}`}
-                            option={option}
-                            selected={selected}
-                            active={active}
-                            disabled={disabledOption}
-                            onMouseEnter={() => {
-                              if (!disabledOption) setActiveIndex(index);
-                            }}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() =>
-                              !disabledOption ? toggleOption(option) : undefined
-                            }
-                          />
-                        );
-                      })
+                          return (
+                            <OptionRow
+                              key={option.value}
+                              id={`${inputId}-option-${index}`}
+                              option={option}
+                              selected={selected}
+                              active={active}
+                              disabled={disabledOption}
+                              onMouseEnter={() => {
+                                if (!disabledOption) setActiveIndex(index);
+                              }}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() =>
+                                !disabledOption
+                                  ? toggleOption(option)
+                                  : undefined
+                              }
+                            />
+                          );
+                        },
+                      )
                     )}
                   </div>
                 </DismissableLayer>

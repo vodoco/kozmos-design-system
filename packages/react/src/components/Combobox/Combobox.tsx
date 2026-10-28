@@ -5,6 +5,7 @@ import {
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
+  keepFieldFocus,
 } from "./field-popup";
 import {
   FIELD_ACTION,
@@ -18,6 +19,12 @@ import {
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
+import {
+  groupOf,
+  orderByGroup,
+  renderOptionGroups,
+  scrollOptionIntoView,
+} from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper } from "../FieldWrapper";
@@ -26,6 +33,16 @@ import { inputVariants, type InputStatus } from "../Input/Input";
 export interface ComboboxOption {
   description?: string;
   disabled?: boolean;
+  /**
+   * The group the option is listed under (GAP-192). Options with no group
+   * come first, unlabelled; then the groups, in the order they first appear,
+   * each under its group's label, a `role="group"` named by it. The arrow
+   * keys move through the options as they are drawn and never stop on a
+   * label. While the list is filtered, a group's label stays as long as any
+   * of its options matches. The name is trimmed, and a blank one is no group.
+   * Combobox, Listbox and MultiSelect all take it.
+   */
+  group?: string;
   label: string;
   value: string;
 }
@@ -208,8 +225,13 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
     const visibleInputValue = inputValue ?? uncontrolledInputValue;
+    // In the order they are drawn: under their groups (GAP-192).
     const filteredOptions = React.useMemo(
-      () => options.filter((option) => filterOption(option, visibleInputValue)),
+      () =>
+        orderByGroup(
+          options.filter((option) => filterOption(option, visibleInputValue)),
+          options,
+        ),
       [filterOption, options, visibleInputValue],
     );
     const validActions = React.useMemo(() => {
@@ -272,9 +294,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
 
     React.useEffect(() => {
       if (activeOptionId)
-        rootRef.current?.ownerDocument
-          .getElementById(activeOptionId)
-          ?.scrollIntoView?.({ block: "nearest" });
+        scrollOptionIntoView(
+          rootRef.current?.ownerDocument.getElementById(activeOptionId),
+        );
     }, [activeOptionId]);
     const canClear =
       clearable && !disabled && !readOnly && Boolean(visibleInputValue);
@@ -369,6 +391,59 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       setOpen(false);
       trackEvent("Combobox", "selection_cleared", {});
       onValueChange?.("", undefined);
+    };
+
+    const renderEntry = (entry: PopupEntry, index: number) => {
+      if (entry.kind === "action")
+        return (
+          <div
+            key={`action:${entry.action.id}`}
+            role="option"
+            id={`${inputId}-option-${index}`}
+            aria-selected={false}
+            aria-disabled={entry.disabled || undefined}
+            data-active={
+              index === activeIndex && !entry.disabled ? "true" : undefined
+            }
+            className={cn(
+              "kozmos-reset kozmos-option",
+              index === filteredOptions.length && "border-t border-border",
+            )}
+            onMouseEnter={() => {
+              if (!entry.disabled) setActiveIndex(index);
+            }}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => selectEntry(entry)}
+          >
+            {entry.action.icon && (
+              <span aria-hidden="true" className="shrink-0">
+                {entry.action.icon}
+              </span>
+            )}
+            <span className="min-w-0 flex-1 whitespace-normal font-medium [overflow-wrap:anywhere]">
+              {entry.action.label}
+            </span>
+          </div>
+        );
+      const option = entry.option;
+      const selected = option.value === selectedValue;
+      const active = index === activeIndex;
+
+      return (
+        <OptionRow
+          key={`value:${option.value}`}
+          id={`${inputId}-option-${index}`}
+          option={option}
+          selected={selected}
+          active={active}
+          disabled={option.disabled}
+          onMouseEnter={() => {
+            if (!option.disabled) setActiveIndex(index);
+          }}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => selectEntry(entry)}
+        />
+      );
     };
 
     return (
@@ -527,6 +602,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   <div
                     ref={popupRef}
                     data-combobox-popup=""
+                    onMouseDown={keepFieldFocus}
                     className={cn(
                       // The frame does not scroll: the listbox in it does (GAP-137),
                       // so the scroll region is the widget the input controls.
@@ -542,6 +618,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       showEmptyText && (
                         <div
                           role="status"
+                          aria-live="polite"
                           className="px-3 py-2 text-sm text-muted-foreground"
                         >
                           {emptyText}
@@ -559,6 +636,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                             ? "status"
                             : undefined
                       }
+                      // A status says its liveness as well (GAP-193); a
+                      // listbox is no live region.
+                      aria-live={
+                        !listboxOpen && showEmptyText ? "polite" : undefined
+                      }
                       aria-label={
                         listboxOpen ? (ariaLabel ?? label) : undefined
                       }
@@ -570,66 +652,25 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                               {emptyText}
                             </div>
                           )
-                        : entries.map((entry, index) => {
-                            if (entry.kind === "action")
-                              return (
-                                <div
-                                  key={`action:${entry.action.id}`}
-                                  role="option"
-                                  id={`${inputId}-option-${index}`}
-                                  aria-selected={false}
-                                  aria-disabled={entry.disabled || undefined}
-                                  data-active={
-                                    index === activeIndex && !entry.disabled
-                                      ? "true"
-                                      : undefined
-                                  }
-                                  className={cn(
-                                    "kozmos-reset kozmos-option",
-                                    index === filteredOptions.length &&
-                                      "border-t border-border",
-                                  )}
-                                  onMouseEnter={() => {
-                                    if (!entry.disabled) setActiveIndex(index);
-                                  }}
-                                  onMouseDown={(event) =>
-                                    event.preventDefault()
-                                  }
-                                  onClick={() => selectEntry(entry)}
-                                >
-                                  {entry.action.icon && (
-                                    <span
-                                      aria-hidden="true"
-                                      className="shrink-0"
-                                    >
-                                      {entry.action.icon}
-                                    </span>
-                                  )}
-                                  <span className="min-w-0 flex-1 whitespace-normal font-medium [overflow-wrap:anywhere]">
-                                    {entry.action.label}
-                                  </span>
-                                </div>
-                              );
-                            const option = entry.option;
-                            const selected = option.value === selectedValue;
-                            const active = index === activeIndex;
-
-                            return (
-                              <OptionRow
-                                key={`value:${option.value}`}
-                                id={`${inputId}-option-${index}`}
-                                option={option}
-                                selected={selected}
-                                active={active}
-                                disabled={option.disabled}
-                                onMouseEnter={() => {
-                                  if (!option.disabled) setActiveIndex(index);
-                                }}
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={() => selectEntry(entry)}
-                              />
-                            );
-                          })}
+                        : [
+                            ...renderOptionGroups(
+                              entries.slice(0, filteredOptions.length),
+                              (entry) =>
+                                entry.kind === "value"
+                                  ? groupOf(entry.option)
+                                  : undefined,
+                              inputId,
+                              renderEntry,
+                            ),
+                            ...entries
+                              .slice(filteredOptions.length)
+                              .map((entry, offset) =>
+                                renderEntry(
+                                  entry,
+                                  filteredOptions.length + offset,
+                                ),
+                              ),
+                          ]}
                     </div>
                   </div>
                 </DismissableLayer>
