@@ -8,7 +8,36 @@ import { PlatformSnippets } from "../PlatformSnippets";
 # Backdrop
 
 A full-viewport scrim that visually separates foreground content from the page.
-Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
+Use `visible` to toggle it. It draws the dim and takes the pointer on it; it moves no focus, traps
+none and names nothing. What it holds, a step card, is in the tab order as any content is, and its
+dialog semantics, focus and dismissal are the card's or the enclosing overlay's to give.
+
+## Where it is drawn
+
+`placement="fixed"`, the default, draws it in the theme's portal, as Popover and Dialog are, so it
+covers the window whatever box it is rendered in: a map, which isolates its stacking, or a panel
+that clips or transforms what it holds, cannot cut it off or stack it under the page's bar. Its
+children are drawn with it in the portal, and React still carries their events up the tree the
+backdrop is rendered in. A product that looked for the backdrop inside its own markup finds it in
+the provider's portal. Inside a modal (Dialog, Drawer, BottomSheet), which makes everything outside
+its content inert, it is drawn in the modal's content instead, so it blocks presses on what it
+dims, its card takes focus inside the modal's focus trap, and neither is hidden from readers.
+
+`placement="inline"` draws it in place, `absolute` over the nearest positioned box: one region's
+dim, a panel while it loads or a map behind a step. Unlike FloatingActionButton's `inline`, which
+puts the button in the flow, an inline backdrop takes no room in the flow. The stories on this page
+are inline, so each dims its own frame. A fixed backdrop given a position by its class
+(`className="absolute"`, the way one was kept to a box before it was portalled) warns in development
+and points here.
+
+A fixed backdrop is drawn once the provider's portal exists, so it is not in the server's HTML: it
+appears a render or two after hydration. An inline one is rendered on the server as before.
+
+A fixed backdrop and the popovers are drawn at the same layer in the same portal, so whichever
+opened last is on top: a Backdrop opened while a Popover, Menu or Tooltip is open dims it, as a
+Dialog opened then does, and a popover opened while the backdrop is up is drawn above it. Before
+the backdrop was portalled it was drawn in the page, under every popover. A tour's step card
+(TourStep) sits a layer above its own backdrop.
 
 <Canvas>
   <Story of={BackdropStories.Default} />
@@ -16,28 +45,79 @@ Use `visible` to toggle it; dialog semantics, focus management and dismissal bel
 
 <Controls />
 
+## Target
+
+A tour dims the page and lights the one control its step points at. Give `target` that control:
+an element, a ref to one, a virtual element (anything with `getBoundingClientRect()`), a rect in
+the viewport's coordinates, or a list of them lit as the one box round them all.
+
+- The dim covers everything but the cut-out, which is padded by `targetPadding` (layout.spacing.100,
+  8, by default) and rounded by `targetRadius` (radius.control, 16), and ringed 2px outside it in
+  the focus colour. In forced colours the ring is a border in the system's Highlight.
+- Pointer events pass through the cut-out, so the control can be pressed; the dim catches them
+  everywhere else. The backdrop's own children, a step card, are never clipped by the cut-out and
+  take the pointer over it too.
+- The control is never moved or re-stacked: it stays where it is in the DOM and in its own
+  stacking context, and nothing changes its z-index or style.
+- The cut-out follows it as it resizes, as anything that scrolls it scrolls and as the window
+  resizes, and, while it is lit, every frame: a control pushed by layout above it, or moved by a
+  transform (a sheet still sliding in), is followed too, and a virtual element is read again each
+  frame. It writes only when the cut-out moves. A ref is read every frame while the backdrop is
+  open, so a control that comes later in the tree is lit once it is there.
+- When the tour moves on to another control, the cut-out glides there over the standard duration,
+  from where it was; under reduced motion it moves at once. A rect or virtual element that moves,
+  a map point as the map moves, is followed, never glided to.
+- A 0 by 0 virtual element or rect, a point on a map, is lit as a point: the cut-out is the
+  padding round it, rounded to a circle.
+- With no target, or one that is not there (a ref to nothing, an element with no box), the whole
+  page is dimmed, as without `target`.
+
+Nothing in the dim is focusable, and the ring is hidden from assistive technology: saying which
+step this is, and what it lights, is the step card's job.
+
+<Canvas>
+  <Story of={BackdropStories.Target} />
+</Canvas>
+
+<Canvas>
+  <Story of={BackdropStories.TargetList} />
+</Canvas>
+
+<Canvas>
+  <Story of={BackdropStories.MovingTarget} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>
 
 <PlatformSnippets
     react={`
-import { Backdrop } from "@kozmos-ds/react";
+import { Backdrop, Button } from "@kozmos-ds/react";
+import { useRef } from "react";
+
 export function Example() {
+  const update = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <Backdrop />
+      <Button ref={update}>Update</Button>
+      <Backdrop target={update} />
     </>
   );
 }
     `}
     vue={`
 <script setup>
-import { KozmosBackdrop } from "@kozmos-ds/vue"
+import { ref } from "vue"
+import { KozmosBackdrop, KozmosButton } from "@kozmos-ds/vue"
+
+// A template ref: the harness lights the component's element.
+const update = ref(null)
 </script>
 
 <template>
-  <KozmosBackdrop />
+  <KozmosButton ref="update">Update</KozmosButton>
+  <KozmosBackdrop :target="update" />
 </template>
     `}
     swift={`

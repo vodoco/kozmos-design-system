@@ -47,6 +47,8 @@ import {
   Timeline,
   Tooltip,
   Popover,
+  PopoverAnchor,
+  PopoverContent,
   Accordion,
   Separator,
   MapView,
@@ -107,6 +109,8 @@ import {
   RoutePreviewPanel,
 } from "@kozmos-ds/react";
 
+import { toReactTarget } from "./targets";
+
 // Core Translation Engine
 export * from "./react-adapter";
 
@@ -143,6 +147,15 @@ const AlertAdapter = ({
       ? React.createElement(AlertDescription, null, description)
       : null,
   );
+
+// Backdrop's target may be a template ref on a component, or a ref() in a
+// list: React is handed the element each names (GAP-189).
+const BackdropAdapter = ({ target, ...props }: any) =>
+  React.createElement(Backdrop, {
+    ...props,
+    target: target === undefined ? undefined : toReactTarget(target),
+  });
+BackdropAdapter.displayName = "Backdrop";
 
 const CheckboxAdapter = ({
   modelValue,
@@ -199,6 +212,69 @@ const WayfindingInputRowAdapter = ({
     },
   });
 
+// GAP-190: a popover the product opens beside an element or rect it does not
+// own. One part, not a PopoverAnchor of its own: every wrapper mounts its own
+// React root, and Radix's anchor must share its Popover's. `anchor` is an
+// element, a Vue component (a template ref on KozmosButton: its element), or
+// anything with a getBoundingClientRect(); the rest go to PopoverContent,
+// v-model:open to `open` and `onOpenChange`. Focus is React's: a close that
+// loses it gives it back to what had it, else to an element anchor.
+type Rect = { getBoundingClientRect(): DOMRect };
+
+/** The element or rect `anchor` names, or null while it has none yet. */
+function resolveAnchor(anchor: unknown): Element | Rect | null {
+  let node: unknown =
+    anchor && typeof anchor === "object" && "$el" in anchor
+      ? (anchor as { $el: unknown }).$el
+      : anchor;
+  // A wrapper's own box draws nothing (display: contents): its element is
+  // the first one inside it, once React has drawn it.
+  while (
+    node instanceof Element &&
+    node.ownerDocument.defaultView?.getComputedStyle(node).display ===
+      "contents"
+  ) {
+    node = node.firstElementChild;
+  }
+  if (node instanceof Element) return node;
+  return node && typeof (node as Rect).getBoundingClientRect === "function"
+    ? (node as Rect)
+    : null;
+}
+
+const AnchoredPopoverAdapter = ({
+  anchor,
+  open,
+  defaultOpen,
+  onOpenChange,
+  modal,
+  children,
+  ...contentProps
+}: any) => {
+  const [, redraw] = React.useReducer((count: number) => count + 1, 0);
+  const resolved = resolveAnchor(anchor);
+  // A component's element arrives when its own React root draws it: watch
+  // its box until then.
+  const box =
+    anchor && typeof anchor === "object" && "$el" in anchor
+      ? (anchor as { $el: unknown }).$el
+      : null;
+  React.useEffect(() => {
+    if (!(box instanceof Element)) return undefined;
+    const observer = new MutationObserver(redraw);
+    observer.observe(box, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [box]);
+  const virtualRef = React.useMemo(() => ({ current: resolved }), [resolved]);
+  return React.createElement(
+    Popover,
+    { open, defaultOpen, onOpenChange, modal },
+    resolved ? React.createElement(PopoverAnchor, { virtualRef } as any) : null,
+    React.createElement(PopoverContent, contentProps, children),
+  );
+};
+AnchoredPopoverAdapter.displayName = "AnchoredPopover";
+
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
@@ -239,7 +315,12 @@ export const KozmosAlert = createVueWrapper(AlertAdapter);
 export const KozmosProgress = createVueWrapper(Progress);
 export const KozmosSpinner = createVueWrapper(Spinner);
 export const KozmosSkeleton = createVueWrapper(Skeleton);
-export const KozmosBackdrop = createVueWrapper(Backdrop);
+export const KozmosBackdrop = createVueWrapper(BackdropAdapter);
+// `target` is declared as a prop, so Vue never writes it onto the wrapper's
+// element as an attribute: it does that with every undeclared attribute, and
+// a component instance cannot be written as one ("Cannot convert object to
+// primitive value"). The wrapper hands its props to React with its attrs.
+Object.assign(KozmosBackdrop, { props: { target: null } });
 export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
@@ -248,6 +329,12 @@ export const KozmosTree = createVueWrapper(Tree);
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
+// Its attrs are React's alone: a component given as `anchor` cannot be set
+// as an attribute on the wrapper's own box, where Vue would put it.
+export const KozmosAnchoredPopover = Object.assign(
+  createVueWrapper(AnchoredPopoverAdapter),
+  { inheritAttrs: false },
+);
 export const KozmosAccordion = createVueWrapper(Accordion);
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);
