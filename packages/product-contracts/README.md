@@ -60,8 +60,10 @@ card's, in English until a product passes its own.
 live map reports (GAP-175), for a product to name them, offer the site's other
 buildings and draw the building's floors. A building's `floors` are
 `FloorPresentation`s, top floor first, each once: FloorSelector takes them as
-they are. SwiftUI and Compose have the same shapes, `KozmosBuildingPresentation`
-and `KozmosSitePresentation`.
+they are. `defaultFloorId` is the level to start on, Pointr's default for the
+building, when the venue's data marks one; without it, start on the ground
+level, which only the product can name. SwiftUI and Compose have the same
+shapes, `KozmosBuildingPresentation` and `KozmosSitePresentation`.
 
 ```ts
 import type {
@@ -79,6 +81,8 @@ export const terminal: BuildingPresentation = {
     { id: "3", label: "Departures", shortLabel: "3" },
     { id: "2", label: "Arrivals", shortLabel: "2" },
   ],
+  // Pointr's default level, the one to start on; left out when there is none.
+  defaultFloorId: "2",
 };
 
 export const airport: SitePresentation = {

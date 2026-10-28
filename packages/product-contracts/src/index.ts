@@ -474,6 +474,13 @@ export interface BuildingPresentation {
    * floors FloorSelector takes, in the order it draws them.
    */
   floors: readonly FloorPresentation[];
+  /**
+   * The level a product starts on, by its `id` in `floors`: Pointr's default
+   * level for the building, when the venue's data marks one (decision 141).
+   * Absent when it marks none: start on the ground level then, which only
+   * the product can name (FloorSelector's "Which level to start on").
+   */
+  defaultFloorId?: string;
 }
 
 /**

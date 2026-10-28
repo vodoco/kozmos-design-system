@@ -155,7 +155,8 @@ export const CollapsibleOpenRightToLeft: Story = {
 
 /**
  * The building the live map reports, a `BuildingPresentation` (GAP-175):
- * its floors, top first, handed to FloorSelector as they are.
+ * its floors, top first, handed to FloorSelector as they are, starting on
+ * its default level (decision 141), else the ground level.
  */
 const terminal: BuildingPresentation = {
   id: "t2",
@@ -167,8 +168,12 @@ const terminal: BuildingPresentation = {
     { id: "0", label: "Ground transport", shortLabel: "0" },
     { id: "-1", label: "Car park", shortLabel: "P" },
   ],
+  defaultFloorId: "2",
 };
 
 export const FromABuilding: Story = {
-  args: { floors: terminal.floors, selectedFloor: "2" },
+  args: {
+    floors: terminal.floors,
+    selectedFloor: terminal.defaultFloorId ?? "0",
+  },
 };

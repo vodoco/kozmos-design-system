@@ -4,8 +4,10 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.docsnippets.BuildingFloors
+import com.kozmos.docsnippets.startFloor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +40,25 @@ class KozmosBuildingPresentationTest {
         assertEquals("", KozmosBuildingPresentation("b", "", "s", emptyList()).label)
     }
 
+    /**
+     * The level to start on (decision 141): Pointr's default, by its id in
+     * `floors`, which a building may leave out; the docs' `startFloor` falls
+     * back to the ground level the product names.
+     */
+    @Test
+    fun aBuildingNamesTheLevelToStartOn() {
+        val marked = terminal.copy(defaultFloorId = "-1")
+        assertEquals("-1", marked.defaultFloorId)
+        assertTrue(marked.floors.any { it.id == marked.defaultFloorId })
+        // Left out, there is none.
+        assertNull(terminal.defaultFloorId)
+        assertNull(KozmosBuildingPresentation("b", "", "s", emptyList()).defaultFloorId)
+        // It is part of the value: a building with a default is another building.
+        assertNotEquals(terminal, marked)
+        assertEquals("-1", startFloor(marked, ground = "0"))
+        assertEquals("0", startFloor(terminal, ground = "0"))
+    }
+
     @Test
     fun aSiteCarriesItsBuildings() {
         val annex = KozmosBuildingPresentation(id = "t1", label = "Terminal 1", siteId = "airport", floors = emptyList())
@@ -57,7 +78,9 @@ class KozmosBuildingPresentationTest {
     fun theDocsExampleDrawsTheBuildingsFloorsTopFirst() {
         val chosen = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            KozmosMaterialTheme { BuildingFloors(terminal, selectedFloor = "2", onFloorSelect = { chosen += it }) }
+            // Started where the docs start: the building's default, the second floor.
+            val start = startFloor(terminal.copy(defaultFloorId = "2"), ground = "0")
+            KozmosMaterialTheme { BuildingFloors(terminal, selectedFloor = start, onFloorSelect = { chosen += it }) }
         }
         val levels = tree.names().filter { name -> floors.any { name.startsWith(it.label) } }
         assertEquals(listOf("Departures", "Arrivals", "Ground transport", "Car park"), levels)

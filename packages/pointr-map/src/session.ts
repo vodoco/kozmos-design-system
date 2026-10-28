@@ -613,11 +613,17 @@ export class PointrMapSession {
     this.applyPadding();
     this.events.status("ready");
     this.events.ready(map);
-    // Events emitted while the view was being found are read back here.
+    // Events emitted while the view was being found are read back here: from
+    // the map view controller's site and building, the venue's data as it
+    // loaded, whose levels keep the mark of the default level; the widget's
+    // getters give the SDK's Level instances, which have lost it (10.13.0).
     const widget = this.widget;
     if (!widget) return;
-    this.onSite(toSite(widget.getCurrentSite()));
-    this.onBuilding(toBuilding(widget.getCurrentBuilding()));
+    const loaded = widget.getUiController()?.getMapViewController();
+    this.onSite(toSite(loaded?.currentSite ?? widget.getCurrentSite()));
+    this.onBuilding(
+      toBuilding(loaded?.currentBuilding ?? widget.getCurrentBuilding()),
+    );
     const level = widget.getCurrentLevel();
     if (level) this.onLevel(level.levelIndex);
   }

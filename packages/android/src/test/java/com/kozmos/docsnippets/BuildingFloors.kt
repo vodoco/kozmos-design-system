@@ -8,6 +8,11 @@ import androidx.compose.runtime.Composable
 import com.kozmos.components.floorselector.KozmosFloorSelector
 import com.kozmos.contracts.KozmosBuildingPresentation
 
+// The level to start on: Pointr's default for the building, else the ground
+// level, which only the product can name.
+fun startFloor(building: KozmosBuildingPresentation, ground: String): String =
+    building.defaultFloorId ?: ground
+
 // The building the map reports: its floors, top first, as the selector draws them.
 @Composable
 fun BuildingFloors(

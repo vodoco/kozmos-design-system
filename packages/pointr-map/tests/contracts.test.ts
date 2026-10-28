@@ -39,4 +39,16 @@ describe("the building and the site are the contracts' (GAP-175)", () => {
       [floor: FloorPresentation, building?: BuildingPresentation]
     >();
   });
+
+  it("names the level to start on, which a building may leave out (decision 141)", () => {
+    expectTypeOf<BuildingPresentation>()
+      .toHaveProperty("defaultFloorId")
+      .toEqualTypeOf<string | undefined>();
+    expectTypeOf<{
+      id: string;
+      label: string;
+      siteId: string;
+      floors: readonly FloorPresentation[];
+    }>().toMatchTypeOf<BuildingPresentation>();
+  });
 });

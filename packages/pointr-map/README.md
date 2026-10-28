@@ -202,7 +202,11 @@ pnpm --filter @kozmos-ds/pointr-map integrity:check     # fails on a hash the CD
 - **GAP-175**: the building and the site the map reports are the contracts' own
   `BuildingPresentation` and `SitePresentation` (`@kozmos-ds/product-contracts`), the shapes SwiftUI
   and Compose have too: a building's `label` is the Pointr Cloud's title, empty when it has none, and
-  its `floors` are its levels top floor first, each once. The package's own
+  its `floors` are its levels top floor first, each once. Its `defaultFloorId` is the level the
+  venue's data marks as the building's default (`properties.isDefault` on the level, where 10.13.0's
+  SDK starts a building), read from the data as it loaded, and left out when none is marked
+  (decision 141): the SDK's own Level instances, which `getCurrentBuilding()` returns, drop the mark.
+  The package's own
   `PointrBuildingPresentation` and `PointrSitePresentation` are gone.
 
 ## Not done yet

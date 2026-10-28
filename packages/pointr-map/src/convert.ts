@@ -75,21 +75,39 @@ export function toFloors(
 }
 
 /**
+ * The floor of the level the venue's data marks as the building's default
+ * (`properties.isDefault`), found as 10.13.0's
+ * `PointrHelper.findDefaultLevelToSet` finds it: the first level marked.
+ * Undefined when none is marked, or the marked one has no index: a product
+ * starts on the ground level then (decision 141).
+ */
+function defaultFloorId(
+  levels: readonly SdkLevel[] | undefined,
+): string | undefined {
+  const marked = levels?.find((level) => Boolean(level?.properties?.isDefault));
+  return toFloor(marked)?.id;
+}
+
+/**
  * A building as the contracts' `BuildingPresentation` (GAP-175): its label
  * the Pointr Cloud's title, empty when it has none; its floors top floor
- * first (decision 38). Its `siteId` is the one its data names, and empty
- * when it names none; `toSite` gives its buildings the site's own.
+ * first (decision 38); its `defaultFloorId` the level the venue's data marks
+ * as its default, left out when none is marked (decision 141). Its `siteId`
+ * is the one its data names, and empty when it names none; `toSite` gives
+ * its buildings the site's own.
  */
 export function toBuilding(
   building: SdkBuilding | undefined,
 ): BuildingPresentation | undefined {
   const id = identifier(building?.buildingInternalIdentifier);
   if (!building || !id) return undefined;
+  const start = defaultFloorId(building.levels);
   return {
     id,
     label: words(building.buildingTitle) ?? "",
     siteId: identifier(building.siteInternalIdentifier) ?? "",
     floors: toFloors(building.levels),
+    ...(start === undefined ? {} : { defaultFloorId: start }),
   };
 }
 

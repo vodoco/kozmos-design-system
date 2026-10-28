@@ -532,7 +532,15 @@ data class KozmosBuildingPresentation(
      * The building's levels, top floor first (decision 38), each once: the
      * floors the floor selector takes, in the order it draws them.
      */
-    val floors: List<KozmosFloorPresentation>
+    val floors: List<KozmosFloorPresentation>,
+    /**
+     * The level a product starts on, by its `id` in [floors]: Pointr's
+     * default level for the building, when the venue's data marks one
+     * (decision 141). `null` when it marks none: start on the ground level
+     * then, which only the product can name (the floor selector's "Which
+     * level to start on").
+     */
+    val defaultFloorId: String? = null
 )
 
 /**

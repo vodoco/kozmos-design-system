@@ -32,6 +32,22 @@ final class KozmosBuildingPresentationTests: XCTestCase {
     XCTAssertEqual(KozmosBuildingPresentation(id: "b", label: "", siteId: "s", floors: []).label, "")
   }
 
+  /// The level to start on (decision 141): Pointr's default, by its id in
+  /// `floors`, which a building may leave out; the docs' `startFloor` falls
+  /// back to the ground level the product names.
+  func testABuildingNamesTheLevelToStartOn() {
+    let marked = KozmosBuildingPresentation(
+      id: "t2", label: "Terminal 2", siteId: "airport", floors: floors, defaultFloorId: "-1")
+    XCTAssertEqual(marked.defaultFloorId, "-1")
+    XCTAssertTrue(marked.floors.contains { $0.id == marked.defaultFloorId })
+    // Left out, there is none.
+    XCTAssertNil(terminal.defaultFloorId)
+    // It is part of the value: a building with a default is another building.
+    XCTAssertNotEqual(marked, terminal)
+    XCTAssertEqual(startFloor(of: marked, ground: "0"), "-1")
+    XCTAssertEqual(startFloor(of: terminal, ground: "0"), "0")
+  }
+
   func testASiteCarriesItsBuildings() {
     let annex = KozmosBuildingPresentation(id: "t1", label: "Terminal 1", siteId: "airport", floors: [])
     let site = KozmosSitePresentation(id: "airport", label: "Airport", buildings: [terminal, annex])
@@ -80,10 +96,15 @@ final class KozmosBuildingPresentationTests: XCTestCase {
       set(1)
       defer { set(old) }
       let chosen = Chosen()
+      // Started where the docs start: the building's default, the second floor.
+      let marked = KozmosBuildingPresentation(
+        id: "t2", label: "Terminal 2", siteId: "airport", floors: floors, defaultFloorId: "2")
+      chosen.current = startFloor(of: marked, ground: "0")
+      XCTAssertEqual(chosen.current, "2")
       let selection = Binding(get: { chosen.current }, set: { chosen.current = $0; chosen.floors.append($0) })
       let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
       window.rootViewController = UIHostingController(
-        rootView: BuildingFloors(building: terminal, selectedFloor: selection))
+        rootView: BuildingFloors(building: marked, selectedFloor: selection))
       window.makeKeyAndVisible()
       defer { window.isHidden = true }
       for _ in 0..<10 { try? await Task.sleep(nanoseconds: 30_000_000) }
