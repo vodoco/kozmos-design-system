@@ -156,13 +156,15 @@ export interface TourStepProps extends Omit<
 // The arrow's tip from what it points at, past Backdrop's cut-out: the
 // cut-out's padding (Backdrop's default, layout.spacing.100), the 2 of its
 // focus ring, and 3 between the ring and the tip, as the MAP-64 boards
-// draw the arrow beside their ring (09, 22 and 43, measured). Radix sets the
-// card the arrow's 12 further out, 15 past the ring.
+// draw the arrow beside their ring (09, 22 and 43, measured). PopoverArrow
+// overlaps the card by 1, over its border (site GAP-74), so Radix, which
+// sets the card the arrow's 12 past its offset, sets it 14 past the ring.
 // scripts/check-tour-step.mjs measures the 3 against the drawn ring.
 const CUTOUT_PADDING = 8;
 const CUTOUT_RING = 2;
 const ARROW_GAP = 3;
-const TARGET_OFFSET = CUTOUT_PADDING + CUTOUT_RING + ARROW_GAP;
+const ARROW_OVERLAP = 1;
+const TARGET_OFFSET = CUTOUT_PADDING + CUTOUT_RING + ARROW_GAP - ARROW_OVERLAP;
 // The arrow: 24 across and 12 deep, as the boards draw it.
 const ARROW_WIDTH = 24;
 const ARROW_HEIGHT = 12;

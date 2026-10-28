@@ -2140,7 +2140,7 @@ section("TourStep (GAP-188, decision 136)");
           arrow.width === 24 &&
           arrow.height === 12 &&
           arrow.x === (width - 24) / 2 &&
-          arrow.y === -12 &&
+          arrow.y === -11 &&
           arrowFill &&
           boundVariableName(fill(arrowFill)) === "Surface/0" &&
           arrowFill.effects.length === 1 &&
@@ -2149,7 +2149,7 @@ section("TourStep (GAP-188, decision 136)");
           arrowFill.effects[0].boundVariables &&
           arrowFill.effects[0].boundVariables.color.id ===
             tokens.variableByName.get("Border/bevel/bottom").id,
-        `${content}: a 24 by 12 arrow above the card's middle, Surface/0, a 0 1 1 shadow in the bevel's colour`,
+        `${content}: a 24 by 12 arrow above the card's middle, 1 over its edge, Surface/0, a 0 1 1 shadow in the bevel's colour`,
       );
       const header = named(component, "Header");
       const eyebrow = named(component, "Eyebrow");

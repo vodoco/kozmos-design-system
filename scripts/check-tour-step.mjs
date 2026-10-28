@@ -26,8 +26,9 @@
  *   The design's heights at compact density: a 32 header row, a 16 progress
  *   row and a 32 footer.
  * - The arrow: 24 by 12 in the card's fill, its tip 3 past the cut-out's ring
- *   and the card 15 past it on every side, as the boards draw it (09, 22,
- *   43); never clipped, as the card does not scroll; none with no target.
+ *   on every side, as the boards draw it (09, 22, 43), and 1 into the card
+ *   over its border (PopoverArrow, site GAP-74), so the card is 14 past the
+ *   ring; never clipped, as the card does not scroll; none with no target.
  * - Where it sits: on each side of the target, centred on it; beside a rect
  *   and a virtual element; in the middle of the window with no target or a
  *   ref to nothing; following the target as it moves; never wider than a
@@ -70,12 +71,17 @@ let passed = 0;
 
 const VIEWPORT = { width: 1000, height: 800 };
 // Backdrop pads the cut-out 8 and rings it 2 outside. The design's arrow tip
-// is 3 past its ring, and its 12 deep arrow sets the card 15 past it
-// (MAP-64 boards 09, 22 and 43, measured).
+// is 3 past its ring (MAP-64 boards 09, 22 and 43, measured); the 12 deep
+// arrow overlaps the card by 1, over its border (PopoverArrow, site GAP-74),
+// so the card is 14 past the ring.
 const ARROW_GAP = 3;
 const ARROW = { width: 24, height: 12 };
-const RING_GAP = ARROW_GAP + ARROW.height;
+const ARROW_OVERLAP = 1;
+const RING_GAP = ARROW_GAP + ARROW.height - ARROW_OVERLAP;
 const TOLERANCE = 1;
+// Radix sets the card on whole pixels: a card of a fractional height above
+// its target lands within half a pixel.
+const GAP_TOLERANCE = 0.5;
 
 async function scenario(name, options, run) {
   const {
@@ -182,7 +188,7 @@ function assertBeside(at, side, label) {
       ? card.left + card.width / 2 - (ring.left + ring.width / 2)
       : card.top + card.height / 2 - (ring.top + ring.height / 2);
   assert.ok(
-    Math.abs(gap - RING_GAP) <= TOLERANCE,
+    Math.abs(gap - RING_GAP) <= GAP_TOLERANCE,
     `${label}: the card ${RING_GAP} past the ring on the ${side}, read ${gap.toFixed(2)} (${JSON.stringify(at)})`,
   );
   assert.ok(
@@ -211,8 +217,9 @@ function assertBeside(at, side, label) {
     left: arrow.left - card.right,
   }[side];
   assert.ok(
-    Math.abs(tip - ARROW_GAP) <= TOLERANCE && Math.abs(base) <= TOLERANCE,
-    `${label}: the arrow's tip ${ARROW_GAP} past the ring and its base on the card, read ${tip.toFixed(2)} and ${base.toFixed(2)}`,
+    Math.abs(tip - ARROW_GAP) <= GAP_TOLERANCE &&
+      Math.abs(base + ARROW_OVERLAP) <= GAP_TOLERANCE,
+    `${label}: the arrow's tip ${ARROW_GAP} past the ring and its base ${ARROW_OVERLAP} into the card, read ${tip.toFixed(2)} and ${(-base).toFixed(2)}`,
   );
   const arrowOff = across
     ? arrow.left + arrow.width / 2 - (ring.left + ring.width / 2)
@@ -828,7 +835,7 @@ await scenario(
 
 for (const side of ["bottom", "top", "right", "left"]) {
   await scenario(
-    `beside the target on the ${side}: the arrow's tip 3 past the cut-out's ring, the card 15`,
+    `beside the target on the ${side}: the arrow's tip 3 past the cut-out's ring, the card 14`,
     { mount: { side } },
     async (page) => {
       const at = await placement(page);

@@ -88,8 +88,9 @@ width prop.
 
 `target` is an element, a ref to one, a virtual element (anything with `getBoundingClientRect()`,
 such as a point on a map) or a rect in the viewport's coordinates. The card sits on its `side`
-(`"bottom"` by default), at `align` along it (`"center"`), its 24 by 12 arrow 3 past the cut-out's
-ring and the card 15 past it, as the design draws them. It flips to the other side where there is
+(`"bottom"` by default), at `align` along it (`"center"`), its 24 by 12 arrow's tip 3 past the
+cut-out's ring, as the design draws it. The arrow covers the card's edge by 1, as every
+PopoverArrow does, so the card is 14 past the ring. It flips to the other side where there is
 no room, and keeps 16 from the window's edges. It is read every frame, as Backdrop reads its
 target, so the card and the cut-out move together, whatever moves the target, and a ref filled
 after the step opens is found. To light a whole container round a control, pass the container as

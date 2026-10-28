@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "b9d531d44508";
+const PLUGIN_BUILD = "c078fbbd7cb4";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -58296,7 +58296,8 @@ async function updatePopoverVariant(
 // bar of the secondary fill,
 // the theme ink to the step, with the position beside it. Every button is
 // Size Small. An Arrow, 24 by 12 in Surface/0 with a 1 drop shadow, points up
-// from the card's middle at the target, as the card sits under it.
+// from the card's middle at the target, over the card's edge by 1, as the
+// card sits under it.
 // Content is the design's states:
 // - First step: 1 of 4, Next.
 // - Step: 2 of 4, Back and Next.
@@ -58833,7 +58834,8 @@ async function updateTourStepVariant(
   component.appendChild(arrow);
   setNodePropertyIfSupported(arrow, "layoutPositioning", "ABSOLUTE");
   arrow.x = (spec.width - TOUR_STEP_ARROW.width) / 2;
-  arrow.y = -TOUR_STEP_ARROW.height;
+  // 1 over the card's edge, as Tooltip's tip and the code's arrow are.
+  arrow.y = -TOUR_STEP_ARROW.height + 1;
   arrow.constraints = { horizontal: "CENTER", vertical: "MIN" };
 
   // The tour's name and position, and Close at the end, on one row.
@@ -59106,7 +59108,7 @@ function tourStepComponentConfig() {
       "Tour Text maps to tourLabel; Position Text is the position React writes from step and stepCount with positionLabel, in the eyebrow and beside the progress bar.",
       "Title Text maps to title, Body Text to body and Instruction Text to instruction; the Instruction boolean shows it, and the Arrow boolean the arrow.",
       "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, exposed; Close is IconButton Ghost with x-close.",
-      "The card is drawn without its target: in code its arrow's tip is 3 past Backdrop's cut-out ring.",
+      "The card is drawn without its target: in code its arrow's tip is 3 past Backdrop's cut-out ring, and the card 14.",
     ],
   };
 }
