@@ -10,8 +10,9 @@ import {
 } from "@kozmos-ds/react";
 
 /* Accordion opening and closing: scripts/check-accordion-motion.mjs reads
-   the animation its content runs, in a plain provider and in one whose
-   design config asks for reduced motion. */
+   the animation its content runs and its chevron's turn, at the motion
+   tokens' timing, slowed through the token, and in a provider whose design
+   config asks for reduced motion. */
 
 function Item({ id }: { id: string }) {
   return (
@@ -31,12 +32,16 @@ function Fixture() {
   return (
     <div style={{ display: "grid", gap: 24, padding: 16, width: 480 }}>
       <ThemeProvider theme="light">
-        {/* Ten times slower than the tokens' 200ms, so a read lands while
-            the content is still moving. */}
+        {/* At the tokens' own timing, to read the duration and easing it
+            runs on. */}
+        <Item id="token" />
+        {/* The standard duration token ten times over, 2800ms, so a read
+            lands while the content is still moving, and the duration is
+            seen to follow the token. */}
         <div
           style={
             {
-              "--semantics-motion-duration-scale": 10,
+              "--semantics-motion-duration-standard": "2800ms",
             } as React.CSSProperties
           }
         >

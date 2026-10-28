@@ -296,8 +296,10 @@ module.exports = {
       // Accordion opens and closes over its content's height, which Radix
       // measures into --radix-accordion-content-height. Its content carried
       // animate-accordion-down and -up from the start, and with no keyframes
-      // here they compiled to nothing: it opened and closed at once. 200ms,
-      // as its chevron turns; reduced motion stops it in owned CSS
+      // here they compiled to nothing: it opened and closed at once. It runs
+      // on the standard motion tokens, as the owned sheet and reveal motion
+      // do, and its chevron turns on the same two (.kozmos-accordion-chevron),
+      // so they move together; reduced motion stops both in owned CSS
       // (.kozmos-accordion-content).
       keyframes: {
         "accordion-down": {
@@ -311,9 +313,9 @@ module.exports = {
       },
       animation: {
         "accordion-down":
-          "accordion-down calc(200ms * var(--semantics-motion-duration-scale, 1)) ease-out",
+          "accordion-down var(--semantics-motion-duration-standard) var(--semantics-motion-easing-standard)",
         "accordion-up":
-          "accordion-up calc(200ms * var(--semantics-motion-duration-scale, 1)) ease-out",
+          "accordion-up var(--semantics-motion-duration-standard) var(--semantics-motion-easing-standard)",
       },
       width: {
         ...DENSITY_SIZES,
