@@ -12,6 +12,25 @@ npm install @kozmos-ds/react react react-dom
 React 18 and 19 are both supported. `@kozmos-ds/tokens`, `@kozmos-ds/icons` and
 `@kozmos-ds/product-contracts` are installed with it.
 
+## Development and production builds
+
+Your bundler, or the ESM CDN that serves the package, must replace
+`process.env.NODE_ENV`, as React itself needs. Vite, webpack, esbuild and
+Rollup with `@rollup/plugin-replace` all do, and esm.sh and jsDelivr's `+esm`
+do when they serve a package.
+
+- **Development:** every component carries its name (`displayName`), so React
+  DevTools and React's warnings show `Button` or `AdaptiveMapShell`, as before.
+- **Production:** components carry no names. DevTools shows `ForwardRef` or
+  `Anonymous` there. In exchange, your bundler leaves out every component you
+  do not use, even one that shares a module with something you do: importing
+  `DEFAULT_PANEL_DETENTS` no longer brings in the whole map shell.
+- **No bundler:** a page that loads the files in `dist` unbundled, with nothing
+  to replace `process.env.NODE_ENV`, throws `process is not defined` when it
+  imports them. In 0.14.0 the same page threw later, when a `Backdrop` first
+  rendered or a part reported an event with no `AnalyticsProvider` around it,
+  since both already read the variable.
+
 ## Set up
 
 Import the stylesheet once and put a `ThemeProvider` around each module (or the whole app):

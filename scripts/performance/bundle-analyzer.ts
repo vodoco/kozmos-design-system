@@ -4,6 +4,7 @@ import path from "path";
 import { execSync } from "child_process";
 import { createRequire } from "module";
 import { gzipSync } from "zlib";
+import { topLevelRetainers } from "./top-level-retainers.mjs";
 
 // What an app pays for @kozmos-ds/react. The ES build is one file per module, and package.json
 // declares the JavaScript free of side effects, so an app's bundler keeps only the modules behind
@@ -112,6 +113,9 @@ const requireFromVite = createRequire(
 );
 const { rollup } = requireFromVite("rollup") as RollupApi;
 const esbuild = requireFromVite("esbuild") as EsbuildApi;
+const { parseAst } = requireFromVite("rollup/parseAst") as {
+  parseAst: (code: string) => unknown;
+};
 
 const kb = (bytes: number) => bytes / 1024;
 const fail: string[] = [];
@@ -190,6 +194,18 @@ async function main() {
   if (lowered.length) {
     fail.push(
       `${lowered.length} modules in dist/esm write optional chaining out (a == null ? void 0 : a.b), as for a browser older than package.json declares: build.target in packages/react/vite.config.mts (${lowered.slice(0, 3).join(", ")})`,
+    );
+  }
+
+  // Each part's name is set in development only, and the calls that make a part
+  // are marked pure (packages/react/vite-plugins/shakable-components.mjs), so an
+  // app's production build leaves out the parts it does not use. Before, a
+  // top-level `X.displayName = "X"` kept every part of a module once anything
+  // from it was imported: `DEFAULT_PANEL_DETENTS`, a constant, cost 8 KB.
+  const retainers = topLevelRetainers(ESM_DIR, parseAst);
+  if (retainers.length) {
+    fail.push(
+      `${retainers.length} top-level statements in dist/esm keep a component that nothing imports (${retainers.slice(0, 3).join("; ")}): see packages/react/vite-plugins/shakable-components.mjs`,
     );
   }
 

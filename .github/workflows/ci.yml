@@ -148,6 +148,13 @@ jobs:
       - name: Verify Component Contracts
         run: pnpm components:contract:check
 
+      # Names are a development aid (decision 128): each part carries its
+      # source's name in development, unbundled and bundled, and none in a
+      # production bundle, where an app's bundler drops the gated assignment
+      # and with it any part nothing uses.
+      - name: Verify Component Names
+        run: pnpm components:names:check
+
       # The three product-contract files are one contract. Nothing compared
       # them until 2026-09-25, and the drift that found was ten fields and
       # types the web had and neither native platform did.
