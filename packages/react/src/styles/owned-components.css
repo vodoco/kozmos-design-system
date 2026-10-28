@@ -83,6 +83,83 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
+     600, 900 and 1000), its label centred in the hole and kept inside the
+     square the hole holds, or beside the dial at the inline end. The arc is
+     the tone's emotion text colour, themed by default, theme 600 as the bar
+     is: every tone reads 4.8:1 or more on the background 100 track, light
+     and dark. */
+  .kozmos-progress-ring {
+    @apply text-xs;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    flex-shrink: 0;
+    vertical-align: middle;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-progress-ring-dial {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: calc(var(--primitives-layout-spacing-900) * 1px);
+    height: calc(var(--primitives-layout-spacing-900) * 1px);
+  }
+  .kozmos-progress-ring[data-size="sm"] > .kozmos-progress-ring-dial {
+    width: calc(var(--primitives-layout-spacing-600) * 1px);
+    height: calc(var(--primitives-layout-spacing-600) * 1px);
+  }
+  .kozmos-progress-ring[data-size="lg"] > .kozmos-progress-ring-dial {
+    width: calc(var(--primitives-layout-spacing-1000) * 1px);
+    height: calc(var(--primitives-layout-spacing-1000) * 1px);
+  }
+  .kozmos-progress-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .kozmos-progress-ring-track {
+    stroke: var(--primitives-colors-background-100);
+  }
+  .kozmos-progress-ring-arc {
+    stroke: var(
+      --kozmos-progress-ring-tone,
+      var(--semantics-emotion-themed-text)
+    );
+    transition: stroke-dasharray var(--semantics-motion-duration-standard)
+      var(--semantics-motion-easing-standard);
+  }
+  .kozmos-progress-ring-dial > .kozmos-progress-ring-label {
+    position: relative;
+    max-width: 57%;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  /* No animated sweep under reduced motion, the system's or the config's. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-ring-arc {
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-ring-arc {
+    transition: none;
+  }
+  /* The system's palette, as the bar's: the arc Highlight, the track
+     GrayText. Only the drawing opts out; the label's text is forced as any
+     text is. */
+  @media (forced-colors: active) {
+    .kozmos-progress-ring-svg {
+      forced-color-adjust: none;
+    }
+    .kozmos-progress-ring-track {
+      stroke: GrayText;
+    }
+    .kozmos-progress-ring-arc {
+      stroke: Highlight;
+    }
+  }
   .kozmos-route-track {
     position: relative;
     height: 48px;

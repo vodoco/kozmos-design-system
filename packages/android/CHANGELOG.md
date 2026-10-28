@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added
+
+- **A circular Progress, for a count out of a total (decision 131, GAP-038):** `KozmosProgress` takes `shape = KozmosProgressShape.Circular`, `size` (`KozmosProgressSize`: `Sm` 48 and 4dp, `Md` 96 and 8, `Lg` 128 and 12, the layout spacing tokens), `tone` (a `KozmosEmotion`, `Themed` by default), `labelPlacement` (`KozmosProgressLabelPlacement`, `Center` or `End`) and a `label`: MAP-64's Level Manager's levels added. `shape` is `Linear` by default, the bar as it was, and a call compiles as before. The ring is drawn on a Canvas, inside its dial: the arc is the tone's emotion text colour (`Themed` is theme 600, the bar's fill) on background 100, 4.80:1 or more for every tone in light and 5.18:1 in dark, from 12 o'clock clockwise, the same right to left; a label at the end sits beside the dial in a Row, so on its left right to left. With animations off a new value is drawn there at once; otherwise it sweeps over the standard duration. The ring is one node, its label's words merged into it wherever they are drawn, with its progress (`progressSemantics`); a `contentDescription` or `stateDescription` of yours replaces Kozmos's. `KozmosProgressRingTest` walks the drawn ring clockwise from 12 o'clock in both directions, measures its band, each tone's arc and the label beside it in both directions, reads its node and counts the frames a sweep takes; `KozmosProgressRingPaparazziTest` draws every size, the six tones and the Level Manager's ring with its label beside it, in both themes, its goldens recorded in the Linux container.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).

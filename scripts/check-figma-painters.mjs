@@ -1954,6 +1954,300 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- Progress's ring (decision 131, GAP-038) -------------------------------------
+
+// A count out of a total: Progress gains Shape (Linear, Circular), a ring's
+// Size (Small 48, Medium 96, Large 128) and its Tone (owner, 28 Oct: a status
+// ring, in Tag's emotions). The ring is a Dial holding a track and an arc,
+// each an ellipse whose arc is filled, so neither is a disc inset in another;
+// the arc is its tone's emotion text colour from 12 o'clock clockwise (Themed
+// is theme 600, the bar's own fill), the track background/100, with the label
+// in the hole and, hidden until Label Beside, the same label beside the dial.
+section("Progress's ring (decision 131, GAP-038)");
+{
+  const ready =
+    Array.isArray(plugin.PROGRESS_FORMS) &&
+    Array.isArray(plugin.PROGRESS_TONES) &&
+    typeof plugin.updateProgressRingVariant === "function";
+  ok(ready, "Progress has Shape, Size and Tone axes and a ring painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const TONES = [
+      "Themed",
+      "Neutral",
+      "Success",
+      "Danger",
+      "Informative",
+      "Alert",
+    ];
+    const axes = plugin.expectedVariantAxesForComponentSetName("Progress");
+    ok(
+      JSON.stringify(axes) ===
+        JSON.stringify({
+          Shape: ["Linear", "Circular"],
+          Size: ["Small", "Medium", "Large"],
+          Tone: TONES,
+          Value: ["0", "25", "50", "75", "100"],
+        }) && plugin.PROGRESS_FORMS.length === 19,
+      `the set's axes are Shape, Size, Tone and Value, a bar and 18 rings a value (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
+    );
+    const parsed = [
+      "Value=50",
+      "Shape=Circular, Size=Large, Value=25",
+      "Shape=Circular, Size=Large, Tone=Success, Value=25",
+      "Shape=Linear, Size=Large, Value=25",
+      "Shape=Linear, Size=Medium, Tone=Danger, Value=25",
+      "Shape=Oval, Size=Medium, Value=25",
+      "Shape=Circular, Size=Medium, Tone=Warning, Value=25",
+      "Shape=Circular, Size=Medium, Value=30",
+    ].map((name) => plugin.parseProgressVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "50", second: "Linear/Medium/Themed" },
+          { value: "25", second: "Circular/Large/Themed" },
+          { value: "25", second: "Circular/Large/Success" },
+          null,
+          null,
+          null,
+          null,
+          null,
+        ]),
+      `a variant from before the axes parses as the bar, a ring from before Tone as Themed; a sized or toned bar, an unknown Shape, Tone or Value is not one (${JSON.stringify(parsed)})`,
+    );
+
+    const ring = async (value, size, tone = "Themed") =>
+      plugin.createProgressVariant({
+        value,
+        second: `Circular/${size}/${tone}`,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    const close = (a, b) => Math.abs(a - b) < 1e-9;
+    for (const [size, diameter, stroke] of [
+      ["Small", 48, 4],
+      ["Medium", 96, 8],
+      ["Large", 128, 12],
+    ]) {
+      const variant = await ring("25", size);
+      const dial = named(variant, "Dial");
+      const track = dial && named(dial, "Ring Track");
+      const arc = dial && named(dial, "Ring Arc");
+      const label = dial && named(dial, "Label");
+      const beside = (variant.children || []).find(
+        (c) => c.name === "Label Beside",
+      );
+      const inner = 1 - (2 * stroke) / diameter;
+      ok(
+        variant.name ===
+          `Shape=Circular, Size=${size}, Tone=Themed, Value=25` &&
+          variant.layoutMode === "HORIZONTAL" &&
+          variant.itemSpacing === 12 &&
+          variant.counterAxisAlignItems === "CENTER" &&
+          variant.fills.length === 0 &&
+          (variant.children || []).map((c) => c.name).join() ===
+            "Dial,Label Beside" &&
+          dial &&
+          dial.width === diameter &&
+          dial.height === diameter &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Label",
+        `${size}: a row of the ${diameter} Dial, holding the track, the arc and the label, and the label beside it, 12 apart (${variant.name}, ${variant.layoutMode}, ${(variant.children || []).map((c) => c.name).join(", ")}; ${dial && (dial.children || []).map((c) => c.name).join(", ")})`,
+      );
+      ok(
+        track &&
+          arc &&
+          track.type === "ELLIPSE" &&
+          arc.type === "ELLIPSE" &&
+          [track, arc].every(
+            (node) =>
+              node.width === diameter &&
+              node.height === diameter &&
+              node.x === 0 &&
+              node.y === 0 &&
+              node.strokes.length === 0 &&
+              close(node.arcData.innerRadius, inner),
+          ),
+        `${size}: the track and the arc are both the whole ${diameter} circle, ${stroke} thick (inner radius ${inner.toFixed(4)}), filled, not stroked or inset (${track && JSON.stringify(track.arcData)}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          close(track.arcData.startingAngle, 0) &&
+          close(track.arcData.endingAngle, 2 * Math.PI) &&
+          close(arc.arcData.startingAngle, -Math.PI / 2) &&
+          close(arc.arcData.endingAngle, 0) &&
+          arc.visible !== false,
+        `${size}: the track is the whole turn; at 25 the arc runs from 12 o'clock a quarter turn clockwise (${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          boundVariableName(track.fills[0]) === "Colors/background/100" &&
+          boundVariableName(arc.fills[0]) === "Emotion/themed/text",
+        `${size}: the track is background/100 and a Themed arc the themed emotion's text, theme 600 as the bar's fill (${track && boundVariableName(track.fills[0])}, ${arc && boundVariableName(arc.fills[0])})`,
+      );
+      const width = Math.floor((diameter - 2 * stroke) * Math.SQRT1_2);
+      ok(
+        label &&
+          label.type === "TEXT" &&
+          label.width === width &&
+          label.fontSize === 12 &&
+          label.textAlignHorizontal === "CENTER" &&
+          close(label.x, Math.round((diameter - width) / 2)) &&
+          boundVariableName(label.fills[0]) === "Colors/foreground/0" &&
+          beside &&
+          beside.type === "TEXT" &&
+          beside.fontSize === 12 &&
+          beside.textAutoResize === "WIDTH_AND_HEIGHT" &&
+          boundVariableName(beside.fills[0]) === "Colors/foreground/0",
+        `${size}: the label is 12, centred, ${width} wide, inside the square the hole holds; the one beside is 12 and hugs its words; both foreground/0 (${label && [label.width, label.fontSize, label.x, label.textAlignHorizontal].join(", ")}; ${beside && beside.textAutoResize})`,
+      );
+    }
+    for (const tone of TONES) {
+      const variant = await ring("75", "Medium", tone);
+      const arc = named(named(variant, "Dial"), "Ring Arc");
+      ok(
+        variant.name ===
+          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75` &&
+          arc &&
+          boundVariableName(arc.fills[0]) ===
+            `Emotion/${tone.toLowerCase()}/text`,
+        `${tone}: the arc is Emotion/${tone.toLowerCase()}/text (${variant.name}, ${arc && boundVariableName(arc.fills[0])})`,
+      );
+    }
+    for (const [value, end, visible] of [
+      ["0", null, false],
+      ["50", Math.PI / 2, true],
+      ["100", (3 * Math.PI) / 2, true],
+    ]) {
+      const arc = named(named(await ring(value, "Medium"), "Dial"), "Ring Arc");
+      ok(
+        arc &&
+          arc.visible === visible &&
+          (end === null || close(arc.arcData.endingAngle, end)),
+        `at ${value} the arc is ${visible ? `drawn to ${(end / Math.PI).toFixed(2)}π` : "hidden: an arc whose ends meet would be a whole ring"} (${arc && arc.visible}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+    }
+    const bar = await plugin.createProgressVariant({
+      value: "50",
+      second: "Linear/Medium/Themed",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      bar.name === "Shape=Linear, Size=Medium, Tone=Themed, Value=50" &&
+        named(bar, "Progress Track") &&
+        !named(bar, "Dial") &&
+        !named(bar, "Label"),
+      `the bar is drawn as before, named with its Shape, Size and Tone (${bar.name})`,
+    );
+
+    // Update over the set as it is in the file today: five bars, named
+    // before the axes. Each keeps its node id and is renamed the Linear,
+    // Medium, Themed bar; the 90 rings are created beside them, and the
+    // label's properties bind every ring's two labels and nothing else.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Progress");
+    const oldNames = ["0", "25", "50", "75", "100"].map((v) => `Value=${v}`);
+    const oldIds = {};
+    for (const name of oldNames) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateProgressComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 5 &&
+        updated.variantsCreated === 90 &&
+        liveSet.children.length === 95 &&
+        new Set(names).size === 95,
+      `Update keeps the set and its 5 bars, and adds 90 rings: 95 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      oldNames.every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return (
+          variant &&
+          variant.name === `Shape=Linear, Size=Medium, Tone=Themed, ${name}` &&
+          named(variant, "Progress Track")
+        );
+      }),
+      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+    );
+    const texts = (name) =>
+      liveSet.findAll((node) => node.type === "TEXT" && node.name === name);
+    const definitions = liveSet.componentPropertyDefinitions || {};
+    const key = (base, type) =>
+      Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === type,
+      );
+    const textKey = key("Label", "TEXT");
+    const showKey = key("Show Label", "BOOLEAN");
+    const besideKey = key("Label Beside", "BOOLEAN");
+    const inHole = texts("Label");
+    const besides = texts("Label Beside");
+    ok(
+      inHole.length === 90 &&
+        besides.length === 90 &&
+        textKey &&
+        showKey &&
+        besideKey &&
+        definitions[showKey].defaultValue === true &&
+        definitions[besideKey].defaultValue === false &&
+        inHole.every(
+          (label) =>
+            label.componentPropertyReferences &&
+            label.componentPropertyReferences.characters === textKey &&
+            label.componentPropertyReferences.visible === showKey,
+        ) &&
+        besides.every(
+          (label) =>
+            label.componentPropertyReferences &&
+            label.componentPropertyReferences.characters === textKey &&
+            label.componentPropertyReferences.visible === besideKey,
+        ),
+      `the 90 rings' labels share Label: the hole's shown by Show Label (on), the one beside by Label Beside (off) (${inHole.length} in the hole, ${besides.length} beside, ${textKey}, ${showKey}, ${besideKey})`,
+    );
+    const boxes = liveSet.children.map((c) => [
+      c.x,
+      c.y,
+      c.x + c.width,
+      c.y + c.height,
+      c.name,
+    ]);
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1)
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const [a, b] = [boxes[i], boxes[j]];
+        if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+          overlaps.push(`${a[4]} / ${b[4]}`);
+      }
+    ok(
+      overlaps.length === 0,
+      `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
 // GAP-188: TourStep, as React's TourStep draws it. Popover's surface 340
 // wide, 16 inside and 4 more at the top for the theme edge, sections 12
 // apart; the edge a layer of its own, out of the flow and stretched; the
@@ -5106,9 +5400,11 @@ section("Backdrop cut-out (GAP-189)");
       `its scrim is an even-odd vector in Overlay/Scrim (${scrim && scrim.type}, ${path && path.windingRule}, ${scrim && boundVariableName(scrim.fills[0])})`,
     );
     // The hole: the box round every point after the scrim's own outline.
-    const numbers = path ? path.data.split(/ (?=M)/).map((sub) =>
-      [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])),
-    ) : [];
+    const numbers = path
+      ? path.data
+          .split(/ (?=M)/)
+          .map((sub) => [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])))
+      : [];
     const holeXs = (numbers[1] || []).filter((_, i) => i % 2 === 0);
     const holeYs = (numbers[1] || []).filter((_, i) => i % 2 === 1);
     const hole = holeXs.length
@@ -5120,7 +5416,8 @@ section("Backdrop cut-out (GAP-189)");
         ]
       : null;
     ok(
-      JSON.stringify(numbers[0]) === JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
+      JSON.stringify(numbers[0]) ===
+        JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
         JSON.stringify(hole) === JSON.stringify([92, 60, 228, 120]) &&
         /^[MLCZ\d.\s-]+$/.test(path ? path.data : ""),
       `the scrim covers the variant and its hole is the control padded 8, from 92, 60 to 228, 120, in M, L, C and Z alone (${JSON.stringify(hole)})`,
@@ -7356,7 +7653,8 @@ section("GAP-192: the option lists draw their groups' labels");
     if (kept) {
       kept.characters = "Interior Asset";
       const redrawn = await draw(part.fn, part.props, component);
-      const again = (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
+      const again =
+        (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
       const text = named(again, "Group 1 Text");
       ok(
         text && text.characters === "Interior Asset",
@@ -7408,7 +7706,9 @@ section("GAP-192: the option lists draw their groups' labels");
   }
 }
 
-section("Since #397: Combobox's and MultiSelect's field actions are React's buttons");
+section(
+  "Since #397: Combobox's and MultiSelect's field actions are React's buttons",
+);
 {
   // React draws the clear and open at the field's end as buttons
   // (field-actions.ts): each as tall and wide as the field, 44 at touch (40
@@ -7441,13 +7741,55 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
   const shown = (node, field) =>
     boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
   const cases = [
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Default", status: "Default", content: "Closed" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Focus", status: "Default", content: "Open" }, ["Clear Button", "Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Disabled", status: "Default", content: "Open" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Readonly", status: "Default", content: "Open" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Empty" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Selected" }, ["Clear Button", "Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Disabled", status: "Default", content: "Selected" }, ["Open Button"]],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Default", status: "Default", content: "Closed" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Focus", status: "Default", content: "Open" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Disabled", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Readonly", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Empty" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Selected" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Disabled", status: "Default", content: "Selected" },
+      ["Open Button"],
+    ],
   ];
   for (const [part, fn, sizeToken, props, expected] of cases) {
     const label = `${part} ${props.state}/${props.content}`;
@@ -7495,7 +7837,9 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
           (button.strokes || []).length === 0,
         `${label}, ${button.name}: the icon centred, on no fill`,
       );
-      const icons = button.children.filter((child) => child.type === "INSTANCE");
+      const icons = button.children.filter(
+        (child) => child.type === "INSTANCE",
+      );
       ok(
         icons.length === 1 && icons[0].width === 16 && icons[0].height === 16,
         `${label}, ${button.name}: one 16px icon (${icons.map((icon) => `${icon.width}x${icon.height}`).join(", ")})`,
@@ -7508,7 +7852,10 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
     );
     ok(
       !field.children.some(
-        (child) => child.type === "INSTANCE" && child !== field.children[0] && /chevron|close/i.test(child.name),
+        (child) =>
+          child.type === "INSTANCE" &&
+          child !== field.children[0] &&
+          /chevron|close/i.test(child.name),
       ),
       `${label}: no bare icon left in the field's line`,
     );

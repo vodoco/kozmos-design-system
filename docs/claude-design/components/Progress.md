@@ -27,7 +27,37 @@ export function ProgressExample() {
 
 ## Progress
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<ProgressPrimitive.ProgressProps & React.RefAttributes<HTMLDivElement>, "ref">`.
+It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which extends `React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>`.
+
+- `shape`: `"linear" | "circular"`, optional, default `"linear"`.
+
+  `"linear"`, the default, is the bar. `"circular"` is a ring with an
+  optional `label` in its centre, for a count out of a total (decision
+  131): it fills from 12 o'clock clockwise, in either reading direction.
+
+- `size`: `"sm" | "md" | "lg"`, optional, default `"md"`.
+
+  A ring's diameter and stroke: `sm` 48 and 4, `md` 96 and 8 (the
+  default), `lg` 128 and 12. A bar has one size.
+
+- `label`: `React.ReactNode`, optional.
+
+  What a ring shows: "11 Levels Added in total", or a percentage. It
+  names the progress bar, or describes it when `aria-label` or
+  `aria-labelledby` already names it, and the drawn copy is hidden from
+  assistive technology, so it is heard once. A bar draws none.
+
+- `labelPlacement`: `"center" | "end"`, optional, default `"center"`.
+
+  Where a ring's label is drawn: `"center"`, in the hole (the default),
+  or `"end"`, beside the ring at the inline end, so on its left right to
+  left.
+
+- `tone`: `Emotion`, optional, default `"themed"`.
+
+  What a ring's completion means, in Tag's and Button's emotions: its arc
+  is the emotion's text colour, 3:1 or more on the track in both themes.
+  `"themed"`, the default, is the bar's own fill, theme 600.
 
 - `asChild`: `boolean`, optional.
 - `value`: `number | null`, optional.
@@ -65,6 +95,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `ProgressTrackProps`, whi
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### Emotion
+
+From `@kozmos-ds/react`, which does not export it by name.
+
+```ts
+type Emotion = (typeof EMOTIONS)[number];
+```
 
 ### ProgressRange
 

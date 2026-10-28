@@ -11586,15 +11586,20 @@ for (const [file, symbols] of [
     "tint: .blue",
     "SwiftUI Progress drawing SwiftUI's blue",
   );
+  // The bar alone: the ring below it is a prominent fill, theme 500.
+  const swiftBar = swiftContent.slice(
+    swiftContent.indexOf("ProgressView(value: value, total: total)"),
+    swiftContent.indexOf("private var ring"),
+  );
   assertNotContains(
     swift,
-    swiftContent,
+    swiftBar,
     "primitivesColorsTheme500",
     "SwiftUI Progress drawing theme 500, not React's 600",
   );
   assertContains(
     swift,
-    swiftContent,
+    swiftBar,
     ".tint(KozmosColors.primitivesColorsTheme600)",
     "SwiftUI Progress drawing React's primary",
   );
@@ -11613,6 +11618,59 @@ for (const [file, symbols] of [
     bar,
     "trackColor = KozmosThemeTokens.primitivesColorsBackground200",
     "Compose Progress drawing React's track",
+  );
+
+  // The ring (decision 131): its arc is its tone's emotion text colour,
+  // Tag's, and unset the themed one, theme 600, the bar's own fill (owner,
+  // 28 Oct), on a background 100 track, where every tone reads 4.8:1 or
+  // more in both themes. Every platform draws it so.
+  const css = read("packages/react/src/styles/owned-components.css");
+  const ringCss = css.slice(css.indexOf(".kozmos-progress-ring-track {"));
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    ".kozmos-progress-ring-track {\n    stroke: var(--primitives-colors-background-100);",
+    "React's ring track on background 100",
+  );
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    "--kozmos-progress-ring-tone,\n      var(--semantics-emotion-themed-text)",
+    "React's ring arc in its tone, themed by default",
+  );
+  const swiftRing = swiftContent.slice(
+    swiftContent.indexOf("private var dial"),
+  );
+  for (const [needle, what] of [
+    [
+      ".strokeBorder(KozmosColors.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    ["                        tone.text,", "arc in its tone's text colour"],
+  ])
+    assertContains(swift, swiftRing, needle, `SwiftUI Progress ring ${what}`);
+  assertContains(
+    swift,
+    swiftContent,
+    "tone: KozmosEmotion = .themed",
+    "SwiftUI Progress ring tone themed by default",
+  );
+  const kotlinRing = kotlinContent.slice(
+    kotlinContent.indexOf("private fun KozmosProgressRing("),
+  );
+  for (const [needle, what] of [
+    [
+      "val track = KozmosThemeTokens.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    ["val fill = tone.text", "arc in its tone's text colour"],
+  ])
+    assertContains(kotlin, kotlinRing, needle, `Compose Progress ring ${what}`);
+  assertContains(
+    kotlin,
+    kotlinContent,
+    "tone: KozmosEmotion = KozmosEmotion.Themed",
+    "Compose Progress ring tone themed by default",
   );
 }
 
