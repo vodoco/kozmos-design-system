@@ -17,6 +17,7 @@ import type {
   MapReadiness,
 } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
+import { impliedLive } from "../../utils/live-region";
 import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import {
   resolveAdaptiveMapLayout,
@@ -1190,6 +1191,11 @@ const AdaptiveMapShell = React.forwardRef<
                 hidden={unavailable}
                 className="z-20 flex items-center justify-center overflow-auto bg-background/80 p-6 text-center backdrop-blur-sm"
                 role={mapStatus === "error" ? "alert" : "status"}
+                // Said as well as implied: an open popup hides every box not
+                // marked aria-live, with its Retry still focusable (GAP-193).
+                aria-live={impliedLive(
+                  mapStatus === "error" ? "alert" : "status",
+                )}
               >
                 {mapStatusContent}
               </div>
