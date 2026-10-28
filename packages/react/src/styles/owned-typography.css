@@ -61,8 +61,15 @@
   .kozmos-text-default {
     @apply text-foreground;
   }
+  /* Muted, as Kozmos's own muted text is (.kozmos-muted-text): on glass it
+     takes what the glass says, the foreground colour, so it reads at 4.5:1
+     over any map (decision 48); on anything else, and on a solid card
+     inside the glass, the theme's muted colour (site GAP-94). */
   .kozmos-text-muted {
-    @apply text-muted-foreground;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
   }
   .kozmos-text-primary {
     @apply text-primary;
