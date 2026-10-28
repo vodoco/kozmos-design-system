@@ -63,7 +63,10 @@ const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 94 KB on 2026-10-26 (decision 117) for MAP-64's tour family (decision 116):
 // Backdrop's target (#408), Stepper's dots (#409), PopoverAnchor (#410) and option groups (#411)
 // take Everything from about 88.5 to 91.2 KB on CI, leaving too little for TourStep (GAP-188).
-const MAX_TOTAL_GZIP_KB = 94;
+// Olcay approved 100 KB on 2026-10-28 (decision 126) for 0.15.0's approved APIs (decision 119):
+// after 0.14.0's tour family and fixes, Everything measures about 93.9 KB, leaving no room for
+// them. A trim pass runs alongside, reported before 0.15.0.
+const MAX_TOTAL_GZIP_KB = 100;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
