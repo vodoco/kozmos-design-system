@@ -18,7 +18,7 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { impliedLive } from "../../utils/live-region";
-import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import {
   resolveAdaptiveMapLayout,
   resolveMapInsets,
@@ -188,10 +188,11 @@ function measurePeekBottom(
   const inContent = content?.querySelector<HTMLElement>(
     "[data-kozmos-peek-anchor]",
   );
+  // An anchor in the content means there is content: it was found in it.
   const bottom = inHeader
     ? inHeader.getBoundingClientRect().bottom - top
-    : inContent && content
-      ? inContent.getBoundingClientRect().bottom - top + content.scrollTop
+    : inContent
+      ? inContent.getBoundingClientRect().bottom - top + content!.scrollTop
       : 0;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
@@ -199,15 +200,16 @@ function measurePeekBottom(
 /** The panel header's bottom edge from the sheet's top; 0 when there is none. */
 function measureHeaderBottom(header: HTMLElement | null): number {
   const sheet = header?.parentElement;
-  if (!header || !sheet) return 0;
-  const style = getComputedStyle(header);
+  // A sheet means a header: it is the header's parent.
+  if (!sheet) return 0;
+  const style = getComputedStyle(header!);
   const topPadding = parseFloat(style.paddingTop) || 0;
   const bottomPadding = parseFloat(style.paddingBottom) || 0;
   // Padding belongs to layout, not to the header's visible content. In
   // particular an empty slot must not raise the collapsed detent.
-  if (header.offsetHeight <= topPadding + bottomPadding) return 0;
+  if (header!.offsetHeight <= topPadding + bottomPadding) return 0;
   const bottom =
-    header.getBoundingClientRect().bottom -
+    header!.getBoundingClientRect().bottom -
     bottomPadding -
     sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
@@ -809,12 +811,6 @@ const AdaptiveMapShell = React.forwardRef<
     const bottomControlsFit =
       cornersFitFor(attributionHeight) &&
       (!lift || attributionHeight + lift <= footerBand);
-    const attributionBounds = {
-      x: available.x + gap,
-      y: available.y + available.height - gap - attributionHeight,
-      width: chromeWidth,
-      height: attributionHeight,
-    };
     const controlsBand = controlsBandFor(attributionHeight);
     const controlsOutOfRoom = measured.ready && controlsBand === 0;
     const controlsBounds = {
@@ -851,15 +847,17 @@ const AdaptiveMapShell = React.forwardRef<
     const attributionLift = bottomControlsFit ? lift : 0;
     const besideCorners =
       bottomControlsHeight > 0 && !attributionLift ? cornerReserve : 0;
-    attributionBounds.x = footerAvailable.x + gap + besideCorners;
-    attributionBounds.width = Math.max(0, footerWidth - 2 * besideCorners);
-    attributionBounds.height = attributionHeight;
-    attributionBounds.y =
-      available.y +
-      available.height -
-      gap -
-      attributionLift -
-      attributionBounds.height;
+    const attributionBounds = {
+      x: footerAvailable.x + gap + besideCorners,
+      y:
+        available.y +
+        available.height -
+        gap -
+        attributionLift -
+        attributionHeight,
+      width: Math.max(0, footerWidth - 2 * besideCorners),
+      height: attributionHeight,
+    };
     if (
       sidePanelCap !== undefined &&
       layout.panelBounds &&
