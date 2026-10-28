@@ -7,10 +7,12 @@ import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
 import com.figma.code.connect.FigmaVariant
 
-// Numbered only: Compose draws no dots yet (GAP-191 is web and Figma first),
-// so a Dots instance shows no Compose snippet rather than a numbered one.
+// A numbered row only: Compose draws no dots and no column yet (GAP-191 and
+// GAP-173 are web and Figma first), so a Dots or vertical instance shows no
+// Compose snippet rather than a numbered row.
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=512-39614")
 @FigmaVariant("Variant", "Numbered")
+@FigmaVariant("Orientation", "Horizontal")
 class KozmosStepperConnect {
     @FigmaProperty(FigmaType.Enum, "Count")
     val count: Int = Figma.mapping(

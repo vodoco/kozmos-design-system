@@ -9344,12 +9344,30 @@ assertContains(
   'figma.enum("State"',
   "React Rating Code Connect maps state axis",
 );
+// One connect per Variant and Count (GAP-173): Code Connect substitutes a
+// value only where the example names it bare or as an object literal's
+// value, so each Count lists exactly its steps.
+for (const variant of ["Numbered", "Dots"])
+  for (const count of ["2", "3", "4", "5", "6", "7", "8"])
+    assertContains(
+      files.reactStepperFigma,
+      source.reactStepperFigma,
+      `variant: { Variant: "${variant}", Count: "${count}" }`,
+      `React Stepper Code Connect maps ${variant} at Count ${count}`,
+    );
 assertContains(
   files.reactStepperFigma,
   source.reactStepperFigma,
-  'figma.enum("Count"',
-  "React Stepper Code Connect maps count axis",
+  'figma.enum("Orientation"',
+  "React Stepper Code Connect maps orientation axis",
 );
+for (const status of ["Error", "Loading", "Done"])
+  assertContains(
+    files.reactStepperFigma,
+    source.reactStepperFigma,
+    `"Step 8 ${status}"`,
+    `React Stepper Code Connect maps each step's ${status}`,
+  );
 assertContains(
   files.reactStepperFigma,
   source.reactStepperFigma,
