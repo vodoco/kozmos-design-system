@@ -1,8 +1,12 @@
-import * as React from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import {
+  Button,
   DesignConfigProvider,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -15,8 +19,8 @@ import {
 } from "@kozmos-ds/react";
 
 /**
- * A page for scripts/check-toaster.mjs: a field and a Select to keep focus
- * in, a Toaster, and the call that fills it. `layout` puts the Toaster
+ * A page for scripts/check-toaster.mjs: a field, a Select and a modal Menu
+ * to keep focus in, a Toaster, and the call that fills it. `layout` puts the Toaster
  * somewhere a fixed part can be trapped (`trapped`: inside a box that isolates
  * its stacking, as a map does, under a bar fixed over it), or mounts two
  * providers (`providers`: a light page and a dark, right-to-left module with
@@ -43,6 +47,15 @@ function Field() {
           <SelectItem value="2">Floor 2</SelectItem>
         </SelectContent>
       </Select>
+      <Menu>
+        <MenuTrigger asChild>
+          <Button id="menu">Place actions</Button>
+        </MenuTrigger>
+        <MenuContent>
+          <MenuItem>Rename</MenuItem>
+          <MenuItem>Delete</MenuItem>
+        </MenuContent>
+      </Menu>
     </>
   );
 }

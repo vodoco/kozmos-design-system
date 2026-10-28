@@ -6,7 +6,8 @@
  *   out loud as every Kozmos live part does (GAP-193): assertive for a
  *   critical toast, polite for every other tone, unless the call says;
  *   in the product's words (the region, the announcement and the close),
- *   and while a modal Select hides the page.
+ *   and while a modal Select or Menu hides the page, with the toast behind
+ *   it hidden and inert together (GAP-193).
  * - Focus is never taken: typing goes on in a field while toasts come, act
  *   and go.
  * - The queue: no more than `limit` at once, oldest first, each in turn.
@@ -168,31 +169,62 @@ await scenario(
   },
 );
 
-await scenario(
-  "announced while a modal Select hides the page, and the list keeps focus",
-  {},
-  async (page) => {
-    await page.locator("#select").click();
-    await page.getByRole("option", { name: "Floor 1" }).waitFor();
-    await show(page, "Saved", { tone: "success" });
-    await waitForAnnouncements(page, 1);
-    const [said] = await announcements(page);
-    assert.deepEqual(
-      said,
-      {
-        text: "Notification Saved",
-        live: "polite",
-        hidden: false,
-        inert: false,
-      },
-      "the announcement is outside what the Select hides",
-    );
-    const focus = await page.evaluate(
-      () => !!document.activeElement?.closest('[role="listbox"]'),
-    );
-    assert.equal(focus, true, "focus stays in the open list");
-  },
-);
+/**
+ * GAP-193 (#420): nothing behind an open Select or modal Menu may be hidden
+ * from a screen reader yet still focusable. The toasts drawn while one is
+ * open are behind it: each focusable box in them is either hidden and inert
+ * together, or neither.
+ */
+const hiddenYetFocusable = (page) =>
+  page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll("li.kozmos-toast, li.kozmos-toast button"),
+    )
+      .filter(
+        (node) =>
+          !!node.closest('[aria-hidden="true"]') !== !!node.closest("[inert]"),
+      )
+      .map((node) => node.outerHTML.slice(0, 80)),
+  );
+
+for (const [popup, open, inside] of [
+  ["a modal Select", "#select", '[role="listbox"]'],
+  ["a modal Menu", "#menu", '[role="menu"]'],
+]) {
+  await scenario(
+    `announced while ${popup} hides the page; the toast behind it is hidden and inert together, and the popup keeps focus`,
+    {},
+    async (page) => {
+      await page.locator(open).click();
+      await page.locator(inside).waitFor();
+      await show(page, "Saved", { tone: "success", withAction: true });
+      await waitForAnnouncements(page, 1);
+      const [said] = await announcements(page);
+      assert.deepEqual(
+        said,
+        {
+          text: "Notification Saved Undo from the history",
+          live: "polite",
+          hidden: false,
+          inert: false,
+        },
+        "the announcement is outside what the popup hides",
+      );
+      await item(page, "Saved").waitFor({ state: "attached" });
+      await settleLayout(page);
+      assert.deepEqual(
+        await hiddenYetFocusable(page),
+        [],
+        "no box in the toast is hidden yet focusable, or inert yet read",
+      );
+      const focus = await page.evaluate(
+        (inside) => !!document.activeElement?.closest(inside),
+        inside,
+      );
+      assert.equal(focus, true, "focus stays in the open popup");
+    },
+  );
+}
 
 await scenario(
   "never takes focus: typing goes on while toasts come, act and go",
