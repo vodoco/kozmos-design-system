@@ -150,6 +150,8 @@ export interface POIResultListProps extends Omit<
   onAction?: (action: POIResultAction, poiId: string) => void;
   /** Run one of the product's own actions, a result's `hostActions`: POIResultCard's `onHostAction`. */
   onHostAction?: (actionId: string, poiId: string) => void;
+  /** The icons the results' host actions draw, by name: POIResultCard's `hostActionIcons`. */
+  hostActionIcons?: POIResultCardProps["hostActionIcons"];
   selectedPoiId?: string;
   label?: string;
   resultCountLabel: string;
@@ -243,6 +245,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       onOpen,
       onAction,
       onHostAction,
+      hostActionIcons,
       selectedPoiId,
       label = "Points of interest",
       resultCountLabel,
@@ -423,6 +426,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                         presentationStyle={presentationStyle}
                         onAction={onAction}
                         onHostAction={onHostAction}
+                        hostActionIcons={hostActionIcons}
                         onExpandedChange={
                           onGroupExpandedChange &&
                           ((open) => onGroupExpandedChange(entry.id, open))
@@ -449,6 +453,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       presentationStyle={presentationStyle}
                       onAction={onAction}
                       onHostAction={onHostAction}
+                      hostActionIcons={hostActionIcons}
                       onOpen={onOpen}
                       onSelect={onSelect}
                       poi={poi}

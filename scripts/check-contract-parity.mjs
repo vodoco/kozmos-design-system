@@ -75,11 +75,15 @@ const NATIVE_ONLY = new Map([
  * iOS is not compared, so how it differs is written here rather than hidden.
  * The check still holds each entry to what it says: the web has the type,
  * iOS's contracts file does not, and the Swift type named is declared where
- * it says. An entry goes when iOS takes the web's shape in its contracts.
+ * it says. An entry that says `fields: true` has the web's fields, by name,
+ * and is compared field by field as a shared type is (its stored `let` and
+ * `var` properties, and its initialiser's defaults), so a field the web gains
+ * cannot go missing beside the panel unseen. An entry goes when iOS takes the
+ * web's shape in its contracts.
  */
 const IOS_DETAILS = "packages/ios/Sources/Components/POIDetailPanel/POIDetailsPresentation.swift";
 const IOS_ELSEWHERE = new Map([
-  ["POIDetailsPresentation", { swift: "KozmosPOIDetailsPresentation", why: "the same eight fields, declared beside the SwiftUI panel" }],
+  ["POIDetailsPresentation", { swift: "KozmosPOIDetailsPresentation", fields: true, why: "the same eight fields, declared beside the SwiftUI panel; their types are SwiftUI's own" }],
   ["POIDetailSummary", { swift: "KozmosPOIDetailSummary", why: "no kind: SwiftUI takes an SF Symbol name, systemImage, for the icon" }],
   ["POIDetailAttributeGroup", { swift: "KozmosPOIDetailAttributeGroup", why: "its items are KozmosPOIDetailTag, not the service shape: its iconName, iconUrl and iconMonochrome, an SF Symbol name, systemImage, as well, and no kind" }],
   ["POIOpeningHoursPresentation", { swift: "KozmosPOIOpeningHours", why: "named KozmosPOIOpeningHours, its rows a nested Row" }],
@@ -155,7 +159,7 @@ function webEnums(source) {
 
 const ios = read(IOS);
 
-function swiftStructs(source) {
+function swiftStructs(source, { vars = false } = {}) {
   const out = new Map();
   const re = /^public struct Kozmos(\w+)[^{]*\{$/gm;
   let m;
@@ -165,7 +169,12 @@ function swiftStructs(source) {
     const body = source.slice(start, end);
     // Stored properties name the fields; the initialiser says which may be
     // left out. Swift puts the default on the parameter, never on the `let`.
-    const names = [...body.matchAll(/^\s{4}public let (\w+):/gm)].map((f) => f[1]);
+    // With `vars`, a stored `var` is a field too; a computed one, whose line
+    // opens a body, is not.
+    const stored = vars
+      ? /^\s{4}public (?:let|var) (\w+):[^{\n]*$/gm
+      : /^\s{4}public let (\w+):/gm;
+    const names = [...body.matchAll(stored)].map((f) => f[1]);
     const initAt = body.search(/^\s{4}public init\(/m);
     const signature =
       initAt === -1 ? "" : body.slice(initAt, body.indexOf(") {", initAt));
@@ -251,6 +260,7 @@ for (const [name, why] of WEB_ONLY) {
     fail(name, "listed in WEB_ONLY but a native platform now has it - remove the entry");
 }
 const iosDetails = read(IOS_DETAILS);
+const iosDetailsStructs = swiftStructs(iosDetails, { vars: true });
 for (const [name, { swift, why }] of IOS_ELSEWHERE) {
   if (!webNames.has(name)) fail(name, `listed in IOS_ELSEWHERE ("${why}") but no longer a web type`);
   if (iosNames.has(name))
@@ -259,9 +269,17 @@ for (const [name, { swift, why }] of IOS_ELSEWHERE) {
     fail(name, `listed in IOS_ELSEWHERE as ${swift}, which ${IOS_DETAILS} no longer declares`);
 }
 
+// An IOS_ELSEWHERE entry with the web's fields is compared as iOS's own.
+const iosCompared = new Map(i.structs);
+for (const [name, { swift, fields }] of IOS_ELSEWHERE) {
+  if (!fields || !swift) continue;
+  const theirs = iosDetailsStructs.get(swift.replace(/^Kozmos/, ""));
+  if (theirs) iosCompared.set(name, theirs);
+}
+
 for (const [name, fields] of w.structs) {
   if (WEB_ONLY.has(name)) continue;
-  for (const [platform, structs] of [["iOS", i.structs], ["Android", d.structs]]) {
+  for (const [platform, structs] of [["iOS", iosCompared], ["Android", d.structs]]) {
     const theirs = structs.get(name);
     if (!theirs) continue; // already reported as a missing type
     for (const [field, optional] of fields) {

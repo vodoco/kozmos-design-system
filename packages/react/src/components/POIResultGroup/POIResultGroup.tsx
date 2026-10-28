@@ -33,6 +33,8 @@ export interface POIResultGroupProps extends Omit<
   onAction?: (action: POIResultAction, poiId: string) => void;
   /** Run one of the product's own actions, a member's `hostActions`: POIResultCard's `onHostAction`. */
   onHostAction?: (actionId: string, poiId: string) => void;
+  /** The icons the members' host actions draw, by name: POIResultCard's `hostActionIcons`. */
+  hostActionIcons?: POIResultCardProps["hostActionIcons"];
   /** How many members show while collapsed. */
   collapsedCount?: number;
   defaultExpanded?: boolean;
@@ -92,6 +94,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       onOpen,
       onAction,
       onHostAction,
+      hostActionIcons,
       collapsedCount = 1,
       defaultExpanded = false,
       expanded,
@@ -156,6 +159,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                   presentationStyle={presentationStyle}
                   onAction={onAction}
                   onHostAction={onHostAction}
+                  hostActionIcons={hostActionIcons}
                   onOpen={onOpen}
                   onSelect={onSelect}
                   poi={poi}

@@ -43,7 +43,12 @@ without `onAction`. What an action does is the product's: the card only says whi
   accessible name, and it wraps, as the card's own actions' words do. The `id` is never shown.
 - **The icon** is a name in the Kozmos icon registry, the names an attribute's `iconName` takes,
   drawn before the words and hidden from screen readers. A name Kozmos does not know draws no icon,
-  never a stand-in.
+  never a stand-in. On the web the card draws it from `hostActionIcons`, the components from
+  `@kozmos-ds/icons` for the names your actions use, `{ calendar: Calendar }`: a lookup by name
+  would put every icon a name reaches into your app, about 20 KB gzip, where a result list alone
+  is about 19. A name you give no component for draws no icon on the web; SwiftUI and Compose draw
+  every registry name. `POIResultList` and `POIResultGroup` hand `hostActionIcons` on, as they hand
+  `onHostAction`.
 - **The keyboard and screen readers** reach each one as a button, after the card's own actions,
   44 by 44 at least; VoiceOver and TalkBack say its words and whether it is dimmed.
 - **Analytics:** a press sends `poi_result_action`, as the card's own actions do, with
@@ -58,6 +63,7 @@ without `onAction`. What an action does is the product's: the card only says whi
 <PlatformSnippets
     react={`
 import { POIResultCard } from "@kozmos-ds/react";
+import { Calendar } from "@kozmos-ds/icons";
 import type {
   POIPresentation,
   POIResultPresentation,
@@ -85,6 +91,8 @@ export function ResultWithReservation({
         // The product's own action, after the card's: its words and its icon.
         hostActions: [{ id: "reserve", label: reserveLabel, iconName: "calendar" }],
       }}
+      // The icon for each name the product's actions use: only these are bundled.
+      hostActionIcons={{ calendar: Calendar }}
       onSelect={onSelect}
       // Told which of the product's actions was pressed, and the POI's ID.
       onHostAction={(actionId, poiId) => {

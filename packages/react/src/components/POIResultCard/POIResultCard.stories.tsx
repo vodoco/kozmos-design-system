@@ -1,6 +1,7 @@
 import type * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
+import { Calendar } from "@kozmos-ds/icons";
 import {
   travelTimeBand,
   type POIPresentation,
@@ -201,12 +202,14 @@ export const LongActionLabels: Story = {
 /**
  * The product's own actions (GAP-028): a restaurant offers "Reserve a table",
  * with its own words and icon, after Go and Details, in the same row. A press
- * reaches `onHostAction` with the action's id.
+ * reaches `onHostAction` with the action's id. The icon is the component the
+ * product gives for its `iconName`, in `hostActionIcons`.
  */
 export const HostActions: Story = {
   args: {
     onAction: fn(),
     onHostAction: fn(),
+    hostActionIcons: { calendar: Calendar },
     poi: { ...poi, name: "Trattoria Uno", categoryLabel: "Restaurant" },
     result: {
       ...meta.args.result,

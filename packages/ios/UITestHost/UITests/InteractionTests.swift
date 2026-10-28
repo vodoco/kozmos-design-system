@@ -365,7 +365,14 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Opening Pointr Express"].exists)
         handOff.tap()
         received("host open-in-app trattoria")
-        if feedback.isHittable { feedback.tap() }
+        // The strip scrolls sideways: bring the disabled one into view, so the
+        // press below reaches it rather than being skipped.
+        for _ in 0..<4 {
+            if feedback.isHittable { break }
+            handOff.swipeLeft()
+        }
+        XCTAssertTrue(feedback.isHittable, "Report a problem is not hittable")
+        feedback.tap()
         received("host open-in-app trattoria")
     }
 

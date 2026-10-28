@@ -11,12 +11,11 @@ import {
 import {
   Star01 as Star,
   NavigationPointer01,
-  isKozmosIconKey,
+  type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
-import { Icon } from "../Icon/Icon";
 import { WithoutGenericClick } from "../../utils/generic-click";
 import { DensityScope } from "../../theme/DensityScope";
 import { useDoubleTapGate } from "../../utils/double-tap";
@@ -61,6 +60,14 @@ export interface POIResultCardProps extends Omit<
    * visible but disabled, as the card's own actions do.
    */
   onHostAction?: (actionId: string, poiId: string) => void;
+  /**
+   * The icons the product's own actions draw, by the `iconName` each gives:
+   * `{ calendar: Calendar }`, the components from `@kozmos-ds/icons`. The
+   * card draws a host action's icon only from here, so an app carries the
+   * icons its actions use rather than every icon a name can reach (20 KB
+   * gzip). A name not given here draws no icon; the label is the action.
+   */
+  hostActionIcons?: Readonly<Partial<Record<string, KozmosIconComponent>>>;
   featuredLabel?: string;
   /** Localized disclosure shown only for result.languageNotListed === true. */
   languageNotListedLabel?: string;
@@ -159,6 +166,22 @@ const attributeTone: Record<POIAttributeKind, string> = {
   restriction: "border-warning/50 bg-warning/10 text-warning-text",
 };
 
+/**
+ * A host action's icon, from the components the product gave by name. Not
+ * `<Icon name>`: a lookup by name keeps every icon a name reaches in the
+ * app's bundle (86, about 20 KB gzip), where a result list alone is 19 KB
+ * (tests/bundle/result-icons.spec.ts). Only the map's own keys: an inherited
+ * name such as `constructor` draws nothing.
+ */
+function hostActionIcon(
+  icons: POIResultCardProps["hostActionIcons"],
+  name: string | undefined,
+): KozmosIconComponent | undefined {
+  if (!icons || !name || !Object.prototype.hasOwnProperty.call(icons, name))
+    return undefined;
+  return icons[name];
+}
+
 const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
   (
     {
@@ -169,6 +192,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onOpen,
       onAction,
       onHostAction,
+      hostActionIcons,
       featuredLabel = "Featured",
       languageNotListedLabel = "Language not listed",
       selectionLabel,
@@ -590,27 +614,33 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                       </span>
                     </Button>
                   ))}
-                  {hostActions.map((entry) => (
-                    <Button
-                      variant="outline"
-                      emotion="neutral"
-                      className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
-                      disabled={entry.disabled || !onHostAction}
-                      key={`host-${entry.id}`}
-                      onClick={() => handleHostAction(entry.id)}
-                      type="button"
-                    >
-                      {entry.iconName && isKozmosIconKey(entry.iconName) && (
-                        <Icon
-                          name={entry.iconName}
-                          className="h-5 w-5 shrink-0"
-                        />
-                      )}
-                      <span className="min-w-0 [overflow-wrap:anywhere]">
-                        {entry.label}
-                      </span>
-                    </Button>
-                  ))}
+                  {hostActions.map((entry) => {
+                    const HostIcon = hostActionIcon(
+                      hostActionIcons,
+                      entry.iconName,
+                    );
+                    return (
+                      <Button
+                        variant="outline"
+                        emotion="neutral"
+                        className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
+                        disabled={entry.disabled || !onHostAction}
+                        key={`host-${entry.id}`}
+                        onClick={() => handleHostAction(entry.id)}
+                        type="button"
+                      >
+                        {HostIcon && (
+                          <HostIcon
+                            aria-hidden="true"
+                            className="h-5 w-5 shrink-0"
+                          />
+                        )}
+                        <span className="min-w-0 [overflow-wrap:anywhere]">
+                          {entry.label}
+                        </span>
+                      </Button>
+                    );
+                  })}
                 </WithoutGenericClick>
               </div>
             </div>

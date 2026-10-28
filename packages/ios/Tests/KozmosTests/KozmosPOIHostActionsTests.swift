@@ -178,11 +178,21 @@ final class KozmosPOIHostActionsTests: XCTestCase {
     }
 
     /// Shown only on the selected, available result, as the card's own are.
+    /// Not finding them proves something only if the walk reaches the card:
+    /// the same walk finds them on the selected, available result, and finds
+    /// the card itself where they are not drawn.
     @MainActor func testOnlyTheSelectedAvailableResultShowsThem() async throws {
       try await withAutomation {
+        let shown = await host(
+          KozmosPOIResultCard(poi: poi, result: result(), onSelect: { _ in }, onHostAction: { _, _ in }))
+        XCTAssertTrue(buttons(shown).contains("Reserve a table"), "selected and available")
+        shown.isHidden = true
         for (name, given) in [("unselected", result(selected: false)), ("unavailable", result(available: false))] {
           let window = await host(
             KozmosPOIResultCard(poi: poi, result: given, onSelect: { _ in }, onHostAction: { _, _ in }))
+          XCTAssertTrue(
+            elements(window).contains { ($0.accessibilityLabel ?? "").contains(poi.name) },
+            "\(name): the walk did not reach the card")
           XCTAssertFalse(buttons(window).contains("Reserve a table"), name)
           window.isHidden = true
         }

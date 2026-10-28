@@ -87,6 +87,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
 
   Run one of the product's own actions, a result's `hostActions`: POIResultCard's `onHostAction`.
 
+- `hostActionIcons`: `POIResultCardProps["hostActionIcons"]`, optional.
+
+  The icons the results' host actions draw, by name: POIResultCard's `hostActionIcons`.
+
 - `selectedPoiId`: `string`, optional.
 - `label`: `string`, optional, default `"Points of interest"`.
 - `resultCountLabel`: `string`, **required**.
@@ -246,6 +250,14 @@ interface POIResultCardProps extends Omit<
    * visible but disabled, as the card's own actions do.
    */
   onHostAction?: (actionId: string, poiId: string) => void;
+  /**
+   * The icons the product's own actions draw, by the `iconName` each gives:
+   * `{ calendar: Calendar }`, the components from `@kozmos-ds/icons`. The
+   * card draws a host action's icon only from here, so an app carries the
+   * icons its actions use rather than every icon a name can reach (20 KB
+   * gzip). A name not given here draws no icon; the label is the action.
+   */
+  hostActionIcons?: Readonly<Partial<Record<string, KozmosIconComponent>>>;
   featuredLabel?: string;
   /** Localized disclosure shown only for result.languageNotListed === true. */
   languageNotListedLabel?: string;
@@ -477,6 +489,24 @@ interface POIResultPresentation {
    */
   hostActions?: readonly POIHostActionPresentation[];
 }
+```
+
+### KozmosIconComponent
+
+From `@kozmos-ds/icons`.
+
+```ts
+/**
+ * An icon is an outline owned by this package or a taxonomy symbol, and both
+ * are drawn from the Pointr Icon Library's own artwork. Until 2026-09-23 this
+ * union had a third arm, `LucideIcon`, and 43 of the 64 names resolved to it:
+ * the same concept in a different hand from the one Figma shows. Every one had
+ * an exact Pointr equivalent by name, so nothing here maps onto a near-miss
+ * any more. Both take the same props, so a consumer cannot tell them apart.
+ */
+type KozmosIconComponent =
+  | ReturnType<typeof createPointrIcon>
+  | ReturnType<typeof createTaxonomyIcon>;
 ```
 
 ### TravelTimeBand

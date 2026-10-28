@@ -4,6 +4,7 @@ import type {
   POIPresentation,
   POIResultPresentation,
 } from "@kozmos-ds/product-contracts";
+import { Calendar } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
 import { POIResultCard } from "./POIResultCard";
 import { POIResultList } from "../POIResultList";
@@ -63,14 +64,22 @@ describe("POIResultCard's host actions (GAP-028)", () => {
     expect(reserveButton.className).not.toContain("bg-primary");
   });
 
-  it("draws a known icon before the label, hidden from screen readers, and none for an unknown name", () => {
+  it("draws the icon the product gave for its name before the label, hidden from screen readers, and none for a name it did not give", () => {
     render(
       <POIResultCard
         poi={poi}
         result={{
           ...result,
-          hostActions: [reserve, { id: "x", label: "Odd", iconName: "nope" }],
+          hostActions: [
+            reserve,
+            { id: "x", label: "Odd", iconName: "nope" },
+            // A registry name the product gave no icon for draws none on the web.
+            { id: "share", label: "Share it", iconName: "share-01" },
+            // An inherited name is never a component.
+            { id: "proto", label: "Proto", iconName: "constructor" },
+          ],
         }}
+        hostActionIcons={{ calendar: Calendar }}
         onSelect={vi.fn()}
         onHostAction={vi.fn()}
       />,
@@ -81,10 +90,28 @@ describe("POIResultCard's host actions (GAP-028)", () => {
     const icon = reserveButton.querySelector("svg");
     expect(icon).not.toBeNull();
     expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(icon).toHaveClass("h-5", "w-5");
     expect(reserveButton.firstElementChild).toBe(icon);
-    expect(
-      screen.getByRole("button", { name: "Odd" }).querySelector("svg"),
-    ).toBeNull();
+    for (const name of ["Odd", "Share it", "Proto"])
+      expect(
+        screen.getByRole("button", { name }).querySelector("svg"),
+      ).toBeNull();
+  });
+
+  it("draws no icon without hostActionIcons, only the words", () => {
+    render(
+      <POIResultCard
+        poi={poi}
+        result={result}
+        onSelect={vi.fn()}
+        onHostAction={vi.fn()}
+      />,
+    );
+    const reserveButton = screen.getByRole("button", {
+      name: "Reserve a table",
+    });
+    expect(reserveButton.querySelector("svg")).toBeNull();
+    expect(reserveButton).toHaveTextContent("Reserve a table");
   });
 
   it("reports the pressed action's id and the POI's, never selecting, with one analytics event", () => {
@@ -226,14 +253,16 @@ describe("POIResultCard's host actions (GAP-028)", () => {
     ]);
   });
 
-  it("is handed on by POIResultList to its cards and its groups", () => {
+  it("is handed on by POIResultList to its cards and its groups, with its icons", () => {
     const onHostAction = vi.fn();
     const member = (id: string) => ({
       poi: { ...poi, id, name: `Branch ${id}` },
       result: {
         ...result,
         poiId: id,
-        hostActions: [{ id: "reserve", label: `Reserve at ${id}` }],
+        hostActions: [
+          { id: "reserve", label: `Reserve at ${id}`, iconName: "calendar" },
+        ],
       },
     });
     render(
@@ -241,6 +270,7 @@ describe("POIResultCard's host actions (GAP-028)", () => {
         resultCountLabel="2 results"
         onSelect={vi.fn()}
         onHostAction={onHostAction}
+        hostActionIcons={{ calendar: Calendar }}
         items={[
           member("a"),
           {
@@ -251,6 +281,10 @@ describe("POIResultCard's host actions (GAP-028)", () => {
         ]}
       />,
     );
+    for (const name of ["Reserve at a", "Reserve at b"])
+      expect(
+        screen.getByRole("button", { name }).querySelector("svg"),
+      ).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reserve at a" }));
     fireEvent.click(screen.getByRole("button", { name: "Reserve at b" }));
     expect(onHostAction.mock.calls).toEqual([

@@ -1,6 +1,7 @@
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { POIDetailPanel, POIResultCard, ThemeProvider } from "@kozmos-ds/react";
+import { Calendar } from "@kozmos-ds/icons";
 import type {
   POIAction,
   POIHostActionPresentation,
@@ -82,6 +83,7 @@ function mount({ part, width, dir = "ltr", labels }: Mount) {
               onSelect={() => pressed.push("select")}
               onAction={(action) => pressed.push(`action ${action}`)}
               onHostAction={onHostAction}
+              hostActionIcons={{ calendar: Calendar }}
             />
           ) : (
             <POIDetailPanel
