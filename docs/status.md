@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 73         | 73/73 | 73/73     | 68/73   | 68/73 | 68/73   | 69/73   | 68/73       |
+| Core                   | 74         | 74/74 | 74/74     | 68/74   | 68/74 | 68/74   | 69/74   | 68/74       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -106,6 +106,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Toast                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | ToggleButton         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Tooltip              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| TourStep             | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 | Tree                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | UserMessage          | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 
@@ -188,18 +189,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 121/121
-- Web stories: 121/121
-- Web tests: 121/121
-- Web Code Connect files: 98/116
-- Web Code Connect scaffolds: 0/116
-- Web Code Connect linked: 98/116
-- iOS components: 111/121
-- iOS Code Connect files: 98/116
-- iOS Code Connect scaffolds: 0/116
-- iOS Code Connect linked: 98/116
-- Android components: 112/121
-- Android Code Connect files: 98/116
-- Android Code Connect scaffolds: 0/116
-- Android Code Connect linked: 98/116
-- Code Connect not applicable: 5/121
+- Web components: 122/122
+- Web stories: 122/122
+- Web tests: 122/122
+- Web Code Connect files: 98/117
+- Web Code Connect scaffolds: 0/117
+- Web Code Connect linked: 98/117
+- iOS components: 111/122
+- iOS Code Connect files: 98/117
+- iOS Code Connect scaffolds: 0/117
+- iOS Code Connect linked: 98/117
+- Android components: 112/122
+- Android Code Connect files: 98/117
+- Android Code Connect scaffolds: 0/117
+- Android Code Connect linked: 98/117
+- Code Connect not applicable: 5/122

@@ -143,7 +143,12 @@ const SelectContent = React.forwardRef<
     const contentRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         release.current?.();
-        release.current = node ? inertOutside(node) : undefined;
+        // Radix's Select is always modal: as it opens it hides the page with
+        // aria-hidden's hideOthers, so the page is kept in reach exactly
+        // where that keeps it visible (GAP-193).
+        release.current = node
+          ? inertOutside(node, { mirrorAriaHidden: true })
+          : undefined;
         if (typeof ref === "function") ref(node);
         else if (ref) ref.current = node;
       },

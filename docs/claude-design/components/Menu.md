@@ -55,7 +55,7 @@ Its props are `DropdownMenuPrimitive.DropdownMenuProps`.
 - `open`: `boolean`, optional.
 - `defaultOpen`: `boolean`, optional.
 - `onOpenChange`: `(open: boolean) => void`, optional.
-- `modal`: `boolean`, optional.
+- `modal`: `boolean`, optional, default `true`.
 
 ## MenuTrigger
 
