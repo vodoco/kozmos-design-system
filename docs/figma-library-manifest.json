@@ -19114,7 +19114,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Toast"],
-          "mappedProps": ["open"],
+          "mappedProps": ["open", "tone"],
           "unmappedProps": []
         },
         "props": [
