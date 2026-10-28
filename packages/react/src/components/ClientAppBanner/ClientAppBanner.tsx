@@ -4,7 +4,7 @@ import { cn } from "../../utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../Avatar";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
-import { surfaceClass } from "../Surface";
+import { surfaceClass } from "../Surface/surface-class";
 import { Text } from "../Text";
 import { DensityScope } from "../../theme/DensityScope";
 

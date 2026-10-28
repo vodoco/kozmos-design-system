@@ -6,7 +6,7 @@ import {
   MapShellPresentationContext,
   scrollbarFor,
 } from "../AdaptiveMapShell/map-shell-presentation";
-import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import {
   DirectionIcon,
   type DirectionType,

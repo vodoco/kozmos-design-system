@@ -178,6 +178,20 @@ async function main() {
       `the ES build has ${modules.length} module files in dist/esm, under ${MIN_ESM_MODULES}: it is one file again, and every import costs the whole library`,
     );
   }
+  // The JavaScript is built for the browsers package.json declares (vite.config.mts). Built for
+  // Vite's default target instead, esbuild wrote every `a?.b` as `a == null ? void 0 : a.b`, in 44
+  // modules, and an app's minifier could not fold all of them back: Everything measured 91.81 KB
+  // here that way on 2026-10-28, and 90.46 KB with the target.
+  const lowered = modules.filter((file) =>
+    /(?<![=!])== null \? void 0 : /.test(
+      fs.readFileSync(path.join(ESM_DIR, file), "utf8"),
+    ),
+  );
+  if (lowered.length) {
+    fail.push(
+      `${lowered.length} modules in dist/esm write optional chaining out (a == null ? void 0 : a.b), as for a browser older than package.json declares: build.target in packages/react/vite.config.mts (${lowered.slice(0, 3).join(", ")})`,
+    );
+  }
 
   // Every entry is bundled with the same options, so Rollup's cache stays valid between them: a
   // cache from a build that took every module to have side effects carries that into the next.
