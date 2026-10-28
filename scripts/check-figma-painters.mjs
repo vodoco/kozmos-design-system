@@ -7220,6 +7220,306 @@ section("Decisions 115 and 26: the list rows draw React's rows");
   }
 }
 
+section("GAP-192: the option lists draw their groups' labels");
+{
+  // Combobox's, MultiSelect's and Listbox's lists draw a label row before
+  // option 1 (Group 1, options 1 and 2) and before option 3 (Group 2), as
+  // React's .kozmos-option-group-label draws it, SelectLabel's: 14/20
+  // semibold in foreground/0, 12 at the sides through the rows' padding
+  // variable, 6 above and below, 32 tall. Hidden until the set's Show Group
+  // Labels boolean, off by default, so the lists draw as before; Group 1 Text
+  // and Group 2 Text name them, and an Update keeps their words.
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const valueOf = (name) => {
+    for (let hops = 0; name && hops < 8; hops += 1) {
+      const token = floats.get(name);
+      if (!token) return undefined;
+      if (!token.alias || !floats.has(token.alias)) return token.value;
+      name = token.alias;
+    }
+    return undefined;
+  };
+  const boundName = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const shown = (node, field) =>
+    boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
+  const draw = async (fn, props, component = figma.createComponent()) => {
+    await plugin[fn](
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const parts = [
+    {
+      name: "Combobox",
+      fn: "updateComboboxVariant",
+      configure: "configureComboboxProperties",
+      props: { state: "Default", status: "Default", content: "Open" },
+      list: "Combobox Listbox",
+    },
+    {
+      name: "MultiSelect",
+      fn: "updateMultiSelectVariant",
+      configure: "configureMultiSelectProperties",
+      props: { state: "Default", status: "Default", content: "Open" },
+      list: "MultiSelect Listbox",
+    },
+    {
+      name: "Listbox",
+      fn: "updateListboxVariant",
+      configure: "configureListboxProperties",
+      props: { selection: "Single", state: "Default" },
+      list: null,
+    },
+  ];
+  for (const part of parts) {
+    const component = await draw(part.fn, part.props);
+    const list = part.list ? named(component, part.list) : component;
+    const order = (list ? list.children : [])
+      .map((child) => child.name)
+      .filter((name) => /^Group \d Label$| Option \d+$/.test(name));
+    ok(
+      JSON.stringify(order) ===
+        JSON.stringify([
+          "Group 1 Label",
+          `${part.name} Option 1`,
+          `${part.name} Option 2`,
+          "Group 2 Label",
+          `${part.name} Option 3`,
+        ]),
+      `${part.name}: Group 1 heads options 1 and 2, Group 2 option 3 (${order.join(", ")})`,
+    );
+    const words = { "Group 1": "Transit", "Group 2": "Cycling" };
+    for (const group of ["Group 1", "Group 2"]) {
+      const row = list && named(list, `${group} Label`);
+      const at = `${part.name}, ${group}`;
+      ok(row && row.type === "FRAME", `${at}: a label row`);
+      if (!row) continue;
+      ok(row.visible === false, `${at}: hidden until Show Group Labels`);
+      ok(
+        row.getSharedPluginData(plugin.RUN_NAMESPACE, "kind") ===
+          "option-group-label",
+        `${at}: marked as a group label`,
+      );
+      ok(
+        shown(row, "paddingLeft") === 12 &&
+          shown(row, "paddingRight") === 12 &&
+          boundName(row, "paddingLeft") === `${part.name}/option/padding/x`,
+        `${at}: 12 at the sides, the rows' padding (${boundName(row, "paddingLeft")} = ${shown(row, "paddingLeft")})`,
+      );
+      ok(
+        row.paddingTop === 6 && row.paddingBottom === 6 && row.height === 32,
+        `${at}: 6 above and below, 32 tall (${row.paddingTop}/${row.paddingBottom}, ${row.height})`,
+      );
+      ok(
+        (row.fills || []).length === 0 && (row.strokes || []).length === 0,
+        `${at}: no fill or stroke, as SelectLabel`,
+      );
+      ok(
+        row.layoutSizingHorizontal === "FILL",
+        `${at}: as wide as the list (${row.layoutSizingHorizontal})`,
+      );
+      const text = named(row, `${group} Text`);
+      ok(
+        text &&
+          text.type === "TEXT" &&
+          text.fontSize === 14 &&
+          text.lineHeight &&
+          text.lineHeight.value === 20 &&
+          text.fontName.style ===
+            plugin.textFontForWeight("Semibold", FONTS).style &&
+          boundVariableName(text.fills[0]) === "Colors/foreground/0",
+        `${at}: the words 14/20 semibold in foreground/0 (${text && `${text.fontSize}/${text.lineHeight && text.lineHeight.value} ${text.fontName.style} ${boundVariableName(text.fills[0])}`})`,
+      );
+      ok(
+        text && text.characters === words[group],
+        `${at}: "${words[group]}" by default (${text && text.characters})`,
+      );
+    }
+
+    // An Update keeps a label's words, as it keeps an option's.
+    const kept = list && named(list, "Group 1 Text");
+    if (kept) {
+      kept.characters = "Interior Asset";
+      const redrawn = await draw(part.fn, part.props, component);
+      const again = (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
+      const text = named(again, "Group 1 Text");
+      ok(
+        text && text.characters === "Interior Asset",
+        `${part.name}: an Update keeps Group 1's words (${text && text.characters})`,
+      );
+    }
+
+    // The set's properties: Show Group Labels drives both rows, and each
+    // label's words are a text property.
+    const variants = [await draw(part.fn, part.props)];
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = part.name;
+    await plugin[part.configure](set, freshStats());
+    const definitions = set.componentPropertyDefinitions;
+    const byBase = (base, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === base && definitions[key].type === type,
+      );
+    const show = byBase("Show Group Labels", "BOOLEAN");
+    ok(
+      show && definitions[show].defaultValue === false,
+      `${part.name}: a Show Group Labels boolean, off by default`,
+    );
+    for (const [group, word] of [
+      ["Group 1", "Transit"],
+      ["Group 2", "Cycling"],
+    ]) {
+      const textProperty = byBase(`${group} Text`, "TEXT");
+      ok(
+        textProperty && definitions[textProperty].defaultValue === word,
+        `${part.name}: a ${group} Text property, "${word}" by default`,
+      );
+      const row = named(variants[0], `${group} Label`);
+      ok(
+        row &&
+          row.componentPropertyReferences &&
+          row.componentPropertyReferences.visible === show,
+        `${part.name}: ${group}'s row shows with Show Group Labels`,
+      );
+      const text = row && named(row, `${group} Text`);
+      ok(
+        text &&
+          text.componentPropertyReferences &&
+          text.componentPropertyReferences.characters === textProperty,
+        `${part.name}: ${group}'s words are ${group} Text`,
+      );
+    }
+    set.remove();
+  }
+}
+
+section("Since #397: Combobox's and MultiSelect's field actions are React's buttons");
+{
+  // React draws the clear and open at the field's end as buttons
+  // (field-actions.ts): each as tall and wide as the field, 44 at touch (40
+  // compact once Figma has density modes: bound to the field's height), the
+  // 16px icon centred, out of the field's line, inside its border, the open
+  // button last; the field keeps the room at its end. Combobox draws a clear
+  // as MultiSelect does, with a value and not disabled or read only, and
+  // keeps its leading search icon, which React does not draw.
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const valueOf = (name) => {
+    for (let hops = 0; name && hops < 8; hops += 1) {
+      const token = floats.get(name);
+      if (!token) return undefined;
+      if (!token.alias || !floats.has(token.alias)) return token.value;
+      name = token.alias;
+    }
+    return undefined;
+  };
+  const boundName = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const shown = (node, field) =>
+    boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
+  const cases = [
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Default", status: "Default", content: "Closed" }, ["Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Focus", status: "Default", content: "Open" }, ["Clear Button", "Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Disabled", status: "Default", content: "Open" }, ["Open Button"]],
+    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Readonly", status: "Default", content: "Open" }, ["Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Empty" }, ["Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Selected" }, ["Clear Button", "Open Button"]],
+    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Disabled", status: "Default", content: "Selected" }, ["Open Button"]],
+  ];
+  for (const [part, fn, sizeToken, props, expected] of cases) {
+    const label = `${part} ${props.state}/${props.content}`;
+    const component = figma.createComponent();
+    await plugin[fn](
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const field = named(component, `${part} Field`);
+    const row = field && named(field, "Field Actions");
+    ok(row, `${label}: the field draws its actions`);
+    if (!row) continue;
+    ok(
+      row.layoutPositioning === "ABSOLUTE" &&
+        row.constraints &&
+        row.constraints.horizontal === "MAX",
+      `${label}: out of the field's line, held at its end (${row.layoutPositioning}, ${row.constraints && row.constraints.horizontal})`,
+    );
+    ok(
+      Math.abs(row.x + row.width - field.width) <= 0.5 && row.y >= 0,
+      `${label}: at the field's end, inside it (x ${row.x} + ${row.width} of ${field.width})`,
+    );
+    const buttons = row.children.filter((child) => child.type === "FRAME");
+    ok(
+      JSON.stringify(buttons.map((button) => button.name)) ===
+        JSON.stringify(expected),
+      `${label}: ${expected.join(", ")} (${buttons.map((button) => button.name).join(", ")})`,
+    );
+    for (const button of buttons) {
+      ok(
+        boundName(button, "width") === sizeToken &&
+          boundName(button, "height") === sizeToken &&
+          shown(button, "width") === 44 &&
+          shown(button, "height") === 44,
+        `${label}, ${button.name}: as tall and wide as the field, 44, bound to ${sizeToken} (${boundName(button, "width")} ${shown(button, "width")}x${shown(button, "height")})`,
+      );
+      ok(
+        button.primaryAxisAlignItems === "CENTER" &&
+          button.counterAxisAlignItems === "CENTER" &&
+          (button.fills || []).length === 0 &&
+          (button.strokes || []).length === 0,
+        `${label}, ${button.name}: the icon centred, on no fill`,
+      );
+      const icons = button.children.filter((child) => child.type === "INSTANCE");
+      ok(
+        icons.length === 1 && icons[0].width === 16 && icons[0].height === 16,
+        `${label}, ${button.name}: one 16px icon (${icons.map((icon) => `${icon.width}x${icon.height}`).join(", ")})`,
+      );
+    }
+    const room = expected.length === 2 ? 96 : 48;
+    ok(
+      field.paddingRight === room && !boundName(field, "paddingRight"),
+      `${label}: the field keeps ${room} at its end for them (${field.paddingRight}, bound ${boundName(field, "paddingRight")})`,
+    );
+    ok(
+      !field.children.some(
+        (child) => child.type === "INSTANCE" && child !== field.children[0] && /chevron|close/i.test(child.name),
+      ),
+      `${label}: no bare icon left in the field's line`,
+    );
+    if (part === "Combobox")
+      ok(
+        field.children[0] && field.children[0].type === "INSTANCE",
+        `${label}: the leading search icon is kept`,
+      );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
