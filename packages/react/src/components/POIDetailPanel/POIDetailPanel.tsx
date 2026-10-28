@@ -8,6 +8,7 @@ import type {
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
 import { Bookmark, Heart, isKozmosIconKey } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
+import { impliedLive } from "../../utils/live-region";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
@@ -83,10 +84,14 @@ const isToggle = (action: POIAction): action is "favourite" | "bookmark" =>
 
 function ActionMessage({ state }: { state?: POIActionState }) {
   if (!state?.message) return null;
+  const role = state.messageTone === "error" ? "alert" : "status";
   return (
+    // The role's liveness said as well: an open popup hides every box not
+    // marked aria-live (GAP-193).
     <p
       className="kozmos-poi-action-message"
-      role={state.messageTone === "error" ? "alert" : "status"}
+      role={role}
+      aria-live={impliedLive(role)}
     >
       {state.message}
     </p>

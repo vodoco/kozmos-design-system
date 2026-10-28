@@ -424,6 +424,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:host-actions
           ADAPTIVE_BROWSER=firefox pnpm test:host-actions
 
+      # GAP-194: Card's padding. Content, or a footer, that is the card's
+      # first child pays the top as well as its sides and bottom, in both
+      # paddings (24, and 16 compact); a header-led card is drawn as before,
+      # a form-wrapped or nested card pays nothing twice, and a caller's own
+      # p-0 or pt-2 still wins (scripts/check-card-padding.mjs).
+      - name: Verify Card Padding
+        run: |
+          pnpm test:card-padding
+          ADAPTIVE_BROWSER=webkit pnpm test:card-padding
+          ADAPTIVE_BROWSER=firefox pnpm test:card-padding
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws

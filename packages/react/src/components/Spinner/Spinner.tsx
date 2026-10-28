@@ -48,6 +48,9 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
         ref={ref}
         className={cn("flex items-center justify-center", className)}
         role="status"
+        // Said as well as implied: an open Select or Menu hides every box not
+        // marked aria-live (GAP-193).
+        aria-live="polite"
         {...props}
       >
         <SpinnerArc className={sizeClasses[size]} size={pixels[size]} />
