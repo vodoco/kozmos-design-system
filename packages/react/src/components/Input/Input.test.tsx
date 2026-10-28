@@ -144,6 +144,7 @@ describe("Input", () => {
     expect(field).toHaveClass("kozmos-input-with-action");
     expect(copy).toHaveClass("kozmos-field-action", "kozmos-input-action");
     expect(copy).toHaveAttribute("type", "button");
+    const rest = copy.innerHTML;
     // The region is in the page, silent, before anything is copied.
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveTextContent("");
@@ -154,6 +155,8 @@ describe("Input", () => {
     expect(writeText).toHaveBeenCalledWith("fid-0042");
     expect(onCopy).toHaveBeenCalledWith("fid-0042");
     expect(status.textContent).toBe("Copied");
+    // A check stands in for the copy icon.
+    expect(copy.innerHTML).not.toBe(rest);
 
     // A second copy changes the words, so it is read again.
     await act(async () => {
@@ -175,10 +178,14 @@ describe("Input", () => {
         action={{ kind: "copy", copiedLabel: "Copiado" }}
       />,
     );
+    const copy = getByRole("button", { name: "Copy" });
+    const icon = copy.innerHTML;
     await act(async () => {
-      fireEvent.click(getByRole("button", { name: "Copy" }));
+      fireEvent.click(copy);
     });
     expect(getByRole("status")).toHaveTextContent("");
+    // The copy icon stays: no check says it copied.
+    expect(copy.innerHTML).toBe(icon);
   });
 
   it("draws a toggle action as a pressed button with its own name", () => {
@@ -219,6 +226,30 @@ describe("Input", () => {
     );
     // Disabled with its field.
     expect(getByRole("button", { name: "Featured" })).toBeDisabled();
+  });
+
+  // Adding or removing the action drew the input in a new wrapper, so React
+  // made a new one: the focus and a value typed into an uncontrolled field
+  // were lost. The input keeps its place in the tree now.
+  it("keeps the same input, its focus and its value, as the action comes and goes", () => {
+    const toggle = {
+      kind: "toggle" as const,
+      label: "Featured",
+      icon: <svg aria-hidden="true" />,
+      pressed: false,
+      onPressedChange: () => {},
+    };
+    const { getByRole, rerender } = render(<Input label="Name" />);
+    const field = getByRole("textbox", { name: "Name" }) as HTMLInputElement;
+    field.focus();
+    fireEvent.change(field, { target: { value: "Gate B12" } });
+    for (const action of [toggle, undefined, { kind: "copy" as const }]) {
+      rerender(<Input label="Name" action={action} />);
+      expect(getByRole("textbox", { name: "Name" })).toBe(field);
+      expect(field).toBeInTheDocument();
+      expect(document.activeElement).toBe(field);
+      expect(field.value).toBe("Gate B12");
+    }
   });
 
   it("draws no wrapper or room without an action", () => {

@@ -8,7 +8,8 @@ export interface IconButtonProps extends ButtonProps {
    * A count at the button's top-end corner (GAP-197): the tours left on a
    * help button, unread notices. A Counter in the theme fill, not a Badge,
    * which is a status (decision 93). The count is read with the button's
-   * name, "Help, 3" by default, in `counterLabel`'s words when given; the
+   * name, "Help, 3" by default, in `counterLabel`'s words when given, whether
+   * the name is `aria-label`, `aria-labelledby` or the button's content; the
    * number drawn is hidden from readers, so it is not read twice. Unset, no
    * counter: pass `undefined` rather than 0 to hide it.
    */
@@ -19,6 +20,12 @@ export interface IconButtonProps extends ButtonProps {
    * number alone.
    */
   counterLabel?: (count: number) => string;
+  /**
+   * What stands between the button's name and its count when they are read,
+   * so a screen reader pauses there: ", " by default, as English writes it;
+   * a product that translates passes its own, "、" in Japanese.
+   */
+  counterSeparator?: string;
 }
 
 function iconButtonSizeClass(size: ButtonProps["size"]) {
@@ -39,19 +46,34 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       variant = "ghost",
       counter,
       counterLabel = String,
+      counterSeparator = ", ",
       children,
       "aria-label": label,
+      "aria-labelledby": labelledBy,
       ...props
     },
     ref,
   ) => {
+    const countId = React.useId();
     const said = counter === undefined ? undefined : counterLabel(counter);
+    // A name from aria-labelledby wins over aria-label and the content, so
+    // the hidden line joins the elements it names: the count is read there
+    // too, where it was lost.
+    const labelledByCount =
+      said !== undefined && labelledBy
+        ? `${labelledBy} ${countId}`
+        : labelledBy;
     return (
       <Button
         ref={ref}
         size={size}
         variant={variant}
-        aria-label={said && label ? `${label}, ${said}` : label}
+        aria-label={
+          said && label && !labelledBy
+            ? `${label}${counterSeparator}${said}`
+            : label
+        }
+        aria-labelledby={labelledByCount}
         className={cn(
           iconButtonSizeClass(size),
           said !== undefined && "kozmos-icon-button-counted",
@@ -70,8 +92,14 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
             >
               {counter}
             </Counter>
-            {/* Named by its content, the count is read from here. */}
-            {label ? null : <span className="sr-only">{`, ${said}`}</span>}
+            {/* Named by its content or by aria-labelledby, the count is
+                read from here. */}
+            {label && !labelledBy ? null : (
+              <span
+                id={countId}
+                className="sr-only"
+              >{`${counterSeparator}${said}`}</span>
+            )}
           </>
         )}
       </Button>

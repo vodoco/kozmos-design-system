@@ -4,21 +4,27 @@
  * dark, touch and compact, left to right and right to left:
  *
  * - IconButton `counter` (GAP-197): a Counter over the icon's top-end corner,
- *   its bottom and start edges 2px past the button's centre at every size,
- *   mirrored right to left; drawn in the theme fill; read with the button's
- *   name, in counterLabel's words, the number itself hidden; an outline in
- *   forced colours.
+ *   its bottom edge on the button's centre line and its start edge 2px past
+ *   it at every size (on the design's 28 help button, 4 above and 6 past its
+ *   end, decision 139), mirrored right to left; drawn in the theme fill; read
+ *   with the button's name, in counterLabel's words, after counterSeparator,
+ *   also when aria-labelledby names it, the number itself hidden; an outline
+ *   in forced colours.
  * - CardHeader `actions` (GAP-169): at the header's inline end, 24 in from
- *   the card's edge, mirrored right to left; centred on the title's line; a
- *   title-only header no taller for an icon button; a long title kept clear
- *   of them; after the title in reading and Tab order, its ring drawn.
+ *   the card's edge, mirrored right to left; centred on the title's line, a
+ *   small and a large icon button too; a title-only header no taller for an
+ *   icon button; a long title kept clear of them; after the title in reading
+ *   and Tab order, its ring drawn.
  * - Input `action` (GAP-154): the copy button inside the field's end, as tall
  *   as the field, the text kept clear of it (in WebKit too, where no @scope
  *   rule reaches an input); Tab reaches it after the field, Enter copies the
  *   value and a polite live region, present before, says "Copied", again on
  *   a second copy; the copy icon gives way to a check. The toggle is a
- *   pressed button with its own name, Space flips it, and pressed it is drawn
- *   in the theme's colour, Highlight in forced colours.
+ *   pressed button with its own name, Space flips it, and pressed it is a
+ *   32 disc of the theme fill under the icon in the fill's foreground, 3:1 or
+ *   more on the field, as a pressed ToggleButton is (not a colour alone,
+ *   WCAG 1.4.1); a Highlight disc in forced colours. Giving a field an action,
+ *   or taking it away, keeps the same input, its focus and its typed value.
  *
  * Each read is recorded on its own, so a run lists every read that fails.
  * Reads named "guard" hold on main too. The accessible names are read with
@@ -187,13 +193,22 @@ for (const m of MATRIX) {
       }),
     );
     await read(
-      "iconbutton counter: over the icon's top-end corner, 2px past the button's centre, at every size",
+      "iconbutton counter: over the icon's top-end corner, its bottom on the button's centre line and its start 2px past it, at every size",
       async () => {
         for (const c of counters) {
           assert.ok(c.counter, `${c.size}: a counter`);
           const cx = (c.button.left + c.button.right) / 2;
           const cy = (c.button.top + c.button.bottom) / 2;
-          near(c.counter.bottom, cy - 2, `${c.size}: its bottom`, 0.5);
+          near(c.counter.bottom, cy, `${c.size}: its bottom`, 0.5);
+          // The MAP-64 design's help button, IconButton sm in compact: 28
+          // across, its Counter at x 16 to 34 and y -4 to 14 (decision 139).
+          if (m.density === "compact" && c.size === "sm" && !rtl) {
+            near(c.button.width, 28, "sm in compact: 28 across", 0.5);
+            near(c.counter.left - c.button.left, 16, "design x from", 0.5);
+            near(c.counter.right - c.button.left, 34, "design x to", 0.5);
+            near(c.counter.top - c.button.top, -4, "design y from", 0.5);
+            near(c.counter.bottom - c.button.top, 14, "design y to", 0.5);
+          }
           if (rtl) near(c.counter.right, cx - 2, `${c.size}: its start`, 0.5);
           else near(c.counter.left, cx + 2, `${c.size}: its start`, 0.5);
           near(c.counter.height, 18, `${c.size}: 18 tall`, 0.5);
@@ -240,6 +255,26 @@ for (const m of MATRIX) {
         );
         const own = await chromiumName(page, "#help-icon");
         if (own !== null) assert.equal(own, "Help, 3 tours left", "Chromium");
+      },
+    );
+    await read(
+      "iconbutton counter: read with a name from aria-labelledby, and after counterSeparator",
+      async () => {
+        assert.equal(
+          await page
+            .getByRole("button", { name: /^Help ?, 4 tours left$/ })
+            .count(),
+          1,
+          "aria-labelledby",
+        );
+        assert.equal(
+          await page.getByRole("button", { name: "ヘルプ、3", exact: true }).count(),
+          1,
+          "counterSeparator",
+        );
+        const own = await chromiumName(page, "#labelled");
+        if (own !== null)
+          assert.match(own, /^Help ?, 4 tours left$/, "Chromium");
       },
     );
     await read(
@@ -329,6 +364,19 @@ for (const m of MATRIX) {
           "long title's first line",
           1.5,
         );
+        // A small and a large icon button are centred too: the actions sat
+        // as tall as the density's default icon button, so a small one rode
+        // 2 high in compact and a large one 2 to 4 low.
+        for (const size of ["sm", "lg"]) {
+          const button = await box(page, `#edit-${size}`);
+          const sized = await box(page, `#title-${size}`);
+          near(
+            (button.top + button.bottom) / 2,
+            (sized.top + sized.bottom) / 2,
+            `${size} centres`,
+            0.5,
+          );
+        }
       },
     );
     await read(
@@ -473,12 +521,19 @@ for (const m of MATRIX) {
       },
     );
     await read(
-      "input toggle: a pressed button with its own name; Space flips it, drawn in the theme's colour",
+      "input toggle: a pressed button with its own name; Space flips it, drawn as a disc of the theme fill, not a colour alone",
       async () => {
         const toggle = page.getByRole("button", { name: "Featured" });
         assert.equal(await toggle.count(), 1, "named Featured");
         assert.equal(await toggle.getAttribute("aria-pressed"), "false");
-        const rest = await toggle.evaluate((el) => getComputedStyle(el).color);
+        const icon = await toggle.locator("svg").boundingBox();
+        const button = await toggle.boundingBox();
+        // A point on the disc, clear of the icon: 12 from the centre, along
+        // the diagonal, inside the 32 disc and outside the 16 icon.
+        const cx = button.x + button.width / 2;
+        const cy = button.y + button.height / 2;
+        const onDisc = [cx - 9, cy - 9];
+        const [restDrawn] = await pixels(await page.screenshot(), [onDisc]);
         await page.focus("#name");
         await page.keyboard.press("Tab");
         await page.keyboard.press("Space");
@@ -486,25 +541,93 @@ for (const m of MATRIX) {
         await page.mouse.move(0, 0);
         await transitioned(toggle);
         await settleLayout(page);
-        const primary = await resolve(page, "--primitives-colors-theme-600");
-        const pressed = await toggle.evaluate(
-          (el) => getComputedStyle(el).color,
+        const fill = await resolve(page, "--primitives-colors-theme-500");
+        const ink = await resolve(
+          page,
+          "--components-primary-buttons-themed-button-foreground-content-idle",
         );
-        assert.equal(pressed, primary, "pressed: theme 600");
-        assert.notEqual(rest, primary, "at rest it is not");
-        // The icon's stroke is drawn in it: some pixel in the icon's box is
-        // near theme 600.
-        const icon = await toggle.locator("svg").boundingBox();
+        const disc = await toggle.evaluate((el) => {
+          const s = getComputedStyle(el, "::before");
+          return {
+            background: s.backgroundColor,
+            width: s.width,
+            height: s.height,
+            colour: getComputedStyle(el).color,
+            field: getComputedStyle(el.previousElementSibling)
+              .backgroundColor,
+          };
+        });
+        assert.equal(disc.background, fill, "the disc: the theme fill");
+        assert.equal(`${disc.width} ${disc.height}`, "32px 32px", "32 across");
+        assert.equal(disc.colour, ink, "the icon: the fill's foreground");
+        const field = rgb(disc.field);
+        const lum = ([r, g, b]) =>
+          [r, g, b]
+            .map((v) => v / 255)
+            .map((v) =>
+              v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4,
+            )
+            .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+        const [hi, lo] = [lum(rgb(fill)), lum(field)].sort((a, b) => b - a);
+        assert.ok(
+          (hi + 0.05) / (lo + 0.05) >= 3,
+          `the disc reads ${((hi + 0.05) / (lo + 0.05)).toFixed(2)}:1 on the field`,
+        );
         const shot = await page.screenshot();
+        const [drawn] = await pixels(shot, [onDisc]);
+        assert.ok(
+          distance(drawn, rgb(fill)) <= 3,
+          `pressed, the disc is drawn: rgb(${drawn.slice(0, 3)})`,
+        );
+        assert.ok(
+          distance(restDrawn, rgb(fill)) > 60,
+          `at rest, no disc: rgb(${restDrawn.slice(0, 3)})`,
+        );
+        // The icon's stroke is drawn in the fill's foreground, on the disc.
         const points = [];
         for (let x = 0; x < icon.width; x += 1)
           points.push([icon.x + x, icon.y + icon.height / 2]);
-        const drawn = await pixels(shot, points);
+        const strokes = await pixels(shot, points);
         assert.ok(
-          drawn.some((p) => distance(p, rgb(primary)) <= 40),
-          "the icon is drawn in the theme's colour",
+          strokes.some((p) => distance(p, rgb(ink)) <= 40),
+          "the icon is drawn in the fill's foreground",
         );
         near(icon.width, 16, "the icon at 16", 0.5);
+      },
+    );
+    await read(
+      "input action: given or taken away, the same input keeps its focus and its typed value",
+      async () => {
+        await page.focus("#switch");
+        await page.keyboard.type("Gate B12");
+        await page.evaluate(() => {
+          window.__switchInput = document.getElementById("switch");
+        });
+        for (const action of [{ kind: "copy" }, null, { kind: "copy" }, null]) {
+          await page.evaluate(
+            (action) => window.controlProps.setAction(action ?? undefined),
+            action,
+          );
+          const state = await page.evaluate(() => {
+            const input = document.getElementById("switch");
+            return {
+              same: input === window.__switchInput,
+              focused: document.activeElement === input,
+              value: input.value,
+              button: !!input.parentElement.querySelector("button"),
+            };
+          });
+          assert.deepEqual(
+            state,
+            { same: true, focused: true, value: "Gate B12", button: !!action },
+            `after ${action ? "giving" : "taking"} the action`,
+          );
+        }
+        // Without an action the field is laid out as it was: as wide as
+        // FID's, its box unchanged.
+        const plain = await box(page, "#switch");
+        const fid = await box(page, "#fid");
+        near(plain.width, fid.width, "as wide as a field with an action", 0.5);
       },
     );
   });
@@ -512,22 +635,31 @@ for (const m of MATRIX) {
 for (const m of [MATRIX[0], MATRIX[3]]) {
   await scenario({ ...m, part: "input", forced: true }, async (page, read) => {
     await read(
-      "input toggle: pressed is Highlight in forced colours",
+      "input toggle: pressed is a Highlight disc under HighlightText in forced colours",
       async () => {
         const toggle = page.getByRole("button", { name: "Featured" });
         await toggle.click();
         await page.mouse.move(0, 0);
         await transitioned(toggle);
         const state = await page.evaluate(() => {
-          const probe = document.createElement("div");
-          probe.style.cssText = "forced-color-adjust:none;color:Highlight";
-          document.body.append(probe);
-          const highlight = getComputedStyle(probe).color;
-          probe.remove();
+          const system = (name) => {
+            const probe = document.createElement("div");
+            probe.style.cssText = `forced-color-adjust:none;color:${name}`;
+            document.body.append(probe);
+            const colour = getComputedStyle(probe).color;
+            probe.remove();
+            return colour;
+          };
           const el = document.querySelector("[aria-pressed]");
-          return { colour: getComputedStyle(el).color, highlight };
+          return {
+            colour: getComputedStyle(el).color,
+            disc: getComputedStyle(el, "::before").backgroundColor,
+            highlight: system("Highlight"),
+            highlightText: system("HighlightText"),
+          };
         });
-        assert.equal(state.colour, state.highlight);
+        assert.equal(state.disc, state.highlight, "the disc");
+        assert.equal(state.colour, state.highlightText, "the icon");
       },
     );
   });
@@ -541,5 +673,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words, outlined in forced colours), CardHeader's actions (at the end, on the title's line, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named and in the theme's colour, Highlight in forced colours)`,
+  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words after counterSeparator, with aria-labelledby too, outlined in forced colours), CardHeader's actions (at the end, on the title's line at any size, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named, a disc of the theme fill under the fill's foreground, a Highlight disc in forced colours; an action given or taken keeps the same input, its focus and its value)`,
 );

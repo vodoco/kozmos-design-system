@@ -16427,11 +16427,13 @@
         },
         "props": [
           "aria-label",
+          "aria-labelledby",
           "asChild",
           "autoFocus",
           "children",
           "counter",
           "counterLabel",
+          "counterSeparator",
           "disabled",
           "isLoading",
           "size",

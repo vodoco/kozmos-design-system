@@ -36,7 +36,8 @@ It forwards its ref to `HTMLButtonElement`. Its props are `IconButtonProps`, whi
   A count at the button's top-end corner (GAP-197): the tours left on a
   help button, unread notices. A Counter in the theme fill, not a Badge,
   which is a status (decision 93). The count is read with the button's
-  name, "Help, 3" by default, in `counterLabel`'s words when given; the
+  name, "Help, 3" by default, in `counterLabel`'s words when given, whether
+  the name is `aria-label`, `aria-labelledby` or the button's content; the
   number drawn is hidden from readers, so it is not read twice. Unset, no
   counter: pass `undefined` rather than 0 to hide it.
 
@@ -45,6 +46,12 @@ It forwards its ref to `HTMLButtonElement`. Its props are `IconButtonProps`, whi
   What the count is read as, after the button's name: `(count) =>
 \`${count} tours left\``, in the product's language. Defaults to the
   number alone.
+
+- `counterSeparator`: `string`, optional, default `", "`.
+
+  What stands between the button's name and its count when they are read,
+  so a screen reader pauses there: ", " by default, as English writes it;
+  a product that translates passes its own, "、" in Japanese.
 
 - `isLoading`: `boolean`, optional.
 - `emotion`: `ButtonEmotion`, optional.

@@ -7784,8 +7784,10 @@ section(
         (child) => child.name === "Counter" && child.type === "FRAME",
       );
     const digits = counter && named(counter, "Counter Text");
+    // Its bottom on the centre line (decision 139: on the design's 28 help
+    // button, 4 above it); its start 2 past the centre.
     const x = box / 2 + 2;
-    const bottom = box / 2 - 2;
+    const bottom = box / 2;
     ok(
       counter &&
         counter.layoutPositioning === "ABSOLUTE" &&
@@ -7797,7 +7799,7 @@ section(
         counter.paddingRight === 5 &&
         counter.constraints.horizontal === "CENTER" &&
         counter.constraints.vertical === "CENTER",
-      `${size} (${box}): the counter is 18 tall, at least 18 wide, its start edge at ${x} and its bottom at ${bottom}, 2 past the centre, held to it (${counter ? `${counter.layoutPositioning} x ${counter.x}, bottom ${counter.y + counter.height}, ${counter.width}x${counter.height}, min ${counter.minWidth}` : "none"})`,
+      `${size} (${box}): the counter is 18 tall, at least 18 wide, its start edge at ${x}, 2 past the centre, and its bottom at ${bottom}, on it, held to it (${counter ? `${counter.layoutPositioning} x ${counter.x}, bottom ${counter.y + counter.height}, ${counter.width}x${counter.height}, min ${counter.minWidth}` : "none"})`,
     );
     ok(
       counter &&
@@ -8239,7 +8241,13 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   const inputCases = [
     ["Readonly", "Default", "Copy", "copy-01", "Colors/foreground/400"],
     ["Default", "Default", "Toggle", "star-01", "Colors/foreground/400"],
-    ["Default", "Default", "TogglePressed", "star-01", "Colors/theme/600"],
+    [
+      "Default",
+      "Default",
+      "TogglePressed",
+      "star-01",
+      "Primary Buttons/themed/button/foreground/content/idle",
+    ],
     ["Disabled", "Default", "Toggle", "star-01", "Colors/foreground/500"],
   ];
   for (const [state, status, action, iconName, tint] of inputCases) {
@@ -8283,6 +8291,30 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         strokes.every((child) => boundVariableName(child.strokes[0]) === tint),
       `${label}: ${iconName} at 16 in ${tint} (${icon ? `${icon.mainComponent && icon.mainComponent.name}, ${strokes.map((child) => boundVariableName(child.strokes[0])).join(" ")}` : "no icon"})`,
     );
+    // Pressed is a shape, not a colour alone (WCAG 1.4.1): a 32 disc of the
+    // theme fill under the icon, as a pressed ToggleButton is and as the
+    // MAP-64 design draws its Featured star (decision 139).
+    const disc = button && named(button, "Pressed Fill");
+    if (action === "TogglePressed") {
+      ok(
+        disc &&
+          button.children.indexOf(disc) <
+            button.children.indexOf(icon) &&
+          disc.layoutPositioning === "ABSOLUTE" &&
+          disc.width === 32 &&
+          disc.height === 32 &&
+          disc.x === (button.width - 32) / 2 &&
+          disc.y === (button.height - 32) / 2 &&
+          disc.constraints.horizontal === "CENTER" &&
+          disc.constraints.vertical === "CENTER" &&
+          disc.cornerRadius === 16 &&
+          boundVariableName((disc.fills || [])[0]) ===
+            "Primary Buttons/themed/button/background/idle",
+        `${label}: a 32 disc of the theme fill under the icon, held to the button's centre (${disc ? `${disc.width}x${disc.height} at ${disc.x},${disc.y}, ${boundVariableName((disc.fills || [])[0])}, index ${button.children.indexOf(disc)} of the icon's ${button.children.indexOf(icon)}` : "none"})`,
+      );
+    } else {
+      ok(!disc, `${label}: no pressed disc`);
+    }
   }
   {
     const node = await input("Default", "Default", "None");
@@ -8390,6 +8422,121 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       liveSet.children.length === 64 && outside.length === 0,
       `and the set grows to hold all 64 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
     );
+  }
+
+  // --- A field another part nests: Action=None, named (GAP-154) ----------------
+  // The importer picked a nested Input by State and Status alone, so a set whose
+  // first State=Default, Status=Default variant drew a copy or a toggle lent it
+  // to Dialog's field, the bottom sheet's and the composites'. A set from before
+  // the Action axis still gives its plain field.
+  {
+    const variantsOf = (names) => {
+      const set = new MockNode("COMPONENT_SET", "Input");
+      for (const name of names) set.appendChild(new MockNode("COMPONENT", name));
+      return set;
+    };
+    const nestedPlugin = (set) => {
+      const page = new MockNode("PAGE", "Components");
+      page.appendChild(set);
+      return loadPlugin({
+        pluginPath: PLUGIN,
+        figma: createFigmaMock({ pages: [page] }),
+      });
+    };
+    const copyFirst = [
+      "State=Default, Status=Default, Action=Copy",
+      "State=Default, Status=Default, Action=TogglePressed",
+      "State=Default, Status=Default, Action=None",
+    ];
+    for (const [painter, call] of [
+      [
+        "Dialog's field",
+        (plugin, body, stats) =>
+          plugin.syncDialogInput({
+            body,
+            name: "Dialog Input",
+            label: "Name",
+            placeholder: "Gate",
+            stats,
+          }),
+      ],
+      [
+        "the bottom sheet's field",
+        (plugin, body, stats) =>
+          plugin.syncBottomSheetInput({
+            body,
+            name: "Bottom Sheet Input",
+            label: "Name",
+            placeholder: "Gate",
+            stats,
+          }),
+      ],
+    ]) {
+      const set = variantsOf(copyFirst);
+      const plugin = nestedPlugin(set);
+      const body = new MockNode("FRAME", "Body");
+      const stats = freshStats();
+      await attempt(() => call(plugin, body, stats));
+      const nested = body.findOne((node) => node.type === "INSTANCE");
+      ok(
+        nested &&
+          nested.mainComponent &&
+          nested.mainComponent.name ===
+            "State=Default, Status=Default, Action=None",
+        `${painter} nests the field with no action, whatever the set's order (${nested && nested.mainComponent ? nested.mainComponent.name : "none"})`,
+      );
+    }
+    {
+      // A set from before the axis: its plain field, with no warning.
+      const set = variantsOf([
+        "State=Default, Status=Error",
+        "State=Default, Status=Default",
+      ]);
+      const plugin = nestedPlugin(set);
+      const body = new MockNode("FRAME", "Body");
+      const stats = freshStats();
+      await attempt(() =>
+        plugin.syncDialogInput({
+          body,
+          name: "Dialog Input",
+          label: "Name",
+          placeholder: "Gate",
+          stats,
+        }),
+      );
+      const nested = body.findOne((node) => node.type === "INSTANCE");
+      ok(
+        nested &&
+          nested.mainComponent &&
+          nested.mainComponent.name === "State=Default, Status=Default" &&
+          !stats.warnings.some((w) => /missing variant/.test(w)),
+        `a set from before the Action axis still lends its plain field (${nested && nested.mainComponent ? nested.mainComponent.name : "none"}; ${stats.warnings.join(" | ")})`,
+      );
+    }
+    {
+      // An instance already nested with an action is set back to none.
+      const set = variantsOf(copyFirst);
+      const plugin = nestedPlugin(set);
+      const input = set.children[0].createInstance();
+      const stats = freshStats();
+      await attempt(() =>
+        plugin.applyCompositeInputInstanceProperties({
+          input,
+          inputSet: set,
+          label: "Name",
+          name: "Field",
+          ownerName: "Dialog",
+          placeholder: "Gate",
+          stats,
+        }),
+      );
+      ok(
+        input.mainComponent &&
+          input.mainComponent.name ===
+            "State=Default, Status=Default, Action=None",
+        `a nested field drawn with a copy is set back to Action=None (${input.mainComponent && input.mainComponent.name})`,
+      );
+    }
   }
 }
 

@@ -104,7 +104,8 @@ From `@kozmos-ds/react`.
  *   read-only value a product shows and never edits, a feature's ID.
  * - `toggle` is a pressed button with its own name, as the reveal is: the
  *   Featured star at a field's end. `icon` is the product's; pressed, it is
- *   drawn in the theme's colour.
+ *   drawn as a pressed ToggleButton is, a disc of the theme fill under the
+ *   icon, so the state is a shape and not a colour alone.
  */
 type InputAction =
   | {

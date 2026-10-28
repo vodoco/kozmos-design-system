@@ -97,3 +97,44 @@ it("draws a counter read with its name, once (GAP-197)", () => {
     screen.getByRole("button").querySelector('[data-slot="counter"]'),
   ).toBeNull();
 });
+
+// A caller that names the button with aria-labelledby set no aria-label, so
+// the count was read nowhere: the hidden line was skipped for the name the
+// caller pointed at. The count joins that name now, after the separator.
+it("reads the count with a name from aria-labelledby", () => {
+  render(
+    <>
+      <span id="help-name">Help</span>
+      <IconButton
+        aria-labelledby="help-name"
+        counter={3}
+        counterLabel={(count) => `${count} tours left`}
+      >
+        <Search aria-hidden="true" />
+      </IconButton>
+    </>,
+  );
+  expect(
+    screen.getByRole("button", { name: /^Help\s*, 3 tours left$/ }),
+  ).toBeInTheDocument();
+});
+
+// The words between the name and the count are the product's, as the
+// count's own are: ", " by default, as English writes it.
+it("joins the name and the count with counterSeparator", () => {
+  const { rerender } = render(
+    <IconButton aria-label="ヘルプ" counter={3} counterSeparator="、">
+      <Search aria-hidden="true" />
+    </IconButton>,
+  );
+  expect(screen.getByRole("button", { name: "ヘルプ、3" })).toBeInTheDocument();
+  rerender(
+    <IconButton counter={5} counterSeparator="、">
+      <Search aria-hidden="true" />
+      <span className="sr-only">お知らせ</span>
+    </IconButton>,
+  );
+  expect(
+    screen.getByRole("button", { name: /^お知らせ\s*、5$/ }),
+  ).toBeInTheDocument();
+});

@@ -1,5 +1,5 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
@@ -8,8 +8,9 @@ import {
   useUncontrolledValue,
   type CharacterCount,
 } from "../FieldWrapper/characterCount";
+import { inputVariants, type InputStatus } from "./inputVariants";
 
-export type InputStatus = "default" | "error" | "warning" | "success";
+export { inputVariants, type InputStatus };
 
 /**
  * A button inside the field's end (GAP-154), drawn as PasswordInput's reveal
@@ -20,7 +21,8 @@ export type InputStatus = "default" | "error" | "warning" | "success";
  *   read-only value a product shows and never edits, a feature's ID.
  * - `toggle` is a pressed button with its own name, as the reveal is: the
  *   Featured star at a field's end. `icon` is the product's; pressed, it is
- *   drawn in the theme's colour.
+ *   drawn as a pressed ToggleButton is, a disc of the theme fill under the
+ *   icon, so the state is a shape and not a colour alone.
  */
 export type InputAction =
   | {
@@ -38,20 +40,6 @@ export type InputAction =
       pressed: boolean;
       onPressedChange: (pressed: boolean) => void;
     };
-
-export const inputVariants = cva("kozmos-reset kozmos-input", {
-  variants: {
-    status: {
-      default: "",
-      error: "kozmos-input-error",
-      warning: "kozmos-input-warning",
-      success: "kozmos-input-success",
-    },
-    error: {
-      true: "kozmos-input-error",
-    },
-  },
-});
 
 export interface InputProps
   extends
@@ -212,14 +200,22 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         status={resolvedStatus}
         className={wrapperClassName}
       >
-        {action ? (
-          <div className="kozmos-reset kozmos-password-field">
-            {field}
+        {/* One wrapper, with an action or without, so the input keeps its
+            place in the tree as an action comes and goes: a new parent made
+            React draw a new input, losing the focus and a typed value.
+            Without an action the wrapper draws no box of its own. */}
+        <div
+          className={
+            action
+              ? "kozmos-reset kozmos-password-field"
+              : "kozmos-input-control"
+          }
+        >
+          {field}
+          {action ? (
             <FieldAction action={action} disabled={props.disabled} />
-          </div>
-        ) : (
-          field
-        )}
+          ) : null}
+        </div>
       </FieldWrapper>
     );
   },

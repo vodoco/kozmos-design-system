@@ -1369,8 +1369,8 @@
   }
   /* CardHeader's actions (GAP-169): at the header's inline end, after the
      title and description, which keep the room before them and their own
-     6px apart. The actions are centred on the title's 24px line, as tall as
-     an icon button at the density, so the header grows no taller for them. */
+     6px apart. The actions are centred on the title's 24px line whatever
+     their size, so the header grows no taller for them. */
   .kozmos-card-header {
     display: flex;
     align-items: flex-start;
@@ -1388,21 +1388,23 @@
     flex-shrink: 0;
     align-items: center;
     gap: 0.5rem;
-    margin-block: calc(
-      (1.5rem - var(--density-icon-control-size-md, 2.75rem)) / 2
-    );
+    /* The title's line: an action of any size is centred on it and spills
+       past it evenly, so the header grows no taller. */
+    block-size: 1.5rem;
   }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
-     bottom and start edges 2px past the button's centre, so it covers the
-     same corner of the icon at every size and density, and the top-left in
-     right to left. In forced colours, where its fill is dropped, an outline
+     bottom edge on the button's centre line and its start edge 2px past it,
+     so it covers the same corner of the icon at every size and density, and
+     the top-left in right to left. On the 28 help button that is 4 above the
+     button and 6 past its end, where the MAP-64 design places its Counter
+     (decision 139). In forced colours, where its fill is dropped, an outline
      keeps it apart from the icon. */
   .kozmos-icon-button-counted {
     position: relative;
   }
   .kozmos-icon-button-counter {
     position: absolute;
-    inset-block-end: calc(50% + 2px);
+    inset-block-end: 50%;
     inset-inline-start: calc(50% + 2px);
     pointer-events: none;
   }

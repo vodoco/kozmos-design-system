@@ -25,8 +25,8 @@ parts, is not the card's first child and is left as it is.
 
 `actions` on `CardHeader` puts what acts on the card at the header's inline end (GAP-169): an edit
 IconButton beside the site's name, a menu. The title and description keep the room before it and
-their own spacing, and the actions are centred on the title's line, with no extra height for an
-icon button at either density. In right to left the actions are at the left. They come after the
+their own spacing, and the actions are centred on the title's line, whatever their size, with no
+extra height for an icon button at either density. In right to left the actions are at the left. They come after the
 title in the reading and tab order. Without `actions`, the header is drawn as it was.
 
 <Canvas of={CardStories.HeaderActions} />

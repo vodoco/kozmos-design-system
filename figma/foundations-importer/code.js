@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "b9f4a5139bad";
+const PLUGIN_BUILD = "e20bb4afc32f";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -189,9 +189,10 @@ const BUTTON_ICON_ON_ACCENT_PROPERTY = "Icon on Accent";
 const BUTTON_ICON_ON_NEUTRAL_PROPERTY = "Icon on Neutral";
 const ICON_BUTTON_SIZES = ["Default", "Small", "Large"];
 // IconButton's count (GAP-197): React's Counter at size sm in the brand tone,
-// over the icon's top-end corner. Its bottom edge sits 2 above the button's
-// centre and its start edge 2 past it, at every size, and it never sizes the
-// button. Drawn as a pill and a text in the component itself, not a nested
+// over the icon's top-end corner. Its bottom edge sits on the button's centre
+// line and its start edge 2 past it, at every size (on the MAP-64 design's 28
+// help button, 4 above it and 6 past its end, decision 139), and it never
+// sizes the button. Drawn as a pill and a text in the component itself, not a nested
 // Counter, so the Counter Text property can drive the digits.
 const ICON_BUTTON_COUNTER_PROPERTY = "Counter";
 const ICON_BUTTON_COUNTER_TEXT_PROPERTY = "Counter Text";
@@ -243,7 +244,23 @@ const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
 // TogglePressed are the Featured star at rest and pressed, its icon swappable
 // through Action Icon.
 const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed"];
+// A field another part nests: at rest and with no action, named in full, so
+// a set whose first State=Default, Status=Default variant draws a copy or a
+// toggle is never the one picked. A set from before the Action axis has no
+// variant that names it, and every one of its variants draws none: the
+// second choice picks there.
+const NESTED_INPUT_VARIANT = {
+  State: "Default",
+  Status: "Default",
+  Action: "None",
+};
+const NESTED_INPUT_VARIANTS = [
+  NESTED_INPUT_VARIANT,
+  { State: "Default", Status: "Default" },
+];
 const INPUT_ACTION_ICON_PROPERTY = "Action Icon";
+// A pressed toggle's disc: a pressed ToggleButton at size sm, 32 across.
+const INPUT_ACTION_PRESSED_FILL_SIZE = 32;
 const PASSWORD_INPUT_VISIBILITY = ["Hidden", "Visible"];
 const NUMBER_INPUT_STEPPERS = ["True", "False"];
 const OTP_INPUT_LENGTHS = ["4", "6"];
@@ -11564,10 +11581,7 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name: "Project Name Input",
       textProperties: {
         "Label Text": "Project name",
@@ -15060,6 +15074,17 @@ function findComponentVariantByProperties(componentSet, properties) {
   return null;
 }
 
+/** Does any variant of the set name this axis? */
+function componentSetHasVariantAxis(componentSet, axis) {
+  if (!componentSet || !componentSet.children) return false;
+  const prefix = `${axis}=`;
+  return componentSet.children.some(
+    (child) =>
+      child.type === "COMPONENT" &&
+      child.name.split(",").some((part) => part.trim().startsWith(prefix)),
+  );
+}
+
 function componentVariantNameMatches(name, properties) {
   const actual = {};
   const parts = name.split(",");
@@ -15092,10 +15117,12 @@ async function createNestedComponentInstance(config) {
     return null;
   }
 
-  const variant = findComponentVariantByProperties(
-    componentSet,
-    config.variantProperties,
-  );
+  // The variant asked for, or a list of them, the first that the set has.
+  let variant = null;
+  for (const properties of [].concat(config.variantProperties)) {
+    variant = findComponentVariantByProperties(componentSet, properties);
+    if (variant) break;
+  }
   if (!variant) {
     if (config.stats && config.stats.warnings) {
       config.stats.warnings.push(
@@ -54683,15 +54710,15 @@ function iconButtonBoxSize(size) {
 /**
  * Where IconButton's counter sits (GAP-197), as React's
  * .kozmos-icon-button-counter places it: its start edge 2 past the button's
- * centre and its bottom edge 2 above it. On a 44 button x is 24 and the
- * bottom 20; on 48, 26 and 22.
+ * centre and its bottom edge on the centre line. On a 44 button x is 24 and
+ * the bottom 22; on 48, 26 and 24.
  */
 function iconButtonCounterPosition(size) {
   const box = iconButtonBoxSize(size);
   const height = counterMetrics("Small").height;
   return {
     x: box / 2 + ICON_BUTTON_COUNTER_OFFSET,
-    y: box / 2 - ICON_BUTTON_COUNTER_OFFSET - height,
+    y: box / 2 - height,
   };
 }
 
@@ -54776,7 +54803,7 @@ async function syncIconButtonCounter(
   const position = iconButtonCounterPosition(size);
   counter.x = position.x;
   counter.y = position.y;
-  // Held to the button's centre, as React's calc(50% + 2px) is.
+  // Held to the button's centre, as React's 50% and calc(50% + 2px) are.
   counter.constraints = { horizontal: "CENTER", vertical: "CENTER" };
   // Off by default, as React draws no counter until one is given.
   counter.visible = false;
@@ -64375,10 +64402,7 @@ async function syncBottomSheetInput({ body, name, label, placeholder, stats }) {
   if (!input) {
     const created = await createNestedComponentInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name,
       stats,
     });
@@ -64436,10 +64460,11 @@ function applyCompositeInputInstanceProperties({
   markNestedComponentInstance(input, "Input");
 
   try {
-    input.setProperties({
-      State: "Default",
-      Status: "Default",
-    });
+    input.setProperties(
+      componentSetHasVariantAxis(inputSet, "Action")
+        ? NESTED_INPUT_VARIANT
+        : { State: "Default", Status: "Default" },
+    );
   } catch (error) {
     stats.warnings.push(
       `${ownerName} ${name}: could not set Input variant properties (${messageFor(error)}).`,
@@ -64475,10 +64500,7 @@ async function ensureCompositeFormInputChildSizing({
 
   const created = await createNestedComponentInstance({
     componentSetName: "Input",
-    variantProperties: {
-      State: "Default",
-      Status: "Default",
-    },
+    variantProperties: NESTED_INPUT_VARIANTS,
     name,
     stats,
   });
@@ -65562,10 +65584,7 @@ async function syncDialogInput({ body, name, label, placeholder, stats }) {
   if (!input) {
     const created = await createNestedComponentInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name,
       stats,
     });
@@ -67465,9 +67484,12 @@ async function syncInputVariantChildren({
  * React's .kozmos-input-action places it: a transparent square at the field's
  * end, inside its border, as tall as the field (bound to its height, 44 in
  * touch) and out of its line, the 16 icon centred. At rest the icon is the
- * field's muted foreground, the reveal's colour; a pressed toggle draws it in
- * theme 600, React's text-primary. Copy is copy-01; the toggle is star-01,
- * which Action Icon swaps.
+ * field's muted foreground, the reveal's colour. A pressed toggle is drawn as
+ * a pressed ToggleButton is, as the MAP-64 design draws its Featured star
+ * (decision 139): a 32 disc of the theme fill under the icon, held to the
+ * button's centre, and the icon in the fill's foreground, so pressed is a
+ * shape and not a colour alone (WCAG 1.4.1). Copy is copy-01; the toggle is
+ * star-01, which Action Icon swaps.
  */
 async function syncInputAction(
   field,
@@ -67532,6 +67554,31 @@ async function syncInputAction(
   );
 
   for (const child of Array.from(button.children || [])) child.remove();
+  if (action === "TogglePressed") {
+    const disc = figma.createFrame();
+    disc.name = "Pressed Fill";
+    disc.resizeWithoutConstraints(
+      INPUT_ACTION_PRESSED_FILL_SIZE,
+      INPUT_ACTION_PRESSED_FILL_SIZE,
+    );
+    disc.cornerRadius = KOZMOS_RADIUS.control;
+    disc.fills = [
+      paintFromVariable(
+        THEME_FILL.name,
+        THEME_FILL.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    disc.strokes = [];
+    disc.clipsContent = false;
+    disc.setSharedPluginData(RUN_NAMESPACE, "kind", "input-action-pressed");
+    button.appendChild(disc);
+    disc.layoutPositioning = "ABSOLUTE";
+    disc.x = (FIELD_ACTION_SIZE - INPUT_ACTION_PRESSED_FILL_SIZE) / 2;
+    disc.y = (FIELD_ACTION_SIZE - INPUT_ACTION_PRESSED_FILL_SIZE) / 2;
+    disc.constraints = { horizontal: "CENTER", vertical: "CENTER" };
+  }
   const tint = inputActionIconTint(action, config);
   const source =
     action === "Copy"
@@ -67558,10 +67605,16 @@ async function syncInputAction(
   return button;
 }
 
-/** The action's icon colour: the field's muted foreground, or pressed, 600. */
+/**
+ * The action's icon colour: the field's muted foreground, or pressed, the
+ * theme fill's foreground on its disc.
+ */
 function inputActionIconTint(action, config) {
   if (action === "TogglePressed") {
-    return { token: "Colors/theme/600", fallback: "#1051E8" };
+    return {
+      token: THEME_FILL_FOREGROUND.name,
+      fallback: THEME_FILL_FOREGROUND.fallback,
+    };
   }
   return { token: config.placeholder, fallback: config.placeholderFallback };
 }
