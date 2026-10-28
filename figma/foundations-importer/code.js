@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "acfbfae9f264";
+const PLUGIN_BUILD = "527a0395a34c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1157,6 +1157,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Menu",
       "Popover",
       "Tooltip",
+      "TourStep",
     ],
   },
   { title: "Controls", components: ["Checkbox", "Radio", "Switch"] },
@@ -3296,6 +3297,35 @@ const COMPONENT_DOCS = [
       "Popover content is keyboard reachable from its trigger in product code.",
       "Surface, text, icon, and border contrast pass in Light and Dark modes.",
       "Dismiss behavior remains a runtime composition concern.",
+    ],
+  },
+  {
+    componentName: "TourStep",
+    componentSetName: "TourStep",
+    category: "Overlay",
+    summary:
+      "TourStep is one step of a product tour: a card beside the control the step points at, which Backdrop's cut-out lights (GAP-188).",
+    usage: [
+      "Use for a guided tour's steps: the tour's name and position, a title, a body, a hint, what completes the step, the dots, Back, Next and Close.",
+      "Use the Coachmark content for a single hint beside a control (GAP-157): no position, no dots, no Back or Next.",
+      "The sequence, pausing and resuming are the product's; the set draws one step.",
+    ],
+    api: [
+      "Content maps to the step's place: First step has no onBack, Step has onBack and onNext, Last step passes nextLabel Finish, Coachmark has no stepCount, onBack or onNext.",
+      "Tour Text maps to tourLabel; Position Text is written from step and stepCount through positionLabel.",
+      "Title Text maps to title, Body Text to children, Hint Text to hint and Instruction Text to instruction.",
+      "Hint and Instruction are booleans showing the hint and the status.",
+    ],
+    properties: [
+      "Content: First step, Step, Last step, Coachmark",
+      "Hint, Instruction (booleans)",
+      "Tour Text, Position Text, Title Text, Body Text, Hint Text, Instruction Text",
+    ],
+    accessibility: [
+      "In code a non-modal dialog named by its title and described by its tour, position, body, hint and status; it takes focus on Next when it opens.",
+      "The status is a polite live region; the dots are for the eye, as the position is in words.",
+      "Escape and Close close it; a press on the dim or the lit target does not.",
+      "Text and surface contrast pass in Light and Dark modes.",
     ],
   },
   {
@@ -10341,6 +10371,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Navbar", updateNavbarComponent],
   ["Sidebar", updateSidebarComponent],
   ["Backdrop", updateBackdropComponent],
+  ["TourStep", updateTourStepComponent],
   ["BottomSheet", updateBottomSheetComponent],
   ["SearchBar", updateSearchBarComponent],
   ["TreeItem", updateTreeItemComponent],
@@ -10564,6 +10595,9 @@ async function updateAllCoreComponents() {
 
 function additionalComponentActionHandlers() {
   return {
+    "build-tour-step": buildTourStepComponent,
+    "update-tour-step": updateTourStepComponent,
+    "rebuild-tour-step": rebuildTourStepComponent,
     "build-meta-strip": buildMetaStripComponent,
     "update-meta-strip": updateMetaStripComponent,
     "rebuild-meta-strip": rebuildMetaStripComponent,
@@ -17697,6 +17731,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "TourStep") {
+    return {
+      Content: TOUR_STEP_CONTENT,
+    };
+  }
+
   if (canonicalName === "Menu") {
     return {
       Content: MENU_CONTENT,
@@ -23640,6 +23680,17 @@ function addComponentTextStyleSpecs(specs, fonts) {
     20,
   );
   addTextStyleSpec(specs, "cardBody", "Card / Body", fonts.regular, 14, 22);
+  addTextStyleSpec(
+    specs,
+    "tourStepEyebrow",
+    "TourStep / Eyebrow",
+    fonts.medium,
+    12,
+    16,
+    "Typography contract for a tour step's name and position: 12/16 semibold, upper case.",
+    undefined,
+    "UPPER",
+  );
   addTextStyleSpec(specs, "listItem", "List / Item", fonts.regular, 14, 20);
   addTextStyleSpec(specs, "treeItem", "Tree / Item", fonts.regular, 14, 20);
   addTextStyleSpec(
@@ -58235,6 +58286,579 @@ async function updatePopoverVariant(
     variableByName,
     fonts,
     stats,
+  });
+}
+
+// --- TourStep ---------------------------------------------------------------
+
+// GAP-188 (decision 116): one step of a product tour, as React's TourStep
+// draws it in Storybook. Popover's surface (Surface/0, the subtle edge, the
+// Control corner, the overlay elevation), 340 wide, 16 inside, the sections
+// 12 apart, and a 4 top edge of the theme fill, drawn as a layer of its own
+// across the top that the card's corner clips, as CSS draws a border-top;
+// the content starts 4 lower, as it does on the web. Content is the step's
+// place in the tour: the first (no Back), one in the middle, the last
+// (Finish), and a coachmark (GAP-157: no position, no dots, no Back or Next).
+// Hint and Instruction are layers each variant carries, shown by the
+// booleans of those names. Back, Next and the dots are live Button and
+// Stepper instances, exposed so a designer edits their labels and position
+// from the step; Close is IconButton's Outline with the x-close glyph.
+const TOUR_STEP_CONTENT = ["First step", "Step", "Last step", "Coachmark"];
+const TOUR_STEP_WIDTH = 340;
+const TOUR_STEP_EDGE = 4;
+const TOUR_STEP_PADDING = 16;
+const TOUR_STEP_GAP = 12;
+const TOUR_STEP_COUNT = "5";
+const TOUR_STEP_SAMPLE = {
+  tour: "How Pointr Cloud is organised",
+  title: "Open a site",
+  body: "Each site in this client is listed here. Open one to see its buildings.",
+  hint: "Sites are listed by client.",
+  instruction: "Go ahead and open a site to proceed to the next step.",
+  coachmarkTitle: "Draw rooms here",
+  coachmarkBody: "Pick the room tool, then click each corner of the room.",
+};
+
+/** What each Content draws: its step of five, and its buttons. */
+function tourStepContentSpec(value) {
+  if (value === "Coachmark") {
+    return {
+      coachmark: true,
+      current: null,
+      back: false,
+      next: null,
+      title: TOUR_STEP_SAMPLE.coachmarkTitle,
+      body: TOUR_STEP_SAMPLE.coachmarkBody,
+    };
+  }
+  const current =
+    value === "First step"
+      ? "1"
+      : value === "Last step"
+        ? TOUR_STEP_COUNT
+        : "2";
+  return {
+    coachmark: false,
+    current,
+    back: value !== "First step",
+    next: value === "Last step" ? "Finish" : "Next",
+    title: TOUR_STEP_SAMPLE.title,
+    body: TOUR_STEP_SAMPLE.body,
+  };
+}
+
+function tourStepVariantCombinations() {
+  return TOUR_STEP_CONTENT.map((content) => ({ content }));
+}
+
+function tourStepVariantKey(props) {
+  return props.content;
+}
+
+function parseTourStepVariantName(name) {
+  const values = parseVariantValueMap(name);
+  if (TOUR_STEP_CONTENT.indexOf(values.Content) === -1) return null;
+  return { content: values.Content };
+}
+
+async function createTourStepVariant({ props, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateTourStepVariant(component, {
+    props,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+/** A live instance of another set, or a placeholder that says which to build. */
+async function createTourStepInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created) {
+    return {
+      node: createMissingNestedComponentNode(
+        name,
+        `Build ${componentSetName} before updating TourStep.`,
+        stats,
+      ),
+      componentSet: null,
+    };
+  }
+  return { node: created.instance, componentSet: created.componentSet };
+}
+
+/** Exposed, so the step's instance offers the nested one's properties. */
+function exposeTourStepInstance(instance, stats) {
+  if (!instance || instance.type !== "INSTANCE") return;
+  try {
+    instance.isExposedInstance = true;
+  } catch (error) {
+    stats.warnings.push(
+      `TourStep: could not expose ${instance.name} (${messageFor(error)}).`,
+    );
+  }
+}
+
+async function tourStepText({
+  name,
+  characters,
+  styleKey,
+  fonts,
+  bold,
+  fontSize,
+  lineHeight,
+  colorToken,
+  colorFallback,
+  variableByName,
+  stats,
+  hug,
+}) {
+  const text = await productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold,
+    fontSize,
+    lineHeight,
+    colorToken,
+    colorFallback,
+    variableByName,
+    stats,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING,
+    wrap: true,
+  });
+  if (hug) text.textAutoResize = "WIDTH_AND_HEIGHT";
+  return text;
+}
+
+async function updateTourStepVariant(
+  component,
+  { props, variableByName, fonts, stats },
+) {
+  const spec = tourStepContentSpec(props.content);
+  productSdkVariantRoot(component, "TourStep", `Content=${props.content}`, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: TOUR_STEP_GAP,
+    padding: TOUR_STEP_PADDING,
+    paddingTop: TOUR_STEP_EDGE + TOUR_STEP_PADDING,
+    width: TOUR_STEP_WIDTH,
+    height: 240,
+    clip: true,
+  });
+  productSdkSurface(component, KOZMOS_RADIUS.control, variableByName, stats);
+  component.effects = [elevationEffect("overlay")];
+
+  // The theme edge: out of the flow, across the top, held to the card's
+  // width as it is resized.
+  const edge = figma.createRectangle();
+  edge.name = "Top Edge";
+  edge.resizeWithoutConstraints(TOUR_STEP_WIDTH, TOUR_STEP_EDGE);
+  edge.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  edge.strokes = [];
+  component.appendChild(edge);
+  setNodePropertyIfSupported(edge, "layoutPositioning", "ABSOLUTE");
+  edge.x = 0;
+  edge.y = 0;
+  edge.constraints = { horizontal: "STRETCH", vertical: "MIN" };
+  edge.setSharedPluginData(RUN_NAMESPACE, "kind", "tour-step-edge");
+
+  // The tour's name and position over the title, and Close at the end.
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: TOUR_STEP_GAP,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING,
+    height: 44,
+  });
+  const heading = productSdkFrame("Heading", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    spacing: 4,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING - 44 - TOUR_STEP_GAP,
+    height: 44,
+  });
+  setNodePropertyIfSupported(heading, "minHeight", 44);
+  if (!spec.coachmark) {
+    const eyebrow = productSdkFrame("Eyebrow", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      spacing: 4,
+      width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING - 44 - TOUR_STEP_GAP,
+      height: 16,
+    });
+    setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
+    for (const [name, characters] of [
+      ["Tour Text", TOUR_STEP_SAMPLE.tour],
+      ["Separator", "·"],
+      ["Position Text", `Step ${spec.current} of ${TOUR_STEP_COUNT}`],
+    ]) {
+      const text = await tourStepText({
+        name,
+        characters,
+        styleKey: "tourStepEyebrow",
+        fonts,
+        bold: true,
+        fontSize: 12,
+        lineHeight: 16,
+        colorToken: "Colors/theme/600",
+        colorFallback: "#1051E8",
+        variableByName,
+        stats,
+        hug: true,
+      });
+      eyebrow.appendChild(text);
+    }
+    appendWithSizing(heading, eyebrow, "FILL", "HUG");
+  }
+  const title = await tourStepText({
+    name: "Title Text",
+    characters: spec.title,
+    styleKey: textStyleKeyForText("Base", "Semibold"),
+    fonts,
+    bold: true,
+    fontSize: 16,
+    lineHeight: 24,
+    colorToken: "Colors/foreground/0",
+    colorFallback: "#000000",
+    variableByName,
+    stats,
+  });
+  appendWithSizing(heading, title, "FILL", "HUG");
+  appendWithSizing(header, heading, "FILL", "HUG");
+
+  const close = await createTourStepInstance({
+    componentSetName: "IconButton",
+    variantProperties: {
+      Variant: "Outline",
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Close",
+    role: "tour-step-close",
+    stats,
+  });
+  if (close.componentSet) {
+    const glyph = await findKozmosIconSourceComponent("x-close");
+    if (glyph) {
+      setInstanceSwapProperty(
+        close.node,
+        close.componentSet,
+        BUTTON_ICON_PROPERTY,
+        glyph.id,
+        stats,
+      );
+    } else {
+      stats.warnings.push(
+        'TourStep: icon "x-close" was not found on the Icons page.',
+      );
+    }
+  }
+  header.appendChild(close.node);
+  appendWithSizing(component, header, "FILL", "HUG");
+
+  const body = await tourStepText({
+    name: "Body Text",
+    characters: spec.body,
+    styleKey: textStyleKeyForText("Small", "Normal"),
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, body, "FILL", "HUG");
+
+  // The hint: the themed surface and its ink, a 4 bar of the theme colour
+  // at its start.
+  const hint = productSdkFrame("Hint", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING,
+    height: 36,
+  });
+  hint.cornerRadius = KOZMOS_RADIUS.marker;
+  hint.fills = [
+    paintFromVariable(
+      "Emotion/themed/surface",
+      "#CAD9FC",
+      variableByName,
+      stats,
+    ),
+  ];
+  hint.strokes = [
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+  ];
+  hint.strokeAlign = "INSIDE";
+  hint.strokeWeight = 4;
+  hint.strokeTopWeight = 0;
+  hint.strokeRightWeight = 0;
+  hint.strokeBottomWeight = 0;
+  hint.strokeLeftWeight = 4;
+  const hintText = await tourStepText({
+    name: "Hint Text",
+    characters: TOUR_STEP_SAMPLE.hint,
+    styleKey: textStyleKeyForText("Small", "Normal"),
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Emotion/themed/onSurface",
+    colorFallback: "#082975",
+    variableByName,
+    stats,
+  });
+  appendWithSizing(hint, hintText, "FILL", "HUG");
+  appendWithSizing(component, hint, "FILL", "HUG");
+  hint.visible = false;
+
+  // The status: the muted fill, the marker (an 8 dot of the theme fill in a
+  // 4 halo of it, the halo a layer at 20%) and what completes the step. The
+  // halo spills out of the dot's 8 as the web's shadow does, taking no room.
+  const instruction = productSdkFrame("Instruction", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING,
+    height: 52,
+  });
+  instruction.cornerRadius = KOZMOS_RADIUS.marker;
+  instruction.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  const marker = productSdkFrame("Marker", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: 8,
+    height: 8,
+  });
+  marker.layoutMode = "NONE";
+  marker.clipsContent = false;
+  const halo = figma.createEllipse();
+  halo.name = "Marker Halo";
+  halo.resizeWithoutConstraints(16, 16);
+  halo.x = -4;
+  halo.y = -4;
+  halo.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  halo.opacity = 0.2;
+  marker.appendChild(halo);
+  const dot = figma.createEllipse();
+  dot.name = "Marker Dot";
+  dot.resizeWithoutConstraints(8, 8);
+  dot.x = 0;
+  dot.y = 0;
+  dot.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  marker.appendChild(dot);
+  marker.setSharedPluginData(RUN_NAMESPACE, "kind", "tour-step-marker");
+  instruction.appendChild(marker);
+  const instructionText = await tourStepText({
+    name: "Instruction Text",
+    characters: TOUR_STEP_SAMPLE.instruction,
+    styleKey: textStyleKeyForText("Small", "Normal"),
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/0",
+    colorFallback: "#000000",
+    variableByName,
+    stats,
+  });
+  appendWithSizing(instruction, instructionText, "FILL", "HUG");
+  appendWithSizing(component, instruction, "FILL", "HUG");
+
+  if (spec.coachmark) return;
+
+  // The dots at the start, Back and Next at the end.
+  const footer = productSdkFrame("Footer", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: TOUR_STEP_GAP,
+    width: TOUR_STEP_WIDTH - 2 * TOUR_STEP_PADDING,
+    height: 44,
+  });
+  const dots = await createTourStepInstance({
+    componentSetName: "Stepper",
+    variantProperties: {
+      Variant: "Dots",
+      Count: TOUR_STEP_COUNT,
+      Current: spec.current,
+    },
+    name: "Dots",
+    role: "tour-step-dots",
+    stats,
+  });
+  footer.appendChild(dots.node);
+  exposeTourStepInstance(dots.node, stats);
+
+  const actions = productSdkFrame("Actions", {
+    direction: "horizontal",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: 160,
+    height: 44,
+  });
+  const buttons = [];
+  if (spec.back) buttons.push(["Back", "Ghost", "Back"]);
+  buttons.push(["Next", "Default", spec.next]);
+  for (const [name, variant, label] of buttons) {
+    const button = await createTourStepInstance({
+      componentSetName: "Button",
+      variantProperties: {
+        Variant: variant,
+        Size: "Default",
+        State: "Default",
+      },
+      name,
+      role: `tour-step-${name.toLowerCase()}`,
+      stats,
+    });
+    if (button.componentSet) {
+      setInstanceTextProperty(
+        button.node,
+        button.componentSet,
+        "Label Text",
+        label,
+        stats,
+      );
+    }
+    actions.appendChild(button.node);
+    exposeTourStepInstance(button.node, stats);
+  }
+  footer.appendChild(actions);
+  appendWithSizing(component, footer, "FILL", "HUG");
+}
+
+function layoutTourStepVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const props = parseTourStepVariantName(child.name);
+    if (!props) continue;
+    child.x = TOUR_STEP_CONTENT.indexOf(props.content) * (TOUR_STEP_WIDTH + 80);
+    child.y = 0;
+  }
+  resizeComponentSetToContainChildren(componentSet);
+}
+
+function configureTourStepProperties(componentSet, stats) {
+  for (const [name, value] of [
+    ["Tour Text", TOUR_STEP_SAMPLE.tour],
+    ["Position Text", `Step 2 of ${TOUR_STEP_COUNT}`],
+    ["Title Text", TOUR_STEP_SAMPLE.title],
+    ["Body Text", TOUR_STEP_SAMPLE.body],
+    ["Hint Text", TOUR_STEP_SAMPLE.hint],
+    ["Instruction Text", TOUR_STEP_SAMPLE.instruction],
+  ]) {
+    configureNamedTextProperty(componentSet, name, name, value, stats);
+  }
+  configureNamedBooleanProperty(componentSet, "Hint", "Hint", false, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Instruction",
+    "Instruction",
+    true,
+    stats,
+  );
+}
+
+function tourStepComponentConfig() {
+  return {
+    componentName: "TourStep",
+    componentSetName: "TourStep",
+    x: 80,
+    y: 6440,
+    combinations: tourStepVariantCombinations,
+    keyForProps: tourStepVariantKey,
+    parseVariantName: parseTourStepVariantName,
+    createVariant: createTourStepVariant,
+    updateVariant: updateTourStepVariant,
+    layoutVariants: layoutTourStepVariants,
+    configureProperties: configureTourStepProperties,
+    description: [
+      "Kozmos TourStep component set generated from React TourStep API (GAP-188).",
+      "Content maps to the step's place in the tour: First step (no onBack), Step (onBack and onNext), Last step (nextLabel Finish), Coachmark (no stepCount, onBack or onNext; GAP-157).",
+      "Tour Text maps to tourLabel; Position Text is the position React writes from step and stepCount with positionLabel.",
+      "Title Text maps to title, Body Text to children, Hint Text to hint and Instruction Text to instruction; the Hint and Instruction booleans show them.",
+      "Back, Next and the dots are live Button and Stepper instances, exposed; Close is IconButton Outline with x-close.",
+      "The card is drawn without its target: in code it sits 12 past Backdrop's cut-out ring.",
+    ],
+  };
+}
+
+function buildTourStepComponent() {
+  return buildPlannedMatrixComponent(tourStepComponentConfig());
+}
+
+function updateTourStepComponent() {
+  return updatePlannedMatrixComponent(tourStepComponentConfig());
+}
+
+async function rebuildTourStepComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "TourStep",
+    componentSetName: "TourStep",
+    build: buildTourStepComponent,
   });
 }
 
