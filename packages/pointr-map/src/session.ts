@@ -1,7 +1,9 @@
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import {
   addressError,
@@ -18,10 +20,8 @@ import {
   toSearchResponse,
   toSite,
   poiId,
-  type PointrBuildingPresentation,
   type PointrPoiItem,
   type PointrSearchResponse,
-  type PointrSitePresentation,
 } from "./convert";
 import { watchCsp, type PointrCspViolation } from "./csp";
 import {
@@ -53,12 +53,9 @@ export interface SessionEvents {
   error(error: PointrMapError): void;
   ready(map: PointrMapLibreMap): void;
   poiSelect(item: PointrPoiItem): void;
-  levelChange(
-    floor: FloorPresentation,
-    building?: PointrBuildingPresentation,
-  ): void;
-  buildingChange(building?: PointrBuildingPresentation): void;
-  siteChange(site?: PointrSitePresentation): void;
+  levelChange(floor: FloorPresentation, building?: BuildingPresentation): void;
+  buildingChange(building?: BuildingPresentation): void;
+  siteChange(site?: SitePresentation): void;
 }
 
 export interface SearchOptions {
@@ -117,8 +114,8 @@ export class PointrMapSession {
   private readyTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly unsubscribe: (() => void)[] = [];
   private readonly pois = new Map<string, PointrPoiItem>();
-  private building: PointrBuildingPresentation | undefined;
-  private site: PointrSitePresentation | undefined;
+  private building: BuildingPresentation | undefined;
+  private site: SitePresentation | undefined;
   private levelIndex: number | undefined;
   private readonly secrets: unknown[];
 
@@ -667,7 +664,7 @@ export class PointrMapSession {
     if (floor) this.events.levelChange(floor, this.building);
   }
 
-  private onBuilding(building: PointrBuildingPresentation | undefined) {
+  private onBuilding(building: BuildingPresentation | undefined) {
     // The same building again is news only when its floors changed (they
     // may arrive after the building does).
     if (JSON.stringify(building) === JSON.stringify(this.building)) return;
@@ -677,7 +674,7 @@ export class PointrMapSession {
     this.events.buildingChange(building);
   }
 
-  private onSite(site: PointrSitePresentation | undefined) {
+  private onSite(site: SitePresentation | undefined) {
     if (site?.id === this.site?.id) return;
     this.site = site;
     this.events.siteChange(site);

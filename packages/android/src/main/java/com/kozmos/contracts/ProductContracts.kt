@@ -504,6 +504,46 @@ data class KozmosFloorPresentation(
     val resultCount: Int? = null
 )
 
+/**
+ * A building as the map reports it, for a product to draw: its name, and its
+ * levels for `KozmosFloorSelector` (GAP-175).
+ *
+ * The live Pointr map reports the building it shows and the site it is in; a
+ * product names the building, offers the site's other buildings, and hands
+ * [floors] to the floor selector as they are. Mirrors `BuildingPresentation`
+ * on the web and `KozmosBuildingPresentation` on SwiftUI.
+ */
+data class KozmosBuildingPresentation(
+    /** The building's id, as the venue's data names it. */
+    val id: String,
+    /**
+     * Already localized, as the venue titles it: "Terminal 2". Empty when the
+     * building has no title, for the product to name it or leave it unnamed.
+     */
+    val label: String,
+    /** The id of the site the building is in: its [KozmosSitePresentation.id]. */
+    val siteId: String,
+    /**
+     * The building's levels, top floor first (decision 38), each once: the
+     * floors the floor selector takes, in the order it draws them.
+     */
+    val floors: List<KozmosFloorPresentation>
+)
+
+/**
+ * A site as the map reports it: its name and its buildings, for a site
+ * switcher or a building list (GAP-175). Mirrors `SitePresentation` on the
+ * web and `KozmosSitePresentation` on SwiftUI.
+ */
+data class KozmosSitePresentation(
+    /** The site's id, as the venue's data names it. */
+    val id: String,
+    /** Already localized, as the venue titles it. Empty when it has no title. */
+    val label: String,
+    /** The site's buildings, in the order the venue's data gives them. */
+    val buildings: List<KozmosBuildingPresentation>
+)
+
 data class KozmosCategoryPresentation(
     val id: String,
     val label: String,

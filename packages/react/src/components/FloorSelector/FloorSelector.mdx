@@ -81,6 +81,82 @@ last, as on a lift panel and in the SDK's level switcher. The lists draw `floors
 pass it, and the stepper steps through it in that order, so one top-first list serves every
 variant.
 
+## A building's floors
+
+The live map reports the building it shows as a `BuildingPresentation` from
+`@kozmos-ds/product-contracts` (GAP-175): its `id`, its `label` as the venue titles it (empty when it
+has no title), the `siteId` of the site it is in, and its `floors`, its levels top floor first, each
+once. Hand `building.floors` to FloorSelector as they are: they are already in the order it draws. The
+site is a `SitePresentation`, its `id`, `label` and `buildings`, for a product that names the site or
+lets the visitor change building. Both are already-localized presentations, as `FloorPresentation`
+is; the product decides what it draws with them. SwiftUI and Compose have the same shapes,
+`KozmosBuildingPresentation` and `KozmosSitePresentation`, compared with the web's by
+`contracts:parity:check`.
+
+<Canvas of={FloorSelectorStories.FromABuilding} />
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { FloorSelector } from "@kozmos-ds/react";
+import type { BuildingPresentation } from "@kozmos-ds/product-contracts";
+
+// The building the map reports: its floors, top first, as FloorSelector draws them.
+export function BuildingFloors({
+  building,
+  startFloor,
+}: {
+  building: BuildingPresentation;
+  startFloor: string;
+}) {
+  const [floor, setFloor] = useState(startFloor);
+  return (
+    <FloorSelector
+      floors={building.floors}
+      selectedFloor={floor}
+      onFloorSelect={setFloor}
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The building the map reports: its floors, top first, as the selector draws them.
+struct BuildingFloors: View {
+    let building: KozmosBuildingPresentation
+    @Binding var selectedFloor: String
+
+    var body: some View {
+        KozmosFloorSelector(
+            floors: building.floors,
+            selectedFloor: $selectedFloor
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.floorselector.KozmosFloorSelector
+import com.kozmos.contracts.KozmosBuildingPresentation
+
+// The building the map reports: its floors, top first, as the selector draws them.
+@Composable
+fun BuildingFloors(
+    building: KozmosBuildingPresentation,
+    selectedFloor: String,
+    onFloorSelect: (String) -> Unit
+) {
+    KozmosFloorSelector(
+        floors = building.floors,
+        selectedFloor = selectedFloor,
+        onFloorSelect = onFloorSelect
+    )
+}
+`}
+/>
+
 ## Which level to start on
 
 Start on the venue's **default level** (a property on Pointr's levels); when there is none, start on

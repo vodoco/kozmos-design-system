@@ -15,21 +15,18 @@ over it: the search, the results, the floors, the selection and the map's status
 import * as React from "react";
 import { AdaptiveMapShell, FloorSelector } from "@kozmos-ds/react";
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
 } from "@kozmos-ds/product-contracts";
-import {
-  PointrMap,
-  type PointrBuildingPresentation,
-  type PointrMapHandle,
-} from "@kozmos-ds/pointr-map";
+import { PointrMap, type PointrMapHandle } from "@kozmos-ds/pointr-map";
 
 export function VenueMap({ cloudToken }: { cloudToken: string }) {
   const map = React.useRef<PointrMapHandle>(null);
   const [insets, setInsets] = React.useState<MapCollisionInsets>();
   const [status, setStatus] = React.useState<MapReadiness>("loading");
-  const [building, setBuilding] = React.useState<PointrBuildingPresentation>();
+  const [building, setBuilding] = React.useState<BuildingPresentation>();
   const [floor, setFloor] = React.useState<FloorPresentation>();
   return (
     <AdaptiveMapShell
@@ -202,9 +199,11 @@ pnpm --filter @kozmos-ds/pointr-map integrity:check     # fails on a hash the CD
   arrive as the ready timeout; the pre-validation refuses every such config it knows of first.
 - The SDK picks its mobile layout from the device, not the container. Touch, RTL (`language: "ar"`)
   and the SDK's navigation events were not exercised by the spike.
-- **GAP-175**: the contracts have no building or site presentation, so `PointrBuildingPresentation`
-  and `PointrSitePresentation` are this package's own, built from the contracts' shapes, until
-  they do.
+- **GAP-175**: the building and the site the map reports are the contracts' own
+  `BuildingPresentation` and `SitePresentation` (`@kozmos-ds/product-contracts`), the shapes SwiftUI
+  and Compose have too: a building's `label` is the Pointr Cloud's title, empty when it has none, and
+  its `floors` are its levels top floor first, each once. The package's own
+  `PointrBuildingPresentation` and `PointrSitePresentation` are gone.
 
 ## Not done yet
 

@@ -1,34 +1,13 @@
 import type {
+  BuildingPresentation,
   FloorPresentation,
   POIPresentation,
   POIResultPresentation,
   SearchResponsePresentation,
   SearchScopePresentation,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import type { SdkBuilding, SdkLevel, SdkPoi, SdkSite } from "./sdk";
-
-/**
- * A building as the map reports it.
- *
- * `@kozmos-ds/product-contracts` has no building or site presentation
- * (GAP-175): these two are this package's until it does, built from the
- * contracts' own shapes so they can be replaced by them.
- */
-export interface PointrBuildingPresentation {
-  id: string;
-  /** As the Pointr Cloud titles it; empty when it has no title. */
-  label: string;
-  siteId: string;
-  /** Top floor first (decision 38). */
-  floors: readonly FloorPresentation[];
-}
-
-/** A site as the map reports it. See PointrBuildingPresentation. */
-export interface PointrSitePresentation {
-  id: string;
-  label: string;
-  buildings: readonly PointrBuildingPresentation[];
-}
 
 /**
  * A POI the map selected or a search found: the two contract shapes a
@@ -95,9 +74,14 @@ export function toFloors(
   return [...byId.values()].sort((a, b) => Number(b.id) - Number(a.id));
 }
 
+/**
+ * A building as the contracts' `BuildingPresentation` (GAP-175): its label
+ * the Pointr Cloud's title, empty when it has none; its floors top floor
+ * first (decision 38).
+ */
 export function toBuilding(
   building: SdkBuilding | undefined,
-): PointrBuildingPresentation | undefined {
+): BuildingPresentation | undefined {
   const id = identifier(building?.buildingInternalIdentifier);
   if (!building || !id) return undefined;
   return {
@@ -108,9 +92,10 @@ export function toBuilding(
   };
 }
 
+/** A site as the contracts' `SitePresentation`, its buildings as `toBuilding` gives them. */
 export function toSite(
   site: SdkSite | undefined,
-): PointrSitePresentation | undefined {
+): SitePresentation | undefined {
   const id = identifier(site?.siteInternalIdentifier);
   if (!site || !id) return undefined;
   return {
@@ -118,7 +103,7 @@ export function toSite(
     label: words(site.siteTitle) ?? "",
     buildings: (site.buildings ?? [])
       .map(toBuilding)
-      .filter((b): b is PointrBuildingPresentation => b !== undefined),
+      .filter((b): b is BuildingPresentation => b !== undefined),
   };
 }
 
@@ -184,7 +169,7 @@ export interface PoiContext {
   /** The SDK's language code, for `name_<code>`. */
   language?: string;
   /** The open building, for the floor's and the building's labels. */
-  building?: PointrBuildingPresentation;
+  building?: BuildingPresentation;
   /** Counted from 1. */
   resultIndex: number;
   selected: boolean;

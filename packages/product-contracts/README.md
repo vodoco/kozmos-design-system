@@ -54,6 +54,40 @@ Compose (`KozmosTravelTimeBand.forDuration`) have the same rule, and all three
 are tested against one table, `tests/travel-time-bands.txt`. The words are the
 card's, in English until a product passes its own.
 
+## Buildings and sites
+
+`BuildingPresentation` and `SitePresentation` are the building and the site a
+live map reports (GAP-175), for a product to name them, offer the site's other
+buildings and draw the building's floors. A building's `floors` are
+`FloorPresentation`s, top floor first, each once: FloorSelector takes them as
+they are. SwiftUI and Compose have the same shapes, `KozmosBuildingPresentation`
+and `KozmosSitePresentation`.
+
+```ts
+import type {
+  BuildingPresentation,
+  SitePresentation,
+} from "@kozmos-ds/product-contracts";
+
+export const terminal: BuildingPresentation = {
+  id: "t2",
+  // As the venue titles it; empty when it has no title.
+  label: "Terminal 2",
+  siteId: "airport",
+  // Top floor first, as FloorSelector draws them.
+  floors: [
+    { id: "3", label: "Departures", shortLabel: "3" },
+    { id: "2", label: "Arrivals", shortLabel: "2" },
+  ],
+};
+
+export const airport: SitePresentation = {
+  id: "airport",
+  label: "Airport",
+  buildings: [terminal],
+};
+```
+
 ## Licence
 
 MIT
