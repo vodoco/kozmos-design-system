@@ -2,7 +2,7 @@
 
 # TourStep
 
-One step of a product tour (GAP-188, decision 116): a card beside the control the step points at, which Backdrop's cut-out lights while the rest of the page is dimmed. It carries the tour's name and its position ("Step 2 of 5"), a title, any body, a hint, the live status of what completes the step ("Go ahead and open a site to proceed to the next step."), the progress as Stepper's dots, Back, Next and Close. It is the MAP-64 boards' card in Kozmos's tokens: Popover's surface, the Control corner, 16 inside, a 4 top edge of the theme fill, 340 wide.
+One step of a product tour (GAP-188, decision 116), drawn as the MAP-64 design draws it (decision 136): a card beside the control the step points at, its arrow pointing at it, which Backdrop's cut-out lights while the rest of the page is dimmed. It carries the tour's name and its position ("Add users and assign permissions · 1 of 4"), Close, a title, a body, what to do now as a Notice ("Open Settings, then User Management, or select Next to go there."), any further content, the progress as a bar, and the footer: a dismiss link at the start, then Back, a secondary action and Next. It is Popover's surface with the Control corner (decision 118), 16 inside, 372 wide, and 432 with the dismiss link.
 
 - **Import:** `import { TourStep } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -26,19 +26,19 @@ export function TourStepExample() {
       target: floor,
       title: "Choose a floor",
       body: "Every floor of the building has its own map.",
-      instruction: "Go ahead and choose a floor to proceed to the next step.",
+      instruction: "Choose a floor, or select Next to open the first one.",
     },
     {
       target: room,
       title: "Draw a room",
       body: "Click each corner of the room, then click the first again.",
-      instruction: "Go ahead and draw a room to proceed to the next step.",
+      instruction: "Draw a room; the tour moves on when it is drawn.",
     },
     {
       target: publish,
       title: "Publish",
       body: "Apps show the new room once the site is published.",
-      instruction: "Go ahead and select Publish to finish the tour.",
+      instruction: "Select Publish, or Done to finish the tour.",
     },
   ];
   const [open, setOpen] = React.useState(false);
@@ -46,7 +46,7 @@ export function TourStepExample() {
   const step = steps[at];
   return (
     <ThemeProvider defaultTheme="light">
-      <Stack gap={6} style={{ minHeight: "28rem" }}>
+      <Stack gap={6} style={{ minHeight: "30rem" }}>
         <Stack direction="row" gap={2} wrap="wrap">
           <Button ref={floor} variant="outline">
             Choose a floor
@@ -76,16 +76,15 @@ export function TourStepExample() {
           step={at + 1}
           stepCount={steps.length}
           title={step.title}
+          body={step.body}
           instruction={step.instruction}
           onBack={at > 0 ? () => setAt(at - 1) : undefined}
           onNext={() =>
             at < steps.length - 1 ? setAt(at + 1) : setOpen(false)
           }
-          nextLabel={at < steps.length - 1 ? "Next" : "Finish"}
+          nextLabel={at < steps.length - 1 ? "Next" : "Done"}
           onClose={() => setOpen(false)}
-        >
-          {step.body}
-        </TourStep>
+        />
       </Stack>
     </ThemeProvider>
   );
@@ -94,25 +93,28 @@ export function TourStepExample() {
 
 ## TourStep
 
-One step of a product tour (GAP-188): a card beside the control the step
-points at, lit by Backdrop's cut-out, with the tour's name and position,
-a title, any body, a hint, the live status of what completes the step,
-the progress as Stepper's dots, Back, Next and Close.
+One step of a product tour (GAP-188), as the MAP-64 design draws it: a card
+beside the control the step points at, its arrow pointing at it, lit by
+Backdrop's cut-out. The tour's name and position, Close, a title, a body,
+what to do now as a Notice in a live region, any content, the progress as
+a bar, and the footer: a dismiss link at the start, then Back, a secondary
+action and Next.
 
 It is one step and it is controlled: the sequence, pausing and resuming
 are the product's. Keep one TourStep and change its props as the tour
 moves on: the cut-out glides to the next target, and the card is drawn
 anew for each `step`, so a reader hears the new one. A non-modal dialog
-named by its title and described by its tour, position, body, hint and
-status, it takes focus when it opens, on Next (else on itself). Escape and
-Close call `onClose`; a press on the dim or on the lit target does not.
-Closed with focus lost, PopoverContent gives focus back (GAP-190): to
-what had it as the step opened, the button that started the tour, or,
-once that is gone or a step opened with focus on the last one's Next, to
-the step's target; a virtual element or a rect has none.
+named by its title and described by its tour, position, body and
+instruction, it takes focus when it opens, on Next (else on itself, as
+when Next is disabled). Escape and Close call `onClose`; a press on the dim
+or on the lit target does not. Closed with focus lost, PopoverContent gives
+focus back (GAP-190): to what had it as the step opened, the button that
+started the tour, or, once that is gone or a step opened with focus on the
+last one's Next, to the step's target; a virtual element or a rect has
+none.
 
-With no `stepCount`, no Back and no Next, it is a coachmark (GAP-157): a
-single hint beside a control, closed by its button and by Escape.
+With no `stepCount` it draws no position and no progress: with no Back and
+no Next it is a coachmark (GAP-157), a single hint beside a control.
 
 It forwards its ref to `HTMLDivElement`. Its props are `TourStepProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "title" | "children">`.
 
@@ -123,43 +125,52 @@ It forwards its ref to `HTMLDivElement`. Its props are `TourStepProps`, which ex
 
 - `target`: `TourStepTarget`, optional.
 
-  What the step points at: the card sits beside it and Backdrop's cut-out
-  lights it, while the rest of the page is dimmed. With none, or one that
-  is not on the page (a ref to nothing, an element with no box), the whole
-  page is dimmed and the card places itself in the middle of the window.
+  What the step points at: the card sits beside it, its arrow pointing at
+  it, and Backdrop's cut-out lights it, while the rest of the page is
+  dimmed. With none, or one that is not on the page (a ref to nothing, an
+  element with no box), the whole page is dimmed and the card, with no
+  arrow, places itself in the middle of the window.
 
 - `tourLabel`: `React.ReactNode`, optional.
 
-  The tour's name, read before its position: "Edit a POI".
+  The tour's name, the eyebrow's words before the position: "Edit a POI".
+  A closing step with no `stepCount` may carry its own state: "Edit a POI ·
+  completed".
 
 - `step`: `number`, optional, default `1`.
 
-  This step, from 1. Past `stepCount`, every dot is done.
+  This step, from 1. Past `stepCount`, it reads as the last.
 
 - `stepCount`: `number`, optional.
 
-  How many steps the tour has. With it, the position ("Step 2 of 5") and
-  the dots are drawn; without it, neither is, and the card is a single
-  hint: a coachmark (GAP-157).
+  How many steps the tour has. With it, the position ("2 of 5") and the
+  progress bar are drawn; without it, neither is, and the card is a single
+  hint (a coachmark, GAP-157), a welcome or a closing card.
 
 - `title`: `React.ReactNode`, **required**.
 
-  The step's title: the dialog's name.
+  The step's title: the dialog's name, a level 2 heading.
 
-- `children`: `React.ReactNode`, optional.
+- `body`: `React.ReactNode`, optional.
 
-  The step's body, any content: text, Tags, a Table.
-
-- `hint`: `React.ReactNode`, optional.
-
-  A tip under the body, on the themed surface.
+  The step's words under the title, in the muted ink.
 
 - `instruction`: `React.ReactNode`, optional.
 
-  What completes the step, as the tour is waiting for it: "Go ahead and
-  open a building to proceed to the next step." A polite live region, so a
-  change while the step is open is read out, with a pulsing marker that
-  stops when motion is reduced.
+  What to do now, as the tour is waiting for it: "Open Settings, then User
+  Management, or select Next to go there." A Notice in `instructionTone`,
+  in a polite live region mounted with each step, so a change while the
+  step is open is read out.
+
+- `instructionTone`: `TourStepInstructionTone`, optional, default `"info"`.
+
+  The instruction's tone. Defaults to "info", with a pointer; "warning",
+  with the warning's own mark, says the step cannot go on as it should
+  ("This step can't be shown on this version of the Dashboard").
+
+- `children`: `React.ReactNode`, optional.
+
+  Any content after the instruction: Tags, a Table, a link.
 
 - `onBack`: `() => void`, optional.
 
@@ -167,11 +178,29 @@ It forwards its ref to `HTMLDivElement`. Its props are `TourStepProps`, which ex
 
 - `onNext`: `() => void`, optional.
 
-  Next, or Finish on the last step. With none, there is no Next button.
+  Next, or Done on the last step. With none, there is no Next button.
 
-- `onClose`: `() => void`, **required**.
+- `nextDisabled`: `boolean`, optional, default `false`.
 
-  Close and Escape. A press outside the card never closes it.
+  Next drawn disabled, not hidden (MAP-64 D11): on a step its own action
+  completes ("Add the user"), or one waiting for a valid value, so the
+  footer keeps one shape on every step. Focus then opens on the card.
+
+- `onSecondary`: `() => void`, optional.
+
+  A second way on, an outline button between Back and Next: "Not now",
+  "Close tour", "Finish without adding". With none, there is none.
+
+- `onDismiss`: `() => void`, optional.
+
+  A link at the footer's start: "Don't show again" (MAP-64 D20). With it,
+  the card is wider, so its three actions sit on one line.
+
+- `onClose`: `() => void`, optional.
+
+  Close and Escape. With none, there is no Close button and Escape does
+  nothing (a welcome card, closed by its own actions). A press outside the
+  card never closes it.
 
 - `backLabel`: `string`, optional, default `"Back"`.
 
@@ -179,17 +208,29 @@ It forwards its ref to `HTMLDivElement`. Its props are `TourStepProps`, which ex
 
 - `nextLabel`: `string`, optional, default `"Next"`.
 
-  Defaults to "Next"; "Finish" on the last step is the product's to pass.
+  Defaults to "Next"; "Done" on the last step is the product's to pass.
+
+- `secondaryLabel`: `string`, optional, default `"Not now"`.
+
+  The secondary button's words. Defaults to "Not now".
+
+- `dismissLabel`: `string`, optional, default `"Don't show again"`.
+
+  The dismiss link's words. Defaults to "Don't show again".
 
 - `closeLabel`: `string`, optional, default `"Close"`.
 
   The close button's name. Defaults to "Close".
 
+- `progressLabel`: `string`, optional, default `"Tour progress"`.
+
+  The progress bar's name. Defaults to "Tour progress".
+
 - `positionLabel`: `string | ((step: number, count: number) => string)`, optional.
 
-  The position, drawn after the tour's name and read with the step: a
-  template with `{step}` and `{count}`, or a function of them. Defaults to
-  "Step {step} of {count}"; "Done" for a closing step.
+  The position, drawn after the tour's name, read with the step, and drawn
+  beside the progress bar, whose value it says: a template with `{step}`
+  and `{count}`, or a function of them. Defaults to "{step} of {count}".
 
 - `side`: `TourStepSide`, optional, default `"bottom"`.
 
@@ -221,6 +262,15 @@ From `@kozmos-ds/react`.
  * one thing at a time.
  */
 type TourStepTarget = BackdropTargetItem;
+```
+
+### TourStepInstructionTone
+
+From `@kozmos-ds/react`.
+
+```ts
+/** The instruction's tone: what to do (info), or that something is wrong (warning). */
+type TourStepInstructionTone = "info" | "warning";
 ```
 
 ### TourStepSide

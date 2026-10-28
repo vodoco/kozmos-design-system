@@ -155,7 +155,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Toast](components/Toast.md): A succinct message that is displayed temporarily.
 - [ToggleButton](components/ToggleButton.md): A button that maintains a pressed/unpressed choice, with default or outline styling.
 - [Tooltip](components/Tooltip.md): A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.
-- [TourStep](components/TourStep.md): One step of a product tour (GAP-188, decision 116): a card beside the control the step points at, which Backdrop's cut-out lights while the rest of the page is dimmed.
+- [TourStep](components/TourStep.md): One step of a product tour (GAP-188, decision 116), drawn as the MAP-64 design draws it (decision 136): a card beside the control the step points at, its arrow pointing at it, which Backdrop's cut-out lights while the rest of the page is dimmed.
 - [Tree](components/Tree.md): Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions.
 - [UserMessage](components/UserMessage.md): The visitor's turn.
 
