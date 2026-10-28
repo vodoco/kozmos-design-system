@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "36e7a5d0020b";
+const PLUGIN_BUILD = "6ad738704c8c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -58398,13 +58398,13 @@ function exposeTourStepInstance(instance, stats) {
 /**
  * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
  * x-close would draw in its source's black in both themes: the tint the
- * Outline button gives its icon is laid again on the swapped-in layers. The
- * same move NavigationItem's shells and BrowseCategoriesPanel's tiles make
- * after their swaps; CORE_UPDATE_SEQUENCE runs IconButton before TourStep, so
- * the tint is laid again in the run that could take it away.
+ * Close's IconButton `variant` gives its icon is laid again on the swapped-in
+ * layers. The same move NavigationItem's shells and BrowseCategoriesPanel's
+ * tiles make after their swaps; CORE_UPDATE_SEQUENCE runs IconButton before
+ * TourStep, so the tint is laid again in the run that could take it away.
  */
-function retintTourStepCloseIcon(instance, variableByName, stats) {
-  const config = buttonConfig("Outline", "Default");
+function retintTourStepCloseIcon(instance, variant, variableByName, stats) {
+  const config = buttonConfig(variant, "Default");
   // The layer the Icon property drives, whatever the swap made of its name.
   const icon =
     instance.findOne(
@@ -58574,10 +58574,12 @@ async function updateTourStepVariant(
   appendWithSizing(heading, title, "FILL", "HUG");
   appendWithSizing(header, heading, "FILL", "HUG");
 
+  // One variant for the instance and for the tint laid again after the swap.
+  const closeVariant = "Outline";
   const close = await createTourStepInstance({
     componentSetName: "IconButton",
     variantProperties: {
-      Variant: "Outline",
+      Variant: closeVariant,
       Size: "Default",
       State: "Default",
     },
@@ -58597,7 +58599,12 @@ async function updateTourStepVariant(
           stats,
         )
       ) {
-        retintTourStepCloseIcon(close.node, variableByName, stats);
+        retintTourStepCloseIcon(
+          close.node,
+          closeVariant,
+          variableByName,
+          stats,
+        );
       }
     } else {
       stats.warnings.push(
