@@ -583,6 +583,67 @@ final class InteractionTests: XCTestCase {
         XCTAssertFalse(card.staticTexts["Continue to the gate"].exists, "the card did not close")
     }
 
+    /// A part that says a name in another language than the interface's is
+    /// one element to XCUITest, as to VoiceOver: a UIKit element laid over
+    /// the part says its words with each phrase's speech language
+    /// (SpeechLanguage.swift). A result named in French is one button found
+    /// by its identifier, a step with a German landmark one static text found
+    /// by the product's identifier, an itinerary row with it one static text,
+    /// and a manoeuvre's instruction one button, each named by its whole
+    /// label, at rest and again with the result selected. A tagged part's
+    /// separate texts, such as the step's "20 m • 1 min", are gone with it.
+    /// Unfixed: `.accessibilityHidden(true)` hid the part under each element
+    /// from assistive technologies but not from XCUITest, which listed it,
+    /// with its texts, beside the element: two buttons `poi-result-bakery`,
+    /// four elements `spoken-step` (the glyph, the instruction, the distance
+    /// and time, and the element), two static texts in the itinerary saying
+    /// the instruction, and two buttons in the manoeuvre.
+    ///
+    /// XCUI reads no speech language, hint or named action, so the app
+    /// reports what VoiceOver is given for each element: the words as read
+    /// before the fix.
+    func testAPartSaidInItsOwnLanguageIsOneElement() {
+        launch("spoken-language")
+        let result = app.buttons.matching(identifier: "poi-result-bakery")
+        let step = app.descendants(matching: .any).matching(identifier: "spoken-step")
+        let instruction = NSPredicate(format: "label BEGINSWITH %@", "Take the lift to Gleis 3")
+        let itinerary = app.otherElements["Itinerary"]
+        let manoeuvre = app.otherElements["Spoken manoeuvre"]
+        // The result's buttons, the step's elements, the itinerary's static
+        // texts that say the instruction, and the manoeuvre's buttons that
+        // say it.
+        let counts = { [result.count, step.count, itinerary.staticTexts.matching(instruction).count,
+                        manoeuvre.buttons.matching(instruction).count] }
+        let report = app.staticTexts["spoken-report"]
+        func spoken(resultTraits: String) -> String {
+            ["Boulangerie Paul, Level 1, Croissants chauds toute la journée; "
+                + "languages [fr Boulangerie Paul, fr Croissants chauds toute la journée]; hint []; "
+                + "id [poi-result-bakery]; traits [\(resultTraits)]; actions [Open details]",
+             "Take the lift to Gleis 3, 20 m, 1 min; languages [de Gleis 3]; hint []; id [spoken-step]; traits [text]; actions []",
+             "Take the lift to Gleis 3, Then 40 m; languages [de Gleis 3]; hint [Show itinerary]; id []; "
+                + "traits [button]; actions []",
+             "Take the lift to Gleis 3, 30 m, 2 min; languages [de Gleis 3]; hint []; id []; traits [text selected]; actions []",
+            ].joined(separator: "\n")
+        }
+        XCTAssertEqual(counts(), [1, 1, 1, 1], "at rest:\n\(app.debugDescription)")
+        XCTAssertEqual(app.staticTexts.matching(identifier: "spoken-step").element.label, "Take the lift to Gleis 3, 20 m, 1 min")
+        XCTAssertTrue(itinerary.staticTexts["Take the lift to Gleis 3, 30 m, 2 min"].isSelected, "the current row")
+        XCTAssertTrue(manoeuvre.buttons["Take the lift to Gleis 3, Then 40 m"].exists)
+        for part in ["20 m • 1 min", "30 m • 2 min", "Then 40 m"] {
+            XCTAssertFalse(app.staticTexts[part].exists, "a tagged part's own text: \(part)")
+        }
+        XCTAssertFalse(result.element.isSelected)
+        app.buttons["Inspect spoken elements"].tap()
+        XCTAssertEqual(report.label, spoken(resultTraits: "button"))
+
+        result.element.tap()
+        received("select bakery")
+        XCTAssertEqual(counts(), [1, 1, 1, 1], "selected:\n\(app.debugDescription)")
+        XCTAssertTrue(result.element.isSelected)
+        app.buttons["Inspect spoken elements"].tap()
+        XCTAssertEqual(report.label, spoken(resultTraits: "button selected"))
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)
