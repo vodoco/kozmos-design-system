@@ -48,14 +48,17 @@ function resolvePreflightTheme(css: string) {
 }
 
 /**
- * The stylesheet is minified for the browsers package.json declares, not for
- * Vite's default target (Chrome 87, Safari 14, Firefox 78), for which esbuild
- * split every `inset` into four longhands and wrote prefixed copies of
- * `appearance` and `tab-size` that no declared browser reads. Android's
- * WebView is Chrome's engine at the same version. An entry this does not
- * understand stops the build rather than leaving a browser out.
+ * The stylesheet and the JavaScript are built for the browsers package.json
+ * declares, not for Vite's default target (Chrome 87, Edge 88, Safari 14,
+ * Firefox 78). For that target esbuild split every `inset` into four longhands
+ * and wrote prefixed copies of `appearance` and `tab-size` that no declared
+ * browser reads, and rewrote every optional chain, `a?.b`, as
+ * `a == null ? void 0 : a.b`: it trusts `?.` only from Chrome and Edge 91, for
+ * a V8 bug no declared browser has. Android's WebView is Chrome's engine at the
+ * same version. An entry this does not understand stops the build rather than
+ * leaving a browser out.
  */
-function cssTargetFrom(browserslist: string[]) {
+function targetFrom(browserslist: string[]) {
   const engines: Record<string, string> = {
     chrome: "chrome",
     edge: "edge",
@@ -68,7 +71,7 @@ function cssTargetFrom(browserslist: string[]) {
       browserslist.map((query) => {
         const match = /^(\w+) >= ([\d.]+)$/.exec(query.trim());
         if (!match || !engines[match[1]])
-          throw new Error(`cssTarget: cannot read browserslist "${query}"`);
+          throw new Error(`target: cannot read browserslist "${query}"`);
         return `${engines[match[1]]}${match[2]}`;
       }),
     ),
@@ -137,7 +140,11 @@ export default defineConfig(async () => {
       },
     },
     build: {
-      cssTarget: cssTargetFrom(packageJson.browserslist),
+      cssTarget: targetFrom(packageJson.browserslist),
+      // ES2020 as well: the syntax stays what it was (the build already writes
+      // `??`, so a consumer's parser sees nothing newer), and `x ??= y`, which
+      // is ES2021, is still written out.
+      target: ["es2020", ...targetFrom(packageJson.browserslist)],
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "KozmosReact",
