@@ -34,17 +34,17 @@ token was declined, so this is not a gap to close.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 121    |
-| Declaring at least one React variant axis | 61     |
+| Components scanned                        | 122    |
+| Declaring at least one React variant axis | 62     |
 | Variations that are compositional only    | 60     |
-| Components with variant gaps — iOS        | 16/61  |
-| Components with variant gaps — Android    | 16/61  |
-| Components with variant gaps — Figma      | 24/61  |
-| Components with variant gaps — Vue        | 12/61  |
-| Components absent entirely — iOS          | 10/121 |
-| Components absent entirely — Android      | 9/121  |
-| Components absent entirely — Figma        | 22/121 |
-| Components absent entirely — Vue          | 24/121 |
+| Components with variant gaps — iOS        | 17/62  |
+| Components with variant gaps — Android    | 17/62  |
+| Components with variant gaps — Figma      | 25/62  |
+| Components with variant gaps — Vue        | 12/62  |
+| Components absent entirely — iOS          | 11/122 |
+| Components absent entirely — Android      | 10/122 |
+| Components absent entirely — Figma        | 22/122 |
+| Components absent entirely — Vue          | 24/122 |
 
 <!-- /generated:headline -->
 
@@ -158,6 +158,10 @@ TimePicker
   - ios missing axes -> hourCycle (h12, h23)
   - android missing axes -> hourCycle (h12, h23)
   - figma missing axes -> hourCycle (h12, h23)
+TourStep
+  - ios: component/set absent
+  - android: component/set absent
+  - figma missing axes -> side (top, right, bottom, left); align (start, center, end)
 Tree
   - ios missing axes -> activationMode (select, toggle, select-toggle)
   - android missing axes -> activationMode (select, toggle, select-toggle)
@@ -230,19 +234,19 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 10 of 121
+### iOS — 11 of 122
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, Surface, TourStep, UserMessage.
 
-### Android — 9 of 121
+### Android — 10 of 122
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, TourStep, UserMessage.
 
-### Figma — 22 of 121
+### Figma — 22 of 122
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
-### Vue — 24 of 121
+### Vue — 24 of 122
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
 
@@ -285,6 +289,9 @@ Remaining:
    aliases.
 4. **Vue** — the components §3 lists as absent from Vue. Vue is a private harness, and its work
    waits (decision 2).
+5. **TourStep on SwiftUI and Compose** — later, by decision 116 (GAP-188): it ships on the web
+   and in Figma first. Its Figma `side` and `align` are where the card sits beside its target,
+   which a drawing of the card alone does not show.
 
 ## 5. Known Limits Of This Analysis
 
