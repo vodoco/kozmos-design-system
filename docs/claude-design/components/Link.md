@@ -32,6 +32,21 @@ export function LinkExample() {
 It forwards its ref to `HTMLAnchorElement`. Its props are `LinkProps`, which extends `React.AnchorHTMLAttributes<HTMLAnchorElement>`.
 
 - `variant`: `"default" | "subtle"`, optional, default `"default"`.
+- `external`: `boolean`, optional, default `false`.
+
+  The link opens in a new tab (GAP-202, decision 122): `target="_blank"`
+  and `rel="noopener noreferrer"`, a caller's own `target` and `rel`
+  still winning; a new-tab icon at the link's inline end, sized and
+  coloured with its text, which never wraps onto a line of its own; and
+  `externalLabel`, read after the link's name.
+
+- `externalLabel`: `string`, optional, default `"opens in a new tab"`.
+
+  What a screen reader hears after the link's name when `external`:
+  "Privacy Policy opens in a new tab". English by default; pass the
+  product's own words. An `aria-label` on the link replaces its content,
+  this announcement with it, so include it there.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

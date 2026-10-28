@@ -423,6 +423,18 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:card-padding
           ADAPTIVE_BROWSER=firefox pnpm test:card-padding
 
+      # GAP-202: Link's external. A new tab with noopener noreferrer, a
+      # caller's own target and rel winning; the link's words, a space and
+      # "opens in a new tab" as each engine lays them out, never drawn; the
+      # new-tab icon hidden, the text's size and colour, at the inline end
+      # and mirrored right to left, and never alone on a line at any width,
+      # touch and compact (scripts/check-link-external.mjs).
+      - name: Verify Link External
+        run: |
+          pnpm test:link-external
+          ADAPTIVE_BROWSER=webkit pnpm test:link-external
+          ADAPTIVE_BROWSER=firefox pnpm test:link-external
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws

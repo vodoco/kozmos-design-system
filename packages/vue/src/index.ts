@@ -369,6 +369,16 @@ export const KozmosSplitButton = createVueWrapper(SplitButton);
 export const KozmosToggleButton = createVueWrapper(ToggleButton);
 export const KozmosSegmentedControl = createVueWrapper(SegmentedControl);
 export const KozmosLink = createVueWrapper(Link);
+// `external` is a Boolean prop, so a bare `external` in a template is true:
+// undeclared, Vue hands React the attribute's value, "", which reads as false.
+// `externalLabel` is declared so `external-label` reaches React by its name
+// (GAP-202).
+Object.assign(KozmosLink, {
+  props: {
+    external: { type: Boolean, default: undefined },
+    externalLabel: { type: String, default: undefined },
+  },
+});
 export const KozmosIconButton = createVueWrapper(IconButton);
 export const KozmosTabs = createVueWrapper(Tabs);
 export const KozmosDialog = createVueWrapper(Dialog);

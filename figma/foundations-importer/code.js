@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3fad06a52ae9";
+const PLUGIN_BUILD = "e7b931815fcd";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -2135,16 +2135,18 @@ const COMPONENT_DOCS = [
       "State maps to focus-visible examples in Code Connect.",
       "Link Text maps to children in Code Connect.",
       "Focus Visible controls the generated focus ring.",
+      "External maps to Link.external: the new-tab icon after the words.",
     ],
     properties: [
       "Variant: Default, Subtle",
       "State: Default, Focus",
-      "Link Text, Focus Visible",
+      "Link Text, Focus Visible, External",
     ],
     accessibility: [
       "Link text contrast passes in Light and Dark modes.",
       "The Focus state shows the generated keyboard focus ring.",
       "Product code should preserve native link semantics or accessible button semantics.",
+      "External's icon is decoration: the code says \"opens in a new tab\" after the link's name.",
     ],
   },
   {
@@ -8509,6 +8511,15 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-202: the new-tab icon is the text's size, React's 1em, after a gap
+  // as wide as its no-break space.
+  {
+    name: "Link/icon/size",
+    value: 14,
+    alias: "Link/font-size",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  { name: "Link/gap", value: 4, alias: "Layout/spacing/50", scopes: ["GAP"] },
   {
     name: "Label/font-size",
     value: 14,
@@ -30448,6 +30459,7 @@ async function buildToggleButtonComponent() {
     "Size maps to ToggleButton.size.",
     "State maps to pressed and disabled in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutToggleButtonVariants(componentSet);
@@ -30503,6 +30515,7 @@ async function updateToggleButtonComponent() {
     "Size maps to ToggleButton.size.",
     "State maps to pressed and disabled in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -31219,6 +31232,7 @@ async function buildLinkComponent() {
     "State provides focus-visible examples.",
     "Link Text maps to children in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -31271,6 +31285,7 @@ async function updateLinkComponent() {
     "State provides focus-visible examples.",
     "Link Text maps to children in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -53097,6 +53112,15 @@ function configureLinkProperties(componentSet, stats) {
     stats,
   );
   configureFocusVisibleProperty(componentSet, stats);
+  // GAP-202: External shows the new-tab icon (syncLinkExternalIcon), off
+  // by default, so a Link draws as it did.
+  configureNamedBooleanProperty(
+    componentSet,
+    LINK_EXTERNAL_ICON_NAME,
+    "External",
+    false,
+    stats,
+  );
 }
 
 function configureLabelProperties(componentSet, stats) {
@@ -55425,6 +55449,18 @@ async function updateLinkVariant(
   ];
   component.appendChild(text);
 
+  // GAP-202: the new-tab icon after the words, hidden until External. The
+  // gap is React's no-break space; it counts only while the icon shows.
+  component.itemSpacing = 4;
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Link/gap",
+    variableByName,
+    stats,
+  );
+  syncLinkExternalIcon(component, config, variableByName, stats);
+
   syncFocusRing(component, {
     enabled: state === "Focus",
     width: 128,
@@ -55437,6 +55473,81 @@ async function updateLinkVariant(
   });
   const ring = directChildNamed(component, "Focus Ring");
   if (ring) ring.visible = state === "Focus";
+}
+
+// GAP-202, decision 122: Link's new-tab icon. Pointr's link-external-01
+// (node 1007:10029), which @kozmos-ds/icons exports as LinkExternal01 and
+// React draws at the link's end; decision 121 keeps it out of the by-name
+// icons, so it is drawn here from its path rather than placed from the Icons
+// page. The painters check holds the path to the package's.
+const LINK_EXTERNAL_ICON_NAME = "External Icon";
+const LINK_EXTERNAL_ICON_PATH =
+  "M15 3H21L21 9M21 3L13 11M10 5H7.8C6.11984 5 5.27976 5 4.63803 5.32698C4.07354 5.6146 3.6146 6.07354 3.32698 6.63803C3 7.27976 3 8.11984 3 9.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H14.2C15.8802 21 16.7202 21 17.362 20.673C17.9265 20.3854 18.3854 19.9265 18.673 19.362C19 18.7202 19 17.8802 19 16.2V14";
+
+/**
+ * The new-tab icon, after the link's words: the text's size, 14 (React's
+ * 1em), its outline stroked 2 × 14 / 24 with round caps and joins, in the
+ * variant's colour, as React's `currentColor`. Drawn again on every Update,
+ * hidden, as the option lists' group labels are: the set's External boolean
+ * shows it (configureLinkProperties).
+ */
+function syncLinkExternalIcon(component, config, variableByName, stats) {
+  const size = 14;
+  const existing = directChildNamed(component, LINK_EXTERNAL_ICON_NAME);
+  if (existing) existing.remove();
+  const icon = figma.createNodeFromSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="${LINK_EXTERNAL_ICON_PATH}" stroke="${config.foregroundFallback}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  );
+  icon.name = LINK_EXTERNAL_ICON_NAME;
+  icon.fills = [];
+  icon.strokes = [];
+  icon.clipsContent = false;
+  icon.setSharedPluginData(RUN_NAMESPACE, "kind", "link-external-icon");
+  icon.setSharedPluginData(
+    RUN_NAMESPACE,
+    "foreground-token",
+    config.foreground,
+  );
+  markDecorativeIcon(icon);
+  // Drawn on its 24 grid and resized with its shapes, as the wayfinding
+  // glyphs are placed (placeIconSource); the stroke is set below.
+  for (const shape of icon.findAll(() => true)) {
+    try {
+      shape.constraints = { horizontal: "SCALE", vertical: "SCALE" };
+    } catch (_error) {
+      // A group takes no constraints; its shapes do.
+    }
+  }
+  try {
+    icon.resize(size, size);
+  } catch (error) {
+    stats.warnings.push(
+      `Link: could not size the new-tab icon to ${size} (${messageFor(error)}).`,
+    );
+  }
+  const paint = paintFromVariable(
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  for (const shape of icon.findAll((node) => node.type === "VECTOR")) {
+    shape.fills = [];
+    shape.strokes = [paint];
+    shape.strokeCap = "ROUND";
+    shape.strokeJoin = "ROUND";
+  }
+  scaleIconStrokes(icon, size);
+  bindSizeVariables(
+    icon,
+    "Link/icon/size",
+    "Link/icon/size",
+    variableByName,
+    stats,
+  );
+  component.appendChild(icon);
+  icon.visible = false;
+  return icon;
 }
 
 async function createLabelVariant({ value, variableByName, fonts, stats }) {

@@ -1650,6 +1650,32 @@
   .kozmos-rtl-mirror {
     transform: scaleX(calc(1 - 2 * var(--kozmos-rtl, 0)));
   }
+  /* Link's new-tab icon (GAP-202): the link's last word, a no-break space
+     and the icon are one unbreakable run, so the icon never starts a line
+     alone. The icon is the text's size and colour (currentColor), centred on
+     its capitals, and points to the inline end, as Compose's AutoMirrored
+     OpenInNew and SwiftUI's arrow.up.forward do. */
+  .kozmos-link-external {
+    white-space: nowrap;
+  }
+  .kozmos-link-external-icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+  /* Read after the link's name, never drawn. */
+  .kozmos-link-external-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
   /* Accordion utilities use transition-all. Do not animate text resizing or
      wrapping inside this scrollable panel: it can move keyboard focus away. */
   .kozmos-map-info-panel .kozmos-map-info-faq [data-state] {

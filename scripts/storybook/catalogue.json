@@ -516,7 +516,13 @@
       "id": "navigation-link",
       "title": "Core/Actions/Link",
       "component": "Link",
-      "exports": ["Default", "Subtle"]
+      "exports": [
+        "Default",
+        "Subtle",
+        "External",
+        "ExternalInText",
+        "ExternalRightToLeft"
+      ]
     },
     {
       "file": "packages/react/src/components/List/List.stories.tsx",
