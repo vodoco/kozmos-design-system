@@ -114,9 +114,8 @@ export interface ButtonLinkProps {
 
 /**
  * A router link styled as a button — the pattern the React package's README
- * gives for navigation, since Button always renders a <button>. Its label is
- * underlined: the button classes do not reset an anchor's text decoration
- * (GAPS.md, GAP-09). Left visible on purpose; the fix belongs in Kozmos.
+ * gives for navigation, since Button always renders a <button>. The button
+ * classes take the anchor's underline off (GAPS.md, GAP-09, fixed in Kozmos).
  */
 export function ButtonLink({
   to,

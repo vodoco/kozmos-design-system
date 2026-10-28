@@ -190,9 +190,9 @@ PopoverContent.displayName = PopoverPrimitive.Content.displayName;
  * about the thing it points at, while plenty of popovers are panels that read
  * better square.
  *
- * Defaults match `TooltipContent`'s arrow so the two agree on screen. Note it
- * inherits no border — `PopoverContent` is bordered and Radix's arrow is a
- * plain filled triangle, which is the same compromise `Tooltip` already makes.
+ * Defaults match `TooltipContent`'s arrow so the two agree on screen: a filled
+ * triangle, 8 by 4, that overlaps the bordered body by 1px, as Figma's tip
+ * does, so the body's border does not run across it (site GAP-74).
  */
 const PopoverArrow = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Arrow>,
