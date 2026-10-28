@@ -1,6 +1,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../utils";
+import { impliedLive } from "../../utils/live-region";
 
 const alertVariants = cva(
   "relative w-full rounded-container border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
@@ -54,18 +55,24 @@ export interface AlertProps
 }
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  ({ className, variant, live = "off", role, ...props }, ref) => (
-    <div
-      ref={ref}
-      // Hard-coded `role="alert"` until 2026-09-25, with no way out: an
-      // assertive live region, so a static page notice was read out the
-      // moment the page opened, over whatever the visitor was doing
-      // (GAP-006). A caller's own `role` still wins.
-      role={role ?? LIVE_ROLE[live]}
-      className={cn(alertVariants({ variant }), className)}
-      {...props}
-    />
-  ),
+  ({ className, variant, live = "off", role, ...props }, ref) => {
+    // Hard-coded `role="alert"` until 2026-09-25, with no way out: an
+    // assertive live region, so a static page notice was read out the
+    // moment the page opened, over whatever the visitor was doing
+    // (GAP-006). A caller's own `role` still wins.
+    const resolved = role ?? LIVE_ROLE[live];
+    return (
+      <div
+        ref={ref}
+        role={resolved}
+        // The role's own liveness, said as well: a Select or Menu open hides
+        // every box but those marked aria-live (GAP-193).
+        aria-live={impliedLive(resolved)}
+        className={cn(alertVariants({ variant }), className)}
+        {...props}
+      />
+    );
+  },
 );
 Alert.displayName = "Alert";
 

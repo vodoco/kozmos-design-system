@@ -178,6 +178,9 @@ export const LanguageSwitcher = React.forwardRef<
           <p
             id={`${id}-pending`}
             role="status"
+            // Said as well as implied by the role, so this list's own Select
+            // and any other open popup keep it visible (GAP-193).
+            aria-live="polite"
             className={
               pending ? "mt-2 text-sm text-muted-foreground" : "sr-only"
             }
@@ -186,7 +189,7 @@ export const LanguageSwitcher = React.forwardRef<
           </p>
           {error && (
             <div className="mt-2 text-sm text-destructive-text">
-              <p id={`${id}-error`} role="alert">
+              <p id={`${id}-error`} role="alert" aria-live="assertive">
                 {error}
               </p>
               {onRetry && (
