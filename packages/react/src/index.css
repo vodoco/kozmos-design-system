@@ -15,6 +15,8 @@
 @import "./styles/owned-poi-detail.css";
 @import "./styles/owned-poi-gallery.css";
 @import "./styles/owned-client-app-banner.css";
+/* After the popover's rules, which the step card's own outweigh by class. */
+@import "./styles/owned-tour-step.css";
 
 @tailwind base;
 @tailwind components;
