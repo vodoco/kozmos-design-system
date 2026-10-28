@@ -273,15 +273,6 @@ body {
   overflow: auto;
 }
 
-/* GAP-55: a Listbox is a grid with no column template, so its one column is
-   as wide as its widest option's text; a long description then widens the
-   options past the list, which scrolls sideways, and the ellipsis each
-   label and description is set up for never shows. The column takes the
-   list's width here, a property the Listbox does not set. */
-.site-search-list {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 /* ---- Reference pages: sidebar beside content -------------------------- */
 
 .site-docs {
@@ -1692,8 +1683,9 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
    (AdaptiveMapShell fills its parent), and a page needs the frame: its own
    Navbar is always sticky (GAP-19) and would otherwise stick over the site's
    header while the page scrolls past the example. It isolates its stacking:
-   Kozmos's map overlays use z-index 50, as the sticky Navbar does, and a
-   later overlay would draw over the header (GAPS.md, GAP-40). */
+   the example's own Navbar is z-index 50, as the site's is, and would draw
+   over the site's header. (Kozmos's map overlays are 50 too, but MapView
+   contains them since GAPS.md's GAP-40 was fixed.) */
 .site-example-canvas {
   isolation: isolate;
   block-size: min(56rem, calc(100dvh - var(--site-space-900)));
