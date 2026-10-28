@@ -18,7 +18,7 @@
  *   map.
  * - GAP-55: a Listbox's column is the list's width, so a long option ends in
  *   an ellipsis instead of widening the list until it scrolls sideways, in a
- *   group that is a grid of its own too (#411's option groups).
+ *   wrapper that is a grid of its own too (an option row is min-width: 0).
  * - GAP-68: BottomNavigation's bar is as tall as its items at both
  *   densities, 64 and 72, as Figma's is, and nothing spills out of it; its
  *   top line is drawn inside, over the items, as Figma's inside stroke is,
@@ -183,12 +183,13 @@ async function gap09(page, mode, theme) {
 }
 
 async function gap55(page, mode, theme) {
-  // The Listbox as it draws its options, and a long option inside a group
-  // that is a grid of its own (#411's option groups), so the truncation is
-  // seen to hold whatever wraps the option.
+  // The Listbox as it draws its options, and a long option inside a wrapper
+  // that is a grid of its own with no column of Kozmos's (as #411's option
+  // group was before it set one), so the truncation is seen to hold
+  // whatever wraps the option.
   for (const [list, name] of [
     ["gap55", "a Listbox"],
-    ["gap55-group", "a Listbox's group"],
+    ["gap55-group", "a Listbox's grid wrapper"],
   ]) {
     const where = `${mode} ${theme} GAP-55 ${name}`;
     const drawn = await page.getByTestId(`${theme}-${list}`).evaluate((box) => {
