@@ -75,6 +75,39 @@ export const Padding: Story = {
   ),
 };
 
+/**
+ * A card with no header, in both paddings: the content alone, and the
+ * content above a footer. Content and footer pad their sides and bottom,
+ * because a header above them has already paid the top; with no header the
+ * one that is the card's first child pays the top as well. It used not to,
+ * and the content touched the card's top edge (GAP-194).
+ */
+export const WithoutHeader: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      {(["default", "compact"] as const).map((padding) => (
+        <div key={padding} className="flex w-[320px] max-w-full flex-col gap-6">
+          <Card padding={padding} className="w-full">
+            <CardContent className="text-sm text-muted-foreground">
+              Content alone — {padding === "default" ? 24 : 16}px on every side.
+            </CardContent>
+          </Card>
+          <Card padding={padding} className="w-full">
+            <CardContent className="text-sm text-muted-foreground">
+              Content above a footer.
+            </CardContent>
+            <CardFooter className="justify-end gap-2">
+              <Button variant="outline">Cancel</Button>
+              <Button>Save</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
 // GAP-169: Pointr Cloud's site card, an edit button at the header's end.
 export const HeaderActions: Story = {
   render: (args) => (

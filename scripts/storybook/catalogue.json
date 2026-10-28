@@ -257,7 +257,7 @@
       "id": "components-card",
       "title": "Core/Layout/Card",
       "component": "Card",
-      "exports": ["Default", "Padding", "HeaderActions"]
+      "exports": ["Default", "Padding", "WithoutHeader", "HeaderActions"]
     },
     {
       "file": "packages/react/src/components/CategoryField/CategoryField.stories.tsx",
