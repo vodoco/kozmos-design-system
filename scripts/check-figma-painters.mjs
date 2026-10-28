@@ -1957,6 +1957,347 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// GAP-188: TourStep, as React's TourStep draws it. Popover's surface 340
+// wide, 16 inside and 4 more at the top for the theme edge, sections 12
+// apart; the edge a layer of its own, out of the flow and stretched; the
+// eyebrow in the theme ink and upper case, the hint on the themed surface
+// with a 4 bar at its start, the status on the muted fill with its marker;
+// Back, Next and the dots live and exposed, Close IconButton's Outline with
+// x-close. Content is First step, Step, Last step and Coachmark; the
+// properties each bind a layer; and the set is drawn from a file that holds
+// the sets it nests, as Build and Update find them.
+section("TourStep (GAP-188)");
+{
+  const ready =
+    Array.isArray(plugin.TOUR_STEP_CONTENT) &&
+    typeof plugin.tourStepComponentConfig === "function" &&
+    typeof plugin.updateTourStepVariant === "function";
+  ok(ready, "TourStep has its Content axis, a planned set and a painter");
+  if (ready) {
+    ok(
+      plugin.TOUR_STEP_CONTENT.join(",") ===
+        "First step,Step,Last step,Coachmark" &&
+        JSON.stringify(
+          plugin.expectedVariantAxesForComponentSetName("TourStep"),
+        ) === JSON.stringify({ Content: plugin.TOUR_STEP_CONTENT }),
+      "four variants: First step, Step, Last step and Coachmark",
+    );
+    ok(
+      plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name).indexOf("TourStep") >
+        Math.max(
+          ...["Button", "IconButton", "Stepper", "Backdrop"].map((name) =>
+            plugin.CORE_UPDATE_SEQUENCE.map(([n]) => n).indexOf(name),
+          ),
+        ),
+      "Update All runs TourStep after the sets it nests",
+    );
+
+    // The file: Button's Default and Ghost, IconButton's Outline and its
+    // Icon swap, Stepper's five-step Dots, and x-close on the Icons page.
+    const labelled = (variant, key) => {
+      const label = new MockNode("TEXT", "Label Text");
+      label.characters = "Button";
+      label.componentPropertyReferences = { characters: key };
+      variant.appendChild(label);
+    };
+    const button = mockComponentSet(
+      "Button",
+      ["Default", "Ghost"].map((variant) => ({
+        properties: { Variant: variant, Size: "Default", State: "Default" },
+        build: (node) => labelled(node, "Label Text#1:0"),
+      })),
+    );
+    button.componentPropertyDefinitions = {
+      "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
+    };
+    const plus = mockIconComponent("plus");
+    const close = mockIconComponent("x-close");
+    const iconButton = mockComponentSet("IconButton", [
+      {
+        properties: { Variant: "Outline", Size: "Default", State: "Default" },
+        build: (node) => {
+          const icon = plus.createInstance();
+          icon.name = "Icon";
+          icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+          node.appendChild(icon);
+        },
+      },
+    ]);
+    iconButton.componentPropertyDefinitions = {
+      "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plus.id },
+    };
+    const stepper = mockComponentSet(
+      "Stepper",
+      ["1", "2", "3", "4", "5"].map((current) => ({
+        properties: { Variant: "Dots", Count: "5", Current: current },
+      })),
+    );
+    const components = new MockNode("PAGE", "Components");
+    for (const set of [button, iconButton, stepper])
+      components.appendChild(set);
+    const icons = new MockNode("PAGE", "Icons");
+    icons.appendChild(plus);
+    icons.appendChild(close);
+    const fileFigma = createFigmaMock({ pages: [components, icons] });
+    const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
+    const tokens = payloadVariables([
+      ...variableByName.keys(),
+      "Emotion/themed/surface",
+      "Emotion/themed/onSurface",
+    ]);
+    await file.ensureKozmosTextStyles(FONTS, freshStats());
+
+    const fill = (node) => node && node.fills && node.fills[0];
+    const painted = {};
+    for (const content of plugin.TOUR_STEP_CONTENT) {
+      const component = fileFigma.createComponent();
+      const stats = freshStats();
+      await file.updateTourStepVariant(component, {
+        props: { content },
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+      painted[content] = component;
+      const coachmark = content === "Coachmark";
+      const rows = component.children.map((child) => child.name);
+      ok(
+        component.name === `Content=${content}` &&
+          component.width === 340 &&
+          component.layoutMode === "VERTICAL" &&
+          component.primaryAxisSizingMode === "AUTO" &&
+          component.paddingTop === 20 &&
+          component.paddingLeft === 16 &&
+          component.paddingRight === 16 &&
+          component.paddingBottom === 16 &&
+          component.itemSpacing === 12 &&
+          component.cornerRadius === 16 &&
+          component.clipsContent === true,
+        `${content}: 340 wide, 16 inside and 20 at the top, 12 apart, the Control corner, clipping the edge (${component.width}, ${component.paddingTop}/${component.paddingLeft}, ${component.itemSpacing}, ${component.cornerRadius})`,
+      );
+      ok(
+        boundVariableName(fill(component)) === "Surface/0" &&
+          boundVariableName(component.strokes[0]) === "Border/Subtle" &&
+          component.strokeWeight === 1 &&
+          component.effects.length === 1 &&
+          component.effects[0].offset.y === 8 &&
+          component.effects[0].radius === 16,
+        `${content}: Popover's surface, the subtle edge and the overlay elevation`,
+      );
+      ok(
+        JSON.stringify(rows) ===
+          JSON.stringify(
+            coachmark
+              ? ["Top Edge", "Header", "Body Text", "Hint", "Instruction"]
+              : [
+                  "Top Edge",
+                  "Header",
+                  "Body Text",
+                  "Hint",
+                  "Instruction",
+                  "Footer",
+                ],
+          ),
+        `${content}: ${rows.join(", ")}`,
+      );
+      const edge = component.children[0];
+      ok(
+        edge.layoutPositioning === "ABSOLUTE" &&
+          edge.x === 0 &&
+          edge.y === 0 &&
+          edge.width === 340 &&
+          edge.height === 4 &&
+          edge.constraints.horizontal === "STRETCH" &&
+          boundVariableName(fill(edge)) ===
+            "Primary Buttons/themed/button/background/idle",
+        `${content}: a 4 edge of the theme fill across the top, out of the flow and stretched`,
+      );
+      const eyebrow = named(component, "Eyebrow");
+      const tour = named(component, "Tour Text");
+      const position = named(component, "Position Text");
+      ok(
+        coachmark
+          ? !eyebrow && !tour && !position
+          : eyebrow &&
+              [tour, named(component, "Separator"), position].every(
+                (text) =>
+                  text &&
+                  text.parent === eyebrow &&
+                  text.textCase === "UPPER" &&
+                  boundVariableName(fill(text)) === "Colors/theme/600",
+              ) &&
+              position.characters ===
+                `Step ${content === "First step" ? 1 : content === "Last step" ? 5 : 2} of 5`,
+        coachmark
+          ? "Coachmark: no tour name and no position"
+          : `${content}: the tour and "${position && position.characters}" upper case in the theme ink`,
+      );
+      const title = named(component, "Title Text");
+      ok(
+        title &&
+          title.fontSize === 16 &&
+          title.lineHeight.value === 24 &&
+          boundVariableName(fill(title)) === "Colors/foreground/0" &&
+          title.characters === (coachmark ? "Draw rooms here" : "Open a site"),
+        `${content}: the title 16/24 in the foreground`,
+      );
+      const closeButton = named(component, "Close");
+      ok(
+        closeButton &&
+          closeButton.type === "INSTANCE" &&
+          closeButton.mainComponent.name ===
+            "Variant=Outline, Size=Default, State=Default" &&
+          closeButton.componentProperties["Icon#2:0"] === close.id,
+        `${content}: Close is IconButton's Outline with x-close`,
+      );
+      const body = named(component, "Body Text");
+      ok(
+        body &&
+          body.fontSize === 14 &&
+          boundVariableName(fill(body)) === "Colors/foreground/400",
+        `${content}: the body 14 in the muted ink`,
+      );
+      const hint = named(component, "Hint");
+      ok(
+        hint &&
+          hint.visible === false &&
+          hint.cornerRadius === 4 &&
+          boundVariableName(fill(hint)) === "Emotion/themed/surface" &&
+          boundVariableName(hint.strokes[0]) === "Colors/theme/600" &&
+          hint.strokeLeftWeight === 4 &&
+          hint.strokeTopWeight === 0 &&
+          hint.strokeRightWeight === 0 &&
+          hint.strokeBottomWeight === 0 &&
+          boundVariableName(fill(named(hint, "Hint Text"))) ===
+            "Emotion/themed/onSurface",
+        `${content}: the hint, hidden until asked for, on the themed surface with a 4 bar at its start`,
+      );
+      const instruction = named(component, "Instruction");
+      const marker = instruction && named(instruction, "Marker");
+      const halo = marker && named(marker, "Marker Halo");
+      const dot = marker && named(marker, "Marker Dot");
+      ok(
+        instruction &&
+          instruction.cornerRadius === 4 &&
+          boundVariableName(fill(instruction)) === "Colors/background/100" &&
+          instruction.paddingTop === 6 &&
+          instruction.paddingLeft === 12 &&
+          instruction.itemSpacing === 8 &&
+          marker.width === 8 &&
+          marker.clipsContent === false &&
+          halo.width === 16 &&
+          halo.x === -4 &&
+          Math.abs(halo.opacity - 0.2) < 1e-9 &&
+          dot.width === 8 &&
+          [halo, dot].every(
+            (shape) =>
+              boundVariableName(fill(shape)) ===
+              "Primary Buttons/themed/button/background/idle",
+          ) &&
+          boundVariableName(fill(named(instruction, "Instruction Text"))) ===
+            "Colors/foreground/0",
+        `${content}: the status on the muted fill, an 8 marker of the theme fill in a 4 halo at 20%`,
+      );
+      if (!coachmark) {
+        const footer = named(component, "Footer");
+        const dots = footer && named(footer, "Dots");
+        const actions = footer && named(footer, "Actions");
+        const labels = (actions ? actions.children : []).map((instance) =>
+          [
+            instance.name,
+            instance.mainComponent && instance.mainComponent.name.split(",")[0],
+            instance.componentProperties &&
+              instance.componentProperties["Label Text#1:0"],
+            instance.isExposedInstance,
+          ].join(" "),
+        );
+        const current =
+          content === "First step" ? "1" : content === "Last step" ? "5" : "2";
+        ok(
+          footer.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+            dots &&
+            dots.type === "INSTANCE" &&
+            dots.isExposedInstance === true &&
+            dots.mainComponent.name ===
+              `Variant=Dots, Count=5, Current=${current}`,
+          `${content}: the dots are Stepper's, on step ${current} of 5, exposed`,
+        );
+        const expected = {
+          "First step": ["Next Variant=Default Next true"],
+          Step: [
+            "Back Variant=Ghost Back true",
+            "Next Variant=Default Next true",
+          ],
+          "Last step": [
+            "Back Variant=Ghost Back true",
+            "Next Variant=Default Finish true",
+          ],
+        }[content];
+        ok(
+          JSON.stringify(labels) === JSON.stringify(expected),
+          `${content}: ${labels.join("; ")}`,
+        );
+      }
+      ok(
+        stats.warnings.length === 0,
+        `${content}: no warnings (${stats.warnings.join(" | ")})`,
+      );
+    }
+
+    // The set's properties: six texts and two booleans, each driving a layer.
+    const set = new MockNode("COMPONENT_SET", "TourStep");
+    for (const content of plugin.TOUR_STEP_CONTENT)
+      set.appendChild(painted[content]);
+    const propertyStats = freshStats();
+    file.configureTourStepProperties(set, propertyStats);
+    const definitions = Object.entries(set.componentPropertyDefinitions).map(
+      ([key, definition]) => `${key.split("#")[0]}:${definition.type}`,
+    );
+    ok(
+      JSON.stringify(definitions.sort()) ===
+        JSON.stringify(
+          [
+            "Body Text:TEXT",
+            "Hint Text:TEXT",
+            "Hint:BOOLEAN",
+            "Instruction Text:TEXT",
+            "Instruction:BOOLEAN",
+            "Position Text:TEXT",
+            "Title Text:TEXT",
+            "Tour Text:TEXT",
+          ].sort(),
+        ),
+      `six text properties and two booleans (${definitions.join(", ")})`,
+    );
+    const references = (key) =>
+      set.findAll(
+        (node) =>
+          node.componentPropertyReferences &&
+          Object.values(node.componentPropertyReferences).some(
+            (value) => String(value).split("#")[0] === key,
+          ),
+      ).length;
+    const unbound = [
+      "Tour Text",
+      "Position Text",
+      "Title Text",
+      "Body Text",
+      "Hint Text",
+      "Instruction Text",
+      "Hint",
+      "Instruction",
+    ].filter((key) => references(key) === 0);
+    ok(
+      unbound.length === 0 && propertyStats.warnings.length === 0,
+      `every property drives a layer (${unbound.join(", ") || "all bound"}; ${propertyStats.warnings.join(" | ")})`,
+    );
+    ok(
+      references("Hint") === 4 && references("Instruction") === 4,
+      "Hint and Instruction drive their layer in every variant",
+    );
+  }
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
@@ -5491,6 +5832,13 @@ section("The product sets audit clean");
         (plugin.ROUTE_PROGRESS_RAIL_CONTENT || []).map((value) => [
           "updateRouteProgressRailVariant",
           { value },
+        ]),
+      ],
+      [
+        "TourStep",
+        (plugin.TOUR_STEP_CONTENT || []).map((content) => [
+          "updateTourStepVariant",
+          { props: { content } },
         ]),
       ],
       [
