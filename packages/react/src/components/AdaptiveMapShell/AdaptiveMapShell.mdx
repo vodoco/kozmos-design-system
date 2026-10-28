@@ -81,6 +81,74 @@ automatically: register opposite corners with the shell.
 
 <Canvas of={Stories.RegisteredBottomCorners} />
 
+## Status and top corners
+
+`status` is the map's status, between the bottom corners and level with them (GAP-123): a
+`MapStatusPill` saying "Route updated" or "Calculating step-free route". It is centred on the
+whole map, as the credits are, and the credits give way to it: they sit directly above it, 16
+above, and the brand still gives way first when there is no room for it (decision 58). When the
+corners leave no middle slot (under 128), the status rises above them, and the credits above it.
+A pill kept rendered with no words takes no room and leaves the credits where they were, so its
+first words are still announced. With no room left above the sheet the status is not drawn, and
+it stays in the accessibility tree, so what it says is still announced. The slot adds no
+landmark: the pill is its own live region.
+
+`controlsTopStart` and `controlsTopEnd` are the logical top corners, 16 under the top bar (or the
+map's top edge), at the start and end of the map beside a side panel, mirrored in right to left.
+They share a row when both fit, and the start sits above the end when they do not. A `controls`
+column starts 16 below them. Both share one landmark, `topControlsLabel` (default
+**Map top corner controls**); pass a translated name, distinct from the other two. When the space
+above a sheet cannot hold them they stay mounted but leave the region, as the bottom corners do.
+
+Nothing the shell places overlaps anything else it places: the top bar, the top corners, the
+`controls` column, the status, the credits, the bottom corners and the panel, at either width and
+at either density. A floor list opened in a bottom corner stays below the top corners, and clear
+of a status level with the corners. When there is too little room, a slot that no longer fits gives
+way: the status and the bottom corners before the top corners, and with no middle slot the bottom
+corners before the status. The top bar and the credits never give way.
+
+What they publish:
+
+- `onLayoutChange().occlusions` reports the top corners' row as one `controls` rectangle, as it
+  reports the bottom corners, and the status's slot, where the pill is centred, as `status`.
+- The top corners pad the camera's top edge only with `controlsPadCamera`, as the `controls`
+  column pads its side.
+- The status never pads the camera. A status comes and goes, and the camera would move each time
+  (GAP-079). The credits above it pad as they would without it.
+
+<Canvas of={Stories.StatusAndTopCorners} />
+<Canvas of={Stories.StatusAndTopCornersBesidePanel} />
+
+### Exit building
+
+Exit building is a recipe, not a part (SDK-UI-006). Put a labelled `MapControlButton` in
+`controlsTopStart`, named after the building and shown only while the map is in one. Pressing it
+asks the map to leave the building. Once the map reports no building, remove the button and the
+floors, and move focus somewhere that stays, such as the search, so it is not lost with the
+button. With `@kozmos-ds/pointr-map` the map is asked through the handle's `exitBuilding()`, and
+the answer comes through `onBuildingChange`. That package's README has the code.
+
+```tsx
+<AdaptiveMapShell
+  map={map}
+  controlsTopStart={
+    building ? (
+      <MapControlButton
+        icon={<LogOut01 />}
+        label={`Exit ${building.label}`}
+        presentation="labelled"
+        onClick={onExitBuilding}
+      />
+    ) : null
+  }
+/>
+```
+
+<Canvas of={Stories.ExitBuilding} />
+
+SwiftUI and Compose do not have these three slots yet; on those platforms, place a status or an
+Exit button in your own overlay.
+
 <Canvas of={Stories.SheetPanelHeader} />
 <Canvas of={Stories.SheetWithPlaceDetails} />
 <Canvas of={Stories.GriplessFittedPanel} />
@@ -332,7 +400,8 @@ stay on one horizontally scrollable line. Oversized custom branding is capped to
 half the usable chrome band; it does not displace the entire panel. Capped sheets allow
 content scrolling. Safe-area and host keyboard insets still apply.
 The SDK adapter applies reported camera padding and owns provider content and deduplication.
-Unregistered overlays and status messages still require host placement.
+Put a map status in the `status` slot; other unregistered overlays still need the host to place
+them.
 
 Native equivalents use `attribution: AnyView(...)` in SwiftUI and `attribution = { ... }` in
 Compose. Native locale remains device/app-owned; there is no native language button.

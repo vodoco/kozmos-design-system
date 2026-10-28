@@ -645,12 +645,41 @@ describe("the handle", () => {
     expect(ref.current!.flyToPoi("unknown")).toBe(false);
   });
 
+  it("exitBuilding() does what the SDK's hidden Exit button does, and the map then reports no building", async () => {
+    const { ref, widget, recorded } = await mountReady();
+    const view = widget.view()!;
+    const controller = widget.getUiController()!.getMapViewController();
+    const exits = vi.fn();
+    view.on("exit-clicked", exits);
+    expect(ref.current!.exitBuilding()).toBe(true);
+    // The button's only act: the view's own exit event, once.
+    expect(exits).toHaveBeenCalledTimes(1);
+    expect(controller.scrollToSiteCalls).toEqual(["s-1"]);
+    expect(view.scrolls).toEqual([{ center: { siteId: "s-1" }, zoom: 15.1 }]);
+    expect(recorded.props.onBuildingChange).toHaveBeenLastCalledWith(undefined);
+    // Outside a building there is nothing to leave.
+    expect(ref.current!.exitBuilding()).toBe(false);
+    expect(exits).toHaveBeenCalledTimes(1);
+  });
+
+  it("exitBuilding() nearer the site's zoom zooms out past it, as the SDK's exit does", async () => {
+    const { ref, widget } = await mountReady();
+    const view = widget.view()!;
+    view.zoom = 16;
+    expect(ref.current!.exitBuilding()).toBe(true);
+    expect(view.zoom).toBeCloseTo(14.9);
+    expect(
+      widget.getUiController()!.getMapViewController().scrollToSiteCalls,
+    ).toEqual([]);
+  });
+
   it("is safe before the map is ready", () => {
     const ref = React.createRef<PointrMapHandle>();
     render(<PointrMap ref={ref} config={config} />);
     expect(ref.current!.map()).toBeUndefined();
     expect(ref.current!.flyToPoi("poi-7")).toBe(false);
     expect(ref.current!.setLevel(1)).toBe(false);
+    expect(ref.current!.exitBuilding()).toBe(false);
   });
 });
 

@@ -82,6 +82,27 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
 
   Opt in to conservative bottom camera padding for the measured corner region.
 
+- `status`: `React.ReactNode`, optional.
+
+  The map's status, between the bottom corners and level with them
+  (GAP-123): a MapStatusPill saying "Route updated" or "Calculating
+  step-free route". The credits give way to it, directly above it, and both
+  stay centred on the map. With no middle slot between the corners it rises
+  above them, as the credits do. With no room above the sheet it is not
+  drawn and still announces. It never pads the camera.
+
+- `controlsTopStart`: `React.ReactNode`, optional.
+
+  Logical top corners under the top bar, clear of the panel: Exit building
+  at the start (SDK-UI-006), the map's information at the end. They share a
+  row, or the start sits above the end; a `controls` column starts below
+  them. They pad the camera only with `controlsPadCamera`.
+
+- `controlsTopEnd`: `React.ReactNode`, optional.
+- `topControlsLabel`: `string`, optional, default `"Map top corner controls"`.
+
+  Accessible name shared by both top corners, distinct from the other two.
+
 - `topBar`: `React.ReactNode`, optional.
 - `panel`: `React.ReactNode`, optional.
 - `panelHeader`: `React.ReactNode`, optional.
@@ -310,7 +331,8 @@ From `@kozmos-ds/product-contracts`.
 
 ```ts
 interface MapOcclusion {
-  kind: "panel" | "top-bar" | "controls" | "attribution";
+  /** `status` is the shell's map status between the bottom corners; it never pads the camera. */
+  kind: "panel" | "top-bar" | "controls" | "attribution" | "status";
   /** Shell-local bounds; intersect with mapBounds before sending to a renderer. */
   bounds: MapLayoutRect;
 }

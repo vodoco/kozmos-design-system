@@ -123,8 +123,17 @@ screens; it does not replace the shell's internal browse panel.
 FloorSelector popups in registered corners use the available shell region, may move horizontally
 beside a long same-side panel, scroll to selection, and dismiss if their region disappears.
 This coordination does not automatically cover arbitrary custom portaled children. Actual SDK
-camera padding, custom status overlays, device keyboard/IME and assistive technology remain
+camera padding, overlays outside the shell's slots, device keyboard/IME and assistive technology remain
 host acceptance work. See [the component reference](../packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.mdx).
+
+## Status and top corners
+
+`status` sits between the bottom corners, level with them, and the credits sit directly above it.
+`controlsTopStart` and `controlsTopEnd` sit under the top bar, at the logical start and end of the
+map beside a side panel. `occlusions` reports the status's slot as `status` and the top corners' row as `controls`.
+The top corners pad the camera's top only with `controlsPadCamera`, and the status never pads it.
+`pnpm test:map-controls` measures them in Chromium, WebKit and Firefox
+(`scripts/check-shell-slots.mjs`). SwiftUI and Compose do not have them yet.
 
 ## Verification and reproduction
 

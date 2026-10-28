@@ -14721,11 +14721,13 @@
           "connectedComponents": ["AdaptiveMapShell"],
           "mappedProps": [
             "controls",
+            "controlsTopStart",
             "map",
             "mapLabel",
             "panel",
             "panelLabel",
             "panelPlacement",
+            "status",
             "topBar"
           ],
           "unmappedProps": []
@@ -14744,6 +14746,8 @@
           "controlsBottomStart",
           "controlsLabel",
           "controlsPadCamera",
+          "controlsTopEnd",
+          "controlsTopStart",
           "defaultPanelDetent",
           "deviceSafeAreaInsets",
           "id",
@@ -14764,9 +14768,11 @@
           "panelSurface",
           "role",
           "safeAreaInsets",
+          "status",
           "tabIndex",
           "title",
           "topBar",
+          "topControlsLabel",
           "usableRegions"
         ],
         "variants": {}

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3fad06a52ae9";
+const PLUGIN_BUILD = "beca76e713bf";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -48098,15 +48098,20 @@ async function updateAdaptiveMapShellVariant(
     height: 344,
   });
 
-  // The map surface hosts the controls slot: `controls` renders above the
-  // canvas, so it is modelled as a trailing-aligned child rather than a
-  // sibling column, which would read as a third pane.
+  // The map surface hosts the slots the shell places over the map, where
+  // React's shell puts them: the top corners under the top bar (SDK-UI-002),
+  // the controls column below the top end, and the bottom row with its two
+  // corners and, between them, the status level with them and the credits
+  // above it (GAP-123). Rows in flow rather than absolute children, so they
+  // follow the surface's width; `controls` stays a trailing child rather than
+  // a sibling column, which would read as a third pane.
   const mapSurface = productSdkFrame("Map Surface", {
-    direction: "horizontal",
+    direction: "vertical",
     primarySizing: "FIXED",
     counterSizing: "FIXED",
-    primaryAlign: "MAX",
+    primaryAlign: "MIN",
     counterAlign: "MIN",
+    spacing: 12,
     padding: 12,
     width: 432,
     height: 344,
@@ -48126,19 +48131,101 @@ async function updateAdaptiveMapShellVariant(
   ];
   mapSurface.strokeWeight = 1;
 
-  const controls = await productSdkSlot({
-    // Inside mapSurface, a `control`-radius panel with a 1px stroke — not the
-    // shell card, which is what the default assumes.
-    parentRadius: KOZMOS_RADIUS.control,
-    name: "Controls Slot",
-    label: "Controls",
-    width: 60,
+  // Inside mapSurface, a `control`-radius panel with a 1px stroke — not the
+  // shell card, which is what the default assumes.
+  const mapSlot = (name, label, width, height) =>
+    productSdkSlot({
+      parentRadius: KOZMOS_RADIUS.control,
+      name,
+      label,
+      width,
+      height,
+      fonts,
+      variableByName,
+      stats,
+    });
+  const mapRow = (name, counterAlign) =>
+    productSdkFrame(name, {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      primaryAlign: "SPACE_BETWEEN",
+      counterAlign,
+      width: 408,
+      height: 40,
+    });
+
+  const topRow = mapRow("Top Corners", "MIN");
+  appendWithSizing(
+    topRow,
+    await mapSlot("Top Start Slot", "Top start", 104, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(
+    topRow,
+    await mapSlot("Top End Slot", "Top end", 72, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, topRow, "FILL", "HUG");
+
+  const controlsRow = productSdkFrame("Controls Column", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "MAX",
+    width: 408,
     height: 152,
-    fonts,
-    variableByName,
-    stats,
   });
-  mapSurface.appendChild(controls);
+  appendWithSizing(
+    controlsRow,
+    await mapSlot("Controls Slot", "Controls", 60, 152),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, controlsRow, "FILL", "HUG");
+
+  // The map between them, undrawn: it takes what the rows leave.
+  const mapSpace = productSdkFrame("Map Space", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: 408,
+    height: 16,
+  });
+  appendWithSizing(mapSurface, mapSpace, "FILL", "FILL");
+
+  const bottomRow = mapRow("Bottom Row", "MAX");
+  appendWithSizing(
+    bottomRow,
+    await mapSlot("Bottom Start Slot", "Bottom start", 104, 40),
+    "FIXED",
+    "FIXED",
+  );
+  const middle = productSdkFrame("Status And Credits", {
+    counterAlign: "CENTER",
+    spacing: 12,
+  });
+  appendWithSizing(
+    middle,
+    await mapSlot("Attribution Slot", "Credits", 120, 24),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(
+    middle,
+    await mapSlot("Status Slot", "Status", 120, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(bottomRow, middle, "HUG", "HUG");
+  appendWithSizing(
+    bottomRow,
+    await mapSlot("Bottom End Slot", "Bottom end", 96, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, bottomRow, "FILL", "HUG");
 
   const panel = await productSdkSlot({
     name: "Panel Slot",
@@ -48179,6 +48266,10 @@ const ADAPTIVE_MAP_SHELL_DESCRIPTION = [
   "PanelPlacement maps to AdaptiveMapShell.panelPlacement (start, end).",
   "Top Bar Slot maps to AdaptiveMapShell.topBar.",
   "Panel Slot maps to AdaptiveMapShell.panel, Controls Slot to .controls.",
+  "Top Start and Top End Slots map to .controlsTopStart and .controlsTopEnd; Exit building goes at the top start.",
+  "Bottom Start and Bottom End Slots map to .controlsBottomStart and .controlsBottomEnd.",
+  "Status Slot maps to .status, level with the bottom corners; Attribution Slot to .attribution, above it.",
+  "Start and end mirror in right to left. SwiftUI and Compose do not have the top corners or the status yet.",
   "Map Surface is renderer output; mapLabel and collisionInsets have no visual counterpart.",
 ];
 

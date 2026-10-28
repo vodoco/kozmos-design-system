@@ -72,6 +72,7 @@ result: POIResultPresentation }` (what a `POIResultList` row takes) with its coo
   level, a level as a `FloorPresentation`, top floor first. A product never touches an SDK class.
 - **The handle**: `map()` (the MapLibre map, for `project` to place a `LocationPin`),
   `flyToPoi(id)` (changes level first, keeps the shell's padding), `setLevel(index or floor id)`,
+  `exitBuilding()` (leaves the open building, below),
   `search(query, { scope })` (a `SearchResponsePresentation` with `items`, numbered from 1). A
   search covers the whole site, the contracts' default, and has no `appliedScope`;
   `{ scope: "building" }` holds it to the open building and says so in `appliedScope`. It rejects
@@ -94,6 +95,40 @@ result: POIResultPresentation }` (what a `POIResultList` row takes) with its coo
 
 A non-fatal error (`fatal: false`: a blocked tile host, a non-blocking SDK problem) leaves the
 status as it was.
+
+## Exit building
+
+The SDK's own Exit button is hidden, as its other chrome is. Kozmos draws it as a recipe
+(SDK-UI-006): a labelled `MapControlButton` in the shell's top-start corner, shown while the map
+is in a building, that calls `exitBuilding()`.
+
+```tsx
+<AdaptiveMapShell
+  map={<PointrMap ref={map} onBuildingChange={setBuilding} /* … */ />}
+  controlsTopStart={
+    building ? (
+      <MapControlButton
+        icon={<LogOut01 />}
+        label={`Exit ${building.label}`}
+        presentation="labelled"
+        onClick={() => {
+          map.current?.exitBuilding();
+          search.current?.focus();
+        }}
+      />
+    ) : null
+  }
+/>
+```
+
+- `exitBuilding()` does what the SDK's button does. In 10.13.0 the button only emits its view's
+  `exitClicked` event, and the SDK's map controller answers it. Zoomed in on a building, it
+  scrolls out to the site's centre. Nearer the site's zoom, it zooms out past it.
+- It returns `false` before the map is ready and outside a building.
+- The map then reports no building through `onBuildingChange`. Take the button and the floors
+  away then, and move focus somewhere that stays, so it is not lost with the button.
+- The selection and the route Kozmos draws are the product's: `exitBuilding()` clears neither, and
+  whether leaving a building should is the product's decision.
 
 ## Keys
 

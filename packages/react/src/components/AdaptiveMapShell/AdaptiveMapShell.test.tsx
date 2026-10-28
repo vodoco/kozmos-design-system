@@ -8,7 +8,10 @@ import {
   type MockInstance,
   vi,
 } from "vitest";
-import { AdaptiveMapShell } from "./AdaptiveMapShell";
+import {
+  AdaptiveMapShell,
+  type AdaptiveMapLayoutSnapshot,
+} from "./AdaptiveMapShell";
 
 describe("AdaptiveMapShell", () => {
   beforeEach(() => {
@@ -447,5 +450,150 @@ describe("AdaptiveMapShell sheet detents", () => {
     const scroller = aside.querySelector<HTMLElement>("p")!.parentElement!;
     expect(scroller.style.overflowY).toBe("auto");
     expect(scroller.style.touchAction).toBe("pan-down");
+  });
+});
+
+// The status and the top corners (GAP-123, SDK-UI-002). jsdom lays nothing
+// out: each slot's content says its size in data-w and data-h, and the shell
+// reads it through its wrapper's offset size, as it does live.
+describe("AdaptiveMapShell status and top corners", () => {
+  const spies: MockInstance[] = [];
+  const sized = (node: HTMLElement, axis: "w" | "h") => {
+    const child = node.firstElementChild;
+    if (child instanceof HTMLElement && child.dataset[axis])
+      return Number(child.dataset[axis]);
+    // A region holding a row of sized parts is as tall as the tallest.
+    if (node.getAttribute("role") !== "region") return 0;
+    return Math.max(
+      0,
+      ...[...node.querySelectorAll<HTMLElement>(`[data-${axis}]`)].map((part) =>
+        Number(part.dataset[axis]),
+      ),
+    );
+  };
+  beforeEach(() => {
+    spies.push(
+      vi
+        .spyOn(HTMLElement.prototype, "clientWidth", "get")
+        .mockReturnValue(390),
+      vi
+        .spyOn(HTMLElement.prototype, "clientHeight", "get")
+        .mockReturnValue(600),
+      vi
+        .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return sized(this, "w");
+        }),
+      vi
+        .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return sized(this, "h");
+        }),
+    );
+  });
+  afterEach(() => spies.splice(0).forEach((spy) => spy.mockRestore()));
+
+  const slots = (
+    props: Partial<React.ComponentProps<typeof AdaptiveMapShell>> = {},
+  ) => {
+    let layout: AdaptiveMapLayoutSnapshot | undefined;
+    render(
+      <AdaptiveMapShell
+        map={<div />}
+        controlsTopStart={
+          <button data-w="160" data-h="48">
+            Exit Main Mall
+          </button>
+        }
+        controlsTopEnd={
+          <button data-w="48" data-h="48">
+            Info
+          </button>
+        }
+        status={
+          <div role="status" data-w="200" data-h="48">
+            Route updated
+          </div>
+        }
+        onLayoutChange={(next) => (layout = next)}
+        {...props}
+      />,
+    );
+    return () => layout!;
+  };
+
+  it("names the top corners as one region and hosts the status without a landmark", () => {
+    slots();
+    const top = screen.getByRole("region", { name: "Map top corner controls" });
+    expect(top).toContainElement(
+      screen.getByRole("button", { name: "Exit Main Mall" }),
+    );
+    expect(top).toContainElement(screen.getByRole("button", { name: "Info" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Route updated");
+    expect(screen.getAllByRole("region").map((r) => r.ariaLabel)).toEqual([
+      "Map",
+      "Map top corner controls",
+    ]);
+  });
+
+  it("localizes the top corners' name and draws nothing for absent slots", () => {
+    const { rerender, container } = render(
+      <AdaptiveMapShell
+        map={<div />}
+        topControlsLabel="Obere Kartensteuerung"
+        controlsTopEnd={
+          <button data-w="48" data-h="48">
+            Info
+          </button>
+        }
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "Obere Kartensteuerung" }),
+    ).toBeVisible();
+    rerender(
+      <AdaptiveMapShell
+        map={<div />}
+        controlsTopStart={false}
+        controlsTopEnd={null}
+        status={false}
+      />,
+    );
+    expect(screen.getAllByRole("region")).toHaveLength(1);
+    expect(container.querySelector("[data-kozmos-top-controls]")).toBeNull();
+    expect(container.querySelector("[data-kozmos-map-status]")).toBeNull();
+  });
+
+  it("reports the corners' region and the status's slot, and pads no camera for them", () => {
+    const layout = slots();
+    expect(layout().occlusions).toEqual([
+      { kind: "controls", bounds: { x: 16, y: 16, width: 358, height: 48 } },
+      { kind: "status", bounds: { x: 16, y: 536, width: 358, height: 48 } },
+    ]);
+    expect(layout().collisionInsets).toEqual({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    });
+  });
+
+  it("lets the top corners pad the camera's top with controlsPadCamera only", () => {
+    const layout = slots({ controlsPadCamera: true });
+    expect(layout().collisionInsets.top).toBe(64);
+    expect(layout().collisionInsets.bottom).toBe(0);
+  });
+
+  it("starts a legacy controls column below the top corners", () => {
+    slots({
+      controls: (
+        <button data-w="48" data-h="100">
+          Locate
+        </button>
+      ),
+    });
+    expect(screen.getByRole("region", { name: "Map controls" }).style.top).toBe(
+      "80px",
+    );
   });
 });
