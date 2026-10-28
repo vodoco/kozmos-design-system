@@ -1341,8 +1341,18 @@ assertContains(
 assertContains(
   files.reactLinkFigma,
   source.reactLinkFigma,
-  '<Link href="#" variant={variant}>',
+  '<Link href="#" variant={variant} external={external}>',
   "Link Code Connect href composition",
+);
+// GAP-202: External is Link.external, left out when off.
+assertContains(
+  files.reactLinkFigma,
+  source.reactLinkFigma,
+  `external: figma.boolean("External", {
+        true: true,
+        false: undefined,
+      }),`,
+  "Link Code Connect External mapping",
 );
 assertContains(
   files.reactSeparatorFigma,
