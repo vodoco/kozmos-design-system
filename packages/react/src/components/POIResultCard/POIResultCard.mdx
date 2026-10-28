@@ -44,11 +44,12 @@ without `onAction`. What an action does is the product's: the card only says whi
 - **The icon** is a name in the Kozmos icon registry, the names an attribute's `iconName` takes,
   drawn before the words and hidden from screen readers. A name Kozmos does not know draws no icon,
   never a stand-in. On the web the card draws it from `hostActionIcons`, the components from
-  `@kozmos-ds/icons` for the names your actions use, `{ calendar: Calendar }`: a lookup by name
-  would put every icon a name reaches into your app, about 20 KB gzip, where a result list alone
-  is about 19. A name you give no component for draws no icon on the web; SwiftUI and Compose draw
-  every registry name. `POIResultList` and `POIResultGroup` hand `hostActionIcons` on, as they hand
-  `onHostAction`.
+  `@kozmos-ds/icons` for the names your actions use, `{ calendar: Calendar }`. It is web only
+  (decision 140): on the web a UI icon is a named import (decision 121), and a lookup by name would
+  put every icon a name reaches into your app, about 20 KB gzip, where a result list alone is about
+  19. A name you give no component for draws no icon on the web; SwiftUI and Compose draw every
+  registry name by its `iconName` and take no such map. `POIResultList` and `POIResultGroup` hand
+  `hostActionIcons` on, as they hand `onHostAction`.
 - **The keyboard and screen readers** reach each one as a button, after the card's own actions,
   44 by 44 at least; VoiceOver and TalkBack say its words and whether it is dimmed.
 - **Analytics:** a press sends `poi_result_action`, as the card's own actions do, with

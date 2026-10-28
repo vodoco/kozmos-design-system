@@ -63,9 +63,15 @@ export interface POIResultCardProps extends Omit<
   /**
    * The icons the product's own actions draw, by the `iconName` each gives:
    * `{ calendar: Calendar }`, the components from `@kozmos-ds/icons`. The
-   * card draws a host action's icon only from here, so an app carries the
-   * icons its actions use rather than every icon a name can reach (20 KB
-   * gzip). A name not given here draws no icon; the label is the action.
+   * card draws a host action's icon only from here; a name not given here
+   * draws no icon, and the label is the action.
+   *
+   * Web only (decision 140). On the web a UI icon is a named import
+   * (decision 121), so an app bundles the icons its actions use: a lookup
+   * by name would bundle every icon a name can reach, about 20 KB gzip, into
+   * any app that shows results. SwiftUI and Compose draw `iconName` by name
+   * themselves and take no such map; the contract's `iconName` is the same
+   * on all three.
    */
   hostActionIcons?: Readonly<Partial<Record<string, KozmosIconComponent>>>;
   featuredLabel?: string;

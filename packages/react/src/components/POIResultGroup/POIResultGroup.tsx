@@ -33,7 +33,7 @@ export interface POIResultGroupProps extends Omit<
   onAction?: (action: POIResultAction, poiId: string) => void;
   /** Run one of the product's own actions, a member's `hostActions`: POIResultCard's `onHostAction`. */
   onHostAction?: (actionId: string, poiId: string) => void;
-  /** The icons the members' host actions draw, by name: POIResultCard's `hostActionIcons`. */
+  /** The icons the members' host actions draw, by name: POIResultCard's `hostActionIcons`. Web only (decision 140): named imports (decision 121). */
   hostActionIcons?: POIResultCardProps["hostActionIcons"];
   /** How many members show while collapsed. */
   collapsedCount?: number;
