@@ -7,9 +7,9 @@ import { gzipSync } from "zlib";
 
 // What an app pays for @kozmos-ds/react. The ES build is one file per module, and package.json
 // declares the JavaScript free of side effects, so an app's bundler keeps only the modules behind
-// what it imports. Each budget is measured the way a Vite app builds: Rollup, honouring the
-// package's `sideEffects`, with its dependencies left out (they are the app's own), then minified
-// and gzipped.
+// what it imports. Each budget is measured the way a Vite app builds for production: Rollup, with
+// `process.env.NODE_ENV` replaced as each module is read and the package's `sideEffects` honoured,
+// with its dependencies left out (they are the app's own), then minified and gzipped.
 //
 // - Every public export, bundled alone: the heaviest stays under MAX_EXPORT_GZIP_KB, so no one
 //   component can quietly pull in the rest. On 2026-09-22 the heaviest was POIDetailPanel at
@@ -197,6 +197,26 @@ async function main() {
   // cache from a build that took every module to have side effects carries that into the next.
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-bundle-"));
   let cache: unknown;
+
+  // An app's production build replaces process.env.NODE_ENV as it reads each module, before it
+  // decides what to keep: Vite's define plugin, webpack's DefinePlugin (from `mode`), esbuild's
+  // `define` and Rollup's @rollup/plugin-replace all do. So code that only runs in development is
+  // already dead when the bundler tree-shakes, and whatever only it kept is left out. Replacing it
+  // here too, with esbuild's define as Vite's does, measures what such an app ships. Replacing it
+  // only after bundling, as this did until 2026-10-28, kept what development-only code held.
+  const productionDefine = {
+    name: "kozmos-production-define",
+    async transform(code: string) {
+      if (!code.includes("process.env.NODE_ENV")) return null;
+      const replaced = await esbuild.transform(code, {
+        format: "esm",
+        loader: "js",
+        define: { "process.env.NODE_ENV": '"production"' },
+      });
+      return { code: replaced.code, map: null };
+    },
+  };
+
   async function cost(source: string, label: string) {
     const input = path.join(work, `${label.replace(/\W/g, "_")}.mjs`);
     fs.writeFileSync(input, source);
@@ -204,6 +224,7 @@ async function main() {
       input,
       external: isExternal,
       cache,
+      plugins: [productionDefine],
       onwarn: () => {},
       treeshake: {
         moduleSideEffects: (id: string, external: boolean) =>
@@ -213,7 +234,7 @@ async function main() {
     cache = bundle.cache;
     const { output } = await bundle.generate({ format: "es" });
     const code = output.map((chunk) => chunk.code ?? "").join("\n");
-    // An app's production build replaces process.env.NODE_ENV, so development-only code drops.
+    // Minified as an app's production build minifies, with the same replacement.
     const minified = (
       await esbuild.transform(code, {
         minify: true,
@@ -236,6 +257,7 @@ async function main() {
             input: ENTRY,
             external: isExternal,
             cache,
+            plugins: [productionDefine],
             onwarn: () => {},
             treeshake: { moduleSideEffects },
           })
