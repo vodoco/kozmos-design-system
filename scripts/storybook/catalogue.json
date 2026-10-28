@@ -438,7 +438,8 @@
         "CollapsibleSingleFloor",
         "CollapsibleOnYourLevel",
         "CollapsibleOpen",
-        "CollapsibleOpenRightToLeft"
+        "CollapsibleOpenRightToLeft",
+        "FromABuilding"
       ]
     },
     {
