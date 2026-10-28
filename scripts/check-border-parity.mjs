@@ -130,7 +130,7 @@ const STROKE_MARKS_ALLOWED = {
     primitive: "Colors/foreground/500",
     why: "an unfilled star's outline is the mark itself",
   },
-  createStepperStepItem: {
+  createStepperIndicator: {
     primitive: "Colors/foreground/500",
     why: "a pending step's ring is its glyph",
   },
