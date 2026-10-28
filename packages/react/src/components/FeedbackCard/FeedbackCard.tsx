@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "../../utils";
-import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import { Button } from "../Button";
 import { CheckCircle } from "@kozmos-ds/icons";
 import { Rating, type RatingVariant } from "../Rating";

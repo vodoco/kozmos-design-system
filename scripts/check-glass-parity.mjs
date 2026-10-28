@@ -130,7 +130,9 @@ const values = {};
     "packages/react/src/components/SaveLocationCard/SaveLocationCard.tsx",
     "packages/react/src/components/RoutingInputGroup/RoutingInputGroup.tsx",
   ];
-  const surface = read("packages/react/src/components/Surface/Surface.tsx");
+  // The classes live apart from the Surface component, so a part that takes
+  // only its class does not bring the component into an app's bundle.
+  const surface = read("packages/react/src/components/Surface/surface-class.ts");
   if (!surface.includes('glass: "kozmos-reset kozmos-surface-glass"') || !surface.includes('solid: "kozmos-reset kozmos-surface-solid"'))
     fail("web: Surface does not name both variants with kozmos-reset");
   else ok("web: Surface names solid and glass, with kozmos-reset");
