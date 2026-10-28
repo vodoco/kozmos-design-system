@@ -63,6 +63,15 @@ It forwards its ref to `HTMLElement`. Its props are `NavbarProps`, which extends
   **Deprecated.** Use context instead.
 
 - `navigation`: `React.ReactNode`, optional.
+- `navigationAlign`: `"start" | "center" | "end"`, optional, default `"center"`.
+
+  Where the navigation sits in the room between the leading slots and the
+  trailing ones (GAP-196). `"center"`, the default, centres it; `"start"`
+  sets it right after the logo, context and primary action; `"end"` beside
+  the actions, utilities and account, as Pointr Cloud draws its main
+  sections. Logical: start and end follow the reading direction, so
+  `"end"` is the left in right to left.
+
 - `primaryAction`: `React.ReactNode`, optional.
 - `actions`: `React.ReactNode`, optional.
 - `utilities`: `React.ReactNode`, optional.

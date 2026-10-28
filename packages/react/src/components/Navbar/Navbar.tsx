@@ -9,6 +9,15 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   /** @deprecated Use context instead. */
   site?: React.ReactNode;
   navigation?: React.ReactNode;
+  /**
+   * Where the navigation sits in the room between the leading slots and the
+   * trailing ones (GAP-196). `"center"`, the default, centres it; `"start"`
+   * sets it right after the logo, context and primary action; `"end"` beside
+   * the actions, utilities and account, as Pointr Cloud draws its main
+   * sections. Logical: start and end follow the reading direction, so
+   * `"end"` is the left in right to left.
+   */
+  navigationAlign?: "start" | "center" | "end";
   primaryAction?: React.ReactNode;
   actions?: React.ReactNode;
   utilities?: React.ReactNode;
@@ -23,6 +32,7 @@ const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       logo,
       site,
       navigation,
+      navigationAlign = "center",
       primaryAction,
       actions,
       utilities,
@@ -76,6 +86,7 @@ const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             <nav
               data-slot="navbar-navigation"
               aria-label={navigationLabel}
+              data-align={navigationAlign}
               className="kozmos-reset kozmos-navbar-navigation"
             >
               {navigationContent}

@@ -184,3 +184,49 @@ export const RowPrimitive: Story = {
     </Tree>
   ),
 };
+
+// GAP-201: a list of records, as Pointr Cloud's Map Content tree draws its
+// buildings and levels: a stroke under every row, an open building on a
+// surface of its own.
+const venueTree: TreeItem[] = [
+  {
+    id: "terminal-a",
+    name: "Terminal A",
+    count: 3,
+    children: [
+      { id: "terminal-a-1", name: "Level 1", count: 128 },
+      { id: "terminal-a-2", name: "Level 2", count: 96 },
+      { id: "terminal-a-3", name: "Level 3", count: 41 },
+    ],
+  },
+  {
+    id: "terminal-b",
+    name: "Terminal B",
+    count: 2,
+    children: [
+      { id: "terminal-b-1", name: "Level 1", count: 87 },
+      { id: "terminal-b-2", name: "Level 2", count: 53 },
+    ],
+  },
+  { id: "car-park", name: "Car park", count: 12 },
+];
+
+// In a panel whose content is 16 in, as a Container inset="panel" puts it:
+// the strokes and the open building's surface reach the panel's edges.
+export const Divided: Story = {
+  render: () => (
+    <div
+      className="border bg-background"
+      style={{ width: 440, paddingInline: 16 }}
+    >
+      <Tree
+        ariaLabel="Map content"
+        data={venueTree}
+        defaultExpandedIds={["terminal-a"]}
+        defaultSelectedId="terminal-a-2"
+        divided
+        bleed={16}
+      />
+    </div>
+  ),
+};

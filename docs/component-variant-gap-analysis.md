@@ -35,12 +35,12 @@ token was declined, so this is not a gap to close.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 122    |
-| Declaring at least one React variant axis | 61     |
-| Variations that are compositional only    | 61     |
-| Components with variant gaps — iOS        | 17/61  |
-| Components with variant gaps — Android    | 17/61  |
-| Components with variant gaps — Figma      | 25/61  |
-| Components with variant gaps — Vue        | 12/61  |
+| Declaring at least one React variant axis | 62     |
+| Variations that are compositional only    | 60     |
+| Components with variant gaps — iOS        | 20/62  |
+| Components with variant gaps — Android    | 20/62  |
+| Components with variant gaps — Figma      | 26/62  |
+| Components with variant gaps — Vue        | 12/62  |
 | Components absent entirely — iOS          | 11/122 |
 | Components absent entirely — Android      | 10/122 |
 | Components absent entirely — Figma        | 22/122 |
@@ -91,6 +91,10 @@ Combobox
   - ios missing axes -> popupLayout (overlay, inline)
   - android missing axes -> popupLayout (overlay, inline)
   - figma missing axes -> popupLayout (overlay, inline)
+Drawer
+  - ios missing values -> placement [named "side" here]: fixed, inline
+  - android missing values -> placement [named "side" here]: fixed, inline
+  - figma missing values -> placement [named "Side" here]: fixed, inline
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)
@@ -127,6 +131,9 @@ MapView
   - ios missing axes -> variant (framed, fill)
   - android missing axes -> variant (framed, fill)
   - figma missing axes -> variant (framed, fill)
+Navbar
+  - ios missing axes -> navigationAlign (start, center, end)
+  - android missing axes -> navigationAlign (start, center, end)
 Notice
   - ios: component/set absent
   - android: component/set absent
@@ -143,6 +150,9 @@ RouteProgressRail
 RouteSetupPanel
   - figma: component/set absent
   - vue: component absent
+Sidebar
+  - ios missing axes -> inset (default, flush)
+  - android missing axes -> inset (default, flush)
 Stepper
   - ios missing axes -> variant (numbered, dots)
   - android missing axes -> variant (numbered, dots)

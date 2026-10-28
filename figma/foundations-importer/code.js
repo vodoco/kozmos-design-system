@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "07e43da39fb4";
+const PLUGIN_BUILD = "ff1e65dd1f56";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -150,6 +150,24 @@ function treeSetVisibilityActions(componentSet) {
   return both;
 }
 const TREE_ITEM_DEPTHS = ["0", "1", "2"];
+// Divided (GAP-201), as React's `divided` on Tree and its rows: a 1px border
+// under the row, edge to edge, and an open parent row on background/50, under
+// a selected row's fill. A boolean property rather than an axis: TreeItem is
+// already the largest set in the library, and an axis would double all three.
+// Both layers are hidden until it is on, so an instance looks as it did.
+const TREE_DIVIDED_PROPERTY_NAME = "Divided";
+const TREE_DIVIDER = {
+  name: "Divider",
+  kind: "tree-divider",
+  token: "Border/Subtle",
+  fallback: "#C7CAD1",
+};
+const TREE_DIVIDED_SURFACE = {
+  name: "Divided Surface",
+  kind: "tree-divided-surface",
+  token: "Colors/background/50",
+  fallback: "#F1F2F4",
+};
 const TIMELINE_CONTENT = ["Basic", "Detailed"];
 const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
@@ -690,6 +708,20 @@ const NAVIGATION_ITEM_VARIANT_LAYOUT = {
   },
 };
 const NAVBAR_CONTENT = ["Basic", "Actions", "Contextual"];
+// Where the navigation sits in the room between the leading slots (logo,
+// context, primary action) and the trailing ones (actions, utilities,
+// account), as React's navigationAlign (GAP-196). The Navigation Slot fills
+// that room whichever it is; its items move: centred, packed after the leading
+// slots, or packed before the trailing ones. Center, React's default, comes
+// first: the variants built before the axis existed parse as Center and keep
+// their place at the head of the set, Figma takes the top-left variant as the
+// set's default, and a Build lists the values in the order an Update leaves.
+const NAVBAR_NAVIGATION_ALIGN = ["Center", "Start", "End"];
+const NAVBAR_NAVIGATION_ALIGN_ITEMS = {
+  Start: "MIN",
+  Center: "CENTER",
+  End: "MAX",
+};
 const NAVBAR_SLOT_NAMES = [
   "Logo Slot",
   "Context Slot",
@@ -906,6 +938,14 @@ const FLOOR_SELECTOR_TRAY_RADIUS =
   FLOOR_SELECTOR_ITEM_RADIUS + FLOOR_SELECTOR_ITEM_INSET;
 
 const SIDEBAR_CONTENT = ["Basic", "Sections", "Tools", "Rail"];
+// The room above the first slot, as React's inset (GAP-199). Default pads the
+// top as the bottom is padded; Flush drops it, so the first slot sits at the
+// top edge, under a product's fixed header. Every Content draws a Header Slot
+// (Rail's is the compact mark), and with a header React starts the header at
+// the edge and keeps the room between it and the navigation, so Flush moves
+// the top padding alone; the bottom keeps its room either way.
+const SIDEBAR_INSETS = ["Default", "Flush"];
+const SIDEBAR_PADDING_Y = 16;
 // Drawer's slot API. Header and Footer join the Content Slot that was already
 // there, so a product can supply its own title row and its own action row
 // instead of forking the component — which is what the Pointr Cloud sideDrawer
@@ -2401,6 +2441,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to Basic, Actions, or Contextual shell examples.",
+      "NavigationAlign maps to Navbar.navigationAlign: Center (the default), Start after the leading slots, or End before the trailing ones.",
       "Logo Slot maps to the leading brand region.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children in Code Connect.",
@@ -2412,6 +2453,7 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Content: Basic, Actions, Contextual",
+      "NavigationAlign: Center, Start, End",
       "Logo Slot",
       "Context Slot",
       "Navigation Slot",
@@ -2499,6 +2541,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to Basic, Sections, Tools, or Rail examples.",
+      "Inset maps to Sidebar.inset: Default, or Flush, the header at the top edge.",
       "Header Slot maps to a leading brand or account region.",
       "Navigation Slot maps to primary Sidebar children in Code Connect.",
       "Tools Slot maps to secondary action rows.",
@@ -2507,6 +2550,7 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Content: Basic, Sections, Tools, Rail",
+      "Inset: Default, Flush",
       "Header Slot",
       "Navigation Slot",
       "Tools Slot",
@@ -2932,6 +2976,7 @@ const COMPONENT_DOCS = [
       "Content Slot maps to Tree children in Code Connect and product code.",
       "Density maps to default and compact row rhythm.",
       "TreeParentItem and TreeChildItem own row states, labels, counts, icons, and secondary actions.",
+      "Tree.divided is each row's Divided property: the rows in the Content Slot are the designer's, and no Tree property reaches into a slot.",
       "Runtime code owns data, keyboard navigation, expansion state, selection callbacks, and nested action handlers.",
     ],
     properties: ["Density: Default, Compact", "Content Slot"],
@@ -2957,6 +3002,8 @@ const COMPONENT_DOCS = [
       "Expanded maps to disclosure open or closed state.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -2966,6 +3013,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeParentItem rows should expose aria-expanded in product code.",
@@ -2988,6 +3036,8 @@ const COMPONENT_DOCS = [
     api: [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -2996,6 +3046,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeChildItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -3020,6 +3071,8 @@ const COMPONENT_DOCS = [
       "Type maps to parent versus child row anatomy.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3030,6 +3083,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -17673,12 +17727,14 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Navbar") {
     return {
       Content: NAVBAR_CONTENT,
+      NavigationAlign: NAVBAR_NAVIGATION_ALIGN,
     };
   }
 
   if (canonicalName === "Sidebar") {
     return {
       Content: SIDEBAR_CONTENT,
+      Inset: SIDEBAR_INSETS,
     };
   }
 
@@ -38329,6 +38385,7 @@ function navbarComponentConfig() {
     description: [
       "Kozmos Navbar component set generated from React Navbar API.",
       "Content maps to Basic, Actions, and Contextual navigation shell examples.",
+      "NavigationAlign maps to Navbar.navigationAlign: Center, the default, centres the navigation in the room between the leading and trailing slots; Start packs it after the logo, context and primary action, End before the actions, utilities and account.",
       "Logo Slot maps to the leading brand area.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children.",
@@ -38359,6 +38416,7 @@ function sidebarComponentConfig() {
     description: [
       "Kozmos Sidebar component set generated from React Sidebar API.",
       "Content maps to Basic, Sections, Tools, and Rail navigation shell examples.",
+      "Inset maps to Sidebar.inset: Default pads the top as the bottom; Flush draws the header at the top edge, under a product's fixed header, and keeps the room under it and at the bottom.",
       "Header Slot maps to brand, account, or workspace content.",
       "Navigation Slot maps to the primary Sidebar navigation content.",
       "Tools Slot maps to secondary actions or utility rows.",
@@ -38485,6 +38543,8 @@ function treeParentItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeParentItem with TreeChildItem to compose product-specific trees.",
     ],
   };
@@ -38511,6 +38571,8 @@ function treeChildItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeChildItem with TreeParentItem to compose product-specific trees.",
     ],
   };
@@ -38539,6 +38601,8 @@ function treeItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Prefer TreeParentItem and TreeChildItem for new product trees; TreeItem stays as a switchable compatibility row.",
     ],
   };
@@ -38658,38 +38722,63 @@ function parseNavigationItemVariantName(name) {
 }
 
 function navbarVariantCombinations() {
-  return NAVBAR_CONTENT.map((content) => ({ content }));
+  const combinations = [];
+  for (const content of NAVBAR_CONTENT) {
+    for (const navigationAlign of NAVBAR_NAVIGATION_ALIGN) {
+      combinations.push({ content, navigationAlign });
+    }
+  }
+  return combinations;
 }
 
 function navbarVariantKey(props) {
-  return props.content;
+  return `${props.content}/${props.navigationAlign}`;
 }
 
+// A variant built before the NavigationAlign axis existed is named
+// "Content=Basic" and parses as Center, React's default, so Update renames it
+// in place and the node ids Code Connect pins survive.
 function parseNavbarVariantName(name) {
   const values = parseVariantValueMap(name);
+  const navigationAlign = values.NavigationAlign || "Center";
+  if (NAVBAR_NAVIGATION_ALIGN.indexOf(navigationAlign) === -1) {
+    return null;
+  }
   if (values.Content === "Product") {
-    return { content: "Contextual" };
+    return { content: "Contextual", navigationAlign };
   }
   if (NAVBAR_CONTENT.indexOf(values.Content) === -1) {
     return null;
   }
-  return { content: values.Content };
+  return { content: values.Content, navigationAlign };
 }
 
 function sidebarVariantCombinations() {
-  return SIDEBAR_CONTENT.map((content) => ({ content }));
+  const combinations = [];
+  for (const content of SIDEBAR_CONTENT) {
+    for (const inset of SIDEBAR_INSETS) {
+      combinations.push({ content, inset });
+    }
+  }
+  return combinations;
 }
 
 function sidebarVariantKey(props) {
-  return props.content;
+  return `${props.content}/${props.inset}`;
 }
 
+// A variant built before the Inset axis existed is named "Content=Basic" and
+// parses as Default, so Update renames it in place and keeps its node id.
 function parseSidebarVariantName(name) {
   const values = parseVariantValueMap(name);
-  if (SIDEBAR_CONTENT.indexOf(values.Content) === -1) {
+  const inset = values.Inset || "Default";
+  if (
+    SIDEBAR_CONTENT.indexOf(values.Content) === -1 ||
+    SIDEBAR_INSETS.indexOf(inset) === -1
+  ) {
     return null;
   }
-  return { content: values.Content };
+  return { content: values.Content, inset };
 }
 
 function backdropVariantCombinations() {
@@ -39459,6 +39548,10 @@ async function syncTreeRowNode(
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
 
+  if (asComponentVariant) {
+    syncTreeDividedLayers(rowNode, { row, metrics, variableByName, stats });
+  }
+
   syncFocusRing(rowNode, {
     enabled: row.focused,
     width: metrics.width,
@@ -39476,6 +39569,86 @@ async function syncTreeRowNode(
   }
 
   return { iconNodes };
+}
+
+/**
+ * Does a divided row draw the open parent's surface? An expanded parent row
+ * that is neither selected nor hovered. In code the surface is on a box round
+ * the row and the fills draw over it, rounded; here the surface would be a
+ * layer over the row's own fill, so a hovered or selected row draws its fill
+ * alone.
+ */
+function treeRowDrawsDividedSurface(row) {
+  return Boolean(
+    row.expandable && row.expanded && !row.selected && !row.hovered,
+  );
+}
+
+/**
+ * Divided's layers (GAP-201), hidden until the Divided property shows them:
+ * the divider, 1 high along the row's bottom edge and the row's full width,
+ * the border role; and on an open parent row, the surface behind everything
+ * the row draws, background/50 and square. Both are absolute, so the row's
+ * auto layout is what it was, and stretch with the row.
+ *
+ * The row keeps its rounded corners, as in code, where the hover and selected
+ * fills stay rounded over the surface. Code draws the divider under the row,
+ * a pixel below its height, and both reach Tree's bleed past it; a boolean
+ * drives visibility, not size, so here both sit within the row.
+ */
+function syncTreeDividedLayers(
+  rowNode,
+  { row, metrics, variableByName, stats },
+) {
+  const absolute = rowNode.layoutMode && rowNode.layoutMode !== "NONE";
+
+  if (treeRowDrawsDividedSurface(row)) {
+    const surface = figma.createRectangle();
+    surface.name = TREE_DIVIDED_SURFACE.name;
+    surface.resize(metrics.width, metrics.rowHeight);
+    surface.cornerRadius = KOZMOS_RADIUS.none;
+    surface.fills = [
+      paintFromVariable(
+        TREE_DIVIDED_SURFACE.token,
+        TREE_DIVIDED_SURFACE.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    surface.strokes = [];
+    surface.setSharedPluginData(
+      RUN_NAMESPACE,
+      "kind",
+      TREE_DIVIDED_SURFACE.kind,
+    );
+    rowNode.insertChild(0, surface);
+    if (absolute) surface.layoutPositioning = "ABSOLUTE";
+    surface.x = 0;
+    surface.y = 0;
+    surface.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    surface.visible = false;
+  }
+
+  const divider = figma.createRectangle();
+  divider.name = TREE_DIVIDER.name;
+  divider.resize(metrics.width, 1);
+  divider.cornerRadius = KOZMOS_RADIUS.none;
+  divider.fills = [
+    paintFromVariable(
+      TREE_DIVIDER.token,
+      TREE_DIVIDER.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  divider.strokes = [];
+  divider.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_DIVIDER.kind);
+  rowNode.appendChild(divider);
+  if (absolute) divider.layoutPositioning = "ABSOLUTE";
+  divider.x = 0;
+  divider.y = metrics.rowHeight - 1;
+  divider.constraints = { horizontal: "STRETCH", vertical: "MAX" };
+  divider.visible = false;
 }
 
 function shouldShowTreeActions(row) {
@@ -40407,7 +40580,8 @@ async function updateNavbarVariant(
 ) {
   const hasActions = props.content === "Actions";
   const isContextual = props.content === "Contextual";
-  component.name = `Content=${props.content}`;
+  const navigationAlign = props.navigationAlign || "Center";
+  component.name = `Content=${props.content}, NavigationAlign=${navigationAlign}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -40514,6 +40688,15 @@ async function updateNavbarVariant(
   });
   component.appendChild(navigationSlot);
   setHorizontalStackFillHugChildSizing(navigationSlot);
+  // The slot fills the room between the leading and trailing slots, as
+  // React's navigation grows into it; NavigationAlign places its items there
+  // (GAP-196). Written after the slot is configured, which resets it to MIN,
+  // and on a designer's own items as on the generated ones.
+  setNodePropertyIfSupported(
+    navigationSlot,
+    "primaryAxisAlignItems",
+    NAVBAR_NAVIGATION_ALIGN_ITEMS[navigationAlign],
+  );
 
   if (hasActions) {
     const actionsSlot = await createNavbarActionsSlot({
@@ -41219,7 +41402,8 @@ async function updateSidebarVariant(
 ) {
   const isRail = props.content === "Rail";
   const hasTools = props.content === "Tools";
-  component.name = `Content=${props.content}`;
+  const inset = props.inset || "Default";
+  component.name = `Content=${props.content}, Inset=${inset}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -41228,8 +41412,10 @@ async function updateSidebarVariant(
   component.itemSpacing = isRail ? 12 : 16;
   component.paddingLeft = isRail ? 4 : 16;
   component.paddingRight = isRail ? 4 : 16;
-  component.paddingTop = 16;
-  component.paddingBottom = 16;
+  // Flush (GAP-199): the header at the top edge, the room under it to the
+  // navigation kept, and the bottom padded as before.
+  component.paddingTop = inset === "Flush" ? 0 : SIDEBAR_PADDING_Y;
+  component.paddingBottom = SIDEBAR_PADDING_Y;
   component.resizeWithoutConstraints(
     isRail ? SIDEBAR_RAIL_WIDTH : SIDEBAR_DEFAULT_WIDTH,
     SIDEBAR_DEFAULT_HEIGHT,
@@ -42111,8 +42297,14 @@ function layoutNavbarVariants(componentSet) {
     if (child.type !== "COMPONENT") continue;
     const props = parseNavbarVariantName(child.name);
     if (!props) continue;
-    child.x = NAVBAR_CONTENT.indexOf(props.content) * 780;
-    child.y = 0;
+    // A column per Content, the bar's width and 80 apart (at 780 apart the
+    // 880 bars overlapped by 100), and a row per NavigationAlign, Center on
+    // top so the set's top-left variant, its default, is React's.
+    child.x =
+      NAVBAR_CONTENT.indexOf(props.content) * (NAVBAR_DEFAULT_WIDTH + 80);
+    child.y =
+      NAVBAR_NAVIGATION_ALIGN.indexOf(props.navigationAlign) *
+      (NAVBAR_DEFAULT_HEIGHT + 40);
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -42126,7 +42318,9 @@ function layoutSidebarVariants(componentSet) {
     const props = parseSidebarVariantName(child.name);
     if (!props) continue;
     child.x = SIDEBAR_CONTENT.indexOf(props.content) * 340;
-    child.y = 0;
+    // A row per Inset, Default on top: the set's default stays Basic, Default.
+    child.y =
+      SIDEBAR_INSETS.indexOf(props.inset) * (SIDEBAR_DEFAULT_HEIGHT + 40);
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -42458,7 +42652,37 @@ async function configureTreeItemProperties(
   );
   configureFocusVisibleProperty(componentSet, stats);
   configureTreeActionVisibilityProperties(componentSet, stats);
+  configureTreeDividedProperty(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Divided, a boolean off by default, showing every row's divider and each open
+ * parent row's surface (GAP-201). Off, an instance draws as it did before the
+ * property existed.
+ */
+function configureTreeDividedProperty(componentSet, stats) {
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    TREE_DIVIDED_PROPERTY_NAME,
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    const kind = generatedKind(node);
+    if (kind === TREE_DIVIDER.kind || kind === TREE_DIVIDED_SURFACE.kind) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeDividedBindings = boundCount;
 }
 
 /**

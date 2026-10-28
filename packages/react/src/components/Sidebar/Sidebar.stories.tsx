@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Sidebar } from "./Sidebar";
+import { Navbar } from "../Navbar/Navbar";
 import { NavigationItem } from "../NavigationItem/NavigationItem";
 import {
   Bell01 as Bell,
@@ -75,6 +76,43 @@ export const Rail: Story = {
         }
       />
       <div className="flex-1 p-4 bg-muted/20">Content Area</div>
+    </div>
+  ),
+};
+
+// GAP-199: a rail flush under a fixed header, its first item at the top edge,
+// as Pointr Cloud draws its side menu.
+export const Flush: Story = {
+  render: () => (
+    <div className="flex h-[520px] flex-col border">
+      <Navbar logo={<div className="font-bold text-xl">Kozmos</div>} />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar
+          variant="rail"
+          inset="flush"
+          navigation={
+            <div className="flex flex-col">
+              {[
+                { icon: Home, label: "Home", active: true },
+                { icon: Search, label: "Search" },
+                { icon: Bell, label: "Updates" },
+                { icon: Settings, label: "Settings" },
+              ].map((item) => (
+                <NavigationItem
+                  key={item.label}
+                  content="icon-label"
+                  icon={<item.icon className="h-6 w-6" />}
+                  placement="rail"
+                  selected={item.active}
+                >
+                  {item.label}
+                </NavigationItem>
+              ))}
+            </div>
+          }
+        />
+        <div className="flex-1 p-4 bg-muted/20">Content Area</div>
+      </div>
     </div>
   ),
 };

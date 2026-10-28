@@ -92,3 +92,38 @@ export const NarrowContainer: Story = {
     ),
   ],
 };
+
+// GAP-196: where the navigation sits in the bar. Pointr Cloud draws its
+// main sections at the end, beside the account.
+export const NavigationAlign: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      {(["start", "center", "end"] as const).map((align) => (
+        <Navbar
+          key={align}
+          navigationAlign={align}
+          navigationLabel={`Main navigation, ${align}`}
+          logo={<div className="font-bold text-xl">Kozmos</div>}
+          account={
+            <Button variant="ghost" size="icon" aria-label="Account menu">
+              <User className="h-5 w-5" />
+            </Button>
+          }
+          navigation={
+            <div className="flex items-center gap-2">
+              <NavigationItem href="#" placement="top" selected>
+                Overview
+              </NavigationItem>
+              <NavigationItem href="#" placement="top">
+                Explore
+              </NavigationItem>
+              <NavigationItem href="#" placement="top">
+                Settings
+              </NavigationItem>
+            </div>
+          }
+        />
+      ))}
+    </div>
+  ),
+};

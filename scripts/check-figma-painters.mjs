@@ -7520,6 +7520,677 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
   }
 }
 
+// --- GAP-196, GAP-199, GAP-201: the shells and the tree rows take React's layout props ---
+
+// The harness lays nothing out, so these measure one auto-layout frame the way
+// Figma lays it out: the padding, the gaps, and the room left over handed to
+// the child that fills; and where a frame packs its own items. Hidden and
+// absolute children take no room.
+function flowOf(frame) {
+  return (frame.children || []).filter(
+    (child) =>
+      child.visible !== false && child.layoutPositioning !== "ABSOLUTE",
+  );
+}
+function layOutAxis(frame, axis) {
+  const horizontal = axis === "x";
+  const size = (node) => (horizontal ? node.width : node.height);
+  const fills = (node) =>
+    node.layoutGrow === 1 ||
+    (horizontal ? node.layoutSizingHorizontal : node.layoutSizingVertical) ===
+      "FILL";
+  const flow = flowOf(frame);
+  const lead = horizontal ? frame.paddingLeft : frame.paddingTop;
+  const tail = horizontal ? frame.paddingRight : frame.paddingBottom;
+  const fixed = flow
+    .filter((child) => !fills(child))
+    .reduce((sum, child) => sum + size(child), 0);
+  const growing = flow.filter(fills).length;
+  const room =
+    size(frame) -
+    lead -
+    tail -
+    fixed -
+    frame.itemSpacing * Math.max(0, flow.length - 1);
+  const boxes = new Map();
+  let at = lead;
+  for (const child of flow) {
+    const length = fills(child) ? room / growing : size(child);
+    boxes.set(child, { start: at, length, end: at + length });
+    at += length + frame.itemSpacing;
+  }
+  return { flow, boxes };
+}
+function packedSpan(frame, length, axis) {
+  const horizontal = axis === "x";
+  const items = flowOf(frame);
+  const content =
+    items.reduce(
+      (sum, item) => sum + (horizontal ? item.width : item.height),
+      0,
+    ) +
+    frame.itemSpacing * Math.max(0, items.length - 1);
+  const lead = horizontal ? frame.paddingLeft : frame.paddingTop;
+  const tail = horizontal ? frame.paddingRight : frame.paddingBottom;
+  const free = length - lead - tail - content;
+  const offset = { MIN: 0, CENTER: free / 2, MAX: free }[
+    frame.primaryAxisAlignItems
+  ];
+  const start = lead + (offset === undefined ? NaN : offset);
+  return { start, end: start + content };
+}
+function overlapsIn(set) {
+  const boxes = set.children.map((c) => [
+    c.x,
+    c.y,
+    c.x + c.width,
+    c.y + c.height,
+    c.name,
+  ]);
+  const found = [];
+  for (let i = 0; i < boxes.length; i += 1)
+    for (let j = i + 1; j < boxes.length; j += 1) {
+      const [a, b] = [boxes[i], boxes[j]];
+      if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+        found.push(`${a[4]} / ${b[4]}`);
+    }
+  return found;
+}
+const topLeftOf = (set) =>
+  set.children.slice().sort((a, b) => a.y - b.y || a.x - b.x)[0];
+
+// Update, run over a set as it is in the file today: its variants named as
+// they are there, each an empty component. The file's variables and fonts
+// stand in as they do in the Stepper replay; what is measured is which nodes
+// Update keeps, renames and adds, and what it declares.
+async function replayUpdate(setName, oldNames, update, extraPages = []) {
+  const livePage = new MockNode("PAGE", "Components");
+  const liveSet = new MockNode("COMPONENT_SET", setName);
+  const oldIds = {};
+  for (const name of oldNames) {
+    const variant = new MockNode("COMPONENT", name);
+    liveSet.appendChild(variant);
+    oldIds[name] = variant.id;
+  }
+  livePage.appendChild(liveSet);
+  const setId = liveSet.id;
+  const updatePlugin = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: createFigmaMock({
+      pages: [livePage].concat(
+        extraPages.length ? extraPages : [new MockNode("PAGE", "Icons")],
+      ),
+    }),
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const result = await updatePlugin[update]();
+  const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+  return {
+    result,
+    liveSet,
+    setId,
+    kept: oldNames.map((name) => byId.get(oldIds[name])),
+    names: liveSet.children.map((child) => child.name),
+  };
+}
+
+// GAP-196: React's navigation grows into the room between the leading slots
+// (logo, context, primary action) and the trailing ones (actions, utilities,
+// account), and navigationAlign places its items there: centred (center, the
+// default), packed after the leading slots (start) or before the trailing
+// ones (end), a gap from them. Figma's Navigation Slot fills the same room and
+// its alignment places the items. A variant named before the axis existed
+// parses as Center, so Update renames it and keeps its node id.
+section("Navbar's NavigationAlign (GAP-196)");
+{
+  const aligns = plugin.NAVBAR_NAVIGATION_ALIGN || [];
+  const combinations = plugin.navbarVariantCombinations();
+  ok(
+    [...aligns].sort().join() === "Center,End,Start" && aligns[0] === "Center",
+    `NavigationAlign is Start, Center and End, Center, React's default, first (${aligns.join(", ")})`,
+  );
+  const axes = plugin.expectedVariantAxesForComponentSetName("Navbar") || {};
+  ok(
+    aligns.length === 3 &&
+      JSON.stringify(axes.NavigationAlign) === JSON.stringify(aligns) &&
+      JSON.stringify(axes.Content) ===
+        JSON.stringify(["Basic", "Actions", "Contextual"]),
+    `the set declares Content and NavigationAlign (${Object.keys(axes).join(", ")})`,
+  );
+  const keys = new Set(combinations.map((c) => plugin.navbarVariantKey(c)));
+  ok(
+    combinations.length === 9 &&
+      keys.size === 9 &&
+      ["Basic", "Actions", "Contextual"].every((content) =>
+        ["Start", "Center", "End"].every((navigationAlign) =>
+          combinations.some(
+            (c) =>
+              c.content === content && c.navigationAlign === navigationAlign,
+          ),
+        ),
+      ),
+    `each Content at each NavigationAlign: 9 variants with 9 keys (${combinations.length}, ${keys.size} keys)`,
+  );
+  const parsed = [
+    "Content=Basic",
+    "Content=Actions, NavigationAlign=End",
+    "Content=Product",
+    "Content=Basic, NavigationAlign=Middle",
+  ].map((name) => plugin.parseNavbarVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { content: "Basic", navigationAlign: "Center" },
+        { content: "Actions", navigationAlign: "End" },
+        { content: "Contextual", navigationAlign: "Center" },
+        null,
+      ]),
+    `a variant from before the axis parses as Center, the legacy Product as Contextual, an unknown value as none (${JSON.stringify(parsed)})`,
+  );
+
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const drawn = [];
+  for (const content of ["Basic", "Actions", "Contextual"]) {
+    for (const navigationAlign of ["Start", "Center", "End"]) {
+      const component = await plugin.createNavbarVariant({
+        props: { content, navigationAlign },
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      drawn.push(component);
+      const at = `${content}, ${navigationAlign}`;
+      const slot = named(component, "Navigation Slot");
+      const { flow, boxes } = layOutAxis(component, "x");
+      const index = slot ? flow.indexOf(slot) : -1;
+      if (index < 1) {
+        ok(false, `${at}: a Navigation Slot after the leading slots`);
+        continue;
+      }
+      const box = boxes.get(slot);
+      const after = flow[index + 1];
+      const gap = component.itemSpacing;
+      // The room React's navigation grows into: a gap after the leading
+      // slots, to a gap before the trailing ones or the bar's end padding.
+      const roomStart = boxes.get(flow[index - 1]).end + gap;
+      const roomEnd = after
+        ? boxes.get(after).start - gap
+        : component.width - component.paddingRight;
+      const span = packedSpan(slot, box.length, "x");
+      const first = box.start + span.start;
+      const last = box.start + span.end;
+      const placed =
+        navigationAlign === "Start"
+          ? Math.abs(first - roomStart) < 0.01
+          : navigationAlign === "End"
+            ? Math.abs(roomEnd - last) < 0.01
+            : first - roomStart > 1 &&
+              Math.abs(first - roomStart - (roomEnd - last)) < 0.01;
+      const said = {
+        Start: `packed ${gap} after the leading slots`,
+        Center: "centred between the leading and trailing slots",
+        End: after
+          ? `packed ${gap} before the trailing slots`
+          : "packed at the bar's end",
+      }[navigationAlign];
+      ok(
+        component.name ===
+          `Content=${content}, NavigationAlign=${navigationAlign}` &&
+          slot.layoutGrow === 1 &&
+          slot.layoutSizingHorizontal === "FILL" &&
+          Math.abs(box.start - roomStart) < 0.01 &&
+          Math.abs(box.end - roomEnd) < 0.01 &&
+          placed,
+        `${at}: named by both axes, the slot fills the room (${box.start}–${box.end}) and its items are ${said} (items ${first}–${last}, room ${roomStart}–${roomEnd}, ${slot.primaryAxisAlignItems}; ${component.name})`,
+      );
+    }
+  }
+
+  const set = new MockNode("COMPONENT_SET", "Navbar");
+  for (const component of drawn) set.appendChild(component);
+  plugin.layoutNavbarVariants(set);
+  const overlaps = overlapsIn(set);
+  const corner = topLeftOf(set);
+  ok(
+    overlaps.length === 0 &&
+      corner.name === "Content=Basic, NavigationAlign=Center",
+    `the laid-out set has no two variants overlapping, and its top-left, Figma's default, is Basic at Center (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
+  );
+
+  // The three variants in the file today, named before the axis existed.
+  const oldNames = ["Content=Basic", "Content=Actions", "Content=Contextual"];
+  const replay = await replayUpdate(
+    "Navbar",
+    oldNames,
+    "updateNavbarComponent",
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 3 &&
+      replay.result.variantsCreated === 6 &&
+      replay.result.variantsRemoved === 0 &&
+      replay.liveSet.children.length === 9 &&
+      new Set(replay.names).size === 9,
+    `Update keeps the set and its 3 variants, and adds 6: 9 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, NavigationAlign=Center`,
+    ),
+    `each of the 3 keeps its node id and is renamed NavigationAlign=Center (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const contextual = replay.kept[2];
+  const contextualSlot = contextual && named(contextual, "Navigation Slot");
+  ok(
+    contextualSlot && contextualSlot.primaryAxisAlignItems === "CENTER",
+    `a renamed variant is repainted in place: Contextual now centres its navigation (${contextualSlot && contextualSlot.primaryAxisAlignItems})`,
+  );
+}
+
+// GAP-199: React's aside pads 24 above and below, and its navigation 16.
+// Flush drops the aside's top padding; with a header, the header starts at
+// the edge and the navigation keeps its room under it (a rail with no header
+// loses that too, but every Figma Content draws a Header Slot, Rail's the
+// compact mark). Figma draws the room above the header as its 16 top padding,
+// so Flush is that padding at 0 and nothing else: the header at the edge, the
+// gap under it and the bottom as they were.
+section("Sidebar's Inset (GAP-199)");
+{
+  const insets = plugin.SIDEBAR_INSETS || [];
+  const combinations = plugin.sidebarVariantCombinations();
+  const axes = plugin.expectedVariantAxesForComponentSetName("Sidebar") || {};
+  ok(
+    JSON.stringify(insets) === JSON.stringify(["Default", "Flush"]) &&
+      JSON.stringify(axes.Inset) === JSON.stringify(insets) &&
+      JSON.stringify(axes.Content) ===
+        JSON.stringify(["Basic", "Sections", "Tools", "Rail"]),
+    `the set declares Content and Inset, Default first (${Object.keys(axes).join(", ")}: ${insets.join(", ")})`,
+  );
+  const keys = new Set(combinations.map((c) => plugin.sidebarVariantKey(c)));
+  ok(
+    combinations.length === 8 &&
+      keys.size === 8 &&
+      ["Basic", "Sections", "Tools", "Rail"].every((content) =>
+        ["Default", "Flush"].every((inset) =>
+          combinations.some((c) => c.content === content && c.inset === inset),
+        ),
+      ),
+    `each Content at each Inset: 8 variants with 8 keys (${combinations.length}, ${keys.size} keys)`,
+  );
+  const parsed = [
+    "Content=Rail",
+    "Content=Tools, Inset=Flush",
+    "Content=Rail, Inset=Tight",
+  ].map((name) => plugin.parseSidebarVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { content: "Rail", inset: "Default" },
+        { content: "Tools", inset: "Flush" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default; an unknown value as none (${JSON.stringify(parsed)})`,
+  );
+
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const drawn = [];
+  const measured = {};
+  for (const content of ["Basic", "Sections", "Tools", "Rail"]) {
+    for (const inset of ["Default", "Flush"]) {
+      const component = await plugin.createSidebarVariant({
+        props: { content, inset },
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      drawn.push(component);
+      const header = named(component, "Header Slot");
+      const navigation = named(component, "Navigation Slot");
+      const footer = named(component, "Footer Slot");
+      const { boxes } = layOutAxis(component, "y");
+      const headerBox = header && boxes.get(header);
+      const navBox = navigation && boxes.get(navigation);
+      const footerBox = footer && boxes.get(footer);
+      const firstItem =
+        navBox &&
+        navBox.start + packedSpan(navigation, navBox.length, "y").start;
+      measured[`${content}/${inset}`] = {
+        name: component.name,
+        header: headerBox && headerBox.start,
+        firstItem,
+        gap: headerBox && navBox && navBox.start - headerBox.end,
+        bottom: footerBox && component.height - footerBox.end,
+        itemSpacing: component.itemSpacing,
+      };
+    }
+  }
+  for (const content of ["Basic", "Sections", "Tools", "Rail"]) {
+    const base = measured[`${content}/Default`];
+    const flush = measured[`${content}/Flush`];
+    ok(
+      base.name === `Content=${content}, Inset=Default` &&
+        flush.name === `Content=${content}, Inset=Flush` &&
+        base.header === 16 &&
+        flush.header === 0 &&
+        flush.firstItem === base.firstItem - 16 &&
+        flush.gap === base.gap &&
+        flush.gap === base.itemSpacing &&
+        flush.bottom === 16 &&
+        base.bottom === 16,
+      `${content}: Default draws the header at 16 and the first navigation item at ${base.firstItem}; Flush the header at the edge and the item at ${base.firstItem - 16}, the ${base.itemSpacing} under the header and the 16 at the bottom kept (Flush: header ${flush.header}, item ${flush.firstItem}, gap ${flush.gap}, bottom ${flush.bottom}; ${flush.name})`,
+    );
+  }
+
+  const set = new MockNode("COMPONENT_SET", "Sidebar");
+  for (const component of drawn) set.appendChild(component);
+  plugin.layoutSidebarVariants(set);
+  const overlaps = overlapsIn(set);
+  const corner = topLeftOf(set);
+  ok(
+    overlaps.length === 0 && corner.name === "Content=Basic, Inset=Default",
+    `the laid-out set has no two variants overlapping, and its top-left is Basic at Default (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
+  );
+
+  const oldNames = [
+    "Content=Basic",
+    "Content=Sections",
+    "Content=Tools",
+    "Content=Rail",
+  ];
+  const replay = await replayUpdate(
+    "Sidebar",
+    oldNames,
+    "updateSidebarComponent",
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 4 &&
+      replay.result.variantsCreated === 4 &&
+      replay.result.variantsRemoved === 0 &&
+      replay.liveSet.children.length === 8 &&
+      new Set(replay.names).size === 8,
+    `Update keeps the set and its 4 variants, and adds 4: 8 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, Inset=Default`,
+    ),
+    `each of the 4 keeps its node id and is renamed Inset=Default (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const created = replay.liveSet.children.filter((c) =>
+    /Inset=Flush$/.test(c.name),
+  );
+  ok(
+    created.length === 4 && created.every((c) => c.paddingTop === 0),
+    `the 4 created are the Flush variants, each with no top padding (${created.map((c) => `${c.name} ${c.paddingTop}`).join("; ")})`,
+  );
+}
+
+// GAP-201: a divided row draws a 1px border under it, edge to edge, and an
+// open parent row that is not selected sits on background/50, under a
+// selected row's fill; hover and the focus ring draw as before. TreeItem is
+// the largest set in the library, so Divided is a boolean on the three row
+// sets, not an axis: a Divider layer on every row and a Divided Surface behind
+// each open parent row that is neither selected nor hovered, both hidden until
+// Divided, off by default, shows them. The corners stay rounded, which a
+// boolean cannot change; the sets say so.
+section("Tree rows' Divided (GAP-201)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await plugin[fn](component, {
+      props,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const layer = (row, name) =>
+    (row.children || []).find((child) => child.name === name) || null;
+  const open = {
+    content: "Basic",
+    expanded: "True",
+    depth: "1",
+    density: "Default",
+    state: "Idle",
+  };
+
+  for (const density of ["Default", "Compact"]) {
+    const row = await draw(
+      "updateTreeParentItemVariant",
+      Object.assign({}, open, { density }),
+    );
+    const height = density === "Compact" ? 32 : 40;
+    const divider = layer(row, "Divider");
+    ok(
+      divider &&
+        divider.type === "RECTANGLE" &&
+        row.height === height &&
+        divider.width === row.width &&
+        divider.width === 320 &&
+        divider.height === 1 &&
+        divider.x === 0 &&
+        divider.y === height - 1 &&
+        divider.layoutPositioning === "ABSOLUTE" &&
+        divider.constraints.horizontal === "STRETCH" &&
+        divider.constraints.vertical === "MAX",
+      `${density}: a Divider 320 by 1 along the row's bottom edge, at y ${height - 1}, absolute and stretched with the row (${divider && `${divider.width}x${divider.height} at ${divider.x},${divider.y}, ${divider.layoutPositioning}`})`,
+    );
+    ok(
+      divider &&
+        divider.fills.length === 1 &&
+        boundVariableName(divider.fills[0]) === "Border/Subtle" &&
+        divider.cornerRadius === 0 &&
+        divider.visible === false,
+      `${density}: the divider is the border role, Border/Subtle (background/200), square, and hidden until Divided (${divider && `${boundVariableName(divider.fills[0])}, visible ${divider.visible}`})`,
+    );
+    const surface = row.children[0];
+    ok(
+      surface &&
+        surface.name === "Divided Surface" &&
+        surface.type === "RECTANGLE" &&
+        surface.width === 320 &&
+        surface.height === height &&
+        surface.x === 0 &&
+        surface.y === 0 &&
+        surface.cornerRadius === 0 &&
+        surface.layoutPositioning === "ABSOLUTE" &&
+        surface.constraints.horizontal === "STRETCH" &&
+        surface.constraints.vertical === "STRETCH" &&
+        surface.fills.length === 1 &&
+        boundVariableName(surface.fills[0]) === "Colors/background/50" &&
+        surface.visible === false,
+      `${density}: an open parent row draws a Divided Surface first, behind the row, full bleed and square, background/50, hidden until Divided (${surface && `${surface.name} ${surface.width}x${surface.height} ${boundVariableName(surface.fills[0])}`})`,
+    );
+  }
+
+  // Which rows draw the surface: an open parent row that is neither selected
+  // nor hovered. A child row, a closed one, a selected and a hovered one draw
+  // the divider alone.
+  const cases = [
+    ["updateTreeParentItemVariant", { expanded: "True", state: "Idle" }, true],
+    ["updateTreeParentItemVariant", { expanded: "True", state: "Focus" }, true],
+    [
+      "updateTreeParentItemVariant",
+      { expanded: "True", state: "Hover" },
+      false,
+    ],
+    [
+      "updateTreeParentItemVariant",
+      { expanded: "True", state: "Selected" },
+      false,
+    ],
+    [
+      "updateTreeParentItemVariant",
+      { expanded: "False", state: "Idle" },
+      false,
+    ],
+    ["updateTreeChildItemVariant", { expanded: "False", state: "Idle" }, false],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", expanded: "True", state: "Focus" },
+      true,
+    ],
+    [
+      "updateTreeItemVariant",
+      { type: "Child", expanded: "False", state: "Idle" },
+      false,
+    ],
+  ];
+  const wrong = [];
+  for (const [fn, props, expectSurface] of cases) {
+    const row = await draw(fn, Object.assign({}, open, props));
+    const surfaces = row.children.filter((c) => c.name === "Divided Surface");
+    const dividers = row.children.filter((c) => c.name === "Divider");
+    if (dividers.length !== 1 || surfaces.length !== (expectSurface ? 1 : 0))
+      wrong.push(
+        `${row.name}: ${dividers.length} divider, ${surfaces.length} surface`,
+      );
+  }
+  ok(
+    wrong.length === 0,
+    `every row draws one divider, and only an open parent row that is Idle or Focus a surface (${wrong.join("; ") || "all as expected"})`,
+  );
+
+  // The set's property: Divided, off by default, drives both layers.
+  const variants = [
+    await draw("updateTreeParentItemVariant", open),
+    await draw(
+      "updateTreeParentItemVariant",
+      Object.assign({}, open, { state: "Selected" }),
+    ),
+  ];
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "TreeParentItem";
+  await plugin.configureTreeItemProperties(
+    set,
+    freshStats(),
+    tokens.variableByName,
+  );
+  const definitions = set.componentPropertyDefinitions;
+  const divided = Object.keys(definitions).find(
+    (key) =>
+      key.split("#")[0] === "Divided" && definitions[key].type === "BOOLEAN",
+  );
+  const driven = set.findAll(
+    (node) =>
+      node.componentPropertyReferences &&
+      node.componentPropertyReferences.visible === divided,
+  );
+  ok(
+    divided &&
+      definitions[divided].defaultValue === false &&
+      driven.length === 3 &&
+      driven.every((node) => /^(Divider|Divided Surface)$/.test(node.name)),
+    `a Divided boolean, off by default, shows the two rows' dividers and the open row's surface, and nothing else (${divided}, ${driven.map((node) => node.name).join(", ")})`,
+  );
+  set.remove();
+
+  // Update over the three sets as they are in the file today: every variant
+  // keeps its node id and its name, none is added or removed, and the set
+  // gains Divided, off, driving a divider on each row and a surface on each
+  // open parent row that is Idle or Focus.
+  const treeIcons = () => {
+    const icons = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      icons.appendChild(mockIconComponent(name));
+    return [icons];
+  };
+  const fileNames = (setName) => {
+    const names = [];
+    const types = setName === "TreeItem" ? ["Parent", "Child"] : [null];
+    for (const type of types)
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                names.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return names;
+  };
+  for (const [setName, update, total, openRows] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144, 36],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72, 0],
+    ["TreeItem", "updateTreeItemComponent", 216, 36],
+  ]) {
+    const oldNames = fileNames(setName);
+    const replay = await replayUpdate(setName, oldNames, update, treeIcons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Divided" && defs[k].type === "BOOLEAN",
+    );
+    const dividers = replay.liveSet.findAll((n) => n.name === "Divider");
+    const surfaces = replay.liveSet.findAll(
+      (n) => n.name === "Divided Surface",
+    );
+    const surfaced = surfaces.map((s) => s.parent && s.parent.name);
+    ok(
+      oldNames.length === total &&
+        replay.result.updated === true &&
+        replay.result.componentSetId === replay.setId &&
+        replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        key &&
+        defs[key].defaultValue === false,
+      `${setName}: Update keeps all ${total} variants, their node ids and names, adds none, and declares Divided off by default (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${key})`,
+    );
+    ok(
+      key &&
+        dividers.length === total &&
+        surfaces.length === openRows &&
+        surfaced.every((name) =>
+          /Expanded=True, .*State=(Idle|Focus)$/.test(name),
+        ) &&
+        dividers
+          .concat(surfaces)
+          .every(
+            (n) =>
+              n.visible === false &&
+              n.componentPropertyReferences &&
+              n.componentPropertyReferences.visible === key,
+          ),
+      `${setName}: a divider on each of its ${total} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
+    );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
