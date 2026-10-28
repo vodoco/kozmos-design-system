@@ -4,8 +4,22 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { cn } from "../../utils";
 import { Check, ChevronRight, Circle } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { inertOutside } from "../../utils/modal-inert";
 
-const Menu = DropdownMenuPrimitive.Root;
+// Whether the menu is modal, as Radix's `modal` says (true unless set false).
+// False outside Kozmos's Menu: a MenuContent under some other root makes
+// nothing inert.
+const MenuModalContext = React.createContext(false);
+
+const Menu = ({
+  modal = true,
+  ...props
+}: DropdownMenuPrimitive.DropdownMenuProps) => (
+  <MenuModalContext.Provider value={modal}>
+    <DropdownMenuPrimitive.Root modal={modal} {...props} />
+  </MenuModalContext.Provider>
+);
+Menu.displayName = DropdownMenuPrimitive.Root.displayName;
 const MenuTrigger = DropdownMenuPrimitive.Trigger;
 const MenuGroup = DropdownMenuPrimitive.Group;
 const MenuPortal = createThemePortal(DropdownMenuPrimitive.Portal);
@@ -55,19 +69,45 @@ const MenuContent = React.forwardRef<
       typeof DropdownMenuPrimitive.Portal
     >["container"];
   }
->(({ className, sideOffset = 4, portalContainer, ...props }, ref) => (
-  <MenuPortal container={portalContainer}>
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 min-w-32 overflow-hidden rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        className,
-      )}
-      {...props}
-    />
-  </MenuPortal>
-));
+>(({ className, sideOffset = 4, portalContainer, ...props }, ref) => {
+  const modal = React.useContext(MenuModalContext);
+  const release = React.useRef<(() => void) | undefined>();
+  const contentRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      release.current?.();
+      // A modal menu hides the page with aria-hidden's hideOthers as it
+      // opens, and traps focus, but left the page focusable: every control
+      // behind it was hidden yet focusable (axe aria-hidden-focus), as
+      // Select's page was until it made it inert. The same here, kept in
+      // reach exactly where hideOthers keeps it visible, and a submenu in a
+      // portal of its own with it (GAP-193). A force-mounted menu stays
+      // mounted while closed, so it makes nothing inert.
+      release.current =
+        node && modal && !props.forceMount
+          ? inertOutside(node, {
+              mirrorAriaHidden: true,
+              keep: "[data-radix-menu-content]",
+            })
+          : undefined;
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref, modal, props.forceMount],
+  );
+  return (
+    <MenuPortal container={portalContainer}>
+      <DropdownMenuPrimitive.Content
+        ref={contentRef}
+        sideOffset={sideOffset}
+        className={cn(
+          "z-50 min-w-32 overflow-hidden rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          className,
+        )}
+        {...props}
+      />
+    </MenuPortal>
+  );
+});
 MenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const MenuItem = React.forwardRef<
