@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "07e43da39fb4";
+const PLUGIN_BUILD = "527a0395a34c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -622,6 +622,10 @@ const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
 const POPOVER_SIDES = ["Top", "Right", "Bottom", "Left"];
 const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 const TOAST_CONTENT = ["Basic", "Action"];
+// toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
+// in the tone's text colour, on the same surface. A variant drawn before the
+// axis is Neutral.
+const TOAST_TONES = ["Neutral", "Success", "Info", "Warning", "Critical"];
 const TABS_COUNTS = ["Two", "Three", "Four"];
 const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
@@ -3364,12 +3368,14 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to composed Toast children in Code Connect.",
+      "Tone maps to toast()'s tone: neutral, success, info, warning or critical.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
     ],
     properties: [
       "Content: Basic, Action",
+      "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
     ],
     accessibility: [
@@ -7013,6 +7019,12 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Toast/close/size", value: 24, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/close/icon/size",
+    value: 16,
+    alias: "Button/icon/size",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Toast/icon/size",
     value: 16,
     alias: "Button/icon/size",
     scopes: ["WIDTH_HEIGHT"],
@@ -17734,6 +17746,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Toast") {
     return {
       Content: TOAST_CONTENT,
+      Tone: TOAST_TONES,
     };
   }
 
@@ -44461,6 +44474,9 @@ async function buildToastComponent() {
     componentSetName: "Toast",
     axisName: "Content",
     values: TOAST_CONTENT,
+    axis2Name: "Tone",
+    axis2Values: TOAST_TONES,
+    yStep: 160,
     x: 80,
     y: 6480,
     xStep: 480,
@@ -44469,6 +44485,7 @@ async function buildToastComponent() {
     description: [
       "Kozmos Toast component set generated from React Toast API.",
       "Content maps to composed Toast children.",
+      "Tone maps to toast()'s tone; Neutral draws no icon.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
@@ -44482,6 +44499,9 @@ async function updateToastComponent() {
     componentSetName: "Toast",
     axisName: "Content",
     values: TOAST_CONTENT,
+    axis2Name: "Tone",
+    axis2Values: TOAST_TONES,
+    yStep: 160,
     xStep: 480,
     createVariant: createToastVariant,
     updateVariant: updateToastVariant,
@@ -44490,6 +44510,7 @@ async function updateToastComponent() {
     description: [
       "Kozmos Toast component set generated from React Toast API.",
       "Content maps to composed Toast children.",
+      "Tone maps to toast()'s tone; Neutral draws no icon.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
@@ -61727,10 +61748,17 @@ async function updateEmptyStateVariant(
   });
 }
 
-async function createToastVariant({ value, variableByName, fonts, stats }) {
+async function createToastVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateToastVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -61739,14 +61767,53 @@ async function createToastVariant({ value, variableByName, fonts, stats }) {
 }
 
 function parseToastVariantName(name) {
-  return parseSingleAxisVariantName(name, "Content", TOAST_CONTENT);
+  const base = parseSingleAxisVariantName(name, "Content", TOAST_CONTENT);
+  if (!base) return null;
+  // A variant drawn before the Tone axis carries no Tone and is the neutral
+  // one, so Update renames it rather than replacing it and its node id
+  // survives.
+  const second = variantAxisValue(name, "Tone") || "Neutral";
+  if (TOAST_TONES.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/**
+ * Each tone's icon and its colour: the icons the Alert set draws for the same
+ * tones, in the tone's text colour (Semantics/Emotion/<tone>/text), as React's
+ * Toaster draws them. Neutral has none.
+ */
+function toastToneIcon(tone) {
+  const tones = {
+    Success: {
+      icon: "check",
+      color: "Emotion/success/text",
+      fallback: "#14653D",
+    },
+    Info: {
+      icon: "info-circle",
+      color: "Emotion/informative/text",
+      fallback: "#1C6082",
+    },
+    Warning: {
+      icon: "alert-triangle",
+      color: "Emotion/alert/text",
+      fallback: "#744D03",
+    },
+    Critical: {
+      icon: "alert-circle",
+      color: "Emotion/danger/text",
+      fallback: "#B01736",
+    },
+  };
+  return tones[tone] || null;
 }
 
 async function updateToastVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
-  component.name = `Content=${value}`;
+  const tone = TOAST_TONES.indexOf(second) === -1 ? "Neutral" : second;
+  component.name = `Content=${value}, Tone=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "AUTO";
@@ -61774,6 +61841,7 @@ async function updateToastVariant(
   await syncToastVariantChildren({
     component,
     value,
+    tone,
     variableByName,
     fonts,
     stats,
@@ -65751,10 +65819,29 @@ function syncMenuSeparator({ component, variableByName, stats }) {
 async function syncToastVariantChildren({
   component,
   value,
+  tone,
   variableByName,
   fonts,
   stats,
 }) {
+  // The tone's icon leads, centred on the row as React's is; redrawn each
+  // run, so its tint is always the tone's.
+  removeGeneratedButtonChild(component, "Icon", true);
+  const toneIcon = toastToneIcon(tone);
+  if (toneIcon) {
+    const icon = await createFixedIconInstance(
+      toneIcon.icon,
+      toneIcon.color,
+      toneIcon.fallback,
+      variableByName,
+      stats,
+      16,
+      "Toast/icon/size",
+    );
+    icon.name = "Icon";
+    component.insertChild(0, icon);
+  }
+
   let textGroup = directChildNamed(component, "Toast Content");
   if (textGroup && textGroup.type !== "FRAME") {
     textGroup.remove();

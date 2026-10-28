@@ -178,6 +178,12 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/alert/900", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/success/900", ["TEXT_FILL", "STROKE_COLOR"]],
+  // A tone's text colour is also its icon: a toast's (GAP-167), drawn in the
+  // tone's words' colour, as React's Toaster draws it.
+  ["Semantics/Emotion/success/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/informative/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/alert/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/danger/text", ["STROKE_COLOR"]],
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],

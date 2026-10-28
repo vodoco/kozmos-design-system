@@ -1,8 +1,24 @@
 import React from "react";
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { cn } from "../../utils";
-import { X } from "@kozmos-ds/icons";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  InfoCircle,
+  X,
+} from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import type { ToastTone } from "./toast-store";
+
+// Each tone's icon, the Alert set's for it in Figma, in the tone's text
+// colour, which holds 3:1 on the toast's background in both themes.
+const TONES = {
+  success: [Check, "text-success-text"],
+  info: [InfoCircle, "text-info-text"],
+  warning: [AlertTriangle, "text-warning-text"],
+  critical: [AlertCircle, "text-destructive-text"],
+} as const;
 
 const ToastProvider = ToastPrimitive.Provider;
 
@@ -13,7 +29,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitive.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 z-toast flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      "fixed top-0 z-toast flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:end-0 sm:top-auto sm:flex-col md:max-w-[420px]",
       className,
     )}
     {...props}
@@ -23,9 +39,19 @@ ToastViewport.displayName = ToastPrimitive.Viewport.displayName;
 
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>
->(({ className, onOpenChange, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root> & {
+    /**
+     * toast()'s tones (GAP-167), Notice's with success. A tone draws its
+     * icon at the inline start, in the tone's text colour; the surface stays
+     * the background. None, or `neutral`, draws no icon. It says nothing to
+     * a screen reader: `type` does that (Radix's `foreground`, assertive, or
+     * `background`, polite), which the Toaster sets from the tone.
+     */
+    tone?: ToastTone;
+  }
+>(({ className, onOpenChange, tone, children, ...props }, ref) => {
   const { trackEvent } = useKozmosAnalytics();
+  const [Icon, ink] = (tone && tone !== "neutral" && TONES[tone]) || [];
 
   return (
     <ToastPrimitive.Root
@@ -38,13 +64,30 @@ const Toast = React.forwardRef<
       // action follow the reading direction. In a right-to-left toast, pr-8
       // and the close's right-2 put both at the inline start, where the
       // words begin, and space-x-4's left margin put the space outside the
-      // action, which then touched the words.
+      // action, which then touched the words. It leaves the way it is
+      // swiped: the provider's `swipeDirection`, which the Toaster sets to
+      // the inline end.
       className={cn(
-        "group pointer-events-auto relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-control border bg-background p-6 pe-8 text-foreground shadow-floating transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+        "group pointer-events-auto relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-control border bg-background p-6 pe-8 text-foreground shadow-floating transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[swipe-direction=left]:data-[state=closed]:slide-out-to-left-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+        // The icon sits in the start padding, 16 from the words, so a toast's
+        // own layout is the same with a tone and without.
+        Icon && "ps-14",
         className,
       )}
+      data-tone={tone}
       {...props}
-    />
+    >
+      {Icon && (
+        <Icon
+          aria-hidden="true"
+          className={cn(
+            "absolute start-6 top-1/2 h-4 w-4 -translate-y-1/2",
+            ink,
+          )}
+        />
+      )}
+      {children}
+    </ToastPrimitive.Root>
   );
 });
 Toast.displayName = ToastPrimitive.Root.displayName;

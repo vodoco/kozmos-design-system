@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T22:50:56.433Z",
+  "generatedAt": "2026-10-28T17:05:50.632Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -7380,7 +7380,7 @@
         "ios": "semanticsEmotionSuccessText",
         "android": "semanticsEmotionSuccessText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7452,7 +7452,7 @@
         "ios": "semanticsEmotionDangerText",
         "android": "semanticsEmotionDangerText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7524,7 +7524,7 @@
         "ios": "semanticsEmotionAlertText",
         "android": "semanticsEmotionAlertText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7644,7 +7644,7 @@
         "ios": "semanticsEmotionInformativeText",
         "android": "semanticsEmotionInformativeText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",

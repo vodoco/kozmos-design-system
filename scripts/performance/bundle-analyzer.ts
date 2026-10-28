@@ -231,7 +231,9 @@ async function main() {
     for (const name of exportsList) {
       const { gzip } = await cost(
         `import { ${name} } from ${JSON.stringify(ENTRY)}; console.log(${name});`,
-        `export_${name}`,
+        // Numbered: `Toast` and `toast` are one file on a Mac's disk, which
+        // ignores case, and the second entry then never resolved.
+        `export_${perExport.length}_${name}`,
       );
       perExport.push([name, gzip]);
     }
