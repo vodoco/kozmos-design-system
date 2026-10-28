@@ -168,7 +168,8 @@ const wizardSteps = [
  * Going back: with `onStepSelect`, every step before the current one is a
  * button and a Tab stop, and a step ahead is one when it says
  * `disabled: false`, as a step already visited does here. The current step
- * never is, and a `disabled` one never is.
+ * is a button that selects nothing, so a step selected keeps the focus as it
+ * becomes current; a step the visitor may not go to is drawn disabled.
  */
 export const Navigable: Story = {
   render: () => {
@@ -217,6 +218,7 @@ export const VerticalRightToLeft: Story = {
         ]}
         currentStep={1}
         positionLabel="الخطوة {step} من {count}"
+        statusSeparator="، "
         statusLabels={{
           done: "مكتملة",
           loading: "قيد التنفيذ",
