@@ -29,6 +29,7 @@
     "test:scoped-utilities": "node scripts/check-scoped-utilities.mjs",
     "test:browser-compatibility": "node scripts/check-browser-compatibility.mjs",
     "test:field-styles": "node scripts/check-field-styles.mjs && node scripts/check-field-actions.mjs",
+    "test:control-props": "node scripts/check-control-props.mjs",
     "test:owned-css": "node scripts/check-owned-css.mjs && node scripts/check-result-presentation.mjs",
     "test:theme-fill": "node scripts/check-theme-fill.mjs",
     "test:location-pin": "node scripts/check-location-pin.mjs",

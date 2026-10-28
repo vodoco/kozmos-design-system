@@ -68,7 +68,14 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## CardHeader
 
-It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTMLDivElement>`.
+It forwards its ref to `HTMLDivElement`. Its props are `CardHeaderProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
+
+- `actions`: `React.ReactNode`, optional.
+
+  What acts on the card, at the header's inline end (GAP-169): an edit
+  IconButton beside the site's name, a menu. The title and description
+  keep the room before it, and the actions are centred on the title's
+  line: at the left in right to left.
 
 - `children`: `ReactNode`, optional.
 

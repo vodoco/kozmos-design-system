@@ -18,6 +18,22 @@ accessible label for the action.
 
 <Controls />
 
+## Counter
+
+`counter` draws a count over the icon's top-end corner (GAP-197): the tours left on a help button,
+unread notices. It is Kozmos's `Counter`, small, in the theme fill, not a `Badge`: Badge is a
+status (decision 93), a `div` that hides its counter at `size="icon"`. Its bottom and start edges sit
+2px past the button's centre, so it covers the same corner of the icon at every size and density,
+and the top-left in right to left. In forced colours, where its fill is dropped, an outline keeps it
+apart from the icon.
+
+The count is read with the button's name: "Help, 3" by default, or in `counterLabel`'s words,
+`` (count) => `${count} tours left` ``, so a product says it in its own language. The number drawn is
+hidden from readers, so it is not read twice; a button named by its content (no `aria-label`) reads
+the count from a visually hidden line instead. Pass `undefined`, not 0, to hide the counter.
+
+<Canvas of={IconButtonStories.Counter} />
+
 ## Implementation
 
 <div className="subheading">Code</div>

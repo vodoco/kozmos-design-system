@@ -29,7 +29,22 @@ export function IconButtonExample() {
 
 ## IconButton
 
-It forwards its ref to `HTMLButtonElement`. Its props are `ButtonProps`, which extends `React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants>`.
+It forwards its ref to `HTMLButtonElement`. Its props are `IconButtonProps`, which extends `ButtonProps`.
+
+- `counter`: `number`, optional.
+
+  A count at the button's top-end corner (GAP-197): the tours left on a
+  help button, unread notices. A Counter in the theme fill, not a Badge,
+  which is a status (decision 93). The count is read with the button's
+  name, "Help, 3" by default, in `counterLabel`'s words when given; the
+  number drawn is hidden from readers, so it is not read twice. Unset, no
+  counter: pass `undefined` rather than 0 to hide it.
+
+- `counterLabel`: `(count: number) => string`, optional, default `String`.
+
+  What the count is read as, after the button's name: `(count) =>
+\`${count} tours left\``, in the product's language. Defaults to the
+  number alone.
 
 - `isLoading`: `boolean`, optional.
 - `emotion`: `ButtonEmotion`, optional.
@@ -56,11 +71,3 @@ From `@kozmos-ds/react`.
 ```ts
 type ButtonEmotion = (typeof BUTTON_EMOTIONS)[number];
 ```
-
-## Also exported
-
-- `IconButtonProps` (type).
-
-  ```ts
-  type IconButtonProps = ButtonProps;
-  ```

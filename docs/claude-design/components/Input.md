@@ -43,6 +43,10 @@ It forwards its ref to `HTMLInputElement`. Its props are `InputProps`, which ext
   `limit` is a soft maximum: going over is an error the visitor is told
   about, not a keystroke the browser swallows.
 
+- `action`: `InputAction`, optional.
+
+  A copy or toggle button inside the field's end (GAP-154).
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -84,6 +88,40 @@ interface CharacterCount {
   overLimit?: string;
   underMinimum?: (minimum: number) => string;
 }
+```
+
+### InputAction
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A button inside the field's end (GAP-154), drawn as PasswordInput's reveal
+ * is: as tall as the field, its ring its own.
+ *
+ * - `copy` copies the field's value and says so: "Copied" in a polite live
+ *   region, and a check in place of the copy icon for two seconds. For a
+ *   read-only value a product shows and never edits, a feature's ID.
+ * - `toggle` is a pressed button with its own name, as the reveal is: the
+ *   Featured star at a field's end. `icon` is the product's; pressed, it is
+ *   drawn in the theme's colour.
+ */
+type InputAction =
+  | {
+      kind: "copy";
+      /** The button's name. Default "Copy". */
+      label?: string;
+      /** What is announced once the value is copied. Default "Copied". */
+      copiedLabel?: string;
+      onCopy?: (value: string) => void;
+    }
+  | {
+      kind: "toggle";
+      label: string;
+      icon: React.ReactNode;
+      pressed: boolean;
+      onPressedChange: (pressed: boolean) => void;
+    };
 ```
 
 ## Also exported

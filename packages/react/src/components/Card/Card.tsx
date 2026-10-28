@@ -45,20 +45,43 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 );
 Card.displayName = "Card";
 
-const CardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "flex flex-col space-y-1.5",
-      PADDING[React.useContext(CardPaddingContext)].all,
-      className,
-    )}
-    {...props}
-  />
-));
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * What acts on the card, at the header's inline end (GAP-169): an edit
+   * IconButton beside the site's name, a menu. The title and description
+   * keep the room before it, and the actions are centred on the title's
+   * line: at the left in right to left.
+   */
+  actions?: React.ReactNode;
+}
+
+const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ className, actions, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        actions ? "kozmos-card-header" : "flex flex-col space-y-1.5",
+        PADDING[React.useContext(CardPaddingContext)].all,
+        className,
+      )}
+      {...props}
+    >
+      {actions ? (
+        <>
+          <div className="kozmos-card-header-text">{children}</div>
+          <div
+            data-slot="card-header-actions"
+            className="kozmos-card-header-actions"
+          >
+            {actions}
+          </div>
+        </>
+      ) : (
+        children
+      )}
+    </div>
+  ),
+);
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<

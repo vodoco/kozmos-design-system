@@ -754,6 +754,24 @@ export class MockNode {
     return this.mainComponent;
   }
 
+  // A component's slot, as ComponentNode.createSlot() makes one: a SLOT child
+  // of the component and a SLOT property, on the set when the component is
+  // one of its variants, that the slot's content references. Not modelled
+  // until GAP-169, a painter's slot fell back to a frame here, which binds
+  // nothing, so no check could see a slot property reach its node.
+  createSlot() {
+    if (this.type !== "COMPONENT") {
+      throw new Error("createSlot on a non-component");
+    }
+    const slot = new MockNode("SLOT", "Slot");
+    this.appendChild(slot);
+    const owner =
+      this.parent && this.parent.type === "COMPONENT_SET" ? this.parent : this;
+    const key = owner.addComponentProperty("Slot", "SLOT", "");
+    slot.componentPropertyReferences = { slotContentId: key };
+    return slot;
+  }
+
   // An instance's own overrides. Only the name is modelled, and Figma resets
   // it with the rest: an instance renamed "Pointr Source" reads as its main
   // component's name again ("search-md") after resetOverrides(). Not

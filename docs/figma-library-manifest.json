@@ -16430,6 +16430,8 @@
           "asChild",
           "autoFocus",
           "children",
+          "counter",
+          "counterLabel",
           "disabled",
           "isLoading",
           "size",
@@ -16474,6 +16476,7 @@
           "unmappedProps": []
         },
         "props": [
+          "action",
           "aria-describedby",
           "aria-invalid",
           "aria-label",

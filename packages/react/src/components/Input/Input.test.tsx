@@ -1,5 +1,5 @@
-import { render, cleanup } from "@testing-library/react";
-import { describe, it, expect, afterEach } from "vitest";
+import { render, cleanup, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { Input } from "./Input";
 import "@testing-library/jest-dom/vitest";
 
@@ -119,5 +119,112 @@ describe("Input", () => {
   it("passes readOnly through to the native input", () => {
     const { getByRole } = render(<Input readOnly />);
     expect(getByRole("textbox")).toHaveAttribute("readonly");
+  });
+
+  it("copies its value from a button inside its end, and says so (GAP-154)", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const onCopy = vi.fn();
+    const { getByRole } = render(
+      <Input
+        label="FID"
+        readOnly
+        defaultValue="fid-0042"
+        action={{ kind: "copy", label: "Copy FID", onCopy }}
+      />,
+    );
+    const field = getByRole("textbox", { name: "FID" });
+    const copy = getByRole("button", { name: "Copy FID" });
+    const status = getByRole("status");
+    // Inside the field's wrapper, after the input, and the room kept for it.
+    expect(field.nextElementSibling).toBe(copy);
+    expect(field).toHaveClass("kozmos-input-with-action");
+    expect(copy).toHaveClass("kozmos-field-action", "kozmos-input-action");
+    expect(copy).toHaveAttribute("type", "button");
+    // The region is in the page, silent, before anything is copied.
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveTextContent("");
+
+    await act(async () => {
+      fireEvent.click(copy);
+    });
+    expect(writeText).toHaveBeenCalledWith("fid-0042");
+    expect(onCopy).toHaveBeenCalledWith("fid-0042");
+    expect(status.textContent).toBe("Copied");
+
+    // A second copy changes the words, so it is read again.
+    await act(async () => {
+      fireEvent.click(copy);
+    });
+    expect(status.textContent).toBe("Copied\u00a0");
+  });
+
+  it("says nothing when the copy fails", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    const { getByRole } = render(
+      <Input
+        label="FID"
+        readOnly
+        defaultValue="fid-0042"
+        action={{ kind: "copy", copiedLabel: "Copiado" }}
+      />,
+    );
+    await act(async () => {
+      fireEvent.click(getByRole("button", { name: "Copy" }));
+    });
+    expect(getByRole("status")).toHaveTextContent("");
+  });
+
+  it("draws a toggle action as a pressed button with its own name", () => {
+    const onPressedChange = vi.fn();
+    const { getByRole, rerender } = render(
+      <Input
+        label="Name"
+        action={{
+          kind: "toggle",
+          label: "Featured",
+          icon: <svg aria-hidden="true" />,
+          pressed: false,
+          onPressedChange,
+        }}
+      />,
+    );
+    const toggle = getByRole("button", { name: "Featured" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+    expect(onPressedChange).toHaveBeenCalledWith(true);
+
+    rerender(
+      <Input
+        label="Name"
+        disabled
+        action={{
+          kind: "toggle",
+          label: "Featured",
+          icon: <svg aria-hidden="true" />,
+          pressed: true,
+          onPressedChange,
+        }}
+      />,
+    );
+    expect(getByRole("button", { name: "Featured" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    // Disabled with its field.
+    expect(getByRole("button", { name: "Featured" })).toBeDisabled();
+  });
+
+  it("draws no wrapper or room without an action", () => {
+    const { getByRole, queryByRole } = render(<Input label="Name" />);
+    expect(getByRole("textbox")).not.toHaveClass("kozmos-input-with-action");
+    expect(queryByRole("button")).toBeNull();
+    expect(queryByRole("status")).toBeNull();
   });
 });

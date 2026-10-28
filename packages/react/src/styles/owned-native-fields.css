@@ -15,6 +15,7 @@
     @apply relative flex items-center;
   }
   .kozmos-password-with-toggle,
+  .kozmos-input-with-action,
   .kozmos-date-input,
   .kozmos-time-input[data-picker] {
     /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
@@ -24,8 +25,24 @@
     padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
   .kozmos-password-toggle,
+  .kozmos-input-action,
   .kozmos-date-picker-trigger {
     @apply absolute end-0 rounded-e-control bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:text-muted-foreground;
+  }
+  /* Input's toggle action (GAP-154): the product's icon at the copy icon's
+     16, and pressed, in the theme's colour, so the state shows whatever the
+     icon; in forced colours, which repaint it, in Highlight. */
+  .kozmos-input-action > svg {
+    @apply h-4 w-4;
+  }
+  .kozmos-input-action[aria-pressed="true"] {
+    @apply text-primary;
+  }
+  /* Forced colours repaint the theme's colour: pressed is Highlight there. */
+  @media (forced-colors: active) {
+    .kozmos-input-action[aria-pressed="true"] {
+      color: Highlight;
+    }
   }
   .kozmos-number-field {
     @apply flex w-full items-stretch;

@@ -495,6 +495,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:field-styles
           ADAPTIVE_BROWSER=firefox pnpm test:field-styles
 
+      # 0.15.0's control props, measured in each engine, light and dark, touch
+      # and compact, both directions: IconButton's counter, placed, drawn and
+      # read with the name (GAP-197); CardHeader's actions at the header's end
+      # on the title's line (GAP-169); Input's copy action, which says it
+      # copied, and its pressed toggle (GAP-154) (scripts/check-control-props.mjs).
+      - name: Verify Control Props
+        run: |
+          pnpm test:control-props
+          ADAPTIVE_BROWSER=webkit pnpm test:control-props
+          ADAPTIVE_BROWSER=firefox pnpm test:control-props
+
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
       - name: Verify Built Form Control Compatibility
