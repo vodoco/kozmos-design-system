@@ -208,10 +208,14 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           // A step the visitor may go to is a button and a Tab stop of its
           // own, as Pagination's pages and Breadcrumb's links are: a list of
           // buttons is not a composite widget, so it takes no roving focus.
+          // By default the steps before the current one, so none when the
+          // current step is not a number; `disabled` says otherwise.
           const navigable =
             !!onStepSelect &&
             !isCurrent &&
-            !(item.disabled ?? index > currentStep);
+            (item.disabled === undefined
+              ? index < currentStep
+              : !item.disabled);
           const content = (
             <>
               <span

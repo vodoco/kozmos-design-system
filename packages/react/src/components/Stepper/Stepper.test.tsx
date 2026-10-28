@@ -327,6 +327,25 @@ describe("Stepper steps as objects, orientation and selection (GAP-173)", () => 
     ).toBeNull();
   });
 
+  // A step that is not a number is before the first: no step is before it,
+  // so none is open unless it says so.
+  it("opens only a step that says so when the current step is not a number", () => {
+    render(
+      <Stepper
+        steps={[
+          "Building details",
+          { label: "Levels", disabled: false },
+          "Alignment",
+        ]}
+        currentStep={NaN}
+        onStepSelect={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole("button")).toEqual([
+      screen.getByRole("button", { name: "Levels, Not started" }),
+    ]);
+  });
+
   it("draws no button without onStepSelect", () => {
     render(<Stepper steps={wizard} currentStep={4} />);
     expect(screen.queryAllByRole("button")).toHaveLength(0);
