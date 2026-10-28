@@ -104,6 +104,14 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
   A double tap on a result opens its details: POIResultCard's `onOpen` (decision 72).
 
 - `onAction`: `(action: POIResultAction, poiId: string) => void`, optional.
+- `onHostAction`: `(actionId: string, poiId: string) => void`, optional.
+
+  Run one of the product's own actions, a member's `hostActions`: POIResultCard's `onHostAction`.
+
+- `hostActionIcons`: `POIResultCardProps["hostActionIcons"]`, optional.
+
+  The icons the members' host actions draw, by name: POIResultCard's `hostActionIcons`. Web only (decision 140): named imports (decision 121).
+
 - `collapsedCount`: `number`, optional, default `1`.
 
   How many members show while collapsed.
@@ -208,6 +216,27 @@ interface POIResultCardProps extends Omit<
    * Without a handler, the actions remain visible but disabled.
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
+  /**
+   * Run one of the product's own actions, `result.hostActions` (GAP-028),
+   * told its `id` and the POI's ID. They are drawn after `result.actions`
+   * in the same row, on the selected result. Without a handler they remain
+   * visible but disabled, as the card's own actions do.
+   */
+  onHostAction?: (actionId: string, poiId: string) => void;
+  /**
+   * The icons the product's own actions draw, by the `iconName` each gives:
+   * `{ calendar: Calendar }`, the components from `@kozmos-ds/icons`. The
+   * card draws a host action's icon only from here; a name not given here
+   * draws no icon, and the label is the action.
+   *
+   * Web only (decision 140). On the web a UI icon is a named import
+   * (decision 121), so an app bundles the icons its actions use: a lookup
+   * by name would bundle every icon a name can reach, about 20 KB gzip, into
+   * any app that shows results. SwiftUI and Compose draw `iconName` by name
+   * themselves and take no such map; the contract's `iconName` is the same
+   * on all three.
+   */
+  hostActionIcons?: Readonly<Partial<Record<string, KozmosIconComponent>>>;
   featuredLabel?: string;
   /** Localized disclosure shown only for result.languageNotListed === true. */
   languageNotListedLabel?: string;
@@ -383,6 +412,13 @@ interface POIResultPresentation {
    * what it is given and never assumes a fixed pair.
    */
   actions?: readonly POIResultActionPresentation[];
+  /**
+   * The product's own actions, with their own words and icons, drawn after
+   * `actions` in the same row and revealed with them (GAP-028): "Reserve a
+   * table" on a restaurant. A press reaches the card's `onHostAction` with
+   * the action's `id`.
+   */
+  hostActions?: readonly POIHostActionPresentation[];
 }
 ```
 
@@ -392,6 +428,24 @@ From `@kozmos-ds/product-contracts`.
 
 ```ts
 type POIAction = "navigate" | "favourite" | "bookmark" | "share" | "order";
+```
+
+### KozmosIconComponent
+
+From `@kozmos-ds/icons`.
+
+```ts
+/**
+ * An icon is an outline owned by this package or a taxonomy symbol, and both
+ * are drawn from the Pointr Icon Library's own artwork. Until 2026-09-23 this
+ * union had a third arm, `LucideIcon`, and 43 of the 64 names resolved to it:
+ * the same concept in a different hand from the one Figma shows. Every one had
+ * an exact Pointr equivalent by name, so nothing here maps onto a near-miss
+ * any more. Both take the same props, so a consumer cannot tell them apart.
+ */
+type KozmosIconComponent =
+  | ReturnType<typeof createPointrIcon>
+  | ReturnType<typeof createTaxonomyIcon>;
 ```
 
 ### TravelTimeBand
@@ -552,6 +606,42 @@ interface POIResultActionPresentation {
   label: string;
   /** Drawn first and filled. Exactly one action should carry it. */
   primary?: boolean;
+  disabled?: boolean;
+}
+```
+
+### POIHostActionPresentation
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * An action the product defines itself, beside the ones Kozmos names
+ * (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+ * Pointr Express". Kozmos draws it with the words and the icon it is given
+ * and says which was pressed by its `id`; what it does is the product's.
+ *
+ * POIResultCard draws a result's `hostActions` after its `actions`, on the
+ * selected result, and POIDetailPanel draws `details.hostActions` after the
+ * supplementary actions, in the same strip: each in the order given, as an
+ * outlined button. Nothing in this shape is specific to either card.
+ */
+interface POIHostActionPresentation {
+  /**
+   * The product's own name for the action, unique among the card's host
+   * actions: "reserve", "open-in-app". Handed back when it is pressed and
+   * reported as `hostActionId` in analytics; never shown or announced.
+   */
+  id: string;
+  /** Already localized: the button's words, and what a screen reader says. */
+  label: string;
+  /**
+   * A Kozmos icon by its registry name, drawn before the label and hidden
+   * from screen readers. A name Kozmos does not know draws no icon, never a
+   * stand-in: the label is the action.
+   */
+  iconName?: string;
+  /** Drawn, but it cannot be pressed. */
   disabled?: boolean;
 }
 ```

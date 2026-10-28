@@ -19,6 +19,8 @@ class KozmosPOIDetailPanelConnect {
         "Panel" to KozmosPOIDetailPanelPresentation.Panel
     )
 
+    // Host Action is one of `details.hostActions` (GAP-130), which
+    // `onHostAction` runs.
     @Composable
     fun ComponentExample() {
         KozmosPOIDetailPanel(
@@ -29,7 +31,8 @@ class KozmosPOIDetailPanelConnect {
             actionLabels = emptyMap(),
             onAction = { _, _ -> },
             onClose = {},
-            presentation = presentation
+            presentation = presentation,
+            onHostAction = { _, _ -> }
         )
     }
 }

@@ -79,6 +79,16 @@ It forwards its ref to `HTMLElement`. Its props are `POIDetailPanelProps`, which
   Supplementary capabilities do not widen the required action label record.
 
 - `supplementaryActionStates`: `Partial<Record<POISupplementaryAction, POIActionState>>`, optional, default `{}`.
+- `onHostAction`: `(actionId: string, poiId: string) => void`, optional.
+
+  Run one of the product's own actions, `details.hostActions` (GAP-130),
+  told its `id` and the POI's ID. They are drawn after the supplementary
+  actions in the same strip; without a handler they are drawn disabled.
+
+- `hostActionStates`: `Readonly<Partial<Record<string, POIActionState>>>`, optional, default `{}`.
+
+  A host action's state, by its `id`: disabled, loading and a message, as a supplementary action's.
+
 - `onClose`: `() => void`, optional.
 - `closeLabel`: `string`, optional, default `"Close details"`.
 - `mediaLabel`: `string`, optional, default `` `${poi.name} photos` ``.
@@ -158,6 +168,13 @@ interface POIDetailsPresentation {
     action: POISupplementaryAction;
     label: string;
   }[];
+  /**
+   * The product's own actions, with their own words and icons, drawn after
+   * the supplementary actions in the same strip (GAP-130): "Get live
+   * directions in Pointr Express" hands the visitor to the product's app.
+   * A press reaches the panel's `onHostAction` with the action's `id`.
+   */
+  hostActions?: readonly POIHostActionPresentation[];
 }
 ```
 
@@ -327,6 +344,42 @@ interface POIOpeningHoursPresentation {
     hours: string;
   }[];
   note?: string;
+}
+```
+
+### POIHostActionPresentation
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * An action the product defines itself, beside the ones Kozmos names
+ * (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+ * Pointr Express". Kozmos draws it with the words and the icon it is given
+ * and says which was pressed by its `id`; what it does is the product's.
+ *
+ * POIResultCard draws a result's `hostActions` after its `actions`, on the
+ * selected result, and POIDetailPanel draws `details.hostActions` after the
+ * supplementary actions, in the same strip: each in the order given, as an
+ * outlined button. Nothing in this shape is specific to either card.
+ */
+interface POIHostActionPresentation {
+  /**
+   * The product's own name for the action, unique among the card's host
+   * actions: "reserve", "open-in-app". Handed back when it is pressed and
+   * reported as `hostActionId` in analytics; never shown or announced.
+   */
+  id: string;
+  /** Already localized: the button's words, and what a screen reader says. */
+  label: string;
+  /**
+   * A Kozmos icon by its registry name, drawn before the label and hidden
+   * from screen readers. A name Kozmos does not know draws no icon, never a
+   * stand-in: the label is the action.
+   */
+  iconName?: string;
+  /** Drawn, but it cannot be pressed. */
+  disabled?: boolean;
 }
 ```
 

@@ -10,6 +10,7 @@ declare const poi: POIDetailPanelProps["poi"];
 declare const actionLabels: POIDetailPanelProps["actionLabels"];
 declare const runAction: POIDetailPanelProps["onAction"];
 declare const dismiss: NonNullable<POIDetailPanelProps["onClose"]>;
+declare const runHostAction: NonNullable<POIDetailPanelProps["onHostAction"]>;
 
 figma.connect(POIDetailPanel, poiDetailPanelUrl, {
   props: {
@@ -22,6 +23,8 @@ figma.connect(POIDetailPanel, poiDetailPanelUrl, {
   // poi is a POIPresentation from @kozmos-ds/product-contracts: the title,
   // subtitle and description shown in Figma are fields of it, not separate
   // props, so the example passes the object rather than the text bindings.
+  // Host Action is one of details.hostActions (GAP-130), which onHostAction
+  // runs.
   example: ({ presentation }) => (
     <POIDetailPanel
       poi={poi}
@@ -30,6 +33,7 @@ figma.connect(POIDetailPanel, poiDetailPanelUrl, {
       onAction={(action, poiId) => runAction(action, poiId)}
       onClose={() => dismiss()}
       closeLabel="Close"
+      onHostAction={(actionId, poiId) => runHostAction(actionId, poiId)}
     />
   ),
 });

@@ -412,6 +412,18 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-028, GAP-130: the product's own actions. On a selected result they
+      # follow Go and Details in order, 44 or more and inside the card, their
+      # icon a hidden mark at their words' start in both directions; Tab
+      # reaches them and Enter and Space run each once with its id; on the
+      # details card they end the strip, which scrolls a focused one into
+      # view; axe finds nothing (scripts/check-host-actions.mjs).
+      - name: Verify Host Actions
+        run: |
+          pnpm test:host-actions
+          ADAPTIVE_BROWSER=webkit pnpm test:host-actions
+          ADAPTIVE_BROWSER=firefox pnpm test:host-actions
+
       # GAP-194: Card's padding. Content, or a footer, that is the card's
       # first child pays the top as well as its sides and bottom, in both
       # paddings (24, and 16 compact); a header-led card is drawn as before,

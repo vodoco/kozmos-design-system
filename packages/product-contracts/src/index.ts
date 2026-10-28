@@ -169,6 +169,13 @@ export interface POIDetailsPresentation {
     action: POISupplementaryAction;
     label: string;
   }[];
+  /**
+   * The product's own actions, with their own words and icons, drawn after
+   * the supplementary actions in the same strip (GAP-130): "Get live
+   * directions in Pointr Express" hands the visitor to the product's app.
+   * A press reaches the panel's `onHostAction` with the action's `id`.
+   */
+  hostActions?: readonly POIHostActionPresentation[];
 }
 
 export interface TravelEstimatePresentation {
@@ -272,6 +279,36 @@ export interface POIResultBadgePresentation {
  */
 export type POIResultMatch = "exact" | "alternative" | "unconfirmed";
 
+/**
+ * An action the product defines itself, beside the ones Kozmos names
+ * (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+ * Pointr Express". Kozmos draws it with the words and the icon it is given
+ * and says which was pressed by its `id`; what it does is the product's.
+ *
+ * POIResultCard draws a result's `hostActions` after its `actions`, on the
+ * selected result, and POIDetailPanel draws `details.hostActions` after the
+ * supplementary actions, in the same strip: each in the order given, as an
+ * outlined button. Nothing in this shape is specific to either card.
+ */
+export interface POIHostActionPresentation {
+  /**
+   * The product's own name for the action, unique among the card's host
+   * actions: "reserve", "open-in-app". Handed back when it is pressed and
+   * reported as `hostActionId` in analytics; never shown or announced.
+   */
+  id: string;
+  /** Already localized: the button's words, and what a screen reader says. */
+  label: string;
+  /**
+   * A Kozmos icon by its registry name, drawn before the label and hidden
+   * from screen readers. A name Kozmos does not know draws no icon, never a
+   * stand-in: the label is the action.
+   */
+  iconName?: string;
+  /** Drawn, but it cannot be pressed. */
+  disabled?: boolean;
+}
+
 /** What a result card offers on the selected result, in the order given. */
 export interface POIResultActionPresentation {
   action: POIResultAction;
@@ -361,6 +398,13 @@ export interface POIResultPresentation {
    * what it is given and never assumes a fixed pair.
    */
   actions?: readonly POIResultActionPresentation[];
+  /**
+   * The product's own actions, with their own words and icons, drawn after
+   * `actions` in the same row and revealed with them (GAP-028): "Reserve a
+   * table" on a restaurant. A press reaches the card's `onHostAction` with
+   * the action's `id`.
+   */
+  hostActions?: readonly POIHostActionPresentation[];
 }
 
 /**

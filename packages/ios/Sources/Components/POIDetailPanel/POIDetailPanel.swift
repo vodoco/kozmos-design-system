@@ -53,6 +53,8 @@ public struct KozmosPOIDetailPanel: View {
     private let actionLabels: [KozmosPOIAction: String]
     private let actionStates: [KozmosPOIAction: KozmosPOIActionState]
     private let supplementaryActionStates: [String: KozmosPOIActionState]
+    /// A host action's state, by its `id`, as a supplementary action's.
+    private let hostActionStates: [String: KozmosPOIActionState]
     private let closeLabel: String
     private let mediaLabel: String
     private let mediaPositionLabel: (Int, Int) -> String
@@ -71,6 +73,10 @@ public struct KozmosPOIDetailPanel: View {
     private let titleLevel: TitleLevel
     private let onAction: (KozmosPOIAction, String) -> Void
     private let onSupplementaryAction: ((String, String) -> Void)?
+    /// Runs one of the product's own actions, `details.hostActions`
+    /// (GAP-130), told its `id` and the POI's ID. They are drawn after the
+    /// supplementary actions in the same strip; without it, disabled.
+    private let onHostAction: ((String, String) -> Void)?
     private let onClose: (() -> Void)?
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
@@ -106,7 +112,9 @@ public struct KozmosPOIDetailPanel: View {
         readMoreLabel: String = "Read more",
         readLessLabel: String = "Read less",
         tagsLabel: String = "Tags",
-        loadingLabel: String = "Loading"
+        loadingLabel: String = "Loading",
+        hostActionStates: [String: KozmosPOIActionState] = [:],
+        onHostAction: ((String, String) -> Void)? = nil
     ) {
         self.poi = poi; self.details = details; self.actionLabels = actionLabels
         self.onAction = onAction; self.actionStates = actionStates; self.onClose = onClose
@@ -121,6 +129,8 @@ public struct KozmosPOIDetailPanel: View {
         self.onSupplementaryAction = onSupplementaryAction
         self.readMoreLabel = readMoreLabel; self.readLessLabel = readLessLabel; self.tagsLabel = tagsLabel
         self.loadingLabel = loadingLabel
+        self.hostActionStates = hostActionStates
+        self.onHostAction = onHostAction
     }
 
     private var quickActions: [KozmosPOIAction] {
@@ -154,7 +164,7 @@ public struct KozmosPOIDetailPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 16).padding(.bottom, 16)
                 }
-                if !stripActions.isEmpty || !details.supplementaryActions.isEmpty {
+                if !stripActions.isEmpty || !details.supplementaryActions.isEmpty || !details.hostActions.isEmpty {
                     // The sheet's smallest detent rests on this row: the
                     // prototype's place card peeks at its header and Go.
                     actionButtons.padding(.bottom, 16).kozmosPanelPeekAnchor()
@@ -368,6 +378,20 @@ public struct KozmosPOIDetailPanel: View {
                     .disabled(onSupplementaryAction == nil)
                     .accessibilityIdentifier("poi-action-\(item.action)")
                 }
+                // The product's own, last, with their own words and icons.
+                ForEach(details.hostActions) { item in
+                    let state = hostActionStates[item.id] ?? .init()
+                    POIDetailActionButton(label: item.label, systemImage: nil,
+                                         iconName: item.iconName.flatMap { KozmosIcon.drawsArtwork(for: $0) ? $0 : nil },
+                                         loadingLabel: loadingLabel,
+                                         state: KozmosPOIActionState(
+                                            disabled: state.disabled || item.disabled || onHostAction == nil,
+                                            loading: state.loading, pressed: state.pressed,
+                                            message: state.message, messageTone: state.messageTone)) {
+                        onHostAction?(item.id, poi.id)
+                    }
+                    .accessibilityIdentifier("poi-host-action-\(item.id)")
+                }
             }
             .padding(.horizontal, 16).padding(.vertical, 2)
         }
@@ -377,6 +401,7 @@ public struct KozmosPOIDetailPanel: View {
     private var allMessages: [(String, KozmosPOIActionState)] {
         poi.actions.compactMap { action in actionStates[action].map { ("core:\(action.rawValue)", $0) } }
         + details.supplementaryActions.compactMap { item in supplementaryActionStates[item.action].map { ("supplementary:\(item.action)", $0) } }
+        + details.hostActions.compactMap { item in hostActionStates[item.id].map { ("host:\(item.id)", $0) } }
     }
 
     private var messages: some View {

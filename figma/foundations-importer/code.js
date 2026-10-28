@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "07e43da39fb4";
+const PLUGIN_BUILD = "2d3c1392a308";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -48932,6 +48932,24 @@ async function updatePOIDetailPanelVariant(
     });
     appendWithSizing(actions, action, "HUG", "FIXED");
   }
+  // The product's own action, details.hostActions (GAP-130): last in the
+  // strip, outlined, with its own icon. Hidden until the Host Action property
+  // asks for it. The code's strip scrolls sideways and never wraps, so one
+  // past the card's edge is cut off at it here, as the strip shows it before
+  // it is scrolled.
+  const hostAction = await productSdkControlButton({
+    name: "Host Action",
+    glyph: "↗",
+    iconName: "map-01",
+    label: "Open in app",
+    filled: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(actions, hostAction, "HUG", "FIXED");
+  hostAction.visible = false;
+  actions.clipsContent = true;
   appendWithSizing(component, actions, "FILL", "FIXED");
 }
 
@@ -48957,6 +48975,21 @@ function configurePOIDetailPanelProperties(componentSet, stats) {
     "Speciality coffee and pastries beside the north atrium escalators.",
     stats,
   );
+  // The product's own action in the strip (GAP-130), with its own words.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Host Action",
+    "Host Action",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Host Action Label",
+    "Host Action Text",
+    "Open in app",
+    stats,
+  );
 }
 
 const POI_DETAIL_PANEL_DESCRIPTION = [
@@ -48965,6 +48998,7 @@ const POI_DETAIL_PANEL_DESCRIPTION = [
   "Title Text maps to poi.name, Subtitle Text to the category, floor, and availability labels.",
   "Description Text maps to poi.description.",
   "Actions Slot maps to poi.actions with actionLabels; actionStates stay product state.",
+  "Host Action, last in the Actions Slot, is a product's own action, details.hostActions (GAP-130): its words are Host Action Text, its icon the product's.",
   "Sheet paints no surface, border or shadow of its own — it sits on the sheet's grey, which draws the handle — rounds only its top corners at the control radius, and its inset blocks (media, services) go white; Inline has no surface chrome.",
 ];
 
@@ -50800,6 +50834,16 @@ async function updatePOIResultCardVariant(
   for (const action of [
     { name: "Primary Action", label: "Go", primary: true },
     { name: "Secondary Action", label: "Details", primary: false },
+    // The product's own action, result.hostActions (GAP-028): after the
+    // card's, outlined as Details is, with its own icon before its words.
+    // Hidden until the Host Action property asks for it.
+    {
+      name: "Host Action",
+      label: "Reserve a table",
+      primary: false,
+      iconName: "calendar",
+      hidden: true,
+    },
   ]) {
     const button = productSdkFrame(action.name, {
       direction: "horizontal",
@@ -50807,6 +50851,7 @@ async function updatePOIResultCardVariant(
       counterSizing: "FIXED",
       primaryAlign: "CENTER",
       counterAlign: "CENTER",
+      spacing: action.iconName ? 8 : 0,
       paddingLeft: 16,
       paddingRight: 16,
       width: 80,
@@ -50826,6 +50871,22 @@ async function updatePOIResultCardVariant(
         paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
       ];
       button.strokeWeight = 1;
+    }
+
+    const icon = action.iconName
+      ? await productSdkIconInstance({
+          iconName: action.iconName,
+          token: { name: "Colors/foreground/0", fallback: "#000000" },
+          size: 20,
+          sizeToken: null,
+          variableByName,
+          stats,
+          owner: "POIResultCard " + action.name,
+        })
+      : null;
+    if (icon) {
+      icon.name = action.name + " Icon";
+      button.appendChild(icon);
     }
 
     const label = await productSdkText({
@@ -50849,6 +50910,7 @@ async function updatePOIResultCardVariant(
     label.textAutoResize = "WIDTH_AND_HEIGHT";
     button.appendChild(label);
     appendWithSizing(actionsRow, button, "HUG", "FIXED");
+    if (action.hidden) button.visible = false;
   }
 
   appendWithSizing(component, actionsRow, "FILL", "FIXED");
@@ -50866,6 +50928,21 @@ function configurePOIResultCardProperties(componentSet, stats) {
     "Actions Row",
     "Actions",
     false,
+    stats,
+  );
+  // The product's own action in that row (GAP-028), with its own words.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Host Action",
+    "Host Action",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Host Action Text",
+    "Host Action Text",
+    "Reserve a table",
     stats,
   );
   configureNamedTextProperty(
@@ -50890,6 +50967,7 @@ const POI_RESULT_CARD_DESCRIPTION = [
   "Title Text maps to poi.name; Meta Text to floorLabel and travelEstimate.",
   "Featured uses a labelled badge, so a sponsored result is not identified by colour alone.",
   "Selection must stay in step with the matching LocationPin on the map.",
+  "Host Action, in the action row, is a product's own action, result.hostActions (GAP-028): its words are Host Action Text, its icon the product's.",
 ];
 
 async function buildPOIResultCardComponent() {

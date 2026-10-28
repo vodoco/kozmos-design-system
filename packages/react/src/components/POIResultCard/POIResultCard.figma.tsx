@@ -9,6 +9,7 @@ const poiResultCardUrl =
 declare const poi: POIResultCardProps["poi"];
 declare const result: POIResultCardProps["result"];
 declare const selectPoi: POIResultCardProps["onSelect"];
+declare const runHostAction: NonNullable<POIResultCardProps["onHostAction"]>;
 
 figma.connect(POIResultCard, poiResultCardUrl, {
   props: {
@@ -20,7 +21,8 @@ figma.connect(POIResultCard, poiResultCardUrl, {
     }),
   },
   // State reads off result.selected, result.featured and result.available —
-  // fields of the POIResultPresentation rather than props of their own.
+  // fields of the POIResultPresentation rather than props of their own. Host
+  // Action is one of result.hostActions (GAP-028), which onHostAction runs.
   example: ({ featuredLabel }) => (
     <POIResultCard
       poi={poi}
@@ -28,6 +30,7 @@ figma.connect(POIResultCard, poiResultCardUrl, {
       featuredLabel={featuredLabel}
       selectionLabel="Show on map"
       onSelect={(poiId) => selectPoi(poiId)}
+      onHostAction={(actionId, poiId) => runHostAction(actionId, poiId)}
     />
   ),
 });
