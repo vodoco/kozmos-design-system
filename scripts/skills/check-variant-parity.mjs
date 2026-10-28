@@ -358,10 +358,20 @@ function braceBlock(source, from) {
 }
 
 function reactAxes(component) {
-  const file = readIfExists(
-    path.join(REACT_DIR, component, `${component}.tsx`),
-  );
-  if (!file) return null;
+  const own = readIfExists(path.join(REACT_DIR, component, `${component}.tsx`));
+  if (!own) return null;
+  // With the modules of its own folder that it imports: Input's recipe and
+  // status live in Input/inputVariants.ts (GAP-154), so the analysis read no
+  // axis on Input once they moved there.
+  const file = [
+    own,
+    ...[...own.matchAll(/from "\.\/([\w-]+)"/g)].map(
+      (m) =>
+        readIfExists(path.join(REACT_DIR, component, `${m[1]}.ts`)) ??
+        readIfExists(path.join(REACT_DIR, component, `${m[1]}.tsx`)) ??
+        "",
+    ),
+  ].join("\n");
 
   const axes = {};
 

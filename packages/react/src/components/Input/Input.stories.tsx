@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
+import { Star01 } from "@kozmos-ds/icons";
 import { Input } from "./Input";
 
 const meta = {
@@ -96,4 +98,36 @@ export const ValidationStates: Story = {
       />
     </div>
   ),
+};
+
+// GAP-154: Pointr Cloud's POI editor, a feature's ID read-only with a copy
+// action that says it copied, and the Featured star as a toggle at a field's
+// end.
+function ActionsExample() {
+  const [featured, setFeatured] = useState(true);
+  return (
+    <div className="grid w-full max-w-sm gap-4">
+      <Input
+        label="FID"
+        readOnly
+        defaultValue="5f0c2a7e-91d4-4b1e-a0f3-6c8e2d1b9a47"
+        action={{ kind: "copy", label: "Copy FID" }}
+      />
+      <Input
+        label="Name"
+        defaultValue="Gate B12"
+        action={{
+          kind: "toggle",
+          label: "Featured",
+          icon: <Star01 aria-hidden="true" />,
+          pressed: featured,
+          onPressedChange: setFeatured,
+        }}
+      />
+    </div>
+  );
+}
+
+export const Actions: Story = {
+  render: () => <ActionsExample />,
 };

@@ -8,6 +8,8 @@ import {
   CardContent,
 } from "./Card";
 import { Button } from "../Button/Button";
+import { IconButton } from "../IconButton/IconButton";
+import { Pencil01 } from "@kozmos-ds/icons";
 import { Input } from "../Input/Input";
 import { Label } from "../Label/Label";
 
@@ -103,5 +105,26 @@ export const WithoutHeader: Story = {
         </div>
       ))}
     </div>
+  ),
+};
+
+// GAP-169: Pointr Cloud's site card, an edit button at the header's end.
+export const HeaderActions: Story = {
+  render: (args) => (
+    <Card className="w-mobile" {...args}>
+      <CardHeader
+        actions={
+          <IconButton aria-label="Edit Boston Logan Airport">
+            <Pencil01 aria-hidden="true" className="h-5 w-5" />
+          </IconButton>
+        }
+      >
+        <CardTitle>Boston Logan Airport</CardTitle>
+        <CardDescription>3 buildings, 11 levels</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm">Changes awaiting publish.</p>
+      </CardContent>
+    </Card>
   ),
 };

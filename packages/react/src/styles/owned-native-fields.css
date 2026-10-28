@@ -14,7 +14,13 @@
   .kozmos-password-field {
     @apply relative flex items-center;
   }
+  /* Input's wrapper without an action: no box of its own, so the field lays
+     out as the wrapper's parent's child, as it did with no wrapper. */
+  .kozmos-input-control {
+    display: contents;
+  }
   .kozmos-password-with-toggle,
+  .kozmos-input-with-action,
   .kozmos-date-input,
   .kozmos-time-input[data-picker] {
     /* Room for the toggle, as tall as the field (decision 82): 48 in touch,
@@ -24,8 +30,45 @@
     padding-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
   }
   .kozmos-password-toggle,
+  .kozmos-input-action,
   .kozmos-date-picker-trigger {
     @apply absolute end-0 rounded-e-control bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:text-muted-foreground;
+  }
+  /* Input's toggle action (GAP-154): the product's icon at the copy icon's
+     16. Pressed, it is drawn as a pressed ToggleButton is, as the MAP-64
+     design draws its Featured star (decision 139): a 32 disc of the theme
+     fill under the icon, in the fill's foreground, so pressed is a shape and
+     not a colour alone (WCAG 1.4.1), whatever the icon. Hovered, the disc is
+     the themed Button's hover; disabled, the disc and icon are dimmed. */
+  .kozmos-input-action > svg {
+    @apply relative h-4 w-4;
+  }
+  .kozmos-input-action[aria-pressed="true"],
+  .kozmos-input-action[aria-pressed="true"]:hover,
+  .kozmos-input-action[aria-pressed="true"]:disabled {
+    @apply text-theme-fill-foreground;
+  }
+  .kozmos-input-action[aria-pressed="true"]::before {
+    @apply absolute inset-0 m-auto h-8 w-8 rounded-control bg-theme-fill;
+    content: "";
+  }
+  .kozmos-input-action[aria-pressed="true"]:hover::before {
+    background-color: var(
+      --components-primary-buttons-themed-button-background-hover
+    );
+  }
+  .kozmos-input-action[aria-pressed="true"]:disabled {
+    opacity: var(--primitives-opacity-50);
+  }
+  /* Forced colours repaint the theme's colours: pressed is a Highlight disc
+     with the icon in HighlightText there. */
+  @media (forced-colors: active) {
+    .kozmos-input-action[aria-pressed="true"] {
+      color: HighlightText;
+    }
+    .kozmos-input-action[aria-pressed="true"]::before {
+      background-color: Highlight;
+    }
   }
   .kozmos-number-field {
     @apply flex w-full items-stretch;

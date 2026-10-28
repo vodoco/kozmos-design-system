@@ -393,6 +393,9 @@ export const KozmosToggleButton = createVueWrapper(ToggleButton);
 export const KozmosSegmentedControl = createVueWrapper(SegmentedControl);
 export const KozmosLink = createVueWrapper(Link);
 export const KozmosIconButton = createVueWrapper(IconButton);
+// `counterLabel` is a function: declared as a prop, it is handed to React and
+// never written onto the wrapper's element as an attribute (GAP-197).
+Object.assign(KozmosIconButton, { props: { counterLabel: null } });
 export const KozmosTabs = createVueWrapper(Tabs);
 export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosThemeProvider = createVueWrapper(ThemeProvider);
@@ -420,6 +423,9 @@ export const KozmosCheckbox = createVueWrapper(CheckboxAdapter, [
   "update:modelValue",
 ]);
 export const KozmosInput = createVueWrapper(ReactInput, ["update:modelValue"]);
+// `action` is an object holding functions and an icon: declared as a prop, it
+// is handed to React, never written onto the wrapper's element (GAP-154).
+Object.assign(KozmosInput, { props: { action: null } });
 export const KozmosTextarea = createVueWrapper(Textarea, ["update:modelValue"]);
 export const KozmosSwitch = createVueWrapper(SwitchAdapter, [
   "update:modelValue",

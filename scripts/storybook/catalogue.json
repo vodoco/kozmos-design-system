@@ -257,7 +257,7 @@
       "id": "components-card",
       "title": "Core/Layout/Card",
       "component": "Card",
-      "exports": ["Default", "Padding", "WithoutHeader"]
+      "exports": ["Default", "Padding", "WithoutHeader", "HeaderActions"]
     },
     {
       "file": "packages/react/src/components/CategoryField/CategoryField.stories.tsx",
@@ -467,14 +467,20 @@
       "id": "action-iconbutton",
       "title": "Core/Actions/IconButton",
       "component": "IconButton",
-      "exports": ["Default", "Variants", "Sizes"]
+      "exports": ["Default", "Variants", "Sizes", "Counter"]
     },
     {
       "file": "packages/react/src/components/Input/Input.stories.tsx",
       "id": "components-input",
       "title": "Core/Inputs/Input",
       "component": "Input",
-      "exports": ["Default", "WithHelperText", "WithError", "ValidationStates"]
+      "exports": [
+        "Default",
+        "WithHelperText",
+        "WithError",
+        "ValidationStates",
+        "Actions"
+      ]
     },
     {
       "file": "packages/react/src/components/Itinerary/Itinerary.stories.tsx",

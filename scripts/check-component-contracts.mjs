@@ -218,6 +218,7 @@ const files = {
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
   reactInput: "packages/react/src/components/Input/Input.tsx",
+  reactInputVariants: "packages/react/src/components/Input/inputVariants.ts",
   reactInputFigma: "packages/react/src/components/Input/Input.figma.tsx",
   reactCombobox: "packages/react/src/components/Combobox/Combobox.tsx",
   reactComboboxFigma:
@@ -994,8 +995,8 @@ assertContains(
   "React Switch neutral unchecked track",
 );
 assertContains(
-  files.reactInput,
-  source.reactInput,
+  files.reactInputVariants,
+  source.reactInputVariants,
   "kozmos-reset kozmos-input",
   "React Input owned recipe",
 );
@@ -2392,9 +2393,55 @@ if (categoryTile.content.iconDecorative) {
   );
 }
 
+// Input's recipe, in a module of its own (GAP-154): a field that shares it
+// imports it from there and never from Input.tsx, whose copy and toggle action
+// would ride into every field's bundle (+0.35 KB to PasswordInput, DatePicker,
+// Search and the rest, measured on 28 Oct).
+{
+  const recipePath = "packages/react/src/components/Input/inputVariants.ts";
+  if (!fs.existsSync(path.join(root, recipePath))) {
+    fail(`${recipePath}: Input's recipe has no module of its own`);
+  }
+  const recipe = read(recipePath);
+  if (
+    !/export const inputVariants = cva\(/.test(recipe) ||
+    !/export type InputStatus\b/.test(recipe)
+  ) {
+    fail(`${recipePath}: inputVariants and InputStatus are not defined here`);
+  }
+  if (/from "\.\.?\//.test(recipe)) {
+    fail(`${recipePath}: the recipe imports another module of the package`);
+  }
+  const walk = (dir) =>
+    fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(
+      (entry) =>
+        entry.isDirectory()
+          ? walk(`${dir}/${entry.name}`)
+          : /\.tsx?$/.test(entry.name) &&
+              !/\.(test|stories|figma)\.tsx?$/.test(entry.name)
+            ? [`${dir}/${entry.name}`]
+            : [],
+    );
+  for (const file of walk("packages/react/src/components")) {
+    if (file.endsWith("/Input/Input.tsx")) continue;
+    const text = read(file);
+    for (const m of text.matchAll(
+      /import\s*\{([^}]*)\}\s*from\s*"[^"]*\/Input\/Input"/g,
+    )) {
+      if (/\b(inputVariants|InputStatus)\b/.test(m[1])) {
+        fail(
+          `${file}: imports Input's recipe from Input/Input; import it from Input/inputVariants, so Input's action stays out of its bundle`,
+        );
+      }
+    }
+  }
+}
+
 // The curated icons: the registry, the plugin's definitions and the catalog
 // agree, name for name and key for key, so a painter never asks the Icons
-// page for a symbol Curated Icons cannot import.
+// page for a symbol Curated Icons cannot import. An icon the importer draws is
+// the registry's (KOSMOS_ICON_DEFINITIONS) or one of the UI icons the registry
+// does not name (IMPORTER_UI_ICON_DEFINITIONS, decision 121), never both.
 {
   const registry = read("packages/icons/src/registry.ts");
   const namesBlock = registry.slice(
@@ -2404,27 +2451,45 @@ if (categoryTile.content.iconDecorative) {
   const names = [...namesBlock.matchAll(/^\s+"([a-z0-9-]+)",$/gm)].map(
     (m) => m[1],
   );
-  const start = source.figma.indexOf("const KOSMOS_ICON_DEFINITIONS = [");
-  const block = source.figma.slice(start, source.figma.indexOf("\n];", start));
+  // Decision 121: the UI glyphs components import by name stay out of the
+  // by-name registry. The check below stops an icon on both lists; this one
+  // stops one moved from the importer's UI list into the registry.
+  for (const glyph of ["copy-01", "star-01", "pencil-01"]) {
+    if (new RegExp(`["'\`]${glyph}["'\`]`).test(registry)) {
+      fail(
+        `packages/icons/src/registry.ts: "${glyph}" is a UI glyph that components import by name; it never joins the by-name registry (decision 121)`,
+      );
+    }
+  }
   // Entry by entry: a taxonomy symbol has no component key, and a pattern
   // spanning entries would pair its name with the next entry's key.
-  const definitions = new Map(
-    block
-      .split(/\n {2}\{\n/)
-      .slice(1)
-      .map((entry) => {
-        const field = (key, pattern) =>
-          (entry.match(new RegExp(`^ {4}${key}: "(${pattern})",$`, "m")) ||
-            [])[1];
-        return [
-          field("name", "[a-z0-9-]+"),
-          {
-            componentKey: field("componentKey", "[0-9a-f]+"),
-            source: field("source", "[a-z]+"),
-          },
-        ];
-      }),
-  );
+  const definitionsOf = (listName) => {
+    const start = source.figma.indexOf(`const ${listName} = [`);
+    if (start === -1) return null;
+    const block = source.figma.slice(
+      start,
+      source.figma.indexOf("\n];", start),
+    );
+    return new Map(
+      block
+        .split(/\n {2}\{\n/)
+        .slice(1)
+        .map((entry) => {
+          const field = (key, pattern) =>
+            (entry.match(new RegExp(`^ {4}${key}: "(${pattern})",$`, "m")) ||
+              [])[1];
+          return [
+            field("name", "[a-z0-9-]+"),
+            {
+              componentKey: field("componentKey", "[0-9a-f]+"),
+              source: field("source", "[a-z]+"),
+            },
+          ];
+        }),
+    );
+  };
+  const definitions = definitionsOf("KOSMOS_ICON_DEFINITIONS") || new Map();
+  const uiDefinitions = definitionsOf("IMPORTER_UI_ICON_DEFINITIONS");
   const catalog = JSON.parse(read("docs/figma-pointr-icon-catalog.json"));
   const items = Array.isArray(catalog)
     ? catalog
@@ -2484,6 +2549,52 @@ if (categoryTile.content.iconDecorative) {
       fail(
         `figma/foundations-importer/code.js: "${name}" is defined but packages/icons/src/registry.ts does not name it`,
       );
+    }
+  }
+  // The UI icons the importer draws for components that React imports by
+  // name (decision 121: Copy01, Star01, Pencil01), so the by-name registry
+  // never names them. Each is the catalog's icon, key for key, so Curated
+  // Icons imports the glyph the component means and no stand-in.
+  if (!uiDefinitions) {
+    fail(
+      "figma/foundations-importer/code.js: IMPORTER_UI_ICON_DEFINITIONS was not found",
+    );
+  } else {
+    for (const [name, definition] of uiDefinitions) {
+      if (!name) {
+        fail(
+          "figma/foundations-importer/code.js: an IMPORTER_UI_ICON_DEFINITIONS entry has no name",
+        );
+        continue;
+      }
+      if (names.includes(name) || definitions.has(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" is also a registry icon; it belongs on one list (decision 121)`,
+        );
+      }
+      if (!keyByName.has(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" is not in docs/figma-pointr-icon-catalog.json`,
+        );
+      } else if (!definition.componentKey) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" has no component key (the catalog's is ${keyByName.get(name)})`,
+        );
+      } else if (definition.componentKey !== keyByName.get(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" carries key ${definition.componentKey}, which is not the catalog's ${keyByName.get(name)}`,
+        );
+      }
+    }
+    // A painter asks for a UI icon by name; the name is on one of the lists.
+    for (const m of source.figma.matchAll(
+      /findImporterIconSource\(\s*"([a-z0-9-]+)"/g,
+    )) {
+      if (!uiDefinitions.has(m[1]) && !definitions.has(m[1])) {
+        fail(
+          `figma/foundations-importer/code.js: a painter asks for icon "${m[1]}", which neither KOSMOS_ICON_DEFINITIONS nor IMPORTER_UI_ICON_DEFINITIONS names`,
+        );
+      }
     }
   }
 }

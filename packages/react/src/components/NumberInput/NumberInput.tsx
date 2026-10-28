@@ -2,7 +2,7 @@ import React from "react";
 import { Minus, Plus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 export interface NumberInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,

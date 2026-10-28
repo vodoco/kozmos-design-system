@@ -754,6 +754,24 @@ export class MockNode {
     return this.mainComponent;
   }
 
+  // A component's slot, as ComponentNode.createSlot() makes one: a SLOT child
+  // of the component and a SLOT property, on the set when the component is
+  // one of its variants, that the slot's content references. Not modelled
+  // until GAP-169, a painter's slot fell back to a frame here, which binds
+  // nothing, so no check could see a slot property reach its node.
+  createSlot() {
+    if (this.type !== "COMPONENT") {
+      throw new Error("createSlot on a non-component");
+    }
+    const slot = new MockNode("SLOT", "Slot");
+    this.appendChild(slot);
+    const owner =
+      this.parent && this.parent.type === "COMPONENT_SET" ? this.parent : this;
+    const key = owner.addComponentProperty("Slot", "SLOT", "");
+    slot.componentPropertyReferences = { slotContentId: key };
+    return slot;
+  }
+
   // An instance's own overrides. Only the name is modelled, and Figma resets
   // it with the rest: an instance renamed "Pointr Source" reads as its main
   // component's name again ("search-md") after resetOverrides(). Not
@@ -767,6 +785,41 @@ export class MockNode {
   setProperties(properties) {
     if (this.type !== "INSTANCE")
       throw new Error("setProperties on a non-instance");
+    // A variant axis of the main component's set moves the instance to the
+    // sibling variant those values name, as Figma does. Not modelled until
+    // GAP-154, a nested field set to Action=None kept drawing its copy.
+    const set =
+      this.mainComponent &&
+      this.mainComponent.parent &&
+      this.mainComponent.parent.type === "COMPONENT_SET"
+        ? this.mainComponent.parent
+        : null;
+    if (set) {
+      const parse = (name) =>
+        Object.fromEntries(
+          name
+            .split(",")
+            .map((part) => part.split("=").map((side) => side.trim()))
+            .filter((pair) => pair.length === 2),
+        );
+      const current = parse(this.mainComponent.name);
+      const wanted = { ...current };
+      let moved = false;
+      for (const [key, value] of Object.entries(properties)) {
+        if (!key.includes("#") && key in current && current[key] !== value) {
+          wanted[key] = value;
+          moved = true;
+        }
+      }
+      if (moved) {
+        const target = set.children.find((child) => {
+          if (child.type !== "COMPONENT") return false;
+          const values = parse(child.name);
+          return Object.keys(wanted).every((k) => values[k] === wanted[k]);
+        });
+        if (target) this.mainComponent = target;
+      }
+    }
     for (const [key, value] of Object.entries(properties)) {
       const base = key.split("#")[0];
       this.componentProperties[key] = value;
