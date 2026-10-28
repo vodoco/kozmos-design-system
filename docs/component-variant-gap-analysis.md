@@ -34,17 +34,17 @@ token was declined, so this is not a gap to close.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 121    |
+| Components scanned                        | 122    |
 | Declaring at least one React variant axis | 61     |
-| Variations that are compositional only    | 60     |
-| Components with variant gaps — iOS        | 19/61  |
-| Components with variant gaps — Android    | 19/61  |
-| Components with variant gaps — Figma      | 24/61  |
+| Variations that are compositional only    | 61     |
+| Components with variant gaps — iOS        | 17/61  |
+| Components with variant gaps — Android    | 17/61  |
+| Components with variant gaps — Figma      | 25/61  |
 | Components with variant gaps — Vue        | 12/61  |
-| Components absent entirely — iOS          | 10/121 |
-| Components absent entirely — Android      | 9/121  |
-| Components absent entirely — Figma        | 22/121 |
-| Components absent entirely — Vue          | 24/121 |
+| Components absent entirely — iOS          | 11/122 |
+| Components absent entirely — Android      | 10/122 |
+| Components absent entirely — Figma        | 22/122 |
+| Components absent entirely — Vue          | 24/122 |
 
 <!-- /generated:headline -->
 
@@ -91,9 +91,6 @@ Combobox
   - ios missing axes -> popupLayout (overlay, inline)
   - android missing axes -> popupLayout (overlay, inline)
   - figma missing axes -> popupLayout (overlay, inline)
-Drawer
-  - ios missing values -> placement [named "side" here]: fixed, inline
-  - android missing values -> placement [named "side" here]: fixed, inline
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)
@@ -130,9 +127,6 @@ MapView
   - ios missing axes -> variant (framed, fill)
   - android missing axes -> variant (framed, fill)
   - figma missing axes -> variant (framed, fill)
-Navbar
-  - ios missing axes -> navigationAlign (start, center, end)
-  - android missing axes -> navigationAlign (start, center, end)
 Notice
   - ios: component/set absent
   - android: component/set absent
@@ -149,9 +143,6 @@ RouteProgressRail
 RouteSetupPanel
   - figma: component/set absent
   - vue: component absent
-Sidebar
-  - ios missing axes -> inset (default, flush)
-  - android missing axes -> inset (default, flush)
 Stepper
   - ios missing axes -> variant (numbered, dots)
   - android missing axes -> variant (numbered, dots)
@@ -167,6 +158,10 @@ TimePicker
   - ios missing axes -> hourCycle (h12, h23)
   - android missing axes -> hourCycle (h12, h23)
   - figma missing axes -> hourCycle (h12, h23)
+TourStep
+  - ios: component/set absent
+  - android: component/set absent
+  - figma missing axes -> side (top, right, bottom, left); align (start, center, end)
 Tree
   - ios missing axes -> activationMode (select, toggle, select-toggle)
   - android missing axes -> activationMode (select, toggle, select-toggle)
@@ -239,19 +234,19 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 10 of 121
+### iOS — 11 of 122
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, Surface, TourStep, UserMessage.
 
-### Android — 9 of 121
+### Android — 10 of 122
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Notice, TourStep, UserMessage.
 
-### Figma — 22 of 121
+### Figma — 22 of 122
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
-### Vue — 24 of 121
+### Vue — 24 of 122
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
 
@@ -294,6 +289,9 @@ Remaining:
    aliases.
 4. **Vue** — the components §3 lists as absent from Vue. Vue is a private harness, and its work
    waits (decision 2).
+5. **TourStep on SwiftUI and Compose** — later, by decision 116 (GAP-188): it ships on the web
+   and in Figma first. Its Figma `side` and `align` are where the card sits beside its target,
+   which a drawing of the card alone does not show.
 
 ## 5. Known Limits Of This Analysis
 
