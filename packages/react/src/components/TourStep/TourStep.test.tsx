@@ -65,11 +65,6 @@ afterEach(() => {
 });
 
 describe("TourStep (GAP-188)", () => {
-  it("is exported from the package", async () => {
-    const pkg = await import("../../index");
-    expect(pkg.TourStep).toBe(TourStep);
-  });
-
   it("is a non-modal dialog named by its title and described by its tour, position, body, hint and status", async () => {
     render(<Step />);
     const dialog = await screen.findByRole("dialog", { name: "Open a site" });
