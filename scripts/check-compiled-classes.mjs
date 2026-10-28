@@ -387,6 +387,42 @@ function isDeclarationName(id) {
       parent.name === id)
   );
 }
+// Every other class a component writes must compile too: one with no
+// modifier the build has no utility for (`pb-safe`, which BottomNavigation
+// carried with no plugin to make it) was read by neither check above, so the
+// bar had no bottom safe-area padding and nothing said so. A class reaches
+// this the way a blocked word does, as a value that becomes a class; a cva
+// variant's name (`defaultVariants`, a compound variant's keys) is not one.
+// Kozmos's own `kozmos-*` hooks are names a part can be found by, rule or
+// not, and `group`/`peer` mark a parent for a variant elsewhere.
+// Known to compile to nothing, found when this was added (27 Oct): Accordion
+// animates with keyframes no config defines. Remove a class from this list
+// as it is fixed; the check fails while a listed class compiles or is gone.
+const KNOWN_UNCOMPILED = new Set([
+  "data-[state=closed]:animate-accordion-up",
+  "data-[state=open]:animate-accordion-down",
+]);
+const HOOK = /^(?:kozmos-|(?:group|peer)(?:\/|$))/;
+function isVariantName(node) {
+  for (let at = node.parent; at; at = at.parent) {
+    if (!ts.isPropertyAssignment(at)) continue;
+    const key = at.name.getText();
+    if (key === "defaultVariants") return true;
+    const list = at.parent?.parent;
+    if (
+      ts.isObjectLiteralExpression(at.parent) &&
+      list &&
+      ts.isArrayLiteralExpression(list) &&
+      ts.isPropertyAssignment(list.parent) &&
+      list.parent.name.getText() === "compoundVariants"
+    )
+      return !/^class(?:Name)?$/.test(key);
+  }
+  return false;
+}
+const uncompiledUses = [];
+const knownSeen = new Set();
+
 const blockedUses = [];
 for (const file of sources) {
   const relative = path.relative(ROOT, file);
@@ -434,10 +470,17 @@ for (const file of sources) {
           " ",
         )
       : node.text;
+    const variantName = isVariantName(node);
     for (const word of text.split(/\s+/)) {
-      if (!blocked.has(word)) continue;
+      if (!word) continue;
       const { line } = source.getLineAndCharacterOfPosition(node.getStart());
-      blockedUses.push(`${word} at ${relative}:${line + 1}`);
+      if (blocked.has(word)) {
+        blockedUses.push(`${word} at ${relative}:${line + 1}`);
+        continue;
+      }
+      if (variantName || HOOK.test(word) || compiled.has(word)) continue;
+      if (KNOWN_UNCOMPILED.has(word)) knownSeen.add(word);
+      else uncompiledUses.push(`${word} at ${relative}:${line + 1}`);
     }
   }
 }
@@ -448,6 +491,24 @@ if (blockedUses.length) {
 } else {
   ok(
     `none of the ${blocked.size} blocked words (${[...blocked].join(", ")}) is written as a class`,
+  );
+}
+
+if (uncompiledUses.length) {
+  fail(
+    `${uncompiledUses.length} class(es) a component writes compile to nothing: ${uncompiledUses.join(", ")}.\n          Give the build the utility, write the rule in owned CSS, or take the class out.`,
+  );
+} else {
+  ok("every other class a component writes compiles");
+}
+const stale = [...KNOWN_UNCOMPILED].filter((cls) => !knownSeen.has(cls));
+if (stale.length) {
+  fail(
+    `${stale.join(", ")} now compile${stale.length === 1 ? "s" : ""} or ${stale.length === 1 ? "is" : "are"} gone: take ${stale.length === 1 ? "it" : "them"} off KNOWN_UNCOMPILED in this file to lock the fix in.`,
+  );
+} else if (KNOWN_UNCOMPILED.size) {
+  console.log(
+    `          Known to compile to nothing: ${[...KNOWN_UNCOMPILED].join(", ")}`,
   );
 }
 
