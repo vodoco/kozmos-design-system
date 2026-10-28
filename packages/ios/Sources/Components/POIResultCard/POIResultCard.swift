@@ -688,8 +688,9 @@ private struct SelectRowAccessibility: ViewModifier {
     let available: Bool
     let selected: Bool
     /// The card's identifier, which the row carries untagged. Tagged, the
-    /// SwiftUI row is hidden and takes it out of the tree, so the element
-    /// carries it instead and a UI test finds every row by it.
+    /// row's accessibility is replaced by nothing, so the identifier reaches
+    /// no element through the row: the element carries it instead, and a UI
+    /// test finds every row by it.
     let identifier: String
     /// What VoiceOver's activation runs: a VoiceOver double tap is one
     /// activation, so it selects, never opens.

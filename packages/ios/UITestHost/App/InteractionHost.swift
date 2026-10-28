@@ -48,6 +48,10 @@ private struct InteractionFixture: View {
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
     private let go = KozmosPOIResultActionPresentation(action: .navigate, label: "Go", primary: true)
+    private let bakery = KozmosPOIPresentation(id: "bakery", name: "Boulangerie Paul", floorLabel: "Level 1")
+    /// An instruction with a part in another language than the interface's.
+    private let platformInstruction = [KozmosInstructionPart(text: "Take the lift to "),
+                                       KozmosInstructionPart(text: "Gleis 3", lang: "de")]
 
     private var photos: [KozmosPOIMediaPresentation] {
         // HTTP is rejected by the component's URL policy; these never need a network.
@@ -120,6 +124,40 @@ private struct InteractionFixture: View {
         }
         return UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows).flatMap { visit($0) }
+    }
+
+    /// What VoiceOver is given for each element whose words start with one of
+    /// `starts`, a line each: the words, the speech language of each range
+    /// that has one, the hint, the identifier, the traits and the named
+    /// actions. XCUI reads no speech language, hint or named action. The
+    /// report's own text, which may start with the same words, is left out.
+    private func spokenElements(_ starts: [String], report: String) -> String {
+        let traits: [(UIAccessibilityTraits, String)] = [(.button, "button"), (.staticText, "text"),
+                                                         (.selected, "selected"), (.notEnabled, "dimmed")]
+        let selector = NSSelectorFromString("accessibilityIdentifier")
+        // SwiftUI's elements answer to the selector without adopting
+        // UIAccessibilityIdentification.
+        let identifier = { (node: NSObject) in
+            node.responds(to: selector) ? node.perform(selector)?.takeUnretainedValue() as? String ?? "" : ""
+        }
+        return accessibleNodes().filter { node in
+            node.isAccessibilityElement && identifier(node) != report
+                && starts.contains { (node.accessibilityLabel ?? "").hasPrefix($0) }
+        }.map { node in
+            var languages: [String] = []
+            if let words = node.accessibilityAttributedLabel {
+                words.enumerateAttribute(.accessibilitySpeechLanguage, in: NSRange(location: 0, length: words.length)) { lang, range, _ in
+                    if let lang = lang as? String { languages.append("\(lang) \((words.string as NSString).substring(with: range))") }
+                }
+            }
+            return [node.accessibilityLabel ?? "",
+                    "languages [\(languages.joined(separator: ", "))]",
+                    "hint [\(node.accessibilityHint ?? "")]",
+                    "id [\(identifier(node))]",
+                    "traits [\(traits.filter { node.accessibilityTraits.contains($0.0) }.map(\.1).joined(separator: " "))]",
+                    "actions [\((node.accessibilityCustomActions ?? []).map(\.name).joined(separator: ", "))]"]
+                .joined(separator: "; ")
+        }.joined(separator: "\n")
     }
 
     var body: some View {
@@ -315,6 +353,33 @@ private struct InteractionFixture: View {
                 ],
                 onHostAction: { action, id in events.append("host \(action) \(id)") })
                 .frame(height: 420)
+        case "spoken-language":
+            // Each part takes the path that says a name in its own language:
+            // a UIKit element laid over the part, with each phrase's speech
+            // language (SpeechLanguage.swift). A result named and summarised
+            // in French; a step, a manoeuvre and an itinerary's current row
+            // with a German landmark.
+            KozmosPOIResultList(items: [.init(poi: bakery, result: .init(poiId: "bakery", resultIndex: 0,
+                                    nameLanguage: "fr", summary: "Croissants chauds toute la journée",
+                                    actions: [go], summaryLanguage: "fr"))],
+                               resultCountLabel: "1 result", selectedPoiId: groupedSelection,
+                               onSelect: { groupedSelection = $0; select($0) }, onAction: action,
+                               onOpen: { events.append("open \($0)") })
+            // Found by the product's identifier, as a UI test finds a step.
+            KozmosDirectionStep(type: .liftUp, instruction: platformInstruction, distance: "20 m", duration: "1 min")
+                .accessibilityIdentifier("spoken-step")
+            KozmosManoeuvreCard(type: .liftUp, instruction: platformInstruction, detail: "Then 40 m",
+                                isExpanded: false, onToggle: { events.append("toggle") },
+                                manoeuvreLabel: "Spoken manoeuvre") {
+                Text("Continue to the platform")
+            }
+            KozmosItinerary(origin: "Main entrance", steps: [
+                .init(id: "lift", instruction: platformInstruction, type: .liftUp, isCurrent: true, distance: "30 m", duration: "2 min"),
+            ], destination: "Platform 3")
+            Button("Inspect spoken elements") {
+                controlAccessibilityReport = spokenElements(["Boulangerie Paul", "Take the lift"], report: "spoken-report")
+            }
+            Text(controlAccessibilityReport).font(.caption2).accessibilityIdentifier("spoken-report")
         case "manoeuvre-custom":
             KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: manoeuvreExpanded,
                                 onToggle: { manoeuvreExpanded.toggle(); events.append("toggle") },
