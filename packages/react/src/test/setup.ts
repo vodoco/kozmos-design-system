@@ -18,7 +18,8 @@ global.ResizeObserver = class {
 // these the drag still "works" and the test still passes, while an unhandled
 // TypeError is thrown past the assertion. A suite that is green with an
 // unhandled error in it is a suite people stop reading.
-if (!Element.prototype.setPointerCapture) {
+// A test in Node's environment (a server render) has no Element at all.
+if (typeof Element !== "undefined" && !Element.prototype.setPointerCapture) {
   Element.prototype.setPointerCapture = function setPointerCapture() {};
   Element.prototype.releasePointerCapture = function releasePointerCapture() {};
   Element.prototype.hasPointerCapture = function hasPointerCapture() {

@@ -4,7 +4,7 @@
 
 A succinct message that is displayed temporarily.
 
-- **Import:** `import { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@kozmos-ds/react";`
+- **Import:** `import { Toast, ToastAction, ToastClose, ToastDescription, Toaster, ToastProvider, ToastTitle, ToastViewport } from "@kozmos-ds/react";`
 - **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-toast--docs>
@@ -50,7 +50,15 @@ export function ToastExample() {
 
 ## Toast
 
-It forwards its ref to `HTMLLIElement`. Its props are `Omit<ToastPrimitive.ToastProps & React.RefAttributes<HTMLLIElement>, "ref">`.
+It forwards its ref to `HTMLLIElement`. Its props are `Omit<ToastPrimitive.ToastProps & React.RefAttributes<HTMLLIElement>, "ref"> & { tone?: ToastTone }`.
+
+- `tone`: `ToastTone`, optional.
+
+  toast()'s tones (GAP-167), Notice's with success. A tone draws its
+  icon at the inline start, in the tone's text colour; the surface stays
+  the background. None, or `neutral`, draws no icon. It says nothing to
+  a screen reader: `type` does that (Radix's `foreground`, assertive, or
+  `background`, polite), which the Toaster sets from the tone.
 
 - `onPause`: `() => void`, optional.
 - `asChild`: `boolean`, optional.
@@ -166,7 +174,130 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.T
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
+## Toaster
+
+Draws the toasts `toast()` shows: mount one, inside a ThemeProvider, and
+call `toast()` from anywhere. It is drawn in the provider's portal, in its
+theme, direction and density, so no box it is rendered in (a map, a panel
+that clips or isolates) can trap it, and the design config's reduced
+motion reaches it there. The toasts queue, `limit` at a time, oldest
+first; each pauses while the toasts are hovered or focused, closes on a
+swipe, its close button or Escape (the newest, with focus outside the
+toasts), and never takes focus.
+
+Its props are `ToasterProps`.
+
+- `id`: `string`, optional, default `""`.
+
+  Which toasts it draws: those whose `toaster` option names this id. One
+  with no id draws the toasts that name none. With two Toasters of one id
+  mounted, the first draws and the other stays empty, so no toast is shown
+  or announced twice.
+
+- `duration`: `number`, optional, default `5000`.
+
+  Each toast's time, in milliseconds, unless it gives its own. 5000.
+
+- `limit`: `number`, optional, default `3`.
+
+  How many show at once; the rest wait their turn. 3.
+
+- `label`: `string`, optional.
+
+  The region's name. Radix's "Notifications ({hotkey})": `{hotkey}` is
+  replaced by the keys that move focus to it.
+
+- `toastLabel`: `string`, optional.
+
+  Said before each toast's words as it is announced. "Notification".
+
+- `closeLabel`: `string`, optional, default `"Dismiss notification"`.
+
+  Each toast's close button. "Dismiss notification".
+
+- `hotkey`: `string[]`, optional.
+
+  The keys that move focus to the toasts. F8.
+
+- `className`: `string`, optional.
+
+  The list's classes, as ToastViewport's.
+
+## Types these props take
+
+### ToastTone
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * Notice's tones (warning, info, critical), with the success GAP-160 asks
+ * of Notice, and neutral, the default, which draws no icon. A toast keeps
+ * its surface, the background (GAP-58), whatever its tone: the tone is its
+ * icon, in the tone's text colour.
+ */
+type ToastTone = "neutral" | "success" | "info" | "warning" | "critical";
+```
+
 ## Also exported
+
+- `toast`: `ToastFunction`.
+- `ToastFunction` (interface).
+
+  ```ts
+  interface ToastFunction {
+    /**
+     * Shows a toast from anywhere: an event handler, a request's callback, a
+     * module outside React. The page's `<Toaster>` draws it. Returns its id,
+     * for `toast.dismiss(id)` or to replace it. Does nothing on the server.
+     */
+    (title: ReactNode, options?: ToastOptions): string;
+    /** Closes the toast with this id, or every toast when given none. */
+    dismiss(id?: string): void;
+  }
+  ```
+
+- `ToastOptions` (interface).
+
+  ```ts
+  interface ToastOptions {
+    /** The words under the title. */
+    description?: ReactNode;
+    /** Defaults to `neutral`. */
+    tone?: ToastTone;
+    /**
+     * How a screen reader announces it, in Notice's words. `assertive` for a
+     * `critical` toast, which interrupts; `polite` for every other tone.
+     */
+    live?: "polite" | "assertive";
+    /**
+     * How long it shows, in milliseconds, from when it is drawn. Defaults to
+     * the Toaster's `duration`; `Infinity` keeps it until it is dismissed.
+     * Hovering or focusing the toasts pauses it.
+     */
+    duration?: number;
+    /**
+     * One button beside the words, which closes the toast as it runs.
+     * `altText` says how to do the same without the toast, for a screen
+     * reader, which announces it in place of the button (Radix's `altText`);
+     * it defaults to `label`.
+     */
+    action?: {
+      label: string;
+      onClick?: () => void;
+      altText?: string;
+    };
+    /**
+     * A toast already showing with this id is replaced, in its place, and
+     * announced again: "Saving…" becomes "Saved".
+     */
+    id?: string;
+    /** The `id` of the Toaster that draws it, when a page has more than one. */
+    toaster?: string;
+    /** Runs once when it closes, however it closes. */
+    onDismiss?: () => void;
+  }
+  ```
 
 - `ToastProps` (type).
 

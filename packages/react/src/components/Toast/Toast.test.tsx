@@ -71,6 +71,32 @@ describe("Toast", () => {
     ).not.toBeInTheDocument();
   });
 
+  // GAP-167: toast()'s tones, on the part as well. A tone draws its icon in
+  // the start padding, in the tone's text colour; no tone changes nothing.
+  it("draws a tone's icon in the tone's colour, and nothing without one", () => {
+    render(
+      <ToastProvider>
+        <Toast open={true} tone="warning">
+          <ToastTitle>Location is approximate</ToastTitle>
+        </Toast>
+        <Toast open={true}>
+          <ToastTitle>Saved</ToastTitle>
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    const toned = screen.getByText("Location is approximate").closest("li")!;
+    expect(toned).toHaveAttribute("data-tone", "warning");
+    expect(toned).toHaveClass("ps-14");
+    const icon = toned.querySelector("svg");
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(icon).toHaveClass("text-warning-text", "absolute", "start-6");
+    const plain = screen.getByText("Saved").closest("li")!;
+    expect(plain).not.toHaveAttribute("data-tone");
+    expect(plain).not.toHaveClass("ps-14");
+    expect(plain.querySelector("svg")).toBeNull();
+  });
+
   it("draws a destructive toast's controls in Kozmos roles, not Tailwind's red", () => {
     render(
       <ToastProvider>

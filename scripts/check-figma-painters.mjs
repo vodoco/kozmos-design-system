@@ -140,6 +140,8 @@ function pages() {
     "shopping-bag-02",
     "user-01",
     "check",
+    "alert-triangle",
+    "alert-circle",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -1950,6 +1952,133 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         fourth.children.filter((child) => /^Step \d+$/.test(child.name))
           .length === 4,
       "a renamed variant is repainted in place: Count=4 still draws its 4 steps",
+    );
+  }
+}
+
+// GAP-167: Toast's Tone axis, toast()'s tones. Neutral draws no icon; each
+// other tone leads with the Alert set's icon for it, 16, in the tone's text
+// colour (Semantics/Emotion/<tone>/text), as React's Toaster draws it, on the
+// same surface and edge. A variant named before the axis parses as Neutral,
+// so Update renames the two in the file and keeps their node ids.
+section("Toast tones (GAP-167)");
+{
+  const ready =
+    Array.isArray(plugin.TOAST_TONES) &&
+    typeof plugin.parseToastVariantName === "function";
+  ok(ready, "Toast has a Tone axis");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    ok(
+      JSON.stringify(plugin.TOAST_TONES) ===
+        JSON.stringify(["Neutral", "Success", "Info", "Warning", "Critical"]),
+      `the tones are toast()'s (${plugin.TOAST_TONES.join(", ")})`,
+    );
+    const parsed = [
+      "Content=Basic",
+      "Content=Action, Tone=Critical",
+      "Content=Basic, Tone=Loud",
+    ].map((name) => plugin.parseToastVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "Basic", second: "Neutral" },
+          { value: "Action", second: "Critical" },
+          null,
+        ]),
+      `a variant from before the axis parses as Neutral; an unknown Tone is not one (${JSON.stringify(parsed)})`,
+    );
+    const expected = {
+      Neutral: null,
+      Success: ["check", "Emotion/success/text"],
+      Info: ["info-circle", "Emotion/informative/text"],
+      Warning: ["alert-triangle", "Emotion/alert/text"],
+      Critical: ["alert-circle", "Emotion/danger/text"],
+    };
+    for (const [tone, want] of Object.entries(expected)) {
+      const variant = await plugin.createToastVariant({
+        value: "Action",
+        second: tone,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      const icons = (variant.children || []).filter(
+        (child) => child.name === "Icon",
+      );
+      const [icon] = icons;
+      const shapes = icon
+        ? icon.findAll((node) => node.type === "VECTOR")
+        : [];
+      const tints = shapes.flatMap((shape) =>
+        (shape.strokes || []).map(boundVariableName).filter(Boolean),
+      );
+      const order = (variant.children || []).map((child) => child.name);
+      const surface = [
+        boundVariableName(variant.fills[0]),
+        boundVariableName(variant.strokes[0]),
+      ];
+      ok(
+        variant.name === `Content=Action, Tone=${tone}` &&
+          JSON.stringify(surface) ===
+            JSON.stringify(["Surface/0", "Border/Subtle"]) &&
+          (want === null
+            ? icons.length === 0
+            : icons.length === 1 &&
+              order[0] === "Icon" &&
+              icon.mainComponent &&
+              icon.mainComponent.name === `Icon / ${want[0]}` &&
+              icon.width === 16 &&
+              shapes.length > 0 &&
+              tints.length === shapes.length &&
+              tints.every((tint) => tint === want[1])),
+        want === null
+          ? `${tone}: no icon, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")})`
+          : `${tone}: ${want[0]} first, 16, in ${want[1]}, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")}; ${icon && icon.mainComponent && icon.mainComponent.name}; ${tints.join("+") || "untinted"})`,
+      );
+    }
+
+    // Update over the set as it is in the file today: two variants, named
+    // before the Tone axis. Each keeps its node id and is renamed Neutral;
+    // the other 8 are created beside them.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Toast");
+    const oldIds = {};
+    for (const name of ["Content=Basic", "Content=Action"]) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateToastComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 2 &&
+        updated.variantsCreated === 8 &&
+        liveSet.children.length === 10 &&
+        new Set(names).size === 10,
+      `Update keeps the set and its 2 variants, and adds 8: 10 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      ["Content=Basic", "Content=Action"].every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return variant && variant.name === `${name}, Tone=Neutral`;
+      }),
+      `each keeps its node id and is renamed Tone=Neutral (${["Content=Basic", "Content=Action"].map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
     );
   }
 }

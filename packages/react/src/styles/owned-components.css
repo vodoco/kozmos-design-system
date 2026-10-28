@@ -1464,6 +1464,22 @@
       animation: none;
     }
   }
+  /* A Toaster's toast (GAP-167) arrives, leaves and springs back from a
+     swipe without moving, under either signal: the media query reached none
+     of it, and the config's scale left each a 0.15 ms cut. The type selector
+     and the two attributes outweigh Toast's own utilities (:scope, a class
+     and an attribute). Its swipe still follows the finger. */
+  @media (prefers-reduced-motion: reduce) {
+    li.kozmos-toast[data-state][data-swipe-direction] {
+      animation: none;
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"]
+    li.kozmos-toast[data-state][data-swipe-direction] {
+    animation: none;
+    transition: none;
+  }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a
      `@apply animate-spin` declared later would simply win. */

@@ -412,6 +412,19 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-167: toast() and Toaster. Each toast is announced once, at its
+      # tone's politeness and in the product's words, even while a modal
+      # Select hides the page; focus is never taken; the queue holds to its
+      # limit, oldest first; a toast pauses while hovered or focused and
+      # closes by its button, Escape, a swipe and its action; neither reduced
+      # motion moves it; each Toaster draws in its own provider's portal, once
+      # per id, untrapped by a box that isolates (scripts/check-toaster.mjs).
+      - name: Verify Toaster
+        run: |
+          pnpm test:toaster
+          ADAPTIVE_BROWSER=webkit pnpm test:toaster
+          ADAPTIVE_BROWSER=firefox pnpm test:toaster
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws

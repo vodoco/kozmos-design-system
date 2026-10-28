@@ -16,6 +16,100 @@ A succinct message that is displayed temporarily.
 
 <Controls />
 
+## From a call: toast() and Toaster
+
+Mount one `Toaster` inside the ThemeProvider, then call `toast()` from anywhere: an event handler, a
+request's callback, a module outside React. The Toaster draws in the provider's portal, in its theme,
+direction and density, so a map or a panel that clips or isolates cannot trap it, and the design
+config's reduced motion reaches it there.
+
+<Canvas>
+  <Story of={ToastStories.FromACall} />
+</Canvas>
+
+- **Tones:** `neutral` (the default, no icon), `success`, `info`, `warning` and `critical`, Notice's
+  tones with success. A tone is an icon at the start, in the tone's text colour; the surface stays the
+  background. The parts take the same `tone`: `<Toast tone="success">`.
+- **Announced:** each toast once, by Radix's live region, with `toastLabel` ("Notification") before
+  its words: a `critical` toast assertively, every other tone politely, and `live` says otherwise. The
+  region says its `aria-live`, as every Kozmos live part does, so a modal Select or Dialog that hides
+  the page from a screen reader does not silence it.
+- **Focus:** a toast never takes it. F8 (`hotkey`) moves focus to the toasts. Escape closes the
+  focused toast, or, with focus anywhere else, the newest one (Radix's layers), and leaves focus
+  where it is.
+- **Time:** `duration` (5 seconds) runs from when a toast is drawn, and pauses while the toasts are
+  hovered or focused, or the window is in the background. `Infinity` keeps a toast until it is
+  dismissed.
+- **The queue:** `limit` (3) show at once, oldest first, and the rest wait their turn. `toast()`
+  returns an id: pass it back as `id` to replace that toast where it is, announced again ("Saving…"
+  becomes "Saved"), or to `toast.dismiss(id)`. `toast.dismiss()` closes them all.
+- **Closing:** its close button, a swipe toward the edge, Escape, its action, or `toast.dismiss`.
+  `onDismiss` runs once, however it closes.
+- **Reduced motion:** under `prefers-reduced-motion: reduce`, or the design config's
+  `motion: "reduced"`, a toast arrives and leaves without moving; a swipe still follows the finger.
+- **Several Toasters:** a Toaster with an `id` draws the toasts whose `toaster` option names it, in
+  its own provider's theme, so a module can keep its own. Of two Toasters with one id, the first
+  mounted draws and the other stays empty: no toast is shown or announced twice.
+- **On the server:** `toast()` does nothing and a Toaster renders no toast, so a server render holds
+  none and hydrates without a mismatch.
+- **Words:** `label` names the region ("Notifications ({hotkey})"), `toastLabel` comes before each
+  announcement, and `closeLabel` names each close button ("Dismiss notification"). An action's
+  `altText` is what a screen reader hears in place of its button.
+
+SwiftUI and Compose have no `toast()` and no tones yet: SwiftUI's `KozmosToast` shows one toast from
+a binding, and Compose's `KozmosToast(hostState)` the snackbars `SnackbarHostState.showSnackbar`
+shows, one at a time. Their tabs under Implementation show both.
+
+<PlatformSnippets
+    react={`
+import { Button, Toaster, toast } from "@kozmos-ds/react";
+
+// Inside your ThemeProvider. One call shows a toast; the second, given the
+// first's id, replaces it where it is and is announced again.
+export function save(place: string): void {
+  const id = toast("Saving", { duration: Infinity });
+  fetch("/api/places/" + place, { method: "PUT" }).then(
+    () =>
+      toast("Location saved", {
+        id,
+        tone: "success",
+        description: "Find it in your saved places.",
+      }),
+    () =>
+      toast("Could not save", {
+        id,
+        tone: "critical",
+        description: "Check your connection and try again.",
+        action: {
+          label: "Retry",
+          altText: "Save again from the place's card",
+          onClick: () => save(place),
+        },
+      }),
+  );
+}
+
+export function Example() {
+  return (
+    <>
+      <Button onClick={() => save("desk-12")}>Save</Button>
+      <Toaster closeLabel="Dismiss notification" />
+    </>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosButton } from "@kozmos-ds/vue"
+// @kozmos-ds/vue cannot show a toast from a call yet: it has no Toaster and no toast().
+</script>
+
+<template>
+  <KozmosButton>Save</KozmosButton>
+</template>
+    `}
+/>
+
 ## Implementation
 
 The close shows only a cross and is named "Dismiss notification" on all three platforms. A product
