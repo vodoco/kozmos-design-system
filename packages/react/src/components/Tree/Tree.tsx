@@ -47,13 +47,23 @@ export interface TreeProps extends Omit<
   ariaLabel?: string;
   density?: TreeDensity;
   /**
-   * A stroke under every row, edge to edge, and an open parent row on a
-   * surface of its own (GAP-201): a list of records, as Pointr Cloud's Map
-   * Content tree draws its buildings and levels, rather than a navigation
-   * tree. The rows lose their rounded corners; a selected row keeps its fill
-   * over the surface.
+   * A stroke under every row and an open parent row on a surface of its own
+   * (GAP-201): a list of records, as Pointr Cloud's Map Content tree draws
+   * its buildings and levels, rather than a navigation tree. The stroke sits
+   * under the row, so a divided row is a pixel taller; the hover and
+   * selected fills keep their corners, inside the stroke and over the
+   * surface, and the focus ring is drawn inside the row. Rows composed as
+   * children take it from here too.
    */
   divided?: boolean;
+  /**
+   * How far a divided row's stroke and an open row's surface reach past the
+   * tree on each side, so they run to the panel's edges while the rows stay
+   * where they are: the panel's own inline padding, 16 in a
+   * `Container inset="panel"`. A number is pixels. 0 by default, the tree's
+   * own edges.
+   */
+  bleed?: number | string;
   indent?: number;
   activationMode?: TreeActivationMode;
   defaultExpandedIds?: string[];
@@ -75,7 +85,11 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   density?: TreeDensity;
   depth?: number;
   disabled?: boolean;
-  /** As Tree's `divided`: a stroke under the row, and an open parent row on a surface. */
+  /**
+   * As Tree's `divided`: a stroke under the row, and an open parent row on a
+   * surface, both reaching the Tree's `bleed` past it. Defaults to the
+   * Tree's.
+   */
   divided?: boolean;
   expanded?: boolean;
   focusVisible?: boolean;
@@ -93,6 +107,9 @@ interface VisibleTreeItem {
   parentId?: string;
 }
 
+/** A Tree's `divided`, for the rows composed in it as children. */
+const TreeDividedContext = React.createContext(false);
+
 const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
   (
     {
@@ -103,6 +120,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       data = [],
       density = "default",
       divided,
+      bleed,
       defaultExpandedIds = [],
       expandedIds,
       indent = 20,
@@ -300,30 +318,41 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         aria-label={ariaLabel}
         className={cn("w-full text-sm", className)}
         {...props}
+        style={
+          bleed === undefined
+            ? props.style
+            : ({
+                "--kozmos-tree-bleed":
+                  typeof bleed === "number" ? `${bleed}px` : bleed,
+                ...props.style,
+              } as React.CSSProperties)
+        }
       >
-        {children ??
-          data.map((item) => (
-            <TreeNode
-              key={item.id}
-              item={item}
-              depth={0}
-              density={density}
-              divided={divided}
-              expandedSet={expandedSet}
-              focusedId={focusedId}
-              indent={indent}
-              itemRefs={itemRefs}
-              selectedId={currentSelectedId}
-              onActivate={activateItem}
-              onFocusItem={setFocusedId}
-              onKeyDown={handleItemKeyDown}
-              onSelect={selectItem}
-              onToggle={toggleExpanded}
-              renderActions={renderActions}
-              renderIcon={renderIcon}
-              renderMeta={renderMeta}
-            />
-          ))}
+        <TreeDividedContext.Provider value={!!divided}>
+          {children ??
+            data.map((item) => (
+              <TreeNode
+                key={item.id}
+                item={item}
+                depth={0}
+                density={density}
+                divided={divided}
+                expandedSet={expandedSet}
+                focusedId={focusedId}
+                indent={indent}
+                itemRefs={itemRefs}
+                selectedId={currentSelectedId}
+                onActivate={activateItem}
+                onFocusItem={setFocusedId}
+                onKeyDown={handleItemKeyDown}
+                onSelect={selectItem}
+                onToggle={toggleExpanded}
+                renderActions={renderActions}
+                renderIcon={renderIcon}
+                renderMeta={renderMeta}
+              />
+            ))}
+        </TreeDividedContext.Provider>
       </div>
     );
   },
@@ -493,7 +522,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
       density = "default",
       depth = 0,
       disabled = false,
-      divided = false,
+      divided: dividedProp,
       expanded = false,
       focusVisible = false,
       hasChildren = false,
@@ -511,8 +540,10 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     const stopActionPropagation = (event: React.SyntheticEvent) => {
       event.stopPropagation();
     };
+    const treeDivided = React.useContext(TreeDividedContext);
+    const divided = dividedProp ?? treeDivided;
 
-    return (
+    const row = (
       <div
         ref={ref}
         data-depth={depth}
@@ -524,16 +555,14 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-start outline-none transition-colors",
           density === "compact" ? "min-h-8 py-1" : "min-h-10 py-1.5",
           "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          // Divided (GAP-201): edge to edge, a stroke under; an open parent
-          // on background 50, under a selected row's fill.
-          divided && "rounded-none border-b border-border",
-          divided &&
-            hasChildren &&
-            expanded &&
-            "bg-[var(--primitives-colors-background-50)]",
+          // Divided, the ring is drawn inside the row: outside it, the next
+          // row's surface covered it, and a panel's edge could cut it.
+          divided && "focus-visible:ring-inset focus-visible:ring-offset-0",
           selected && "bg-muted text-foreground",
           focusVisible &&
-            "ring-2 ring-ring ring-offset-2 ring-offset-background",
+            (divided
+              ? "ring-2 ring-inset ring-ring"
+              : "ring-2 ring-ring ring-offset-2 ring-offset-background"),
           disabled && "cursor-not-allowed opacity-50",
           className,
         )}
@@ -589,6 +618,30 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           </span>
         )}
       </div>
+    );
+    // Divided (GAP-201): the stroke under the row and an open parent's
+    // surface, on a box that reaches the Tree's bleed past it on each side,
+    // to the panel's edges, while the row and its fills stay where they are.
+    // The stroke is outside the row's height: a row and its stroke, as the
+    // design draws a row and a separator.
+    return divided ? (
+      <div
+        data-tree-divider=""
+        className={cn(
+          "border-b border-border",
+          hasChildren &&
+            expanded &&
+            "bg-[var(--primitives-colors-background-50)]",
+        )}
+        style={{
+          marginInline: "calc(var(--kozmos-tree-bleed, 0px) * -1)",
+          paddingInline: "var(--kozmos-tree-bleed, 0px)",
+        }}
+      >
+        {row}
+      </div>
+    ) : (
+      row
     );
   },
 );

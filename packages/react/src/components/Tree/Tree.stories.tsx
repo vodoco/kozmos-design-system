@@ -211,14 +211,22 @@ const venueTree: TreeItem[] = [
   { id: "car-park", name: "Car park", count: 12 },
 ];
 
+// In a panel whose content is 16 in, as a Container inset="panel" puts it:
+// the strokes and the open building's surface reach the panel's edges.
 export const Divided: Story = {
   render: () => (
-    <Tree
-      ariaLabel="Map content"
-      data={venueTree}
-      defaultExpandedIds={["terminal-a"]}
-      defaultSelectedId="terminal-a-2"
-      divided
-    />
+    <div
+      className="border bg-background"
+      style={{ width: 440, paddingInline: 16 }}
+    >
+      <Tree
+        ariaLabel="Map content"
+        data={venueTree}
+        defaultExpandedIds={["terminal-a"]}
+        defaultSelectedId="terminal-a-2"
+        divided
+        bleed={16}
+      />
+    </div>
   ),
 };

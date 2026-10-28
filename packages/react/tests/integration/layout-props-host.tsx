@@ -1,3 +1,4 @@
+import * as React from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import {
@@ -34,6 +35,8 @@ interface Mount {
   header?: boolean;
   placement?: "fixed" | "inline";
   modal?: boolean;
+  /** Content taller than the region, so the drawer reaches its most. */
+  tall?: boolean;
   divided?: boolean;
   selectedId?: string;
 }
@@ -57,6 +60,61 @@ const venue: TreeItem[] = [
 ];
 
 const counts = { help: 0 };
+/** Opens or closes the drawer from the page's code, as a product does. */
+const drawer = { setOpen: (_open: boolean) => {} };
+
+/** A fixed header over a positioned region, the drawer in it, controlled. */
+function DrawerPage(props: Mount) {
+  const [open, setOpen] = React.useState(false);
+  drawer.setOpen = setOpen;
+  return (
+    <div
+      id="page"
+      style={{ display: "flex", flexDirection: "column", height: 600 }}
+    >
+      <header
+        id="header-bar"
+        style={{ height: 64, flexShrink: 0, display: "flex", gap: 8 }}
+      >
+        <button
+          id="help"
+          type="button"
+          onClick={() => {
+            counts.help += 1;
+          }}
+        >
+          Help
+        </button>
+        <input id="search" aria-label="Search" />
+      </header>
+      <div id="region" style={{ position: "relative", flex: 1, minHeight: 0 }}>
+        <Drawer
+          placement={props.placement}
+          modal={props.modal}
+          open={open}
+          onOpenChange={setOpen}
+        >
+          <DrawerTrigger asChild>
+            <Button id="trigger">Get started</Button>
+          </DrawerTrigger>
+          <DrawerContent id="drawer">
+            <DrawerHeader>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+            </DrawerHeader>
+            <Button id="tour">Start the tour</Button>
+            {props.tall && (
+              <div id="tall" style={{ height: 1200, flexShrink: 0 }} />
+            )}
+          </DrawerContent>
+        </Drawer>
+        <button id="after" type="button">
+          After
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function Part(props: Mount) {
   if (props.part === "navbar")
@@ -117,47 +175,16 @@ function Part(props: Mount) {
         </div>
       </div>
     );
-  if (props.part === "drawer")
-    return (
-      <div
-        id="page"
-        style={{ display: "flex", flexDirection: "column", height: 600 }}
-      >
-        <header
-          id="header-bar"
-          style={{ height: 64, flexShrink: 0, display: "flex", gap: 8 }}
-        >
-          <button
-            id="help"
-            type="button"
-            onClick={() => {
-              counts.help += 1;
-            }}
-          >
-            Help
-          </button>
-        </header>
-        <div
-          id="region"
-          style={{ position: "relative", flex: 1, minHeight: 0 }}
-        >
-          <Drawer placement={props.placement} modal={props.modal}>
-            <DrawerTrigger asChild>
-              <Button id="trigger">Get started</Button>
-            </DrawerTrigger>
-            <DrawerContent id="drawer">
-              <DrawerHeader>
-                <DrawerTitle>Get started</DrawerTitle>
-                <DrawerDescription>Tours for this page</DrawerDescription>
-              </DrawerHeader>
-              <Button id="tour">Start the tour</Button>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      </div>
-    );
+  if (props.part === "drawer") return <DrawerPage {...props} />;
+  // Pointr Cloud's Map Content panel: 440 wide, its content 20 in (a panel
+  // Container's 16 and the tour's 4), scrolling; the tree's strokes and
+  // surface reach its edges.
   return (
-    <div style={{ width: 360 }}>
+    <div
+      id="panel"
+      className="bg-background"
+      style={{ width: 440, paddingInline: 20, overflow: "auto" }}
+    >
       <Tree
         id="tree"
         ariaLabel="Map content"
@@ -165,6 +192,7 @@ function Part(props: Mount) {
         defaultExpandedIds={["terminal-a"]}
         selectedId={props.selectedId}
         divided={props.divided}
+        bleed={20}
       />
     </div>
   );
@@ -192,7 +220,11 @@ function mount(props: Mount) {
 
 declare global {
   interface Window {
-    layoutProps: { mount: typeof mount; counts: typeof counts };
+    layoutProps: {
+      mount: typeof mount;
+      counts: typeof counts;
+      drawer: typeof drawer;
+    };
   }
 }
-window.layoutProps = { mount, counts };
+window.layoutProps = { mount, counts, drawer };

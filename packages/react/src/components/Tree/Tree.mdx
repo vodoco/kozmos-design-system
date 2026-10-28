@@ -33,12 +33,20 @@ tree container.
 
 ## Divided
 
-`divided` draws a 1px stroke under every row, edge to edge in the border role, and sets an open
-parent row on a surface of its own, background 50 (GAP-201): a tree of records, as Pointr Cloud's Map
-Content tree draws its buildings and levels, rather than a navigation tree. The rows lose their
-rounded corners. A selected row keeps the selected fill over the surface, and hover and focus draw as
-before. `TreeItemRow`, `TreeParentItemRow` and `TreeChildItemRow` take `divided` too, for a composed
-tree.
+`divided` draws a 1px stroke under every row in the border role, and sets an open parent row on a
+surface of its own, background 50 (GAP-201): a tree of records, as Pointr Cloud's Map Content tree
+draws its buildings and levels, rather than a navigation tree.
+
+- **The stroke is under the row**, outside its height, so a divided row is the row and its stroke:
+  41 where an undivided row is 40.
+- **To the panel's edges:** `bleed` takes the stroke and the open row's surface past the tree on each
+  side while the rows stay where they are. Give it the panel's own inline padding, 16 in a
+  `Container inset="panel"`; a number is pixels. Without it, both stop at the tree's edges.
+- **The fills keep their corners.** A hover or selected fill stays rounded, inside the tree, over the
+  surface. The focus ring is drawn inside the row, so neither the next row nor the panel's edge cuts
+  it.
+- **Composed trees:** rows put in a divided `Tree` as children are divided too. `TreeItemRow`,
+  `TreeParentItemRow` and `TreeChildItemRow` also take `divided` of their own, which wins.
 
 <Canvas>
   <Story of={TreeStories.Divided} />

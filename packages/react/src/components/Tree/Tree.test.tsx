@@ -195,7 +195,7 @@ describe("Tree", () => {
     ).toHaveAttribute("data-selected", "true");
   });
 
-  it("divided draws a stroke under every row and an open parent on a surface (GAP-201)", () => {
+  it("divided draws a stroke under every row and an open parent on a surface, reaching the bleed past the tree (GAP-201)", () => {
     const data: TreeItem[] = [
       {
         id: "a",
@@ -211,60 +211,91 @@ describe("Tree", () => {
     ];
     const surface = "bg-[var(--primitives-colors-background-50)]";
     const { rerender } = render(
-      <Tree data={data} divided defaultExpandedIds={["a", "b"]} />,
+      <Tree data={data} divided bleed={20} defaultExpandedIds={["a", "b"]} />,
     );
     const row = (name: string, index = 0) =>
       screen.getAllByRole("treeitem", { name: new RegExp(name) })[index];
+    const divider = (name: string, index = 0) =>
+      row(name, index).parentElement as HTMLElement;
 
+    expect(screen.getByRole("tree")).toHaveStyle({
+      "--kozmos-tree-bleed": "20px",
+    });
     for (const item of screen.getAllByRole("treeitem")) {
-      expect(item).toHaveClass("border-b", "border-border", "rounded-none");
-      expect(item).not.toHaveClass("rounded-control");
+      // The row keeps its corners and its height; the stroke is on the box
+      // round it, which reaches the bleed past the tree on each side.
+      expect(item).toHaveClass("rounded-control", "focus-visible:ring-inset");
+      expect(item).not.toHaveClass("border-b", "rounded-none");
+      const box = item.parentElement as HTMLElement;
+      expect(box).toHaveAttribute("data-tree-divider");
+      expect(box).toHaveClass("border-b", "border-border");
+      expect(box.style.marginInline).toBe(
+        "calc(var(--kozmos-tree-bleed, 0px) * -1)",
+      );
+      expect(box.style.paddingInline).toBe("var(--kozmos-tree-bleed, 0px)");
     }
     // Open parents on the surface; a leaf and a child do not take it.
-    expect(row("Terminal A")).toHaveClass(surface);
-    expect(row("Car park")).not.toHaveClass(surface);
-    expect(row("Level 1")).not.toHaveClass(surface);
+    expect(divider("Terminal A")).toHaveClass(surface);
+    expect(divider("Car park")).not.toHaveClass(surface);
+    expect(divider("Level 1")).not.toHaveClass(surface);
 
     // Closed, a parent leaves the surface.
     fireEvent.click(row("Terminal B"));
     expect(row("Terminal B")).toHaveAttribute("aria-expanded", "false");
-    expect(row("Terminal B")).not.toHaveClass(surface);
+    expect(divider("Terminal B")).not.toHaveClass(surface);
 
-    // A selected open parent keeps the selected fill, not the surface.
+    // A selected open parent: its rounded fill over the surface.
     rerender(
       <Tree data={data} divided defaultExpandedIds={["a"]} selectedId="a" />,
     );
     expect(row("Terminal A")).toHaveAttribute("aria-expanded", "true");
-    expect(row("Terminal A")).toHaveClass("bg-muted");
-    expect(row("Terminal A")).not.toHaveClass(surface);
+    expect(row("Terminal A")).toHaveClass("bg-muted", "rounded-control");
+    expect(divider("Terminal A")).toHaveClass(surface);
 
-    // Not divided, the tree as it was drawn.
+    // Not divided, the tree as it was drawn, with no box round its rows.
     rerender(<Tree data={data} defaultExpandedIds={["a"]} />);
-    expect(row("Terminal A")).toHaveClass("rounded-control");
-    expect(row("Terminal A")).not.toHaveClass("border-b", surface);
+    expect(row("Terminal A")).toHaveClass(
+      "rounded-control",
+      "focus-visible:ring-offset-2",
+    );
+    expect(row("Terminal A")).not.toHaveClass("focus-visible:ring-inset");
+    expect(
+      screen.getByRole("tree").querySelector("[data-tree-divider]"),
+    ).toBeNull();
   });
 
-  it("gives composed rows the divided look too", () => {
-    render(
-      <Tree>
+  it("gives composed rows the divided look, from the Tree or their own prop", () => {
+    const { rerender } = render(
+      <Tree divided>
         <TreeParentItemRow
           role="treeitem"
           aria-expanded
           name="Terminal A"
           expanded
-          divided
         />
-        <TreeChildItemRow role="treeitem" name="Level 1" depth={1} divided />
+        <TreeChildItemRow role="treeitem" name="Level 1" depth={1} />
       </Tree>,
     );
-    const [parent, child] = screen.getAllByRole("treeitem");
-    expect(parent).toHaveClass(
-      "border-b",
-      "bg-[var(--primitives-colors-background-50)]",
+    const surface = "bg-[var(--primitives-colors-background-50)]";
+    let [parent, child] = screen.getAllByRole("treeitem");
+    expect(parent.parentElement).toHaveClass("border-b", surface);
+    expect(child.parentElement).toHaveClass("border-b");
+    expect(child.parentElement).not.toHaveClass(surface);
+    // A row's own divided={false} wins over the Tree's.
+    rerender(
+      <Tree divided>
+        <TreeChildItemRow role="treeitem" name="Level 1" divided={false} />
+      </Tree>,
     );
-    expect(child).toHaveClass("border-b");
-    expect(child).not.toHaveClass(
-      "bg-[var(--primitives-colors-background-50)]",
+    [child] = screen.getAllByRole("treeitem");
+    expect(child.parentElement).toHaveAttribute("role", "tree");
+    // And a row's own divided works in a Tree that is not.
+    rerender(
+      <Tree>
+        <TreeChildItemRow role="treeitem" name="Level 1" divided />
+      </Tree>,
     );
+    [parent] = screen.getAllByRole("treeitem");
+    expect(parent.parentElement).toHaveAttribute("data-tree-divider");
   });
 });

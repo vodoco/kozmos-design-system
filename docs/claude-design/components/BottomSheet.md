@@ -67,8 +67,13 @@ Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof Dia
   `"fixed"`, the default, slides over the window from its edge, in the
   theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
   in place, `absolute` against the nearest positioned box, so a panel can
-  sit in the region under a fixed header instead of covering it; it is not
-  modal unless `modal` says so, so the header and the page stay usable.
+  sit in the region under a fixed header instead of covering it. A left or
+  right one floats there (decision 139): 16 from its side and the top, 420
+  wide at most, as tall as its content up to 48 short of the region, with
+  the container's corners all round. It is not modal unless `modal` says
+  so, and then it is a panel beside the page, not a dialog: it takes focus
+  only when its DrawerTrigger opens it, Tab and Shift+Tab leave it, a press
+  or focus outside leaves it open, and Escape closes it only from inside.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
@@ -78,7 +83,7 @@ Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof Dia
 
 ## BottomSheetTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `DialogTriggerProps`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<DialogTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.

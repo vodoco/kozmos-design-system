@@ -60,7 +60,8 @@ describe("BottomSheet", () => {
         </BottomSheet>
       </div>,
     );
-    const dialog = screen.getByRole("dialog");
+    // Not modal, so a panel in the region rather than a dialog.
+    const dialog = screen.getByRole("complementary", { name: "Levels" });
     expect(screen.getByTestId("region")).toContainElement(dialog);
     expect(dialog).toHaveClass("absolute");
     expect(dialog).not.toHaveClass("fixed");

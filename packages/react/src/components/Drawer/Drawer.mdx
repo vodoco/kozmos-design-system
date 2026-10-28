@@ -20,16 +20,34 @@ committing to a dashboard, map, or CMS-specific layout.
 
 `placement="inline"` on `Drawer` draws the drawer in place, `absolute` against the nearest
 positioned box, as Backdrop's `placement="inline"` does (GAP-198): a panel that sits in the region
-under a fixed header instead of covering it, Pointr Cloud's Get started panel. Give the region
-`position: relative`; the drawer fills its height from the side it opens on and takes no room in the
-flow, so it covers the region's content, not the header.
+under a fixed header instead of covering it, as Pointr Cloud's Get started panel does. Give the
+region `position: relative`; the drawer takes no room in the flow, so it covers the region's content,
+not the header.
 
-An inline drawer is not modal unless `modal` says so: nothing outside it is inert or hidden from
-readers, the page keeps scrolling and takes presses. As any non-modal Radix dialog, it moves focus
-into itself when it opens, Tab cycles within it while it is open, and Escape closes it and returns
-focus to its trigger; a press outside it, on the header too, closes it, and `onInteractOutside` with
-`preventDefault()` keeps it open. With `modal`, its scrim is drawn over the region alone, and the
-rest of the page is inert as under any modal.
+- **It floats** (decision 139). A right or left drawer sits 16 from its side and from the region's
+  top. It is 420 wide, or the region less 16 on each side when that is narrower, and as tall as its
+  content, up to 48 less than the region (32 left under it), and then it scrolls. Its four corners
+  are the container's, and its border is on its inner side. `side` is physical, as it is for a fixed
+  drawer: right to left, pass `side="left"` for a panel at the inline end. A top or bottom drawer
+  (BottomSheet's) stays at its edge, across the region.
+- **It scrolls with its region.** An inline drawer is `absolute`, so it moves with whatever scrolls
+  the box it is positioned in. To keep it pinned under the header, keep the positioned region still,
+  put the page's scroller inside the region, and render the Drawer outside that scroller.
+- **It is a panel, not a dialog** while it isn't modal, the default: a labelled `complementary`
+  landmark beside the page, not a `dialog`.
+  - Nothing outside it is inert or hidden from readers, and the page keeps scrolling and taking
+    presses.
+  - It takes focus only when its `DrawerTrigger` opens it. A panel the product opens in code, such as
+    Get started on a first visit, leaves focus where it is; to move focus in yourself, focus an
+    element in `onOpenAutoFocus`.
+  - Tab and Shift+Tab move in and out of it in the page's order. Focus is never held inside.
+  - A press or focus outside it, on the header too, leaves it open. To close it then, close it in
+    `onInteractOutside`.
+  - Escape closes it only while focus is inside it. Escape in the page is the page's.
+  - Closing gives the trigger its focus when focus was inside it. Focus the user has put elsewhere
+    stays where it is.
+- **With `modal`**, it is a dialog again. Its scrim is drawn over the region alone, and the rest of
+  the page is inert, as under any modal.
 
 `placement="fixed"`, the default, is the drawer as it was: drawn in the theme's portal over the
 window, and modal unless `modal={false}`. BottomSheet is a Drawer, so it takes `placement` too: an

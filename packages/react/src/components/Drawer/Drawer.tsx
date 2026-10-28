@@ -21,13 +21,29 @@ export type DrawerProps = React.ComponentPropsWithoutRef<
    * `"fixed"`, the default, slides over the window from its edge, in the
    * theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
    * in place, `absolute` against the nearest positioned box, so a panel can
-   * sit in the region under a fixed header instead of covering it; it is not
-   * modal unless `modal` says so, so the header and the page stay usable.
+   * sit in the region under a fixed header instead of covering it. A left or
+   * right one floats there (decision 139): 16 from its side and the top, 420
+   * wide at most, as tall as its content up to 48 short of the region, with
+   * the container's corners all round. It is not modal unless `modal` says
+   * so, and then it is a panel beside the page, not a dialog: it takes focus
+   * only when its DrawerTrigger opens it, Tab and Shift+Tab leave it, a press
+   * or focus outside leaves it open, and Escape closes it only from inside.
    */
   placement?: DrawerPlacement;
 };
 
-const DrawerPlacementContext = React.createContext<DrawerPlacement>("fixed");
+interface DrawerState {
+  placement: DrawerPlacement;
+  modal: boolean;
+  /** Its DrawerTrigger opened it: focus follows into an inline panel. */
+  fromTrigger: { current: boolean };
+}
+
+const DrawerContext = React.createContext<DrawerState>({
+  placement: "fixed",
+  modal: true,
+  fromTrigger: { current: false },
+});
 
 export type DrawerContentProps = React.ComponentPropsWithoutRef<
   typeof DialogPrimitive.Content
@@ -48,6 +64,25 @@ const drawerSideClasses: Record<DrawerSide, string> = {
   top: "inset-x-0 top-0 max-h-[80vh] rounded-b-container border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
 };
 
+// Inline, a side drawer floats in its region, as Pointr Cloud's Get started
+// panel (decision 139): 16 from its side and the top; 420 wide, or the region
+// less 16 each side; as tall as its content up to 48 short of the region,
+// which leaves 32 under it; the container's corners all round, and the border
+// on its inner side, as the fixed one's. A top or bottom one, BottomSheet's,
+// stays at its edge across the region.
+const drawerInlineSideClasses: Partial<Record<DrawerSide, string>> = {
+  left: "left-4 top-4 max-h-[calc(100%-3rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+  right:
+    "right-4 top-4 max-h-[calc(100%-3rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+};
+
+/** Focuses `element` if it is still there to take it; says whether it did. */
+function focusIfFocusable(element: Element | null | undefined) {
+  if (!(element instanceof HTMLElement) || !element.isConnected) return false;
+  element.focus({ preventScroll: true });
+  return element.ownerDocument.activeElement === element;
+}
+
 const Drawer = ({
   onOpenChange,
   placement = "fixed",
@@ -55,9 +90,10 @@ const Drawer = ({
   ...props
 }: DrawerProps) => {
   const { trackEvent } = useKozmosAnalytics();
+  const [fromTrigger] = React.useState(() => ({ current: false }));
 
   return (
-    <DrawerPlacementContext.Provider value={placement}>
+    <DrawerContext.Provider value={{ placement, modal, fromTrigger }}>
       <DialogPrimitive.Root
         modal={modal}
         onOpenChange={(open) => {
@@ -66,12 +102,29 @@ const Drawer = ({
         }}
         {...props}
       />
-    </DrawerPlacementContext.Provider>
+    </DrawerContext.Provider>
   );
 };
 Drawer.displayName = "Drawer";
 
-const DrawerTrigger = DialogPrimitive.Trigger;
+const DrawerTrigger = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
+>(({ onClick, ...props }, ref) => {
+  const { fromTrigger } = React.useContext(DrawerContext);
+  return (
+    <DialogPrimitive.Trigger
+      ref={ref}
+      onClick={(event) => {
+        fromTrigger.current =
+          event.currentTarget.getAttribute("data-state") === "closed";
+        onClick?.(event);
+      }}
+      {...props}
+    />
+  );
+});
+DrawerTrigger.displayName = DialogPrimitive.Trigger.displayName;
 const DrawerClose = DialogPrimitive.Close;
 const DrawerPortal = createThemePortal(DialogPrimitive.Portal);
 
@@ -101,6 +154,10 @@ const DrawerContent = React.forwardRef<
       showClose = true,
       side = "right",
       portalContainer,
+      onOpenAutoFocus,
+      onCloseAutoFocus,
+      onEscapeKeyDown,
+      onInteractOutside,
       ...props
     },
     ref,
@@ -108,25 +165,19 @@ const DrawerContent = React.forwardRef<
     // A Backdrop rendered inside is drawn in this content, not beside it,
     // where the modal would make it inert (OverlayContainerContext).
     const [contentRef, container] = useOverlayContainer(ref);
+    const drawer = React.useContext(DrawerContext);
     // Inline, drawn in place over the nearest positioned box, its scrim (when
     // modal) with it.
-    const inline = React.useContext(DrawerPlacementContext) === "inline";
+    const inline = drawer.placement === "inline";
+    // Inline and not modal, a panel beside the page rather than a dialog.
+    const panel = inline && !drawer.modal;
+    // What had focus as it opened, to give it back to if closing loses it.
+    const invoker = React.useRef<Element | null>(null);
     const overlay = (
       <DrawerOverlay className={inline ? "absolute" : undefined} />
     );
-    const content = (
-      <DialogPrimitive.Content
-        ref={contentRef}
-        className={cn(
-          "fixed z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
-          "border-border",
-          drawerSideClasses[side],
-          inline && "absolute",
-          className,
-        )}
-        data-side={side}
-        {...props}
-      >
+    const body = (
+      <>
         <OverlayContainerContext.Provider value={container}>
           {children}
         </OverlayContainerContext.Provider>
@@ -138,6 +189,81 @@ const DrawerContent = React.forwardRef<
             <span className="sr-only">Close drawer</span>
           </DialogPrimitive.Close>
         ) : null}
+      </>
+    );
+    const content = (
+      <DialogPrimitive.Content
+        ref={contentRef}
+        // A panel is a labelled landmark beside the page; a caller's role
+        // wins. (A role of undefined would take Radix's "dialog" away.)
+        {...(panel && { role: "complementary" })}
+        className={cn(
+          inline ? "absolute" : "fixed",
+          "z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
+          "border-border",
+          (inline && drawerInlineSideClasses[side]) || drawerSideClasses[side],
+          className,
+        )}
+        data-side={side}
+        onOpenAutoFocus={(event) => {
+          invoker.current =
+            (event.currentTarget as Node | null)?.ownerDocument
+              ?.activeElement ?? null;
+          onOpenAutoFocus?.(event);
+          // A panel the product opens takes no focus; one its trigger opens
+          // does. To move focus in yourself, focus it in onOpenAutoFocus.
+          if (panel && !drawer.fromTrigger.current) event.preventDefault();
+          drawer.fromTrigger.current = false;
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (!panel || event.defaultPrevented) return;
+          const doc = (event.currentTarget as Node | null)?.ownerDocument;
+          if (!doc) return;
+          // Focus the user has put elsewhere on the page stays there.
+          if (doc.activeElement && doc.activeElement !== doc.body) {
+            event.preventDefault();
+            return;
+          }
+          // After Radix's own, which gives a trigger its focus: with none,
+          // what had focus as it opened.
+          queueMicrotask(() => {
+            if (doc.activeElement === doc.body)
+              focusIfFocusable(invoker.current);
+          });
+        }}
+        onEscapeKeyDown={(event) => {
+          onEscapeKeyDown?.(event);
+          // Escape from the page is the page's.
+          if (
+            panel &&
+            !container?.contains(container.ownerDocument.activeElement)
+          )
+            event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          onInteractOutside?.(event);
+          // A press or focus outside a panel is the page being used.
+          if (panel) event.preventDefault();
+        }}
+        {...props}
+      >
+        {panel ? (
+          // Radix's focus scope loops Tab inside its content, modal or not.
+          // Tab and Shift+Tab leave a panel: the key stops here, after
+          // whatever inside handles it and before the scope's handler on the
+          // content, and the browser moves focus on.
+          <div
+            className="contents"
+            onKeyDown={(event) => {
+              if (event.key === "Tab") event.stopPropagation();
+            }}
+          >
+            {body}
+          </div>
+        ) : (
+          body
+        )}
       </DialogPrimitive.Content>
     );
     return inline ? (

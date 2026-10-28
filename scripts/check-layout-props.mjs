@@ -12,16 +12,23 @@
  *   pixels); with a header, the header at the edge and the item 16 under it;
  *   an expanded sidebar's first item 16 under the edge, its outer ring drawn
  *   above it, not cut by the scrolling navigation.
- * - Drawer `placement="inline"` (GAP-198): drawn in the region under the
- *   header, top to bottom of it, at its side; the header uncovered, not
- *   hidden from readers, not inert and pressable; Enter opens it and moves
- *   focus in, Escape closes it and focus returns to the trigger. Modal and
- *   inline, its scrim covers the region alone.
- * - Tree `divided` (GAP-201): a 1px stroke in the border role under every
- *   row, read computed and as pixels, square rows, an open parent on
- *   background 50 (computed and drawn), a selected open parent on the
- *   selected fill; the arrow keys move a focus ring that draws on a divided
- *   row.
+ * - Drawer `placement="inline"` (GAP-198, decision 139): floating in the
+ *   region under the header, 16 from its top and side, 420 wide, as tall as
+ *   its content up to 32 above the region's bottom (then it scrolls), the
+ *   container's corners all round; the header uncovered, not hidden from
+ *   readers, not inert and pressable. Not modal, it is a panel: its trigger
+ *   moves focus in, the page's code does not; Tab and Shift+Tab leave it and
+ *   come back; a press or Escape on the page leaves it open; Escape from
+ *   inside closes it and the trigger has focus; closed by code, focus stays
+ *   where the user put it. Modal and inline, its scrim covers the region
+ *   alone.
+ * - Tree `divided` (GAP-201), in a 440 panel whose content is 20 in, the
+ *   tree's `bleed`: a 1px stroke in the border role under every row, outside
+ *   its height (a row and its stroke, 41), running to the panel's edges while
+ *   the row stays in the tree, read computed and as pixels; an open parent on
+ *   background 50 to the panel's edges (computed and drawn); a selected open
+ *   parent's fill rounded inside the tree, over the surface; the arrow keys
+ *   move a focus ring drawn inside the row.
  *
  * Each read is recorded on its own, so a run lists every read that fails.
  * Reads named "guard" hold on main too: they pin what each prop must keep
@@ -359,6 +366,36 @@ const pageColour = async (page) =>
     ),
   );
 
+/** The drawer's place, size and corners, read as drawn. */
+const drawerShape = (page) =>
+  page.evaluate(() => {
+    const el = document.getElementById("drawer");
+    const style = getComputedStyle(el);
+    const last = el.querySelector("#tall, #tour").getBoundingClientRect();
+    return {
+      box: el.getBoundingClientRect().toJSON(),
+      corners: [
+        style.borderTopLeftRadius,
+        style.borderTopRightRadius,
+        style.borderBottomRightRadius,
+        style.borderBottomLeftRadius,
+      ],
+      borders: [style.borderLeftWidth, style.borderRightWidth],
+      paddingBottom: parseFloat(style.paddingBottom),
+      lastBottom: last.bottom,
+      scrolls: el.scrollHeight > el.clientHeight + 1,
+      role: el.getAttribute("role"),
+    };
+  });
+const inDrawer = (page) =>
+  page.evaluate(() =>
+    document.getElementById("drawer").contains(document.activeElement),
+  );
+const activeId = (page) =>
+  page.evaluate(
+    () => document.activeElement?.id || document.activeElement?.tagName,
+  );
+
 for (const m of MATRIX) {
   await scenario(
     { ...m, part: "drawer", placement: "inline" },
@@ -369,11 +406,11 @@ for (const m of MATRIX) {
       await settled(page);
       await settleLayout(page);
       await read(
-        "drawer inline: drawn in the region, under the header, top to bottom of it, at its side",
+        "drawer inline: floats in the region, 16 from the top and its side, 420 wide, as tall as its content, the container's corners all round",
         async () => {
           const region = await box(page, "#region");
           const header = await box(page, "#header-bar");
-          const drawer = await box(page, "#drawer");
+          const shape = await drawerShape(page);
           assert.equal(
             await page.evaluate(
               () => !!document.querySelector("#region #drawer"),
@@ -381,10 +418,32 @@ for (const m of MATRIX) {
             true,
             "drawn in place, in the region",
           );
-          near(drawer.top, region.top, "top at the region's", 0.5);
-          assert.ok(drawer.top >= header.bottom - 0.5, "below the header");
-          near(drawer.bottom, region.bottom, "bottom at the region's", 0.5);
-          near(drawer.right, region.right, "at the region's side", 0.5);
+          assert.ok(shape.box.top >= header.bottom - 0.5, "below the header");
+          near(
+            shape.box.top,
+            region.top + 16,
+            "16 under the region's top",
+            0.5,
+          );
+          near(shape.box.right, region.right - 16, "16 from its side", 0.5);
+          near(shape.box.width, 420, "420 wide", 0.5);
+          near(
+            shape.box.bottom,
+            shape.lastBottom + shape.paddingBottom,
+            "as tall as its content",
+            1,
+          );
+          assert.ok(
+            shape.box.bottom < region.bottom - 32,
+            "short of the region's bottom",
+          );
+          assert.deepEqual(shape.corners, ["20px", "20px", "20px", "20px"]);
+          assert.deepEqual(
+            shape.borders,
+            ["1px", "0px"],
+            "the border on its inner side",
+          );
+          assert.equal(shape.role, "complementary", "a panel, not a dialog");
         },
       );
       await read(
@@ -398,36 +457,31 @@ for (const m of MATRIX) {
           }),
       );
       await read(
-        "guard: drawer inline: Enter moved focus in, Tab cycles within it, Escape closes it and returns focus to the trigger",
+        "drawer inline: its trigger moved focus in; Tab and Shift+Tab leave it and come back, and it stays open; Escape from inside closes it and the trigger has focus",
         async () => {
-          assert.ok(
-            await page.evaluate(() =>
-              document
-                .getElementById("drawer")
-                .contains(document.activeElement),
-            ),
-            "Enter opened it and moved focus in",
+          assert.equal(
+            await activeId(page),
+            "tour",
+            "Enter on its trigger moved focus in",
           );
-          // Tab cycles within it, as in any Radix dialog, modal or not.
-          for (let n = 0; n < 4; n += 1) await page.keyboard.press("Tab");
-          assert.ok(
-            await page.evaluate(() =>
-              document
-                .getElementById("drawer")
-                .contains(document.activeElement),
-            ),
-            "Tab cycles within it",
+          await page.keyboard.press(TAB);
+          assert.equal(await inDrawer(page), true, "the close, still inside");
+          await page.keyboard.press(TAB);
+          assert.equal(await activeId(page), "after", "Tab left it");
+          await page.keyboard.press(`Shift+${TAB}`);
+          assert.equal(await inDrawer(page), true, "Shift+Tab came back");
+          assert.equal(
+            await page.locator("#drawer").getAttribute("data-state"),
+            "open",
+            "open as focus left it",
           );
           await page.keyboard.press("Escape");
           await page.locator("#drawer").waitFor({ state: "detached" });
-          assert.equal(
-            await page.evaluate(() => document.activeElement?.id),
-            "trigger",
-          );
+          assert.equal(await activeId(page), "trigger");
         },
       );
       await read(
-        "drawer inline: a press on the header, the drawer open, reaches it and closes the drawer",
+        "drawer inline: a press on the header reaches it and leaves the drawer open; Escape from the page leaves it open",
         async () => {
           await page.click("#trigger");
           await page.locator("#drawer").waitFor();
@@ -442,8 +496,64 @@ for (const m of MATRIX) {
             await page.evaluate(() => window.layoutProps.counts.help),
             1,
           );
-          // A press outside closes it, as any non-modal dialog.
+          await page.focus("#search");
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(300);
+          assert.equal(
+            await page.locator("#drawer").getAttribute("data-state"),
+            "open",
+          );
+        },
+      );
+    },
+  );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline" },
+    async (page, read) => {
+      await page.focus("#search");
+      await page.keyboard.type("gate");
+      await page.evaluate(() => window.layoutProps.drawer.setOpen(true));
+      await page.locator("#drawer").waitFor();
+      await settled(page);
+      await read(
+        "drawer inline: opened by the page's code, it leaves focus in the page's field",
+        async () => {
+          assert.equal(await activeId(page), "search");
+          await page.keyboard.type(" b");
+          assert.equal(await page.inputValue("#search"), "gate b");
+        },
+      );
+      await read(
+        "drawer inline: closed by the page's code, focus stays where the user put it",
+        async () => {
+          await page.evaluate(() => window.layoutProps.drawer.setOpen(false));
           await page.locator("#drawer").waitFor({ state: "detached" });
+          await page.waitForTimeout(50);
+          assert.equal(await activeId(page), "search");
+        },
+      );
+    },
+  );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline", tall: true },
+    async (page, read) => {
+      await page.evaluate(() => window.layoutProps.drawer.setOpen(true));
+      await page.locator("#drawer").waitFor();
+      await settled(page);
+      await settleLayout(page);
+      await read(
+        "drawer inline: content taller than the region stops 16 under its top and 32 above its bottom, and scrolls",
+        async () => {
+          const region = await box(page, "#region");
+          const shape = await drawerShape(page);
+          near(shape.box.top, region.top + 16, "16 under the top", 0.5);
+          near(
+            shape.box.bottom,
+            region.bottom - 32,
+            "32 above the bottom",
+            0.5,
+          );
+          assert.equal(shape.scrolls, true, "it scrolls");
         },
       );
     },
@@ -532,13 +642,22 @@ const rows = (page) =>
       tokens,
       rows: [...document.querySelectorAll("[role=treeitem]")].map((row) => {
         const s = getComputedStyle(row);
+        const divider = row.parentElement.matches("[data-tree-divider]")
+          ? row.parentElement
+          : null;
+        const d = divider && getComputedStyle(divider);
         return {
           name: row.textContent.trim(),
           box: row.getBoundingClientRect().toJSON(),
-          borderBottom: `${s.borderBottomWidth} ${s.borderBottomStyle} ${s.borderBottomColor}`,
-          borderTop: s.borderTopWidth,
+          borderBottom: s.borderBottomWidth,
           radius: s.borderTopLeftRadius,
           background: s.backgroundColor,
+          divider: divider && {
+            box: divider.getBoundingClientRect().toJSON(),
+            borderBottom: `${d.borderBottomWidth} ${d.borderBottomStyle} ${d.borderBottomColor}`,
+            borderTop: d.borderTopWidth,
+            background: d.backgroundColor,
+          },
         };
       }),
     };
@@ -549,59 +668,91 @@ for (const m of MATRIX) {
     const state = await rows(page);
     const shot = await page.screenshot();
     const tree = await box(page, "#tree");
+    const panel = await box(page, "#panel");
     const page0 = await pageColour(page);
     await read(
-      "tree divided: a 1px stroke in the border role under every row, none above, square rows",
+      "tree divided: each row as tall as undivided, its 1px stroke under it in the border role, running to the panel's edges",
       async () => {
         for (const row of state.rows) {
+          assert.ok(row.divider, `${row.name} has its stroke's box`);
+          // One line of text: the row's own minimum height, the stroke
+          // outside it.
+          near(row.box.height, 40, `${row.name}'s row`, 0.5);
+          near(row.divider.box.height, 41, `${row.name} and its stroke`, 0.5);
           assert.equal(
             row.borderBottom,
+            "0px",
+            `${row.name}: no stroke inside`,
+          );
+          assert.equal(
+            row.divider.borderBottom,
             `1px solid ${state.tokens.border}`,
             `${row.name}'s stroke`,
           );
-          assert.equal(row.borderTop, "0px", `${row.name}: no top stroke`);
-          assert.equal(row.radius, "0px", `${row.name} is square`);
+          assert.equal(row.divider.borderTop, "0px", `${row.name}: none above`);
+          near(
+            row.divider.box.left,
+            panel.left,
+            `${row.name}'s stroke start`,
+            0.5,
+          );
+          near(
+            row.divider.box.right,
+            panel.right,
+            `${row.name}'s stroke end`,
+            0.5,
+          );
+          // The row's content stays in the tree, 20 in from the panel.
+          near(row.box.left, tree.left, `${row.name}'s row start`, 0.5);
+          near(row.box.right, tree.right, `${row.name}'s row end`, 0.5);
+        }
+        near(tree.left, panel.left + 20, "the tree 20 in", 0.5);
+      },
+    );
+    // Drawn: each stroke's pixel line is the border colour, at the middle
+    // and at the panel's two edges, past the tree.
+    await read(
+      "tree divided: every stroke drawn to the panel's edges",
+      async () => {
+        for (const row of state.rows) {
+          const y = row.divider.box.bottom - 0.5;
+          const points = await pixels(shot, [
+            [(panel.left + panel.right) / 2, y],
+            [panel.left + 1, y],
+            [panel.right - 2, y],
+          ]);
+          for (const p of points)
+            assert.ok(
+              distance(p, rgb(state.tokens.border)) <= 3,
+              `${row.name}: rgb(${p.slice(0, 3)})`,
+            );
         }
       },
     );
-    // Drawn: each row's last pixel line is the border colour, at its
-    // middle and at the tree's two edges.
-    await read("tree divided: every stroke drawn, edge to edge", async () => {
-      for (const row of state.rows) {
-        const y = row.box.bottom - 0.5;
-        const points = await pixels(shot, [
-          [(row.box.left + row.box.right) / 2, y],
-          [tree.left + 1, y],
-          [tree.right - 2, y],
-        ]);
-        for (const p of points)
-          assert.ok(
-            distance(p, rgb(state.tokens.border)) <= 3,
-            `${row.name}: rgb(${p.slice(0, 3)})`,
-          );
-      }
-    });
     await read(
-      "tree divided: an open parent on background 50, computed and drawn; a leaf on the page",
+      "tree divided: an open parent on background 50 to the panel's edges, computed and drawn; a leaf on the page",
       async () => {
         const open = state.rows.find((r) => r.name.startsWith("Terminal A"));
         const leaf = state.rows.find((r) => r.name.startsWith("Car park"));
-        assert.equal(open.background, state.tokens.surface, "computed");
-        const [surfacePixel, leafPixel] = await pixels(shot, [
-          [open.box.right - 4, open.box.top + 4],
-          [leaf.box.right - 4, leaf.box.top + 4],
+        assert.equal(open.divider.background, state.tokens.surface, "computed");
+        const middle = open.box.top + open.box.height / 2;
+        const [edge, inside, leafPixel] = await pixels(shot, [
+          [panel.left + 4, middle],
+          [open.box.right - 4, middle],
+          [leaf.box.right - 4, leaf.box.top + leaf.box.height / 2],
         ]);
-        assert.ok(
-          distance(surfacePixel, rgb(state.tokens.surface)) <= 2,
-          `drawn: rgb(${surfacePixel.slice(0, 3)})`,
-        );
+        for (const p of [edge, inside])
+          assert.ok(
+            distance(p, rgb(state.tokens.surface)) <= 2,
+            `drawn: rgb(${p.slice(0, 3)})`,
+          );
         assert.ok(distance(leafPixel, page0) <= 2, "a leaf on the page");
         if (m.theme === "light")
-          assert.ok(distance(surfacePixel, page0) >= 8, "off the page");
+          assert.ok(distance(edge, page0) >= 8, "off the page");
       },
     );
     await read(
-      "tree divided: ArrowDown moves a focus ring that draws on a divided row, its stroke kept",
+      "tree divided: ArrowDown moves a focus ring drawn inside the row, whole inside the panel, its stroke kept",
       async () => {
         await page.locator("[role=treeitem]").first().focus();
         await page.keyboard.press("ArrowDown");
@@ -611,12 +762,25 @@ for (const m of MATRIX) {
           return {
             name: el.textContent.trim(),
             ring: s.boxShadow,
-            stroke: s.borderBottomWidth,
+            box: el.getBoundingClientRect().toJSON(),
+            stroke: getComputedStyle(el.parentElement).borderBottomWidth,
           };
         });
         assert.ok(focused.name.startsWith("Level 1"), focused.name);
-        assert.notEqual(focused.ring, "none", "the focus ring draws");
+        assert.match(focused.ring, /inset/, "the ring is drawn inside the row");
+        assert.ok(
+          focused.box.left >= panel.left + 20 - 0.5,
+          "inside the panel's padding",
+        );
         assert.equal(focused.stroke, "1px", "the stroke stays");
+        const ring = await page.screenshot();
+        const [p] = await pixels(ring, [
+          [focused.box.left + 1, focused.box.top + focused.box.height / 2],
+        ]);
+        assert.ok(
+          distance(p, page0) >= 40,
+          `the ring drawn: rgb(${p.slice(0, 3)})`,
+        );
       },
     );
   });
@@ -624,12 +788,38 @@ for (const m of MATRIX) {
     { ...m, part: "tree", divided: true, selectedId: "terminal-a" },
     async (page, read) => {
       const state = await rows(page);
+      const shot = await page.screenshot();
+      const panel = await box(page, "#panel");
       const open = state.rows.find((r) => r.name.startsWith("Terminal A"));
       await read(
-        "tree divided: a selected open parent on the selected fill, its stroke kept",
+        "tree divided: a selected open parent keeps its rounded fill inside the tree, over the surface, its stroke kept",
         async () => {
-          assert.equal(open.background, state.tokens.muted, "background 100");
-          assert.equal(open.borderBottom, `1px solid ${state.tokens.border}`);
+          assert.equal(
+            open.background,
+            state.tokens.muted,
+            "the selected fill",
+          );
+          assert.equal(open.radius, "16px", "rounded");
+          assert.equal(open.divider.background, state.tokens.surface);
+          assert.equal(
+            open.divider.borderBottom,
+            `1px solid ${state.tokens.border}`,
+          );
+          const middle = open.box.top + open.box.height / 2;
+          const [fill, edge, corner] = await pixels(shot, [
+            [(open.box.left + open.box.right) / 2, middle],
+            [panel.left + 4, middle],
+            [open.box.left + 1, open.box.top + 1],
+          ]);
+          assert.ok(
+            distance(fill, rgb(state.tokens.muted)) <= 2,
+            `fill rgb(${fill.slice(0, 3)})`,
+          );
+          for (const p of [edge, corner])
+            assert.ok(
+              distance(p, rgb(state.tokens.surface)) <= 2,
+              `the surface round it: rgb(${p.slice(0, 3)})`,
+            );
         },
       );
     },
@@ -640,7 +830,8 @@ for (const m of MATRIX) {
       "guard: tree not divided, rounded rows, no stroke, a named tree",
       async () => {
         for (const row of state.rows) {
-          assert.equal(row.borderBottom.split(" ")[0], "0px", row.name);
+          assert.equal(row.borderBottom, "0px", row.name);
+          assert.equal(row.divider, null, row.name);
           assert.equal(row.radius, "16px", row.name);
         }
         assert.equal(
@@ -660,5 +851,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (in the region, the header uncovered, read and pressable; modal, the scrim on the region alone), Tree divided (strokes computed and drawn, square rows, the open parent's surface, the selected fill, a focus ring), and the defaults and keys kept`,
+  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (floating in the region, as tall as its content, the header uncovered, read and pressable; a panel, not a dialog, for focus, Tab, presses and Escape; modal, the scrim on the region alone), Tree divided (strokes under the rows to the panel's edges, computed and drawn, the open parent's surface, the selected fill rounded over it, an inset focus ring), and the defaults and keys kept`,
 );

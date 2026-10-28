@@ -58,8 +58,9 @@ export const Default: Story = {
   ),
 };
 
-// GAP-198: a panel in the region under a fixed header, which it leaves
-// usable. Open from the start here, without taking focus on the docs page.
+// GAP-198: a panel floating in the region under a fixed header, which it
+// leaves usable (decision 139). Opened from the start here, by the page, so
+// it takes no focus on the docs page.
 export const Inline: Story = {
   render: ({ side }) => (
     <div className="flex h-[480px] flex-col overflow-hidden border">
@@ -72,10 +73,7 @@ export const Inline: Story = {
           <DrawerTrigger asChild>
             <Button variant="outline">Get started</Button>
           </DrawerTrigger>
-          <DrawerContent
-            side={side}
-            onOpenAutoFocus={(event) => event.preventDefault()}
-          >
+          <DrawerContent side={side}>
             <DrawerHeader>
               <DrawerTitle>Get started</DrawerTitle>
               <DrawerDescription>
