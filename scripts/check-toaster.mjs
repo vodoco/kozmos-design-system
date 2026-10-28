@@ -47,6 +47,7 @@ async function scenario(name, mount, run, pageOptions = {}) {
       `<!doctype html><html lang="en"><head><title>Toaster</title><style>body{margin:0}</style><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
     );
     await page.addScriptTag({ content: code });
+    await page.evaluate(recordAnnouncements);
     await page.evaluate((mount) => window.toaster.mount(mount), mount);
     await settleLayout(page);
     const said = await run(page);
@@ -78,29 +79,38 @@ async function arrived(page, title) {
 
 /**
  * Radix's announcements: the visually hidden regions it mounts beside the
- * page for a second, each with its words once they are written.
+ * page for a second, two frames after the toast, each with its words once
+ * they are written. A recorder installed with the page keeps every one as it
+ * was when its words arrived, in reach or not, so a slow runner cannot miss
+ * one that has already gone.
  */
-const announcements = (page) =>
-  page.evaluate(() =>
-    Array.from(document.querySelectorAll('[role="status"][aria-live]'))
-      .filter((node) => !node.closest("li") && node.textContent)
-      .map((node) => ({
+function recordAnnouncements() {
+  const said = new Map();
+  const read = () => {
+    for (const node of document.querySelectorAll(
+      '[role="status"][aria-live]',
+    )) {
+      if (node.closest("li") || !node.textContent || said.has(node)) continue;
+      said.set(node, {
         text: node.textContent,
         live: node.getAttribute("aria-live"),
         hidden: !!node.closest('[aria-hidden="true"]'),
         inert: !!node.closest("[inert]"),
-      })),
-  );
+      });
+    }
+  };
+  new MutationObserver(read).observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+  window.announced = () => [...said.values()];
+}
+const announcements = (page) => page.evaluate(() => window.announced());
 const waitForAnnouncements = (page, count) =>
-  page.waitForFunction(
-    (count) =>
-      Array.from(
-        document.querySelectorAll('[role="status"][aria-live]'),
-      ).filter((node) => !node.closest("li") && node.textContent).length >=
-      count,
-    count,
-    { timeout: 900 },
-  );
+  page.waitForFunction((count) => window.announced().length >= count, count, {
+    timeout: 5000,
+  });
 
 await scenario(
   "announced once each, at each tone's politeness, in the product's words",
@@ -433,7 +443,7 @@ await scenario(
       "the module's toast takes its provider's theme, direction and tokens",
     );
     assert.notEqual(page_.fill, module_.fill);
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(300);
     assert.equal((await announcements(page)).length, 2, "said once each");
   },
 );
