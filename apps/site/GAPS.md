@@ -288,8 +288,10 @@ keep the table's four columns and its statuses as they are.
 - **Now:** the theme switch, the copy button and the home page's "Pause
   motion" still use words.
 - **Follow-up:** those controls could draw the components themselves,
-  imported from `@kozmos-ds/icons` (the one rule allows the Kozmos packages),
-  rather than wait for GAP-79.
+  imported from `@kozmos-ds/icons` (the one rule allows the Kozmos packages).
+  That is the way now: GAP-79 will not name them, since UI glyphs stay named
+  imports, `<Icon icon={Sun} />` (the product register's decision 121,
+  2026-10-27).
 - **Lane:** Core (icons).
 
 ## GAP-08 · No footer
@@ -762,6 +764,11 @@ keep the table's four columns and its statuses as they are.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`, as for
   GAP-24), fixed by default, with the scrim colour and blur unchanged.
+- **On `main` since #419** (2026-10-27, for 0.14.0, not yet released):
+  `placement="inline"` draws the backdrop in place, absolute over the nearest
+  positioned box, and `"fixed"`, the default, is drawn in the theme's portal.
+  The attract screen can move to it; until it does, the status stays
+  _composed_.
 
 ## GAP-35 · `BrowseCategoriesPanel` is four columns at any width
 
@@ -1761,6 +1768,11 @@ Text"])`) and the Get started page shows — touches it.
   their names, categories and aliases, so `Icon name="…"` reaches them and one
   source serves a venue's categories, its manoeuvres (GAP-69) and its
   amenities. The generation is done; the naming is what is missing.
+- **Decided** (the product register's decisions 119 and 121, 2026-10-26 and
+  27): the registry gains a curated venue set, its categories, amenities and
+  services, with names, categories and aliases, approved for 0.15.0. Not the
+  whole library, and not loaded lazily. UI glyphs stay named imports, so
+  GAP-07's and GAP-86's icons are imports, not names.
 
 ## GAP-80 · No row actions: nothing shows on hover outside `Tree`
 
@@ -1883,8 +1895,9 @@ Text"])`) and the Get started page shows — touches it.
   it connects. The phone search's assistant shows them, and "GAP-86 is fixed:
   the assistant's voice control draws its own marks" reads each state's mark.
   What is left is a speaker for a read-aloud control in `AIMessage`'s
-  `trailing` slot: `VolumeMax` is exported, but `Icon name` cannot reach it
-  (GAP-79).
+  `trailing` slot: `VolumeMax` is exported, and `Icon name` will not reach
+  it, since UI glyphs stay named imports (`<Icon icon={VolumeMax} />`, the
+  product register's decision 121; GAP-79).
 - **Was:** the AIInputBar demo used `stars-01` for "Suggest a question", and
   said why, until the demos moved to Storybook on 2026-09-28. Related: GAP-07,
   GAP-15, GAP-79.
