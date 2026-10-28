@@ -4,6 +4,8 @@ type InertEntry = {
   within?: Element;
   /** Boxes in it that stay in reach too, as a selector. */
   keep?: string;
+  /** Keep in reach only what aria-hidden's `hideOthers` keeps visible. */
+  mirrorAriaHidden?: boolean;
 };
 
 type InertState = {
@@ -21,6 +23,11 @@ const documents = new WeakMap<Document, InertState>();
 const LIVE =
   '[aria-live], [role~="status"], [role~="alert"], [role~="log"], [role~="marquee"], [role~="timer"], output, script';
 
+/** What aria-hidden's `hideOthers` leaves visible as it hides the rest of the
+ * page (aria-hidden 1.2.6), which Radix's Select, Dialog and Menu call as they
+ * open: boxes marked `aria-live`, and scripts. Nothing by role. */
+const ARIA_HIDDEN_KEEPS = "[aria-live], script";
+
 /** Make the background of a document-modal popup non-interactive. The newest
  * connected popup wins; release restores the preceding popup and host attributes.
  * Native inert complements, rather than replaces, the primitive's focus trap.
@@ -30,10 +37,22 @@ const LIVE =
  * frame it covers, leaves the rest of the page alone. Such surfaces in
  * different frames hold at once; a document-modal popup opened after them
  * takes the whole page until it is released. `keep` names boxes in it that
- * stay in reach as well, such as the portals a surface's own popups open in. */
+ * stay in reach as well, such as the portals a surface's own popups open in.
+ *
+ * `mirrorAriaHidden` is for a primitive that also hides the rest of the page
+ * from assistive technology with aria-hidden's `hideOthers`, as Radix's Select
+ * does: what stays in reach is then exactly what that leaves visible — boxes
+ * marked `aria-live` that it found, not those named by a role alone, and not
+ * one that arrives later inside a box it hid. A box hidden but in reach is
+ * focusable while a screen reader is told it is not there (axe
+ * `aria-hidden-focus`); one shown but inert is silenced (GAP-193). */
 export function inertOutside(
   target: HTMLElement,
-  { within, keep }: { within?: Element; keep?: string } = {},
+  {
+    within,
+    keep,
+    mirrorAriaHidden = false,
+  }: { within?: Element; keep?: string; mirrorAriaHidden?: boolean } = {},
 ): () => void {
   const doc = target.ownerDocument;
   let state = documents.get(doc);
@@ -54,13 +73,20 @@ export function inertOutside(
             : doc.body;
         active.push(entry.target);
         // Preserve live announcements: those marked with aria-live, as the
-        // ARIA visibility primitive keeps them, and those whose role makes
-        // them live, as Kozmos's own status parts do with a role alone
-        // (MapStatusPill, Alert, Notice, Spinner). Never make a container
-        // inert if it contains an active popup.
+        // ARIA visibility primitive keeps them, and, unless the popup hides
+        // the page with that primitive too, those whose role alone makes them
+        // live. Kozmos's own live parts say both (GAP-193). Never make a
+        // container inert if it contains an active popup.
+        const live = entry.mirrorAriaHidden
+          ? [...scope.querySelectorAll(ARIA_HIDDEN_KEEPS)].filter(
+              // hideOthers keeps what it found as it opened; one inside a box
+              // it hid, or that was hidden already, is hidden with it.
+              (node) => !node.closest('[aria-hidden="true"]'),
+            )
+          : [...scope.querySelectorAll(LIVE)];
         const reachable = [
           ...active,
-          ...scope.querySelectorAll(LIVE),
+          ...live,
           ...(entry.keep ? scope.querySelectorAll(entry.keep) : []),
         ];
         const visit = (parent: Element) => {
@@ -99,7 +125,7 @@ export function inertOutside(
     state.observer.observe(doc.body, { childList: true, subtree: true });
   }
   const current = state;
-  const entry: InertEntry = { target, within, keep };
+  const entry: InertEntry = { target, within, keep, mirrorAriaHidden };
   current.targets.push(entry);
   current.update();
   let released = false;
