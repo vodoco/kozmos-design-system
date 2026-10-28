@@ -102,26 +102,28 @@ class KozmosLinkExternalTest {
      * lets the run overflow instead.
      */
     @Test fun theIconNeverStartsALineAlone() {
-        val words = "Privacy Policy and Terms of Service"
         val alone = mutableListOf<String>()
         val desperate = mutableListOf<String>()
         var widths = 0
-        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
-            // The run's width, laid out on one line: from the last word's
-            // first character to the icon's far edge.
+        for ((direction, words) in listOf(
+            LayoutDirection.Ltr to "Privacy Policy and Terms of Service",
+            LayoutDirection.Rtl to "سياسة الخصوصية وشروط الخدمة"
+        )) {
+            // The run: the last word, the no-break space and the icon, as a
+            // link of that word alone lays them out on one line.
             var density = 1f
+            val lastWord = words.substringAfterLast(' ')
             val wide = paparazzi.readSemantics {
                 density = LocalDensity.current.density
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
                     KozmosMaterialTheme {
-                        Box(Modifier.width(600.dp)) { KozmosLink(text = words, onClick = {}, external = true) }
+                        Box(Modifier.width(600.dp)) { KozmosLink(text = lastWord, onClick = {}, external = true) }
                     }
                 }
             }
             val line = checkNotNull(wide.unmerged.firstNotNullOfOrNull { it.textLayout })
-            val icon = checkNotNull(line.placeholderRects.singleOrNull())
-            val wordStart = line.getBoundingBox(words.lastIndexOf(' ') + 1)
-            val run = if (direction == LayoutDirection.Ltr) icon.right - wordStart.left else wordStart.right - icon.left
+            check(line.lineCount == 1) { "the run took ${line.lineCount} lines at 600dp" }
+            val run = line.getLineRight(0) - line.getLineLeft(0)
             for (width in 48..320 step 4) {
                 val tree = paparazzi.readSemantics {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
@@ -141,7 +143,7 @@ class KozmosLinkExternalTest {
                     if (width * density >= run) alone += "$direction at ${width}dp" else desperate += "$direction at ${width}dp"
                 }
             }
-            println("GAP-202 Compose, $direction: the last word and the icon take ${run / density}dp")
+            println("GAP-202 Compose, $direction: \"$lastWord\" and the icon take ${run / density}dp")
         }
         println("GAP-202 Compose: the icon took a line alone only where the run cannot fit one: $desperate")
         assertTrue("read $widths widths", widths > 100)
