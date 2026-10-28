@@ -22,7 +22,8 @@ import {
  * it and a counter of presses on the target, in a provider of the given
  * theme, density and direction. The step points at the target as the mount
  * names it: the element (a ref), a rect, a virtual element, a ref to
- * nothing, or nothing. Two steps, so Next moves the tour on.
+ * nothing, or nothing. Two steps, so Next moves the tour on; or the MAP-64
+ * design's other cards: the welcome card, a coachmark and an ending.
  */
 interface Mount {
   theme: "light" | "dark";
@@ -35,6 +36,17 @@ interface Mount {
   open?: boolean;
   /** A coachmark: no stepCount, no Back and no Next. */
   coachmark?: boolean;
+  /**
+   * The design's welcome card (US1-Welcome): "Welcome", no position, no
+   * Back and no Close; Don't show again, Not now and Show me the tours.
+   */
+  welcome?: boolean;
+  /** Next drawn disabled, as on a step its own action completes (D11). */
+  nextDisabled?: boolean;
+  /** The instruction's tone. */
+  instructionTone?: TourStepProps["instructionTone"];
+  /** A secondary action, "Finish without adding", between Back and Next. */
+  secondary?: boolean;
   /** The coachmark's one action, "Got it", with no dots beside it. */
   coachmarkAction?: boolean;
   /** Under a DesignConfigProvider whose config reduces motion. */
@@ -65,6 +77,7 @@ interface Controls {
   open(): void;
   presses(): number;
   closes(): number;
+  actions(): string[];
 }
 let controls: Controls | null = null;
 // Where the virtual element is, past the target: moved with nothing else on
@@ -78,6 +91,10 @@ function Page({
   open: openAtStart = true,
   coachmark = false,
   coachmarkAction = false,
+  welcome = false,
+  nextDisabled = false,
+  instructionTone,
+  secondary = false,
   bodyPopover = false,
   pagePopover = false,
 }: Mount) {
@@ -90,6 +107,7 @@ function Page({
   );
   const presses = React.useRef(0);
   const closes = React.useRef(0);
+  const actions = React.useRef<string[]>([]);
   controls = {
     setInstruction,
     open: () => {
@@ -98,6 +116,7 @@ function Page({
     },
     presses: () => presses.current,
     closes: () => closes.current,
+    actions: () => actions.current,
   };
   // A rect where the target is, read once; a virtual element that reads it
   // as it is now.
@@ -164,56 +183,95 @@ function Page({
           Open a site
         </Button>
       </div>
-      <TourStep
-        id="step"
-        open={open}
-        target={targets[target]}
-        side={side}
-        align={align}
-        tourLabel={coachmark ? undefined : "How Pointr Cloud is organised"}
-        step={at + 1}
-        stepCount={coachmark ? undefined : STEPS.length}
-        title={coachmark ? "Draw rooms here" : step.title}
-        hint={coachmark ? undefined : "Sites are listed by client."}
-        instruction={coachmark ? undefined : (instruction ?? undefined)}
-        onBack={coachmark || at === 0 ? undefined : () => setAt(at - 1)}
-        onNext={
-          coachmark
-            ? coachmarkAction
-              ? () => setOpen(false)
+      {welcome ? (
+        <TourStep
+          id="step"
+          open={open}
+          target={targets[target]}
+          side={side}
+          align={align}
+          tourLabel="Welcome"
+          title="Welcome to Pointr Cloud"
+          body="Learn the basics in your own maps. Tours, documentation and help for the page you are on now live under this button, on every page."
+          onDismiss={() => {
+            actions.current.push("dismiss");
+            setOpen(false);
+          }}
+          onSecondary={() => {
+            actions.current.push("secondary");
+            setOpen(false);
+          }}
+          onNext={() => {
+            actions.current.push("next");
+            setOpen(false);
+          }}
+          nextLabel="Show me the tours"
+        />
+      ) : (
+        <TourStep
+          id="step"
+          open={open}
+          target={targets[target]}
+          side={side}
+          align={align}
+          tourLabel={coachmark ? undefined : "How Pointr Cloud is organised"}
+          step={at + 1}
+          stepCount={coachmark ? undefined : STEPS.length}
+          title={coachmark ? "Draw rooms here" : step.title}
+          body={
+            coachmark
+              ? "Pick the room tool, then click the corners."
+              : step.body
+          }
+          instruction={coachmark ? undefined : (instruction ?? undefined)}
+          instructionTone={instructionTone}
+          onBack={coachmark || at === 0 ? undefined : () => setAt(at - 1)}
+          onNext={
+            coachmark
+              ? coachmarkAction
+                ? () => setOpen(false)
+                : undefined
+              : () => (at < STEPS.length - 1 ? setAt(at + 1) : setOpen(false))
+          }
+          nextDisabled={nextDisabled}
+          onSecondary={
+            secondary
+              ? () => {
+                  actions.current.push("secondary");
+                }
               : undefined
-            : () => (at < STEPS.length - 1 ? setAt(at + 1) : setOpen(false))
-        }
-        nextLabel={
-          coachmark ? "Got it" : at < STEPS.length - 1 ? "Next" : "Finish"
-        }
-        closeLabel={coachmark ? "Dismiss" : "Close tour"}
-        onClose={() => {
-          closes.current += 1;
-          setOpen(false);
-        }}
-      >
-        {coachmark ? "Pick the room tool, then click the corners." : step.body}
-        {bodyPopover ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button id="more" size="sm" variant="outline">
-                More
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              id="more-popover"
-              side="top"
-              align="start"
-              sideOffset={-24}
-              aria-label="More"
-              style={{ width: 160 }}
-            >
-              More about sites
-            </PopoverContent>
-          </Popover>
-        ) : null}
-      </TourStep>
+          }
+          secondaryLabel="Finish without adding"
+          nextLabel={
+            coachmark ? "Got it" : at < STEPS.length - 1 ? "Next" : "Done"
+          }
+          closeLabel={coachmark ? "Dismiss" : "Close tour"}
+          onClose={() => {
+            closes.current += 1;
+            setOpen(false);
+          }}
+        >
+          {bodyPopover ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button id="more" size="sm" variant="outline">
+                  More
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                id="more-popover"
+                side="top"
+                align="start"
+                sideOffset={-24}
+                aria-label="More"
+                style={{ width: 160 }}
+              >
+                More about sites
+              </PopoverContent>
+            </Popover>
+          ) : null}
+        </TourStep>
+      )}
     </div>
   );
 }
@@ -273,6 +331,7 @@ declare global {
       open(): void;
       presses(): number;
       closes(): number;
+      actions(): string[];
     };
   }
 }
@@ -286,4 +345,5 @@ window.tourStep = {
   open: () => controls?.open(),
   presses: () => controls?.presses() ?? 0,
   closes: () => controls?.closes() ?? 0,
+  actions: () => controls?.actions() ?? [],
 };

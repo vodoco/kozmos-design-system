@@ -178,11 +178,19 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/alert/900", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Primitives/Colors/emotional/success/900", ["TEXT_FILL", "STROKE_COLOR"]],
+  // The informative ink, as alert's 900 is: a tour step's instruction's
+  // pointer (GAP-188, decision 136).
+  ["Primitives/Colors/emotional/info/800", ["TEXT_FILL", "STROKE_COLOR"]],
+  // A Notice's edge, its tone's fill at 50 %: a tour step's instruction in
+  // the info and warning tones.
+  ["Primitives/Colors/emotional/info/700", ["STROKE_COLOR"]],
+  ["Primitives/Colors/emotional/alert/800", ["STROKE_COLOR"]],
+  // The bevel's shade is a soft edge under a shape: a tour step's arrow.
+  ["Primitives/Border/bevel/bottom", ["EFFECT_COLOR"]],
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
-  // The themed emotion's ink is the words of a tour step's hint, on the
-  // themed surface (GAP-188).
+  // The themed emotion's ink is words on the themed surface as well.
   ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's

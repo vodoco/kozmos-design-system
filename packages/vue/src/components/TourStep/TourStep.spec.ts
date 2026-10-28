@@ -4,7 +4,7 @@ import { createApp, h, nextTick, ref, type App } from "vue";
 import { KozmosTourStep } from "../../index";
 
 // GAP-188 in the harness: a tour's step mounted from Vue, beside an element
-// Vue draws, with its body from the default slot and its buttons from Vue's
+// Vue draws, with its body from the #body slot and its buttons from Vue's
 // listeners.
 beforeAll(() => {
   // Radix measures through ResizeObserver, which jsdom does not have.
@@ -57,7 +57,7 @@ function mountStep() {
           },
         },
         {
-          default: () => "Each site in this client is listed here.",
+          body: () => "Each site in this client is listed here.",
           instruction: () => "Go ahead and open a site.",
         },
       ),

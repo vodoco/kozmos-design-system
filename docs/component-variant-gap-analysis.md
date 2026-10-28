@@ -161,7 +161,7 @@ TimePicker
 TourStep
   - ios: component/set absent
   - android: component/set absent
-  - figma missing axes -> side (top, right, bottom, left); align (start, center, end)
+  - figma missing axes -> instructionTone (info, warning); side (top, right, bottom, left); align (start, center, end)
 Tree
   - ios missing axes -> activationMode (select, toggle, select-toggle)
   - android missing axes -> activationMode (select, toggle, select-toggle)

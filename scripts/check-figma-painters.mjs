@@ -1330,6 +1330,8 @@ section("A set runs after the sets it reaches into");
     browseCategoriesPanelTile: ["CategoryTile", "BrowseCategoriesPanel"],
     setBrowseCategoriesPanelTileIcon: ["CategoryTile", "BrowseCategoriesPanel"],
     updateCategoryTileVariant: ["Counter", "CategoryTile"],
+    // Close's x-close, tinted again after the swap.
+    retintTourStepCloseIcon: ["IconButton", "TourStep"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1380,6 +1382,10 @@ section("A set runs after the sets it reaches into");
         "BrowseCategoriesPanel",
       "after CategoryTile: BrowseCategoriesPanel",
     );
+    ok(
+      plugin.setsToUpdateAfter(["IconButton"]).includes("TourStep"),
+      `after IconButton: TourStep (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+    );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
     const tile = { updated: true, warnings: [] };
@@ -1411,6 +1417,7 @@ section("A set runs after the sets it reaches into");
   for (const [fn, name] of [
     ["updateCategoryTileComponent", "CategoryTile"],
     ["updateCounterComponent", "Counter"],
+    ["updateIconButtonComponent", "IconButton"],
   ]) {
     ok(
       typeof plugin[fn] === "function" &&
@@ -1954,16 +1961,21 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
-// GAP-188: TourStep, as React's TourStep draws it. Popover's surface 340
-// wide, 16 inside and 4 more at the top for the theme edge, sections 12
-// apart; the edge a layer of its own, out of the flow and stretched; the
-// eyebrow in the theme ink and upper case, the hint on the themed surface
-// with a 4 bar at its start, the status on the muted fill with its marker;
-// Back, Next and the dots live and exposed, Close IconButton's Outline with
-// x-close. Content is First step, Step, Last step and Coachmark; the
-// properties each bind a layer; and the set is drawn from a file that holds
-// the sets it nests, as Build and Update find them.
-section("TourStep (GAP-188)");
+// GAP-188: TourStep, as React's TourStep draws it, the MAP-64 design's card
+// (decision 136). Popover's surface 372 wide (432 for the welcome card), 16
+// inside, sections 12 apart, no top edge; an Arrow 24 by 12 out of the flow
+// above the card's middle; the header row with the eyebrow (sentence case,
+// the theme ink) and Close, IconButton's Ghost with x-close in the ghost's
+// ink; the title Heading 4; the body in the muted ink; the instruction as
+// Notice draws it (its tone's fill at 5 % and edge at 50 % as layers, the
+// Container corner, 8/12 inside, a 16 icon, cursor-02's outline for info and
+// alert-triangle for the warning); the progress bar of the secondary fill
+// with the theme ink to the step and the position beside it; Back, the
+// secondary action, Next and the dismiss link live and exposed at Size Small,
+// a disabled Next at 50 %. Content is the design's states; the properties
+// each bind a layer; and the set is drawn from a file that holds the sets it
+// nests, as Build and Update find them.
+section("TourStep (GAP-188, decision 136)");
 {
   const ready =
     Array.isArray(plugin.TOUR_STEP_CONTENT) &&
@@ -1973,24 +1985,37 @@ section("TourStep (GAP-188)");
   if (ready) {
     ok(
       plugin.TOUR_STEP_CONTENT.join(",") ===
-        "First step,Step,Last step,Coachmark" &&
+        "First step,Step,Last step,Warning,Coachmark,Welcome" &&
         JSON.stringify(
           plugin.expectedVariantAxesForComponentSetName("TourStep"),
         ) === JSON.stringify({ Content: plugin.TOUR_STEP_CONTENT }),
-      "four variants: First step, Step, Last step and Coachmark",
+      "six variants: First step, Step, Last step, Warning, Coachmark and Welcome",
     );
     ok(
       plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name).indexOf("TourStep") >
         Math.max(
-          ...["Button", "IconButton", "Stepper", "Backdrop"].map((name) =>
+          ...["Button", "IconButton", "Backdrop"].map((name) =>
             plugin.CORE_UPDATE_SEQUENCE.map(([n]) => n).indexOf(name),
           ),
         ),
       "Update All runs TourStep after the sets it nests",
     );
+    // The pointer is drawn from the icons package's own outline.
+    const generated = fs.readFileSync(
+      path.join(ROOT, "packages/icons/src/pointr/icons.generated.ts"),
+      "utf8",
+    );
+    const cursor = generated.match(
+      /export const Cursor02 = \/\* @__PURE__ \*\/ createPointrIcon\("Cursor02", \[\s*\{\s*d: "([^"]+)"/,
+    );
+    ok(
+      cursor && plugin.TOUR_STEP_POINTER_PATH === cursor[1],
+      "the instruction's pointer is cursor-02's outline in packages/icons",
+    );
 
-    // The file: Button's Default and Ghost, IconButton's Outline and its
-    // Icon swap, Stepper's five-step Dots, and x-close on the Icons page.
+    // The file: Button's Default, Ghost, Outline and Link at Small,
+    // IconButton's Ghost and its Icon swap, x-close and alert-triangle on the
+    // Icons page.
     const labelled = (variant, key) => {
       const label = new MockNode("TEXT", "Label Text");
       label.characters = "Button";
@@ -1999,8 +2024,8 @@ section("TourStep (GAP-188)");
     };
     const button = mockComponentSet(
       "Button",
-      ["Default", "Ghost"].map((variant) => ({
-        properties: { Variant: variant, Size: "Default", State: "Default" },
+      ["Default", "Ghost", "Outline", "Link"].map((variant) => ({
+        properties: { Variant: variant, Size: "Small", State: "Default" },
         build: (node) => labelled(node, "Label Text#1:0"),
       })),
     );
@@ -2009,13 +2034,30 @@ section("TourStep (GAP-188)");
     };
     const plus = mockIconComponent("plus");
     const close = mockIconComponent("x-close");
+    const warningMark = mockIconComponent("alert-triangle");
+    // IconButton tints its Icon with the Ghost's ink, as configureIconButtonSlot
+    // does: a swap takes that tint away with the layers it was laid on.
+    const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
     const iconButton = mockComponentSet("IconButton", [
       {
-        properties: { Variant: "Outline", Size: "Default", State: "Default" },
+        properties: { Variant: "Ghost", Size: "Default", State: "Default" },
         build: (node) => {
           const icon = plus.createInstance();
           icon.name = "Icon";
           icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+          for (const layer of icon.children) {
+            layer.strokes = [
+              {
+                type: "SOLID",
+                color: { r: 0.05, g: 0.27, b: 0.76 },
+                opacity: 1,
+                visible: true,
+                boundVariables: {
+                  color: { type: "VARIABLE_ALIAS", id: ghostInk },
+                },
+              },
+            ];
+          }
           node.appendChild(icon);
         },
       },
@@ -2023,24 +2065,21 @@ section("TourStep (GAP-188)");
     iconButton.componentPropertyDefinitions = {
       "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plus.id },
     };
-    const stepper = mockComponentSet(
-      "Stepper",
-      ["1", "2", "3", "4", "5"].map((current) => ({
-        properties: { Variant: "Dots", Count: "5", Current: current },
-      })),
-    );
     const components = new MockNode("PAGE", "Components");
-    for (const set of [button, iconButton, stepper])
-      components.appendChild(set);
+    for (const set of [button, iconButton]) components.appendChild(set);
     const icons = new MockNode("PAGE", "Icons");
-    icons.appendChild(plus);
-    icons.appendChild(close);
+    for (const icon of [plus, close, warningMark]) icons.appendChild(icon);
     const fileFigma = createFigmaMock({ pages: [components, icons] });
     const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
     const tokens = payloadVariables([
       ...variableByName.keys(),
-      "Emotion/themed/surface",
-      "Emotion/themed/onSurface",
+      "Colors/emotional/info/700",
+      "Colors/emotional/alert/800",
+      "Emotion/informative/text",
+      "Emotion/alert/text",
+      "Colors/emotional/info/800",
+      "Border/bevel/bottom",
+      "Colors/background/200",
     ]);
     await file.ensureKozmosTextStyles(FONTS, freshStats());
 
@@ -2057,20 +2096,23 @@ section("TourStep (GAP-188)");
       });
       painted[content] = component;
       const coachmark = content === "Coachmark";
+      const welcome = content === "Welcome";
+      const warning = content === "Warning";
+      const width = welcome ? 432 : 372;
       const rows = component.children.map((child) => child.name);
       ok(
         component.name === `Content=${content}` &&
-          component.width === 340 &&
+          component.width === width &&
           component.layoutMode === "VERTICAL" &&
           component.primaryAxisSizingMode === "AUTO" &&
-          component.paddingTop === 20 &&
+          component.paddingTop === 16 &&
           component.paddingLeft === 16 &&
           component.paddingRight === 16 &&
           component.paddingBottom === 16 &&
           component.itemSpacing === 12 &&
           component.cornerRadius === 16 &&
-          component.clipsContent === true,
-        `${content}: 340 wide, 16 inside and 20 at the top, 12 apart, the Control corner, clipping the edge (${component.width}, ${component.paddingTop}/${component.paddingLeft}, ${component.itemSpacing}, ${component.cornerRadius})`,
+          component.clipsContent === false,
+        `${content}: ${width} wide, 16 inside, 12 apart, the Control corner, its arrow outside (${component.width}, ${component.paddingTop}/${component.paddingLeft}, ${component.itemSpacing}, ${component.cornerRadius})`,
       );
       ok(
         boundVariableName(fill(component)) === "Surface/0" &&
@@ -2079,73 +2121,113 @@ section("TourStep (GAP-188)");
           component.effects.length === 1 &&
           component.effects[0].offset.y === 8 &&
           component.effects[0].radius === 16,
-        `${content}: Popover's surface, the subtle edge and the overlay elevation`,
+        `${content}: Popover's surface, the subtle edge all round and the overlay elevation`,
       );
+      const expectedRows = ["Arrow", "Header", "Title Text", "Body Text"];
+      if (!coachmark && !welcome) expectedRows.push("Instruction", "Progress");
+      if (!coachmark) expectedRows.push("Footer");
       ok(
-        JSON.stringify(rows) ===
-          JSON.stringify(
-            coachmark
-              ? ["Top Edge", "Header", "Body Text", "Hint", "Instruction"]
-              : [
-                  "Top Edge",
-                  "Header",
-                  "Body Text",
-                  "Hint",
-                  "Instruction",
-                  "Footer",
-                ],
-          ),
-        `${content}: ${rows.join(", ")}`,
+        JSON.stringify(rows) === JSON.stringify(expectedRows) &&
+          !named(component, "Top Edge") &&
+          !named(component, "Hint") &&
+          !named(component, "Dots"),
+        `${content}: ${rows.join(", ")}; no top edge, hint or dots`,
       );
-      const edge = component.children[0];
+      const arrow = component.children[0];
+      const arrowFill = arrow && named(arrow, "Arrow Fill");
       ok(
-        edge.layoutPositioning === "ABSOLUTE" &&
-          edge.x === 0 &&
-          edge.y === 0 &&
-          edge.width === 340 &&
-          edge.height === 4 &&
-          edge.constraints.horizontal === "STRETCH" &&
-          boundVariableName(fill(edge)) ===
-            "Primary Buttons/themed/button/background/idle",
-        `${content}: a 4 edge of the theme fill across the top, out of the flow and stretched`,
+        arrow.layoutPositioning === "ABSOLUTE" &&
+          arrow.width === 24 &&
+          arrow.height === 12 &&
+          arrow.x === (width - 24) / 2 &&
+          arrow.y === -11 &&
+          arrowFill &&
+          boundVariableName(fill(arrowFill)) === "Surface/0" &&
+          arrowFill.effects.length === 1 &&
+          arrowFill.effects[0].offset.y === 1 &&
+          arrowFill.effects[0].radius === 1 &&
+          arrowFill.effects[0].boundVariables &&
+          arrowFill.effects[0].boundVariables.color.id ===
+            tokens.variableByName.get("Border/bevel/bottom").id,
+        `${content}: a 24 by 12 arrow above the card's middle, 1 over its edge, Surface/0, a 0 1 1 shadow in the bevel's colour`,
       );
+      const header = named(component, "Header");
       const eyebrow = named(component, "Eyebrow");
       const tour = named(component, "Tour Text");
-      const position = named(component, "Position Text");
+      const position = eyebrow && named(eyebrow, "Position Text");
+      const current = { "First step": 1, Step: 2 }[content] || 4;
       ok(
         coachmark
-          ? !eyebrow && !tour && !position
+          ? !eyebrow
           : eyebrow &&
-              [tour, named(component, "Separator"), position].every(
-                (text) =>
-                  text &&
-                  text.parent === eyebrow &&
-                  text.textCase === "UPPER" &&
-                  boundVariableName(fill(text)) === "Colors/theme/600",
-              ) &&
-              position.characters ===
-                `Step ${content === "First step" ? 1 : content === "Last step" ? 5 : 2} of 5`,
+              tour &&
+              tour.parent === eyebrow &&
+              [tour, position, named(component, "Separator")]
+                .filter(Boolean)
+                .every(
+                  (text) =>
+                    text.textCase !== "UPPER" &&
+                    text.fontSize === 12 &&
+                    boundVariableName(fill(text)) === "Colors/theme/600",
+                ) &&
+              (welcome
+                ? tour.characters === "Welcome" && !position
+                : position.characters === `${current} of 4`),
         coachmark
           ? "Coachmark: no tour name and no position"
-          : `${content}: the tour and "${position && position.characters}" upper case in the theme ink`,
-      );
-      const title = named(component, "Title Text");
-      ok(
-        title &&
-          title.fontSize === 16 &&
-          title.lineHeight.value === 24 &&
-          boundVariableName(fill(title)) === "Colors/foreground/0" &&
-          title.characters === (coachmark ? "Draw rooms here" : "Open a site"),
-        `${content}: the title 16/24 in the foreground`,
+          : `${content}: "${tour && tour.characters}${position ? ` · ${position.characters}` : ""}", 12 in the theme ink, in sentence case`,
       );
       const closeButton = named(component, "Close");
       ok(
-        closeButton &&
-          closeButton.type === "INSTANCE" &&
-          closeButton.mainComponent.name ===
-            "Variant=Outline, Size=Default, State=Default" &&
-          closeButton.componentProperties["Icon#2:0"] === close.id,
-        `${content}: Close is IconButton's Outline with x-close`,
+        welcome
+          ? !closeButton
+          : closeButton &&
+              closeButton.parent === header &&
+              header.children[header.children.length - 1] === closeButton &&
+              closeButton.type === "INSTANCE" &&
+              closeButton.mainComponent.name ===
+                "Variant=Ghost, Size=Default, State=Default" &&
+              closeButton.componentProperties["Icon#2:0"] === close.id,
+        welcome
+          ? "Welcome: no Close"
+          : `${content}: Close is IconButton's Ghost with x-close, at the header's end`,
+      );
+      if (!welcome) {
+        // The swap replaces the layer the button's tint was laid on, so
+        // x-close came in its source's black. It takes the ghost's ink again,
+        // bound to its variable.
+        const closeIcon = closeButton.findOne(
+          (node) =>
+            node.type === "INSTANCE" &&
+            node.componentPropertyReferences &&
+            node.componentPropertyReferences.mainComponent === "Icon#2:0",
+        );
+        const closeInk = closeIcon
+          ? closeIcon.findAll((node) => (node.strokes || []).length > 0)
+          : [];
+        ok(
+          closeIcon &&
+            closeIcon.mainComponent === close &&
+            closeInk.length > 0 &&
+            closeInk.every(
+              (node) => boundVariableName(node.strokes[0]) === ghostInk,
+            ),
+          `${content}: x-close draws in the ghost button's ink, ${ghostInk} (${closeInk.map((node) => boundVariableName(node.strokes[0]) || hexOf(node.strokes[0])).join(", ") || "no stroked layer"})`,
+        );
+      }
+      const title = named(component, "Title Text");
+      ok(
+        title &&
+          title.fontSize === 20 &&
+          title.lineHeight.value === 28 &&
+          boundVariableName(fill(title)) === "Colors/foreground/0" &&
+          title.characters ===
+            (coachmark
+              ? "Draw rooms here"
+              : welcome
+                ? "Welcome to Pointr Cloud"
+                : "Open User Management in Settings"),
+        `${content}: the title Heading 4, 20/28, in the foreground`,
       );
       const body = named(component, "Body Text");
       ok(
@@ -2154,84 +2236,122 @@ section("TourStep (GAP-188)");
           boundVariableName(fill(body)) === "Colors/foreground/400",
         `${content}: the body 14 in the muted ink`,
       );
-      const hint = named(component, "Hint");
-      ok(
-        hint &&
-          hint.visible === false &&
-          hint.cornerRadius === 4 &&
-          boundVariableName(fill(hint)) === "Emotion/themed/surface" &&
-          boundVariableName(hint.strokes[0]) === "Colors/theme/600" &&
-          hint.strokeLeftWeight === 4 &&
-          hint.strokeTopWeight === 0 &&
-          hint.strokeRightWeight === 0 &&
-          hint.strokeBottomWeight === 0 &&
-          boundVariableName(fill(named(hint, "Hint Text"))) ===
-            "Emotion/themed/onSurface",
-        `${content}: the hint, hidden until asked for, on the themed surface with a 4 bar at its start`,
-      );
       const instruction = named(component, "Instruction");
-      const marker = instruction && named(instruction, "Marker");
-      const halo = marker && named(marker, "Marker Halo");
-      const dot = marker && named(marker, "Marker Dot");
-      ok(
-        instruction &&
-          instruction.cornerRadius === 4 &&
-          boundVariableName(fill(instruction)) === "Colors/background/100" &&
-          instruction.paddingTop === 6 &&
-          instruction.paddingLeft === 12 &&
-          instruction.itemSpacing === 8 &&
-          marker.width === 8 &&
-          marker.clipsContent === false &&
-          halo.width === 16 &&
-          halo.x === -4 &&
-          Math.abs(halo.opacity - 0.2) < 1e-9 &&
-          dot.width === 8 &&
-          [halo, dot].every(
-            (shape) =>
-              boundVariableName(fill(shape)) ===
-              "Primary Buttons/themed/button/background/idle",
-          ) &&
-          boundVariableName(fill(named(instruction, "Instruction Text"))) ===
-            "Colors/foreground/0",
-        `${content}: the status on the muted fill, an 8 marker of the theme fill in a 4 halo at 20%`,
-      );
+      if (coachmark || welcome) {
+        ok(!instruction, `${content}: no instruction`);
+      } else {
+        const toneFill = warning
+          ? "Colors/emotional/alert/800"
+          : "Colors/emotional/info/700";
+        const toneInk = warning
+          ? "Emotion/alert/text"
+          : "Emotion/informative/text";
+        const toneMark = warning
+          ? "Colors/emotional/alert/900"
+          : "Colors/emotional/info/800";
+        const wash = named(instruction, "Instruction Fill");
+        const edge = named(instruction, "Instruction Edge");
+        const icon = named(instruction, "Instruction Icon");
+        const text = named(instruction, "Instruction Text");
+        const iconInk = icon
+          ? icon.findAll((node) => (node.strokes || []).length > 0)
+          : [];
+        ok(
+          instruction.cornerRadius === 20 &&
+            instruction.paddingTop === 8 &&
+            instruction.paddingLeft === 12 &&
+            instruction.itemSpacing === 8 &&
+            instruction.counterAxisAlignItems === "CENTER" &&
+            (instruction.fills || []).length === 0 &&
+            wash &&
+            wash.layoutPositioning === "ABSOLUTE" &&
+            boundVariableName(fill(wash)) === toneFill &&
+            Math.abs(wash.opacity - 0.05) < 1e-9 &&
+            edge &&
+            edge.layoutPositioning === "ABSOLUTE" &&
+            (edge.fills || []).length === 0 &&
+            boundVariableName(edge.strokes[0]) === toneFill &&
+            edge.strokeWeight === 1 &&
+            Math.abs(edge.opacity - 0.5) < 1e-9,
+          `${content}: the instruction on its tone's fill at 5 % with its edge at 50 %, the Container corner, 8/12 inside`,
+        );
+        ok(
+          icon &&
+            icon.width === 16 &&
+            icon.height === 16 &&
+            iconInk.length > 0 &&
+            iconInk.every(
+              (node) => boundVariableName(node.strokes[0]) === toneMark,
+            ) &&
+            (warning
+              ? icon.type === "INSTANCE" && icon.mainComponent === warningMark
+              : icon.type === "FRAME" &&
+                String(icon.svg).includes(plugin.TOUR_STEP_POINTER_PATH)) &&
+            text &&
+            text.fontSize === 14 &&
+            text.lineHeight.value === 19.25 &&
+            boundVariableName(fill(text)) === toneInk,
+          `${content}: a 16 ${warning ? "alert-triangle" : "cursor-02"} in ${toneMark}, and the words 14 semibold at 19.25 in ${toneInk}`,
+        );
+        const progress = named(component, "Progress");
+        const track = progress && named(progress, "Progress Track");
+        const range = track && named(track, "Progress Range");
+        const words = progress && named(progress, "Position Text");
+        ok(
+          progress &&
+            progress.itemSpacing === 12 &&
+            track.height === 8 &&
+            track.cornerRadius === 9999 &&
+            boundVariableName(fill(track)) === "Colors/background/200" &&
+            boundVariableName(fill(range)) === "Colors/theme/600" &&
+            range.constraints.horizontal === "SCALE" &&
+            Math.abs(range.width - (track.width * current) / 4) <= 1 &&
+            words.characters === `${current} of 4` &&
+            words.fontSize === 12 &&
+            boundVariableName(fill(words)) === "Colors/foreground/400" &&
+            progress.children[progress.children.length - 1] === words,
+          `${content}: the bar, filled to ${current} of 4 in the theme ink, and "${words && words.characters}" after it in the muted ink`,
+        );
+      }
       if (!coachmark) {
         const footer = named(component, "Footer");
-        const dots = footer && named(footer, "Dots");
-        const actions = footer && named(footer, "Actions");
-        const labels = (actions ? actions.children : []).map((instance) =>
-          [
-            instance.name,
-            instance.mainComponent && instance.mainComponent.name.split(",")[0],
-            instance.componentProperties &&
-              instance.componentProperties["Label Text#1:0"],
-            instance.isExposedInstance,
-          ].join(" "),
-        );
-        const current =
-          content === "First step" ? "1" : content === "Last step" ? "5" : "2";
-        ok(
-          footer.primaryAxisAlignItems === "SPACE_BETWEEN" &&
-            dots &&
-            dots.type === "INSTANCE" &&
-            dots.isExposedInstance === true &&
-            dots.mainComponent.name ===
-              `Variant=Dots, Count=5, Current=${current}`,
-          `${content}: the dots are Stepper's, on step ${current} of 5, exposed`,
-        );
+        const labels = footer
+          .findAll((node) => node.type === "INSTANCE")
+          .map((instance) =>
+            [
+              instance.name,
+              instance.mainComponent &&
+                instance.mainComponent.name.split(",").slice(0, 2).join(","),
+              instance.componentProperties &&
+                instance.componentProperties["Label Text#1:0"],
+              instance.isExposedInstance,
+              instance.opacity,
+            ].join(" "),
+          );
         const expected = {
-          "First step": ["Next Variant=Default Next true"],
+          "First step": ["Next Variant=Default, Size=Small Next true 1"],
           Step: [
-            "Back Variant=Ghost Back true",
-            "Next Variant=Default Next true",
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Next Variant=Default, Size=Small Next true 1",
           ],
           "Last step": [
-            "Back Variant=Ghost Back true",
-            "Next Variant=Default Finish true",
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Next Variant=Default, Size=Small Next true 0.5",
+          ],
+          Warning: [
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Secondary Variant=Outline, Size=Small Finish without adding true 1",
+          ],
+          Welcome: [
+            "Dismiss Variant=Link, Size=Small Don't show again true 1",
+            "Secondary Variant=Outline, Size=Small Not now true 1",
+            "Next Variant=Default, Size=Small Show me the tours true 1",
           ],
         }[content];
         ok(
-          JSON.stringify(labels) === JSON.stringify(expected),
+          JSON.stringify(labels) === JSON.stringify(expected) &&
+            footer.primaryAxisAlignItems ===
+              (welcome ? "SPACE_BETWEEN" : "MAX"),
           `${content}: ${labels.join("; ")}`,
         );
       }
@@ -2241,7 +2361,7 @@ section("TourStep (GAP-188)");
       );
     }
 
-    // The set's properties: six texts and two booleans, each driving a layer.
+    // The set's properties: five texts and two booleans, each driving a layer.
     const set = new MockNode("COMPONENT_SET", "TourStep");
     for (const content of plugin.TOUR_STEP_CONTENT)
       set.appendChild(painted[content]);
@@ -2254,9 +2374,8 @@ section("TourStep (GAP-188)");
       JSON.stringify(definitions.sort()) ===
         JSON.stringify(
           [
+            "Arrow:BOOLEAN",
             "Body Text:TEXT",
-            "Hint Text:TEXT",
-            "Hint:BOOLEAN",
             "Instruction Text:TEXT",
             "Instruction:BOOLEAN",
             "Position Text:TEXT",
@@ -2264,7 +2383,7 @@ section("TourStep (GAP-188)");
             "Tour Text:TEXT",
           ].sort(),
         ),
-      `six text properties and two booleans (${definitions.join(", ")})`,
+      `five text properties and two booleans (${definitions.join(", ")})`,
     );
     const references = (key) =>
       set.findAll(
@@ -2279,18 +2398,20 @@ section("TourStep (GAP-188)");
       "Position Text",
       "Title Text",
       "Body Text",
-      "Hint Text",
       "Instruction Text",
-      "Hint",
       "Instruction",
+      "Arrow",
     ].filter((key) => references(key) === 0);
     ok(
       unbound.length === 0 && propertyStats.warnings.length === 0,
       `every property drives a layer (${unbound.join(", ") || "all bound"}; ${propertyStats.warnings.join(" | ")})`,
     );
     ok(
-      references("Hint") === 4 && references("Instruction") === 4,
-      "Hint and Instruction drive their layer in every variant",
+      references("Instruction") === 4 &&
+        references("Arrow") === 6 &&
+        // The eyebrow's and the progress's, in each of the four steps.
+        references("Position Text") === 8,
+      `Instruction drives its layer in the four steps, Arrow in all six, Position Text the eyebrow and the progress (${references("Instruction")}, ${references("Arrow")}, ${references("Position Text")})`,
     );
   }
 }
@@ -5106,9 +5227,11 @@ section("Backdrop cut-out (GAP-189)");
       `its scrim is an even-odd vector in Overlay/Scrim (${scrim && scrim.type}, ${path && path.windingRule}, ${scrim && boundVariableName(scrim.fills[0])})`,
     );
     // The hole: the box round every point after the scrim's own outline.
-    const numbers = path ? path.data.split(/ (?=M)/).map((sub) =>
-      [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])),
-    ) : [];
+    const numbers = path
+      ? path.data
+          .split(/ (?=M)/)
+          .map((sub) => [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])))
+      : [];
     const holeXs = (numbers[1] || []).filter((_, i) => i % 2 === 0);
     const holeYs = (numbers[1] || []).filter((_, i) => i % 2 === 1);
     const hole = holeXs.length
@@ -5120,7 +5243,8 @@ section("Backdrop cut-out (GAP-189)");
         ]
       : null;
     ok(
-      JSON.stringify(numbers[0]) === JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
+      JSON.stringify(numbers[0]) ===
+        JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
         JSON.stringify(hole) === JSON.stringify([92, 60, 228, 120]) &&
         /^[MLCZ\d.\s-]+$/.test(path ? path.data : ""),
       `the scrim covers the variant and its hole is the control padded 8, from 92, 60 to 228, 120, in M, L, C and Z alone (${JSON.stringify(hole)})`,
@@ -7356,7 +7480,8 @@ section("GAP-192: the option lists draw their groups' labels");
     if (kept) {
       kept.characters = "Interior Asset";
       const redrawn = await draw(part.fn, part.props, component);
-      const again = (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
+      const again =
+        (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
       const text = named(again, "Group 1 Text");
       ok(
         text && text.characters === "Interior Asset",
@@ -7408,7 +7533,9 @@ section("GAP-192: the option lists draw their groups' labels");
   }
 }
 
-section("Since #397: Combobox's and MultiSelect's field actions are React's buttons");
+section(
+  "Since #397: Combobox's and MultiSelect's field actions are React's buttons",
+);
 {
   // React draws the clear and open at the field's end as buttons
   // (field-actions.ts): each as tall and wide as the field, 44 at touch (40
@@ -7441,13 +7568,55 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
   const shown = (node, field) =>
     boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
   const cases = [
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Default", status: "Default", content: "Closed" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Focus", status: "Default", content: "Open" }, ["Clear Button", "Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Disabled", status: "Default", content: "Open" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Readonly", status: "Default", content: "Open" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Empty" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Selected" }, ["Clear Button", "Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Disabled", status: "Default", content: "Selected" }, ["Open Button"]],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Default", status: "Default", content: "Closed" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Focus", status: "Default", content: "Open" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Disabled", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Readonly", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Empty" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Selected" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Disabled", status: "Default", content: "Selected" },
+      ["Open Button"],
+    ],
   ];
   for (const [part, fn, sizeToken, props, expected] of cases) {
     const label = `${part} ${props.state}/${props.content}`;
@@ -7495,7 +7664,9 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
           (button.strokes || []).length === 0,
         `${label}, ${button.name}: the icon centred, on no fill`,
       );
-      const icons = button.children.filter((child) => child.type === "INSTANCE");
+      const icons = button.children.filter(
+        (child) => child.type === "INSTANCE",
+      );
       ok(
         icons.length === 1 && icons[0].width === 16 && icons[0].height === 16,
         `${label}, ${button.name}: one 16px icon (${icons.map((icon) => `${icon.width}x${icon.height}`).join(", ")})`,
@@ -7508,7 +7679,10 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
     );
     ok(
       !field.children.some(
-        (child) => child.type === "INSTANCE" && child !== field.children[0] && /chevron|close/i.test(child.name),
+        (child) =>
+          child.type === "INSTANCE" &&
+          child !== field.children[0] &&
+          /chevron|close/i.test(child.name),
       ),
       `${label}: no bare icon left in the field's line`,
     );

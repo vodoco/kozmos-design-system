@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T22:50:56.433Z",
+  "generatedAt": "2026-10-28T16:21:33.422Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -2872,7 +2872,7 @@
         "ios": "primitivesColorsEmotionalAlert800",
         "android": "primitivesColorsEmotionalAlert800"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -3117,7 +3117,7 @@
         "ios": "primitivesColorsEmotionalInfo700",
         "android": "primitivesColorsEmotionalInfo700"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -3141,7 +3141,12 @@
         "ios": "primitivesColorsEmotionalInfo800",
         "android": "primitivesColorsEmotionalInfo800"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -4308,7 +4313,12 @@
         "ios": "primitivesBorderBevelBottom",
         "android": "primitivesBorderBevelBottom"
       },
-      "suggestedScopes": ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"],
+      "suggestedScopes": [
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL",
+        "EFFECT_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
