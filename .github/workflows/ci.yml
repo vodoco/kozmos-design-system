@@ -435,6 +435,22 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:card-padding
           ADAPTIVE_BROWSER=firefox pnpm test:card-padding
 
+      # GAP-188: TourStep. The card is 340 wide on Popover's surface with a
+      # 4 theme edge, from its tokens, with and without @scope, light and
+      # dark; it sits 12 past the cut-out's ring on each side, beside a rect
+      # and a virtual element, and in the middle of the window with none; it
+      # stays above its Backdrop and under a popover opened from it; a press
+      # on the dim or the lit target leaves it open; it takes focus on Next
+      # when the page opens it, Next draws the next step with focus on its
+      # Next, Escape closes it and focus goes back; the status is one live
+      # region; the marker holds still under reduced motion; right to left
+      # and compact density (scripts/check-tour-step.mjs).
+      - name: Verify TourStep
+        run: |
+          pnpm test:tour-step
+          ADAPTIVE_BROWSER=webkit pnpm test:tour-step
+          ADAPTIVE_BROWSER=firefox pnpm test:tour-step
+
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
       # and Calendar's geometry, colours, keyboard and locales as Figma draws
