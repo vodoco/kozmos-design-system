@@ -133,6 +133,9 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
             id={messageId}
             className={fieldMessageClass(messageStatus)}
             role={messageStatus === "error" ? "alert" : undefined}
+            // Said as well as implied by the role: an open Select hides every
+            // box not marked aria-live, its own field's error too (GAP-193).
+            aria-live={messageStatus === "error" ? "assertive" : undefined}
           >
             {count != null && (
               <>

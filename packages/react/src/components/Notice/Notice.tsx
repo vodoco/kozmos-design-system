@@ -1,6 +1,7 @@
 import React from "react";
 import { AlertTriangle, ChevronDown } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { impliedLive } from "../../utils/live-region";
 
 export type NoticeTone = "warning" | "info" | "critical";
 
@@ -142,6 +143,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
     // No icon, no column: the detail and the action then start where the
     // summary does.
     const drawsIcon = icon !== null && icon !== false;
+    const resolvedRole = role ?? LIVE_ROLE[live];
 
     return (
       <div
@@ -154,7 +156,11 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
         // Fixed at `status` until row 54: a notice could be read politely or
         // not at all, and an emergency had no way to interrupt. A caller's own
         // `role` still wins.
-        role={role ?? LIVE_ROLE[live]}
+        role={resolvedRole}
+        // The role's own liveness, said as well: a Select or Menu open hides
+        // every box but those marked aria-live, and the "More" button in this
+        // one stayed focusable inside the hidden box (GAP-193).
+        aria-live={impliedLive(resolvedRole)}
         {...props}
       >
         <div
