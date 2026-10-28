@@ -129,10 +129,11 @@ function Parts({ theme }: { theme: Theme }) {
           ]}
         />
       </div>
-      {/* GAP-55 whatever wraps the option: a group of options, as #411's
-          option groups draw one, a grid of its own (`display: grid; gap:
-          inherit`) whose implicit column sizes to its widest option. The
-          group's own rule is #411's; it is written here as that markup. */}
+      {/* GAP-55 whatever wraps the option: a wrapper that is a grid of its
+          own (`display: grid; gap: inherit`), whose implicit column sizes to
+          its widest option, as #411's option group was before it set its own
+          column. No Kozmos class gives it a column, so the option's own
+          `min-width: 0` is what holds. */}
       <div style={{ width: 280 }}>
         <div
           aria-label="Grouped results"
@@ -142,7 +143,6 @@ function Parts({ theme }: { theme: Theme }) {
         >
           <div
             aria-label="Places"
-            className="kozmos-option-group"
             role="group"
             style={{ display: "grid", gap: "inherit" }}
           >
