@@ -64,9 +64,10 @@
 }
 
 /* The attract screen covers the whole directory. The map's floor list sits
-   in a MapOverlay at the top layer, and MapView does not contain it (GAPS.md,
-   GAP-40), so the screen takes that layer too and, coming later, covers it;
-   solid since decision 49, it would otherwise show the list over itself. */
+   in a MapOverlay at the top layer, inside the map's own stacking context
+   since GAPS.md's GAP-40 was fixed; the screen takes that layer too and,
+   coming later, covers it whatever the map holds. Solid since decision 49,
+   it would otherwise show the list over itself. */
 .ex-kiosk-attract {
   position: absolute;
   inset: 0;
