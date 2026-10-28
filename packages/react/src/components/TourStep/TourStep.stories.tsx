@@ -6,7 +6,6 @@ import { Button } from "../Button/Button";
 import { IconButton } from "../IconButton/IconButton";
 import { Stack } from "../Stack/Stack";
 import { Tag } from "../Tag/Tag";
-import { Text } from "../Text/Text";
 import {
   Table,
   TableBody,
