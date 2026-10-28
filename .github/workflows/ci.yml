@@ -412,6 +412,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-194: Card's padding. Content, or a footer, that is the card's
+      # first child pays the top as well as its sides and bottom, in both
+      # paddings (24, and 16 compact); a header-led card is drawn as before,
+      # a form-wrapped or nested card pays nothing twice, and a caller's own
+      # p-0 or pt-2 still wins (scripts/check-card-padding.mjs).
+      - name: Verify Card Padding
+        run: |
+          pnpm test:card-padding
+          ADAPTIVE_BROWSER=webkit pnpm test:card-padding
+          ADAPTIVE_BROWSER=firefox pnpm test:card-padding
+
       # GAP-188: TourStep. The card is 340 wide on Popover's surface with a
       # 4 theme edge, from its tokens, with and without @scope, light and
       # dark; it sits 12 past the cut-out's ring on each side, beside a rect
