@@ -17582,6 +17582,7 @@
           "children",
           "closeLabel",
           "details",
+          "hostActionStates",
           "id",
           "mediaControlsLabel",
           "mediaLabel",

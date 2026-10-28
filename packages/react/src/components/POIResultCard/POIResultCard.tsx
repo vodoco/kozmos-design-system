@@ -8,10 +8,15 @@ import {
   type POIResultPresentation,
   type TravelTimeBand,
 } from "@kozmos-ds/product-contracts";
-import { Star01 as Star, NavigationPointer01 } from "@kozmos-ds/icons";
+import {
+  Star01 as Star,
+  NavigationPointer01,
+  isKozmosIconKey,
+} from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
+import { Icon } from "../Icon/Icon";
 import { WithoutGenericClick } from "../../utils/generic-click";
 import { DensityScope } from "../../theme/DensityScope";
 import { useDoubleTapGate } from "../../utils/double-tap";
@@ -49,6 +54,13 @@ export interface POIResultCardProps extends Omit<
    * Without a handler, the actions remain visible but disabled.
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
+  /**
+   * Run one of the product's own actions, `result.hostActions` (GAP-028),
+   * told its `id` and the POI's ID. They are drawn after `result.actions`
+   * in the same row, on the selected result. Without a handler they remain
+   * visible but disabled, as the card's own actions do.
+   */
+  onHostAction?: (actionId: string, poiId: string) => void;
   featuredLabel?: string;
   /** Localized disclosure shown only for result.languageNotListed === true. */
   languageNotListedLabel?: string;
@@ -156,6 +168,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onSelect,
       onOpen,
       onAction,
+      onHostAction,
       featuredLabel = "Featured",
       languageNotListedLabel = "Language not listed",
       selectionLabel,
@@ -216,7 +229,10 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     // Shown only on the selected result: an action row on every card would be
     // a wall of buttons, and the tap that selects is the tap that asks.
     const actions = result.selected ? (result.actions ?? []) : [];
-    const showActions = available && actions.length > 0;
+    const hostActions = result.selected ? (result.hostActions ?? []) : [];
+    const offersActions =
+      (result.actions?.length ?? 0) + (result.hostActions?.length ?? 0) > 0;
+    const showActions = available && actions.length + hostActions.length > 0;
     const actionsId = `${id}-actions`;
 
     // The access restriction arrives as its own labelled field rather than in
@@ -242,6 +258,19 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         action,
       });
       onAction(action, poi.id);
+    };
+
+    // The product's own action reports as `host`, with its id, so one event
+    // counts every action pressed on a result.
+    const handleHostAction = (actionId: string) => {
+      if (!onHostAction) return;
+      trackEvent("POIResultCard", "poi_result_action", {
+        poiId: poi.id,
+        resultIndex: result.resultIndex,
+        action: "host",
+        hostActionId: actionId,
+      });
+      onHostAction(actionId, poi.id);
     };
 
     const name = (
@@ -355,9 +384,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           <button
             aria-controls={showActions ? actionsId : undefined}
             aria-describedby={describedBy}
-            aria-expanded={
-              (result.actions?.length ?? 0) > 0 ? showActions : undefined
-            }
+            aria-expanded={offersActions ? showActions : undefined}
             aria-label={selectionLabel}
             // `aria-current`, not `aria-pressed` (GAP-049).
             //
@@ -555,6 +582,27 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                       {sdk && entry.action === "navigate" && (
                         <NavigationPointer01
                           aria-hidden="true"
+                          className="h-5 w-5 shrink-0"
+                        />
+                      )}
+                      <span className="min-w-0 [overflow-wrap:anywhere]">
+                        {entry.label}
+                      </span>
+                    </Button>
+                  ))}
+                  {hostActions.map((entry) => (
+                    <Button
+                      variant="outline"
+                      emotion="neutral"
+                      className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
+                      disabled={entry.disabled || !onHostAction}
+                      key={`host-${entry.id}`}
+                      onClick={() => handleHostAction(entry.id)}
+                      type="button"
+                    >
+                      {entry.iconName && isKozmosIconKey(entry.iconName) && (
+                        <Icon
+                          name={entry.iconName}
                           className="h-5 w-5 shrink-0"
                         />
                       )}

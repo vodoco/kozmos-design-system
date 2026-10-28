@@ -104,6 +104,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
   A double tap on a result opens its details: POIResultCard's `onOpen` (decision 72).
 
 - `onAction`: `(action: POIResultAction, poiId: string) => void`, optional.
+- `onHostAction`: `(actionId: string, poiId: string) => void`, optional.
+
+  Run one of the product's own actions, a member's `hostActions`: POIResultCard's `onHostAction`.
+
 - `collapsedCount`: `number`, optional, default `1`.
 
   How many members show while collapsed.
@@ -208,6 +212,13 @@ interface POIResultCardProps extends Omit<
    * Without a handler, the actions remain visible but disabled.
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
+  /**
+   * Run one of the product's own actions, `result.hostActions` (GAP-028),
+   * told its `id` and the POI's ID. They are drawn after `result.actions`
+   * in the same row, on the selected result. Without a handler they remain
+   * visible but disabled, as the card's own actions do.
+   */
+  onHostAction?: (actionId: string, poiId: string) => void;
   featuredLabel?: string;
   /** Localized disclosure shown only for result.languageNotListed === true. */
   languageNotListedLabel?: string;
@@ -383,6 +394,13 @@ interface POIResultPresentation {
    * what it is given and never assumes a fixed pair.
    */
   actions?: readonly POIResultActionPresentation[];
+  /**
+   * The product's own actions, with their own words and icons, drawn after
+   * `actions` in the same row and revealed with them (GAP-028): "Reserve a
+   * table" on a restaurant. A press reaches the card's `onHostAction` with
+   * the action's `id`.
+   */
+  hostActions?: readonly POIHostActionPresentation[];
 }
 ```
 
@@ -552,6 +570,42 @@ interface POIResultActionPresentation {
   label: string;
   /** Drawn first and filled. Exactly one action should carry it. */
   primary?: boolean;
+  disabled?: boolean;
+}
+```
+
+### POIHostActionPresentation
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * An action the product defines itself, beside the ones Kozmos names
+ * (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+ * Pointr Express". Kozmos draws it with the words and the icon it is given
+ * and says which was pressed by its `id`; what it does is the product's.
+ *
+ * POIResultCard draws a result's `hostActions` after its `actions`, on the
+ * selected result, and POIDetailPanel draws `details.hostActions` after the
+ * supplementary actions, in the same strip: each in the order given, as an
+ * outlined button. Nothing in this shape is specific to either card.
+ */
+interface POIHostActionPresentation {
+  /**
+   * The product's own name for the action, unique among the card's host
+   * actions: "reserve", "open-in-app". Handed back when it is pressed and
+   * reported as `hostActionId` in analytics; never shown or announced.
+   */
+  id: string;
+  /** Already localized: the button's words, and what a screen reader says. */
+  label: string;
+  /**
+   * A Kozmos icon by its registry name, drawn before the label and hidden
+   * from screen readers. A name Kozmos does not know draws no icon, never a
+   * stand-in: the label is the action.
+   */
+  iconName?: string;
+  /** Drawn, but it cannot be pressed. */
   disabled?: boolean;
 }
 ```

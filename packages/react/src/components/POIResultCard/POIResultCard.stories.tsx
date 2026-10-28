@@ -199,6 +199,30 @@ export const LongActionLabels: Story = {
 };
 
 /**
+ * The product's own actions (GAP-028): a restaurant offers "Reserve a table",
+ * with its own words and icon, after Go and Details, in the same row. A press
+ * reaches `onHostAction` with the action's id.
+ */
+export const HostActions: Story = {
+  args: {
+    onAction: fn(),
+    onHostAction: fn(),
+    poi: { ...poi, name: "Trattoria Uno", categoryLabel: "Restaurant" },
+    result: {
+      ...meta.args.result,
+      selected: true,
+      actions: [
+        { action: "navigate", label: "Go", primary: true },
+        { action: "details", label: "Details" },
+      ],
+      hostActions: [
+        { id: "reserve", label: "Reserve a table", iconName: "calendar" },
+      ],
+    },
+  },
+};
+
+/**
  * A badge says why a result is in this list — "Alternative", "Similar",
  * "Close by". It is quiet: a neutral tab with no star, on the card's grey
  * edge, so it never reads as featured (GAP-054). It never replaces Featured:

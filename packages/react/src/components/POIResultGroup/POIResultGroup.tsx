@@ -31,6 +31,8 @@ export interface POIResultGroupProps extends Omit<
   /** A double tap on a result opens its details: POIResultCard's `onOpen` (decision 72). */
   onOpen?: (poiId: string) => void;
   onAction?: (action: POIResultAction, poiId: string) => void;
+  /** Run one of the product's own actions, a member's `hostActions`: POIResultCard's `onHostAction`. */
+  onHostAction?: (actionId: string, poiId: string) => void;
   /** How many members show while collapsed. */
   collapsedCount?: number;
   defaultExpanded?: boolean;
@@ -89,6 +91,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       onSelect,
       onOpen,
       onAction,
+      onHostAction,
       collapsedCount = 1,
       defaultExpanded = false,
       expanded,
@@ -152,6 +155,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                   numbered={numbered}
                   presentationStyle={presentationStyle}
                   onAction={onAction}
+                  onHostAction={onHostAction}
                   onOpen={onOpen}
                   onSelect={onSelect}
                   poi={poi}

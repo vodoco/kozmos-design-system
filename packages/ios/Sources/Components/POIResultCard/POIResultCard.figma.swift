@@ -27,7 +27,8 @@ struct KozmosPOIResultCardConnect: FigmaConnect {
     var available: Bool = true
 
     // State reads off the KozmosPOIResultPresentation rather than parameters,
-    // so the axis feeds the object.
+    // so the axis feeds the object. Host Action is one of `hostActions`
+    // (GAP-028), which `onHostAction` runs.
     var body: some View {
         KozmosPOIResultCard(
             poi: KozmosPOIPresentation(
@@ -45,7 +46,8 @@ struct KozmosPOIResultCardConnect: FigmaConnect {
                 floorId: "l2",
                 available: self.available
             ),
-            onSelect: { _ in }
+            onSelect: { _ in },
+            onHostAction: { _, _ in }
         )
     }
 }

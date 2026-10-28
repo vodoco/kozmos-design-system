@@ -6,11 +6,12 @@ import type {
   POISupplementaryAction,
 } from "@kozmos-ds/product-contracts";
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
-import { Bookmark, Heart } from "@kozmos-ds/icons";
+import { Bookmark, Heart, isKozmosIconKey } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
+import { Icon } from "../Icon";
 import { Heading } from "../Heading";
 import { POIMediaGallery } from "../POIMediaGallery";
 import {
@@ -48,6 +49,14 @@ export interface POIDetailPanelProps extends Omit<
   supplementaryActionStates?: Partial<
     Record<POISupplementaryAction, POIActionState>
   >;
+  /**
+   * Run one of the product's own actions, `details.hostActions` (GAP-130),
+   * told its `id` and the POI's ID. They are drawn after the supplementary
+   * actions in the same strip; without a handler they are drawn disabled.
+   */
+  onHostAction?: (actionId: string, poiId: string) => void;
+  /** A host action's state, by its `id`: disabled, loading and a message, as a supplementary action's. */
+  hostActionStates?: Readonly<Partial<Record<string, POIActionState>>>;
   onClose?: () => void;
   closeLabel?: string;
   mediaLabel?: string;
@@ -112,6 +121,8 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
       onAction,
       onSupplementaryAction,
       supplementaryActionStates = {},
+      onHostAction,
+      hostActionStates = {},
       onClose,
       closeLabel = "Close details",
       mediaLabel = `${poi.name} photos`,
@@ -141,6 +152,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
     }, [poi.id]);
     const locationLabel = poiLocationLabel(poi);
     const actions = poi.actions.filter((action) => !isToggle(action));
+    const hostActions = details?.hostActions ?? [];
     const SectionHeading = titleLevel === 2 ? "h3" : "h4";
     const hasRestriction =
       poi.accessRestrictions !== undefined &&
@@ -225,6 +237,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
             <p className="kozmos-poi-intro">{poi.description}</p>
           )}
           {(actions.length > 0 ||
+            hostActions.length > 0 ||
             Boolean(details?.supplementaryActions?.length)) && (
             <div
               key={poi.id}
@@ -316,6 +329,26 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                   </Button>
                 );
               })}
+              {hostActions.map(({ id, label, iconName, disabled }) => {
+                const state = hostActionStates[id];
+                return (
+                  <Button
+                    key={`host-${id}`}
+                    className="kozmos-poi-action"
+                    variant="outline"
+                    emotion="neutral"
+                    type="button"
+                    disabled={!onHostAction || disabled || state?.disabled}
+                    isLoading={state?.loading}
+                    onClick={() => onHostAction?.(id, poi.id)}
+                  >
+                    {iconName && isKozmosIconKey(iconName) && (
+                      <Icon name={iconName} size="lg" />
+                    )}
+                    {label}
+                  </Button>
+                );
+              })}
             </div>
           )}
           {poi.actions.map((action) => (
@@ -326,6 +359,9 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
               key={action}
               state={supplementaryActionStates[action]}
             />
+          ))}
+          {hostActions.map(({ id }) => (
+            <ActionMessage key={`host-${id}`} state={hostActionStates[id]} />
           ))}
           {details && <POIDetailSummaryStrip details={details} />}
           {hasBody && (

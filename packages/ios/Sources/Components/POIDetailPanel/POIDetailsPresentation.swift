@@ -10,6 +10,11 @@ public struct KozmosPOIDetailsPresentation: Sendable, Hashable, Codable {
     public var travelEstimate: KozmosTravelEstimatePresentation?
     public var openingHours: KozmosPOIOpeningHours?
     public var description: KozmosPOIDetailDescription?
+    /// The product's own actions, with their own words and icons, drawn
+    /// after the supplementary actions in the same strip (GAP-130): "Get
+    /// live directions in Pointr Express" hands the visitor to the product's
+    /// app. A press reaches the panel's `onHostAction` with the action's `id`.
+    public var hostActions: [KozmosPOIHostActionPresentation]
 
     public init(
         summary: [KozmosPOIDetailSummary] = [],
@@ -18,7 +23,8 @@ public struct KozmosPOIDetailsPresentation: Sendable, Hashable, Codable {
         supplementaryActions: [KozmosPOIDetailAction] = [],
         travelEstimate: KozmosTravelEstimatePresentation? = nil,
         openingHours: KozmosPOIOpeningHours? = nil,
-        description: KozmosPOIDetailDescription? = nil
+        description: KozmosPOIDetailDescription? = nil,
+        hostActions: [KozmosPOIHostActionPresentation] = []
     ) {
         self.summary = summary
         self.groups = groups
@@ -27,6 +33,7 @@ public struct KozmosPOIDetailsPresentation: Sendable, Hashable, Codable {
         self.travelEstimate = travelEstimate
         self.openingHours = openingHours
         self.description = description
+        self.hostActions = hostActions
     }
 
     /// JSON callers get the same empty-collection defaults as Swift callers.
@@ -40,6 +47,7 @@ public struct KozmosPOIDetailsPresentation: Sendable, Hashable, Codable {
         travelEstimate = try values.decodeIfPresent(KozmosTravelEstimatePresentation.self, forKey: .travelEstimate)
         openingHours = try values.decodeIfPresent(KozmosPOIOpeningHours.self, forKey: .openingHours)
         description = try values.decodeIfPresent(KozmosPOIDetailDescription.self, forKey: .description)
+        hostActions = try values.decodeIfPresent([KozmosPOIHostActionPresentation].self, forKey: .hostActions) ?? []
     }
 
     /// A POI has one row of at most three equal-width highlights. Callers must

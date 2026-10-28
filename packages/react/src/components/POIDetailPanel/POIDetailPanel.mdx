@@ -16,6 +16,133 @@ presentations.
 <Canvas of={Stories.PartialData} />
 <Controls />
 
+## The product's own actions
+
+A product hands the visitor on with an action of its own, "Get live directions in Pointr Express"
+from Safari, "Report a problem", as `details.hostActions` (GAP-130): each a
+`POIHostActionPresentation` from `@kozmos-ds/product-contracts`, with the product's own `id`, its
+words in `label`, and an optional `iconName` and `disabled`. The card draws them last in its action
+strip, after the place's own actions and book and call, in the order given, as outlined buttons,
+and a press reaches `onHostAction(actionId, poiId)`. Without `onHostAction` they are drawn
+disabled. `hostActionStates`, by `id`, gives each one the disabled, loading and message states a
+supplementary action has, and its message follows theirs.
+
+The words are the product's, already translated, and are the button's accessible name; the icon,
+a name in the Kozmos icon registry, is drawn before them, 24 pixels, and hidden from screen readers,
+and a name Kozmos does not know draws none. Each is a button in the strip's tab order, and the strip
+scrolls to it for the keyboard, VoiceOver and TalkBack. The card sends no analytics for its actions,
+the product's included. The same names on iOS (`hostActionStates:` and `onHostAction:`, the last
+parameters) and Android.
+
+<Canvas of={Stories.HostActions} />
+
+<PlatformSnippets
+    react={`
+import { POIDetailPanel } from "@kozmos-ds/react";
+import type { POIAction, POIPresentation } from "@kozmos-ds/product-contracts";
+
+export function DetailsWithHandOff({
+  poi,
+  actionLabels,
+  handOffLabel,
+  onAction,
+  onHandOff,
+}: {
+  poi: POIPresentation;
+  actionLabels: Record<POIAction, string>;
+  // "Get live directions in Pointr Express", in the visitor's language.
+  handOffLabel: string;
+  onAction: (action: POIAction, poiId: string) => void;
+  onHandOff: (poiId: string) => void;
+}) {
+  return (
+    <POIDetailPanel
+      poi={poi}
+      actionLabels={actionLabels}
+      onAction={onAction}
+      // The product's own action, last in the card's strip.
+      details={{
+        hostActions: [
+          { id: "open-in-app", label: handOffLabel, iconName: "map-01" },
+        ],
+      }}
+      // Told which of the product's actions was pressed, and the POI's ID.
+      onHostAction={(actionId, poiId) => {
+        if (actionId === "open-in-app") onHandOff(poiId);
+      }}
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The details card hands the visitor to the product's app from its own
+// action strip, after the place's actions.
+struct DetailsWithHandOff: View {
+    let poi: KozmosPOIPresentation
+    let actionLabels: [KozmosPOIAction: String]
+    // "Get live directions in Pointr Express", in the visitor's language.
+    let handOffLabel: String
+    let onAction: (KozmosPOIAction, String) -> Void
+    let onHandOff: (String) -> Void
+
+    var body: some View {
+        KozmosPOIDetailPanel(
+            poi: poi,
+            actionLabels: actionLabels,
+            onAction: onAction,
+            // The product's own action, last in the card's strip.
+            details: KozmosPOIDetailsPresentation(hostActions: [
+                KozmosPOIHostActionPresentation(id: "open-in-app", label: handOffLabel, iconName: "map-01")
+            ]),
+            // Told which of the product's actions was pressed, and the POI's ID.
+            onHostAction: { actionId, poiId in
+                if actionId == "open-in-app" { onHandOff(poiId) }
+            }
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
+import com.kozmos.contracts.KozmosPOIAction
+import com.kozmos.contracts.KozmosPOIDetailsPresentation
+import com.kozmos.contracts.KozmosPOIHostActionPresentation
+import com.kozmos.contracts.KozmosPOIPresentation
+
+// The details card hands the visitor to the product's app from its own
+// action strip, after the place's actions.
+@Composable
+fun DetailsWithHandOff(
+    poi: KozmosPOIPresentation,
+    actionLabels: Map<KozmosPOIAction, String>,
+    // "Get live directions in Pointr Express", in the visitor's language.
+    handOffLabel: String,
+    onAction: (KozmosPOIAction, String) -> Unit,
+    onHandOff: (String) -> Unit
+) {
+    KozmosPOIDetailPanel(
+        poi = poi,
+        actionLabels = actionLabels,
+        onAction = onAction,
+        // The product's own action, last in the card's strip.
+        details = KozmosPOIDetailsPresentation(
+            hostActions = listOf(
+                KozmosPOIHostActionPresentation(id = "open-in-app", label = handOffLabel, iconName = "map-01")
+            )
+        ),
+        // Told which of the product's actions was pressed, and the POI's ID.
+        onHostAction = { actionId, poiId ->
+            if (actionId == "open-in-app") onHandOff(poiId)
+        }
+    )
+}
+`}
+/>
+
 ## SDK reference examples
 
 The **Product SDK / POI Detail Examples** stories rebuild the supplied restaurant,

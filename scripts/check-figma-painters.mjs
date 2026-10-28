@@ -140,6 +140,7 @@ function pages() {
     "shopping-bag-02",
     "user-01",
     "check",
+    "calendar",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -854,6 +855,58 @@ section("POIDetailPanel");
   ok(
     services && boundVariableName(services.fills[0]) === "Surface/100",
     "panel: the services block stays muted",
+  );
+
+  // GAP-130: the product's own action, last in the strip, outlined, with its
+  // icon before its words, hidden until Host Action shows it. The strip cuts
+  // off what passes the card's edge, as the code's strip does before it is
+  // scrolled, rather than wrapping or growing the card.
+  const strip = named(panel, "Actions Slot");
+  const hostAction = strip && strip.children[strip.children.length - 1];
+  ok(
+    strip &&
+      strip.children.map((child) => child.name).join(", ") ===
+        "Navigate Action, Save Action, Share Action, Host Action" &&
+      strip.clipsContent === true,
+    `the strip ends with the host action and clips (${strip && strip.children.map((child) => child.name).join(", ")})`,
+  );
+  ok(
+    hostAction &&
+      hostAction.visible === false &&
+      boundVariableName(hostAction.fills[0]) === "Surface/0" &&
+      boundVariableName(hostAction.strokes[0]) === "Border/Subtle" &&
+      hostAction.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Label" &&
+      hostAction.children[0].type === "INSTANCE" &&
+      hostAction.children[1].characters === "Open in app" &&
+      hostAction.height === 44,
+    `the host action is a hidden 44 outlined button, its icon before its words (${hostAction && hostAction.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
+  );
+  const variants = [];
+  for (const value of ["Inline", "Panel"]) variants.push((await paint(value)).component);
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIDetailPanel";
+  plugin.configurePOIDetailPanelProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Open in app" &&
+      variants.every(
+        (variant) =>
+          named(variant, "Host Action")?.componentPropertyReferences?.visible ===
+            hostProperty &&
+          named(variant, "Host Action Label")?.componentPropertyReferences
+            ?.characters === hostText,
+      ),
+    `a Host Action boolean, off, and Host Action Text, on every variant (${Object.keys(definitions).join(", ")})`,
   );
 }
 
@@ -2991,18 +3044,41 @@ section("POIResultCard actions");
     "GAP-056: 44px result actions plus the row's 12px bottom inset",
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       buttons[0].name === "Primary Action" &&
-      buttons[1].name === "Secondary Action",
-    `two actions, primary first (${buttons.map((b) => b.name).join(", ")})`,
+      buttons[1].name === "Secondary Action" &&
+      buttons[2].name === "Host Action",
+    `two actions, primary first, then the product's own (${buttons.map((b) => b.name).join(", ")})`,
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       boundVariableName(buttons[0].fills[0]) ===
         "Primary Buttons/themed/button/background/idle" &&
       boundVariableName(buttons[1].fills[0]) === "Surface/0" &&
-      buttons[1].strokeWeight === 1,
-    `the primary is the theme fill and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+      buttons[1].strokeWeight === 1 &&
+      boundVariableName(buttons[2].fills[0]) === "Surface/0" &&
+      boundVariableName(buttons[2].strokes[0]) === "Border/Subtle" &&
+      buttons[2].strokeWeight === 1,
+    `the primary is the theme fill, the secondary and the host action outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+  );
+  // GAP-028: the product's own action is drawn on every variant and hidden,
+  // its icon before its words, until the Host Action property shows it.
+  const host = buttons[2];
+  ok(
+    host &&
+      host.visible === false &&
+      buttons[0].visible !== false &&
+      buttons[1].visible !== false,
+    "the host action is hidden until Host Action asks for it; Go and Details are not",
+  );
+  ok(
+    host &&
+      host.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Text" &&
+      host.children[0].type === "INSTANCE" &&
+      host.children[1].characters === "Reserve a table" &&
+      host.itemSpacing === 8,
+    `the host action's icon leads its words, 8 apart (${host && host.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
   );
   // The primary is drawn as a default Button: its label is the theme
   // foreground, white in both themes. Surface/0 turned black in the dark.
@@ -3031,6 +3107,50 @@ section("POIResultCard actions");
   ok(
     !component.children.some((child) => child.name === "Logo Slot"),
     `and the card holds only the two rows (${component.children.map((c) => c.name).join(", ")})`,
+  );
+
+  // The Host Action property shows the product's own action and Host Action
+  // Text says its words, on every variant.
+  const variants = [];
+  for (const state of ["Default", "Selected"]) {
+    const variant = figma.createComponent();
+    await plugin.updatePOIResultCardVariant(variant, {
+      value: state,
+      second: "Card",
+      variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    variants.push(variant);
+  }
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIResultCard";
+  plugin.configurePOIResultCardProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Reserve a table",
+    `a Host Action boolean, off, and Host Action Text (${Object.keys(definitions).join(", ")})`,
+  );
+  ok(
+    Boolean(hostProperty && hostText) &&
+      variants.every((variant) => {
+        const button = named(variant, "Host Action");
+        const words = named(variant, "Host Action Text");
+        return (
+          button?.componentPropertyReferences?.visible === hostProperty &&
+          words?.componentPropertyReferences?.characters === hostText
+        );
+      }),
+    "every variant's host action shows through Host Action and says Host Action Text",
   );
 }
 
