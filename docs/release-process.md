@@ -639,3 +639,75 @@ SwiftUI and Compose changes ship from the repository at this commit, not a nativ
 
 Every component page's SwiftUI and Compose tabs show the compiled, real API (#310, #312, #315, #317). Figma, Code
 Connect, external Claude Design artifacts and product deployments are separate.
+
+### 0.13.0
+
+Published on 2026-10-26 from `ba2a28f427b596d63ee069270f871f4be13dfd41`, the version merge
+[#407](https://github.com/vodoco/kozmos-design-system/pull/407). React 0.13.0, icons 0.7.0 and tokens 0.8.1;
+product-contracts 0.9.1 is unchanged and not planned. It carries the web's own date and time panels
+(decisions 104 and 105, GAP-186): `Calendar` (#352), and DatePicker (#361), DateRangePicker (#366) and TimePicker
+(#369) opening it; the 29 icon names the natives draw beyond the library (GAP-179, #364); the product's words on
+Pagination, SplitButton and the toast's close (GAP-182, GAP-168); list rows drawn as Figma draws them (#372, #386);
+MultiSelect's 44px buttons (#397) and its forced-colours input (#401); a sheet fitted to the assistant (#404); and a
+smaller stylesheet: 20 measured trims (#395), and Tailwind's compiler defaults registered rather than declared on
+every element (#381). The published `style.css` is 30,539 bytes gzip, down from 0.12.2's 31,414 (`gzip -9`), with
+Calendar's and the pickers' panels in it.
+
+Claude dispatched the release after the pre-flight passed (Olcay, 25 Oct). Olcay then asked Claude in chat to
+approve the protected `npm-release` deployment for him, and Claude approved it, as `vodoco`, for this release only,
+as for 0.12.2.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.13.0, icons 0.7.0 and tokens 0.8.1 on npm `latest`. React pins tokens 0.8.1, icons 0.7.0 and product-contracts 0.9.1 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Exact main-push CI      | [40366715021](https://github.com/vodoco/kozmos-design-system/actions/runs/40366715021): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis, Visual Regression, Lighthouse CI, Pages and Site succeeded on the merge.                                                                                                                                                                                                                                                                                                                    |
+| Preflight / publication | `pnpm release:preflight` against that run passed on 26 Oct (credential placement, request, evidence and plan; none of the three on npm). [40374438773](https://github.com/vodoco/kozmos-design-system/actions/runs/40374438773) succeeded (guard, prepare, publish).                                                                                                                                                                                                                                                                                                                  |
+| Registry readback       | All three are on `latest` with SLSA v1 provenance (Sigstore log indexes 3493440859 for icons, 3493481771 for tokens and 3493534973 for React). Each SHA-512 integrity equals the one the publish job printed, and the job verified the approved tarballs in the registry.                                                                                                                                                                                                                                                                                                             |
+| Installed consumer      | A fresh npm installation of React 0.13.0, lifecycle scripts off, with React 19.3.1 resolved tokens 0.8.1, icons 0.7.0 and contracts 0.9.1 and exposed 272 exports from CJS and from the ESM entry, `Calendar` the new one (0.12.2, installed the same way: 271, none of them `Calendar`). Server-rendered: a Button, and a `Calendar` for October 2026 as a `role="grid"`. `kozmosIconNamesBeyondTheLibrary` lists 29 names (icons 0.6.0 has none). The same with React 18.3.1, where Calendar's server render printed React 18's `useLayoutEffect` warning, fixed for 0.13.1 (#412). |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/icons@0.7.0`, `@kozmos-ds/tokens@0.8.1` and `@kozmos-ds/react@0.13.0` at `ba2a28f4`, and a second dry-run found all three in place. React 0.13.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                      |
+| Website / Storybook     | [Pages 40366714873](https://github.com/vodoco/kozmos-design-system/actions/runs/40366714873) built and deployed this exact SHA. The live Storybook's `index.json` (622 entries) lists Calendar's six stories.                                                                                                                                                                                                                                                                                                                                                                         |
+| Code Connect            | Published from this commit on 26 Oct: 213 React, 214 SwiftUI and 209 Compose docs, every dry run valid first, Compose's `Select.figma.kt` (`KozmosSelectTrigger`, #341) among them (Olcay, 24 Oct).                                                                                                                                                                                                                                                                                                                                                                                   |
+
+Change details: [React](../packages/react/CHANGELOG.md#0130), [icons](../packages/icons/CHANGELOG.md#070),
+[tokens](../packages/tokens/CHANGELOG.md#081) and the [generated AI changelog](../.ai-skills/api-changelog.md).
+Upgrading from 0.12.2:
+
+- **The date and time pickers open Kozmos's panels** in Chromium, Edge and Safari: a button at each field's end
+  opens a Calendar, or for TimePicker a list of times, in a Popover. The value APIs are unchanged, and the new props
+  are optional. Firefox 146 keeps the browser's date fields, as no page can hide its picker button (Mozilla's
+  webcompat bug 2048623, which waits on platform bug 2051201); it gets TimePicker's list. DateRangePicker's two fields are labelled beside their inputs, not around them.
+- **List rows are 44 tall** (40 at compact density), with a light active row and the chosen row's check at the
+  end, in Combobox, MultiSelect, Select and Listbox. A screen that fitted a list to 36px rows shows fewer rows.
+- **MultiSelect's clear and open are 44px buttons,** so its chips wrap 16px sooner.
+- **The stylesheet no longer has utilities nothing in Kozmos uses** (`container`, `hidden`, `pl-8`, `rounded-lg`
+  and the rest the React changelog lists). A product class that relied on Kozmos's stylesheet for one needs its own.
+- **Code that switches exhaustively over `KozmosIconKey`** now sees 29 more names; an app that looks an icon up by
+  name brings in 19.9 KB gzip of icons where it brought in 11.8.
+- **`ToastClose` is named "Dismiss notification"** when the caller passes no `aria-label`.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry: both native
+CHANGELOGs cut `## 0.13.0 — repository snapshot` here. Since 0.12.2:
+
+- **API, on SwiftUI:** right to left, a tooltip's `.left` and `.right` are now the view's own left and right, and
+  the new `.leading` and `.trailing` follow the reading direction (#368), so a `switch` over `KozmosTooltipSide`
+  with no `default` needs the two new cases. On Compose: `KozmosText(style =)` (#339), `KozmosSelectTrigger` (#341),
+  `KozmosAnalyticsProvider` (#343) and a tooltip on its trigger's leading or trailing side (#367).
+- **On both:** the product's words for Pagination (#342), SplitButton's menu half (#346), POICard's and
+  WayfindingCard's close buttons (#345), the toast's close (#350) and FileUpload, which also tells the product when
+  a file is removed (#357, GAP-185); `KozmosIcon` draws `layers-three-01` and `walking` (#360, GAP-181); an alert's
+  variant reaches its icon, title and description (#330); accordion triggers say whether their panel is open
+  (#318); muted text and icons are foreground/400 (#393).
+- **The pickers:** SwiftUI's are Kozmos fields around the system pickers (#353), and Compose's open Material 3's
+  pickers in Kozmos fields (#351), writing dates and times in the locale's style on the device's clock (#347,
+  GAP-183); the date and time pickers' icons say nothing (#316, #319).
+- **On iOS:** twelve parts take a tap across what they draw (#392); right to left, five parts (#356), the route
+  track (#348), a tooltip (#371) and the AI search button's ring (#363) draw as React does; six parts draw a
+  `KozmosIcon` in their own colour (#340); the empty state (#362), the save-location pencil's 44pt target (#388),
+  a selected navigation item (#344) and bottom-navigation tile (#355) in the person's language; MultiSelect and
+  Combobox stay closed when they start unusable (#402).
+- **On Compose:** 44dp targets for Pagination, list rows and MultiSelect, and an inert MultiSelect or colour
+  picker changes nothing (#396); an icon-only toggle button can be named (#320); the empty state's and route
+  option's icon colours (#354, #358); a side tooltip's tip right to left (#365).
+
+Figma (the importer's list rows, #385, which Olcay ran Update for on 23 Oct), external Claude Design artifacts and
+product deployments are separate.

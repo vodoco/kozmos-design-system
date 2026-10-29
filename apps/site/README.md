@@ -379,10 +379,10 @@ its four paths — wordmark, subline, two stars — or update
 `aspect-ratio`s in `site.css` (`.site-logo`) and the proportions in the
 header tests, run `brand`, and `LOGO_TEXT` if the words change.
 
-**Nothing draws over the header.** Kozmos's map overlays are z-index 50, as
-the sticky Navbar is, and `MapView` does not isolate them (GAP-40), so every
-site frame that hosts a map — the example canvases — has
-`isolation: isolate`. So does the home page's cover, whose
+**Nothing draws over the header.** An example's own Navbar is z-index 50,
+as the site's sticky Navbar is, so every example canvas has
+`isolation: isolate`. (Kozmos's map overlays are 50 too; `MapView` isolates
+them since GAP-40 was fixed.) So does the home page's cover, whose
 words are raised over its own layers inside it. A test scrolls each stacked
 element of a page under the header and checks what is painted there.
 
@@ -652,29 +652,28 @@ positively checks its styling in all three engines. Physical Safari/iOS
 acceptance and publication remain separate.
 
 **Design-system gaps, measured.** Twenty-one tests measure what Kozmos draws
-today. Seven of them now measure a fix rather than a defect: the sheet
+today. Eleven of them now measure a fix rather than a defect: the sheet
 handle's 16px row and 40 × 4 grip (GAP-38), the spinner and the skeleton
 resting under the reduced-motion preference (GAP-50, in the states
 example's loading view), SearchBar hiding the browser's own clear (GAP-37),
 an empty state centring its wrapped words (GAP-66), MapOverlay keeping
 the shadow of what floats in it (GAP-72) and the assistant's voice control
-drawing its own marks (GAP-86), and SearchBar's styled field in WebKit
-(GAP-20); an eighth, the Button's 8px between
+drawing its own marks (GAP-86), SearchBar's styled field in WebKit
+(GAP-20), the button link with no underline (GAP-09), the `Listbox`'s
+options taking its width (GAP-55), MapView's isolation (GAP-40) and a
+muted `Text` following glass (GAP-94); a twelfth, the Button's 8px between
 icon and label (GAP-56), is held by the test of every button the site
 draws. Beside them, emotion text now reads on every neutral surface
 (GAP-31), whose four known-violation allowances are deleted. The rest still
 pin defects — the preflight zeroing a caller's border (GAP-52), the sheet's
-square corners on a rounded screen (GAP-53), the button link's underline
-(GAP-09), the label that cannot wrap (GAP-57), the `Listbox` column as wide
-as its widest option (GAP-55), the breadcrumb's separator pointing back up
-its own trail in right to left (GAP-61), MapView's missing isolation
-(GAP-40), CardTitle's 1.0 line height (GAP-42), where a touch 20px from the
+square corners on a rounded screen (GAP-53), the label that cannot wrap
+(GAP-57), the breadcrumb's separator pointing back up
+its own trail in right to left (GAP-61), CardTitle's 1.0 line height (GAP-42), where a touch 20px from the
 slider's thumb lands (GAP-43), the header's white first paint for a
 dark-mode visitor with the scripts blocked (GAP-03), the two-row header at
 320px (GAP-41), brand variant 1's 600, fixed on 2026-10-08 (GAP-45), the map shell's boxes
-cutting the shadows of what they hold (GAP-91), a muted `Text` staying
-grey on glass (GAP-94) and the level switcher's column growing out of the
-phone's frame (GAP-95). Each measures what a
+cutting the shadows of what they hold (GAP-91) and the level switcher's
+column growing out of the phone's frame (GAP-95). Each measures what a
 visitor gets, so any honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md)
 says what to flip it to. The tests that read a component page's demo — the
 toast with no fill (GAP-58), the island on a black page and without room for
@@ -820,8 +819,7 @@ These need someone to decide; the site does not guess:
 3. **Linking the source.** The repository is public now, and the site still
    links to no GitHub page — a "view the source" link from a component page
    to its file would be a small, useful addition.
-4. **Whether each gap is fixed in Kozmos** (the fixes are in `GAPS.md`), and
-   whether GAP-09's underline may be hidden meanwhile.
+4. **Whether each gap is fixed in Kozmos** (the fixes are in `GAPS.md`).
 5. **Figma counterparts** for the examples, as the SDK examples have on the
    `Examples` page — out of this site's scope so far.
 6. **The cover’s buttons.** The cover paints the Figma file's violet from

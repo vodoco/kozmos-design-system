@@ -34,6 +34,16 @@ describe("SplitButton", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("tints the seam's side alone, so the outline keeps its edge (site GAP-73)", () => {
+    // A seam colour on all four sides outranked the outline variant's own,
+    // and its outline drew white at a fifth over white.
+    // scripts/check-site-gaps.mjs reads every side's colour in every engine.
+    render(<SplitButton variant="outline">Save</SplitButton>);
+    const main = screen.getByRole("button", { name: "Save" });
+    expect(main).toHaveClass("border-e", "border-e-theme-fill-foreground/20");
+    expect(main).not.toHaveClass("border-theme-fill-foreground/20");
+  });
+
   it("names the menu half More options when a product passes no name", () => {
     render(<SplitButton>Publish</SplitButton>);
     expect(

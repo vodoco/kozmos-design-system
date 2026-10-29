@@ -72,26 +72,51 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## TreeChildItemRow
 
+A row with no children: a treeitem with no disclosure and no
+`aria-expanded`.
+
 It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, which is `Omit<TreeItemRowProps, "hasChildren" | "expanded">`.
 
 - `meta`: `React.ReactNode`, optional.
 - `disabled`: `boolean`, optional.
+
+  Dims the row, and is its `aria-disabled`.
+
 - `name`: `React.ReactNode`, **required**.
 - `actions`: `React.ReactNode`, optional.
 - `actionsVisibility`: `"auto" | "always"`, optional.
 - `count`: `React.ReactNode`, optional.
 - `density`: `TreeDensity`, optional.
 - `depth`: `number`, optional.
+
+  How deep the row is, 0 at the top: its indent, and its `aria-level`, one more.
+
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional.
 - `onDisclosureClick`: `(event: React.MouseEvent<HTMLSpanElement>) => void`, optional.
 - `selected`: `boolean`, optional.
+
+  Its `aria-selected`, and the selected fill.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TreeItemRow
+
+One row of a tree, and its treeitem: `depth` gives its `aria-level`,
+`expanded` its `aria-expanded` when it has children, `selected` its
+`aria-selected` and `disabled` its `aria-disabled`.
+
+Tree draws these rows itself from `data`. To compose a tree, put the rows
+in a `Tree` with children, which is the `role="tree"` container, and a
+parent's children in a `<div role="group">` right after its row. A composed
+tree has no keyboard of its own: Tree moves focus with the arrow keys only
+through `data`.
+
+A caller's own `role` or `aria-*` wins. With another role, such as `"none"`
+inside a treeitem of the caller's own, the row adds no tree state.
 
 It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
@@ -101,37 +126,68 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 - `count`: `React.ReactNode`, optional.
 - `density`: `TreeDensity`, optional, default `"default"`.
 - `depth`: `number`, optional, default `0`.
+
+  How deep the row is, 0 at the top: its indent, and its `aria-level`, one more.
+
 - `disabled`: `boolean`, optional, default `false`.
+
+  Dims the row, and is its `aria-disabled`.
+
 - `expanded`: `boolean`, optional, default `false`.
+
+  Whether a row with children shows them: its `aria-expanded`.
+
 - `focusVisible`: `boolean`, optional, default `false`.
 - `hasChildren`: `boolean`, optional, default `false`.
+
+  Draws the disclosure, and gives the row `aria-expanded`.
+
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional, default `20`.
 - `meta`: `React.ReactNode`, optional.
 - `onDisclosureClick`: `(event: React.MouseEvent<HTMLSpanElement>) => void`, optional.
 - `selected`: `boolean`, optional, default `false`.
+
+  Its `aria-selected`, and the selected fill.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TreeParentItemRow
 
+A row with children, as `TreeItemRow` with `hasChildren`: a treeitem whose
+`expanded` is its `aria-expanded`. When it is expanded, put its children in
+a `<div role="group">` right after it, at `depth` one more.
+
 It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`, which is `Omit<TreeItemRowProps, "hasChildren">`.
 
 - `meta`: `React.ReactNode`, optional.
 - `disabled`: `boolean`, optional.
+
+  Dims the row, and is its `aria-disabled`.
+
 - `name`: `React.ReactNode`, **required**.
 - `expanded`: `boolean`, optional.
+
+  Whether a row with children shows them: its `aria-expanded`.
+
 - `actions`: `React.ReactNode`, optional.
 - `actionsVisibility`: `"auto" | "always"`, optional.
 - `count`: `React.ReactNode`, optional.
 - `density`: `TreeDensity`, optional.
 - `depth`: `number`, optional.
+
+  How deep the row is, 0 at the top: its indent, and its `aria-level`, one more.
+
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional.
 - `onDisclosureClick`: `(event: React.MouseEvent<HTMLSpanElement>) => void`, optional.
 - `selected`: `boolean`, optional.
+
+  Its `aria-selected`, and the selected fill.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

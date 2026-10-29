@@ -25,6 +25,58 @@ tree container.
   <Story of={TreeStories.WithRowActions} />
 </Canvas>
 
+## Composing a tree
+
+Every row is a treeitem, whether `Tree` draws it from `data` or you compose it.
+A composed tree has three parts:
+
+- **The container:** `Tree` with children is the `role="tree"`, named by
+  `ariaLabel`.
+- **The rows:** `TreeParentItemRow` for a row with children, `TreeChildItemRow`
+  for one without. Each row carries its own level and state from the props it
+  already takes.
+- **The groups:** an expanded parent's children go in a `<div role="group">`
+  right after its row, at `depth` one more.
+
+| Row prop   | What it gives the row                                    |
+| ---------- | -------------------------------------------------------- |
+| `depth`    | The indent, and `aria-level`, one more (0 is level 1)    |
+| `expanded` | `aria-expanded`, on `TreeParentItemRow` only             |
+| `selected` | `aria-selected`, and the selected fill                   |
+| `disabled` | `aria-disabled`, and the dimmed row                      |
+
+```tsx
+<Tree ariaLabel="Map content">
+  <TreeParentItemRow name="Outdoor map content" count={23} expanded />
+  <div role="group">
+    <TreeParentItemRow name="Terminal C" depth={1} expanded />
+    <div role="group">
+      <TreeChildItemRow name="Burger King" depth={2} selected />
+      <TreeChildItemRow name="McDonald's" depth={2} />
+    </div>
+    <TreeParentItemRow name="Terminal D" depth={1} />
+  </div>
+  <TreeChildItemRow name="Archived content" disabled />
+</Tree>
+```
+
+<Canvas>
+  <Story of={TreeStories.Composed} />
+</Canvas>
+
+Leave out `role` and the `aria-*` states: the row sets them. A `role` or
+`aria-*` of your own still wins, and with a role other than `treeitem` (`"none"`
+inside a treeitem of your own) the row adds no tree state. Keep the row's
+state in your own state, so `expanded` and `selected` change as the screen
+does.
+
+A composed tree has no keyboard of its own: `Tree` moves focus with the arrow
+keys, Home and End only through `data`. Use `data`, with its `icon`, `count`,
+`meta` and `actions` slots, when the tree needs the keyboard.
+
+A composed row takes the same `icon`, `count`, `meta` and `actions` as a row
+from `data`:
+
 <Canvas>
   <Story of={TreeStories.RowPrimitive} />
 </Canvas>
