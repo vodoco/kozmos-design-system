@@ -1180,7 +1180,7 @@
       "id": "data-display-tree",
       "title": "Core/Data display/Tree",
       "component": "Tree",
-      "exports": ["Default", "WithRowActions", "RowPrimitive"]
+      "exports": ["Default", "WithRowActions", "Composed", "RowPrimitive"]
     },
     {
       "file": "packages/react/src/components/UserLocationMarker/UserLocationMarker.stories.tsx",

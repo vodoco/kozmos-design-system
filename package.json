@@ -47,6 +47,7 @@
     "test:route-track": "node scripts/check-route-track.mjs",
     "test:storybook-docs": "node scripts/check-storybook-docs.mjs",
     "test:storybook-audit-fixes": "node scripts/check-storybook-audit-fixes.mjs",
+    "test:tree-semantics": "node scripts/check-tree-semantics.mjs",
     "test:storybook-vue-smoke": "node scripts/check-storybook-vue-smoke.mjs",
     "test:storybook-audit": "node scripts/audit-storybook.mjs",
     "test:storybook-interactions": "node scripts/check-storybook-interactions.mjs",

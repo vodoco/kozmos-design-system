@@ -165,6 +165,133 @@ describe("Tree", () => {
     ).toBeNull();
   });
 
+  // GAP-204: composed rows were plain divs, so a tree built from them had no
+  // items.
+  it("makes each composed row a treeitem with its level and state", () => {
+    render(
+      <Tree ariaLabel="Map content">
+        <TreeParentItemRow name="Outdoor map content" expanded />
+        <div role="group">
+          <TreeParentItemRow name="Terminal C" depth={1} />
+          <TreeChildItemRow name="Burger King" depth={1} selected />
+        </div>
+        <TreeChildItemRow name="Archived content" disabled />
+      </Tree>,
+    );
+
+    const rows = screen.getAllByRole("treeitem");
+    expect(rows).toHaveLength(4);
+    const [outdoor, terminal, burger, archived] = rows;
+
+    expect(outdoor).toHaveAccessibleName(/outdoor map content/i);
+    expect(outdoor).toHaveAttribute("aria-level", "1");
+    expect(outdoor).toHaveAttribute("aria-expanded", "true");
+    expect(outdoor).toHaveAttribute("aria-selected", "false");
+    expect(outdoor).not.toHaveAttribute("aria-disabled");
+
+    expect(terminal).toHaveAttribute("aria-level", "2");
+    expect(terminal).toHaveAttribute("aria-expanded", "false");
+
+    expect(burger).toHaveAttribute("aria-level", "2");
+    expect(burger).toHaveAttribute("aria-selected", "true");
+    expect(burger).not.toHaveAttribute("aria-expanded");
+
+    expect(archived).toHaveAttribute("aria-level", "1");
+    expect(archived).toHaveAttribute("aria-disabled", "true");
+    expect(archived).not.toHaveAttribute("aria-expanded");
+  });
+
+  it("lets a caller's own role and aria props win on a composed row", () => {
+    render(
+      <Tree ariaLabel="Map content">
+        <TreeParentItemRow
+          name="Overridden"
+          aria-level={4}
+          aria-selected="true"
+          aria-expanded="true"
+        />
+        <div role="treeitem" aria-level={1} aria-selected="false">
+          <TreeChildItemRow
+            name="Inside the caller's own treeitem"
+            role="none"
+            selected
+            disabled
+          />
+        </div>
+      </Tree>,
+    );
+
+    const overridden = screen.getByRole("treeitem", { name: /overridden/i });
+    expect(overridden).toHaveAttribute("aria-level", "4");
+    expect(overridden).toHaveAttribute("aria-selected", "true");
+    expect(overridden).toHaveAttribute("aria-expanded", "true");
+
+    // With another role, the row adds no tree state to it.
+    const inner = screen
+      .getByText("Inside the caller's own treeitem")
+      .closest("[data-depth]");
+    expect(inner).toHaveAttribute("role", "none");
+    for (const attribute of [
+      "aria-level",
+      "aria-expanded",
+      "aria-selected",
+      "aria-disabled",
+    ])
+      expect(inner).not.toHaveAttribute(attribute);
+    expect(screen.getAllByRole("treeitem")).toHaveLength(2);
+  });
+
+  it("gives each row of the data-driven Tree one treeitem role and its level", () => {
+    const data: TreeItem[] = [
+      {
+        id: "root",
+        name: "Root",
+        children: [
+          {
+            id: "branch",
+            name: "Branch",
+            children: [{ id: "leaf", name: "Leaf", disabled: true }],
+          },
+        ],
+      },
+    ];
+    const { container } = render(
+      <Tree
+        data={data}
+        defaultExpandedIds={["root", "branch"]}
+        defaultSelectedId="branch"
+      />,
+    );
+
+    const rows = Array.from(container.querySelectorAll("[data-depth]"));
+    const items = screen.getAllByRole("treeitem");
+    expect(items).toEqual(rows);
+    expect(
+      container.querySelectorAll('[role="treeitem"] [role="treeitem"]'),
+    ).toHaveLength(0);
+    expect(items.map((item) => item.getAttribute("aria-level"))).toEqual([
+      "1",
+      "2",
+      "3",
+    ]);
+    expect(items.map((item) => item.getAttribute("aria-expanded"))).toEqual([
+      "true",
+      "true",
+      null,
+    ]);
+    expect(items.map((item) => item.getAttribute("aria-selected"))).toEqual([
+      "false",
+      "true",
+      "false",
+    ]);
+    expect(items.map((item) => item.getAttribute("aria-disabled"))).toEqual([
+      null,
+      null,
+      "true",
+    ]);
+    expect(container.querySelectorAll('[role="group"]')).toHaveLength(2);
+  });
+
   it("can act as a semantic shell for composed row primitives", () => {
     render(
       <Tree ariaLabel="Composed tree">

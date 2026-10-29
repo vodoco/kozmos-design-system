@@ -144,6 +144,58 @@ export const WithRowActions: Story = {
   ),
 };
 
+/**
+ * A tree composed from rows: Tree with children is the `role="tree"`
+ * container, each row is a treeitem whose `depth`, `expanded`, `selected`
+ * and `disabled` give its level and state, and a parent's children sit in a
+ * `role="group"` after it.
+ */
+export const Composed: Story = {
+  render: () => (
+    <Tree ariaLabel="Map content" className="w-80 max-w-full">
+      <TreeParentItemRow
+        name="Outdoor map content"
+        count={23}
+        expanded
+        icon={<FolderOpen aria-hidden="true" className="h-4 w-4" />}
+      />
+      <div role="group">
+        <TreeParentItemRow
+          name="Terminal C"
+          count={2}
+          depth={1}
+          expanded
+          icon={<FolderOpen aria-hidden="true" className="h-4 w-4" />}
+        />
+        <div role="group">
+          <TreeChildItemRow
+            name="Burger King"
+            depth={2}
+            selected
+            icon={<MapPin aria-hidden="true" className="h-4 w-4" />}
+          />
+          <TreeChildItemRow
+            name="McDonald's"
+            depth={2}
+            icon={<MapPin aria-hidden="true" className="h-4 w-4" />}
+          />
+        </div>
+        <TreeParentItemRow
+          name="Terminal D"
+          count={14}
+          depth={1}
+          icon={<FolderOpen aria-hidden="true" className="h-4 w-4" />}
+        />
+      </div>
+      <TreeChildItemRow
+        name="Archived content"
+        disabled
+        icon={<MapPin aria-hidden="true" className="h-4 w-4" />}
+      />
+    </Tree>
+  ),
+};
+
 export const RowPrimitive: Story = {
   render: () => (
     <Tree
@@ -155,7 +207,6 @@ export const RowPrimitive: Story = {
         name="Content group"
         count={164}
         expanded
-        role="treeitem"
         icon={<FolderOpen aria-hidden="true" className="h-4 w-4" />}
         actions={
           <>
@@ -172,7 +223,6 @@ export const RowPrimitive: Story = {
         name="Place item"
         count={4}
         depth={2}
-        role="treeitem"
         selected
         icon={<MapPin aria-hidden="true" className="h-4 w-4" />}
         actions={
