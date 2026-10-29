@@ -1,34 +1,13 @@
 import type {
+  BuildingPresentation,
   FloorPresentation,
   POIPresentation,
   POIResultPresentation,
   SearchResponsePresentation,
   SearchScopePresentation,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import type { SdkBuilding, SdkLevel, SdkPoi, SdkSite } from "./sdk";
-
-/**
- * A building as the map reports it.
- *
- * `@kozmos-ds/product-contracts` has no building or site presentation
- * (GAP-175): these two are this package's until it does, built from the
- * contracts' own shapes so they can be replaced by them.
- */
-export interface PointrBuildingPresentation {
-  id: string;
-  /** As the Pointr Cloud titles it; empty when it has no title. */
-  label: string;
-  siteId: string;
-  /** Top floor first (decision 38). */
-  floors: readonly FloorPresentation[];
-}
-
-/** A site as the map reports it. See PointrBuildingPresentation. */
-export interface PointrSitePresentation {
-  id: string;
-  label: string;
-  buildings: readonly PointrBuildingPresentation[];
-}
 
 /**
  * A POI the map selected or a search found: the two contract shapes a
@@ -95,22 +74,52 @@ export function toFloors(
   return [...byId.values()].sort((a, b) => Number(b.id) - Number(a.id));
 }
 
+/**
+ * The floor of the level the venue's data marks as the building's default
+ * (`properties.isDefault`), found as 10.13.0's
+ * `PointrHelper.findDefaultLevelToSet` finds it: the first level marked.
+ * Undefined when none is marked, or the marked one has no index: a product
+ * starts on the ground level then (decision 141).
+ */
+function defaultFloorId(
+  levels: readonly SdkLevel[] | undefined,
+): string | undefined {
+  const marked = levels?.find((level) => Boolean(level?.properties?.isDefault));
+  return toFloor(marked)?.id;
+}
+
+/**
+ * A building as the contracts' `BuildingPresentation` (GAP-175): its label
+ * the Pointr Cloud's title, empty when it has none; its floors top floor
+ * first (decision 38); its `defaultFloorId` the level the venue's data marks
+ * as its default, left out when none is marked (decision 141). Its `siteId`
+ * is the one its data names, and empty when it names none; `toSite` gives
+ * its buildings the site's own.
+ */
 export function toBuilding(
   building: SdkBuilding | undefined,
-): PointrBuildingPresentation | undefined {
+): BuildingPresentation | undefined {
   const id = identifier(building?.buildingInternalIdentifier);
   if (!building || !id) return undefined;
+  const start = defaultFloorId(building.levels);
   return {
     id,
     label: words(building.buildingTitle) ?? "",
     siteId: identifier(building.siteInternalIdentifier) ?? "",
     floors: toFloors(building.levels),
+    ...(start === undefined ? {} : { defaultFloorId: start }),
   };
 }
 
+/**
+ * A site as the contracts' `SitePresentation`, its buildings as `toBuilding`
+ * gives them, each carrying the site's id: a building is in the site that
+ * lists it, so its `siteId` is the site's `id` (GAP-175), even when its own
+ * data names no site or another.
+ */
 export function toSite(
   site: SdkSite | undefined,
-): PointrSitePresentation | undefined {
+): SitePresentation | undefined {
   const id = identifier(site?.siteInternalIdentifier);
   if (!site || !id) return undefined;
   return {
@@ -118,7 +127,8 @@ export function toSite(
     label: words(site.siteTitle) ?? "",
     buildings: (site.buildings ?? [])
       .map(toBuilding)
-      .filter((b): b is PointrBuildingPresentation => b !== undefined),
+      .filter((b): b is BuildingPresentation => b !== undefined)
+      .map((building) => ({ ...building, siteId: id })),
   };
 }
 
@@ -184,7 +194,7 @@ export interface PoiContext {
   /** The SDK's language code, for `name_<code>`. */
   language?: string;
   /** The open building, for the floor's and the building's labels. */
-  building?: PointrBuildingPresentation;
+  building?: BuildingPresentation;
   /** Counted from 1. */
   resultIndex: number;
   selected: boolean;

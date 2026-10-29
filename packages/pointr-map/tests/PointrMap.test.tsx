@@ -21,6 +21,7 @@ import {
   FakePoi,
   FakeWidget,
   failSdkFile,
+  fakeVenue,
   giveWebGL,
   installFakeSdk,
   resetFakeSdk,
@@ -166,7 +167,11 @@ function giveAdoptedStyleSheets() {
 
 async function mountReady(
   props: Partial<PointrMapProps> = {},
-  options: { strict?: boolean } = {},
+  options: {
+    strict?: boolean;
+    venue?: ReturnType<typeof fakeVenue>;
+    levelIndex?: number;
+  } = {},
 ) {
   const recorded = recorder();
   const ref = React.createRef<PointrMapHandle>();
@@ -182,7 +187,7 @@ async function mountReady(
   await waitFor(() => expect(FakeWidget.instance?.started).toBe(1));
   const widget = FakeWidget.instance!;
   await act(async () => {
-    widget.loadData();
+    widget.loadData(options.venue, options.levelIndex);
   });
   await waitFor(() => expect(lastStatus(recorded)).toBe("ready"));
   return { ...view, recorded, ref, widget, map: widget.view()!.map! };
@@ -556,6 +561,48 @@ describe("events, as contract shapes", () => {
       label: "Airport",
       buildings: [],
     });
+  });
+
+  it("reports the level the venue's data marks as the building's default, the level to start on (decision 141)", async () => {
+    // The data marks the first floor; the SDK starts there, as the fake does.
+    const { widget, recorded } = await mountReady(
+      {},
+      { venue: fakeVenue({ defaultLevelIndex: 1 }), levelIndex: 1 },
+    );
+    // Read back on ready from the data as it loaded: the widget's getters
+    // give Level instances, which have lost the mark.
+    expect(recorded.props.onBuildingChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "b-1", defaultFloorId: "1" }),
+    );
+    expect(recorded.props.onSiteChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        buildings: [expect.objectContaining({ defaultFloorId: "1" })],
+      }),
+    );
+    // A building event carries the data as loaded, the mark included.
+    widget.view()!.emit("current-building-changed", {
+      newCurrentBuilding: {
+        buildingInternalIdentifier: "b-2",
+        siteInternalIdentifier: "s-1",
+        buildingTitle: "Annex",
+        levels: [
+          { levelIndex: 1, properties: {} },
+          { levelIndex: -1, properties: { isDefault: true } },
+        ],
+      },
+    });
+    expect(recorded.props.onBuildingChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "b-2", defaultFloorId: "-1" }),
+    );
+  });
+
+  it("names no default level when the venue's data marks none", async () => {
+    const { recorded } = await mountReady();
+    const building = vi
+      .mocked(recorded.props.onBuildingChange!)
+      .mock.calls.at(-1)?.[0];
+    expect(building?.id).toBe("b-1");
+    expect(building).not.toHaveProperty("defaultFloorId");
   });
 });
 

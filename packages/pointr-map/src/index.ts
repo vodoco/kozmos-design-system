@@ -4,12 +4,7 @@ export {
   type PointrMapProps,
 } from "./PointrMap";
 export type { PointrMapAuth, PointrMapConfig } from "./config";
-export type {
-  PointrBuildingPresentation,
-  PointrPoiItem,
-  PointrSearchResponse,
-  PointrSitePresentation,
-} from "./convert";
+export type { PointrPoiItem, PointrSearchResponse } from "./convert";
 export {
   PointrMapError,
   pointrMapStatus,

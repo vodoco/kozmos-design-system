@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added and changed
+
+- **Buildings and sites (GAP-175):** `KozmosBuildingPresentation(id, label, siteId, floors)` and `KozmosSitePresentation(id, label, buildings)`, data classes, are the building and the site the live map reports, as the web's `BuildingPresentation` and `SitePresentation` and SwiftUI's types of the same names. A building's `floors` are its levels top floor first (decision 38), each once: the order `KozmosFloorSelector` draws them, so a product hands `building.floors` to it as they are. `label` is already localized, as the venue titles it, and empty when it has none. `siteId` is the id of the site the building is in, which every building in a site's `buildings` carries. `defaultFloorId: String? = null`, last, is the level to start on, Pointr's default for the building, by its id in `floors`, when the venue's data marks one (decision 141); the docs' `startFloor(building, ground)` starts there, else on the ground level the product names. New types only: nothing existing changes. The FloorSelector page's Compose tab draws a building's floors (`BuildingFloors`, compiled in the test source set), and `KozmosBuildingPresentationTest` draws it and reads its floors top first.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).

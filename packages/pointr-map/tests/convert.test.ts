@@ -83,6 +83,65 @@ describe("buildings and sites", () => {
       buildings: [{ id: "b", label: "", siteId: "42", floors: [] }],
     });
   });
+
+  it("names the level the venue's data marks as the default, the first marked, as 10.13.0 finds it (decision 141)", () => {
+    const building = (levels: unknown[]) =>
+      toBuilding({
+        buildingInternalIdentifier: "b",
+        siteInternalIdentifier: "s",
+        levels: levels as never,
+      });
+    expect(
+      building([
+        { levelIndex: 0, properties: {} },
+        { levelIndex: -1, properties: { isDefault: true } },
+        { levelIndex: 2, properties: { isDefault: true } },
+      ])?.defaultFloorId,
+    ).toBe("-1");
+    // None marked, or the marked one has no index: no default, the key left out.
+    for (const levels of [
+      [{ levelIndex: 0, properties: {} }, { levelIndex: 1 }],
+      [{ levelIndex: 0 }, { properties: { isDefault: true } }],
+      [],
+    ])
+      expect(building(levels)).not.toHaveProperty("defaultFloorId");
+    // The SDK's own Level instances have lost the mark.
+    expect(building([new FakeLevel({ levelIndex: 1 })])).not.toHaveProperty(
+      "defaultFloorId",
+    );
+    // A site's buildings keep it.
+    expect(
+      toSite({
+        siteInternalIdentifier: "s",
+        buildings: [
+          {
+            buildingInternalIdentifier: "b",
+            siteInternalIdentifier: "s",
+            levels: [
+              { levelIndex: 1, properties: { isDefault: true } },
+            ] as never,
+          },
+        ],
+      })?.buildings[0].defaultFloorId,
+    ).toBe("1");
+  });
+
+  it("gives a site's buildings the site's own id, whatever their data names (GAP-175)", () => {
+    const site = toSite({
+      siteInternalIdentifier: "campus",
+      buildings: [
+        {
+          buildingInternalIdentifier: "a",
+          siteInternalIdentifier: null as never,
+        },
+        { buildingInternalIdentifier: "b", siteInternalIdentifier: "" },
+        { buildingInternalIdentifier: "c", siteInternalIdentifier: "other" },
+        { buildingInternalIdentifier: "d", siteInternalIdentifier: "campus" },
+      ],
+    });
+    expect(site?.buildings.map((b) => b.id)).toEqual(["a", "b", "c", "d"]);
+    expect(site?.buildings.every((b) => b.siteId === site.id)).toBe(true);
+  });
 });
 
 describe("POIs", () => {

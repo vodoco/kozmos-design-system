@@ -524,6 +524,64 @@ public struct KozmosFloorPresentation: Sendable, Hashable, Identifiable {
     }
 }
 
+/// A building as the map reports it, for a product to draw: its name, and
+/// its levels for `KozmosFloorSelector` (GAP-175).
+///
+/// The live Pointr map reports the building it shows and the site it is in;
+/// a product names the building, offers the site's other buildings, and hands
+/// `floors` to the floor selector as they are. Mirrors `BuildingPresentation`
+/// on the web and `KozmosBuildingPresentation` on Compose.
+public struct KozmosBuildingPresentation: Sendable, Hashable, Identifiable {
+    /// The building's id, as the venue's data names it.
+    public let id: String
+    /// Already localized, as the venue titles it: "Terminal 2". Empty when
+    /// the building has no title, for the product to name it or leave it
+    /// unnamed.
+    public let label: String
+    /// The id of the site the building is in: its `KozmosSitePresentation.id`,
+    /// which every building in a site's `buildings` carries. Empty when the
+    /// venue's data names no site for a building reported on its own.
+    public let siteId: String
+    /// The building's levels, top floor first (decision 38), each once: the
+    /// floors the floor selector takes, in the order it draws them.
+    public let floors: [KozmosFloorPresentation]
+    /// The level a product starts on, by its `id` in `floors`: Pointr's
+    /// default level for the building, when the venue's data marks one
+    /// (decision 141). `nil` when it marks none: start on the ground level
+    /// then, which only the product can name (the floor selector's "Which
+    /// level to start on").
+    public let defaultFloorId: String?
+
+    public init(
+        id: String, label: String, siteId: String, floors: [KozmosFloorPresentation],
+        defaultFloorId: String? = nil
+    ) {
+        self.id = id
+        self.label = label
+        self.siteId = siteId
+        self.floors = floors
+        self.defaultFloorId = defaultFloorId
+    }
+}
+
+/// A site as the map reports it: its name and its buildings, for a site
+/// switcher or a building list (GAP-175). Mirrors `SitePresentation` on the
+/// web and `KozmosSitePresentation` on Compose.
+public struct KozmosSitePresentation: Sendable, Hashable, Identifiable {
+    /// The site's id, as the venue's data names it.
+    public let id: String
+    /// Already localized, as the venue titles it. Empty when it has no title.
+    public let label: String
+    /// The site's buildings, in the order the venue's data gives them.
+    public let buildings: [KozmosBuildingPresentation]
+
+    public init(id: String, label: String, buildings: [KozmosBuildingPresentation]) {
+        self.id = id
+        self.label = label
+        self.buildings = buildings
+    }
+}
+
 public struct KozmosCategoryPresentation: Sendable, Hashable, Identifiable {
     public let id: String
     public let label: String

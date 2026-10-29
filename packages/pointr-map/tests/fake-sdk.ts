@@ -176,6 +176,12 @@ export class FakeMap extends Emitter {
   }
 }
 
+/**
+ * As 10.13.0's Level (read from the bundle on 28 Oct): its constructor copies
+ * the index, the titles and the external identifier, and nothing else, so a
+ * level's `properties`, where the venue's data marks the default level
+ * (`isDefault`), do not survive it.
+ */
 export class FakeLevel {
   levelIndex: number;
   levelShortTitle: string;
@@ -218,6 +224,14 @@ export class FakeView extends Emitter {
 
 export class FakeMapViewController {
   view?: FakeView;
+  /**
+   * The current site and building as the venue's data loaded them: 10.13.0's
+   * MapViewController reads both from its Storage (BaseViewController's
+   * getters), not as Site, Building and Level instances, so their levels keep
+   * `properties`. Its building and site events carry the same objects.
+   */
+  currentSite?: FakeSiteData;
+  currentBuilding?: FakeBuildingData;
   building3DModelsActive = true;
   /** The 3D flag's value at each destroyMap call. */
   destroyMapCalls: boolean[] = [];
@@ -281,37 +295,66 @@ export interface FakeSite {
   buildings: FakeBuilding[];
 }
 
-export function fakeVenue() {
-  const levels = [
-    new FakeLevel({
-      levelIndex: 0,
-      levelShortTitle: "G",
-      levelLongTitle: "Ground floor",
-    }),
-    new FakeLevel({
-      levelIndex: 2,
-      levelShortTitle: "2",
-      levelLongTitle: "Second floor",
-    }),
-    new FakeLevel({
-      levelIndex: 1,
-      levelShortTitle: "1",
-      levelLongTitle: "First floor",
-    }),
-  ];
-  const building: FakeBuilding = {
+/** A level as the venue's data gives it, before the SDK's Level drops its `properties`. */
+export interface FakeLevelData {
+  levelIndex: number;
+  levelShortTitle: string;
+  levelLongTitle: string;
+  properties: { isDefault?: boolean };
+}
+
+export interface FakeBuildingData extends Omit<FakeBuilding, "levels"> {
+  levels: FakeLevelData[];
+}
+
+export interface FakeSiteData extends Omit<FakeSite, "buildings"> {
+  buildings: FakeBuildingData[];
+}
+
+/**
+ * A site with one building of three levels. `defaultLevelIndex` marks that
+ * level as the building's default in the venue's data, as
+ * `properties.isDefault`, where 10.13.0's `PointrHelper.findDefaultLevelToSet`
+ * reads it. `loaded` is the data as it loaded (the map view controller's, and
+ * what the building and site events carry); `site`, `building` and `levels`
+ * are the SDK's instances of it, as `getCurrentSite()`, `getCurrentBuilding()`
+ * and the SiteBuildingManager return them, their levels without `properties`.
+ */
+export function fakeVenue({
+  defaultLevelIndex,
+}: { defaultLevelIndex?: number } = {}) {
+  const data: FakeLevelData[] = [
+    { levelIndex: 0, levelShortTitle: "G", levelLongTitle: "Ground floor" },
+    { levelIndex: 2, levelShortTitle: "2", levelLongTitle: "Second floor" },
+    { levelIndex: 1, levelShortTitle: "1", levelLongTitle: "First floor" },
+  ].map((level) => ({
+    ...level,
+    properties:
+      level.levelIndex === defaultLevelIndex ? { isDefault: true } : {},
+  }));
+  const levels = data.map((level) => new FakeLevel(level));
+  const buildingData = {
     buildingInternalIdentifier: "b-1",
     buildingExternalIdentifier: "B1",
     siteInternalIdentifier: "s-1",
     buildingTitle: "Main building",
-    levels,
   };
+  const building: FakeBuilding = { ...buildingData, levels };
   const site: FakeSite = {
     siteInternalIdentifier: "s-1",
     siteTitle: "Campus",
     buildings: [building],
   };
-  return { site, building, levels };
+  const loadedBuilding: FakeBuildingData = { ...buildingData, levels: data };
+  const loaded = {
+    building: loadedBuilding,
+    site: {
+      siteInternalIdentifier: "s-1",
+      siteTitle: "Campus",
+      buildings: [loadedBuilding],
+    } satisfies FakeSiteData,
+  };
+  return { site, building, levels, loaded };
 }
 
 export class FakeWidget extends Emitter {
@@ -453,6 +496,8 @@ export class FakeWidget extends Emitter {
     view.map = new FakeMap();
     this.currentSite = venue.site;
     this.currentBuilding = venue.building;
+    ui.mapViewController.currentSite = venue.loaded.site;
+    ui.mapViewController.currentBuilding = venue.loaded.building;
     this.currentLevel = venue.levels.find((l) => l.levelIndex === levelIndex);
     this.emit("data-loaded");
     view.isMapReadyEmitted = true;
