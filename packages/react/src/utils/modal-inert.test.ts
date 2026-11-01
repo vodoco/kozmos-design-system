@@ -229,3 +229,56 @@ describe("live regions named by their role (0.6.0)", () => {
     }),
   );
 });
+
+describe("a popup that hides the page with aria-hidden too (GAP-193)", () => {
+  // Radix's Select and Menu hide the rest of the page with aria-hidden's
+  // hideOthers, which keeps only `[aria-live]` boxes visible. What stays in
+  // reach must be exactly that: a box hidden but in reach takes focus while
+  // a screen reader is told it is not there (axe aria-hidden-focus).
+  const mirror = (target: HTMLElement) => {
+    const release = inertOutside(target, { mirrorAriaHidden: true });
+    releases.push(release);
+    return release;
+  };
+  function page() {
+    document.body.innerHTML =
+      '<main><button id="tile">Shops</button><div id="by-attribute" role="status" aria-live="polite"><button>Undo</button></div><div id="by-role" role="alert"><button>Retry</button></div><output id="output">3 results</output></main><div id="popup">List</div>';
+    return { $: (id: string) => document.getElementById(id)! };
+  }
+  const inert = (node: Element) => node.closest("[inert]") !== null;
+
+  it("keeps a region marked aria-live in reach, and not one named live by its role alone", () => {
+    const { $ } = page();
+    mirror($("popup"));
+    expect(inert($("tile"))).toBe(true);
+    expect(inert($("by-attribute").querySelector("button")!)).toBe(false);
+    expect(inert($("by-role").querySelector("button")!)).toBe(true);
+    expect(inert($("output"))).toBe(true);
+    expect(inert($("popup"))).toBe(false);
+  });
+
+  it("leaves a region in reach that the primitive left visible, and not one inside a box it hid", async () => {
+    const { $ } = page();
+    mirror($("popup"));
+    // As hideOthers does: the boxes beside what it keeps are hidden.
+    $("tile").setAttribute("aria-hidden", "true");
+    const hiddenBox = document.createElement("div");
+    hiddenBox.setAttribute("aria-hidden", "true");
+    document.querySelector("main")!.append(hiddenBox);
+    await Promise.resolve();
+    const late = document.createElement("div");
+    late.setAttribute("aria-live", "assertive");
+    late.innerHTML = "<button>Reconnect</button>";
+    hiddenBox.append(late);
+    await Promise.resolve();
+    expect(inert(late.querySelector("button")!)).toBe(true);
+    expect(inert($("by-attribute").querySelector("button")!)).toBe(false);
+  });
+
+  it("keeps naming regions by their role for a surface that hides nothing", () => {
+    const { $ } = page();
+    start($("popup"));
+    expect(inert($("by-role").querySelector("button")!)).toBe(false);
+    expect(inert($("output"))).toBe(false);
+  });
+});

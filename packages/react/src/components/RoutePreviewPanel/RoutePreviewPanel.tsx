@@ -5,6 +5,7 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { ArrowLeft } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { impliedLive } from "../../utils/live-region";
 import {
   EMOTION_FILLED_CLASSES,
   emotionSurfaceProperties,
@@ -105,6 +106,13 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
                     ? "alert"
                     : "status"
                 }
+                // Said as well as implied: an open popup hides every box not
+                // marked aria-live (GAP-193).
+                aria-live={impliedLive(
+                  status === "error" || status === "no-route"
+                    ? "alert"
+                    : "status",
+                )}
               >
                 {statusContent}
               </div>
@@ -141,6 +149,7 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
                 )}
                 style={emotionSurfaceProperties("alert")}
                 role="status"
+                aria-live="polite"
               >
                 {alert}
               </div>

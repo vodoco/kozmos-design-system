@@ -52,13 +52,15 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
   /// SwiftUI's Text accessibility label loses per-range speech language on iOS.
   /// This supported UIKit element replaces only that label, not the visual/touch
   /// view: it lies over the view it speaks for, takes no touches, and is the one
-  /// element VoiceOver finds there.
+  /// element VoiceOver finds there, and XCUITest too (measured on iOS 26.5 and
+  /// 18.2; iOS 16 and 17 and Mac Catalyst were not measured).
   struct KozmosSpeechLanguageElement: UIViewRepresentable {
     let words: NSAttributedString
     let traits: UIAccessibilityTraits
     let hint: String?
-    /// The identifier a UI test finds the view by: the hidden SwiftUI view's
-    /// own no longer reaches the accessibility tree.
+    /// The identifier a UI test finds the view by. The view's accessibility is
+    /// replaced by nothing, so an identifier set on the view itself reaches no
+    /// element: the element carries it instead.
     let identifier: String?
     let activate: (() -> Void)?
     /// The element's named actions, in VoiceOver's actions rotor.
@@ -106,14 +108,23 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
   }
 
   extension View {
-    /// Hides this view from VoiceOver and lays `KozmosSpeechLanguageElement`
-    /// over it, saying `words` with each range's speech language.
+    /// Lays `KozmosSpeechLanguageElement` over this view, saying `words` with
+    /// each range's speech language, and replaces this view's accessibility
+    /// with nothing, so the element is the one VoiceOver finds, and the one
+    /// XCUITest finds (measured on iOS 26.5 and 18.2; iOS 16 and 17 and Mac
+    /// Catalyst were not measured).
     func kozmosSpeechLanguageElement(
       _ words: NSAttributedString, traits: UIAccessibilityTraits, hint: String? = nil,
       identifier: String? = nil, activate: (() -> Void)? = nil,
       actions: [KozmosSpokenAction] = []
     ) -> some View {
-      self.accessibilityHidden(true)
+      // `.accessibilityHidden(true)` hid the view from assistive
+      // technologies but not from XCUITest: XCUITest still listed it, with
+      // its texts, beside the element at the same frame, so a result's
+      // identifier matched two buttons, as the accordion trigger's title did
+      // (measured on iOS 26.5 and 18.2; iOS 16 and 17 and Mac Catalyst were
+      // not measured).
+      self.accessibilityRepresentation { EmptyView() }
         .overlay(
           KozmosSpeechLanguageElement(
             words: words, traits: traits, hint: hint, identifier: identifier,

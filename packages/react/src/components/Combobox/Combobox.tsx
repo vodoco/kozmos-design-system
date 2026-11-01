@@ -618,6 +618,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       showEmptyText && (
                         <div
                           role="status"
+                          aria-live="polite"
                           className="px-3 py-2 text-sm text-muted-foreground"
                         >
                           {emptyText}
@@ -634,6 +635,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                           : showEmptyText
                             ? "status"
                             : undefined
+                      }
+                      // A status says its liveness as well (GAP-193); a
+                      // listbox is no live region.
+                      aria-live={
+                        !listboxOpen && showEmptyText ? "polite" : undefined
                       }
                       aria-label={
                         listboxOpen ? (ariaLabel ?? label) : undefined

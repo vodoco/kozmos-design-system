@@ -17,10 +17,38 @@ import { cn } from "../../utils";
  */
 export type CardPadding = "default" | "compact";
 
-const PADDING: Record<CardPadding, { all: string; sides: string }> = {
-  default: { all: "p-6", sides: "px-6 pb-6" },
-  compact: { all: "p-4", sides: "px-4 pb-4" },
+/**
+ * `lead` is the top a part pays when it is the card's first child.
+ *
+ * CardContent and CardFooter pad their sides and bottom only, as a header
+ * above has already paid the top. With no header, content (or a footer) was
+ * the card's first child and touched its top edge (GAP-194). The card now
+ * sets the top on whichever box is its own first child, as a custom
+ * property, and the part reads it as its own `pt-*`: so a header-led card is
+ * drawn as before, a part inside a wrapper (a form) is not the card's first
+ * child and is left alone, and a caller's own `p-*`, `py-*` or `pt-*` on the
+ * part still wins, through tailwind-merge, as it does for the sides.
+ */
+const PADDING: Record<
+  CardPadding,
+  { all: string; sides: string; lead: string }
+> = {
+  default: {
+    all: "p-6",
+    sides: "px-6 pb-6",
+    lead: "[&>:first-child]:[--kozmos-card-lead:1.5rem]",
+  },
+  compact: {
+    all: "p-4",
+    sides: "px-4 pb-4",
+    lead: "[&>:first-child]:[--kozmos-card-lead:1rem]",
+  },
 };
+
+/** A part's own top: none, unless the card says it is its first child. Its
+ * own `0px` keeps a part in a nested card, or under a wrapper, from
+ * inheriting the top of an outer one. */
+const LEAD = "[--kozmos-card-lead:0px] pt-[var(--kozmos-card-lead)]";
 
 const CardPaddingContext = React.createContext<CardPadding>("default");
 
@@ -34,8 +62,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         data-padding={padding}
+        // kozmos-card: an opaque card of its own, on glass too (site GAP-94).
         className={cn(
-          "rounded-container border bg-card text-card-foreground shadow-raised",
+          "kozmos-card rounded-container border bg-card text-card-foreground shadow-raised",
+          PADDING[padding].lead,
           className,
         )}
         {...props}
@@ -94,9 +124,11 @@ const CardContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    // Sides and bottom only: a header above has already paid the top.
+    // Sides and bottom, and the top only as the card's first child: a header
+    // above has already paid it (GAP-194).
     className={cn(
       PADDING[React.useContext(CardPaddingContext)].sides,
+      LEAD,
       className,
     )}
     {...props}
@@ -110,9 +142,11 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
+    // As CardContent: the top only as the card's first child (GAP-194).
     className={cn(
       "flex items-center",
       PADDING[React.useContext(CardPaddingContext)].sides,
+      LEAD,
       className,
     )}
     {...props}

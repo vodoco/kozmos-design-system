@@ -260,7 +260,7 @@
       "id": "components-card",
       "title": "Core/Layout/Card",
       "component": "Card",
-      "exports": ["Default", "Padding"]
+      "exports": ["Default", "Padding", "WithoutHeader"]
     },
     {
       "file": "packages/react/src/components/CategoryField/CategoryField.stories.tsx",
@@ -857,6 +857,21 @@
       "exports": ["AnchoredToAControl", "AnchoredToARect", "Default"]
     },
     {
+      "file": "packages/react/src/components/TourStep/TourStep.stories.tsx",
+      "id": "overlay-tour-step",
+      "title": "Core/Overlays/TourStep",
+      "component": "TourStep",
+      "exports": [
+        "Default",
+        "Step",
+        "WithContent",
+        "NoTarget",
+        "Coachmark",
+        "RightToLeft",
+        "Compact"
+      ]
+    },
+    {
       "file": "packages/react/src/components/Progress/Progress.stories.tsx",
       "id": "feedback-progress",
       "title": "Core/Feedback/Progress",
@@ -1168,7 +1183,7 @@
       "id": "data-display-tree",
       "title": "Core/Data display/Tree",
       "component": "Tree",
-      "exports": ["Default", "WithRowActions", "RowPrimitive"]
+      "exports": ["Default", "WithRowActions", "Composed", "RowPrimitive"]
     },
     {
       "file": "packages/react/src/components/UserLocationMarker/UserLocationMarker.stories.tsx",

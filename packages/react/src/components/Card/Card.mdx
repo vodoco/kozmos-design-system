@@ -10,6 +10,11 @@ import { PlatformSnippets } from '../PlatformSnippets';
 
 Displays a card with header, content, and footer.
 
+`CardContent` and `CardFooter` pad their sides and bottom: a header above them has already paid the
+top. With no header, the one that is the card's first child pays the top as well, so content never
+touches the card's top edge (GAP-194). A part inside a wrapper, such as a `form` around the card's
+parts, is not the card's first child and is left as it is.
+
 <Canvas>
   <Story of={CardStories.Default} />
 </Canvas>

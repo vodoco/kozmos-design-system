@@ -36,8 +36,12 @@ const MapView = React.forwardRef<HTMLDivElement, MapViewProps>(
       <div
         ref={ref}
         aria-label={mapLabel}
+        // Its own stacking context, framed or filling: what the map draws, a
+        // MapOverlay's z-index 50 or a map engine's own layers, stacks inside
+        // the map, so it cannot draw over a page's sticky header (also 50) or
+        // over AdaptiveMapShell's top bar, controls and panel (site GAP-40).
         className={cn(
-          "relative h-full w-full overflow-hidden bg-muted",
+          "relative isolate h-full w-full overflow-hidden bg-muted",
           variant === "framed" &&
             "min-h-[400px] rounded-control border border-border",
           className,

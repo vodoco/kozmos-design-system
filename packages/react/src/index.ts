@@ -62,6 +62,7 @@ export * from "./components/Tree/Tree";
 export * from "./components/Timeline/Timeline";
 export * from "./components/Tooltip/Tooltip";
 export * from "./components/Popover/Popover";
+export * from "./components/TourStep";
 export * from "./components/FieldWrapper/FieldWrapper";
 
 export * from "./components/Accordion/Accordion";

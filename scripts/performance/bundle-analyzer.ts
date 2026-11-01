@@ -63,7 +63,10 @@ const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 94 KB on 2026-10-26 (decision 117) for MAP-64's tour family (decision 116):
 // Backdrop's target (#408), Stepper's dots (#409), PopoverAnchor (#410) and option groups (#411)
 // take Everything from about 88.5 to 91.2 KB on CI, leaving too little for TourStep (GAP-188).
-const MAX_TOTAL_GZIP_KB = 94;
+// Olcay approved 100 KB on 2026-10-28 (decision 126) for 0.15.0's approved APIs (decision 119):
+// after 0.14.0's tour family and fixes, Everything measures about 93.9 KB, leaving no room for
+// them. A trim pass runs alongside, reported before 0.15.0.
+const MAX_TOTAL_GZIP_KB = 100;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
@@ -173,6 +176,20 @@ async function main() {
   if (modules.length < MIN_ESM_MODULES) {
     fail.push(
       `the ES build has ${modules.length} module files in dist/esm, under ${MIN_ESM_MODULES}: it is one file again, and every import costs the whole library`,
+    );
+  }
+  // The JavaScript is built for the browsers package.json declares (vite.config.mts). Built for
+  // Vite's default target instead, esbuild wrote every `a?.b` as `a == null ? void 0 : a.b`, in 44
+  // modules, and an app's minifier could not fold all of them back: Everything measured 91.81 KB
+  // here that way on 2026-10-28, and 90.46 KB with the target.
+  const lowered = modules.filter((file) =>
+    /(?<![=!])== null \? void 0 : /.test(
+      fs.readFileSync(path.join(ESM_DIR, file), "utf8"),
+    ),
+  );
+  if (lowered.length) {
+    fail.push(
+      `${lowered.length} modules in dist/esm write optional chaining out (a == null ? void 0 : a.b), as for a browser older than package.json declares: build.target in packages/react/vite.config.mts (${lowered.slice(0, 3).join(", ")})`,
     );
   }
 
