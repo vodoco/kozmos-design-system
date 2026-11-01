@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "07e43da39fb4";
+const PLUGIN_BUILD = "6ad738704c8c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -10213,6 +10213,8 @@ let lastSetProgressAt = 0;
  */
 const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
+  // TourStep's Close: x-close, tinted again after the swap.
+  IconButton: ["TourStep"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -30434,6 +30436,8 @@ async function updateIconButtonComponent() {
   configureFocusVisibleProperty(existing, stats);
   await refreshButtonSlotsIfPresent(page, variableByName, stats);
   await pruneLegacyGeneratedIconSlotComponents(stats);
+  // TourStep's Close is an IconButton whose x-close TourStep tints.
+  noteSetsToUpdateNext("IconButton", stats);
   return stats;
 }
 
@@ -58391,6 +58395,46 @@ function exposeTourStepInstance(instance, stats) {
   }
 }
 
+/**
+ * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
+ * x-close would draw in its source's black in both themes: the tint the
+ * Close's IconButton `variant` gives its icon is laid again on the swapped-in
+ * layers. The same move NavigationItem's shells and BrowseCategoriesPanel's
+ * tiles make after their swaps; CORE_UPDATE_SEQUENCE runs IconButton before
+ * TourStep, so the tint is laid again in the run that could take it away.
+ */
+function retintTourStepCloseIcon(instance, variant, variableByName, stats) {
+  const config = buttonConfig(variant, "Default");
+  // The layer the Icon property drives, whatever the swap made of its name.
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "tour-step-close-icon",
+      "TourStep: Close has no Icon layer to tint after the swap.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+}
+
 async function tourStepText({
   name,
   characters,
@@ -58530,10 +58574,12 @@ async function updateTourStepVariant(
   appendWithSizing(heading, title, "FILL", "HUG");
   appendWithSizing(header, heading, "FILL", "HUG");
 
+  // One variant for the instance and for the tint laid again after the swap.
+  const closeVariant = "Outline";
   const close = await createTourStepInstance({
     componentSetName: "IconButton",
     variantProperties: {
-      Variant: "Outline",
+      Variant: closeVariant,
       Size: "Default",
       State: "Default",
     },
@@ -58544,13 +58590,22 @@ async function updateTourStepVariant(
   if (close.componentSet) {
     const glyph = await findKozmosIconSourceComponent("x-close");
     if (glyph) {
-      setInstanceSwapProperty(
-        close.node,
-        close.componentSet,
-        BUTTON_ICON_PROPERTY,
-        glyph.id,
-        stats,
-      );
+      if (
+        setInstanceSwapProperty(
+          close.node,
+          close.componentSet,
+          BUTTON_ICON_PROPERTY,
+          glyph.id,
+          stats,
+        )
+      ) {
+        retintTourStepCloseIcon(
+          close.node,
+          closeVariant,
+          variableByName,
+          stats,
+        );
+      }
     } else {
       stats.warnings.push(
         'TourStep: icon "x-close" was not found on the Icons page.',

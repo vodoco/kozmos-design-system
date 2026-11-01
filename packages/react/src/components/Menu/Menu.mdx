@@ -16,6 +16,15 @@ Compose its trigger and content parts; use Select for a form value and Popover f
 
 <Controls />
 
+## A disabled item
+
+A disabled `MenuItem` takes no pointer and the arrow keys pass over it, so no tooltip can say why it is unavailable (decision 123). Either:
+
+- **leave it out**, when it can't be used here; or
+- **keep it and say why in its own words**, in the item: `<MenuItem disabled>Map Content: add a building first</MenuItem>`. The reason is read with the item's name.
+
+Don't leave a greyed-out item to explain itself.
+
 ## Implementation
 
 <div className="subheading">Code</div>

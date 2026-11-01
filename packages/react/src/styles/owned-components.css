@@ -1511,6 +1511,29 @@
       animation: none;
     }
   }
+  /* Accordion's chevron turns on the standard motion tokens, as its
+     content opens and closes over them (the accordion keyframes in
+     tailwind.config.js), so the two move together. Under reduced motion, the media query's or the design
+     config's, both snap: the content's animation, a scoped utility running
+     over its height, stops here too. The element and the two attributes
+     Radix always sets outweigh the utility's class, attribute and :scope. */
+  @media (prefers-reduced-motion: no-preference) {
+    .kozmos-accordion-chevron {
+      transition: transform var(--semantics-motion-duration-standard)
+        var(--semantics-motion-easing-standard);
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-accordion-chevron {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    div.kozmos-accordion-content[data-state][data-orientation] {
+      animation: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] div.kozmos-accordion-content[data-state] {
+    animation: none;
+  }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a
      `@apply animate-spin` declared later would simply win. */

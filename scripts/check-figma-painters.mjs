@@ -1330,6 +1330,8 @@ section("A set runs after the sets it reaches into");
     browseCategoriesPanelTile: ["CategoryTile", "BrowseCategoriesPanel"],
     setBrowseCategoriesPanelTileIcon: ["CategoryTile", "BrowseCategoriesPanel"],
     updateCategoryTileVariant: ["Counter", "CategoryTile"],
+    // Close's x-close, tinted again after the swap.
+    retintTourStepCloseIcon: ["IconButton", "TourStep"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1380,6 +1382,10 @@ section("A set runs after the sets it reaches into");
         "BrowseCategoriesPanel",
       "after CategoryTile: BrowseCategoriesPanel",
     );
+    ok(
+      plugin.setsToUpdateAfter(["IconButton"]).includes("TourStep"),
+      `after IconButton: TourStep (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+    );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
     const tile = { updated: true, warnings: [] };
@@ -1411,6 +1417,7 @@ section("A set runs after the sets it reaches into");
   for (const [fn, name] of [
     ["updateCategoryTileComponent", "CategoryTile"],
     ["updateCounterComponent", "Counter"],
+    ["updateIconButtonComponent", "IconButton"],
   ]) {
     ok(
       typeof plugin[fn] === "function" &&
@@ -2009,6 +2016,10 @@ section("TourStep (GAP-188)");
     };
     const plus = mockIconComponent("plus");
     const close = mockIconComponent("x-close");
+    // IconButton tints its Icon with the Outline ink, as configureIconButtonSlot
+    // does: a swap takes that tint away with the layers it was laid on.
+    const outlineInk =
+      "Secondary Buttons/themed/button/foreground/content/idle";
     const iconButton = mockComponentSet("IconButton", [
       {
         properties: { Variant: "Outline", Size: "Default", State: "Default" },
@@ -2016,6 +2027,19 @@ section("TourStep (GAP-188)");
           const icon = plus.createInstance();
           icon.name = "Icon";
           icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+          for (const layer of icon.children) {
+            layer.strokes = [
+              {
+                type: "SOLID",
+                color: { r: 0.05, g: 0.27, b: 0.76 },
+                opacity: 1,
+                visible: true,
+                boundVariables: {
+                  color: { type: "VARIABLE_ALIAS", id: outlineInk },
+                },
+              },
+            ];
+          }
           node.appendChild(icon);
         },
       },
@@ -2146,6 +2170,29 @@ section("TourStep (GAP-188)");
             "Variant=Outline, Size=Default, State=Default" &&
           closeButton.componentProperties["Icon#2:0"] === close.id,
         `${content}: Close is IconButton's Outline with x-close`,
+      );
+      // The swap replaces the layer the Outline button's tint was laid on, so
+      // x-close came in its source's black, in both themes. It takes the
+      // Outline ink again, bound to its variable.
+      const closeIcon =
+        closeButton &&
+        closeButton.findOne(
+          (node) =>
+            node.type === "INSTANCE" &&
+            node.componentPropertyReferences &&
+            node.componentPropertyReferences.mainComponent === "Icon#2:0",
+        );
+      const closeInk = closeIcon
+        ? closeIcon.findAll((node) => (node.strokes || []).length > 0)
+        : [];
+      ok(
+        closeIcon &&
+          closeIcon.mainComponent === close &&
+          closeInk.length > 0 &&
+          closeInk.every(
+            (node) => boundVariableName(node.strokes[0]) === outlineInk,
+          ),
+        `${content}: x-close draws in the Outline button's ink, ${outlineInk} (${closeInk.map((node) => boundVariableName(node.strokes[0]) || hexOf(node.strokes[0])).join(", ") || "no stroked layer"})`,
       );
       const body = named(component, "Body Text");
       ok(
@@ -5106,9 +5153,11 @@ section("Backdrop cut-out (GAP-189)");
       `its scrim is an even-odd vector in Overlay/Scrim (${scrim && scrim.type}, ${path && path.windingRule}, ${scrim && boundVariableName(scrim.fills[0])})`,
     );
     // The hole: the box round every point after the scrim's own outline.
-    const numbers = path ? path.data.split(/ (?=M)/).map((sub) =>
-      [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])),
-    ) : [];
+    const numbers = path
+      ? path.data
+          .split(/ (?=M)/)
+          .map((sub) => [...sub.matchAll(/-?[\d.]+/g)].map((m) => Number(m[0])))
+      : [];
     const holeXs = (numbers[1] || []).filter((_, i) => i % 2 === 0);
     const holeYs = (numbers[1] || []).filter((_, i) => i % 2 === 1);
     const hole = holeXs.length
@@ -5120,7 +5169,8 @@ section("Backdrop cut-out (GAP-189)");
         ]
       : null;
     ok(
-      JSON.stringify(numbers[0]) === JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
+      JSON.stringify(numbers[0]) ===
+        JSON.stringify([0, 0, 320, 0, 320, 180, 0, 180]) &&
         JSON.stringify(hole) === JSON.stringify([92, 60, 228, 120]) &&
         /^[MLCZ\d.\s-]+$/.test(path ? path.data : ""),
       `the scrim covers the variant and its hole is the control padded 8, from 92, 60 to 228, 120, in M, L, C and Z alone (${JSON.stringify(hole)})`,
@@ -7356,7 +7406,8 @@ section("GAP-192: the option lists draw their groups' labels");
     if (kept) {
       kept.characters = "Interior Asset";
       const redrawn = await draw(part.fn, part.props, component);
-      const again = (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
+      const again =
+        (part.list ? named(redrawn, part.list) : redrawn) || redrawn;
       const text = named(again, "Group 1 Text");
       ok(
         text && text.characters === "Interior Asset",
@@ -7408,7 +7459,9 @@ section("GAP-192: the option lists draw their groups' labels");
   }
 }
 
-section("Since #397: Combobox's and MultiSelect's field actions are React's buttons");
+section(
+  "Since #397: Combobox's and MultiSelect's field actions are React's buttons",
+);
 {
   // React draws the clear and open at the field's end as buttons
   // (field-actions.ts): each as tall and wide as the field, 44 at touch (40
@@ -7441,13 +7494,55 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
   const shown = (node, field) =>
     boundName(node, field) ? valueOf(boundName(node, field)) : node[field];
   const cases = [
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Default", status: "Default", content: "Closed" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Focus", status: "Default", content: "Open" }, ["Clear Button", "Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Disabled", status: "Default", content: "Open" }, ["Open Button"]],
-    ["Combobox", "updateComboboxVariant", "Combobox/field/height", { state: "Readonly", status: "Default", content: "Open" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Empty" }, ["Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Default", status: "Default", content: "Selected" }, ["Clear Button", "Open Button"]],
-    ["MultiSelect", "updateMultiSelectVariant", "MultiSelect/field/min-height", { state: "Disabled", status: "Default", content: "Selected" }, ["Open Button"]],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Default", status: "Default", content: "Closed" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Focus", status: "Default", content: "Open" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Disabled", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      "Combobox/field/height",
+      { state: "Readonly", status: "Default", content: "Open" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Empty" },
+      ["Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Default", status: "Default", content: "Selected" },
+      ["Clear Button", "Open Button"],
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      "MultiSelect/field/min-height",
+      { state: "Disabled", status: "Default", content: "Selected" },
+      ["Open Button"],
+    ],
   ];
   for (const [part, fn, sizeToken, props, expected] of cases) {
     const label = `${part} ${props.state}/${props.content}`;
@@ -7495,7 +7590,9 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
           (button.strokes || []).length === 0,
         `${label}, ${button.name}: the icon centred, on no fill`,
       );
-      const icons = button.children.filter((child) => child.type === "INSTANCE");
+      const icons = button.children.filter(
+        (child) => child.type === "INSTANCE",
+      );
       ok(
         icons.length === 1 && icons[0].width === 16 && icons[0].height === 16,
         `${label}, ${button.name}: one 16px icon (${icons.map((icon) => `${icon.width}x${icon.height}`).join(", ")})`,
@@ -7508,7 +7605,10 @@ section("Since #397: Combobox's and MultiSelect's field actions are React's butt
     );
     ok(
       !field.children.some(
-        (child) => child.type === "INSTANCE" && child !== field.children[0] && /chevron|close/i.test(child.name),
+        (child) =>
+          child.type === "INSTANCE" &&
+          child !== field.children[0] &&
+          /chevron|close/i.test(child.name),
       ),
       `${label}: no bare icon left in the field's line`,
     );
