@@ -701,6 +701,11 @@ describe("the handle", () => {
   });
 });
 
+// The ready timer runs from the first request, so a test that needs something
+// to happen first gives it this long: at 20, a busy runner times out as
+// "script" before the files arrive or the violation is reported.
+const READY_TIMEOUT_AFTER_LOAD_MS = 250;
+
 describe("errors, mapped to a code and the shell's status", () => {
   it.each([
     ["no base URL", { ...config, baseUrl: "" }],
@@ -918,7 +923,11 @@ describe("errors, mapped to a code and the shell's status", () => {
   it("data: a map that never becomes ready times out, and a late one is still ready", async () => {
     const recorded = recorder();
     render(
-      <PointrMap config={config} readyTimeoutMs={20} {...recorded.props} />,
+      <PointrMap
+        config={config}
+        readyTimeoutMs={READY_TIMEOUT_AFTER_LOAD_MS}
+        {...recorded.props}
+      />,
     );
     await serveSdkFiles();
     await waitFor(() => expect(recorded.errors).toHaveLength(1));
@@ -1010,7 +1019,11 @@ describe("the ready timeout", () => {
   it("csp: a load that stalls after a violation times out as csp", async () => {
     const recorded = recorder();
     render(
-      <PointrMap config={config} readyTimeoutMs={20} {...recorded.props} />,
+      <PointrMap
+        config={config}
+        readyTimeoutMs={READY_TIMEOUT_AFTER_LOAD_MS}
+        {...recorded.props}
+      />,
     );
     await waitFor(() =>
       expect(
