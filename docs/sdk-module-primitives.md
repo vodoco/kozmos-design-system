@@ -5,10 +5,11 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02.
-React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0 are published on `latest`;
-icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a native
-registry release. See [release evidence](release-process.md#080).
+Baseline: React 0.14.0 on `latest` with tokens 0.8.1, icons 0.7.0 and product-contracts 0.9.1 (published
+2026-11-01 from `5df3af1ff96e4670571564b067e33d68ac1696d5`; [release evidence](release-process.md#0140)).
+This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
+React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
+repository, not a native registry release. See [release evidence](release-process.md#080).
 P01–P04 below are all in that release.
 React 0.9.0 (2026-10-06, `c7644af8`; tokens 0.5.0, icons 0.6.0, product-contracts 0.8.0) adds the
 navigation completion (#193): RouteSetupPanel, RouteLocationField, ArrivalPanel, RouteSummary hosted in the
@@ -30,6 +31,19 @@ React 0.12.2 (2026-10-22, `afcc2fbd`; tokens, icons and product-contracts unchan
 control radius, falls POIDetailPanel's unsafe or failed artwork back to its `iconName` (GAP-178), draws every
 `KozmosIcon` name in POI detail tags, and marks Stepper's current step. See
 [release evidence](release-process.md#0122).
+
+React 0.13.0 (2026-10-26, `ba2a28f4`; tokens 0.8.1, icons 0.7.0, product-contracts unchanged) opens the date and
+time pickers' own panels (`Calendar`, decisions 104 and 105, GAP-186), draws the 29 icon names the natives draw
+beyond the library (GAP-179), and takes the product's words on Pagination, SplitButton and the toast's close
+(GAP-182, GAP-168). See [release evidence](release-process.md#0130).
+
+React 0.14.0 (2026-11-01, `5df3af1f`; tokens, icons and product-contracts unchanged) adds MAP-64's tour family
+(decision 116): `TourStep` (GAP-188), Backdrop's cut-out (GAP-189), `PopoverAnchor` (GAP-190), Stepper's dots
+(GAP-191) and option groups (GAP-192), none of them on SwiftUI or Compose yet. A fixed Backdrop is drawn in the
+theme's portal, MapView is its own stacking context, live parts keep speaking under an open Select or Menu
+(GAP-193), a composed tree's rows are treeitems (GAP-204), and React's CardContent and CardFooter pay the top as a
+card's first child (GAP-194). A library release is not board, Figma or device acceptance. See
+[release evidence](release-process.md#0140).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
