@@ -45,4 +45,15 @@ describe("MapView", () => {
     );
     expect(container.firstElementChild).toHaveAttribute("role", "application");
   });
+
+  it("is its own stacking context, framed or filling (site GAP-40)", () => {
+    // MapOverlay is z-index 50, as a sticky Navbar is, and a map engine's
+    // layers take z-indexes of their own: isolated, they stack inside the
+    // map and never over the page's header or the shell's chrome.
+    // scripts/check-site-gaps.mjs reads what draws on top in every engine.
+    const { container, rerender } = render(<MapView mapLabel="Venue map" />);
+    expect(container.firstElementChild).toHaveClass("isolate");
+    rerender(<MapView mapLabel="Venue map" variant="fill" />);
+    expect(container.firstElementChild).toHaveClass("isolate");
+  });
 });

@@ -57,6 +57,11 @@ import { buttonVariants } from "@kozmos-ds/react";
 </a>;
 ```
 
+The anchor draws no underline at rest, and the `link` variant underlines on hover. A class
+of your own that underlines it wins only with more weight than Kozmos's rule: Kozmos's own
+`underline` utility does, but a host utility in a cascade layer (as Tailwind 4 writes them)
+never does, and an unlayered one only when it loads after Kozmos's stylesheet.
+
 For an application that deliberately wants Tailwind's **global** reset, optionally
 import `@kozmos-ds/react/reset.css` before its own host styles. It is never imported
 automatically. Do not also import the token package's global CSS into an embedded

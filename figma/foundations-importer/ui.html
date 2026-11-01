@@ -1119,6 +1119,7 @@
                 <option value="menu">Menu</option>
                 <option value="popover">Popover</option>
                 <option value="tooltip">Tooltip</option>
+                <option value="tourStep">TourStep</option>
               </optgroup>
               <optgroup label="Controls">
                 <option value="checkbox">Checkbox</option>
@@ -2028,6 +2029,13 @@
           update: "update-popover",
           rebuild: "rebuild-popover",
           hint: "Build creates Popover with Side variants plus editable title and description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        tourStep: {
+          label: "TourStep",
+          build: "build-tour-step",
+          update: "update-tour-step",
+          rebuild: "rebuild-tour-step",
+          hint: "Build creates TourStep (GAP-188), a product tour's step card, with First step, Step, Last step and Coachmark content: the tour's name and position, title, body, a hint and the status behind the Hint and Instruction booleans, live Stepper dots and Back and Next Buttons, and IconButton's Close. Build Button, IconButton and Stepper first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         menu: {
           label: "Menu",

@@ -181,6 +181,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
+  // The themed emotion's ink is the words of a tour step's hint, on the
+  // themed surface (GAP-188).
+  ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's
   // star.
