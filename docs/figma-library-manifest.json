@@ -14,7 +14,7 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 99 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 100 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
@@ -14542,9 +14542,9 @@
       "stories": 122,
       "tests": 122,
       "exported": 122,
-      "codeConnectFiles": 98,
+      "codeConnectFiles": 99,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 98
+      "codeConnectLinked": 99
     },
     "firstBatch": [
       "Accordion",
@@ -14642,6 +14642,7 @@
       "Toast",
       "ToggleButton",
       "Tooltip",
+      "TourStep",
       "Tree",
       "UserLocationMarker",
       "WayfindingCard"
@@ -19209,14 +19210,26 @@
         "test": "packages/react/src/components/TourStep/TourStep.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/TourStep/TourStep.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2307-10045",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["TourStep"],
+          "mappedProps": [
+            "body",
+            "instruction",
+            "instructionTone",
+            "nextDisabled",
+            "nextLabel",
+            "secondaryLabel",
+            "step",
+            "stepCount",
+            "target",
+            "title",
+            "tourLabel"
+          ],
           "unmappedProps": []
         },
         "props": [

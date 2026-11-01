@@ -138,6 +138,8 @@
       "src/components/BottomSheet/BottomSheet.tsx",
       "src/components/Popover/Popover.figma.tsx",
       "src/components/Popover/Popover.tsx",
+      "src/components/TourStep/TourStep.figma.tsx",
+      "src/components/TourStep/TourStep.tsx",
       "src/components/Menu/Menu.figma.tsx",
       "src/components/Menu/Menu.tsx",
       "src/components/Toast/Toast.figma.tsx",
