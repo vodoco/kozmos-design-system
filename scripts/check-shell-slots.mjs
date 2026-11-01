@@ -578,7 +578,8 @@ try {
       { dir, still: still.column, passing: passing.column },
     );
 
-    // Near enough that they reach it: it still makes room.
+    // Near enough that they reach it: it still makes room. Credits with no
+    // brand are short, so what clears them would not clear a status.
     const { boxes: reached } = await render({
       dir,
       density: "touch",
@@ -587,6 +588,7 @@ try {
       panel: true,
       tallPanel: true,
       bottomCorners: false,
+      brandless: true,
       status: STATUS,
     });
     read(
@@ -640,6 +642,7 @@ try {
     const { boxes: column } = await render({
       ...phone,
       width: 360,
+      brandless: true,
       status: "Calculating a step-free route to Gate 12",
     });
     read(
