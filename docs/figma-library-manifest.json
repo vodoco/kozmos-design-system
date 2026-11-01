@@ -14721,13 +14721,11 @@
           "connectedComponents": ["AdaptiveMapShell"],
           "mappedProps": [
             "controls",
-            "controlsTopStart",
             "map",
             "mapLabel",
             "panel",
             "panelLabel",
             "panelPlacement",
-            "status",
             "topBar"
           ],
           "unmappedProps": []
