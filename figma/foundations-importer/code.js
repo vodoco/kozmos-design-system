@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c078fbbd7cb4";
+const PLUGIN_BUILD = "95f469ac5093";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -3302,20 +3302,21 @@ const COMPONENT_DOCS = [
     summary:
       "TourStep is one step of a product tour: a card beside the control the step points at, which Backdrop's cut-out lights (GAP-188).",
     usage: [
-      "Use for a guided tour's steps: the tour's name and position, a title, a body, a hint, what completes the step, the dots, Back, Next and Close.",
-      "Use the Coachmark content for a single hint beside a control (GAP-157): no position, no dots, no Back or Next.",
+      "Use for a guided tour's steps: the tour's name and position, a title, a body, what to do now, the progress, Back, Next and Close.",
+      "Use the Coachmark content for a single hint beside a control (GAP-157): no position, no progress, no Back or Next.",
+      "Use the Welcome content for a card that opens a tour: a dismiss link, a secondary action and Next, and no Close.",
       "The sequence, pausing and resuming are the product's; the set draws one step.",
     ],
     api: [
-      "Content maps to the step's place: First step has no onBack, Step has onBack and onNext, Last step passes nextLabel Finish, Coachmark has no stepCount, onBack or onNext.",
-      "Tour Text maps to tourLabel; Position Text is written from step and stepCount through positionLabel.",
-      "Title Text maps to title, Body Text to children, Hint Text to hint and Instruction Text to instruction.",
-      "Hint and Instruction are booleans showing the hint and the status.",
+      "Content maps to the step's place: First step has no onBack, Step has onBack and onNext, Last step passes nextDisabled, Warning passes instructionTone warning and onSecondary with no onNext, Coachmark has no stepCount, onBack or onNext, and Welcome has no onClose and passes onDismiss and onSecondary.",
+      "Tour Text maps to tourLabel, Title Text to title, Body Text to body and Instruction Text to instruction.",
+      "The position belongs to the variant, as its bar does: React writes it from step and stepCount through positionLabel.",
+      "Instruction and Arrow are booleans showing the instruction and the arrow.",
     ],
     properties: [
-      "Content: First step, Step, Last step, Coachmark",
-      "Hint, Instruction (booleans)",
-      "Tour Text, Position Text, Title Text, Body Text, Hint Text, Instruction Text",
+      "Content: First step, Step, Last step, Warning, Coachmark, Welcome",
+      "Instruction, Arrow (booleans)",
+      "Tour Text, Title Text, Body Text, Instruction Text",
     ],
     accessibility: [
       "In code a non-modal dialog named by its title and described by its tour, position, body, hint and status; it takes focus on Next when it opens.",
@@ -58289,15 +58290,26 @@ async function updatePopoverVariant(
 // semibold in the theme ink, sentence case) and Close at its end
 // (IconButton's Ghost with x-close); the title is Heading 4 under it, the
 // whole width; the body Small in the muted ink. The instruction is Notice's
-// look: its tone's fill at 5 % behind and its edge at 50 %, as layers of
-// their own, the Container corner, 8/12 inside, a 16 icon on the words'
-// middle (cursor-02 for info, drawn here, and alert-triangle for the
-// warning) and the words 14 semibold in the tone's ink. The progress is a
-// bar of the secondary fill,
-// the theme ink to the step, with the position beside it. Every button is
-// Size Small. An Arrow, 24 by 12 in Surface/0 with a 1 drop shadow, points up
-// from the card's middle at the target, over the card's edge by 1, as the
-// card sits under it.
+// box: its tone's fill at 5 % behind and its edge at 50 %, as layers of
+// their own, the Container corner, a 1 border and 8/12 inside it, a 16 icon
+// on the words' middle (cursor-02 for info, drawn here, and alert-triangle
+// for the warning) and the words 14 semibold in the tone's ink. The progress
+// is a bar of the secondary fill, the theme ink to the step, with the
+// position beside it. Every button is Size Small, as wide as its words. An
+// Arrow, 24 by 12 in Surface/0 with a 1 drop shadow, points up from the
+// card's middle at the target, over the card's edge by 1, as the card sits
+// under it.
+//
+// The set draws Touch, the one density the file has. The design and React's
+// stories are compact (ThemeProvider density="compact", decision 82): there
+// Close and the buttons are 32, and the card 24 shorter. Here they are live
+// instances of Button and IconButton, whose every size is 44, and they stay
+// bound to it: a 32 written on an instance would be a size the library does
+// not have, and it would hold those instances out of the Density modes
+// GAP-146 asks for. The design's other two overrides are the Dashboard's and
+// not Kozmos's, so they are not drawn either: Readex Pro, and corners of 8
+// where Kozmos's are 16 and 20 (the design's GAP-202).
+//
 // Content is the design's states:
 // - First step: 1 of 4, Next.
 // - Step: 2 of 4, Back and Next.
@@ -58312,6 +58324,18 @@ async function updatePopoverVariant(
 //   wide so the three sit on one line (US1-Welcome).
 // Back, the secondary action, Next and the dismiss link are live Button
 // instances, exposed so a designer edits their labels from the step.
+//
+// One sample for all six. A component set's TEXT property has one default,
+// and it replaces the words of every layer bound to it, in every variant, the
+// moment the layer is bound: the live file's Welcome read the step's eyebrow
+// and title and its Warning the info tone's words, whatever the painter wrote
+// (Build, 2026-11-01). So the words of a bound layer are written once, here,
+// to read true on every variant they appear on: nothing about a step's place,
+// no target and no button a variant may not have (Last step's Next is
+// disabled, Warning has none). The position is not a property at all, because
+// the bar beside it is the variant's: a default would say "2 of 4" over the
+// first step's bar and the last's. Each variant writes its own, and a designer
+// types over it on an instance, as they would anything the variant decides.
 const TOUR_STEP_CONTENT = [
   "First step",
   "Step",
@@ -58326,22 +58350,18 @@ const TOUR_STEP_PADDING = 16;
 const TOUR_STEP_GAP = 12;
 const TOUR_STEP_COUNT = 4;
 const TOUR_STEP_ARROW = { width: 24, height: 12 };
+const TOUR_STEP_CLOSE_ICON = 16;
 // Notice's summary: 14 semibold at leading-snug.
 const TOUR_STEP_INSTRUCTION_LINE = 19.25;
+// Notice's 8/12 and its 1 border, which the edge layer draws out of the flow.
+const TOUR_STEP_INSTRUCTION_INSET = { x: 13, y: 9 };
+const TOUR_STEP_INSTRUCTION_GAP = 8;
 const TOUR_STEP_SAMPLE = {
-  tour: "Add users and assign permissions",
-  title: "Open User Management in Settings",
-  body: "User Management is where you give people access to Pointr Cloud. It is in Settings.",
+  tour: "Getting started",
+  title: "Find your way around Pointr Cloud",
+  body: "Learn the basics in your own maps, one step at a time. Leave and come back at any time.",
   instruction:
-    "Open Settings, then User Management, or select Next to go there.",
-  warning:
-    "Fix what the Dashboard's message says and select Add User again, or select Finish without adding.",
-  coachmarkTitle: "Draw rooms here",
-  coachmarkBody: "Pick the room tool, then click each corner of the room.",
-  welcomeTour: "Welcome",
-  welcomeTitle: "Welcome to Pointr Cloud",
-  welcomeBody:
-    "Learn the basics in your own maps. Tours, documentation and help for the page you are on now live under this button, on every page.",
+    "Do what this step asks to go on, or close the tour and come back later.",
 };
 // The pointer React's TourStep draws for info: Pointr's cursor-02 (node
 // 1007:11267), from packages/icons. It is not one of the curated icons on the
@@ -58367,19 +58387,16 @@ const TOUR_STEP_TONES = {
   },
 };
 
-/** What each Content draws. */
+/** What each Content draws. The words of a bound layer are TOUR_STEP_SAMPLE's. */
 function tourStepContentSpec(value) {
   const step = (current, extra) =>
     Object.assign(
       {
         width: TOUR_STEP_WIDTH,
         eyebrow: true,
-        tour: TOUR_STEP_SAMPLE.tour,
         current,
         close: true,
-        title: TOUR_STEP_SAMPLE.title,
-        body: TOUR_STEP_SAMPLE.body,
-        instruction: TOUR_STEP_SAMPLE.instruction,
+        instruction: true,
         tone: "Info",
         progress: true,
         dismiss: null,
@@ -58395,7 +58412,6 @@ function tourStepContentSpec(value) {
     return step(TOUR_STEP_COUNT, { nextDisabled: true });
   if (value === "Warning")
     return step(TOUR_STEP_COUNT, {
-      instruction: TOUR_STEP_SAMPLE.warning,
       tone: "Warning",
       secondary: "Finish without adding",
       next: null,
@@ -58403,9 +58419,7 @@ function tourStepContentSpec(value) {
   if (value === "Coachmark")
     return step(null, {
       eyebrow: false,
-      title: TOUR_STEP_SAMPLE.coachmarkTitle,
-      body: TOUR_STEP_SAMPLE.coachmarkBody,
-      instruction: null,
+      instruction: false,
       progress: false,
       back: false,
       next: null,
@@ -58413,11 +58427,8 @@ function tourStepContentSpec(value) {
   if (value === "Welcome")
     return step(null, {
       width: TOUR_STEP_WIDE_WIDTH,
-      tour: TOUR_STEP_SAMPLE.welcomeTour,
       close: false,
-      title: TOUR_STEP_SAMPLE.welcomeTitle,
-      body: TOUR_STEP_SAMPLE.welcomeBody,
-      instruction: null,
+      instruction: false,
       progress: false,
       dismiss: "Don't show again",
       back: false,
@@ -58498,7 +58509,8 @@ function exposeTourStepInstance(instance, stats) {
  * Close's IconButton `variant` gives its icon is laid again on the swapped-in
  * layers. The same move NavigationItem's shells and BrowseCategoriesPanel's
  * tiles make after their swaps; CORE_UPDATE_SEQUENCE runs IconButton before
- * TourStep, so the tint is laid again in the run that could take it away.
+ * TourStep, so the tint is laid again in the run that could take it away. The
+ * stroke goes with it: 2 on a 24 source stays 2 at 16, where React draws 1.33.
  */
 function retintTourStepCloseIcon(instance, variant, variableByName, stats) {
   const config = buttonConfig(variant, "Default");
@@ -58530,6 +58542,7 @@ function retintTourStepCloseIcon(instance, variant, variableByName, stats) {
     variableByName,
     stats,
   );
+  scaleIconStrokes(icon, TOUR_STEP_CLOSE_ICON);
 }
 
 async function tourStepText({
@@ -58566,7 +58579,15 @@ async function tourStepText({
   return text;
 }
 
-/** A Button instance with its label, exposed; or a placeholder. */
+/**
+ * A Button instance as wide as its words, exposed; or a placeholder.
+ *
+ * Size=Small is a fixed 96 in the file and its label sizes itself, so a label
+ * longer than 72 ran out of both sides of the button, past the card's edge and
+ * over its neighbours. React's sm button has no width: it is its words and 12
+ * either side. HUG before the parent, as Card's actions do: the live file holds
+ * those at their labels (Cancel 79, Save 65) with Button/width still bound.
+ */
 async function tourStepButton({ name, variant, label, stats }) {
   const button = await createTourStepInstance({
     componentSetName: "Button",
@@ -58583,19 +58604,37 @@ async function tourStepButton({ name, variant, label, stats }) {
       label,
       stats,
     );
+    setLayoutSizingHorizontal(button.node, "HUG");
+    const words = button.node.findOne(
+      (node) => node.type === "TEXT" && node.name === "Label Text",
+    );
+    const room =
+      button.node.width - button.node.paddingLeft - button.node.paddingRight;
+    if (words && words.width > room + 0.5) {
+      stats.warnings.push(
+        `TourStep: ${name} did not hug "${label}": ${Math.round(words.width)} in ${Math.round(room)}.`,
+      );
+    }
   }
   exposeTourStepInstance(button.node, stats);
   return button.node;
 }
 
-/** The arrow: a 24 by 12 triangle pointing up from the card's middle. */
+/**
+ * The arrow: a 24 by 12 triangle pointing up from the card's middle.
+ *
+ * Its frame clips. The frame ends at the bottom of the card's edge, which the
+ * triangle's base covers, so the shadow that gives its slopes their edge stops
+ * there too: unclipped it fell on the card's own white under the base, the
+ * hairline in the live file's renders (D1 at 2x where React's reads FB).
+ */
 async function tourStepArrow(width, variableByName, stats) {
   const arrow = figma.createFrame();
   arrow.name = "Arrow";
   arrow.resizeWithoutConstraints(TOUR_STEP_ARROW.width, TOUR_STEP_ARROW.height);
   arrow.fills = [];
   arrow.strokes = [];
-  arrow.clipsContent = false;
+  arrow.clipsContent = true;
   const fill = figma.createVector();
   fill.name = "Arrow Fill";
   arrow.appendChild(fill);
@@ -58658,7 +58697,22 @@ function tourStepPointer(ink, variableByName, stats) {
   return icon;
 }
 
-/** The instruction, as Notice draws it in its tone. */
+/**
+ * The instruction, as Notice draws it in its tone.
+ *
+ * Fixed until its layers are in. An absolute layer starts as a child in the
+ * flow, and a frame that hugs takes it and its padding in at once, then keeps
+ * that size once the layer leaves the flow; the stretch set next holds the
+ * difference for good. So the fill and the edge each stopped 16 (the padding,
+ * top and bottom) short of a frame that hugged its two lines correctly: 39 in
+ * 55 on all four live variants, the words running out of the box the eye sees.
+ * Fixed, the frame takes nothing in, and the layers stretch from no margin.
+ * The caller hugs it, and holdTourStepInstructionLayers reads the result back.
+ *
+ * Notice's box holds its 1 border in the flow and the layers here do not, so
+ * the padding says it: 1 + 8 and 1 + 12, 57 tall on two lines as the design's
+ * is, with the words 288 wide.
+ */
 async function tourStepInstruction({
   spec,
   width,
@@ -58670,13 +58724,13 @@ async function tourStepInstruction({
   const instruction = productSdkFrame("Instruction", {
     direction: "horizontal",
     primarySizing: "FIXED",
-    counterSizing: "AUTO",
+    counterSizing: "FIXED",
     counterAlign: "CENTER",
-    spacing: 8,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 12,
-    paddingRight: 12,
+    spacing: TOUR_STEP_INSTRUCTION_GAP,
+    paddingTop: TOUR_STEP_INSTRUCTION_INSET.y,
+    paddingBottom: TOUR_STEP_INSTRUCTION_INSET.y,
+    paddingLeft: TOUR_STEP_INSTRUCTION_INSET.x,
+    paddingRight: TOUR_STEP_INSTRUCTION_INSET.x,
     width,
     height: 40,
   });
@@ -58731,7 +58785,7 @@ async function tourStepInstruction({
   }
   const text = await tourStepText({
     name: "Instruction Text",
-    characters: spec.instruction,
+    characters: TOUR_STEP_SAMPLE.instruction,
     styleKey: "tourStepInstruction",
     fonts,
     bold: true,
@@ -58741,10 +58795,42 @@ async function tourStepInstruction({
     colorFallback: tone.ink.fallback,
     variableByName,
     stats,
-    width: width - 24 - 16 - 8,
+    width:
+      width -
+      2 * TOUR_STEP_INSTRUCTION_INSET.x -
+      16 -
+      TOUR_STEP_INSTRUCTION_GAP,
   });
   appendWithSizing(instruction, text, "FILL", "HUG");
   return instruction;
+}
+
+/**
+ * Once the frame hugs its words, its fill and edge are its size, whatever the
+ * runtime did on the way, so a longer instruction on an instance stretches them
+ * from no margin. A size that will not take says so in the run's log.
+ */
+function holdTourStepInstructionLayers(instruction, stats) {
+  for (const name of ["Instruction Fill", "Instruction Edge"]) {
+    const layer = instruction.findChild((node) => node.name === name);
+    if (!layer) continue;
+    layer.x = 0;
+    layer.y = 0;
+    layer.resizeWithoutConstraints(instruction.width, instruction.height);
+    if (
+      Math.abs(layer.width - instruction.width) > 0.5 ||
+      Math.abs(layer.height - instruction.height) > 0.5
+    ) {
+      stats.warnings.push(
+        `TourStep: ${name} is ${layer.width} by ${layer.height} in a ${instruction.width} by ${instruction.height} instruction.`,
+      );
+    }
+  }
+}
+
+/** The position in words: the variant's own, as the bar beside it is. */
+function tourStepPosition(spec) {
+  return `${spec.current} of ${TOUR_STEP_COUNT}`;
 }
 
 /** The progress: the bar, filled to the step, and the position beside it. */
@@ -58760,7 +58846,7 @@ async function tourStepProgress({ spec, width, variableByName, fonts, stats }) {
   });
   const words = await tourStepText({
     name: "Position Text",
-    characters: `${spec.current} of ${TOUR_STEP_COUNT}`,
+    characters: tourStepPosition(spec),
     styleKey: textStyleKeyForText("XS", "Normal"),
     fonts,
     bold: false,
@@ -58798,7 +58884,9 @@ async function tourStepProgress({ spec, width, variableByName, fonts, stats }) {
   );
   range.x = 0;
   range.y = 0;
-  range.cornerRadius = KOZMOS_RADIUS.pill;
+  // Square, as Progress's indicator is: the track's clip rounds its start, and
+  // its end only when the bar is full.
+  range.cornerRadius = 0;
   range.fills = [
     paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
   ];
@@ -58826,6 +58914,10 @@ async function updateTourStepVariant(
     clip: false,
   });
   productSdkSurface(component, KOZMOS_RADIUS.control, variableByName, stats);
+  // Neither is documented, and the card's 338 inside and the arrow's cover of
+  // the edge both lean on them: the border is inside the box, and laid out.
+  component.strokeAlign = "INSIDE";
+  setNodePropertyIfSupported(component, "strokesIncludedInLayout", true);
   component.effects = [elevationEffect("overlay")];
 
   // The arrow: out of the flow, above the card's middle, held there as the
@@ -58861,10 +58953,10 @@ async function updateTourStepVariant(
         height: 16,
       });
       setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
-      const parts = [["Tour Text", spec.tour]];
+      const parts = [["Tour Text", TOUR_STEP_SAMPLE.tour]];
       if (spec.current) {
         parts.push(["Separator", "·"]);
-        parts.push(["Position Text", `${spec.current} of ${TOUR_STEP_COUNT}`]);
+        parts.push(["Position Text", tourStepPosition(spec)]);
       }
       for (const [name, characters] of parts) {
         const text = await tourStepText({
@@ -58933,7 +59025,7 @@ async function updateTourStepVariant(
 
   const title = await tourStepText({
     name: "Title Text",
-    characters: spec.title,
+    characters: TOUR_STEP_SAMPLE.title,
     styleKey: textStyleKeyForHeading("H4"),
     fonts,
     bold: true,
@@ -58949,7 +59041,7 @@ async function updateTourStepVariant(
 
   const body = await tourStepText({
     name: "Body Text",
-    characters: spec.body,
+    characters: TOUR_STEP_SAMPLE.body,
     styleKey: textStyleKeyForText("Small", "Normal"),
     fonts,
     bold: false,
@@ -58972,6 +59064,7 @@ async function updateTourStepVariant(
       stats,
     });
     appendWithSizing(component, instruction, "FILL", "HUG");
+    holdTourStepInstructionLayers(instruction, stats);
   }
 
   if (spec.progress) {
@@ -59070,9 +59163,16 @@ function layoutTourStepVariants(componentSet) {
 }
 
 function configureTourStepProperties(componentSet, stats) {
+  // The Build of 2026-11-01 made it, and its default read "2 of 4" over every
+  // step's bar. The layers it drove are redrawn without it.
+  deleteComponentPropertiesByBaseName(
+    componentSet,
+    ["Position Text"],
+    ["TEXT"],
+    stats,
+  );
   for (const [name, value] of [
     ["Tour Text", TOUR_STEP_SAMPLE.tour],
-    ["Position Text", `2 of ${TOUR_STEP_COUNT}`],
     ["Title Text", TOUR_STEP_SAMPLE.title],
     ["Body Text", TOUR_STEP_SAMPLE.body],
     ["Instruction Text", TOUR_STEP_SAMPLE.instruction],
@@ -59087,6 +59187,10 @@ function configureTourStepProperties(componentSet, stats) {
     stats,
   );
   configureNamedBooleanProperty(componentSet, "Arrow", "Arrow", true, stats);
+  // A default that reflows a card arrives after layoutVariants: the live set
+  // kept a box 19 taller than its tallest card, for a Warning that lost a line
+  // when it was bound.
+  layoutTourStepVariants(componentSet);
 }
 
 function tourStepComponentConfig() {
@@ -59105,9 +59209,10 @@ function tourStepComponentConfig() {
     description: [
       "Kozmos TourStep component set generated from React TourStep API (GAP-188), as the MAP-64 design draws it (decision 136).",
       "Content maps to the design's states: First step (no onBack), Step (onBack and onNext), Last step (nextDisabled), Warning (instructionTone warning, onSecondary, no onNext), Coachmark (no stepCount, onBack or onNext; GAP-157), Welcome (no onClose, onDismiss, onSecondary, 432 wide).",
-      "Tour Text maps to tourLabel; Position Text is the position React writes from step and stepCount with positionLabel, in the eyebrow and beside the progress bar.",
-      "Title Text maps to title, Body Text to body and Instruction Text to instruction; the Instruction boolean shows it, and the Arrow boolean the arrow.",
-      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, exposed; Close is IconButton Ghost with x-close.",
+      "Tour Text maps to tourLabel, Title Text to title, Body Text to body and Instruction Text to instruction; the Instruction boolean shows it, and the Arrow boolean the arrow. Their sample words are shared by all six variants, as a text property has one default.",
+      "The position is the variant's own, in the eyebrow and beside the bar: React writes it from step and stepCount with positionLabel.",
+      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, as wide as their words, exposed; Close is IconButton Ghost with x-close.",
+      "Drawn at Touch density, the only one the file has (GAP-146): compact, as Pointr Cloud is, Close and the buttons are 32 and the card 24 shorter.",
       "The card is drawn without its target: in code its arrow's tip is 3 past Backdrop's cut-out ring, and the card 14.",
     ],
   };

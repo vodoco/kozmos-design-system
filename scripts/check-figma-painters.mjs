@@ -33,8 +33,13 @@ import {
   payloadVariables,
   resetSearchStats,
   searchStats,
+  withAutoLayout,
   withNodeDefaults,
 } from "./lib/figma-plugin-harness.mjs";
+import {
+  isTypedGlyph,
+  layersShortOfTheirFrame,
+} from "./lib/figma-verify-rules.mjs";
 
 const ROOT = process.cwd();
 const PLUGIN = path.resolve(
@@ -1974,7 +1979,11 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // secondary action, Next and the dismiss link live and exposed at Size Small,
 // a disabled Next at 50 %. Content is the design's states; the properties
 // each bind a layer; and the set is drawn from a file that holds the sets it
-// nests, as Build and Update find them.
+// nests, as Build and Update find them. The painters run inside
+// `withAutoLayout`, so the numbers read here are the ones the file lays out:
+// until 2026-11-01 this section read what the painter wrote, every assertion
+// passed, and the Build drew labels out of their buttons, words out of the
+// instruction and "2 of 4" over a full bar.
 section("TourStep (GAP-188, decision 136)");
 {
   const ready =
@@ -2016,8 +2025,26 @@ section("TourStep (GAP-188, decision 136)");
     // The file: Button's Default, Ghost, Outline and Link at Small,
     // IconButton's Ghost and its Icon swap, x-close and alert-triangle on the
     // Icons page.
-    const labelled = (variant, key) => {
+    // Size=Small as updateButtonVariant draws it: a fixed 96 by 44, 12 either
+    // side, the label sizing itself and centred, the outline's stroke laid out.
+    const labelled = (variant, name, key) => {
+      variant.layoutMode = "HORIZONTAL";
+      variant.primaryAxisSizingMode = "FIXED";
+      variant.counterAxisSizingMode = "FIXED";
+      variant.primaryAxisAlignItems = "CENTER";
+      variant.counterAxisAlignItems = "CENTER";
+      variant.itemSpacing = 8;
+      variant.paddingLeft = 12;
+      variant.paddingRight = 12;
+      variant.resize(96, 44);
+      if (name === "Outline") {
+        variant.strokes = [
+          { type: "SOLID", color: { r: 0, g: 0, b: 1 }, opacity: 1 },
+        ];
+      }
       const label = new MockNode("TEXT", "Label Text");
+      label.fontSize = 14;
+      label.lineHeight = { unit: "PIXELS", value: 20 };
       label.characters = "Button";
       label.componentPropertyReferences = { characters: key };
       variant.appendChild(label);
@@ -2026,7 +2053,7 @@ section("TourStep (GAP-188, decision 136)");
       "Button",
       ["Default", "Ghost", "Outline", "Link"].map((variant) => ({
         properties: { Variant: variant, Size: "Small", State: "Default" },
-        build: (node) => labelled(node, "Label Text#1:0"),
+        build: (node) => labelled(node, variant, "Label Text#1:0"),
       })),
     );
     button.componentPropertyDefinitions = {
@@ -2042,8 +2069,13 @@ section("TourStep (GAP-188, decision 136)");
       {
         properties: { Variant: "Ghost", Size: "Default", State: "Default" },
         build: (node) => {
+          node.layoutMode = "HORIZONTAL";
+          node.primaryAxisSizingMode = "FIXED";
+          node.counterAxisSizingMode = "FIXED";
+          node.resize(44, 44);
           const icon = plus.createInstance();
           icon.name = "Icon";
+          icon.resize(16, 16);
           icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
           for (const layer of icon.children) {
             layer.strokes = [
@@ -2088,12 +2120,14 @@ section("TourStep (GAP-188, decision 136)");
     for (const content of plugin.TOUR_STEP_CONTENT) {
       const component = fileFigma.createComponent();
       const stats = freshStats();
-      await file.updateTourStepVariant(component, {
-        props: { content },
-        variableByName: tokens.variableByName,
-        fonts: FONTS,
-        stats,
-      });
+      await withAutoLayout(() =>
+        file.updateTourStepVariant(component, {
+          props: { content },
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
       painted[content] = component;
       const coachmark = content === "Coachmark";
       const welcome = content === "Welcome";
@@ -2141,6 +2175,7 @@ section("TourStep (GAP-188, decision 136)");
           arrow.height === 12 &&
           arrow.x === (width - 24) / 2 &&
           arrow.y === -11 &&
+          arrow.clipsContent === true &&
           arrowFill &&
           boundVariableName(fill(arrowFill)) === "Surface/0" &&
           arrowFill.effects.length === 1 &&
@@ -2149,7 +2184,7 @@ section("TourStep (GAP-188, decision 136)");
           arrowFill.effects[0].boundVariables &&
           arrowFill.effects[0].boundVariables.color.id ===
             tokens.variableByName.get("Border/bevel/bottom").id,
-        `${content}: a 24 by 12 arrow above the card's middle, 1 over its edge, Surface/0, a 0 1 1 shadow in the bevel's colour`,
+        `${content}: a 24 by 12 arrow above the card's middle, 1 over its edge, Surface/0, a 0 1 1 shadow in the bevel's colour that its frame clips at the edge`,
       );
       const header = named(component, "Header");
       const eyebrow = named(component, "Eyebrow");
@@ -2170,9 +2205,8 @@ section("TourStep (GAP-188, decision 136)");
                     text.fontSize === 12 &&
                     boundVariableName(fill(text)) === "Colors/theme/600",
                 ) &&
-              (welcome
-                ? tour.characters === "Welcome" && !position
-                : position.characters === `${current} of 4`),
+              tour.characters === plugin.TOUR_STEP_SAMPLE.tour &&
+              (welcome ? !position : position.characters === `${current} of 4`),
         coachmark
           ? "Coachmark: no tour name and no position"
           : `${content}: "${tour && tour.characters}${position ? ` · ${position.characters}` : ""}", 12 in the theme ink, in sentence case`,
@@ -2210,9 +2244,11 @@ section("TourStep (GAP-188, decision 136)");
             closeIcon.mainComponent === close &&
             closeInk.length > 0 &&
             closeInk.every(
-              (node) => boundVariableName(node.strokes[0]) === ghostInk,
+              (node) =>
+                boundVariableName(node.strokes[0]) === ghostInk &&
+                Math.abs(node.strokeWeight - 4 / 3) < 1e-6,
             ),
-          `${content}: x-close draws in the ghost button's ink, ${ghostInk} (${closeInk.map((node) => boundVariableName(node.strokes[0]) || hexOf(node.strokes[0])).join(", ") || "no stroked layer"})`,
+          `${content}: x-close draws in the ghost button's ink, ${ghostInk}, at React's 1.33 (${closeInk.map((node) => `${boundVariableName(node.strokes[0]) || hexOf(node.strokes[0])} ${node.strokeWeight}`).join(", ") || "no stroked layer"})`,
         );
       }
       const title = named(component, "Title Text");
@@ -2221,20 +2257,16 @@ section("TourStep (GAP-188, decision 136)");
           title.fontSize === 20 &&
           title.lineHeight.value === 28 &&
           boundVariableName(fill(title)) === "Colors/foreground/0" &&
-          title.characters ===
-            (coachmark
-              ? "Draw rooms here"
-              : welcome
-                ? "Welcome to Pointr Cloud"
-                : "Open User Management in Settings"),
-        `${content}: the title Heading 4, 20/28, in the foreground`,
+          title.characters === plugin.TOUR_STEP_SAMPLE.title,
+        `${content}: the title Heading 4, 20/28, in the foreground, the one sample ("${title && title.characters}")`,
       );
       const body = named(component, "Body Text");
       ok(
         body &&
           body.fontSize === 14 &&
-          boundVariableName(fill(body)) === "Colors/foreground/400",
-        `${content}: the body 14 in the muted ink`,
+          boundVariableName(fill(body)) === "Colors/foreground/400" &&
+          body.characters === plugin.TOUR_STEP_SAMPLE.body,
+        `${content}: the body 14 in the muted ink, the one sample`,
       );
       const instruction = named(component, "Instruction");
       if (coachmark || welcome) {
@@ -2258,8 +2290,6 @@ section("TourStep (GAP-188, decision 136)");
           : [];
         ok(
           instruction.cornerRadius === 20 &&
-            instruction.paddingTop === 8 &&
-            instruction.paddingLeft === 12 &&
             instruction.itemSpacing === 8 &&
             instruction.counterAxisAlignItems === "CENTER" &&
             (instruction.fills || []).length === 0 &&
@@ -2273,7 +2303,39 @@ section("TourStep (GAP-188, decision 136)");
             boundVariableName(edge.strokes[0]) === toneFill &&
             edge.strokeWeight === 1 &&
             Math.abs(edge.opacity - 0.5) < 1e-9,
-          `${content}: the instruction on its tone's fill at 5 % with its edge at 50 %, the Container corner, 8/12 inside`,
+          `${content}: the instruction on its tone's fill at 5 % with its edge at 50 %, the Container corner`,
+        );
+        // Notice's box, with its border in the flow: 8/12 inside a 1 border,
+        // so the words are 288 wide and two lines of them make it 56.5, the
+        // design's 57. The layers that draw the box are the frame's size: the
+        // frame hugged its words in the live file, and the two layers stopped
+        // 16 short of it, 39 in 55, with the words running out of what shows.
+        const lines = Math.round(text.height / 19.25);
+        ok(
+          instruction.paddingTop === 9 &&
+            instruction.paddingBottom === 9 &&
+            instruction.paddingLeft === 13 &&
+            instruction.paddingRight === 13 &&
+            text.width === 288 &&
+            lines === 2 &&
+            instruction.height === 18 + 2 * 19.25,
+          `${content}: 8/12 inside Notice's 1 border, the words 288 wide on two lines, the box 56.5 (${instruction.paddingTop}/${instruction.paddingLeft}, ${text.width}, ${text.height}, ${instruction.height})`,
+        );
+        ok(
+          [wash, edge].every(
+            (layer) =>
+              layer.x === 0 &&
+              layer.y === 0 &&
+              layer.width === instruction.width &&
+              layer.height === instruction.height &&
+              layer.constraints.horizontal === "STRETCH" &&
+              layer.constraints.vertical === "STRETCH",
+          ),
+          `${content}: the fill and the edge are the instruction's size, and stretch with it from no margin (${wash.width}x${wash.height}, ${edge.width}x${edge.height} in ${instruction.width}x${instruction.height})`,
+        );
+        ok(
+          icon.y === (instruction.height - 16) / 2,
+          `${content}: the icon on the middle of the words (${icon.y} in ${instruction.height})`,
         );
         ok(
           icon &&
@@ -2305,12 +2367,14 @@ section("TourStep (GAP-188, decision 136)");
             boundVariableName(fill(track)) === "Colors/background/200" &&
             boundVariableName(fill(range)) === "Colors/theme/600" &&
             range.constraints.horizontal === "SCALE" &&
+            range.cornerRadius === 0 &&
+            track.clipsContent === true &&
             Math.abs(range.width - (track.width * current) / 4) <= 1 &&
             words.characters === `${current} of 4` &&
             words.fontSize === 12 &&
             boundVariableName(fill(words)) === "Colors/foreground/400" &&
             progress.children[progress.children.length - 1] === words,
-          `${content}: the bar, filled to ${current} of 4 in the theme ink, and "${words && words.characters}" after it in the muted ink`,
+          `${content}: the bar, filled to ${current} of 4 in the theme ink, a square end the track's clip rounds, and "${words && words.characters}" after it in the muted ink`,
         );
       }
       if (!coachmark) {
@@ -2354,6 +2418,42 @@ section("TourStep (GAP-188, decision 136)");
               (welcome ? "SPACE_BETWEEN" : "MAX"),
           `${content}: ${labels.join("; ")}`,
         );
+        // Every button is its words and 12 either side, and the row stays
+        // inside the card: the dismiss link's box on the inner edge, the
+        // actions ending on the other. Size=Small is a fixed 96 in the file:
+        // in the live set "Finish without adding" ran past the card's edge.
+        const buttons = footer.findAll((node) => node.type === "INSTANCE");
+        const fits = buttons.map((instance) => {
+          const label = named(instance, "Label Text");
+          const stroke = instance.mainComponent.name.includes("Outline")
+            ? 2
+            : 0;
+          return {
+            name: instance.name,
+            width: instance.width,
+            label: label.width,
+            hugs:
+              instance.primaryAxisSizingMode === "AUTO" &&
+              instance.width === label.width + 24 + stroke &&
+              label.x >= 12 &&
+              label.x + label.width <= instance.width - 12,
+          };
+        });
+        ok(
+          fits.every((button) => button.hugs),
+          `${content}: every button hugs its label (${fits.map((button) => `${button.name} ${button.width} for ${button.label}`).join(", ")})`,
+        );
+        const actions = named(footer, "Actions");
+        const dismiss = named(footer, "Dismiss");
+        ok(
+          actions.x >= 0 &&
+            actions.x + actions.width === footer.width &&
+            (dismiss
+              ? dismiss.x === 0 && dismiss.x + dismiss.width < actions.x
+              : true) &&
+            footer.height === 44,
+          `${content}: the actions end on the card's inner edge, ${dismiss ? "the link starts on the other, " : ""}one line (${dismiss ? `${dismiss.x}+${dismiss.width}, ` : ""}${actions.x}+${actions.width} in ${footer.width})`,
+        );
       }
       ok(
         stats.warnings.length === 0,
@@ -2361,12 +2461,16 @@ section("TourStep (GAP-188, decision 136)");
       );
     }
 
-    // The set's properties: five texts and two booleans, each driving a layer.
+    // The set's properties: four texts and two booleans, each driving a layer.
+    // In the order Build and Update run them: the layout, then the properties.
     const set = new MockNode("COMPONENT_SET", "TourStep");
     for (const content of plugin.TOUR_STEP_CONTENT)
       set.appendChild(painted[content]);
     const propertyStats = freshStats();
-    file.configureTourStepProperties(set, propertyStats);
+    await withAutoLayout(async () => {
+      file.layoutTourStepVariants(set);
+      file.configureTourStepProperties(set, propertyStats);
+    });
     const definitions = Object.entries(set.componentPropertyDefinitions).map(
       ([key, definition]) => `${key.split("#")[0]}:${definition.type}`,
     );
@@ -2378,12 +2482,11 @@ section("TourStep (GAP-188, decision 136)");
             "Body Text:TEXT",
             "Instruction Text:TEXT",
             "Instruction:BOOLEAN",
-            "Position Text:TEXT",
             "Title Text:TEXT",
             "Tour Text:TEXT",
           ].sort(),
         ),
-      `five text properties and two booleans (${definitions.join(", ")})`,
+      `four text properties and two booleans, and no position (${definitions.join(", ")})`,
     );
     const references = (key) =>
       set.findAll(
@@ -2395,7 +2498,6 @@ section("TourStep (GAP-188, decision 136)");
       ).length;
     const unbound = [
       "Tour Text",
-      "Position Text",
       "Title Text",
       "Body Text",
       "Instruction Text",
@@ -2407,13 +2509,365 @@ section("TourStep (GAP-188, decision 136)");
       `every property drives a layer (${unbound.join(", ") || "all bound"}; ${propertyStats.warnings.join(" | ")})`,
     );
     ok(
-      references("Instruction") === 4 &&
-        references("Arrow") === 6 &&
-        // The eyebrow's and the progress's, in each of the four steps.
-        references("Position Text") === 8,
-      `Instruction drives its layer in the four steps, Arrow in all six, Position Text the eyebrow and the progress (${references("Instruction")}, ${references("Arrow")}, ${references("Position Text")})`,
+      references("Instruction") === 4 && references("Arrow") === 6,
+      `Instruction drives its layer in the four steps, and Arrow in all six (${references("Instruction")}, ${references("Arrow")})`,
+    );
+
+    // What the file shows once the layers are bound. A set's TEXT property has
+    // one default and it replaces every bound layer's words, so no variant can
+    // keep words of its own there: the sample has to read true on all six, and
+    // the position, which the bar beside it decides, cannot be a property.
+    const sample = plugin.TOUR_STEP_SAMPLE;
+    const defaultOf = (name) =>
+      Object.entries(set.componentPropertyDefinitions).find(
+        ([key]) => key.split("#")[0] === name,
+      )?.[1].defaultValue;
+    for (const [name, key] of [
+      ["Tour Text", "tour"],
+      ["Title Text", "title"],
+      ["Body Text", "body"],
+      ["Instruction Text", "instruction"],
+    ]) {
+      const layers = set.findAll(
+        (node) => node.type === "TEXT" && node.name === name,
+      );
+      ok(
+        layers.length > 0 &&
+          defaultOf(name) === sample[key] &&
+          layers.every((layer) => layer.characters === sample[key]),
+        `${name}: ${layers.length} bound layers all read the default, "${sample[key]}"`,
+      );
+    }
+    ok(
+      [sample.tour, sample.title, sample.body, sample.instruction].every(
+        (words) =>
+          !/\bnext\b|\bselect\b|\bfinish\b|\bwelcome\b|\d of \d/i.test(words),
+      ),
+      "the sample names no position and no button a variant may not have",
+    );
+    for (const content of plugin.TOUR_STEP_CONTENT) {
+      const component = painted[content];
+      const current = { "First step": 1, Step: 2 }[content] || 4;
+      const positions = component.findAll(
+        (node) => node.type === "TEXT" && node.name === "Position Text",
+      );
+      if (content === "Coachmark" || content === "Welcome") {
+        ok(positions.length === 0, `${content}: no position`);
+        continue;
+      }
+      const track = named(component, "Progress Track");
+      const range = named(component, "Progress Range");
+      const said = positions.map((node) => node.characters);
+      ok(
+        positions.length === 2 &&
+          said.every((words) => words === `${current} of 4`) &&
+          Math.abs(range.width / track.width - current / 4) < 0.01 &&
+          positions.every(
+            (node) => !(node.componentPropertyReferences || {}).characters,
+          ),
+        `${content}: says ${said.join(" and ")} over a bar at ${Math.round((range.width / track.width) * 100)} %, written by the variant and bound to nothing`,
+      );
+    }
+    const tallest = Math.max(...set.children.map((child) => child.height));
+    ok(
+      set.height === tallest + 20 &&
+        set.children.every((child) => child.y === 20),
+      `the set's box ends on its tallest card (${set.height} for ${tallest}, each card 20 down for its arrow)`,
+    );
+
+    // An Update over what is on the file, keeping every id Code Connect is
+    // about to pin. The set as the Build of 2026-11-01 left it: Position Text a
+    // property, its layers bound to it. New layer ids in every variant, so the
+    // Close's tint and stroke are laid again in the same run.
+    const positionKey = set.addComponentProperty(
+      "Position Text",
+      "TEXT",
+      "2 of 4",
+    );
+    for (const layer of set.findAll(
+      (node) => node.type === "TEXT" && node.name === "Position Text",
+    )) {
+      layer.componentPropertyReferences = { characters: positionKey };
+    }
+    const ids = {
+      set: set.id,
+      variants: set.children.map((child) => child.id),
+      title: named(set.children[0], "Title Text").id,
+    };
+    const config = file.tourStepComponentConfig();
+    const updateStats = freshStats();
+    await withAutoLayout(async () => {
+      for (const child of [...set.children]) {
+        await config.updateVariant(child, {
+          props: config.parseVariantName(child.name),
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: updateStats,
+        });
+      }
+      config.layoutVariants(set);
+      await config.configureProperties(set, updateStats, tokens.variableByName);
+      file.reportUnboundComponentProperties(set, updateStats);
+    });
+    ok(
+      set.id === ids.set &&
+        JSON.stringify(set.children.map((child) => child.id)) ===
+          JSON.stringify(ids.variants) &&
+        named(set.children[0], "Title Text").id !== ids.title,
+      "an Update keeps the set's id and its six variants', and redraws their layers",
+    );
+    ok(
+      !Object.keys(set.componentPropertyDefinitions).some(
+        (key) => key.split("#")[0] === "Position Text",
+      ) &&
+        references("Title Text") === 6 &&
+        updateStats.warnings.length === 0,
+      `an Update takes Position Text off the set and leaves nothing unbound (${updateStats.warnings.join(" | ")})`,
+    );
+    const updated = set.children[1];
+    const updatedEdge = named(updated, "Instruction Edge");
+    const updatedClose = named(updated, "Close").findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.mainComponent === "Icon#2:0",
+    );
+    const updatedInk = updatedClose.findAll(
+      (node) => (node.strokes || []).length > 0,
+    );
+    ok(
+      updatedEdge.height === named(updated, "Instruction").height &&
+        updatedInk.length > 0 &&
+        updatedInk.every(
+          (node) =>
+            boundVariableName(node.strokes[0]) === ghostInk &&
+            Math.abs(node.strokeWeight - 4 / 3) < 1e-6,
+        ),
+      "over the Build, the instruction's layers still fit and Close keeps its tint and stroke",
+    );
+
+    // Figma documents neither default. A new frame that clips, and a stroke
+    // that starts outside, leave the drawing as it is.
+    const worst = fileFigma.createComponent();
+    const worstStats = freshStats();
+    await withNodeDefaults(
+      {
+        FRAME: { clipsContent: true, strokeAlign: "OUTSIDE" },
+        COMPONENT: { clipsContent: true, strokeAlign: "OUTSIDE" },
+        RECTANGLE: { strokeAlign: "OUTSIDE" },
+      },
+      () =>
+        withAutoLayout(async () => {
+          const painting = fileFigma.createComponent();
+          await file.updateTourStepVariant(painting, {
+            props: { content: "Step" },
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: worstStats,
+          });
+          worst.appendChild(painting);
+        }),
+    );
+    const worstCard = worst.children[0];
+    const clipping = worstCard
+      .findAll((node) => node.type === "FRAME" && node.clipsContent)
+      .map((node) => node.name);
+    ok(
+      worstCard.strokeAlign === "INSIDE" &&
+        worstCard.clipsContent === false &&
+        named(worstCard, "Instruction Edge").strokeAlign === "INSIDE" &&
+        JSON.stringify(clipping.sort()) ===
+          JSON.stringify(["Arrow", "Progress Track"]),
+      `whatever a new node starts as, the card's border is inside and only the arrow and the track clip (${worstCard.strokeAlign}, ${clipping.join(", ")})`,
     );
   }
+}
+
+// What the stand-in learned from the live TourStep set, on its own: each is a
+// behaviour a painter leans on and the stand-in used to pass over, so a check
+// that reads layout is reading the file's rules, not this file's hopes. Read
+// over REST on 2026-11-01, where the painter that drew the set, replayed in
+// `withAutoLayout`, lands within a pixel of its 127 nodes and its 2692 by 388,
+// apart from the widths of self-sizing text.
+section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
+{
+  await withAutoLayout(async () => {
+    const buttonVariant = new MockNode("COMPONENT", "Size=Small");
+    buttonVariant.layoutMode = "HORIZONTAL";
+    buttonVariant.primaryAxisSizingMode = "FIXED";
+    buttonVariant.counterAxisSizingMode = "FIXED";
+    buttonVariant.primaryAxisAlignItems = "CENTER";
+    buttonVariant.paddingLeft = 12;
+    buttonVariant.paddingRight = 12;
+    buttonVariant.resize(96, 44);
+    const label = new MockNode("TEXT", "Label Text");
+    label.fontSize = 14;
+    label.characters = "Next";
+    label.componentPropertyReferences = { characters: "Label Text#1:0" };
+    buttonVariant.appendChild(label);
+
+    // A fixed primary axis keeps its width when the label changes.
+    const kept = buttonVariant.createInstance();
+    kept.setProperties({ "Label Text#1:0": "Finish without adding" });
+    const keptLabel = named(kept, "Label Text");
+    ok(
+      kept.width === 96 &&
+        keptLabel.width > 72 &&
+        keptLabel.x < 0 &&
+        keptLabel.x + keptLabel.width > 96,
+      `a fixed instance keeps its 96, and a long label runs out of both sides (${kept.width}, the label at ${keptLabel.x}+${keptLabel.width})`,
+    );
+    // HUG is the shorthand for the sizing mode, and the instance follows.
+    const hugged = buttonVariant.createInstance();
+    hugged.setProperties({ "Label Text#1:0": "Finish without adding" });
+    hugged.layoutSizingHorizontal = "HUG";
+    const huggedLabel = named(hugged, "Label Text");
+    ok(
+      hugged.primaryAxisSizingMode === "AUTO" &&
+        hugged.width === huggedLabel.width + 24 &&
+        huggedLabel.x === 12,
+      `a hugging instance is its label and its padding (${hugged.width}, ${hugged.primaryAxisSizingMode})`,
+    );
+
+    // A bound text takes the set's default, in every variant, at once.
+    const set = new MockNode("COMPONENT_SET", "Set");
+    const key = set.addComponentProperty("Words", "TEXT", "The default");
+    const texts = ["One", "Two"].map((words) => {
+      const variant = new MockNode("COMPONENT", words);
+      const text = new MockNode("TEXT", "Words");
+      text.characters = words;
+      variant.appendChild(text);
+      set.appendChild(variant);
+      return text;
+    });
+    ok(
+      texts[0].characters === "One",
+      "a text keeps its words until it is bound",
+    );
+    for (const text of texts) {
+      text.componentPropertyReferences = { characters: key };
+    }
+    ok(
+      texts.every((text) => text.characters === "The default"),
+      "a bound text takes the set's default, whatever its variant wrote",
+    );
+    set.editComponentProperty(key, { defaultValue: "Another" });
+    ok(
+      texts.every((text) => text.characters === "Another"),
+      "a new default reaches every bound layer",
+    );
+    set.deleteComponentProperty(key);
+    ok(
+      texts.every(
+        (text) =>
+          text.characters === "Another" &&
+          !text.componentPropertyReferences.characters,
+      ),
+      "a deleted property leaves its layers their words and no reference",
+    );
+
+    // A padded hug frame takes an absolute layer in while it is in the flow,
+    // and holds the size when it leaves it, so the stretch keeps the padding as
+    // a margin however the frame moves after that.
+    const frame = new MockNode("FRAME", "Hugging");
+    frame.layoutMode = "HORIZONTAL";
+    frame.primaryAxisSizingMode = "FIXED";
+    frame.counterAxisSizingMode = "AUTO";
+    frame.paddingTop = 8;
+    frame.paddingBottom = 8;
+    frame.resizeWithoutConstraints(338, 40);
+    const layer = new MockNode("RECTANGLE", "Layer");
+    layer.resize(338, 40);
+    frame.insertChild(0, layer);
+    ok(frame.height === 56, `the flow child and the padding: ${frame.height}`);
+    layer.layoutPositioning = "ABSOLUTE";
+    layer.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    ok(frame.height === 56, `no flow child left, it holds: ${frame.height}`);
+    const words = new MockNode("TEXT", "Words");
+    words.textAutoResize = "HEIGHT";
+    words.lineHeight = { unit: "PIXELS", value: 19.25 };
+    words.fontSize = 14;
+    words.characters = "w".repeat(70);
+    words.resizeWithoutConstraints(290, 19.25);
+    frame.appendChild(words);
+    ok(
+      frame.height === 54.5 && layer.height === 38.5,
+      `the frame hugs two lines, and the layer stays 16 short: ${layer.height} in ${frame.height}, the live 39 in 55`,
+    );
+  });
+}
+
+// figma:verify's two new rules, on nodes shaped as REST returns them. The
+// report it missed was not about text at all: over REST on 2026-11-01 the
+// instruction's words sat inside their own box and inside the frame, which
+// hugged them, and what fell short was the frame's own fill and edge, absolute
+// layers its overflow rule skips on purpose.
+section("figma:verify reads stretched layers and a separator");
+{
+  const box = (x, y, width, height) => ({ x, y, width, height });
+  const stretched = {
+    horizontal: "LEFT_RIGHT",
+    vertical: "TOP_BOTTOM",
+  };
+  const layer = (name, bounds, constraints = stretched) => ({
+    name,
+    type: "RECTANGLE",
+    layoutPositioning: "ABSOLUTE",
+    constraints,
+    absoluteBoundingBox: bounds,
+  });
+  const frame = (children, height = 55) => ({
+    name: "Instruction",
+    type: "FRAME",
+    layoutMode: "HORIZONTAL",
+    absoluteBoundingBox: box(0, 0, 338, height),
+    children,
+  });
+  const short = layersShortOfTheirFrame("TourStep", {
+    name: "TourStep",
+    children: [
+      frame([
+        layer("Instruction Fill", box(0, 0, 338, 39)),
+        layer("Instruction Edge", box(0, 0, 338, 39)),
+      ]),
+    ],
+  });
+  ok(
+    short.length === 2 &&
+      short[0] ===
+        "TourStep / Instruction > Instruction Fill — 338x39 over a 338x55 frame (short by 16)",
+    `a layer stretched over its frame and short of it is named (${short.join("; ")})`,
+  );
+  ok(
+    layersShortOfTheirFrame("Set", {
+      name: "Set",
+      children: [
+        frame([
+          // On the frame, a focus ring past it, a strip stretched one way, and
+          // a hidden layer.
+          layer("Fits", box(0, 0, 338, 55)),
+          layer("Focus Ring", box(-4, -4, 346, 63)),
+          layer("Vertical Scrollbar", box(330, 0, 8, 23), {
+            horizontal: "RIGHT",
+            vertical: "TOP_BOTTOM",
+          }),
+          { ...layer("Hidden", box(0, 0, 338, 10)), visible: false },
+        ]),
+      ],
+    }).length === 0,
+    "a layer on its frame, one past it, a strip and a hidden layer are left alone",
+  );
+
+  const text = (name, characters) => ({ type: "TEXT", name, characters });
+  ok(
+    !isTypedGlyph(text("Separator", "·")) &&
+      isTypedGlyph(text("Label", "·")) &&
+      isTypedGlyph(text("Separator", "→")) &&
+      isTypedGlyph(text("Close", "×")) &&
+      !isTypedGlyph(text("Label", "Next")) &&
+      !isTypedGlyph(text("Percent", "%")),
+    "a Separator's dot is punctuation; a dot elsewhere, and any other glyph, still counts",
+  );
 }
 
 // --- Decision 59: the theme fill and what sits on it ------------------------------
