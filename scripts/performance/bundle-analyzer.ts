@@ -203,7 +203,7 @@ async function main() {
   // `define` and Rollup's @rollup/plugin-replace all do. So code that only runs in development is
   // already dead when the bundler tree-shakes, and whatever only it kept is left out. Replacing it
   // here too, with esbuild's define as Vite's does, measures what such an app ships. Replacing it
-  // only after bundling, as this did until 2026-10-28, kept what development-only code held.
+  // only after bundling, as this used to, kept what development-only code held.
   const productionDefine = {
     name: "kozmos-production-define",
     async transform(code: string) {
