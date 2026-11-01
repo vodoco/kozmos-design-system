@@ -882,6 +882,19 @@ for (const target of ["none", "missing"]) {
   );
 }
 
+// The welcome card's help button may not be on the page: centred, it keeps
+// the width its three actions need.
+await scenario(
+  "the dismiss link keeps the card 432 wide in the middle of the window, where its target is not on the page",
+  { mount: { welcome: true, target: "missing" } },
+  async (page) => {
+    const at = await placement(page);
+    assertCentred(at, VIEWPORT, "missing");
+    const m = await measure(page);
+    assert.equal(m.card.w, 27 * m.rootFont, "432 wide, as 27rem");
+  },
+);
+
 await scenario(
   "the arrow is never clipped: the point under its middle is the arrow, while the card enters too",
   { mount: { open: false } },

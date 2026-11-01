@@ -36,9 +36,6 @@
     text-align: start;
     overflow-wrap: anywhere;
   }
-  .kozmos-popover.kozmos-tour-step[data-width="wide"] {
-    --kozmos-tour-step-width: 27rem;
-  }
   /* With nothing to point at, it places itself in the middle of the window,
      420 wide (decision 139): Radix sets its top at the window's middle, and
      it moves up by half its own height. The whole window is its room then. */
@@ -48,6 +45,11 @@
     max-block-size: calc(
       100dvh - 2 * var(--primitives-layout-spacing-200) * 1px
     );
+  }
+  /* After the centre: the dismiss link's three actions need the width wherever
+     the card sits, as when a welcome card's target is not on the page. */
+  .kozmos-popover.kozmos-tour-step[data-width="wide"] {
+    --kozmos-tour-step-width: 27rem;
   }
   /* A popover opened from inside the card, or by the lit target while the
      step is open (a field's list, a tooltip), opens above the card, as it
