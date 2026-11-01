@@ -29,6 +29,16 @@ type Config = {
   detent?: PanelDetent;
   topBar?: boolean;
   legacy?: boolean;
+  /** How many buttons the legacy column holds. */
+  legacyCount?: number;
+  /** A side panel taller than the map, which the shell caps. */
+  tallPanel?: boolean;
+  /** Credits wider than a short status. */
+  wideCredits?: boolean;
+  /** Credits with no brand, whose box is the only one that widens with them. */
+  brandless?: boolean;
+  /** False leaves the bottom corners out, so nothing but the credits caps a side panel. */
+  bottomCorners?: boolean;
   /** The status's words; "" keeps the pill rendered with none. */
   status?: string;
   topStart?: boolean;
@@ -60,6 +70,11 @@ function Fixture({
   detent = { height: 120 },
   topBar = true,
   legacy = false,
+  legacyCount = 1,
+  tallPanel = false,
+  wideCredits = false,
+  brandless = false,
+  bottomCorners = true,
   status,
   topStart = true,
   topEnd = true,
@@ -89,11 +104,16 @@ function Fixture({
         }
         controls={
           legacy ? (
-            <MapControlButton
-              icon={<InfoCircle className="h-5 w-5" />}
-              label="Legacy control"
-              onClick={() => undefined}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {Array.from({ length: legacyCount }, (_, i) => (
+                <MapControlButton
+                  key={i}
+                  icon={<InfoCircle className="h-5 w-5" />}
+                  label="Legacy control"
+                  onClick={() => undefined}
+                />
+              ))}
+            </div>
           ) : undefined
         }
         controlsTopStart={
@@ -126,45 +146,63 @@ function Fixture({
         attribution={
           attribution ? (
             <MapAttribution
-              credits={[{ id: "owner", label: "© Example indoor data" }]}
+              showBrand={!brandless}
+              credits={[
+                {
+                  id: "owner",
+                  label: wideCredits
+                    ? "© Example indoor data, surveyed for the venue's owners"
+                    : "© Example indoor data",
+                },
+              ]}
             />
           ) : undefined
         }
         controlsBottomStart={
-          <MapControlButton
-            icon={<Accessibility className="h-5 w-5" />}
-            label={wideStart ? "Step-free routes only" : "Step-free"}
-            presentation={wideStart ? "labelled" : "icon-only"}
-            pressed={false}
-            onClick={() => undefined}
-          />
+          bottomCorners ? (
+            <MapControlButton
+              icon={<Accessibility className="h-5 w-5" />}
+              label={wideStart ? "Step-free routes only" : "Step-free"}
+              presentation={wideStart ? "labelled" : "icon-only"}
+              pressed={false}
+              onClick={() => undefined}
+            />
+          ) : undefined
         }
         controlsBottomEnd={
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: 16,
-            }}
-          >
-            <FloorSelector
-              variant="collapsible"
-              floors={Array.from({ length: floors }, (_, i) => ({
-                id: String(i),
-                shortLabel: String(i),
-                label: "Level " + i,
-              }))}
-              selectedFloor={floor}
-              onFloorSelect={setFloor}
-            />
-            <MapControlsGroup
-              onZoomIn={() => undefined}
-              onZoomOut={() => undefined}
-            />
-          </div>
+          bottomCorners ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
+                gap: 16,
+              }}
+            >
+              {floors > 0 && (
+                <FloorSelector
+                  variant="collapsible"
+                  floors={Array.from({ length: floors }, (_, i) => ({
+                    id: String(i),
+                    shortLabel: String(i),
+                    label: "Level " + i,
+                  }))}
+                  selectedFloor={floor}
+                  onFloorSelect={setFloor}
+                />
+              )}
+              <MapControlsGroup
+                onZoomIn={() => undefined}
+                onZoomOut={() => undefined}
+              />
+            </div>
+          ) : undefined
         }
-        panel={panel ? <div style={{ height: 160 }}>Details</div> : undefined}
+        panel={
+          panel ? (
+            <div style={{ height: tallPanel ? 2000 : 160 }}>Details</div>
+          ) : undefined
+        }
         panelPlacement={panelPlacement}
         panelDetents={[detent]}
         controlsPadCamera={padCamera}

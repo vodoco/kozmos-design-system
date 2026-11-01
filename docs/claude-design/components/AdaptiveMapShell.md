@@ -89,7 +89,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
   step-free route". The credits give way to it, directly above it, and both
   stay centred on the map. With no middle slot between the corners it rises
   above them, as the credits do. With no room above the sheet it is not
-  drawn and still announces. It never pads the camera.
+  drawn and still announces. It never pads the camera, and a tall panel or
+  controls column it and the credits do not reach keeps its height.
 
 - `controlsTopStart`: `React.ReactNode`, optional.
 

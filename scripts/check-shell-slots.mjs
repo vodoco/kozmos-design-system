@@ -11,7 +11,9 @@
  * density. The slots are reported in the layout snapshot; the status never
  * moves the camera, and the top corners pad it only with `controlsPadCamera`.
  * A floor list opened in the bottom-end corner stays clear of the top corners
- * and the status.
+ * and the status. Tab walks the slots as they are drawn, top to bottom. A
+ * status comes and goes, so it moves only what it and the credits above it
+ * reach: a tall side panel or controls column clear of them keeps its height.
  *
  * Every read is soft: a failure is recorded and the next read runs, so a run
  * against a build without the slots names each read that fails, and the run
@@ -57,6 +59,8 @@ const overlaps = (a, b) =>
   b.x < a.x + a.width - 0.5 &&
   a.y < b.y + b.height - 0.5 &&
   b.y < a.y + a.height - 0.5;
+/** Whether two boxes share a stretch of the inline axis, at whatever height. */
+const across = (a, b) => a.x < b.x + b.width - 0.5 && b.x < a.x + a.width - 0.5;
 const right = (r) => r.x + r.width;
 const bottom = (r) => r.y + r.height;
 const centre = (r) => r.x + r.width / 2;
@@ -102,6 +106,7 @@ function measure() {
     exit: box(button("Exit Main Mall")),
     info: box(button("Info")),
     legacy: box(button("Legacy control")),
+    column: box(region("Map controls")),
     stepFree: box(button("Step-free")),
     floors: box(
       document.querySelector('[role="group"][aria-label="Floor selector"]'),
@@ -499,6 +504,165 @@ try {
       { dir, popup: b.popup, exit: b.exit, info: b.info, status: b.status },
     );
     await page.keyboard.press("Escape");
+  }
+
+  // ------------------------------------------------------------- focus order
+  // Tab from the top bar walks what is drawn under it, in the order it is
+  // drawn: the top corners, then the controls column below them.
+  for (const dir of ["ltr", "rtl"])
+    for (const width of [390, 1024]) {
+      await render({
+        dir,
+        density: "touch",
+        width,
+        height: 844,
+        panel: true,
+        legacy: true,
+        status: STATUS,
+      });
+      await page.getByRole("button", { name: "Search" }).focus();
+      const order = [];
+      for (let tab = 0; tab < 4; tab++) {
+        await page.keyboard.press("Tab");
+        order.push(
+          await page.evaluate(() => {
+            const focused = document.activeElement;
+            return (
+              focused?.getAttribute("aria-label") ?? focused?.textContent ?? ""
+            );
+          }),
+        );
+      }
+      read(
+        "Tab reaches the top corners before the controls column drawn below them",
+        order.join() === "Exit Main Mall,Info,Legacy control,Step-free",
+        { dir, width, order },
+      );
+    }
+
+  // ---------------------------------------- what a status comes and goes past
+  for (const dir of ["ltr", "rtl"]) {
+    // Wide enough that the status and the credits end short of the panel on
+    // one side and of the column on the other.
+    const clear = {
+      dir,
+      density: "touch",
+      width: 1180,
+      height: 700,
+      panel: true,
+      tallPanel: true,
+      legacy: true,
+      legacyCount: 12,
+      bottomCorners: false,
+    };
+    const still = (await render(clear)).boxes;
+    const passing = (await render({ ...clear, status: STATUS })).boxes;
+    read(
+      "a status clear of a tall side panel leaves its height as it was",
+      passing.status &&
+        still.panel &&
+        passing.panel &&
+        !across(passing.status, passing.panel) &&
+        !across(passing.attribution, passing.panel) &&
+        near(passing.panel.height, still.panel.height, 0.5),
+      { dir, still: still.panel, passing: passing.panel },
+    );
+    read(
+      "a status clear of a tall controls column leaves its height as it was",
+      passing.status &&
+        still.column &&
+        passing.column &&
+        !across(passing.status, passing.column) &&
+        !across(passing.attribution, passing.column) &&
+        near(passing.column.height, still.column.height, 0.5),
+      { dir, still: still.column, passing: passing.column },
+    );
+
+    // Near enough that they reach it: it still makes room.
+    const { boxes: reached } = await render({
+      dir,
+      density: "touch",
+      width: 1024,
+      height: 700,
+      panel: true,
+      tallPanel: true,
+      bottomCorners: false,
+      status: STATUS,
+    });
+    read(
+      "a status that reaches a tall side panel still clears it",
+      reached.status &&
+        reached.panel &&
+        reached.attribution &&
+        across(reached.status, reached.panel) &&
+        !overlaps(reached.status, reached.panel) &&
+        !overlaps(reached.attribution, reached.panel),
+      { dir, reached },
+    );
+    // The credits widen in place, clear of the panel before and reaching it
+    // after, and nothing else resizes to say so.
+    const shortStatus = {
+      dir,
+      density: "touch",
+      width: 1100,
+      height: 700,
+      panel: true,
+      tallPanel: true,
+      bottomCorners: false,
+      brandless: true,
+      status: "Done",
+    };
+    const { boxes: narrow } = await render(shortStatus);
+    const { boxes: credited } = await render({
+      ...shortStatus,
+      wideCredits: true,
+    });
+    read(
+      "wide credits that reach a tall side panel clear it, raised by a short status",
+      credited.status &&
+        credited.panel &&
+        credited.attribution &&
+        !across(narrow.attribution, narrow.panel) &&
+        !across(credited.status, credited.panel) &&
+        across(credited.attribution, credited.panel) &&
+        !overlaps(credited.attribution, credited.panel),
+      { dir, narrow, credited },
+    );
+    const phone = {
+      dir,
+      density: "touch",
+      width: 390,
+      height: 844,
+      legacy: true,
+      legacyCount: 12,
+      floors: 0,
+    };
+    const { boxes: column } = await render({
+      ...phone,
+      width: 360,
+      status: "Calculating a step-free route to Gate 12",
+    });
+    read(
+      "a status that reaches a tall controls column still clears it",
+      column.status &&
+        column.column &&
+        column.attribution &&
+        across(column.status, column.column) &&
+        !overlaps(column.status, column.column) &&
+        !overlaps(column.attribution, column.column),
+      { dir, column },
+    );
+    // The column's band may narrow for a status; whether the corners below it
+    // fit may not, or a status that wraps beside them could flip them for ever.
+    const { boxes: unstatused } = await render(phone);
+    const { boxes: statused } = await render({ ...phone, status: STATUS });
+    read(
+      "a status leaves the bottom corners under a tall controls column as they were",
+      statused.status &&
+        unstatused.column &&
+        Boolean(statused.zoom) === Boolean(unstatused.zoom),
+      { dir, unstatused: unstatused.zoom, statused: statused.zoom },
+    );
   }
 
   // ---------------------------------------------- landmarks, state, presses

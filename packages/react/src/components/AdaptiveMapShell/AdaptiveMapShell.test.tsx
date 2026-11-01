@@ -596,4 +596,18 @@ describe("AdaptiveMapShell status and top corners", () => {
       "80px",
     );
   });
+
+  it("comes before the controls column drawn below it, in the order Tab walks", () => {
+    slots({
+      controls: (
+        <button data-w="48" data-h="100">
+          Locate
+        </button>
+      ),
+    });
+    const buttons = screen
+      .getAllByRole("button")
+      .map((button) => button.textContent);
+    expect(buttons).toEqual(["Exit Main Mall", "Info", "Locate"]);
+  });
 });

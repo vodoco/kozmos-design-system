@@ -132,6 +132,7 @@ host acceptance work. See [the component reference](../packages/react/src/compon
 `controlsTopStart` and `controlsTopEnd` sit under the top bar, at the logical start and end of the
 map beside a side panel. `occlusions` reports the status's slot as `status` and the top corners' row as `controls`.
 The top corners pad the camera's top only with `controlsPadCamera`, and the status never pads it.
+A status moves only what it reaches: a tall side panel or `controls` column clear of it and the credits keeps its height.
 `pnpm test:map-controls` measures them in Chromium, WebKit and Firefox
 (`scripts/check-shell-slots.mjs`). SwiftUI and Compose do not have them yet.
 

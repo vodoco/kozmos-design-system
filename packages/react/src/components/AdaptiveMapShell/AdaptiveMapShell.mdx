@@ -115,6 +115,10 @@ What they publish:
   column pads its side.
 - The status never pads the camera. A status comes and goes, and the camera would move each time
   (GAP-079). The credits above it pad as they would without it.
+- For the same reason a status moves only what it reaches. A tall side panel or `controls` column
+  keeps its height as a status comes and goes, unless the status or the credits above it, centred
+  on the map, reach across it. Then it makes room while the status shows. Whether the bottom
+  corners fit never depends on a status.
 
 <Canvas of={Stories.StatusAndTopCorners} />
 <Canvas of={Stories.StatusAndTopCornersBesidePanel} />
