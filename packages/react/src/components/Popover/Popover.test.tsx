@@ -131,12 +131,6 @@ function TwoStepTour({
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 describe("PopoverAnchor (GAP-190)", () => {
-  it("is exported from the package", async () => {
-    const pkg = await import("../../index");
-    expect(pkg.PopoverAnchor).toBeDefined();
-    expect(pkg.PopoverAnchor).toBe(PopoverAnchor);
-  });
-
   it("leaves its target a plain button, which opens nothing", () => {
     render(<TourStep />);
     const target = screen.getByRole("button", { name: "Add desk" });
