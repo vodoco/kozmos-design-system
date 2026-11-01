@@ -124,9 +124,11 @@ is in a building, that calls `exitBuilding()`.
 - `exitBuilding()` does what the SDK's button does. In 10.13.0 the button only emits its view's
   `exitClicked` event, and the SDK's map controller answers it. Zoomed in on a building, it
   scrolls out to the site's centre. Nearer the site's zoom, it zooms out past it.
-- It returns `false` before the map is ready and outside a building.
-- The map then reports no building through `onBuildingChange`. Take the button and the floors
-  away then, and move focus somewhere that stays, so it is not lost with the button.
+- It returns `true` when the SDK was asked, not when the map has left: below the site's zoom the
+  SDK does nothing. It returns `false` before the map is ready, outside a building, and with an
+  SDK whose view has no `exitClicked` event.
+- The map reports no building through `onBuildingChange` once it has left. Take the button and the
+  floors away then, and move focus somewhere that stays, so it is not lost with the button.
 - The selection and the route Kozmos draws are the product's: `exitBuilding()` clears neither, and
   whether leaving a building should is the product's decision.
 

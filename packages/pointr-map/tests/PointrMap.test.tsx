@@ -673,6 +673,17 @@ describe("the handle", () => {
     ).toEqual([]);
   });
 
+  it("exitBuilding() asks only for the event the view names", async () => {
+    const { ref, widget } = await mountReady();
+    const view = widget.view()!;
+    const exits = vi.fn();
+    view.on("exit-clicked", exits);
+    // Another version's view: nothing to ask, and no name to guess at.
+    delete (view.events as Record<string, string | undefined>).exitClicked;
+    expect(ref.current!.exitBuilding()).toBe(false);
+    expect(exits).not.toHaveBeenCalled();
+  });
+
   it("is safe before the map is ready", () => {
     const ref = React.createRef<PointrMapHandle>();
     render(<PointrMap ref={ref} config={config} />);

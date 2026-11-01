@@ -90,8 +90,10 @@ export interface PointrMapHandle {
   /**
    * Leaves the open building for its site, as the SDK's own Exit button does
    * (Kozmos hides that button; put a MapControlButton in AdaptiveMapShell's
-   * `controlsTopStart` instead). The map then reports no building through
-   * `onBuildingChange`. False before the map is ready and outside a building.
+   * `controlsTopStart` instead). True means the SDK was asked, not that the
+   * map has left: it reports no building through `onBuildingChange` when it
+   * has, and below the site's zoom the SDK does nothing. False before the map
+   * is ready, outside a building, and with an SDK whose view has no such event.
    */
   exitBuilding(): boolean;
   /**

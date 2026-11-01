@@ -301,13 +301,16 @@ export class PointrMapSession {
    * controller answers it — zoomed in on a building, it scrolls out to the
    * site's centre; nearer the site's zoom, it zooms out past it (10.13.0).
    * The building change follows from the camera, through `onBuildingChange`.
+   * True means asked: below the site's zoom the controller does nothing, and
+   * only `onBuildingChange` says the map left.
    */
   exitBuilding(): boolean {
     const widget = this.widget;
     const view = this.view;
-    if (!widget || !this.map || !view?.emit) return false;
+    const exitClicked = view?.events?.exitClicked;
+    if (!widget || !this.map || !view?.emit || !exitClicked) return false;
     if (!(widget.getCurrentBuilding() ?? this.building)) return false;
-    view.emit(view.events?.exitClicked ?? "exit-clicked");
+    view.emit(exitClicked);
     return true;
   }
 
