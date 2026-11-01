@@ -1,5 +1,5 @@
 ---
-"@kozmos-ds/react": patch
+"@kozmos-ds/react": minor
 ---
 
 **Production builds no longer carry component names.** Each part's `displayName` is now set only when `process.env.NODE_ENV` is not `"production"`, so a development build shows `Button`, `AdaptiveMapShell` and every other name in React DevTools and React's warnings as before, and a production build shows `ForwardRef` or `Anonymous` there. Kozmos reads no `displayName` itself.
