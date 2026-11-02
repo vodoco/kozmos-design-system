@@ -47,6 +47,30 @@ final class KozmosAccordionBoxedTests: XCTestCase {
         }
     }
 
+    /// One section, open, then disabled or loading: its header at 0, and its
+    /// content 8 under the 44, a block of theme 600 and some words.
+    private struct OpenThenInert: View {
+        var disabled = false
+        var loading = false
+        @State var open: String? = "one"
+
+        var body: some View {
+            KozmosAccordion(variant: .boxed) {
+                KozmosAccordionItem(disabled: disabled) {
+                    KozmosAccordionTrigger(value: "one", title: "Building details", selection: $open, label: "Step 1/5", loading: loading) { Mark() }
+                    KozmosAccordionContent(value: "one", selection: $open) {
+                        VStack(spacing: 0) {
+                            KozmosColors.primitivesColorsTheme600.frame(height: 30)
+                            Text("The form")
+                        }
+                    }
+                }
+            }
+            .frame(width: 408)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+
     #if os(iOS)
     private static let size = CGSize(width: 408, height: 300)
     private static let schemes: [ColorScheme] = [.light, .dark]
@@ -138,6 +162,58 @@ final class KozmosAccordionBoxedTests: XCTestCase {
         }
     }
 
+    /// A section can be open when it turns disabled or starts loading: the
+    /// header greys and keeps its hairline, with none of the open fill or the
+    /// open label's ink, and the section stays open.
+    @MainActor func testAnOpenSectionThatIsDisabledOrLoadingIsGreyNotFilled() async throws {
+        for scheme in Self.schemes {
+            for (name, disabled, loading) in [("disabled", true, false), ("loading", false, true)] {
+                let drawn = try await draw(OpenThenInert(disabled: disabled, loading: loading), scheme)
+                let fill = try ink(KozmosColors.primitivesColorsTheme900, scheme)
+                let grey = try ink(KozmosColors.primitivesColorsBackground100, scheme)
+                let form = try ink(KozmosColors.primitivesColorsTheme600, scheme)
+                let edge = try ink(KozmosColors.semanticsBorderSubtle, scheme)
+                let openLabel = try ink(KozmosColors.primitivesColorsTheme300, scheme, tolerance: 12)
+                let row = CGRect(x: 0, y: 0, width: 408, height: 44)
+                XCTAssertNil(drawn.boundingBox(in: Self.whole, where: fill), "\(scheme), \(name): the header draws the open fill")
+                let header = try XCTUnwrap(drawn.boundingBox(in: row, where: grey), "\(scheme), \(name): no grey header")
+                XCTAssertEqual(header.height, 44, accuracy: 0.7, "\(scheme), \(name): \(header)")
+                let top = drawn.color(at: CGPoint(x: 204, y: 0.5))
+                XCTAssertTrue(edge(top.r, top.g, top.b), "\(scheme), \(name): the hairline went, \(top)")
+                XCTAssertEqual(drawn.count(in: row, where: openLabel), 0, "\(scheme), \(name): the label is the open header's")
+                let content = try XCTUnwrap(drawn.boundingBox(in: Self.whole, where: form), "\(scheme), \(name): the open content went")
+                XCTAssertEqual(content.minY, 52, accuracy: 0.7, "\(scheme), \(name): \(content)")
+            }
+        }
+    }
+
+    /// The title is regular, as the live page draws it. A `Font` can't be read
+    /// back, so it is read off the ink: the medium cut of the same words, drawn
+    /// where the header draws them, lays down more of it.
+    @MainActor func testTheTitleIsRegular() async throws {
+        let title = "Building details"
+        func inked<V: View>(_ view: V) async throws -> Int {
+            let drawn = try await draw(view.frame(width: 408).frame(maxHeight: .infinity, alignment: .top), .light)
+            return drawn.count(in: CGRect(x: 4, y: 4, width: 360, height: 36)) { r, _, _ in r < 128 }
+        }
+        func line(_ weight: Font.Weight) -> some View {
+            Text(title)
+                .font(KozmosTypography.footnote.weight(weight))
+                .foregroundColor(KozmosColors.primitivesColorsForeground0)
+                .padding(.leading, 9)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        }
+        let header = try await inked(KozmosAccordion(variant: .boxed) {
+            KozmosAccordionItem {
+                KozmosAccordionTrigger(value: "one", title: title, selection: .constant(nil))
+            }
+        })
+        let regular = try await inked(line(.regular))
+        let medium = try await inked(line(.medium))
+        XCTAssertGreaterThan(medium, regular, "the two cuts draw alike, so this reads nothing")
+        XCTAssertLessThan(abs(header - regular), abs(header - medium), "the title draws \(header), against \(regular) regular and \(medium) medium")
+    }
+
     /// The icon at the start and the chevron at the end, mirrored right to
     /// left, on a closed header.
     @MainActor func testRightToLeftMirrorsTheMarks() async throws {
@@ -209,6 +285,20 @@ final class KozmosAccordionBoxedTests: XCTestCase {
             XCTAssertFalse(trigger.accessibilityActivate(), "VoiceOver can activate it")
             try await Task.sleep(nanoseconds: 300_000_000)
             XCTAssertFalse(self.elements(window).contains { $0.accessibilityLabel == "The plans" }, "it opened")
+        }
+    }
+
+    /// Open, then disabled or loading: dimmed, it takes no activation, so it
+    /// can't be closed, and what is in the section stays.
+    @MainActor func testAnOpenTriggerThatIsDisabledOrLoadingKeepsItsContent() async throws {
+        for (disabled, loading) in [(true, false), (false, true)] {
+            try await inspect(OpenThenInert(disabled: disabled, loading: loading)) { window in
+                let trigger = try self.element(named: "Step 1/5, Building details", in: window)
+                XCTAssertTrue(trigger.accessibilityTraits.contains(.notEnabled), "it reads as enabled")
+                XCTAssertFalse(trigger.accessibilityActivate(), "VoiceOver can activate it")
+                try await Task.sleep(nanoseconds: 300_000_000)
+                XCTAssertTrue(self.elements(window).contains { $0.accessibilityLabel == "The form" }, "the open content went")
+            }
         }
     }
 

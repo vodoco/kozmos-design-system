@@ -5,8 +5,8 @@ public enum KozmosAccordionVariant: String, CaseIterable, Sendable {
     /// Rows divided by a rule.
     case `default`
     /// Decision 149: each header a box of its own, 8 apart, a hairline while
-    /// closed and the theme's darkest fill while open, with the section's
-    /// content in the page's flow under it.
+    /// closed and a fill of theme 900 while open, with the section's content
+    /// in the page's flow under it.
     case boxed
 }
 
@@ -83,9 +83,9 @@ public struct KozmosAccordionTrigger: View {
     /// finds it on that button, but on the rule under the trigger as well.
     ///
     /// `label` is drawn by the boxed form alone. `loading` draws a spinner
-    /// where the chevron is and disables the item while it is set, in either
-    /// form; SwiftUI has no busy state, so VoiceOver hears `loadingLabel` as
-    /// the trigger's value.
+    /// where the chevron is and disables the trigger while it is set, in
+    /// either form; SwiftUI has no busy state, so VoiceOver hears
+    /// `loadingLabel` as the trigger's value.
     public init(
         value: String,
         title: String,

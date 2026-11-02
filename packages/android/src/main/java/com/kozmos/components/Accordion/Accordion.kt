@@ -56,8 +56,8 @@ import com.kozmos.tokens.KozmosDimensions
 /**
  * How an accordion's sections are drawn, mirroring React's `variant`. Boxed
  * (decision 149) draws each header as a box of its own, 8 apart: a hairline
- * while closed and the theme's darkest fill while open, with the section's
- * content in the page's flow under it.
+ * while closed and a fill of theme 900 while open, with the section's content
+ * in the page's flow under it.
  */
 enum class KozmosAccordionVariant(val value: String) {
     Default("default"),
@@ -109,7 +109,7 @@ fun KozmosAccordionItem(
  * [label] and [icon] are drawn by the boxed form alone: the small line over
  * the title, the product's words, and the mark at the start, 20 square,
  * decoration to TalkBack. [loading] draws a spinner where the chevron is and
- * disables the item while it is set, in either form, and TalkBack reads
+ * disables the trigger while it is set, in either form, and TalkBack reads
  * [loadingLabel] as the trigger's state: Compose has no busy state to set.
  */
 @Composable

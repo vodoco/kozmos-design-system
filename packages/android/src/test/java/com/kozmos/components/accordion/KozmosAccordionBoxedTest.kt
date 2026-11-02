@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
@@ -76,6 +77,23 @@ private fun Sections(
                 loading = loading, loadingLabel = "Yükleniyor"
             )
             KozmosAccordionContent(value = "loading", selectedValue = open) { Text("The plans") }
+        }
+    }
+}
+
+/**
+ * One section, open, then disabled or loading: its header at 0, and 8 under
+ * the 44 its content, a magenta block and some words.
+ */
+@Composable
+private fun OpenThenInert(disabled: Boolean = false, loading: Boolean = false) {
+    KozmosAccordion(Modifier.width(PANEL.dp), variant = KozmosAccordionVariant.Boxed) {
+        KozmosAccordionItem(disabled = disabled) {
+            KozmosAccordionTrigger(value = "open", selectedValue = "open", onValueChange = {}, title = "Building details", label = "Step 1/5", loading = loading)
+            KozmosAccordionContent(value = "open", selectedValue = "open") {
+                Spacer(Modifier.fillMaxWidth().height(30.dp).background(Color.Magenta))
+                Text("The form")
+            }
         }
     }
 }
@@ -165,6 +183,25 @@ class KozmosAccordionBoxedTest {
             assertNotNull("the opened trigger offers collapse", read().trigger("Floor plans").collapse)
         }
         assertEquals(listOf<String?>("loading"), changes)
+    }
+
+    /** Regular, as the live page draws it: read from what the text laid out in. */
+    @Test fun theTitleIsRegular() {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { Sections() } }
+        assertEquals(FontWeight.Normal, tree.unmerged.single { "Building details" in it.texts }.fontWeight)
+    }
+
+    /** Open, then disabled or loading: no press, so it can't be closed, and the content stays. */
+    @Test fun anOpenTriggerThatIsDisabledOrLoadingKeepsItsContent() {
+        for ((disabled, loading) in listOf(true to false, false to true)) {
+            val tree = paparazzi.readSemantics {
+                KozmosMaterialTheme { OpenThenInert(disabled, loading) }
+            }
+            val trigger = tree.trigger("Building details")
+            assertFalse("it reads as enabled", trigger.enabled)
+            assertNull("it offers collapse", trigger.collapse)
+            assertTrue("the open content went: ${tree.merged.map { it.texts }}", tree.merged.any { "The form" in it.texts })
+        }
     }
 
     /** `disabled` is the item's in the default form too, and its open content stays. */
@@ -290,6 +327,38 @@ class KozmosAccordionBoxedPixelsTest {
             val disabled = drawn.count(mark, row(142f), off(grey(dark)))
             assertTrue("dark=$dark: the disabled header draws a chevron ($disabled pixels)", disabled < 4)
             assertTrue("dark=$dark: the loading header draws no spinner", drawn.count(mark, row(194f), off(grey(dark))) > 10)
+        }
+    }
+
+    /**
+     * Open, then disabled or loading: the header greys and keeps its hairline,
+     * so its grey is 42 inside the 44, with none of the open fill or the open
+     * label's ink, over its content.
+     */
+    @Test fun anOpenSectionThatIsDisabledOrLoadingIsGreyNotFilled() {
+        val magenta = 0xFFFF00FF.toInt()
+        for (dark in listOf(false, true)) {
+            for ((disabled, loading) in listOf(true to false, false to true)) {
+                val name = "dark=$dark, disabled=$disabled, loading=$loading"
+                val drawn = paparazzi.drawn(frames) {
+                    CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
+                        KozmosMaterialTheme {
+                            Box(Modifier.background(Color(host)).padding(16.dp)) { OpenThenInert(disabled, loading) }
+                        }
+                    }
+                }
+                val everywhere = 0 until drawn.width
+                val rows = 0 until drawn.height
+                val filled = drawn.count(everywhere, rows) { DrawnPixels.matches(it, theme900(dark), 2) }
+                assertTrue("$name: the header draws the open fill ($filled pixels)", filled < 4)
+                val openLabel = drawn.count(everywhere, rows) { DrawnPixels.matches(it, label(dark), 30) }
+                assertTrue("$name: the label is the open header's ($openLabel pixels)", openLabel < 4)
+                val form = checkNotNull(drawn.box(magenta)) { "$name: the open content went" }
+                val header = checkNotNull(drawn.box(grey(dark), bottom = form.top)) { "$name: no grey header" }
+                val dp = form.width / PANEL
+                assertEquals("$name: the grey's height inside the hairline, in dp", 42f, header.height / dp, 1f)
+                assertEquals("$name: 8 under the header, in dp", 9f, (form.top - header.bottom - 1) / dp, 1.2f)
+            }
         }
     }
 
