@@ -395,13 +395,11 @@ function isDeclarationName(id) {
 // variant's name (`defaultVariants`, a compound variant's keys) is not one.
 // Kozmos's own `kozmos-*` hooks are names a part can be found by, rule or
 // not, and `group`/`peer` mark a parent for a variant elsewhere.
-// Known to compile to nothing, found when this was added (27 Oct): Accordion
-// animates with keyframes no config defines. Remove a class from this list
-// as it is fixed; the check fails while a listed class compiles or is gone.
-const KNOWN_UNCOMPILED = new Set([
-  "data-[state=closed]:animate-accordion-up",
-  "data-[state=open]:animate-accordion-down",
-]);
+// Known to compile to nothing: none. Accordion's two animation classes,
+// found when this was added (27 Oct), compile since their keyframes were
+// defined. Add a class here only with a reason; the check fails while a
+// listed class compiles or is gone.
+const KNOWN_UNCOMPILED = new Set([]);
 const HOOK = /^(?:kozmos-|(?:group|peer)(?:\/|$))/;
 function isVariantName(node) {
   for (let at = node.parent; at; at = at.parent) {

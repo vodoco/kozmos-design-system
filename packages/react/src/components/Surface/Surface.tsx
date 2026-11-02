@@ -1,6 +1,8 @@
 import React from "react";
 import { cn } from "../../utils";
 
+import { surfaceClass } from "./surface-class";
+
 /**
  * What a surface is made of. Solid — the background colour with the subtle
  * border — is the default everywhere; glass, the glass surface role composed
@@ -8,20 +10,7 @@ import { cn } from "../../utils";
  */
 export type SurfaceVariant = "solid" | "glass";
 
-/**
- * The class for each variant, for a component that is itself the surface's
- * element (a landmark, a list item). Both carry `kozmos-reset`: the legacy
- * preflight, scoped to the root, would otherwise keep its border reset over
- * the surface's edge.
- */
-export const SURFACE_CLASSES: Record<SurfaceVariant, string> = {
-  solid: "kozmos-reset kozmos-surface-solid",
-  glass: "kozmos-reset kozmos-surface-glass",
-};
-
-export function surfaceClass(variant: SurfaceVariant = "solid") {
-  return SURFACE_CLASSES[variant];
-}
+export { SURFACE_CLASSES, surfaceClass } from "./surface-class";
 
 export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: SurfaceVariant;
