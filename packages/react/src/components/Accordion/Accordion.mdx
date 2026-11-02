@@ -116,18 +116,20 @@ fun StepFreeAccess() {
 
 ## Boxed
 
-`variant="boxed"` draws each section as a box of its own, for a form in steps: a hairline while closed, the theme's darkest fill while open, and the section's content in the panel's flow under its header. Sections sit 8 apart. A header is the density's control height, 40 at compact and 44 at touch, so a pointer-first tool sets `density="compact"` and a touch product keeps its 44 target. Corners are the control radius.
+`variant="boxed"` draws each section as a box of its own, for a form in steps: a hairline while closed, a fill of theme 900 while open, and the section's content in the panel's flow under its header. Theme 900 turns over in the dark, where it is pale with a black title. Sections sit 8 apart. A header is the density's control height, 40 at compact and 44 at touch, so a pointer-first tool sets `density="compact"` and a touch product keeps its 44 target. Corners are the control radius.
 
 <Canvas>
   <Story of={AccordionStories.Boxed} />
 </Canvas>
 
 - **What is yours.** Which section opens when, the "Step 1/5" words, the Continue and Save buttons and whatever sits beside the panel. There is no built-in step count: `label` is your string, read before the title as part of the trigger's name.
+- **Focus at Continue is yours too.** A Continue button sits inside the section it closes, so on a keyboard focus falls to the page and the next Tab starts from the top. Accordion can't know where you're going, so move focus yourself: `AccordionTrigger` forwards its ref, and a trigger can take focus once its section is enabled. The story above commits the state with `flushSync`, then focuses the next trigger.
 - **Disabled.** `disabled` on `AccordionItem`, as in the default form. It is greyed, draws no chevron, takes no press or focus, and the arrow keys and Tab pass over it.
-- **Loading.** `loading` on `AccordionTrigger` draws a spinner where the chevron is, marks the trigger busy to assistive technology and disables the item until you clear it, in either form. SwiftUI and Compose have no busy state to set, so they say `loadingLabel` instead, "Loading" unless you pass your own.
+- **Loading.** `loading` on `AccordionTrigger` draws a spinner where the chevron is, and marks the trigger busy to assistive technology and disabled until you clear it, in either form. A `disabled` prop on the trigger can't turn that off. SwiftUI and Compose have no busy state to set, so they say `loadingLabel` instead, "Loading" unless you pass your own.
 - **`icon` and `label`** are the boxed form's: the default form draws neither.
 - **In the content.** It doesn't clip at rest, so a field's focus ring draws whole. Leave room for the ring at the panel's edge: a panel with `overflow: hidden` right at the sections' edge will still clip it.
 - **Contrast.** The title and the label are foreground 1000 and theme 300 on theme 900. Each pair turns over with the theme and clears 4.5:1 in both (13.25 and 5.29 light, 14.84 and 5.66 dark). A client theme that replaces theme 300 or 900 takes on that pair: nothing at runtime checks it.
+- **Re-branding.** Overriding theme 500 to 700 leaves 900 alone, so a client's open header stays Pointr's navy until you set 900 and 300 too. Set them per theme, with `tokens={{ light, dark }}` on `ThemeProvider`: a flat set puts a dark 900 under the dark theme's black title, about 2:1.
 
 <Canvas>
   <Story of={AccordionStories.BoxedLoading} />

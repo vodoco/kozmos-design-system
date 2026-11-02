@@ -1,4 +1,5 @@
 import * as React from "react";
+import { flushSync } from "react-dom";
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   Building02,
@@ -69,11 +70,15 @@ const sections = [
 /**
  * Adding a building: a later section is disabled until the one before it is
  * done. What opens when, the "Step n/5" words and the buttons are the
- * product's; Kozmos draws the sections. Continue moves it on here.
+ * product's; Kozmos draws the sections. Continue moves it on here, and takes
+ * focus with it: the button sits inside the section it closes, so focus would
+ * fall to the page. The next trigger can't take focus until it is enabled,
+ * which is why the state is flushed first.
  */
 function AddBuilding() {
   const [reached, setReached] = React.useState(0);
   const [open, setOpen] = React.useState("details");
+  const triggers = React.useRef<Record<string, HTMLButtonElement | null>>({});
   return (
     <DensityScope density="compact">
       <Box style={panel}>
@@ -85,7 +90,13 @@ function AddBuilding() {
         >
           {sections.map(({ value, icon, title }, index) => (
             <AccordionItem key={value} value={value} disabled={index > reached}>
-              <AccordionTrigger icon={icon} label={`Step ${index + 1}/5`}>
+              <AccordionTrigger
+                ref={(node) => {
+                  triggers.current[value] = node;
+                }}
+                icon={icon}
+                label={`Step ${index + 1}/5`}
+              >
                 {title}
               </AccordionTrigger>
               <AccordionContent>
@@ -95,8 +106,11 @@ function AddBuilding() {
                     onClick={() => {
                       const next = sections[index + 1]?.value;
                       if (!next) return;
-                      setReached((was) => Math.max(was, index + 1));
-                      setOpen(next);
+                      flushSync(() => {
+                        setReached((was) => Math.max(was, index + 1));
+                        setOpen(next);
+                      });
+                      triggers.current[next]?.focus();
                     }}
                   >
                     Continue

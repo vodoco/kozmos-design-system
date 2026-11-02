@@ -5,18 +5,18 @@ import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { SpinnerArc } from "../Spinner/SpinnerArc";
 
-interface AccordionFormProps {
+interface AccordionProps {
   /**
    * How the sections are drawn. Defaults to "default", rows divided by a rule.
    * "boxed" (decision 149) draws each header as a box of its own, 8 apart: a
-   * hairline while closed, and the theme's darkest fill while open, with the
+   * hairline while closed, and filled with theme 900 while open, with the
    * section's content in the page's flow under it. Its height is the
    * density's control height: 40 compact, 44 touch.
    */
   variant?: "default" | "boxed";
 }
 
-type AccordionRootProps = AccordionFormProps &
+type AccordionRootProps = AccordionProps &
   (
     | AccordionPrimitive.AccordionSingleProps
     | AccordionPrimitive.AccordionMultipleProps
@@ -91,8 +91,9 @@ export interface AccordionTriggerProps extends React.ComponentPropsWithoutRef<
    */
   label?: React.ReactNode;
   /**
-   * A spinner where the chevron is, the trigger busy to assistive technology,
-   * and the item disabled while it is set, in either form.
+   * A spinner where the chevron is, and the trigger busy to assistive
+   * technology and disabled while it is set, in either form. The section's
+   * content is left alone, and `disabled` here can't turn it off.
    */
   loading?: boolean;
 }
@@ -112,17 +113,20 @@ const AccordionTrigger = React.forwardRef<
             : "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180",
           className,
         )}
-        // Radix passes a disabled item's state as this same attribute, and
-        // reads it to skip a trigger by keyboard. Only while loading: an
-        // undefined here would clear the item's own.
-        {...(loading && { disabled: true, "aria-busy": true })}
         {...props}
+        // Radix passes a disabled item's state as this same attribute, and
+        // reads it to skip a trigger by keyboard. After the caller's props,
+        // or their `disabled={false}` would make a loading section pressable.
+        // Only while loading: an undefined here would clear the item's own.
+        {...(loading && { disabled: true, "aria-busy": true })}
       >
         {boxed ? (
           <>
             {icon}
             <span className="kozmos-accordion-text">
-              {label && <span className="kozmos-accordion-label">{label}</span>}
+              {(label || label === 0) && (
+                <span className="kozmos-accordion-label">{label}</span>
+              )}
               {/* Keeps the two lines apart in the trigger's name: WebKit runs
                   one block into the next without it. */}{" "}
               {children}

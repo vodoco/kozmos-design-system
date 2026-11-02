@@ -95,6 +95,7 @@ function read(root, { title }) {
     borderWidth: parseFloat(style.borderTopWidth),
     borderStyle: style.borderTopStyle,
     borderColor: style.borderTopColor,
+    cursor: style.cursor,
     paddingInlineStart: parseFloat(style.paddingInlineStart),
     paddingInlineEnd: parseFloat(style.paddingInlineEnd),
     disabled: button.disabled,
@@ -108,6 +109,13 @@ function read(root, { title }) {
     // Its box, not its rect: a turning arc's rect is the rotated square's.
     spinner: spinnerBox(button.querySelector(".kozmos-spinner-arc")),
     text: box(button.querySelector(".kozmos-accordion-text")) ?? {},
+    // The words as drawn: a long word's ink can leave its own box.
+    ink: (() => {
+      const range = document.createRange();
+      range.selectNodeContents(button.querySelector(".kozmos-accordion-text"));
+      const rect = range.getBoundingClientRect();
+      return { left: rect.left, right: rect.right };
+    })(),
     name: button.textContent,
   };
 }
@@ -349,6 +357,19 @@ try {
         `${where}: the content is overflow ${content.overflow} at rest; a field's focus ring would be clipped`,
       );
 
+      // A header that takes a press says so, and one that doesn't says that.
+      for (const [name, section, cursor] of [
+        ["closed", closed, "pointer"],
+        ["open", open, "pointer"],
+        ["disabled", disabled, "not-allowed"],
+        ["loading", loading, "not-allowed"],
+      ]) {
+        expect(
+          section.cursor === cursor,
+          `${where}: a ${name} header's cursor is ${section.cursor}; expected ${cursor}`,
+        );
+      }
+
       // Disabled: greyed, with no chevron.
       expect(
         disabled.disabled === true,
@@ -471,6 +492,61 @@ try {
         near(long.mark.width, 20, 0.01),
         `${here}: the words squeezed the chevron to ${long.mark.width}`,
       );
+
+      // One word with nowhere to break: it breaks where it must.
+      const here2 = `${engine}, ${mode}, an unbroken word in 220`;
+      const word = await sectionOf(page, "unbroken", "Donaudampf");
+      expect(
+        word.ink.right <= word.mark.left,
+        `${here2}: the word's ink ends at ${word.ink.right}, past the chevron at ${word.mark.left}`,
+      );
+      expect(
+        word.box.height > 40 &&
+          word.text.top >= word.box.top &&
+          word.text.bottom <= word.box.bottom,
+        `${here2}: the lines run ${word.text.top} to ${word.text.bottom}, out of a header of ${word.box.top} to ${word.box.bottom}`,
+      );
+    }
+
+    // Open, then disabled or loading: the header greys and takes no press,
+    // and the section stays open with its fields live.
+    {
+      const token = await page.getByTestId("inert-open").evaluate(tokens);
+      for (const [name, title, field] of [
+        ["disabled", "Held open", "Held field"],
+        ["loading", "Busy open", "Busy field"],
+      ]) {
+        const here = `${engine}, ${mode}, open and ${name}`;
+        const root = page.getByTestId("inert-open");
+        const section = await root.evaluate(read, { title });
+        expect(
+          section.disabled === true && section.expanded === "true",
+          `${here}: disabled ${section.disabled}, expanded ${section.expanded}; expected a disabled header on an open section`,
+        );
+        expect(
+          section.backgroundColor === token.grey,
+          `${here}: the header is ${section.backgroundColor}; expected background 100, ${token.grey}, not the open fill`,
+        );
+        expect(
+          section.color === token.muted && section.label.color === token.muted,
+          `${here}: the words are ${section.color} and ${section.label.color}; expected foreground 400, ${token.muted}`,
+        );
+        expect(
+          name === "loading"
+            ? section.spinner !== null && section.chevron === null
+            : section.chevron?.display === "none",
+          `${here}: its mark is wrong: chevron ${section.chevron?.display}, spinner ${section.spinner !== null}`,
+        );
+        const input = root.getByRole("textbox", { name: field });
+        await input.focus();
+        expect(
+          await input.evaluate(
+            (node) => document.activeElement === node && !node.disabled,
+          ),
+          `${here}: its field took no focus`,
+        );
+        await input.blur();
+      }
     }
 
     // Right to left: the icon at the right, the chevron at the left.

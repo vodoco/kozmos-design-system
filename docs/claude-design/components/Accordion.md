@@ -54,13 +54,13 @@ export function AccordionExample() {
 
 ## Accordion
 
-It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, which is `AccordionFormProps & (AccordionPrimitive.AccordionSingleProps | AccordionPrimitive.AccordionMultipleProps)`.
+It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, which is `AccordionProps & (AccordionPrimitive.AccordionSingleProps | AccordionPrimitive.AccordionMultipleProps)`.
 
 - `variant`: `"default" | "boxed"`, optional.
 
   How the sections are drawn. Defaults to "default", rows divided by a rule.
   "boxed" (decision 149) draws each header as a box of its own, 8 apart: a
-  hairline while closed, and the theme's darkest fill while open, with the
+  hairline while closed, and filled with theme 900 while open, with the
   section's content in the page's flow under it. Its height is the
   density's control height: 40 compact, 44 touch.
 
@@ -130,8 +130,9 @@ It forwards its ref to `HTMLButtonElement`. Its props are `AccordionTriggerProps
 
 - `loading`: `boolean`, optional.
 
-  A spinner where the chevron is, the trigger busy to assistive technology,
-  and the item disabled while it is set, in either form.
+  A spinner where the chevron is, and the trigger busy to assistive
+  technology and disabled while it is set, in either form. The section's
+  content is left alone, and `disabled` here can't turn it off.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.

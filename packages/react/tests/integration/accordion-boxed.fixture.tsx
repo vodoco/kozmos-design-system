@@ -96,6 +96,57 @@ function Fixture() {
             </Accordion>
           </div>
         </DensityScope>
+        {/* One unbroken word: it breaks inside the header, as natives do. */}
+        <DensityScope density="compact">
+          <div style={{ width: 220 }}>
+            <Accordion
+              type="single"
+              variant="boxed"
+              collapsible
+              data-testid="unbroken"
+            >
+              <AccordionItem value="word">
+                <AccordionTrigger icon={<Building02 />} label="Step 1/5">
+                  Donaudampfschifffahrtsgesellschaftskapitaensmuetze
+                </AccordionTrigger>
+                <AccordionContent>The form</AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </DensityScope>
+        {/* Open, then disabled or loading: the header greys, and the content
+            stays, its fields live. */}
+        <DensityScope density="compact">
+          <div style={{ width: 408 }}>
+            <Accordion
+              type="multiple"
+              variant="boxed"
+              defaultValue={["held", "busy"]}
+              data-testid="inert-open"
+            >
+              <AccordionItem value="held" disabled>
+                <AccordionTrigger icon={<Building02 />} label="Step 1/5">
+                  Held open
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Input aria-label="Held field" />
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="busy">
+                <AccordionTrigger
+                  icon={<Building02 />}
+                  label="Step 2/5"
+                  loading
+                >
+                  Busy open
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Input aria-label="Busy field" />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </DensityScope>
         <div style={{ width: 408 }}>
           <Accordion
             type="single"

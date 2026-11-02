@@ -178,6 +178,42 @@ describe("Accordion", () => {
       expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
 
+    // A caller's `disabled`, passed on or left undefined, can't open a section
+    // that says it is loading.
+    it.each([[false], [undefined]])(
+      "stays disabled while loading when the trigger's disabled is %s",
+      (disabled) => {
+        render(
+          <Accordion type="single" variant="boxed" collapsible>
+            <AccordionItem value="one">
+              <AccordionTrigger loading disabled={disabled}>
+                Levels
+              </AccordionTrigger>
+              <AccordionContent>More</AccordionContent>
+            </AccordionItem>
+          </Accordion>,
+        );
+        const trigger = screen.getByRole("button", { name: "Levels" });
+        expect(trigger).toBeDisabled();
+        expect(trigger).toHaveAttribute("aria-busy", "true");
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+      },
+    );
+
+    it("draws a label of 0 in the label's own line", () => {
+      const { container } = render(
+        <Accordion type="single" variant="boxed" collapsible>
+          <AccordionItem value="one">
+            <AccordionTrigger label={0}>Levels</AccordionTrigger>
+          </AccordionItem>
+        </Accordion>,
+      );
+      expect(
+        container.querySelector(".kozmos-accordion-label")?.textContent,
+      ).toBe("0");
+    });
+
     it("has no accessibility violations", async () => {
       const { container } = render(<Sections loading />);
       expect(await axe(container)).toHaveNoViolations();
