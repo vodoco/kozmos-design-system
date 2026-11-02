@@ -860,12 +860,16 @@
       "component": "TourStep",
       "exports": [
         "Default",
+        "Welcome",
         "Step",
-        "WithContent",
+        "DoStep",
+        "LastStep",
+        "Warning",
         "NoTarget",
+        "Ending",
+        "WithContent",
         "Coachmark",
-        "RightToLeft",
-        "Compact"
+        "RightToLeft"
       ]
     },
     {
@@ -1180,7 +1184,13 @@
       "id": "data-display-tree",
       "title": "Core/Data display/Tree",
       "component": "Tree",
-      "exports": ["Default", "WithRowActions", "RowPrimitive", "Divided"]
+      "exports": [
+        "Default",
+        "WithRowActions",
+        "Composed",
+        "RowPrimitive",
+        "Divided"
+      ]
     },
     {
       "file": "packages/react/src/components/UserLocationMarker/UserLocationMarker.stories.tsx",
