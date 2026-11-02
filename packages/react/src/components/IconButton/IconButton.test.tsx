@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { Counter } from "../Counter/Counter";
 import { IconButton } from "./IconButton";
 import { describe, it, expect } from "vitest";
 import { SearchMd as Search } from "@kozmos-ds/icons";
@@ -137,4 +138,32 @@ it("joins the name and the count with counterSeparator", () => {
   expect(
     screen.getByRole("button", { name: /^お知らせ\s*、5$/ }),
   ).toBeInTheDocument();
+});
+
+// The counter is drawn here without the Counter module, which takes 0.3 KB off
+// every part that embeds an IconButton, TourStep over its budget without it.
+// So its recipe is written twice, and this holds the two equal: a change to
+// Counter's `brand` `sm` must be made in IconButton too.
+it("draws its counter as Counter draws brand at sm", () => {
+  render(
+    <>
+      <IconButton aria-label="Help" counter={3}>
+        <Search aria-hidden="true" />
+      </IconButton>
+      <Counter data-testid="counter" tone="brand" size="sm">
+        {3}
+      </Counter>
+    </>,
+  );
+  const drawn = screen
+    .getByRole("button", { name: "Help, 3" })
+    .querySelector<HTMLElement>('[data-slot="counter"]')!;
+  const counter = screen.getByTestId("counter");
+  const recipe = (element: HTMLElement) =>
+    [...element.classList]
+      .filter((name) => name !== "kozmos-icon-button-counter")
+      .sort();
+  expect(recipe(drawn)).toEqual(recipe(counter));
+  expect(drawn.tagName).toBe(counter.tagName);
+  expect(drawn.textContent).toBe(counter.textContent);
 });

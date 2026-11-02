@@ -1,17 +1,16 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Button, type ButtonProps } from "../Button/Button";
-import { Counter } from "../Counter/Counter";
 
 export interface IconButtonProps extends ButtonProps {
   /**
    * A count at the button's top-end corner (GAP-197): the tours left on a
-   * help button, unread notices. A Counter in the theme fill, not a Badge,
-   * which is a status (decision 93). The count is read with the button's
-   * name, "Help, 3" by default, in `counterLabel`'s words when given, whether
-   * the name is `aria-label`, `aria-labelledby` or the button's content; the
-   * number drawn is hidden from readers, so it is not read twice. Unset, no
-   * counter: pass `undefined` rather than 0 to hide it.
+   * help button, unread notices. Drawn as a Counter in the theme fill, not a
+   * Badge, which is a status (decision 93). The count is read with the
+   * button's name, "Help, 3" by default, in `counterLabel`'s words when given,
+   * whether the name is `aria-label`, `aria-labelledby` or the button's
+   * content; the number drawn is hidden from readers, so it is not read twice.
+   * Unset, no counter: pass `undefined` rather than 0 to hide it.
    */
   counter?: number;
   /**
@@ -84,14 +83,16 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         {children}
         {said === undefined ? null : (
           <>
-            <Counter
+            {/* Counter's brand recipe at sm, without the Counter module:
+                0.3 KB off every part that embeds an IconButton.
+                IconButton.test.tsx holds the two equal. */}
+            <span
               aria-hidden="true"
-              tone="brand"
-              size="sm"
-              className="kozmos-icon-button-counter"
+              data-slot="counter"
+              className="kozmos-icon-button-counter inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-theme-fill px-[5px] text-[11px] font-semibold tabular-nums text-theme-fill-foreground"
             >
               {counter}
-            </Counter>
+            </span>
             {/* Named by its content or by aria-labelledby, the count is
                 read from here. */}
             {label && !labelledBy ? null : (

@@ -34,12 +34,12 @@ It forwards its ref to `HTMLButtonElement`. Its props are `IconButtonProps`, whi
 - `counter`: `number`, optional.
 
   A count at the button's top-end corner (GAP-197): the tours left on a
-  help button, unread notices. A Counter in the theme fill, not a Badge,
-  which is a status (decision 93). The count is read with the button's
-  name, "Help, 3" by default, in `counterLabel`'s words when given, whether
-  the name is `aria-label`, `aria-labelledby` or the button's content; the
-  number drawn is hidden from readers, so it is not read twice. Unset, no
-  counter: pass `undefined` rather than 0 to hide it.
+  help button, unread notices. Drawn as a Counter in the theme fill, not a
+  Badge, which is a status (decision 93). The count is read with the
+  button's name, "Help, 3" by default, in `counterLabel`'s words when given,
+  whether the name is `aria-label`, `aria-labelledby` or the button's
+  content; the number drawn is hidden from readers, so it is not read twice.
+  Unset, no counter: pass `undefined` rather than 0 to hide it.
 
 - `counterLabel`: `(count: number) => string`, optional, default `String`.
 
