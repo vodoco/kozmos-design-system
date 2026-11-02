@@ -1,3 +1,9 @@
+import {
+  AlertCircle,
+  AlertTriangle,
+  InfoCircle,
+  Stars01,
+} from "@kozmos-ds/icons";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Notice } from "./Notice";
@@ -25,6 +31,33 @@ describe("Notice", () => {
     // the visitor is already being told.
     render(<Notice summary="Check allergens with the venue." />);
     expect(screen.getByRole("status")).toBeVisible();
+  });
+
+  it.each([
+    ["warning", AlertTriangle],
+    ["info", InfoCircle],
+    ["critical", AlertCircle],
+  ] as const)("draws the %s tone's own mark by default", (tone, Mark) => {
+    // Every tone drew the warning triangle until 2 Nov 2026, so an info notice
+    // read as a warning. The marks are Toast's, for the same three tones.
+    const { container } = render(<Notice summary="Check." tone={tone} />);
+    const { container: own } = render(<Mark />);
+    const mark = container.querySelector('[aria-hidden="true"] > svg');
+    expect(mark!.innerHTML).toBe(own.querySelector("svg")!.innerHTML);
+  });
+
+  it("keeps a caller's icon over the tone's mark, and none means none", () => {
+    const { container, rerender } = render(
+      <Notice
+        icon={<Stars01 data-testid="own" />}
+        summary="Check."
+        tone="info"
+      />,
+    );
+    expect(container.querySelectorAll("svg")).toHaveLength(1);
+    expect(screen.getByTestId("own")).toBeInTheDocument();
+    rerender(<Notice icon={null} summary="Check." tone="info" />);
+    expect(container.querySelector("svg")).toBeNull();
   });
 
   it("offers no disclosure when there is nothing behind it", () => {

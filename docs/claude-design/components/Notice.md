@@ -65,8 +65,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `NoticeProps`, which exte
 - `tone`: `NoticeTone`, optional, default `"warning"`.
 - `icon`: `React.ReactNode`, optional.
 
-  Replaces the default tone icon. `null` or `false` draws none, and leaves
-  no empty column before the summary (GAP-118).
+  Replaces the tone's own mark: a triangle for `warning`, an info circle for
+  `info`, an alert circle for `critical`. `null` or `false` draws none, and
+  leaves no empty column before the summary (GAP-118).
 
 - `iconAlign`: `"start" | "center"`, optional, default `"start"`.
 

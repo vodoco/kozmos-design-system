@@ -51,6 +51,9 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     private let onOpen: ((String) -> Void)?
     /// What VoiceOver calls the action that opens a result's details: the card's.
     private let openLabel: String
+    /// Runs one of the product's own actions, a result's `hostActions`, told
+    /// its `id` and the POI's ID: the card's `onHostAction`, given to every card.
+    private let onHostAction: ((String, String) -> Void)?
     private let emptyState: EmptyStateContent
 
     public init(
@@ -69,6 +72,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
         onOpen: ((String) -> Void)? = nil,
         openLabel: String = "Open details",
+        onHostAction: ((String, String) -> Void)? = nil,
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
         self.items = items
@@ -86,6 +90,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.onAction = onAction
         self.onOpen = onOpen
         self.openLabel = openLabel
+        self.onHostAction = onHostAction
         self.emptyState = emptyState()
     }
 
@@ -106,7 +111,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             languageNotListedLabel: languageNotListedLabel,
             presentationStyle: presentationStyle,
             onOpen: onOpen,
-            openLabel: openLabel
+            openLabel: openLabel,
+            onHostAction: onHostAction
         )
     }
 
@@ -165,7 +171,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         languageNotListedLabel: String = "Language not listed",
         presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
         onOpen: ((String) -> Void)? = nil,
-        openLabel: String = "Open details"
+        openLabel: String = "Open details",
+        onHostAction: ((String, String) -> Void)? = nil
     ) {
         self.init(
             items: items,
@@ -182,7 +189,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             languageNotListedLabel: languageNotListedLabel,
             presentationStyle: presentationStyle,
             onOpen: onOpen,
-            openLabel: openLabel
+            openLabel: openLabel,
+            onHostAction: onHostAction
         ) {
             EmptyView()
         }

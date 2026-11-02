@@ -26,6 +26,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import com.kozmos.components.icon.KozmosIcon
 import com.kozmos.components.icon.KozmosIconSize
+import com.kozmos.components.icon.knownIconVector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -148,6 +149,13 @@ enum class KozmosPOIDetailPanelPresentation {
  * [loadingLabel], and a pressed one is filled and selected. The new
  * parameters follow the released ones, so a call written against 0.5.0
  * compiles and binds as it did.
+ *
+ * The product's own actions, [KozmosPOIDetailsPresentation.hostActions]
+ * (GAP-130), come last in the strip, each with its own words and, where
+ * Kozmos draws the name, its icon; a press reaches [onHostAction] with the
+ * action's id and the POI's ID, and with no callback they are drawn
+ * disabled. Their state, by id, is in [hostActionStates], as a supplementary
+ * action's is, and their messages follow the supplementary ones.
  */
 @Composable
 fun KozmosPOIDetailPanel(
@@ -169,7 +177,9 @@ fun KozmosPOIDetailPanel(
     readMoreLabel: String = "Read more",
     readLessLabel: String = "Read less",
     tagsLabel: String = "Tags",
-    loadingLabel: String = "Loading"
+    loadingLabel: String = "Loading",
+    hostActionStates: Map<String, KozmosPOIActionState> = emptyMap(),
+    onHostAction: ((String, String) -> Unit)? = null
 ) {
     val radius = KozmosDimensions.semanticsRadiusPanel
     // An inset block's surface: the muted grey on the panel's own white, and
@@ -216,6 +226,7 @@ fun KozmosPOIDetailPanel(
     val headerToggles = poi.actions.filter { it in HeaderToggleActions }
     val rowActions = poi.actions.filterNot { it in HeaderToggleActions }
     val supplementaryActions = details.supplementaryActions
+    val hostActions = details.hostActions
 
     Surface(
         modifier = modifier
@@ -306,7 +317,7 @@ fun KozmosPOIDetailPanel(
                     )
                 }
 
-                if (rowActions.isNotEmpty() || supplementaryActions.isNotEmpty()) {
+                if (rowActions.isNotEmpty() || supplementaryActions.isNotEmpty() || hostActions.isNotEmpty()) {
                     // One strip that scrolls sideways, as on iOS and the web,
                     // however many actions and however long their words: a
                     // FlowRow wrapped them onto a second row and grew the
@@ -350,6 +361,17 @@ fun KozmosPOIDetailPanel(
                                 available = onSupplementaryAction != null
                             )
                         }
+                        // The product's own, last, with their own words and icons.
+                        hostActions.forEach { item ->
+                            StripButton(
+                                label = item.label,
+                                onClick = { onHostAction?.invoke(item.id, poi.id) },
+                                state = hostActionStates[item.id],
+                                loadingLabel = loadingLabel,
+                                available = onHostAction != null && !item.disabled,
+                                iconName = item.iconName?.takeIf { knownIconVector(it) != null }
+                            )
+                        }
                     }
                 }
 
@@ -360,6 +382,9 @@ fun KozmosPOIDetailPanel(
                 }
                 supplementaryActions.forEach { item ->
                     supplementaryActionStates[item.action]?.let { ActionMessage(state = it, surface = insetSurface) }
+                }
+                hostActions.forEach { item ->
+                    hostActionStates[item.id]?.let { ActionMessage(state = it, surface = insetSurface) }
                 }
 
                 // Under the strip, the card's whole width, as iOS's and the
@@ -660,15 +685,20 @@ private fun StripButton(
     loadingLabel: String,
     primary: Boolean = false,
     estimate: KozmosTravelEstimatePresentation? = null,
-    available: Boolean = true
+    available: Boolean = true,
+    /** A Kozmos icon Kozmos draws, before the label: a host action's. */
+    iconName: String? = null
 ) {
     val pressed = state?.pressed == true
     val loading = state?.loading == true
     val estimateParts = estimate
         ?.let { listOfNotNull(it.durationLabel, it.distanceLabel).filter { part -> part.isNotEmpty() } }
         ?.takeIf { it.isNotEmpty() }
+    val enabled = available && !(state?.disabled ?: false)
     KozmosButton(
-        onClick = onClick,
+        // Inert while disabled, however it is pressed: a disabled button's
+        // click action still runs when TalkBack or a test invokes it.
+        onClick = { if (enabled && !loading) onClick() },
         modifier = Modifier
             // Two lines want 56, as on iOS and the web.
             .then(if (estimateParts != null) Modifier.heightIn(min = KozmosDimensions.primitivesLayoutSizing700) else Modifier)
@@ -681,11 +711,13 @@ private fun StripButton(
                 }
             },
         variant = if (primary || pressed) KozmosButtonVariant.Default else KozmosButtonVariant.Outline,
-        enabled = available && !(state?.disabled ?: false),
+        enabled = enabled,
         isLoading = loading
     ) {
         if (primary) {
             KozmosIcon("navigation-pointer-01", size = KozmosIconSize.Lg)
+        } else if (iconName != null) {
+            KozmosIcon(iconName, size = KozmosIconSize.Lg)
         }
         if (estimateParts == null) {
             Text(label)

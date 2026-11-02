@@ -357,7 +357,7 @@ function braceBlock(source, from) {
   return null;
 }
 
-function reactAxes(component) {
+export function reactAxes(component) {
   const own = readIfExists(path.join(REACT_DIR, component, `${component}.tsx`));
   if (!own) return null;
   // With the modules of its own folder that it imports: Input's recipe and

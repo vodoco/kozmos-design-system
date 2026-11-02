@@ -419,6 +419,18 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-028, GAP-130: the product's own actions. On a selected result they
+      # follow Go and Details in order, 44 or more and inside the card, their
+      # icon a hidden mark at their words' start in both directions; Tab
+      # reaches them and Enter and Space run each once with its id; on the
+      # details card they end the strip, which scrolls a focused one into
+      # view; axe finds nothing (scripts/check-host-actions.mjs).
+      - name: Verify Host Actions
+        run: |
+          pnpm test:host-actions
+          ADAPTIVE_BROWSER=webkit pnpm test:host-actions
+          ADAPTIVE_BROWSER=firefox pnpm test:host-actions
+
       # GAP-194: Card's padding. Content, or a footer, that is the card's
       # first child pays the top as well as its sides and bottom, in both
       # paddings (24, and 16 compact); a header-led card is drawn as before,
@@ -446,6 +458,32 @@ jobs:
           pnpm test:tour-step
           ADAPTIVE_BROWSER=webkit pnpm test:tour-step
           ADAPTIVE_BROWSER=firefox pnpm test:tour-step
+
+      # GAP-205: CardTitle's heading level. `as` takes h2 to h6 and the title
+      # is an h3 without it; a page titled with an h1 and a card titled
+      # as="h2" passes axe's heading-order, and every level looks the same
+      # (scripts/check-card-title-level.mjs).
+      - name: Verify Card Title Level
+        run: |
+          pnpm test:card-title-level
+          ADAPTIVE_BROWSER=webkit pnpm test:card-title-level
+          ADAPTIVE_BROWSER=firefox pnpm test:card-title-level
+
+      # GAP-167: toast() and Toaster. Each toast is announced once, at its
+      # tone's politeness and in the product's words, even while a modal
+      # Select hides the page; focus is never taken; the queue holds to its
+      # limit, oldest first; a toast pauses while hovered or focused and
+      # closes by its button, Escape, a swipe and its action; neither reduced
+      # motion moves it; each Toaster draws in its own provider's portal, once
+      # per id, untrapped by a box that isolates; it draws above an open
+      # Drawer and its style moves it clear of one; right to left it sits,
+      # swipes and leaves toward the inline end, and a closing toast slides
+      # out before it goes (scripts/check-toaster.mjs).
+      - name: Verify Toaster
+        run: |
+          pnpm test:toaster
+          ADAPTIVE_BROWSER=webkit pnpm test:toaster
+          ADAPTIVE_BROWSER=firefox pnpm test:toaster
 
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),

@@ -14662,7 +14662,7 @@
           "issues": [],
           "connectedComponents": ["Accordion"],
           "mappedProps": ["collapsible", "defaultValue", "type"],
-          "unmappedProps": ["collapsible", "defaultValue", "type"]
+          "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [
           "aria-describedby",
@@ -14672,7 +14672,9 @@
           "id",
           "role",
           "tabIndex",
-          "title"
+          "title",
+          "type",
+          "variant"
         ],
         "variants": {}
       },
@@ -14744,6 +14746,8 @@
           "controlsBottomStart",
           "controlsLabel",
           "controlsPadCamera",
+          "controlsTopEnd",
+          "controlsTopStart",
           "defaultPanelDetent",
           "deviceSafeAreaInsets",
           "id",
@@ -14764,9 +14768,11 @@
           "panelSurface",
           "role",
           "safeAreaInsets",
+          "status",
           "tabIndex",
           "title",
           "topBar",
+          "topControlsLabel",
           "usableRegions"
         ],
         "variants": {}
@@ -17589,6 +17595,7 @@
           "children",
           "closeLabel",
           "details",
+          "hostActionStates",
           "id",
           "mediaControlsLabel",
           "mediaLabel",
@@ -17674,6 +17681,7 @@
           "children",
           "currentFloorId",
           "featuredLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "languageNotListedLabel",
@@ -17718,6 +17726,7 @@
           "expanded",
           "featuredLabel",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",
@@ -17767,6 +17776,7 @@
           "featuredLabel",
           "header",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",
@@ -19135,6 +19145,7 @@
           "role",
           "tabIndex",
           "title",
+          "tone",
           "type"
         ],
         "variants": {}

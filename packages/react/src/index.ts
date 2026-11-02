@@ -39,6 +39,7 @@ export * from "./components/Sidebar/Sidebar";
 export * from "./components/Menu/Menu";
 export * from "./components/Drawer/Drawer";
 export * from "./components/Toast/Toast";
+export * from "./components/Toast/Toaster";
 export * from "./components/Breadcrumb/Breadcrumb";
 export * from "./components/Pagination/Pagination";
 export * from "./components/Stepper/Stepper";

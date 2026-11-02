@@ -120,6 +120,11 @@ fun KozmosPOIResultList(
     /** Names each result's open action for TalkBack: the card's. */
     openLabel: String = "Open details",
     /**
+     * Runs one of the product's own actions, a result's `hostActions`, told
+     * its id and the POI's ID: the card's `onHostAction`, given to every card.
+     */
+    onHostAction: ((String, String) -> Unit)? = null,
+    /**
      * Runs an action from the selected result's action row, told which
      * action and the POI's ID. Without it those actions are drawn disabled.
      */
@@ -177,12 +182,43 @@ fun KozmosPOIResultList(
                     presentationStyle = presentationStyle,
                     onOpen = onOpen,
                     openLabel = openLabel,
+                    onHostAction = onHostAction,
                     onAction = onAction
                 )
             }
         }
     }
 }
+
+/**
+ * The list as 0.14.0 declared it, with no onHostAction: it sits before
+ * [onAction], so that [onAction] stays the trailing lambda, and this overload
+ * keeps the positional call.
+ */
+@Composable
+fun KozmosPOIResultList(
+    items: List<KozmosPOIResultListItem>,
+    resultCountLabel: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "Points of interest",
+    selectedPoiId: String? = null,
+    featuredLabel: String = "Featured",
+    emptyState: (@Composable () -> Unit)? = null,
+    currentFloorId: String? = null,
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    actionsLabel: String = "Actions for this result",
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
+    onOpen: ((String) -> Unit)? = null,
+    openLabel: String = "Open details",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultList(
+    items, resultCountLabel, onSelect, modifier, label, selectedPoiId, featuredLabel, emptyState,
+    currentFloorId, travelTimeBandLabels, numbered, actionsLabel, languageNotListedLabel,
+    presentationStyle, onOpen, openLabel, onHostAction = null, onAction = onAction
+)
 
 /**
  * The list as 0.10.0 declared it, [onAction] fifteenth and last. onOpen and
