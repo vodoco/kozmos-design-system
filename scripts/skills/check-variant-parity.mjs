@@ -361,7 +361,7 @@ function braceBlock(source, from) {
   return null;
 }
 
-function reactAxes(component) {
+export function reactAxes(component) {
   const file = readIfExists(
     path.join(REACT_DIR, component, `${component}.tsx`),
   );
