@@ -60,6 +60,11 @@ It forwards its ref to `HTMLLIElement`. Its props are `Omit<ToastPrimitive.Toast
   a screen reader: `type` does that (Radix's `foreground`, assertive, or
   `background`, polite), which the Toaster sets from the tone.
 
+- `duration`: `number`, optional.
+
+  Time in milliseconds that toast should remain visible for. Overrides value
+  given to `ToastProvider`.
+
 - `onPause`: `() => void`, optional.
 - `asChild`: `boolean`, optional.
 - `forceMount`: `true`, optional.
@@ -72,11 +77,6 @@ It forwards its ref to `HTMLLIElement`. Its props are `Omit<ToastPrimitive.Toast
 - `onOpenChange`: `(open: boolean) => void`, optional.
 - `type`: `'foreground' | 'background'`, optional.
 - `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
-- `duration`: `number`, optional.
-
-  Time in milliseconds that toast should remain visible for. Overrides value
-  given to `ToastProvider`.
-
 - `onResume`: `() => void`, optional.
 - `onSwipeStart`: `(event: SwipeEvent) => void`, optional.
 - `onSwipeMove`: `(event: SwipeEvent) => void`, optional.
@@ -88,7 +88,14 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## ToastProvider
 
-Its props are `ToastPrimitive.ToastProviderProps`.
+Radix's provider, swiping toward the inline end unless it is told.
+
+Its props are `ToastProviderProps`, which is `Omit<React.ComponentPropsWithoutRef<typeof ToastPrimitive.Provider>, "swipeDirection"> & { swipeDirection?: ToastPrimitive.ToastProviderProps["swipeDirection"] }`.
+
+- `swipeDirection`: `ToastPrimitive.ToastProviderProps["swipeDirection"]`, optional.
+
+  The way a toast is swiped, and leaves. Defaults to the inline end, where
+  the viewport sits: `right`, or `left` under a right-to-left ThemeProvider.
 
 - `children`: `React.ReactNode`, optional.
 - `label`: `string`, optional, default `'Notification'`.
@@ -99,10 +106,6 @@ Its props are `ToastPrimitive.ToastProviderProps`.
 - `duration`: `number`, optional, default `5000`.
 
   Time in milliseconds that each toast should remain visible for.
-
-- `swipeDirection`: `SwipeDirection`, optional, default `'right'`.
-
-  Direction of pointer swipe that should close the toast.
 
 - `swipeThreshold`: `number`, optional, default `50`.
 

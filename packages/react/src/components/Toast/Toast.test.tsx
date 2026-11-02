@@ -7,9 +7,36 @@ import {
   ToastViewport,
   ToastTitle,
 } from "./Toast";
+import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 import { describe, it, expect } from "vitest";
 
 describe("Toast", () => {
+  it.each([
+    ["ltr", undefined, "right"],
+    ["rtl", undefined, "left"],
+    ["rtl", "right", "right"],
+  ] as const)(
+    "a hand-made toast in %s, with swipeDirection %s, swipes and leaves to the %s",
+    (dir, swipeDirection, expected) => {
+      // The viewport sits at the inline end, so right to left it moved left
+      // while a provider the Toaster did not make still swiped right, across
+      // the page. The exit keys on this attribute too.
+      render(
+        <ThemeProvider dir={dir} theme="light">
+          <ToastProvider swipeDirection={swipeDirection}>
+            <Toast open={true}>
+              <ToastTitle>Saved</ToastTitle>
+            </Toast>
+            <ToastViewport />
+          </ToastProvider>
+        </ThemeProvider>,
+      );
+      expect(
+        screen.getByText("Saved").closest("[data-swipe-direction]"),
+      ).toHaveAttribute("data-swipe-direction", expected);
+    },
+  );
+
   it("renders correctly", () => {
     render(
       <ToastProvider>

@@ -54,7 +54,9 @@ config's reduced motion reaches it there.
   a Dialog's, a Drawer's or a Popover's 50, so a toast covers a Drawer open beside it, inline or not.
   While a panel stays open there, move the list clear of it with the Toaster's `style`, logically, so
   it mirrors: `style={{ insetInlineEnd: 468 }}` beside a 420 panel floating 16 from the edge. Right to
-  left, the list sits at the left, and a toast is swiped and leaves to the left.
+  left, the list sits at the left, and a toast is swiped and leaves to the left. So does a toast built
+  from the parts: `ToastProvider` takes the side from the ThemeProvider's `dir` unless you pass
+  `swipeDirection`.
 - **Reduced motion:** under `prefers-reduced-motion: reduce`, or the design config's
   `motion: "reduced"`, a toast arrives and leaves without moving; a swipe still follows the finger.
 - **Several Toasters:** a Toaster with an `id` draws the toasts whose `toaster` option names it, in

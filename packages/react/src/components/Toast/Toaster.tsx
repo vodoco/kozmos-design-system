@@ -152,13 +152,7 @@ export function Toaster({
     />
   );
   return (
-    <ToastProvider
-      duration={duration}
-      label={toastLabel}
-      // Toward the inline end, where the list sits, so right to left a
-      // toast is swiped, and leaves, to the left.
-      swipeDirection={theme?.dir === "rtl" ? "left" : "right"}
-    >
+    <ToastProvider duration={duration} label={toastLabel}>
       {owner(id) === token &&
         records
           .filter((record) => (record.toaster ?? "") === id)

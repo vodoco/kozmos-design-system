@@ -8,6 +8,7 @@ import {
   InfoCircle,
   X,
 } from "@kozmos-ds/icons";
+import { ThemeProviderContext } from "../../theme/theme-context";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import type { ToastTone } from "./toast-store";
 
@@ -20,7 +21,29 @@ const TONES = {
   critical: [AlertCircle, "text-destructive-text"],
 } as const;
 
-const ToastProvider = ToastPrimitive.Provider;
+type ToastProviderProps = Omit<
+  React.ComponentPropsWithoutRef<typeof ToastPrimitive.Provider>,
+  "swipeDirection"
+> & {
+  /**
+   * The way a toast is swiped, and leaves. Defaults to the inline end, where
+   * the viewport sits: `right`, or `left` under a right-to-left ThemeProvider.
+   */
+  swipeDirection?: ToastPrimitive.ToastProviderProps["swipeDirection"];
+};
+
+/** Radix's provider, swiping toward the inline end unless it is told. */
+function ToastProvider({ swipeDirection, ...props }: ToastProviderProps) {
+  const theme = React.useContext(ThemeProviderContext);
+  return (
+    <ToastPrimitive.Provider
+      swipeDirection={
+        swipeDirection ?? (theme?.dir === "rtl" ? "left" : "right")
+      }
+      {...props}
+    />
+  );
+}
 
 const ToastViewport = React.forwardRef<
   React.ElementRef<typeof ToastPrimitive.Viewport>,
@@ -65,8 +88,7 @@ const Toast = React.forwardRef<
       // and the close's right-2 put both at the inline start, where the
       // words begin, and space-x-4's left margin put the space outside the
       // action, which then touched the words. It leaves the way it is
-      // swiped: the provider's `swipeDirection`, which the Toaster sets to
-      // the inline end.
+      // swiped: the provider's `swipeDirection`, the inline end by default.
       className={cn(
         "group pointer-events-auto relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-control border bg-background p-6 pe-8 text-foreground shadow-floating transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[swipe-direction=left]:data-[state=closed]:slide-out-to-left-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
         // The icon sits in the start padding, 16 from the words, so a toast's
