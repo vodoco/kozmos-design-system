@@ -29,6 +29,8 @@ import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.VerticalAlignmentLine
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -356,6 +358,13 @@ fun KozmosCardHeader(
     }
 }
 
+/**
+ * The card's title, and a heading: TalkBack says "heading" after it, and its
+ * headings navigation stops on it, as a screen reader stops on React's
+ * `CardTitle`, an `h3` (GAP-205). It was plain text, so a visitor could not
+ * move from card to card by its title. Compose's heading has no level: React's
+ * `as` sets one on the web.
+ */
 @Composable
 fun KozmosCardTitle(
     title: String,
@@ -366,7 +375,7 @@ fun KozmosCardTitle(
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold,
         color = KozmosThemeTokens.primitivesColorsForeground100,
-        modifier = modifier
+        modifier = modifier.semantics { heading() }
     )
 }
 

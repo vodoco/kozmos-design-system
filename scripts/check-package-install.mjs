@@ -455,6 +455,28 @@ results.push([
   "renders a Calendar on the server without a warning" + (serverErrors.length ? " — " + serverErrors[0] : ""),
 ]);
 
+// toast() and Toaster (GAP-167): a module's state on a server is every
+// request's, so a call there queues nothing, and a Toaster renders, in a
+// ThemeProvider and out of one, with no warning and no toast.
+serverErrors.length = 0;
+console.error = (...args) => serverErrors.push(String(args[0]).split("\\n")[0]);
+try {
+  let dismissed = 0;
+  const id = kozmos.toast("From a request", { onDismiss: () => (dismissed += 1) });
+  kozmos.toast.dismiss();
+  const toaster =
+    renderToStaticMarkup(createElement(kozmos.ThemeProvider, { theme: "light" }, createElement(kozmos.Toaster))) +
+    renderToStaticMarkup(createElement(kozmos.Toaster));
+  results.push([
+    typeof id === "string" && dismissed === 0 && !toaster.includes("From a request") && serverErrors.length === 0,
+    "renders a Toaster on the server without a warning, and toast() there queues nothing" +
+      (serverErrors.length ? " — " + serverErrors[0] : dismissed ? " — a server call was queued" : ""),
+  ]);
+} catch (error) {
+  results.push([false, "renders a Toaster on the server — " + error.message]);
+}
+console.error = consoleError;
+
 process.stdout.write(JSON.stringify(results));
 `;
 
@@ -517,7 +539,7 @@ for (const major of REACT_MAJORS) {
     for (const [, what] of failed) fail(`React ${major}: ${what}`);
     if (failed.length === 0) {
       ok(
-        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requirable.length} CommonJS entr(y/ies) load, a Button and a Calendar render on the server, the Calendar with no warning`,
+        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requirable.length} CommonJS entr(y/ies) load, a Button, a Calendar and a Toaster render on the server, with no warning`,
       );
     }
   } catch (error) {
