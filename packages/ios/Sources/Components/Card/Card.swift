@@ -54,8 +54,10 @@ public struct KozmosCard<Content: View>: View {
         )
         .environment(\.kozmosCardPadding, padding)
         // A card is a solid surface of its own, so what it holds doesn't read
-        // the glass around it, as React's `.kozmos-card` resets it.
+        // the glass around it, as React's `.kozmos-card` resets it, or a
+        // themed guidance card's white, which on this solid fill can't be seen.
         .environment(\.kozmosSurfaceStyle, .solid)
+        .environment(\.kozmosGuidanceForeground, nil)
     }
 }
 

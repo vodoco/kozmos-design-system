@@ -27,7 +27,7 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
     /// Where in the surface the words being read are drawn. With a card in
     /// the surface, the card holds one line and the glass another, and only
     /// the line being read is blanked.
-    private enum Spot { case onSurface, inCard, besideCard }
+    private enum Spot { case onSurface, inCard, besideCard, inCardOnGuidance }
 
     /// A muted `KozmosText` at `spot` on a surface of `style`, over the two rooms.
     private func scene(
@@ -35,6 +35,11 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
     ) -> some View {
         let read = KozmosText(blank ? String(repeating: " ", count: words.count) : words, tone: .muted)
         let other = KozmosText(words, tone: .muted)
+        // As wide as the surface, so a card doesn't hug the words: spaces are
+        // narrower than letters, and its edges would be read as the text.
+        let filled = { (line: KozmosText) in
+            line.padding(8).frame(maxWidth: .infinity, alignment: .leading)
+        }
         return ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 KozmosColors.primitivesColorsTheme600
@@ -47,13 +52,18 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
                 case .inCard:
                     VStack(alignment: .leading, spacing: 8) {
                         other
-                        KozmosCard { read.padding(8) }
+                        KozmosCard { filled(read) }
                     }
                 case .besideCard:
                     VStack(alignment: .leading, spacing: 8) {
                         read
-                        KozmosCard { other.padding(8) }
+                        KozmosCard { filled(other) }
                     }
+                case .inCardOnGuidance:
+                    // A themed manoeuvre card's itinerary is a public slot,
+                    // and the guidance's foreground reaches what it holds.
+                    KozmosCard { filled(read) }
+                        .environment(\.kozmosGuidanceForeground, .white)
                 }
             }
             .padding(16)
@@ -136,7 +146,7 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
             }
             let (toInk, toMuted) = (Self.distance(read.core, ink), Self.distance(read.core, muted))
             print("GAP-203 iOS, muted KozmosText on \(style), \(spot), \(scheme): \(describe(read.core)), \(read.pixels) pixels, \(String(format: "%.2f", read.ratio)):1 over \(describe(read.behind)); foreground/100 \(describe(ink)) is \(toInk) away, foreground/400 \(describe(muted)) \(toMuted)")
-            if style == .glass && spot != .inCard {
+            if style == .glass && spot != .inCard && spot != .inCardOnGuidance {
                 if toInk >= toMuted {
                     wrong.append("glass, \(spot), \(scheme): drew \(describe(read.core)), nearer foreground/400 \(describe(muted)) than foreground/100 \(describe(ink))")
                 }
@@ -169,6 +179,14 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
     /// beside them does, and the glass doesn't reach through it.
     @MainActor func testOnASolidCardOnGlassAMutedKozmosTextKeepsForeground400() async throws {
         let wrong = try await reads(.glass, .inCard)
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
+    }
+
+    /// The same goes for the guidance: a card in a themed manoeuvre card's
+    /// itinerary is solid, so its muted words keep foreground/400 rather than
+    /// the guidance's white, which on the card's own white can't be seen.
+    @MainActor func testOnASolidCardInGuidanceAMutedKozmosTextKeepsForeground400() async throws {
+        let wrong = try await reads(.solid, .inCardOnGuidance)
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
 
