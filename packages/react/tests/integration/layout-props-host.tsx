@@ -54,6 +54,8 @@ interface Mount {
   second?: boolean;
   /** A BottomSheet in the region, not a Drawer. */
   sheet?: boolean;
+  /** No exit animation, so the panel goes in the commit that closes it. */
+  noExit?: boolean;
   logoInset?: boolean;
   divided?: boolean;
   selectedId?: string;
@@ -186,6 +188,7 @@ function DrawerPage(props: Mount) {
             <DrawerContent
               id="drawer"
               side={props.side}
+              style={props.noExit ? { animation: "none" } : undefined}
               onKeyDown={(event) => counts.contentKeys.push(event.key)}
               onInteractOutside={
                 props.closeOnOutside

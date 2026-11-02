@@ -840,6 +840,46 @@ for (const m of MATRIX) {
       );
     },
   );
+  // With no exit the panel goes in the commit that closes it, focus in it: to
+  // a browser that blurs what it removes, that must not read as focus leaving,
+  // and a press outside hasn't moved focus yet.
+  await scenario(
+    {
+      ...m,
+      part: "drawer",
+      placement: "inline",
+      noExit: true,
+      closeOnOutside: true,
+    },
+    async (page, read) => {
+      await read(
+        "guard: drawer inline, with no exit to run, Escape from inside gives the trigger focus",
+        async () => {
+          await page.click("#trigger");
+          await page.locator("#drawer").waitFor();
+          assert.equal(await inDrawer(page), true, "its trigger moved it in");
+          await page.keyboard.press("Escape");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          await page.waitForTimeout(50);
+          assert.equal(await activeId(page), "trigger");
+        },
+      );
+      await read(
+        "drawer inline: with no exit to run, a press on the page's background leaves focus on the body; the trigger takes none",
+        async () => {
+          await page.click("#trigger");
+          await page.locator("#drawer").waitFor();
+          assert.equal(await inDrawer(page), true, "its trigger moved it in");
+          // The layer starts listening for presses a task after it mounts.
+          await settleLayout(page);
+          await pressBackground(page);
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          await page.waitForTimeout(50);
+          assert.equal(await activeId(page), "BODY");
+        },
+      );
+    },
+  );
   // The panel's side away from the trigger, which sits at the inline start.
   const awayFromTrigger = rtl ? "left" : "right";
   for (const triggerBox of [false, true])
