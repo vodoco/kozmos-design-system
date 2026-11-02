@@ -57,8 +57,11 @@ final class KozmosLinkExternalTests: XCTestCase {
 
     // MARK: What it draws
 
-    private func scene(external: Bool, _ direction: LayoutDirection, _ type: DynamicTypeSize = .large) -> some View {
+    private func scene(
+        external: Bool, _ direction: LayoutDirection, _ type: DynamicTypeSize = .large, font: Font? = nil
+    ) -> some View {
         KozmosLink("Privacy Policy", destination: destination, external: external)
+            .font(font)
             .padding(.horizontal, 16)
             .frame(width: size.width, height: size.height, alignment: .leading)
             .background(Color.white)
@@ -88,10 +91,12 @@ final class KozmosLinkExternalTests: XCTestCase {
 
     /// The icon's box: the theme-coloured ink the external link draws beyond
     /// the plain one's words, at its end.
-    @MainActor private func icon(_ direction: LayoutDirection, _ type: DynamicTypeSize = .large) async throws -> (box: CGRect?, words: CGRect?, drawn: RenderedPixels) {
-        let name = "gap-202-link-\(direction == .leftToRight ? "ltr" : "rtl")-\(type)"
-        let plain = try await render(scene(external: false, direction, type), "\(name)-plain")
-        let drawn = try await render(scene(external: true, direction, type), "\(name)-external")
+    @MainActor private func icon(
+        _ direction: LayoutDirection, _ type: DynamicTypeSize = .large, font: Font? = nil, fontName: String = ""
+    ) async throws -> (box: CGRect?, words: CGRect?, drawn: RenderedPixels) {
+        let name = "gap-202-link-\(direction == .leftToRight ? "ltr" : "rtl")-\(type)\(fontName)"
+        let plain = try await render(scene(external: false, direction, type, font: font), "\(name)-plain")
+        let drawn = try await render(scene(external: true, direction, type, font: font), "\(name)-external")
         let words = Self.union(ink(plain))
         let all = Self.union(ink(drawn))
         guard let words, let all else { return (nil, words, drawn) }
@@ -148,6 +153,26 @@ final class KozmosLinkExternalTests: XCTestCase {
         let at = try XCTUnwrap(large), grown = try XCTUnwrap(bigger)
         print("GAP-202 iOS, Dynamic Type: icon \(at.height) at large, \(grown.height) at accessibility1")
         XCTAssertGreaterThan(grown.height, at.height * 1.4)
+    }
+
+    /// The icon is the link's text size in whatever font the link is given,
+    /// as React's 1em and Compose's are: a `.font(_:)` reaches the words, so
+    /// it reaches the icon. A text style or a fixed size, smaller or larger.
+    @MainActor func testTheIconFollowsTheLinksFont() async throws {
+        var wrong: [String] = []
+        for (name, font, side) in [("footnote", Font.footnote, 13.0), ("title3", .title3, 20), ("28pt", .system(size: 28), 28)] {
+            let (box, words, _) = try await icon(.leftToRight, font: font, fontName: "-\(name)")
+            guard let glyph = box, let text = words else {
+                wrong.append("\(name): no icon after the words")
+                continue
+            }
+            print("GAP-202 iOS, \(name): words \(text), icon \(glyph)")
+            let expected = side * 20 / 24
+            if abs(glyph.height - expected) > 1.5 { wrong.append("\(name): the icon is \(glyph.height) tall, not \(expected)") }
+            if abs(glyph.width - expected) > 1.5 { wrong.append("\(name): the icon is \(glyph.width) wide, not \(expected)") }
+            if abs(glyph.midY - text.midY) > side / 4 { wrong.append("\(name): the icon is not level with the words") }
+        }
+        XCTAssertEqual(wrong, [])
     }
 
     /// The guard: a link that stays in the app draws its words alone, the

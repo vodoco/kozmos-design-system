@@ -6,9 +6,6 @@ public struct KozmosLink: View {
     let external: Bool
     let externalLabel: String
 
-    /// The new-tab icon is the body text's size, 17 at the default text
-    /// size, and grows with it, as React's is the text's 1em.
-    @ScaledMetric(relativeTo: .body) private var iconSide: CGFloat = 17
     @Environment(\.layoutDirection) private var layoutDirection
 
     /// - Parameters:
@@ -37,18 +34,15 @@ public struct KozmosLink: View {
         if external {
             Link(destination: destination) {
                 // The icon sits beside the label's last line, so it never
-                // starts a line alone, its bottom an eighth of its side under
-                // the baseline, centred on the capitals as React's is.
-                HStack(alignment: .lastTextBaseline, spacing: iconSide / 4) {
+                // starts a line alone. SwiftUI never says what size a font
+                // is, so two spaces in the link's own font say it: a no-break
+                // space, the gap, as React's is; and an em space, one em
+                // wide, which is the icon's side, as React's is the text's
+                // 1em, whatever `.font(_:)` or text size the link is in.
+                HStack(alignment: .lastTextBaseline, spacing: 0) {
                     Text(label)
-                    Self.newTabGlyph
-                        .stroke(style: KozmosPointrGlyph.style(size: iconSide))
-                        .frame(width: iconSide, height: iconSide)
-                        // It points to the link's end: mirrored right to
-                        // left, as SwiftUI's arrow.up.forward is.
-                        .scaleEffect(x: layoutDirection == .rightToLeft ? -1 : 1, y: 1)
-                        .alignmentGuide(.lastTextBaseline) { $0.height * 7 / 8 }
-                        .accessibilityHidden(true)
+                    Text(verbatim: "\u{00A0}").hidden()
+                    Text(verbatim: "\u{2003}").hidden().overlay { newTabIcon }
                 }
             }
             .foregroundColor(KozmosColors.primitivesColorsTheme600)
@@ -57,6 +51,21 @@ public struct KozmosLink: View {
             Link(label, destination: destination)
                 .foregroundColor(KozmosColors.primitivesColorsTheme600)
         }
+    }
+
+    /// The new-tab icon, a square as wide as its box, centred in the line, so
+    /// on the capitals, as React's is.
+    private var newTabIcon: some View {
+        GeometryReader { box in
+            Self.newTabGlyph
+                .stroke(style: KozmosPointrGlyph.style(size: box.size.width))
+                .frame(width: box.size.width, height: box.size.width)
+                // It points to the link's end: mirrored right to left, as
+                // SwiftUI's arrow.up.forward is.
+                .scaleEffect(x: layoutDirection == .rightToLeft ? -1 : 1, y: 1)
+                .frame(height: box.size.height)
+        }
+        .accessibilityHidden(true)
     }
 
     /// Pointr's `link-external-01`, as `@kozmos-ds/icons` exports it,
