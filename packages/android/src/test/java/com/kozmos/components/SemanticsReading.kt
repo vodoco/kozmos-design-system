@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.toSize
 import app.cash.paparazzi.Paparazzi
 import app.cash.paparazzi.SnapshotHandler
@@ -131,7 +132,9 @@ data class ReadNode(
     /** The click's label, which TalkBack reads as "Double-tap to <label>". */
     val clickLabel: String? = null,
     /** A text's layout as it was drawn: its lines and its inline content's places. */
-    val textLayout: TextLayoutResult? = null
+    val textLayout: TextLayoutResult? = null,
+    /** The weight a text lays its words out in, where it says one. */
+    val fontWeight: FontWeight? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -366,5 +369,10 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     clickLabel = node.config.getOrNull(SemanticsActions.OnClick)?.label,
     textLayout = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { get ->
         mutableListOf<TextLayoutResult>().also { get(it) }.firstOrNull()
+    },
+    fontWeight = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { read ->
+        val layouts = mutableListOf<TextLayoutResult>()
+        read(layouts)
+        layouts.firstOrNull()?.layoutInput?.style?.fontWeight
     }
 )
