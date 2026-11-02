@@ -1389,9 +1389,11 @@ section("A set runs after the sets it reaches into");
         "BrowseCategoriesPanel",
       "after CategoryTile: BrowseCategoriesPanel",
     );
+    // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
-      plugin.setsToUpdateAfter(["IconButton"]).includes("TourStep"),
-      `after IconButton: TourStep (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+      [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
+        "Card,TourStep",
+      `after IconButton: TourStep and Card (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -8872,8 +8874,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     if (action === "TogglePressed") {
       ok(
         disc &&
-          button.children.indexOf(disc) <
-            button.children.indexOf(icon) &&
+          button.children.indexOf(disc) < button.children.indexOf(icon) &&
           disc.layoutPositioning === "ABSOLUTE" &&
           disc.width === 32 &&
           disc.height === 32 &&
@@ -9006,7 +9007,8 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   {
     const variantsOf = (names) => {
       const set = new MockNode("COMPONENT_SET", "Input");
-      for (const name of names) set.appendChild(new MockNode("COMPONENT", name));
+      for (const name of names)
+        set.appendChild(new MockNode("COMPONENT", name));
       return set;
     };
     const nestedPlugin = (set) => {
@@ -9058,6 +9060,24 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           nested.mainComponent.name ===
             "State=Default, Status=Default, Action=None",
         `${painter} nests the field with no action, whatever the set's order (${nested && nested.mainComponent ? nested.mainComponent.name : "none"})`,
+      );
+    }
+    {
+      // The cases above read what a painter ends up drawing, and three of the
+      // four picks are set back afterwards, so this reads the picks: an
+      // example has no second chance. A pick of State and Status alone takes
+      // whichever comes first in the set, a copy or a toggle.
+      const picks = [
+        ...fs
+          .readFileSync(PLUGIN, "utf8")
+          .matchAll(
+            /componentSetName: "Input",\s+variantProperties: ([^\n]+)/g,
+          ),
+      ].map((pick) => pick[1]);
+      ok(
+        picks.length === 4 &&
+          picks.every((pick) => pick === "NESTED_INPUT_VARIANTS,"),
+        `every nested Input is picked with Action=None named (${picks.length}: ${[...new Set(picks)].join(" ")})`,
       );
     }
     {
