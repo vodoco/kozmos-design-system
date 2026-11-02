@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "95f469ac5093";
+const PLUGIN_BUILD = "2d66721e1615";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -58286,10 +58286,12 @@ async function updatePopoverVariant(
 // decision 136) and as React's TourStep draws it in Storybook. Popover's
 // surface (Surface/0, the subtle edge all round, the Control corner, the
 // overlay elevation), 372 wide, 16 inside, the sections 12 apart, and no top
-// edge. The header row holds the eyebrow (the tour and the position, XS
-// semibold in the theme ink, sentence case) and Close at its end
-// (IconButton's Ghost with x-close); the title is Heading 4 under it, the
-// whole width; the body Small in the muted ink. The instruction is Notice's
+// edge. The header hugs the eyebrow (the tour and the position, XS semibold in
+// the theme ink, sentence case) 8 over the title, Heading 4; with no eyebrow
+// the title starts at the top of the card. Close (IconButton's Ghost with
+// x-close) takes no row: it is out of the flow in the card's top corner, and
+// the eyebrow and the title wrap before it. The body is Small in the muted
+// ink. The instruction is Notice's
 // box: its tone's fill at 5 % behind and its edge at 50 %, as layers of
 // their own, the Container corner, a 1 border and 8/12 inside it, a 16 icon
 // on the words' middle (cursor-02 for info, drawn here, and alert-triangle
@@ -58302,7 +58304,7 @@ async function updatePopoverVariant(
 //
 // The set draws Touch, the one density the file has. The design and React's
 // stories are compact (ThemeProvider density="compact", decision 82): there
-// Close and the buttons are 32, and the card 24 shorter. Here they are live
+// Close and the buttons are 32, and the card 12 shorter. Here they are live
 // instances of Button and IconButton, whose every size is 44, and they stay
 // bound to it: a 32 written on an instance would be a size the library does
 // not have, and it would hold those instances out of the Density modes
@@ -58350,7 +58352,18 @@ const TOUR_STEP_PADDING = 16;
 const TOUR_STEP_GAP = 12;
 const TOUR_STEP_COUNT = 4;
 const TOUR_STEP_ARROW = { width: 24, height: 12 };
+const TOUR_STEP_EYEBROW_GAP = 8;
+const TOUR_STEP_EYEBROW_LINE = 16;
+const TOUR_STEP_TITLE_LINE = 28;
 const TOUR_STEP_CLOSE_ICON = 16;
+// Close at Touch, as owned-tour-step.css places it. Its 16 icon ends on the
+// padding, so its box stops 2 from the card's inner edge, and the words stop 8
+// before the box: 38 of the 338.
+const TOUR_STEP_CLOSE_SIZE = 44;
+const TOUR_STEP_CLOSE_INSET =
+  TOUR_STEP_PADDING + (TOUR_STEP_CLOSE_ICON - TOUR_STEP_CLOSE_SIZE) / 2;
+const TOUR_STEP_CLOSE_ROOM =
+  TOUR_STEP_CLOSE_INSET + TOUR_STEP_CLOSE_SIZE - TOUR_STEP_PADDING + 8;
 // Notice's summary: 14 semibold at leading-snug.
 const TOUR_STEP_INSTRUCTION_LINE = 19.25;
 // Notice's 8/12 and its 1 border, which the edge layer draws out of the flow.
@@ -58898,6 +58911,110 @@ async function tourStepProgress({ spec, width, variableByName, fonts, stats }) {
   return row;
 }
 
+/** Where Close's corner is on the card: its icon ends on the padding, on its line. */
+function tourStepClosePlace(spec) {
+  const edge = 1;
+  const line = spec.eyebrow ? TOUR_STEP_EYEBROW_LINE : TOUR_STEP_TITLE_LINE;
+  return {
+    x: spec.width - edge - TOUR_STEP_CLOSE_INSET - TOUR_STEP_CLOSE_SIZE,
+    y: edge + TOUR_STEP_PADDING + (line - TOUR_STEP_CLOSE_SIZE) / 2,
+  };
+}
+
+/**
+ * Close, out of the flow in the card's top corner, so it takes no row.
+ *
+ * It arrives after the Header, not before: an absolute layer starts as a child
+ * in the flow, and a hug frame takes it in, padding and all, and keeps that
+ * size if nothing else is left in the flow (the instruction's fill and edge
+ * stopped 16 short for it). With the Header there the card gives its 44 back.
+ * x and y are placeAbsolute's, after it leaves the flow: written before, they
+ * are lost. Held at the top and the end, it follows a card a designer widens,
+ * and stays put as the rows under it grow.
+ */
+async function tourStepClose(component, spec, variableByName, stats) {
+  // One variant for the instance and for the tint laid again after the swap:
+  // the design's ghost Close.
+  const closeVariant = "Ghost";
+  const close = await createTourStepInstance({
+    componentSetName: "IconButton",
+    variantProperties: {
+      Variant: closeVariant,
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Close",
+    role: "tour-step-close",
+    stats,
+  });
+  if (close.componentSet) {
+    const glyph = await findKozmosIconSourceComponent("x-close");
+    if (glyph) {
+      if (
+        setInstanceSwapProperty(
+          close.node,
+          close.componentSet,
+          BUTTON_ICON_PROPERTY,
+          glyph.id,
+          stats,
+        )
+      ) {
+        retintTourStepCloseIcon(
+          close.node,
+          closeVariant,
+          variableByName,
+          stats,
+        );
+      }
+    } else {
+      stats.warnings.push(
+        'TourStep: icon "x-close" was not found on the Icons page.',
+      );
+    }
+  }
+  component.appendChild(close.node);
+  const place = tourStepClosePlace(spec);
+  placeAbsolute(close.node, place.x, place.y);
+  close.node.constraints = { horizontal: "MAX", vertical: "MIN" };
+}
+
+/**
+ * Once the rows are in, Close is where it was put and the card is its rows,
+ * whatever the runtime did on the way: a band above the title is what this
+ * layout exists to remove. Either read back wrong says so in the run's log.
+ */
+function holdTourStepClose(component, spec, stats) {
+  const close = component.findChild((node) => node.name === "Close");
+  if (close) {
+    const place = tourStepClosePlace(spec);
+    close.x = place.x;
+    close.y = place.y;
+    if (
+      close.layoutPositioning !== "ABSOLUTE" ||
+      Math.abs(close.x - place.x) > 0.5 ||
+      Math.abs(close.y - place.y) > 0.5 ||
+      Math.abs(close.width - TOUR_STEP_CLOSE_SIZE) > 0.5 ||
+      Math.abs(close.height - TOUR_STEP_CLOSE_SIZE) > 0.5
+    ) {
+      stats.warnings.push(
+        `TourStep: Close is ${close.width} by ${close.height} at ${close.x}, ${close.y} (${close.layoutPositioning}), not a ${TOUR_STEP_CLOSE_SIZE} at ${place.x}, ${place.y}.`,
+      );
+    }
+  }
+  const rows = component.children.filter(
+    (node) => node.layoutPositioning !== "ABSOLUTE",
+  );
+  const height =
+    2 * (TOUR_STEP_PADDING + 1) +
+    rows.reduce((sum, node) => sum + node.height, 0) +
+    TOUR_STEP_GAP * (rows.length - 1);
+  if (Math.abs(component.height - height) > 0.5) {
+    stats.warnings.push(
+      `TourStep: ${component.name} is ${component.height} tall over rows of ${height}.`,
+    );
+  }
+}
+
 async function updateTourStepVariant(
   component,
   { props, variableByName, fonts, stats },
@@ -58930,99 +59047,54 @@ async function updateTourStepVariant(
   arrow.y = -TOUR_STEP_ARROW.height + 1;
   arrow.constraints = { horizontal: "CENTER", vertical: "MIN" };
 
-  // The tour's name and position, and Close at the end, on one row.
-  if (spec.eyebrow || spec.close) {
-    const header = productSdkFrame("Header", {
+  // The tour's name and position, 8 over the title. The group hugs them, so
+  // with no eyebrow the title starts at the top of the card; with a Close, and
+  // only then, they wrap before it.
+  const room = spec.close ? TOUR_STEP_CLOSE_ROOM : 0;
+  const header = productSdkFrame("Header", {
+    direction: "vertical",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: TOUR_STEP_EYEBROW_GAP,
+    paddingRight: room,
+    width: inner,
+    height: TOUR_STEP_TITLE_LINE,
+  });
+  if (spec.eyebrow) {
+    const eyebrow = productSdkFrame("Eyebrow", {
       direction: "horizontal",
       primarySizing: "FIXED",
       counterSizing: "AUTO",
-      // Close alone sits at the end, as in the code.
-      primaryAlign: spec.eyebrow ? "SPACE_BETWEEN" : "MAX",
-      counterAlign: "CENTER",
-      spacing: 8,
-      width: inner,
-      height: 44,
+      spacing: 4,
+      width: inner - room,
+      height: TOUR_STEP_EYEBROW_LINE,
     });
-    if (spec.eyebrow) {
-      const eyebrow = productSdkFrame("Eyebrow", {
-        direction: "horizontal",
-        primarySizing: "FIXED",
-        counterSizing: "AUTO",
-        spacing: 4,
-        width: inner - (spec.close ? 44 + 8 : 0),
-        height: 16,
-      });
-      setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
-      const parts = [["Tour Text", TOUR_STEP_SAMPLE.tour]];
-      if (spec.current) {
-        parts.push(["Separator", "·"]);
-        parts.push(["Position Text", tourStepPosition(spec)]);
-      }
-      for (const [name, characters] of parts) {
-        const text = await tourStepText({
-          name,
-          characters,
-          styleKey: "tourStepEyebrow",
-          fonts,
-          bold: true,
-          fontSize: 12,
-          lineHeight: 16,
-          colorToken: "Colors/theme/600",
-          colorFallback: "#1051E8",
-          variableByName,
-          stats,
-          width: inner,
-          hug: true,
-        });
-        eyebrow.appendChild(text);
-      }
-      appendWithSizing(header, eyebrow, "FILL", "HUG");
+    setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
+    const parts = [["Tour Text", TOUR_STEP_SAMPLE.tour]];
+    if (spec.current) {
+      parts.push(["Separator", "·"]);
+      parts.push(["Position Text", tourStepPosition(spec)]);
     }
-    if (spec.close) {
-      // One variant for the instance and for the tint laid again after the
-      // swap: the design's ghost Close.
-      const closeVariant = "Ghost";
-      const close = await createTourStepInstance({
-        componentSetName: "IconButton",
-        variantProperties: {
-          Variant: closeVariant,
-          Size: "Default",
-          State: "Default",
-        },
-        name: "Close",
-        role: "tour-step-close",
+    for (const [name, characters] of parts) {
+      const text = await tourStepText({
+        name,
+        characters,
+        styleKey: "tourStepEyebrow",
+        fonts,
+        bold: true,
+        fontSize: 12,
+        lineHeight: TOUR_STEP_EYEBROW_LINE,
+        colorToken: "Colors/theme/600",
+        colorFallback: "#1051E8",
+        variableByName,
         stats,
+        width: inner - room,
+        hug: true,
       });
-      if (close.componentSet) {
-        const glyph = await findKozmosIconSourceComponent("x-close");
-        if (glyph) {
-          if (
-            setInstanceSwapProperty(
-              close.node,
-              close.componentSet,
-              BUTTON_ICON_PROPERTY,
-              glyph.id,
-              stats,
-            )
-          ) {
-            retintTourStepCloseIcon(
-              close.node,
-              closeVariant,
-              variableByName,
-              stats,
-            );
-          }
-        } else {
-          stats.warnings.push(
-            'TourStep: icon "x-close" was not found on the Icons page.',
-          );
-        }
-      }
-      header.appendChild(close.node);
+      eyebrow.appendChild(text);
     }
-    appendWithSizing(component, header, "FILL", "HUG");
+    appendWithSizing(header, eyebrow, "FILL", "HUG");
   }
-
   const title = await tourStepText({
     name: "Title Text",
     characters: TOUR_STEP_SAMPLE.title,
@@ -59030,14 +59102,16 @@ async function updateTourStepVariant(
     fonts,
     bold: true,
     fontSize: 20,
-    lineHeight: 28,
+    lineHeight: TOUR_STEP_TITLE_LINE,
     colorToken: "Colors/foreground/0",
     colorFallback: "#000000",
     variableByName,
     stats,
-    width: inner,
+    width: inner - room,
   });
-  appendWithSizing(component, title, "FILL", "HUG");
+  appendWithSizing(header, title, "FILL", "HUG");
+  appendWithSizing(component, header, "FILL", "HUG");
+  if (spec.close) await tourStepClose(component, spec, variableByName, stats);
 
   const body = await tourStepText({
     name: "Body Text",
@@ -59078,10 +59152,14 @@ async function updateTourStepVariant(
     appendWithSizing(component, progress, "FILL", "HUG");
   }
 
-  if (!spec.dismiss && !spec.back && !spec.secondary && !spec.next) return;
+  if (spec.dismiss || spec.back || spec.secondary || spec.next) {
+    await tourStepFooter(component, spec, inner, stats);
+  }
+  holdTourStepClose(component, spec, stats);
+}
 
-  // The dismiss link at the start; Back, the secondary action and Next at
-  // the end.
+/** The dismiss link at the start; Back, the secondary action and Next at the end. */
+async function tourStepFooter(component, spec, inner, stats) {
   const footer = productSdkFrame("Footer", {
     direction: "horizontal",
     primarySizing: "FIXED",
@@ -59211,8 +59289,8 @@ function tourStepComponentConfig() {
       "Content maps to the design's states: First step (no onBack), Step (onBack and onNext), Last step (nextDisabled), Warning (instructionTone warning, onSecondary, no onNext), Coachmark (no stepCount, onBack or onNext; GAP-157), Welcome (no onClose, onDismiss, onSecondary, 432 wide).",
       "Tour Text maps to tourLabel, Title Text to title, Body Text to body and Instruction Text to instruction; the Instruction boolean shows it, and the Arrow boolean the arrow. Their sample words are shared by all six variants, as a text property has one default.",
       "The position is the variant's own, in the eyebrow and beside the bar: React writes it from step and stepCount with positionLabel.",
-      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, as wide as their words, exposed; Close is IconButton Ghost with x-close.",
-      "Drawn at Touch density, the only one the file has (GAP-146): compact, as Pointr Cloud is, Close and the buttons are 32 and the card 24 shorter.",
+      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, as wide as their words, exposed; Close is IconButton Ghost with x-close, out of the flow in the card's top corner, and the eyebrow and title wrap before it.",
+      "Drawn at Touch density, the only one the file has (GAP-146): compact, as Pointr Cloud is, Close and the buttons are 32 and the card 12 shorter.",
       "The card is drawn without its target: in code its arrow's tip is 3 past Backdrop's cut-out ring, and the card 14.",
     ],
   };

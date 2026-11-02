@@ -19,12 +19,22 @@
  * - The progress: an 8 pill bar of the secondary fill, filled from the
  *   inline start in the theme ink to step/count, and "n of m" (Text xs muted)
  *   12 after it.
- * - The header and footer: Close a ghost 32 (44 at touch density) at the
- *   eyebrow's row's end, or no Close without onClose; Back ghost, the
- *   secondary outline and Next default, every one size sm (32, or 44 at
- *   touch), at the end, the dismiss link at the start; Next drawn disabled.
- *   The design's heights at compact density: a 32 header row, a 16 progress
- *   row and a 32 footer.
+ * - The header: the eyebrow's row hugs its one line, 8 over the title, and
+ *   with no eyebrow the title starts at the top of the card, with no empty
+ *   box, on every card, at both densities, right to left too.
+ * - Close, a ghost 32 (44 at touch density), or none without onClose: out of
+ *   the flow in the card's top corner, its 16 icon ending on the sections'
+ *   padding and on the eyebrow's line, or the title's first with no eyebrow.
+ *   The whole target can be pressed and its focus ring is inside the sections,
+ *   which clip what leaves them. The eyebrow and the title wrap before it, and
+ *   only with a Close: a long tour's name, a long title, a word with nowhere to
+ *   break and Arabic, at 372 and in a 320 window, never run under it. DOM and
+ *   focus order stay as they were: eyebrow, Close, title; Next has focus, and
+ *   Shift+Tab reaches Close. At twice the reader's text size it stays whole.
+ * - The footer: Back ghost, the secondary outline and Next default, every one
+ *   size sm (32, or 44 at touch), at the end, the dismiss link at the start;
+ *   Next drawn disabled. The design's heights at compact density: a 16
+ *   eyebrow, a 16 progress row and a 32 footer.
  * - The arrow: 24 by 12 in the card's fill, its tip 3 past the cut-out's ring
  *   on every side, as the boards draw it (09, 22, 43), and 1 into the card
  *   over its border (PopoverArrow, site GAP-74), so the card is 14 past the
@@ -518,9 +528,9 @@ for (const [mode, stylesheet] of [
           "one above the overlay layer, where the backdrop is",
         );
         assert.ok(
-          m.gaps.length === 5 &&
+          m.gaps.length === 4 &&
             m.gaps.every((gap) => Math.abs(gap - 12) <= 0.5),
-          `five sections after the header, 12 apart (${m.gaps})`,
+          `four sections after the header, 12 apart (${m.gaps})`,
         );
         // The eyebrow: Text xs semibold primary, in sentence case.
         assert.equal(m.eyebrow.color, m.tokens.ink, "the eyebrow's theme ink");
@@ -532,12 +542,11 @@ for (const [mode, stylesheet] of [
           "How Pointr Cloud is organised · 1 of 2",
           "{tour} · {step} of {count}",
         );
-        // The title: Heading 4 as an h2, the whole width, under the eyebrow.
+        // The title: Heading 4 as an h2, under the eyebrow.
         assert.equal(m.title.tag, "H2");
         assert.equal(m.title.font, "20px/28px/700", "Heading 4: 20/28 bold");
         assert.equal(m.title.color, m.tokens.foreground, "the foreground");
-        assert.equal(m.title.w, m.header.w, "the title takes the whole width");
-        assert.ok(m.title.y >= m.header.bottom, "under the eyebrow's row");
+        assert.ok(m.title.y >= m.eyebrow.bottom, "under the eyebrow's row");
         // The body: Text sm muted.
         assert.equal(m.body.color, m.tokens.muted, "the body's muted ink");
         assert.equal(m.body.font, "14px/20px", "Text sm");
@@ -591,7 +600,11 @@ for (const [mode, stylesheet] of [
           );
         }
         // The arrow: the card's fill.
-        assert.equal(m.arrow.fill, m.background, "the arrow is the card's fill");
+        assert.equal(
+          m.arrow.fill,
+          m.background,
+          "the arrow is the card's fill",
+        );
         assert.ok(
           m.arrow.filter.startsWith("drop-shadow"),
           `with a soft edge (${m.arrow.filter})`,
@@ -656,29 +669,29 @@ for (const theme of ["light", "dark"]) {
 // --- The design's heights, at compact density ---------------------------------
 
 await scenario(
-  "at compact density, the design's rows: a 32 header with the eyebrow on Close's middle, a 16 progress row, a 32 footer",
+  "at compact density, the design's rows: a 16 eyebrow on Close's middle, 8 over the title, a 16 progress row, a 32 footer",
   { mount: { density: "compact" } },
   async (page) => {
     await placement(page);
     const m = await measure(page);
-    assert.equal(m.header.h, 32, "the header row is Close's 32");
+    assert.equal(m.eyebrow.h, 16, "the eyebrow's row is its words' 16");
     assert.ok(
       middleOf(m.eyebrow, m.close) <= 0.5,
       "the eyebrow on Close's middle",
     );
-    assert.equal(m.close.right, m.header.right, "Close at the row's end");
     assert.equal(m.progress.row.h, 16, "the progress row is its words' 16");
     assert.equal(m.footer.h, 32, "the footer is its buttons' 32");
     // Padding, rows and gaps add up to the card, as the design's do.
     const rows = [
-      m.header.h,
+      m.eyebrow.h,
+      8,
       m.title.h,
       m.body.h,
       m.notice.h,
       m.progress.row.h,
       m.footer.h,
     ];
-    const height = 2 + 32 + rows.reduce((a, b) => a + b, 0) + 5 * 12;
+    const height = 2 + 32 + rows.reduce((a, b) => a + b, 0) + 4 * 12;
     assert.ok(
       Math.abs(m.card.h - height) <= 0.5,
       `the card is its rows, ${height}, read ${m.card.h}`,
@@ -727,6 +740,424 @@ for (const [density, size] of [
   );
 }
 
+// --- The header: Close out of the flow, the words before it ---------------------
+
+// The longest a line gets, in every language: words, one word with nowhere to
+// break but its letters, and Arabic, which runs the other way.
+const LONG_WORDS =
+  "How Pointr Cloud organises its clients, sites, buildings, levels and the people who may open them";
+const ONE_WORD =
+  "Donaudampfschifffahrtsgesellschaftskapitänsmützenabzeichen".repeat(2);
+const ARABIC =
+  "كيف تنظم منصة بوينتر السحابية العملاء والمواقع والمباني والطوابق والأشخاص الذين يمكنهم فتحها";
+
+/** The header's boxes, the lines its words are set on, and Close's, in the page. */
+const header = (page) =>
+  page.evaluate(() => {
+    const card = document.getElementById("step");
+    const sections = card.querySelector(".kozmos-tour-step-sections");
+    const rectOf = (r) => ({
+      left: r.left,
+      top: r.top,
+      right: r.right,
+      bottom: r.bottom,
+      width: r.width,
+      height: r.height,
+    });
+    const box = (node) => rectOf(node.getBoundingClientRect());
+    const words = (selector) => {
+      const node = card.querySelector(selector);
+      if (!node) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return {
+        ...box(node),
+        line: parseFloat(getComputedStyle(node).lineHeight),
+        paddingEnd: parseFloat(getComputedStyle(node).paddingInlineEnd),
+        lines: Array.from(range.getClientRects())
+          .filter((rect) => rect.width > 0)
+          .map(rectOf),
+      };
+    };
+    const close = card.querySelector(".kozmos-tour-step-close");
+    const closeStyle = close && getComputedStyle(close);
+    const inFlow = (node) => getComputedStyle(node).position !== "absolute";
+    const rows = Array.from(sections.children).filter(inFlow);
+    return {
+      dir: getComputedStyle(card).direction,
+      card: box(card),
+      sections: box(sections),
+      scrolls: {
+        x: sections.scrollWidth - sections.clientWidth,
+        y: sections.scrollHeight - sections.clientHeight,
+      },
+      // Every box in the flow: an empty one takes the column's gap with it.
+      empty: [...rows, ...rows.flatMap((row) => Array.from(row.children))]
+        .filter(
+          (node) => inFlow(node) && node.getBoundingClientRect().height === 0,
+        )
+        .map((node) => node.className),
+      first: rows[0] && box(rows[0]),
+      eyebrow: words(".kozmos-tour-step-eyebrow"),
+      title: words(".kozmos-tour-step-title"),
+      close: close && {
+        ...box(close),
+        position: closeStyle.position,
+        icon: box(close.querySelector("svg")),
+      },
+    };
+  });
+
+/** How far a box's corners are past `outer` on any side; 0 or less is inside. */
+const past = (inner, outer) =>
+  Math.max(
+    outer.left - inner.left,
+    outer.top - inner.top,
+    inner.right - outer.right,
+    inner.bottom - outer.bottom,
+  );
+
+const overlap = (a, b) =>
+  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+function assertCorner(h, { size, pretitle, label }) {
+  assert.deepEqual(h.empty, [], `${label}: no empty box`);
+  assert.equal(
+    h.close.position,
+    "absolute",
+    `${label}: Close is out of the flow`,
+  );
+  assert.deepEqual(
+    [h.close.width, h.close.height],
+    [size, size],
+    `${label}: Close keeps its ${size}`,
+  );
+  // The icon ends on the sections' padding, on the line it sits beside.
+  const fromEnd =
+    h.dir === "rtl"
+      ? h.close.icon.left - h.sections.left
+      : h.sections.right - h.close.icon.right;
+  assert.ok(
+    Math.abs(fromEnd - 16) <= 0.5,
+    `${label}: its icon 16 from the card's end, read ${fromEnd}`,
+  );
+  const line = pretitle ? h.eyebrow : h.title;
+  const offLine =
+    h.close.icon.top + h.close.icon.height / 2 - (line.top + line.line / 2);
+  assert.ok(
+    Math.abs(offLine) <= 0.5,
+    `${label}: its icon on the ${pretitle ? "eyebrow's line" : "title's first line"}, read ${offLine} off`,
+  );
+}
+
+for (const [density, size] of [
+  ["touch", 44],
+  ["compact", 32],
+]) {
+  for (const dir of ["ltr", "rtl"]) {
+    await scenario(
+      `${density}, ${dir}: the eyebrow hugs its line 16 from the top and 8 over the title, and Close's icon sits on it, 16 from the end`,
+      { mount: { density, dir } },
+      async (page) => {
+        await placement(page);
+        const h = await header(page);
+        assertCorner(h, { size, pretitle: true, label: "eyebrow" });
+        const { eyebrow, title, sections } = h;
+        assert.equal(eyebrow.height, eyebrow.line, "one line, and no more");
+        assert.equal(eyebrow.top - sections.top, 16, "16 from the top");
+        assert.equal(title.top - eyebrow.bottom, 8, "8 over the title");
+      },
+    );
+    await scenario(
+      `${density}, ${dir}: with no eyebrow, the title starts 16 from the top, with no empty band, and Close's icon sits on its first line`,
+      { mount: { density, dir, coachmark: true } },
+      async (page) => {
+        await placement(page);
+        const h = await header(page);
+        assertCorner(h, { size, pretitle: false, label: "no eyebrow" });
+        assert.equal(h.eyebrow, null, "no eyebrow");
+        assert.equal(h.title.top - h.sections.top, 16, "16 from the top");
+        assert.equal(h.first.top, h.title.top, "nothing above the title");
+      },
+    );
+    await scenario(
+      `${density}, ${dir}: the welcome card's eyebrow, with no Close, 8 over the title, and its words the whole width`,
+      {
+        mount: {
+          density,
+          dir,
+          welcome: true,
+          tourLabel: ONE_WORD.repeat(2),
+          title: ONE_WORD,
+        },
+      },
+      async (page) => {
+        await placement(page);
+        const h = await header(page);
+        assert.deepEqual(h.empty, [], "no empty box");
+        assert.equal(h.close, null, "no Close");
+        assert.equal(h.title.top - h.eyebrow.bottom, 8, "8 over the title");
+        assert.equal(h.first.top, h.eyebrow.top, "nothing above the eyebrow");
+        for (const words of [h.eyebrow, h.title]) {
+          // One word runs to the end of every line but its last.
+          const widest = Math.max(...words.lines.map((line) => line.width));
+          assert.ok(
+            widest > h.sections.width - 2 * 16 - words.line,
+            `its words the whole width: ${widest} of ${h.sections.width - 2 * 16}`,
+          );
+        }
+      },
+    );
+
+    await scenario(
+      `${density}, ${dir}: the whole of Close can be pressed, its focus ring is inside the sections that clip it, and they do not scroll for it`,
+      { mount: { density, dir } },
+      async (page) => {
+        await placement(page);
+        await page.keyboard.press("Shift+Tab");
+        const read = await page.evaluate(() => {
+          const close = document.querySelector("#step .kozmos-tour-step-close");
+          const s = getComputedStyle(close);
+          const r = close.getBoundingClientRect();
+          // What a shadow reaches past the box: inset shadows stay inside it.
+          const shadows =
+            s.boxShadow === "none" ? [] : s.boxShadow.split(/,(?![^(]*\))/);
+          const reach = shadows
+            .filter((shadow) => !/\binset\b/.test(shadow))
+            .map((shadow) => {
+              const [x, y, blur, spread] = shadow
+                .replace(/(?:rgba?|color|oklab|oklch|lab|lch)\([^)]*\)/g, "")
+                .match(/-?[\d.]+px/g)
+                .map(parseFloat);
+              return Math.max(Math.abs(x), Math.abs(y)) + blur + spread;
+            });
+          // Each edge's middle, 1 in: Radix's corners are rounded, and a press
+          // on one that falls outside the curve is not on the button.
+          const x = r.left + r.width / 2;
+          const y = r.top + r.height / 2;
+          const onClose = (px, py) =>
+            close.contains(document.elementFromPoint(px, py));
+          return {
+            focused: document.activeElement === close,
+            visible: close.matches(":focus-visible"),
+            ring: Math.max(0, ...reach),
+            shadows: s.boxShadow,
+            outline:
+              s.outlineStyle === "none"
+                ? 0
+                : parseFloat(s.outlineWidth) + parseFloat(s.outlineOffset),
+            pressed: [
+              onClose(r.left + 1, y),
+              onClose(r.right - 1, y),
+              onClose(x, r.top + 1),
+              onClose(x, r.bottom - 1),
+              onClose(x, y),
+            ],
+          };
+        });
+        assert.ok(read.focused, "Shift+Tab reached Close");
+        assert.ok(read.visible, "by keyboard, so its ring is drawn");
+        assert.ok(read.shadows !== "none", "there is a ring to measure");
+        assert.deepEqual(
+          read.pressed,
+          [true, true, true, true, true],
+          "every edge of the target takes a press",
+        );
+        const h = await header(page);
+        assertCorner(h, { size, pretitle: true, label: "focused" });
+        const reach = Math.max(read.ring, read.outline);
+        const ring = {
+          left: h.close.left - reach,
+          top: h.close.top - reach,
+          right: h.close.right + reach,
+          bottom: h.close.bottom + reach,
+        };
+        assert.ok(
+          past(ring, h.sections) <= 0,
+          `the ring, ${reach} past the target, is inside the sections: ${past(ring, h.sections)} over (${read.shadows})`,
+        );
+        assert.deepEqual(h.scrolls, { x: 0, y: 0 }, "nothing to scroll");
+      },
+    );
+  }
+
+  await scenario(
+    `${density}: DOM and focus order as they were: eyebrow, Close, title, then the actions; focus opens on Next`,
+    { mount: { density } },
+    async (page) => {
+      await placement(page);
+      const order = await page.evaluate(() =>
+        Array.from(
+          document.querySelectorAll(
+            "#step .kozmos-tour-step-eyebrow, #step .kozmos-tour-step-close, #step .kozmos-tour-step-title, #step .kozmos-tour-step-body, #step button",
+          ),
+        ).map((node) =>
+          node.className.includes("kozmos-tour-step-")
+            ? node.className.match(/kozmos-tour-step-(\w+)/)[1]
+            : node.textContent,
+        ),
+      );
+      assert.deepEqual(order, ["eyebrow", "close", "title", "body", "Next"]);
+      const active = () =>
+        page.evaluate(
+          () =>
+            document.activeElement.getAttribute("aria-label") ??
+            document.activeElement.textContent,
+        );
+      assert.equal(await active(), "Next", "focus opens on Next");
+      await page.keyboard.press("Shift+Tab");
+      assert.equal(await active(), "Close tour", "Close, just before it");
+      await page.keyboard.press("Tab");
+      assert.equal(await active(), "Next", "and back");
+    },
+  );
+
+  for (const dir of ["ltr", "rtl"]) {
+    for (const [viewport, target] of [
+      [VIEWPORT, "ref"],
+      [{ width: 320, height: 800 }, "none"],
+    ]) {
+      for (const [language, words] of [
+        ["words", LONG_WORDS],
+        ["one word", ONE_WORD],
+        ["Arabic", ARABIC],
+      ]) {
+        for (const [what, mount] of [
+          ["a long tour's name and title", { tourLabel: words, title: words }],
+          ["a long title with no eyebrow", { coachmark: true, title: words }],
+        ]) {
+          await scenario(
+            `${density}, ${dir}, ${viewport.width} wide, ${language}: ${what} wrap before Close and never run under it`,
+            { viewport, mount: { density, dir, target, ...mount } },
+            async (page) => {
+              await placement(page);
+              const h = await header(page);
+              assertCorner(h, {
+                size,
+                pretitle: !mount.coachmark,
+                label: what,
+              });
+              const lines = [...(h.eyebrow?.lines ?? []), ...h.title.lines];
+              assert.ok(lines.length > 1, "it took more than one line");
+              const under = lines.filter((line) => overlap(line, h.close));
+              assert.deepEqual(under, [], "no line under Close");
+              const content = {
+                left: h.sections.left + 16,
+                top: h.sections.top,
+                right: h.sections.right - 16,
+                bottom: h.sections.bottom,
+              };
+              assert.ok(
+                lines.every((line) => past(line, content) <= 0.5),
+                "every line inside the card",
+              );
+              assert.equal(h.scrolls.x, 0, "and nothing scrolls sideways");
+              // Close is whole, in the window as in the card.
+              assert.ok(
+                past(h.close, h.sections) <= 0 &&
+                  h.close.left >= 0 &&
+                  h.close.right <= viewport.width,
+                "Close is whole",
+              );
+            },
+          );
+        }
+      }
+    }
+  }
+}
+
+// Owned, so it holds where a host without @scope drops the utilities.
+await scenario(
+  "without @scope, Close is still in its corner, the eyebrow 8 over the title, and the words wrap before it",
+  {
+    stylesheet: unscoped.toString(),
+    mount: { density: "touch", title: LONG_WORDS, tourLabel: LONG_WORDS },
+  },
+  async (page) => {
+    await placement(page);
+    const h = await header(page);
+    assertCorner(h, { size: 44, pretitle: true, label: "without @scope" });
+    assert.equal(h.title.top - h.eyebrow.bottom, 8, "8 over the title");
+    assert.deepEqual(
+      [...h.eyebrow.lines, ...h.title.lines].filter((line) =>
+        overlap(line, h.close),
+      ),
+      [],
+      "no line under Close",
+    );
+  },
+);
+
+await scenario(
+  "at twice the reader's text size, Close grows with it and stays whole, and the words still wrap before it",
+  {
+    stylesheet: `${css} html{font-size:200%}`,
+    mount: { density: "touch", target: "none", title: LONG_WORDS },
+  },
+  async (page) => {
+    await placement(page);
+    const h = await header(page);
+    assert.equal(h.close.width, 88, "Close follows the reader's text");
+    assert.ok(
+      past(h.close, h.sections) <= 0,
+      `Close is whole: ${past(h.close, h.sections)} over`,
+    );
+    assert.deepEqual(
+      [...h.eyebrow.lines, ...h.title.lines].filter((line) =>
+        overlap(line, h.close),
+      ),
+      [],
+      "no line under Close",
+    );
+  },
+);
+
+await scenario(
+  "in a short window, Close scrolls with the words, so nothing runs under it, and focus brings it back whole",
+  {
+    // Short enough to scroll it out of sight: Firefox's focus leaves a part
+    // that still shows where it is, as it does any button in a scroller.
+    viewport: { width: 1000, height: 180 },
+    mount: { target: "none", density: "compact" },
+  },
+  async (page) => {
+    await placement(page);
+    const read = await page.evaluate(() => {
+      const sections = document.querySelector(
+        "#step .kozmos-tour-step-sections",
+      );
+      const close = sections.querySelector(".kozmos-tour-step-close");
+      const title = sections.querySelector(".kozmos-tour-step-title");
+      const gap = () =>
+        close.getBoundingClientRect().top - title.getBoundingClientRect().top;
+      const before = gap();
+      sections.scrollTop = sections.scrollHeight;
+      const scrolled = sections.scrollTop;
+      const after = gap();
+      close.focus();
+      return { scrolled, before, after };
+    });
+    assert.ok(read.scrolled > 0, "the sections scroll");
+    assert.equal(read.after, read.before, "Close moves with the title");
+    // WebKit scrolls to what took focus once the script has ended.
+    const back = await until(page, () => {
+      const sections = document.querySelector(
+        "#step .kozmos-tour-step-sections",
+      );
+      const c = sections
+        .querySelector(".kozmos-tour-step-close")
+        .getBoundingClientRect();
+      const s = sections.getBoundingClientRect();
+      return { ok: c.top >= s.top && c.bottom <= s.bottom, top: c.top - s.top };
+    });
+    assert.ok(
+      back.ok,
+      `focus brings it back, whole (${back.top} from the top)`,
+    );
+  },
+);
+
 // --- The design's other cards ---------------------------------------------------
 
 await scenario(
@@ -746,7 +1177,7 @@ await scenario(
     assert.equal(m.close, null, "no Close");
     assert.equal(m.progress, null, "no progress");
     assert.equal(m.eyebrow.text, "Welcome");
-    assert.equal(m.header.h, 16, "the eyebrow's row is its words alone");
+    assert.equal(m.eyebrow.h, 16, "the eyebrow's row is its words alone");
     assert.deepEqual(
       m.buttons.map((button) => button.label),
       ["Don't show again", "Not now", "Show me the tours"],
@@ -773,7 +1204,8 @@ await scenario(
         secondary.y === next.y &&
           secondary.y > dismiss.y &&
           m.buttons.every(
-            (button) => button.x >= m.footer.x && button.right <= m.footer.right,
+            (button) =>
+              button.x >= m.footer.x && button.right <= m.footer.right,
           ),
         `wider than 432 in this font, the actions wrap under the link, at the end (${m.buttons.map((button) => `${button.x},${button.y}`)})`,
       );
@@ -787,10 +1219,9 @@ await scenario(
     assert.equal(await page.locator("#step").count(), 1, "Escape leaves it");
     await page.getByRole("button", { name: "Don't show again" }).click();
     await page.locator("#step").waitFor({ state: "detached" });
-    assert.deepEqual(
-      await page.evaluate(() => window.tourStep.actions()),
-      ["dismiss"],
-    );
+    assert.deepEqual(await page.evaluate(() => window.tourStep.actions()), [
+      "dismiss",
+    ]);
   },
 );
 
@@ -840,10 +1271,9 @@ await scenario(
     assert.ok(m.buttons[1].classes.includes("kozmos-button-outline"));
     assert.ok(m.buttons.every((button) => button.h === 32));
     await page.getByRole("button", { name: "Finish without adding" }).click();
-    assert.deepEqual(
-      await page.evaluate(() => window.tourStep.actions()),
-      ["secondary"],
-    );
+    assert.deepEqual(await page.evaluate(() => window.tourStep.actions()), [
+      "secondary",
+    ]);
   },
 );
 
@@ -906,9 +1336,7 @@ await scenario(
       if (i === 1) await placement(page);
       hits.push(
         await until(page, () => {
-          const arrow = document.querySelector(
-            "#step .kozmos-tour-step-arrow",
-          );
+          const arrow = document.querySelector("#step .kozmos-tour-step-arrow");
           if (!arrow) return { ok: false };
           const r = arrow.getBoundingClientRect();
           if (!r.width) return { ok: false };
@@ -1519,8 +1947,8 @@ await scenario(
     const m = await measure(page);
     const card = m.card;
     assert.ok(
-      Math.abs(m.close.x - card.x - 17) <= TOLERANCE,
-      `Close at the left, read ${m.close.x - card.x}`,
+      Math.abs(m.close.icon.x - card.x - 17) <= TOLERANCE,
+      `Close's icon at the left, read ${m.close.icon.x - card.x}`,
     );
     assert.ok(
       Math.abs(card.right - m.eyebrow.right - 17) <= TOLERANCE,

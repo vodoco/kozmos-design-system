@@ -57,6 +57,10 @@ interface Mount {
   inDialog?: boolean;
   /** A Popover open on the page before the tour starts. */
   pagePopover?: boolean;
+  /** The tour's name, for one too long for its line. */
+  tourLabel?: string;
+  /** The title, for one too long for its line. */
+  title?: string;
 }
 
 const STEPS = [
@@ -97,6 +101,8 @@ function Page({
   secondary = false,
   bodyPopover = false,
   pagePopover = false,
+  tourLabel,
+  title,
 }: Mount) {
   const site = React.useRef<HTMLButtonElement>(null);
   const nothing = React.useRef<HTMLButtonElement>(null);
@@ -190,8 +196,8 @@ function Page({
           target={targets[target]}
           side={side}
           align={align}
-          tourLabel="Welcome"
-          title="Welcome to Pointr Cloud"
+          tourLabel={tourLabel ?? "Welcome"}
+          title={title ?? "Welcome to Pointr Cloud"}
           body="Learn the basics in your own maps. Tours, documentation and help for the page you are on now live under this button, on every page."
           onDismiss={() => {
             actions.current.push("dismiss");
@@ -214,10 +220,14 @@ function Page({
           target={targets[target]}
           side={side}
           align={align}
-          tourLabel={coachmark ? undefined : "How Pointr Cloud is organised"}
+          tourLabel={
+            coachmark
+              ? undefined
+              : (tourLabel ?? "How Pointr Cloud is organised")
+          }
           step={at + 1}
           stepCount={coachmark ? undefined : STEPS.length}
-          title={coachmark ? "Draw rooms here" : step.title}
+          title={title ?? (coachmark ? "Draw rooms here" : step.title)}
           body={
             coachmark
               ? "Pick the room tool, then click the corners."
