@@ -148,6 +148,13 @@ jobs:
       - name: Verify Component Contracts
         run: pnpm components:contract:check
 
+      # Names are a development aid (decision 128): each part carries its
+      # source's name in development, unbundled and bundled, and none in a
+      # production bundle, where an app's bundler drops the gated assignment
+      # and with it any part nothing uses.
+      - name: Verify Component Names
+        run: pnpm components:names:check
+
       # The three product-contract files are one contract. Nothing compared
       # them until 2026-09-25, and the drift that found was ten fields and
       # types the web had and neither native platform did.
@@ -423,16 +430,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:card-padding
           ADAPTIVE_BROWSER=firefox pnpm test:card-padding
 
-      # GAP-188: TourStep. The card is 340 wide on Popover's surface with a
-      # 4 theme edge, from its tokens, with and without @scope, light and
-      # dark; it sits 12 past the cut-out's ring on each side, beside a rect
-      # and a virtual element, and in the middle of the window with none; it
+      # GAP-188: TourStep. The card is 372 wide, 432 with the dismiss link
+      # and 420 with no target, on Popover's surface with its edge all round,
+      # from its tokens, with and without @scope, light and dark; its arrow's
+      # tip sits 3 past the cut-out's ring on each side, beside a rect and a
+      # virtual element, and it sits in the middle of the window with none; it
       # stays above its Backdrop and under a popover opened from it; a press
       # on the dim or the lit target leaves it open; it takes focus on Next
       # when the page opens it, Next draws the next step with focus on its
       # Next, Escape closes it and focus goes back; the status is one live
-      # region; the marker holds still under reduced motion; right to left
-      # and compact density (scripts/check-tour-step.mjs).
+      # region; the card arrives without its zoom under reduced motion; right
+      # to left and compact density (scripts/check-tour-step.mjs).
       - name: Verify TourStep
         run: |
           pnpm test:tour-step
@@ -599,15 +607,18 @@ jobs:
           - name: Interactions (webkit)
             port: 6103
             run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-interactions
+          # GAP-204: a tree composed from Tree's rows, and Tree's own, read
+          # as a tree: axe finds nothing, and every row is one treeitem with
+          # its level and state (scripts/check-tree-semantics.mjs).
           - name: Documentation (chromium)
             port: 6104
-            run: pnpm -w test:storybook-docs && pnpm -w test:storybook-audit-fixes
+            run: pnpm -w test:storybook-docs && pnpm -w test:storybook-audit-fixes && pnpm -w test:tree-semantics
           - name: Documentation (firefox)
             port: 6105
-            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes && ADAPTIVE_BROWSER=firefox pnpm -w test:tree-semantics
           - name: Documentation (webkit)
             port: 6106
-            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes && ADAPTIVE_BROWSER=webkit pnpm -w test:tree-semantics
           - name: POI Reference (chromium)
             port: 6107
             run: pnpm -w test:poi-details
