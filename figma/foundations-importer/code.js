@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "cd51d936526f";
+const PLUGIN_BUILD = "12be1a7d58fd";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -24044,7 +24044,7 @@ function addComponentTextStyleSpecs(specs, fonts) {
     specs,
     "accordionBoxedTitle",
     "Accordion / Boxed Title",
-    fonts.medium,
+    fonts.regular,
     13,
     17.5,
     "Kozmos Accordion's boxed title: paragraph small, on line height 100.",

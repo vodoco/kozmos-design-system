@@ -217,7 +217,6 @@ public struct KozmosAccordionTrigger: View {
                 }
                 Text(title)
                     .font(KozmosTypography.footnote)
-                    .fontWeight(.medium)
                     .foregroundColor(ink)
                     .fixedSize(horizontal: false, vertical: true)
             }

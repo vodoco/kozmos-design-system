@@ -71,6 +71,7 @@ function read(root, { title }) {
       color: style.color,
       fontSize: parseFloat(style.fontSize),
       lineHeight: parseFloat(style.lineHeight),
+      fontWeight: style.fontWeight,
     };
   };
   const spinnerBox = (node) => {
@@ -235,6 +236,11 @@ try {
             section.text.fontSize < 13.1 &&
             near(section.text.lineHeight, 17.5, 0.05),
           `${where}: a ${name} title is ${section.text.fontSize}/${section.text.lineHeight}; expected the 13 on the 17.5 of the type tokens`,
+        );
+        // Regular, as the live page draws it, open or closed (decision 149).
+        expect(
+          section.text.fontWeight === "400",
+          `${where}: a ${name} title weighs ${section.text.fontWeight}; expected 400`,
         );
       }
       expect(
