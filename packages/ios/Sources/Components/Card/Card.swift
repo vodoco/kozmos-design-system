@@ -53,6 +53,9 @@ public struct KozmosCard<Content: View>: View {
                 .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
         )
         .environment(\.kozmosCardPadding, padding)
+        // A card is a solid surface of its own, so what it holds doesn't read
+        // the glass around it, as React's `.kozmos-card` resets it.
+        .environment(\.kozmosSurfaceStyle, .solid)
     }
 }
 

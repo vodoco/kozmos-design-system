@@ -24,18 +24,42 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
 
     private typealias RGB = (r: UInt8, g: UInt8, b: UInt8)
 
-    /// A muted `KozmosText` on a surface of `style`, over the two rooms.
-    private func scene(_ style: KozmosSurfaceStyle, _ scheme: ColorScheme, blank: Bool = false) -> some View {
-        ZStack(alignment: .top) {
+    /// Where in the surface the words being read are drawn. With a card in
+    /// the surface, the card holds one line and the glass another, and only
+    /// the line being read is blanked.
+    private enum Spot { case onSurface, inCard, besideCard }
+
+    /// A muted `KozmosText` at `spot` on a surface of `style`, over the two rooms.
+    private func scene(
+        _ style: KozmosSurfaceStyle, _ scheme: ColorScheme, _ spot: Spot = .onSurface, blank: Bool = false
+    ) -> some View {
+        let read = KozmosText(blank ? String(repeating: " ", count: words.count) : words, tone: .muted)
+        let other = KozmosText(words, tone: .muted)
+        return ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 KozmosColors.primitivesColorsTheme600
                 KozmosColors.primitivesColorsEmotionalAlert800
             }
-            KozmosText(blank ? String(repeating: " ", count: words.count) : words, tone: .muted)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .kozmosSurface(RoundedRectangle(cornerRadius: 20, style: .continuous), style: style)
-                .padding(16)
+            Group {
+                switch spot {
+                case .onSurface:
+                    read
+                case .inCard:
+                    VStack(alignment: .leading, spacing: 8) {
+                        other
+                        KozmosCard { read.padding(8) }
+                    }
+                case .besideCard:
+                    VStack(alignment: .leading, spacing: 8) {
+                        read
+                        KozmosCard { other.padding(8) }
+                    }
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .kozmosSurface(RoundedRectangle(cornerRadius: 20, style: .continuous), style: style)
+            .padding(16)
         }
         .frame(width: size.width, height: size.height)
         .environment(\.layoutDirection, .leftToRight)
@@ -90,9 +114,10 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
         return (core.0, worst.1, Self.contrast(core.0, worst.1), found.count)
     }
 
-    /// Reads the muted text on `style` in both appearances: the colour it
-    /// drew, and which swatch it is nearer.
-    @MainActor private func reads(_ style: KozmosSurfaceStyle) async throws -> [String] {
+    /// Reads the muted text at `spot` on `style` in both appearances: the
+    /// colour it drew, and which swatch it is nearer. On glass it is the
+    /// foreground colour, unless a solid card lies between them.
+    @MainActor private func reads(_ style: KozmosSurfaceStyle, _ spot: Spot = .onSurface) async throws -> [String] {
         var wrong: [String] = []
         for scheme in [ColorScheme.light, .dark] {
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -102,27 +127,24 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
             let muted = try await render(
                 KozmosColors.primitivesColorsForeground400.environment(\.colorScheme, scheme),
                 "gap-203-muted-swatch-\(scheme)").color(at: centre)
-            let name = "gap-203-muted-text-\(style)-\(scheme)"
-            let drawn = try await render(scene(style, scheme), name)
-            let blanked = try await render(scene(style, scheme, blank: true), "\(name)-blank")
+            let name = "gap-203-muted-text-\(style)-\(spot)-\(scheme)"
+            let drawn = try await render(scene(style, scheme, spot), name)
+            let blanked = try await render(scene(style, scheme, spot, blank: true), "\(name)-blank")
             guard let read = glyphs(drawn, blanked) else {
-                wrong.append("\(style), \(scheme): the text drew nothing")
+                wrong.append("\(style), \(spot), \(scheme): the text drew nothing")
                 continue
             }
             let (toInk, toMuted) = (Self.distance(read.core, ink), Self.distance(read.core, muted))
-            print("GAP-203 iOS, muted KozmosText on \(style), \(scheme): \(describe(read.core)), \(read.pixels) pixels, \(String(format: "%.2f", read.ratio)):1 over \(describe(read.behind)); foreground/100 \(describe(ink)) is \(toInk) away, foreground/400 \(describe(muted)) \(toMuted)")
-            switch style {
-            case .glass:
+            print("GAP-203 iOS, muted KozmosText on \(style), \(spot), \(scheme): \(describe(read.core)), \(read.pixels) pixels, \(String(format: "%.2f", read.ratio)):1 over \(describe(read.behind)); foreground/100 \(describe(ink)) is \(toInk) away, foreground/400 \(describe(muted)) \(toMuted)")
+            if style == .glass && spot != .inCard {
                 if toInk >= toMuted {
-                    wrong.append("glass, \(scheme): drew \(describe(read.core)), nearer foreground/400 \(describe(muted)) than foreground/100 \(describe(ink))")
+                    wrong.append("glass, \(spot), \(scheme): drew \(describe(read.core)), nearer foreground/400 \(describe(muted)) than foreground/100 \(describe(ink))")
                 }
                 if read.ratio < 4.5 {
-                    wrong.append("glass, \(scheme): \(String(format: "%.2f", read.ratio)):1 over \(describe(read.behind)), under 4.5:1")
+                    wrong.append("glass, \(spot), \(scheme): \(String(format: "%.2f", read.ratio)):1 over \(describe(read.behind)), under 4.5:1")
                 }
-            case .solid:
-                if toMuted >= toInk {
-                    wrong.append("solid, \(scheme): drew \(describe(read.core)), nearer foreground/100 \(describe(ink)) than foreground/400 \(describe(muted))")
-                }
+            } else if toMuted >= toInk {
+                wrong.append("\(style), \(spot), \(scheme): drew \(describe(read.core)), nearer foreground/100 \(describe(ink)) than foreground/400 \(describe(muted))")
             }
         }
         return wrong
@@ -138,6 +160,24 @@ final class KozmosTextMutedOnGlassTests: XCTestCase {
     /// The guard: on a solid surface it keeps foreground/400, light and dark.
     @MainActor func testOnASolidSurfaceAMutedKozmosTextKeepsForeground400() async throws {
         let wrong = try await reads(.solid)
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
+    }
+
+    /// A `KozmosCard` is a solid surface of its own, wherever it sits, as
+    /// React's `.kozmos-card` resets the glass's muted colour: on glass, the
+    /// card's muted words keep foreground/400, as `KozmosCardDescription`
+    /// beside them does, and the glass doesn't reach through it.
+    @MainActor func testOnASolidCardOnGlassAMutedKozmosTextKeepsForeground400() async throws {
+        let wrong = try await reads(.glass, .inCard)
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
+    }
+
+    /// The positive control for the card: the same scene, glass and card, and
+    /// the line beside the card is on glass, so it draws the foreground
+    /// colour. Without this, the card's test would pass in a scene that was
+    /// never glass, and a card that reset its parent would too.
+    @MainActor func testBesideASolidCardOnGlassAMutedKozmosTextDrawsTheForegroundColour() async throws {
+        let wrong = try await reads(.glass, .besideCard)
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
 }
