@@ -90,3 +90,24 @@ export const PartialData: Story = {
     },
   },
 };
+
+/**
+ * The product's own action (GAP-130): a hand-off to the product's app, in
+ * the card's own strip after the place's actions, with its own words and
+ * icon. A press reaches `onHostAction` with the action's id.
+ */
+export const HostActions: Story = {
+  args: {
+    onHostAction: fn(),
+    poi: { ...poi, actions: ["navigate", "favourite", "share"] },
+    details: {
+      hostActions: [
+        {
+          id: "open-in-app",
+          label: "Get live directions in Pointr Express",
+          iconName: "map-01",
+        },
+      ],
+    },
+  },
+};

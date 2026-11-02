@@ -86,6 +86,38 @@ data class KozmosPOIResultBadgePresentation(
     val label: String
 )
 
+/**
+ * An action the product defines itself, beside the ones Kozmos names
+ * (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+ * Pointr Express". Kozmos draws it with the words and the icon it is given
+ * and says which was pressed by its [id]; what it does is the product's.
+ *
+ * `KozmosPOIResultCard` draws a result's [KozmosPOIResultPresentation.hostActions]
+ * after its actions, on the selected result, and `KozmosPOIDetailPanel` draws
+ * [KozmosPOIDetailsPresentation.hostActions] after the supplementary actions,
+ * in the same strip: each in the order given, as an outlined button. Mirrors
+ * `POIHostActionPresentation` on the web and `KozmosPOIHostActionPresentation`
+ * on SwiftUI.
+ */
+data class KozmosPOIHostActionPresentation(
+    /**
+     * The product's own name for the action, unique among the card's host
+     * actions: "reserve", "open-in-app". Handed back when it is pressed and
+     * reported as `hostActionId` in analytics; never shown or announced.
+     */
+    val id: String,
+    /** Already localized: the button's words, and what TalkBack says. */
+    val label: String,
+    /**
+     * A Kozmos icon by its registry name, drawn before the label and hidden
+     * from TalkBack. A name Kozmos does not know draws no icon, never a
+     * stand-in: the label is the action.
+     */
+    val iconName: String? = null,
+    /** Drawn, but it cannot be pressed. */
+    val disabled: Boolean = false
+)
+
 /** What a result card offers on the selected result, in the order given. */
 data class KozmosPOIResultActionPresentation(
     val action: KozmosPOIResultAction,
@@ -288,7 +320,14 @@ data class KozmosPOIDetailsPresentation(
     val description: KozmosPOIDetailDescription? = null,
     val tags: List<KozmosPOIServicePresentation> = emptyList(),
     /** Drawn after the POI's own actions, in the same strip. */
-    val supplementaryActions: List<KozmosPOISupplementaryActionPresentation> = emptyList()
+    val supplementaryActions: List<KozmosPOISupplementaryActionPresentation> = emptyList(),
+    /**
+     * The product's own actions, with their own words and icons, drawn after
+     * the supplementary actions in the same strip (GAP-130): "Get live
+     * directions in Pointr Express" hands the visitor to the product's app. A
+     * press reaches the panel's `onHostAction` with the action's id.
+     */
+    val hostActions: List<KozmosPOIHostActionPresentation> = emptyList()
 ) {
     /** The summary facts the card shows: one row of at most three, in the order given. */
     val visibleSummary: List<KozmosPOIDetailSummary>
@@ -477,7 +516,14 @@ data class KozmosPOIResultPresentation(
      * TalkBack needs the tag to say it in a Spanish voice (WCAG 3.1.2). Leave
      * it out when the summary is in the interface language.
      */
-    val summaryLanguage: String? = null
+    val summaryLanguage: String? = null,
+    /**
+     * The product's own actions, with their own words and icons, drawn after
+     * [actions] in the same row and revealed with them (GAP-028): "Reserve a
+     * table" on a restaurant. A press reaches the card's `onHostAction` with
+     * the action's id.
+     */
+    val hostActions: List<KozmosPOIHostActionPresentation> = emptyList()
 ) {
     /** Mirrors the web rule: only an explicit `false` marks a result unavailable. */
     val isAvailable: Boolean

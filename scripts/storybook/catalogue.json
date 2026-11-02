@@ -777,7 +777,13 @@
       "id": "product-sdk-poidetailpanel",
       "title": "SDK/Place details/POIDetailPanel",
       "component": "POIDetailPanel",
-      "exports": ["Inline", "Sheet", "DesktopPanel", "PartialData"]
+      "exports": [
+        "Inline",
+        "Sheet",
+        "DesktopPanel",
+        "PartialData",
+        "HostActions"
+      ]
     },
     {
       "file": "packages/react/src/components/POIMediaGallery/POIMediaGallery.stories.tsx",
@@ -801,6 +807,7 @@
         "FeaturedSelected",
         "SelectedWithActions",
         "LongActionLabels",
+        "HostActions",
         "AlternativeBadge",
         "Tabs",
         "TabsInTheDark",

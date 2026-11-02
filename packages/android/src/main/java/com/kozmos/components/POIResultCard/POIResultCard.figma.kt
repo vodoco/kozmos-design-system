@@ -28,6 +28,7 @@ class KozmosPOIResultCardConnect {
         "Default" to true, "Selected" to true, "Featured" to true, "Unavailable" to false
     )
 
+    // Host Action is one of `hostActions` (GAP-028), which `onHostAction` runs.
     @Composable
     fun ComponentExample() {
         KozmosPOIResultCard(
@@ -38,7 +39,9 @@ class KozmosPOIResultCardConnect {
                 poiId = "cafe", resultIndex = 1, selected = selected,
                 featured = featured, floorId = "l2", available = available
             ),
-            onSelect = {}
+            onSelect = {},
+            presentationStyle = KozmosPOIResultPresentationStyle.Sdk,
+            onHostAction = { _, _ -> }
         )
     }
 }
