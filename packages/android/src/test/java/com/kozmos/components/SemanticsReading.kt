@@ -25,6 +25,8 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.toSize
 import app.cash.paparazzi.Paparazzi
 import app.cash.paparazzi.SnapshotHandler
@@ -126,7 +128,9 @@ data class ReadNode(
     /** The node's custom actions, by the label TalkBack offers each under. */
     val customActions: Map<String, () -> Boolean> = emptyMap(),
     /** What a text field holds: the words it shows as its value. */
-    val editableText: String? = null
+    val editableText: String? = null,
+    /** The weight a text lays its words out in, where it says one. */
+    val fontWeight: FontWeight? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -357,5 +361,10 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     },
     customActions = node.config.getOrNull(SemanticsActions.CustomActions)
         ?.associate { it.label to it.action }.orEmpty(),
-    editableText = node.config.getOrNull(SemanticsProperties.EditableText)?.text
+    editableText = node.config.getOrNull(SemanticsProperties.EditableText)?.text,
+    fontWeight = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { read ->
+        val layouts = mutableListOf<TextLayoutResult>()
+        read(layouts)
+        layouts.firstOrNull()?.layoutInput?.style?.fontWeight
+    }
 )

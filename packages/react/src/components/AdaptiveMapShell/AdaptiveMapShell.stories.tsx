@@ -1,9 +1,10 @@
-import type { CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   Accessibility,
   Heart,
   InfoCircle as Info,
+  LogOut01,
   NavigationPointer01,
   ShoppingBag01 as ShoppingBag,
   Utensils,
@@ -20,6 +21,7 @@ import { FloorSelector } from "../FloorSelector";
 import { MapControlsGroup } from "../MapControlsGroup";
 import { SearchBar } from "../SearchBar";
 import { MapAttribution } from "../MapAttribution";
+import { MapStatusPill } from "../MapStatusPill";
 import { LanguageSwitcher } from "../LanguageSwitcher";
 
 const meta = {
@@ -530,5 +532,144 @@ export const AttributionBesidePanel: Story = {
     ...AttributionWithSheet.args,
     style: { width: 1000, height: 600, maxWidth: "100%" },
     panelPlacement: "start",
+  },
+};
+
+const exampleCredits = (
+  <MapAttribution credits={[{ id: "owner", label: "© Example indoor data" }]} />
+);
+
+/**
+ * Every map slot at once on a phone: the map's status between the bottom
+ * corners, level with them, and the credits directly above it (GAP-123); Exit
+ * building at the top start and the map's information at the top end, under
+ * the search (SDK-UI-002). `pnpm test:map-controls` measures the same layout
+ * (scripts/check-shell-slots.mjs).
+ */
+export const StatusAndTopCorners: Story = {
+  args: {
+    className: undefined,
+    style: { width: 390, height: 760, maxWidth: "100%" },
+    controls: undefined,
+    topBar: (
+      <SearchBar
+        aria-label="Search places"
+        placeholder="Search"
+        value=""
+        onChange={() => undefined}
+      />
+    ),
+    controlsTopStart: (
+      <MapControlButton
+        icon={<LogOut01 className="h-5 w-5" />}
+        label="Exit Main Mall"
+        presentation="labelled"
+        onClick={() => undefined}
+      />
+    ),
+    controlsTopEnd: (
+      <MapControlButton
+        icon={<Info className="h-5 w-5" />}
+        label="Map information"
+        onClick={() => undefined}
+      />
+    ),
+    status: (
+      <MapStatusPill tone="progress">Calculating step-free route</MapStatusPill>
+    ),
+    controlsBottomStart: (
+      <MapControlButton
+        icon={<Accessibility className="h-5 w-5" />}
+        label="Step-free"
+        pressed
+        onClick={() => undefined}
+      />
+    ),
+    controlsBottomEnd: (
+      <div className="flex flex-col items-end gap-4">
+        <FloorSelector
+          floors={["2", "1", "G"]}
+          selectedFloor="1"
+          variant="collapsible"
+          onFloorSelect={() => undefined}
+        />
+        <MapControlsGroup
+          onZoomIn={() => undefined}
+          onZoomOut={() => undefined}
+        />
+      </div>
+    ),
+    attribution: exampleCredits,
+    panelDetents: ["collapsed"],
+    panel: (
+      <div className="px-4">
+        <Button>Place details</Button>
+      </div>
+    ),
+  },
+};
+
+/** The same slots beside a side panel: the top corners keep clear of it. */
+export const StatusAndTopCornersBesidePanel: Story = {
+  args: {
+    ...StatusAndTopCorners.args,
+    style: { width: 1000, height: 600, maxWidth: "100%" },
+    status: <MapStatusPill tone="success">Route updated</MapStatusPill>,
+  },
+};
+
+/**
+ * Exit building, as a recipe rather than a part (SDK-UI-006): a labelled
+ * MapControlButton in the top-start corner, shown while the map is in a
+ * building and named after it. Pressing it asks the map to leave the building
+ * (with `@kozmos-ds/pointr-map`, the handle's `exitBuilding()`); once the map
+ * reports no building, the button and the floors go, and focus moves to the
+ * search rather than being lost with the button. This story stands in for the
+ * map with illustrative state.
+ */
+export const ExitBuilding: Story = {
+  args: { ...StatusAndTopCorners.args, status: undefined },
+  render: function ExitBuildingStory(args) {
+    const [building, setBuilding] = useState<string | undefined>("Main Mall");
+    const search = useRef<HTMLInputElement>(null);
+    return (
+      <AdaptiveMapShell
+        {...args}
+        topBar={
+          <SearchBar
+            ref={search}
+            aria-label="Search places"
+            placeholder={building ? `Search ${building}` : "Search"}
+            value=""
+            onChange={() => undefined}
+          />
+        }
+        controlsTopStart={
+          building ? (
+            <MapControlButton
+              icon={<LogOut01 className="h-5 w-5" />}
+              label={`Exit ${building}`}
+              presentation="labelled"
+              onClick={() => {
+                // map.current?.exitBuilding(), and the map then reports no
+                // building through onBuildingChange.
+                setBuilding(undefined);
+                search.current?.focus();
+              }}
+            />
+          ) : null
+        }
+        controlsBottomEnd={building ? args.controlsBottomEnd : null}
+        controlsBottomStart={
+          building ? (
+            args.controlsBottomStart
+          ) : (
+            <Button variant="outline" onClick={() => setBuilding("Main Mall")}>
+              Enter Main Mall
+            </Button>
+          )
+        }
+      />
+    );
   },
 };

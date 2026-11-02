@@ -1,7 +1,9 @@
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import {
   addressError,
@@ -18,10 +20,8 @@ import {
   toSearchResponse,
   toSite,
   poiId,
-  type PointrBuildingPresentation,
   type PointrPoiItem,
   type PointrSearchResponse,
-  type PointrSitePresentation,
 } from "./convert";
 import { watchCsp, type PointrCspViolation } from "./csp";
 import {
@@ -53,12 +53,9 @@ export interface SessionEvents {
   error(error: PointrMapError): void;
   ready(map: PointrMapLibreMap): void;
   poiSelect(item: PointrPoiItem): void;
-  levelChange(
-    floor: FloorPresentation,
-    building?: PointrBuildingPresentation,
-  ): void;
-  buildingChange(building?: PointrBuildingPresentation): void;
-  siteChange(site?: PointrSitePresentation): void;
+  levelChange(floor: FloorPresentation, building?: BuildingPresentation): void;
+  buildingChange(building?: BuildingPresentation): void;
+  siteChange(site?: SitePresentation): void;
 }
 
 export interface SearchOptions {
@@ -117,8 +114,8 @@ export class PointrMapSession {
   private readyTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly unsubscribe: (() => void)[] = [];
   private readonly pois = new Map<string, PointrPoiItem>();
-  private building: PointrBuildingPresentation | undefined;
-  private site: PointrSitePresentation | undefined;
+  private building: BuildingPresentation | undefined;
+  private site: SitePresentation | undefined;
   private levelIndex: number | undefined;
   private readonly secrets: unknown[];
 
@@ -292,6 +289,25 @@ export class PointrMapSession {
     const live = building?.levels?.find((l) => l.levelIndex === wanted);
     if (!live) return false;
     widget.setLevel(live);
+    return true;
+  }
+
+  /**
+   * Leaves the open building as the SDK's own Exit button does, which Kozmos
+   * hides: the button only emits the view's `exitClicked`, and the SDK's map
+   * controller answers it — zoomed in on a building, it scrolls out to the
+   * site's centre; nearer the site's zoom, it zooms out past it (10.13.0).
+   * The building change follows from the camera, through `onBuildingChange`.
+   * True means asked: below the site's zoom the controller does nothing, and
+   * only `onBuildingChange` says the map left.
+   */
+  exitBuilding(): boolean {
+    const widget = this.widget;
+    const view = this.view;
+    const exitClicked = view?.events?.exitClicked;
+    if (!widget || !this.map || !view?.emit || !exitClicked) return false;
+    if (!(widget.getCurrentBuilding() ?? this.building)) return false;
+    view.emit(exitClicked);
     return true;
   }
 
@@ -616,11 +632,17 @@ export class PointrMapSession {
     this.applyPadding();
     this.events.status("ready");
     this.events.ready(map);
-    // Events emitted while the view was being found are read back here.
+    // Events emitted while the view was being found are read back here: from
+    // the map view controller's site and building, the venue's data as it
+    // loaded, whose levels keep the mark of the default level; the widget's
+    // getters give the SDK's Level instances, which have lost it (10.13.0).
     const widget = this.widget;
     if (!widget) return;
-    this.onSite(toSite(widget.getCurrentSite()));
-    this.onBuilding(toBuilding(widget.getCurrentBuilding()));
+    const loaded = widget.getUiController()?.getMapViewController();
+    this.onSite(toSite(loaded?.currentSite ?? widget.getCurrentSite()));
+    this.onBuilding(
+      toBuilding(loaded?.currentBuilding ?? widget.getCurrentBuilding()),
+    );
     const level = widget.getCurrentLevel();
     if (level) this.onLevel(level.levelIndex);
   }
@@ -667,7 +689,7 @@ export class PointrMapSession {
     if (floor) this.events.levelChange(floor, this.building);
   }
 
-  private onBuilding(building: PointrBuildingPresentation | undefined) {
+  private onBuilding(building: BuildingPresentation | undefined) {
     // The same building again is news only when its floors changed (they
     // may arrive after the building does).
     if (JSON.stringify(building) === JSON.stringify(this.building)) return;
@@ -677,7 +699,7 @@ export class PointrMapSession {
     this.events.buildingChange(building);
   }
 
-  private onSite(site: PointrSitePresentation | undefined) {
+  private onSite(site: SitePresentation | undefined) {
     if (site?.id === this.site?.id) return;
     this.site = site;
     this.events.siteChange(site);
