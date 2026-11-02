@@ -2,7 +2,7 @@
 "@kozmos-ds/react": minor
 ---
 
-The stylesheet is smaller: 30.60 KB gzip, down from 31.26 (31,335 bytes gzip, down from 32,011; 224,274 raw, down from 231,529). Every Kozmos part draws as it did, and no element Kozmos renders carries what went. What a product could notice:
+The stylesheet is 0.66 KB smaller gzip, and 7,255 bytes smaller raw, before what this release adds. Every Kozmos part draws as it did, and no element Kozmos renders carries what went. What a product could notice:
 
 - **55 utilities nothing in Kozmos uses are gone.** A class a product passes through `className` applies only if Kozmos's stylesheet has it, and these it no longer has. Tailwind made them because it read Kozmos's own CSS files, from each class an `@apply` names and from property names such as `flex-shrink`, and it no longer reads those files. A product that uses one needs its own Tailwind or its own CSS: `h-control`, `h-control-sm` and `h-control-lg` read `--density-control-height-md`, `--density-control-height-sm` and `--density-control-height-lg`.
   - the plain ones: `animate-spin`, `backdrop-filter`, `border-collapse`, `border-none`, `border-y`, `drop-shadow`, `flex-shrink`, `h-control`, `h-control-lg`, `h-control-sm`, `left-2`, `outline-2`, `outline-offset-2`, `outline-ring`, `pe-16`, `ps-9`, `rounded-e-control`, `rounded-s-control`, `transition-[max-width,opacity,margin]`, `transition-[max-width,padding,background-color,color]`;
