@@ -1,17 +1,14 @@
 import * as React from "react";
 import { MapView, type MapViewVariant } from "@kozmos-ds/react";
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import type { PointrMapConfig } from "./config";
-import type {
-  PointrBuildingPresentation,
-  PointrPoiItem,
-  PointrSearchResponse,
-  PointrSitePresentation,
-} from "./convert";
+import type { PointrPoiItem, PointrSearchResponse } from "./convert";
 import { PointrMapError } from "./errors";
 import type { PointrMapLibreMap } from "./sdk";
 import { POINTR_SDK_VERSION } from "./sdk-versions";
@@ -64,11 +61,11 @@ export interface PointrMapProps {
   onPoiSelect?: (item: PointrPoiItem) => void;
   onLevelChange?: (
     floor: FloorPresentation,
-    building?: PointrBuildingPresentation,
+    building?: BuildingPresentation,
   ) => void;
   /** The building the map is in; undefined when it leaves every building. */
-  onBuildingChange?: (building?: PointrBuildingPresentation) => void;
-  onSiteChange?: (site?: PointrSitePresentation) => void;
+  onBuildingChange?: (building?: BuildingPresentation) => void;
+  onSiteChange?: (site?: SitePresentation) => void;
 }
 
 /** What a ref to PointrMap offers. Each call is safe before the map is ready. */

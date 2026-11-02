@@ -53,6 +53,16 @@ export interface SdkMapViewController {
    * every unmount (measured). Set false before `destroyMap()`.
    */
   building3DModelsActive?: boolean;
+  /**
+   * The current site and building as the venue's data loaded them (the
+   * SDK's Storage, through BaseViewController's getters in 10.13.0): not the
+   * SDK's own Site, Building and Level instances, so a level here keeps its
+   * `properties`, where the data marks the default level. The widget's
+   * `getCurrentSite()` and `getCurrentBuilding()` return instances whose
+   * levels have lost them.
+   */
+  currentSite?: SdkSite;
+  currentBuilding?: SdkBuilding;
 }
 
 /** An SDK error as `UiController.showError` receives it. */
@@ -78,6 +88,16 @@ export interface SdkLevel {
   levelShortTitle?: string;
   levelLongTitle?: string;
   externalIdentifier?: string;
+  /**
+   * A level as the venue's data gives it: `isDefault` marks the building's
+   * default level, which 10.13.0's `PointrHelper.findDefaultLevelToSet`
+   * starts a building on (else level 0, else the lowest above 0, else the
+   * lowest). The SDK's Level class copies the index, the titles and the
+   * external identifier only, so its instances have no `properties`: only
+   * the data as loaded does (the view's building and site events, and the
+   * map view controller's `currentSite` and `currentBuilding`).
+   */
+  properties?: { isDefault?: unknown };
 }
 
 export interface SdkBuilding {
