@@ -1005,7 +1005,7 @@ keep the table's four columns and its statuses as they are.
   8px a side below `sm` (`Stepper.tsx:109–116`, `:144`, `:158`), so five
   steps fit a 288px row. That is neither fix asked for below: every label
   still shows, cut short, and there is no vertical form, which is the change
-  list's GAP-173, still a decision. #409 (released in 0.14.0) adds
+  list's GAP-173, parked by decision 149. #409 (released in 0.14.0) adds
   `variant="dots"`, one dot per step and no label shown, a tour's progress.
   Whether truncated labels or the dots are narrow form enough to drop the
   wrapper, whose comments still say Kozmos has no narrower form, is the
