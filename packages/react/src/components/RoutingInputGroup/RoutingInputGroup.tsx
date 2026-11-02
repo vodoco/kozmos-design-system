@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
-import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import { Input } from "../Input";
 import { Button } from "../Button";
 import {

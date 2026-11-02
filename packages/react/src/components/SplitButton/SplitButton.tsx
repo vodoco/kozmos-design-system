@@ -48,8 +48,11 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
         {...props}
       >
         <WithoutGenericClick>
+          {/* The seam tints the inline-end side alone: a colour on all four
+              sides outranked the outline variant's own, and its outline
+              drew white at a fifth over white (site GAP-73). */}
           <Button
-            className="rounded-e-none border-e border-theme-fill-foreground/20 focus:z-10"
+            className="rounded-e-none border-e border-e-theme-fill-foreground/20 focus:z-10"
             onClick={(e) => {
               trackEvent("SplitButton", "split_button_main_clicked");
               onMainClick?.(e);

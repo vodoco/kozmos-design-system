@@ -19,6 +19,7 @@ test("what a published package ships counts, and nothing else does", () => {
     "packages/react/src/styles/owned-components.css",
     "packages/react/tsconfig.json",
     "packages/react/vite.config.mts",
+    "packages/react/vite-plugins/shakable-components.mjs",
     "packages/icons/vite.config.mts",
     "packages/react/tailwind.config.js",
     "packages/react/postcss.config.cjs",
