@@ -6,8 +6,9 @@ Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` 
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
-### Added and changed
+### Added
 
+- **`KozmosAccordion` has a boxed form, and an item can be disabled or loading (decision 149):** `KozmosAccordion(variant: .boxed)` draws each section as a box of its own, 8 apart: a hairline while closed, theme 900 with its title in foreground 1000 and its label in theme 300 while open, and the content in the page's flow 8 under its header, at the control radius. A header is 44 tall at least, this platform's target, and grows with the text; React's is the density's control height, 40 compact and 44 touch, and the page this form comes from is compact. `KozmosAccordionTrigger` takes `label`, the small line over the title, and an `icon`, both the boxed form's. Both are new in a way the look is not: a trigger took every tap until now. `KozmosAccordionItem(disabled:)` takes no tap on the item's trigger, in either form, and VoiceOver reads it dimmed; in the boxed form it is greyed with no chevron. An open item stays open and its content is left alone, as React's is. `KozmosAccordionTrigger(loading:)` draws a spinner where the chevron is and disables the trigger while it is set, in either form, and as SwiftUI has no busy state, VoiceOver reads `loadingLabel`, "Loading" unless a product passes its own, as the trigger's value. Existing calls compile and draw as they did. The boxed form is still under Reduce Motion. `KozmosAccordionBoxedTests` draws the sections in light and dark, right to left and at accessibility3 and reads what VoiceOver is given, including that a disabled or loading trigger cannot be activated. `BuildingSections` compiles the docs tab.
 - **`KozmosNavbar` `logoInset`** (GAP-208, decisions 147 and 150): sets `logo` in a column as wide as `KozmosSidebar`'s rail, from the bar's edge, so a Home tile sits over the rail and what follows starts past it. The column mirrors right to left. It takes no number: the rail's width is one constant, read by both parts. Held by `KozmosNavbarLogoInsetTests`.
 
 ### Fixed

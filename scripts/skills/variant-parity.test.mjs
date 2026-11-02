@@ -13,6 +13,7 @@ import {
   compareAxes,
   enumBodyValues,
   iosAxes,
+  reactAxes,
 } from "./check-variant-parity.mjs";
 
 test("Swift component axes include shared utility enums", () => {
@@ -24,6 +25,14 @@ test("Swift component axes include shared utility enums", () => {
     "theme",
     "background",
   ]);
+});
+
+// The reader finds `<Component>Props`. Accordion's root props are a union
+// around its form, and under another name its `variant` was never compared,
+// while every platform passed.
+test("Accordion's variant is read on React and on Swift", () => {
+  assert.deepEqual(reactAxes("Accordion").variant, ["default", "boxed"]);
+  assert.deepEqual(iosAxes("Accordion").variant, ["default", "boxed"]);
 });
 
 test("Kotlin entries are read through a doc comment that holds commas", () => {

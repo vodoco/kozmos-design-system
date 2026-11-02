@@ -370,6 +370,18 @@
       "minimum": 4.5
     },
     {
+      "name": "Accordion's boxed form, the open header's title on its fill (decision 149)",
+      "background": "primitives-colors-theme-900",
+      "foreground": "primitives-colors-foreground-1000",
+      "minimum": 4.5
+    },
+    {
+      "name": "Accordion's boxed form, the open header's label on its fill (decision 149)",
+      "background": "primitives-colors-theme-900",
+      "foreground": "primitives-colors-theme-300",
+      "minimum": 4.5
+    },
+    {
       "name": "scrollbar thumb on the page and the panel (non-text)",
       "background": "primitives-colors-background-0",
       "foreground": "semantics-scrollbar-thumb",
