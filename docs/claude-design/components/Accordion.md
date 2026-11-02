@@ -54,7 +54,15 @@ export function AccordionExample() {
 
 ## Accordion
 
-It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, which is `AccordionPrimitive.AccordionSingleProps | AccordionPrimitive.AccordionMultipleProps`.
+It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, which is `AccordionFormProps & (AccordionPrimitive.AccordionSingleProps | AccordionPrimitive.AccordionMultipleProps)`.
+
+- `variant`: `"default" | "boxed"`, optional.
+
+  How the sections are drawn. Defaults to "default", rows divided by a rule.
+  "boxed" (decision 149) draws each header as a box of its own, 8 apart: a
+  hairline while closed, and the theme's darkest fill while open, with the
+  section's content in the page's flow under it. Its height is the
+  density's control height: 40 compact, 44 touch.
 
 - `type`: `'single'`, **required**.
 - `value`: `string`, optional.
@@ -109,7 +117,21 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## AccordionTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `Omit<AccordionPrimitive.AccordionTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
+It forwards its ref to `HTMLButtonElement`. Its props are `AccordionTriggerProps`, which extends `React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>`.
+
+- `icon`: `React.ReactNode`, optional.
+
+  The boxed form's mark at the start, drawn 20 square.
+
+- `label`: `React.ReactNode`, optional.
+
+  The boxed form's small line over the title, and the product's words:
+  "Step 1/5". Read before the title, as part of the trigger's name.
+
+- `loading`: `boolean`, optional.
+
+  A spinner where the chevron is, the trigger busy to assistive technology,
+  and the item disabled while it is set, in either form.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.

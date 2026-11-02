@@ -173,6 +173,8 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The theme's 600 is a word, a mark, an edge or a focus ring on the
   // surface (decision 59).
   ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],
+  // Theme 300 is a word on theme 900: Accordion's boxed label (decision 149).
+  ["Primitives/Colors/theme/300", ["TEXT_FILL"]],
   // A status's words, its icon, and the edge and focus ring of a field,
   // control or alert in it.
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],

@@ -113,3 +113,185 @@ fun StepFreeAccess() {
 }
 `}
 />
+
+## Boxed
+
+`variant="boxed"` draws each section as a box of its own, for a form in steps: a hairline while closed, the theme's darkest fill while open, and the section's content in the panel's flow under its header. Sections sit 8 apart. A header is the density's control height, 40 at compact and 44 at touch, so a pointer-first tool sets `density="compact"` and a touch product keeps its 44 target. Corners are the control radius.
+
+<Canvas>
+  <Story of={AccordionStories.Boxed} />
+</Canvas>
+
+- **What is yours.** Which section opens when, the "Step 1/5" words, the Continue and Save buttons and whatever sits beside the panel. There is no built-in step count: `label` is your string, read before the title as part of the trigger's name.
+- **Disabled.** `disabled` on `AccordionItem`, as in the default form. It is greyed, draws no chevron, takes no press or focus, and the arrow keys and Tab pass over it.
+- **Loading.** `loading` on `AccordionTrigger` draws a spinner where the chevron is, marks the trigger busy to assistive technology and disables the item until you clear it, in either form. SwiftUI and Compose have no busy state to set, so they say `loadingLabel` instead, "Loading" unless you pass your own.
+- **`icon` and `label`** are the boxed form's: the default form draws neither.
+- **In the content.** It doesn't clip at rest, so a field's focus ring draws whole. Leave room for the ring at the panel's edge: a panel with `overflow: hidden` right at the sections' edge will still clip it.
+- **Contrast.** The title and the label are foreground 1000 and theme 300 on theme 900. Each pair turns over with the theme and clears 4.5:1 in both (13.25 and 5.29 light, 14.84 and 5.66 dark). A client theme that replaces theme 300 or 900 takes on that pair: nothing at runtime checks it.
+
+<Canvas>
+  <Story of={AccordionStories.BoxedLoading} />
+</Canvas>
+
+<Canvas>
+  <Story of={AccordionStories.BoxedStates} />
+</Canvas>
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@kozmos-ds/react";
+import { Building02, LayersTwo01 } from "@kozmos-ds/icons";
+
+export function BuildingSections({ open, onOpen, levelsLoading }) {
+  return (
+    <Accordion type="single" variant="boxed" value={open} onValueChange={onOpen}>
+      <AccordionItem value="details">
+        <AccordionTrigger icon={<Building02 />} label="Step 1/5">
+          Building details
+        </AccordionTrigger>
+        <AccordionContent>The form</AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="levels">
+        <AccordionTrigger
+          icon={<LayersTwo01 />}
+          label="Step 3/5"
+          loading={levelsLoading}
+        >
+          Levels
+        </AccordionTrigger>
+        <AccordionContent>The levels</AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// One section open at a time, and the open one is yours to hold, as are the
+// "Step n/5" words. A later section is disabled until you reach it, and one
+// that is loading shows a spinner and takes no tap until you clear it.
+struct BuildingSections: View {
+    @Binding var open: String?
+    var levelsLoading: Bool
+    var plansReached: Bool
+
+    var body: some View {
+        KozmosAccordion(variant: .boxed) {
+            KozmosAccordionItem {
+                KozmosAccordionTrigger(
+                    value: "details",
+                    title: "Building details",
+                    selection: $open,
+                    label: "Step 1/5"
+                ) {
+                    KozmosIcon("home-line")
+                }
+                KozmosAccordionContent(value: "details", selection: $open) {
+                    KozmosText("The form")
+                }
+            }
+            KozmosAccordionItem {
+                KozmosAccordionTrigger(
+                    value: "levels",
+                    title: "Levels",
+                    selection: $open,
+                    label: "Step 3/5",
+                    loading: levelsLoading
+                ) {
+                    KozmosIcon("layers-three-01")
+                }
+                KozmosAccordionContent(value: "levels", selection: $open) {
+                    KozmosText("The levels")
+                }
+            }
+            KozmosAccordionItem(disabled: !plansReached) {
+                KozmosAccordionTrigger(
+                    value: "plans",
+                    title: "Floor plans",
+                    selection: $open,
+                    label: "Step 4/5"
+                ) {
+                    KozmosIcon("layers-three-01")
+                }
+                KozmosAccordionContent(value: "plans", selection: $open) {
+                    KozmosText("The plans")
+                }
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.accordion.KozmosAccordion
+import com.kozmos.components.accordion.KozmosAccordionContent
+import com.kozmos.components.accordion.KozmosAccordionItem
+import com.kozmos.components.accordion.KozmosAccordionTrigger
+import com.kozmos.components.accordion.KozmosAccordionVariant
+import com.kozmos.components.icon.KozmosIcon
+import com.kozmos.components.text.KozmosText
+
+// One section open at a time, and the open one is yours to hold, as are the
+// "Step n/5" words. A later section is disabled until you reach it, and one
+// that is loading shows a spinner and takes no press until you clear it.
+@Composable
+fun BuildingSections(
+    open: String?,
+    onOpen: (String?) -> Unit,
+    levelsLoading: Boolean,
+    plansReached: Boolean
+) {
+    KozmosAccordion(variant = KozmosAccordionVariant.Boxed) {
+        KozmosAccordionItem {
+            KozmosAccordionTrigger(
+                value = "details",
+                selectedValue = open,
+                onValueChange = onOpen,
+                title = "Building details",
+                label = "Step 1/5",
+                icon = { KozmosIcon(name = "home-line") }
+            )
+            KozmosAccordionContent(value = "details", selectedValue = open) {
+                KozmosText(text = "The form")
+            }
+        }
+        KozmosAccordionItem {
+            KozmosAccordionTrigger(
+                value = "levels",
+                selectedValue = open,
+                onValueChange = onOpen,
+                title = "Levels",
+                label = "Step 3/5",
+                icon = { KozmosIcon(name = "layers-three-01") },
+                loading = levelsLoading
+            )
+            KozmosAccordionContent(value = "levels", selectedValue = open) {
+                KozmosText(text = "The levels")
+            }
+        }
+        KozmosAccordionItem(disabled = !plansReached) {
+            KozmosAccordionTrigger(
+                value = "plans",
+                selectedValue = open,
+                onValueChange = onOpen,
+                title = "Floor plans",
+                label = "Step 4/5",
+                icon = { KozmosIcon(name = "layers-three-01") }
+            )
+            KozmosAccordionContent(value = "plans", selectedValue = open) {
+                KozmosText(text = "The plans")
+            }
+        }
+    }
+}
+`}
+/>

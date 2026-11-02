@@ -300,15 +300,23 @@ module.exports = {
       // on the standard motion tokens, as the owned sheet and reveal motion
       // do, and its chevron turns on the same two (.kozmos-accordion-chevron),
       // so they move together; reduced motion stops both in owned CSS
-      // (.kozmos-accordion-content).
+      // (.kozmos-accordion-content). The boxed form's content has no
+      // overflow-hidden of its own, so a form's focus rings draw whole at
+      // rest: the keyframes clip it for as long as it moves.
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: { height: "0", overflow: "hidden" },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+            overflow: "hidden",
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          from: {
+            height: "var(--radix-accordion-content-height)",
+            overflow: "hidden",
+          },
+          to: { height: "0", overflow: "hidden" },
         },
       },
       animation: {

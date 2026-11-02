@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T16:21:33.422Z",
+  "generatedAt": "2026-11-02T08:34:37.239Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -1153,7 +1153,7 @@
         "ios": "primitivesColorsTheme300",
         "android": "primitivesColorsTheme300"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
