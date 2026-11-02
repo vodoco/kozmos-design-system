@@ -65,6 +65,8 @@ a count, give `getValueLabel`, as below, and it is said "11 of 15".
   tone.
 - **No value.** With `value` null the track is drawn alone. A moving indeterminate ring is
   GAP-159's, not this form's.
+- **Over the total.** A value past the total is all of it: "16 of 15" draws a full ring, and
+  says 15 of 15. SwiftUI and Compose clamp it as well, and the bar does the same.
 
 SwiftUI's `KozmosProgress(value:total:shape:size:tone:labelPlacement:label:)` and Compose's
 `KozmosProgress(progress, shape = KozmosProgressShape.Circular, size, tone, labelPlacement,

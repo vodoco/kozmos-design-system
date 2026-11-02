@@ -69,9 +69,18 @@ const Progress = React.forwardRef<
     const labelId = React.useId();
     const resolvedMax =
       typeof max === "number" && !Number.isNaN(max) && max > 0 ? max : 100;
+    // A value over the total is all of it: "16 of 15" is a full ring and a
+    // full bar, as SwiftUI's and Compose's are and as `<progress>` has it.
+    // Radix would call it unknown and draw none done.
+    const drawnValue =
+      typeof value === "number" && Number.isFinite(value) && value > resolvedMax
+        ? resolvedMax
+        : value;
     const known =
-      typeof value === "number" && value >= 0 && value <= resolvedMax;
-    const percentage = known ? (value / resolvedMax) * 100 : 0;
+      typeof drawnValue === "number" &&
+      drawnValue >= 0 &&
+      drawnValue <= resolvedMax;
+    const percentage = known ? (drawnValue / resolvedMax) * 100 : 0;
     if (shape === "circular") {
       const [diameter, stroke] = RING[size] ?? RING.md;
       const centre = diameter / 2;
@@ -97,7 +106,7 @@ const Progress = React.forwardRef<
       return (
         <ProgressPrimitive.Root
           ref={ref}
-          value={value}
+          value={drawnValue}
           max={max}
           data-shape="circular"
           data-size={size}
@@ -163,7 +172,7 @@ const Progress = React.forwardRef<
     return (
       <ProgressPrimitive.Root
         ref={ref}
-        value={value}
+        value={drawnValue}
         max={max}
         className={cn(
           "relative h-2 w-full overflow-hidden rounded-pill bg-secondary",

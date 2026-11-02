@@ -20,6 +20,13 @@ describe("Progress", () => {
     expect(progress).not.toHaveAttribute("aria-valuenow");
     expect(progress).toHaveAttribute("data-state", "indeterminate");
   });
+  it("draws a value over the total as a full bar, as the natives do", () => {
+    render(<Progress value={120} aria-label="Download" />);
+    const progress = screen.getByRole("progressbar", { name: "Download" });
+    expect(progress).toHaveAttribute("data-state", "complete");
+    expect(progress).toHaveAttribute("aria-valuenow", "100");
+    expect(progress.firstElementChild).toHaveStyle({ width: "100%" });
+  });
   it("renders correctly", () => {
     render(<Progress value={50} aria-label="progress" />);
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
@@ -219,6 +226,37 @@ describe("Progress", () => {
       expect(progress).toHaveAttribute("data-state", "indeterminate");
       expect(progress).not.toHaveAttribute("aria-valuenow");
       expect(progress.querySelectorAll("circle")).toHaveLength(1);
+    });
+
+    // "16 of 15 levels": all of them, as SwiftUI's and Compose's rings have
+    // it, and as `<progress>` does. Radix would call it unknown and draw the
+    // track alone, as if none were done.
+    it("draws a value over the total as a full ring", () => {
+      render(
+        <Progress
+          shape="circular"
+          value={16}
+          max={15}
+          aria-label="Levels"
+          getValueLabel={(value, max) => `${value} of ${max}`}
+        />,
+      );
+      const progress = screen.getByRole("progressbar", { name: "Levels" });
+      expect(progress).toHaveAttribute("data-state", "complete");
+      expect(progress).toHaveAttribute("aria-valuenow", "15");
+      expect(progress).toHaveAttribute("aria-valuetext", "15 of 15");
+      const { arc } = ring(progress);
+      const [drawn, gap] = arc.getAttribute("stroke-dasharray")!.split(" ");
+      expect(Number(drawn)).toBeCloseTo(Number(gap));
+    });
+
+    it("leaves a value that is not a number unknown, the track alone", () => {
+      render(
+        <Progress shape="circular" value={Infinity} aria-label="Levels" />,
+      );
+      const progress = screen.getByRole("progressbar", { name: "Levels" });
+      expect(progress).toHaveAttribute("data-state", "indeterminate");
+      expect(ring(progress).arc).toBeUndefined();
     });
 
     it("leaves the bar as it was: no ring, no label", () => {
