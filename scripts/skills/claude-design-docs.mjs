@@ -468,6 +468,55 @@ const list = (items) =>
     ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`
     : (items[0] ?? "");
 
+/** Each semantic radius role's pixels, by role name in lower case: control, container, panel… */
+function semanticRadius(tokens) {
+  const scale = tokens.Primitives.Layout.radius;
+  const roles = {};
+  for (const [name, token] of Object.entries(tokens.Semantics.Radius)) {
+    const step = /^\{Primitives\.Layout\.radius\.([^}]+)\}$/.exec(token.$value);
+    if (!step || !(step[1] in scale))
+      throw new Error(
+        `Semantics.Radius.${name} is ${token.$value}, not a step of Primitives.Layout.radius: the README's Corners section reads it as one.`,
+      );
+    roles[name.toLowerCase()] = scale[step[1]].$value;
+  }
+  for (const role of ["control", "container", "panel", "marker"])
+    if (!(role in roles))
+      throw new Error(
+        `Semantics.Radius has no ${role}, which the README's Corners section names.`,
+      );
+  return roles;
+}
+
+/**
+ * The README says no part reads the button, input and card primitive radii
+ * (an override of them changes nothing). Hold that true: fail the build when a
+ * component's source reads one, by variable or by Tailwind class.
+ */
+function assertPrimitiveRadiiUnread(root) {
+  const read =
+    /--primitives-radius-(button|input|card)\b|\brounded-(?:[a-z]{1,2}-)?(button|input|card)\b/;
+  const found = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(file);
+      else if (
+        /\.(tsx?|css)$/.test(entry.name) &&
+        !/\.(test|stories|figma)\.tsx?$/.test(entry.name)
+      ) {
+        const match = read.exec(fs.readFileSync(file, "utf8"));
+        if (match) found.push(`${path.relative(root, file)}: ${match[0]}`);
+      }
+    }
+  };
+  walk(path.join(root, "packages/react/src"));
+  if (found.length)
+    throw new Error(
+      `The README says no part reads --primitives-radius-button, -input or -card, but ${found.join("; ")}. Correct the README's Corners section.`,
+    );
+}
+
 /** The consuming page: README.md. */
 function renderReadme({ root, api, cards, owner }) {
   const react = readJson(path.join(root, "packages/react/package.json"));
@@ -543,9 +592,13 @@ function renderReadme({ root, api, cards, owner }) {
   );
 
   // Pointr's brand face, which the brand family role names (decision 87).
-  const brandFamily = readJson(
+  const lightTokens = readJson(
     path.join(root, "packages/tokens/src/tokens-light.json"),
-  ).Primitives.Typography.font.family.primary.$value;
+  );
+  const brandFamily =
+    lightTokens.Primitives.Typography.font.family.primary.$value;
+  const radius = semanticRadius(lightTokens);
+  assertPrimitiveRadiiUnread(root);
 
   return [
     "# Kozmos for Claude Design",
@@ -608,6 +661,80 @@ function renderReadme({ root, api, cards, owner }) {
     "  );",
     "}",
     "```",
+    "",
+    "### Icons",
+    "",
+    "When you know which icon you need, import it from `@kozmos-ds/icons` and give it to `Icon`: `<Icon icon={HelpCircle} />` (decision 121). A named import brings in that icon alone. Look an icon up by name, `<Icon name=\"…\" />`, only when the name is data, such as a category's icon that comes from the server: a lookup brings in every icon a name can reach, as `@kozmos-ds/icons`' README says, and no UI glyph is added to the names. Every icon `@kozmos-ds/icons` exports is drawn this way, so none of them is a gap.",
+    "",
+    "```tsx",
+    'import { HelpCircle } from "@kozmos-ds/icons";',
+    'import { Icon, IconButton, ThemeProvider } from "@kozmos-ds/react";',
+    "",
+    "export function HelpButtonExample() {",
+    "  return (",
+    '    <ThemeProvider defaultTheme="light">',
+    '      <IconButton variant="outline" aria-label="Help">',
+    "        <Icon icon={HelpCircle} />",
+    "      </IconButton>",
+    "    </ThemeProvider>",
+    "  );",
+    "}",
+    "```",
+    "",
+    "### Navbar's Home tile",
+    "",
+    "A Home tile goes in Navbar's `logo` slot, as an icon-only `NavigationItem` (`placement=\"top\"`, `content=\"icon-only\"`) with its name, `selected` on the home page, where it draws the top navigation's grey fill (decision 139, the MAP-64 design). The slot is at the bar's inline start, where a Home tile sits. `actions` is drawn in the group at the bar's end, after the navigation. The bar is a `<header>`, and only its `navigation` slot is inside its `<nav>` landmark, so neither `logo` nor `actions` belongs to the navigation. Lining the tile up over a Sidebar rail is not yet a Navbar option.",
+    "",
+    "```tsx",
+    'import { HomeLine } from "@kozmos-ds/icons";',
+    "import {",
+    "  Icon,",
+    "  Navbar,",
+    "  NavigationItem,",
+    "  ThemeProvider,",
+    '} from "@kozmos-ds/react";',
+    "",
+    "export function HomeTileExample() {",
+    "  return (",
+    '    <ThemeProvider defaultTheme="light">',
+    "      <Navbar",
+    "        logo={",
+    "          <NavigationItem",
+    '            href="#"',
+    '            placement="top"',
+    '            content="icon-only"',
+    '            icon={<Icon icon={HomeLine} />}',
+    '            aria-label="Home"',
+    "            selected",
+    "          />",
+    "        }",
+    "        navigation={",
+    "          <>",
+    '            <NavigationItem href="#" placement="top" selected>',
+    "              Maps",
+    "            </NavigationItem>",
+    '            <NavigationItem href="#" placement="top">',
+    "              Settings",
+    "            </NavigationItem>",
+    "          </>",
+    "        }",
+    "      />",
+    "    </ThemeProvider>",
+    "  );",
+    "}",
+    "```",
+    "",
+    "### Corners",
+    "",
+    `Parts round their corners with the semantic radius roles, which the provider's \`tokens\` can repoint: \`--semantics-radius-control\` (${radius.control}: buttons, fields, list rows), \`--semantics-radius-container\` (${radius.container}: cards and dialogs) and \`--semantics-radius-panel\` (${radius.panel}: large panels and sheets), with \`--semantics-radius-marker\` (${radius.marker}), \`--semantics-radius-pill\` and \`--semantics-radius-none\` for small marks, pills and flush edges. Each is a number of pixels with no unit. No part reads \`--primitives-radius-button\`, \`--primitives-radius-input\` or \`--primitives-radius-card\`, so overriding them changes nothing. Pointr Cloud keeps these corners (decision 118).`,
+    "",
+    "### Scanning a board",
+    "",
+    "Select is modal (decision 120). While its list is open, the rest of the page is inert and hidden from assistive technology, and the list is drawn outside every landmark, so an accessibility scan of a board with a list open reports the page's regions and landmarks. Scan a board with every list closed. LanguageSwitcher is built from Select and does the same.",
+    "",
+    "### A disabled menu item",
+    "",
+    "A disabled `MenuItem` takes no pointer and the arrow keys pass over it, so no tooltip can say why it is unavailable (decision 123). Leave it out, or keep it and say why in its own words: `<MenuItem disabled>Map Content: add a building first</MenuItem>`. Menu's docs page says the same.",
     "",
     "### Where the API is",
     "",

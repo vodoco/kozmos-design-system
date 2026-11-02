@@ -161,9 +161,10 @@ BackdropAdapter.displayName = "Backdrop";
 // TourStep's target is read as Backdrop's is: a template ref on a component
 // is its element (GAP-188). One part, so the card, its Backdrop and its
 // anchor share one React root. Named slots reach React as the props of
-// their names (#title, #hint, #instruction, #tourLabel), and @back, @next
-// and @close as onBack, onNext and onClose: without @back or @next there is
-// no Back or Next.
+// their names (#title, #body, #instruction, #tourLabel), the default slot as
+// the content after the instruction, and @back, @next, @secondary, @dismiss
+// and @close as onBack, onNext, onSecondary, onDismiss and onClose: without
+// one of them there is no such button.
 const TourStepAdapter = ({ target, ...props }: any) =>
   React.createElement(TourStep, {
     ...props,
