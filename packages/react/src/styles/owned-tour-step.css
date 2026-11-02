@@ -93,7 +93,7 @@
       var(--primitives-layout-spacing-200) * 1px +
         (
           var(--primitives-layout-sizing-200) * 1px -
-            var(--density-icon-control-size-md)
+            var(--density-icon-control-size-md, 2.75rem)
         ) /
         2
     );
@@ -104,7 +104,8 @@
   /* With a Close, and only then, the words wrap 8 before it. */
   .kozmos-tour-step .kozmos-tour-step-header:has(> .kozmos-tour-step-close) {
     --kozmos-tour-step-close-room: calc(
-      var(--kozmos-tour-step-close-end) + var(--density-icon-control-size-md) +
+      var(--kozmos-tour-step-close-end) +
+        var(--density-icon-control-size-md, 2.75rem) +
         var(--primitives-layout-spacing-100) * 1px -
         var(--primitives-layout-spacing-200) * 1px
     );
@@ -132,7 +133,11 @@
     inset-block-start: max(
       0px,
       var(--primitives-layout-spacing-200) * 1px +
-        (var(--kozmos-tour-step-line) - var(--density-icon-control-size-md)) / 2
+        (
+          var(--kozmos-tour-step-line) -
+            var(--density-icon-control-size-md, 2.75rem)
+        ) /
+        2
     );
     inset-inline-end: var(--kozmos-tour-step-close-end);
   }
