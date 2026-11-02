@@ -171,6 +171,7 @@ public struct KozmosProgress: View {
 
     /// A ring with `label` in its centre, or beside it with
     /// `labelPlacement: .end`: "11 Levels Added in total", or a percentage.
+    /// It is the caption step, 12 on 16, unless its content says otherwise.
     /// The label's words name the ring for VoiceOver, with its value; an
     /// `accessibilityLabel` of the caller's replaces them. A bar draws no
     /// label.
@@ -224,7 +225,10 @@ public struct KozmosProgress: View {
 
     /// The dial, and its label beside it at the inline end when asked: an
     /// HStack, so right to left the label is on its left. One element: the
-    /// label's words, and how far it has got.
+    /// label's words, and how far it has got. The label is the caption step
+    /// on either path, 12 on 16 as React's ring sets it, until its content
+    /// says otherwise: at body's 17, "75%" broke over two lines in an `.sm`
+    /// ring. Its colour is `.primary`, foreground 0's black and white.
     private var ring: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             dial
@@ -232,6 +236,7 @@ public struct KozmosProgress: View {
                 label.multilineTextAlignment(.leading)
             }
         }
+        .font(KozmosTypography.caption)
         .accessibilityElement(children: .combine)
         .accessibilityValue(spokenValue)
         .accessibilityAddTraits(.updatesFrequently)

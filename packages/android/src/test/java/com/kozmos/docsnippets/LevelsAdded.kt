@@ -15,6 +15,7 @@ import com.kozmos.components.progress.KozmosProgress
 import com.kozmos.components.progress.KozmosProgressLabelPlacement
 import com.kozmos.components.progress.KozmosProgressShape
 import com.kozmos.components.progress.KozmosProgressSize
+import com.kozmos.tokens.KozmosThemeTokens
 
 // A count out of a total: 11 of 15 levels, as a fraction of 1, the label
 // beside the ring at the inline end. The label's words name the ring for
@@ -30,7 +31,7 @@ fun LevelsAdded() {
     ) {
         Column {
             Text("11 Levels", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("Added in total", fontSize = 12.sp)
+            Text("Added in total", color = KozmosThemeTokens.primitivesColorsForeground400)
         }
     }
 }

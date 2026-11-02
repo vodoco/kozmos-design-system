@@ -27,6 +27,15 @@ final class KozmosProgressRingTests: XCTestCase {
         XCTAssertEqual(KozmosProgress(value: 3, total: 0, shape: .circular).fraction, 0)
     }
 
+    /// A value over the total is all of it, as React's ring and Compose's
+    /// have it, and one that is not a number is none done, as theirs is.
+    func testAValueOverTheTotalIsAllOfIt() {
+        let over = KozmosProgress(value: 16, total: 15, shape: .circular)
+        XCTAssertEqual(over.fraction, 1)
+        XCTAssertEqual(over.spokenValue, "100%")
+        XCTAssertEqual(KozmosProgress(value: .infinity, shape: .circular).fraction, 0)
+    }
+
     func testReduceMotionDrawsANewValueAtOnce() {
         XCTAssertNil(KozmosProgress.sweep(reduceMotion: true))
         XCTAssertNotNil(KozmosProgress.sweep(reduceMotion: false))
@@ -123,6 +132,51 @@ final class KozmosProgressRingTests: XCTestCase {
             XCTAssertLessThan(hypot(corner.x - 64, corner.y - 64), hole)
         }
     }
+
+    #if os(iOS)
+    /// The black ink a label draws, on an empty ring: the track is grey.
+    @MainActor private func ink<Label: View>(
+        _ size: KozmosProgressSize,
+        _ placement: KozmosProgressLabelPlacement,
+        @ViewBuilder _ label: () -> Label
+    ) throws -> CGRect {
+        let drawn = try DrawnPixels.draw(
+            KozmosProgress(value: 0, shape: .circular, size: size, labelPlacement: placement, label: label)
+                .environment(\.colorScheme, .light),
+            scale: 4)
+        return try XCTUnwrap(drawn.boundingBox { r, g, b, a in a > 200 && r < 60 && g < 60 && b < 60 })
+    }
+
+    /// React's `.kozmos-progress-ring`: 12 on 16 wherever the label is drawn,
+    /// until its content says otherwise. Read from the ink: an H is 8.5 tall
+    /// at 12pt, and two of them on two lines are that and 16. Body's 17pt,
+    /// a bare Text's, is 12 tall and 22 apart. On a Mac `.caption` is 10pt,
+    /// so this runs on the simulator.
+    @MainActor func testTheLabelIs12On16UnlessItsContentSaysOtherwise() throws {
+        var wrong: [String] = []
+        for placement in KozmosProgressLabelPlacement.allCases {
+            let one = try ink(.lg, placement) { Text(verbatim: "H").foregroundColor(.black) }
+            let two = try ink(.lg, placement) { Text(verbatim: "H\nH").foregroundColor(.black) }
+            let own = try ink(.lg, placement) {
+                Text(verbatim: "H").font(.system(size: 30)).foregroundColor(.black)
+            }
+            if abs(one.height - 8.5) > 1 { wrong.append("\(placement): an H is \(one.height) tall, not 8.5") }
+            if abs(two.height - one.height - 16) > 0.75 {
+                wrong.append("\(placement): its lines are \(two.height - one.height) apart, not 16")
+            }
+            if own.height < 18 { wrong.append("\(placement): a label's own 30pt drew \(own.height) tall") }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    /// 12pt is what lets a percentage fit: "75%" stays on one line in the
+    /// hole's square.
+    @MainActor func testAPercentageFitsOnOneLineInASmallRing() throws {
+        let words = try ink(.sm, .center) { Text(verbatim: "75%").foregroundColor(.black) }
+        XCTAssertLessThanOrEqual(words.width, (48 - 2 * 4) * 0.7071)
+        XCTAssertLessThan(words.height, 12, "two lines")
+    }
+    #endif
 
     /// Owner, 28 Oct: a status ring. Each tone's arc is its emotion's text
     /// colour, Tag's, and unset it is `.themed`, theme 600, the bar's own

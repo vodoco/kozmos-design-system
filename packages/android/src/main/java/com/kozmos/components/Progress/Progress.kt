@@ -11,16 +11,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.progressSemantics
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.em
 import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import com.kozmos.components.KozmosEmotion
+import com.kozmos.components.text.KozmosTextStyle
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosMotion
 import androidx.compose.material3.MaterialTheme
@@ -149,8 +151,10 @@ enum class KozmosProgressLabelPlacement { Center, End }
  * How far something has got: a bar, or with [shape] Circular a ring of
  * [size] whose arc is [tone]'s colour, Tag's and Button's emotions (Themed,
  * the bar's own theme 600, by default), with [label] in its centre or, with
- * [labelPlacement] End, beside it. [progress] is a fraction of 1, clamped;
- * NaN is none done. A bar draws no label.
+ * [labelPlacement] End, beside it, 12 on 16 in foreground 0 unless its content
+ * says otherwise. [progress] is a fraction of 1, clamped, so over the total
+ * is a full ring; one that is not a finite number is none done. A bar draws
+ * no label.
  */
 @Composable
 fun KozmosProgress(
@@ -183,6 +187,26 @@ internal fun kozmosProgressSweep(animationsOn: Boolean): AnimationSpec<Float> =
     else snap()
 
 /**
+ * What a ring's label is drawn in, on either path, as React's
+ * `.kozmos-progress-ring` sets it: foreground 0, and the caption step, 12 on
+ * 16, until its content says otherwise. The colour is the ring's own: with
+ * no Material Surface above it, what is around it is Material's black, on a
+ * dark page too. The line height is a share of the size, so a label that
+ * sets only a larger size keeps its lines apart.
+ */
+@Composable
+private fun KozmosProgressRingLabel(textAlign: TextAlign, label: @Composable () -> Unit) {
+    CompositionLocalProvider(
+        LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground0,
+        LocalTextStyle provides KozmosTextStyle.Caption.textStyle.copy(
+            lineHeight = (16f / 12f).em,
+            textAlign = textAlign
+        ),
+        content = label
+    )
+}
+
+/**
  * The dial, and its label beside it at the inline end when asked: a Row, so
  * right to left the label is on its left. The ring is one node: the label's
  * words, with its progress.
@@ -202,7 +226,7 @@ private fun KozmosProgressRing(
     labelPlacement: KozmosProgressLabelPlacement,
     label: (@Composable () -> Unit)?
 ) {
-    val target = if (progress.isNaN()) 0f else progress.coerceIn(0f, 1f)
+    val target = if (progress.isFinite()) progress.coerceIn(0f, 1f) else 0f
     val swept by animateFloatAsState(target, kozmosProgressSweep(rememberKozmosAnimationsOn()), label = "sweep")
     val track = KozmosThemeTokens.primitivesColorsBackground100
     val fill = tone.text
@@ -229,10 +253,12 @@ private fun KozmosProgressRing(
                     Modifier.widthIn(max = (ringSize.diameter - ringSize.stroke * 2) * 0.7071f),
                     contentAlignment = Alignment.Center
                 ) {
-                    ProvideTextStyle(LocalTextStyle.current.copy(textAlign = TextAlign.Center)) { label() }
+                    KozmosProgressRingLabel(TextAlign.Center, label)
                 }
             }
         }
-        if (label != null && labelPlacement == KozmosProgressLabelPlacement.End) label()
+        if (label != null && labelPlacement == KozmosProgressLabelPlacement.End) {
+            KozmosProgressRingLabel(TextAlign.Start, label)
+        }
     }
 }

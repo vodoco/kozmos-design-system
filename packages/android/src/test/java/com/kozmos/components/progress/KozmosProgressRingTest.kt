@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
@@ -42,6 +43,7 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosMotion
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
@@ -79,6 +81,8 @@ class KozmosProgressRingTest {
     private class Drawn(val pixels: DrawnPixels, val bounds: Rect, val scale: Float, val density: Float) {
         val centreX get() = (bounds.left + bounds.width / 2) * scale
         val centreY get() = (bounds.top + bounds.height / 2) * scale
+        /** Frame pixels to a dp. */
+        val perDp get() = scale * density
         /** The pixel at [degrees] clockwise from 12 o'clock, [radius] frame pixels out. */
         fun at(degrees: Double, radius: Float): Int {
             val a = degrees * PI / 180
@@ -208,6 +212,126 @@ class KozmosProgressRingTest {
                 val ratio = (maxOf(want.luminance(), trackColour.luminance()) + 0.05f) / (minOf(want.luminance(), trackColour.luminance()) + 0.05f)
                 if (ratio < 3f) wrong += "$name: $ratio:1 on the track"
             }
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /**
+     * A value over the total is all of it, as React's ring and SwiftUI's have
+     * it; a progress that is not a number is none done, as theirs is.
+     */
+    @Test fun aValueOverTheTotalIsAFullRingAndOneThatIsNotANumberIsNone() {
+        val r = (128f - 12f) / 2f
+        val over = draw(16f / 15f, KozmosProgressSize.Lg)
+        val wrong = mutableListOf<String>()
+        for (degrees in listOf(5.0, 180.0, 355.0)) {
+            val pixel = over.at(degrees, r * over.perDp)
+            if (!isArc(pixel)) wrong += "16 of 15: no arc at $degrees° (${DrawnPixels.hex(pixel)})"
+        }
+        for (progress in listOf(Float.NaN, Float.POSITIVE_INFINITY)) {
+            val none = draw(progress, KozmosProgressSize.Lg)
+            val pixel = none.at(90.0, r * none.perDp)
+            if (isArc(pixel)) wrong += "$progress: an arc is drawn (${DrawnPixels.hex(pixel)})"
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /** The label's words, laid out in a ring of [size] with nothing else around them. */
+    private fun layOut(
+        size: KozmosProgressSize,
+        placement: KozmosProgressLabelPlacement,
+        label: @Composable () -> Unit
+    ): Float {
+        var density = 0f
+        paparazzi.drawn(frames) {
+            CompositionLocalProvider(LocalKozmosAnimatorScale provides 0f) {
+                KozmosMaterialTheme {
+                    density = LocalDensity.current.density
+                    KozmosProgress(
+                        0.5f,
+                        shape = KozmosProgressShape.Circular,
+                        size = size,
+                        labelPlacement = placement,
+                        label = label
+                    )
+                }
+            }
+        }
+        return density
+    }
+
+    /**
+     * React's `.kozmos-progress-ring`: 12 on 16 wherever the label is drawn,
+     * until its content says otherwise. A size of the label's own keeps its
+     * lines apart: a line height fixed at 16 would have laid a 20sp line's
+     * words over the next.
+     */
+    @Test fun theLabelIs12On16UnlessItsContentSaysOtherwise() {
+        val wrong = mutableListOf<String>()
+        for (placement in KozmosProgressLabelPlacement.values()) {
+            var plain: TextLayoutResult? = null
+            var large: TextLayoutResult? = null
+            val density = layOut(KozmosProgressSize.Lg, placement) {
+                Column {
+                    Text("one\ntwo", onTextLayout = { plain = it })
+                    Text("one\ntwo", fontSize = 20.sp, onTextLayout = { large = it })
+                }
+            }
+            val words = checkNotNull(plain)
+            val apart = (words.getLineBottom(1) - words.getLineBottom(0)) / density
+            if (words.layoutInput.style.fontSize != 12.sp) wrong += "$placement: ${words.layoutInput.style.fontSize}, not 12sp"
+            if (kotlin.math.abs(apart - 16f) > 0.5f) wrong += "$placement: its lines are $apart apart, not 16"
+            val heading = checkNotNull(large)
+            val headingApart = (heading.getLineBottom(1) - heading.getLineBottom(0)) / density
+            if (headingApart < 24f) wrong += "$placement: a 20sp line's lines are only $headingApart apart"
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /** 12sp is what lets a percentage fit: "75%" stays on one line in the hole's square. */
+    @Test fun aPercentageFitsOnOneLineInASmallRing() {
+        var words: TextLayoutResult? = null
+        val density = layOut(KozmosProgressSize.Sm, KozmosProgressLabelPlacement.Center) {
+            Text("75%", onTextLayout = { words = it })
+        }
+        val laidOut = checkNotNull(words)
+        val hole = (48f - 2 * 4f) * 0.7071f
+        assertEquals("75% is ${laidOut.size.width / density} wide in a hole of $hole", 1, laidOut.lineCount)
+        assertTrue(laidOut.size.width / density <= hole)
+    }
+
+    /**
+     * React's ring sets its own colour, foreground 0, so the label reads on
+     * whatever is behind it, on both paths and in both themes. Nothing here
+     * draws a Material Surface, so nothing else provides one: dark, Material's
+     * black was drawn on the dark page.
+     */
+    @Test fun theLabelIsForeground0OnEitherPathWithNoSurfaceAboveIt() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) for (placement in KozmosProgressLabelPlacement.values()) {
+            val pixels = paparazzi.drawn(frames) {
+                CompositionLocalProvider(
+                    LocalKozmosUseDarkTokens provides dark,
+                    LocalKozmosAnimatorScale provides 0f
+                ) {
+                    KozmosMaterialTheme {
+                        Box(Modifier.fillMaxSize().background(KozmosThemeTokens.semanticsSurface0).padding(24.dp)) {
+                            KozmosProgress(
+                                0f,
+                                shape = KozmosProgressShape.Circular,
+                                size = KozmosProgressSize.Lg,
+                                labelPlacement = placement
+                            ) { Text("50%") }
+                        }
+                    }
+                }
+            }
+            val ink = if (dark) KozmosColorsDark.primitivesColorsForeground0 else KozmosColors.primitivesColorsForeground0
+            var inked = 0
+            for (y in 0 until pixels.height) for (x in 0 until pixels.width) {
+                if (DrawnPixels.matches(pixels.argb(x, y), ink.toArgb(), tolerance = 24)) inked++
+            }
+            if (inked < 8) wrong += "${if (dark) "dark" else "light"} $placement: $inked pixels of the label's ${DrawnPixels.hex(ink.toArgb())}"
         }
         assertEquals(emptyList<String>(), wrong)
     }
