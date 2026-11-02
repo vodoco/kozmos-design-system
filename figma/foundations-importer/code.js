@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "12be1a7d58fd";
+const PLUGIN_BUILD = "c2edc0017d10";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -8908,8 +8908,9 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   // The boxed form (decision 149): 408, the building editor's panel. The
-  // header is a control's height, 44 at touch, and 40 compact once Figma has
-  // Density modes, as every Button in the file is (GAP-146). Its type is the
+  // header is at least a control's height, 44 at touch, and 40 compact once
+  // Figma has Density modes, as every Button in the file is (GAP-146), and it
+  // grows with a title that wraps. Its type is the
   // tokens React reads, not the 12 and 14 of the text roles.
   {
     name: "Accordion/boxed/width/default",
@@ -8932,6 +8933,12 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Accordion/boxed/trigger/padding/x",
     value: 8,
     alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Accordion/boxed/trigger/padding/y",
+    value: 2,
+    alias: "Layout/spacing/25",
     scopes: ["GAP"],
   },
   {
@@ -19167,15 +19174,29 @@ function auditAccordionAutoLayoutIntegrity(componentSet, issues) {
         kind: "accordion-trigger-horizontal-sizing",
         variant: component.name,
       });
+      // The boxed header hugs its lines over a floor, as React's min-height
+      // does: a title that wraps grows it.
+      const boxed = props.variant === "Boxed";
       auditAutoLayoutSizing({
         node: trigger,
         issues,
         kind: "accordion-trigger-vertical-sizing",
         field: "layoutSizingVertical",
-        expected: "FIXED",
+        expected: boxed ? "HUG" : "FIXED",
         actual: trigger.layoutSizingVertical,
         variant: component.name,
       });
+      if (boxed && !(trigger.boundVariables || {}).minHeight) {
+        issues.push({
+          kind: "accordion-trigger-min-height-unbound",
+          variant: component.name,
+          node: trigger.name,
+          nodeType: trigger.type,
+          nodeId: trigger.id,
+          urlNodeId: nodeIdForUrl(trigger.id),
+          expected: "minHeight bound to Accordion/boxed/trigger/height",
+        });
+      }
       auditVisualOverflow(
         component.name,
         trigger,
@@ -53445,10 +53466,11 @@ async function configureAccordionProperties(
 
   const labels = ensureBooleanProperty(componentSet, "Show Label", true, stats);
   const icons = ensureBooleanProperty(componentSet, "Show Icon", true, stats);
-  const iconComponent = await resolveDefaultIconSourceComponent(
-    variableByName,
-    stats,
-  );
+  // The icon the boxed variants paint: a default that differed would swap
+  // every one of them, and drop its tint, or be what a reset swaps to.
+  const iconComponent =
+    (await findKozmosIconSourceComponent(ACCORDION_BOXED_ICON)) ||
+    (await resolveDefaultIconSourceComponent(variableByName, stats));
   const iconSourceComponents = await findKozmosIconSourceComponents();
   const swap = iconComponent
     ? ensureInstanceSwapProperty(
@@ -57094,6 +57116,7 @@ const ACCORDION_TRIGGER_SAMPLE = "Is it accessible?";
 const ACCORDION_CONTENT_SAMPLE =
   "Yes. It follows the WAI-ARIA disclosure pattern.";
 const ACCORDION_LABEL_SAMPLE = "Step 1/5";
+const ACCORDION_BOXED_ICON = "home-line";
 
 async function createAccordionVariant({
   value,
@@ -57152,7 +57175,8 @@ function accordionBoxedPaint(state) {
     return {
       fill: "Colors/background/100",
       fillFallback: "#E3E4E8",
-      edge: true,
+      edge: "Border/Subtle",
+      edgeFallback: "#C7CAD1",
       ink: "Colors/foreground/400",
       inkFallback: "#5D626F",
       label: "Colors/foreground/400",
@@ -57163,7 +57187,8 @@ function accordionBoxedPaint(state) {
     return {
       fill: "Colors/theme/900",
       fillFallback: "#082975",
-      edge: false,
+      edge: "Colors/theme/900",
+      edgeFallback: "#082975",
       ink: "Colors/foreground/1000",
       inkFallback: "#FFFFFF",
       label: "Colors/theme/300",
@@ -57173,7 +57198,8 @@ function accordionBoxedPaint(state) {
   return {
     fill: "Colors/background/0",
     fillFallback: "#FFFFFF",
-    edge: true,
+    edge: "Border/Subtle",
+    edgeFallback: "#C7CAD1",
     ink: "Colors/foreground/0",
     inkFallback: "#000000",
     label: "Colors/foreground/400",
@@ -57183,9 +57209,11 @@ function accordionBoxedPaint(state) {
 
 /**
  * The boxed form: a header of its own, with a hairline that stays laid out
- * while open, so nothing moves, as React's transparent edge does. 8 inside
- * that edge, as React's padding is. Its height holds two lines; the column
- * hugs them in the middle of it.
+ * while open, in the fill's colour, so nothing moves, as React's transparent
+ * edge does: a frame with no stroke lays out none. 8 inside that edge and 2
+ * above and below it, as React's padding is. It hugs its lines over a floor
+ * of the control's height, as React's min-height does: two short lines sit in
+ * the middle of 44, and a title that wraps grows the header.
  */
 async function updateAccordionBoxedVariant(
   component,
@@ -57237,10 +57265,11 @@ async function updateAccordionBoxedVariant(
   trigger.primaryAxisAlignItems = "MIN";
   trigger.counterAxisAlignItems = "CENTER";
   trigger.itemSpacing = 8;
+  // Padding before the stroke: a frame takes both in, and stays grown.
   trigger.paddingLeft = 8;
   trigger.paddingRight = 8;
-  trigger.paddingTop = 0;
-  trigger.paddingBottom = 0;
+  trigger.paddingTop = 2;
+  trigger.paddingBottom = 2;
   trigger.resizeWithoutConstraints(408, 44);
   trigger.cornerRadius = KOZMOS_RADIUS.control;
   trigger.fills = [
@@ -57249,14 +57278,15 @@ async function updateAccordionBoxedVariant(
   setNodePropertyIfSupported(trigger, "strokesIncludedInLayout", true);
   trigger.strokeWeight = 1;
   trigger.strokeAlign = "INSIDE";
-  trigger.strokes = paint.edge
-    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
-    : [];
+  trigger.strokes = [
+    paintFromVariable(paint.edge, paint.edgeFallback, variableByName, stats),
+  ];
   trigger.clipsContent = false;
   component.appendChild(trigger);
+  setNodePropertyIfSupported(trigger, "minHeight", 44);
   bindFloatVariable(
     trigger,
-    "height",
+    "minHeight",
     "Accordion/boxed/trigger/height",
     variableByName,
     stats,
@@ -57284,10 +57314,20 @@ async function updateAccordionBoxedVariant(
       stats,
     );
   }
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      trigger,
+      side,
+      "Accordion/boxed/trigger/padding/y",
+      variableByName,
+      stats,
+    );
+  }
+  // Fixed until its layers are in: it hugs them below.
   setVerticalFixedFillChildSizing(trigger);
 
   const mark = await createFixedIconInstance(
-    "home-line",
+    ACCORDION_BOXED_ICON,
     paint.ink,
     paint.inkFallback,
     variableByName,
@@ -57299,7 +57339,7 @@ async function updateAccordionBoxedVariant(
   setHugChildSizing(mark);
 
   // The lines hug: the column is as tall as they are, and they are as wide
-  // as it is, so a longer label wraps rather than leaves the header.
+  // as it is, so a longer label wraps, and the header grows with it.
   const column = figma.createFrame();
   column.name = "Accordion Text";
   column.layoutMode = "VERTICAL";
@@ -57382,6 +57422,15 @@ async function updateAccordionBoxedVariant(
       stats,
     });
     chevron.name = "Accordion Chevron";
+  }
+
+  // Everything is in: the header hugs it now, and its floor holds short lines
+  // at 44. Read back, because a frame can come out larger than it was asked.
+  setLayoutSizingVertical(trigger, "HUG");
+  if (Math.round(trigger.height) !== 44) {
+    stats.warnings.push(
+      `Accordion's boxed ${value} header is ${trigger.height} tall, not 44.`,
+    );
   }
 
   if (isOpen) {

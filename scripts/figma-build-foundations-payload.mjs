@@ -175,6 +175,8 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],
   // Theme 300 is a word on theme 900: Accordion's boxed label (decision 149).
   ["Primitives/Colors/theme/300", ["TEXT_FILL"]],
+  // Theme 900 is the edge an open boxed header keeps, in its fill's colour.
+  ["Primitives/Colors/theme/900", ["STROKE_COLOR"]],
   // A status's words, its icon, and the edge and focus ring of a field,
   // control or alert in it.
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],

@@ -28,6 +28,7 @@ import {
   loadPlugin,
   mockComponentSet,
   mockIconComponent,
+  mockTextStyleById,
   mockWayfindingIconComponent,
   mockVariables,
   payloadVariables,
@@ -8185,6 +8186,9 @@ boxedAccordion: {
   ]);
   const components = new MockNode("PAGE", "Components");
   const [, icons] = pages();
+  // The icon the boxed variants paint. Left out of the page, it would fall
+  // back to the slot default, and the Icon property would agree by accident.
+  icons.appendChild(mockIconComponent("home-line"));
   const fileFigma = createFigmaMock({
     pages: [components, icons],
     collections: tokens.collections,
@@ -8300,6 +8304,14 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   const boxed = (state) => variants.get(`Variant=Boxed, State=${state}`);
   const part = (state, name) => named(boxed(state), name);
   const bound = (paint) => (paint ? boundVariableName(paint) : null);
+  const variableNamed = (alias) =>
+    tokens.variables.find((variable) => variable.id === alias?.id)?.name ??
+    alias?.id?.replace("VariableID:", "");
+  const swapDefault = () =>
+    Object.entries(set.componentPropertyDefinitions).find(
+      ([key, definition]) =>
+        key.split("#")[0] === "Icon" && definition.type === "INSTANCE_SWAP",
+    )?.[1].defaultValue;
   const paints = {
     Closed: [
       "Colors/background/0",
@@ -8329,28 +8341,70 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `${state}: the header is 408 by 44 (${trigger.width} by ${trigger.height})`,
     );
     ok(
+      trigger.layoutSizingVertical === "HUG" &&
+        trigger.minHeight === 44 &&
+        variableNamed(trigger.boundVariables?.minHeight) ===
+          "Accordion/boxed/trigger/height",
+      `${state}: the header hugs, with a bound floor of 44, as every platform's grows (${trigger.layoutSizingVertical}, ${trigger.minHeight}, ${variableNamed(trigger.boundVariables?.minHeight)})`,
+    );
+    ok(
       trigger.cornerRadius === 16 &&
         trigger.boundVariables?.cornerRadius &&
         trigger.paddingLeft === 8 &&
         trigger.paddingRight === 8 &&
+        trigger.paddingTop === 2 &&
+        trigger.paddingBottom === 2 &&
+        trigger.boundVariables?.paddingTop &&
+        trigger.boundVariables?.paddingBottom &&
         trigger.itemSpacing === 8,
-      `${state}: corners 16, bound, and 8 in and between`,
+      `${state}: corners 16, bound, 8 in and between, and 2 above and below, as React's py-0.5`,
     );
     ok(
       bound(trigger.fills[0]) === fill,
       `${state}: the fill is ${fill} (${bound(trigger.fills[0])})`,
     );
+    // The edge stays laid out while open: it wears the fill, so it doesn't
+    // show, and a frame with no stroke would lay out 1 less on every side.
     ok(
-      state === "Open"
-        ? trigger.strokes.length === 0
-        : bound(trigger.strokes[0]) === "Border/Subtle" &&
-            trigger.strokeWeight === 1,
-      `${state}: ${state === "Open" ? "no edge" : "a 1 hairline"}`,
+      bound(trigger.strokes[0]) ===
+        (state === "Open" ? fill : "Border/Subtle") &&
+        trigger.strokeWeight === 1,
+      `${state}: a 1 edge of ${state === "Open" ? fill : "Border/Subtle"} (${bound(trigger.strokes[0])} at ${trigger.strokeWeight})`,
     );
     ok(
       bound(title.fills[0]) === ink && bound(label.fills[0]) === labelInk,
       `${state}: title ${ink} and label ${labelInk} (${bound(title.fills[0])}, ${bound(label.fills[0])})`,
     );
+
+    // What the eye reads first: the marks' ink, state by state. An icon's
+    // paint is an override on its vector, so it is read there.
+    const mark = part(state, "Icon");
+    const inkOf = (instance) =>
+      bound(instance?.findOne((node) => node.type === "VECTOR")?.strokes[0]);
+    ok(
+      inkOf(mark) === ink,
+      `${state}: the icon is ${ink} (${inkOf(mark)})`,
+    );
+    ok(
+      mark?.mainComponent?.name === "Icon / home-line" &&
+        mark.mainComponent.id === swapDefault(),
+      `${state}: the Icon property's default is the icon painted (${mark?.mainComponent?.name} ${mark?.mainComponent?.id}, default ${swapDefault()})`,
+    );
+
+    // The title is regular on every platform, as the live page draws it, and
+    // the type comes from the set's own style.
+    for (const [text, styleName] of [
+      [title, "Accordion / Boxed Title"],
+      [label, "Accordion / Boxed Label"],
+    ]) {
+      const style = mockTextStyleById(text.textStyleId);
+      ok(
+        text.fontName.style === "Regular" &&
+          style?.name === styleName &&
+          style.fontName.style === "Regular",
+        `${state}: ${text.name} is Regular, from ${styleName} (${text.fontName.style}, ${style?.name}, ${style?.fontName.style})`,
+      );
+    }
 
     // The labels hug: each line is as wide as the column and as tall as its
     // words, and the column as tall as the two, inside the header.
@@ -8399,10 +8453,34 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     chevron("Closed")?.width === 20 && chevron("Open")?.width === 20,
     "Closed and Open draw a 20 chevron",
   );
+  for (const [state, source, ink] of [
+    ["Closed", "chevron-down", "Colors/foreground/0"],
+    ["Open", "chevron-up", "Colors/foreground/1000"],
+  ]) {
+    const drawn = chevron(state);
+    const paint = bound(
+      drawn?.findOne((node) => node.type === "VECTOR")?.strokes[0],
+    );
+    ok(
+      drawn?.mainComponent?.name === `Icon / ${source}` && paint === ink,
+      `${state}: the chevron is ${source} in ${ink} (${drawn?.mainComponent?.name}, ${paint})`,
+    );
+  }
   ok(!chevron("Disabled"), "Disabled draws no chevron");
   ok(
     !chevron("Loading") && part("Loading", "Loading Indicator")?.width === 20,
     "Loading draws a 20 spinner where the chevron is",
+  );
+  ok(
+    bound(part("Loading", "Loading Indicator")?.strokes[0]) ===
+      "Colors/foreground/400",
+    `Loading's spinner is the greyed ink (${bound(part("Loading", "Loading Indicator")?.strokes[0])})`,
+  );
+  ok(
+    part("Open", "Accordion Text").x === part("Closed", "Accordion Text").x &&
+      part("Open", "Accordion Text").width ===
+        part("Closed", "Accordion Text").width,
+    `opening moves nothing: the lines sit where they did (${part("Closed", "Accordion Text").x}, ${part("Open", "Accordion Text").x})`,
   );
   ok(
     !part("Closed", "Accordion Content") &&
@@ -8457,6 +8535,65 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       boundTo("Icon", "mainComponent").length === 4,
     `the label and the icon are the four Boxed variants' to turn off, and the icon to swap (${boundTo("Show Label", "visible").length}, ${boundTo("Show Icon", "visible").length}, ${boundTo("Icon", "mainComponent").length})`,
   );
+
+  // The plugin's own audit reads the same shape.
+  const layoutIssues = [];
+  file.auditAccordionAutoLayoutIntegrity(set, layoutIssues);
+  ok(
+    layoutIssues.length === 0,
+    `the set's auto layout audits clean (${layoutIssues.map((issue) => `${issue.variant}: ${issue.kind}`).join("; ")})`,
+  );
+
+  // A title that wraps grows the header, as React's min-height, SwiftUI's
+  // frame and Compose's defaultMinSize do. Two lines are 14, 2 by 17.5, 2 by 2
+  // of padding and 2 of hairline, 55, as React's header measures, in every
+  // state; a third is 72.5. Read on instances, as a designer's title arrives,
+  // at the set's width and on one resized to 300.
+  const titleKey = Object.keys(definitions).find(
+    (key) => key.split("#")[0] === "Trigger Text",
+  );
+  const words = "A building details section ".repeat(5);
+  for (const state of Object.keys(paints)) {
+    const instance = boxed(state).createInstance();
+    components.appendChild(instance);
+    const header = () => named(instance, "Accordion Trigger");
+    const column = () => named(instance, "Accordion Text");
+    const measure = async (text, width) =>
+      withAutoLayout(async () => {
+        instance.setProperties({ [titleKey]: text });
+        if (width) instance.resize(width, instance.height);
+        return {
+          height: header().height,
+          columnBottom: column().y + column().height,
+          words: named(column(), "Trigger Text").height,
+        };
+      });
+    const two = await measure(words.slice(0, 80));
+    ok(
+      two.words === 35 && two.height === 55,
+      `${state}: two lines grow the header to 55 (${two.words} of words, ${two.height})`,
+    );
+    const three = await measure(words.slice(0, 110));
+    ok(
+      three.words === 52.5 &&
+        three.height === 72.5 &&
+        three.columnBottom <= three.height,
+      `${state}: three lines to 72.5, inside it (${three.words} of words, ${three.height}, ending ${three.columnBottom})`,
+    );
+    const narrow = await measure(words.slice(0, 80), 300);
+    ok(
+      header().width === 300 &&
+        narrow.height > 55 &&
+        narrow.columnBottom <= narrow.height,
+      `${state}: at 300 the same words grow it again (${narrow.words} of words, ${narrow.height}, at ${header().width})`,
+    );
+    const short = await measure("Levels", 408);
+    ok(
+      short.height === 44,
+      `${state}: back to one line, the floor holds it at 44 (${short.height})`,
+    );
+    instance.remove();
+  }
 
   // Audited in Light and Dark with the token values the importer writes: the
   // label's theme 300 and the title's foreground 1000 on theme 900 turn over
