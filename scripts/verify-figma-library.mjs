@@ -12,11 +12,16 @@
  *   collapsed — text nodes at zero width, the sizing bug from 6803f20
  *   contrast  — WCAG AA on every text node against the surface behind it
  *   truncated — text set to TRUNCATE in a box too small for its own string
+ *   short     — a layer stretched over its frame that stops short of it
  *
  * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read.
  */
 import fs from "node:fs";
 import path from "node:path";
+import {
+  isTypedGlyph,
+  layersShortOfTheirFrame,
+} from "./lib/figma-verify-rules.mjs";
 
 const ROOT = process.cwd();
 const FILE_KEY = "Yj4O8p6Y9h2Sa9zJVoAiVY";
@@ -191,6 +196,7 @@ async function main() {
   const overflowing = [];
   const undefinedNames = [];
   const typedGlyphs = [];
+  const shortLayers = [];
 
   for (const name of names) {
     if (!sets[name]) {
@@ -290,12 +296,11 @@ async function main() {
   // holds 2,279 real icon instances across 41 sets, and a handful of sets type
   // arrows and plus signs into text nodes instead — which no icon library can
   // restyle, no product can swap, and no platform renders identically.
-  // Percentages and asterisks are real characters and are left alone.
-  const GLYPH = /^[^A-Za-z0-9%*\s]{1,2}$/;
+  // scripts/lib/figma-verify-rules.mjs says what counts.
   for (const [name, set] of Object.entries(sets)) {
     const seen = new Set();
     (function walk(node) {
-      if (node.type === "TEXT" && GLYPH.test((node.characters || "").trim())) {
+      if (isTypedGlyph(node)) {
         const key = name + "/" + node.name + "/" + node.characters.trim();
         if (!seen.has(key)) {
           seen.add(key);
@@ -372,6 +377,13 @@ async function main() {
       }
       if (node.children) node.children.forEach(walk);
     })(set);
+  }
+
+  // A layer stretched over its frame that stops short of it. The overflow rule
+  // above skips every absolute layer, and the box the eye sees can be one: see
+  // the rule itself in scripts/lib/figma-verify-rules.mjs.
+  for (const [name, set] of Object.entries(sets)) {
+    shortLayers.push(...layersShortOfTheirFrame(name, set));
   }
 
   // WCAG 1.4.3 exempts inactive controls, and a dimmed layer is a deliberate
@@ -483,6 +495,10 @@ async function main() {
   // Reported, not enforced: this arrives with a backlog across the Product/SDK
   // lane. Add it to the failing total on the day it reaches zero.
   report("icons typed as characters", typedGlyphs);
+  // Reported, not enforced, until the Update it arrives with has run: the only
+  // findings are TourStep's fill and edge, which that Update closes. Add it to
+  // the failing total on the day it reaches zero.
+  report("layers stretched over a frame that stop short of it", shortLayers);
 
   console.log(
     total === 0

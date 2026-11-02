@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-10-22): in use; React 0.12.2 is published (evidence below).
+Status (2026-11-01): in use; React 0.14.0 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -663,7 +663,7 @@ as for 0.12.2.
 | Exact main-push CI      | [40366715021](https://github.com/vodoco/kozmos-design-system/actions/runs/40366715021): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis, Visual Regression, Lighthouse CI, Pages and Site succeeded on the merge.                                                                                                                                                                                                                                                                                                                    |
 | Preflight / publication | `pnpm release:preflight` against that run passed on 26 Oct (credential placement, request, evidence and plan; none of the three on npm). [40374438773](https://github.com/vodoco/kozmos-design-system/actions/runs/40374438773) succeeded (guard, prepare, publish).                                                                                                                                                                                                                                                                                                                  |
 | Registry readback       | All three are on `latest` with SLSA v1 provenance (Sigstore log indexes 3493440859 for icons, 3493481771 for tokens and 3493534973 for React). Each SHA-512 integrity equals the one the publish job printed, and the job verified the approved tarballs in the registry.                                                                                                                                                                                                                                                                                                             |
-| Installed consumer      | A fresh npm installation of React 0.13.0, lifecycle scripts off, with React 19.3.1 resolved tokens 0.8.1, icons 0.7.0 and contracts 0.9.1 and exposed 272 exports from CJS and from the ESM entry, `Calendar` the new one (0.12.2, installed the same way: 271, none of them `Calendar`). Server-rendered: a Button, and a `Calendar` for October 2026 as a `role="grid"`. `kozmosIconNamesBeyondTheLibrary` lists 29 names (icons 0.6.0 has none). The same with React 18.3.1, where Calendar's server render printed React 18's `useLayoutEffect` warning, fixed for 0.13.1 (#412). |
+| Installed consumer      | A fresh npm installation of React 0.13.0, lifecycle scripts off, with React 19.3.1 resolved tokens 0.8.1, icons 0.7.0 and contracts 0.9.1 and exposed 272 exports from CJS and from the ESM entry, `Calendar` the new one (0.12.2, installed the same way: 271, none of them `Calendar`). Server-rendered: a Button, and a `Calendar` for October 2026 as a `role="grid"`. `kozmosIconNamesBeyondTheLibrary` lists 29 names (icons 0.6.0 has none). The same with React 18.3.1, where Calendar's server render printed React 18's `useLayoutEffect` warning, fixed for 0.14.0 (#412). |
 | Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/icons@0.7.0`, `@kozmos-ds/tokens@0.8.1` and `@kozmos-ds/react@0.13.0` at `ba2a28f4`, and a second dry-run found all three in place. React 0.13.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                      |
 | Website / Storybook     | [Pages 40366714873](https://github.com/vodoco/kozmos-design-system/actions/runs/40366714873) built and deployed this exact SHA. The live Storybook's `index.json` (622 entries) lists Calendar's six stories.                                                                                                                                                                                                                                                                                                                                                                         |
 | Code Connect            | Published from this commit on 26 Oct: 213 React, 214 SwiftUI and 209 Compose docs, every dry run valid first, Compose's `Select.figma.kt` (`KozmosSelectTrigger`, #341) among them (Olcay, 24 Oct).                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -711,3 +711,104 @@ CHANGELOGs cut `## 0.13.0 — repository snapshot` here. Since 0.12.2:
 
 Figma (the importer's list rows, #385, which Olcay ran Update for on 23 Oct), external Claude Design artifacts and
 product deployments are separate.
+
+### 0.14.0
+
+Published on 2026-11-01 from `5df3af1ff96e4670571564b067e33d68ac1696d5`, the version merge
+[#452](https://github.com/vodoco/kozmos-design-system/pull/452). React 0.14.0 alone moves; icons 0.7.0, tokens 0.8.1
+and product-contracts 0.9.1 are unchanged and not planned. It carries MAP-64's tour family (decision 116): `TourStep`
+(GAP-188, #422, #444), Backdrop's cut-out (GAP-189, #408), `PopoverAnchor` (GAP-190, #410), Stepper's dots (GAP-191,
+#409) and options under their groups (GAP-192, #411). A fixed Backdrop is drawn in the theme's portal, with
+`placement` (#419), and the design config's reduced motion reaches that portal (#418). Live parts keep speaking under
+an open Select or Menu (GAP-193, #420), a card with no header pays its top (GAP-194, #421, React's half), a composed
+tree's rows are treeitems (GAP-204, #435), Accordion opens over its content's height (#423), Calendar renders on the
+server under React 18 without a warning (#412), and seven defects the website found are fixed (#416). A trim pass
+took 1.38 KB off the whole library (#428). The published `style.css` is 31,604 bytes gzip, up from 0.13.0's 30,539
+(`gzip -9`). On this commit CI's analyzer reads Everything at 93.15 of 100 KB and the stylesheet at 31.27 of 32 KB.
+
+Olcay approved this release in advance, for 0.14.0 only, and on 1 Nov said "publish 0.14.0 if everything's green".
+Claude dispatched the release after the pre-flight passed and approved the protected `npm-release` deployment, as
+`vodoco`, for this release only, as for 0.12.2 and 0.13.0.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Versions                | React 0.14.0 alone on npm `latest`. It pins tokens 0.8.1, icons 0.7.0 and product-contracts 0.9.1 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Exact main-push CI      | [41345138914](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138914), 17 jobs. **Attempt 1 failed in iOS Build,** on `KozmosPOIDetailIconFallbackTests.testAFailedAssetFallsBackToTheIconName` and `testAFailedAssetFallsBackToTheSystemImage`. The commit changes no iOS code, and iOS is not published to npm. One re-run of the failed job, attempt 2, passed: all 17 jobs, 710 iOS tests with 0 failures, those two passing by name. The test's own fix goes in a separate pull request. [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138867), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138875), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138866) and [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138918) succeeded on the merge. |
+| Preflight / publication | `pnpm release:preflight` against attempt 2 of that run passed on 1 Nov (credential placement, request, evidence and plan; 0.14.0 not on npm). [41353096069](https://github.com/vodoco/kozmos-design-system/actions/runs/41353096069) succeeded (guard, prepare, publish).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Registry readback       | 0.14.0 is on `latest` with SLSA v1 provenance (Sigstore log index 3636247261, publish attestation 3636266989). Its SHA-512 integrity, `sha512-WbzQVP2EeOXicJd…kRX6fJHi8MWRQ==`, equals the one the publish job printed, and the job verified the approved tarball in the registry. Unpacked 1,847,032 bytes in 177 files (0.13.0: 1,759,813 in 170).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Installed consumer      | A fresh npm installation of React 0.14.0, lifecycle scripts off, with React 18.3.1 and with React 19.3.1. Each resolved tokens 0.8.1, icons 0.7.0 and contracts 0.9.1 and exposed 274 exports from CJS and from the ESM entry (0.13.0: 272), with `TourStep`, `PopoverAnchor`, `Backdrop`, `Stepper`, `Combobox`, `TreeParentItemRow` and `TreeChildItemRow` present in both. Server rendering passed for Stepper's dots, Card, TourStep, Backdrop and a tree row, which reads `role="treeitem"`.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/react@0.14.0` at `5df3af1f` with 111 lines of notes, `git ls-remote` and `gh release list` read it back, and a second dry-run found it in place. React 0.14.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Website / Storybook     | [Pages 41345138951](https://github.com/vodoco/kozmos-design-system/actions/runs/41345138951) built and deployed this exact SHA. The live Storybook's `index.json` has 647 entries, 12 of them Core/Overlays/TourStep; its iframe and the site's `components/tour-step/` page answer.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Code Connect            | Not republished: no `.figma.tsx`, `.figma.swift`, `.figma.kt` or linked config changed since the last publish, from `422cfd91`. Parse gives the same 218 React documents with no errors, and a dry run is valid. TourStep has no Code Connect yet: Olcay ruled on 1 Nov that it waits for the native TourStep, since the parity check needs every node on all three platforms.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+Change details: [React](../packages/react/CHANGELOG.md#0140) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.13.0:
+
+- **A fixed `Backdrop` moves to the theme's portal.** The element and its children (a step card) are in the provider's
+  portal root, not in the markup they are rendered in: a product that queried them there finds them in the portal,
+  and the element carries the provider's `data-kozmos-density`. Its class, id, attributes and ref are unchanged, it
+  adds no wrapper, and React still carries its children's events up the tree it is rendered in.
+  - **It is no longer in the server's HTML:** it is drawn a render or two after hydration, once the provider's portal
+    exists. An inline one renders on the server as before.
+  - **It stacks with the popovers:** whichever opened last is on top, so a Backdrop opened while a Popover, Menu or
+    Tooltip is open dims it, and one opened after sits above it. It was under every popover.
+  - **Inside a Dialog, Drawer or BottomSheet** it is drawn in the modal's content, as it was drawn in place before.
+  - **A product that dimmed a region with `className="absolute"` passes `placement="inline"` now.** A fixed backdrop
+    given a positioning class warns once in development and says so.
+- **`MapView` is its own stacking context.** A fixed element rendered inside the map that does not portal, a fixed
+  `FloatingActionButton`, a `DynamicIsland` or a product's own, now stacks inside the map, under a sticky header and
+  the shell's chrome: render it outside the map, or portal it out.
+- **`CardContent` or `CardFooter` as a card's first child pays the top:** 24, or 16 with `padding="compact"`. A spacer
+  or top margin inside the part now gives that room twice, so remove it. A top padding passed to the part (`pt-6`,
+  `p-6`) replaces the new one rather than adding to it, and can go too. A spacer element before the part keeps it from
+  being first, so nothing changes until it is removed. A header-led card, and a part inside a wrapper such as a
+  `form`, draw as before.
+- **Accordion now moves.** It opens and closes over its content's height in 280ms, where it snapped, and its chevron
+  turns on the same tokens, where it took 200ms. Both snap under reduced motion, the browser's or the design config's.
+- **Live parts say their liveness:** every Kozmos part with a live role also carries `aria-live`. A caller's own
+  still wins, and `live="off"` sets none. While a Select or a modal Menu is open, the page stays in reach only where
+  Radix keeps it visible: boxes marked `aria-live` that were there as it opened. So a product's own region with a live
+  role and no `aria-live` is hidden and out of reach then.
+- **A modal `Menu` makes the page inert while it is open,** as Select does; `modal={false}` makes nothing inert.
+  `Menu` and `Popover` are now Kozmos's own roots around Radix's, with the same props.
+- **`PopoverContent` gives focus back** when it closes with focus lost (Escape, or a button in it): to what had focus
+  as it opened, else to the anchor's element. A press outside leaves focus where it landed, as before, and
+  `onCloseAutoFocus` with `event.preventDefault()` takes it over.
+- **A press in Combobox's or MultiSelect's list that misses a row** (a group's label, the list's padding, the gap
+  between rows) leaves the list open and focus in the field, where it closed the list and dropped focus to the page.
+- **`TreeItemRow`, `TreeParentItemRow` and `TreeChildItemRow` are treeitems,** with `aria-level`, `aria-expanded`,
+  `aria-selected` and `aria-disabled` from the props they already take. A caller's own `role` or `aria-*` still wins,
+  and with another role the row adds no tree state. Compose a tree in a `Tree` with children, an expanded parent's
+  children in a `<div role="group">` right after its row. A tree from `data` gains `aria-level` alone.
+- **What the website found,** with the props unchanged (the React changelog has each one):
+  - a Button drawn on a link, and Pagination's links, lose the browser's underline;
+  - Listbox's long options end in an ellipsis in a list that no longer scrolls sideways, with no `title`;
+  - BottomNavigation's bar is 72 tall at the default density, where it was 64, and pads its bottom by
+    `env(safe-area-inset-bottom)`;
+  - SplitButton's outline keeps its edge, and the seam tints its inline-end side alone;
+  - Tooltip's tip and PopoverArrow overlap the body by 1px, and the tooltip sits where it did;
+  - a muted `Text` on glass reads the foreground on glass, as Kozmos's own muted text does.
+- **Reduced motion:** the design config's reaches the theme's portal, so a Spinner or Skeleton in a Popover, Dialog or
+  Menu stops too, and it carries down to a nested provider. `useDesignConfig()` still returns its own config.
+- **Build output:** the JavaScript writes `?.` as the source does, where it wrote each chain out. The syntax is no
+  newer than before, as the build already wrote `??`, and an app that targets a browser older than Chrome 91 rewrites
+  the chains itself. `surfaceClass` and `SURFACE_CLASSES` have a module of their own, with the same exports.
+
+Nothing else needs changing. No export or prop was removed, and tokens, icons and product-contracts did not move.
+`TourStep`, `PopoverAnchor`, `target`, `placement`, `variant="dots"` and `group` are optional additions: a Stepper
+with no `variant` is the numbered one, a list with no groups draws as before, and a Backdrop with no target dims the
+whole page.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry. This version cut no
+native snapshot, so both CHANGELOGs keep them under `Unreleased — repository source`. Since 0.13.0:
+
+- **On iOS:** the floor switcher's tile (#415) and a part said in another language (#417) are one element to XCUITest,
+  as they are to VoiceOver. A product's UI tests find a tagged part by its whole label or its identifier now; the
+  CHANGELOG has the migration.
+- **On both:** Stepper's Code Connect maps Numbered at Count 2 to 8 and shows no snippet for Dots (#409), and
+  MapStatusPill's docs draw the walking figure with `KozmosIcon` (#413).
+- **Not on either yet:** TourStep, Backdrop's cut-out, `PopoverAnchor`, Stepper's dots and option groups (decision
+  116). SwiftUI's and Compose's half of GAP-194 is open in #437, and SwiftUI's muted text on glass (GAP-203) in #436.
+
+Figma is not finished: TourStep's set is on the live file (node 2307:10045), and its painter fix (#450) is on `main`,
+awaiting Olcay's Update. External Claude Design artifacts and product deployments are separate.
