@@ -16433,9 +16433,13 @@
         },
         "props": [
           "aria-label",
+          "aria-labelledby",
           "asChild",
           "autoFocus",
           "children",
+          "counter",
+          "counterLabel",
+          "counterSeparator",
           "disabled",
           "isLoading",
           "size",
@@ -16480,6 +16484,7 @@
           "unmappedProps": []
         },
         "props": [
+          "action",
           "aria-describedby",
           "aria-invalid",
           "aria-label",

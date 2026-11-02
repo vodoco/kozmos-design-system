@@ -5,7 +5,7 @@ import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Calendar as MonthCalendar } from "../Calendar/Calendar";
 import { FieldWrapper } from "../FieldWrapper";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
 import { typeInto, useCanReplaceDatePicker } from "./date-picker-engine";
 
