@@ -4,12 +4,13 @@ import path from "path";
 import { execSync } from "child_process";
 import { createRequire } from "module";
 import { gzipSync } from "zlib";
+import { topLevelRetainers } from "./top-level-retainers.mjs";
 
 // What an app pays for @kozmos-ds/react. The ES build is one file per module, and package.json
 // declares the JavaScript free of side effects, so an app's bundler keeps only the modules behind
-// what it imports. Each budget is measured the way a Vite app builds: Rollup, honouring the
-// package's `sideEffects`, with its dependencies left out (they are the app's own), then minified
-// and gzipped.
+// what it imports. Each budget is measured the way a Vite app builds for production: Rollup, with
+// `process.env.NODE_ENV` replaced as each module is read and the package's `sideEffects` honoured,
+// with its dependencies left out (they are the app's own), then minified and gzipped.
 //
 // - Every public export, bundled alone: the heaviest stays under MAX_EXPORT_GZIP_KB, so no one
 //   component can quietly pull in the rest. On 2026-09-22 the heaviest was POIDetailPanel at
@@ -112,6 +113,9 @@ const requireFromVite = createRequire(
 );
 const { rollup } = requireFromVite("rollup") as RollupApi;
 const esbuild = requireFromVite("esbuild") as EsbuildApi;
+const { parseAst } = requireFromVite("rollup/parseAst") as {
+  parseAst: (code: string) => unknown;
+};
 
 const kb = (bytes: number) => bytes / 1024;
 const fail: string[] = [];
@@ -178,11 +182,57 @@ async function main() {
       `the ES build has ${modules.length} module files in dist/esm, under ${MIN_ESM_MODULES}: it is one file again, and every import costs the whole library`,
     );
   }
+  // The JavaScript is built for the browsers package.json declares (vite.config.mts). Built for
+  // Vite's default target instead, esbuild wrote every `a?.b` as `a == null ? void 0 : a.b`, in 44
+  // modules, and an app's minifier could not fold all of them back: Everything measured 91.81 KB
+  // here that way on 2026-10-28, and 90.46 KB with the target.
+  const lowered = modules.filter((file) =>
+    /(?<![=!])== null \? void 0 : /.test(
+      fs.readFileSync(path.join(ESM_DIR, file), "utf8"),
+    ),
+  );
+  if (lowered.length) {
+    fail.push(
+      `${lowered.length} modules in dist/esm write optional chaining out (a == null ? void 0 : a.b), as for a browser older than package.json declares: build.target in packages/react/vite.config.mts (${lowered.slice(0, 3).join(", ")})`,
+    );
+  }
+
+  // Each part's name is set in development only, and the calls that make a part
+  // are marked pure (packages/react/vite-plugins/shakable-components.mjs), so an
+  // app's production build leaves out the parts it does not use. Before, a
+  // top-level `X.displayName = "X"` kept every part of a module once anything
+  // from it was imported: `DEFAULT_PANEL_DETENTS`, a constant, cost 8 KB.
+  const retainers = topLevelRetainers(ESM_DIR, parseAst);
+  if (retainers.length) {
+    fail.push(
+      `${retainers.length} top-level statements in dist/esm keep a component that nothing imports (${retainers.slice(0, 3).join("; ")}): see packages/react/vite-plugins/shakable-components.mjs`,
+    );
+  }
 
   // Every entry is bundled with the same options, so Rollup's cache stays valid between them: a
   // cache from a build that took every module to have side effects carries that into the next.
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-bundle-"));
   let cache: unknown;
+
+  // An app's production build replaces process.env.NODE_ENV as it reads each module, before it
+  // decides what to keep: Vite's define plugin, webpack's DefinePlugin (from `mode`), esbuild's
+  // `define` and Rollup's @rollup/plugin-replace all do. So code that only runs in development is
+  // already dead when the bundler tree-shakes, and whatever only it kept is left out. Replacing it
+  // here too, with esbuild's define as Vite's does, measures what such an app ships. Replacing it
+  // only after bundling, as this used to, kept what development-only code held.
+  const productionDefine = {
+    name: "kozmos-production-define",
+    async transform(code: string) {
+      if (!code.includes("process.env.NODE_ENV")) return null;
+      const replaced = await esbuild.transform(code, {
+        format: "esm",
+        loader: "js",
+        define: { "process.env.NODE_ENV": '"production"' },
+      });
+      return { code: replaced.code, map: null };
+    },
+  };
+
   async function cost(source: string, label: string) {
     const input = path.join(work, `${label.replace(/\W/g, "_")}.mjs`);
     fs.writeFileSync(input, source);
@@ -190,6 +240,7 @@ async function main() {
       input,
       external: isExternal,
       cache,
+      plugins: [productionDefine],
       onwarn: () => {},
       treeshake: {
         moduleSideEffects: (id: string, external: boolean) =>
@@ -199,7 +250,7 @@ async function main() {
     cache = bundle.cache;
     const { output } = await bundle.generate({ format: "es" });
     const code = output.map((chunk) => chunk.code ?? "").join("\n");
-    // An app's production build replaces process.env.NODE_ENV, so development-only code drops.
+    // Minified as an app's production build minifies, with the same replacement.
     const minified = (
       await esbuild.transform(code, {
         minify: true,
@@ -222,6 +273,7 @@ async function main() {
             input: ENTRY,
             external: isExternal,
             cache,
+            plugins: [productionDefine],
             onwarn: () => {},
             treeshake: { moduleSideEffects },
           })
