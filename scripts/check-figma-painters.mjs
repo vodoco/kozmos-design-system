@@ -8520,6 +8520,43 @@ section("Navbar's LogoInset (GAP-208)");
       `${content}: what follows starts 16 past the column, as React's gap (${next && boxes.get(next).start})`,
     );
   }
+  // A real SLOT may refuse a frame's field: the Update says so.
+  const descriptor = Object.getOwnPropertyDescriptor(
+    MockNode.prototype,
+    "primaryAxisAlignItems",
+  );
+  const refusing = new WeakMap();
+  Object.defineProperty(MockNode.prototype, "primaryAxisAlignItems", {
+    configurable: true,
+    get() {
+      return refusing.get(this) ?? "MIN";
+    },
+    set(value) {
+      if (this.name === "Logo Slot" || this.name === "Navigation Slot")
+        if (value !== "MIN") return;
+      refusing.set(this, value);
+    },
+  });
+  const refused = freshStats();
+  await plugin.createNavbarVariant({
+    props: { content: "Basic", navigationAlign: "End", logoInset: "True" },
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: refused,
+  });
+  if (descriptor)
+    Object.defineProperty(
+      MockNode.prototype,
+      "primaryAxisAlignItems",
+      descriptor,
+    );
+  else delete MockNode.prototype.primaryAxisAlignItems;
+  ok(
+    ["Logo Slot refused", "Navigation Slot refused"].every((said) =>
+      refused.warnings.some((warning) => warning.includes(said)),
+    ),
+    `a Logo Slot or Navigation Slot that refuses its alignment is reported, not lost (${refused.warnings.join("; ")})`,
+  );
   const plain = await plugin.createNavbarVariant({
     props: { content: "Basic", navigationAlign: "End", logoInset: "False" },
     variableByName: tokens.variableByName,
@@ -8687,7 +8724,24 @@ section("Drawer's floating form (GAP-198)");
   plugin.auditDrawerAutoLayoutIntegrity(auditSet, issues);
   ok(
     issues.length === 0,
-    `the audit holds a floating card to hugging, and a fixed one to filling (${issues.map((i) => `${i.kind} on ${i.variant}`).join("; ")})`,
+    `the audit passes a floating card that hugs, and a fixed one that fills (${issues.map((i) => `${i.kind} on ${i.variant}`).join("; ")})`,
+  );
+  const filling = await draw("Right", "Inline");
+  named(filling, "Drawer Body").layoutSizingVertical = "FILL";
+  const hugging = await draw("Right", "Fixed");
+  named(hugging, "Drawer Body").layoutSizingVertical = "HUG";
+  const wrongSet = new MockNode("COMPONENT_SET", "Drawer");
+  wrongSet.appendChild(filling);
+  wrongSet.appendChild(hugging);
+  const wrong = [];
+  plugin.auditDrawerAutoLayoutIntegrity(wrongSet, wrong);
+  ok(
+    JSON.stringify(
+      wrong
+        .filter((issue) => issue.kind === "drawer-body-vertical-sizing")
+        .map((issue) => issue.variant),
+    ) === JSON.stringify([filling.name, hugging.name]),
+    `the audit fails a floating card whose body fills, and a fixed one whose body hugs (${wrong.map((i) => `${i.kind} on ${i.variant}`).join("; ")})`,
   );
 
   // The four variants in the file today, named before the axis existed.

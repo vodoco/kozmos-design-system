@@ -149,6 +149,17 @@ describe("Tree", () => {
     ).toHaveAttribute("data-focus-visible", "true");
   });
 
+  it("draws a row's forced focus ring inside it when divided, and outside it when not", () => {
+    const { rerender } = render(<TreeItemRow name="Place item" focusVisible />);
+    const row = () =>
+      screen.getByText("Place item").closest("[data-focus-visible]");
+    expect(row()).toHaveClass("ring-2", "ring-offset-2");
+    expect(row()).not.toHaveClass("ring-inset");
+    rerender(<TreeItemRow name="Place item" focusVisible divided />);
+    expect(row()).toHaveClass("ring-2", "ring-inset");
+    expect(row()).not.toHaveClass("ring-offset-2");
+  });
+
   it("exports parent and child row primitives with the right disclosure contract", () => {
     render(
       <>

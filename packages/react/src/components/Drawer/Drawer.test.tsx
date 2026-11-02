@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AnalyticsProvider } from "../../utils/analytics";
 import { AICompanionPanel } from "../AICompanionPanel";
+import { Backdrop } from "../Backdrop";
+import { Popover, PopoverContent, PopoverTrigger } from "../Popover";
 import { Search } from "../Search";
 import {
   Drawer,
@@ -13,6 +15,50 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "./Drawer";
+
+/**
+ * Waits out the layer's zero timeout, which starts its pointerdown listener,
+ * and FocusScope's, which hands focus back after the panel goes.
+ */
+const nextTask = () =>
+  act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+/** A controlled inline panel, as a product composes it, in a region. */
+function InlinePanel({
+  closeOnOutside = false,
+  noTrigger = false,
+  openRef,
+  ...content
+}: {
+  closeOnOutside?: boolean;
+  noTrigger?: boolean;
+  openRef?: { current: (open: boolean) => void };
+} & React.ComponentProps<typeof DrawerContent>) {
+  const [open, setOpen] = React.useState(false);
+  if (openRef) openRef.current = setOpen;
+  return (
+    <AnalyticsProvider onDispatch={() => {}}>
+      <input aria-label="Sites" defaultValue="Gate" />
+      <div data-testid="background">Background</div>
+      <button type="button">After</button>
+      <div style={{ position: "relative" }}>
+        <Drawer placement="inline" open={open} onOpenChange={setOpen}>
+          {noTrigger ? null : <DrawerTrigger>Get started</DrawerTrigger>}
+          <DrawerContent
+            onInteractOutside={
+              closeOnOutside ? () => setOpen(false) : undefined
+            }
+            {...content}
+          >
+            <DrawerTitle>Get started</DrawerTitle>
+            <DrawerDescription>Tours for this page</DrawerDescription>
+            <button type="button">Start the tour</button>
+          </DrawerContent>
+        </Drawer>
+      </div>
+    </AnalyticsProvider>
+  );
+}
 
 describe("Drawer", () => {
   it("opens on trigger click", async () => {
@@ -329,9 +375,10 @@ describe("Drawer", () => {
     expect(header.className).not.toMatch(/\bpr-\[/);
   });
 
-  it("inline and not modal keeps Radix's callbacks: Escape from inside can be refused, and a press outside can close it", async () => {
+  it("inline and not modal keeps onEscapeKeyDown for the Escape that would close it: refused from inside, never called for the page's", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
+    const onEscapeKeyDown = vi.fn();
     let refuse = true;
     render(
       <AnalyticsProvider onDispatch={() => {}}>
@@ -339,9 +386,9 @@ describe("Drawer", () => {
           <Drawer placement="inline" defaultOpen onOpenChange={onOpenChange}>
             <DrawerContent
               onEscapeKeyDown={(event) => {
+                onEscapeKeyDown();
                 if (refuse) event.preventDefault();
               }}
-              onInteractOutside={() => onOpenChange("outside")}
             >
               <DrawerTitle>Get started</DrawerTitle>
               <DrawerDescription>Tours for this page</DrawerDescription>
@@ -353,8 +400,12 @@ describe("Drawer", () => {
       </AnalyticsProvider>,
     );
     const panel = await screen.findByRole("complementary");
+    screen.getByRole("button", { name: "After" }).focus();
+    await user.keyboard("{Escape}");
+    expect(onEscapeKeyDown).not.toHaveBeenCalled();
     screen.getByRole("button", { name: "Start the tour" }).focus();
     await user.keyboard("{Escape}");
+    expect(onEscapeKeyDown).toHaveBeenCalledTimes(1);
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(panel).toBeInTheDocument();
     refuse = false;
@@ -362,8 +413,430 @@ describe("Drawer", () => {
     expect(onOpenChange).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
     await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
-    await user.click(screen.getByRole("button", { name: "After" }));
-    expect(onOpenChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("inline and not modal tells a product of a press outside, and of focus going outside, and stays open", async () => {
+    const user = userEvent.setup();
+    const heard: string[] = [];
+    const openRef = { current: (_open: boolean) => {} };
+    render(
+      <InlinePanel
+        openRef={openRef}
+        onPointerDownOutside={() => heard.push("pointer")}
+        onFocusOutside={() => heard.push("focus")}
+        onInteractOutside={(event) =>
+          heard.push(`interact ${event.detail.originalEvent.type}`)
+        }
+      />,
+    );
+    act(() => openRef.current(true));
+    await screen.findByRole("complementary");
+    await nextTask();
+    await user.click(screen.getByTestId("background"));
+    expect(heard).toEqual(["pointer", "interact pointerdown"]);
+    heard.length = 0;
+    act(() => screen.getByRole("button", { name: "Start the tour" }).focus());
+    expect(heard).toEqual([]);
+    act(() => screen.getByRole("button", { name: "After" }).focus());
+    expect(heard).toEqual(["focus", "interact focusin"]);
+    expect(screen.getByRole("complementary")).toBeInTheDocument();
+  });
+
+  it("inline and not modal stays open on a press outside with no handler, and closes on one in onInteractOutside", async () => {
+    const user = userEvent.setup();
+    const openRef = { current: (_open: boolean) => {} };
+    const { rerender } = render(<InlinePanel openRef={openRef} />);
+    act(() => openRef.current(true));
+    await screen.findByRole("complementary");
+    await nextTask();
+    await user.click(screen.getByTestId("background"));
+    expect(screen.getByRole("complementary")).toBeInTheDocument();
+    rerender(<InlinePanel openRef={openRef} closeOnOutside />);
+    await user.click(screen.getByTestId("background"));
+    await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
+  });
+
+  it("inline and not modal doesn't call a press on its trigger outside: the recipe's panel closes, and stays closed", async () => {
+    const user = userEvent.setup();
+    const heard: string[] = [];
+    render(
+      <InlinePanel
+        closeOnOutside
+        onPointerDownOutside={() => heard.push("pointer")}
+        onFocusOutside={() => heard.push("focus")}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Get started" }));
+    await screen.findByRole("complementary");
+    await nextTask();
+    await user.click(screen.getByRole("button", { name: "Get started" }));
+    await nextTask();
+    expect(screen.queryByRole("complementary")).toBeNull();
+    expect(heard).toEqual([]);
+  });
+
+  it("inline and not modal doesn't call focus on a box round its trigger outside, which is where Safari puts a press's", async () => {
+    const user = userEvent.setup();
+    const onInteractOutside = vi.fn();
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <button type="button">After</button>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline">
+            <div data-testid="box" tabIndex={0}>
+              <DrawerTrigger>Get started</DrawerTrigger>
+            </div>
+            <DrawerContent onInteractOutside={onInteractOutside}>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "Get started" }));
+    await screen.findByRole("complementary");
+    act(() => screen.getByTestId("box").focus());
+    expect(onInteractOutside).not.toHaveBeenCalled();
+    act(() => screen.getByRole("button", { name: "After" }).focus());
+    expect(onInteractOutside).toHaveBeenCalledTimes(1);
+  });
+
+  it("inline and not modal leaves focus on the body when it closes, if it was never inside, with a trigger or without", async () => {
+    for (const noTrigger of [false, true]) {
+      const openRef = { current: (_open: boolean) => {} };
+      const { unmount } = render(
+        <InlinePanel openRef={openRef} noTrigger={noTrigger} />,
+      );
+      act(() => openRef.current(true));
+      await screen.findByRole("complementary");
+      expect(document.body).toHaveFocus();
+      act(() => openRef.current(false));
+      await waitFor(() =>
+        expect(screen.queryByRole("complementary")).toBeNull(),
+      );
+      await nextTask();
+      expect(document.body).toHaveFocus();
+      unmount();
+    }
+  });
+
+  it("inline and not modal leaves Search alone when a press on the page closes it: not refocused, its text not selected", async () => {
+    const user = userEvent.setup();
+    for (const noTrigger of [false, true]) {
+      const openRef = { current: (_open: boolean) => {} };
+      const { unmount } = render(
+        <InlinePanel openRef={openRef} noTrigger={noTrigger} closeOnOutside />,
+      );
+      const sites = screen.getByRole<HTMLInputElement>("textbox", {
+        name: "Sites",
+      });
+      sites.focus();
+      sites.setSelectionRange(4, 4);
+      act(() => openRef.current(true));
+      await screen.findByRole("complementary");
+      await nextTask();
+      expect(sites).toHaveFocus();
+      await user.click(screen.getByTestId("background"));
+      await waitFor(() =>
+        expect(screen.queryByRole("complementary")).toBeNull(),
+      );
+      await nextTask();
+      expect(document.body).toHaveFocus();
+      expect(sites.selectionStart).toBe(4);
+      unmount();
+    }
+  });
+
+  it("inline and not modal doesn't take focus back from a press outside, which closed it with focus still inside", async () => {
+    const user = userEvent.setup();
+    render(<InlinePanel closeOnOutside />);
+    const trigger = screen.getByRole("button", { name: "Get started" });
+    await user.click(trigger);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start the tour" }),
+      ).toHaveFocus(),
+    );
+    await nextTask();
+    await user.click(screen.getByTestId("background"));
+    await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
+    await nextTask();
+    expect(trigger).not.toHaveFocus();
+    expect(document.body).toHaveFocus();
+  });
+
+  it("inline and not modal leaves focus on the body if it left the panel for it before closing", async () => {
+    const user = userEvent.setup();
+    const openRef = { current: (_open: boolean) => {} };
+    render(<InlinePanel openRef={openRef} />);
+    const trigger = screen.getByRole("button", { name: "Get started" });
+    await user.click(trigger);
+    const tour = screen.getByRole("button", { name: "Start the tour" });
+    await waitFor(() => expect(tour).toHaveFocus());
+    act(() => tour.blur());
+    act(() => openRef.current(false));
+    await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
+    await nextTask();
+    expect(document.body).toHaveFocus();
+  });
+
+  it("inline and not modal counts autoFocus as inside: closing gives the trigger focus", async () => {
+    const user = userEvent.setup();
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline">
+            <DrawerTrigger>Get started</DrawerTrigger>
+            <DrawerContent>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+              <input aria-label="Name" autoFocus />
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "Get started" }));
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus(),
+    );
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Get started" })).toHaveFocus(),
+    );
+  });
+
+  it("two inline panels each close on Escape from inside, whichever opened last", async () => {
+    const user = userEvent.setup();
+    const onFirst = vi.fn();
+    const onSecond = vi.fn();
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" defaultOpen onOpenChange={onFirst}>
+            <DrawerContent>
+              <DrawerTitle>First</DrawerTitle>
+              <DrawerDescription>The older</DrawerDescription>
+              <button type="button">In the first</button>
+            </DrawerContent>
+          </Drawer>
+          <Drawer placement="inline" defaultOpen onOpenChange={onSecond}>
+            <DrawerContent>
+              <DrawerTitle>Second</DrawerTitle>
+              <DrawerDescription>The newer</DrawerDescription>
+              <button type="button">In the second</button>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    await screen.findByRole("complementary", { name: "Second" });
+    screen.getByRole("button", { name: "In the first" }).focus();
+    await user.keyboard("{Escape}");
+    expect(onFirst).toHaveBeenCalledWith(false);
+    expect(onSecond).not.toHaveBeenCalled();
+  });
+
+  it("inline and not modal lets a Popover inside it take Escape first", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    const onEscapeKeyDown = vi.fn();
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" defaultOpen onOpenChange={onOpenChange}>
+            <DrawerContent onEscapeKeyDown={onEscapeKeyDown}>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+              <Popover>
+                <PopoverTrigger>More</PopoverTrigger>
+                <PopoverContent>Details</PopoverContent>
+              </Popover>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    await user.click(await screen.findByRole("button", { name: "More" }));
+    await screen.findByText("Details");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByText("Details")).toBeNull());
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onEscapeKeyDown).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    expect(onEscapeKeyDown).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("inline and not modal says nothing for Escape in a closed, force-mounted panel, as during its exit", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    const onDispatch = vi.fn();
+    render(
+      <AnalyticsProvider onDispatch={onDispatch} batchDelayMs={10}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" onOpenChange={onOpenChange}>
+            <DrawerContent forceMount>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+              <button type="button">Start the tour</button>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    screen.getByRole("button", { name: "Start the tour" }).focus();
+    await user.keyboard("{Escape}");
+    await act(() => new Promise((resolve) => setTimeout(resolve, 30)));
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onDispatch).not.toHaveBeenCalled();
+  });
+
+  it("inline and not modal is no modal to a Backdrop inside it, which is drawn in the theme's portal", async () => {
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" defaultOpen>
+            <DrawerContent>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+              <Backdrop data-testid="scrim" />
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    const panel = await screen.findByRole("complementary");
+    await waitFor(() =>
+      expect(screen.getByTestId("scrim")).toBeInTheDocument(),
+    );
+    expect(panel).not.toContainElement(screen.getByTestId("scrim"));
+  });
+
+  it("modal still draws a Backdrop inside it", async () => {
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" modal defaultOpen>
+            <DrawerContent>
+              <DrawerTitle>Get started</DrawerTitle>
+              <DrawerDescription>Tours for this page</DrawerDescription>
+              <Backdrop data-testid="scrim" />
+            </DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>,
+    );
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(dialog).toContainElement(screen.getByTestId("scrim")),
+    );
+  });
+
+  it("inline and not modal warns in development with nothing to name it, and not with a title or a label", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const panelWith = (content: React.ReactNode, label?: string) => (
+      <AnalyticsProvider onDispatch={() => {}}>
+        <div style={{ position: "relative" }}>
+          <Drawer placement="inline" defaultOpen>
+            <DrawerContent aria-label={label}>{content}</DrawerContent>
+          </Drawer>
+        </div>
+      </AnalyticsProvider>
+    );
+    const named = () =>
+      warn.mock.calls.filter(([message]) =>
+        String(message).includes("DrawerTitle"),
+      );
+    const first = render(panelWith(<DrawerTitle>Get started</DrawerTitle>));
+    await screen.findByRole("complementary");
+    first.unmount();
+    const second = render(panelWith(<p>Tours</p>, "Get started"));
+    await screen.findByRole("complementary");
+    second.unmount();
+    expect(named()).toHaveLength(0);
+    render(panelWith(<p>Tours</p>));
+    await screen.findByRole("complementary");
+    await waitFor(() => expect(named()).toHaveLength(1));
+    warn.mockRestore();
+  });
+
+  it("inline and not modal: a press that opens nothing leaves the next opening by code taking no focus", async () => {
+    const user = userEvent.setup();
+    const openRef = { current: (_open: boolean) => {} };
+    function Refusing() {
+      const [open, setOpen] = React.useState(false);
+      openRef.current = setOpen;
+      return (
+        <AnalyticsProvider onDispatch={() => {}}>
+          <div style={{ position: "relative" }}>
+            <Drawer placement="inline" open={open}>
+              <DrawerTrigger>Get started</DrawerTrigger>
+              <DrawerContent>
+                <DrawerTitle>Get started</DrawerTitle>
+                <DrawerDescription>Tours for this page</DrawerDescription>
+                <button type="button">Start the tour</button>
+              </DrawerContent>
+            </Drawer>
+          </div>
+        </AnalyticsProvider>
+      );
+    }
+    render(<Refusing />);
+    const trigger = screen.getByRole("button", { name: "Get started" });
+    await user.click(trigger);
+    await nextTask();
+    expect(screen.queryByRole("complementary")).toBeNull();
+    act(() => openRef.current(true));
+    await screen.findByRole("complementary");
+    await nextTask();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("gives a stable callback ref to its trigger once, and runs a React 19 ref's cleanup, in place of null", () => {
+    const stable = vi.fn();
+    const cleanup = vi.fn();
+    const withCleanup = vi.fn(() => cleanup);
+    const page = () => (
+      <AnalyticsProvider onDispatch={() => {}}>
+        <Drawer>
+          <DrawerTrigger ref={stable}>Stable</DrawerTrigger>
+          <DrawerTrigger ref={withCleanup}>Cleanup</DrawerTrigger>
+        </Drawer>
+      </AnalyticsProvider>
+    );
+    const { rerender, unmount } = render(page());
+    rerender(page());
+    expect(stable).toHaveBeenCalledTimes(1);
+    expect(withCleanup).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    expect(withCleanup).toHaveBeenCalledTimes(1);
+    expect(stable).toHaveBeenLastCalledWith(null);
+  });
+
+  it("a fixed trigger says it opens a dialog, and points at the dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <AnalyticsProvider onDispatch={() => {}}>
+        <Drawer>
+          <DrawerTrigger>Open</DrawerTrigger>
+          <DrawerContent>
+            <DrawerTitle>Layers</DrawerTitle>
+            <DrawerDescription>Map layers</DrawerDescription>
+          </DrawerContent>
+        </Drawer>
+      </AnalyticsProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Open" });
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute(
+      "aria-controls",
+      screen.getByRole("dialog").id,
+    );
   });
 
   it("inline and not modal keeps focus callbacks: a product moves focus in from onOpenAutoFocus, and onCloseAutoFocus can keep it from the trigger", async () => {
@@ -429,11 +902,14 @@ describe("Drawer", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Get started" })).toHaveFocus(),
     );
-    await waitFor(() => expect(onDispatch).toHaveBeenCalled());
-    const events = onDispatch.mock.calls
-      .flatMap(([batch]) => batch)
-      .map((event) => event.eventName);
-    expect(events).toEqual(["drawer_opened", "drawer_closed"]);
+    // A batch is 10 ms, so the two can arrive in one or in two.
+    await waitFor(() =>
+      expect(
+        onDispatch.mock.calls
+          .flatMap(([batch]) => batch)
+          .map((event) => event.eventName),
+      ).toEqual(["drawer_opened", "drawer_closed"]),
+    );
   });
 
   it("inline and not modal takes focus when its trigger opens it", async () => {

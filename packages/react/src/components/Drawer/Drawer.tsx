@@ -1,5 +1,6 @@
 import { createThemePortal } from "../../theme/ThemePortal";
 import * as React from "react";
+import { useComposedRefs } from "@radix-ui/react-compose-refs";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { FocusScope } from "@radix-ui/react-focus-scope";
@@ -31,8 +32,9 @@ export type DrawerProps = React.ComponentPropsWithoutRef<
    * corners all round. It is not modal unless `modal` says so, and then it is
    * a panel beside the page, not a dialog: it takes focus only when its
    * DrawerTrigger opens it, Tab and Shift+Tab leave it, a press or focus
-   * outside leaves it open, and Escape closes it only from inside: Escape in
-   * the page is the page's.
+   * outside leaves it open (close it in `onInteractOutside`, which a press on
+   * its trigger doesn't reach), and Escape closes it only from inside: Escape
+   * in the page is the page's. Closing gives focus back only if it was inside.
    */
   placement?: DrawerPlacement;
 };
@@ -92,6 +94,33 @@ const drawerInlineSideClasses: Partial<Record<DrawerSide, string>> = {
     "right-4 top-4 max-h-[calc(100%-2rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
 };
 
+type OutsideEvent = Parameters<
+  NonNullable<DrawerContentProps["onInteractOutside"]>
+>[0];
+
+/**
+ * A panel's name: Radix's warning for a title lives in its Content, which a
+ * panel isn't. Warns once a panel, in development.
+ */
+function useWarnUnnamed(
+  panel: HTMLElement | null,
+  titleId: string,
+  labelled: boolean,
+) {
+  React.useEffect(() => {
+    if (
+      process.env.NODE_ENV === "production" ||
+      !panel ||
+      labelled ||
+      panel.ownerDocument.getElementById(titleId)
+    )
+      return;
+    console.warn(
+      "Drawer: an inline panel has no DrawerTitle, so nothing names it to a screen reader. Render a DrawerTitle in it, or pass aria-label.",
+    );
+  }, [panel, titleId, labelled]);
+}
+
 /** Focuses `element` if it is still there to take it; says whether it did. */
 function focusIfFocusable(element: Element | null | undefined) {
   if (!(element instanceof HTMLElement) || !element.isConnected) return false;
@@ -142,13 +171,16 @@ const DrawerTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
 >(({ onClick, ...props }, ref) => {
   const { panel, panelId, trigger } = React.useContext(DrawerContext);
+  const setElement = React.useCallback(
+    (node: HTMLButtonElement | null) => {
+      trigger.element = node;
+    },
+    [trigger],
+  );
+  const triggerRef = useComposedRefs(ref, setElement);
   return (
     <DialogPrimitive.Trigger
-      ref={(node) => {
-        trigger.element = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) ref.current = node;
-      }}
+      ref={triggerRef}
       // Radix names the dialog's Content here; a panel is neither.
       {...(panel && {
         "aria-controls": `${panelId}-content`,
@@ -158,6 +190,12 @@ const DrawerTrigger = React.forwardRef<
         trigger.opening =
           event.currentTarget.getAttribute("data-state") === "closed";
         onClick?.(event);
+        // The opening is done by now, or it isn't coming: a press the product
+        // refused, or one during the exit, says nothing of the next opening.
+        if (panel)
+          setTimeout(() => {
+            trigger.opening = false;
+          });
       }}
       {...props}
     />
@@ -203,17 +241,29 @@ const DrawerContent = React.forwardRef<
     ref,
   ) => {
     // A Backdrop rendered inside is drawn in this content, not beside it,
-    // where the modal would make it inert (OverlayContainerContext).
+    // where the modal would make it inert (OverlayContainerContext). A panel
+    // is no modal: its Backdrop goes to the portal, and reaches over the header.
     const [contentRef, container] = useOverlayContainer(ref);
     const drawer = React.useContext(DrawerContext);
     // Inline, drawn in place over the nearest positioned box, its scrim (when
     // modal) with it.
     const inline = drawer.placement === "inline";
+    // Whether focus is in the panel: closing gives back only focus it took.
+    const focusInside = React.useRef(false);
+    useWarnUnnamed(
+      drawer.panel ? container : null,
+      `${drawer.panelId}-title`,
+      !!(props["aria-label"] || props["aria-labelledby"]),
+    );
     const body = (
       <>
-        <OverlayContainerContext.Provider value={container}>
-          {children}
-        </OverlayContainerContext.Provider>
+        {drawer.panel ? (
+          children
+        ) : (
+          <OverlayContainerContext.Provider value={container}>
+            {children}
+          </OverlayContainerContext.Provider>
+        )}
         {showClose ? (
           // The icon button's size, its centre where touch's 44 puts it, on
           // the title (decision 82): 16 from the top at 44, 22 at 32.
@@ -229,6 +279,10 @@ const DrawerContent = React.forwardRef<
       "z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
       "border-border",
       (inline && drawerInlineSideClasses[side]) || drawerSideClasses[side],
+      // At its edge, inline, the region is a limit too: past it is the header.
+      inline &&
+        (side === "top" || side === "bottom") &&
+        "max-h-[min(100%,80vh)]",
       className,
     );
     // A panel beside the page, not a dialog: Dialog.Content's parts, with what
@@ -237,7 +291,24 @@ const DrawerContent = React.forwardRef<
     // layer would prevent every Escape it did not close on, in the capture
     // phase, before the page sees it. With no `onDismiss` the layer closes
     // nothing and prevents nothing.
-    if (drawer.panel)
+    if (drawer.panel) {
+      // A press on the trigger isn't outside: it toggles the panel on its
+      // `click`, so a panel closed at `pointerdown` would open again. WebKit
+      // focuses no button for a mouse, and the focusable box round it takes it.
+      const skippingTrigger =
+        <E extends OutsideEvent>(handler?: (event: E) => void) =>
+        (event: E) => {
+          const trigger = drawer.trigger.element;
+          const target = event.target as Node;
+          if (
+            trigger?.contains(target) ||
+            (trigger &&
+              event.detail.originalEvent.type === "focusin" &&
+              target.contains(trigger))
+          )
+            return;
+          handler?.(event);
+        };
       return (
         <Presence present={forceMount || drawer.open}>
           <FocusScope
@@ -252,12 +323,16 @@ const DrawerContent = React.forwardRef<
             }}
             onUnmountAutoFocus={(event) => {
               onCloseAutoFocus?.(event);
+              const wasInside = focusInside.current;
+              focusInside.current = false;
               if (event.defaultPrevented) return;
               const doc = (event.currentTarget as Node).ownerDocument;
-              // Focus the user has put elsewhere on the page stays there. With
-              // none, the trigger takes it; with no trigger, what had it as
-              // the panel opened, as the scope does by default.
+              // Focus that was never in the panel isn't the panel's to give
+              // back, and focus put elsewhere on the page stays there. Focus
+              // that left with it goes to the trigger; with no trigger, to
+              // what had it as the panel opened, as the scope does by default.
               if (
+                !wasInside ||
                 (doc?.activeElement && doc.activeElement !== doc.body) ||
                 focusIfFocusable(drawer.trigger.element)
               )
@@ -274,24 +349,47 @@ const DrawerContent = React.forwardRef<
               className={shape}
               data-side={side}
               data-state={drawer.open ? "open" : "closed"}
-              onEscapeKeyDown={(event) => {
-                onEscapeKeyDown?.(event);
-                // Escape in the page is the page's: it goes on, unprevented.
+              {...props}
+              // In the bubble phase, from inside, not the layer's Escape: that
+              // reaches only the highest layer, so of two panels only the
+              // newer would hear it, and Escape in the page is the page's. A
+              // layer inside this panel has prevented its own by now.
+              onKeyDown={(event) => {
+                props.onKeyDown?.(event);
                 if (
-                  event.defaultPrevented ||
-                  !container?.contains(container.ownerDocument.activeElement)
+                  event.key !== "Escape" ||
+                  !drawer.open ||
+                  event.nativeEvent.defaultPrevented
                 )
                   return;
+                onEscapeKeyDown?.(event.nativeEvent);
+                if (event.nativeEvent.defaultPrevented) return;
                 event.preventDefault();
                 drawer.setOpen(false);
               }}
-              {...props}
+              onFocusCapture={(event) => {
+                props.onFocusCapture?.(event);
+                focusInside.current = true;
+              }}
+              onBlurCapture={(event) => {
+                props.onBlurCapture?.(event);
+                focusInside.current = false;
+              }}
+              onPointerDownOutside={skippingTrigger(props.onPointerDownOutside)}
+              onFocusOutside={skippingTrigger(props.onFocusOutside)}
+              onInteractOutside={skippingTrigger((event: OutsideEvent) => {
+                props.onInteractOutside?.(event);
+                // Closed by this press with no exit to run, it goes before the
+                // press can move focus: this isn't focus to give back.
+                if (!event.defaultPrevented) focusInside.current = false;
+              })}
             >
               {body}
             </DismissableLayer>
           </FocusScope>
         </Presence>
       );
+    }
     const overlay = (
       <DrawerOverlay className={inline ? "absolute" : undefined} />
     );

@@ -27,7 +27,13 @@
  *   a Search clears and an AICompanionPanel closes; no focus guards round the
  *   page; a product's onKeyDown sees Tab; Escape from inside closes it and
  *   the trigger has focus; closed by code, focus stays where the user put
- *   it. Modal and inline, its scrim covers the region alone.
+ *   it, on the body too, and goes back only if it was in the panel. With the
+ *   docs' close-on-outside recipe a mouse press on the trigger closes it and
+ *   it stays closed, and a press in the page closes it and leaves focus
+ *   alone. Escape from inside closes that panel with another opened after
+ *   it, once, however often it is pressed during the exit, which runs. Top
+ *   and bottom ones, and a BottomSheet, stop at the region. Modal and inline,
+ *   its scrim covers the region alone.
  * - Drawer's close and header are on logical sides, as Dialog's.
  * - Tree `divided` (GAP-201), in a 440 panel whose content is 20 in, the
  *   tree's `bleed`: a 1px stroke in the border role under every row, outside
@@ -473,6 +479,21 @@ const activeId = (page) =>
   page.evaluate(
     () => document.activeElement?.id || document.activeElement?.tagName,
   );
+/** Opens or closes the drawer from the page's code, and waits for it. */
+const setDrawerOpen = async (page, open) => {
+  await page.evaluate((open) => window.layoutProps.drawer.setOpen(open), open);
+  await page.locator("#drawer").waitFor({
+    state: open ? "visible" : "detached",
+  });
+  if (open) await settled(page);
+  // The scope hands focus back a task after the panel goes.
+  else await page.waitForTimeout(50);
+};
+/** A mouse press on the region's bare background, away from everything. */
+const pressBackground = async (page) => {
+  const region = await box(page, "#region");
+  await page.mouse.click(region.left + 300, region.bottom - 20);
+};
 
 for (const m of MATRIX) {
   const rtl = m.dir === "rtl";
@@ -741,6 +762,249 @@ for (const m of MATRIX) {
       );
     },
   );
+  // Focus that was never in the panel is not the panel's to move (Radix's
+  // hasInteractedOutsideRef): on the body, the trigger takes none of it.
+  await scenario(
+    { ...m, part: "drawer", placement: "inline" },
+    async (page, read) => {
+      await read(
+        "drawer inline: closed by code with focus on the body, it stays on the body; the trigger takes none",
+        async () => {
+          await setDrawerOpen(page, true);
+          assert.equal(await activeId(page), "BODY", "opened by code");
+          await setDrawerOpen(page, false);
+          assert.equal(await activeId(page), "BODY");
+        },
+      );
+      await read(
+        "drawer inline: focus that left the panel for the body stays there when it closes",
+        async () => {
+          await page.click("#trigger");
+          await page.locator("#drawer").waitFor();
+          await settled(page);
+          assert.equal(await inDrawer(page), true, "its trigger moved it in");
+          await page.evaluate(() => document.activeElement.blur());
+          await setDrawerOpen(page, false);
+          assert.equal(await activeId(page), "BODY");
+        },
+      );
+    },
+  );
+  for (const noTrigger of [false, true])
+    await scenario(
+      {
+        ...m,
+        part: "drawer",
+        placement: "inline",
+        closeOnOutside: true,
+        noTrigger,
+      },
+      async (page, read) => {
+        await read(
+          `drawer inline: ${noTrigger ? "no trigger" : "a trigger"}, in Search as code opens it, a press on the page's background closes it and Search isn't refocused or selected`,
+          async () => {
+            await page.focus("#search");
+            await page.keyboard.type("gate");
+            await setDrawerOpen(page, true);
+            assert.equal(await activeId(page), "search", "opened by code");
+            await pressBackground(page);
+            await page.locator("#drawer").waitFor({ state: "detached" });
+            await page.waitForTimeout(50);
+            assert.equal(await activeId(page), "BODY");
+            assert.deepEqual(
+              await page.evaluate(() => {
+                const search = document.getElementById("search");
+                return [search.selectionStart, search.selectionEnd];
+              }),
+              [4, 4],
+              "its text selected",
+            );
+          },
+        );
+      },
+    );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline", noTrigger: true },
+    async (page, read) => {
+      await read(
+        "guard: drawer inline, no trigger: focus that was in the panel goes back to what had it as it opened",
+        async () => {
+          await page.focus("#search");
+          await setDrawerOpen(page, true);
+          await page.focus("#tour");
+          await page.keyboard.press("Escape");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          await page.waitForTimeout(50);
+          assert.equal(await activeId(page), "search");
+        },
+      );
+    },
+  );
+  // The panel's side away from the trigger, which sits at the inline start.
+  const awayFromTrigger = rtl ? "left" : "right";
+  for (const triggerBox of [false, true])
+    await scenario(
+      {
+        ...m,
+        part: "drawer",
+        placement: "inline",
+        closeOnOutside: true,
+        side: awayFromTrigger,
+        triggerBox,
+      },
+      async (page, read) => {
+        await read(
+          `drawer inline: with the close-on-outside recipe, a mouse press on its trigger${triggerBox ? ", in a focusable box," : ""} closes it and it stays closed`,
+          async () => {
+            await page.click("#trigger");
+            await page.locator("#drawer").waitFor();
+            await settled(page);
+            await page.evaluate(() => {
+              window.layoutProps.counts.openChanges.length = 0;
+            });
+            await page.click("#trigger");
+            await page.locator("#drawer").waitFor({ state: "detached" });
+            await page.waitForTimeout(300);
+            assert.equal(await page.locator("#drawer").count(), 0, "reopened");
+            const { openChanges, outside } = await page.evaluate(
+              () => window.layoutProps.counts,
+            );
+            assert.deepEqual(openChanges, [false], "the trigger closed it");
+            assert.deepEqual(outside, [], "the recipe heard no press");
+          },
+        );
+      },
+    );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline", closeOnOutside: true },
+    async (page, read) => {
+      await read(
+        "guard: drawer inline, with the close-on-outside recipe, a press in the page closes it, and reaches the page",
+        async () => {
+          await setDrawerOpen(page, true);
+          await page.click("#help");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          const { help, outside } = await page.evaluate(
+            () => window.layoutProps.counts,
+          );
+          assert.equal(help, 1, "the press reached the page");
+          assert.equal(outside[0], "help");
+        },
+      );
+    },
+  );
+  // Radix's layers: only the highest hears Escape, in the capture phase.
+  await scenario(
+    { ...m, part: "drawer", placement: "inline", second: true },
+    async (page, read) => {
+      await setDrawerOpen(page, true);
+      await page.evaluate(() => window.layoutProps.drawer.setSecondOpen(true));
+      await page.locator("#second").waitFor();
+      await settled(page);
+      await read(
+        "drawer inline: two open, Escape in the page leaves both",
+        async () => {
+          await page.focus("#search");
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(50);
+          assert.equal(await page.locator("#drawer").count(), 1, "the first");
+          assert.equal(await page.locator("#second").count(), 1, "the second");
+        },
+      );
+      await read(
+        "drawer inline: two open, Escape in the older closes it, and the newer stays",
+        async () => {
+          await page.focus("#tour");
+          await page.keyboard.press("Escape");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          assert.equal(await page.locator("#second").count(), 1, "the second");
+        },
+      );
+      await read(
+        "drawer inline: Escape in the one that is left closes it",
+        async () => {
+          await page.focus("#second-button");
+          await page.keyboard.press("Escape");
+          await page.locator("#second").waitFor({ state: "detached" });
+        },
+      );
+    },
+  );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline" },
+    async (page, read) => {
+      await read(
+        "drawer inline: closing runs its exit: still there, closed, its animation running",
+        async () => {
+          await setDrawerOpen(page, true);
+          const exit = await page.evaluate(async () => {
+            window.layoutProps.drawer.setOpen(false);
+            await new Promise((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(resolve)),
+            );
+            const panel = document.getElementById("drawer");
+            return (
+              panel && {
+                state: panel.dataset.state,
+                running: panel
+                  .getAnimations()
+                  .filter((a) => a.playState === "running").length,
+              }
+            );
+          });
+          assert.ok(exit, "gone at once");
+          assert.equal(exit.state, "closed");
+          assert.ok(exit.running > 0, "no animation running");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+        },
+      );
+      await read(
+        "drawer inline: Escape again during the exit says onOpenChange once",
+        async () => {
+          await setDrawerOpen(page, true);
+          await page.focus("#tour");
+          await page.evaluate(() => {
+            window.layoutProps.counts.openChanges.length = 0;
+          });
+          await page.keyboard.press("Escape");
+          await page.keyboard.press("Escape");
+          await page.locator("#drawer").waitFor({ state: "detached" });
+          assert.deepEqual(
+            await page.evaluate(() => window.layoutProps.counts.openChanges),
+            [false],
+          );
+        },
+      );
+    },
+  );
+  // Region 536 under a 64 header in a 700 window: 80vh is 560.
+  for (const form of [
+    { side: "bottom" },
+    { side: "top" },
+    { side: "bottom", sheet: true },
+  ])
+    await scenario(
+      { ...m, part: "drawer", placement: "inline", tall: true, ...form },
+      async (page, read) => {
+        await setDrawerOpen(page, true);
+        await settleLayout(page);
+        await read(
+          `drawer inline: a tall ${form.sheet ? "BottomSheet" : `${form.side} drawer`} stops at the region, off the header, and scrolls`,
+          async () => {
+            const region = await box(page, "#region");
+            const header = await box(page, "#header-bar");
+            const shape = await drawerShape(page);
+            assert.ok(
+              shape.box.top >= header.bottom - 0.5,
+              `over the header: its top ${shape.box.top}, the header's bottom ${header.bottom}`,
+            );
+            near(shape.box.top, region.top, "at the region's top", 0.5);
+            near(shape.box.bottom, region.bottom, "at its bottom", 0.5);
+            assert.equal(shape.scrolls, true, "it scrolls");
+          },
+        );
+      },
+    );
   await scenario(
     { ...m, part: "drawer", placement: "inline", tall: true },
     async (page, read) => {
@@ -1058,5 +1322,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), its logo column over the rail, Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (floating in the region, 16 from each edge, its border all round, as tall as its content, the header uncovered, read and pressable; a panel, not a dialog, for focus, Tab, presses and Escape; Escape in the page the page's, a real Search and a real AICompanionPanel; no focus guards; Tab reaching a product's onKeyDown; modal, the scrim on the region alone), Tree divided (strokes under the rows to the panel's edges, computed and drawn, the open parent's surface, the selected fill rounded over it, an inset focus ring), and the defaults and keys kept`,
+  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), its logo column over the rail, Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (floating in the region, 16 from each edge, its border all round, as tall as its content, the header uncovered, read and pressable; a panel, not a dialog, for focus, Tab, presses and Escape; Escape in the page the page's, a real Search and a real AICompanionPanel; no focus guards; Tab reaching a product's onKeyDown; focus given back only if it was inside; a mouse press on the trigger closing it with the close-on-outside recipe; Escape in either of two panels, once, during a running exit; top, bottom and BottomSheet stopped at the region; modal, the scrim on the region alone), Tree divided (strokes under the rows to the panel's edges, computed and drawn, the open parent's surface, the selected fill rounded over it, an inset focus ring), and the defaults and keys kept`,
 );

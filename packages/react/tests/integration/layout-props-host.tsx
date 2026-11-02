@@ -3,6 +3,8 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import {
   AICompanionPanel,
+  BottomSheet,
+  BottomSheetContent,
   Button,
   Drawer,
   DrawerContent,
@@ -41,6 +43,17 @@ interface Mount {
   tall?: boolean;
   /** An open AICompanionPanel in the page beside the drawer. */
   companion?: boolean;
+  side?: "left" | "right" | "top" | "bottom";
+  /** The docs' recipe: the drawer closes in onInteractOutside. */
+  closeOnOutside?: boolean;
+  /** No DrawerTrigger: a panel only the page's code opens. */
+  noTrigger?: boolean;
+  /** The trigger in a focusable box, as Safari focuses for a pressed button. */
+  triggerBox?: boolean;
+  /** A second inline panel at the left, which the page's code opens. */
+  second?: boolean;
+  /** A BottomSheet in the region, not a Drawer. */
+  sheet?: boolean;
   logoInset?: boolean;
   divided?: boolean;
   selectedId?: string;
@@ -73,9 +86,16 @@ const counts = {
   regionKeys: [] as string[],
   /** Whether each Escape reached the page's document already prevented. */
   escapes: [] as boolean[],
+  /** Each onOpenChange the drawer gave. */
+  openChanges: [] as boolean[],
+  /** The id of what each onInteractOutside the recipe heard was on. */
+  outside: [] as string[],
 };
-/** Opens or closes the drawer from the page's code, as a product does. */
-const drawer = { setOpen: (_open: boolean) => {} };
+/** Opens or closes the drawers from the page's code, as a product does. */
+const drawer = {
+  setOpen: (_open: boolean) => {},
+  setSecondOpen: (_open: boolean) => {},
+};
 
 // In the bubble phase, as a page's own handler: Radix listens in the capture
 // phase, so what is prevented there is already prevented here.
@@ -86,8 +106,15 @@ document.addEventListener("keydown", (event) => {
 /** A fixed header over a positioned region, the drawer in it, controlled. */
 function DrawerPage(props: Mount) {
   const [open, setOpen] = React.useState(false);
+  const [secondOpen, setSecondOpen] = React.useState(false);
   const [companionOpen, setCompanionOpen] = React.useState(true);
   drawer.setOpen = setOpen;
+  drawer.setSecondOpen = setSecondOpen;
+  const trigger = props.noTrigger ? null : (
+    <DrawerTrigger asChild>
+      <Button id="trigger">Get started</Button>
+    </DrawerTrigger>
+  );
   return (
     <div
       id="page"
@@ -129,29 +156,72 @@ function DrawerPage(props: Mount) {
         style={{ position: "relative", flex: 1, minHeight: 0 }}
         onKeyDown={(event) => counts.regionKeys.push(event.key)}
       >
-        <Drawer
-          placement={props.placement}
-          modal={props.modal}
-          open={open}
-          onOpenChange={setOpen}
-        >
-          <DrawerTrigger asChild>
-            <Button id="trigger">Get started</Button>
-          </DrawerTrigger>
-          <DrawerContent
-            id="drawer"
-            onKeyDown={(event) => counts.contentKeys.push(event.key)}
-          >
-            <DrawerHeader>
-              <DrawerTitle>Get started</DrawerTitle>
-              <DrawerDescription>Tours for this page</DrawerDescription>
-            </DrawerHeader>
-            <Button id="tour">Start the tour</Button>
-            {props.tall && (
+        {props.sheet ? (
+          <BottomSheet placement="inline" open={open} onOpenChange={setOpen}>
+            <BottomSheetContent id="drawer" title="Gate B12">
               <div id="tall" style={{ height: 1200, flexShrink: 0 }} />
+            </BottomSheetContent>
+          </BottomSheet>
+        ) : (
+          <Drawer
+            placement={props.placement}
+            modal={props.modal}
+            open={open}
+            onOpenChange={(next) => {
+              counts.openChanges.push(next);
+              setOpen(next);
+            }}
+          >
+            {props.triggerBox ? (
+              <div
+                id="trigger-box"
+                tabIndex={0}
+                style={{ display: "inline-block" }}
+              >
+                {trigger}
+              </div>
+            ) : (
+              trigger
             )}
-          </DrawerContent>
-        </Drawer>
+            <DrawerContent
+              id="drawer"
+              side={props.side}
+              onKeyDown={(event) => counts.contentKeys.push(event.key)}
+              onInteractOutside={
+                props.closeOnOutside
+                  ? (event) => {
+                      counts.outside.push((event.target as HTMLElement).id);
+                      setOpen(false);
+                    }
+                  : undefined
+              }
+            >
+              <DrawerHeader>
+                <DrawerTitle>Get started</DrawerTitle>
+                <DrawerDescription>Tours for this page</DrawerDescription>
+              </DrawerHeader>
+              <Button id="tour">Start the tour</Button>
+              {props.tall && (
+                <div id="tall" style={{ height: 1200, flexShrink: 0 }} />
+              )}
+            </DrawerContent>
+          </Drawer>
+        )}
+        {props.second ? (
+          <Drawer
+            placement="inline"
+            open={secondOpen}
+            onOpenChange={setSecondOpen}
+          >
+            <DrawerContent id="second" side="left">
+              <DrawerHeader>
+                <DrawerTitle>Layers</DrawerTitle>
+                <DrawerDescription>Map layers</DrawerDescription>
+              </DrawerHeader>
+              <Button id="second-button">Show all</Button>
+            </DrawerContent>
+          </Drawer>
+        ) : null}
         <button id="after" type="button">
           After
         </button>
@@ -304,6 +374,8 @@ function mount(props: Mount) {
   counts.contentKeys.length = 0;
   counts.regionKeys.length = 0;
   counts.escapes.length = 0;
+  counts.openChanges.length = 0;
+  counts.outside.length = 0;
   root = createRoot(document.getElementById("fixture")!);
   flushSync(() =>
     root!.render(

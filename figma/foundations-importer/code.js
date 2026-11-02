@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d68782b734ba";
+const PLUGIN_BUILD = "7ecc765ab202";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -40889,7 +40889,12 @@ async function updateNavbarVariant(
       variableByName,
       stats,
     );
-    setNodePropertyIfSupported(logoSlot, "primaryAxisAlignItems", "CENTER");
+    if (
+      !setNodePropertyIfSupported(logoSlot, "primaryAxisAlignItems", "CENTER")
+    )
+      stats.warnings.push(
+        `${component.name}: the Logo Slot refused its centred alignment, so the logo sits at the column's start.`,
+      );
   } else {
     setHugChildSizing(logoSlot);
   }
@@ -40930,11 +40935,16 @@ async function updateNavbarVariant(
   // React's navigation grows into it; NavigationAlign places its items there
   // (GAP-196). Written after the slot is configured, which resets it to MIN,
   // and on a designer's own items as on the generated ones.
-  setNodePropertyIfSupported(
-    navigationSlot,
-    "primaryAxisAlignItems",
-    NAVBAR_NAVIGATION_ALIGN_ITEMS[navigationAlign],
-  );
+  if (
+    !setNodePropertyIfSupported(
+      navigationSlot,
+      "primaryAxisAlignItems",
+      NAVBAR_NAVIGATION_ALIGN_ITEMS[navigationAlign],
+    )
+  )
+    stats.warnings.push(
+      `${component.name}: the Navigation Slot refused its alignment, so its items sit at the slot's start.`,
+    );
 
   if (hasActions) {
     const actionsSlot = await createNavbarActionsSlot({

@@ -29,7 +29,8 @@ not the header.
   as its content, up to the region less 16 at the top and the bottom, and then it scrolls. Its
   border goes all the way round, and its four corners are the container's. `side` is physical, as
   it is for a fixed drawer: right to left, pass `side="left"` for a panel at the inline end. A top
-  or bottom drawer (BottomSheet's) stays at its edge, across the region.
+  or bottom drawer (BottomSheet's) stays at its edge, across the region, and stops at the region's
+  far edge, so it can't grow over the header.
 - **It scrolls with its region.** An inline drawer is `absolute`, so it moves with whatever scrolls
   the box it is positioned in. To keep it pinned under the header, keep the positioned region still,
   put the page's scroller inside the region, and render the Drawer outside that scroller.
@@ -42,13 +43,20 @@ not the header.
     element in `onOpenAutoFocus`.
   - Tab and Shift+Tab move in and out of it in the page's order. Focus is never held inside.
   - A press or focus outside it, on the header too, leaves it open. To close it then, close it in
-    `onInteractOutside`.
-  - Escape closes it only while focus is inside it. Escape in the page is the page's: it reaches the
-    page unprevented, so a Search clears and an AICompanionPanel closes.
+    `onInteractOutside`. A press on its `DrawerTrigger` isn't outside: the trigger closes it itself.
+  - Escape closes it only while focus is inside it, and `onEscapeKeyDown` can refuse that. Escape in
+    the page is the page's: it reaches the page unprevented, so a Search clears and an
+    AICompanionPanel closes. One thing it can't reach: Radix tells only its newest layer, so a
+    Popover or menu opened before your code opens the panel doesn't hear Escape until the panel
+    closes. One opened after it does.
   - A product's `onKeyDown` on it, or round it, sees every key, Tab too. No focus guards are added to
     the page.
-  - Closing gives the trigger its focus when focus was inside it. Focus the user has put elsewhere
-    stays where it is.
+  - Closing gives focus back only if it was inside: to the trigger, or with no trigger to what had
+    it as the panel opened. Focus the user has put elsewhere stays where it is, and that includes
+    the page's background.
+  - Render a `DrawerTitle` in it, or pass `aria-label`: nothing else names it. It warns in
+    development when nothing does. A `complementary` landmark belongs at the top level, so inside
+    `main`, pass `role="region"`.
 - **With `modal`**, it is a dialog again. Its scrim is drawn over the region alone, and the rest of
   the page is inert, as under any modal.
 
