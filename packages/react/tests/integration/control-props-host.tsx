@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { HelpCircle, Pencil01, Star01 } from "@kozmos-ds/icons";
@@ -21,9 +21,10 @@ import {
  * The clipboard is a stand-in that records what is written, so the copy is
  * read the same in every engine, secure context or not. `setAction` gives the
  * #switch field an action, or takes it away, as a product's state does.
+ * `pressed` holds a pressed toggle's `icon` in the forms it can take.
  */
 interface Mount {
-  part: "iconbutton" | "card" | "input";
+  part: "iconbutton" | "card" | "input" | "pressed";
   theme: "light" | "dark";
   density: "touch" | "compact";
   dir: "ltr" | "rtl";
@@ -56,6 +57,21 @@ function Toggle() {
     />
   );
 }
+
+// A toggle's icon is a node, so these are as much an icon as an svg is. A
+// swatch of one colour reads back exactly, where a line's edge blends.
+const SWATCH = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#f0f"/></svg>',
+)}`;
+const PRESSED_ICONS: Record<string, ReactNode> = {
+  wrapped: (
+    <span>
+      <Star01 aria-hidden="true" width={16} height={16} />
+    </span>
+  ),
+  image: <img alt="" src={SWATCH} width={16} height={16} />,
+  text: "A",
+};
 
 let setSwitchAction: (action: InputAction | undefined) => void = () => {};
 function Switch() {
@@ -158,6 +174,24 @@ function Part({ part }: Mount) {
               <CardTitle id={`title-${size}`}>Gate</CardTitle>
             </CardHeader>
           </Card>
+        ))}
+      </div>
+    );
+  if (part === "pressed")
+    return (
+      <div style={{ display: "grid", gap: 16, padding: 24, width: 360 }}>
+        {Object.entries(PRESSED_ICONS).map(([name, icon]) => (
+          <Input
+            key={name}
+            label={name}
+            action={{
+              kind: "toggle",
+              label: name,
+              icon,
+              pressed: true,
+              onPressedChange: () => {},
+            }}
+          />
         ))}
       </div>
     );

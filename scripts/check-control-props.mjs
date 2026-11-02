@@ -23,8 +23,10 @@
  *   pressed button with its own name, Space flips it, and pressed it is a
  *   32 disc of the theme fill under the icon in the fill's foreground, 3:1 or
  *   more on the field, as a pressed ToggleButton is (not a colour alone,
- *   WCAG 1.4.1); a Highlight disc in forced colours. Giving a field an action,
- *   or taking it away, keeps the same input, its focus and its typed value.
+ *   WCAG 1.4.1), and whatever `icon` is, a wrapped icon, an image or text is
+ *   drawn on the disc, not under it; a Highlight disc in forced colours.
+ *   Giving a field an action, or taking it away, keeps the same input, its
+ *   focus and its typed value.
  *
  * Each read is recorded on its own, so a run lists every read that fails.
  * Reads named "guard" hold on main too. The accessible names are read with
@@ -268,7 +270,9 @@ for (const m of MATRIX) {
           "aria-labelledby",
         );
         assert.equal(
-          await page.getByRole("button", { name: "ヘルプ、3", exact: true }).count(),
+          await page
+            .getByRole("button", { name: "ヘルプ、3", exact: true })
+            .count(),
           1,
           "counterSeparator",
         );
@@ -553,8 +557,7 @@ for (const m of MATRIX) {
             width: s.width,
             height: s.height,
             colour: getComputedStyle(el).color,
-            field: getComputedStyle(el.previousElementSibling)
-              .backgroundColor,
+            field: getComputedStyle(el.previousElementSibling).backgroundColor,
           };
         });
         assert.equal(disc.background, fill, "the disc: the theme fill");
@@ -632,6 +635,62 @@ for (const m of MATRIX) {
     );
   });
 }
+// `icon` is a node, so what shows on the disc is whatever a product passes:
+// the disc is under all of it, not only under a direct svg child.
+for (const m of MATRIX) {
+  await scenario({ ...m, part: "pressed" }, async (page, read) => {
+    const fill = rgb(await resolve(page, "--primitives-colors-theme-500"));
+    const ink = rgb(
+      await resolve(
+        page,
+        "--components-primary-buttons-themed-button-foreground-content-idle",
+      ),
+    );
+    /** The disc's colour beside the icon, and every pixel over the icon. */
+    const drawn = async (name) => {
+      const button = await page.getByRole("button", { name }).boundingBox();
+      const cx = button.x + button.width / 2;
+      const cy = button.y + button.height / 2;
+      const points = [[cx - 12, cy]];
+      for (let x = -8; x < 8; x += 1)
+        for (let y = -8; y < 8; y += 1) points.push([cx + x, cy + y]);
+      const [disc, ...icon] = await pixels(await page.screenshot(), points);
+      return { disc, icon };
+    };
+    for (const name of ["wrapped", "text"]) {
+      await read(
+        `input toggle: a pressed ${name} icon is drawn on the disc, in the fill's foreground`,
+        async () => {
+          const { disc, icon } = await drawn(name);
+          assert.ok(
+            distance(disc, fill) <= 3,
+            `the disc is drawn: rgb(${disc.slice(0, 3)})`,
+          );
+          const nearest = Math.min(...icon.map((p) => distance(p, ink)));
+          assert.ok(
+            nearest <= 40,
+            `nothing over the disc is the icon's ink: the nearest is ${nearest} off`,
+          );
+        },
+      );
+    }
+    await read(
+      "input toggle: a pressed image is drawn on the disc",
+      async () => {
+        const { disc, icon } = await drawn("image");
+        assert.ok(
+          distance(disc, fill) <= 3,
+          `the disc is drawn: rgb(${disc.slice(0, 3)})`,
+        );
+        const swatch = icon.filter((p) => distance(p, [255, 0, 255]) <= 3);
+        assert.ok(
+          swatch.length >= 256 * 0.9,
+          `${swatch.length} of 256 pixels are the image's`,
+        );
+      },
+    );
+  });
+}
 for (const m of [MATRIX[0], MATRIX[3]]) {
   await scenario({ ...m, part: "input", forced: true }, async (page, read) => {
     await read(
@@ -673,5 +732,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words after counterSeparator, with aria-labelledby too, outlined in forced colours), CardHeader's actions (at the end, on the title's line at any size, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named, a disc of the theme fill under the fill's foreground, a Highlight disc in forced colours; an action given or taken keeps the same input, its focus and its value)`,
+  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words after counterSeparator, with aria-labelledby too, outlined in forced colours), CardHeader's actions (at the end, on the title's line at any size, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named, a disc of the theme fill under the fill's foreground, a wrapped icon, an image and text each drawn on the disc and not under it, a Highlight disc in forced colours; an action given or taken keeps the same input, its focus and its value)`,
 );
