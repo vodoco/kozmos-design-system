@@ -103,11 +103,20 @@
   }
   /* With a Close, and only then, the words wrap 8 before it. */
   .kozmos-tour-step .kozmos-tour-step-header:has(> .kozmos-tour-step-close) {
-    padding-inline-end: calc(
+    --kozmos-tour-step-close-room: calc(
       var(--kozmos-tour-step-close-end) + var(--density-icon-control-size-md) +
         var(--primitives-layout-spacing-100) * 1px -
         var(--primitives-layout-spacing-200) * 1px
     );
+    padding-inline-end: var(--kozmos-tour-step-close-room);
+  }
+  /* At compact, Close ends where a title under the eyebrow starts, so that
+     title keeps the card's width instead of wrapping for nothing. */
+  [data-kozmos-density="compact"]
+    .kozmos-tour-step
+    .kozmos-tour-step-eyebrow
+    ~ .kozmos-tour-step-title {
+    margin-inline-end: calc(-1 * var(--kozmos-tour-step-close-room, 0px));
   }
   /* Its icon on the first line of the words beside it: the title's 28, or
      the eyebrow's 16, Text's own lines, which no token says. A ring outside a

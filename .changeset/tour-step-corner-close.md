@@ -12,7 +12,7 @@ change.
 
 A product that measured the card: with the same number of lines, a step is 32 shorter at touch
 density and 20 at compact; a card with Close and no eyebrow (a coachmark) 56 and 44; a card with an
-eyebrow and no Close (the welcome card) 4. With a Close, the eyebrow and the title are 38 narrower
-at touch and 32 at compact, so a title that only just fitted may take another line, 28 tall: the
-MAP-64 "Open User Management in Settings" step ends 8 taller at compact.
+eyebrow and no Close (the welcome card) 4. With a Close, the eyebrow is 38 narrower at touch and 32 at compact, and
+so is the title at touch or with no eyebrow, so a title that only just fitted there may take
+another line, 28 tall. At compact, a title under the eyebrow keeps the card's width.
 `.kozmos-tour-step-header` now holds the title too, and renders on every card.

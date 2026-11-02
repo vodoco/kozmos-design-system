@@ -1089,6 +1089,28 @@ await scenario(
   },
 );
 
+// Compact only: Close ends where the title starts, so a title under the
+// eyebrow keeps the card's width. At touch, Close reaches into its line.
+await scenario(
+  "at compact density, a title under the eyebrow takes the card's width and needn't wrap for Close",
+  {
+    mount: {
+      density: "compact",
+      title: "Open User Management in Settings",
+    },
+  },
+  async (page) => {
+    await placement(page);
+    const h = await header(page);
+    assert.equal(h.title.lines.length, 1, "one line, as it fits");
+    assert.deepEqual(
+      h.title.lines.filter((line) => overlap(line, h.close)),
+      [],
+      "no line under Close",
+    );
+  },
+);
+
 await scenario(
   "at twice the reader's text size, Close grows with it and stays whole, and the words still wrap before it",
   {
