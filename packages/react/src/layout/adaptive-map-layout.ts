@@ -35,7 +35,7 @@ export const emptyInsets: LayoutInsets = {
   bottom: 0,
   left: 0,
 };
-const positive = (value: number | undefined) =>
+export const positive = (value: number | undefined) =>
   Number.isFinite(value) ? Math.max(0, value!) : 0;
 
 export function intersectRect(a: LayoutRect, b: LayoutRect): LayoutRect {

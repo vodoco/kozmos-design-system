@@ -138,7 +138,10 @@
         "RegisteredBottomCorners",
         "RegisteredAttribution",
         "AttributionWithSheet",
-        "AttributionBesidePanel"
+        "AttributionBesidePanel",
+        "StatusAndTopCorners",
+        "StatusAndTopCornersBesidePanel",
+        "ExitBuilding"
       ]
     },
     {

@@ -222,6 +222,8 @@ const files = {
   reactCombobox: "packages/react/src/components/Combobox/Combobox.tsx",
   reactComboboxFigma:
     "packages/react/src/components/Combobox/Combobox.figma.tsx",
+  reactAdaptiveMapShellFigma:
+    "packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.figma.tsx",
   reactMultiSelect: "packages/react/src/components/MultiSelect/MultiSelect.tsx",
   reactMultiSelectFigma:
     "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
@@ -873,6 +875,16 @@ assertContains(
   "formatCounterValue",
   "React Counter normalizes legacy wrapped values",
 );
+// The shell's map slots are frames, with no property to read them from, so an
+// example naming what they hold would hand a designer's copy controls and
+// words nobody drew.
+for (const prop of ["controlsTopStart", "controlsTopEnd", "status"])
+  assertNotContains(
+    files.reactAdaptiveMapShellFigma,
+    source.reactAdaptiveMapShellFigma,
+    new RegExp(`\\b${prop}=`),
+    `AdaptiveMapShell Code Connect example filling ${prop}`,
+  );
 assertContains(
   files.reactCounterFigma,
   source.reactCounterFigma,
