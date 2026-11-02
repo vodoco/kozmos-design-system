@@ -162,25 +162,10 @@ public struct KozmosIcon: View {
         }
     }
 
+    /// The web registry's aliases are generated, so a platform cannot keep a
+    /// list of its own.
     private static func resolvedIconName(_ name: String) -> String {
-        switch name {
-        case "add": return "plus"
-        case "back": return "arrow-left"
-        case "close", "x": return "x-close"
-        case "delete": return "trash-01"
-        case "edit": return "edit-01"
-        case "home": return "home-line"
-        case "location", "map-pin": return "marker-pin-01"
-        case "menu": return "menu-01"
-        case "next": return "arrow-right"
-        case "notifications": return "bell-01"
-        case "search": return "search-md"
-        case "settings": return "settings-01"
-        case "user": return "user-01"
-        case "users": return "users-01"
-        case "warning": return "alert-triangle"
-        default: return name
-        }
+        KozmosIconAliases.resolve(name)
     }
 }
 

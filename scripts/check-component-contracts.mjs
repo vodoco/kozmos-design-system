@@ -2432,20 +2432,20 @@ if (categoryTile.content.iconDecorative) {
   const keyByName = new Map(
     items.map((item) => [item.name, item.componentKey]),
   );
-  // The taxonomy's symbols: the art the plugin draws them from, and the
-  // registry's own record that they are the taxonomy's.
-  const svgStart = source.figma.indexOf("const TAXONOMY_ICON_SVGS = {");
+  // The icons the Pointr library has no outline for: the art the plugin draws
+  // them from, and the registry's own record that they are owned.
+  const svgStart = source.figma.indexOf("const KOZMOS_OWNED_ICON_SVGS = {");
   const drawn = new Set(
     [
       ...source.figma
         .slice(svgStart, source.figma.indexOf("\n};", svgStart))
-        .matchAll(/^ {2}"([a-z0-9-]+)":(?:$| ')/gm),
+        .matchAll(/^ {2}"?([a-z0-9-]+)"?:(?:$| ')/gm),
     ].map((m) => m[1]),
   );
-  const taxonomyInRegistry = new Set(
+  const ownedInRegistry = new Set(
     [
       ...registry.matchAll(
-        /name: "([a-z0-9-]+)",\s+figmaName: "[^"]+",\s+source: "taxonomy",/g,
+        /name: "([a-z0-9-]+)",\s+figmaName: "[^"]+",\s+source: "owned",/g,
       ),
     ].map((m) => m[1]),
   );
@@ -2455,15 +2455,15 @@ if (categoryTile.content.iconDecorative) {
       fail(
         `figma/foundations-importer/code.js: curated icon "${name}" is in the registry but has no KOSMOS_ICON_DEFINITIONS entry`,
       );
-    } else if (definition.source === "taxonomy") {
+    } else if (definition.source === "owned") {
       if (definition.componentKey || !drawn.has(name)) {
         fail(
-          `figma/foundations-importer/code.js: taxonomy symbol "${name}" needs its SVG in TAXONOMY_ICON_SVGS and no component key`,
+          `figma/foundations-importer/code.js: owned icon "${name}" needs its SVG in KOZMOS_OWNED_ICON_SVGS and no component key`,
         );
       }
-      if (!taxonomyInRegistry.has(name)) {
+      if (!ownedInRegistry.has(name)) {
         fail(
-          `packages/icons/src/registry.ts: "${name}" is a taxonomy symbol in the plugin, and its definition does not say source: "taxonomy"`,
+          `packages/icons/src/registry.ts: "${name}" is an owned icon in the plugin, and its definition does not say source: "owned"`,
         );
       }
     } else if (definition.componentKey !== keyByName.get(name)) {
@@ -2473,9 +2473,9 @@ if (categoryTile.content.iconDecorative) {
     }
   }
   for (const name of drawn) {
-    if (!definitions.has(name) || definitions.get(name).source !== "taxonomy") {
+    if (!definitions.has(name) || definitions.get(name).source !== "owned") {
       fail(
-        `figma/foundations-importer/code.js: TAXONOMY_ICON_SVGS draws "${name}", which no taxonomy definition names`,
+        `figma/foundations-importer/code.js: KOZMOS_OWNED_ICON_SVGS draws "${name}", which no owned definition names`,
       );
     }
   }

@@ -76,6 +76,7 @@
     "icons:navigation:check": "node --test scripts/ci/navigation-glyphs.test.mjs",
     "icons:native:generate": "node scripts/generate-native-icons.mjs",
     "icons:native:check": "node scripts/generate-native-icons.mjs --check",
+    "icons:names:check": "node scripts/check-icon-names.mjs",
     "figma:plugin:check": "node scripts/check-figma-plugin-compat.mjs",
     "figma:manifest": "node scripts/figma-build-manifest.mjs",
     "figma:manifest:check": "node scripts/figma-build-manifest.mjs --check",

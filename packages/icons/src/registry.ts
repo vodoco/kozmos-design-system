@@ -10,6 +10,8 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
+  BatteryCharging01,
+  Beaker01,
   Bell01,
   BluetoothOff,
   Bookmark,
@@ -22,15 +24,19 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Clapperboard,
   Clock,
   ClockPlus,
   Compass01,
+  CreditCard01,
   Download01,
+  Droplets01,
   Edit01,
   Eye,
   Feather,
   FlipBackward,
   Globe02,
+  GraduationHat01,
   Heart,
   HomeLine,
   InfoCircle,
@@ -40,23 +46,30 @@ import {
   Lock01,
   LogIn01,
   LogOut01,
+  Luggage01,
   Mail01,
   Map01,
   MarkerPin01,
+  MedicalCross,
   Menu01,
   Minus,
   NavigationPointer01,
+  Package,
+  Passport,
   Phone,
+  Plane,
   Plus,
   QrCode01,
   Route,
   Scan,
+  Scissors01,
   SearchMd,
   Settings01,
   Share01,
   ShoppingBag02,
   Stars01,
   SwitchVertical01,
+  Ticket01,
   Trash01,
   Upload01,
   User01,
@@ -89,7 +102,7 @@ import {
   StairsUp,
   TurnBack,
 } from "./owned/navigation.generated";
-import { Walking } from "./owned/icons";
+import { Accessibility, Utensils, Walking } from "./owned/icons";
 
 export const kozmosIconNames = [
   "activity",
@@ -140,8 +153,8 @@ export const kozmosIconNames = [
   // These were the first owned outlines, added when every name above still
   // resolved to the nearest lucide shape. Each was needed by the SDK's POI
   // detail card and had no Kozmos name at all — see docs/poi-detail-card-gaps.
-  // Every name in this registry is now drawn by the Pointr Icon Library, so
-  // this grouping records history rather than a difference.
+  // Every name to here is now drawn by the Pointr Icon Library, so this
+  // grouping records history rather than a difference.
   "bookmark",
   "calendar-check-01",
   "clock-plus",
@@ -155,6 +168,26 @@ export const kozmosIconNames = [
   "phone",
   "share-01",
   "shopping-bag-02",
+
+  // The venue set (GAP-105, decisions 119 and 121): a place's categories,
+  // amenities and services, chosen from what the taxonomy's quick access
+  // matches; packages/icons/README.md says how and what was left out. The
+  // registry grows only by this set: a UI glyph stays a named import.
+  "utensils",
+  "medical-cross",
+  "plane",
+  "clapperboard",
+  "graduation-hat-01",
+  "beaker-01",
+  "accessibility",
+  "credit-card-01",
+  "battery-charging-01",
+  "droplets-01",
+  "luggage-01",
+  "passport",
+  "ticket-01",
+  "package",
+  "scissors-01",
 ] as const;
 
 export type KozmosIconName = (typeof kozmosIconNames)[number];
@@ -195,9 +228,19 @@ export interface KozmosTaxonomyIconDefinition extends KozmosIconDefinitionBase {
   taxonomyVersion: string;
 }
 
+/**
+ * An icon this package draws itself, because the Pointr Icon Library has no
+ * such outline: owned/icons.ts says where each came from. The Figma plugin
+ * carries its artwork and draws it on the Icons page.
+ */
+export interface KozmosOwnedIconDefinition extends KozmosIconDefinitionBase {
+  source: "owned";
+}
+
 export type KozmosIconDefinition =
   | KozmosPointrIconDefinition
-  | KozmosTaxonomyIconDefinition;
+  | KozmosTaxonomyIconDefinition
+  | KozmosOwnedIconDefinition;
 
 export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
   {
@@ -657,23 +700,213 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     description: "Order or shop.",
     component: ShoppingBag02,
   },
+  {
+    name: "utensils",
+    figmaName: "Utensils",
+    source: "owned",
+    category: "Venue categories",
+    description: "Food and drink: a restaurant, a café, a food court.",
+    component: Utensils,
+  },
+  {
+    name: "medical-cross",
+    figmaName: "medical-cross",
+    figmaNodeId: "1007:10071",
+    category: "Venue categories",
+    description: "Medical care: first aid, emergency, a clinic.",
+    component: MedicalCross,
+  },
+  {
+    name: "plane",
+    figmaName: "plane",
+    figmaNodeId: "1007:11868",
+    category: "Venue categories",
+    description: "Flights: a boarding gate.",
+    component: Plane,
+  },
+  {
+    name: "clapperboard",
+    figmaName: "clapperboard",
+    figmaNodeId: "1007:10637",
+    category: "Venue categories",
+    description: "Entertainment: a cinema, a theatre.",
+    component: Clapperboard,
+  },
+  {
+    name: "graduation-hat-01",
+    figmaName: "graduation-hat-01",
+    figmaNodeId: "1007:9017",
+    category: "Venue categories",
+    description: "Learning and study: a classroom, a lecture hall.",
+    component: GraduationHat01,
+  },
+  {
+    name: "beaker-01",
+    figmaName: "beaker-01",
+    figmaNodeId: "1007:8972",
+    category: "Venue categories",
+    description: "Research and labs: a laboratory.",
+    component: Beaker01,
+  },
+  {
+    name: "accessibility",
+    figmaName: "Accessibility",
+    source: "owned",
+    category: "Venue amenities",
+    description: "Accessible places and accessibility services.",
+    component: Accessibility,
+  },
+  {
+    name: "credit-card-01",
+    figmaName: "credit-card-01",
+    figmaNodeId: "1007:9540",
+    category: "Venue amenities",
+    description: "Pay or take out money: an ATM, a checkout.",
+    component: CreditCard01,
+  },
+  {
+    name: "battery-charging-01",
+    figmaName: "battery-charging-01",
+    figmaNodeId: "1007:10604",
+    category: "Venue amenities",
+    description: "Device charging: a charging station.",
+    component: BatteryCharging01,
+  },
+  {
+    name: "droplets-01",
+    figmaName: "droplets-01",
+    figmaNodeId: "1007:11950",
+    category: "Venue amenities",
+    description: "Drinking water: a water refill station.",
+    component: Droplets01,
+  },
+  {
+    name: "luggage-01",
+    figmaName: "luggage-01",
+    figmaNodeId: "1007:11815",
+    category: "Venue services",
+    description: "Check-in and baggage: bag drop, baggage reclaim.",
+    component: Luggage01,
+  },
+  {
+    name: "passport",
+    figmaName: "passport",
+    figmaNodeId: "1007:11863",
+    category: "Venue services",
+    description: "Passport control, customs and immigration.",
+    component: Passport,
+  },
+  {
+    name: "ticket-01",
+    figmaName: "ticket-01",
+    figmaNodeId: "1007:11878",
+    category: "Venue services",
+    description: "Tickets: a ticket office, a box office.",
+    component: Ticket01,
+  },
+  {
+    name: "package",
+    figmaName: "package",
+    figmaNodeId: "1007:9151",
+    category: "Venue services",
+    description: "Order collection: click and collect, parcel pickup.",
+    component: Package,
+  },
+  {
+    name: "scissors-01",
+    figmaName: "scissors-01",
+    figmaNodeId: "1007:11438",
+    category: "Venue services",
+    description: "A salon: hair and barber services.",
+    component: Scissors01,
+  },
 ];
 
-// Both calls are marked `/* @__PURE__ */`, for the reason each generated icon
-// carries one: a bundler must assume a call at module scope can do something,
-// and keeps it unless told otherwise. A mark covers its own call, not the calls
-// in its arguments, so the `.map` needs its own. From 2026-09-23 to 2026-09-29
-// only `Object.fromEntries` was marked, and Rollup and esbuild both kept the
-// `.map`, and with it the definitions and every icon they named: in 0.4.0,
-// importing `Check` alone cost an app 11.49 KB gzip, all 56 of the registry's
-// icons, where it now costs 0.38. tests/tree-shaking.test.mjs bundles single
-// imports with both bundlers and fails if the registry comes back with them.
-export const kozmosIconRegistry = /* @__PURE__ */ Object.fromEntries(
-  /* @__PURE__ */ kozmosIconDefinitions.map((icon) => [
-    icon.name,
-    icon.component,
-  ]),
-) as Record<KozmosIconName, KozmosIconComponent>;
+// Every name and the component it draws, written out rather than built from
+// the definitions, for what a lookup then leaves behind. A lookup needs a
+// component, not its Figma node, category or description, and until 2026-11-02
+// this was `Object.fromEntries(kozmosIconDefinitions.map(...))`, which kept all
+// of them: 1.49 KB gzip of an app's 19.84 for words it never read. From
+// 2026-09-23 to 2026-09-29 that call kept every icon from everything else as
+// well, importing `Check` alone cost an app 11.49 KB gzip in 0.4.0, because
+// only the outer call was marked `/* @__PURE__ */`. A literal needs no mark.
+// scripts/check-icon-names.mjs holds it to the definitions, and
+// tests/tree-shaking.test.mjs bundles single imports with both bundlers and
+// fails if the registry or the definitions come back with them.
+export const kozmosIconRegistry: Record<KozmosIconName, KozmosIconComponent> = {
+  activity: Activity,
+  "alert-circle": AlertCircle,
+  "alert-triangle": AlertTriangle,
+  "arrow-down": ArrowDown,
+  "arrow-left": ArrowLeft,
+  "arrow-right": ArrowRight,
+  "arrow-up": ArrowUp,
+  "bell-01": Bell01,
+  "bluetooth-off": BluetoothOff,
+  "building-01": Building01,
+  bus: Bus,
+  calendar: Calendar,
+  check: Check,
+  "chevron-down": ChevronDown,
+  "chevron-left": ChevronLeft,
+  "chevron-right": ChevronRight,
+  "chevron-up": ChevronUp,
+  clock: Clock,
+  "compass-01": Compass01,
+  "download-01": Download01,
+  "edit-01": Edit01,
+  "flip-backward": FlipBackward,
+  "home-line": HomeLine,
+  "info-circle": InfoCircle,
+  "lock-01": Lock01,
+  "map-01": Map01,
+  "marker-pin-01": MarkerPin01,
+  "menu-01": Menu01,
+  minus: Minus,
+  "navigation-pointer-01": NavigationPointer01,
+  plus: Plus,
+  "qr-code-01": QrCode01,
+  route: Route,
+  scan: Scan,
+  "search-md": SearchMd,
+  "settings-01": Settings01,
+  "stars-01": Stars01,
+  "switch-vertical-01": SwitchVertical01,
+  "trash-01": Trash01,
+  "upload-01": Upload01,
+  "user-01": User01,
+  "users-01": Users01,
+  wifi: Wifi,
+  "x-close": XClose,
+  bookmark: Bookmark,
+  "calendar-check-01": CalendarCheck01,
+  "clock-plus": ClockPlus,
+  eye: Eye,
+  feather: Feather,
+  "globe-02": Globe02,
+  heart: Heart,
+  "layout-alt-02": LayoutAlt02,
+  "loading-01": Loading01,
+  "mail-01": Mail01,
+  phone: Phone,
+  "share-01": Share01,
+  "shopping-bag-02": ShoppingBag02,
+  utensils: Utensils,
+  "medical-cross": MedicalCross,
+  plane: Plane,
+  clapperboard: Clapperboard,
+  "graduation-hat-01": GraduationHat01,
+  "beaker-01": Beaker01,
+  accessibility: Accessibility,
+  "credit-card-01": CreditCard01,
+  "battery-charging-01": BatteryCharging01,
+  "droplets-01": Droplets01,
+  "luggage-01": Luggage01,
+  passport: Passport,
+  "ticket-01": Ticket01,
+  package: Package,
+  "scissors-01": Scissors01,
+};
 
 export const kozmosIconAliases = {
   add: "plus",
@@ -693,7 +926,58 @@ export const kozmosIconAliases = {
   users: "users-01",
   warning: "alert-triangle",
   x: "x-close",
-} as const satisfies Record<string, KozmosIconName>;
+
+  // The venue set's: what a product holds for a place. Each is a taxonomy
+  // mainType or subType as Pointr publishes it (10.16.0), a `serviceTypes`
+  // value in kebab case, or a word BrowseCategoriesPanel's stories pass as
+  // `iconName`, and each stands for the one glyph that is that thing. A subType
+  // several mainTypes share (desk, office, kiosk, lounge) means nothing alone,
+  // and a type with no glyph (restroom-space, parking-space) has no alias: a
+  // stand-in would say something else.
+  "amenity-space": "info-circle",
+  atm: "credit-card-01",
+  "bag-drop-checkin": "luggage-01",
+  "baggage-reclaim": "luggage-01",
+  "baggage-services": "luggage-01",
+  "boarding-gate": "plane",
+  "bus-station": "bus",
+  "charging-station": "battery-charging-01",
+  checkout: "credit-card-01",
+  "customs-immigration": "passport",
+  "device-charging": "battery-charging-01",
+  dining: "utensils",
+  "education-space": "graduation-hat-01",
+  elevator: "elevator-up-and-down",
+  entrance: "route-enter",
+  "entrance-exit": "route-entrance-exit",
+  "entertainment-space": "clapperboard",
+  escalator: "escalator-no-direction",
+  exit: "route-exit",
+  favourite: "heart",
+  "first-aid": "medical-cross",
+  "food-beverage-space": "utensils",
+  hydration: "droplets-01",
+  information: "info-circle",
+  laboratory: "beaker-01",
+  "medical-space": "medical-cross",
+  "movie-theater": "clapperboard",
+  "order-collect": "package",
+  "passport-control": "passport",
+  ramp: "ramp-no-direction",
+  "retail-space": "shopping-bag-02",
+  salon: "scissors-01",
+  "security-space": "security-control",
+  shopping: "shopping-bag-02",
+  "shuttle-station": "shuttle",
+  stairs: "stairs-no-direction",
+  ticketing: "ticket-01",
+  "transportation-space": "bus",
+  "water-refill-station": "droplets-01",
+  "wifi-zone": "wifi",
+} as const satisfies Record<
+  string,
+  KozmosIconName | KozmosIconNameBeyondTheLibrary
+>;
 
 export type KozmosIconAlias = keyof typeof kozmosIconAliases;
 

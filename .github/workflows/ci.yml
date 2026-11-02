@@ -331,6 +331,12 @@ jobs:
       - name: Verify Native Icons Are Generated From Pointr's Artwork
         run: pnpm icons:native:check
 
+      # Every alias has to resolve and every platform has to hold the web's
+      # names: a typo in the aliases draws nothing on the web and a stand-in on
+      # the natives, with nothing to say so.
+      - name: Verify The Icon Registry And Its Platforms Agree
+        run: pnpm icons:names:check
+
       - name: Parse React Code Connect
         run: pnpm figma:parse:linked
 

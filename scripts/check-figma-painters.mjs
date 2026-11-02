@@ -3956,8 +3956,9 @@ section("POIResultCard actions");
 // source's layer id, so an Update that draws a source again drops them: until
 // 2026-09-22 every Curated Icons → Update did, for every set but the four it
 // repaints. A second run keeps every source layer, id for id; a source that is
-// no longer right is drawn again and said so; and the taxonomy's symbols are
-// drawn from the SVGs the plugin carries, as filled shapes that scale.
+// no longer right is drawn again and said so; and the icons the Pointr library
+// has no outline for are drawn from the SVGs the plugin carries, as shapes that
+// scale.
 section("Curated Icons");
 {
   const library = new Map();
@@ -3988,15 +3989,39 @@ section("Curated Icons");
   // navigation-glyphs.json), as solid shapes that scale.
   const wayfinding = icons.KOZMOS_WAYFINDING_ICONS || [];
   const total = definitions.length + wayfinding.length;
+  const owned = definitions.filter((definition) => !definition.componentKey);
+  const importable = definitions.length - owned.length;
   const first = await icons.syncIconSourceLibrary();
   ok(
     wayfinding.length === 23 &&
+      owned.length === 2 &&
       first.created === total &&
-      first.imported === definitions.length &&
-      first.drawn === wayfinding.length &&
+      first.imported === importable &&
+      first.drawn === wayfinding.length + owned.length &&
       first.failed === 0,
-    `a first run makes all ${total}, importing the ${definitions.length} Pointr icons and drawing the ${wayfinding.length} wayfinding glyphs (${JSON.stringify({ created: first.created, imported: first.imported, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
+    `a first run makes all ${total}, importing the ${importable} Pointr icons and drawing the ${wayfinding.length} wayfinding glyphs and ${owned.length} owned icons (${JSON.stringify({ created: first.created, imported: first.imported, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
   );
+  // The venue set's two names the library has no outline for (GAP-105): an
+  // Owned Source frame of the package's own artwork, one solid, one stroked,
+  // whichever a part's slot then does with it.
+  for (const definition of owned) {
+    const component = components().find(
+      (node) => node.name === `Icon / ${definition.name}`,
+    );
+    const frame = component && component.children[0];
+    ok(
+      frame &&
+        frame.type === "FRAME" &&
+        frame.name === "Owned Source" &&
+        frame.width === 24 &&
+        frame.children.length > 0 &&
+        frame.children.every((shape) => shape.type === "VECTOR") &&
+        component.description.includes("packages/icons/src/owned/icons.ts") &&
+        component.getSharedPluginData("kozmos_ds_importer", "icon-name") ===
+          definition.name,
+      `${definition.name} is a 24 Owned Source frame of the package's own artwork`,
+    );
+  }
   const elevator = components().find(
     (node) => node.name === "Icon / elevator-up",
   );
@@ -4050,7 +4075,9 @@ section("Curated Icons");
     components()
       .filter((component) =>
         definitions.some(
-          (definition) => component.name === `Icon / ${definition.name}`,
+          (definition) =>
+            definition.componentKey &&
+            component.name === `Icon / ${definition.name}`,
         ),
       )
       .every(
@@ -4103,20 +4130,34 @@ section("Curated Icons");
             component.name.replace(/^Icon \/ /, ""),
           ).issues.length === 0,
       ),
-    `the ${pointr.length} icons, Pointr and wayfinding, audit clean`,
+    `the ${pointr.length} icons, Pointr, owned and wayfinding, audit clean`,
   );
 
-  // Every source is a Pointr outline now, so every slot is offered all of them:
-  // the taxonomy's filled symbols, which a stroke tint could not reach, are
-  // gone from the package and from here.
+  // Every slot is offered the Pointr outlines. A wayfinding glyph or an owned
+  // icon is drawn, so a stroke tint keyed through a Pointr outline's layers
+  // cannot reach it; a category's slot, which tints its own, offers the owned.
   const general = await icons.findKozmosIconSourceComponents();
+  const isOwnedSource = (component) =>
+    owned.some((definition) => component.name === `Icon / ${definition.name}`);
   ok(
-    general.length === definitions.length &&
-      !general.some((component) => /taxonomy-/.test(component.name)) &&
+    general.length === importable &&
+      !general.some(isOwnedSource) &&
       !general.some((component) =>
         wayfinding.some((icon) => component.name === `Icon / ${icon.name}`),
       ),
-    `every slot is offered all ${general.length} Pointr icons, and no wayfinding glyph, which a stroke tint cannot reach`,
+    `every slot is offered all ${general.length} Pointr icons, and no wayfinding glyph or owned icon, which a stroke tint cannot reach`,
+  );
+  const categorySlot = await icons.findKozmosIconSourceComponents({
+    withOwned: true,
+  });
+  ok(
+    categorySlot.length === definitions.length &&
+      owned.every((definition) =>
+        categorySlot.some(
+          (component) => component.name === `Icon / ${definition.name}`,
+        ),
+      ),
+    `a category's slot is offered the ${categorySlot.length} with the owned icons, utensils and accessibility among them`,
   );
 }
 
