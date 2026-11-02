@@ -19140,6 +19140,7 @@
           "role",
           "tabIndex",
           "title",
+          "tone",
           "type"
         ],
         "variants": {}
