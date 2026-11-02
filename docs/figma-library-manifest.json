@@ -14662,7 +14662,7 @@
           "issues": [],
           "connectedComponents": ["Accordion"],
           "mappedProps": ["collapsible", "defaultValue", "type"],
-          "unmappedProps": ["collapsible", "defaultValue", "type"]
+          "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [
           "aria-describedby",
@@ -14672,7 +14672,9 @@
           "id",
           "role",
           "tabIndex",
-          "title"
+          "title",
+          "type",
+          "variant"
         ],
         "variants": {}
       },

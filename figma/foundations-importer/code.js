@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "be69f1be6a8d";
+const PLUGIN_BUILD = "2525ffe572eb";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -155,7 +155,10 @@ const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
 const META_STRIP_LABELS = ["Hidden", "Shown"];
 const META_STRIP_ICONS = ["None", "Leading"];
-const ACCORDION_STATES = ["Closed", "Open"];
+const ACCORDION_STATES = ["Closed", "Open", "Disabled", "Loading"];
+// Decision 149. The set is sparse: the default form draws no disabled or
+// loading look of its own, so it stays Closed and Open.
+const ACCORDION_VARIANTS = ["Default", "Boxed"];
 const TAG_VARIANTS = ["Default", "Secondary", "Destructive", "Outline"];
 const TAG_REMOVABLE = ["False", "True"];
 // Decision 59 (Olcay, 2026-10-07): a prominent fill is the theme fill, the
@@ -2528,14 +2531,27 @@ const COMPONENT_DOCS = [
       "Use Closed for the default collapsed row.",
       "Use Open when the item content is visible and belongs under the trigger.",
       "Keep accordions for related, scannable content rather than primary navigation.",
+      "Use Variant=Boxed for a form in steps: a header of its own for each section, 8 apart, with the form under it in the panel's flow.",
     ],
     api: [
-      "State maps to the visual data-state examples for AccordionTrigger and AccordionContent.",
+      'Variant maps to Accordion\'s variant: Default, or Boxed for variant="boxed".',
+      "State maps to the visual data-state examples for AccordionTrigger and AccordionContent; Disabled and Loading are the boxed form's, AccordionItem's disabled and AccordionTrigger's loading.",
       "Trigger Text maps to AccordionTrigger children.",
       "Content Text maps to AccordionContent children.",
+      "Label Text maps to AccordionTrigger's label, the small line over the title. The words are the product's.",
+      "Icon maps to AccordionTrigger's icon.",
       "Root type, collapsible behavior, and animation remain product-code concerns.",
     ],
-    properties: ["State: Closed, Open", "Trigger Text", "Content Text"],
+    properties: [
+      "Variant: Default, Boxed",
+      "State: Closed, Open, Disabled, Loading",
+      "Trigger Text",
+      "Content Text",
+      "Label Text",
+      "Icon",
+      "Show Label",
+      "Show Icon",
+    ],
     accessibility: [
       "Product code uses Radix Accordion for keyboard and ARIA behavior.",
       "Trigger rows keep a 44px-or-larger visual target.",
@@ -8889,6 +8905,77 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Accordion/content/padding-bottom",
     value: 16,
     alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  // The boxed form (decision 149): 408, the building editor's panel. The
+  // header is at least a control's height, 44 at touch, and 40 compact once
+  // Figma has Density modes, as every Button in the file is (GAP-146), and it
+  // grows with a title that wraps. Its type is the
+  // tokens React reads, not the 12 and 14 of the text roles.
+  {
+    name: "Accordion/boxed/width/default",
+    value: 408,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/trigger/height",
+    value: 44,
+    alias: "Button/height/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/trigger/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Accordion/boxed/trigger/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Accordion/boxed/trigger/padding/y",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Accordion/boxed/trigger/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "Accordion/boxed/icon/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Accordion/boxed/label/font-size",
+    value: 11.008000373840332,
+    alias: "Typography/font/size/paragraph/xsmall",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Accordion/boxed/label/line-height",
+    value: 14,
+    alias: "Typography/line/height/50",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/title/font-size",
+    value: 13.008000373840332,
+    alias: "Typography/font/size/paragraph/small",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Accordion/boxed/title/line-height",
+    value: 17.503999710083008,
+    alias: "Typography/line/height/100",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/content/padding-top",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
 ];
@@ -16885,7 +16972,7 @@ function auditComponentSet(
   }
 
   if (record.name === "Accordion") {
-    for (const baseName of ["Trigger Text", "Content Text"]) {
+    for (const baseName of ["Trigger Text", "Content Text", "Label Text"]) {
       const textProperty = textPropertyByBaseName[baseName];
       if (!textProperty || textProperty.boundTextNodes === 0) {
         record.warnings.push(
@@ -17505,6 +17592,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Accordion") {
     return {
+      Variant: ACCORDION_VARIANTS,
       State: ACCORDION_STATES,
     };
   }
@@ -19086,15 +19174,29 @@ function auditAccordionAutoLayoutIntegrity(componentSet, issues) {
         kind: "accordion-trigger-horizontal-sizing",
         variant: component.name,
       });
+      // The boxed header hugs its lines over a floor, as React's min-height
+      // does: a title that wraps grows it.
+      const boxed = props.variant === "Boxed";
       auditAutoLayoutSizing({
         node: trigger,
         issues,
         kind: "accordion-trigger-vertical-sizing",
         field: "layoutSizingVertical",
-        expected: "FIXED",
+        expected: boxed ? "HUG" : "FIXED",
         actual: trigger.layoutSizingVertical,
         variant: component.name,
       });
+      if (boxed && !(trigger.boundVariables || {}).minHeight) {
+        issues.push({
+          kind: "accordion-trigger-min-height-unbound",
+          variant: component.name,
+          node: trigger.name,
+          nodeType: trigger.type,
+          nodeId: trigger.id,
+          urlNodeId: nodeIdForUrl(trigger.id),
+          expected: "minHeight bound to Accordion/boxed/trigger/height",
+        });
+      }
       auditVisualOverflow(
         component.name,
         trigger,
@@ -19145,6 +19247,9 @@ function auditAccordionAutoLayoutIntegrity(componentSet, issues) {
         urlNodeId: nodeIdForUrl(content.id),
       });
     }
+
+    // The boxed form's edge is its header's, and its root draws none.
+    if (props.variant === "Boxed") continue;
 
     const divider = directChildNamed(component, "Accordion Divider");
     if (divider) {
@@ -23956,6 +24061,24 @@ function addComponentTextStyleSpecs(specs, fonts) {
     14,
     20,
   );
+  addTextStyleSpec(
+    specs,
+    "accordionBoxedTitle",
+    "Accordion / Boxed Title",
+    fonts.regular,
+    13,
+    17.5,
+    "Kozmos Accordion's boxed title: paragraph small, on line height 100.",
+  );
+  addTextStyleSpec(
+    specs,
+    "accordionBoxedLabel",
+    "Accordion / Boxed Label",
+    fonts.regular,
+    11,
+    14,
+    "Kozmos Accordion's boxed label: paragraph xsmall, on line height 50.",
+  );
 }
 
 function addTextStyleSpec(
@@ -24307,6 +24430,13 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return textName === "Step Number" ? "fieldText" : "fieldMeta";
   }
   if (setName === "Accordion") {
+    const accordionProps = component
+      ? parseAccordionVariantName(component.name)
+      : null;
+    if (accordionProps && accordionProps.variant === "Boxed") {
+      if (textName === "Trigger Text") return "accordionBoxedTitle";
+      if (textName === "Label Text") return "accordionBoxedLabel";
+    }
     return textName === "Trigger Text"
       ? "accordionTrigger"
       : "accordionContent";
@@ -32118,9 +32248,13 @@ async function buildAccordionComponent() {
     componentSetName: "Accordion",
     axisName: "State",
     values: ACCORDION_STATES,
+    axis2Name: "Variant",
+    axis2Values: ACCORDION_VARIANTS,
+    hasCombination: accordionCombinationExists,
     x: 80,
     y: 12100,
     xStep: 440,
+    yStep: 180,
     createVariant: createAccordionVariant,
     configureProperties: configureAccordionProperties,
     description: [
@@ -32128,6 +32262,7 @@ async function buildAccordionComponent() {
       "State maps to closed and open data-state examples.",
       "Trigger Text maps to AccordionTrigger children.",
       "Content Text maps to AccordionContent children when open.",
+      "Variant=Boxed is decision 149's form: Label Text and Icon are its own.",
     ],
   });
 }
@@ -32138,7 +32273,11 @@ async function updateAccordionComponent() {
     componentSetName: "Accordion",
     axisName: "State",
     values: ACCORDION_STATES,
+    axis2Name: "Variant",
+    axis2Values: ACCORDION_VARIANTS,
+    hasCombination: accordionCombinationExists,
     xStep: 440,
+    yStep: 180,
     createVariant: createAccordionVariant,
     updateVariant: updateAccordionVariant,
     parseVariantName: parseAccordionVariantName,
@@ -32147,6 +32286,7 @@ async function updateAccordionComponent() {
       "Kozmos Accordion component set generated from React Accordion anatomy.",
       "State maps to closed and open data-state examples.",
       "Trigger Text maps to AccordionTrigger children.",
+      "Variant=Boxed is decision 149's form: Label Text and Icon are its own.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -52749,8 +52889,15 @@ function generatedVariantCombinations(config) {
   const seconds = config.axis2Values || [null];
   const out = [];
   for (let i = 0; i < config.values.length; i += 1)
-    for (let j = 0; j < seconds.length; j += 1)
+    for (let j = 0; j < seconds.length; j += 1) {
+      // A sparse set says which pairs it draws.
+      if (
+        config.hasCombination &&
+        !config.hasCombination(config.values[i], seconds[j])
+      )
+        continue;
       out.push({ value: config.values[i], second: seconds[j], i, j });
+    }
   return out;
 }
 
@@ -53368,21 +53515,63 @@ function configurePaginationProperties(componentSet, stats) {
   );
 }
 
-function configureAccordionProperties(componentSet, stats) {
+async function configureAccordionProperties(
+  componentSet,
+  stats,
+  variableByName,
+) {
   configureNamedTextProperty(
     componentSet,
     "Trigger Text",
     "Trigger Text",
-    "Is it accessible?",
+    ACCORDION_TRIGGER_SAMPLE,
     stats,
   );
   configureNamedTextProperty(
     componentSet,
     "Content Text",
     "Content Text",
-    "Yes. It follows the WAI-ARIA disclosure pattern.",
+    ACCORDION_CONTENT_SAMPLE,
     stats,
   );
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    ACCORDION_LABEL_SAMPLE,
+    stats,
+  );
+
+  const labels = ensureBooleanProperty(componentSet, "Show Label", true, stats);
+  const icons = ensureBooleanProperty(componentSet, "Show Icon", true, stats);
+  // The icon the boxed variants paint: a default that differed would swap
+  // every one of them, and drop its tint, or be what a reset swaps to.
+  const iconComponent =
+    (await findKozmosIconSourceComponent(ACCORDION_BOXED_ICON)) ||
+    (await resolveDefaultIconSourceComponent(variableByName, stats));
+  const iconSourceComponents = await findKozmosIconSourceComponents();
+  const swap = iconComponent
+    ? ensureInstanceSwapProperty(
+        componentSet,
+        BUTTON_ICON_PROPERTY,
+        iconComponent.id,
+        stats,
+        iconPreferredValues(iconSourceComponents),
+      )
+    : null;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const props = parseAccordionVariantName(child.name);
+    if (!props || props.variant !== "Boxed") continue;
+    const trigger = directChildNamed(child, "Accordion Trigger");
+    const column = trigger && directChildNamed(trigger, "Accordion Text");
+    const label = column && directChildNamed(column, "Label Text");
+    const icon = trigger && directChildNamed(trigger, "Icon");
+    if (labels && label) bindVisibilityProperty(label, labels, stats);
+    if (swap && icon) bindInstanceSwapProperty(icon, swap, stats);
+    if (icons && icon) bindVisibilityProperty(icon, icons, stats);
+  }
 }
 
 function configureChipProperties(componentSet, stats) {
@@ -56999,15 +57188,36 @@ function appendPaginationEllipsis(parent, metrics, variableByName, stats) {
   };
 }
 
-async function createAccordionVariant({ value, variableByName, fonts, stats }) {
+// One sample each, on every variant: a text bound to a property draws the
+// set's one default, so a sample a variant wrote of its own would never show.
+const ACCORDION_TRIGGER_SAMPLE = "Is it accessible?";
+const ACCORDION_CONTENT_SAMPLE =
+  "Yes. It follows the WAI-ARIA disclosure pattern.";
+const ACCORDION_LABEL_SAMPLE = "Step 1/5";
+const ACCORDION_BOXED_ICON = "home-line";
+
+async function createAccordionVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateAccordionVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
   });
   return component;
+}
+
+/** Which pairs the set draws: the default form is only Closed and Open. */
+function accordionCombinationExists(state, variant) {
+  if (ACCORDION_VARIANTS.indexOf(variant) === -1) return false;
+  return variant === "Boxed" || state === "Closed" || state === "Open";
 }
 
 function parseAccordionVariantName(name) {
@@ -57024,18 +57234,342 @@ function parseAccordionVariantName(name) {
 
   if (ACCORDION_STATES.indexOf(values.State) === -1) return null;
 
+  // A variant drawn before the axis existed reads as Default, so Update
+  // renames the two the file has, and Code Connect's node ids survive.
+  const variant = values.Variant === undefined ? "Default" : values.Variant;
+  if (!accordionCombinationExists(values.State, variant)) return null;
+
   return {
     value: values.State,
     state: values.State,
+    second: variant,
+    variant,
   };
 }
 
-async function updateAccordionVariant(
+/** What Accordion's boxed header paints in a state (decision 149). */
+function accordionBoxedPaint(state) {
+  if (state === "Disabled" || state === "Loading") {
+    return {
+      fill: "Colors/background/100",
+      fillFallback: "#E3E4E8",
+      edge: "Border/Subtle",
+      edgeFallback: "#C7CAD1",
+      ink: "Colors/foreground/400",
+      inkFallback: "#5D626F",
+      label: "Colors/foreground/400",
+      labelFallback: "#5D626F",
+    };
+  }
+  if (state === "Open") {
+    return {
+      fill: "Colors/theme/900",
+      fillFallback: "#082975",
+      edge: "Colors/theme/900",
+      edgeFallback: "#082975",
+      ink: "Colors/foreground/1000",
+      inkFallback: "#FFFFFF",
+      label: "Colors/theme/300",
+      labelFallback: "#7EA2F6",
+    };
+  }
+  return {
+    fill: "Colors/background/0",
+    fillFallback: "#FFFFFF",
+    edge: "Border/Subtle",
+    edgeFallback: "#C7CAD1",
+    ink: "Colors/foreground/0",
+    inkFallback: "#000000",
+    label: "Colors/foreground/400",
+    labelFallback: "#5D626F",
+  };
+}
+
+/**
+ * The boxed form: a header of its own, with a hairline that stays laid out
+ * while open, in the fill's colour, so nothing moves, as React's transparent
+ * edge does: a frame with no stroke lays out none. 8 inside that edge and 2
+ * above and below it, as React's padding is. It hugs its lines over a floor
+ * of the control's height, as React's min-height does: two short lines sit in
+ * the middle of 44, and a title that wraps grows the header.
+ */
+async function updateAccordionBoxedVariant(
   component,
   { value, variableByName, fonts, stats },
 ) {
   const isOpen = value === "Open";
-  component.name = `State=${value}`;
+  const paint = accordionBoxedPaint(value);
+  component.name = `Variant=Boxed, State=${value}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(408, 44);
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Accordion");
+  bindFloatVariable(
+    component,
+    "width",
+    "Accordion/boxed/width/default",
+    variableByName,
+    stats,
+  );
+  clearBoundVariable(component, "height", stats);
+  setLayoutSizingHorizontal(component, "FIXED");
+  setLayoutSizingVertical(component, "HUG");
+
+  const oldChildren = [];
+  for (const child of component.children || []) {
+    oldChildren.push(child);
+  }
+  for (const child of oldChildren) {
+    child.remove();
+  }
+
+  const trigger = figma.createFrame();
+  trigger.name = "Accordion Trigger";
+  trigger.layoutMode = "HORIZONTAL";
+  trigger.primaryAxisSizingMode = "FIXED";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "MIN";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = 8;
+  // Padding before the stroke: a frame takes both in, and stays grown.
+  trigger.paddingLeft = 8;
+  trigger.paddingRight = 8;
+  trigger.paddingTop = 2;
+  trigger.paddingBottom = 2;
+  trigger.resizeWithoutConstraints(408, 44);
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.fills = [
+    paintFromVariable(paint.fill, paint.fillFallback, variableByName, stats),
+  ];
+  setNodePropertyIfSupported(trigger, "strokesIncludedInLayout", true);
+  trigger.strokeWeight = 1;
+  trigger.strokeAlign = "INSIDE";
+  trigger.strokes = [
+    paintFromVariable(paint.edge, paint.edgeFallback, variableByName, stats),
+  ];
+  trigger.clipsContent = false;
+  component.appendChild(trigger);
+  setNodePropertyIfSupported(trigger, "minHeight", 44);
+  bindFloatVariable(
+    trigger,
+    "minHeight",
+    "Accordion/boxed/trigger/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "cornerRadius",
+    "Accordion/boxed/trigger/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "itemSpacing",
+    "Accordion/boxed/trigger/gap",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"]) {
+    bindFloatVariable(
+      trigger,
+      side,
+      "Accordion/boxed/trigger/padding/x",
+      variableByName,
+      stats,
+    );
+  }
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      trigger,
+      side,
+      "Accordion/boxed/trigger/padding/y",
+      variableByName,
+      stats,
+    );
+  }
+  // Fixed until its layers are in: it hugs them below.
+  setVerticalFixedFillChildSizing(trigger);
+
+  const mark = await createFixedIconInstance(
+    ACCORDION_BOXED_ICON,
+    paint.ink,
+    paint.inkFallback,
+    variableByName,
+    stats,
+    20,
+    "Accordion/boxed/icon/size",
+  );
+  trigger.appendChild(mark);
+  setHugChildSizing(mark);
+
+  // The lines hug: the column is as tall as they are, and they are as wide
+  // as it is, so a longer label wraps, and the header grows with it.
+  const column = figma.createFrame();
+  column.name = "Accordion Text";
+  column.layoutMode = "VERTICAL";
+  column.primaryAxisSizingMode = "AUTO";
+  column.counterAxisSizingMode = "FIXED";
+  column.primaryAxisAlignItems = "MIN";
+  column.counterAxisAlignItems = "MIN";
+  column.itemSpacing = 0;
+  column.paddingLeft = 0;
+  column.paddingRight = 0;
+  column.paddingTop = 0;
+  column.paddingBottom = 0;
+  column.fills = [];
+  column.strokes = [];
+  column.clipsContent = false;
+  trigger.appendChild(column);
+  setLayoutSizingHorizontal(column, "FILL");
+  setLayoutSizingVertical(column, "HUG");
+  column.layoutGrow = 1;
+
+  for (const line of [
+    {
+      name: "Label Text",
+      characters: ACCORDION_LABEL_SAMPLE,
+      fontToken: "Accordion/boxed/label/font-size",
+      lineHeightToken: "Accordion/boxed/label/line-height",
+      colorToken: paint.label,
+      colorFallback: paint.labelFallback,
+      styleKey: "accordionBoxedLabel",
+    },
+    {
+      name: "Trigger Text",
+      characters: ACCORDION_TRIGGER_SAMPLE,
+      fontToken: "Accordion/boxed/title/font-size",
+      lineHeightToken: "Accordion/boxed/title/line-height",
+      colorToken: paint.ink,
+      colorFallback: paint.inkFallback,
+      styleKey: "accordionBoxedTitle",
+    },
+  ]) {
+    const text = await appendAccordionText({
+      parent: column,
+      name: line.name,
+      characters: line.characters,
+      fontToken: line.fontToken,
+      lineHeightToken: line.lineHeightToken,
+      colorToken: line.colorToken,
+      colorFallback: line.colorFallback,
+      styleKey: line.styleKey,
+      fillHorizontal: true,
+      fonts,
+      variableByName,
+      stats,
+    });
+    // In a column, growing would be the column's height, not the line's.
+    text.layoutGrow = 0;
+    setLayoutSizingVertical(text, "HUG");
+  }
+
+  if (value === "Loading") {
+    const spinner = createSpinnerGlyph(
+      paint.ink,
+      paint.inkFallback,
+      variableByName,
+      stats,
+      20,
+      "Accordion/boxed/icon/size",
+    );
+    trigger.appendChild(spinner);
+    setHugChildSizing(spinner);
+  } else if (value !== "Disabled") {
+    const chevron = await appendAccordionChevron({
+      parent: trigger,
+      isOpen,
+      variableName: paint.ink,
+      fallback: paint.inkFallback,
+      size: 20,
+      sizeToken: "Accordion/boxed/icon/size",
+      variableByName,
+      stats,
+    });
+    chevron.name = "Accordion Chevron";
+  }
+
+  // Everything is in: the header hugs it now, and its floor holds short lines
+  // at 44. Read back, because a frame can come out larger than it was asked.
+  setLayoutSizingVertical(trigger, "HUG");
+  if (Math.round(trigger.height) !== 44) {
+    stats.warnings.push(
+      `Accordion's boxed ${value} header is ${trigger.height} tall, not 44.`,
+    );
+  }
+
+  if (isOpen) {
+    const content = figma.createFrame();
+    content.name = "Accordion Content";
+    content.layoutMode = "VERTICAL";
+    content.primaryAxisSizingMode = "AUTO";
+    content.counterAxisSizingMode = "FIXED";
+    content.primaryAxisAlignItems = "MIN";
+    content.counterAxisAlignItems = "MIN";
+    content.itemSpacing = 0;
+    content.paddingLeft = 0;
+    content.paddingRight = 0;
+    content.paddingTop = 8;
+    content.paddingBottom = 0;
+    content.resizeWithoutConstraints(408, 28);
+    content.fills = [];
+    content.strokes = [];
+    content.strokeWeight = 0;
+    content.clipsContent = false;
+    component.appendChild(content);
+    bindFloatVariable(
+      content,
+      "paddingTop",
+      "Accordion/boxed/content/padding-top",
+      variableByName,
+      stats,
+    );
+    setVerticalStackChildSizing(content);
+    await appendAccordionText({
+      parent: content,
+      name: "Content Text",
+      characters: ACCORDION_CONTENT_SAMPLE,
+      fontToken: "Accordion/content/font-size",
+      lineHeightToken: "Accordion/content/line-height",
+      colorToken: "Colors/foreground/0",
+      colorFallback: "#000000",
+      fillHorizontal: true,
+      fonts,
+      variableByName,
+      stats,
+    });
+  }
+}
+
+async function updateAccordionVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  if (second === "Boxed") {
+    await updateAccordionBoxedVariant(component, {
+      value,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
+  const isOpen = value === "Open";
+  component.name = `Variant=Default, State=${value}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -57115,7 +57649,7 @@ async function updateAccordionVariant(
   await appendAccordionText({
     parent: trigger,
     name: "Trigger Text",
-    characters: "Is it accessible?",
+    characters: ACCORDION_TRIGGER_SAMPLE,
     fontToken: "Accordion/trigger/font-size",
     lineHeightToken: "Accordion/trigger/line-height",
     colorToken: "Colors/foreground/0",
@@ -57170,7 +57704,7 @@ async function updateAccordionVariant(
     await appendAccordionText({
       parent: content,
       name: "Content Text",
-      characters: "Yes. It follows the WAI-ARIA disclosure pattern.",
+      characters: ACCORDION_CONTENT_SAMPLE,
       fontToken: "Accordion/content/font-size",
       lineHeightToken: "Accordion/content/line-height",
       colorToken: "Colors/foreground/400",
@@ -57193,6 +57727,7 @@ async function appendAccordionText({
   colorToken,
   colorFallback,
   fillHorizontal = false,
+  styleKey,
   fonts,
   variableByName,
   stats,
@@ -57204,7 +57739,8 @@ async function appendAccordionText({
   text.lineHeight = { unit: "PIXELS", value: 20 };
   await applyTextStyleToNodeAsync(
     text,
-    name === "Trigger Text" ? "accordionTrigger" : "accordionContent",
+    styleKey ||
+      (name === "Trigger Text" ? "accordionTrigger" : "accordionContent"),
     stats,
   );
   text.characters = characters;
@@ -57248,16 +57784,21 @@ async function appendAccordionText({
 async function appendAccordionChevron({
   parent,
   isOpen,
+  variableName = "Colors/foreground/400",
+  fallback = "#5D626F",
+  size = 16,
+  sizeToken,
   variableByName,
   stats,
 }) {
   const icon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
-    "Colors/foreground/400",
-    "#5D626F",
+    variableName,
+    fallback,
     variableByName,
     stats,
-    16,
+    size,
+    sizeToken,
   );
   parent.appendChild(icon);
   setHugChildSizing(icon);

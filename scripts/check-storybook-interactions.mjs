@@ -1067,6 +1067,48 @@ try {
         assert.deepEqual(rails, []);
         console.log(`PASS rails ${theme} ${viewport.width}`);
         if (viewport.width === 1280) {
+          // Accordion's boxed form, by keyboard (GAP-209). Continue sits inside
+          // the section it closes, so without the story's focus move it falls
+          // to the body and the next Tab starts from the top of the page.
+          await visit("data-display-accordion--boxed");
+          for (const [title, next] of [
+            ["Building details", "Location"],
+            ["Location", "Levels"],
+            ["Levels", "Floor plans"],
+            ["Floor plans", "Review"],
+          ]) {
+            await page.getByRole("button", { name: "Continue" }).focus();
+            await page.keyboard.press("Enter");
+            await page.waitForFunction(() => {
+              const shown = document.querySelectorAll(
+                '[role="region"]:not([hidden])',
+              );
+              return (
+                shown.length === 1 && shown[0].getAnimations().length === 0
+              );
+            });
+            assert.deepEqual(
+              await page.evaluate(() => {
+                const active = document.activeElement;
+                return {
+                  tag: active?.tagName,
+                  expanded: active?.getAttribute("aria-expanded"),
+                  title: active?.textContent?.replace(/Step \d\/5/, "").trim(),
+                };
+              }),
+              { tag: "BUTTON", expanded: "true", title: next },
+              `Continue in ${title} leaves focus on the next trigger`,
+            );
+            await page.keyboard.press("Tab");
+            assert.equal(
+              await page.evaluate(() =>
+                document.activeElement?.getAttribute("aria-label"),
+              ),
+              `${next} name`,
+              `Tab from ${next}'s trigger reaches its form`,
+            );
+          }
+          console.log(`PASS boxed Accordion's Continue keeps focus ${theme}`);
           await visit("data-display-chip--variants");
           const chips = page.locator(
             '[data-slot="chip"]:not([aria-disabled="true"])',
