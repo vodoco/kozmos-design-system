@@ -24,12 +24,12 @@ under a fixed header instead of covering it, as Pointr Cloud's Get started panel
 region `position: relative`; the drawer takes no room in the flow, so it covers the region's content,
 not the header.
 
-- **It floats** (decision 139). A right or left drawer sits 16 from its side and from the region's
-  top. It is 420 wide, or the region less 16 on each side when that is narrower, and as tall as its
-  content, up to 48 less than the region (32 left under it), and then it scrolls. Its four corners
-  are the container's, and its border is on its inner side. `side` is physical, as it is for a fixed
-  drawer: right to left, pass `side="left"` for a panel at the inline end. A top or bottom drawer
-  (BottomSheet's) stays at its edge, across the region.
+- **It floats** (decisions 139 and 148). A right or left drawer sits 16 from every edge of the region
+  it reaches. It is 420 wide, or the region less 16 on each side when that is narrower, and as tall
+  as its content, up to the region less 16 at the top and the bottom, and then it scrolls. Its
+  border goes all the way round, and its four corners are the container's. `side` is physical, as
+  it is for a fixed drawer: right to left, pass `side="left"` for a panel at the inline end. A top
+  or bottom drawer (BottomSheet's) stays at its edge, across the region.
 - **It scrolls with its region.** An inline drawer is `absolute`, so it moves with whatever scrolls
   the box it is positioned in. To keep it pinned under the header, keep the positioned region still,
   put the page's scroller inside the region, and render the Drawer outside that scroller.
@@ -43,7 +43,10 @@ not the header.
   - Tab and Shift+Tab move in and out of it in the page's order. Focus is never held inside.
   - A press or focus outside it, on the header too, leaves it open. To close it then, close it in
     `onInteractOutside`.
-  - Escape closes it only while focus is inside it. Escape in the page is the page's.
+  - Escape closes it only while focus is inside it. Escape in the page is the page's: it reaches the
+    page unprevented, so a Search clears and an AICompanionPanel closes.
+  - A product's `onKeyDown` on it, or round it, sees every key, Tab too. No focus guards are added to
+    the page.
   - Closing gives the trigger its focus when focus was inside it. Focus the user has put elsewhere
     stays where it is.
 - **With `modal`**, it is a dialog again. Its scrim is drawn over the region alone, and the rest of
@@ -52,6 +55,10 @@ not the header.
 `placement="fixed"`, the default, is the drawer as it was: drawn in the theme's portal over the
 window, and modal unless `modal={false}`. BottomSheet is a Drawer, so it takes `placement` too: an
 inline sheet rises from the bottom of its region.
+
+The close sits at the inline end and the header's room for it with it, so they mirror right to left,
+whichever `side` the drawer is on. `closeLabel` names the close, "Close drawer" by default, as
+Dialog's does.
 
 <Canvas of={DrawerStories.Inline} />
 

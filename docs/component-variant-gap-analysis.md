@@ -39,7 +39,7 @@ token was declined, so this is not a gap to close.
 | Variations that are compositional only    | 60     |
 | Components with variant gaps — iOS        | 20/62  |
 | Components with variant gaps — Android    | 20/62  |
-| Components with variant gaps — Figma      | 26/62  |
+| Components with variant gaps — Figma      | 25/62  |
 | Components with variant gaps — Vue        | 12/62  |
 | Components absent entirely — iOS          | 11/122 |
 | Components absent entirely — Android      | 10/122 |
@@ -94,7 +94,6 @@ Combobox
 Drawer
   - ios missing values -> placement [named "side" here]: fixed, inline
   - android missing values -> placement [named "side" here]: fixed, inline
-  - figma missing values -> placement [named "Side" here]: fixed, inline
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)

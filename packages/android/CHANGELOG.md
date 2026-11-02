@@ -6,6 +6,10 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added and changed
+
+- **`KozmosNavbar` `logoInset`** (GAP-208, decisions 147 and 150): sets `logo` in a column as wide as `KozmosSidebar`'s rail, from the bar's edge, so a Home tile sits over the rail and what follows starts past it. The column mirrors right to left. It takes no number: the rail's width is one constant, read by both parts. It follows `modifier`, so a call that passes `logo` by position names it now. Held by `KozmosNavbarLogoInsetTest`.
+
 ## 0.13.0 — repository snapshot
 
 Native source changes since the 0.6.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.13.0`. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).

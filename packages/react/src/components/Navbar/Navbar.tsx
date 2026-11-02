@@ -5,6 +5,14 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   /** Accessible name for the navigation landmark. */
   navigationLabel?: string;
   logo?: React.ReactNode;
+  /**
+   * Sets `logo` in a column as wide as Sidebar's rail, from the bar's edge
+   * (GAP-208), over a rail at the page's start: the logo centred over the
+   * rail's items, and what follows past the rail. A column is either the
+   * rail's or it isn't, so this takes no length. Logical: the column is at
+   * the right in right to left.
+   */
+  logoInset?: boolean;
   context?: React.ReactNode;
   /** @deprecated Use context instead. */
   site?: React.ReactNode;
@@ -30,6 +38,7 @@ const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       className,
       context,
       logo,
+      logoInset = false,
       site,
       navigation,
       navigationAlign = "center",
@@ -61,6 +70,7 @@ const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {logo ? (
             <div
               data-slot="navbar-logo"
+              data-inset={logoInset || undefined}
               className="kozmos-reset kozmos-navbar-logo"
             >
               {logo}

@@ -9,7 +9,11 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { enumBodyValues, iosAxes } from "./check-variant-parity.mjs";
+import {
+  compareAxes,
+  enumBodyValues,
+  iosAxes,
+} from "./check-variant-parity.mjs";
 
 test("Swift component axes include shared utility enums", () => {
   assert.deepEqual(iosAxes("ArrivalPanel").presentation, [
@@ -54,4 +58,15 @@ test("Swift cases are read, several to a line and through a comment", () => {
     case xl
 }`;
   assert.deepEqual(enumBodyValues(block, "swift"), ["sm", "md", "lg", "xl"]);
+});
+
+test("An axis is read by its own name before an alias: Drawer's placement and Figma's Side", () => {
+  const { missingValues, missingAxes } = compareAxes(
+    "Drawer",
+    "figma",
+    { placement: ["fixed", "inline"] },
+    { Side: ["Right", "Left"], Placement: ["Fixed", "Inline"] },
+  );
+  assert.deepEqual(missingValues, []);
+  assert.deepEqual(missingAxes, []);
 });

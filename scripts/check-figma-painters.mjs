@@ -8290,17 +8290,21 @@ section("Navbar's NavigationAlign (GAP-196)");
   );
   const keys = new Set(combinations.map((c) => plugin.navbarVariantKey(c)));
   ok(
-    combinations.length === 9 &&
-      keys.size === 9 &&
+    combinations.length === 18 &&
+      keys.size === 18 &&
       ["Basic", "Actions", "Contextual"].every((content) =>
         ["Start", "Center", "End"].every((navigationAlign) =>
-          combinations.some(
-            (c) =>
-              c.content === content && c.navigationAlign === navigationAlign,
+          ["False", "True"].every((logoInset) =>
+            combinations.some(
+              (c) =>
+                c.content === content &&
+                c.navigationAlign === navigationAlign &&
+                c.logoInset === logoInset,
+            ),
           ),
         ),
       ),
-    `each Content at each NavigationAlign: 9 variants with 9 keys (${combinations.length}, ${keys.size} keys)`,
+    `each Content at each NavigationAlign, with and without LogoInset: 18 variants with 18 keys (${combinations.length}, ${keys.size} keys)`,
   );
   const parsed = [
     "Content=Basic",
@@ -8311,9 +8315,13 @@ section("Navbar's NavigationAlign (GAP-196)");
   ok(
     JSON.stringify(parsed) ===
       JSON.stringify([
-        { content: "Basic", navigationAlign: "Center" },
-        { content: "Actions", navigationAlign: "End" },
-        { content: "Contextual", navigationAlign: "Center" },
+        { content: "Basic", navigationAlign: "Center", logoInset: "False" },
+        { content: "Actions", navigationAlign: "End", logoInset: "False" },
+        {
+          content: "Contextual",
+          navigationAlign: "Center",
+          logoInset: "False",
+        },
         null,
       ]),
     `a variant from before the axis parses as Center, the legacy Product as Contextual, an unknown value as none (${JSON.stringify(parsed)})`,
@@ -8324,7 +8332,7 @@ section("Navbar's NavigationAlign (GAP-196)");
   for (const content of ["Basic", "Actions", "Contextual"]) {
     for (const navigationAlign of ["Start", "Center", "End"]) {
       const component = await plugin.createNavbarVariant({
-        props: { content, navigationAlign },
+        props: { content, navigationAlign, logoInset: "False" },
         variableByName: tokens.variableByName,
         fonts: FONTS,
         stats: freshStats(),
@@ -8366,7 +8374,7 @@ section("Navbar's NavigationAlign (GAP-196)");
       }[navigationAlign];
       ok(
         component.name ===
-          `Content=${content}, NavigationAlign=${navigationAlign}` &&
+          `Content=${content}, NavigationAlign=${navigationAlign}, LogoInset=False` &&
           slot.layoutGrow === 1 &&
           slot.layoutSizingHorizontal === "FILL" &&
           Math.abs(box.start - roomStart) < 0.01 &&
@@ -8377,6 +8385,16 @@ section("Navbar's NavigationAlign (GAP-196)");
     }
   }
 
+  for (const content of ["Basic", "Actions", "Contextual"])
+    for (const navigationAlign of ["Start", "Center", "End"])
+      drawn.push(
+        await plugin.createNavbarVariant({
+          props: { content, navigationAlign, logoInset: "True" },
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
   const set = new MockNode("COMPONENT_SET", "Navbar");
   for (const component of drawn) set.appendChild(component);
   plugin.layoutNavbarVariants(set);
@@ -8384,8 +8402,8 @@ section("Navbar's NavigationAlign (GAP-196)");
   const corner = topLeftOf(set);
   ok(
     overlaps.length === 0 &&
-      corner.name === "Content=Basic, NavigationAlign=Center",
-    `the laid-out set has no two variants overlapping, and its top-left, Figma's default, is Basic at Center (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
+      corner.name === "Content=Basic, NavigationAlign=Center, LogoInset=False",
+    `the laid-out set has no two variants overlapping, and its top-left, Figma's default, is Basic at Center without LogoInset (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
   );
 
   // The three variants in the file today, named before the axis existed.
@@ -8399,24 +8417,306 @@ section("Navbar's NavigationAlign (GAP-196)");
     replay.result.updated === true &&
       replay.result.componentSetId === replay.setId &&
       replay.result.variantsUpdated === 3 &&
-      replay.result.variantsCreated === 6 &&
+      replay.result.variantsCreated === 15 &&
       replay.result.variantsRemoved === 0 &&
-      replay.liveSet.children.length === 9 &&
-      new Set(replay.names).size === 9,
-    `Update keeps the set and its 3 variants, and adds 6: 9 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed)`,
+      replay.liveSet.children.length === 18 &&
+      new Set(replay.names).size === 18,
+    `Update keeps the set and its 3 variants, and adds 15: 18 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed)`,
   );
   ok(
     replay.kept.every(
       (variant, i) =>
-        variant && variant.name === `${oldNames[i]}, NavigationAlign=Center`,
+        variant &&
+        variant.name ===
+          `${oldNames[i]}, NavigationAlign=Center, LogoInset=False`,
     ),
-    `each of the 3 keeps its node id and is renamed NavigationAlign=Center (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+    `each of the 3 keeps its node id and is renamed NavigationAlign=Center, LogoInset=False (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
   );
   const contextual = replay.kept[2];
   const contextualSlot = contextual && named(contextual, "Navigation Slot");
   ok(
     contextualSlot && contextualSlot.primaryAxisAlignItems === "CENTER",
     `a renamed variant is repainted in place: Contextual now centres its navigation (${contextualSlot && contextualSlot.primaryAxisAlignItems})`,
+  );
+}
+
+// GAP-208, decisions 147 and 150: React sets the logo in a column as wide as
+// Sidebar's rail, from the bar's edge: a 96 box pulled 16 back. Figma's bar
+// pads 16 too, so LogoInset is that padding at 0 and a Logo Slot fixed at the
+// rail's own variable, the logo centred in it. The variable is the same node
+// the rail's width is bound to, so the two can't part.
+section("Navbar's LogoInset (GAP-208)");
+{
+  const insets = plugin.NAVBAR_LOGO_INSET || [];
+  const axes = plugin.expectedVariantAxesForComponentSetName("Navbar") || {};
+  ok(
+    JSON.stringify(insets) === JSON.stringify(["False", "True"]) &&
+      JSON.stringify(axes.LogoInset) === JSON.stringify(insets),
+    `the set declares LogoInset, False, React's default, first (${Object.keys(axes).join(", ")}: ${insets.join(", ")})`,
+  );
+  const parsed = [
+    "Content=Basic, NavigationAlign=End",
+    "Content=Actions, NavigationAlign=Start, LogoInset=True",
+    "Content=Basic, NavigationAlign=End, LogoInset=Maybe",
+  ].map((name) => plugin.parseNavbarVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { content: "Basic", navigationAlign: "End", logoInset: "False" },
+        { content: "Actions", navigationAlign: "Start", logoInset: "True" },
+        null,
+      ]),
+    `a variant from before the axis parses as False, an unknown value as none (${JSON.stringify(parsed)})`,
+  );
+
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    "Sidebar/width/rail",
+    "Navbar/padding/x",
+  ]);
+  const railVariable = tokens.variableByName.get("Sidebar/width/rail");
+  const padVariable = tokens.variableByName.get("Navbar/padding/x");
+  const widthBound = (node, variable) =>
+    variable &&
+    node.boundVariables &&
+    node.boundVariables.width &&
+    node.boundVariables.width.id === variable.id;
+  const rail = await plugin.createSidebarVariant({
+    props: { content: "Rail", inset: "Flush" },
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  for (const content of ["Basic", "Actions", "Contextual"]) {
+    const component = await plugin.createNavbarVariant({
+      props: { content, navigationAlign: "End", logoInset: "True" },
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const logo = named(component, "Logo Slot");
+    const { flow, boxes } = layOutAxis(component, "x");
+    const box = logo && boxes.get(logo);
+    const next = flow[flow.indexOf(logo) + 1];
+    ok(
+      logo &&
+        component.name ===
+          `Content=${content}, NavigationAlign=End, LogoInset=True` &&
+        component.paddingLeft === 0 &&
+        component.paddingRight === 16 &&
+        !(component.boundVariables && component.boundVariables.paddingLeft) &&
+        box.start === 0 &&
+        box.end === rail.width &&
+        rail.width === 96 &&
+        logo.layoutSizingHorizontal === "FIXED" &&
+        logo.primaryAxisAlignItems === "CENTER" &&
+        widthBound(logo, railVariable) &&
+        widthBound(rail, railVariable),
+      `${content}: the Logo Slot is the rail: from the bar's edge, ${rail.width} wide by the rail's own variable, its logo centred (${box && box.start}–${box && box.end}, padding ${component.paddingLeft}, ${logo && logo.layoutSizingHorizontal}, ${logo && logo.primaryAxisAlignItems})`,
+    );
+    ok(
+      next && boxes.get(next).start === rail.width + 16,
+      `${content}: what follows starts 16 past the column, as React's gap (${next && boxes.get(next).start})`,
+    );
+  }
+  const plain = await plugin.createNavbarVariant({
+    props: { content: "Basic", navigationAlign: "End", logoInset: "False" },
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  const plainLogo = named(plain, "Logo Slot");
+  ok(
+    plain.paddingLeft === 16 &&
+      plain.boundVariables.paddingLeft.id === padVariable.id &&
+      plainLogo.layoutSizingHorizontal === "HUG" &&
+      plainLogo.primaryAxisAlignItems !== "CENTER",
+    `without it the bar pads 16 by its own variable, and the slot hugs its logo (${plain.paddingLeft}, ${plainLogo.layoutSizingHorizontal})`,
+  );
+  // The set as it is after #433's first Update: each repaint keeps its id.
+  const oldNames = [];
+  for (const content of ["Basic", "Actions", "Contextual"])
+    for (const align of ["Center", "Start", "End"])
+      oldNames.push(`Content=${content}, NavigationAlign=${align}`);
+  const replay = await replayUpdate(
+    "Navbar",
+    oldNames,
+    "updateNavbarComponent",
+  );
+  ok(
+    replay.result.variantsUpdated === 9 &&
+      replay.result.variantsCreated === 9 &&
+      replay.result.variantsRemoved === 0 &&
+      replay.kept.every(
+        (variant, i) =>
+          variant && variant.name === `${oldNames[i]}, LogoInset=False`,
+      ),
+    `Update over the 9 keeps their node ids, renames them LogoInset=False and adds the 9 with it (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created)`,
+  );
+}
+
+// GAP-198, decisions 139 and 148: a left or right inline Drawer floats in its
+// region. In Figma, Placement=Inline draws that card: 420 wide by its own
+// variable, as tall as its content, its border all the way round and the
+// container's corners. 16 from every edge of the region is where a designer
+// puts it, as React's region does, so the set says so and draws no region. A
+// top or bottom inline Drawer stays at its edge, as drawn at Fixed.
+section("Drawer's floating form (GAP-198)");
+{
+  const placements = plugin.DRAWER_PLACEMENTS || [];
+  const axes = plugin.expectedVariantAxesForComponentSetName("Drawer") || {};
+  ok(
+    JSON.stringify(placements) === JSON.stringify(["Fixed", "Inline"]) &&
+      JSON.stringify(axes.Placement) === JSON.stringify(placements) &&
+      JSON.stringify(axes.Side) ===
+        JSON.stringify(["Right", "Left", "Top", "Bottom"]),
+    `the set declares Side and Placement, Fixed, React's default, first (${Object.keys(axes).join(", ")}: ${placements.join(", ")})`,
+  );
+  const parsed = [
+    "Side=Right",
+    "Side=Left, Placement=Inline",
+    "Side=Left, Placement=Floating",
+  ].map((name) => plugin.parseDrawerVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { value: "Right", second: "Fixed" },
+        { value: "Left", second: "Inline" },
+        null,
+      ]),
+    `a variant from before the axis parses as Fixed, an unknown value as none (${JSON.stringify(parsed)})`,
+  );
+
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    "Drawer/width/inline",
+    "Drawer/radius/inline",
+  ]);
+  const widthToken = tokens.variableByName.get("Drawer/width/inline");
+  const radiusToken = tokens.variableByName.get("Drawer/radius/inline");
+  const floatToken = (name) =>
+    plugin.COMPONENT_FLOAT_TOKENS.find((token) => token.name === name);
+  ok(
+    floatToken("Drawer/width/inline")?.value === 420 &&
+      floatToken("Drawer/radius/inline")?.alias === "Radius/Container",
+    `Drawer/width/inline is 420 and Drawer/radius/inline is the container's corner (${JSON.stringify(floatToken("Drawer/width/inline"))}, ${JSON.stringify(floatToken("Drawer/radius/inline"))})`,
+  );
+  // Figma splits cornerRadius into the four corners; the harness keeps it.
+  const boundToRadius = (node, variable) =>
+    ["cornerRadius", "topLeftRadius"].some(
+      (field) =>
+        node.boundVariables[field] &&
+        node.boundVariables[field].id === variable.id,
+    );
+  const draw = (value, second) =>
+    plugin.createDrawerVariant({
+      value,
+      second,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+  const shapes = [];
+  for (const side of ["Right", "Left"]) {
+    const card = await draw(side, "Inline");
+    shapes.push(card);
+    const body = named(card, "Drawer Body");
+    const slot = body && named(body, "Content Slot");
+    const footer = named(card, "Drawer Footer");
+    ok(
+      card.name === `Side=${side}, Placement=Inline` &&
+        card.width === 420 &&
+        card.boundVariables.width.id === widthToken.id &&
+        card.primaryAxisSizingMode === "AUTO" &&
+        !card.boundVariables.height &&
+        body.layoutSizingVertical === "HUG" &&
+        body.primaryAxisSizingMode === "AUTO" &&
+        slot.layoutSizingVertical === "HUG" &&
+        footer.layoutSizingHorizontal === "FILL",
+      `${side}, Inline: 420 by its own variable and as tall as its content, body and slot hugging (${card.name}, ${card.width}, ${card.primaryAxisSizingMode}, body ${body && body.layoutSizingVertical}, slot ${slot && slot.layoutSizingVertical})`,
+    );
+    ok(
+      card.cornerRadius === 20 &&
+        boundToRadius(card, radiusToken) &&
+        card.strokes.length === 1 &&
+        card.strokeWeight === 1 &&
+        card.strokeAlign !== "OUTSIDE" &&
+        [
+          "strokeTopWeight",
+          "strokeRightWeight",
+          "strokeBottomWeight",
+          "strokeLeftWeight",
+        ].every((side) => card[side] === undefined || card[side] === 1),
+      `${side}, Inline: the container's corners and its border all the way round (${card.cornerRadius}, ${card.strokeWeight})`,
+    );
+    ok(
+      card.paddingTop === 24 &&
+        card.paddingLeft === 24 &&
+        card.itemSpacing === 16 &&
+        card.effects.length === 1 &&
+        card.fills.length === 1,
+      `${side}, Inline: the fixed drawer's padding, gap, surface and shadow (${card.paddingTop}, ${card.itemSpacing}, ${card.effects.length})`,
+    );
+  }
+  for (const side of ["Top", "Bottom"]) {
+    const inline = await draw(side, "Inline");
+    const fixed = await draw(side, "Fixed");
+    ok(
+      inline.name === `Side=${side}, Placement=Inline` &&
+        inline.width === fixed.width &&
+        inline.height === fixed.height &&
+        inline.primaryAxisSizingMode === "FIXED" &&
+        inline.cornerRadius === fixed.cornerRadius,
+      `${side}: inline stays at its edge, drawn as Fixed (${inline.width}×${inline.height})`,
+    );
+  }
+  const fixed = await draw("Right", "Fixed");
+  ok(
+    fixed.name === "Side=Right, Placement=Fixed" &&
+      fixed.width === 408 &&
+      fixed.height === 360 &&
+      fixed.primaryAxisSizingMode === "FIXED" &&
+      fixed.cornerRadius === 16,
+    `Fixed is the Drawer as it was: 408×360, 16 corners (${fixed.name}, ${fixed.width}×${fixed.height}, ${fixed.cornerRadius})`,
+  );
+  const issues = [];
+  const auditSet = new MockNode("COMPONENT_SET", "Drawer");
+  for (const card of shapes) auditSet.appendChild(card);
+  auditSet.appendChild(fixed);
+  plugin.auditDrawerAutoLayoutIntegrity(auditSet, issues);
+  ok(
+    issues.length === 0,
+    `the audit holds a floating card to hugging, and a fixed one to filling (${issues.map((i) => `${i.kind} on ${i.variant}`).join("; ")})`,
+  );
+
+  // The four variants in the file today, named before the axis existed.
+  const oldNames = ["Side=Right", "Side=Left", "Side=Top", "Side=Bottom"];
+  const replay = await replayUpdate(
+    "Drawer",
+    oldNames,
+    "updateDrawerComponent",
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 4 &&
+      replay.result.variantsCreated === 4 &&
+      replay.liveSet.children.length === 8 &&
+      new Set(replay.names).size === 8,
+    `Update keeps the set and its 4 variants, and adds 4: 8 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, Placement=Fixed`,
+    ),
+    `each of the 4 keeps its node id and is renamed Placement=Fixed (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const overlaps = overlapsIn(replay.liveSet);
+  const corner = topLeftOf(replay.liveSet);
+  ok(
+    overlaps.length === 0 && corner.name === "Side=Right, Placement=Fixed",
+    `the updated set has no two variants overlapping, and its top-left, Figma's default, is Right at Fixed (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
   );
 }
 

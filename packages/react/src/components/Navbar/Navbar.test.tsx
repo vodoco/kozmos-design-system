@@ -75,4 +75,17 @@ describe("Navbar", () => {
       expect(nav()).toHaveClass("kozmos-navbar-navigation");
     }
   });
+
+  it("sets the logo in the rail's column only with logoInset (GAP-208)", () => {
+    const logo = () =>
+      document.querySelector('[data-slot="navbar-logo"]') as HTMLElement;
+    const { rerender } = render(<Navbar logo={<a href="#">Home</a>} />);
+    expect(logo()).not.toHaveAttribute("data-inset");
+    rerender(<Navbar logoInset logo={<a href="#">Home</a>} />);
+    expect(logo()).toHaveAttribute("data-inset", "true");
+    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    // No logo, no column.
+    rerender(<Navbar logoInset />);
+    expect(logo()).toBeNull();
+  });
 });

@@ -32,10 +32,21 @@ right to left, `"end"` is the left. When the bar wraps, the navigation keeps its
 own line. The landmark, its name and the reading and tab order stay as they are: only where the items
 are drawn changes.
 
-A Home tile belongs in the `logo` slot (an outline IconButton), not in `actions`, which sits outside
-the navigation landmark.
+A Home tile belongs in the `logo` slot, as an icon-only top `NavigationItem`, not in `actions`, which
+sits in the group at the bar's end.
 
 <Canvas of={NavbarStories.NavigationAlign} />
+
+## Over a rail
+
+`logoInset` sets the logo in a column as wide as Sidebar's rail, from the bar's edge (GAP-208). With a
+rail under the bar at the page's start, a Home tile sits over the rail's items, and what follows
+starts past the rail, so a block 424 wide ends where a 440 panel beside the rail does. Pointr Cloud
+draws its shell this way. It takes no length, because the only right width is the rail's. Left out,
+the logo sits at the bar's padding and is as wide as it is. The column is logical: in right to left it
+is at the bar's right, over a rail there. SwiftUI's and Compose's `KozmosNavbar` take `logoInset` too.
+
+<Canvas of={NavbarStories.LogoInset} />
 
 ## Implementation
 

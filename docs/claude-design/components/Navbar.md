@@ -57,6 +57,14 @@ It forwards its ref to `HTMLElement`. Its props are `NavbarProps`, which extends
   Accessible name for the navigation landmark.
 
 - `logo`: `React.ReactNode`, optional.
+- `logoInset`: `boolean`, optional, default `false`.
+
+  Sets `logo` in a column as wide as Sidebar's rail, from the bar's edge
+  (GAP-208), over a rail at the page's start: the logo centred over the
+  rail's items, and what follows past the rail. A column is either the
+  rail's or it isn't, so this takes no length. Logical: the column is at
+  the right in right to left.
+
 - `context`: `React.ReactNode`, optional.
 - `site`: `React.ReactNode`, optional.
 

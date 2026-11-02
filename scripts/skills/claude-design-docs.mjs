@@ -683,7 +683,7 @@ function renderReadme({ root, api, cards, owner }) {
     "",
     "### Navbar's Home tile",
     "",
-    "A Home tile goes in Navbar's `logo` slot, as an icon-only `NavigationItem` (`placement=\"top\"`, `content=\"icon-only\"`) with its name, `selected` on the home page, where it draws the top navigation's grey fill (decision 139, the MAP-64 design). The slot is at the bar's inline start, where a Home tile sits. `actions` is drawn in the group at the bar's end, after the navigation. The bar is a `<header>`, and only its `navigation` slot is inside its `<nav>` landmark, so neither `logo` nor `actions` belongs to the navigation. Lining the tile up over a Sidebar rail is not yet a Navbar option.",
+    "A Home tile goes in Navbar's `logo` slot, as an icon-only `NavigationItem` (`placement=\"top\"`, `content=\"icon-only\"`) with its name, `selected` on the home page, where it draws the top navigation's grey fill (decision 139, the MAP-64 design). The slot is at the bar's inline start, where a Home tile sits. `actions` is drawn in the group at the bar's end, after the navigation. The bar is a `<header>`, and only its `navigation` slot is inside its `<nav>` landmark, so neither `logo` nor `actions` belongs to the navigation. Over a Sidebar rail at the page's start, `logoInset` sets the tile in a column as wide as the rail, from the bar's edge, so it sits over the rail's items and what follows starts past the rail (GAP-208).",
     "",
     "```tsx",
     'import { HomeLine } from "@kozmos-ds/icons";',

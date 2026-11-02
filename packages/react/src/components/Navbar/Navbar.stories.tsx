@@ -2,10 +2,13 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Navbar } from "./Navbar";
 import { Button } from "../Button/Button";
 import { NavigationItem } from "../NavigationItem/NavigationItem";
+import { Sidebar } from "../Sidebar/Sidebar";
 import {
   Bell01 as Bell,
   ChevronDown,
   Globe01 as Globe,
+  HomeLine,
+  Map01,
   User01 as User,
 } from "@kozmos-ds/icons";
 
@@ -124,6 +127,57 @@ export const NavigationAlign: Story = {
           }
         />
       ))}
+    </div>
+  ),
+};
+
+// GAP-208: over a Sidebar rail, the logo's column is the rail: the tile sits
+// over the rail's items, and what follows starts past the rail. A rail under
+// the bar shows it; the column has no edge of its own.
+export const LogoInset: Story = {
+  render: () => (
+    <div>
+      <Navbar
+        logoInset
+        navigationAlign="end"
+        logo={
+          <NavigationItem
+            href="#"
+            placement="top"
+            content="icon-only"
+            icon={<HomeLine className="h-5 w-5" />}
+            aria-label="Home"
+            selected
+          />
+        }
+        navigation={
+          <div className="flex items-center gap-2">
+            <NavigationItem href="#" placement="top">
+              Maps
+            </NavigationItem>
+            <NavigationItem href="#" placement="top">
+              Settings
+            </NavigationItem>
+          </div>
+        }
+      />
+      <div style={{ display: "flex", height: 200 }}>
+        <Sidebar
+          inset="flush"
+          variant="rail"
+          navigation={
+            <NavigationItem
+              href="#"
+              placement="rail"
+              content="icon-label"
+              icon={<Map01 className="h-5 w-5" />}
+              selected
+            >
+              Map
+            </NavigationItem>
+          }
+        />
+      </div>
     </div>
   ),
 };

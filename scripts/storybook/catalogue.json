@@ -695,7 +695,13 @@
       "id": "navigation-navbar",
       "title": "Core/Layout/Navbar",
       "component": "Navbar",
-      "exports": ["Default", "Contextual", "NarrowContainer", "NavigationAlign"]
+      "exports": [
+        "Default",
+        "Contextual",
+        "NarrowContainer",
+        "NavigationAlign",
+        "LogoInset"
+      ]
     },
     {
       "file": "packages/react/src/components/NavigationAnnouncer/NavigationAnnouncer.stories.tsx",

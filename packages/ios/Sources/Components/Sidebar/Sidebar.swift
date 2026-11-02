@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// The rail's width, its edge included. KozmosNavbar's `logoInset` column reads
+/// it too (GAP-208), so the two can't part.
+let kozmosRailWidth: CGFloat = 96
+
 public enum KozmosSidebarVariant {
     case expanded
     case rail
@@ -85,7 +89,7 @@ public struct KozmosSidebar<Content: View>: View {
     /// The rail is 96pt, its edge included, and its KozmosNavigationItems
     /// fill it (decision 42), so it has no horizontal padding.
     private var width: CGFloat {
-        variant == .rail ? 96 : 256
+        variant == .rail ? kozmosRailWidth : 256
     }
 
     private var horizontalPadding: CGFloat {

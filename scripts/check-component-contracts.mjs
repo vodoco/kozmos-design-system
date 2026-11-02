@@ -5007,7 +5007,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "width: horizontal ? 408 : 520",
+  "horizontal ? 408 : 520",
   "Drawer side width matches the bound Drawer width token",
 );
 assertNotContains(

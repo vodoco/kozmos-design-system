@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "ce449607b934";
+const PLUGIN_BUILD = "72346df86ffa";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -637,6 +637,13 @@ const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
 const DIALOG_CONTENT = ["Basic", "Form", "Footer"];
 const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
+// Where the drawer is drawn, as React's placement (GAP-198). Inline, a left or
+// right drawer floats in its region (decisions 139 and 148): 420 wide, as tall
+// as its content, its border and the container's corners all round. A top or
+// bottom one stays at its edge, as Fixed draws it. Fixed, React's default,
+// comes first: the variants built before the axis existed parse as Fixed and
+// keep their place at the head of the set, whose top-left is its default.
+const DRAWER_PLACEMENTS = ["Fixed", "Inline"];
 const POPOVER_SIDES = ["Top", "Right", "Bottom", "Left"];
 const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 const TOAST_CONTENT = ["Basic", "Action"];
@@ -722,6 +729,11 @@ const NAVBAR_NAVIGATION_ALIGN_ITEMS = {
   Center: "CENTER",
   End: "MAX",
 };
+// Whether the logo sits in a column as wide as Sidebar's rail, from the bar's
+// edge, as React's logoInset (GAP-208): the bar's start padding goes, and the
+// Logo Slot takes the rail's own variable with its logo centred. False, React's
+// default, comes first, as NavigationAlign's Center does.
+const NAVBAR_LOGO_INSET = ["False", "True"];
 const NAVBAR_SLOT_NAMES = [
   "Logo Slot",
   "Context Slot",
@@ -958,7 +970,8 @@ const SIDEBAR_SLOT_NAMES = [
   "Footer Slot",
 ];
 const SIDEBAR_DEFAULT_WIDTH = 280;
-const SIDEBAR_RAIL_WIDTH = 80;
+// Code's rail, decision 42. Navbar's LogoInset column takes this width too.
+const SIDEBAR_RAIL_WIDTH = 96;
 const SIDEBAR_DEFAULT_HEIGHT = 360;
 const SIDEBAR_SLOT_WIDTH = 248;
 const SIDEBAR_RAIL_SLOT_WIDTH = 72;
@@ -2442,6 +2455,7 @@ const COMPONENT_DOCS = [
     api: [
       "Content maps to Basic, Actions, or Contextual shell examples.",
       "NavigationAlign maps to Navbar.navigationAlign: Center (the default), Start after the leading slots, or End before the trailing ones.",
+      "LogoInset maps to Navbar.logoInset: True sets Logo Slot in a column as wide as Sidebar's rail, from the bar's edge, so a Home tile sits over the rail.",
       "Logo Slot maps to the leading brand region.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children in Code Connect.",
@@ -2454,6 +2468,7 @@ const COMPONENT_DOCS = [
     properties: [
       "Content: Basic, Actions, Contextual",
       "NavigationAlign: Center, Start, End",
+      "LogoInset: False, True",
       "Logo Slot",
       "Context Slot",
       "Navigation Slot",
@@ -3308,16 +3323,19 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Side maps to DrawerContent.side in Code Connect.",
+      "Placement maps to Drawer.placement: Fixed, the default, over the window, or Inline, in a region under a fixed header.",
+      "At Placement=Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round. Place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "The runtime owns focus trapping, dismiss behavior, and trigger composition.",
     ],
     properties: [
       "Side: Right, Left, Top, Bottom",
+      "Placement: Fixed, Inline",
       "Title Text, Description Text, Body Text",
     ],
     accessibility: [
-      "Drawer content uses Dialog primitives in React and equivalent modal semantics on native platforms.",
+      "Drawer content uses Dialog primitives in React and equivalent modal semantics on native platforms. Placement=Inline is a labelled complementary panel beside the page unless the product makes it modal.",
       "Product code should label the drawer and return focus to the trigger when dismissed.",
       "Text, surface, and boundary contrast pass in Light and Dark modes.",
     ],
@@ -6734,6 +6752,7 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Drawer/width/default", value: 408, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Drawer/width/inline", value: 420, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/height/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/sheet/width", value: 520, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/sheet/height", value: 320, scopes: ["WIDTH_HEIGHT"] },
@@ -6771,6 +6790,12 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Drawer/radius",
     value: 16,
     alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Drawer/radius/inline",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -17731,6 +17756,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: NAVBAR_CONTENT,
       NavigationAlign: NAVBAR_NAVIGATION_ALIGN,
+      LogoInset: NAVBAR_LOGO_INSET,
     };
   }
 
@@ -17769,6 +17795,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Drawer") {
     return {
       Side: DRAWER_SIDES,
+      Placement: DRAWER_PLACEMENTS,
     };
   }
 
@@ -19868,6 +19895,12 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
     const props = parseDrawerVariantName(component.name);
     if (!props) continue;
 
+    // A floating card is as tall as its content, so its body and slot hug.
+    const expectedVertical = drawerFloats(props.value, props.second)
+      ? "HUG"
+      : "FILL";
+    const expectedGrow = expectedVertical === "FILL" ? 1 : 0;
+
     const body = directChildNamed(component, "Drawer Body");
     if (!body || body.type !== "FRAME") {
       issues.push({
@@ -19893,12 +19926,15 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
       issues,
       kind: "drawer-body-vertical-sizing",
       field: "layoutSizingVertical",
-      expected: "FILL",
+      expected: expectedVertical,
       actual: body.layoutSizingVertical,
       variant: component.name,
     });
 
-    if (typeof body.layoutGrow === "number" && body.layoutGrow !== 1) {
+    if (
+      typeof body.layoutGrow === "number" &&
+      body.layoutGrow !== expectedGrow
+    ) {
       issues.push({
         kind: "drawer-body-primary-axis-fill",
         variant: component.name,
@@ -19907,7 +19943,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         nodeId: body.id,
         urlNodeId: nodeIdForUrl(body.id),
         field: "layoutGrow",
-        expected: 1,
+        expected: expectedGrow,
         actual: body.layoutGrow,
       });
     }
@@ -19920,7 +19956,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         node: body.name,
         nodeId: body.id,
         urlNodeId: nodeIdForUrl(body.id),
-        expected: "Drawer Body should contain a fill-height Content Slot.",
+        expected: "Drawer Body should contain a Content Slot.",
       });
     } else {
       auditAutoLayoutSizing({
@@ -19937,14 +19973,14 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         issues,
         kind: "drawer-content-slot-vertical-sizing",
         field: "layoutSizingVertical",
-        expected: "FILL",
+        expected: expectedVertical,
         actual: contentSlot.layoutSizingVertical,
         variant: component.name,
       });
 
       if (
         typeof contentSlot.layoutGrow === "number" &&
-        contentSlot.layoutGrow !== 1
+        contentSlot.layoutGrow !== expectedGrow
       ) {
         issues.push({
           kind: "drawer-content-slot-primary-axis-fill",
@@ -19954,7 +19990,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
           nodeId: contentSlot.id,
           urlNodeId: nodeIdForUrl(contentSlot.id),
           field: "layoutGrow",
-          expected: 1,
+          expected: expectedGrow,
           actual: contentSlot.layoutGrow,
         });
       }
@@ -27079,6 +27115,7 @@ function bindDialogGeometryVariables(
 function bindDrawerGeometryVariables(
   component,
   side,
+  floats,
   header,
   body,
   footer,
@@ -27090,17 +27127,24 @@ function bindDrawerGeometryVariables(
   bindFloatVariable(
     component,
     "width",
-    horizontal ? "Drawer/width/default" : "Drawer/sheet/width",
+    floats
+      ? "Drawer/width/inline"
+      : horizontal
+        ? "Drawer/width/default"
+        : "Drawer/sheet/width",
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "height",
-    horizontal ? "Drawer/height/default" : "Drawer/sheet/height",
-    variableByName,
-    stats,
-  );
+  // A floating card is as tall as its content, so nothing holds its height.
+  if (!floats) {
+    bindFloatVariable(
+      component,
+      "height",
+      horizontal ? "Drawer/height/default" : "Drawer/sheet/height",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "paddingLeft",
@@ -27139,7 +27183,7 @@ function bindDrawerGeometryVariables(
   bindFloatVariable(
     component,
     "cornerRadius",
-    "Drawer/radius",
+    floats ? "Drawer/radius/inline" : "Drawer/radius",
     variableByName,
     stats,
   );
@@ -33364,20 +33408,27 @@ async function updateDialogComponent() {
   });
 }
 
+// The rows are 360 tall at Fixed, and a floating card's content can grow.
+const DRAWER_PLACEMENT_ROW_STEP = 480;
+
 async function buildDrawerComponent() {
   return buildSingleAxisComponent({
     componentName: "Drawer",
     componentSetName: "Drawer",
     axisName: "Side",
     values: DRAWER_SIDES,
+    axis2Name: "Placement",
+    axis2Values: DRAWER_PLACEMENTS,
     x: 80,
     y: 5840,
     xStep: 560,
+    yStep: DRAWER_PLACEMENT_ROW_STEP,
     createVariant: createDrawerVariant,
     configureProperties: configureDrawerProperties,
     description: [
       "Kozmos Drawer component set generated from React DrawerContent API.",
       "Side maps to DrawerContent.side.",
+      "Placement maps to Drawer.placement. At Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round; place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "Drawer is a generic edge sheet; product-specific navigation, filters, and map content remain composition concerns.",
@@ -33391,7 +33442,10 @@ async function updateDrawerComponent() {
     componentSetName: "Drawer",
     axisName: "Side",
     values: DRAWER_SIDES,
+    axis2Name: "Placement",
+    axis2Values: DRAWER_PLACEMENTS,
     xStep: 560,
+    yStep: DRAWER_PLACEMENT_ROW_STEP,
     createVariant: createDrawerVariant,
     updateVariant: updateDrawerVariant,
     parseVariantName: parseDrawerVariantName,
@@ -33399,6 +33453,7 @@ async function updateDrawerComponent() {
     description: [
       "Kozmos Drawer component set generated from React DrawerContent API.",
       "Side maps to DrawerContent.side.",
+      "Placement maps to Drawer.placement. At Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round; place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "Drawer is a generic edge sheet; product-specific navigation, filters, and map content remain composition concerns.",
@@ -38398,6 +38453,7 @@ function navbarComponentConfig() {
       "Kozmos Navbar component set generated from React Navbar API.",
       "Content maps to Basic, Actions, and Contextual navigation shell examples.",
       "NavigationAlign maps to Navbar.navigationAlign: Center, the default, centres the navigation in the room between the leading and trailing slots; Start packs it after the logo, context and primary action, End before the actions, utilities and account.",
+      "LogoInset maps to Navbar.logoInset: True sets Logo Slot in a column as wide as Sidebar's rail, from the bar's edge, with the logo centred, so a Home tile sits over the rail.",
       "Logo Slot maps to the leading brand area.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children.",
@@ -38737,32 +38793,39 @@ function navbarVariantCombinations() {
   const combinations = [];
   for (const content of NAVBAR_CONTENT) {
     for (const navigationAlign of NAVBAR_NAVIGATION_ALIGN) {
-      combinations.push({ content, navigationAlign });
+      for (const logoInset of NAVBAR_LOGO_INSET) {
+        combinations.push({ content, navigationAlign, logoInset });
+      }
     }
   }
   return combinations;
 }
 
 function navbarVariantKey(props) {
-  return `${props.content}/${props.navigationAlign}`;
+  return `${props.content}/${props.navigationAlign}/${props.logoInset}`;
 }
 
 // A variant built before the NavigationAlign axis existed is named
-// "Content=Basic" and parses as Center, React's default, so Update renames it
-// in place and the node ids Code Connect pins survive.
+// "Content=Basic" and parses as Center, React's default, and one built before
+// LogoInset as False, so Update renames it in place and the node ids Code
+// Connect pins survive.
 function parseNavbarVariantName(name) {
   const values = parseVariantValueMap(name);
   const navigationAlign = values.NavigationAlign || "Center";
-  if (NAVBAR_NAVIGATION_ALIGN.indexOf(navigationAlign) === -1) {
+  const logoInset = values.LogoInset || "False";
+  if (
+    NAVBAR_NAVIGATION_ALIGN.indexOf(navigationAlign) === -1 ||
+    NAVBAR_LOGO_INSET.indexOf(logoInset) === -1
+  ) {
     return null;
   }
   if (values.Content === "Product") {
-    return { content: "Contextual", navigationAlign };
+    return { content: "Contextual", navigationAlign, logoInset };
   }
   if (NAVBAR_CONTENT.indexOf(values.Content) === -1) {
     return null;
   }
-  return { content: values.Content, navigationAlign };
+  return { content: values.Content, navigationAlign, logoInset };
 }
 
 function sidebarVariantCombinations() {
@@ -40593,14 +40656,19 @@ async function updateNavbarVariant(
   const hasActions = props.content === "Actions";
   const isContextual = props.content === "Contextual";
   const navigationAlign = props.navigationAlign || "Center";
-  component.name = `Content=${props.content}, NavigationAlign=${navigationAlign}`;
+  const logoInset = (props.logoInset || "False") === "True";
+  component.name = `Content=${props.content}, NavigationAlign=${navigationAlign}, LogoInset=${logoInset ? "True" : "False"}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = isContextual ? 10 : 16;
-  component.paddingLeft = 16;
+  // Past the column, React's 16, so what follows starts 16 beyond the rail.
+  component.itemSpacing = isContextual && !logoInset ? 10 : 16;
+  // A bound padding would ignore the 0 (a variant Update repaints keeps its
+  // bindings), so it goes first.
+  if (logoInset) clearBoundVariable(component, "paddingLeft", stats);
+  component.paddingLeft = logoInset ? 0 : 16;
   component.paddingRight = 16;
   component.paddingTop = 0;
   component.paddingBottom = 0;
@@ -40627,13 +40695,15 @@ async function updateNavbarVariant(
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "paddingLeft",
-    "Navbar/padding/x",
-    variableByName,
-    stats,
-  );
+  if (!logoInset) {
+    bindFloatVariable(
+      component,
+      "paddingLeft",
+      "Navbar/padding/x",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "paddingRight",
@@ -40659,14 +40729,30 @@ async function updateNavbarVariant(
 
   const logoSlot = await createNavbarLogoSlot({
     component,
-    compact: isContextual,
+    // The column is a tile's: the mark alone, as the name would overrun it.
+    compact: isContextual || logoInset,
     reusableSlot: reusableSlotNamed(reusableSlots, "Logo Slot"),
     variableByName,
     fonts,
     stats,
   });
   component.appendChild(logoSlot);
-  setHugChildSizing(logoSlot);
+  if (logoInset) {
+    // The column is the rail: its own variable, so the two can't part, and
+    // written after the slot is configured, which resets its alignment.
+    setFixedChildSizing(logoSlot);
+    resizeNodeWithoutConstraints(logoSlot, SIDEBAR_RAIL_WIDTH, logoSlot.height);
+    bindFloatVariable(
+      logoSlot,
+      "width",
+      "Sidebar/width/rail",
+      variableByName,
+      stats,
+    );
+    setNodePropertyIfSupported(logoSlot, "primaryAxisAlignItems", "CENTER");
+  } else {
+    setHugChildSizing(logoSlot);
+  }
 
   if (isContextual) {
     const contextSlot = await createNavbarContextSlot({
@@ -42311,11 +42397,14 @@ function layoutNavbarVariants(componentSet) {
     if (!props) continue;
     // A column per Content, the bar's width and 80 apart (at 780 apart the
     // 880 bars overlapped by 100), and a row per NavigationAlign, Center on
-    // top so the set's top-left variant, its default, is React's.
+    // top so the set's top-left variant, its default, is React's; the
+    // LogoInset rows under those.
     child.x =
       NAVBAR_CONTENT.indexOf(props.content) * (NAVBAR_DEFAULT_WIDTH + 80);
     child.y =
-      NAVBAR_NAVIGATION_ALIGN.indexOf(props.navigationAlign) *
+      (NAVBAR_NAVIGATION_ALIGN.indexOf(props.navigationAlign) +
+        NAVBAR_LOGO_INSET.indexOf(props.logoInset) *
+          NAVBAR_NAVIGATION_ALIGN.length) *
       (NAVBAR_DEFAULT_HEIGHT + 40);
   }
 
@@ -58349,10 +58438,17 @@ async function updateDialogVariant(
   normalizeDialogVariantCompositeSizing(component);
 }
 
-async function createDrawerVariant({ value, variableByName, fonts, stats }) {
+async function createDrawerVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateDrawerVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -58372,31 +58468,45 @@ function parseDrawerVariantName(name) {
     values[key] = value;
   }
 
-  if (DRAWER_SIDES.indexOf(values.Side) === -1) {
+  // A variant built before the Placement axis existed parses as Fixed, so
+  // Update renames it in place and the node ids Code Connect pins survive.
+  const placement = values.Placement || "Fixed";
+  if (
+    DRAWER_SIDES.indexOf(values.Side) === -1 ||
+    DRAWER_PLACEMENTS.indexOf(placement) === -1
+  ) {
     return null;
   }
 
   return {
     value: values.Side,
+    second: placement,
   };
 }
 
-function drawerVariantSize(side) {
+/** A left or right inline drawer floats; a top or bottom one stays at its edge. */
+function drawerFloats(side, placement) {
+  return placement === "Inline" && (side === "Left" || side === "Right");
+}
+
+function drawerVariantSize(side, placement) {
   const horizontal = side === "Left" || side === "Right";
   return {
-    width: horizontal ? 408 : 520,
+    width: drawerFloats(side, placement) ? 420 : horizontal ? 408 : 520,
     height: horizontal ? 360 : 320,
   };
 }
 
 async function updateDrawerVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const side = value;
-  const size = drawerVariantSize(side);
+  const placement = second || "Fixed";
+  const floats = drawerFloats(side, placement);
+  const size = drawerVariantSize(side, placement);
 
-  component.name = `Side=${side}`;
+  component.name = `Side=${side}, Placement=${placement}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -58408,7 +58518,9 @@ async function updateDrawerVariant(
   component.paddingTop = 24;
   component.paddingBottom = 24;
   component.resizeWithoutConstraints(size.width, size.height);
-  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.cornerRadius = floats
+    ? KOZMOS_RADIUS.container
+    : KOZMOS_RADIUS.control;
   component.clipsContent = false;
   component.fills = [
     paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
@@ -58421,14 +58533,18 @@ async function updateDrawerVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Drawer");
   component.setSharedPluginData(RUN_NAMESPACE, "side", side);
+  component.setSharedPluginData(RUN_NAMESPACE, "placement", placement);
 
   await syncDrawerVariantChildren({
     component,
     side,
+    placement,
     variableByName,
     fonts,
     stats,
   });
+  // Last, past every resize: a floating card is as tall as its content.
+  if (floats) component.primaryAxisSizingMode = "AUTO";
 }
 
 async function createPopoverVariant({ value, variableByName, fonts, stats }) {
@@ -64798,6 +64914,7 @@ async function syncBottomSheetFooterAction({
 async function syncDrawerVariantChildren({
   component,
   side,
+  placement,
   variableByName,
   fonts,
   stats,
@@ -64813,7 +64930,8 @@ async function syncDrawerVariantChildren({
   );
   removeDirectChildrenExceptMany(component, Object.values(reusableSlots));
   const reusableContentSlot = reusableSlotNamed(reusableSlots, "Content Slot");
-  const size = drawerVariantSize(side);
+  const floats = drawerFloats(side, placement);
+  const size = drawerVariantSize(side, placement);
   const contentWidth = size.width - 48;
 
   const header = figma.createFrame();
@@ -64966,11 +65084,17 @@ async function syncDrawerVariantChildren({
     reusableSlot: reusableContentSlot,
     stats,
   });
-  setVerticalStackFillChildSizing(contentSlot);
+  if (floats) setVerticalStackChildSizing(contentSlot);
+  else setVerticalStackFillChildSizing(contentSlot);
 
   component.appendChild(body);
   setLayoutSizingHorizontal(body, "FILL");
-  setVerticalStackFillChildSizing(body);
+  if (floats) {
+    body.primaryAxisSizingMode = "AUTO";
+    setVerticalStackChildSizing(body);
+  } else {
+    setVerticalStackFillChildSizing(body);
+  }
 
   const footer = figma.createFrame();
   footer.name = "Drawer Footer";
@@ -65022,6 +65146,7 @@ async function syncDrawerVariantChildren({
   bindDrawerGeometryVariables(
     component,
     side,
+    floats,
     header,
     body,
     footer,

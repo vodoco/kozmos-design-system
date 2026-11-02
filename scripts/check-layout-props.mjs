@@ -12,16 +12,23 @@
  *   pixels); with a header, the header at the edge and the item 16 under it;
  *   an expanded sidebar's first item 16 under the edge, its outer ring drawn
  *   above it, not cut by the scrolling navigation.
- * - Drawer `placement="inline"` (GAP-198, decision 139): floating in the
- *   region under the header, 16 from its top and side, 420 wide, as tall as
- *   its content up to 32 above the region's bottom (then it scrolls), the
- *   container's corners all round; the header uncovered, not hidden from
- *   readers, not inert and pressable. Not modal, it is a panel: its trigger
- *   moves focus in, the page's code does not; Tab and Shift+Tab leave it and
- *   come back; a press or Escape on the page leaves it open; Escape from
- *   inside closes it and the trigger has focus; closed by code, focus stays
- *   where the user put it. Modal and inline, its scrim covers the region
- *   alone.
+ * - Navbar `logoInset` (GAP-208): the logo in a column as wide as the rail
+ *   under it, from the bar's edge, its tile over the rail's, and a 424 site
+ *   block ending where the 440 panel beside the rail does; mirrored right to
+ *   left, and without the prop the logo where it was.
+ * - Drawer `placement="inline"` (GAP-198, decisions 139 and 148): floating in
+ *   the region under the header, 16 from each edge it reaches (420 wide, as
+ *   tall as its content up to 16 above the region's bottom, then it scrolls),
+ *   its border all the way round, the container's corners all round; the
+ *   header uncovered, not hidden from readers, not inert and pressable. Not
+ *   modal, it is a panel: its trigger moves focus in, the page's code does
+ *   not; Tab and Shift+Tab leave it and come back; a press or Escape on the
+ *   page leaves it open; Escape in the page is the page's, not prevented, so
+ *   a Search clears and an AICompanionPanel closes; no focus guards round the
+ *   page; a product's onKeyDown sees Tab; Escape from inside closes it and
+ *   the trigger has focus; closed by code, focus stays where the user put
+ *   it. Modal and inline, its scrim covers the region alone.
+ * - Drawer's close and header are on logical sides, as Dialog's.
  * - Tree `divided` (GAP-201), in a 440 panel whose content is 20 in, the
  *   tree's `bleed`: a 1px stroke in the border role under every row, outside
  *   its height (a row and its stroke, 41), running to the panel's edges while
@@ -231,6 +238,72 @@ for (const m of MATRIX) {
   );
 }
 
+// --- Navbar: logoInset, over a rail (GAP-208) -------------------------------
+
+for (const m of MATRIX) {
+  const rtl = m.dir === "rtl";
+  await scenario(
+    { ...m, part: "shell", logoInset: true },
+    async (page, read) => {
+      const bar = await box(page, "#navbar");
+      const rail = await box(page, "#sidebar");
+      const column = await box(page, "[data-slot=navbar-logo]");
+      const home = await box(page, "#home");
+      const railItem = await box(page, "#rail-item");
+      await read(
+        "navbar logoInset: the logo's column is the rail: as wide, from the bar's edge",
+        async () => {
+          near(column.width, rail.width, "column as wide as the rail", 0.5);
+          near(
+            rtl ? bar.right - column.right : column.left - bar.left,
+            0,
+            "the column from the bar's edge",
+            0.5,
+          );
+          near(column.left, rail.left, "the column over the rail", 0.5);
+        },
+      );
+      await read("navbar logoInset: the tile over the rail's item", async () =>
+        near(
+          (home.left + home.right) / 2,
+          (railItem.left + railItem.right) / 2,
+          "tile's centre",
+        ),
+      );
+      await read(
+        "navbar logoInset: the 424 site block ends where the 440 panel does",
+        async () => {
+          const site = await box(page, "#site-block");
+          const panel = await box(page, "#side-panel");
+          near(
+            rtl ? site.left : site.right,
+            rtl ? panel.left : panel.right,
+            "the block's end",
+            0.5,
+          );
+        },
+      );
+    },
+  );
+  await scenario({ ...m, part: "shell" }, async (page, read) => {
+    await read(
+      "guard: navbar without logoInset, the logo at the bar's padding, as wide as it is",
+      async () => {
+        const bar = await box(page, "#navbar");
+        const column = await box(page, "[data-slot=navbar-logo]");
+        const home = await box(page, "#home");
+        near(
+          rtl ? bar.right - column.right : column.left - bar.left,
+          16,
+          "16 from the bar's edge",
+          0.5,
+        );
+        near(column.width, home.width, "the column hugs the logo", 0.5);
+      },
+    );
+  });
+}
+
 // --- Sidebar: inset="flush" (GAP-199) ---------------------------------------
 
 /**
@@ -380,7 +453,12 @@ const drawerShape = (page) =>
         style.borderBottomRightRadius,
         style.borderBottomLeftRadius,
       ],
-      borders: [style.borderLeftWidth, style.borderRightWidth],
+      borders: [
+        style.borderTopWidth,
+        style.borderRightWidth,
+        style.borderBottomWidth,
+        style.borderLeftWidth,
+      ],
       paddingBottom: parseFloat(style.paddingBottom),
       lastBottom: last.bottom,
       scrolls: el.scrollHeight > el.clientHeight + 1,
@@ -397,6 +475,7 @@ const activeId = (page) =>
   );
 
 for (const m of MATRIX) {
+  const rtl = m.dir === "rtl";
   await scenario(
     { ...m, part: "drawer", placement: "inline" },
     async (page, read) => {
@@ -406,7 +485,7 @@ for (const m of MATRIX) {
       await settled(page);
       await settleLayout(page);
       await read(
-        "drawer inline: floats in the region, 16 from the top and its side, 420 wide, as tall as its content, the container's corners all round",
+        "drawer inline: floats in the region, 16 from the top and its side, 420 wide, as tall as its content, the container's corners and its border all round",
         async () => {
           const region = await box(page, "#region");
           const header = await box(page, "#header-bar");
@@ -434,14 +513,14 @@ for (const m of MATRIX) {
             1,
           );
           assert.ok(
-            shape.box.bottom < region.bottom - 32,
+            shape.box.bottom < region.bottom - 16,
             "short of the region's bottom",
           );
           assert.deepEqual(shape.corners, ["20px", "20px", "20px", "20px"]);
           assert.deepEqual(
             shape.borders,
-            ["1px", "0px"],
-            "the border on its inner side",
+            ["1px", "1px", "1px", "1px"],
+            "the border all the way round",
           );
           assert.equal(shape.role, "complementary", "a panel, not a dialog");
         },
@@ -510,6 +589,134 @@ for (const m of MATRIX) {
   await scenario(
     { ...m, part: "drawer", placement: "inline" },
     async (page, read) => {
+      await page.evaluate(() => window.layoutProps.drawer.setOpen(true));
+      await page.locator("#drawer").waitFor();
+      await settled(page);
+      await read(
+        "drawer inline: Escape in the page's Search is the page's: not prevented, and the field clears where the browser clears it, the drawer open",
+        async () => {
+          await page.focus("#search");
+          await page.keyboard.type("gate");
+          await page.keyboard.press("Escape");
+          assert.deepEqual(
+            await page.evaluate(() => window.layoutProps.counts.escapes),
+            [false],
+            "prevented when the page saw it",
+          );
+          // Playwright's WebKit leaves a search field's text on Escape, with
+          // no drawer on the page either. What it can show is the line above.
+          if (browser.browserType().name() !== "webkit")
+            assert.equal(await page.inputValue("#search"), "", "cleared");
+          assert.equal(
+            await page.locator("#drawer").getAttribute("data-state"),
+            "open",
+          );
+        },
+      );
+      await read(
+        "drawer inline: no focus guards round the page, so Tab and Shift+Tab off its ends land on nothing invisible",
+        async () => {
+          assert.equal(
+            await page.locator("[data-radix-focus-guard]").count(),
+            0,
+            "guards in the page",
+          );
+          const onGuard = () =>
+            page.evaluate(
+              () =>
+                document.activeElement?.hasAttribute(
+                  "data-radix-focus-guard",
+                ) ?? false,
+            );
+          await page.focus("#after");
+          await page.keyboard.press(TAB);
+          assert.equal(await onGuard(), false, "Tab off the end");
+          await page.focus("#help");
+          await page.keyboard.press(`Shift+${TAB}`);
+          assert.equal(await onGuard(), false, "Shift+Tab off the start");
+        },
+      );
+      await read(
+        "drawer inline: a product's onKeyDown on the content, and round it, sees Tab from inside, and it still leaves",
+        async () => {
+          await page.focus("#tour");
+          await page.evaluate(() => {
+            window.layoutProps.counts.contentKeys.length = 0;
+            window.layoutProps.counts.regionKeys.length = 0;
+          });
+          await page.keyboard.press(TAB);
+          const { contentKeys, regionKeys } = await page.evaluate(
+            () => window.layoutProps.counts,
+          );
+          assert.ok(contentKeys.includes("Tab"), "on DrawerContent");
+          assert.ok(regionKeys.includes("Tab"), "on the region round it");
+          await page.keyboard.press(TAB);
+          assert.equal(await activeId(page), "after", "Tab left it");
+        },
+      );
+      await read(
+        "drawer: the close at the inline end and the header's room there, its words from the inline start",
+        async () => {
+          const drawerBox = await box(page, "#drawer");
+          const close = await page
+            .getByRole("button", { name: "Close drawer" })
+            .boundingBox()
+            .then(({ x, width }) => ({ left: x, right: x + width }));
+          near(
+            rtl ? close.left - drawerBox.left : drawerBox.right - close.right,
+            17,
+            "the close, 16 inside the border",
+            0.5,
+          );
+          const header = await page.evaluate(() => {
+            const style = getComputedStyle(
+              document.querySelector("#drawer h2").parentElement,
+            );
+            return {
+              align: style.textAlign,
+              left: parseFloat(style.paddingLeft),
+              right: parseFloat(style.paddingRight),
+            };
+          });
+          assert.equal(header.align, "start", "the header's words");
+          assert.ok(
+            rtl ? header.left > 0 : header.right > 0,
+            `room for the close: ${header.left} and ${header.right}`,
+          );
+          assert.equal(rtl ? header.right : header.left, 0, "none opposite");
+        },
+      );
+    },
+  );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline", companion: true },
+    async (page, read) => {
+      await page.evaluate(() => window.layoutProps.drawer.setOpen(true));
+      await page.locator("#drawer").waitFor();
+      await settled(page);
+      await read(
+        "drawer inline: Escape in an open AICompanionPanel in the page closes it, and the drawer stays open",
+        async () => {
+          await page.focus("#ask");
+          await page.keyboard.press("Escape");
+          assert.equal(
+            await page.evaluate(
+              () => window.layoutProps.counts.companionClosed,
+            ),
+            1,
+            "the panel's onClose",
+          );
+          assert.equal(
+            await page.locator("#drawer").getAttribute("data-state"),
+            "open",
+          );
+        },
+      );
+    },
+  );
+  await scenario(
+    { ...m, part: "drawer", placement: "inline" },
+    async (page, read) => {
       await page.focus("#search");
       await page.keyboard.type("gate");
       await page.evaluate(() => window.layoutProps.drawer.setOpen(true));
@@ -542,15 +749,15 @@ for (const m of MATRIX) {
       await settled(page);
       await settleLayout(page);
       await read(
-        "drawer inline: content taller than the region stops 16 under its top and 32 above its bottom, and scrolls",
+        "drawer inline: content taller than the region stops 16 under its top and 16 above its bottom, and scrolls",
         async () => {
           const region = await box(page, "#region");
           const shape = await drawerShape(page);
           near(shape.box.top, region.top + 16, "16 under the top", 0.5);
           near(
             shape.box.bottom,
-            region.bottom - 32,
-            "32 above the bottom",
+            region.bottom - 16,
+            "16 above the bottom",
             0.5,
           );
           assert.equal(shape.scrolls, true, "it scrolls");
@@ -851,5 +1058,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (floating in the region, as tall as its content, the header uncovered, read and pressable; a panel, not a dialog, for focus, Tab, presses and Escape; modal, the scrim on the region alone), Tree divided (strokes under the rows to the panel's edges, computed and drawn, the open parent's surface, the selected fill rounded over it, an inset focus ring), and the defaults and keys kept`,
+  `\nPASS layout props: ${reads} reads in light and dark, touch and compact, left to right and right to left; Navbar's navigation at the start and end (Tab walking into the account), its logo column over the rail, Sidebar flush (a rail's first item and its ring at the edge, a header at the edge, an expanded sidebar's ring whole), Drawer inline (floating in the region, 16 from each edge, its border all round, as tall as its content, the header uncovered, read and pressable; a panel, not a dialog, for focus, Tab, presses and Escape; Escape in the page the page's, a real Search and a real AICompanionPanel; no focus guards; Tab reaching a product's onKeyDown; modal, the scrim on the region alone), Tree divided (strokes under the rows to the panel's edges, computed and drawn, the open parent's surface, the selected fill rounded over it, an inset focus ring), and the defaults and keys kept`,
 );
