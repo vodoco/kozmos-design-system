@@ -4,6 +4,7 @@ import dts from "unplugin-dts/vite";
 import path from "path";
 import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
+import { shakableComponents } from "./vite-plugins/shakable-components.mjs";
 
 const require = createRequire(import.meta.url);
 const packageJson = require("./package.json");
@@ -104,6 +105,14 @@ export default defineConfig(async () => {
           });
         },
       },
+      // Component names in development only, and parts an app's bundler can
+      // leave out when the app does not use them: vite-plugins/shakable-components.mjs.
+      shakableComponents({
+        include: (id: string) =>
+          id.startsWith(path.resolve(__dirname, "src") + path.sep) &&
+          /\.[jt]sx?$/.test(id),
+        pureFactories: ["createThemePortal"],
+      }),
       dts({
         insertTypesEntry: true,
         // API Extractor rolls the declarations into dist/index.d.ts. Left
