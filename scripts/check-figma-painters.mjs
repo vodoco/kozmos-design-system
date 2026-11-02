@@ -8321,6 +8321,20 @@ section("GAP-202: Link's External shows the new-tab icon");
     "Link: Link Text is kept",
   );
   set.remove();
+
+  // A set's description names its own properties: External is Link's. Read
+  // from the source, since an Update writes these on the live set.
+  const describing = [
+    ...fs
+      .readFileSync(PLUGIN, "utf8")
+      .matchAll(/applyComponentSetDescription\(\s*\w+,\s*"(\w+)"[^]*?\]\);/g),
+  ]
+    .filter(([call]) => call.includes("Link.external"))
+    .map(([, component]) => component);
+  ok(
+    describing.length === 2 && describing.every((name) => name === "Link"),
+    `only Link's Build and Update describe External (${describing.join(", ")})`,
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------

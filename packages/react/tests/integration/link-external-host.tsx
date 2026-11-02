@@ -52,6 +52,11 @@ function Fixture() {
             Documentation
           </Link>
         </Text>
+        <Text size="sm" data-case="caller-self">
+          <Link href="https://example.com/help" external target="_self">
+            Help centre
+          </Link>
+        </Text>
         <Text size="sm" data-case="same-tab">
           <Link href="/venues">Browse venues</Link>
         </Text>

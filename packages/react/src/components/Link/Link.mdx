@@ -21,7 +21,8 @@ Supply `href` and meaningful link text; use Button for an action that does not n
 `external` is for a link that leaves the product: a policy, the terms, the documentation. It opens a new
 tab (`target="_blank"`, with `rel="noopener noreferrer"`, so the new page cannot reach this one), and says
 so twice: a new-tab icon at the link's end, in its colour and size, and "opens in a new tab", read after
-the link's name. A product's own `target` or `rel` still wins.
+the link's name. A product's own `target` or `rel` still wins, and a `target` that keeps it in this tab
+(`_self`, `_parent`, `_top`) opens no new tab, so the link draws no icon and says nothing of one.
 
 <Canvas>
   <Story of={LinkStories.External} />

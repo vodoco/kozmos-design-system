@@ -182,6 +182,18 @@ try {
     caller.target === "docs" && caller.rel === "noopener",
     `${caller.target} ${caller.rel}`,
   );
+  // The caller's target keeps it in this tab, so nothing says a new one.
+  const self = await read("caller-self");
+  expect(
+    "caller's _self: no icon, no rel",
+    self.target === "_self" && self.rel === null && !self.hasIcon,
+    JSON.stringify(self),
+  );
+  expect(
+    "caller's _self: named by its words alone",
+    (await named("caller-self", "Help centre")) === 1,
+    "no link named Help centre",
+  );
   const plain = await read("same-tab");
   expect(
     "same tab: no target, rel or icon",

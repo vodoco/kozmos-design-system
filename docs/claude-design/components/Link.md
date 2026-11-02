@@ -38,7 +38,9 @@ It forwards its ref to `HTMLAnchorElement`. Its props are `LinkProps`, which ext
   and `rel="noopener noreferrer"`, a caller's own `target` and `rel`
   still winning; a new-tab icon at the link's inline end, sized and
   coloured with its text, which never wraps onto a line of its own; and
-  `externalLabel`, read after the link's name.
+  `externalLabel`, read after the link's name. A caller's `target` that
+  keeps it in this tab (`_self`, `_parent`, `_top`) opens no new tab, so
+  it adds none of these.
 
 - `externalLabel`: `string`, optional, default `"opens in a new tab"`.
 

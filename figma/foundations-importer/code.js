@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d8f1e10bfd67";
+const PLUGIN_BUILD = "6a197805b42b";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -30522,7 +30522,6 @@ async function buildToggleButtonComponent() {
     "Size maps to ToggleButton.size.",
     "State maps to pressed and disabled in Code Connect.",
     "Focus Visible controls the generated focus ring.",
-    "External shows the new-tab icon, Link.external.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutToggleButtonVariants(componentSet);
@@ -30578,7 +30577,6 @@ async function updateToggleButtonComponent() {
     "Size maps to ToggleButton.size.",
     "State maps to pressed and disabled in Code Connect.",
     "Focus Visible controls the generated focus ring.",
-    "External shows the new-tab icon, Link.external.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);

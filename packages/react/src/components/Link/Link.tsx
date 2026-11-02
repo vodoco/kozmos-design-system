@@ -10,7 +10,9 @@ export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement>
    * and `rel="noopener noreferrer"`, a caller's own `target` and `rel`
    * still winning; a new-tab icon at the link's inline end, sized and
    * coloured with its text, which never wraps onto a line of its own; and
-   * `externalLabel`, read after the link's name.
+   * `externalLabel`, read after the link's name. A caller's `target` that
+   * keeps it in this tab (`_self`, `_parent`, `_top`) opens no new tab, so
+   * it adds none of these.
    */
   external?: boolean;
   /**
@@ -39,12 +41,17 @@ const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // The caller's `target` wins, so one that keeps the link in this tab
+    // leaves nothing to say about a new one. An empty target is this tab too.
+    const newTab =
+      external &&
+      (target == null || !/^(?:_self|_parent|_top)?$/i.test(target));
     return (
       <a
         ref={ref}
         href={href}
-        target={target ?? (external ? "_blank" : undefined)}
-        rel={rel ?? (external ? "noopener noreferrer" : undefined)}
+        target={target ?? (newTab ? "_blank" : undefined)}
+        rel={rel ?? (newTab ? "noopener noreferrer" : undefined)}
         onClick={(e) => {
           trackEvent("Link", "link_clicked", { href });
           onClick?.(e);
@@ -58,7 +65,7 @@ const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
         {...props}
       >
         {children}
-        {external && (
+        {newTab && (
           // A no-break space joins the icon to the link's last word, so the
           // icon never wraps onto a line alone, and is the gap before it. It
           // also parts the name from the announcement where WebKit runs a

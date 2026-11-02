@@ -48,6 +48,24 @@ describe("Link", () => {
       expect(link).toHaveAttribute("rel", "noopener");
     });
 
+    // The caller's `target` wins, so a link it keeps in this tab doesn't open
+    // a new one, and neither the icon nor the words say it does.
+    it.each(["_self", "_SELF", "_parent", "_top", ""])(
+      "says nothing of a new tab when the caller's target is %j",
+      (target) => {
+        render(
+          <Link href="https://example.com/docs" external target={target}>
+            Documentation
+          </Link>,
+        );
+        const link = screen.getByRole("link", { name: "Documentation" });
+        expect(link).toHaveAttribute("target", target);
+        expect(link).not.toHaveAttribute("rel");
+        expect(link.querySelector("svg")).toBeNull();
+        expect(link).toHaveTextContent(/^Documentation$/);
+      },
+    );
+
     it("draws the new-tab icon at the inline end, hidden, mirrored right to left", () => {
       render(
         <Link href="https://example.com/terms" external>
