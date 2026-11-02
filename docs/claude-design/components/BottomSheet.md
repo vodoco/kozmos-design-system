@@ -74,8 +74,9 @@ Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof Dia
   corners all round. It is not modal unless `modal` says so, and then it is
   a panel beside the page, not a dialog: it takes focus only when its
   DrawerTrigger opens it, Tab and Shift+Tab leave it, a press or focus
-  outside leaves it open, and Escape closes it only from inside: Escape in
-  the page is the page's.
+  outside leaves it open (close it in `onInteractOutside`, which a press on
+  its trigger doesn't reach), and Escape closes it only from inside: Escape
+  in the page is the page's. Closing gives focus back only if it was inside.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
@@ -109,10 +110,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
 
   The sheet's accessible name.
 
-  A dialog without a title is unnamed to a screen reader, and Radix says so
-  in the console — but a `Heading` inside the sheet type-checks, renders and
-  satisfies nothing, so the sheet ships unlabelled. That is what happened
-  while rebuilding the SDK's POI detail card.
+  A sheet without a title is unnamed to a screen reader, and the console says
+  so — but a `Heading` inside the sheet type-checks, renders and satisfies
+  nothing, so the sheet ships unlabelled. That is what happened while
+  rebuilding the SDK's POI detail card.
 
   Pass `title` and the name is rendered for assistive technology and drawn
   nowhere, which is what you want when your own markup already shows the

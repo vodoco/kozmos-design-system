@@ -124,8 +124,9 @@ Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof Dia
   corners all round. It is not modal unless `modal` says so, and then it is
   a panel beside the page, not a dialog: it takes focus only when its
   DrawerTrigger opens it, Tab and Shift+Tab leave it, a press or focus
-  outside leaves it open, and Escape closes it only from inside: Escape in
-  the page is the page's.
+  outside leaves it open (close it in `onInteractOutside`, which a press on
+  its trigger doesn't reach), and Escape closes it only from inside: Escape
+  in the page is the page's. Closing gives focus back only if it was inside.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
