@@ -13,7 +13,8 @@
         "tailwind.config.*",
         "tsconfig.json",
         "tsconfig.*.json",
-        "vite.config.*"
+        "vite.config.*",
+        "vite-plugins/**"
       ],
       "outputs": [
         "dist/**",
