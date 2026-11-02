@@ -3,7 +3,6 @@ package com.kozmos.components.navbar
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -27,9 +26,10 @@ import org.junit.Test
 /**
  * GAP-208, decisions 147 and 150: `logoInset` sets the logo in a column as wide
  * as KozmosSidebar's rail, from the bar's edge. Over a rail at the screen's
- * start, the logo sits over the rail's items, and a 424 block after it ends
- * where a 440 panel beside the rail does: at 536. Read from the laid-out
- * bounds, in dp, in a 700 bar, so nothing here is a golden.
+ * start, the logo sits over the rail's items, and what follows starts 16 past
+ * the rail, so a 424 block would end where a 440 panel beside the rail does.
+ * Read from the laid-out bounds, in dp, so nothing here is a golden. Paparazzi's
+ * screen is 360 wide: the block is 120, and ends at 232.
  */
 class KozmosNavbarLogoInsetTest {
     @get:Rule
@@ -60,12 +60,10 @@ class KozmosNavbarLogoInsetTest {
             px = LocalDensity.current.density
             Stage(direction) {
                 KozmosNavbar(
-                    modifier = Modifier
-                        .width(700.dp)
-                        .onGloballyPositioned { bar = it.boundsInRoot() },
+                    modifier = Modifier.onGloballyPositioned { bar = it.boundsInRoot() },
                     logoInset = logoInset,
                     logo = { Box(Modifier.size(24.dp).onGloballyPositioned { logo = it.boundsInRoot() }) },
-                    context = { Box(Modifier.size(424.dp, 24.dp).onGloballyPositioned { site = it.boundsInRoot() }) }
+                    context = { Box(Modifier.size(120.dp, 24.dp).onGloballyPositioned { site = it.boundsInRoot() }) }
                 )
             }
         }
@@ -93,11 +91,11 @@ class KozmosNavbarLogoInsetTest {
     }
 
     @Test
-    fun theLogoIsCentredInAColumnFromTheBarsEdgeAndTheBlockEndsWhereThePanelDoes() {
+    fun theLogoIsCentredInAColumnFromTheBarsEdgeAndWhatFollowsStartsPastIt() {
         val laid = laidOut(logoInset = true)
         assertEquals("the logo's centre", 48f, laid.logo.center.x, 0.5f)
         assertEquals("what follows starts 16 past the column", 112f, laid.site.left, 0.5f)
-        assertEquals("a 424 block ends with a 96 rail and a 440 panel", 536f, laid.site.right, 0.5f)
+        assertEquals("and runs on from there", 232f, laid.site.right, 0.5f)
     }
 
     @Test
@@ -113,7 +111,7 @@ class KozmosNavbarLogoInsetTest {
     fun rightToLeftTheColumnMirrors() {
         val laid = laidOut(logoInset = true, direction = LayoutDirection.Rtl)
         assertEquals("the logo's centre, from the bar's right", 48f, laid.bar.right - laid.logo.center.x, 0.5f)
-        assertEquals("the block's end, from the bar's right", 536f, laid.bar.right - laid.site.left, 0.5f)
+        assertEquals("the block's end, from the bar's right", 232f, laid.bar.right - laid.site.left, 0.5f)
     }
 
     @Test
