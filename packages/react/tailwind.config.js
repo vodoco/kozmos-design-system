@@ -22,17 +22,22 @@ const DENSITY_SIZES = {
 };
 
 module.exports = {
-  // Keep utility overrides available during migration, including utilities
-  // now consumed by @apply recipes instead of JSX class strings.
-  //
   // Tests are not scanned: a class a test names (`ml-2`, `rounded-lg`, a
   // regex like `rounded-[lr]`) is a string the test looks for, not one the
   // package draws, and 21 utilities shipped for no other reason. A class a
   // component uses is in the component, so it is still generated.
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,css}",
-    "!./src/**/*.test.{js,ts,jsx,tsx}",
-  ],
+  //
+  // Nor are our own stylesheets: @apply resolves without the scan, so reading
+  // them only added a standalone utility for each word in them that reads as
+  // a class, every word an @apply names and property names like `flex-shrink`.
+  // No element carried any of the 55, a leftover of the owned-CSS migration.
+  content: ["./src/**/*.{js,ts,jsx,tsx}", "!./src/**/*.test.{js,ts,jsx,tsx}"],
+  // Public, and no part names it: the provider's pointer handler looks for
+  // it, and a product can set it. Only one @apply kept it alive when the
+  // stylesheets were scanned. scripts/check-config-isolation.mjs fails without
+  // it; components:classes:check cannot see it, since no string in the source
+  // names it.
+  safelist: ["glass-spotlight"],
   // Words Tailwind finds in the source that are never classes here: `hidden`
   // and `visible` in comments and style values, `static` in position types,
   // `transform` and `filter` in style keys and array methods, `blur` and
