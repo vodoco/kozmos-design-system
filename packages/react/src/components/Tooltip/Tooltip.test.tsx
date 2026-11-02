@@ -38,6 +38,25 @@ describe("Tooltip", () => {
     expect(screen.getByRole("tooltip")).toBeInTheDocument();
   });
 
+  it("overlaps its tip 1px into the body, as Figma's does (site GAP-74)", () => {
+    // Flush against the bordered body, the tip left the border running
+    // across it. scripts/check-site-gaps.mjs reads the join's pixels on
+    // every side in every engine.
+    render(
+      <TooltipProvider>
+        <Tooltip open>
+          <TooltipTrigger>Hover me</TooltipTrigger>
+          <TooltipContent>Content</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    const tip = document.querySelector("[data-side] svg");
+    expect(tip).not.toBeNull();
+    expect(tip).toHaveClass("-translate-y-px", "fill-popover");
+    expect(tip).toHaveAttribute("width", "8");
+    expect(tip).toHaveAttribute("height", "4");
+  });
+
   it("keeps a disabled trigger reachable by keyboard", () => {
     // The case the whole prop exists for. A disabled <button> emits no
     // pointer events and cannot take focus, so without the wrapper the

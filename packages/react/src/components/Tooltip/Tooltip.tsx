@@ -74,7 +74,16 @@ const TooltipContent = React.forwardRef<
       {...props}
     >
       {children}
-      <TooltipPrimitive.Arrow width={8} height={4} className="fill-popover" />
+      {/* The tip, 8 by 4, overlaps the body by 1px, as Figma's Tooltip tip
+          does: it covers the body's border where the two meet, so no line
+          runs across the tail (site GAP-74). Radix turns the tip to each
+          side, so "up" in its own frame is always into the body, and its
+          box, which places the tooltip, keeps its size. */}
+      <TooltipPrimitive.Arrow
+        width={8}
+        height={4}
+        className="-translate-y-px fill-popover"
+      />
     </TooltipPrimitive.Content>
   );
   return portalContainer === undefined && !theme ? (
