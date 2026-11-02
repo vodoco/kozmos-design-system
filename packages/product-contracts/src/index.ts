@@ -446,6 +446,57 @@ export interface FloorPresentation {
   resultCount?: number;
 }
 
+/**
+ * A building as the map reports it, for a product to draw: its name, and its
+ * levels for FloorSelector (GAP-175).
+ *
+ * The live Pointr map reports the building it shows and the site it is in;
+ * a product names the building, offers the site's other buildings, and hands
+ * `floors` to FloorSelector as they are. SwiftUI and Compose have the same
+ * shape, `KozmosBuildingPresentation`.
+ */
+export interface BuildingPresentation {
+  /** The building's id, as the venue's data names it. */
+  id: string;
+  /**
+   * Already localized, as the venue titles it: "Terminal 2". Empty when the
+   * building has no title, for the product to name it or leave it unnamed.
+   */
+  label: string;
+  /**
+   * The id of the site the building is in: its `SitePresentation.id`, which
+   * every building in a site's `buildings` carries. Empty when the venue's
+   * data names no site for a building reported on its own.
+   */
+  siteId: string;
+  /**
+   * The building's levels, top floor first (decision 38), each once: the
+   * floors FloorSelector takes, in the order it draws them.
+   */
+  floors: readonly FloorPresentation[];
+  /**
+   * The level a product starts on, by its `id` in `floors`: Pointr's default
+   * level for the building, when the venue's data marks one (decision 141).
+   * Absent when it marks none: start on the ground level then, which only
+   * the product can name (FloorSelector's "Which level to start on").
+   */
+  defaultFloorId?: string;
+}
+
+/**
+ * A site as the map reports it: its name and its buildings, for a site
+ * switcher or a building list (GAP-175). SwiftUI and Compose have the same
+ * shape, `KozmosSitePresentation`.
+ */
+export interface SitePresentation {
+  /** The site's id, as the venue's data names it. */
+  id: string;
+  /** Already localized, as the venue titles it. Empty when it has no title. */
+  label: string;
+  /** The site's buildings, in the order the venue's data gives them. */
+  buildings: readonly BuildingPresentation[];
+}
+
 export interface CategoryPresentation {
   id: string;
   label: string;
