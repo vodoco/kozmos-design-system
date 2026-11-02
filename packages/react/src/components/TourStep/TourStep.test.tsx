@@ -1,4 +1,5 @@
 import * as React from "react";
+import { AlertTriangle } from "@kozmos-ds/icons";
 import {
   act,
   fireEvent,
@@ -396,8 +397,9 @@ describe("TourStep (GAP-188)", () => {
     expect(notice()).toHaveAttribute("data-tone", "warning");
     expect(notice().className).toContain("bg-warning/5");
     // The warning tone's own mark, not the pointer.
-    expect(notice().querySelector("svg")!.innerHTML).not.toContain(
-      "M20.5056 10.7754",
+    const { container: triangle } = render(<AlertTriangle />);
+    expect(notice().querySelector("svg")!.innerHTML).toBe(
+      triangle.querySelector("svg")!.innerHTML,
     );
   });
 
