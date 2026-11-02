@@ -2394,9 +2394,11 @@ if (categoryTile.content.iconDecorative) {
 }
 
 // Input's recipe, in a module of its own (GAP-154): a field that shares it
-// imports it from there and never from Input.tsx, whose copy and toggle action
-// would ride into every field's bundle (+0.35 KB to PasswordInput, DatePicker,
-// Search and the rest, measured on 28 Oct).
+// imports it from there and never through Input.tsx, whose copy and toggle
+// action would ride into every field's bundle (+0.35 KB to PasswordInput,
+// DatePicker, Search and the rest, measured on 28 Oct). The specifier is
+// resolved, so what counts is the module reached and not how it is spelled:
+// the file, its folder's barrel or the package's.
 {
   const recipePath = "packages/react/src/components/Input/inputVariants.ts";
   if (!fs.existsSync(path.join(root, recipePath))) {
@@ -2413,24 +2415,37 @@ if (categoryTile.content.iconDecorative) {
     fail(`${recipePath}: the recipe imports another module of the package`);
   }
   const walk = (dir) =>
-    fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(
-      (entry) =>
+    fs
+      .readdirSync(path.join(root, dir), { withFileTypes: true })
+      .flatMap((entry) =>
         entry.isDirectory()
           ? walk(`${dir}/${entry.name}`)
           : /\.tsx?$/.test(entry.name) &&
               !/\.(test|stories|figma)\.tsx?$/.test(entry.name)
             ? [`${dir}/${entry.name}`]
             : [],
-    );
-  for (const file of walk("packages/react/src/components")) {
+      );
+  const reachesInput =
+    /^packages\/react\/src(\/index|\/components\/Input(\/index|\/Input)?)?(\.tsx?)?$/;
+  const recipeNames = "(inputVariants|InputStatus)";
+  for (const file of walk("packages/react/src")) {
     if (file.endsWith("/Input/Input.tsx")) continue;
     const text = read(file);
     for (const m of text.matchAll(
-      /import\s*\{([^}]*)\}\s*from\s*"[^"]*\/Input\/Input"/g,
+      /\b(?:import|export)\s+([\w$*\s{},]*?)\s*from\s*["'](\.[^"']*)["']/g,
     )) {
-      if (/\b(inputVariants|InputStatus)\b/.test(m[1])) {
+      const module = path.posix.normalize(
+        path.posix.join(path.posix.dirname(file), m[2]),
+      );
+      if (!reachesInput.test(module)) continue;
+      const namespace = m[1].match(/\*\s+as\s+([\w$]+)/)?.[1];
+      if (
+        new RegExp(`\\b${recipeNames}\\b`).test(m[1]) ||
+        (namespace &&
+          new RegExp(`\\b${namespace}\\.${recipeNames}\\b`).test(text))
+      ) {
         fail(
-          `${file}: imports Input's recipe from Input/Input; import it from Input/inputVariants, so Input's action stays out of its bundle`,
+          `${file}: takes Input's recipe through "${m[2]}", which brings Input.tsx; import it from Input/inputVariants, so Input's action stays out of its bundle`,
         );
       }
     }
