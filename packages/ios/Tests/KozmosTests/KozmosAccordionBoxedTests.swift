@@ -151,12 +151,23 @@ final class KozmosAccordionBoxedTests: XCTestCase {
         XCTAssertGreaterThan(inked(9), 10, "no chevron at the left")
     }
 
-    /// At an accessibility size a header grows with its words and clips none.
-    @MainActor func testAHeaderGrowsWithLargeText() async throws {
-        let drawn = try await draw(Sections().environment(\.dynamicTypeSize, .accessibility3), .light)
-        let fill = try ink(KozmosColors.primitivesColorsTheme900, .light)
-        let box = try XCTUnwrap(drawn.boundingBox(in: Self.whole, where: fill))
-        XCTAssertGreaterThan(box.height, 44, "\(box)")
+    /// At an accessibility size a header grows with its words and clips none,
+    /// where a fixed height would cut them. Laid out, not drawn: the hosted
+    /// snapshot gives the view its own traits.
+    @MainActor func testAHeaderGrowsWithLargeText() {
+        func height(_ textSize: DynamicTypeSize) -> CGFloat {
+            let header = KozmosAccordion(variant: .boxed) {
+                KozmosAccordionItem {
+                    KozmosAccordionTrigger(value: "one", title: "Building details", selection: .constant(nil), label: "Step 1/5") { Mark() }
+                }
+            }
+            .environment(\.dynamicTypeSize, textSize)
+            return UIHostingController(rootView: header)
+                .sizeThatFits(in: CGSize(width: 408, height: CGFloat.greatestFiniteMagnitude))
+                .height
+        }
+        XCTAssertEqual(height(.large), 44, accuracy: 0.5, "at the default size")
+        XCTAssertGreaterThan(height(.accessibility3), 60, "at accessibility3")
     }
 
     @MainActor func testTheDocsSnippetDraws() async throws {

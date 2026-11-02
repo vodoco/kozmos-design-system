@@ -74,6 +74,28 @@ function Fixture() {
             <Sections id="rtl" />
           </DensityScope>
         </div>
+        {/* Long words in a narrow panel: the lines wrap and the header grows,
+            with its marks kept inside it. */}
+        <DensityScope density="compact">
+          <div style={{ width: 220 }}>
+            <Accordion
+              type="single"
+              variant="boxed"
+              collapsible
+              data-testid="narrow"
+            >
+              <AccordionItem value="long">
+                <AccordionTrigger
+                  icon={<Building02 />}
+                  label="Step 1/5 of the whole of it"
+                >
+                  A building details section with a very long title
+                </AccordionTrigger>
+                <AccordionContent>The form</AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </DensityScope>
         <div style={{ width: 408 }}>
           <Accordion
             type="single"

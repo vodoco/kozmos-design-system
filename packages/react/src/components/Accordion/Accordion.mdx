@@ -148,10 +148,12 @@ import {
   AccordionTrigger,
 } from "@kozmos-ds/react";
 import { Building02, LayersTwo01 } from "@kozmos-ds/icons";
+import { useState } from "react";
 
-export function BuildingSections({ open, onOpen, levelsLoading }) {
+export function BuildingSections({ levelsLoading }: { levelsLoading: boolean }) {
+  const [open, setOpen] = useState("details");
   return (
-    <Accordion type="single" variant="boxed" value={open} onValueChange={onOpen}>
+    <Accordion type="single" variant="boxed" value={open} onValueChange={setOpen}>
       <AccordionItem value="details">
         <AccordionTrigger icon={<Building02 />} label="Step 1/5">
           Building details

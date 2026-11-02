@@ -443,6 +443,30 @@ try {
       );
     }
 
+    // Long words in a narrow panel: the header grows with its lines, and
+    // the icon, the words and the chevron all stay inside it.
+    {
+      const here = `${engine}, ${mode}, a long title in 220`;
+      const long = await sectionOf(page, "narrow", "long title");
+      expect(
+        long.box.height > 40,
+        `${here}: the header is ${long.box.height}; expected it to grow past 40 with its lines`,
+      );
+      expect(
+        long.text.top >= long.box.top && long.text.bottom <= long.box.bottom,
+        `${here}: the lines run ${long.text.top} to ${long.text.bottom}, out of a header of ${long.box.top} to ${long.box.bottom}`,
+      );
+      expect(
+        near(long.box.right - long.mark.right, 9, 0.01) &&
+          long.text.right <= long.mark.left,
+        `${here}: the chevron ends ${long.box.right - long.mark.right} in, and the words at ${long.text.right} of its ${long.mark.left}`,
+      );
+      expect(
+        near(long.mark.width, 20, 0.01),
+        `${here}: the words squeezed the chevron to ${long.mark.width}`,
+      );
+    }
+
     // Right to left: the icon at the right, the chevron at the left.
     const rtl = await sectionOf(page, "rtl", "Location");
     const where = `${engine}, ${mode}, right to left`;
@@ -473,6 +497,30 @@ try {
     );
 
     expect(errors.length === 0, `${engine}, ${mode}: ${errors.join(", ")}`);
+    await page.close();
+  }
+
+  // At twice the reader's font size the whole header scales, height and type
+  // and marks, as the controls beside it do.
+  {
+    const { page, errors } = await openPage(browser, css);
+    await page.addStyleTag({ content: "html{font-size:200%}" });
+    await settleLayout(page);
+    const where = `${engine}, at twice the font size`;
+    const closed = await sectionOf(page, "light", "Location");
+    expect(
+      near(closed.box.height, 80),
+      `${where}: a header is ${closed.box.height}; expected 80`,
+    );
+    expect(
+      near(closed.label.fontSize, 22, 0.1),
+      `${where}: the label is ${closed.label.fontSize}; expected 22`,
+    );
+    expect(
+      near(closed.mark.width, 40, 0.01),
+      `${where}: the chevron is ${closed.mark.width}; expected 40`,
+    );
+    expect(errors.length === 0, `${where}: ${errors.join(", ")}`);
     await page.close();
   }
 
@@ -888,5 +936,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nAccordion's boxed form: ${reads} reads pass in ${engine}: heights, gaps, corners, colours and contrast in both themes, with and without @scope; right to left; reduced motion; ${forcedRead ? "forced colours; " : ""}the keyboard, the ring on a filled header, and the default form.`,
+  `\nAccordion's boxed form: ${reads} reads pass in ${engine}: heights, gaps, corners, colours and contrast in both themes, with and without @scope; both densities; long words in a narrow panel; twice the font size; right to left; reduced motion; ${forcedRead ? "forced colours; " : ""}the keyboard, the ring on a filled header, and the default form.`,
 );
