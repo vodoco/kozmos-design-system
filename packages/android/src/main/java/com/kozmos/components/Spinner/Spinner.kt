@@ -72,6 +72,19 @@ fun KozmosSpinner(
     // dark golden was a black rectangle. A control that sets a content colour
     // — a Button, an IconButton — passes it in.
     color: Color = KozmosThemeTokens.primitivesColorsForeground0
+) = KozmosSpinner(modifier, size.dimension, label, color)
+
+/**
+ * The arc off the `Spinner/size` scale, in a part that sets its own marks'
+ * size: Accordion's boxed header draws it where its 20 chevron is, as React
+ * draws `SpinnerArc` there. The weight scales as the scale's do.
+ */
+@Composable
+internal fun KozmosSpinner(
+    modifier: Modifier = Modifier,
+    dimension: Dp,
+    label: String = "Loading",
+    color: Color = KozmosThemeTokens.primitivesColorsForeground0
 ) {
     // One turn a second, linear — the same turn React's `kozmos-spin` takes.
     val transition = rememberInfiniteTransition(label = "kozmos-spinner")
@@ -85,10 +98,10 @@ fun KozmosSpinner(
         label = "kozmos-spinner-angle"
     )
     val animationsOn = rememberKozmosAnimationsOn()
-    val strokeWidth = KozmosDimensions.primitivesIconStrokeMd * (size.dimension / 24.dp)
+    val strokeWidth = KozmosDimensions.primitivesIconStrokeMd * (dimension / 24.dp)
     Canvas(
         modifier = modifier
-            .size(size.dimension)
+            .size(dimension)
             .semantics { contentDescription = label }
     ) {
         val stroke = strokeWidth.toPx()

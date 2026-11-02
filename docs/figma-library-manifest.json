@@ -14662,7 +14662,7 @@
           "issues": [],
           "connectedComponents": ["Accordion"],
           "mappedProps": ["collapsible", "defaultValue", "type"],
-          "unmappedProps": ["collapsible", "defaultValue", "type"]
+          "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [
           "aria-describedby",
@@ -14672,7 +14672,9 @@
           "id",
           "role",
           "tabIndex",
-          "title"
+          "title",
+          "type",
+          "variant"
         ],
         "variants": {}
       },
@@ -17588,6 +17590,7 @@
           "children",
           "closeLabel",
           "details",
+          "hostActionStates",
           "id",
           "mediaControlsLabel",
           "mediaLabel",
@@ -17673,6 +17676,7 @@
           "children",
           "currentFloorId",
           "featuredLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "languageNotListedLabel",
@@ -17717,6 +17721,7 @@
           "expanded",
           "featuredLabel",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",
@@ -17766,6 +17771,7 @@
           "featuredLabel",
           "header",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",

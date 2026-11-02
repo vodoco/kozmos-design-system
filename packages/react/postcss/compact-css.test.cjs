@@ -26,7 +26,7 @@ test("a declaration a later one always overrides goes", async () => {
     ].join(" "),
   );
   assert.deepEqual(declarations(root, "transition-duration"), [
-    ".map-control calc(.3s * var(--s,1))",
+    ".map-control calc(.3s*var(--s,1))",
   ]);
   assert.deepEqual(declarations(root, "color"), [".reads var(--ink)"]);
   assert.deepEqual(declarations(root, /^--tw-enter/), [
@@ -130,6 +130,92 @@ test("a var() fallback loses the space after its comma in ordinary properties", 
     width: "var(--x,1px)",
     margin: "var(--m,0) var(--n,2px)",
   });
+});
+
+test("an ordinary value loses the padding of a var() and the spaces around *", async () => {
+  const root = await compile(
+    [
+      ".a {width: var( --w ); height: calc(1px * 2); top: calc(var(--t) * -1)}",
+      // A fallback beside the padding, and a var() in a var().
+      ".b {margin: var( --m, 0 ) var( --n, var( --o ) )}",
+      // Parentheses of its own in a calc(), a calc() in a function, and the
+      // other math functions.
+      ".c {left: calc((1px + var(--l)) * 2); filter: blur(calc(var(--b) * 1px))}",
+      ".d {width: min(2px * 3, 1px); height: clamp(1px, 2px * 3, 3px); top: calc( 1px + 2px )}",
+    ].join(" "),
+  );
+  assert.deepEqual(declarations(root, /^(?!$)/), [
+    ".a var(--w)",
+    ".a calc(1px*2)",
+    ".a calc(var(--t)*-1)",
+    ".b var(--m,0) var(--n,var(--o))",
+    ".c calc((1px + var(--l))*2)",
+    ".c blur(calc(var(--b)*1px))",
+    ".d min(2px*3, 1px)",
+    ".d clamp(1px, 2px*3, 3px)",
+    ".d calc(1px + 2px)",
+  ]);
+});
+
+test("a space that means something stays in an ordinary value", async () => {
+  const root = await compile(
+    [
+      // `+` and `-` need their spaces in calc().
+      ".a {width: calc(1px + 2px); height: calc(100% - 2px); top: calc(1px + 2px * 3 - 4px); left: calc(1px - -2px)}",
+      // Text: in a string, in a url(), in a url()'s modifier.
+      '.b {content: "calc( 1 * 2 ) var( --x )"; background: url( a.png ); mask: url("a * b.png"); cursor: url("a.svg" var( --c )), auto}',
+      // Unquoted, a url() is one word.
+      ".c {background: url(calc( 1 * 2 ).png)}",
+      // A string in a var()'s fallback.
+      '.d {quotes: var(--q, "a * b") var( --r, "( c )" )}',
+      // A * outside a math function is not an operator, and a var()'s
+      // fallback is not math, even in a calc().
+      ".e {grid-area: a * b; margin: var(--m, a * b); width: calc(var(--w, 1 * 2) * 3); font: (a * b)}",
+      // Any other function's padding is not this step's.
+      ".f {color: rgb( 0 0 0 ); width: fit-content( 1px )}",
+    ].join(" "),
+  );
+  assert.deepEqual(declarations(root, /^(?!$)/), [
+    ".a calc(1px + 2px)",
+    ".a calc(100% - 2px)",
+    ".a calc(1px + 2px*3 - 4px)",
+    ".a calc(1px - -2px)",
+    '.b "calc( 1 * 2 ) var( --x )"',
+    ".b url( a.png )",
+    '.b url("a * b.png")',
+    '.b url("a.svg" var( --c )), auto',
+    ".c url(calc( 1 * 2 ).png)",
+    '.d var(--q,"a * b") var(--r,"( c )")',
+    ".e a * b",
+    ".e var(--m,a * b)",
+    ".e calc(var(--w,1 * 2)*3)",
+    ".e (a * b)",
+    ".f rgb( 0 0 0 )",
+    ".f fit-content( 1px )",
+  ]);
+});
+
+// Outside calc(), postcss-value-parser reads `2px*var(--w)` as one function
+// called `2px*var`: taken out any earlier, the * hides the var() from the
+// steps that look for one.
+test("a * taken out of a value hides no var() from the steps that read it", async () => {
+  const root = await compile(
+    ".a {width: 1px; width: min(2px * var(--w, 1px), 3px)}",
+  );
+  assert.deepEqual(declarations(root, "width"), [
+    ".a min(2px*var(--w,1px), 3px)",
+  ]);
+});
+
+// Alone, because customPropertyInnerWhitespace has already done as much by
+// the time this step runs: a whole pass could never show it reaching one.
+test("the step for ordinary values leaves a custom property alone", () => {
+  const root = postcss.parse(".a {--x: var( --y ); --z: calc(1px * 2)}");
+  plugin.steps.ordinaryValueSpaces(root);
+  assert.deepEqual(declarations(root, /^--/), [
+    ".a var( --y )",
+    ".a calc(1px * 2)",
+  ]);
 });
 
 test("transparent is #0000 where a value is a colour", async () => {
@@ -304,6 +390,7 @@ test("a second pass changes nothing", async () => {
     "/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com */",
     ".a {--x: rgba(1, 2, 3, .5); --w: #ffffff; color: var(--c, transparent); color: var(--d, red)}",
     ".b {margin: var(--m, 0) var(--n, 0)} .c {margin: var(--m, 0) var(--n, 0)}",
+    ".f {width: calc(2px * var( --w, 1px )); height: min(2px * var( --h ), 3px)}",
     "@media (min-width: 1px) {.d {opacity: 0}} @media (min-width: 1px) {.e {opacity: 0}}",
   ].join(" ");
   const once = (await postcss([plugin()]).process(source, { from: undefined }))
