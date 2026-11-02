@@ -18,6 +18,8 @@ struct KozmosPOIDetailPanelConnect: FigmaConnect {
     )
     var presentation: KozmosPOIDetailPanel.Presentation = .inline
 
+    // Host Action is one of `details.hostActions` (GAP-130), which
+    // `onHostAction` runs.
     var body: some View {
         KozmosPOIDetailPanel(
             poi: KozmosPOIPresentation(
@@ -30,7 +32,8 @@ struct KozmosPOIDetailPanelConnect: FigmaConnect {
             actionLabels: [:],
             onAction: { _, _ in },
             onClose: {},
-            presentation: self.presentation
+            presentation: self.presentation,
+            onHostAction: { _, _ in }
         )
     }
 }

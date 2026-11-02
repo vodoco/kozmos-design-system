@@ -92,6 +92,10 @@ public struct KozmosPOIResultCard: View {
     /// Runs an action from the selected result's row, told which action and
     /// the POI's ID. Without it the row's actions are drawn disabled.
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
+    /// Runs one of the product's own actions, `result.hostActions`
+    /// (GAP-028), told its `id` and the POI's ID. They are drawn after
+    /// `result.actions` in the same row; without it they are drawn disabled.
+    let onHostAction: ((String, String) -> Void)?
     /// Opens the result's details, told the POI's ID: a double tap on the
     /// result, selected or not (decision 72, GAP-143), and VoiceOver's
     /// `openLabel` action. Without it every tap selects, as before.
@@ -117,7 +121,8 @@ public struct KozmosPOIResultCard: View {
         presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
         appearance: KozmosPOIResultAppearance = .card,
         onOpen: ((String) -> Void)? = nil,
-        openLabel: String = "Open details"
+        openLabel: String = "Open details",
+        onHostAction: ((String, String) -> Void)? = nil
     ) {
         self.poi = poi
         self.result = result
@@ -134,6 +139,7 @@ public struct KozmosPOIResultCard: View {
         self.onAction = onAction
         self.onOpen = onOpen
         self.openLabel = openLabel
+        self.onHostAction = onHostAction
     }
 
     /// The card's one tab, and what it says decides how it looks. Featured
@@ -258,11 +264,36 @@ public struct KozmosPOIResultCard: View {
         onAction?(action, poi.id)
     }
 
+    /// The product's own action reports as `host`, with its id, so one event
+    /// counts every action pressed on a result.
+    private func handleHostAction(_ entry: KozmosPOIHostActionPresentation) {
+        guard !entry.disabled, let onHostAction else { return }
+        trackEvent(
+            KozmosAnalyticsEvent(
+                eventName: "poi_result_action",
+                component: "POIResultCard",
+                properties: [
+                    "poiId": poi.id,
+                    "resultIndex": result.resultIndex,
+                    "action": "host",
+                    "hostActionId": entry.id
+                ]
+            )
+        )
+        onHostAction(entry.id, poi.id)
+    }
+
     /// Shown only on the selected result: an action row on every card would
     /// be a wall of buttons, and the tap that selects is the tap that asks.
     private var visibleActions: [KozmosPOIResultActionPresentation] {
         guard result.selected, available else { return [] }
         return result.actions
+    }
+
+    /// The product's own actions, shown when the card's are: after them.
+    var visibleHostActions: [KozmosPOIHostActionPresentation] {
+        guard result.selected, available else { return [] }
+        return result.hostActions
     }
 
     /// An action runs only when it is enabled and something handles it.
@@ -497,7 +528,7 @@ public struct KozmosPOIResultCard: View {
                     .accessibilityHidden(true)
             }
 
-            if !visibleActions.isEmpty {
+            if !visibleActions.isEmpty || !visibleHostActions.isEmpty {
                 Divider().overlay(KozmosColors.semanticsBorderSubtle)
 
                 ViewThatFits(in: .horizontal) {
@@ -606,11 +637,17 @@ public struct KozmosPOIResultCard: View {
         .accessibilityHidden(sdk || tab.isNumber)
     }
 
+    @ViewBuilder
     private var actionButtons: some View {
         ForEach(visibleActions) { entry in
             KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry), showsNavigationIcon: sdk && entry.action == .navigate) {
                 guard canRun(entry) else { return }
                 handleAction(entry.action)
+            }
+        }
+        ForEach(visibleHostActions) { entry in
+            KozmosPOIResultHostActionButton(entry: entry, enabled: !entry.disabled && onHostAction != nil) {
+                handleHostAction(entry)
             }
         }
     }
@@ -699,6 +736,26 @@ private struct SelectRowAccessibility: ViewModifier {
                     Button(open.name, action: open.perform)
                 }
             }
+    }
+}
+
+/// One of the product's own actions on a selected result (GAP-028): an
+/// outlined button with its words and, where Kozmos draws the name, its
+/// icon before them. A name Kozmos does not know draws no icon.
+private struct KozmosPOIResultHostActionButton: View {
+    let entry: KozmosPOIHostActionPresentation
+    let enabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        KozmosButton(entry.label,
+            variant: .outline,
+            emotion: .neutral,
+            isDisabled: !enabled,
+            leadingIconName: entry.iconName.flatMap { KozmosIcon.drawsArtwork(for: $0) ? $0 : nil },
+            action: action)
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier("poi-result-host-action-\(entry.id)")
     }
 }
 
