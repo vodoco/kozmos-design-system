@@ -1,3 +1,4 @@
+import * as React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -363,6 +364,46 @@ describe("Drawer", () => {
     await waitFor(() => expect(screen.queryByRole("complementary")).toBeNull());
     await user.click(screen.getByRole("button", { name: "After" }));
     expect(onOpenChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("inline and not modal keeps focus callbacks: a product moves focus in from onOpenAutoFocus, and onCloseAutoFocus can keep it from the trigger", async () => {
+    const onCloseAutoFocus = vi.fn((event: Event) => event.preventDefault());
+    function Page({ open }: { open: boolean }) {
+      const tour = React.useRef<HTMLButtonElement>(null);
+      return (
+        <AnalyticsProvider onDispatch={() => {}}>
+          <div style={{ position: "relative" }}>
+            <Drawer placement="inline" open={open}>
+              <DrawerTrigger>Get started</DrawerTrigger>
+              <DrawerContent
+                onOpenAutoFocus={() => tour.current?.focus()}
+                onCloseAutoFocus={onCloseAutoFocus}
+              >
+                <DrawerTitle>Get started</DrawerTitle>
+                <DrawerDescription>Tours for this page</DrawerDescription>
+                <button ref={tour} type="button">
+                  Start the tour
+                </button>
+              </DrawerContent>
+            </Drawer>
+          </div>
+        </AnalyticsProvider>
+      );
+    }
+    const { rerender } = render(<Page open={false} />);
+    rerender(<Page open />);
+    await screen.findByRole("complementary");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start the tour" }),
+      ).toHaveFocus(),
+    );
+    rerender(<Page open={false} />);
+    await waitFor(() => expect(onCloseAutoFocus).toHaveBeenCalled());
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(
+      screen.getByRole("button", { name: "Get started" }),
+    ).not.toHaveFocus();
   });
 
   it("inline and not modal closes from its close, uncontrolled, tracks it once, and gives its trigger focus", async () => {
