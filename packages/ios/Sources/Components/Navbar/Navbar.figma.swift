@@ -10,8 +10,12 @@ struct KozmosNavbarBasicConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
     var variant = ["Content": "Basic", "NavigationAlign": "Center"]
 
+    @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
+    var logoInset: Bool = false
+
     var body: some View {
         KozmosNavbar(
+            logoInset: self.logoInset,
             logo: {
                 Text("Logo")
             },
@@ -42,8 +46,12 @@ struct KozmosNavbarActionsConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
     var variant = ["Content": "Actions", "NavigationAlign": "Center"]
 
+    @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
+    var logoInset: Bool = false
+
     var body: some View {
         KozmosNavbar(
+            logoInset: self.logoInset,
             logo: {
                 Text("Logo")
             },
@@ -74,8 +82,12 @@ struct KozmosNavbarContextualConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
     var variant = ["Content": "Contextual", "NavigationAlign": "Center"]
 
+    @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
+    var logoInset: Bool = false
+
     var body: some View {
         KozmosNavbar(
+            logoInset: self.logoInset,
             logo: {
                 Text("Logo")
             },

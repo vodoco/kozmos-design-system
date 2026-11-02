@@ -1,9 +1,14 @@
 import SwiftUI
 import Figma
 
+// Placement=Fixed only: SwiftUI's drawer has no inline form yet (GAP-198 is web
+// and Figma first, decision 134), so an Inline instance shows no SwiftUI snippet
+// rather than a fixed one.
+
 struct KozmosDrawerConnect: FigmaConnect {
     let component = KozmosDrawer<AnyView>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=232-2042"
+    var variant = ["Placement": "Fixed"]
 
     @FigmaEnum(
         "Side",

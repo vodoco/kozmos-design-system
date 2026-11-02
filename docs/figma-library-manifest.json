@@ -16002,7 +16002,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Drawer", "DrawerContent"],
-          "mappedProps": ["side"],
+          "mappedProps": ["placement", "side"],
           "unmappedProps": []
         },
         "props": [
@@ -17204,6 +17204,7 @@
             "actions",
             "context",
             "logo",
+            "logoInset",
             "navigation",
             "navigationAlign",
             "primaryAction",

@@ -22,9 +22,16 @@ class KozmosNavbarConnect {
         "Contextual" to "contextual"
     )
 
+    @FigmaProperty(FigmaType.Enum, "LogoInset")
+    val logoInset: Boolean = Figma.mapping(
+        "False" to false,
+        "True" to true
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosNavbar(
+            logoInset = logoInset,
             logo = {
                 Text("Logo")
             },
