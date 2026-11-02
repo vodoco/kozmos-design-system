@@ -1091,6 +1091,14 @@ await scenario(
 
 // Compact only: Close ends where the title starts, so a title under the
 // eyebrow keeps the card's width. At touch, Close reaches into its line.
+// Read from the title's box, not its lines: the host picks the font, and what
+// fits one line in one wraps in a wider one.
+const assertTakesTheCardsWidth = (h) =>
+  assert.ok(
+    Math.abs(h.title.width - (h.sections.width - 32)) < 0.5,
+    `the title is the card's width less its 16s: ${h.title.width} of ${h.sections.width}`,
+  );
+
 await scenario(
   "at compact density, a title under the eyebrow takes the card's width and needn't wrap for Close",
   {
@@ -1102,7 +1110,7 @@ await scenario(
   async (page) => {
     await placement(page);
     const h = await header(page);
-    assert.equal(h.title.lines.length, 1, "one line, as it fits");
+    assertTakesTheCardsWidth(h);
     assert.deepEqual(
       h.title.lines.filter((line) => overlap(line, h.close)),
       [],
@@ -1123,8 +1131,7 @@ await scenario(
   },
   async (page) => {
     await placement(page);
-    const h = await header(page);
-    assert.equal(h.title.lines.length, 1, "one line, as it fits");
+    assertTakesTheCardsWidth(await header(page));
   },
 );
 
@@ -1140,6 +1147,10 @@ await scenario(
   async (page) => {
     await placement(page);
     const h = await header(page);
+    assert.ok(
+      h.title.right <= h.close.left + 0.5,
+      `the title's box stops before Close: ${h.title.right} of ${h.close.left}`,
+    );
     assert.deepEqual(
       h.title.lines.filter((line) => overlap(line, h.close)),
       [],
