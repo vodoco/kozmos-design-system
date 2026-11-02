@@ -1,5 +1,10 @@
 import React from "react";
-import { AlertTriangle, ChevronDown } from "@kozmos-ds/icons";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ChevronDown,
+  InfoCircle,
+} from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { impliedLive } from "../../utils/live-region";
 
@@ -39,8 +44,9 @@ export interface NoticeProps extends Omit<
   children?: React.ReactNode;
   tone?: NoticeTone;
   /**
-   * Replaces the default tone icon. `null` or `false` draws none, and leaves
-   * no empty column before the summary (GAP-118).
+   * Replaces the tone's own mark: a triangle for `warning`, an info circle for
+   * `info`, an alert circle for `critical`. `null` or `false` draws none, and
+   * leaves no empty column before the summary (GAP-118).
    */
   icon?: React.ReactNode;
   /**
@@ -82,6 +88,13 @@ const toneStyles: Record<NoticeTone, string> = {
   warning: "border-warning/50 bg-warning/5 text-warning-text",
   info: "border-info/50 bg-info/5 text-info-text",
   critical: "border-destructive/60 bg-destructive/5 text-destructive-text",
+};
+
+/** Each tone's own mark, the ones Toast draws for the same three tones. */
+const toneMarks: Record<NoticeTone, typeof AlertTriangle> = {
+  warning: AlertTriangle,
+  info: InfoCircle,
+  critical: AlertCircle,
 };
 
 /**
@@ -144,6 +157,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
     // summary does.
     const drawsIcon = icon !== null && icon !== false;
     const resolvedRole = role ?? LIVE_ROLE[live];
+    const ToneMark = toneMarks[tone];
 
     return (
       <div
@@ -174,7 +188,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
               aria-hidden="true"
               className={cn("shrink-0", iconAlign === "start" && "mt-0.5")}
             >
-              {icon ?? <AlertTriangle className="h-4 w-4" />}
+              {icon ?? <ToneMark className="h-4 w-4" />}
             </span>
           )}
           <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "../../utils";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { FieldWrapper } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 

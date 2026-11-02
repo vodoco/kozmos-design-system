@@ -21,7 +21,8 @@ The collapsed detail is hidden with the `hidden` **attribute**, not a class, so
 it stays hidden when the stylesheet does not and stays out of the accessibility
 tree either way.
 
-`icon` replaces the tone's mark; `icon={null}` draws none and leaves no empty column, so the
+Each tone draws its own mark: a triangle for `warning`, an info circle for `info`, an alert circle
+for `critical`. `icon` replaces the tone's mark; `icon={null}` draws none and leaves no empty column, so the
 summary, the detail and the action start at the notice's edge. `iconAlign="center"` centres the
 icon on a one-line summary that holds a control, as MAP-474's Search with AI suggestion does
 (GAP-118); the default `start` keeps it on the first line of a summary that wraps.

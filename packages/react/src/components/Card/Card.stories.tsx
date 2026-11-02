@@ -8,8 +8,11 @@ import {
   CardContent,
 } from "./Card";
 import { Button } from "../Button/Button";
+import { IconButton } from "../IconButton/IconButton";
+import { Pencil01 } from "@kozmos-ds/icons";
 import { Input } from "../Input/Input";
 import { Label } from "../Label/Label";
+import { Heading } from "../Heading/Heading";
 
 const meta = {
   id: "components-card",
@@ -43,6 +46,31 @@ export const Default: Story = {
         <Button>Deploy</Button>
       </CardFooter>
     </Card>
+  ),
+};
+
+/**
+ * The title's level follows the page's outline (GAP-205). It is an `h3`
+ * unless `as` says otherwise; under a page titled with an `h1`, a card's
+ * title is the next level down, `as="h2"`, or a screen reader's list of
+ * headings skips a level. `as` takes `h2` to `h6`, and the title looks the
+ * same at every level.
+ */
+export const TitleLevel: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex w-mobile max-w-full flex-col gap-4">
+      <Heading level={1}>Settings</Heading>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle as="h2">Client details</CardTitle>
+          <CardDescription>The client this site belongs to.</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Pointr
+        </CardContent>
+      </Card>
+    </div>
   ),
 };
 
@@ -103,5 +131,26 @@ export const WithoutHeader: Story = {
         </div>
       ))}
     </div>
+  ),
+};
+
+// GAP-169: Pointr Cloud's site card, an edit button at the header's end.
+export const HeaderActions: Story = {
+  render: (args) => (
+    <Card className="w-mobile" {...args}>
+      <CardHeader
+        actions={
+          <IconButton aria-label="Edit Boston Logan Airport">
+            <Pencil01 aria-hidden="true" className="h-5 w-5" />
+          </IconButton>
+        }
+      >
+        <CardTitle>Boston Logan Airport</CardTitle>
+        <CardDescription>3 buildings, 11 levels</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm">Changes awaiting publish.</p>
+      </CardContent>
+    </Card>
   ),
 };

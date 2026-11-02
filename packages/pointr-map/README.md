@@ -15,21 +15,18 @@ over it: the search, the results, the floors, the selection and the map's status
 import * as React from "react";
 import { AdaptiveMapShell, FloorSelector } from "@kozmos-ds/react";
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
 } from "@kozmos-ds/product-contracts";
-import {
-  PointrMap,
-  type PointrBuildingPresentation,
-  type PointrMapHandle,
-} from "@kozmos-ds/pointr-map";
+import { PointrMap, type PointrMapHandle } from "@kozmos-ds/pointr-map";
 
 export function VenueMap({ cloudToken }: { cloudToken: string }) {
   const map = React.useRef<PointrMapHandle>(null);
   const [insets, setInsets] = React.useState<MapCollisionInsets>();
   const [status, setStatus] = React.useState<MapReadiness>("loading");
-  const [building, setBuilding] = React.useState<PointrBuildingPresentation>();
+  const [building, setBuilding] = React.useState<BuildingPresentation>();
   const [floor, setFloor] = React.useState<FloorPresentation>();
   return (
     <AdaptiveMapShell
@@ -72,6 +69,7 @@ result: POIResultPresentation }` (what a `POIResultList` row takes) with its coo
   level, a level as a `FloorPresentation`, top floor first. A product never touches an SDK class.
 - **The handle**: `map()` (the MapLibre map, for `project` to place a `LocationPin`),
   `flyToPoi(id)` (changes level first, keeps the shell's padding), `setLevel(index or floor id)`,
+  `exitBuilding()` (leaves the open building, below),
   `search(query, { scope })` (a `SearchResponsePresentation` with `items`, numbered from 1). A
   search covers the whole site, the contracts' default, and has no `appliedScope`;
   `{ scope: "building" }` holds it to the open building and says so in `appliedScope`. It rejects
@@ -94,6 +92,42 @@ result: POIResultPresentation }` (what a `POIResultList` row takes) with its coo
 
 A non-fatal error (`fatal: false`: a blocked tile host, a non-blocking SDK problem) leaves the
 status as it was.
+
+## Exit building
+
+The SDK's own Exit button is hidden, as its other chrome is. Kozmos draws it as a recipe
+(SDK-UI-006): a labelled `MapControlButton` in the shell's top-start corner, shown while the map
+is in a building, that calls `exitBuilding()`.
+
+```tsx
+<AdaptiveMapShell
+  map={<PointrMap ref={map} onBuildingChange={setBuilding} /* … */ />}
+  controlsTopStart={
+    building ? (
+      <MapControlButton
+        icon={<LogOut01 />}
+        label={`Exit ${building.label}`}
+        presentation="labelled"
+        onClick={() => {
+          map.current?.exitBuilding();
+          search.current?.focus();
+        }}
+      />
+    ) : null
+  }
+/>
+```
+
+- `exitBuilding()` does what the SDK's button does. In 10.13.0 the button only emits its view's
+  `exitClicked` event, and the SDK's map controller answers it. Zoomed in on a building, it
+  scrolls out to the site's centre. Nearer the site's zoom, it zooms out past it.
+- It returns `true` when the SDK was asked, not when the map has left: below the site's zoom the
+  SDK does nothing. It returns `false` before the map is ready, outside a building, and with an
+  SDK whose view has no `exitClicked` event.
+- The map reports no building through `onBuildingChange` once it has left. Take the button and the
+  floors away then, and move focus somewhere that stays, so it is not lost with the button.
+- The selection and the route Kozmos draws are the product's: `exitBuilding()` clears neither, and
+  whether leaving a building should is the product's decision.
 
 ## Keys
 
@@ -202,9 +236,15 @@ pnpm --filter @kozmos-ds/pointr-map integrity:check     # fails on a hash the CD
   arrive as the ready timeout; the pre-validation refuses every such config it knows of first.
 - The SDK picks its mobile layout from the device, not the container. Touch, RTL (`language: "ar"`)
   and the SDK's navigation events were not exercised by the spike.
-- **GAP-175**: the contracts have no building or site presentation, so `PointrBuildingPresentation`
-  and `PointrSitePresentation` are this package's own, built from the contracts' shapes, until
-  they do.
+- **GAP-175**: the building and the site the map reports are the contracts' own
+  `BuildingPresentation` and `SitePresentation` (`@kozmos-ds/product-contracts`), the shapes SwiftUI
+  and Compose have too: a building's `label` is the Pointr Cloud's title, empty when it has none, and
+  its `floors` are its levels top floor first, each once. Its `defaultFloorId` is the level the
+  venue's data marks as the building's default (`properties.isDefault` on the level, where 10.13.0's
+  SDK starts a building), read from the data as it loaded, and left out when none is marked
+  (decision 141): the SDK's own Level instances, which `getCurrentBuilding()` returns, drop the mark.
+  The package's own
+  `PointrBuildingPresentation` and `PointrSitePresentation` are gone.
 
 ## Not done yet
 
