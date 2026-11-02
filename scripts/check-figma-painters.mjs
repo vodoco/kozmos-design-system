@@ -33,8 +33,13 @@ import {
   payloadVariables,
   resetSearchStats,
   searchStats,
+  withAutoLayout,
   withNodeDefaults,
 } from "./lib/figma-plugin-harness.mjs";
+import {
+  isTypedGlyph,
+  layersShortOfTheirFrame,
+} from "./lib/figma-verify-rules.mjs";
 
 const ROOT = process.cwd();
 const PLUGIN = path.resolve(
@@ -1330,6 +1335,8 @@ section("A set runs after the sets it reaches into");
     browseCategoriesPanelTile: ["CategoryTile", "BrowseCategoriesPanel"],
     setBrowseCategoriesPanelTileIcon: ["CategoryTile", "BrowseCategoriesPanel"],
     updateCategoryTileVariant: ["Counter", "CategoryTile"],
+    // Close's x-close, tinted again after the swap.
+    retintTourStepCloseIcon: ["IconButton", "TourStep"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1380,6 +1387,10 @@ section("A set runs after the sets it reaches into");
         "BrowseCategoriesPanel",
       "after CategoryTile: BrowseCategoriesPanel",
     );
+    ok(
+      plugin.setsToUpdateAfter(["IconButton"]).includes("TourStep"),
+      `after IconButton: TourStep (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+    );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
     const tile = { updated: true, warnings: [] };
@@ -1411,6 +1422,7 @@ section("A set runs after the sets it reaches into");
   for (const [fn, name] of [
     ["updateCategoryTileComponent", "CategoryTile"],
     ["updateCounterComponent", "Counter"],
+    ["updateIconButtonComponent", "IconButton"],
   ]) {
     ok(
       typeof plugin[fn] === "function" &&
@@ -2248,16 +2260,25 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
-// GAP-188: TourStep, as React's TourStep draws it. Popover's surface 340
-// wide, 16 inside and 4 more at the top for the theme edge, sections 12
-// apart; the edge a layer of its own, out of the flow and stretched; the
-// eyebrow in the theme ink and upper case, the hint on the themed surface
-// with a 4 bar at its start, the status on the muted fill with its marker;
-// Back, Next and the dots live and exposed, Close IconButton's Outline with
-// x-close. Content is First step, Step, Last step and Coachmark; the
-// properties each bind a layer; and the set is drawn from a file that holds
-// the sets it nests, as Build and Update find them.
-section("TourStep (GAP-188)");
+// GAP-188: TourStep, as React's TourStep draws it, the MAP-64 design's card
+// (decision 136). Popover's surface 372 wide (432 for the welcome card), 16
+// inside, sections 12 apart, no top edge; an Arrow 24 by 12 out of the flow
+// above the card's middle; the header row with the eyebrow (sentence case,
+// the theme ink) and Close, IconButton's Ghost with x-close in the ghost's
+// ink; the title Heading 4; the body in the muted ink; the instruction as
+// Notice draws it (its tone's fill at 5 % and edge at 50 % as layers, the
+// Container corner, 8/12 inside, a 16 icon, cursor-02's outline for info and
+// alert-triangle for the warning); the progress bar of the secondary fill
+// with the theme ink to the step and the position beside it; Back, the
+// secondary action, Next and the dismiss link live and exposed at Size Small,
+// a disabled Next at 50 %. Content is the design's states; the properties
+// each bind a layer; and the set is drawn from a file that holds the sets it
+// nests, as Build and Update find them. The painters run inside
+// `withAutoLayout`, so the numbers read here are the ones the file lays out:
+// until 2026-11-01 this section read what the painter wrote, every assertion
+// passed, and the Build drew labels out of their buttons, words out of the
+// instruction and "2 of 4" over a full bar.
+section("TourStep (GAP-188, decision 136)");
 {
   const ready =
     Array.isArray(plugin.TOUR_STEP_CONTENT) &&
@@ -2267,35 +2288,66 @@ section("TourStep (GAP-188)");
   if (ready) {
     ok(
       plugin.TOUR_STEP_CONTENT.join(",") ===
-        "First step,Step,Last step,Coachmark" &&
+        "First step,Step,Last step,Warning,Coachmark,Welcome" &&
         JSON.stringify(
           plugin.expectedVariantAxesForComponentSetName("TourStep"),
         ) === JSON.stringify({ Content: plugin.TOUR_STEP_CONTENT }),
-      "four variants: First step, Step, Last step and Coachmark",
+      "six variants: First step, Step, Last step, Warning, Coachmark and Welcome",
     );
     ok(
       plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name).indexOf("TourStep") >
         Math.max(
-          ...["Button", "IconButton", "Stepper", "Backdrop"].map((name) =>
+          ...["Button", "IconButton", "Backdrop"].map((name) =>
             plugin.CORE_UPDATE_SEQUENCE.map(([n]) => n).indexOf(name),
           ),
         ),
       "Update All runs TourStep after the sets it nests",
     );
+    // The pointer is drawn from the icons package's own outline.
+    const generated = fs.readFileSync(
+      path.join(ROOT, "packages/icons/src/pointr/icons.generated.ts"),
+      "utf8",
+    );
+    const cursor = generated.match(
+      /export const Cursor02 = \/\* @__PURE__ \*\/ createPointrIcon\("Cursor02", \[\s*\{\s*d: "([^"]+)"/,
+    );
+    ok(
+      cursor && plugin.TOUR_STEP_POINTER_PATH === cursor[1],
+      "the instruction's pointer is cursor-02's outline in packages/icons",
+    );
 
-    // The file: Button's Default and Ghost, IconButton's Outline and its
-    // Icon swap, Stepper's five-step Dots, and x-close on the Icons page.
-    const labelled = (variant, key) => {
+    // The file: Button's Default, Ghost, Outline and Link at Small,
+    // IconButton's Ghost and its Icon swap, x-close and alert-triangle on the
+    // Icons page.
+    // Size=Small as updateButtonVariant draws it: a fixed 96 by 44, 12 either
+    // side, the label sizing itself and centred, the outline's stroke laid out.
+    const labelled = (variant, name, key) => {
+      variant.layoutMode = "HORIZONTAL";
+      variant.primaryAxisSizingMode = "FIXED";
+      variant.counterAxisSizingMode = "FIXED";
+      variant.primaryAxisAlignItems = "CENTER";
+      variant.counterAxisAlignItems = "CENTER";
+      variant.itemSpacing = 8;
+      variant.paddingLeft = 12;
+      variant.paddingRight = 12;
+      variant.resize(96, 44);
+      if (name === "Outline") {
+        variant.strokes = [
+          { type: "SOLID", color: { r: 0, g: 0, b: 1 }, opacity: 1 },
+        ];
+      }
       const label = new MockNode("TEXT", "Label Text");
+      label.fontSize = 14;
+      label.lineHeight = { unit: "PIXELS", value: 20 };
       label.characters = "Button";
       label.componentPropertyReferences = { characters: key };
       variant.appendChild(label);
     };
     const button = mockComponentSet(
       "Button",
-      ["Default", "Ghost"].map((variant) => ({
-        properties: { Variant: variant, Size: "Default", State: "Default" },
-        build: (node) => labelled(node, "Label Text#1:0"),
+      ["Default", "Ghost", "Outline", "Link"].map((variant) => ({
+        properties: { Variant: variant, Size: "Small", State: "Default" },
+        build: (node) => labelled(node, variant, "Label Text#1:0"),
       })),
     );
     button.componentPropertyDefinitions = {
@@ -2303,13 +2355,35 @@ section("TourStep (GAP-188)");
     };
     const plus = mockIconComponent("plus");
     const close = mockIconComponent("x-close");
+    const warningMark = mockIconComponent("alert-triangle");
+    // IconButton tints its Icon with the Ghost's ink, as configureIconButtonSlot
+    // does: a swap takes that tint away with the layers it was laid on.
+    const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
     const iconButton = mockComponentSet("IconButton", [
       {
-        properties: { Variant: "Outline", Size: "Default", State: "Default" },
+        properties: { Variant: "Ghost", Size: "Default", State: "Default" },
         build: (node) => {
+          node.layoutMode = "HORIZONTAL";
+          node.primaryAxisSizingMode = "FIXED";
+          node.counterAxisSizingMode = "FIXED";
+          node.resize(44, 44);
           const icon = plus.createInstance();
           icon.name = "Icon";
+          icon.resize(16, 16);
           icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+          for (const layer of icon.children) {
+            layer.strokes = [
+              {
+                type: "SOLID",
+                color: { r: 0.05, g: 0.27, b: 0.76 },
+                opacity: 1,
+                visible: true,
+                boundVariables: {
+                  color: { type: "VARIABLE_ALIAS", id: ghostInk },
+                },
+              },
+            ];
+          }
           node.appendChild(icon);
         },
       },
@@ -2317,24 +2391,21 @@ section("TourStep (GAP-188)");
     iconButton.componentPropertyDefinitions = {
       "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plus.id },
     };
-    const stepper = mockComponentSet(
-      "Stepper",
-      ["1", "2", "3", "4", "5"].map((current) => ({
-        properties: { Variant: "Dots", Count: "5", Current: current },
-      })),
-    );
     const components = new MockNode("PAGE", "Components");
-    for (const set of [button, iconButton, stepper])
-      components.appendChild(set);
+    for (const set of [button, iconButton]) components.appendChild(set);
     const icons = new MockNode("PAGE", "Icons");
-    icons.appendChild(plus);
-    icons.appendChild(close);
+    for (const icon of [plus, close, warningMark]) icons.appendChild(icon);
     const fileFigma = createFigmaMock({ pages: [components, icons] });
     const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
     const tokens = payloadVariables([
       ...variableByName.keys(),
-      "Emotion/themed/surface",
-      "Emotion/themed/onSurface",
+      "Colors/emotional/info/700",
+      "Colors/emotional/alert/800",
+      "Emotion/informative/text",
+      "Emotion/alert/text",
+      "Colors/emotional/info/800",
+      "Border/bevel/bottom",
+      "Colors/background/200",
     ]);
     await file.ensureKozmosTextStyles(FONTS, freshStats());
 
@@ -2343,28 +2414,33 @@ section("TourStep (GAP-188)");
     for (const content of plugin.TOUR_STEP_CONTENT) {
       const component = fileFigma.createComponent();
       const stats = freshStats();
-      await file.updateTourStepVariant(component, {
-        props: { content },
-        variableByName: tokens.variableByName,
-        fonts: FONTS,
-        stats,
-      });
+      await withAutoLayout(() =>
+        file.updateTourStepVariant(component, {
+          props: { content },
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
       painted[content] = component;
       const coachmark = content === "Coachmark";
+      const welcome = content === "Welcome";
+      const warning = content === "Warning";
+      const width = welcome ? 432 : 372;
       const rows = component.children.map((child) => child.name);
       ok(
         component.name === `Content=${content}` &&
-          component.width === 340 &&
+          component.width === width &&
           component.layoutMode === "VERTICAL" &&
           component.primaryAxisSizingMode === "AUTO" &&
-          component.paddingTop === 20 &&
+          component.paddingTop === 16 &&
           component.paddingLeft === 16 &&
           component.paddingRight === 16 &&
           component.paddingBottom === 16 &&
           component.itemSpacing === 12 &&
           component.cornerRadius === 16 &&
-          component.clipsContent === true,
-        `${content}: 340 wide, 16 inside and 20 at the top, 12 apart, the Control corner, clipping the edge (${component.width}, ${component.paddingTop}/${component.paddingLeft}, ${component.itemSpacing}, ${component.cornerRadius})`,
+          component.clipsContent === false,
+        `${content}: ${width} wide, 16 inside, 12 apart, the Control corner, its arrow outside (${component.width}, ${component.paddingTop}/${component.paddingLeft}, ${component.itemSpacing}, ${component.cornerRadius})`,
       );
       ok(
         boundVariableName(fill(component)) === "Surface/0" &&
@@ -2373,160 +2449,304 @@ section("TourStep (GAP-188)");
           component.effects.length === 1 &&
           component.effects[0].offset.y === 8 &&
           component.effects[0].radius === 16,
-        `${content}: Popover's surface, the subtle edge and the overlay elevation`,
+        `${content}: Popover's surface, the subtle edge all round and the overlay elevation`,
       );
+      const expectedRows = ["Arrow", "Header", "Title Text", "Body Text"];
+      if (!coachmark && !welcome) expectedRows.push("Instruction", "Progress");
+      if (!coachmark) expectedRows.push("Footer");
       ok(
-        JSON.stringify(rows) ===
-          JSON.stringify(
-            coachmark
-              ? ["Top Edge", "Header", "Body Text", "Hint", "Instruction"]
-              : [
-                  "Top Edge",
-                  "Header",
-                  "Body Text",
-                  "Hint",
-                  "Instruction",
-                  "Footer",
-                ],
-          ),
-        `${content}: ${rows.join(", ")}`,
+        JSON.stringify(rows) === JSON.stringify(expectedRows) &&
+          !named(component, "Top Edge") &&
+          !named(component, "Hint") &&
+          !named(component, "Dots"),
+        `${content}: ${rows.join(", ")}; no top edge, hint or dots`,
       );
-      const edge = component.children[0];
+      const arrow = component.children[0];
+      const arrowFill = arrow && named(arrow, "Arrow Fill");
       ok(
-        edge.layoutPositioning === "ABSOLUTE" &&
-          edge.x === 0 &&
-          edge.y === 0 &&
-          edge.width === 340 &&
-          edge.height === 4 &&
-          edge.constraints.horizontal === "STRETCH" &&
-          boundVariableName(fill(edge)) ===
-            "Primary Buttons/themed/button/background/idle",
-        `${content}: a 4 edge of the theme fill across the top, out of the flow and stretched`,
+        arrow.layoutPositioning === "ABSOLUTE" &&
+          arrow.width === 24 &&
+          arrow.height === 12 &&
+          arrow.x === (width - 24) / 2 &&
+          arrow.y === -11 &&
+          arrow.clipsContent === true &&
+          arrowFill &&
+          boundVariableName(fill(arrowFill)) === "Surface/0" &&
+          arrowFill.effects.length === 1 &&
+          arrowFill.effects[0].offset.y === 1 &&
+          arrowFill.effects[0].radius === 1 &&
+          arrowFill.effects[0].boundVariables &&
+          arrowFill.effects[0].boundVariables.color.id ===
+            tokens.variableByName.get("Border/bevel/bottom").id,
+        `${content}: a 24 by 12 arrow above the card's middle, 1 over its edge, Surface/0, a 0 1 1 shadow in the bevel's colour that its frame clips at the edge`,
       );
+      const header = named(component, "Header");
       const eyebrow = named(component, "Eyebrow");
       const tour = named(component, "Tour Text");
-      const position = named(component, "Position Text");
+      const position = eyebrow && named(eyebrow, "Position Text");
+      const current = { "First step": 1, Step: 2 }[content] || 4;
       ok(
         coachmark
-          ? !eyebrow && !tour && !position
+          ? !eyebrow
           : eyebrow &&
-              [tour, named(component, "Separator"), position].every(
-                (text) =>
-                  text &&
-                  text.parent === eyebrow &&
-                  text.textCase === "UPPER" &&
-                  boundVariableName(fill(text)) === "Colors/theme/600",
-              ) &&
-              position.characters ===
-                `Step ${content === "First step" ? 1 : content === "Last step" ? 5 : 2} of 5`,
+              tour &&
+              tour.parent === eyebrow &&
+              [tour, position, named(component, "Separator")]
+                .filter(Boolean)
+                .every(
+                  (text) =>
+                    text.textCase !== "UPPER" &&
+                    text.fontSize === 12 &&
+                    boundVariableName(fill(text)) === "Colors/theme/600",
+                ) &&
+              tour.characters === plugin.TOUR_STEP_SAMPLE.tour &&
+              (welcome ? !position : position.characters === `${current} of 4`),
         coachmark
           ? "Coachmark: no tour name and no position"
-          : `${content}: the tour and "${position && position.characters}" upper case in the theme ink`,
-      );
-      const title = named(component, "Title Text");
-      ok(
-        title &&
-          title.fontSize === 16 &&
-          title.lineHeight.value === 24 &&
-          boundVariableName(fill(title)) === "Colors/foreground/0" &&
-          title.characters === (coachmark ? "Draw rooms here" : "Open a site"),
-        `${content}: the title 16/24 in the foreground`,
+          : `${content}: "${tour && tour.characters}${position ? ` · ${position.characters}` : ""}", 12 in the theme ink, in sentence case`,
       );
       const closeButton = named(component, "Close");
       ok(
-        closeButton &&
-          closeButton.type === "INSTANCE" &&
-          closeButton.mainComponent.name ===
-            "Variant=Outline, Size=Default, State=Default" &&
-          closeButton.componentProperties["Icon#2:0"] === close.id,
-        `${content}: Close is IconButton's Outline with x-close`,
+        welcome
+          ? !closeButton
+          : closeButton &&
+              closeButton.parent === header &&
+              header.children[header.children.length - 1] === closeButton &&
+              closeButton.type === "INSTANCE" &&
+              closeButton.mainComponent.name ===
+                "Variant=Ghost, Size=Default, State=Default" &&
+              closeButton.componentProperties["Icon#2:0"] === close.id,
+        welcome
+          ? "Welcome: no Close"
+          : `${content}: Close is IconButton's Ghost with x-close, at the header's end`,
+      );
+      if (!welcome) {
+        // The swap replaces the layer the button's tint was laid on, so
+        // x-close came in its source's black. It takes the ghost's ink again,
+        // bound to its variable.
+        const closeIcon = closeButton.findOne(
+          (node) =>
+            node.type === "INSTANCE" &&
+            node.componentPropertyReferences &&
+            node.componentPropertyReferences.mainComponent === "Icon#2:0",
+        );
+        const closeInk = closeIcon
+          ? closeIcon.findAll((node) => (node.strokes || []).length > 0)
+          : [];
+        ok(
+          closeIcon &&
+            closeIcon.mainComponent === close &&
+            closeInk.length > 0 &&
+            closeInk.every(
+              (node) =>
+                boundVariableName(node.strokes[0]) === ghostInk &&
+                Math.abs(node.strokeWeight - 4 / 3) < 1e-6,
+            ),
+          `${content}: x-close draws in the ghost button's ink, ${ghostInk}, at React's 1.33 (${closeInk.map((node) => `${boundVariableName(node.strokes[0]) || hexOf(node.strokes[0])} ${node.strokeWeight}`).join(", ") || "no stroked layer"})`,
+        );
+      }
+      const title = named(component, "Title Text");
+      ok(
+        title &&
+          title.fontSize === 20 &&
+          title.lineHeight.value === 28 &&
+          boundVariableName(fill(title)) === "Colors/foreground/0" &&
+          title.characters === plugin.TOUR_STEP_SAMPLE.title,
+        `${content}: the title Heading 4, 20/28, in the foreground, the one sample ("${title && title.characters}")`,
       );
       const body = named(component, "Body Text");
       ok(
         body &&
           body.fontSize === 14 &&
-          boundVariableName(fill(body)) === "Colors/foreground/400",
-        `${content}: the body 14 in the muted ink`,
-      );
-      const hint = named(component, "Hint");
-      ok(
-        hint &&
-          hint.visible === false &&
-          hint.cornerRadius === 4 &&
-          boundVariableName(fill(hint)) === "Emotion/themed/surface" &&
-          boundVariableName(hint.strokes[0]) === "Colors/theme/600" &&
-          hint.strokeLeftWeight === 4 &&
-          hint.strokeTopWeight === 0 &&
-          hint.strokeRightWeight === 0 &&
-          hint.strokeBottomWeight === 0 &&
-          boundVariableName(fill(named(hint, "Hint Text"))) ===
-            "Emotion/themed/onSurface",
-        `${content}: the hint, hidden until asked for, on the themed surface with a 4 bar at its start`,
+          boundVariableName(fill(body)) === "Colors/foreground/400" &&
+          body.characters === plugin.TOUR_STEP_SAMPLE.body,
+        `${content}: the body 14 in the muted ink, the one sample`,
       );
       const instruction = named(component, "Instruction");
-      const marker = instruction && named(instruction, "Marker");
-      const halo = marker && named(marker, "Marker Halo");
-      const dot = marker && named(marker, "Marker Dot");
-      ok(
-        instruction &&
-          instruction.cornerRadius === 4 &&
-          boundVariableName(fill(instruction)) === "Colors/background/100" &&
-          instruction.paddingTop === 6 &&
-          instruction.paddingLeft === 12 &&
-          instruction.itemSpacing === 8 &&
-          marker.width === 8 &&
-          marker.clipsContent === false &&
-          halo.width === 16 &&
-          halo.x === -4 &&
-          Math.abs(halo.opacity - 0.2) < 1e-9 &&
-          dot.width === 8 &&
-          [halo, dot].every(
-            (shape) =>
-              boundVariableName(fill(shape)) ===
-              "Primary Buttons/themed/button/background/idle",
-          ) &&
-          boundVariableName(fill(named(instruction, "Instruction Text"))) ===
-            "Colors/foreground/0",
-        `${content}: the status on the muted fill, an 8 marker of the theme fill in a 4 halo at 20%`,
-      );
+      if (coachmark || welcome) {
+        ok(!instruction, `${content}: no instruction`);
+      } else {
+        const toneFill = warning
+          ? "Colors/emotional/alert/800"
+          : "Colors/emotional/info/700";
+        const toneInk = warning
+          ? "Emotion/alert/text"
+          : "Emotion/informative/text";
+        const toneMark = warning
+          ? "Colors/emotional/alert/900"
+          : "Colors/emotional/info/800";
+        const wash = named(instruction, "Instruction Fill");
+        const edge = named(instruction, "Instruction Edge");
+        const icon = named(instruction, "Instruction Icon");
+        const text = named(instruction, "Instruction Text");
+        const iconInk = icon
+          ? icon.findAll((node) => (node.strokes || []).length > 0)
+          : [];
+        ok(
+          instruction.cornerRadius === 20 &&
+            instruction.itemSpacing === 8 &&
+            instruction.counterAxisAlignItems === "CENTER" &&
+            (instruction.fills || []).length === 0 &&
+            wash &&
+            wash.layoutPositioning === "ABSOLUTE" &&
+            boundVariableName(fill(wash)) === toneFill &&
+            Math.abs(wash.opacity - 0.05) < 1e-9 &&
+            edge &&
+            edge.layoutPositioning === "ABSOLUTE" &&
+            (edge.fills || []).length === 0 &&
+            boundVariableName(edge.strokes[0]) === toneFill &&
+            edge.strokeWeight === 1 &&
+            Math.abs(edge.opacity - 0.5) < 1e-9,
+          `${content}: the instruction on its tone's fill at 5 % with its edge at 50 %, the Container corner`,
+        );
+        // Notice's box, with its border in the flow: 8/12 inside a 1 border,
+        // so the words are 288 wide and two lines of them make it 56.5, the
+        // design's 57. The layers that draw the box are the frame's size: the
+        // frame hugged its words in the live file, and the two layers stopped
+        // 16 short of it, 39 in 55, with the words running out of what shows.
+        const lines = Math.round(text.height / 19.25);
+        ok(
+          instruction.paddingTop === 9 &&
+            instruction.paddingBottom === 9 &&
+            instruction.paddingLeft === 13 &&
+            instruction.paddingRight === 13 &&
+            text.width === 288 &&
+            lines === 2 &&
+            instruction.height === 18 + 2 * 19.25,
+          `${content}: 8/12 inside Notice's 1 border, the words 288 wide on two lines, the box 56.5 (${instruction.paddingTop}/${instruction.paddingLeft}, ${text.width}, ${text.height}, ${instruction.height})`,
+        );
+        ok(
+          [wash, edge].every(
+            (layer) =>
+              layer.x === 0 &&
+              layer.y === 0 &&
+              layer.width === instruction.width &&
+              layer.height === instruction.height &&
+              layer.constraints.horizontal === "STRETCH" &&
+              layer.constraints.vertical === "STRETCH",
+          ),
+          `${content}: the fill and the edge are the instruction's size, and stretch with it from no margin (${wash.width}x${wash.height}, ${edge.width}x${edge.height} in ${instruction.width}x${instruction.height})`,
+        );
+        ok(
+          icon.y === (instruction.height - 16) / 2,
+          `${content}: the icon on the middle of the words (${icon.y} in ${instruction.height})`,
+        );
+        ok(
+          icon &&
+            icon.width === 16 &&
+            icon.height === 16 &&
+            iconInk.length > 0 &&
+            iconInk.every(
+              (node) => boundVariableName(node.strokes[0]) === toneMark,
+            ) &&
+            (warning
+              ? icon.type === "INSTANCE" && icon.mainComponent === warningMark
+              : icon.type === "FRAME" &&
+                String(icon.svg).includes(plugin.TOUR_STEP_POINTER_PATH)) &&
+            text &&
+            text.fontSize === 14 &&
+            text.lineHeight.value === 19.25 &&
+            boundVariableName(fill(text)) === toneInk,
+          `${content}: a 16 ${warning ? "alert-triangle" : "cursor-02"} in ${toneMark}, and the words 14 semibold at 19.25 in ${toneInk}`,
+        );
+        const progress = named(component, "Progress");
+        const track = progress && named(progress, "Progress Track");
+        const range = track && named(track, "Progress Range");
+        const words = progress && named(progress, "Position Text");
+        ok(
+          progress &&
+            progress.itemSpacing === 12 &&
+            track.height === 8 &&
+            track.cornerRadius === 9999 &&
+            boundVariableName(fill(track)) === "Colors/background/200" &&
+            boundVariableName(fill(range)) === "Colors/theme/600" &&
+            range.constraints.horizontal === "SCALE" &&
+            range.cornerRadius === 0 &&
+            track.clipsContent === true &&
+            Math.abs(range.width - (track.width * current) / 4) <= 1 &&
+            words.characters === `${current} of 4` &&
+            words.fontSize === 12 &&
+            boundVariableName(fill(words)) === "Colors/foreground/400" &&
+            progress.children[progress.children.length - 1] === words,
+          `${content}: the bar, filled to ${current} of 4 in the theme ink, a square end the track's clip rounds, and "${words && words.characters}" after it in the muted ink`,
+        );
+      }
       if (!coachmark) {
         const footer = named(component, "Footer");
-        const dots = footer && named(footer, "Dots");
-        const actions = footer && named(footer, "Actions");
-        const labels = (actions ? actions.children : []).map((instance) =>
-          [
-            instance.name,
-            instance.mainComponent && instance.mainComponent.name.split(",")[0],
-            instance.componentProperties &&
-              instance.componentProperties["Label Text#1:0"],
-            instance.isExposedInstance,
-          ].join(" "),
-        );
-        const current =
-          content === "First step" ? "1" : content === "Last step" ? "5" : "2";
-        ok(
-          footer.primaryAxisAlignItems === "SPACE_BETWEEN" &&
-            dots &&
-            dots.type === "INSTANCE" &&
-            dots.isExposedInstance === true &&
-            dots.mainComponent.name ===
-              `Variant=Dots, Count=5, Current=${current}`,
-          `${content}: the dots are Stepper's, on step ${current} of 5, exposed`,
-        );
+        const labels = footer
+          .findAll((node) => node.type === "INSTANCE")
+          .map((instance) =>
+            [
+              instance.name,
+              instance.mainComponent &&
+                instance.mainComponent.name.split(",").slice(0, 2).join(","),
+              instance.componentProperties &&
+                instance.componentProperties["Label Text#1:0"],
+              instance.isExposedInstance,
+              instance.opacity,
+            ].join(" "),
+          );
         const expected = {
-          "First step": ["Next Variant=Default Next true"],
+          "First step": ["Next Variant=Default, Size=Small Next true 1"],
           Step: [
-            "Back Variant=Ghost Back true",
-            "Next Variant=Default Next true",
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Next Variant=Default, Size=Small Next true 1",
           ],
           "Last step": [
-            "Back Variant=Ghost Back true",
-            "Next Variant=Default Finish true",
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Next Variant=Default, Size=Small Next true 0.5",
+          ],
+          Warning: [
+            "Back Variant=Ghost, Size=Small Back true 1",
+            "Secondary Variant=Outline, Size=Small Finish without adding true 1",
+          ],
+          Welcome: [
+            "Dismiss Variant=Link, Size=Small Don't show again true 1",
+            "Secondary Variant=Outline, Size=Small Not now true 1",
+            "Next Variant=Default, Size=Small Show me the tours true 1",
           ],
         }[content];
         ok(
-          JSON.stringify(labels) === JSON.stringify(expected),
+          JSON.stringify(labels) === JSON.stringify(expected) &&
+            footer.primaryAxisAlignItems ===
+              (welcome ? "SPACE_BETWEEN" : "MAX"),
           `${content}: ${labels.join("; ")}`,
+        );
+        // Every button is its words and 12 either side, and the row stays
+        // inside the card: the dismiss link's box on the inner edge, the
+        // actions ending on the other. Size=Small is a fixed 96 in the file:
+        // in the live set "Finish without adding" ran past the card's edge.
+        const buttons = footer.findAll((node) => node.type === "INSTANCE");
+        const fits = buttons.map((instance) => {
+          const label = named(instance, "Label Text");
+          const stroke = instance.mainComponent.name.includes("Outline")
+            ? 2
+            : 0;
+          return {
+            name: instance.name,
+            width: instance.width,
+            label: label.width,
+            hugs:
+              instance.primaryAxisSizingMode === "AUTO" &&
+              instance.width === label.width + 24 + stroke &&
+              label.x >= 12 &&
+              label.x + label.width <= instance.width - 12,
+          };
+        });
+        ok(
+          fits.every((button) => button.hugs),
+          `${content}: every button hugs its label (${fits.map((button) => `${button.name} ${button.width} for ${button.label}`).join(", ")})`,
+        );
+        const actions = named(footer, "Actions");
+        const dismiss = named(footer, "Dismiss");
+        ok(
+          actions.x >= 0 &&
+            actions.x + actions.width === footer.width &&
+            (dismiss
+              ? dismiss.x === 0 && dismiss.x + dismiss.width < actions.x
+              : true) &&
+            footer.height === 44,
+          `${content}: the actions end on the card's inner edge, ${dismiss ? "the link starts on the other, " : ""}one line (${dismiss ? `${dismiss.x}+${dismiss.width}, ` : ""}${actions.x}+${actions.width} in ${footer.width})`,
         );
       }
       ok(
@@ -2535,12 +2755,16 @@ section("TourStep (GAP-188)");
       );
     }
 
-    // The set's properties: six texts and two booleans, each driving a layer.
+    // The set's properties: four texts and two booleans, each driving a layer.
+    // In the order Build and Update run them: the layout, then the properties.
     const set = new MockNode("COMPONENT_SET", "TourStep");
     for (const content of plugin.TOUR_STEP_CONTENT)
       set.appendChild(painted[content]);
     const propertyStats = freshStats();
-    file.configureTourStepProperties(set, propertyStats);
+    await withAutoLayout(async () => {
+      file.layoutTourStepVariants(set);
+      file.configureTourStepProperties(set, propertyStats);
+    });
     const definitions = Object.entries(set.componentPropertyDefinitions).map(
       ([key, definition]) => `${key.split("#")[0]}:${definition.type}`,
     );
@@ -2548,17 +2772,15 @@ section("TourStep (GAP-188)");
       JSON.stringify(definitions.sort()) ===
         JSON.stringify(
           [
+            "Arrow:BOOLEAN",
             "Body Text:TEXT",
-            "Hint Text:TEXT",
-            "Hint:BOOLEAN",
             "Instruction Text:TEXT",
             "Instruction:BOOLEAN",
-            "Position Text:TEXT",
             "Title Text:TEXT",
             "Tour Text:TEXT",
           ].sort(),
         ),
-      `six text properties and two booleans (${definitions.join(", ")})`,
+      `four text properties and two booleans, and no position (${definitions.join(", ")})`,
     );
     const references = (key) =>
       set.findAll(
@@ -2570,23 +2792,376 @@ section("TourStep (GAP-188)");
       ).length;
     const unbound = [
       "Tour Text",
-      "Position Text",
       "Title Text",
       "Body Text",
-      "Hint Text",
       "Instruction Text",
-      "Hint",
       "Instruction",
+      "Arrow",
     ].filter((key) => references(key) === 0);
     ok(
       unbound.length === 0 && propertyStats.warnings.length === 0,
       `every property drives a layer (${unbound.join(", ") || "all bound"}; ${propertyStats.warnings.join(" | ")})`,
     );
     ok(
-      references("Hint") === 4 && references("Instruction") === 4,
-      "Hint and Instruction drive their layer in every variant",
+      references("Instruction") === 4 && references("Arrow") === 6,
+      `Instruction drives its layer in the four steps, and Arrow in all six (${references("Instruction")}, ${references("Arrow")})`,
+    );
+
+    // What the file shows once the layers are bound. A set's TEXT property has
+    // one default and it replaces every bound layer's words, so no variant can
+    // keep words of its own there: the sample has to read true on all six, and
+    // the position, which the bar beside it decides, cannot be a property.
+    const sample = plugin.TOUR_STEP_SAMPLE;
+    const defaultOf = (name) =>
+      Object.entries(set.componentPropertyDefinitions).find(
+        ([key]) => key.split("#")[0] === name,
+      )?.[1].defaultValue;
+    for (const [name, key] of [
+      ["Tour Text", "tour"],
+      ["Title Text", "title"],
+      ["Body Text", "body"],
+      ["Instruction Text", "instruction"],
+    ]) {
+      const layers = set.findAll(
+        (node) => node.type === "TEXT" && node.name === name,
+      );
+      ok(
+        layers.length > 0 &&
+          defaultOf(name) === sample[key] &&
+          layers.every((layer) => layer.characters === sample[key]),
+        `${name}: ${layers.length} bound layers all read the default, "${sample[key]}"`,
+      );
+    }
+    ok(
+      [sample.tour, sample.title, sample.body, sample.instruction].every(
+        (words) =>
+          !/\bnext\b|\bselect\b|\bfinish\b|\bwelcome\b|\d of \d/i.test(words),
+      ),
+      "the sample names no position and no button a variant may not have",
+    );
+    for (const content of plugin.TOUR_STEP_CONTENT) {
+      const component = painted[content];
+      const current = { "First step": 1, Step: 2 }[content] || 4;
+      const positions = component.findAll(
+        (node) => node.type === "TEXT" && node.name === "Position Text",
+      );
+      if (content === "Coachmark" || content === "Welcome") {
+        ok(positions.length === 0, `${content}: no position`);
+        continue;
+      }
+      const track = named(component, "Progress Track");
+      const range = named(component, "Progress Range");
+      const said = positions.map((node) => node.characters);
+      ok(
+        positions.length === 2 &&
+          said.every((words) => words === `${current} of 4`) &&
+          Math.abs(range.width / track.width - current / 4) < 0.01 &&
+          positions.every(
+            (node) => !(node.componentPropertyReferences || {}).characters,
+          ),
+        `${content}: says ${said.join(" and ")} over a bar at ${Math.round((range.width / track.width) * 100)} %, written by the variant and bound to nothing`,
+      );
+    }
+    const tallest = Math.max(...set.children.map((child) => child.height));
+    ok(
+      set.height === tallest + 20 &&
+        set.children.every((child) => child.y === 20),
+      `the set's box ends on its tallest card (${set.height} for ${tallest}, each card 20 down for its arrow)`,
+    );
+
+    // An Update over what is on the file, keeping every id Code Connect is
+    // about to pin. The set as the Build of 2026-11-01 left it: Position Text a
+    // property, its layers bound to it. New layer ids in every variant, so the
+    // Close's tint and stroke are laid again in the same run.
+    const positionKey = set.addComponentProperty(
+      "Position Text",
+      "TEXT",
+      "2 of 4",
+    );
+    for (const layer of set.findAll(
+      (node) => node.type === "TEXT" && node.name === "Position Text",
+    )) {
+      layer.componentPropertyReferences = { characters: positionKey };
+    }
+    const ids = {
+      set: set.id,
+      variants: set.children.map((child) => child.id),
+      title: named(set.children[0], "Title Text").id,
+    };
+    const config = file.tourStepComponentConfig();
+    const updateStats = freshStats();
+    await withAutoLayout(async () => {
+      for (const child of [...set.children]) {
+        await config.updateVariant(child, {
+          props: config.parseVariantName(child.name),
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: updateStats,
+        });
+      }
+      config.layoutVariants(set);
+      await config.configureProperties(set, updateStats, tokens.variableByName);
+      file.reportUnboundComponentProperties(set, updateStats);
+    });
+    ok(
+      set.id === ids.set &&
+        JSON.stringify(set.children.map((child) => child.id)) ===
+          JSON.stringify(ids.variants) &&
+        named(set.children[0], "Title Text").id !== ids.title,
+      "an Update keeps the set's id and its six variants', and redraws their layers",
+    );
+    ok(
+      !Object.keys(set.componentPropertyDefinitions).some(
+        (key) => key.split("#")[0] === "Position Text",
+      ) &&
+        references("Title Text") === 6 &&
+        updateStats.warnings.length === 0,
+      `an Update takes Position Text off the set and leaves nothing unbound (${updateStats.warnings.join(" | ")})`,
+    );
+    const updated = set.children[1];
+    const updatedEdge = named(updated, "Instruction Edge");
+    const updatedClose = named(updated, "Close").findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.mainComponent === "Icon#2:0",
+    );
+    const updatedInk = updatedClose.findAll(
+      (node) => (node.strokes || []).length > 0,
+    );
+    ok(
+      updatedEdge.height === named(updated, "Instruction").height &&
+        updatedInk.length > 0 &&
+        updatedInk.every(
+          (node) =>
+            boundVariableName(node.strokes[0]) === ghostInk &&
+            Math.abs(node.strokeWeight - 4 / 3) < 1e-6,
+        ),
+      "over the Build, the instruction's layers still fit and Close keeps its tint and stroke",
+    );
+
+    // Figma documents neither default. A new frame that clips, and a stroke
+    // that starts outside, leave the drawing as it is.
+    const worst = fileFigma.createComponent();
+    const worstStats = freshStats();
+    await withNodeDefaults(
+      {
+        FRAME: { clipsContent: true, strokeAlign: "OUTSIDE" },
+        COMPONENT: { clipsContent: true, strokeAlign: "OUTSIDE" },
+        RECTANGLE: { strokeAlign: "OUTSIDE" },
+      },
+      () =>
+        withAutoLayout(async () => {
+          const painting = fileFigma.createComponent();
+          await file.updateTourStepVariant(painting, {
+            props: { content: "Step" },
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: worstStats,
+          });
+          worst.appendChild(painting);
+        }),
+    );
+    const worstCard = worst.children[0];
+    const clipping = worstCard
+      .findAll((node) => node.type === "FRAME" && node.clipsContent)
+      .map((node) => node.name);
+    ok(
+      worstCard.strokeAlign === "INSIDE" &&
+        worstCard.clipsContent === false &&
+        named(worstCard, "Instruction Edge").strokeAlign === "INSIDE" &&
+        JSON.stringify(clipping.sort()) ===
+          JSON.stringify(["Arrow", "Progress Track"]),
+      `whatever a new node starts as, the card's border is inside and only the arrow and the track clip (${worstCard.strokeAlign}, ${clipping.join(", ")})`,
     );
   }
+}
+
+// What the stand-in learned from the live TourStep set, on its own: each is a
+// behaviour a painter leans on and the stand-in used to pass over, so a check
+// that reads layout is reading the file's rules, not this file's hopes. Read
+// over REST on 2026-11-01, where the painter that drew the set, replayed in
+// `withAutoLayout`, lands within a pixel of its 127 nodes and its 2692 by 388,
+// apart from the widths of self-sizing text.
+section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
+{
+  await withAutoLayout(async () => {
+    const buttonVariant = new MockNode("COMPONENT", "Size=Small");
+    buttonVariant.layoutMode = "HORIZONTAL";
+    buttonVariant.primaryAxisSizingMode = "FIXED";
+    buttonVariant.counterAxisSizingMode = "FIXED";
+    buttonVariant.primaryAxisAlignItems = "CENTER";
+    buttonVariant.paddingLeft = 12;
+    buttonVariant.paddingRight = 12;
+    buttonVariant.resize(96, 44);
+    const label = new MockNode("TEXT", "Label Text");
+    label.fontSize = 14;
+    label.characters = "Next";
+    label.componentPropertyReferences = { characters: "Label Text#1:0" };
+    buttonVariant.appendChild(label);
+
+    // A fixed primary axis keeps its width when the label changes.
+    const kept = buttonVariant.createInstance();
+    kept.setProperties({ "Label Text#1:0": "Finish without adding" });
+    const keptLabel = named(kept, "Label Text");
+    ok(
+      kept.width === 96 &&
+        keptLabel.width > 72 &&
+        keptLabel.x < 0 &&
+        keptLabel.x + keptLabel.width > 96,
+      `a fixed instance keeps its 96, and a long label runs out of both sides (${kept.width}, the label at ${keptLabel.x}+${keptLabel.width})`,
+    );
+    // HUG is the shorthand for the sizing mode, and the instance follows.
+    const hugged = buttonVariant.createInstance();
+    hugged.setProperties({ "Label Text#1:0": "Finish without adding" });
+    hugged.layoutSizingHorizontal = "HUG";
+    const huggedLabel = named(hugged, "Label Text");
+    ok(
+      hugged.primaryAxisSizingMode === "AUTO" &&
+        hugged.width === huggedLabel.width + 24 &&
+        huggedLabel.x === 12,
+      `a hugging instance is its label and its padding (${hugged.width}, ${hugged.primaryAxisSizingMode})`,
+    );
+
+    // A bound text takes the set's default, in every variant, at once.
+    const set = new MockNode("COMPONENT_SET", "Set");
+    const key = set.addComponentProperty("Words", "TEXT", "The default");
+    const texts = ["One", "Two"].map((words) => {
+      const variant = new MockNode("COMPONENT", words);
+      const text = new MockNode("TEXT", "Words");
+      text.characters = words;
+      variant.appendChild(text);
+      set.appendChild(variant);
+      return text;
+    });
+    ok(
+      texts[0].characters === "One",
+      "a text keeps its words until it is bound",
+    );
+    for (const text of texts) {
+      text.componentPropertyReferences = { characters: key };
+    }
+    ok(
+      texts.every((text) => text.characters === "The default"),
+      "a bound text takes the set's default, whatever its variant wrote",
+    );
+    set.editComponentProperty(key, { defaultValue: "Another" });
+    ok(
+      texts.every((text) => text.characters === "Another"),
+      "a new default reaches every bound layer",
+    );
+    set.deleteComponentProperty(key);
+    ok(
+      texts.every(
+        (text) =>
+          text.characters === "Another" &&
+          !text.componentPropertyReferences.characters,
+      ),
+      "a deleted property leaves its layers their words and no reference",
+    );
+
+    // A padded hug frame takes an absolute layer in while it is in the flow,
+    // and holds the size when it leaves it, so the stretch keeps the padding as
+    // a margin however the frame moves after that.
+    const frame = new MockNode("FRAME", "Hugging");
+    frame.layoutMode = "HORIZONTAL";
+    frame.primaryAxisSizingMode = "FIXED";
+    frame.counterAxisSizingMode = "AUTO";
+    frame.paddingTop = 8;
+    frame.paddingBottom = 8;
+    frame.resizeWithoutConstraints(338, 40);
+    const layer = new MockNode("RECTANGLE", "Layer");
+    layer.resize(338, 40);
+    frame.insertChild(0, layer);
+    ok(frame.height === 56, `the flow child and the padding: ${frame.height}`);
+    layer.layoutPositioning = "ABSOLUTE";
+    layer.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    ok(frame.height === 56, `no flow child left, it holds: ${frame.height}`);
+    const words = new MockNode("TEXT", "Words");
+    words.textAutoResize = "HEIGHT";
+    words.lineHeight = { unit: "PIXELS", value: 19.25 };
+    words.fontSize = 14;
+    words.characters = "w".repeat(70);
+    words.resizeWithoutConstraints(290, 19.25);
+    frame.appendChild(words);
+    ok(
+      frame.height === 54.5 && layer.height === 38.5,
+      `the frame hugs two lines, and the layer stays 16 short: ${layer.height} in ${frame.height}, the live 39 in 55`,
+    );
+  });
+}
+
+// figma:verify's two new rules, on nodes shaped as REST returns them. The
+// report it missed was not about text at all: over REST on 2026-11-01 the
+// instruction's words sat inside their own box and inside the frame, which
+// hugged them, and what fell short was the frame's own fill and edge, absolute
+// layers its overflow rule skips on purpose.
+section("figma:verify reads stretched layers and a separator");
+{
+  const box = (x, y, width, height) => ({ x, y, width, height });
+  const stretched = {
+    horizontal: "LEFT_RIGHT",
+    vertical: "TOP_BOTTOM",
+  };
+  const layer = (name, bounds, constraints = stretched) => ({
+    name,
+    type: "RECTANGLE",
+    layoutPositioning: "ABSOLUTE",
+    constraints,
+    absoluteBoundingBox: bounds,
+  });
+  const frame = (children, height = 55) => ({
+    name: "Instruction",
+    type: "FRAME",
+    layoutMode: "HORIZONTAL",
+    absoluteBoundingBox: box(0, 0, 338, height),
+    children,
+  });
+  const short = layersShortOfTheirFrame("TourStep", {
+    name: "TourStep",
+    children: [
+      frame([
+        layer("Instruction Fill", box(0, 0, 338, 39)),
+        layer("Instruction Edge", box(0, 0, 338, 39)),
+      ]),
+    ],
+  });
+  ok(
+    short.length === 2 &&
+      short[0] ===
+        "TourStep / Instruction > Instruction Fill — 338x39 over a 338x55 frame (short by 16)",
+    `a layer stretched over its frame and short of it is named (${short.join("; ")})`,
+  );
+  ok(
+    layersShortOfTheirFrame("Set", {
+      name: "Set",
+      children: [
+        frame([
+          // On the frame, a focus ring past it, a strip stretched one way, and
+          // a hidden layer.
+          layer("Fits", box(0, 0, 338, 55)),
+          layer("Focus Ring", box(-4, -4, 346, 63)),
+          layer("Vertical Scrollbar", box(330, 0, 8, 23), {
+            horizontal: "RIGHT",
+            vertical: "TOP_BOTTOM",
+          }),
+          { ...layer("Hidden", box(0, 0, 338, 10)), visible: false },
+        ]),
+      ],
+    }).length === 0,
+    "a layer on its frame, one past it, a strip and a hidden layer are left alone",
+  );
+
+  const text = (name, characters) => ({ type: "TEXT", name, characters });
+  ok(
+    !isTypedGlyph(text("Separator", "·")) &&
+      isTypedGlyph(text("Label", "·")) &&
+      isTypedGlyph(text("Separator", "→")) &&
+      isTypedGlyph(text("Close", "×")) &&
+      !isTypedGlyph(text("Label", "Next")) &&
+      !isTypedGlyph(text("Percent", "%")),
+    "a Separator's dot is punctuation; a dot elsewhere, and any other glyph, still counts",
+  );
 }
 
 // --- Decision 59: the theme fill and what sits on it ------------------------------

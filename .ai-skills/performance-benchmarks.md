@@ -52,7 +52,8 @@ tiers planned before the code are kept in
 
 The required `analyze-bundle` check (`.github/workflows/bundle-size.yml`) runs
 `scripts/performance/bundle-analyzer.ts`. It builds `@kozmos-ds/react`, bundles it the way a Vite
-app would (Rollup, honouring the package's `sideEffects`, its dependencies left out), and holds four
+app's production build would (Rollup, with `process.env.NODE_ENV` replaced as each module is read and
+the package's `sideEffects` honoured, its dependencies left out), and holds four
 budgets, gzipped:
 
 | Measure                              | Budget |

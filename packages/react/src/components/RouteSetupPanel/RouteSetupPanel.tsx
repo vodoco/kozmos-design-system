@@ -3,7 +3,7 @@ import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
-import { surfaceClass, type SurfaceVariant } from "../Surface";
+import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
 import { DensityScope } from "../../theme/DensityScope";
 
 export interface RouteSetupPanelProps extends React.HTMLAttributes<HTMLElement> {
