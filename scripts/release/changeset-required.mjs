@@ -41,11 +41,12 @@ const NOT_SHIPPED =
   /(^|\/)(__tests__|tests?)\/|\.(test|spec|stories)\.[cm]?[jt]sx?$|\.figma\.tsx?$|\.mdx?$|\.snap$/;
 // Beside src/, the files that decide what dist holds: the build configs, the
 // PostCSS plugins react's build runs over every rule it ships
-// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), and tsconfig, whose
-// `exclude` is what unplugin-dts publishes. tsconfig.node.json only types
+// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins it runs
+// over every module (vite-plugins/), and tsconfig, whose `exclude` is what
+// unplugin-dts publishes. tsconfig.node.json only types
 // the build config itself.
 const BUILD_FILES =
-  /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;
+  /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|vite-plugins\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;
 // package.json fields a consumer's resolver, bundler or installer reads, or
 // that decide what the tarball holds and how it is published. A version bump
 // alone is the release itself, not a change to release.

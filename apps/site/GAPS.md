@@ -771,7 +771,7 @@ keep the table's four columns and its statuses as they are.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`, as for
   GAP-24), fixed by default, with the scrim colour and blur unchanged.
-- **On `main` since #419** (2026-10-27, for 0.14.0, not yet released):
+- **Released in 0.14.0** (#419, 2026-10-27):
   `placement="inline"` draws the backdrop in place, absolute over the nearest
   positioned box, and `"fixed"`, the default, is drawn in the theme's portal.
   The attract screen can move to it; until it does, the status stays
@@ -1005,7 +1005,7 @@ keep the table's four columns and its statuses as they are.
   8px a side below `sm` (`Stepper.tsx:109–116`, `:144`, `:158`), so five
   steps fit a 288px row. That is neither fix asked for below: every label
   still shows, cut short, and there is no vertical form, which is the change
-  list's GAP-173, still a decision. #409 (on `main`, for 0.14.0) adds
+  list's GAP-173, parked by decision 149. #409 (released in 0.14.0) adds
   `variant="dots"`, one dot per step and no label shown, a tour's progress.
   Whether truncated labels or the dots are narrow form enough to drop the
   wrapper, whose comments still say Kozmos has no narrower form, is the
