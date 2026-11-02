@@ -10,6 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  DensityScope,
   ThemeProvider,
   TourStep,
   type TourStepProps,
@@ -28,6 +29,8 @@ import {
 interface Mount {
   theme: "light" | "dark";
   density?: "touch" | "compact";
+  /** A DensityScope round the page: it marks the card itself, in the portal. */
+  scoped?: "touch" | "compact";
   dir?: "ltr" | "rtl";
   target?: "ref" | "rect" | "virtual" | "missing" | "none";
   side?: TourStepProps["side"];
@@ -323,6 +326,10 @@ function mount(options: Mount) {
                 <Page {...options} />
               </DialogContent>
             </Dialog>
+          ) : options.scoped ? (
+            <DensityScope density={options.scoped}>
+              <Page {...options} />
+            </DensityScope>
           ) : (
             <Page {...options} />
           )}

@@ -112,8 +112,12 @@
   }
   /* At compact, Close ends where a title under the eyebrow starts, so that
      title keeps the card's width instead of wrapping for nothing. */
+  /* The provider marks an ancestor; a DensityScope marks the card itself. */
   [data-kozmos-density="compact"]
-    .kozmos-tour-step
+    .kozmos-tour-step:not([data-kozmos-density="touch"])
+    .kozmos-tour-step-eyebrow
+    ~ .kozmos-tour-step-title,
+  .kozmos-tour-step[data-kozmos-density="compact"]
     .kozmos-tour-step-eyebrow
     ~ .kozmos-tour-step-title {
     margin-inline-end: calc(-1 * var(--kozmos-tour-step-close-room, 0px));

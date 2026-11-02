@@ -1111,6 +1111,43 @@ await scenario(
   },
 );
 
+// DensityScope marks the card itself, in the portal, not an ancestor.
+await scenario(
+  "in a compact DensityScope, a title under the eyebrow takes the card's width too",
+  {
+    mount: {
+      density: "touch",
+      scoped: "compact",
+      title: "Open User Management in Settings",
+    },
+  },
+  async (page) => {
+    await placement(page);
+    const h = await header(page);
+    assert.equal(h.title.lines.length, 1, "one line, as it fits");
+  },
+);
+
+await scenario(
+  "in a touch DensityScope on a compact page, the title keeps its room for Close",
+  {
+    mount: {
+      density: "compact",
+      scoped: "touch",
+      title: "Open User Management in Settings",
+    },
+  },
+  async (page) => {
+    await placement(page);
+    const h = await header(page);
+    assert.deepEqual(
+      h.title.lines.filter((line) => overlap(line, h.close)),
+      [],
+      "no line under Close",
+    );
+  },
+);
+
 await scenario(
   "at twice the reader's text size, Close grows with it and stays whole, and the words still wrap before it",
   {
