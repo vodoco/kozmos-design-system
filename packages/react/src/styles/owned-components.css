@@ -1511,6 +1511,56 @@
       animation: none;
     }
   }
+  /* Accordion's boxed form (decision 149). Its height is the density's control
+     height, 40 compact and 44 touch; the content under it is in the page's
+     flow. The edge stays, transparent, while open: it keeps the box's size and
+     still draws in forced colours. Theme 300 and foreground 1000 on theme 900
+     turn over with the theme, so they hold 4.5:1 in both
+     (tokens:contrast:check). */
+  .kozmos-accordion-boxed {
+    @apply flex flex-col gap-2;
+  }
+  .kozmos-accordion-trigger {
+    min-height: var(--density-control-height-md, 2.75rem);
+    font-size: calc(
+      var(--primitives-typography-font-size-paragraph-small) * 1rem / 16
+    );
+    line-height: calc(var(--primitives-typography-line-height-100) * 1rem / 16);
+    @apply flex w-full cursor-pointer items-center gap-2 rounded-control border bg-background px-2 py-0.5 text-start font-normal text-foreground ring-offset-background hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
+  }
+  .kozmos-accordion-trigger[data-state="open"]:enabled {
+    border-color: transparent;
+    background-color: var(--primitives-colors-theme-900);
+    color: var(--primitives-colors-foreground-1000);
+    --kz-label: var(--primitives-colors-theme-300);
+  }
+  .kozmos-accordion-trigger[data-state="open"] > .kozmos-accordion-chevron {
+    transform: rotate(180deg);
+  }
+  .kozmos-accordion-trigger:disabled > .kozmos-accordion-chevron {
+    display: none;
+  }
+  .kozmos-accordion-trigger > svg {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .kozmos-accordion-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-accordion-label {
+    display: block;
+    font-size: calc(
+      var(--primitives-typography-font-size-paragraph-xsmall) * 1rem / 16
+    );
+    line-height: calc(var(--primitives-typography-line-height-50) * 1rem / 16);
+    color: var(--kz-label, var(--primitives-colors-foreground-400));
+  }
+  .kozmos-accordion-body {
+    padding-top: 0.5rem;
+  }
   /* Accordion's chevron turns on the standard motion tokens, as its
      content opens and closes over them (the accordion keyframes in
      tailwind.config.js), so the two move together. Under reduced motion, the media query's or the design
@@ -1533,6 +1583,22 @@
   }
   [data-kozmos-motion="reduced"] div.kozmos-accordion-content[data-state] {
     animation: none;
+  }
+  /* A Toaster's toast (GAP-167) arrives, leaves and springs back from a
+     swipe without moving, under either signal: the media query reached none
+     of it, and the config's scale left each a 0.15 ms cut. The type selector
+     and the two attributes outweigh Toast's own utilities (:scope, a class
+     and an attribute). Its swipe still follows the finger. */
+  @media (prefers-reduced-motion: reduce) {
+    li.kozmos-toast[data-state][data-swipe-direction] {
+      animation: none;
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"]
+    li.kozmos-toast[data-state][data-swipe-direction] {
+    animation: none;
+    transition: none;
   }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a

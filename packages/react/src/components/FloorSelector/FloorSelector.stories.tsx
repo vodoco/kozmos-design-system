@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import { useEffect, useRef } from "react";
+import type { BuildingPresentation } from "@kozmos-ds/product-contracts";
 import { ThemeProvider } from "../ThemeProvider";
 import { FloorSelector, type FloorSelectorProps } from "./FloorSelector";
 
@@ -149,5 +150,30 @@ export const CollapsibleOpenRightToLeft: Story = {
         <OpenedOnArrival {...args} />
       </ThemeProvider>
     );
+  },
+};
+
+/**
+ * The building the live map reports, a `BuildingPresentation` (GAP-175):
+ * its floors, top first, handed to FloorSelector as they are, starting on
+ * its default level (decision 141), else the ground level.
+ */
+const terminal: BuildingPresentation = {
+  id: "t2",
+  label: "Terminal 2",
+  siteId: "airport",
+  floors: [
+    { id: "3", label: "Departures", shortLabel: "3" },
+    { id: "2", label: "Arrivals", shortLabel: "2" },
+    { id: "0", label: "Ground transport", shortLabel: "0" },
+    { id: "-1", label: "Car park", shortLabel: "P" },
+  ],
+  defaultFloorId: "2",
+};
+
+export const FromABuilding: Story = {
+  args: {
+    floors: terminal.floors,
+    selectedFloor: terminal.defaultFloorId ?? "0",
   },
 };

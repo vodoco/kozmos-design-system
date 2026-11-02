@@ -254,6 +254,9 @@ export function createMockTextStyle() {
 }
 
 /** Writing a style's field on its text with another value detaches it. */
+/** A text style the mock holds, by the id a text carries. */
+export const mockTextStyleById = (id) => mockTextStyles.get(id);
+
 function detachOverriddenStyle(node, field, value) {
   const style = mockTextStyles.get(node.textStyleId);
   if (style && JSON.stringify(style[field]) !== JSON.stringify(value)) {
@@ -543,6 +546,18 @@ export class MockNode {
     }
   }
 
+  // A floor on a frame's height, which a hug axis stops at. Bound to a
+  // variable it reads the variable's value in Figma; here the painter writes
+  // the value as well, as it does for every other bound field.
+  get minHeight() {
+    return this._minHeight === undefined ? null : this._minHeight;
+  }
+
+  set minHeight(value) {
+    this._minHeight = value;
+    settleAutoLayout(this.parent || this);
+  }
+
   get layoutPositioning() {
     return this._layoutPositioning;
   }
@@ -782,6 +797,11 @@ export class MockNode {
           : value && typeof value === "object"
             ? structuredClone(value)
             : value;
+    }
+    // A layer keeps how it sizes in its copy: an instance's FILL text still
+    // fills when a property changes its words.
+    if (this[layoutSizingValues]) {
+      copy[layoutSizingValues] = { ...this[layoutSizingValues] };
     }
     for (const child of this.children) copy.appendChild(child.clone());
     return copy;
@@ -1028,6 +1048,10 @@ function isAutoLayoutNode(node) {
  *   the height of a padded hug frame keeps a margin of the padding for good:
  *   Instruction Fill and Edge read 39 in 55 on all four variants, the frame
  *   hugging its two lines and the layers 16 short of it.
+ * - `minHeight` is a floor on a hug axis: the frame hugs what is in it and
+ *   stops there, as the panel's Min H does. Unlike the rules above, this one
+ *   was not read off the live file: Accordion's boxed Update is its first
+ *   read-back. `minWidth` is not modelled.
  * - `layoutWrap` is not modelled: a row that would wrap overflows here, which
  *   is the worse of the two for a check to read.
  */
@@ -1173,7 +1197,7 @@ function layOut(node) {
     const content = horizontal
       ? Math.max(...heights)
       : heights.reduce((sum, height) => sum + height, 0) + gap;
-    placeSize(node, node.width, content + insetY);
+    placeSize(node, node.width, Math.max(content + insetY, node.minHeight || 0));
   }
 
   // Where each child ends up, so a check can read a row's edges.

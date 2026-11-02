@@ -124,6 +124,9 @@ is pressed reaches `onAction` with the action and the POI's ID, and never select
 list hands `onAction` and `actionsLabel`, the action row's name, to every result, groups included.
 The same names on iOS and Android, where both are optional and come after the list's other
 parameters.
+The product's own actions, a result's `hostActions` (GAP-028), follow the card's in the same row,
+and the list hands `onHostAction(actionId, poiId)` and `hostActionIcons`, the icons for their names,
+to every result the same way: POIResultCard's page has them.
 
 Give the list `onAction` whenever its results carry actions. On iOS and Android an action with
 nothing to run it is drawn disabled, as `POIDetailPanel` draws a supplementary action it has no

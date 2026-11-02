@@ -173,6 +173,10 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The theme's 600 is a word, a mark, an edge or a focus ring on the
   // surface (decision 59).
   ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],
+  // Theme 300 is a word on theme 900: Accordion's boxed label (decision 149).
+  ["Primitives/Colors/theme/300", ["TEXT_FILL"]],
+  // Theme 900 is the edge an open boxed header keeps, in its fill's colour.
+  ["Primitives/Colors/theme/900", ["STROKE_COLOR"]],
   // A status's words, its icon, and the edge and focus ring of a field,
   // control or alert in it.
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
@@ -187,6 +191,12 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/emotional/alert/800", ["STROKE_COLOR"]],
   // The bevel's shade is a soft edge under a shape: a tour step's arrow.
   ["Primitives/Border/bevel/bottom", ["EFFECT_COLOR"]],
+  // A tone's text colour is also its icon: a toast's (GAP-167), drawn in the
+  // tone's words' colour, as React's Toaster draws it.
+  ["Semantics/Emotion/success/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/informative/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/alert/text", ["STROKE_COLOR"]],
+  ["Semantics/Emotion/danger/text", ["STROKE_COLOR"]],
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],

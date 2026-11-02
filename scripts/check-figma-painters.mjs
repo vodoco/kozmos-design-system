@@ -28,6 +28,7 @@ import {
   loadPlugin,
   mockComponentSet,
   mockIconComponent,
+  mockTextStyleById,
   mockWayfindingIconComponent,
   mockVariables,
   payloadVariables,
@@ -145,6 +146,9 @@ function pages() {
     "shopping-bag-02",
     "user-01",
     "check",
+    "alert-triangle",
+    "alert-circle",
+    "calendar",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -859,6 +863,58 @@ section("POIDetailPanel");
   ok(
     services && boundVariableName(services.fills[0]) === "Surface/100",
     "panel: the services block stays muted",
+  );
+
+  // GAP-130: the product's own action, last in the strip, outlined, with its
+  // icon before its words, hidden until Host Action shows it. The strip cuts
+  // off what passes the card's edge, as the code's strip does before it is
+  // scrolled, rather than wrapping or growing the card.
+  const strip = named(panel, "Actions Slot");
+  const hostAction = strip && strip.children[strip.children.length - 1];
+  ok(
+    strip &&
+      strip.children.map((child) => child.name).join(", ") ===
+        "Navigate Action, Save Action, Share Action, Host Action" &&
+      strip.clipsContent === true,
+    `the strip ends with the host action and clips (${strip && strip.children.map((child) => child.name).join(", ")})`,
+  );
+  ok(
+    hostAction &&
+      hostAction.visible === false &&
+      boundVariableName(hostAction.fills[0]) === "Surface/0" &&
+      boundVariableName(hostAction.strokes[0]) === "Border/Subtle" &&
+      hostAction.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Label" &&
+      hostAction.children[0].type === "INSTANCE" &&
+      hostAction.children[1].characters === "Open in app" &&
+      hostAction.height === 44,
+    `the host action is a hidden 44 outlined button, its icon before its words (${hostAction && hostAction.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
+  );
+  const variants = [];
+  for (const value of ["Inline", "Panel"]) variants.push((await paint(value)).component);
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIDetailPanel";
+  plugin.configurePOIDetailPanelProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Open in app" &&
+      variants.every(
+        (variant) =>
+          named(variant, "Host Action")?.componentPropertyReferences?.visible ===
+            hostProperty &&
+          named(variant, "Host Action Label")?.componentPropertyReferences
+            ?.characters === hostText,
+      ),
+    `a Host Action boolean, off, and Host Action Text, on every variant (${Object.keys(definitions).join(", ")})`,
   );
 }
 
@@ -2870,6 +2926,133 @@ section("figma:verify reads stretched layers and a separator");
   );
 }
 
+// GAP-167: Toast's Tone axis, toast()'s tones. Neutral draws no icon; each
+// other tone leads with the Alert set's icon for it, 16, in the tone's text
+// colour (Semantics/Emotion/<tone>/text), as React's Toaster draws it, on the
+// same surface and edge. A variant named before the axis parses as Neutral,
+// so Update renames the two in the file and keeps their node ids.
+section("Toast tones (GAP-167)");
+{
+  const ready =
+    Array.isArray(plugin.TOAST_TONES) &&
+    typeof plugin.parseToastVariantName === "function";
+  ok(ready, "Toast has a Tone axis");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    ok(
+      JSON.stringify(plugin.TOAST_TONES) ===
+        JSON.stringify(["Neutral", "Success", "Info", "Warning", "Critical"]),
+      `the tones are toast()'s (${plugin.TOAST_TONES.join(", ")})`,
+    );
+    const parsed = [
+      "Content=Basic",
+      "Content=Action, Tone=Critical",
+      "Content=Basic, Tone=Loud",
+    ].map((name) => plugin.parseToastVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "Basic", second: "Neutral" },
+          { value: "Action", second: "Critical" },
+          null,
+        ]),
+      `a variant from before the axis parses as Neutral; an unknown Tone is not one (${JSON.stringify(parsed)})`,
+    );
+    const expected = {
+      Neutral: null,
+      Success: ["check", "Emotion/success/text"],
+      Info: ["info-circle", "Emotion/informative/text"],
+      Warning: ["alert-triangle", "Emotion/alert/text"],
+      Critical: ["alert-circle", "Emotion/danger/text"],
+    };
+    for (const [tone, want] of Object.entries(expected)) {
+      const variant = await plugin.createToastVariant({
+        value: "Action",
+        second: tone,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      const icons = (variant.children || []).filter(
+        (child) => child.name === "Icon",
+      );
+      const [icon] = icons;
+      const shapes = icon
+        ? icon.findAll((node) => node.type === "VECTOR")
+        : [];
+      const tints = shapes.flatMap((shape) =>
+        (shape.strokes || []).map(boundVariableName).filter(Boolean),
+      );
+      const order = (variant.children || []).map((child) => child.name);
+      const surface = [
+        boundVariableName(variant.fills[0]),
+        boundVariableName(variant.strokes[0]),
+      ];
+      ok(
+        variant.name === `Content=Action, Tone=${tone}` &&
+          JSON.stringify(surface) ===
+            JSON.stringify(["Surface/0", "Border/Subtle"]) &&
+          (want === null
+            ? icons.length === 0
+            : icons.length === 1 &&
+              order[0] === "Icon" &&
+              icon.mainComponent &&
+              icon.mainComponent.name === `Icon / ${want[0]}` &&
+              icon.width === 16 &&
+              shapes.length > 0 &&
+              tints.length === shapes.length &&
+              tints.every((tint) => tint === want[1])),
+        want === null
+          ? `${tone}: no icon, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")})`
+          : `${tone}: ${want[0]} first, 16, in ${want[1]}, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")}; ${icon && icon.mainComponent && icon.mainComponent.name}; ${tints.join("+") || "untinted"})`,
+      );
+    }
+
+    // Update over the set as it is in the file today: two variants, named
+    // before the Tone axis. Each keeps its node id and is renamed Neutral;
+    // the other 8 are created beside them.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Toast");
+    const oldIds = {};
+    for (const name of ["Content=Basic", "Content=Action"]) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateToastComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 2 &&
+        updated.variantsCreated === 8 &&
+        liveSet.children.length === 10 &&
+        new Set(names).size === 10,
+      `Update keeps the set and its 2 variants, and adds 8: 10 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      ["Content=Basic", "Content=Action"].every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return variant && variant.name === `${name}, Tone=Neutral`;
+      }),
+      `each keeps its node id and is renamed Tone=Neutral (${["Content=Basic", "Content=Action"].map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+    );
+  }
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
@@ -3907,18 +4090,41 @@ section("POIResultCard actions");
     "GAP-056: 44px result actions plus the row's 12px bottom inset",
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       buttons[0].name === "Primary Action" &&
-      buttons[1].name === "Secondary Action",
-    `two actions, primary first (${buttons.map((b) => b.name).join(", ")})`,
+      buttons[1].name === "Secondary Action" &&
+      buttons[2].name === "Host Action",
+    `two actions, primary first, then the product's own (${buttons.map((b) => b.name).join(", ")})`,
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       boundVariableName(buttons[0].fills[0]) ===
         "Primary Buttons/themed/button/background/idle" &&
       boundVariableName(buttons[1].fills[0]) === "Surface/0" &&
-      buttons[1].strokeWeight === 1,
-    `the primary is the theme fill and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+      buttons[1].strokeWeight === 1 &&
+      boundVariableName(buttons[2].fills[0]) === "Surface/0" &&
+      boundVariableName(buttons[2].strokes[0]) === "Border/Subtle" &&
+      buttons[2].strokeWeight === 1,
+    `the primary is the theme fill, the secondary and the host action outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+  );
+  // GAP-028: the product's own action is drawn on every variant and hidden,
+  // its icon before its words, until the Host Action property shows it.
+  const host = buttons[2];
+  ok(
+    host &&
+      host.visible === false &&
+      buttons[0].visible !== false &&
+      buttons[1].visible !== false,
+    "the host action is hidden until Host Action asks for it; Go and Details are not",
+  );
+  ok(
+    host &&
+      host.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Text" &&
+      host.children[0].type === "INSTANCE" &&
+      host.children[1].characters === "Reserve a table" &&
+      host.itemSpacing === 8,
+    `the host action's icon leads its words, 8 apart (${host && host.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
   );
   // The primary is drawn as a default Button: its label is the theme
   // foreground, white in both themes. Surface/0 turned black in the dark.
@@ -3947,6 +4153,50 @@ section("POIResultCard actions");
   ok(
     !component.children.some((child) => child.name === "Logo Slot"),
     `and the card holds only the two rows (${component.children.map((c) => c.name).join(", ")})`,
+  );
+
+  // The Host Action property shows the product's own action and Host Action
+  // Text says its words, on every variant.
+  const variants = [];
+  for (const state of ["Default", "Selected"]) {
+    const variant = figma.createComponent();
+    await plugin.updatePOIResultCardVariant(variant, {
+      value: state,
+      second: "Card",
+      variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    variants.push(variant);
+  }
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIResultCard";
+  plugin.configurePOIResultCardProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Reserve a table",
+    `a Host Action boolean, off, and Host Action Text (${Object.keys(definitions).join(", ")})`,
+  );
+  ok(
+    Boolean(hostProperty && hostText) &&
+      variants.every((variant) => {
+        const button = named(variant, "Host Action");
+        const words = named(variant, "Host Action Text");
+        return (
+          button?.componentPropertyReferences?.visible === hostProperty &&
+          words?.componentPropertyReferences?.characters === hostText
+        );
+      }),
+    "every variant's host action shows through Host Action and says Host Action Text",
   );
 }
 
@@ -5309,6 +5559,89 @@ section("MapControlsGroup");
         !named(button, `${name} Glyph`),
       `${name} is a ${iconName} icon`,
     );
+  }
+}
+
+section("AdaptiveMapShell's map slots (GAP-123, SDK-UI-002)");
+{
+  // Where React's shell puts what it places over the map: the top corners
+  // under the top bar, the controls column below the top end, and the bottom
+  // row with its corners and, between them, the status with the credits
+  // above it. Rows in flow, so they follow the surface's width.
+  for (const value of ["Start", "End"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateAdaptiveMapShellVariant(component, {
+      value,
+      variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const surface = named(component, "Map Surface");
+    const names = (node) => (node ? node.children.map((c) => c.name) : []);
+    ok(
+      surface &&
+        surface.layoutMode === "VERTICAL" &&
+        names(surface).join() ===
+          "Top Corners,Controls Column,Map Space,Bottom Row",
+      `${value}: the map surface stacks the top corners, the controls, the map and the bottom row`,
+    );
+    const top = surface && named(surface, "Top Corners");
+    ok(
+      top &&
+        top.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        top.layoutSizingHorizontal === "FILL" &&
+        names(top).join() === "Top Start Slot,Top End Slot",
+      `${value}: the top corners share a row, the start first and the end at the end`,
+    );
+    const column = surface && named(surface, "Controls Column");
+    ok(
+      column &&
+        column.primaryAxisAlignItems === "MAX" &&
+        names(column).join() === "Controls Slot",
+      `${value}: the controls column sits at the end, below the top corners`,
+    );
+    const space = surface && named(surface, "Map Space");
+    ok(
+      space &&
+        space.layoutSizingVertical === "FILL" &&
+        space.fills.length === 0 &&
+        space.strokes.length === 0,
+      `${value}: the map between the rows is undrawn and takes what they leave`,
+    );
+    const bottom = surface && named(surface, "Bottom Row");
+    ok(
+      bottom &&
+        bottom.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        bottom.counterAxisAlignItems === "MAX" &&
+        names(bottom).join() ===
+          "Bottom Start Slot,Status And Credits,Bottom End Slot",
+      `${value}: the bottom row puts the status between the corners, level with their bottom edge`,
+    );
+    const middle = bottom && named(bottom, "Status And Credits");
+    ok(
+      middle && names(middle).join() === "Attribution Slot,Status Slot",
+      `${value}: the credits sit directly above the status`,
+    );
+    for (const name of [
+      "Top Start Slot",
+      "Top End Slot",
+      "Bottom Start Slot",
+      "Bottom End Slot",
+      "Status Slot",
+      "Attribution Slot",
+    ]) {
+      const slot = surface && named(surface, name);
+      ok(
+        slot &&
+          slot.cornerRadius ===
+            plugin.nestedRadius(
+              plugin.KOZMOS_RADIUS.control,
+              plugin.PRODUCT_SDK_CARD_INSET,
+            ),
+        `${value}: ${name} takes the radius the map surface's inset leaves it`,
+      );
+    }
   }
 }
 
@@ -8146,6 +8479,474 @@ section(
         `${label}: the leading search icon is kept`,
       );
   }
+}
+
+// --- Accordion's boxed form (decision 149) -----------------------------------
+
+// A new axis on the live set, painted as Update paints it. The set is first
+// drawn as the file holds it, two variants named by State alone, under ids
+// Code Connect pins, then Updated: the ids stay, the Default variants draw as
+// they did, and four Boxed ones join them. Under withAutoLayout, because the
+// last Build passed a check that laid nothing out and was visibly wrong.
+section("Decision 149: Accordion's boxed form");
+boxedAccordion: {
+  const axes = plugin.expectedVariantAxesForComponentSetName("Accordion");
+  ok(
+    JSON.stringify(axes && axes.Variant) ===
+      JSON.stringify(["Default", "Boxed"]) &&
+      JSON.stringify(axes && axes.State) ===
+        JSON.stringify(["Closed", "Open", "Disabled", "Loading"]),
+    `the set expects Variant and State (got ${JSON.stringify(axes)})`,
+  );
+  const parse = plugin.parseAccordionVariantName;
+  ok(
+    parse("State=Closed").second === "Default",
+    "a variant with no Variant reads as Default, so Update renames rather than replaces",
+  );
+  ok(
+    parse("Variant=Default, State=Disabled") === null &&
+      parse("Variant=Default, State=Loading") === null &&
+      parse("Variant=Roomy, State=Closed") === null,
+    "the default form is only Closed and Open, and an unknown form is refused",
+  );
+
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    ...plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name),
+    "Colors/theme/300",
+    "Colors/theme/900",
+  ]);
+  const components = new MockNode("PAGE", "Components");
+  const [, icons] = pages();
+  // The icon the boxed variants paint. Left out of the page, it would fall
+  // back to the slot default, and the Icon property would agree by accident.
+  icons.appendChild(mockIconComponent("home-line"));
+  const fileFigma = createFigmaMock({
+    pages: [components, icons],
+    collections: tokens.collections,
+  });
+  fileFigma.createTextStyle = createMockTextStyle;
+  fileFigma.accordionTokens = tokens.variableByName;
+  // The file's variables and fonts stand in as they do elsewhere here.
+  const file = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: fileFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => figma.accordionTokens;
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  await file.ensureKozmosTextStyles(FONTS, freshStats());
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const unresolved = [...floats.values()]
+    .filter((token) => token.name.startsWith("Accordion/boxed/") && token.alias)
+    .filter(
+      (token) =>
+        !floats.has(token.alias) &&
+        !tokens.variables.some((variable) => variable.name === token.alias),
+    );
+  ok(
+    unresolved.length === 0,
+    `every boxed token aliases a variable the file has (${unresolved.map((token) => token.alias).join(", ")})`,
+  );
+  const defaults = { closed: null, open: null };
+  const paintDefault = async (value) => {
+    const component = fileFigma.createComponent();
+    await withAutoLayout(() =>
+      file.updateAccordionVariant(component, {
+        value,
+        second: "Default",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    component.name = `State=${value}`;
+    return component;
+  };
+  defaults.closed = await paintDefault("Closed");
+  defaults.open = await paintDefault("Open");
+  const shape = (node) =>
+    JSON.stringify(
+      node
+        .findAll(() => true)
+        .map((child) => ({
+          name: child.name,
+          type: child.type,
+          width: child.width,
+          height: child.height,
+          layoutMode: child.layoutMode,
+          paddingBottom: child.paddingBottom,
+          itemSpacing: child.itemSpacing,
+          characters: child.characters,
+          strokeBottomWeight: child.strokeBottomWeight,
+        })),
+    );
+  const before = {
+    Closed: shape(defaults.closed),
+    Open: shape(defaults.open),
+  };
+  const set = fileFigma.combineAsVariants(
+    [defaults.closed, defaults.open],
+    components,
+  );
+  set.name = "Accordion";
+  const pinned = {
+    set: set.id,
+    Closed: defaults.closed.id,
+    Open: defaults.open.id,
+  };
+
+  const stats = await withAutoLayout(() => file.updateAccordionComponent());
+  ok(
+    stats.updated === true && stats.componentSetId === pinned.set,
+    `Update keeps the set's node id (${stats.componentSetId}, ${stats.message || "updated"})`,
+  );
+  const variants = new Map(set.children.map((child) => [child.name, child]));
+  const expected = [
+    "Variant=Default, State=Closed",
+    "Variant=Default, State=Open",
+    "Variant=Boxed, State=Closed",
+    "Variant=Boxed, State=Open",
+    "Variant=Boxed, State=Disabled",
+    "Variant=Boxed, State=Loading",
+  ];
+  ok(
+    set.children.length === 6 && expected.every((name) => variants.has(name)),
+    `the set is six variants (${[...variants.keys()].join("; ")})`,
+  );
+  ok(
+    variants.get("Variant=Default, State=Closed")?.id === pinned.Closed &&
+      variants.get("Variant=Default, State=Open")?.id === pinned.Open,
+    "the two the file had are renamed in place: their node ids stay",
+  );
+  for (const value of ["Closed", "Open"]) {
+    const after = variants.get(`Variant=Default, State=${value}`);
+    ok(
+      after && shape(after) === before[value],
+      `Default, ${value} draws as it did`,
+    );
+  }
+
+  // Against a plugin with no boxed form, the rest has nothing to read.
+  if (!variants.has("Variant=Boxed, State=Open")) break boxedAccordion;
+
+  const boxed = (state) => variants.get(`Variant=Boxed, State=${state}`);
+  const part = (state, name) => named(boxed(state), name);
+  const bound = (paint) => (paint ? boundVariableName(paint) : null);
+  const variableNamed = (alias) =>
+    tokens.variables.find((variable) => variable.id === alias?.id)?.name ??
+    alias?.id?.replace("VariableID:", "");
+  const swapDefault = () =>
+    Object.entries(set.componentPropertyDefinitions).find(
+      ([key, definition]) =>
+        key.split("#")[0] === "Icon" && definition.type === "INSTANCE_SWAP",
+    )?.[1].defaultValue;
+  const paints = {
+    Closed: [
+      "Colors/background/0",
+      "Colors/foreground/0",
+      "Colors/foreground/400",
+    ],
+    Open: ["Colors/theme/900", "Colors/foreground/1000", "Colors/theme/300"],
+    Disabled: [
+      "Colors/background/100",
+      "Colors/foreground/400",
+      "Colors/foreground/400",
+    ],
+    Loading: [
+      "Colors/background/100",
+      "Colors/foreground/400",
+      "Colors/foreground/400",
+    ],
+  };
+  for (const state of Object.keys(paints)) {
+    const trigger = part(state, "Accordion Trigger");
+    const column = part(state, "Accordion Text");
+    const label = part(state, "Label Text");
+    const title = part(state, "Trigger Text");
+    const [fill, ink, labelInk] = paints[state];
+    ok(
+      trigger.width === 408 && trigger.height === 44,
+      `${state}: the header is 408 by 44 (${trigger.width} by ${trigger.height})`,
+    );
+    ok(
+      trigger.layoutSizingVertical === "HUG" &&
+        trigger.minHeight === 44 &&
+        variableNamed(trigger.boundVariables?.minHeight) ===
+          "Accordion/boxed/trigger/height",
+      `${state}: the header hugs, with a bound floor of 44, as every platform's grows (${trigger.layoutSizingVertical}, ${trigger.minHeight}, ${variableNamed(trigger.boundVariables?.minHeight)})`,
+    );
+    ok(
+      trigger.cornerRadius === 16 &&
+        trigger.boundVariables?.cornerRadius &&
+        trigger.paddingLeft === 8 &&
+        trigger.paddingRight === 8 &&
+        trigger.paddingTop === 2 &&
+        trigger.paddingBottom === 2 &&
+        trigger.boundVariables?.paddingTop &&
+        trigger.boundVariables?.paddingBottom &&
+        trigger.itemSpacing === 8,
+      `${state}: corners 16, bound, 8 in and between, and 2 above and below, as React's py-0.5`,
+    );
+    ok(
+      bound(trigger.fills[0]) === fill,
+      `${state}: the fill is ${fill} (${bound(trigger.fills[0])})`,
+    );
+    // The edge stays laid out while open: it wears the fill, so it doesn't
+    // show, and a frame with no stroke would lay out 1 less on every side.
+    ok(
+      bound(trigger.strokes[0]) ===
+        (state === "Open" ? fill : "Border/Subtle") &&
+        trigger.strokeWeight === 1,
+      `${state}: a 1 edge of ${state === "Open" ? fill : "Border/Subtle"} (${bound(trigger.strokes[0])} at ${trigger.strokeWeight})`,
+    );
+    ok(
+      bound(title.fills[0]) === ink && bound(label.fills[0]) === labelInk,
+      `${state}: title ${ink} and label ${labelInk} (${bound(title.fills[0])}, ${bound(label.fills[0])})`,
+    );
+
+    // What the eye reads first: the marks' ink, state by state. An icon's
+    // paint is an override on its vector, so it is read there.
+    const mark = part(state, "Icon");
+    const inkOf = (instance) =>
+      bound(instance?.findOne((node) => node.type === "VECTOR")?.strokes[0]);
+    ok(
+      inkOf(mark) === ink,
+      `${state}: the icon is ${ink} (${inkOf(mark)})`,
+    );
+    ok(
+      mark?.mainComponent?.name === "Icon / home-line" &&
+        mark.mainComponent.id === swapDefault(),
+      `${state}: the Icon property's default is the icon painted (${mark?.mainComponent?.name} ${mark?.mainComponent?.id}, default ${swapDefault()})`,
+    );
+
+    // The title is regular on every platform, as the live page draws it, and
+    // the type comes from the set's own style.
+    for (const [text, styleName] of [
+      [title, "Accordion / Boxed Title"],
+      [label, "Accordion / Boxed Label"],
+    ]) {
+      const style = mockTextStyleById(text.textStyleId);
+      ok(
+        text.fontName.style === "Regular" &&
+          style?.name === styleName &&
+          style.fontName.style === "Regular",
+        `${state}: ${text.name} is Regular, from ${styleName} (${text.fontName.style}, ${style?.name}, ${style?.fontName.style})`,
+      );
+    }
+
+    // The labels hug: each line is as wide as the column and as tall as its
+    // words, and the column as tall as the two, inside the header.
+    ok(
+      label.layoutSizingHorizontal === "FILL" &&
+        title.layoutSizingHorizontal === "FILL" &&
+        label.layoutSizingVertical === "HUG" &&
+        title.layoutSizingVertical === "HUG" &&
+        label.layoutGrow === 0 &&
+        title.layoutGrow === 0 &&
+        label.textAutoResize === "HEIGHT" &&
+        title.textAutoResize === "HEIGHT",
+      `${state}: both lines fill the column and hug their words`,
+    );
+    ok(
+      column.layoutSizingHorizontal === "FILL" &&
+        column.layoutSizingVertical === "HUG" &&
+        column.height === label.height + title.height,
+      `${state}: the column hugs the two lines (${column.height} of ${label.height} and ${title.height})`,
+    );
+    ok(
+      column.y >= 0 &&
+        column.y + column.height <= trigger.height &&
+        Math.abs(column.y - (trigger.height - column.height) / 2) <= 0.5,
+      `${state}: the lines sit in the middle of the header (${column.y} of ${column.height} in ${trigger.height})`,
+    );
+    const last = trigger.children[trigger.children.length - 1];
+    ok(
+      (last === column || column.x + column.width <= last.x) &&
+        last.x + last.width <= trigger.width,
+      `${state}: nothing leaves the header (the column ends ${column.x + column.width}, its last child ${last.x + last.width})`,
+    );
+    ok(
+      plugin.inferTextStyleKeyForComponentText
+        ? file.inferTextStyleKeyForComponentText(title, set) ===
+            "accordionBoxedTitle" &&
+            file.inferTextStyleKeyForComponentText(label, set) ===
+              "accordionBoxedLabel"
+        : false,
+      `${state}: Apply Text Styles keeps the boxed type, and would not put it back to 14`,
+    );
+  }
+
+  const chevron = (state) => part(state, "Accordion Chevron");
+  ok(
+    chevron("Closed")?.width === 20 && chevron("Open")?.width === 20,
+    "Closed and Open draw a 20 chevron",
+  );
+  for (const [state, source, ink] of [
+    ["Closed", "chevron-down", "Colors/foreground/0"],
+    ["Open", "chevron-up", "Colors/foreground/1000"],
+  ]) {
+    const drawn = chevron(state);
+    const paint = bound(
+      drawn?.findOne((node) => node.type === "VECTOR")?.strokes[0],
+    );
+    ok(
+      drawn?.mainComponent?.name === `Icon / ${source}` && paint === ink,
+      `${state}: the chevron is ${source} in ${ink} (${drawn?.mainComponent?.name}, ${paint})`,
+    );
+  }
+  ok(!chevron("Disabled"), "Disabled draws no chevron");
+  ok(
+    !chevron("Loading") && part("Loading", "Loading Indicator")?.width === 20,
+    "Loading draws a 20 spinner where the chevron is",
+  );
+  ok(
+    bound(part("Loading", "Loading Indicator")?.strokes[0]) ===
+      "Colors/foreground/400",
+    `Loading's spinner is the greyed ink (${bound(part("Loading", "Loading Indicator")?.strokes[0])})`,
+  );
+  ok(
+    part("Open", "Accordion Text").x === part("Closed", "Accordion Text").x &&
+      part("Open", "Accordion Text").width ===
+        part("Closed", "Accordion Text").width,
+    `opening moves nothing: the lines sit where they did (${part("Closed", "Accordion Text").x}, ${part("Open", "Accordion Text").x})`,
+  );
+  ok(
+    !part("Closed", "Accordion Content") &&
+      !part("Disabled", "Accordion Content") &&
+      !part("Loading", "Accordion Content"),
+    "only Open has content",
+  );
+  const content = part("Open", "Accordion Content");
+  ok(
+    content?.paddingTop === 8 &&
+      content.paddingLeft === 0 &&
+      content.boundVariables?.paddingTop,
+    "Open's content is 8 under its header, in the panel's flow",
+  );
+
+  // A bound text draws the set's one default: a variant that wrote a sample
+  // of its own would read true here and false in the file.
+  const definitions = set.componentPropertyDefinitions;
+  const defaultOf = (base) =>
+    Object.entries(definitions).find(
+      ([key, definition]) =>
+        key.split("#")[0] === base && definition.type === "TEXT",
+    )?.[1].defaultValue;
+  ok(
+    defaultOf("Label Text") === "Step 1/5" &&
+      defaultOf("Trigger Text") === "Is it accessible?",
+    `each text property has its default (${defaultOf("Label Text")}, ${defaultOf("Trigger Text")})`,
+  );
+  for (const base of ["Label Text", "Trigger Text", "Content Text"]) {
+    const texts = set.findAll((node) => node.name === base);
+    ok(
+      texts.length > 0 &&
+        texts.every(
+          (text) =>
+            text.componentPropertyReferences?.characters &&
+            text.characters === defaultOf(base),
+        ),
+      `all ${texts.length} ${base} layers are bound, and read the set's one default`,
+    );
+  }
+  const boundTo = (base, field) =>
+    Object.entries(definitions)
+      .filter(([key]) => key.split("#")[0] === base)
+      .flatMap(([key]) =>
+        set.findAll(
+          (node) => node._componentPropertyReferences?.[field] === key,
+        ),
+      );
+  ok(
+    boundTo("Show Label", "visible").length === 4 &&
+      boundTo("Show Icon", "visible").length === 4 &&
+      boundTo("Icon", "mainComponent").length === 4,
+    `the label and the icon are the four Boxed variants' to turn off, and the icon to swap (${boundTo("Show Label", "visible").length}, ${boundTo("Show Icon", "visible").length}, ${boundTo("Icon", "mainComponent").length})`,
+  );
+
+  // The plugin's own audit reads the same shape.
+  const layoutIssues = [];
+  file.auditAccordionAutoLayoutIntegrity(set, layoutIssues);
+  ok(
+    layoutIssues.length === 0,
+    `the set's auto layout audits clean (${layoutIssues.map((issue) => `${issue.variant}: ${issue.kind}`).join("; ")})`,
+  );
+
+  // A title that wraps grows the header, as React's min-height, SwiftUI's
+  // frame and Compose's defaultMinSize do. Two lines are 14, 2 by 17.5, 2 by 2
+  // of padding and 2 of hairline, 55, as React's header measures, in every
+  // state; a third is 72.5. Read on instances, as a designer's title arrives,
+  // at the set's width and on one resized to 300.
+  const titleKey = Object.keys(definitions).find(
+    (key) => key.split("#")[0] === "Trigger Text",
+  );
+  const words = "A building details section ".repeat(5);
+  for (const state of Object.keys(paints)) {
+    const instance = boxed(state).createInstance();
+    components.appendChild(instance);
+    const header = () => named(instance, "Accordion Trigger");
+    const column = () => named(instance, "Accordion Text");
+    const measure = async (text, width) =>
+      withAutoLayout(async () => {
+        instance.setProperties({ [titleKey]: text });
+        if (width) instance.resize(width, instance.height);
+        return {
+          height: header().height,
+          columnBottom: column().y + column().height,
+          words: named(column(), "Trigger Text").height,
+        };
+      });
+    const two = await measure(words.slice(0, 80));
+    ok(
+      two.words === 35 && two.height === 55,
+      `${state}: two lines grow the header to 55 (${two.words} of words, ${two.height})`,
+    );
+    const three = await measure(words.slice(0, 110));
+    ok(
+      three.words === 52.5 &&
+        three.height === 72.5 &&
+        three.columnBottom <= three.height,
+      `${state}: three lines to 72.5, inside it (${three.words} of words, ${three.height}, ending ${three.columnBottom})`,
+    );
+    const narrow = await measure(words.slice(0, 80), 300);
+    ok(
+      header().width === 300 &&
+        narrow.height > 55 &&
+        narrow.columnBottom <= narrow.height,
+      `${state}: at 300 the same words grow it again (${narrow.words} of words, ${narrow.height}, at ${header().width})`,
+    );
+    const short = await measure("Levels", 408);
+    ok(
+      short.height === 44,
+      `${state}: back to one line, the floor holds it at 44 (${short.height})`,
+    );
+    instance.remove();
+  }
+
+  // Audited in Light and Dark with the token values the importer writes: the
+  // label's theme 300 and the title's foreground 1000 on theme 900 turn over
+  // together, so both modes clear 4.5:1.
+  const measured = file.auditComponentContrast(
+    set,
+    set.children,
+    file.createVariableContext(tokens.collections, tokens.variables),
+  );
+  ok(
+    measured.byMode.length === 2 &&
+      measured.byMode.every(
+        (mode) => mode.textPairs >= 12 && mode.minTextContrast >= 4.5,
+      ),
+    `every text in the set clears 4.5:1 in both modes (${measured.byMode
+      .map(
+        (mode) =>
+          `${mode.mode} ${mode.minTextContrast} over ${mode.textPairs} pairs`,
+      )
+      .join(", ")})`,
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------
