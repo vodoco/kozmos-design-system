@@ -6,12 +6,14 @@
  *
  * It models what the painters touch: frames, components, instances, text,
  * vectors, the auto-layout properties, fills and strokes, variable-bound
- * paints, shared plugin data, component properties and instance swaps. It
- * does not lay anything out: a text node's width is the sum of a fixed
- * advance per character, an auto-layout frame keeps the size it was given.
- * That is enough to assert the numbers a painter writes — a 64 square, a
- * counter placed 4 beyond its edge, a paint bound to a named variable — and
- * not enough to assert how Figma renders them. It is a unit test of the
+ * paints, shared plugin data, component properties and instance swaps. By
+ * default it does not lay anything out: a text node's width is the sum of a
+ * fixed advance per character, an auto-layout frame keeps the size it was
+ * given. That is enough to assert the numbers a painter writes — a 64 square,
+ * a counter placed 4 beyond its edge, a paint bound to a named variable — and
+ * not enough to assert how Figma renders them. Inside `withAutoLayout` frames
+ * hug, fill and place their children as the file does, after every write, so a
+ * check can read the geometry a painter ends up with. It is a unit test of the
  * painter, not a picture of the file.
  *
  * `loadPlugin` evaluates the plugin source in a fresh context whose `figma`
@@ -517,6 +519,39 @@ export class MockNode {
     Object.assign(this, nodeDefaults[type]);
   }
 
+  // A layer takes its property's default the moment it is bound, whatever it
+  // said before, because a set's TEXT property has one default for every
+  // variant. TourStep's six variants, painted with six sets of words on
+  // 2026-11-01, all read the one default in the live file: Welcome the step's
+  // eyebrow, Warning the info tone's words, Last step "2 of 4" over a full bar.
+  get componentPropertyReferences() {
+    return this._componentPropertyReferences;
+  }
+
+  set componentPropertyReferences(value) {
+    this._componentPropertyReferences = value;
+    if (this.type !== "TEXT" || !value || !value.characters) return;
+    for (let node = this.parent; node; node = node.parent) {
+      if (node.type === "INSTANCE") return;
+      const definition =
+        node.componentPropertyDefinitions &&
+        node.componentPropertyDefinitions[value.characters];
+      if (definition) {
+        this.characters = definition.defaultValue;
+        return;
+      }
+    }
+  }
+
+  get layoutPositioning() {
+    return this._layoutPositioning;
+  }
+
+  set layoutPositioning(value) {
+    this._layoutPositioning = value;
+    settleAutoLayout(this.parent);
+  }
+
   get fills() {
     return this._fills;
   }
@@ -603,24 +638,28 @@ export class MockNode {
           : lines;
       this.height = capped * line;
     }
+    settleAutoLayout(this.parent);
   }
 
   appendChild(child) {
     if (child.parent) child.parent.removeChild(child);
     child.parent = this;
     this.children.push(child);
+    settleAutoLayout(this);
   }
 
   insertChild(index, child) {
     if (child.parent) child.parent.removeChild(child);
     child.parent = this;
     this.children.splice(index, 0, child);
+    settleAutoLayout(this);
   }
 
   removeChild(child) {
     const index = this.children.indexOf(child);
     if (index !== -1) this.children.splice(index, 1);
     child.parent = null;
+    settleAutoLayout(this);
   }
 
   remove() {
@@ -629,10 +668,21 @@ export class MockNode {
   }
 
   resize(width, height) {
+    this.takeSize(width, height, true);
+  }
+
+  // `resize` carries the children's constraints with it, and
+  // `resizeWithoutConstraints` does not, as in Figma.
+  takeSize(width, height, constrained) {
+    const from = { width: this.width, height: this.height };
     this.width = width;
     this.height = height;
     this.requestedSize = { width, height };
     this.holdAutoLayoutMinimum();
+    if (!autoLayout.on) return;
+    if (constrained) followConstraints(this, from.width, from.height);
+    if (this.type === "TEXT") this.remeasure();
+    settleAutoLayout(this);
   }
 
   setExplicitVariableModeForCollection(collection, modeId) {
@@ -644,7 +694,7 @@ export class MockNode {
   }
 
   resizeWithoutConstraints(width, height) {
-    this.resize(width, height);
+    this.takeSize(width, height, false);
   }
 
   rescale() {}
@@ -818,11 +868,40 @@ export class MockNode {
     const definition = this.componentPropertyDefinitions[name];
     if (!definition) throw new Error(`no property ${name}`);
     Object.assign(definition, patch);
+    if (definition.type === "TEXT" && "defaultValue" in patch) {
+      for (const layer of this.layersBoundTo(name)) {
+        layer.characters = definition.defaultValue;
+      }
+    }
     return name;
   }
 
+  // The layers keep their words and lose the reference, as in Figma.
   deleteComponentProperty(name) {
     delete this.componentPropertyDefinitions[name];
+    for (const layer of this.layersBoundTo(name)) {
+      const references = { ...layer._componentPropertyReferences };
+      for (const field of Object.keys(references)) {
+        if (references[field] === name) delete references[field];
+      }
+      layer._componentPropertyReferences = references;
+    }
+  }
+
+  // A plain walk: this is no search a painter makes, and an instance's layers
+  // answer to their own main component's properties.
+  layersBoundTo(name) {
+    const found = [];
+    (function walk(node) {
+      for (const child of node.children) {
+        const references = child._componentPropertyReferences;
+        if (references && Object.values(references).includes(name)) {
+          found.push(child);
+        }
+        if (child.type !== "INSTANCE") walk(child);
+      }
+    })(this);
+    return found;
   }
 }
 
@@ -927,6 +1006,210 @@ const layoutSizingValues = Symbol("layoutSizing");
 function isAutoLayoutNode(node) {
   return Boolean(node && node.layoutMode && node.layoutMode !== "NONE");
 }
+
+/**
+ * Auto layout as the file does it, after every write, for what runs inside
+ * `withAutoLayout`. None of this is documented; each rule is read from the
+ * live TourStep set over REST on 2026-11-01. The painter that drew it, replayed
+ * here, lands within a pixel of its 127 nodes and its 2692 by 388, apart from
+ * what CHAR_ADVANCE sets: a self-sizing text's width and the row it shares.
+ *
+ * - A frame hugs its flow children, its padding and a laid-out stroke, on the
+ *   axes it hugs, and a fixed axis keeps its size whatever its children do. So
+ *   an instance of a fixed variant keeps its width when its label changes: the
+ *   label is a text sizing itself, and it runs out of both sides, because the
+ *   button centres it. Footer's Button instances read 96 wide over labels of
+ *   144, 126 and 115.
+ * - A hug frame with no flow child left holds the size it had. An absolute
+ *   layer starts in the flow, so the frame takes it in, padding and all, and
+ *   stays there when the layer goes absolute.
+ * - A stretched child keeps whatever margin it has as its parent changes size,
+ *   by the parent's change. Together with the last rule, a layer that goes in
+ *   the height of a padded hug frame keeps a margin of the padding for good:
+ *   Instruction Fill and Edge read 39 in 55 on all four variants, the frame
+ *   hugging its two lines and the layers 16 short of it.
+ * - `layoutWrap` is not modelled: a row that would wrap overflows here, which
+ *   is the worse of the two for a check to read.
+ */
+const autoLayout = { on: false, settling: false };
+
+/** Runs `run` with frames laying themselves out after every write. */
+export async function withAutoLayout(run) {
+  const saved = autoLayout.on;
+  autoLayout.on = true;
+  try {
+    return await run();
+  } finally {
+    autoLayout.on = saved;
+  }
+}
+
+function settleAutoLayout(node) {
+  if (!autoLayout.on || autoLayout.settling || !node) return;
+  let top = node;
+  while (isAutoLayoutNode(top.parent)) top = top.parent;
+  if (!isAutoLayoutNode(top)) return;
+  autoLayout.settling = true;
+  try {
+    layOut(top);
+  } finally {
+    autoLayout.settling = false;
+  }
+}
+
+const inFlow = (node) =>
+  node.children.filter(
+    (child) =>
+      child.layoutPositioning !== "ABSOLUTE" && child.visible !== false,
+  );
+
+const hugsAxis = (node, axis) =>
+  isAutoLayoutNode(node) &&
+  ((axis === "width") === (node.layoutMode === "HORIZONTAL")
+    ? node.primaryAxisSizingMode
+    : node.counterAxisSizingMode) === "AUTO";
+
+function laidOutStroke(node) {
+  if (node.strokesIncludedInLayout === false) return 0;
+  const stroked =
+    Array.isArray(node.strokes) &&
+    node.strokes.some((paint) => paint && paint.visible !== false);
+  return stroked && typeof node.strokeWeight === "number"
+    ? node.strokeWeight
+    : 0;
+}
+
+// Space-between is Figma's auto gap: the item spacing is ignored.
+const flowGap = (node, count) =>
+  node.primaryAxisAlignItems === "SPACE_BETWEEN"
+    ? 0
+    : (node.itemSpacing || 0) * Math.max(0, count - 1);
+
+function hugWidth(node) {
+  if (!hugsAxis(node, "width")) return node.width;
+  const flow = inFlow(node);
+  if (!flow.length) return node.width;
+  const widths = flow.map(hugWidth);
+  const inset =
+    (node.paddingLeft || 0) +
+    (node.paddingRight || 0) +
+    2 * laidOutStroke(node);
+  return node.layoutMode === "HORIZONTAL"
+    ? inset +
+        widths.reduce((sum, width) => sum + width, 0) +
+        flowGap(node, flow.length)
+    : inset + Math.max(...widths);
+}
+
+function followConstraints(node, fromWidth, fromHeight) {
+  const dw = node.width - fromWidth;
+  const dh = node.height - fromHeight;
+  if (!dw && !dh) return;
+  for (const child of node.children) {
+    if (isAutoLayoutNode(node) && child.layoutPositioning !== "ABSOLUTE") {
+      continue;
+    }
+    const { horizontal, vertical } = child.constraints || {};
+    const was = { width: child.width, height: child.height };
+    if (horizontal === "STRETCH") child.width += dw;
+    else if (horizontal === "MAX") child.x += dw;
+    else if (horizontal === "CENTER") child.x += dw / 2;
+    else if (horizontal === "SCALE" && fromWidth) {
+      child.x *= node.width / fromWidth;
+      child.width *= node.width / fromWidth;
+    }
+    if (vertical === "STRETCH") child.height += dh;
+    else if (vertical === "MAX") child.y += dh;
+    else if (vertical === "CENTER") child.y += dh / 2;
+    else if (vertical === "SCALE" && fromHeight) {
+      child.y *= node.height / fromHeight;
+      child.height *= node.height / fromHeight;
+    }
+    followConstraints(child, was.width, was.height);
+  }
+}
+
+function placeSize(node, width, height) {
+  const from = { width: node.width, height: node.height };
+  node.width = width;
+  node.height = height;
+  followConstraints(node, from.width, from.height);
+  if (node.type === "TEXT" && from.width !== width) node.remeasure();
+}
+
+function layOut(node) {
+  if (!isAutoLayoutNode(node)) return;
+  const horizontal = node.layoutMode === "HORIZONTAL";
+  const flow = inFlow(node);
+  const stroke = laidOutStroke(node);
+  const left = (node.paddingLeft || 0) + stroke;
+  const top = (node.paddingTop || 0) + stroke;
+  const insetX = left + (node.paddingRight || 0) + stroke;
+  const insetY = top + (node.paddingBottom || 0) + stroke;
+  const gap = flowGap(node, flow.length);
+
+  if (flow.length && hugsAxis(node, "width")) {
+    placeSize(node, hugWidth(node), node.height);
+  }
+
+  // Widths first: a wrapping text's height comes from its width.
+  const room = node.width - insetX;
+  const filling = (child) => child.layoutSizingHorizontal === "FILL";
+  const fixed = horizontal
+    ? flow
+        .filter((child) => !filling(child))
+        .reduce((sum, child) => sum + hugWidth(child), 0) + gap
+    : 0;
+  const share = horizontal
+    ? Math.max(0, room - fixed) / (flow.filter(filling).length || 1)
+    : room;
+  for (const child of flow) {
+    placeSize(child, filling(child) ? share : hugWidth(child), child.height);
+    layOut(child);
+  }
+
+  if (flow.length && hugsAxis(node, "height")) {
+    const heights = flow.map((child) => child.height);
+    const content = horizontal
+      ? Math.max(...heights)
+      : heights.reduce((sum, height) => sum + height, 0) + gap;
+    placeSize(node, node.width, content + insetY);
+  }
+
+  // Where each child ends up, so a check can read a row's edges.
+  const along = horizontal ? "width" : "height";
+  const across = horizontal ? "height" : "width";
+  const roomAlong = node[along] - (horizontal ? insetX : insetY);
+  const roomAcross = node[across] - (horizontal ? insetY : insetX);
+  const used =
+    flow.reduce((sum, child) => sum + child[along], 0) +
+    (node.primaryAxisAlignItems === "SPACE_BETWEEN" ? 0 : gap);
+  const spare = roomAlong - used;
+  const between =
+    node.primaryAxisAlignItems === "SPACE_BETWEEN" && flow.length > 1
+      ? Math.max(0, spare) / (flow.length - 1)
+      : node.itemSpacing || 0;
+  let cursor =
+    (horizontal ? left : top) +
+    (node.primaryAxisAlignItems === "MAX"
+      ? spare
+      : node.primaryAxisAlignItems === "CENTER"
+        ? spare / 2
+        : 0);
+  for (const child of flow) {
+    const crossStart = horizontal ? top : left;
+    const cross =
+      crossStart +
+      (node.counterAxisAlignItems === "MAX"
+        ? roomAcross - child[across]
+        : node.counterAxisAlignItems === "CENTER"
+          ? (roomAcross - child[across]) / 2
+          : 0);
+    child.x = horizontal ? cursor : cross;
+    child.y = horizontal ? cross : cursor;
+    cursor += child[along] + between;
+  }
+}
 for (const axis of ["layoutSizingHorizontal", "layoutSizingVertical"]) {
   Object.defineProperty(MockNode.prototype, axis, {
     configurable: true,
@@ -952,6 +1235,14 @@ for (const axis of ["layoutSizingHorizontal", "layoutSizingVertical"]) {
       }
       if (!this[layoutSizingValues]) this[layoutSizingValues] = {};
       this[layoutSizingValues][axis] = value;
+      // The shorthand for the frame's own sizing modes, as in Figma.
+      if (isAutoLayoutNode(this)) {
+        const primary =
+          (axis === "layoutSizingHorizontal") ===
+          (this.layoutMode === "HORIZONTAL");
+        this[primary ? "primaryAxisSizingMode" : "counterAxisSizingMode"] =
+          value === "HUG" ? "AUTO" : "FIXED";
+      }
       // HUG sizes a text's height to its lines; a box that truncated keeps its
       // one line as a limit (see TEXT_SIZING_FIELDS).
       if (
@@ -969,6 +1260,7 @@ for (const axis of ["layoutSizingHorizontal", "layoutSizingVertical"]) {
         }
         this.remeasure();
       }
+      settleAutoLayout(this.parent || this);
     },
   });
 }
