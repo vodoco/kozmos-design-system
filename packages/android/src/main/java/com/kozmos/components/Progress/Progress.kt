@@ -1,5 +1,8 @@
 package com.kozmos.components.progress
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
@@ -16,6 +19,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -154,7 +158,8 @@ enum class KozmosProgressLabelPlacement { Center, End }
  * [labelPlacement] End, beside it, 12 on 16 in foreground 0 unless its content
  * says otherwise. [progress] is a fraction of 1, clamped, so over the total
  * is a full ring; one that is not a finite number is none done. A bar draws
- * no label.
+ * no label. An Sm ring that is whole and has no label draws a check in its
+ * hole.
  */
 @Composable
 fun KozmosProgress(
@@ -216,6 +221,11 @@ private fun KozmosProgressRingLabel(textAlign: TextAlign, label: @Composable () 
  * the bar's fill, on background 100: 4.8:1 or more for every tone, light and
  * dark. It runs from 12 o'clock clockwise. A Canvas is not mirrored right to
  * left, and a progress ring does not mirror.
+ *
+ * "100%" is 31.8 wide at 12, in the 28.28 square an Sm hole holds (owner,
+ * 2 Nov), so a whole Sm ring with no label of the product's draws a check, in
+ * the arc's colour, and says 100% by a name of its own: outermost, a name of
+ * the caller's replaces it.
  */
 @Composable
 private fun KozmosProgressRing(
@@ -230,10 +240,12 @@ private fun KozmosProgressRing(
     val swept by animateFloatAsState(target, kozmosProgressSweep(rememberKozmosAnimationsOn()), label = "sweep")
     val track = KozmosThemeTokens.primitivesColorsBackground100
     val fill = tone.text
+    val drawsCheck = ringSize == KozmosProgressSize.Sm && label == null && target >= 1f
     Row(
         modifier
             .semantics(mergeDescendants = true) {}
-            .progressSemantics(target),
+            .progressSemantics(target)
+            .then(if (drawsCheck) Modifier.semantics { contentDescription = "100%" } else Modifier),
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -246,6 +258,14 @@ private fun KozmosProgressRing(
                 if (swept > 0f) {
                     drawArc(fill, -90f, 360f * swept, false, corner, circle, style = Stroke(stroke, cap = StrokeCap.Butt))
                 }
+            }
+            if (drawsCheck) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = fill,
+                    modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
+                )
             }
             if (label != null && labelPlacement == KozmosProgressLabelPlacement.Center) {
                 // Inside the square the hole holds, centred.

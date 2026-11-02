@@ -203,6 +203,11 @@ public struct KozmosProgress: View {
     /// What VoiceOver says for a ring's value: its percentage, as the bar's.
     var spokenValue: String { "\(Int((fraction * 100).rounded()))%" }
 
+    /// "100%" is 31.8 wide at 12, in the 28.28 square an `.sm` hole holds
+    /// (owner, 2 Nov), so a whole `.sm` ring with no label of the product's
+    /// draws a check. Over the total is whole too, as `fraction` clamps it.
+    var drawsCheck: Bool { size == .sm && label == nil && fraction >= 1 }
+
     /// A new value sweeps the arc round, over the standard duration; under
     /// Reduce Motion it is drawn there at once.
     static func sweep(reduceMotion: Bool) -> Animation? {
@@ -248,7 +253,10 @@ public struct KozmosProgress: View {
     /// more for every tone, light and dark. It starts at 12 o'clock and runs
     /// clockwise. A progress ring does not mirror, so it is drawn in a
     /// left-to-right environment: right to left SwiftUI turns a rotation, and
-    /// a shape, the other way.
+    /// a shape, the other way. The check is `check`'s symbol in the arc's
+    /// colour, 17.5 across as React's, inside the 28.28 square the hole
+    /// holds. It says the percentage rather than its own name, so a ring with
+    /// no other name says 100%, and a name of the caller's replaces that.
     private var dial: some View {
         ZStack {
             ZStack {
@@ -271,6 +279,12 @@ public struct KozmosProgress: View {
                 label
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: (size.diameter - 2 * size.stroke) * 0.7071)
+            }
+            if drawsCheck {
+                Image(systemName: KozmosIcon.symbolName(for: "check"))
+                    .font(.system(size: KozmosIconSize.md.pointSize, weight: .semibold))
+                    .foregroundColor(tone.text)
+                    .accessibilityLabel(spokenValue)
             }
         }
         .frame(width: size.diameter, height: size.diameter)

@@ -133,6 +133,95 @@ final class KozmosProgressRingTests: XCTestCase {
         }
     }
 
+    /// What a ring paints in its hole, read every quarter point: the ink's box
+    /// from the ring's centre, and how many of its pixels are the arc's own
+    /// colour, read from the same drawing at 45°, where the arc's middle is.
+    private struct Hole {
+        var box: CGRect?
+        var inked = 0
+        var arcColoured = 0
+    }
+
+    @MainActor private func hole<V: View>(_ ring: V, _ size: KozmosProgressSize = .sm) throws -> Hole {
+        let drawn = try DrawnPixels.draw(ring, scale: 4)
+        let centre = size.diameter / 2
+        let middle = (size.diameter - size.stroke) / 2
+        let arc = drawn.pixel(at: CGPoint(x: centre + middle * 0.7071, y: centre - middle * 0.7071))
+        let reach = centre - size.stroke - 1
+        var found = Hole()
+        for dy in stride(from: -reach, through: reach, by: 0.25) {
+            for dx in stride(from: -reach, through: reach, by: 0.25) where hypot(dx, dy) < reach {
+                let ink = drawn.pixel(at: CGPoint(x: centre + dx, y: centre + dy))
+                guard ink.a > 200 else { continue }
+                found.inked += 1
+                let spot = CGRect(x: dx, y: dy, width: 0.25, height: 0.25)
+                found.box = found.box?.union(spot) ?? spot
+                if abs(Int(ink.r) - Int(arc.r)) <= 8, abs(Int(ink.g) - Int(arc.g)) <= 8, abs(Int(ink.b) - Int(arc.b)) <= 8 {
+                    found.arcColoured += 1
+                }
+            }
+        }
+        return found
+    }
+
+    /// Owner, 2 Nov: "100%" is 31.8 wide at 12, in the 28.28 square an `.sm`
+    /// hole holds, so a whole `.sm` ring with no label of the product's draws
+    /// a check. It stays inside that square, centred, and it is the arc's own
+    /// colour for every tone in both themes, as `tone` makes it. A value over
+    /// the total is complete too.
+    @MainActor func testASmallRingAtCompleteDrawsACheckInItsTone() throws {
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            for tone in [KozmosEmotion.themed, .neutral, .success, .danger, .informative, .alert] {
+                for (value, total) in [(1.0, 1.0), (16.0, 15.0)] {
+                    let name = "\(scheme) \(tone) \(value)/\(total)"
+                    let found = try hole(
+                        KozmosProgress(value: value, total: total, shape: .circular, size: .sm, tone: tone)
+                            .environment(\.colorScheme, scheme))
+                    guard let box = found.box else {
+                        wrong.append("\(name): the hole paints nothing")
+                        continue
+                    }
+                    if box.width < 12 || box.height < 9 { wrong.append("\(name): \(box.size) is no check") }
+                    let square = 28.28 / 2
+                    if max(abs(box.minX), abs(box.maxX), abs(box.minY), abs(box.maxY)) > square {
+                        wrong.append("\(name): the check leaves the 28.28 square: \(box)")
+                    }
+                    if abs(box.midX) > 1.5 || abs(box.midY) > 1.5 { wrong.append("\(name): off centre: \(box)") }
+                    if Double(found.arcColoured) < 0.6 * Double(found.inked) {
+                        wrong.append("\(name): \(found.arcColoured) of \(found.inked) pixels are the arc's colour")
+                    }
+                }
+            }
+        }
+        XCTAssertEqual(wrong, [])
+    }
+
+    /// A label of the product's always wins, in the hole or beside the ring,
+    /// and nothing short of complete, or at another size, draws a check.
+    @MainActor func testTheCheckDrawsOnlyAtASmallCompleteRingWithNoLabel() throws {
+        var wrong: [String] = []
+        for (name, size, value) in [
+            ("sm at 0.99", KozmosProgressSize.sm, 0.99), ("sm at 0", .sm, 0), ("md whole", .md, 1), ("lg whole", .lg, 1),
+        ] {
+            let found = try hole(
+                KozmosProgress(value: value, shape: .circular, size: size).environment(\.colorScheme, .light), size)
+            if found.inked > 0 { wrong.append("\(name): the hole paints \(found.inked) pixels") }
+        }
+        let inTheHole = try hole(
+            KozmosProgress(value: 1, shape: .circular, size: .sm) { Text(verbatim: "OK").foregroundColor(.black) }
+                .environment(\.colorScheme, .light))
+        if inTheHole.inked == 0 { wrong.append("the product's label is not drawn") }
+        if inTheHole.arcColoured > 0 { wrong.append("a label in the hole: \(inTheHole.arcColoured) pixels of a check") }
+        let beside = try hole(
+            KozmosProgress(value: 1, shape: .circular, size: .sm, labelPlacement: .end) {
+                Text(verbatim: "OK").foregroundColor(.black)
+            }
+            .environment(\.colorScheme, .light))
+        if beside.inked > 0 { wrong.append("a label beside: the hole paints \(beside.inked) pixels") }
+        XCTAssertEqual(wrong, [])
+    }
+
     #if os(iOS)
     /// The black ink a label draws, on an empty ring: the track is grey.
     @MainActor private func ink<Label: View>(
@@ -304,6 +393,33 @@ final class KozmosProgressRingTests: XCTestCase {
                 XCTAssertEqual(ring.accessibilityValue, label.contains("2 Levels") ? "33%" : "73%")
             }
             XCTAssertTrue(ring.accessibilityTraits.contains(.updatesFrequently))
+        }
+    }
+
+    /// The check is decoration: the ring still says 100%, by a name of its
+    /// own when it has no other, and with its value. VoiceOver would otherwise
+    /// read the symbol's own name. A name or a value of the caller's replaces
+    /// Kozmos's, as it does on a ring with a label.
+    @MainActor func testASmallRingAtCompleteSays100Percent() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let cases: [(AnyView, String, String)] = [
+            (AnyView(KozmosProgress(value: 1, shape: .circular, size: .sm)), "100%", "100%"),
+            (AnyView(KozmosProgress(value: 16, total: 15, shape: .circular, size: .sm)), "100%", "100%"),
+            (AnyView(KozmosProgress(value: 1, shape: .circular, size: .sm).accessibilityLabel("Upload")), "Upload", "100%"),
+            (AnyView(KozmosProgress(value: 15, total: 15, shape: .circular, size: .sm)
+                .accessibilityLabel("Levels").accessibilityValue("15 of 15")), "Levels", "15 of 15"),
+        ]
+        for (view, label, value) in cases {
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
+            window.rootViewController = UIHostingController(rootView: view)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            try await Task.sleep(nanoseconds: 300_000_000)
+            let found = elements(in: window)
+            XCTAssertEqual(found.count, 1, "\(found.compactMap(\.accessibilityLabel))")
+            XCTAssertEqual(found.first?.accessibilityLabel, label)
+            XCTAssertEqual(found.first?.accessibilityValue, value)
         }
     }
 

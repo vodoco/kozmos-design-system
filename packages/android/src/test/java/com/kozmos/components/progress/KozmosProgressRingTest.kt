@@ -99,6 +99,8 @@ class KozmosProgressRingTest {
         direction: LayoutDirection = LayoutDirection.Ltr,
         tone: KozmosEmotion? = null,
         dark: Boolean = false,
+        placement: KozmosProgressLabelPlacement = KozmosProgressLabelPlacement.End,
+        page: Color = Color.White,
         label: (@Composable () -> Unit)? = null
     ): Drawn {
         var bounds = Rect.Zero
@@ -115,7 +117,7 @@ class KozmosProgressRingTest {
                     density = LocalDensity.current.density
                     // A margin round the ring, so a ray read past its edge
                     // reads the page, not the frame's edge pixel again.
-                    Box(Modifier.fillMaxSize().background(Color.White).padding(24.dp)) {
+                    Box(Modifier.fillMaxSize().background(page).padding(24.dp)) {
                         val placed = Modifier.onGloballyPositioned { bounds = it.boundsInRoot(); rootWidth = view.width }
                         if (tone == null) {
                             KozmosProgress(
@@ -123,7 +125,7 @@ class KozmosProgressRingTest {
                                 placed,
                                 shape = KozmosProgressShape.Circular,
                                 size = size,
-                                labelPlacement = KozmosProgressLabelPlacement.End,
+                                labelPlacement = placement,
                                 label = label
                             )
                         } else {
@@ -234,6 +236,131 @@ class KozmosProgressRingTest {
             if (isArc(pixel)) wrong += "$progress: an arc is drawn (${DrawnPixels.hex(pixel)})"
         }
         assertEquals(emptyList<String>(), wrong)
+    }
+
+    /** What a ring paints in its hole: the ink's box from the centre, in dp, and how much of it is [ink]. */
+    private class Hole(val box: Rect?, val inked: Int, val matching: Int)
+
+    private fun hole(ring: Drawn, size: KozmosProgressSize, ink: Int, page: Color = Color.White): Hole {
+        val reach = (size.diameter.value / 2 - size.stroke.value - 1) * ring.perDp
+        // From the dial's own start: a label beside it widens the bounds.
+        val centreX = ring.bounds.left * ring.scale + size.diameter.value / 2 * ring.perDp
+        var box: Rect? = null
+        var inked = 0
+        var matching = 0
+        for (y in (ring.centreY - reach).toInt()..(ring.centreY + reach).toInt()) {
+            for (x in (centreX - reach).toInt()..(centreX + reach).toInt()) {
+                val dx = x + 0.5f - centreX
+                val dy = y + 0.5f - ring.centreY
+                if (kotlin.math.hypot(dx, dy) > reach) continue
+                val pixel = ring.pixels.argb(x, y)
+                if (DrawnPixels.matches(pixel, page.toArgb(), tolerance = 40)) continue
+                inked++
+                if (DrawnPixels.matches(pixel, ink, tolerance = 12)) matching++
+                val spot = Rect(dx / ring.perDp, dy / ring.perDp, dx / ring.perDp, dy / ring.perDp)
+                box = box?.let { Rect(minOf(it.left, spot.left), minOf(it.top, spot.top), maxOf(it.right, spot.right), maxOf(it.bottom, spot.bottom)) } ?: spot
+            }
+        }
+        return Hole(box, inked, matching)
+    }
+
+    /** The arc's own colour, read from the same drawing at 45°, where its middle is. */
+    private fun arcOf(ring: Drawn, size: KozmosProgressSize) =
+        ring.at(45.0, (size.diameter.value - size.stroke.value) / 2 * ring.perDp)
+
+    /**
+     * Owner, 2 Nov: "100%" is 31.8 wide at 12, in the 28.28 square a small
+     * hole holds, so a whole Sm ring with no label of the product's draws a
+     * check. It stays inside that square, centred, and it is the arc's own
+     * colour for every tone in both themes, as `tone` makes it. A value over
+     * the total is complete too.
+     */
+    @Test fun aSmallRingAtCompleteDrawsACheckInItsTone() {
+        val wrong = mutableListOf<String>()
+        val size = KozmosProgressSize.Sm
+        for (dark in listOf(false, true)) for (tone in listOf<KozmosEmotion?>(null) + KozmosEmotion.values()) {
+            for (progress in if (tone == null) listOf(1f, 16f / 15f) else listOf(1f)) {
+                // On the theme's page: dark, success's and alert's text are almost white.
+                val page = if (dark) KozmosColorsDark.semanticsSurface0 else KozmosColors.semanticsSurface0
+                val ring = draw(progress, size, tone = tone, dark = dark, page = page)
+                val arc = arcOf(ring, size)
+                val read = hole(ring, size, arc, page)
+                val name = "${if (dark) "dark" else "light"} ${tone ?: "unset"} $progress"
+                val box = read.box
+                if (box == null) { wrong += "$name: the hole paints nothing"; continue }
+                if (box.width < 12f || box.height < 9f) wrong += "$name: ${box.width} by ${box.height} is no check"
+                val square = 28.28f / 2
+                if (maxOf(-box.left, box.right, -box.top, box.bottom) > square) wrong += "$name: the check leaves the 28.28 square: $box"
+                if (kotlin.math.abs(box.center.x) > 1.5f || kotlin.math.abs(box.center.y) > 1.5f) wrong += "$name: off centre: $box"
+                if (read.matching < 0.5f * read.inked) wrong += "$name: ${read.matching} of ${read.inked} pixels are the arc's ${DrawnPixels.hex(arc)}"
+            }
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /**
+     * A label of the product's always wins, in the hole or beside the ring,
+     * and nothing short of complete, or at another size, draws a check.
+     */
+    @Test fun theCheckDrawsOnlyAtASmallCompleteRingWithNoLabel() {
+        val wrong = mutableListOf<String>()
+        val small = KozmosProgressSize.Sm
+        for ((size, progress) in listOf(small to 0.99f, small to 0f, KozmosProgressSize.Md to 1f, KozmosProgressSize.Lg to 1f)) {
+            val ring = draw(progress, size)
+            val read = hole(ring, size, arcOf(ring, size))
+            if (read.inked > 0) wrong += "$size at $progress: the hole paints ${read.inked} pixels"
+        }
+        val own = draw(1f, small, placement = KozmosProgressLabelPlacement.Center) { Text("OK", color = Color.Black) }
+        val inTheHole = hole(own, small, arcOf(own, small))
+        if (inTheHole.inked == 0) wrong += "the product's label is not drawn"
+        if (inTheHole.matching > 0) wrong += "a label in the hole: ${inTheHole.matching} pixels of a check"
+        val by = draw(1f, small, placement = KozmosProgressLabelPlacement.End) { Text("OK", color = Color.Black) }
+        val beside = hole(by, small, theme)
+        if (beside.inked > 0) wrong += "a label beside: the hole paints ${beside.inked} pixels"
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    /**
+     * The check is decoration: the ring still says 100%, by a name of its own
+     * when it has no other, with its progress. A name or a value of the
+     * caller's replaces Kozmos's, as it does on a ring with a label, and no
+     * other ring takes a name.
+     */
+    @Test fun aSmallRingAtCompleteSays100Percent() {
+        val read = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                Column {
+                    val small = KozmosProgressSize.Sm
+                    val shape = KozmosProgressShape.Circular
+                    KozmosProgress(1f, shape = shape, size = small)
+                    KozmosProgress(16f / 15f, shape = shape, size = small)
+                    KozmosProgress(1f, Modifier.semantics { contentDescription = "Upload" }, shape = shape, size = small)
+                    KozmosProgress(
+                        1f,
+                        Modifier.semantics {
+                            contentDescription = "Levels"
+                            stateDescription = "15 of 15"
+                        },
+                        shape = shape,
+                        size = small
+                    )
+                    KozmosProgress(0.99f, shape = shape, size = small)
+                    KozmosProgress(1f, shape = shape, size = KozmosProgressSize.Md)
+                }
+            }
+        }
+        val rings = read.merged.filter { it.progressRange != null }
+        assertEquals("six rings, one node each", 6, rings.size)
+        val (whole, over, upload, levels, short) = rings
+        val medium = rings[5]
+        assertEquals("100%", whole.description)
+        assertEquals("100%", over.description)
+        assertEquals("Upload", upload.description)
+        assertEquals("Levels", levels.description)
+        assertEquals("15 of 15", levels.stateDescription)
+        for (ring in listOf(whole, over, upload, levels)) assertEquals(1f, ring.progressRange!!.current, 0.0001f)
+        assertEquals(null, short.description)
+        assertEquals(null, medium.description)
     }
 
     /** The label's words, laid out in a ring of [size] with nothing else around them. */

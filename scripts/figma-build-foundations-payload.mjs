@@ -198,11 +198,11 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
   // A progress ring's arc is its tone's text colour, an ellipse's arc
   // filled (decision 131, owner 28 Oct: a status ring). A tone's text colour
-  // is also its icon, a toast's (GAP-167), so the four status tones carry
-  // both scopes: a Map keeps a key's last row, and a row with only the ring's
-  // would take the stroke back from Toast.
-  ["Semantics/Emotion/neutral/text", ["SHAPE_FILL"]],
-  ["Semantics/Emotion/themed/text", ["SHAPE_FILL"]],
+  // is also its icon, a toast's (GAP-167) and a complete small ring's check,
+  // an icon's stroke, so all six tones carry both scopes: a Map keeps a key's
+  // last row, and a row with only the ring's would take the stroke back.
+  ["Semantics/Emotion/neutral/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/themed/text", ["STROKE_COLOR", "SHAPE_FILL"]],
   ["Semantics/Emotion/success/text", ["STROKE_COLOR", "SHAPE_FILL"]],
   ["Semantics/Emotion/danger/text", ["STROKE_COLOR", "SHAPE_FILL"]],
   ["Semantics/Emotion/informative/text", ["STROKE_COLOR", "SHAPE_FILL"]],

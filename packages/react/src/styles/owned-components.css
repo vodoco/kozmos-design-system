@@ -137,6 +137,12 @@
     text-align: center;
     overflow-wrap: anywhere;
   }
+  /* An `sm` ring's check at complete: the icon's own 24, inside the 28.28
+     square the hole holds, in the arc's colour. */
+  .kozmos-progress-ring-done {
+    position: relative;
+    color: var(--kozmos-progress-ring-tone);
+  }
   /* No animated sweep under reduced motion, the system's or the config's. */
   @media (prefers-reduced-motion: reduce) {
     .kozmos-progress-ring-arc {
@@ -158,6 +164,11 @@
     }
     .kozmos-progress-ring-arc {
       stroke: Highlight;
+    }
+    /* An svg's own `color` escapes forcing in Chromium and WebKit, so the
+       check names the arc's system colour. */
+    .kozmos-progress-ring-done {
+      color: Highlight;
     }
   }
   .kozmos-route-track {

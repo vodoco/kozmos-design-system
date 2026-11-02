@@ -45,7 +45,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which ex
   What a ring shows: "11 Levels Added in total", or a percentage. It
   names the progress bar, or describes it when `aria-label` or
   `aria-labelledby` already names it, and the drawn copy is hidden from
-  assistive technology, so it is heard once. A bar draws none.
+  assistive technology, so it is heard once. A bar draws none. An `sm`
+  ring that is complete and has no label draws a check in its hole.
 
 - `labelPlacement`: `"center" | "end"`, optional, default `"center"`.
 

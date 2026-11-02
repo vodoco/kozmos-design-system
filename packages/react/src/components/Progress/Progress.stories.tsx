@@ -61,6 +61,35 @@ export const CircularSizes: Story = {
   ),
 };
 
+// Owner, 2 Nov: "100%" does not fit an `sm` hole at 12, so a whole `sm` ring
+// with no label of the product's draws a check, in its tone. It still says
+// 100%, and a label of the product's always wins.
+export const CircularComplete: Story = {
+  render: () => (
+    <Stack direction="row" gap={4} align="center" wrap="wrap">
+      {(
+        [
+          "themed",
+          "neutral",
+          "success",
+          "informative",
+          "alert",
+          "danger",
+        ] as const
+      ).map((tone) => (
+        <Progress
+          key={tone}
+          shape="circular"
+          size="sm"
+          tone={tone}
+          value={100}
+          aria-label={`${tone} upload`}
+        />
+      ))}
+    </Stack>
+  ),
+};
+
 // MAP-64's Level Manager: 11 levels added, out of 15, its label beside the
 // ring at the inline end, as the design draws it: Heading 4's size over xs
 // muted. The label names the ring, and the value reads as the count.

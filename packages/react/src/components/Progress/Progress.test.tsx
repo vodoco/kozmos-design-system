@@ -259,6 +259,144 @@ describe("Progress", () => {
       expect(ring(progress).arc).toBeUndefined();
     });
 
+    // Owner, 2 Nov: "100%" is 31.8 wide at 12, in a 28.28 square; "99%" fits.
+    // So at `sm` a whole ring with no label of the product's draws a check.
+    describe("a small ring at complete", () => {
+      const mark = (progress: HTMLElement) =>
+        progress.querySelector(".kozmos-progress-ring-done");
+
+      it("draws a check in the hole, and still says 100%", () => {
+        render(<Progress shape="circular" size="sm" value={100} />);
+        const progress = screen.getByRole("progressbar", { name: "100%" });
+        expect(progress).toHaveAttribute("aria-valuenow", "100");
+        expect(progress).toHaveAttribute("aria-valuetext", "100%");
+        expect(progress).toHaveAttribute("data-state", "complete");
+        const check = mark(progress);
+        expect(check).toBeInTheDocument();
+        expect(check?.parentElement).toHaveClass("kozmos-progress-ring-dial");
+        expect(check).toHaveAttribute("aria-hidden", "true");
+        expect(check).toHaveAttribute("focusable", "false");
+        expect(check).toHaveAttribute("width", "24");
+        expect(check).toHaveAttribute("height", "24");
+        expect(check).toHaveAttribute("stroke", "currentColor");
+        expect(
+          progress.querySelector(".kozmos-progress-ring-label"),
+        ).toBeNull();
+      });
+
+      it("counts a value over the total as complete", () => {
+        render(<Progress shape="circular" size="sm" value={16} max={15} />);
+        const progress = screen.getByRole("progressbar", { name: "100%" });
+        expect(progress).toHaveAttribute("aria-valuenow", "15");
+        expect(progress).toHaveAttribute("aria-valuetext", "100%");
+        expect(mark(progress)).toBeInTheDocument();
+      });
+
+      it("keeps the name and the value the product gave it", () => {
+        render(
+          <Progress
+            shape="circular"
+            size="sm"
+            value={15}
+            max={15}
+            aria-label="Levels"
+            getValueLabel={(value, max) => `${value} of ${max}`}
+          />,
+        );
+        const progress = screen.getByRole("progressbar", { name: "Levels" });
+        expect(progress).toHaveAttribute("aria-valuetext", "15 of 15");
+        expect(mark(progress)).toBeInTheDocument();
+      });
+
+      it("keeps a name given by reference", () => {
+        render(
+          <>
+            <span id="own">Levels</span>
+            <Progress
+              shape="circular"
+              size="sm"
+              value={100}
+              aria-labelledby="own"
+            />
+          </>,
+        );
+        expect(
+          mark(screen.getByRole("progressbar", { name: "Levels" })),
+        ).toBeInTheDocument();
+      });
+
+      it("gives way to the product's own label, in the hole or beside it", () => {
+        const { rerender } = render(
+          <Progress shape="circular" size="sm" value={100} label="Done" />,
+        );
+        const progress = screen.getByRole("progressbar", { name: "Done" });
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress
+            shape="circular"
+            size="sm"
+            value={100}
+            label="Done"
+            labelPlacement="end"
+          />,
+        );
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress shape="circular" size="sm" value={100} label="100%" />,
+        );
+        expect(mark(progress)).toBeNull();
+        expect(progress).toHaveTextContent("100%");
+      });
+
+      it("draws no check short of complete, at another size, or while unknown", () => {
+        const { rerender } = render(
+          <Progress shape="circular" size="sm" value={99} aria-label="Ring" />,
+        );
+        const progress = screen.getByRole("progressbar", { name: "Ring" });
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress shape="circular" size="md" value={100} aria-label="Ring" />,
+        );
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress shape="circular" size="lg" value={100} aria-label="Ring" />,
+        );
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress
+            shape="circular"
+            size="sm"
+            value={null}
+            aria-label="Ring"
+          />,
+        );
+        expect(mark(progress)).toBeNull();
+        rerender(
+          <Progress
+            shape="circular"
+            size="sm"
+            value={Number.NaN}
+            aria-label="Ring"
+          />,
+        );
+        expect(mark(progress)).toBeNull();
+      });
+
+      it("names no unnamed ring short of the check", () => {
+        render(<Progress shape="circular" size="md" value={100} />);
+        expect(screen.getByRole("progressbar")).not.toHaveAttribute(
+          "aria-label",
+        );
+      });
+
+      it("leaves a bar as it was", () => {
+        render(<Progress size="sm" value={100} aria-label="Bar" />);
+        const progress = screen.getByRole("progressbar", { name: "Bar" });
+        expect(mark(progress)).toBeNull();
+        expect(progress.querySelector("svg")).toBeNull();
+      });
+    });
+
     it("leaves the bar as it was: no ring, no label", () => {
       render(
         <Progress

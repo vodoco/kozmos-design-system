@@ -67,6 +67,13 @@ a count, give `getValueLabel`, as below, and it is said "11 of 15".
   GAP-159's, not this form's.
 - **Over the total.** A value past the total is all of it: "16 of 15" draws a full ring, and
   says 15 of 15. SwiftUI and Compose clamp it as well, and the bar does the same.
+- **Complete at `sm`.** "100%" is 31.8 wide at 12, in the 28.28 square an `sm` hole holds, so
+  a whole `sm` ring with no `label` draws a check in its hole: the icon Stepper and Checkbox
+  draw, at 24, in the ring's tone, and in forced colours Highlight, as the arc is. A value over
+  the total counts. It is decoration: the value still says 100%, and with no other name the
+  ring is named "100%" too. A `label` of the product's always wins, in the hole or beside the
+  ring, and "100%" passed as a `label` is one, so leave `label` out at complete rather than
+  passing the number. Only `sm` draws it, and only whole: `md` and `lg` hold "100%".
 
 SwiftUI's `KozmosProgress(value:total:shape:size:tone:labelPlacement:label:)` and Compose's
 `KozmosProgress(progress, shape = KozmosProgressShape.Circular, size, tone, labelPlacement,
@@ -76,8 +83,13 @@ label's words wherever it is drawn, with its progress: VoiceOver says its percen
 TalkBack its progress; a value of your own (`accessibilityValue`, `stateDescription`)
 replaces it.
 
+They draw the check at `sm` too, each in its own icon for done, SF Symbols' `checkmark` and
+Material's `Check`. Figma's Small ring at 100 draws it as well, in place of the label: Figma
+binds no inverse of Show Label, so Show Label has nothing to draw on those six variants.
+
 <Canvas of={ProgressStories.Circular} />
 <Canvas of={ProgressStories.CircularSizes} />
+<Canvas of={ProgressStories.CircularComplete} />
 <Canvas of={ProgressStories.Tones} />
 <Canvas of={ProgressStories.LevelsAdded} />
 

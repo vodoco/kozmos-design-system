@@ -23,6 +23,12 @@
  *   "11 of 15", and the label's words nowhere else in the tree (Playwright's
  *   tree in every engine, and Chromium's own).
  * - Label: every line of the label lies inside the ring's hole.
+ * - Complete: at `sm`, a whole ring with no label of the product's paints a
+ *   check, 18 by 13 of ink, inside the 28.28 square the hole holds and centred
+ *   in it, in the arc's colour for each tone, in light and dark, either way
+ *   round, and a value over the total does too. It says 100%, name and value,
+ *   and only that. A product's own label replaces it, and nothing short of
+ *   complete, at another size, draws one. In forced colours it is Highlight.
  * - Motion: a new value sweeps; under reduced motion, the media query's or
  *   the config's ([data-kozmos-motion="reduced"]), it does not.
  * - Forced colours: the arc is the system's Highlight and the track its
@@ -206,6 +212,7 @@ const read = (page) =>
       .querySelector(".kozmos-progress-ring-dial")
       .getBoundingClientRect();
     const label = ring.querySelector(".kozmos-progress-ring-label");
+    const check = ring.querySelector(".kozmos-progress-ring-done");
     // Inside the ring's own surface: a system colour resolves by the
     // colour scheme where it is used, and the provider sets the scheme.
     const probe = document.createElement("div");
@@ -221,6 +228,9 @@ const read = (page) =>
       box: box.toJSON(),
       root: ring.getBoundingClientRect().toJSON(),
       label: label ? label.getBoundingClientRect().toJSON() : null,
+      check: check ? check.getBoundingClientRect().toJSON() : null,
+      checkColour: check ? getComputedStyle(check).color : null,
+      checkStroke: check ? getComputedStyle(check).stroke : null,
       svg: ring.querySelector("svg").getBoundingClientRect().toJSON(),
       track: getComputedStyle(track).stroke,
       arc: arc ? getComputedStyle(arc).stroke : null,
@@ -692,6 +702,267 @@ await scenario(
   },
 );
 
+/**
+ * Every pixel of the hole, as coverage of the ink over the page: what the
+ * hole paints, whatever the markup says. Screen pixels, relative to the
+ * dial's centre, over the scale.
+ */
+async function holeInk(page, state, ink, scale) {
+  const shot = await page.screenshot();
+  const left = Math.floor(state.box.left * scale);
+  const top = Math.floor(state.box.top * scale);
+  const across = Math.ceil(state.box.width * scale);
+  const points = [];
+  for (let y = 0; y < across; y += 1)
+    for (let x = 0; x < across; x += 1) points.push([left + x, top + y]);
+  const pixels = await analyse(shot, { kind: "pixels", points });
+  reads += pixels.length;
+  const surface = parse(state.surface);
+  const cx = (state.box.left + state.box.width / 2) * scale;
+  const cy = (state.box.top + state.box.height / 2) * scale;
+  const span = [0, 1, 2].map((k) => ink[k] - surface[k]);
+  const norm = span.reduce((sum, v) => sum + v * v, 0);
+  const [, stroke] = Object.values(RINGS).find(
+    ([diameter]) => diameter === Math.round(state.box.width),
+  );
+  const hole = (state.box.width / 2 - stroke) * scale - 1;
+  const inked = [];
+  for (let i = 0; i < pixels.length; i += 1) {
+    const [x, y] = points[i];
+    const dx = x + 0.5 - cx;
+    const dy = y + 0.5 - cy;
+    if (Math.hypot(dx, dy) > hole) continue;
+    const cover =
+      [0, 1, 2].reduce(
+        (sum, k) => sum + (pixels[i][k] - surface[k]) * span[k],
+        0,
+      ) / norm;
+    if (cover >= 0.5) inked.push({ x: dx / scale, y: dy / scale, cover });
+  }
+  return inked;
+}
+
+for (const dir of ["ltr", "rtl"])
+  for (const theme of ["light", "dark"])
+    await scenario(
+      `${dir} ${theme}: at sm, a whole ring with no label of its own paints a check in the hole, in each tone's arc colour`,
+      async (problems) => {
+        const scale = 2;
+        for (const tone of [undefined, ...TONES]) {
+          const { page, errors } = await open({
+            theme,
+            dir,
+            size: "sm",
+            value: 100,
+            tone,
+            scale,
+          });
+          const state = await read(page);
+          const where = tone ?? "no tone";
+          if (!state.check) {
+            problems.push(`${where}: no check is drawn`);
+            await page.close();
+            continue;
+          }
+          // In the ring's tone: the very colour the arc computes to.
+          if (state.checkColour !== state.arc)
+            problems.push(
+              `${where}: the check is ${state.checkColour}, the arc ${state.arc}`,
+            );
+          const dial = {
+            x: state.box.left + state.box.width / 2,
+            y: state.box.top + state.box.height / 2,
+          };
+          const box = {
+            x: state.check.left + state.check.width / 2 - dial.x,
+            y: state.check.top + state.check.height / 2 - dial.y,
+          };
+          if (Math.abs(box.x) > 0.01 || Math.abs(box.y) > 0.01)
+            problems.push(
+              `${where}: the check's box is ${box.x.toFixed(2)}, ${box.y.toFixed(2)} off the dial's centre`,
+            );
+          if (state.check.width !== 24 || state.check.height !== 24)
+            problems.push(
+              `${where}: the check's box is ${state.check.width} by ${state.check.height}, not 24`,
+            );
+          const ink = parse(state.arc);
+          const inked = await holeInk(page, state, ink, scale);
+          if (!inked.length) {
+            problems.push(`${where}: the hole paints no ink`);
+            await page.close();
+            continue;
+          }
+          const xs = inked.map((p) => p.x);
+          const ys = inked.map((p) => p.y);
+          const [left, right] = [Math.min(...xs), Math.max(...xs)];
+          const [top, bottom] = [Math.min(...ys), Math.max(...ys)];
+          const farthest = Math.max(
+            ...inked.map((p) => Math.max(Math.abs(p.x), Math.abs(p.y))),
+          );
+          if (tone === undefined)
+            measured.push(
+              `${dir} ${theme} complete: ink ${(right - left).toFixed(1)} by ${(bottom - top).toFixed(1)} px, ${left.toFixed(1)} to ${right.toFixed(1)} across the centre, ${top.toFixed(1)} to ${bottom.toFixed(1)} down it, at ${contrast(ink, parse(state.surface)).toFixed(2)}:1 on the page`,
+            );
+          if (right - left < 15 || bottom - top < 10)
+            problems.push(
+              `${where}: the check paints ${(right - left).toFixed(1)} by ${(bottom - top).toFixed(1)}, not a check`,
+            );
+          // Inside the square the hole holds, as a label is kept.
+          if (farthest > 14.14)
+            problems.push(
+              `${where}: the check reaches ${farthest.toFixed(1)} from the centre, outside the 28.28 square`,
+            );
+          if (contrast(ink, parse(state.surface)) < 3)
+            problems.push(
+              `${where}: the check reads ${contrast(ink, parse(state.surface)).toFixed(2)}:1 on the page`,
+            );
+          if (errors.length) problems.push(`${where}: ${errors.join("; ")}`);
+          await page.close();
+        }
+      },
+    );
+
+await scenario(
+  "a small ring at complete says 100%, name and value, and nothing else",
+  async (problems) => {
+    for (const [value, max, valuenow] of [
+      [100, 100, "100"],
+      [15, 15, "15"],
+      [16, 15, "15"],
+    ]) {
+      const where = `${value} of ${max}`;
+      const { page, errors } = await open({
+        theme: "light",
+        size: "sm",
+        value,
+        max,
+      });
+      const bar = page.getByRole("progressbar", { name: "100%", exact: true });
+      reads += 1;
+      if ((await bar.count()) !== 1) {
+        problems.push(`${where}: no progress bar is named "100%"`);
+        await page.close();
+        continue;
+      }
+      const values = await bar.evaluate((node) => ({
+        now: node.getAttribute("aria-valuenow"),
+        text: node.getAttribute("aria-valuetext"),
+      }));
+      if (values.now !== valuenow || values.text !== "100%")
+        problems.push(`${where}: its value is ${JSON.stringify(values)}`);
+      const snapshot = await page.locator("#surface").ariaSnapshot();
+      reads += 1;
+      if (snapshot.trim() !== `- progressbar "100%"`)
+        problems.push(`${where}: the tree reads ${snapshot}`);
+      if (engine === "chromium") {
+        const tree = await chromiumTree(page);
+        reads += 1;
+        if (tree.name !== "100%" || tree.valuetext !== "100%")
+          problems.push(
+            `${where}: Chromium reads "${tree.name}", value "${tree.valuetext}"`,
+          );
+        if (tree.texts.length)
+          problems.push(
+            `${where}: Chromium also reads ${JSON.stringify(tree.texts)} as text`,
+          );
+      }
+      if (errors.length) problems.push(`${where}: ${errors.join("; ")}`);
+      await page.close();
+    }
+    // A name of the product's stays, and the value still says 100%.
+    const { page } = await open({
+      theme: "light",
+      size: "sm",
+      value: 100,
+      ariaLabel: "Upload",
+    });
+    const named = page.getByRole("progressbar", {
+      name: "Upload",
+      exact: true,
+    });
+    reads += 1;
+    if ((await named.count()) !== 1)
+      problems.push(`the product's name is lost`);
+    else if ((await named.getAttribute("aria-valuetext")) !== "100%")
+      problems.push(`the product's ring does not say 100%`);
+    if (!(await read(page)).check) problems.push(`a named ring draws no check`);
+    await page.close();
+  },
+);
+
+await scenario(
+  "a product's own label replaces the check, and nothing short of complete, or at another size, draws one",
+  async (problems) => {
+    for (const [name, options, hole] of [
+      ["label in the hole", { size: "sm", value: 100, label: "OK" }, true],
+      [
+        "label beside",
+        { size: "sm", value: 100, label: "OK", labelPlacement: "end" },
+        false,
+      ],
+      ["99 of 100", { size: "sm", value: 99, ariaLabel: "Ring" }, false],
+      ["md, whole", { size: "md", value: 100, ariaLabel: "Ring" }, false],
+      ["lg, whole", { size: "lg", value: 100, ariaLabel: "Ring" }, false],
+    ]) {
+      const scale = 2;
+      const { page } = await open({ theme: "light", scale, ...options });
+      const state = await read(page);
+      if (state.check) problems.push(`${name}: a check is drawn`);
+      // Read from the pixels: the hole paints the label's words, or nothing.
+      const inked = await holeInk(page, state, [0, 0, 0], scale);
+      if (hole && !inked.length)
+        problems.push(`${name}: its label is not drawn`);
+      if (!hole && inked.length)
+        problems.push(`${name}: the hole paints ${inked.length} pixels of ink`);
+      await page.close();
+    }
+  },
+);
+
+await scenario(
+  "forced colours: the check is the system's Highlight, as the arc is, painted",
+  async (problems) => {
+    for (const theme of ["light", "dark"]) {
+      const scale = 2;
+      const { page } = await open({
+        theme,
+        size: "sm",
+        value: 100,
+        tone: "danger",
+        forced: "active",
+        scale,
+      });
+      const state = await read(page);
+      if (!state.check) {
+        problems.push(`${theme}: no check is drawn`);
+        await page.close();
+        continue;
+      }
+      // The icon's own corner, the middle of its stroke: a computed colour
+      // is no proof, as an svg's own `color` escapes forcing in two engines.
+      const [painted] = await analyse(await page.screenshot(), {
+        kind: "pixels",
+        points: [
+          [
+            Math.round((state.check.left + 9) * scale),
+            Math.round((state.check.top + 16.8) * scale),
+          ],
+        ],
+      });
+      reads += 1;
+      const want = over(state.system.highlight, parse(state.surface));
+      measured.push(
+        `forced colours ${theme}: the check paints rgb(${painted}), Highlight ${want.map(Math.round)} on ${state.surface}`,
+      );
+      if (distance(painted, want) > 6)
+        problems.push(
+          `${theme}: the check paints rgb(${painted}), not Highlight (${want.map(Math.round)})`,
+        );
+      await page.close();
+    }
+  },
+);
+
 await scenario(
   "a new value sweeps; under reduced motion, the media query's or the config's, it does not",
   async (problems) => {
@@ -773,5 +1044,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS progress ring (${engine}): ${reads} reads; the arc runs clockwise from 12 o'clock for value / max of the turn, left to right and right to left, at 1x and 2x; the band is the stroke all the way round and centred, at 48, 96 and 128; unset, the arc is the bar's theme 600, and each of the six tones its emotion's text colour, on background 100, 3:1 or more on the track and the page, light and dark; a label at the end sits 12 from the dial at the inline end, centred, named once; the bar is named or described by its centre label once, with its value; the label fits the hole; reduced motion stills the sweep; forced colours paint Highlight on GrayText`,
+  `\nPASS progress ring (${engine}): ${reads} reads; the arc runs clockwise from 12 o'clock for value / max of the turn, left to right and right to left, at 1x and 2x; the band is the stroke all the way round and centred, at 48, 96 and 128; unset, the arc is the bar's theme 600, and each of the six tones its emotion's text colour, on background 100, 3:1 or more on the track and the page, light and dark; a label at the end sits 12 from the dial at the inline end, centred, named once; the bar is named or described by its centre label once, with its value; the label fits the hole; at sm a whole ring with no label of its own paints a check inside the square the hole holds, in each tone's arc colour, says 100% in name and value, and gives way to a product's label; reduced motion stills the sweep; forced colours paint Highlight on GrayText`,
 );

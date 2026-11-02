@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "771ddc929e2d";
+const PLUGIN_BUILD = "750cf9354ccf";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -4063,6 +4063,7 @@ const COMPONENT_DOCS = [
       "Value maps to Progress.value in Code Connect.",
       "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
       "Shape maps to Progress.shape; Size, Tone and Label to a ring's size, tone and label; Label Beside to labelPlacement end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label: \"100%\" does not fit. A product's own label wins in code; Show Label has nothing to draw on those variants.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
     properties: [
@@ -4078,6 +4079,7 @@ const COMPONENT_DOCS = [
       "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
       "Code should provide an accessible progress value; a ring's centre label names it.",
+      "A small ring's check is decoration: the ring still says 100%, in name and value.",
     ],
   },
   {
@@ -44477,6 +44479,7 @@ async function buildProgressComponent() {
       "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -44503,6 +44506,7 @@ async function updateProgressComponent() {
       "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -62620,8 +62624,9 @@ function progressRingToneFill(tone) {
 
 /**
  * Progress's ring (decision 131): a Dial, holding a track, an arc over it
- * and the label in the hole, and beside it at the inline end, hidden until
- * Label Beside, the same label. The variant hugs them in a row, 12 apart.
+ * and the label in the hole, or at Small and 100 a check, and beside it at
+ * the inline end, hidden until Label Beside, the same label. The variant hugs
+ * them in a row, 12 apart.
  * The track and the arc are ellipses whose arcs are filled, inner radius and
  * all, so neither is a disc inset in another and each binds its fill: the
  * track background/100, the arc its tone's emotion text colour, from 12
@@ -62759,16 +62764,27 @@ async function updateProgressRingVariant(
     return node;
   };
 
-  const label = await text(dial, "Label");
-  label.textAlignHorizontal = "CENTER";
-  label.textAlignVertical = "CENTER";
-  // Inside the square the hole holds, centred, as React's label is.
-  const width = Math.floor((diameter - 2 * metrics.stroke) * Math.SQRT1_2);
-  label.resizeWithoutConstraints(width, 16);
-  setTextAutoResize(label, "HEIGHT");
-  label.x = Math.round((diameter - width) / 2);
-  label.y = Math.round((diameter - label.height) / 2);
-  label.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  // "100%" is 31.8 wide at 12, in the 28.28 square a Small hole holds (owner,
+  // 2 Nov), so the Small ring at 100 draws the check code draws with no label.
+  // Figma binds no inverse of Show Label, so the label cannot wait behind it:
+  // it goes, and Show Label has nothing to draw on these variants.
+  if (size === "Small" && value === "100") {
+    const stale =
+      directChildNamed(dial, "Label") || directChildNamed(component, "Label");
+    if (stale) stale.remove();
+    await syncProgressRingCheck(dial, diameter, fill, variableByName, stats);
+  } else {
+    const label = await text(dial, "Label");
+    label.textAlignHorizontal = "CENTER";
+    label.textAlignVertical = "CENTER";
+    // Inside the square the hole holds, centred, as React's label is.
+    const width = Math.floor((diameter - 2 * metrics.stroke) * Math.SQRT1_2);
+    label.resizeWithoutConstraints(width, 16);
+    setTextAutoResize(label, "HEIGHT");
+    label.x = Math.round((diameter - width) / 2);
+    label.y = Math.round((diameter - label.height) / 2);
+    label.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  }
 
   // Beside the dial, at the inline end, hidden until Label Beside: the row
   // hugs the dial alone until then.
@@ -62777,6 +62793,48 @@ async function updateProgressRingVariant(
   setTextAutoResize(beside, "WIDTH_AND_HEIGHT");
   beside.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
   component.appendChild(beside);
+}
+
+/**
+ * A complete Small ring's check: the Icons page's, at its own 24, so its
+ * stroke is the 2 code draws (Figma keeps a stroke's weight on a resize),
+ * centred in the dial in the arc's colour. Retinted on every Update.
+ */
+async function syncProgressRingCheck(
+  dial,
+  diameter,
+  fill,
+  variableByName,
+  stats,
+) {
+  let check = directChildNamed(dial, "Done Check");
+  if (check && check.type !== "INSTANCE") {
+    check.remove();
+    check = null;
+  }
+  if (!check) {
+    const source = await findKozmosIconSourceComponent("check");
+    if (!source) {
+      stats.warnings.push(
+        "Progress: the Icons page has no check for the Small ring at 100. Run Icons, then Update Progress.",
+      );
+      return;
+    }
+    check = source.createInstance();
+    check.name = "Done Check";
+  }
+  dial.appendChild(check);
+  check.resize(24, 24);
+  check.x = (diameter - 24) / 2;
+  check.y = (diameter - 24) / 2;
+  check.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-check");
+  applyIconColorOverrides(
+    check,
+    fill.name,
+    fill.fallback,
+    variableByName,
+    stats,
+  );
 }
 
 async function createSpinnerVariant({ value, variableByName, stats }) {

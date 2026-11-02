@@ -1976,6 +1976,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // the arc is its tone's emotion text colour from 12 o'clock clockwise (Themed
 // is theme 600, the bar's own fill), the track background/100, with the label
 // in the hole and, hidden until Label Beside, the same label beside the dial.
+// The Small ring at 100 draws a check in the hole instead of the label.
 section("Progress's ring (decision 131, GAP-038)");
 {
   const ready =
@@ -2143,6 +2144,96 @@ section("Progress's ring (decision 131, GAP-038)");
         `at ${value} the arc is ${visible ? `drawn to ${(end / Math.PI).toFixed(2)}π` : "hidden: an arc whose ends meet would be a whole ring"} (${arc && arc.visible}, ${arc && JSON.stringify(arc.arcData)})`,
       );
     }
+    // Owner, 2 Nov: "100%" is 31.8 wide at 12, in the 28.28 square a Small
+    // hole holds, so the Small ring at 100 draws the check code draws with no
+    // label: the Icons page's check at its own 24, in the ring's tone, where
+    // the label was. Figma binds no inverse, so the label cannot stand behind
+    // it, and Show Label has nothing to draw on those six variants.
+    for (const tone of TONES) {
+      const variant = await ring("100", "Small", tone);
+      const dial = named(variant, "Dial");
+      const check = dial && named(dial, "Done Check");
+      const vector = check && check.findOne((n) => n.type === "VECTOR");
+      ok(
+        dial &&
+          check &&
+          check.type === "INSTANCE" &&
+          check.mainComponent.name === "Icon / check" &&
+          check.width === 24 &&
+          check.height === 24 &&
+          check.x === 12 &&
+          check.y === 12 &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Done Check" &&
+          vector &&
+          boundVariableName(vector.strokes[0]) ===
+            `Emotion/${tone.toLowerCase()}/text`,
+        `Small at 100, ${tone}: the check at 24, centred in the 48 dial where the label was, in Emotion/${tone.toLowerCase()}/text (${dial && (dial.children || []).map((c) => c.name).join(", ")}; ${check && [check.type, check.width, check.x, check.y].join(", ")}; ${vector && boundVariableName(vector.strokes[0])})`,
+      );
+    }
+    for (const [value, size] of [
+      ["75", "Small"],
+      ["0", "Small"],
+      ["100", "Medium"],
+      ["100", "Large"],
+    ]) {
+      const dial = named(await ring(value, size), "Dial");
+      ok(
+        dial &&
+          !named(dial, "Done Check") &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Label",
+        `${size} at ${value} keeps its label and draws no check (${dial && (dial.children || []).map((c) => c.name).join(", ")})`,
+      );
+    }
+    // An Update over a ring from before: the label goes, the check comes,
+    // and a second Update leaves one check, retinted.
+    {
+      const before = await ring("75", "Small");
+      const stale = named(named(before, "Dial"), "Label");
+      const again = () =>
+        plugin.updateProgressRingVariant(before, {
+          value: "100",
+          size: "Small",
+          tone: "Success",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        });
+      await again();
+      await again();
+      const dial = named(before, "Dial");
+      const checks = (dial.children || []).filter(
+        (c) => c.name === "Done Check",
+      );
+      const vector = checks[0] && checks[0].findOne((n) => n.type === "VECTOR");
+      ok(
+        stale &&
+          !named(dial, "Label") &&
+          checks.length === 1 &&
+          vector &&
+          boundVariableName(vector.strokes[0]) === "Emotion/success/text" &&
+          named(before, "Label Beside"),
+        `an Update over an older ring swaps its label for one check, and keeps the label beside (${(dial.children || []).map((c) => c.name).join(", ")}; ${vector && boundVariableName(vector.strokes[0])})`,
+      );
+    }
+    // A ring drawn before the Dial held its parts directly on the variant.
+    {
+      const before = await ring("75", "Small");
+      before.appendChild(named(named(before, "Dial"), "Label"));
+      await plugin.updateProgressRingVariant(before, {
+        value: "100",
+        size: "Small",
+        tone: "Themed",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      ok(
+        !named(before, "Label") && named(before, "Done Check"),
+        `an Update over a ring from before the Dial leaves no label behind (${(before.children || []).map((c) => c.name).join(", ")})`,
+      );
+    }
     const bar = await plugin.createProgressVariant({
       value: "50",
       second: "Linear/Medium/Themed",
@@ -2173,10 +2264,12 @@ section("Progress's ring (decision 131, GAP-038)");
     }
     livePage.appendChild(liveSet);
     const setId = liveSet.id;
+    const liveIcons = new MockNode("PAGE", "Icons");
+    liveIcons.appendChild(mockIconComponent("check"));
     const updatePlugin = loadPlugin({
       pluginPath: PLUGIN,
       figma: createFigmaMock({
-        pages: [livePage, new MockNode("PAGE", "Icons")],
+        pages: [livePage, liveIcons],
       }),
       append: `
 ensureComponentRuntimeVariables = async () => new Map();
@@ -2218,9 +2311,16 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     const besideKey = key("Label Beside", "BOOLEAN");
     const inHole = texts("Label");
     const besides = texts("Label Beside");
+    const checks = liveSet.findAll((node) => node.name === "Done Check");
     ok(
-      inHole.length === 90 &&
+      inHole.length === 84 &&
         besides.length === 90 &&
+        checks.length === 6 &&
+        checks.every(
+          (check) =>
+            !check.componentPropertyReferences ||
+            !check.componentPropertyReferences.visible,
+        ) &&
         textKey &&
         showKey &&
         besideKey &&
@@ -2238,7 +2338,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
             label.componentPropertyReferences.characters === textKey &&
             label.componentPropertyReferences.visible === besideKey,
         ),
-      `the 90 rings' labels share Label: the hole's shown by Show Label (on), the one beside by Label Beside (off) (${inHole.length} in the hole, ${besides.length} beside, ${textKey}, ${showKey}, ${besideKey})`,
+      `the rings' labels share Label: 84 in the hole, shown by Show Label (on), and 90 beside, by Label Beside (off); the six Small rings at 100 draw a check, bound to neither (${inHole.length} in the hole, ${besides.length} beside, ${checks.length} checks, ${textKey}, ${showKey}, ${besideKey})`,
     );
     const boxes = liveSet.children.map((c) => [
       c.x,

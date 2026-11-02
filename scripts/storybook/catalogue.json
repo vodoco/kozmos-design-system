@@ -881,6 +881,7 @@
         "Default",
         "Circular",
         "CircularSizes",
+        "CircularComplete",
         "LevelsAdded",
         "Tones",
         "SelectedSection",

@@ -1,5 +1,6 @@
 import React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
+import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { EMOTIONS, type Emotion } from "../../utils/emotion";
 
@@ -21,7 +22,8 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * What a ring shows: "11 Levels Added in total", or a percentage. It
    * names the progress bar, or describes it when `aria-label` or
    * `aria-labelledby` already names it, and the drawn copy is hidden from
-   * assistive technology, so it is heard once. A bar draws none.
+   * assistive technology, so it is heard once. A bar draws none. An `sm`
+   * ring that is complete and has no label draws a check in its hole.
    */
   label?: React.ReactNode;
   /**
@@ -94,6 +96,10 @@ const Progress = React.forwardRef<
       const named = props["aria-label"] != null || labelledBy != null;
       const emotion = EMOTIONS.includes(tone) ? tone : "themed";
       const beside = labelPlacement === "end";
+      // "100%" is 31.8 wide at 12, in the 28.28 square an `sm` hole holds
+      // (owner, 2 Nov), so a whole `sm` ring with no label of the product's
+      // draws a check. It says 100%, by a name of its own if it has no other.
+      const done = size === "sm" && !labelled && drawnValue === resolvedMax;
       const drawn = labelled && (
         <div
           id={labelId}
@@ -128,6 +134,7 @@ const Progress = React.forwardRef<
               : describedBy
           }
           {...props}
+          aria-label={done && !named ? "100%" : props["aria-label"]}
         >
           {/* One drawing: the track and the arc are strokes of one circle,
               so nothing is inset and nothing can sit off centre. The arc
@@ -164,6 +171,13 @@ const Progress = React.forwardRef<
               )}
             </svg>
             {!beside && drawn}
+            {done && (
+              <Check
+                aria-hidden="true"
+                focusable="false"
+                className="kozmos-progress-ring-done"
+              />
+            )}
           </div>
           {beside && drawn}
         </ProgressPrimitive.Root>
