@@ -107,8 +107,9 @@ function dropOverridden(root) {
 // function's parentheses, around a comma or a slash, around `*` in calc()
 // (`rgba(23, 25, 28, .03)` is `rgba(23,25,28,.03)`, `var( --a )` is
 // `var(--a)`). The space between two words, and around `+` and `-` in calc(),
-// stays. Custom properties only: esbuild already does this for the rest. It
-// draws the same; what getPropertyValue() returns is shorter.
+// stays. Custom properties only: esbuild does the commas and slashes of the
+// rest, and ordinaryValueSpaces what it leaves. It draws the same; what
+// getPropertyValue() returns is shorter.
 const MATH = new Set(["calc", "min", "max", "clamp"]);
 function compactCustomPropertySpaces(nodes, inMath) {
   for (let i = 0; i < nodes.length; i++) {
@@ -176,7 +177,7 @@ function varFallbackSpace(root) {
     parsed.walk((node) => {
       if (node.type !== "function") return;
       if (node.value.toLowerCase() === "url") return false;
-      if (node.value.toLowerCase() !== "var" || node.before) return;
+      if (node.value.toLowerCase() !== "var") return;
       const [name, comma] = node.nodes;
       if (
         name?.type === "word" &&
@@ -190,6 +191,43 @@ function varFallbackSpace(root) {
       }
     });
     if (changed) decl.value = parsed.toString();
+  });
+}
+
+// What esbuild leaves in an ordinary property: the padding of a var() wrapped
+// in the source, `var( --a )`, and the spaces around `*` in calc(), as
+// customPropertyInnerWhitespace takes them out of a custom property. Only
+// those: `+` and `-` need their spaces in calc(), a string or a url() is text,
+// and a `*` is an operator only in a math function, which a var()'s fallback
+// is not. It draws the same; getComputedStyle reads the same.
+//
+// After every step that looks for a var(): outside calc(),
+// postcss-value-parser reads `2px*var(--a)` as one function, `2px*var`.
+function compactOrdinarySpaces(nodes, inMath) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (inMath && node.type === "word" && node.value === "*") {
+      if (nodes[i + 1]?.type === "space") nodes.splice(i + 1, 1);
+      if (nodes[i - 1]?.type === "space") nodes.splice(--i, 1);
+    }
+    if (node.type !== "function") continue;
+    const name = node.value.toLowerCase();
+    if (name === "url") continue;
+    const math = MATH.has(name) || (inMath && name === "");
+    if (math || name === "var") {
+      node.before = "";
+      node.after = "";
+    }
+    compactOrdinarySpaces(node.nodes, math);
+  }
+}
+function ordinaryValueSpaces(root) {
+  root.walkDecls((decl) => {
+    if (decl.prop.startsWith("--") || !/\(\s|\s\)|\s\*\s/.test(decl.value))
+      return;
+    const parsed = valueParser(decl.value);
+    compactOrdinarySpaces(parsed.nodes, false);
+    decl.value = parsed.toString();
   });
 }
 
@@ -441,6 +479,7 @@ const STEPS = [
   customPropertyInnerWhitespace,
   customPropertyHex,
   varFallbackSpace,
+  ordinaryValueSpaces,
   transparentKeyword,
   dropTailwindBanner,
   mergeIdenticalRules,
@@ -460,6 +499,7 @@ module.exports.steps = {
   customPropertyInnerWhitespace,
   customPropertyHex,
   varFallbackSpace,
+  ordinaryValueSpaces,
   transparentKeyword,
   dropTailwindBanner,
   mergeIdenticalRules,
