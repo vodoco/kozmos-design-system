@@ -478,49 +478,48 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
             {/* The sections scroll inside the card, so the arrow, drawn
                 outside the card's box, is never clipped by the scroll. */}
             <div className="kozmos-tour-step-sections">
-              {hasEyebrow || onClose ? (
-                <div className="kozmos-tour-step-header">
-                  {hasEyebrow ? (
-                    <Text
-                      size="xs"
-                      weight="semibold"
-                      color="primary"
-                      className="kozmos-tour-step-eyebrow"
-                    >
-                      {hasTour ? <span id={tourId}>{tourLabel}</span> : null}
-                      {hasTour && position ? (
-                        <>
-                          {" "}
-                          <span aria-hidden="true">·</span>{" "}
-                        </>
-                      ) : null}
-                      {position ? (
-                        <span id={positionId}>{position}</span>
-                      ) : null}
-                    </Text>
-                  ) : null}
-                  {onClose ? (
-                    <IconButton
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="kozmos-tour-step-close"
-                      aria-label={closeLabel}
-                      onClick={onClose}
-                    >
-                      <X aria-hidden="true" size={16} />
-                    </IconButton>
-                  ) : null}
-                </div>
-              ) : null}
-              <Heading
-                level={4}
-                as="h2"
-                id={titleId}
-                className="kozmos-tour-step-title"
-              >
-                {title}
-              </Heading>
+              {/* Close takes no row: it is out of the flow in the card's
+                  corner, between the eyebrow and the title for the keyboard
+                  and a reader (owned-tour-step.css). */}
+              <div className="kozmos-tour-step-header">
+                {hasEyebrow ? (
+                  <Text
+                    size="xs"
+                    weight="semibold"
+                    color="primary"
+                    className="kozmos-tour-step-eyebrow"
+                  >
+                    {hasTour ? <span id={tourId}>{tourLabel}</span> : null}
+                    {hasTour && position ? (
+                      <>
+                        {" "}
+                        <span aria-hidden="true">·</span>{" "}
+                      </>
+                    ) : null}
+                    {position ? <span id={positionId}>{position}</span> : null}
+                  </Text>
+                ) : null}
+                {onClose ? (
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="kozmos-tour-step-close"
+                    aria-label={closeLabel}
+                    onClick={onClose}
+                  >
+                    <X aria-hidden="true" size={16} />
+                  </IconButton>
+                ) : null}
+                <Heading
+                  level={4}
+                  as="h2"
+                  id={titleId}
+                  className="kozmos-tour-step-title"
+                >
+                  {title}
+                </Heading>
+              </div>
               {hasBody ? (
                 <Text
                   as="div"

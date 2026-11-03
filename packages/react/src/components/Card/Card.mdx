@@ -10,16 +10,35 @@ import { PlatformSnippets } from '../PlatformSnippets';
 
 Displays a card with header, content, and footer.
 
-`CardContent` and `CardFooter` pad their sides and bottom: a header above them has already paid the
+`CardContent` and `CardFooter` pad their sides and bottom, on SwiftUI and Compose too: a header above them has already paid the
 top. With no header, the one that is the card's first child pays the top as well, so content never
 touches the card's top edge (GAP-194). A part inside a wrapper, such as a `form` around the card's
 parts, is not the card's first child and is left as it is.
+
+`CardTitle` is a heading, and its level follows the page's outline (GAP-205): an `h3` unless `as`
+says otherwise. Under a page titled with an `h1`, a card's title is the next level down,
+`as="h2"`, or a screen reader's list of headings skips a level. `as` takes `h2` to `h6`, as
+`Heading` does; there is no `h1`, the page's own title. The level changes what a screen reader
+hears, not how the title looks. On SwiftUI and Compose `KozmosCardTitle` is a heading too, with no
+level: VoiceOver's and TalkBack's heading navigation stop on it.
+
+<Canvas of={CardStories.TitleLevel} />
 
 <Canvas>
   <Story of={CardStories.Default} />
 </Canvas>
 
 <Controls />
+
+## Header actions
+
+`actions` on `CardHeader` puts what acts on the card at the header's inline end (GAP-169): an edit
+IconButton beside the site's name, a menu. The title and description keep the room before it and
+their own spacing, and the actions are centred on the title's line, whatever their size, with no
+extra height for an icon button at either density. In right to left the actions are at the left. They come after the
+title in the reading and tab order. Without `actions`, the header is drawn as it was.
+
+<Canvas of={CardStories.HeaderActions} />
 
 ## Implementation
 

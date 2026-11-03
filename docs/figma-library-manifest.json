@@ -14746,6 +14746,8 @@
           "controlsBottomStart",
           "controlsLabel",
           "controlsPadCamera",
+          "controlsTopEnd",
+          "controlsTopStart",
           "defaultPanelDetent",
           "deviceSafeAreaInsets",
           "id",
@@ -14766,9 +14768,11 @@
           "panelSurface",
           "role",
           "safeAreaInsets",
+          "status",
           "tabIndex",
           "title",
           "topBar",
+          "topControlsLabel",
           "usableRegions"
         ],
         "variants": {}
@@ -16429,9 +16433,13 @@
         },
         "props": [
           "aria-label",
+          "aria-labelledby",
           "asChild",
           "autoFocus",
           "children",
+          "counter",
+          "counterLabel",
+          "counterSeparator",
           "disabled",
           "isLoading",
           "size",
@@ -16476,6 +16484,7 @@
           "unmappedProps": []
         },
         "props": [
+          "action",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -17586,6 +17595,7 @@
           "children",
           "closeLabel",
           "details",
+          "hostActionStates",
           "id",
           "mediaControlsLabel",
           "mediaLabel",
@@ -17671,6 +17681,7 @@
           "children",
           "currentFloorId",
           "featuredLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "languageNotListedLabel",
@@ -17715,6 +17726,7 @@
           "expanded",
           "featuredLabel",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",
@@ -17764,6 +17776,7 @@
           "featuredLabel",
           "header",
           "hideLabel",
+          "hostActionIcons",
           "id",
           "idPrefix",
           "items",
@@ -19138,6 +19151,7 @@
           "role",
           "tabIndex",
           "title",
+          "tone",
           "type"
         ],
         "variants": {}

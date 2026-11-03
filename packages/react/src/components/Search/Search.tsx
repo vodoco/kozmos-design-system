@@ -1,6 +1,6 @@
 import React from "react";
 import { SearchMd as SearchIcon } from "@kozmos-ds/icons";
-import { inputVariants } from "../Input/Input";
+import { inputVariants } from "../Input/inputVariants";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 

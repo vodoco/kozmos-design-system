@@ -12,7 +12,9 @@
  *
  * Usage: node scripts/check-figma-painters.mjs [path/to/code.js]
  */
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {
   FONTS,
@@ -41,6 +43,7 @@ import {
   isTypedGlyph,
   layersShortOfTheirFrame,
 } from "./lib/figma-verify-rules.mjs";
+import { expectations } from "./verify-figma-library.mjs";
 
 const ROOT = process.cwd();
 const PLUGIN = path.resolve(
@@ -146,6 +149,9 @@ function pages() {
     "shopping-bag-02",
     "user-01",
     "check",
+    "alert-triangle",
+    "alert-circle",
+    "calendar",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -861,6 +867,58 @@ section("POIDetailPanel");
     services && boundVariableName(services.fills[0]) === "Surface/100",
     "panel: the services block stays muted",
   );
+
+  // GAP-130: the product's own action, last in the strip, outlined, with its
+  // icon before its words, hidden until Host Action shows it. The strip cuts
+  // off what passes the card's edge, as the code's strip does before it is
+  // scrolled, rather than wrapping or growing the card.
+  const strip = named(panel, "Actions Slot");
+  const hostAction = strip && strip.children[strip.children.length - 1];
+  ok(
+    strip &&
+      strip.children.map((child) => child.name).join(", ") ===
+        "Navigate Action, Save Action, Share Action, Host Action" &&
+      strip.clipsContent === true,
+    `the strip ends with the host action and clips (${strip && strip.children.map((child) => child.name).join(", ")})`,
+  );
+  ok(
+    hostAction &&
+      hostAction.visible === false &&
+      boundVariableName(hostAction.fills[0]) === "Surface/0" &&
+      boundVariableName(hostAction.strokes[0]) === "Border/Subtle" &&
+      hostAction.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Label" &&
+      hostAction.children[0].type === "INSTANCE" &&
+      hostAction.children[1].characters === "Open in app" &&
+      hostAction.height === 44,
+    `the host action is a hidden 44 outlined button, its icon before its words (${hostAction && hostAction.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
+  );
+  const variants = [];
+  for (const value of ["Inline", "Panel"]) variants.push((await paint(value)).component);
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIDetailPanel";
+  plugin.configurePOIDetailPanelProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Open in app" &&
+      variants.every(
+        (variant) =>
+          named(variant, "Host Action")?.componentPropertyReferences?.visible ===
+            hostProperty &&
+          named(variant, "Host Action Label")?.componentPropertyReferences
+            ?.characters === hostText,
+      ),
+    `a Host Action boolean, off, and Host Action Text, on every variant (${Object.keys(definitions).join(", ")})`,
+  );
 }
 
 // --- CategoryField ---------------------------------------------------------------
@@ -1338,6 +1396,8 @@ section("A set runs after the sets it reaches into");
     updateCategoryTileVariant: ["Counter", "CategoryTile"],
     // Close's x-close, tinted again after the swap.
     retintTourStepCloseIcon: ["IconButton", "TourStep"],
+    // GAP-169: the header action's pencil, tinted again after the swap.
+    retintCardHeaderActionIcon: ["IconButton", "Card"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1388,9 +1448,11 @@ section("A set runs after the sets it reaches into");
         "BrowseCategoriesPanel",
       "after CategoryTile: BrowseCategoriesPanel",
     );
+    // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
-      plugin.setsToUpdateAfter(["IconButton"]).includes("TourStep"),
-      `after IconButton: TourStep (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+      [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
+        "Card,TourStep",
+      `after IconButton: TourStep and Card (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -2364,9 +2426,12 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // GAP-188: TourStep, as React's TourStep draws it, the MAP-64 design's card
 // (decision 136). Popover's surface 372 wide (432 for the welcome card), 16
 // inside, sections 12 apart, no top edge; an Arrow 24 by 12 out of the flow
-// above the card's middle; the header row with the eyebrow (sentence case,
-// the theme ink) and Close, IconButton's Ghost with x-close in the ghost's
-// ink; the title Heading 4; the body in the muted ink; the instruction as
+// above the card's middle; the header, which hugs the eyebrow (sentence case,
+// the theme ink) 8 over the title, Heading 4, both wrapping before Close when
+// there is one; Close, IconButton's Ghost with x-close in the ghost's ink, out
+// of the flow in the card's top corner, its 16 icon ending on the padding and
+// on the eyebrow's line, or the title's first with no eyebrow, taking no row;
+// the body in the muted ink; the instruction as
 // Notice draws it (its tone's fill at 5 % and edge at 50 % as layers, the
 // Container corner, 8/12 inside, a 16 icon, cursor-02's outline for info and
 // alert-triangle for the warning); the progress bar of the secondary fill
@@ -2552,7 +2617,9 @@ section("TourStep (GAP-188, decision 136)");
           component.effects[0].radius === 16,
         `${content}: Popover's surface, the subtle edge all round and the overlay elevation`,
       );
-      const expectedRows = ["Arrow", "Header", "Title Text", "Body Text"];
+      const expectedRows = ["Arrow", "Header"];
+      if (!welcome) expectedRows.push("Close");
+      expectedRows.push("Body Text");
       if (!coachmark && !welcome) expectedRows.push("Instruction", "Progress");
       if (!coachmark) expectedRows.push("Footer");
       ok(
@@ -2611,15 +2678,63 @@ section("TourStep (GAP-188, decision 136)");
         welcome
           ? !closeButton
           : closeButton &&
-              closeButton.parent === header &&
-              header.children[header.children.length - 1] === closeButton &&
               closeButton.type === "INSTANCE" &&
               closeButton.mainComponent.name ===
                 "Variant=Ghost, Size=Default, State=Default" &&
               closeButton.componentProperties["Icon#2:0"] === close.id,
         welcome
           ? "Welcome: no Close"
-          : `${content}: Close is IconButton's Ghost with x-close, at the header's end`,
+          : `${content}: Close is IconButton's Ghost with x-close`,
+      );
+      // Close takes no row: out of the flow on the card itself, a full 44, its
+      // 16 icon ending on the padding and on the eyebrow's 16 line, or the
+      // title's first 28 with no eyebrow. The card's 1 edge is laid out, so
+      // the words start 17 in.
+      if (!welcome) {
+        const line = coachmark ? 28 : 16;
+        ok(
+          closeButton.parent === component &&
+            closeButton.layoutPositioning === "ABSOLUTE" &&
+            closeButton.width === 44 &&
+            closeButton.height === 44 &&
+            closeButton.x === width - 3 - 44 &&
+            closeButton.y === 17 + (line - 44) / 2 &&
+            closeButton.y + 22 === header.y + line / 2 &&
+            closeButton.constraints.horizontal === "MAX" &&
+            closeButton.constraints.vertical === "MIN",
+          `${content}: Close is out of the flow in the corner, a full 44, its icon on the ${coachmark ? "title's first line" : "eyebrow's line"} (${closeButton.layoutPositioning}, ${closeButton.width} by ${closeButton.height} at ${closeButton.x}, ${closeButton.y}, ${JSON.stringify(closeButton.constraints)})`,
+        );
+      }
+      // The header hugs its words, 8 apart, starts at the top of the card, and
+      // leaves Close its room: 30 of it past the padding, and 8.
+      const headerTitle = named(component, "Title Text");
+      const words = coachmark ? [headerTitle] : [eyebrow, headerTitle];
+      const room = welcome ? 0 : 38;
+      ok(
+        header.layoutMode === "VERTICAL" &&
+          header.primaryAxisSizingMode === "AUTO" &&
+          header.itemSpacing === 8 &&
+          header.paddingRight === room &&
+          header.x === 17 &&
+          header.y === 17 &&
+          header.width === width - 34 &&
+          header.children.length === words.length &&
+          words.every((text, index) => header.children[index] === text) &&
+          words.every((text) => text.width === width - 34 - room) &&
+          words[0].y === 0 &&
+          header.height ===
+            words.reduce((sum, text) => sum + text.height, 0) +
+              8 * (words.length - 1),
+        `${content}: the header hugs ${words.map((text) => text.name).join(", ")}, ${room ? `wrapping ${room} before Close` : "the whole width"}, 17 from the top (${header.x}, ${header.y}, ${header.width} by ${header.height}, ${header.paddingRight}, ${words.map((text) => text.width)})`,
+      );
+      // Nothing but its rows: the card has no band the rows do not draw.
+      const flow = component.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const rowsHeight = flow.reduce((sum, child) => sum + child.height, 0);
+      ok(
+        component.height === 34 + rowsHeight + 12 * (flow.length - 1),
+        `${content}: the card is its rows, with no empty band (${component.height} for ${flow.map((child) => `${child.name} ${child.height}`).join(", ")})`,
       );
       if (!welcome) {
         // The swap replaces the layer the button's tint was laid on, so
@@ -3019,6 +3134,21 @@ section("TourStep (GAP-188, decision 136)");
         updateStats.warnings.length === 0,
       `an Update takes Position Text off the set and leaves nothing unbound (${updateStats.warnings.join(" | ")})`,
     );
+    for (const child of set.children.filter(
+      (variant) => variant.name !== "Content=Welcome",
+    )) {
+      const closeLayer = named(child, "Close");
+      const line = child.name === "Content=Coachmark" ? 28 : 16;
+      ok(
+        closeLayer.parent === child &&
+          closeLayer.layoutPositioning === "ABSOLUTE" &&
+          closeLayer.width === 44 &&
+          closeLayer.height === 44 &&
+          closeLayer.x === 325 &&
+          closeLayer.y === 17 + (line - 44) / 2,
+        `over the Build, ${child.name}: Close is out of the flow in the corner (${closeLayer.layoutPositioning}, ${closeLayer.width} by ${closeLayer.height} at ${closeLayer.x}, ${closeLayer.y})`,
+      );
+    }
     const updated = set.children[1];
     const updatedEdge = named(updated, "Instruction Edge");
     const updatedClose = named(updated, "Close").findOne(
@@ -3189,6 +3319,58 @@ section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
       frame.height === 54.5 && layer.height === 38.5,
       `the frame hugs two lines, and the layer stays 16 short: ${layer.height} in ${frame.height}, the live 39 in 55`,
     );
+
+    // A corner layer: a flow child until it leaves the flow, so a frame with
+    // words left in it takes it in and gives it back, and only then do x and y
+    // mean anything. placeAbsolute's comment says what the file does with one
+    // written before: UserLocationMarker's three shapes stacked in a column.
+    const card = new MockNode("FRAME", "Card");
+    card.layoutMode = "VERTICAL";
+    card.primaryAxisSizingMode = "AUTO";
+    card.counterAxisSizingMode = "FIXED";
+    card.paddingTop = 16;
+    card.paddingBottom = 16;
+    card.resizeWithoutConstraints(372, 100);
+    const line = new MockNode("TEXT", "Line");
+    line.lineHeight = { unit: "PIXELS", value: 28 };
+    line.fontSize = 20;
+    line.characters = "Title";
+    card.appendChild(line);
+    ok(card.height === 60, `the card hugs its line: ${card.height}`);
+    const corner = new MockNode("FRAME", "Corner");
+    corner.resizeWithoutConstraints(44, 44);
+    card.appendChild(corner);
+    ok(
+      card.height === 104,
+      `in the flow, it takes a row, and the padding around it: ${card.height}`,
+    );
+    corner.x = 325;
+    corner.y = 3;
+    ok(
+      corner.x === 0 && corner.y === 44,
+      `a flow child is where the frame put it, whatever is written (${corner.x}, ${corner.y})`,
+    );
+    corner.layoutPositioning = "ABSOLUTE";
+    ok(
+      card.height === 60 && corner.x === 0 && corner.y === 44,
+      `out of the flow, a frame with words left hugs them, and the layer stays where it was (${card.height}, ${corner.x}, ${corner.y})`,
+    );
+    corner.x = 325;
+    corner.y = 3;
+    corner.constraints = { horizontal: "MAX", vertical: "MIN" };
+    card.resize(432, card.height);
+    card.appendChild(new MockNode("FRAME", "Next row"));
+    ok(
+      corner.x === 385 && corner.y === 3 && card.height > 60,
+      `held at the top and the end, it follows the card's width, and its height leaves it be (${corner.x}, ${corner.y} in ${card.width} by ${card.height})`,
+    );
+    let refused = false;
+    try {
+      new MockNode("FRAME", "Loose").layoutPositioning = "ABSOLUTE";
+    } catch {
+      refused = true;
+    }
+    ok(refused, "a layer outside an auto-layout frame cannot go absolute");
   });
 }
 
@@ -3197,7 +3379,9 @@ section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
 // instruction's words sat inside their own box and inside the frame, which
 // hugged them, and what fell short was the frame's own fill and edge, absolute
 // layers its overflow rule skips on purpose.
-section("figma:verify reads stretched layers and a separator");
+section(
+  "figma:verify reads stretched layers and a separator, and fails on them",
+);
 {
   const box = (x, y, width, height) => ({ x, y, width, height });
   const stretched = {
@@ -3263,6 +3447,206 @@ section("figma:verify reads stretched layers and a separator");
       !isTypedGlyph(text("Percent", "%")),
     "a Separator's dot is punctuation; a dot elsewhere, and any other glyph, still counts",
   );
+
+  // The three reports it only printed until their counts reached zero on the
+  // live file (2026-11-02): the run itself, on a page that holds every set and
+  // variant it expects, passes, and each with one defect added fails, by one.
+  const { names, axes } = expectations();
+  const variantsOf = (byAxis = {}) => {
+    const first = Object.entries(byAxis).map(([axis, [value]]) => [
+      axis,
+      value,
+    ]);
+    const combinations = Object.entries(byAxis).flatMap(([axis, values]) =>
+      values.map((value) =>
+        first.map(([name, start]) =>
+          name === axis ? `${name}=${value}` : `${name}=${start}`,
+        ),
+      ),
+    );
+    return [...new Set(combinations.map((pairs) => pairs.join(", ")))].map(
+      (name) => ({ type: "COMPONENT", name }),
+    );
+  };
+  // A defect goes inside a variant: a set's own children are its variants.
+  const page = (defect) => ({
+    type: "PAGE",
+    children: names.map((name) => ({
+      type: "COMPONENT_SET",
+      name,
+      children: variantsOf(axes[name]).map((variant, index) =>
+        defect && name === "TourStep" && index === 0
+          ? { ...variant, children: [defect] }
+          : variant,
+      ),
+    })),
+  });
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "figma-verify-"));
+  const run = (saved) => {
+    const file = path.join(directory, "page.json");
+    fs.writeFileSync(file, JSON.stringify(saved));
+    return spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/verify-figma-library.mjs"), "--page", file],
+      { encoding: "utf8" },
+    );
+  };
+  const clean = run(page());
+  ok(
+    clean.status === 0,
+    `a page with every set and nothing wrong passes (exit ${clean.status}: ${clean.stdout.match(/FAIL .*/g)})`,
+  );
+  const inside = { ...frame([]), paddingLeft: 0, paddingRight: 0 };
+  for (const [report, defect] of [
+    [
+      "children that overflow the box holding them",
+      {
+        ...inside,
+        children: [{ name: "Wide", absoluteBoundingBox: box(0, 0, 400, 20) }],
+      },
+    ],
+    ["icons typed as characters", text("Close", "×")],
+    [
+      "layers stretched over a frame that stop short of it",
+      frame([layer("Instruction Fill", box(0, 0, 338, 39))]),
+    ],
+  ]) {
+    const result = run(page(defect));
+    ok(
+      result.status === 1 &&
+        result.stdout.includes(`FAIL  ${report} — 1`) &&
+        result.stdout.includes("\n1 drift item(s)."),
+      `figma:verify fails on one finding in "${report}" (exit ${result.status}: ${result.stdout.match(/\d+ drift item|matches what/)})`,
+    );
+  }
+  fs.rmSync(directory, { recursive: true, force: true });
+}
+
+// GAP-167: Toast's Tone axis, toast()'s tones. Neutral draws no icon; each
+// other tone leads with the Alert set's icon for it, 16, in the tone's text
+// colour (Semantics/Emotion/<tone>/text), as React's Toaster draws it, on the
+// same surface and edge. A variant named before the axis parses as Neutral,
+// so Update renames the two in the file and keeps their node ids.
+section("Toast tones (GAP-167)");
+{
+  const ready =
+    Array.isArray(plugin.TOAST_TONES) &&
+    typeof plugin.parseToastVariantName === "function";
+  ok(ready, "Toast has a Tone axis");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    ok(
+      JSON.stringify(plugin.TOAST_TONES) ===
+        JSON.stringify(["Neutral", "Success", "Info", "Warning", "Critical"]),
+      `the tones are toast()'s (${plugin.TOAST_TONES.join(", ")})`,
+    );
+    const parsed = [
+      "Content=Basic",
+      "Content=Action, Tone=Critical",
+      "Content=Basic, Tone=Loud",
+    ].map((name) => plugin.parseToastVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "Basic", second: "Neutral" },
+          { value: "Action", second: "Critical" },
+          null,
+        ]),
+      `a variant from before the axis parses as Neutral; an unknown Tone is not one (${JSON.stringify(parsed)})`,
+    );
+    const expected = {
+      Neutral: null,
+      Success: ["check", "Emotion/success/text"],
+      Info: ["info-circle", "Emotion/informative/text"],
+      Warning: ["alert-triangle", "Emotion/alert/text"],
+      Critical: ["alert-circle", "Emotion/danger/text"],
+    };
+    for (const [tone, want] of Object.entries(expected)) {
+      const variant = await plugin.createToastVariant({
+        value: "Action",
+        second: tone,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      const icons = (variant.children || []).filter(
+        (child) => child.name === "Icon",
+      );
+      const [icon] = icons;
+      const shapes = icon
+        ? icon.findAll((node) => node.type === "VECTOR")
+        : [];
+      const tints = shapes.flatMap((shape) =>
+        (shape.strokes || []).map(boundVariableName).filter(Boolean),
+      );
+      const order = (variant.children || []).map((child) => child.name);
+      const surface = [
+        boundVariableName(variant.fills[0]),
+        boundVariableName(variant.strokes[0]),
+      ];
+      ok(
+        variant.name === `Content=Action, Tone=${tone}` &&
+          JSON.stringify(surface) ===
+            JSON.stringify(["Surface/0", "Border/Subtle"]) &&
+          (want === null
+            ? icons.length === 0
+            : icons.length === 1 &&
+              order[0] === "Icon" &&
+              icon.mainComponent &&
+              icon.mainComponent.name === `Icon / ${want[0]}` &&
+              icon.width === 16 &&
+              shapes.length > 0 &&
+              tints.length === shapes.length &&
+              tints.every((tint) => tint === want[1])),
+        want === null
+          ? `${tone}: no icon, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")})`
+          : `${tone}: ${want[0]} first, 16, in ${want[1]}, on Surface/0 and Border/Subtle (${variant.name}; ${order.join(", ")}; ${icon && icon.mainComponent && icon.mainComponent.name}; ${tints.join("+") || "untinted"})`,
+      );
+    }
+
+    // Update over the set as it is in the file today: two variants, named
+    // before the Tone axis. Each keeps its node id and is renamed Neutral;
+    // the other 8 are created beside them.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Toast");
+    const oldIds = {};
+    for (const name of ["Content=Basic", "Content=Action"]) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, new MockNode("PAGE", "Icons")],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateToastComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 2 &&
+        updated.variantsCreated === 8 &&
+        liveSet.children.length === 10 &&
+        new Set(names).size === 10,
+      `Update keeps the set and its 2 variants, and adds 8: 10 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      ["Content=Basic", "Content=Action"].every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return variant && variant.name === `${name}, Tone=Neutral`;
+      }),
+      `each keeps its node id and is renamed Tone=Neutral (${["Content=Basic", "Content=Action"].map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+    );
+  }
 }
 
 // --- Decision 59: the theme fill and what sits on it ------------------------------
@@ -3878,7 +4262,10 @@ section("Every frame keeps the size it was drawn at");
     figma: scanFigma,
     append: capture,
   });
-  for (const definition of scan.KOSMOS_ICON_DEFINITIONS) {
+  // The registry's icons and the UI icons it does not name (decision 121).
+  for (const definition of scan.KOSMOS_ICON_DEFINITIONS.concat(
+    scan.IMPORTER_UI_ICON_DEFINITIONS || [],
+  )) {
     scanPages[1].appendChild(mockIconComponent(definition.name));
   }
   const tokens = payloadVariables([...variableByName.keys()]);
@@ -4001,7 +4388,10 @@ section("Every binding is in its variable's scope");
     append:
       "\n;ensureComponentRuntimeVariables = async function () { return figma.__scopeVariables; };\n",
   });
-  for (const definition of scoped.KOSMOS_ICON_DEFINITIONS) {
+  // The registry's icons and the UI icons it does not name (decision 121).
+  for (const definition of scoped.KOSMOS_ICON_DEFINITIONS.concat(
+    scoped.IMPORTER_UI_ICON_DEFINITIONS || [],
+  )) {
     scopePages[1].appendChild(mockIconComponent(definition.name));
   }
   const componentTokens = scoped.COMPONENT_FLOAT_TOKENS || [];
@@ -4302,18 +4692,41 @@ section("POIResultCard actions");
     "GAP-056: 44px result actions plus the row's 12px bottom inset",
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       buttons[0].name === "Primary Action" &&
-      buttons[1].name === "Secondary Action",
-    `two actions, primary first (${buttons.map((b) => b.name).join(", ")})`,
+      buttons[1].name === "Secondary Action" &&
+      buttons[2].name === "Host Action",
+    `two actions, primary first, then the product's own (${buttons.map((b) => b.name).join(", ")})`,
   );
   ok(
-    buttons.length === 2 &&
+    buttons.length === 3 &&
       boundVariableName(buttons[0].fills[0]) ===
         "Primary Buttons/themed/button/background/idle" &&
       boundVariableName(buttons[1].fills[0]) === "Surface/0" &&
-      buttons[1].strokeWeight === 1,
-    `the primary is the theme fill and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+      buttons[1].strokeWeight === 1 &&
+      boundVariableName(buttons[2].fills[0]) === "Surface/0" &&
+      boundVariableName(buttons[2].strokes[0]) === "Border/Subtle" &&
+      buttons[2].strokeWeight === 1,
+    `the primary is the theme fill, the secondary and the host action outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+  );
+  // GAP-028: the product's own action is drawn on every variant and hidden,
+  // its icon before its words, until the Host Action property shows it.
+  const host = buttons[2];
+  ok(
+    host &&
+      host.visible === false &&
+      buttons[0].visible !== false &&
+      buttons[1].visible !== false,
+    "the host action is hidden until Host Action asks for it; Go and Details are not",
+  );
+  ok(
+    host &&
+      host.children.map((child) => child.name).join(", ") ===
+        "Host Action Icon, Host Action Text" &&
+      host.children[0].type === "INSTANCE" &&
+      host.children[1].characters === "Reserve a table" &&
+      host.itemSpacing === 8,
+    `the host action's icon leads its words, 8 apart (${host && host.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
   );
   // The primary is drawn as a default Button: its label is the theme
   // foreground, white in both themes. Surface/0 turned black in the dark.
@@ -4343,6 +4756,50 @@ section("POIResultCard actions");
     !component.children.some((child) => child.name === "Logo Slot"),
     `and the card holds only the two rows (${component.children.map((c) => c.name).join(", ")})`,
   );
+
+  // The Host Action property shows the product's own action and Host Action
+  // Text says its words, on every variant.
+  const variants = [];
+  for (const state of ["Default", "Selected"]) {
+    const variant = figma.createComponent();
+    await plugin.updatePOIResultCardVariant(variant, {
+      value: state,
+      second: "Card",
+      variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    variants.push(variant);
+  }
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "POIResultCard";
+  plugin.configurePOIResultCardProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const byBase = (base, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === base && definitions[key].type === type,
+    );
+  const hostProperty = byBase("Host Action", "BOOLEAN");
+  const hostText = byBase("Host Action Text", "TEXT");
+  ok(
+    hostProperty &&
+      definitions[hostProperty].defaultValue === false &&
+      hostText &&
+      definitions[hostText].defaultValue === "Reserve a table",
+    `a Host Action boolean, off, and Host Action Text (${Object.keys(definitions).join(", ")})`,
+  );
+  ok(
+    Boolean(hostProperty && hostText) &&
+      variants.every((variant) => {
+        const button = named(variant, "Host Action");
+        const words = named(variant, "Host Action Text");
+        return (
+          button?.componentPropertyReferences?.visible === hostProperty &&
+          words?.componentPropertyReferences?.characters === hostText
+        );
+      }),
+    "every variant's host action shows through Host Action and says Host Action Text",
+  );
 }
 
 // --- Curated Icons ------------------------------------------------------------------
@@ -4351,8 +4808,9 @@ section("POIResultCard actions");
 // source's layer id, so an Update that draws a source again drops them: until
 // 2026-09-22 every Curated Icons → Update did, for every set but the four it
 // repaints. A second run keeps every source layer, id for id; a source that is
-// no longer right is drawn again and said so; and the taxonomy's symbols are
-// drawn from the SVGs the plugin carries, as filled shapes that scale.
+// no longer right is drawn again and said so; and the icons the Pointr library
+// has no outline for are drawn from the SVGs the plugin carries, as shapes that
+// scale.
 section("Curated Icons");
 {
   const library = new Map();
@@ -4361,7 +4819,10 @@ section("Curated Icons");
     pluginPath: PLUGIN,
     figma: createFigmaMock({ pages: [iconsPage], library }),
   });
-  const definitions = icons.KOSMOS_ICON_DEFINITIONS;
+  // The registry's icons and the UI icons it does not name (decision 121),
+  // which Curated Icons imports beside them.
+  const uiDefinitions = icons.IMPORTER_UI_ICON_DEFINITIONS || [];
+  const definitions = icons.KOSMOS_ICON_DEFINITIONS.concat(uiDefinitions);
   for (const definition of definitions) {
     if (!definition.componentKey) continue;
     const source = mockIconComponent(definition.name);
@@ -4383,15 +4844,39 @@ section("Curated Icons");
   // navigation-glyphs.json), as solid shapes that scale.
   const wayfinding = icons.KOZMOS_WAYFINDING_ICONS || [];
   const total = definitions.length + wayfinding.length;
+  const owned = definitions.filter((definition) => !definition.componentKey);
+  const importable = definitions.length - owned.length;
   const first = await icons.syncIconSourceLibrary();
   ok(
     wayfinding.length === 23 &&
+      owned.length === 2 &&
       first.created === total &&
-      first.imported === definitions.length &&
-      first.drawn === wayfinding.length &&
+      first.imported === importable &&
+      first.drawn === wayfinding.length + owned.length &&
       first.failed === 0,
-    `a first run makes all ${total}, importing the ${definitions.length} Pointr icons and drawing the ${wayfinding.length} wayfinding glyphs (${JSON.stringify({ created: first.created, imported: first.imported, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
+    `a first run makes all ${total}, importing the ${importable} Pointr icons and drawing the ${wayfinding.length} wayfinding glyphs and ${owned.length} owned icons (${JSON.stringify({ created: first.created, imported: first.imported, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
   );
+  // The venue set's two names the library has no outline for (GAP-105): an
+  // Owned Source frame of the package's own artwork, one solid, one stroked,
+  // whichever a part's slot then does with it.
+  for (const definition of owned) {
+    const component = components().find(
+      (node) => node.name === `Icon / ${definition.name}`,
+    );
+    const frame = component && component.children[0];
+    ok(
+      frame &&
+        frame.type === "FRAME" &&
+        frame.name === "Owned Source" &&
+        frame.width === 24 &&
+        frame.children.length > 0 &&
+        frame.children.every((shape) => shape.type === "VECTOR") &&
+        component.description.includes("packages/icons/src/owned/icons.ts") &&
+        component.getSharedPluginData("kozmos_ds_importer", "icon-name") ===
+          definition.name,
+      `${definition.name} is a 24 Owned Source frame of the package's own artwork`,
+    );
+  }
   const elevator = components().find(
     (node) => node.name === "Icon / elevator-up",
   );
@@ -4445,7 +4930,9 @@ section("Curated Icons");
     components()
       .filter((component) =>
         definitions.some(
-          (definition) => component.name === `Icon / ${definition.name}`,
+          (definition) =>
+            definition.componentKey &&
+            component.name === `Icon / ${definition.name}`,
         ),
       )
       .every(
@@ -4498,20 +4985,34 @@ section("Curated Icons");
             component.name.replace(/^Icon \/ /, ""),
           ).issues.length === 0,
       ),
-    `the ${pointr.length} icons, Pointr and wayfinding, audit clean`,
+    `the ${pointr.length} icons, Pointr, owned and wayfinding, audit clean`,
   );
 
-  // Every source is a Pointr outline now, so every slot is offered all of them:
-  // the taxonomy's filled symbols, which a stroke tint could not reach, are
-  // gone from the package and from here.
+  // Every slot is offered the Pointr outlines. A wayfinding glyph or an owned
+  // icon is drawn, so a stroke tint keyed through a Pointr outline's layers
+  // cannot reach it; a category's slot, which tints its own, offers the owned.
   const general = await icons.findKozmosIconSourceComponents();
+  const isOwnedSource = (component) =>
+    owned.some((definition) => component.name === `Icon / ${definition.name}`);
   ok(
-    general.length === definitions.length &&
-      !general.some((component) => /taxonomy-/.test(component.name)) &&
+    general.length === importable &&
+      !general.some(isOwnedSource) &&
       !general.some((component) =>
         wayfinding.some((icon) => component.name === `Icon / ${icon.name}`),
       ),
-    `every slot is offered all ${general.length} Pointr icons, and no wayfinding glyph, which a stroke tint cannot reach`,
+    `every slot is offered all ${general.length} Pointr icons, and no wayfinding glyph or owned icon, which a stroke tint cannot reach`,
+  );
+  const categorySlot = await icons.findKozmosIconSourceComponents({
+    withOwned: true,
+  });
+  ok(
+    categorySlot.length === definitions.length &&
+      owned.every((definition) =>
+        categorySlot.some(
+          (component) => component.name === `Icon / ${definition.name}`,
+        ),
+      ),
+    `a category's slot is offered the ${categorySlot.length} with the owned icons, utensils and accessibility among them`,
   );
 }
 
@@ -5704,6 +6205,89 @@ section("MapControlsGroup");
         !named(button, `${name} Glyph`),
       `${name} is a ${iconName} icon`,
     );
+  }
+}
+
+section("AdaptiveMapShell's map slots (GAP-123, SDK-UI-002)");
+{
+  // Where React's shell puts what it places over the map: the top corners
+  // under the top bar, the controls column below the top end, and the bottom
+  // row with its corners and, between them, the status with the credits
+  // above it. Rows in flow, so they follow the surface's width.
+  for (const value of ["Start", "End"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateAdaptiveMapShellVariant(component, {
+      value,
+      variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const surface = named(component, "Map Surface");
+    const names = (node) => (node ? node.children.map((c) => c.name) : []);
+    ok(
+      surface &&
+        surface.layoutMode === "VERTICAL" &&
+        names(surface).join() ===
+          "Top Corners,Controls Column,Map Space,Bottom Row",
+      `${value}: the map surface stacks the top corners, the controls, the map and the bottom row`,
+    );
+    const top = surface && named(surface, "Top Corners");
+    ok(
+      top &&
+        top.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        top.layoutSizingHorizontal === "FILL" &&
+        names(top).join() === "Top Start Slot,Top End Slot",
+      `${value}: the top corners share a row, the start first and the end at the end`,
+    );
+    const column = surface && named(surface, "Controls Column");
+    ok(
+      column &&
+        column.primaryAxisAlignItems === "MAX" &&
+        names(column).join() === "Controls Slot",
+      `${value}: the controls column sits at the end, below the top corners`,
+    );
+    const space = surface && named(surface, "Map Space");
+    ok(
+      space &&
+        space.layoutSizingVertical === "FILL" &&
+        space.fills.length === 0 &&
+        space.strokes.length === 0,
+      `${value}: the map between the rows is undrawn and takes what they leave`,
+    );
+    const bottom = surface && named(surface, "Bottom Row");
+    ok(
+      bottom &&
+        bottom.primaryAxisAlignItems === "SPACE_BETWEEN" &&
+        bottom.counterAxisAlignItems === "MAX" &&
+        names(bottom).join() ===
+          "Bottom Start Slot,Status And Credits,Bottom End Slot",
+      `${value}: the bottom row puts the status between the corners, level with their bottom edge`,
+    );
+    const middle = bottom && named(bottom, "Status And Credits");
+    ok(
+      middle && names(middle).join() === "Attribution Slot,Status Slot",
+      `${value}: the credits sit directly above the status`,
+    );
+    for (const name of [
+      "Top Start Slot",
+      "Top End Slot",
+      "Bottom Start Slot",
+      "Bottom End Slot",
+      "Status Slot",
+      "Attribution Slot",
+    ]) {
+      const slot = surface && named(surface, name);
+      ok(
+        slot &&
+          slot.cornerRadius ===
+            plugin.nestedRadius(
+              plugin.KOZMOS_RADIUS.control,
+              plugin.PRODUCT_SDK_CARD_INSET,
+            ),
+        `${value}: ${name} takes the radius the map surface's inset leaves it`,
+      );
+    }
   }
 }
 
@@ -9009,6 +9593,979 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       )
       .join(", ")})`,
   );
+}
+
+// --- GAP-197, GAP-169, GAP-154: the controls' new props --------------------------
+
+// Three React props reach Figma (27 Oct 2026). IconButton's `counter` is a
+// brand Counter at size sm over the icon's top-end corner, its start and
+// bottom edges 2 past the button's centre; CardHeader's `actions` sit at the
+// header's end on the title's line, 16 from the text; Input's `action` is a
+// copy or toggle button inside the field's end, drawn as PasswordInput's
+// reveal. The copy, star and pencil are UI icons the by-name registry does
+// not name (decision 121), imported beside it. Every value asserted here is
+// computed in a guard, so against an importer without them each assertion
+// fails on its own rather than the run stopping at the first missing helper.
+section(
+  "Control props: IconButton's counter, CardHeader's actions, Input's action (GAP-197, GAP-169, GAP-154)",
+);
+{
+  const attempt = async (fn) => {
+    try {
+      return await fn();
+    } catch {
+      return null;
+    }
+  };
+  const boundFloat = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const definitionsOf = (set, type) =>
+    Object.entries((set && set.componentPropertyDefinitions) || {}).filter(
+      ([, definition]) => definition.type === type,
+    );
+  const propertyNamed = (set, base, type) =>
+    (definitionsOf(set, type).find(([key]) => key.split("#")[0] === base) ||
+      [])[0] || null;
+  const tokens = payloadVariables(
+    (plugin.COMPONENT_FLOAT_TOKENS || [])
+      .map((token) => token.name)
+      .concat([...variableByName.keys()]),
+  );
+  const catalog = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-pointr-icon-catalog.json"),
+      "utf8",
+    ),
+  );
+  const catalogKey = new Map(
+    (Array.isArray(catalog) ? catalog : catalog.icons || []).map((item) => [
+      item.name,
+      item.componentKey,
+    ]),
+  );
+
+  // A file of its own: Counter, the curated icons and the three UI icons on
+  // their pages, and an IconButton set for the card's action to nest.
+  const uiIcons = ["copy-01", "pencil-01", "star-01"];
+  const controlsPages = () => {
+    const [components, icons] = pages();
+    for (const name of uiIcons) icons.appendChild(mockIconComponent(name));
+    return [components, icons];
+  };
+  const [componentsPage, iconsPage] = controlsPages();
+  const controls = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: createFigmaMock({ pages: [componentsPage, iconsPage] }),
+  });
+  const iconComponent = (name) =>
+    iconsPage.children.find((node) => node.name === `Icon / ${name}`);
+
+  // UI icons (decision 121) ----------------------------------------------------
+  const uiList = controls.IMPORTER_UI_ICON_DEFINITIONS || [];
+  ok(
+    JSON.stringify(uiList.map((definition) => definition.name)) ===
+      JSON.stringify(uiIcons) &&
+      uiList.every(
+        (definition) =>
+          definition.componentKey &&
+          definition.componentKey === catalogKey.get(definition.name) &&
+          !controls.KOSMOS_ICON_DEFINITIONS.some(
+            (registry) => registry.name === definition.name,
+          ),
+      ),
+    `the importer's UI icons are copy-01, pencil-01 and star-01, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
+  );
+  {
+    const library = new Map();
+    const page = new MockNode("PAGE", "Icons");
+    const run = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [page], library }),
+    });
+    const all = run.KOSMOS_ICON_DEFINITIONS.concat(
+      run.IMPORTER_UI_ICON_DEFINITIONS || [],
+    );
+    for (const definition of all) {
+      if (!definition.componentKey) continue;
+      const source = mockIconComponent(definition.name);
+      source.key = definition.componentKey;
+      library.set(definition.componentKey, source);
+    }
+    const synced = await attempt(() => run.syncIconSourceLibrary());
+    const placed = (name) =>
+      page.children.find((node) => node.name === `Icon / ${name}`);
+    const registryCount = run.KOSMOS_ICON_DEFINITIONS.length;
+    const wayfindingCount = (run.KOZMOS_WAYFINDING_ICONS || []).length;
+    const slotOf = (index) => [
+      80 + (index % 8) * 120,
+      80 + Math.floor(index / 8) * 96,
+    ];
+    const at = (node) => (node ? [node.x, node.y] : null);
+    ok(
+      synced &&
+        synced.failed === 0 &&
+        uiIcons.every((name, offset) => {
+          const node = placed(name);
+          return (
+            node &&
+            node.children.length === 1 &&
+            node.children[0].type === "INSTANCE" &&
+            node.children[0].mainComponent ===
+              library.get(catalogKey.get(name)) &&
+            JSON.stringify(at(node)) ===
+              JSON.stringify(slotOf(registryCount + wayfindingCount + offset))
+          );
+        }),
+      `Curated Icons imports the three by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
+    );
+    const lastRegistry = run.KOSMOS_ICON_DEFINITIONS[registryCount - 1];
+    const lastGlyph = (run.KOZMOS_WAYFINDING_ICONS || [])[wayfindingCount - 1];
+    ok(
+      synced &&
+        uiIcons.every((name) => placed(name)) &&
+        JSON.stringify(at(placed(lastRegistry.name))) ===
+          JSON.stringify(slotOf(registryCount - 1)) &&
+        lastGlyph &&
+        JSON.stringify(at(placed(lastGlyph.name))) ===
+          JSON.stringify(slotOf(registryCount + wayfindingCount - 1)),
+      "and every icon already on the page keeps its place",
+    );
+    const offered = await attempt(() => run.findKozmosIconSourceComponents());
+    ok(
+      offered &&
+        uiIcons.every((name) =>
+          offered.some((component) => component.name === `Icon / ${name}`),
+        ),
+      "the swaps are offered them too",
+    );
+  }
+  {
+    const empty = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: pages() }),
+    });
+    const missingStats = freshStats();
+    const missing =
+      typeof empty.findImporterIconSource === "function"
+        ? await empty.findImporterIconSource("copy-01", "Input", missingStats)
+        : undefined;
+    const found =
+      typeof controls.findImporterIconSource === "function"
+        ? await controls.findImporterIconSource(
+            "copy-01",
+            "Input",
+            freshStats(),
+          )
+        : undefined;
+    ok(
+      missing === null &&
+        missingStats.warnings.some(
+          (warning) =>
+            /Icon \/ copy-01 is not on the Icons page/.test(warning) &&
+            /Run Curated Icons, then Update Input/.test(warning),
+        ) &&
+        found === iconComponent("copy-01"),
+      `a UI icon not on the Icons page is drawn as no icon and named, never as another glyph (${missing === null ? "null" : String(missing && missing.name)}; ${missingStats.warnings.join(" | ")})`,
+    );
+  }
+
+  // IconButton's counter (GAP-197) ---------------------------------------------
+  const counterCases = [
+    ["Default", 44],
+    ["Small", 44],
+    ["Large", 48],
+  ];
+  for (const [size, box] of counterCases) {
+    const button = await attempt(() =>
+      controls.createIconButtonVariant({
+        variant: "Ghost",
+        size,
+        state: "Default",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const counter =
+      button &&
+      button.children.find(
+        (child) => child.name === "Counter" && child.type === "FRAME",
+      );
+    const digits = counter && named(counter, "Counter Text");
+    // Its bottom on the centre line (decision 139: on the design's 28 help
+    // button, 4 above it); its start 2 past the centre.
+    const x = box / 2 + 2;
+    const bottom = box / 2;
+    ok(
+      counter &&
+        counter.layoutPositioning === "ABSOLUTE" &&
+        counter.x === x &&
+        counter.y + counter.height === bottom &&
+        counter.height === 18 &&
+        counter.minWidth === 18 &&
+        counter.paddingLeft === 5 &&
+        counter.paddingRight === 5 &&
+        counter.constraints.horizontal === "CENTER" &&
+        counter.constraints.vertical === "CENTER",
+      `${size} (${box}): the counter is 18 tall, at least 18 wide, its start edge at ${x}, 2 past the centre, and its bottom at ${bottom}, on it, held to it (${counter ? `${counter.layoutPositioning} x ${counter.x}, bottom ${counter.y + counter.height}, ${counter.width}x${counter.height}, min ${counter.minWidth}` : "none"})`,
+    );
+    ok(
+      counter &&
+        boundVariableName(counter.fills[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        boundFloat(counter, "height") === "Counter/height/small" &&
+        boundFloat(counter, "paddingLeft") === "Counter/padding/x/small" &&
+        boundFloat(counter, "cornerRadius") === "Counter/radius" &&
+        digits &&
+        digits.type === "TEXT" &&
+        digits.characters === "3" &&
+        boundVariableName(digits.fills[0]) ===
+          "Primary Buttons/themed/button/foreground/content/idle" &&
+        boundFloat(digits, "fontSize") === "Counter/font-size/small" &&
+        boundFloat(digits, "lineHeight") === "Counter/line-height/small",
+      `${size}: the theme fill, white digits on it, and the small Counter's metrics, bound as the Counter's painter binds them (${counter ? boundVariableName(counter.fills[0]) : "none"}, ${digits ? boundVariableName(digits.fills[0]) : "no digits"})`,
+    );
+    ok(
+      button &&
+        counter &&
+        button.width === 44 &&
+        button.height === 44 &&
+        button.children[button.children.length - 1] === counter &&
+        counter.visible === false,
+      `${size}: hidden by default, drawn over everything else, and the button keeps its size (${button ? `${button.width}x${button.height}, last ${button.children.length && button.children[button.children.length - 1].name}` : "none"})`,
+    );
+  }
+  ok(
+    controls.inferTextStyleKeyForComponentText &&
+      controls.inferTextStyleKeyForComponentText(
+        new MockNode("TEXT", "Counter Text"),
+        new MockNode("COMPONENT_SET", "IconButton"),
+      ) === "counterSmall",
+    "the audit expects the counter's digits in the Counter's small style",
+  );
+  {
+    const set = new MockNode("COMPONENT_SET", "IconButton");
+    for (const size of ["Default", "Large"]) {
+      const variant = await attempt(() =>
+        controls.createIconButtonVariant({
+          variant: "Ghost",
+          size,
+          state: "Default",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      if (variant) set.appendChild(variant);
+    }
+    componentsPage.appendChild(set);
+    const stats = Object.assign(freshStats(), { iconSlotsBound: 0 });
+    await attempt(() =>
+      controls.configureIconButtonSlot(
+        set,
+        iconComponent("search-md"),
+        tokens.variableByName,
+        stats,
+      ),
+    );
+    await attempt(() =>
+      controls.configureIconButtonCounterProperties(set, stats),
+    );
+    const flag = propertyNamed(set, "Counter", "BOOLEAN");
+    const text = propertyNamed(set, "Counter Text", "TEXT");
+    ok(
+      flag &&
+        set.componentPropertyDefinitions[flag].defaultValue === false &&
+        text &&
+        set.componentPropertyDefinitions[text].defaultValue === "3",
+      `IconButton gains Counter (a boolean, off) and Counter Text ("3") (${definitionsOf(
+        set,
+        "BOOLEAN",
+      )
+        .map(([key]) => key)
+        .join(", ")}; ${definitionsOf(set, "TEXT")
+        .map(([key]) => key)
+        .join(", ")})`,
+    );
+    const variants = set.children;
+    ok(
+      variants.length === 2 &&
+        variants.every((variant) => {
+          const counter = variant.children.find((c) => c.name === "Counter");
+          const digits = counter && named(counter, "Counter Text");
+          return (
+            counter &&
+            counter.componentPropertyReferences &&
+            counter.componentPropertyReferences.visible === flag &&
+            digits.componentPropertyReferences &&
+            digits.componentPropertyReferences.characters === text &&
+            variant.children[variant.children.length - 1] === counter &&
+            variant.children.some((c) => c.name === "Icon")
+          );
+        }),
+      "Counter shows each variant's counter and Counter Text is its digits; the counter stays over the icon the slot appends",
+    );
+  }
+  {
+    // Update over the 63 variants in the file today: each keeps its node id
+    // and gains a hidden counter, and none is added.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "IconButton");
+    const ids = new Map();
+    for (const variant of [
+      "Default",
+      "Destructive",
+      "Outline",
+      "Secondary",
+      "Ghost",
+      "Link",
+      "Glass",
+    ]) {
+      for (const size of ["Default", "Small", "Large"]) {
+        for (const state of ["Default", "Disabled", "Loading"]) {
+          const name = `Variant=${variant}, Size=${size}, State=${state}`;
+          const node = new MockNode("COMPONENT", name);
+          liveSet.appendChild(node);
+          ids.set(name, node.id);
+        }
+      }
+    }
+    livePage.appendChild(liveSet);
+    const [, liveIcons] = controlsPages();
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [livePage, liveIcons] }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await attempt(() =>
+      updatePlugin.updateIconButtonComponent(),
+    );
+    const kept = [...ids].every(([name, id]) =>
+      liveSet.children.some((child) => child.id === id && child.name === name),
+    );
+    ok(
+      updated &&
+        updated.updated === true &&
+        updated.variantsUpdated === 63 &&
+        updated.variantsMissing === 0 &&
+        liveSet.children.length === 63 &&
+        kept &&
+        liveSet.children.every((child) => {
+          const counter = child.children.find((c) => c.name === "Counter");
+          return counter && counter.visible === false;
+        }),
+      `Update keeps the 63 IconButtons, id for id, each with a hidden counter (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsMissing} missing` : "threw"}, ${liveSet.children.length} children)`,
+    );
+    ok(
+      updated &&
+        updated.warnings.some((warning) =>
+          warning.startsWith("Next, update Card"),
+        ),
+      "and names Card next, whose header action is an IconButton",
+    );
+  }
+
+  // CardHeader's actions (GAP-169) ---------------------------------------------
+  const card = async (value, second, file) => {
+    const node = new MockNode("COMPONENT", "Card");
+    componentsPage.appendChild(node);
+    const stats = freshStats();
+    await attempt(() =>
+      (file || controls).updateCardVariant(node, {
+        value,
+        second,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { node, stats };
+  };
+  const ghost = controls.buttonConfig("Ghost", "Default").foreground;
+  for (const [value, padding] of [
+    ["Header", "Default"],
+    ["Full", "Compact"],
+  ]) {
+    const { node } = await card(value, padding);
+    const header = node.children.find((child) => child.name === "Card Header");
+    const column =
+      header &&
+      header.children.find((child) => child.name === "Card Header Text");
+    const actions =
+      header &&
+      header.children.find((child) => child.name === "Header Actions");
+    const slot =
+      actions &&
+      actions.children.find((child) => child.name === "Header Actions Slot");
+    const title = column && named(column, "Title Text");
+    const label = `${value}/${padding}`;
+    ok(
+      header &&
+        header.layoutMode === "HORIZONTAL" &&
+        header.itemSpacing === 16 &&
+        !boundFloat(header, "itemSpacing") &&
+        header.counterAxisAlignItems === "MIN" &&
+        column &&
+        header.children.indexOf(column) === 0 &&
+        column.layoutSizingHorizontal === "FILL" &&
+        column.itemSpacing === 6 &&
+        boundFloat(column, "itemSpacing") === "Card/header/gap" &&
+        title &&
+        named(column, "Description Text"),
+      `${label}: the header is a row, the title and description in a column that fills it, 6 apart, then the actions 16 after (${header ? `${header.layoutMode}, gap ${header.itemSpacing} bound ${boundFloat(header, "itemSpacing")}` : "no header"})`,
+    );
+    ok(
+      actions &&
+        header.children[header.children.length - 1] === actions &&
+        actions.visible === false &&
+        actions.layoutMode === "HORIZONTAL" &&
+        actions.counterAxisSizingMode === "FIXED" &&
+        actions.height === 24 &&
+        title &&
+        actions.height === title.lineHeight.value &&
+        actions.counterAxisAlignItems === "CENTER" &&
+        actions.primaryAxisAlignItems === "MAX",
+      `${label}: the actions are hidden by default at the header's end, as tall as the title's 24 line and centred on it, so the header is no taller for them (${actions ? `${actions.width}x${actions.height}, ${actions.counterAxisAlignItems}, visible ${actions.visible}` : "none"})`,
+    );
+    const action = slot && slot.children[0];
+    const swapped =
+      action &&
+      Object.entries(action.componentProperties || {}).find(
+        ([key]) => key.split("#")[0] === "Icon",
+      );
+    const actionIcon =
+      action &&
+      action.findOne(
+        (child) => child.type === "INSTANCE" && child.name === "Icon",
+      );
+    const strokes =
+      actionIcon &&
+      actionIcon.findAll((child) => (child.strokes || []).length > 0);
+    ok(
+      slot &&
+        slot.type === "SLOT" &&
+        slot.itemSpacing === 8 &&
+        slot.counterAxisAlignItems === "CENTER" &&
+        slot.height === 44 &&
+        (24 - slot.height) / 2 === -10,
+      `${label}: the Header Actions Slot hugs its actions, 8 apart, and is centred on the line: a 44 button hangs 10 into the padding above and below, React's margin (${slot ? `${slot.type} ${slot.width}x${slot.height}, gap ${slot.itemSpacing}` : "none"})`,
+    );
+    ok(
+      action &&
+        action.type === "INSTANCE" &&
+        action.name === "Edit Action" &&
+        action.mainComponent &&
+        action.mainComponent.name ===
+          "Variant=Ghost, Size=Default, State=Default" &&
+        swapped &&
+        swapped[1] === iconComponent("pencil-01").id &&
+        strokes &&
+        strokes.length > 0 &&
+        strokes.every((child) => boundVariableName(child.strokes[0]) === ghost),
+      `${label}: it holds a ghost IconButton with the pencil, tinted as the ghost button tints its icon (${action ? `${action.name}, ${action.mainComponent && action.mainComponent.name}, icon ${swapped && swapped[1]}` : "none"})`,
+    );
+  }
+  {
+    const bare = await card("Header", "Default", plugin);
+    const slot = bare.node.findOne(
+      (child) => child.name === "Header Actions Slot",
+    );
+    ok(
+      slot &&
+        slot.children.length === 0 &&
+        bare.stats.warnings.some((warning) =>
+          /Icon \/ pencil-01 is not on the Icons page/.test(warning),
+        ),
+      `with no pencil on the Icons page the slot is left empty and the run says so (${slot ? slot.children.length : "no slot"}; ${bare.stats.warnings.filter((w) => /pencil/.test(w)).join(" | ")})`,
+    );
+  }
+  {
+    const set = new MockNode("COMPONENT_SET", "Card");
+    componentsPage.appendChild(set);
+    for (const value of ["Basic", "Header", "Full"]) {
+      for (const second of ["Default", "Compact"]) {
+        const node = new MockNode("COMPONENT", "Card");
+        set.appendChild(node);
+        await attempt(() =>
+          controls.updateCardVariant(node, {
+            value,
+            second,
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          }),
+        );
+      }
+    }
+    const stats = freshStats();
+    await attempt(() => controls.configureCardProperties(set, stats));
+    const flag = propertyNamed(set, "Header Actions", "BOOLEAN");
+    const slotProperty = propertyNamed(set, "Header Actions Slot", "SLOT");
+    const slots = set.findAll((node) => node.name === "Header Actions Slot");
+    const frames = set.findAll((node) => node.name === "Header Actions");
+    ok(
+      flag &&
+        set.componentPropertyDefinitions[flag].defaultValue === false &&
+        slotProperty &&
+        definitionsOf(set, "SLOT").length === 1,
+      `Card gains Header Actions (a boolean, off) and one Header Actions Slot (${definitionsOf(
+        set,
+        "BOOLEAN",
+      )
+        .map(([key]) => key)
+        .join(", ")}; ${definitionsOf(set, "SLOT")
+        .map(([key]) => key)
+        .join(", ")})`,
+    );
+    ok(
+      frames.length === 4 &&
+        slots.length === 4 &&
+        frames.every(
+          (frame) =>
+            frame.componentPropertyReferences &&
+            frame.componentPropertyReferences.visible === flag,
+        ) &&
+        slots.every(
+          (slot) =>
+            slot.type === "SLOT" &&
+            Object.values(slot.componentPropertyReferences || {}).includes(
+              slotProperty,
+            ),
+        ),
+      `the Header and Full variants' actions show with it, and their four slots bind the slot property; Basic, with no header, has none (${frames.length} frames, ${slots.length} slots)`,
+    );
+  }
+  {
+    // Update over the six cards in the file today, drawn before the column:
+    // the title and description sit in the header itself. Each variant keeps
+    // its node id, and so does each text, moved into the column.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Card");
+    const ids = new Map();
+    const textIds = [];
+    for (const value of ["Basic", "Header", "Full"]) {
+      for (const second of ["Default", "Compact"]) {
+        const name = `Content=${value}, Padding=${second}`;
+        const node = new MockNode("COMPONENT", name);
+        liveSet.appendChild(node);
+        ids.set(name, node.id);
+        if (value === "Basic") continue;
+        const header = new MockNode("FRAME", "Card Header");
+        header.layoutMode = "VERTICAL";
+        header.itemSpacing = 6;
+        for (const textName of ["Title Text", "Description Text"]) {
+          const text = new MockNode("TEXT", textName);
+          header.appendChild(text);
+          textIds.push([name, textName, text.id]);
+        }
+        node.appendChild(header);
+      }
+    }
+    livePage.appendChild(liveSet);
+    const [, liveIcons] = controlsPages();
+    const iconButtons = new MockNode("COMPONENT_SET", "IconButton");
+    iconButtons.appendChild(
+      new MockNode("COMPONENT", "Variant=Ghost, Size=Default, State=Default"),
+    );
+    livePage.appendChild(iconButtons);
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [livePage, liveIcons] }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await attempt(() => updatePlugin.updateCardComponent());
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const textsKept = textIds.every(([name, textName, id]) => {
+      const variant = byId.get(ids.get(name));
+      const column = variant && named(variant, "Card Header Text");
+      const text = column && named(column, textName);
+      return text && text.id === id;
+    });
+    ok(
+      updated &&
+        updated.updated === true &&
+        updated.variantsUpdated === 6 &&
+        updated.variantsCreated === 0 &&
+        [...ids].every(
+          ([name, id]) => byId.get(id) && byId.get(id).name === name,
+        ) &&
+        textsKept &&
+        propertyNamed(liveSet, "Header Actions", "BOOLEAN") &&
+        propertyNamed(liveSet, "Header Actions Slot", "SLOT"),
+      `Update keeps the six cards, id for id, and moves each title and description into the column with its node id, adding Header Actions and its slot (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created, texts kept ${textsKept}` : "threw"})`,
+    );
+  }
+
+  // Input's action (GAP-154) ---------------------------------------------------
+  const axes = controls.expectedVariantAxesForComponentSetName("Input");
+  ok(
+    axes &&
+      JSON.stringify(axes.Action) ===
+        JSON.stringify(["None", "Copy", "Toggle", "TogglePressed"]) &&
+      JSON.stringify(axes.State) ===
+        JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]) &&
+      JSON.stringify(axes.Status) ===
+        JSON.stringify(["Default", "Error", "Warning", "Success"]),
+    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State and Status: 64 variants (${JSON.stringify(axes && axes.Action)})`,
+  );
+  ok(
+    JSON.stringify(
+      [
+        "State=Readonly, Status=Default",
+        "State=Readonly, Status=Default, Action=Copy",
+        "State=Default, Status=Error, Action=TogglePressed",
+        "State=Default, Status=Default, Action=Star",
+      ].map((name) => controls.parseInputVariantName(name)),
+    ) ===
+      JSON.stringify([
+        { state: "Readonly", status: "Default", action: "None" },
+        { state: "Readonly", status: "Default", action: "Copy" },
+        { state: "Default", status: "Error", action: "TogglePressed" },
+        null,
+      ]),
+    "a variant from before the axis parses as Action=None; an unknown Action is not one",
+  );
+  const input = async (state, status, action) => {
+    const node = new MockNode("COMPONENT", "Input");
+    componentsPage.appendChild(node);
+    await attempt(() =>
+      controls.updateInputVariant(node, {
+        state,
+        status,
+        action,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return node;
+  };
+  const inputCases = [
+    ["Readonly", "Default", "Copy", "copy-01", "Colors/foreground/400"],
+    ["Default", "Default", "Toggle", "star-01", "Colors/foreground/400"],
+    [
+      "Default",
+      "Default",
+      "TogglePressed",
+      "star-01",
+      "Primary Buttons/themed/button/foreground/content/idle",
+    ],
+    ["Disabled", "Default", "Toggle", "star-01", "Colors/foreground/500"],
+  ];
+  for (const [state, status, action, iconName, tint] of inputCases) {
+    const node = await input(state, status, action);
+    const field = named(node, "Input Field");
+    const button = field && named(field, "Input Action");
+    const icon =
+      button && button.children.find((child) => child.type === "INSTANCE");
+    const strokes = icon
+      ? icon.findAll((child) => (child.strokes || []).length > 0)
+      : [];
+    const label = `${state}/${action}`;
+    ok(
+      node.name === `State=${state}, Status=${status}, Action=${action}` &&
+        button &&
+        button.layoutPositioning === "ABSOLUTE" &&
+        button.x + button.width === field.width &&
+        button.y === 0 &&
+        button.width === 44 &&
+        button.height === field.height &&
+        boundFloat(button, "width") === "Input/field/height" &&
+        boundFloat(button, "height") === "Input/field/height" &&
+        button.constraints.horizontal === "MAX" &&
+        (button.fills || []).length === 0 &&
+        (button.strokes || []).length === 0,
+      `${label}: the action is a transparent square inside the field's end, as tall as the field and bound to its height (${button ? `x ${button.x}+${button.width} of ${field.width}, ${button.height} of ${field.height}` : "none"})`,
+    );
+    ok(
+      field &&
+        field.paddingRight === 48 &&
+        !boundFloat(field, "paddingRight") &&
+        field.paddingLeft === 12,
+      `${label}: the text is kept clear of it, the field's height and 4: 48 at the end (${field && field.paddingRight}, bound ${field && boundFloat(field, "paddingRight")})`,
+    );
+    ok(
+      icon &&
+        icon.mainComponent === iconComponent(iconName) &&
+        icon.width === 16 &&
+        icon.height === 16 &&
+        strokes.length > 0 &&
+        strokes.every((child) => boundVariableName(child.strokes[0]) === tint),
+      `${label}: ${iconName} at 16 in ${tint} (${icon ? `${icon.mainComponent && icon.mainComponent.name}, ${strokes.map((child) => boundVariableName(child.strokes[0])).join(" ")}` : "no icon"})`,
+    );
+    // Pressed is a shape, not a colour alone (WCAG 1.4.1): a 32 disc of the
+    // theme fill under the icon, as a pressed ToggleButton is and as the
+    // MAP-64 design draws its Featured star (decision 139).
+    const disc = button && named(button, "Pressed Fill");
+    if (action === "TogglePressed") {
+      ok(
+        disc &&
+          button.children.indexOf(disc) < button.children.indexOf(icon) &&
+          disc.layoutPositioning === "ABSOLUTE" &&
+          disc.width === 32 &&
+          disc.height === 32 &&
+          disc.x === (button.width - 32) / 2 &&
+          disc.y === (button.height - 32) / 2 &&
+          disc.constraints.horizontal === "CENTER" &&
+          disc.constraints.vertical === "CENTER" &&
+          disc.cornerRadius === 16 &&
+          boundVariableName((disc.fills || [])[0]) ===
+            "Primary Buttons/themed/button/background/idle",
+        `${label}: a 32 disc of the theme fill under the icon, held to the button's centre (${disc ? `${disc.width}x${disc.height} at ${disc.x},${disc.y}, ${boundVariableName((disc.fills || [])[0])}, index ${button.children.indexOf(disc)} of the icon's ${button.children.indexOf(icon)}` : "none"})`,
+      );
+    } else {
+      ok(!disc, `${label}: no pressed disc`);
+    }
+  }
+  {
+    const node = await input("Default", "Default", "None");
+    const field = named(node, "Input Field");
+    ok(
+      node.name === "State=Default, Status=Default, Action=None" &&
+        field &&
+        !named(field, "Input Action") &&
+        boundFloat(field, "paddingRight") === "Input/field/padding/x",
+      "None is the field as it was: no action, its end padding the field's own",
+    );
+  }
+  {
+    const set = new MockNode("COMPONENT_SET", "Input");
+    for (const action of ["None", "Copy", "Toggle", "TogglePressed"]) {
+      const node = await input("Default", "Default", action);
+      set.appendChild(node);
+    }
+    const stats = freshStats();
+    await attempt(() => controls.configureInputActionIconProperty(set, stats));
+    const swap = propertyNamed(set, "Action Icon", "INSTANCE_SWAP");
+    const bound = set.children.map((variant) => {
+      const icon = variant.findOne(
+        (child) => child.type === "INSTANCE" && child.name === "Action Icon",
+      );
+      return Boolean(
+        icon &&
+        icon.componentPropertyReferences &&
+        icon.componentPropertyReferences.mainComponent === swap,
+      );
+    });
+    ok(
+      swap &&
+        set.componentPropertyDefinitions[swap].defaultValue ===
+          iconComponent("star-01").id &&
+        JSON.stringify(bound) === JSON.stringify([false, false, true, true]),
+      `Action Icon swaps the toggle's star, at rest and pressed; Copy keeps copy-01 (${swap}; ${JSON.stringify(bound)})`,
+    );
+  }
+  {
+    // Update over the 16 variants in the file today: each keeps its node id
+    // and is renamed Action=None, and the other 48 are created.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Input");
+    const ids = new Map();
+    for (const state of ["Default", "Focus", "Disabled", "Readonly"]) {
+      for (const status of ["Default", "Error", "Warning", "Success"]) {
+        const name = `State=${state}, Status=${status}`;
+        const node = new MockNode("COMPONENT", name);
+        liveSet.appendChild(node);
+        ids.set(name, node.id);
+      }
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const [, liveIcons] = controlsPages();
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [livePage, liveIcons] }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await attempt(() => updatePlugin.updateInputComponent());
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 16 &&
+        updated.variantsCreated === 48 &&
+        liveSet.children.length === 64 &&
+        new Set(names).size === 64,
+      `Update keeps the set and its 16 variants, and adds 48: 64 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
+    );
+    ok(
+      [...ids].every(([name, id]) => {
+        const node = byId.get(id);
+        return (
+          node &&
+          node.name === `${name}, Action=None` &&
+          !named(node, "Input Action")
+        );
+      }),
+      "each of the 16 keeps its node id, is renamed Action=None and draws no action",
+    );
+    const at = (name) => {
+      const node = liveSet.children.find((child) => child.name === name);
+      return node ? [node.x, node.y] : null;
+    };
+    ok(
+      JSON.stringify(at("State=Readonly, Status=Success, Action=None")) ===
+        JSON.stringify([3 * 360, 3 * 126]) &&
+        JSON.stringify(at("State=Default, Status=Default, Action=Copy")) ===
+          JSON.stringify([0, 4 * 126]),
+      `the 16 keep their places and the new bands lie under them (${JSON.stringify(at("State=Readonly, Status=Success, Action=None"))}, ${JSON.stringify(at("State=Default, Status=Default, Action=Copy"))})`,
+    );
+    const outside = liveSet.children.filter(
+      (child) =>
+        child.x + child.width > liveSet.width ||
+        child.y + child.height > liveSet.height,
+    );
+    ok(
+      liveSet.children.length === 64 && outside.length === 0,
+      `and the set grows to hold all 64 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+    );
+  }
+
+  // --- A field another part nests: Action=None, named (GAP-154) ----------------
+  // The importer picked a nested Input by State and Status alone, so a set whose
+  // first State=Default, Status=Default variant drew a copy or a toggle lent it
+  // to Dialog's field, the bottom sheet's and the composites'. A set from before
+  // the Action axis still gives its plain field.
+  {
+    const variantsOf = (names) => {
+      const set = new MockNode("COMPONENT_SET", "Input");
+      for (const name of names)
+        set.appendChild(new MockNode("COMPONENT", name));
+      return set;
+    };
+    const nestedPlugin = (set) => {
+      const page = new MockNode("PAGE", "Components");
+      page.appendChild(set);
+      return loadPlugin({
+        pluginPath: PLUGIN,
+        figma: createFigmaMock({ pages: [page] }),
+      });
+    };
+    const copyFirst = [
+      "State=Default, Status=Default, Action=Copy",
+      "State=Default, Status=Default, Action=TogglePressed",
+      "State=Default, Status=Default, Action=None",
+    ];
+    for (const [painter, call] of [
+      [
+        "Dialog's field",
+        (plugin, body, stats) =>
+          plugin.syncDialogInput({
+            body,
+            name: "Dialog Input",
+            label: "Name",
+            placeholder: "Gate",
+            stats,
+          }),
+      ],
+      [
+        "the bottom sheet's field",
+        (plugin, body, stats) =>
+          plugin.syncBottomSheetInput({
+            body,
+            name: "Bottom Sheet Input",
+            label: "Name",
+            placeholder: "Gate",
+            stats,
+          }),
+      ],
+    ]) {
+      const set = variantsOf(copyFirst);
+      const plugin = nestedPlugin(set);
+      const body = new MockNode("FRAME", "Body");
+      const stats = freshStats();
+      await attempt(() => call(plugin, body, stats));
+      const nested = body.findOne((node) => node.type === "INSTANCE");
+      ok(
+        nested &&
+          nested.mainComponent &&
+          nested.mainComponent.name ===
+            "State=Default, Status=Default, Action=None",
+        `${painter} nests the field with no action, whatever the set's order (${nested && nested.mainComponent ? nested.mainComponent.name : "none"})`,
+      );
+    }
+    {
+      // The cases above read what a painter ends up drawing, and three of the
+      // four picks are set back afterwards, so this reads the picks: an
+      // example has no second chance. A pick of State and Status alone takes
+      // whichever comes first in the set, a copy or a toggle.
+      const picks = [
+        ...fs
+          .readFileSync(PLUGIN, "utf8")
+          .matchAll(
+            /componentSetName: "Input",\s+variantProperties: ([^\n]+)/g,
+          ),
+      ].map((pick) => pick[1]);
+      ok(
+        picks.length === 4 &&
+          picks.every((pick) => pick === "NESTED_INPUT_VARIANTS,"),
+        `every nested Input is picked with Action=None named (${picks.length}: ${[...new Set(picks)].join(" ")})`,
+      );
+    }
+    {
+      // A set from before the axis: its plain field, with no warning.
+      const set = variantsOf([
+        "State=Default, Status=Error",
+        "State=Default, Status=Default",
+      ]);
+      const plugin = nestedPlugin(set);
+      const body = new MockNode("FRAME", "Body");
+      const stats = freshStats();
+      await attempt(() =>
+        plugin.syncDialogInput({
+          body,
+          name: "Dialog Input",
+          label: "Name",
+          placeholder: "Gate",
+          stats,
+        }),
+      );
+      const nested = body.findOne((node) => node.type === "INSTANCE");
+      ok(
+        nested &&
+          nested.mainComponent &&
+          nested.mainComponent.name === "State=Default, Status=Default" &&
+          !stats.warnings.some((w) => /missing variant/.test(w)),
+        `a set from before the Action axis still lends its plain field (${nested && nested.mainComponent ? nested.mainComponent.name : "none"}; ${stats.warnings.join(" | ")})`,
+      );
+    }
+    {
+      // An instance already nested with an action is set back to none.
+      const set = variantsOf(copyFirst);
+      const plugin = nestedPlugin(set);
+      const input = set.children[0].createInstance();
+      const stats = freshStats();
+      await attempt(() =>
+        plugin.applyCompositeInputInstanceProperties({
+          input,
+          inputSet: set,
+          label: "Name",
+          name: "Field",
+          ownerName: "Dialog",
+          placeholder: "Gate",
+          stats,
+        }),
+      );
+      ok(
+        input.mainComponent &&
+          input.mainComponent.name ===
+            "State=Default, Status=Default, Action=None",
+        `a nested field drawn with a copy is set back to Action=None (${input.mainComponent && input.mainComponent.name})`,
+      );
+    }
+  }
 }
 
 // --- Summary ---------------------------------------------------------------------

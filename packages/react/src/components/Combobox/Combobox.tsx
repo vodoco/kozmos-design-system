@@ -28,7 +28,7 @@ import {
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper } from "../FieldWrapper";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 export interface ComboboxOption {
   description?: string;

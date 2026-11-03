@@ -101,9 +101,9 @@ final class KozmosIconNamesTests: XCTestCase {
     /// close as x-close and notifications as bell-01, and stands for a name
     /// the registry knows.
     @MainActor func testEveryAliasTheWebRegistryAcceptsDrawsItsName() throws {
-        let names = Set(try Self.webRegistryNames())
+        let names = Set(try Self.webRegistryNames() + Self.webNamesBeyondTheLibrary())
         let aliases = try Self.webRegistryAliases()
-        XCTAssertGreaterThanOrEqual(aliases.count, 17, "the web registry lists \(aliases.count) aliases; the list was not read")
+        XCTAssertGreaterThanOrEqual(aliases.count, 57, "the web registry lists \(aliases.count) aliases; the list was not read")
         for (alias, name) in aliases {
             XCTAssertTrue(names.contains(name), "\(alias) stands for \(name), which the registry does not know")
             let drawn = try DrawnPixels.draw(KozmosIcon(alias, size: .xl), scale: 3)
@@ -261,6 +261,71 @@ final class KozmosIconNamesTests: XCTestCase {
             XCTAssertNotNil(danger.boundingBox(where: DrawnPixels.matches(red, tolerance: 12)),
                             "\(name) is not drawn in the icon's colour")
         }
+    }
+
+    /// GAP-105: the venue set's outlines are the paths React draws, generated
+    /// from packages/icons by scripts/generate-native-icons.mjs, stroked 2 on
+    /// the 24 grid, in the icon's colour, never mirrored, and never an SF
+    /// Symbol near-miss. Each of the set's 15 names, 13 here and the two that
+    /// are this package's own below, is drawn from the web's artwork.
+    @MainActor func testTheVenueSetDrawsTheWebsOutlinesByName() throws {
+        let pointr = [
+            "battery-charging-01": "BatteryCharging01", "beaker-01": "Beaker01", "clapperboard": "Clapperboard",
+            "credit-card-01": "CreditCard01", "droplets-01": "Droplets01", "graduation-hat-01": "GraduationHat01",
+            "luggage-01": "Luggage01", "medical-cross": "MedicalCross", "package": "Package",
+            "passport": "Passport", "plane": "Plane", "scissors-01": "Scissors01", "ticket-01": "Ticket01",
+        ]
+        XCTAssertEqual(pointr.count, 13)
+        let registry = Set(try Self.webRegistryNames())
+        for (name, exportName) in pointr.sorted(by: { $0.key < $1.key }) {
+            XCTAssertTrue(registry.contains(name), "\(name) is not a name the web's registry knows")
+            let data = try Self.pointrPathData(exportName)
+            XCTAssertFalse(data.isEmpty, "\(exportName) has no path")
+            let outline = try XCTUnwrap(KozmosPointrGlyph.outline(data.joined(separator: " ")),
+                                        "\(exportName)'s path data does not parse")
+            let side = KozmosIconSize.xl.pointSize
+            let expected = try DrawnPixels.draw(
+                outline.stroke(style: StrokeStyle(lineWidth: 2 * side / 24, lineCap: .round, lineJoin: .round))
+                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                    .frame(width: side, height: side), scale: 3)
+            let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
+            XCTAssertTrue(alike(drawn, expected), "\(name) is not Pointr's \(exportName), stroked 2 on the grid")
+            let rtl = try DrawnPixels.draw(KozmosIcon(name, size: .xl).environment(\.layoutDirection, .rightToLeft), scale: 3)
+            XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "\(name) mirrors right to left")
+        }
+    }
+
+    /// GAP-105: `utensils` and `accessibility` are this package's own artwork,
+    /// which the Pointr library has no outline for. Written with relative
+    /// commands and arcs on the web; the generator hands SwiftUI the same
+    /// shapes in the absolute commands its reader takes, so each must parse
+    /// and draw. `utensils` is an outline on the 24 grid, 2 to 22 tall as its
+    /// paths are; `accessibility` is solid, its viewBox squaring the mark so
+    /// that the longer side spans 20 of 24, as owned/icons.ts measures. Neither
+    /// mirrors, and each takes the icon's colour.
+    @MainActor func testTheVenueSetsOwnArtworkDrawsByName() throws {
+        for name in ["utensils", "accessibility"] {
+            XCTAssertTrue(try Self.webRegistryNames().contains(name), "\(name) is not a name the web's registry knows")
+            XCTAssertNotNil(KozmosPointrGlyph.named(name), "\(name) is not drawn from the web's artwork")
+            let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
+            let rtl = try DrawnPixels.draw(KozmosIcon(name, size: .xl).environment(\.layoutDirection, .rightToLeft), scale: 3)
+            XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "\(name) mirrors right to left")
+            let danger = try DrawnPixels.draw(KozmosIcon(name, size: .xl, color: .destructive), scale: 3)
+            let red = try DrawnPixels.resolved(KozmosColors.primitivesColorsEmotionalDanger600, in: .light)
+            XCTAssertNotNil(danger.boundingBox(where: DrawnPixels.matches(red, tolerance: 12)), "\(name) is not drawn in the icon's colour")
+        }
+        XCTAssertEqual(KozmosPointrIconPaths.data("utensils")?.count, 3, "utensils is not the web's three paths")
+        XCTAssertNil(KozmosPointrIconPaths.symbol("utensils"), "utensils is an outline, not a solid mark")
+        let accessibility = try XCTUnwrap(KozmosPointrIconPaths.symbol("accessibility"))
+        XCTAssertEqual(accessibility.paths.count, 3, "accessibility is not the web's three paths")
+        XCTAssertEqual(accessibility.side, 776.13, accuracy: 0.001, "accessibility is not on the web's squared viewBox")
+
+        let unit: CGFloat = 32.0 / 24.0
+        let utensils = try XCTUnwrap(DrawnPixels.draw(KozmosIcon("utensils", size: .xl), scale: 3).boundingBox { _, _, _, a in a > 128 })
+        // Its paths run 2 to 22 on the grid and a round cap adds 1 at each end.
+        XCTAssertEqual(utensils.height, 22 * unit, accuracy: 1.5, "utensils spans \(utensils) of 32")
+        let mark = try XCTUnwrap(DrawnPixels.draw(KozmosIcon("accessibility", size: .xl), scale: 3).boundingBox { _, _, _, a in a > 128 })
+        XCTAssertEqual(max(mark.width, mark.height), 20 * unit, accuracy: 1.5, "accessibility spans \(mark) of 32")
     }
 
     /// GAP-181: the map control's layers glyph and the status pill's walking

@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { FieldWrapper } from "../FieldWrapper";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 // The way the panel's range gradients run: 90deg ("to right") left to right,
 // and from the right in a right-to-left field, where a native range's lowest

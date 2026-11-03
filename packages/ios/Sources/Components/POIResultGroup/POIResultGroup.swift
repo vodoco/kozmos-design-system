@@ -24,6 +24,8 @@ public struct KozmosPOIResultGroup: View {
     /// A double tap on a branch opens its details: the card's `onOpen` (decision 72).
     private let onOpen: ((String) -> Void)?
     private let openLabel: String
+    /// Runs one of the product's own actions, a member's `hostActions`: the card's `onHostAction`.
+    private let onHostAction: ((String, String) -> Void)?
     @State private var uncontrolledExpanded: Bool
     @State private var hovered = false
 
@@ -37,7 +39,8 @@ public struct KozmosPOIResultGroup: View {
                 currentFloorId: String? = nil, travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
                 presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
                 onSelect: @escaping (String) -> Void, onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
-                onOpen: ((String) -> Void)? = nil, openLabel: String = "Open details") {
+                onOpen: ((String) -> Void)? = nil, openLabel: String = "Open details",
+                onHostAction: ((String, String) -> Void)? = nil) {
         self.items = items
         self.label = label
         self.collapsedCount = max(0, min(collapsedCount, items.count))
@@ -59,6 +62,7 @@ public struct KozmosPOIResultGroup: View {
         self.onAction = onAction
         self.onOpen = onOpen
         self.openLabel = openLabel
+        self.onHostAction = onHostAction
         self._uncontrolledExpanded = State(initialValue: defaultExpanded)
     }
 
@@ -70,7 +74,8 @@ public struct KozmosPOIResultGroup: View {
         KozmosPOIResultCard(poi: item.poi, result: item.result.selecting(selectedPoiId), featuredLabel: featuredLabel,
             currentFloorId: currentFloorId, actionsLabel: actionsLabel, travelTimeBandLabels: travelTimeBandLabels,
             numbered: numbered, onSelect: onSelect, onAction: onAction, languageNotListedLabel: languageNotListedLabel,
-            presentationStyle: presentationStyle, appearance: .row, onOpen: onOpen, openLabel: openLabel)
+            presentationStyle: presentationStyle, appearance: .row, onOpen: onOpen, openLabel: openLabel,
+            onHostAction: onHostAction)
     }
 
     private func toggle() {

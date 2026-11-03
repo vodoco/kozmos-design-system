@@ -12,12 +12,17 @@
  *   collapsed — text nodes at zero width, the sizing bug from 6803f20
  *   contrast  — WCAG AA on every text node against the surface behind it
  *   truncated — text set to TRUNCATE in a box too small for its own string
+ *   overflow  — a child wider or taller than the box its frame leaves it
+ *   glyphs    — a symbol typed as a character where an icon belongs
  *   short     — a layer stretched over its frame that stops short of it
  *
- * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read.
+ * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read. With
+ * `--page <file>` it reads a page saved as REST returns it instead, which is
+ * how scripts/check-figma-painters.mjs sees a run fail without the live file.
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
@@ -48,7 +53,7 @@ function token() {
 }
 
 /** Expected set names and variant axes, read from the plugin source. */
-function expectations() {
+export function expectations() {
   const source = fs.readFileSync(PLUGIN, "utf8");
 
   const arrays = {};
@@ -153,7 +158,12 @@ const solidFill = (node) => {
   return fill ? toHex(fill.color) : null;
 };
 
-async function main() {
+/** The Components page, as REST returns it. */
+async function readPage() {
+  const saved = process.argv.indexOf("--page");
+  if (saved !== -1) {
+    return JSON.parse(fs.readFileSync(process.argv[saved + 1], "utf8"));
+  }
   const t = token();
   if (!t) {
     console.error(
@@ -178,7 +188,11 @@ async function main() {
     );
     process.exit(2);
   }
-  const page = (await res.json()).nodes[PAGE_NODE].document;
+  return (await res.json()).nodes[PAGE_NODE].document;
+}
+
+async function main() {
+  const page = await readPage();
 
   const sets = {};
   (function find(n) {
@@ -483,22 +497,12 @@ async function main() {
   total += report(`text contrast below ${AA}:1`, lowContrast);
   total += report("properties bound to no layer (blocks publishing)", unbound);
   total += report('variant names containing "undefined"', undefinedNames);
-  // Reported, not enforced, for the same reason the nesting check was: the
-  // 62 findings this arrived with are pre-existing and two of them are design
-  // calls, not bugs. NavigationItem computes 8px of padding for its rail, 10
-  // for compact and 12 for default, then binds all three to one variable worth
-  // 12, so the rail's content box is 48 where the painter assumed 56. Deciding
-  // whether the rail gets its own padding variable is a design question. Add
-  // this to `total` on the day the count reaches zero — a gate that is red on
-  // purpose is a gate somebody switches off.
-  report("children that overflow the box holding them", overflowing);
-  // Reported, not enforced: this arrives with a backlog across the Product/SDK
-  // lane. Add it to the failing total on the day it reaches zero.
-  report("icons typed as characters", typedGlyphs);
-  // Reported, not enforced, until the Update it arrives with has run: the only
-  // findings are TourStep's fill and edge, which that Update closes. Add it to
-  // the failing total on the day it reaches zero.
-  report("layers stretched over a frame that stop short of it", shortLayers);
+  total += report("children that overflow the box holding them", overflowing);
+  total += report("icons typed as characters", typedGlyphs);
+  total += report(
+    "layers stretched over a frame that stop short of it",
+    shortLayers,
+  );
 
   console.log(
     total === 0
@@ -576,7 +580,11 @@ async function main() {
   process.exit(total === 0 ? 0 : 1);
 }
 
-main().catch((e) => {
-  console.error("verification failed: " + e.message);
-  process.exit(2);
-});
+// Imported, it only lends `expectations`. A realpath, so a symlinked checkout
+// still runs: a verify that skips itself exits 0.
+if (fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => {
+    console.error("verification failed: " + e.message);
+    process.exit(2);
+  });
+}

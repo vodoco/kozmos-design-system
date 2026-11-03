@@ -20,6 +20,15 @@
  *   showLoadingView from a promise callback once the token is in hand: at
  *   once for a cloud token, after the token request for keys.
  *
+ * And as the 10.13.0 bundle reads (the Exit button, read from it on 28 Oct):
+ * - The Exit button, on a click or from the keyboard, only emits the view's
+ *   `exitClicked`. The map view controller answers it: at or above the
+ *   building zoom (17) it scrolls to the current site's centre at the site
+ *   zoom (15) plus 0.1, and makes that site current; at or above the site
+ *   zoom, it zooms to 0.1 below it; below that it does nothing. The building
+ *   change the camera's move brings is emitted at once here; the bundle
+ *   emits it once the camera settles outside the building.
+ *
  * No network and no keys: the identifiers the tests pass are made up.
  */
 import { vi } from "vitest";
@@ -176,6 +185,12 @@ export class FakeMap extends Emitter {
   }
 }
 
+/**
+ * As 10.13.0's Level (read from the bundle on 28 Oct): its constructor copies
+ * the index, the titles and the external identifier, and nothing else, so a
+ * level's `properties`, where the venue's data marks the default level
+ * (`isDefault`), do not survive it.
+ */
 export class FakeLevel {
   levelIndex: number;
   levelShortTitle: string;
@@ -194,6 +209,20 @@ export class FakeLevel {
 export class FakeView extends Emitter {
   map?: FakeMap;
   isMapReadyEmitted = false;
+  /** The camera's zoom, as MapView's getZoom() reads it. */
+  zoom = 18;
+  /** Each scrollTo(centre, zoom) the controller made. */
+  scrolls: { center: unknown; zoom: number }[] = [];
+  getZoom() {
+    return this.zoom;
+  }
+  zoomTo(zoom: number) {
+    this.zoom = zoom;
+  }
+  scrollTo(center: unknown, zoom: number) {
+    this.scrolls.push({ center, zoom });
+    this.zoom = zoom;
+  }
   events = {
     levelChanged: "level-changed",
     zoom: "zoom",
@@ -217,7 +246,50 @@ export class FakeView extends Emitter {
 }
 
 export class FakeMapViewController {
-  view?: FakeView;
+  readonly SITE_ZOOM_LEVEL = 15;
+  readonly BUILDING_ZOOM_LEVEL = 17;
+  private shown?: FakeView;
+  /** The widget whose site and building this controller keeps. */
+  widget?: FakeWidget;
+  /** Each site the controller scrolled to, by id. */
+  scrollToSiteCalls: string[] = [];
+  get view() {
+    return this.shown;
+  }
+  set view(view: FakeView | undefined) {
+    this.shown = view;
+    view?.on(view.events.exitClicked, () => this.onExitClicked());
+  }
+  /** MapViewController's exitClicked listener. */
+  onExitClicked() {
+    const view = this.shown!;
+    const zoom = view.getZoom() ?? 0;
+    if (zoom >= this.BUILDING_ZOOM_LEVEL)
+      this.scrollToSite(this.widget?.currentSite?.siteInternalIdentifier ?? "");
+    else if (zoom >= this.SITE_ZOOM_LEVEL)
+      view.zoomTo(this.SITE_ZOOM_LEVEL - 0.1);
+  }
+  scrollToSite(siteId: string) {
+    this.scrollToSiteCalls.push(siteId);
+    this.shown!.scrollTo({ siteId }, this.SITE_ZOOM_LEVEL + 0.1);
+    const widget = this.widget;
+    const old = widget?.currentBuilding;
+    if (!widget || !old) return;
+    widget.currentBuilding = undefined;
+    this.currentBuilding = undefined;
+    this.shown!.emit("current-building-changed", {
+      oldCurrentBuilding: old,
+      newCurrentBuilding: undefined,
+    });
+  }
+  /**
+   * The current site and building as the venue's data loaded them: 10.13.0's
+   * MapViewController reads both from its Storage (BaseViewController's
+   * getters), not as Site, Building and Level instances, so their levels keep
+   * `properties`. Its building and site events carry the same objects.
+   */
+  currentSite?: FakeSiteData;
+  currentBuilding?: FakeBuildingData;
   building3DModelsActive = true;
   /** The 3D flag's value at each destroyMap call. */
   destroyMapCalls: boolean[] = [];
@@ -281,37 +353,66 @@ export interface FakeSite {
   buildings: FakeBuilding[];
 }
 
-export function fakeVenue() {
-  const levels = [
-    new FakeLevel({
-      levelIndex: 0,
-      levelShortTitle: "G",
-      levelLongTitle: "Ground floor",
-    }),
-    new FakeLevel({
-      levelIndex: 2,
-      levelShortTitle: "2",
-      levelLongTitle: "Second floor",
-    }),
-    new FakeLevel({
-      levelIndex: 1,
-      levelShortTitle: "1",
-      levelLongTitle: "First floor",
-    }),
-  ];
-  const building: FakeBuilding = {
+/** A level as the venue's data gives it, before the SDK's Level drops its `properties`. */
+export interface FakeLevelData {
+  levelIndex: number;
+  levelShortTitle: string;
+  levelLongTitle: string;
+  properties: { isDefault?: boolean };
+}
+
+export interface FakeBuildingData extends Omit<FakeBuilding, "levels"> {
+  levels: FakeLevelData[];
+}
+
+export interface FakeSiteData extends Omit<FakeSite, "buildings"> {
+  buildings: FakeBuildingData[];
+}
+
+/**
+ * A site with one building of three levels. `defaultLevelIndex` marks that
+ * level as the building's default in the venue's data, as
+ * `properties.isDefault`, where 10.13.0's `PointrHelper.findDefaultLevelToSet`
+ * reads it. `loaded` is the data as it loaded (the map view controller's, and
+ * what the building and site events carry); `site`, `building` and `levels`
+ * are the SDK's instances of it, as `getCurrentSite()`, `getCurrentBuilding()`
+ * and the SiteBuildingManager return them, their levels without `properties`.
+ */
+export function fakeVenue({
+  defaultLevelIndex,
+}: { defaultLevelIndex?: number } = {}) {
+  const data: FakeLevelData[] = [
+    { levelIndex: 0, levelShortTitle: "G", levelLongTitle: "Ground floor" },
+    { levelIndex: 2, levelShortTitle: "2", levelLongTitle: "Second floor" },
+    { levelIndex: 1, levelShortTitle: "1", levelLongTitle: "First floor" },
+  ].map((level) => ({
+    ...level,
+    properties:
+      level.levelIndex === defaultLevelIndex ? { isDefault: true } : {},
+  }));
+  const levels = data.map((level) => new FakeLevel(level));
+  const buildingData = {
     buildingInternalIdentifier: "b-1",
     buildingExternalIdentifier: "B1",
     siteInternalIdentifier: "s-1",
     buildingTitle: "Main building",
-    levels,
   };
+  const building: FakeBuilding = { ...buildingData, levels };
   const site: FakeSite = {
     siteInternalIdentifier: "s-1",
     siteTitle: "Campus",
     buildings: [building],
   };
-  return { site, building, levels };
+  const loadedBuilding: FakeBuildingData = { ...buildingData, levels: data };
+  const loaded = {
+    building: loadedBuilding,
+    site: {
+      siteInternalIdentifier: "s-1",
+      siteTitle: "Campus",
+      buildings: [loadedBuilding],
+    } satisfies FakeSiteData,
+  };
+  return { site, building, levels, loaded };
 }
 
 export class FakeWidget extends Emitter {
@@ -365,6 +466,7 @@ export class FakeWidget extends Emitter {
     }
     // A new UiController each start(), as the bundle's start() makes it.
     const ui = new FakeUiController();
+    ui.mapViewController.widget = this;
     this.ui = ui;
     const checked = validate(this.options ?? {});
     if (!checked.isValid) {
@@ -453,6 +555,8 @@ export class FakeWidget extends Emitter {
     view.map = new FakeMap();
     this.currentSite = venue.site;
     this.currentBuilding = venue.building;
+    ui.mapViewController.currentSite = venue.loaded.site;
+    ui.mapViewController.currentBuilding = venue.loaded.building;
     this.currentLevel = venue.levels.find((l) => l.levelIndex === levelIndex);
     this.emit("data-loaded");
     view.isMapReadyEmitted = true;
