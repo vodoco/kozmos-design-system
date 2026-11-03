@@ -6,6 +6,12 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
 
+### Added
+
+- **`KozmosIcon` draws the venue set (GAP-105, decisions 119 and 121):** 15 names for a place's categories, amenities and services, `utensils`, `medical-cross`, `plane`, `clapperboard`, `graduation-hat-01`, `beaker-01`, `accessibility`, `credit-card-01`, `battery-charging-01`, `droplets-01`, `luggage-01`, `passport`, `ticket-01`, `package` and `scissors-01`, with the web's artwork rather than a Material near-miss, and 40 aliases a product already holds, a taxonomy type such as `food-beverage-space`, `boarding-gate`, `atm` or `entrance-exit` among them. A POI tag or chip with one of these as its `iconName` draws it, where it drew nothing.
+  - The aliases are generated from the web's list by `scripts/generate-native-icons.mjs`, into `PointrIcons.generated.kt`, so Compose keeps no list of its own, and `pnpm icons:names:check` holds all three platforms to the same names.
+  - `IconNamesTest.theVenueSetIsDrawnByNameAsTheWebDrawsIt` and `IconNamesTest.everyAliasTheWebRegistryAcceptsDrawsItsName`.
+
 ### Fixed
 
 - **Content or a footer that is the card's first child pays the top (GAP-194):** `KozmosCardContent` and `KozmosCardFooter` pad their sides and bottom only, because a header above them has already paid the top. With no `KozmosCardHeader`, the content, or a footer alone, touched the card's top edge. `KozmosCard` now pays its padding above its first child when that child is content or a footer: 24dp, or 16dp with `KozmosCardPadding.Compact`, as React's card does since #421.

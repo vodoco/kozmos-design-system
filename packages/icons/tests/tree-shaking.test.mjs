@@ -30,6 +30,12 @@ import { gzipSync } from "node:zlib";
 // the registry (kozmosIconNamesBeyondTheLibrary, GAP-179 and GAP-181): 86 icons, 19.9 KB.
 const MAX_ONE_ICON_GZIP_KB = 2;
 
+// On 2026-11-02 the venue set (GAP-105) took a lookup to 101 icons and 23.44 KB with Rollup,
+// 15 icons and 40 aliases adding 5.09 KB, and a lookup leaving the definitions' words behind
+// taking 1.49 KB back. Every app that draws `Icon` pays this, by name or by `icon` prop, so
+// its growth should be somebody's decision: raise this only with the measurement.
+const MAX_LOOKUP_GZIP_KB = 24;
+
 const PACKAGE_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
@@ -225,6 +231,27 @@ for (const [bundler, bundle] of Object.entries(bundlers)) {
     test("import { getIconComponent } keeps every icon a name can reach, by design", async () => {
       const kept = survivors(await bundleOf(["getIconComponent"]));
       assert.deepEqual(kept, [...new Set(nameableNames)].sort());
+    });
+
+    test(`import { getIconComponent } costs at most ${MAX_LOOKUP_GZIP_KB} KB gzip`, async () => {
+      const code = await bundleOf(["getIconComponent"]);
+      const gzip = gzipSync(code).length;
+      assert.ok(
+        gzip <= MAX_LOOKUP_GZIP_KB * 1024,
+        `a lookup by name costs ${kb(gzip)} KB gzip (${kb(code.length)} KB minified), over ${MAX_LOOKUP_GZIP_KB} KB`,
+      );
+    });
+
+    // A lookup needs a component, not its Figma node, category or description.
+    test("import { getIconComponent } leaves the definitions' words behind", async () => {
+      const code = await bundleOf(["getIconComponent"]);
+      for (const word of ["Sparkles: the AI search.", "1007:9735"])
+        assert.ok(!code.includes(word), `a lookup keeps "${word}"`);
+      const definitions = await bundleOf(["getIconDefinition"]);
+      assert.ok(
+        definitions.includes("Sparkles: the AI search."),
+        "the control: a definition lookup keeps them",
+      );
     });
   });
 }

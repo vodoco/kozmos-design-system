@@ -230,6 +230,77 @@ class IconNamesTest {
         }
     }
 
+    /**
+     * GAP-105: the venue set draws the web's artwork, never a Material
+     * near-miss, unmirrored: 14 outlines stroked 2 on the 24 grid, Pointr's 13
+     * and this package's `utensils`, and `accessibility`, this package's solid
+     * mark on its own squared viewBox.
+     */
+    @Test
+    fun theVenueSetIsDrawnByNameAsTheWebDrawsIt() {
+        val outlines = mapOf(
+            "battery-charging-01" to "BatteryCharging01", "beaker-01" to "Beaker01", "clapperboard" to "Clapperboard",
+            "credit-card-01" to "CreditCard01", "droplets-01" to "Droplets01", "graduation-hat-01" to "GraduationHat01",
+            "luggage-01" to "Luggage01", "medical-cross" to "MedicalCross", "package" to "Package",
+            "passport" to "Passport", "plane" to "Plane", "scissors-01" to "Scissors01", "ticket-01" to "Ticket01",
+            "utensils" to "Utensils"
+        )
+        val registry = webRegistryNames().toSet()
+        for ((name, vectorName) in outlines) {
+            assertTrue("$name is not a name the web's registry knows", name in registry)
+            val icon = knownIconVector(name)
+            assertEquals("$name is not the web's $vectorName", vectorName, icon?.name)
+            assertEquals("$name mirrors right to left", false, icon!!.autoMirror)
+            assertEquals("$name is not on the 24 grid", 24f, icon.viewportWidth)
+            val paths = icon.root.filterIsInstance<VectorPath>()
+            assertTrue("$name draws no path", paths.isNotEmpty())
+            for (path in paths) {
+                assertNull("$name is filled", path.fill)
+                assertEquals("$name is not stroked 2", 2f, path.strokeLineWidth)
+            }
+        }
+        assertTrue("accessibility is not a name the web's registry knows", "accessibility" in registry)
+        val accessibility = knownIconVector("accessibility")
+        assertEquals("accessibility is not the web's Accessibility", "Accessibility", accessibility?.name)
+        assertEquals(false, accessibility!!.autoMirror)
+        assertEquals("accessibility is not on its own squared viewBox", accessibility.viewportWidth, accessibility.viewportHeight)
+        val solid = accessibility.root.filterIsInstance<androidx.compose.ui.graphics.vector.VectorGroup>()
+            .flatMap { group -> group.filterIsInstance<VectorPath>() }
+        assertEquals("accessibility is not the web's three paths", 3, solid.size)
+        for (path in solid) {
+            assertTrue("accessibility is not filled", path.fill is SolidColor)
+            assertNull("accessibility is stroked", path.stroke)
+        }
+    }
+
+    /** The aliases the web's registry accepts (`kozmosIconAliases`), each with the name it stands for. */
+    private fun webRegistryAliases(): List<Pair<String, String>> {
+        val map = webRegistrySource().substringAfter("export const kozmosIconAliases = {", "")
+            .substringBefore("} as const", "")
+        check(map.isNotEmpty()) { "no kozmosIconAliases map in registry.ts" }
+        val entry = Regex("^\\s*\"?([a-z0-9-]+)\"?\\s*:\\s*\"([a-z0-9-]+)\",?\\s*$")
+        return map.lines().mapNotNull { line ->
+            entry.find(line.substringBefore("//"))?.let { it.groupValues[1] to it.groupValues[2] }
+        }
+    }
+
+    /**
+     * Every alias the web's registry accepts draws the name it stands for,
+     * dining as utensils and boarding-gate as plane, and stands for a name
+     * the web knows. Compose reads them from the generated list, so an alias
+     * added to the web without a generator run fails here.
+     */
+    @Test
+    fun everyAliasTheWebRegistryAcceptsDrawsItsName() {
+        val aliases = webRegistryAliases()
+        assertTrue("the web registry lists ${aliases.size} aliases; the list was not read", aliases.size >= 57)
+        val names = (webRegistryNames() + webNamesBeyondTheLibrary()).toSet()
+        for ((alias, name) in aliases) {
+            assertTrue("$alias stands for $name, which the web does not know", name in names)
+            assertEquals("$alias does not draw $name", knownIconVector(name), knownIconVector(alias))
+        }
+    }
+
     /** The name a glyph is drawn by: its export name in kebab case, ElevatorUpAndDown as elevator-up-and-down. */
     private fun iconName(exportName: String): String = exportName.replace(Regex("(?<=[a-z0-9])([A-Z])"), "-$1").lowercase()
 
