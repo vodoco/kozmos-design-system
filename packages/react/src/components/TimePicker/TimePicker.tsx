@@ -6,7 +6,7 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 import { resolveLocale } from "../Calendar/calendar-dates";
 import { typeInto } from "../DatePicker/date-picker-engine";
 import { FieldWrapper } from "../FieldWrapper";
-import { inputVariants, type InputStatus } from "../Input/Input";
+import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { Listbox } from "../Listbox/Listbox";
 import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
 

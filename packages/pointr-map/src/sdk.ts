@@ -41,6 +41,13 @@ export interface SdkMapView extends SdkEmitter {
   map?: PointrMapLibreMap;
   isMapReadyEmitted?: boolean;
   events?: Record<string, string>;
+  /**
+   * The view's own emitter. Its Exit button does nothing but emit
+   * `events.exitClicked` here, on a click and from the keyboard alike; the
+   * SDK's controllers listen and do the leaving (read from the 10.13.0
+   * bundle).
+   */
+  emit?(name: string, ...args: unknown[]): void;
 }
 
 export interface SdkMapViewController {

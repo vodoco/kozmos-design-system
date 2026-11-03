@@ -88,6 +88,49 @@ public struct KozmosPOIResultBadgePresentation: Sendable, Hashable, Codable {
     }
 }
 
+/// An action the product defines itself, beside the ones Kozmos names
+/// (GAP-028, GAP-130): "Reserve a table", "Book", "Get live directions in
+/// Pointr Express". Kozmos draws it with the words and the icon it is given
+/// and says which was pressed by its `id`; what it does is the product's.
+///
+/// `KozmosPOIResultCard` draws a result's `hostActions` after its `actions`,
+/// on the selected result, and `KozmosPOIDetailPanel` draws
+/// `details.hostActions` after the supplementary actions, in the same strip:
+/// each in the order given, as an outlined button. Mirrors
+/// `POIHostActionPresentation` on the web and Compose.
+public struct KozmosPOIHostActionPresentation: Sendable, Hashable, Identifiable, Codable {
+    /// The product's own name for the action, unique among the card's host
+    /// actions: "reserve", "open-in-app". Handed back when it is pressed and
+    /// reported as `hostActionId` in analytics; never shown or announced.
+    public let id: String
+    /// Already localized: the button's words, and what VoiceOver says.
+    public let label: String
+    /// A Kozmos icon by its registry name, drawn before the label and hidden
+    /// from VoiceOver. A name Kozmos does not know draws no icon, never a
+    /// stand-in: the label is the action.
+    public let iconName: String?
+    /// Drawn, but it cannot be pressed.
+    public let disabled: Bool
+
+    public init(id: String, label: String, iconName: String? = nil, disabled: Bool = false) {
+        self.id = id
+        self.label = label
+        self.iconName = iconName
+        self.disabled = disabled
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, label, iconName, disabled }
+
+    /// JSON may leave `iconName` and `disabled` out, as a Swift caller may.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        label = try values.decode(String.self, forKey: .label)
+        iconName = try values.decodeIfPresent(String.self, forKey: .iconName)
+        disabled = try values.decodeIfPresent(Bool.self, forKey: .disabled) ?? false
+    }
+}
+
 /// What a result card offers on the selected result, in the order given.
 public struct KozmosPOIResultActionPresentation: Sendable, Hashable, Identifiable, Codable {
     public var id: String { action.rawValue + "-" + label }
@@ -426,6 +469,11 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// US2-EC1). VoiceOver needs the tag to say it in a Spanish voice (WCAG
     /// 3.1.2). Leave it out when the summary is in the interface language.
     public let summaryLanguage: String?
+    /// The product's own actions, with their own words and icons, drawn
+    /// after `actions` in the same row and revealed with them (GAP-028):
+    /// "Reserve a table" on a restaurant. A press reaches the card's
+    /// `onHostAction` with the action's `id`.
+    public let hostActions: [KozmosPOIHostActionPresentation]
 
     public init(
         poiId: String,
@@ -443,7 +491,8 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         summary: String? = nil,
         actions: [KozmosPOIResultActionPresentation] = [],
         languageNotListed: Bool? = nil,
-        summaryLanguage: String? = nil
+        summaryLanguage: String? = nil,
+        hostActions: [KozmosPOIHostActionPresentation] = []
     ) {
         self.poiId = poiId
         self.resultIndex = resultIndex
@@ -461,6 +510,7 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         self.actions = actions
         self.languageNotListed = languageNotListed
         self.summaryLanguage = summaryLanguage
+        self.hostActions = hostActions
     }
 
     /// Mirrors the web rule: only an explicit `false` marks a result unavailable.
@@ -491,7 +541,8 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
             summary: summary,
             actions: actions,
             languageNotListed: languageNotListed,
-            summaryLanguage: summaryLanguage
+            summaryLanguage: summaryLanguage,
+            hostActions: hostActions
         )
     }
 }

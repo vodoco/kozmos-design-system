@@ -1,4 +1,5 @@
 import * as React from "react";
+import { AlertTriangle } from "@kozmos-ds/icons";
 import {
   act,
   fireEvent,
@@ -160,10 +161,33 @@ describe("TourStep (GAP-188)", () => {
     expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
     fireEvent.keyDown(dialog, { key: "Escape" });
     expect(screen.getByRole("dialog")).toBe(dialog);
-    // The eyebrow keeps its row on its own.
-    expect(dialog.querySelector(".kozmos-tour-step-header")).toHaveTextContent(
+    expect(dialog.querySelector(".kozmos-tour-step-eyebrow")).toHaveTextContent(
       "How Pointr Cloud is organised · 2 of 5",
     );
+  });
+
+  it("holds the eyebrow, Close and the title in that order, in one header that is never empty", async () => {
+    const parts = (dialog: HTMLElement) =>
+      Array.from(
+        dialog.querySelector(".kozmos-tour-step-header")!.children,
+      ).map((part) => part.className.match(/kozmos-tour-step-(\w+)/)![1]);
+    const first = render(<Step />);
+    expect(parts(await screen.findByRole("dialog"))).toEqual([
+      "eyebrow",
+      "close",
+      "title",
+    ]);
+    first.unmount();
+    const coachmark = render(
+      <TourStep title="Draw a room" closeLabel="Dismiss" onClose={() => {}} />,
+    );
+    expect(parts(await screen.findByRole("dialog"))).toEqual([
+      "close",
+      "title",
+    ]);
+    coachmark.unmount();
+    render(<TourStep title="Draw a room" />);
+    expect(parts(await screen.findByRole("dialog"))).toEqual(["title"]);
   });
 
   it("stays open on a press outside it, on the dim or on the lit target, and says so through onInteractOutside", async () => {
@@ -396,8 +420,9 @@ describe("TourStep (GAP-188)", () => {
     expect(notice()).toHaveAttribute("data-tone", "warning");
     expect(notice().className).toContain("bg-warning/5");
     // The warning tone's own mark, not the pointer.
-    expect(notice().querySelector("svg")!.innerHTML).not.toContain(
-      "M20.5056 10.7754",
+    const { container: triangle } = render(<AlertTriangle />);
+    expect(notice().querySelector("svg")!.innerHTML).toBe(
+      triangle.querySelector("svg")!.innerHTML,
     );
   });
 

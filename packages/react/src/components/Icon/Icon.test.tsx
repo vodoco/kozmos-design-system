@@ -33,6 +33,62 @@ describe("Icon", () => {
   });
 });
 
+describe("the venue set (GAP-105)", () => {
+  const paths = (element: Element) =>
+    [...element.querySelectorAll("path")].map((path) => path.getAttribute("d"));
+
+  it.each([
+    ["utensils", kozmosIcons.Utensils],
+    ["accessibility", kozmosIcons.Accessibility],
+    ["medical-cross", kozmosIcons.MedicalCross],
+    ["plane", kozmosIcons.Plane],
+    ["clapperboard", kozmosIcons.Clapperboard],
+    ["graduation-hat-01", kozmosIcons.GraduationHat01],
+    ["beaker-01", kozmosIcons.Beaker01],
+    ["credit-card-01", kozmosIcons.CreditCard01],
+    ["battery-charging-01", kozmosIcons.BatteryCharging01],
+    ["droplets-01", kozmosIcons.Droplets01],
+    ["luggage-01", kozmosIcons.Luggage01],
+    ["passport", kozmosIcons.Passport],
+    ["ticket-01", kozmosIcons.Ticket01],
+    ["package", kozmosIcons.Package],
+    ["scissors-01", kozmosIcons.Scissors01],
+  ] as const)("%s draws its own export by name", (name, component) => {
+    const { container: byName } = render(<Icon name={name} />);
+    const { container: byIcon } = render(<Icon icon={component} />);
+    expect(paths(byName).length).toBeGreaterThan(0);
+    expect(paths(byName)).toEqual(paths(byIcon));
+    expect(kozmosIcons.getIconDefinition(name)?.category).toMatch(/^Venue /);
+  });
+
+  it.each([
+    ["food-beverage-space", "utensils"],
+    ["dining", "utensils"],
+    ["boarding-gate", "plane"],
+    ["atm", "credit-card-01"],
+    ["charging-station", "battery-charging-01"],
+    ["shopping", "shopping-bag-02"],
+    // Beyond the library: an alias reaches a wayfinding glyph as well.
+    ["entrance-exit", "route-entrance-exit"],
+    ["security-space", "security-control"],
+    ["elevator", "elevator-up-and-down"],
+  ] as const)("%s, as a product holds it, draws %s", (alias, name) => {
+    const { container: byAlias } = render(<Icon name={alias} />);
+    const { container: byName } = render(<Icon name={name} />);
+    expect(paths(byAlias).length).toBeGreaterThan(0);
+    expect(paths(byAlias)).toEqual(paths(byName));
+  });
+
+  // A type with no glyph has no alias: a car for parking would say something else.
+  it.each(["restroom-space", "parking-space"])("%s is not a name", (name) => {
+    expect(kozmosIcons.isKozmosIconKey(name)).toBe(false);
+    const { container } = render(
+      <Icon name={name as kozmosIcons.KozmosIconKey} />,
+    );
+    expect(container.querySelector("svg")).not.toBeInTheDocument();
+  });
+});
+
 describe("Pointr Maps - Express wayfinding glyphs", () => {
   // Solid shapes on the 24 grid in the current colour: a stroke width means
   // nothing to them, so the stroke props every icon takes are accepted and

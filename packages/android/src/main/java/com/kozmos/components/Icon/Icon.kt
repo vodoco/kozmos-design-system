@@ -81,24 +81,8 @@ fun KozmosIcon(
     )
 }
 
-private fun resolveIconName(name: String): String = when (name) {
-    "add" -> "plus"
-    "back" -> "arrow-left"
-    "close", "x" -> "x-close"
-    "delete" -> "trash-01"
-    "edit" -> "edit-01"
-    "home" -> "home-line"
-    "location", "map-pin" -> "marker-pin-01"
-    "menu" -> "menu-01"
-    "next" -> "arrow-right"
-    "notifications" -> "bell-01"
-    "search" -> "search-md"
-    "settings" -> "settings-01"
-    "user" -> "user-01"
-    "users" -> "users-01"
-    "warning" -> "alert-triangle"
-    else -> name
-}
+/** The web registry's aliases are generated, so a platform cannot keep a list of its own. */
+private fun resolveIconName(name: String): String = KozmosIconAliases.resolve(name)
 
 internal fun resolveIconVector(rawName: String): ImageVector = knownIconVector(rawName) ?: Icons.Default.Info
 

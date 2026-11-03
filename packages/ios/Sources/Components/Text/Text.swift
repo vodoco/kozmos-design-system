@@ -32,7 +32,8 @@ public enum KozmosTextStyle: String, CaseIterable, Sendable {
 public enum KozmosTextTone: String, CaseIterable, Sendable {
     /// Ordinary reading text.
     case `default`
-    /// Supporting text: captions, counts, secondary lines.
+    /// Supporting text: captions, counts, secondary lines. Foreground/400,
+    /// and on a glass surface the foreground colour (decision 48).
     case muted
     /// Text carrying the brand colour, for emphasis inside a sentence.
     case brand
@@ -95,11 +96,17 @@ public struct KozmosText: View {
         self.lineLimit = lineLimit
     }
 
+    @ViewBuilder
     public var body: some View {
-        Text(text)
-            .font(style.font)
-            .fontWeight(weight)
-            .foregroundColor(tone.color)
-            .lineLimit(lineLimit)
+        let drawn = Text(text).font(style.font).fontWeight(weight)
+        if tone == .muted {
+            // Muted words read the surface they sit on, as the parts' muted
+            // lines do: on glass the foreground colour, so they read at 4.5:1
+            // over any map (decision 48), and foreground/400 elsewhere. As the
+            // web's `Text color="muted"` does (#416, GAP-203).
+            drawn.kozmosMutedText().lineLimit(lineLimit)
+        } else {
+            drawn.foregroundColor(tone.color).lineLimit(lineLimit)
+        }
     }
 }

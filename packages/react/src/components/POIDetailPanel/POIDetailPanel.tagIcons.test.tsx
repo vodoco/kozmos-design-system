@@ -117,8 +117,8 @@ function namesSwiftUIDraws(): Set<string> {
     ),
   ]);
   const aliases = between(
-    icon,
-    "func resolvedIconName",
+    generated,
+    "enum KozmosIconAliases",
     "default: return name",
   );
   for (const [, names, target] of aliases.matchAll(
@@ -155,7 +155,11 @@ function namesComposeDraws(): Set<string> {
       /^\s*"([^"]+)" ->/gm,
     ),
   ]);
-  const aliases = between(icon, "fun resolveIconName", "else -> name");
+  const aliases = between(
+    generated,
+    "object KozmosIconAliases",
+    "else -> name",
+  );
   for (const [, names, target] of aliases.matchAll(
     /^\s*([^\n]+?) -> "([^"]+)"/gm,
   )) {
@@ -278,7 +282,7 @@ describe("POIDetailPanel tag icons", () => {
       ...kozmosIconNames,
       ...(Object.keys(kozmosIconAliases) as KozmosIconKey[]),
     ];
-    expect(names).toHaveLength(57 + 17);
+    expect(names).toHaveLength(72 + 57);
     const iconOf = renderTags(names);
     for (const name of names) {
       expect(iconOf(name)?.outerHTML, name).toBe(
@@ -300,7 +304,7 @@ describe("POIDetailPanel tag icons", () => {
     const compose = namesComposeDraws();
     // At least the names each platform's own tests hold it to; fewer means
     // the sources above were not read.
-    const floor = kozmosIconNames.length + 17 + glyphs.length;
+    const floor = kozmosIconNames.length + 57 + glyphs.length;
     expect(swiftUI.size).toBeGreaterThanOrEqual(floor);
     expect(compose.size).toBeGreaterThanOrEqual(floor);
     const candidates = Array.from(

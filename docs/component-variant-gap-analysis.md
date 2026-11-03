@@ -35,12 +35,12 @@ token was declined, so this is not a gap to close.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 122    |
-| Declaring at least one React variant axis | 63     |
-| Variations that are compositional only    | 59     |
-| Components with variant gaps — iOS        | 20/63  |
-| Components with variant gaps — Android    | 20/63  |
-| Components with variant gaps — Figma      | 25/63  |
-| Components with variant gaps — Vue        | 12/63  |
+| Declaring at least one React variant axis | 64     |
+| Variations that are compositional only    | 58     |
+| Components with variant gaps — iOS        | 20/64  |
+| Components with variant gaps — Android    | 20/64  |
+| Components with variant gaps — Figma      | 25/64  |
+| Components with variant gaps — Vue        | 12/64  |
 | Components absent entirely — iOS          | 11/122 |
 | Components absent entirely — Android      | 10/122 |
 | Components absent entirely — Figma        | 22/122 |

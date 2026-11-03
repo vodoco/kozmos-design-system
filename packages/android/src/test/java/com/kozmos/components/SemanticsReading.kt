@@ -129,6 +129,10 @@ data class ReadNode(
     val customActions: Map<String, () -> Boolean> = emptyMap(),
     /** What a text field holds: the words it shows as its value. */
     val editableText: String? = null,
+    /** The click's label, which TalkBack reads as "Double-tap to <label>". */
+    val clickLabel: String? = null,
+    /** A text's layout as it was drawn: its lines and its inline content's places. */
+    val textLayout: TextLayoutResult? = null,
     /** The weight a text lays its words out in, where it says one. */
     val fontWeight: FontWeight? = null
 ) {
@@ -362,6 +366,10 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     customActions = node.config.getOrNull(SemanticsActions.CustomActions)
         ?.associate { it.label to it.action }.orEmpty(),
     editableText = node.config.getOrNull(SemanticsProperties.EditableText)?.text,
+    clickLabel = node.config.getOrNull(SemanticsActions.OnClick)?.label,
+    textLayout = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { get ->
+        mutableListOf<TextLayoutResult>().also { get(it) }.firstOrNull()
+    },
     fontWeight = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { read ->
         val layouts = mutableListOf<TextLayoutResult>()
         read(layouts)

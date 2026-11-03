@@ -78,7 +78,46 @@ if (unknown.length) {
     `Icons page has ${unknown.length} component(s) neither the registry nor navigation-glyphs.json names: ${unknown.map((i) => i.name).join(", ")}`,
   );
 }
-const undrawn = [...names].filter((n) => !icons.some((i) => i.name === n));
+// The names the registry holds before the Icons page draws them: the venue set
+// (GAP-105). The plugin draws them on the owner's Curated Icons → Update, which
+// gives each a node id, and a connection needs that id: until a baseline records
+// them they have none, and Dev Mode has no node to show one on. List only what
+// such an Update is still to draw, and empty this when its baseline lands: a
+// name here that the page draws is an error, so the list cannot go stale.
+const AWAITING_THE_ICONS_PAGE = new Set([
+  "accessibility",
+  "battery-charging-01",
+  "beaker-01",
+  "clapperboard",
+  "credit-card-01",
+  "droplets-01",
+  "graduation-hat-01",
+  "luggage-01",
+  "medical-cross",
+  "package",
+  "passport",
+  "plane",
+  "scissors-01",
+  "ticket-01",
+  "utensils",
+]);
+const drawnAlready = [...AWAITING_THE_ICONS_PAGE].filter((n) =>
+  icons.some((i) => i.name === n),
+);
+if (drawnAlready.length) {
+  throw new Error(
+    `the Icons page draws ${drawnAlready.join(", ")}: take them off AWAITING_THE_ICONS_PAGE`,
+  );
+}
+const notInRegistry = [...AWAITING_THE_ICONS_PAGE].filter((n) => !names.has(n));
+if (notInRegistry.length) {
+  throw new Error(
+    `AWAITING_THE_ICONS_PAGE names ${notInRegistry.join(", ")}, which the registry does not`,
+  );
+}
+const undrawn = [...names].filter(
+  (n) => !AWAITING_THE_ICONS_PAGE.has(n) && !icons.some((i) => i.name === n),
+);
 if (undrawn.length) {
   throw new Error(
     `registry names ${undrawn.length} icon(s) the Icons page does not draw: ${undrawn.join(", ")}`,

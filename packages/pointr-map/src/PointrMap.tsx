@@ -85,6 +85,15 @@ export interface PointrMapHandle {
    */
   setLevel(level: number | string): boolean;
   /**
+   * Leaves the open building for its site, as the SDK's own Exit button does
+   * (Kozmos hides that button; put a MapControlButton in AdaptiveMapShell's
+   * `controlsTopStart` instead). True means the SDK was asked, not that the
+   * map has left: it reports no building through `onBuildingChange` when it
+   * has, and below the site's zoom the SDK does nothing. False before the map
+   * is ready, outside a building, and with an SDK whose view has no such event.
+   */
+  exitBuilding(): boolean;
+  /**
    * Searches the whole site, or the open building with `{ scope: "building" }`,
    * numbered from 1. Rejects with a non-fatal `data` PointrMapError before the
    * map is ready, when the SDK's search fails, and when the map is removed
@@ -204,6 +213,7 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
         flyToPoi: (id, options) =>
           session.current?.flyToPoi(id, options) ?? false,
         setLevel: (level) => session.current?.setLevel(level) ?? false,
+        exitBuilding: () => session.current?.exitBuilding() ?? false,
         search: (query, options) =>
           session.current
             ? session.current.search(query, options)

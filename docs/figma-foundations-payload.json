@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T10:10:27.705Z",
+  "generatedAt": "2026-11-03T08:39:28.255Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -7246,7 +7246,7 @@
         "ios": "semanticsEmotionNeutralText",
         "android": "semanticsEmotionNeutralText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7318,7 +7318,7 @@
         "ios": "semanticsEmotionThemedText",
         "android": "semanticsEmotionThemedText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7390,7 +7390,7 @@
         "ios": "semanticsEmotionSuccessText",
         "android": "semanticsEmotionSuccessText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7462,7 +7462,7 @@
         "ios": "semanticsEmotionDangerText",
         "android": "semanticsEmotionDangerText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7534,7 +7534,7 @@
         "ios": "semanticsEmotionAlertText",
         "android": "semanticsEmotionAlertText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",
@@ -7654,7 +7654,7 @@
         "ios": "semanticsEmotionInformativeText",
         "android": "semanticsEmotionInformativeText"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
       "values": {
         "light": {
           "kind": "alias",

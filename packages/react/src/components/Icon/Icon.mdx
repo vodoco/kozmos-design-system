@@ -21,7 +21,10 @@ Icons are decorative by default; provide an accessible label when the icon itsel
 `name` takes every name SwiftUI's and Compose's `KozmosIcon` take, the same on all three platforms:
 
 - the curated library's names, with their aliases (`close` for `x-close`, `search` for `search-md` and the rest), each a
-  Pointr Icon Library outline or a taxonomy symbol, which the Figma Icons page and Code Connect pair name for name;
+  Pointr Icon Library outline or Kozmos's own artwork, which the Figma Icons page and Code Connect pair name for name;
+- within them the venue set, the categories, amenities and services a visitor looks for (`utensils`, `accessibility`,
+  `medical-cross`, `plane`, `luggage-01` and the rest), which also answer to the taxonomy's own names:
+  `food-beverage-space`, `boarding-gate`, `atm`, `charging-station`;
 - the 23 wayfinding glyphs of Pointr Maps - Express, by the kebab case of their export names: `elevator-up`,
   `stairs-no-direction`, `route-entrance-exit`, `security-control`, `shuttle` and the rest, filled in the text's colour;
 - four Pointr Icon Library outlines beyond the curated set: `log-in-01`, `log-out-01`, `arrow-up-right` and
@@ -31,6 +34,10 @@ Icons are decorative by default; provide an accessible label when the icon itsel
 
 `kozmosIconNames` lists the curated names and `kozmosIconNamesBeyondTheLibrary` the other 29. A name Kozmos does not
 know draws nothing. `icon` takes any component `@kozmos-ds/icons` exports, the whole Pointr Icon Library included.
+
+A UI icon stays a named import, `<Icon icon={Copy01} />`: the names grow only by the venue set (decision 121). The
+`@kozmos-ds/icons` README lists the set, each name's aliases, how it was chosen and what was left out. Toilets and
+parking have no glyph yet, so a product draws those with the taxonomy's `iconUrl`.
 
 ## Implementation
 
