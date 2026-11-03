@@ -7,9 +7,36 @@ import {
   ToastViewport,
   ToastTitle,
 } from "./Toast";
+import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 import { describe, it, expect } from "vitest";
 
 describe("Toast", () => {
+  it.each([
+    ["ltr", undefined, "right"],
+    ["rtl", undefined, "left"],
+    ["rtl", "right", "right"],
+  ] as const)(
+    "a hand-made toast in %s, with swipeDirection %s, swipes and leaves to the %s",
+    (dir, swipeDirection, expected) => {
+      // The viewport sits at the inline end, so right to left it moved left
+      // while a provider the Toaster did not make still swiped right, across
+      // the page. The exit keys on this attribute too.
+      render(
+        <ThemeProvider dir={dir} theme="light">
+          <ToastProvider swipeDirection={swipeDirection}>
+            <Toast open={true}>
+              <ToastTitle>Saved</ToastTitle>
+            </Toast>
+            <ToastViewport />
+          </ToastProvider>
+        </ThemeProvider>,
+      );
+      expect(
+        screen.getByText("Saved").closest("[data-swipe-direction]"),
+      ).toHaveAttribute("data-swipe-direction", expected);
+    },
+  );
+
   it("renders correctly", () => {
     render(
       <ToastProvider>
@@ -69,6 +96,32 @@ describe("Toast", () => {
     expect(
       screen.queryByRole("button", { name: "Dismiss notification" }),
     ).not.toBeInTheDocument();
+  });
+
+  // GAP-167: toast()'s tones, on the part as well. A tone draws its icon in
+  // the start padding, in the tone's text colour; no tone changes nothing.
+  it("draws a tone's icon in the tone's colour, and nothing without one", () => {
+    render(
+      <ToastProvider>
+        <Toast open={true} tone="warning">
+          <ToastTitle>Location is approximate</ToastTitle>
+        </Toast>
+        <Toast open={true}>
+          <ToastTitle>Saved</ToastTitle>
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    const toned = screen.getByText("Location is approximate").closest("li")!;
+    expect(toned).toHaveAttribute("data-tone", "warning");
+    expect(toned).toHaveClass("ps-14");
+    const icon = toned.querySelector("svg");
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(icon).toHaveClass("text-warning-text", "absolute", "start-6");
+    const plain = screen.getByText("Saved").closest("li")!;
+    expect(plain).not.toHaveAttribute("data-tone");
+    expect(plain).not.toHaveClass("ps-14");
+    expect(plain.querySelector("svg")).toBeNull();
   });
 
   it("draws a destructive toast's controls in Kozmos roles, not Tailwind's red", () => {

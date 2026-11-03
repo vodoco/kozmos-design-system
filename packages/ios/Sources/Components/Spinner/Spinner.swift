@@ -41,7 +41,8 @@ public enum KozmosSpinnerSize: String, CaseIterable, Sendable {
 /// follows the theme without being told. It rests when the visitor has asked
 /// for less motion; the label still says what is happening.
 public struct KozmosSpinner: View {
-    private let size: KozmosSpinnerSize
+    private let points: CGFloat
+    private let lineWidth: CGFloat
     private let color: Color
     private let label: String
 
@@ -61,7 +62,18 @@ public struct KozmosSpinner: View {
         color: Color = KozmosColors.primitivesColorsForeground0,
         label: String = "Loading"
     ) {
-        self.size = size
+        self.points = size.points
+        self.lineWidth = size.lineWidth
+        self.color = color
+        self.label = label
+    }
+
+    /// The arc off the `Spinner/size` scale, in a part that sets its own
+    /// marks' size: Accordion's boxed header draws it where its 20 chevron is,
+    /// as React draws `SpinnerArc` there. The weight scales as the scale's do.
+    init(diameter: CGFloat, color: Color, label: String = "Loading") {
+        self.points = diameter
+        self.lineWidth = KozmosDimensions.primitivesIconStrokeMd * diameter / 24
         self.color = color
         self.label = label
     }
@@ -77,15 +89,15 @@ public struct KozmosSpinner: View {
             // radius 9 in the icons' 24 box, as React's `d` is and as Compose
             // insets to, which puts the ink 2 units inside the edge on all
             // three.
-            .inset(by: size.points / 8)
+            .inset(by: points / 8)
             .trim(from: 0, to: 0.75)
-            .stroke(color, style: StrokeStyle(lineWidth: size.lineWidth, lineCap: .round))
+            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
             .rotationEffect(.degrees(-90 + angle))
             // Drawn and turned as it is in every language, as React's arc is:
             // right to left, SwiftUI turns a rotation the other way, so the
             // gap sat at the bottom right and the arc turned anticlockwise.
             .environment(\.layoutDirection, .leftToRight)
-            .frame(width: size.points, height: size.points)
+            .frame(width: points, height: points)
             .onAppear {
                 guard !reduceMotion else { return }
                 withAnimation(.linear(duration: Self.turnDuration).repeatForever(autoreverses: false)) {

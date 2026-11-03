@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { IconButton } from "./IconButton";
 import { Icon } from "../Icon/Icon";
+import { Bell01, HelpCircle } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof IconButton> = {
   id: "action-iconbutton",
@@ -72,6 +73,30 @@ export const Sizes: Story = {
       </IconButton>
       <IconButton size="lg" variant="outline" aria-label="Large">
         <Icon name="search-md" size="md" />
+      </IconButton>
+    </div>
+  ),
+};
+
+// GAP-197: the count of tours left on a help button, read with its name
+// ("Help, 3 tours left"), at every size.
+export const Counter: Story = {
+  render: () => (
+    <div className="flex items-center gap-4">
+      {(["sm", "icon", "lg"] as const).map((size) => (
+        <IconButton
+          key={size}
+          aria-label="Help"
+          counter={3}
+          counterLabel={(count) => `${count} tours left`}
+          size={size}
+          variant="outline"
+        >
+          <HelpCircle aria-hidden="true" className="h-5 w-5" />
+        </IconButton>
+      ))}
+      <IconButton aria-label="Notices" counter={12} variant="ghost">
+        <Bell01 aria-hidden="true" className="h-5 w-5" />
       </IconButton>
     </div>
   ),

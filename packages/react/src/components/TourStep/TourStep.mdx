@@ -37,12 +37,17 @@ where the tour ends.
 ## The card, part by part
 
 - **The eyebrow**: `tourLabel` and the position, `"{tour} · {step} of {count}"`, in the theme ink,
-  Text xs semibold, in sentence case. `positionLabel` writes the position: a template with `{step}`
-  and `{count}` (`"{step} of {count}"` by default) or a function of them.
-- **Close**: a ghost icon button at the end of the eyebrow's row, named by `closeLabel` ("Close").
-  It is drawn only with `onClose`, which Escape calls too; without it there is no Close, and Escape
-  leaves the step open.
-- **The title**: a level 2 heading, drawn at Heading 4's size.
+  Text xs semibold, in sentence case. Its row hugs its line, 8 above the title. `positionLabel`
+  writes the position: a template with `{step}` and `{count}` (`"{step} of {count}"` by default) or
+  a function of them.
+- **Close**: a ghost icon button named by `closeLabel` ("Close"), out of the flow in the card's top
+  corner, so it takes no row: its icon sits on the eyebrow's line, or on the title's first line
+  when there is no eyebrow. The eyebrow and the title wrap before it. It keeps its place between
+  them for the keyboard and for a reader, and it scrolls with the card's content in a short window.
+  It is drawn only with `onClose`, which Escape calls too; without it there is no Close, Escape
+  leaves the step open, and the eyebrow and the title take the whole width.
+- **The title**: a level 2 heading, drawn at Heading 4's size. With no eyebrow, it starts at the top
+  of the card.
 - **The body**: `body`, Text sm in the muted ink.
 - **The instruction**: what to do now, a Notice that never collapses, its icon centred on its words.
   `instructionTone` is `"info"` (the default, with a pointer) or `"warning"` (with the warning's
@@ -161,8 +166,8 @@ The labels have English defaults (decision 100): `backLabel` "Back", `nextLabel`
 `secondaryLabel` "Not now", `dismissLabel` "Don't show again", `closeLabel` "Close",
 `progressLabel` "Tour progress" and `positionLabel` `"{step} of {count}"`.
 
-Right to left, the card, its sections, the progress bar and the footer mirror, as the provider's
-direction says. At compact density (Pointr Cloud's), Close and every button are 32; at touch
+Right to left, the card, Close, its sections, the progress bar and the footer mirror, as the
+provider's direction says. At compact density (Pointr Cloud's), Close and every button are 32; at touch
 density, 44. The card arrives without its zoom when motion is reduced, and in forced colours its
 arrow is drawn in the system's text colour.
 
