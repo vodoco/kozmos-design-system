@@ -563,8 +563,34 @@ export class MockNode {
   }
 
   set layoutPositioning(value) {
+    if (
+      autoLayout.on &&
+      value === "ABSOLUTE" &&
+      !isAutoLayoutNode(this.parent)
+    ) {
+      throw new Error(
+        "in set_layoutPositioning: can only set layoutPositioning on a child of an auto-layout frame",
+      );
+    }
     this._layoutPositioning = value;
     settleAutoLayout(this.parent);
+  }
+
+  // See `layOut`: a flow child's place is its frame's.
+  get x() {
+    return this._x;
+  }
+
+  set x(value) {
+    if (!ignoresPlacement(this)) this._x = value;
+  }
+
+  get y() {
+    return this._y;
+  }
+
+  set y(value) {
+    if (!ignoresPlacement(this)) this._y = value;
   }
 
   get fills() {
@@ -1101,6 +1127,10 @@ function isAutoLayoutNode(node) {
  *   the height of a padded hug frame keeps a margin of the padding for good:
  *   Instruction Fill and Edge read 39 in 55 on all four variants, the frame
  *   hugging its two lines and the layers 16 short of it.
+ * - A layer starts as a flow child. Its x and y are the frame's until it leaves
+ *   the flow, so one written before it does is lost; it stays where it was when
+ *   it leaves, and goes absolute only in an auto-layout frame. A frame with
+ *   flow children left hugs them again, so a corner layer costs a card nothing.
  * - `minHeight` is a floor on a hug axis: the frame hugs what is in it and
  *   stops there, as the panel's Min H does. Unlike the rules above, this one
  *   was not read off the live file: Accordion's boxed Update is its first
@@ -1139,6 +1169,14 @@ const inFlow = (node) =>
     (child) =>
       child.layoutPositioning !== "ABSOLUTE" && child.visible !== false,
   );
+
+// A write to a flow child's x or y does nothing in the file, where the frame
+// lays it out. `settling` is the frame itself, placing it.
+const ignoresPlacement = (node) =>
+  autoLayout.on &&
+  !autoLayout.settling &&
+  isAutoLayoutNode(node.parent) &&
+  node.layoutPositioning !== "ABSOLUTE";
 
 const hugsAxis = (node, axis) =>
   isAutoLayoutNode(node) &&

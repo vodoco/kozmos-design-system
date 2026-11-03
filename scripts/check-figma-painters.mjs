@@ -12,7 +12,9 @@
  *
  * Usage: node scripts/check-figma-painters.mjs [path/to/code.js]
  */
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {
   FONTS,
@@ -41,6 +43,7 @@ import {
   isTypedGlyph,
   layersShortOfTheirFrame,
 } from "./lib/figma-verify-rules.mjs";
+import { expectations } from "./verify-figma-library.mjs";
 
 const ROOT = process.cwd();
 const PLUGIN = path.resolve(
@@ -2029,9 +2032,12 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // GAP-188: TourStep, as React's TourStep draws it, the MAP-64 design's card
 // (decision 136). Popover's surface 372 wide (432 for the welcome card), 16
 // inside, sections 12 apart, no top edge; an Arrow 24 by 12 out of the flow
-// above the card's middle; the header row with the eyebrow (sentence case,
-// the theme ink) and Close, IconButton's Ghost with x-close in the ghost's
-// ink; the title Heading 4; the body in the muted ink; the instruction as
+// above the card's middle; the header, which hugs the eyebrow (sentence case,
+// the theme ink) 8 over the title, Heading 4, both wrapping before Close when
+// there is one; Close, IconButton's Ghost with x-close in the ghost's ink, out
+// of the flow in the card's top corner, its 16 icon ending on the padding and
+// on the eyebrow's line, or the title's first with no eyebrow, taking no row;
+// the body in the muted ink; the instruction as
 // Notice draws it (its tone's fill at 5 % and edge at 50 % as layers, the
 // Container corner, 8/12 inside, a 16 icon, cursor-02's outline for info and
 // alert-triangle for the warning); the progress bar of the secondary fill
@@ -2217,7 +2223,9 @@ section("TourStep (GAP-188, decision 136)");
           component.effects[0].radius === 16,
         `${content}: Popover's surface, the subtle edge all round and the overlay elevation`,
       );
-      const expectedRows = ["Arrow", "Header", "Title Text", "Body Text"];
+      const expectedRows = ["Arrow", "Header"];
+      if (!welcome) expectedRows.push("Close");
+      expectedRows.push("Body Text");
       if (!coachmark && !welcome) expectedRows.push("Instruction", "Progress");
       if (!coachmark) expectedRows.push("Footer");
       ok(
@@ -2276,15 +2284,63 @@ section("TourStep (GAP-188, decision 136)");
         welcome
           ? !closeButton
           : closeButton &&
-              closeButton.parent === header &&
-              header.children[header.children.length - 1] === closeButton &&
               closeButton.type === "INSTANCE" &&
               closeButton.mainComponent.name ===
                 "Variant=Ghost, Size=Default, State=Default" &&
               closeButton.componentProperties["Icon#2:0"] === close.id,
         welcome
           ? "Welcome: no Close"
-          : `${content}: Close is IconButton's Ghost with x-close, at the header's end`,
+          : `${content}: Close is IconButton's Ghost with x-close`,
+      );
+      // Close takes no row: out of the flow on the card itself, a full 44, its
+      // 16 icon ending on the padding and on the eyebrow's 16 line, or the
+      // title's first 28 with no eyebrow. The card's 1 edge is laid out, so
+      // the words start 17 in.
+      if (!welcome) {
+        const line = coachmark ? 28 : 16;
+        ok(
+          closeButton.parent === component &&
+            closeButton.layoutPositioning === "ABSOLUTE" &&
+            closeButton.width === 44 &&
+            closeButton.height === 44 &&
+            closeButton.x === width - 3 - 44 &&
+            closeButton.y === 17 + (line - 44) / 2 &&
+            closeButton.y + 22 === header.y + line / 2 &&
+            closeButton.constraints.horizontal === "MAX" &&
+            closeButton.constraints.vertical === "MIN",
+          `${content}: Close is out of the flow in the corner, a full 44, its icon on the ${coachmark ? "title's first line" : "eyebrow's line"} (${closeButton.layoutPositioning}, ${closeButton.width} by ${closeButton.height} at ${closeButton.x}, ${closeButton.y}, ${JSON.stringify(closeButton.constraints)})`,
+        );
+      }
+      // The header hugs its words, 8 apart, starts at the top of the card, and
+      // leaves Close its room: 30 of it past the padding, and 8.
+      const headerTitle = named(component, "Title Text");
+      const words = coachmark ? [headerTitle] : [eyebrow, headerTitle];
+      const room = welcome ? 0 : 38;
+      ok(
+        header.layoutMode === "VERTICAL" &&
+          header.primaryAxisSizingMode === "AUTO" &&
+          header.itemSpacing === 8 &&
+          header.paddingRight === room &&
+          header.x === 17 &&
+          header.y === 17 &&
+          header.width === width - 34 &&
+          header.children.length === words.length &&
+          words.every((text, index) => header.children[index] === text) &&
+          words.every((text) => text.width === width - 34 - room) &&
+          words[0].y === 0 &&
+          header.height ===
+            words.reduce((sum, text) => sum + text.height, 0) +
+              8 * (words.length - 1),
+        `${content}: the header hugs ${words.map((text) => text.name).join(", ")}, ${room ? `wrapping ${room} before Close` : "the whole width"}, 17 from the top (${header.x}, ${header.y}, ${header.width} by ${header.height}, ${header.paddingRight}, ${words.map((text) => text.width)})`,
+      );
+      // Nothing but its rows: the card has no band the rows do not draw.
+      const flow = component.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const rowsHeight = flow.reduce((sum, child) => sum + child.height, 0);
+      ok(
+        component.height === 34 + rowsHeight + 12 * (flow.length - 1),
+        `${content}: the card is its rows, with no empty band (${component.height} for ${flow.map((child) => `${child.name} ${child.height}`).join(", ")})`,
       );
       if (!welcome) {
         // The swap replaces the layer the button's tint was laid on, so
@@ -2684,6 +2740,21 @@ section("TourStep (GAP-188, decision 136)");
         updateStats.warnings.length === 0,
       `an Update takes Position Text off the set and leaves nothing unbound (${updateStats.warnings.join(" | ")})`,
     );
+    for (const child of set.children.filter(
+      (variant) => variant.name !== "Content=Welcome",
+    )) {
+      const closeLayer = named(child, "Close");
+      const line = child.name === "Content=Coachmark" ? 28 : 16;
+      ok(
+        closeLayer.parent === child &&
+          closeLayer.layoutPositioning === "ABSOLUTE" &&
+          closeLayer.width === 44 &&
+          closeLayer.height === 44 &&
+          closeLayer.x === 325 &&
+          closeLayer.y === 17 + (line - 44) / 2,
+        `over the Build, ${child.name}: Close is out of the flow in the corner (${closeLayer.layoutPositioning}, ${closeLayer.width} by ${closeLayer.height} at ${closeLayer.x}, ${closeLayer.y})`,
+      );
+    }
     const updated = set.children[1];
     const updatedEdge = named(updated, "Instruction Edge");
     const updatedClose = named(updated, "Close").findOne(
@@ -2854,6 +2925,58 @@ section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
       frame.height === 54.5 && layer.height === 38.5,
       `the frame hugs two lines, and the layer stays 16 short: ${layer.height} in ${frame.height}, the live 39 in 55`,
     );
+
+    // A corner layer: a flow child until it leaves the flow, so a frame with
+    // words left in it takes it in and gives it back, and only then do x and y
+    // mean anything. placeAbsolute's comment says what the file does with one
+    // written before: UserLocationMarker's three shapes stacked in a column.
+    const card = new MockNode("FRAME", "Card");
+    card.layoutMode = "VERTICAL";
+    card.primaryAxisSizingMode = "AUTO";
+    card.counterAxisSizingMode = "FIXED";
+    card.paddingTop = 16;
+    card.paddingBottom = 16;
+    card.resizeWithoutConstraints(372, 100);
+    const line = new MockNode("TEXT", "Line");
+    line.lineHeight = { unit: "PIXELS", value: 28 };
+    line.fontSize = 20;
+    line.characters = "Title";
+    card.appendChild(line);
+    ok(card.height === 60, `the card hugs its line: ${card.height}`);
+    const corner = new MockNode("FRAME", "Corner");
+    corner.resizeWithoutConstraints(44, 44);
+    card.appendChild(corner);
+    ok(
+      card.height === 104,
+      `in the flow, it takes a row, and the padding around it: ${card.height}`,
+    );
+    corner.x = 325;
+    corner.y = 3;
+    ok(
+      corner.x === 0 && corner.y === 44,
+      `a flow child is where the frame put it, whatever is written (${corner.x}, ${corner.y})`,
+    );
+    corner.layoutPositioning = "ABSOLUTE";
+    ok(
+      card.height === 60 && corner.x === 0 && corner.y === 44,
+      `out of the flow, a frame with words left hugs them, and the layer stays where it was (${card.height}, ${corner.x}, ${corner.y})`,
+    );
+    corner.x = 325;
+    corner.y = 3;
+    corner.constraints = { horizontal: "MAX", vertical: "MIN" };
+    card.resize(432, card.height);
+    card.appendChild(new MockNode("FRAME", "Next row"));
+    ok(
+      corner.x === 385 && corner.y === 3 && card.height > 60,
+      `held at the top and the end, it follows the card's width, and its height leaves it be (${corner.x}, ${corner.y} in ${card.width} by ${card.height})`,
+    );
+    let refused = false;
+    try {
+      new MockNode("FRAME", "Loose").layoutPositioning = "ABSOLUTE";
+    } catch {
+      refused = true;
+    }
+    ok(refused, "a layer outside an auto-layout frame cannot go absolute");
   });
 }
 
@@ -2862,7 +2985,9 @@ section("The stand-in lays out as the file does (TourStep, 2026-11-01)");
 // instruction's words sat inside their own box and inside the frame, which
 // hugged them, and what fell short was the frame's own fill and edge, absolute
 // layers its overflow rule skips on purpose.
-section("figma:verify reads stretched layers and a separator");
+section(
+  "figma:verify reads stretched layers and a separator, and fails on them",
+);
 {
   const box = (x, y, width, height) => ({ x, y, width, height });
   const stretched = {
@@ -2928,6 +3053,79 @@ section("figma:verify reads stretched layers and a separator");
       !isTypedGlyph(text("Percent", "%")),
     "a Separator's dot is punctuation; a dot elsewhere, and any other glyph, still counts",
   );
+
+  // The three reports it only printed until their counts reached zero on the
+  // live file (2026-11-02): the run itself, on a page that holds every set and
+  // variant it expects, passes, and each with one defect added fails, by one.
+  const { names, axes } = expectations();
+  const variantsOf = (byAxis = {}) => {
+    const first = Object.entries(byAxis).map(([axis, [value]]) => [
+      axis,
+      value,
+    ]);
+    const combinations = Object.entries(byAxis).flatMap(([axis, values]) =>
+      values.map((value) =>
+        first.map(([name, start]) =>
+          name === axis ? `${name}=${value}` : `${name}=${start}`,
+        ),
+      ),
+    );
+    return [...new Set(combinations.map((pairs) => pairs.join(", ")))].map(
+      (name) => ({ type: "COMPONENT", name }),
+    );
+  };
+  // A defect goes inside a variant: a set's own children are its variants.
+  const page = (defect) => ({
+    type: "PAGE",
+    children: names.map((name) => ({
+      type: "COMPONENT_SET",
+      name,
+      children: variantsOf(axes[name]).map((variant, index) =>
+        defect && name === "TourStep" && index === 0
+          ? { ...variant, children: [defect] }
+          : variant,
+      ),
+    })),
+  });
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "figma-verify-"));
+  const run = (saved) => {
+    const file = path.join(directory, "page.json");
+    fs.writeFileSync(file, JSON.stringify(saved));
+    return spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/verify-figma-library.mjs"), "--page", file],
+      { encoding: "utf8" },
+    );
+  };
+  const clean = run(page());
+  ok(
+    clean.status === 0,
+    `a page with every set and nothing wrong passes (exit ${clean.status}: ${clean.stdout.match(/FAIL .*/g)})`,
+  );
+  const inside = { ...frame([]), paddingLeft: 0, paddingRight: 0 };
+  for (const [report, defect] of [
+    [
+      "children that overflow the box holding them",
+      {
+        ...inside,
+        children: [{ name: "Wide", absoluteBoundingBox: box(0, 0, 400, 20) }],
+      },
+    ],
+    ["icons typed as characters", text("Close", "×")],
+    [
+      "layers stretched over a frame that stop short of it",
+      frame([layer("Instruction Fill", box(0, 0, 338, 39))]),
+    ],
+  ]) {
+    const result = run(page(defect));
+    ok(
+      result.status === 1 &&
+        result.stdout.includes(`FAIL  ${report} — 1`) &&
+        result.stdout.includes("\n1 drift item(s)."),
+      `figma:verify fails on one finding in "${report}" (exit ${result.status}: ${result.stdout.match(/\d+ drift item|matches what/)})`,
+    );
+  }
+  fs.rmSync(directory, { recursive: true, force: true });
 }
 
 // GAP-167: Toast's Tone axis, toast()'s tones. Neutral draws no icon; each
