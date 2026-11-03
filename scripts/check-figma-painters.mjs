@@ -895,7 +895,8 @@ section("POIDetailPanel");
     `the host action is a hidden 44 outlined button, its icon before its words (${hostAction && hostAction.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
   );
   const variants = [];
-  for (const value of ["Inline", "Panel"]) variants.push((await paint(value)).component);
+  for (const value of ["Inline", "Panel"])
+    variants.push((await paint(value)).component);
   const set = figma.combineAsVariants(variants, figma.currentPage);
   set.name = "POIDetailPanel";
   plugin.configurePOIDetailPanelProperties(set, freshStats());
@@ -913,8 +914,8 @@ section("POIDetailPanel");
       definitions[hostText].defaultValue === "Open in app" &&
       variants.every(
         (variant) =>
-          named(variant, "Host Action")?.componentPropertyReferences?.visible ===
-            hostProperty &&
+          named(variant, "Host Action")?.componentPropertyReferences
+            ?.visible === hostProperty &&
           named(variant, "Host Action Label")?.componentPropertyReferences
             ?.characters === hostText,
       ),
@@ -3574,9 +3575,7 @@ section("Toast tones (GAP-167)");
         (child) => child.name === "Icon",
       );
       const [icon] = icons;
-      const shapes = icon
-        ? icon.findAll((node) => node.type === "VECTOR")
-        : [];
+      const shapes = icon ? icon.findAll((node) => node.type === "VECTOR") : [];
       const tints = shapes.flatMap((shape) =>
         (shape.strokes || []).map(boundVariableName).filter(Boolean),
       );
@@ -11720,8 +11719,11 @@ section("GAP-202: Link's External shows the new-tab icon");
       ok(
         component.children.filter((child) => child.name === "External Icon")
           .length === 1 &&
-          component.children.map((child) => child.name).indexOf("External Icon") ===
-            component.children.map((child) => child.name).indexOf("Link Text") + 1,
+          component.children
+            .map((child) => child.name)
+            .indexOf("External Icon") ===
+            component.children.map((child) => child.name).indexOf("Link Text") +
+              1,
         `${at}: an Update keeps one icon after the words`,
       );
     }

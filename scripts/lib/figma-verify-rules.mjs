@@ -96,10 +96,9 @@ export function strokeLayoutsThatDisagree(name, set) {
   for (const variant of set.children || []) {
     (function walk(node, at) {
       if (node.layoutMode && node.layoutMode !== "NONE" && isStroked(node)) {
-        if (!byPath.has(at)) byPath.set(at, { in: [], out: [] });
-        byPath
-          .get(at)
-          [node.strokesIncludedInLayout ? "in" : "out"].push(variant.name);
+        const split = byPath.get(at) || { in: [], out: [] };
+        split[node.strokesIncludedInLayout ? "in" : "out"].push(variant.name);
+        byPath.set(at, split);
       }
       for (const child of node.children || []) {
         if (child.visible !== false) walk(child, `${at} > ${child.name}`);
