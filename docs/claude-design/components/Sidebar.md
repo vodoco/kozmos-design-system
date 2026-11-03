@@ -65,6 +65,15 @@ It forwards its ref to `HTMLElement`. Its props are `SidebarProps`, which extend
 - `content`: `React.ReactNode`, optional.
 - `tools`: `React.ReactNode`, optional.
 - `footer`: `React.ReactNode`, optional.
+- `inset`: `"default" | "flush"`, optional, default `"default"`.
+
+  The room above the first slot (GAP-199). `"default"` pads the top as the
+  bottom is padded: 24, and 16 more above the navigation. `"flush"` drops
+  the 24, and on a rail with no header the 16 too: its first item flush
+  under a fixed header, as Pointr Cloud draws its side menu.
+  An expanded sidebar keeps the 16, room for the ring its items draw
+  outside themselves. The bottom keeps its room either way.
+
 - `variant`: `"expanded" | "rail"`, optional, default `collapsed ? "rail" : "expanded"`.
 - `children`: `ReactNode`, optional.
 

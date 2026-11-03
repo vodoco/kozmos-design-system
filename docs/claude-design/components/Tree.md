@@ -56,6 +56,24 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
 - `children`: `React.ReactNode`, optional.
 - `ariaLabel`: `string`, optional, default `"Tree"`.
 - `density`: `TreeDensity`, optional, default `"default"`.
+- `divided`: `boolean`, optional.
+
+  A stroke under every row and an open parent row on a surface of its own
+  (GAP-201): a list of records, as Pointr Cloud's Map Content tree draws
+  its buildings and levels, rather than a navigation tree. The stroke sits
+  under the row, so a divided row is a pixel taller; the hover and
+  selected fills keep their corners, inside the stroke and over the
+  surface, and the focus ring is drawn inside the row. Rows composed as
+  children take it from here too.
+
+- `bleed`: `number | string`, optional.
+
+  How far a divided row's stroke and an open row's surface reach past the
+  tree on each side, so they run to the panel's edges while the rows stay
+  where they are: the panel's own inline padding, 16 in a
+  `Container inset="panel"`. A number is pixels. 0 by default, the tree's
+  own edges.
+
 - `indent`: `number`, optional, default `20`.
 - `activationMode`: `TreeActivationMode`, optional, default `"select-toggle"`.
 - `defaultExpandedIds`: `string[]`, optional, default `[]`.
@@ -90,6 +108,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
 - `depth`: `number`, optional.
 
   How deep the row is, 0 at the top: its indent, and its `aria-level`, one more.
+
+- `divided`: `boolean`, optional.
+
+  As Tree's `divided`: a stroke under the row, and an open parent row on a
+  surface, both reaching the Tree's `bleed` past it. Defaults to the
+  Tree's.
 
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.
@@ -132,6 +156,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 - `disabled`: `boolean`, optional, default `false`.
 
   Dims the row, and is its `aria-disabled`.
+
+- `divided`: `boolean`, optional.
+
+  As Tree's `divided`: a stroke under the row, and an open parent row on a
+  surface, both reaching the Tree's `bleed` past it. Defaults to the
+  Tree's.
 
 - `expanded`: `boolean`, optional, default `false`.
 
@@ -179,6 +209,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
 - `depth`: `number`, optional.
 
   How deep the row is, 0 at the top: its indent, and its `aria-level`, one more.
+
+- `divided`: `boolean`, optional.
+
+  As Tree's `divided`: a stroke under the row, and an open parent row on a
+  surface, both reaching the Tree's `bleed` past it. Defaults to the
+  Tree's.
 
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.

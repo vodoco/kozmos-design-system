@@ -40,8 +40,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `RadioGroupProps`, which 
 - `asChild`: `boolean`, optional.
 - `disabled`: `React.ComponentPropsWithoutRef<typeof Radio>['disabled']`, optional.
 - `value`: `string | null`, optional.
-- `loop`: `RovingFocusGroupProps['loop']`, optional.
 - `name`: `RadioGroupContextValue['name']`, optional.
+- `loop`: `RovingFocusGroupProps['loop']`, optional.
 - `orientation`: `RovingFocusGroupProps['orientation']`, optional.
 - `required`: `React.ComponentPropsWithoutRef<typeof Radio>['required']`, optional.
 - `onValueChange`: `RadioGroupContextValue['onValueChange']`, optional.

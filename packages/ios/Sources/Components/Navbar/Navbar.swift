@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct KozmosNavbar: View {
+    let logoInset: Bool
     let logo: AnyView?
     let context: AnyView?
     let navigation: AnyView?
@@ -14,6 +15,7 @@ public struct KozmosNavbar: View {
         @ViewBuilder leading: () -> L,
         @ViewBuilder trailing: () -> T
     ) {
+        self.logoInset = false
         self.logo = AnyView(Text(title).font(KozmosTypography.headline))
         self.context = AnyView(leading())
         self.navigation = nil
@@ -24,6 +26,7 @@ public struct KozmosNavbar: View {
     }
 
     public init(title: String) {
+        self.logoInset = false
         self.logo = AnyView(Text(title).font(KozmosTypography.headline))
         self.context = nil
         self.navigation = nil
@@ -33,6 +36,10 @@ public struct KozmosNavbar: View {
         self.account = nil
     }
 
+    /// - Parameter logoInset: Sets `logo` in a column as wide as KozmosSidebar's
+    ///   rail, from the bar's edge (GAP-208), over a rail at the screen's
+    ///   leading edge: the logo centred over the rail's items, and what follows
+    ///   past the rail. Right to left, the column mirrors.
     public init<
         Logo: View,
         Context: View,
@@ -42,6 +49,7 @@ public struct KozmosNavbar: View {
         Utilities: View,
         Account: View
     >(
+        logoInset: Bool = false,
         @ViewBuilder logo: () -> Logo,
         @ViewBuilder context: () -> Context,
         @ViewBuilder navigation: () -> Navigation,
@@ -50,6 +58,7 @@ public struct KozmosNavbar: View {
         @ViewBuilder utilities: () -> Utilities,
         @ViewBuilder account: () -> Account
     ) {
+        self.logoInset = logoInset
         self.logo = AnyView(logo())
         self.context = AnyView(context())
         self.navigation = AnyView(navigation())
@@ -62,8 +71,13 @@ public struct KozmosNavbar: View {
     public var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing200) {
             if let logo = logo {
-                logo
-                    .frame(alignment: .leading)
+                if logoInset {
+                    logo
+                        .frame(width: kozmosRailWidth)
+                } else {
+                    logo
+                        .frame(alignment: .leading)
+                }
             }
             if let context = context {
                 context
@@ -92,8 +106,12 @@ public struct KozmosNavbar: View {
             }
             .frame(alignment: .trailing)
         }
-        .frame(minHeight: 64)
-        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+        // A slot of EmptyView takes no room, so with nothing to fill it the
+        // bar's content starts at its leading edge, not in its middle.
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        // The logo's column starts at the bar's edge.
+        .padding(.leading, logoInset ? 0 : KozmosDimensions.primitivesLayoutSpacing200)
+        .padding(.trailing, KozmosDimensions.primitivesLayoutSpacing200)
         .background(KozmosColors.primitivesColorsBackground0)
         .overlay(
             Rectangle()

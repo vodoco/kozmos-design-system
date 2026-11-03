@@ -26,6 +26,14 @@
     max-inline-size: 100%;
     overflow-wrap: anywhere;
   }
+  /* logoInset (GAP-208): w-24 is Sidebar's rail, and the bar's 16 of padding
+     is taken back, so the column starts at the bar's edge over the rail. */
+  .kozmos-navbar-logo[data-inset] {
+    @apply -ms-4 w-24;
+    display: flex;
+    flex: none;
+    justify-content: center;
+  }
   .kozmos-navbar-navigation {
     display: flex;
     flex: 1 1 16rem;
@@ -35,6 +43,14 @@
     gap: 0.5rem;
     min-inline-size: 0;
     max-inline-size: 100%;
+  }
+  /* navigationAlign (GAP-196): the room the navigation grows into, from its
+     start or to its end; flex's start and end follow the direction. */
+  .kozmos-navbar-navigation[data-align="start"] {
+    justify-content: flex-start;
+  }
+  .kozmos-navbar-navigation[data-align="end"] {
+    justify-content: flex-end;
   }
   .kozmos-navbar-navigation > * {
     min-inline-size: 0;

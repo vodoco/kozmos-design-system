@@ -64,9 +64,9 @@ It forwards its ref to `HTMLSpanElement`. Its props are `SliderProps`, which ext
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional.
 - `value`: `number[]`, optional.
+- `name`: `string`, optional.
 - `max`: `number`, optional.
 - `min`: `number`, optional.
-- `name`: `string`, optional.
 - `orientation`: `React.AriaAttributes['aria-orientation']`, optional.
 - `onValueChange`: `(value: number[]) => void`, optional.
 - `step`: `number`, optional.

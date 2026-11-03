@@ -59,7 +59,24 @@ export function BottomSheetExample() {
 
 ## BottomSheet
 
-Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>`.
+Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> & { placement?: DrawerPlacement }`.
+
+- `placement`: `DrawerPlacement`, optional.
+
+  Where the drawer is drawn (GAP-198), as Backdrop's `placement`.
+  `"fixed"`, the default, slides over the window from its edge, in the
+  theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
+  in place, `absolute` against the nearest positioned box, so a panel can
+  sit in the region under a fixed header instead of covering it. A left or
+  right one floats there (decisions 139 and 148): 16 from its side and the
+  top, 420 wide at most, as tall as its content up to 32 short of the
+  region, which leaves 16 under it, with its border and the container's
+  corners all round. It is not modal unless `modal` says so, and then it is
+  a panel beside the page, not a dialog: it takes focus only when its
+  DrawerTrigger opens it, Tab and Shift+Tab leave it, a press or focus
+  outside leaves it open (close it in `onInteractOutside`, which a press on
+  its trigger doesn't reach), and Escape closes it only from inside: Escape
+  in the page is the page's. Closing gives focus back only if it was inside.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
@@ -69,7 +86,7 @@ Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof Dia
 
 ## BottomSheetTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `DialogTriggerProps`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<DialogTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
@@ -93,10 +110,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
 
   The sheet's accessible name.
 
-  A dialog without a title is unnamed to a screen reader, and Radix says so
-  in the console — but a `Heading` inside the sheet type-checks, renders and
-  satisfies nothing, so the sheet ships unlabelled. That is what happened
-  while rebuilding the SDK's POI detail card.
+  A sheet without a title is unnamed to a screen reader, and the console says
+  so — but a `Heading` inside the sheet type-checks, renders and satisfies
+  nothing, so the sheet ships unlabelled. That is what happened while
+  rebuilding the SDK's POI detail card.
 
   Pass `title` and the name is rendered for assistive technology and drawn
   nowhere, which is what you want when your own markup already shows the
@@ -104,6 +121,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
   children instead and leave this unset.
 
 - `side`: `DrawerSide`, optional.
+- `closeLabel`: `string`, optional.
+
+  The close's accessible name, "Close drawer" by default, as Dialog's.
+
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]`, optional.
 - `showClose`: `boolean`, optional, default `true`.
 - `asChild`: `boolean`, optional.
@@ -182,6 +203,14 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `Omit<DialogDescrip
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### DrawerPlacement
+
+From `@kozmos-ds/react`.
+
+```ts
+type DrawerPlacement = "fixed" | "inline";
+```
 
 ### DrawerSide
 

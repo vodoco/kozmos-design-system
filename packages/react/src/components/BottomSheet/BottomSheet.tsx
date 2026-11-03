@@ -24,10 +24,10 @@ export interface BottomSheetContentProps extends React.ComponentPropsWithoutRef<
   /**
    * The sheet's accessible name.
    *
-   * A dialog without a title is unnamed to a screen reader, and Radix says so
-   * in the console — but a `Heading` inside the sheet type-checks, renders and
-   * satisfies nothing, so the sheet ships unlabelled. That is what happened
-   * while rebuilding the SDK's POI detail card.
+   * A sheet without a title is unnamed to a screen reader, and the console says
+   * so — but a `Heading` inside the sheet type-checks, renders and satisfies
+   * nothing, so the sheet ships unlabelled. That is what happened while
+   * rebuilding the SDK's POI detail card.
    *
    * Pass `title` and the name is rendered for assistive technology and drawn
    * nowhere, which is what you want when your own markup already shows the
@@ -46,7 +46,7 @@ const BottomSheetContent = React.forwardRef<
     side="bottom"
     showClose={false}
     className={cn(
-      "inset-x-0 bottom-0 mt-24 flex h-auto max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] flex-col overscroll-contain rounded-t-container border-t bg-background !px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom))] !pt-0",
+      "inset-x-0 bottom-0 mt-24 flex h-auto max-h-[min(100%,calc(100dvh-env(safe-area-inset-top)-1rem))] flex-col overscroll-contain rounded-t-container border-t bg-background !px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom))] !pt-0",
       className,
     )}
     {...props}

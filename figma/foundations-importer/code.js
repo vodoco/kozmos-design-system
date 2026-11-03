@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d0f38ffc01fd";
+const PLUGIN_BUILD = "de7928e1c973";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -150,6 +150,24 @@ function treeSetVisibilityActions(componentSet) {
   return both;
 }
 const TREE_ITEM_DEPTHS = ["0", "1", "2"];
+// Divided (GAP-201), as React's `divided` on Tree and its rows: a 1px border
+// under the row, edge to edge, and an open parent row on background/50, under
+// a selected row's fill. A boolean property rather than an axis: TreeItem is
+// already the largest set in the library, and an axis would double all three.
+// Both layers are hidden until it is on, so an instance looks as it did.
+const TREE_DIVIDED_PROPERTY_NAME = "Divided";
+const TREE_DIVIDER = {
+  name: "Divider",
+  kind: "tree-divider",
+  token: "Border/Subtle",
+  fallback: "#C7CAD1",
+};
+const TREE_DIVIDED_SURFACE = {
+  name: "Divided Surface",
+  kind: "tree-divided-surface",
+  token: "Colors/background/50",
+  fallback: "#F1F2F4",
+};
 const TIMELINE_CONTENT = ["Basic", "Detailed"];
 const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
@@ -690,6 +708,13 @@ const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
 const DIALOG_CONTENT = ["Basic", "Form", "Footer"];
 const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
+// Where the drawer is drawn, as React's placement (GAP-198). Inline, a left or
+// right drawer floats in its region (decisions 139 and 148): 420 wide, as tall
+// as its content, its border and the container's corners all round. A top or
+// bottom one stays at its edge, as Fixed draws it. Fixed, React's default,
+// comes first: the variants built before the axis existed parse as Fixed and
+// keep their place at the head of the set, whose top-left is its default.
+const DRAWER_PLACEMENTS = ["Fixed", "Inline"];
 const POPOVER_SIDES = ["Top", "Right", "Bottom", "Left"];
 const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 const TOAST_CONTENT = ["Basic", "Action"];
@@ -765,6 +790,25 @@ const NAVIGATION_ITEM_VARIANT_LAYOUT = {
   },
 };
 const NAVBAR_CONTENT = ["Basic", "Actions", "Contextual"];
+// Where the navigation sits in the room between the leading slots (logo,
+// context, primary action) and the trailing ones (actions, utilities,
+// account), as React's navigationAlign (GAP-196). The Navigation Slot fills
+// that room whichever it is; its items move: centred, packed after the leading
+// slots, or packed before the trailing ones. Center, React's default, comes
+// first: the variants built before the axis existed parse as Center and keep
+// their place at the head of the set, Figma takes the top-left variant as the
+// set's default, and a Build lists the values in the order an Update leaves.
+const NAVBAR_NAVIGATION_ALIGN = ["Center", "Start", "End"];
+const NAVBAR_NAVIGATION_ALIGN_ITEMS = {
+  Start: "MIN",
+  Center: "CENTER",
+  End: "MAX",
+};
+// Whether the logo sits in a column as wide as Sidebar's rail, from the bar's
+// edge, as React's logoInset (GAP-208): the bar's start padding goes, and the
+// Logo Slot takes the rail's own variable with its logo centred. False, React's
+// default, comes first, as NavigationAlign's Center does.
+const NAVBAR_LOGO_INSET = ["False", "True"];
 const NAVBAR_SLOT_NAMES = [
   "Logo Slot",
   "Context Slot",
@@ -981,6 +1025,14 @@ const FLOOR_SELECTOR_TRAY_RADIUS =
   FLOOR_SELECTOR_ITEM_RADIUS + FLOOR_SELECTOR_ITEM_INSET;
 
 const SIDEBAR_CONTENT = ["Basic", "Sections", "Tools", "Rail"];
+// The room above the first slot, as React's inset (GAP-199). Default pads the
+// top as the bottom is padded; Flush drops it, so the first slot sits at the
+// top edge, under a product's fixed header. Every Content draws a Header Slot
+// (Rail's is the compact mark), and with a header React starts the header at
+// the edge and keeps the room between it and the navigation, so Flush moves
+// the top padding alone; the bottom keeps its room either way.
+const SIDEBAR_INSETS = ["Default", "Flush"];
+const SIDEBAR_PADDING_Y = 16;
 // Drawer's slot API. Header and Footer join the Content Slot that was already
 // there, so a product can supply its own title row and its own action row
 // instead of forking the component — which is what the Pointr Cloud sideDrawer
@@ -993,7 +1045,8 @@ const SIDEBAR_SLOT_NAMES = [
   "Footer Slot",
 ];
 const SIDEBAR_DEFAULT_WIDTH = 280;
-const SIDEBAR_RAIL_WIDTH = 80;
+// Code's rail, decision 42. Navbar's LogoInset column takes this width too.
+const SIDEBAR_RAIL_WIDTH = 96;
 const SIDEBAR_DEFAULT_HEIGHT = 360;
 const SIDEBAR_SLOT_WIDTH = 248;
 const SIDEBAR_RAIL_SLOT_WIDTH = 72;
@@ -2478,6 +2531,8 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to Basic, Actions, or Contextual shell examples.",
+      "NavigationAlign maps to Navbar.navigationAlign: Center (the default), Start after the leading slots, or End before the trailing ones.",
+      "LogoInset maps to Navbar.logoInset: True sets Logo Slot in a column as wide as Sidebar's rail, from the bar's edge, so a Home tile sits over the rail.",
       "Logo Slot maps to the leading brand region.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children in Code Connect.",
@@ -2489,6 +2544,8 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Content: Basic, Actions, Contextual",
+      "NavigationAlign: Center, Start, End",
+      "LogoInset: False, True",
       "Logo Slot",
       "Context Slot",
       "Navigation Slot",
@@ -2576,6 +2633,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to Basic, Sections, Tools, or Rail examples.",
+      "Inset maps to Sidebar.inset: Default, or Flush, the header at the top edge.",
       "Header Slot maps to a leading brand or account region.",
       "Navigation Slot maps to primary Sidebar children in Code Connect.",
       "Tools Slot maps to secondary action rows.",
@@ -2584,6 +2642,7 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Content: Basic, Sections, Tools, Rail",
+      "Inset: Default, Flush",
       "Header Slot",
       "Navigation Slot",
       "Tools Slot",
@@ -3026,6 +3085,7 @@ const COMPONENT_DOCS = [
       "Content Slot maps to Tree children in Code Connect and product code.",
       "Density maps to default and compact row rhythm.",
       "TreeParentItem and TreeChildItem own row states, labels, counts, icons, and secondary actions.",
+      "Tree.divided is each row's Divided property: the rows in the Content Slot are the designer's, and no Tree property reaches into a slot.",
       "Runtime code owns data, keyboard navigation, expansion state, selection callbacks, and nested action handlers.",
     ],
     properties: ["Density: Default, Compact", "Content Slot"],
@@ -3051,6 +3111,8 @@ const COMPONENT_DOCS = [
       "Expanded maps to disclosure open or closed state.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3060,6 +3122,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeParentItem rows should expose aria-expanded in product code.",
@@ -3082,6 +3145,8 @@ const COMPONENT_DOCS = [
     api: [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3090,6 +3155,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeChildItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -3114,6 +3180,8 @@ const COMPONENT_DOCS = [
       "Type maps to parent versus child row anatomy.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3124,6 +3192,7 @@ const COMPONENT_DOCS = [
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
+      "Divided",
     ],
     accessibility: [
       "TreeItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -3348,16 +3417,19 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Side maps to DrawerContent.side in Code Connect.",
+      "Placement maps to Drawer.placement: Fixed, the default, over the window, or Inline, in a region under a fixed header.",
+      "At Placement=Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round. Place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "The runtime owns focus trapping, dismiss behavior, and trigger composition.",
     ],
     properties: [
       "Side: Right, Left, Top, Bottom",
+      "Placement: Fixed, Inline",
       "Title Text, Description Text, Body Text",
     ],
     accessibility: [
-      "Drawer content uses Dialog primitives in React and equivalent modal semantics on native platforms.",
+      "Drawer content uses Dialog primitives in React and equivalent modal semantics on native platforms. Placement=Inline is a labelled complementary panel beside the page unless the product makes it modal.",
       "Product code should label the drawer and return focus to the trigger when dismissed.",
       "Text, surface, and boundary contrast pass in Light and Dark modes.",
     ],
@@ -6946,6 +7018,7 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Drawer/width/default", value: 408, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Drawer/width/inline", value: 420, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/height/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/sheet/width", value: 520, scopes: ["WIDTH_HEIGHT"] },
   { name: "Drawer/sheet/height", value: 320, scopes: ["WIDTH_HEIGHT"] },
@@ -6983,6 +7056,12 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Drawer/radius",
     value: 16,
     alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Drawer/radius/inline",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -18068,12 +18147,15 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Navbar") {
     return {
       Content: NAVBAR_CONTENT,
+      NavigationAlign: NAVBAR_NAVIGATION_ALIGN,
+      LogoInset: NAVBAR_LOGO_INSET,
     };
   }
 
   if (canonicalName === "Sidebar") {
     return {
       Content: SIDEBAR_CONTENT,
+      Inset: SIDEBAR_INSETS,
     };
   }
 
@@ -18105,6 +18187,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Drawer") {
     return {
       Side: DRAWER_SIDES,
+      Placement: DRAWER_PLACEMENTS,
     };
   }
 
@@ -20226,6 +20309,12 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
     const props = parseDrawerVariantName(component.name);
     if (!props) continue;
 
+    // A floating card is as tall as its content, so its body and slot hug.
+    const expectedVertical = drawerFloats(props.value, props.second)
+      ? "HUG"
+      : "FILL";
+    const expectedGrow = expectedVertical === "FILL" ? 1 : 0;
+
     const body = directChildNamed(component, "Drawer Body");
     if (!body || body.type !== "FRAME") {
       issues.push({
@@ -20251,12 +20340,15 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
       issues,
       kind: "drawer-body-vertical-sizing",
       field: "layoutSizingVertical",
-      expected: "FILL",
+      expected: expectedVertical,
       actual: body.layoutSizingVertical,
       variant: component.name,
     });
 
-    if (typeof body.layoutGrow === "number" && body.layoutGrow !== 1) {
+    if (
+      typeof body.layoutGrow === "number" &&
+      body.layoutGrow !== expectedGrow
+    ) {
       issues.push({
         kind: "drawer-body-primary-axis-fill",
         variant: component.name,
@@ -20265,7 +20357,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         nodeId: body.id,
         urlNodeId: nodeIdForUrl(body.id),
         field: "layoutGrow",
-        expected: 1,
+        expected: expectedGrow,
         actual: body.layoutGrow,
       });
     }
@@ -20278,7 +20370,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         node: body.name,
         nodeId: body.id,
         urlNodeId: nodeIdForUrl(body.id),
-        expected: "Drawer Body should contain a fill-height Content Slot.",
+        expected: "Drawer Body should contain a Content Slot.",
       });
     } else {
       auditAutoLayoutSizing({
@@ -20295,14 +20387,14 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
         issues,
         kind: "drawer-content-slot-vertical-sizing",
         field: "layoutSizingVertical",
-        expected: "FILL",
+        expected: expectedVertical,
         actual: contentSlot.layoutSizingVertical,
         variant: component.name,
       });
 
       if (
         typeof contentSlot.layoutGrow === "number" &&
-        contentSlot.layoutGrow !== 1
+        contentSlot.layoutGrow !== expectedGrow
       ) {
         issues.push({
           kind: "drawer-content-slot-primary-axis-fill",
@@ -20312,7 +20404,7 @@ function auditDrawerAutoLayoutIntegrity(componentSet, issues) {
           nodeId: contentSlot.id,
           urlNodeId: nodeIdForUrl(contentSlot.id),
           field: "layoutGrow",
-          expected: 1,
+          expected: expectedGrow,
           actual: contentSlot.layoutGrow,
         });
       }
@@ -27470,6 +27562,7 @@ function bindDialogGeometryVariables(
 function bindDrawerGeometryVariables(
   component,
   side,
+  floats,
   header,
   body,
   footer,
@@ -27481,17 +27574,24 @@ function bindDrawerGeometryVariables(
   bindFloatVariable(
     component,
     "width",
-    horizontal ? "Drawer/width/default" : "Drawer/sheet/width",
+    floats
+      ? "Drawer/width/inline"
+      : horizontal
+        ? "Drawer/width/default"
+        : "Drawer/sheet/width",
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "height",
-    horizontal ? "Drawer/height/default" : "Drawer/sheet/height",
-    variableByName,
-    stats,
-  );
+  // A floating card is as tall as its content, so nothing holds its height.
+  if (!floats) {
+    bindFloatVariable(
+      component,
+      "height",
+      horizontal ? "Drawer/height/default" : "Drawer/sheet/height",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "paddingLeft",
@@ -27530,7 +27630,7 @@ function bindDrawerGeometryVariables(
   bindFloatVariable(
     component,
     "cornerRadius",
-    "Drawer/radius",
+    floats ? "Drawer/radius/inline" : "Drawer/radius",
     variableByName,
     stats,
   );
@@ -33776,20 +33876,27 @@ async function updateDialogComponent() {
   });
 }
 
+// The rows are 360 tall at Fixed, and a floating card's content can grow.
+const DRAWER_PLACEMENT_ROW_STEP = 480;
+
 async function buildDrawerComponent() {
   return buildSingleAxisComponent({
     componentName: "Drawer",
     componentSetName: "Drawer",
     axisName: "Side",
     values: DRAWER_SIDES,
+    axis2Name: "Placement",
+    axis2Values: DRAWER_PLACEMENTS,
     x: 80,
     y: 5840,
     xStep: 560,
+    yStep: DRAWER_PLACEMENT_ROW_STEP,
     createVariant: createDrawerVariant,
     configureProperties: configureDrawerProperties,
     description: [
       "Kozmos Drawer component set generated from React DrawerContent API.",
       "Side maps to DrawerContent.side.",
+      "Placement maps to Drawer.placement. At Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round; place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "Drawer is a generic edge sheet; product-specific navigation, filters, and map content remain composition concerns.",
@@ -33803,7 +33910,10 @@ async function updateDrawerComponent() {
     componentSetName: "Drawer",
     axisName: "Side",
     values: DRAWER_SIDES,
+    axis2Name: "Placement",
+    axis2Values: DRAWER_PLACEMENTS,
     xStep: 560,
+    yStep: DRAWER_PLACEMENT_ROW_STEP,
     createVariant: createDrawerVariant,
     updateVariant: updateDrawerVariant,
     parseVariantName: parseDrawerVariantName,
@@ -33811,6 +33921,7 @@ async function updateDrawerComponent() {
     description: [
       "Kozmos Drawer component set generated from React DrawerContent API.",
       "Side maps to DrawerContent.side.",
+      "Placement maps to Drawer.placement. At Inline a Right or Left drawer floats: 420 wide, as tall as its content, its border and the container's corners all round; place it 16 from every edge of its region. Top and Bottom stay at their edge.",
       "Title Text, Description Text, and Body Text map to composed drawer content.",
       "Footer actions compose live Button instances.",
       "Drawer is a generic edge sheet; product-specific navigation, filters, and map content remain composition concerns.",
@@ -38816,6 +38927,8 @@ function navbarComponentConfig() {
     description: [
       "Kozmos Navbar component set generated from React Navbar API.",
       "Content maps to Basic, Actions, and Contextual navigation shell examples.",
+      "NavigationAlign maps to Navbar.navigationAlign: Center, the default, centres the navigation in the room between the leading and trailing slots; Start packs it after the logo, context and primary action, End before the actions, utilities and account.",
+      "LogoInset maps to Navbar.logoInset: True sets Logo Slot in a column as wide as Sidebar's rail, from the bar's edge, with the logo centred, so a Home tile sits over the rail.",
       "Logo Slot maps to the leading brand area.",
       "Context Slot maps to workspace, tenant, project, or scope switcher content.",
       "Navigation Slot maps to Navbar children.",
@@ -38846,6 +38959,7 @@ function sidebarComponentConfig() {
     description: [
       "Kozmos Sidebar component set generated from React Sidebar API.",
       "Content maps to Basic, Sections, Tools, and Rail navigation shell examples.",
+      "Inset maps to Sidebar.inset: Default pads the top as the bottom; Flush draws the header at the top edge, under a product's fixed header, and keeps the room under it and at the bottom.",
       "Header Slot maps to brand, account, or workspace content.",
       "Navigation Slot maps to the primary Sidebar navigation content.",
       "Tools Slot maps to secondary actions or utility rows.",
@@ -38972,6 +39086,8 @@ function treeParentItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeParentItem with TreeChildItem to compose product-specific trees.",
     ],
   };
@@ -38998,6 +39114,8 @@ function treeChildItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeChildItem with TreeParentItem to compose product-specific trees.",
     ],
   };
@@ -39026,6 +39144,8 @@ function treeItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Prefer TreeParentItem and TreeChildItem for new product trees; TreeItem stays as a switchable compatibility row.",
     ],
   };
@@ -39145,38 +39265,70 @@ function parseNavigationItemVariantName(name) {
 }
 
 function navbarVariantCombinations() {
-  return NAVBAR_CONTENT.map((content) => ({ content }));
+  const combinations = [];
+  for (const content of NAVBAR_CONTENT) {
+    for (const navigationAlign of NAVBAR_NAVIGATION_ALIGN) {
+      for (const logoInset of NAVBAR_LOGO_INSET) {
+        combinations.push({ content, navigationAlign, logoInset });
+      }
+    }
+  }
+  return combinations;
 }
 
 function navbarVariantKey(props) {
-  return props.content;
+  return `${props.content}/${props.navigationAlign}/${props.logoInset}`;
 }
 
+// A variant built before the NavigationAlign axis existed is named
+// "Content=Basic" and parses as Center, React's default, and one built before
+// LogoInset as False, so Update renames it in place and the node ids Code
+// Connect pins survive.
 function parseNavbarVariantName(name) {
   const values = parseVariantValueMap(name);
+  const navigationAlign = values.NavigationAlign || "Center";
+  const logoInset = values.LogoInset || "False";
+  if (
+    NAVBAR_NAVIGATION_ALIGN.indexOf(navigationAlign) === -1 ||
+    NAVBAR_LOGO_INSET.indexOf(logoInset) === -1
+  ) {
+    return null;
+  }
   if (values.Content === "Product") {
-    return { content: "Contextual" };
+    return { content: "Contextual", navigationAlign, logoInset };
   }
   if (NAVBAR_CONTENT.indexOf(values.Content) === -1) {
     return null;
   }
-  return { content: values.Content };
+  return { content: values.Content, navigationAlign, logoInset };
 }
 
 function sidebarVariantCombinations() {
-  return SIDEBAR_CONTENT.map((content) => ({ content }));
+  const combinations = [];
+  for (const content of SIDEBAR_CONTENT) {
+    for (const inset of SIDEBAR_INSETS) {
+      combinations.push({ content, inset });
+    }
+  }
+  return combinations;
 }
 
 function sidebarVariantKey(props) {
-  return props.content;
+  return `${props.content}/${props.inset}`;
 }
 
+// A variant built before the Inset axis existed is named "Content=Basic" and
+// parses as Default, so Update renames it in place and keeps its node id.
 function parseSidebarVariantName(name) {
   const values = parseVariantValueMap(name);
-  if (SIDEBAR_CONTENT.indexOf(values.Content) === -1) {
+  const inset = values.Inset || "Default";
+  if (
+    SIDEBAR_CONTENT.indexOf(values.Content) === -1 ||
+    SIDEBAR_INSETS.indexOf(inset) === -1
+  ) {
     return null;
   }
-  return { content: values.Content };
+  return { content: values.Content, inset };
 }
 
 function backdropVariantCombinations() {
@@ -39946,6 +40098,10 @@ async function syncTreeRowNode(
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
 
+  if (asComponentVariant) {
+    syncTreeDividedLayers(rowNode, { row, metrics, variableByName, stats });
+  }
+
   syncFocusRing(rowNode, {
     enabled: row.focused,
     width: metrics.width,
@@ -39963,6 +40119,86 @@ async function syncTreeRowNode(
   }
 
   return { iconNodes };
+}
+
+/**
+ * Does a divided row draw the open parent's surface? An expanded parent row
+ * that is neither selected nor hovered. In code the surface is on a box round
+ * the row and the fills draw over it, rounded; here the surface would be a
+ * layer over the row's own fill, so a hovered or selected row draws its fill
+ * alone.
+ */
+function treeRowDrawsDividedSurface(row) {
+  return Boolean(
+    row.expandable && row.expanded && !row.selected && !row.hovered,
+  );
+}
+
+/**
+ * Divided's layers (GAP-201), hidden until the Divided property shows them:
+ * the divider, 1 high along the row's bottom edge and the row's full width,
+ * the border role; and on an open parent row, the surface behind everything
+ * the row draws, background/50 and square. Both are absolute, so the row's
+ * auto layout is what it was, and stretch with the row.
+ *
+ * The row keeps its rounded corners, as in code, where the hover and selected
+ * fills stay rounded over the surface. Code draws the divider under the row,
+ * a pixel below its height, and both reach Tree's bleed past it; a boolean
+ * drives visibility, not size, so here both sit within the row.
+ */
+function syncTreeDividedLayers(
+  rowNode,
+  { row, metrics, variableByName, stats },
+) {
+  const absolute = rowNode.layoutMode && rowNode.layoutMode !== "NONE";
+
+  if (treeRowDrawsDividedSurface(row)) {
+    const surface = figma.createRectangle();
+    surface.name = TREE_DIVIDED_SURFACE.name;
+    surface.resize(metrics.width, metrics.rowHeight);
+    surface.cornerRadius = KOZMOS_RADIUS.none;
+    surface.fills = [
+      paintFromVariable(
+        TREE_DIVIDED_SURFACE.token,
+        TREE_DIVIDED_SURFACE.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    surface.strokes = [];
+    surface.setSharedPluginData(
+      RUN_NAMESPACE,
+      "kind",
+      TREE_DIVIDED_SURFACE.kind,
+    );
+    rowNode.insertChild(0, surface);
+    if (absolute) surface.layoutPositioning = "ABSOLUTE";
+    surface.x = 0;
+    surface.y = 0;
+    surface.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    surface.visible = false;
+  }
+
+  const divider = figma.createRectangle();
+  divider.name = TREE_DIVIDER.name;
+  divider.resize(metrics.width, 1);
+  divider.cornerRadius = KOZMOS_RADIUS.none;
+  divider.fills = [
+    paintFromVariable(
+      TREE_DIVIDER.token,
+      TREE_DIVIDER.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  divider.strokes = [];
+  divider.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_DIVIDER.kind);
+  rowNode.appendChild(divider);
+  if (absolute) divider.layoutPositioning = "ABSOLUTE";
+  divider.x = 0;
+  divider.y = metrics.rowHeight - 1;
+  divider.constraints = { horizontal: "STRETCH", vertical: "MAX" };
+  divider.visible = false;
 }
 
 function shouldShowTreeActions(row) {
@@ -40894,14 +41130,20 @@ async function updateNavbarVariant(
 ) {
   const hasActions = props.content === "Actions";
   const isContextual = props.content === "Contextual";
-  component.name = `Content=${props.content}`;
+  const navigationAlign = props.navigationAlign || "Center";
+  const logoInset = (props.logoInset || "False") === "True";
+  component.name = `Content=${props.content}, NavigationAlign=${navigationAlign}, LogoInset=${logoInset ? "True" : "False"}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = isContextual ? 10 : 16;
-  component.paddingLeft = 16;
+  // Past the column, React's 16, so what follows starts 16 beyond the rail.
+  component.itemSpacing = isContextual && !logoInset ? 10 : 16;
+  // A bound padding would ignore the 0 (a variant Update repaints keeps its
+  // bindings), so it goes first.
+  if (logoInset) clearBoundVariable(component, "paddingLeft", stats);
+  component.paddingLeft = logoInset ? 0 : 16;
   component.paddingRight = 16;
   component.paddingTop = 0;
   component.paddingBottom = 0;
@@ -40928,13 +41170,15 @@ async function updateNavbarVariant(
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "paddingLeft",
-    "Navbar/padding/x",
-    variableByName,
-    stats,
-  );
+  if (!logoInset) {
+    bindFloatVariable(
+      component,
+      "paddingLeft",
+      "Navbar/padding/x",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "paddingRight",
@@ -40960,14 +41204,35 @@ async function updateNavbarVariant(
 
   const logoSlot = await createNavbarLogoSlot({
     component,
-    compact: isContextual,
+    // The column is a tile's: the mark alone, as the name would overrun it.
+    compact: isContextual || logoInset,
     reusableSlot: reusableSlotNamed(reusableSlots, "Logo Slot"),
     variableByName,
     fonts,
     stats,
   });
   component.appendChild(logoSlot);
-  setHugChildSizing(logoSlot);
+  if (logoInset) {
+    // The column is the rail: its own variable, so the two can't part, and
+    // written after the slot is configured, which resets its alignment.
+    setFixedChildSizing(logoSlot);
+    resizeNodeWithoutConstraints(logoSlot, SIDEBAR_RAIL_WIDTH, logoSlot.height);
+    bindFloatVariable(
+      logoSlot,
+      "width",
+      "Sidebar/width/rail",
+      variableByName,
+      stats,
+    );
+    if (
+      !setNodePropertyIfSupported(logoSlot, "primaryAxisAlignItems", "CENTER")
+    )
+      stats.warnings.push(
+        `${component.name}: the Logo Slot refused its centred alignment, so the logo sits at the column's start.`,
+      );
+  } else {
+    setHugChildSizing(logoSlot);
+  }
 
   if (isContextual) {
     const contextSlot = await createNavbarContextSlot({
@@ -41001,6 +41266,20 @@ async function updateNavbarVariant(
   });
   component.appendChild(navigationSlot);
   setHorizontalStackFillHugChildSizing(navigationSlot);
+  // The slot fills the room between the leading and trailing slots, as
+  // React's navigation grows into it; NavigationAlign places its items there
+  // (GAP-196). Written after the slot is configured, which resets it to MIN,
+  // and on a designer's own items as on the generated ones.
+  if (
+    !setNodePropertyIfSupported(
+      navigationSlot,
+      "primaryAxisAlignItems",
+      NAVBAR_NAVIGATION_ALIGN_ITEMS[navigationAlign],
+    )
+  )
+    stats.warnings.push(
+      `${component.name}: the Navigation Slot refused its alignment, so its items sit at the slot's start.`,
+    );
 
   if (hasActions) {
     const actionsSlot = await createNavbarActionsSlot({
@@ -41706,7 +41985,8 @@ async function updateSidebarVariant(
 ) {
   const isRail = props.content === "Rail";
   const hasTools = props.content === "Tools";
-  component.name = `Content=${props.content}`;
+  const inset = props.inset || "Default";
+  component.name = `Content=${props.content}, Inset=${inset}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -41715,8 +41995,10 @@ async function updateSidebarVariant(
   component.itemSpacing = isRail ? 12 : 16;
   component.paddingLeft = isRail ? 4 : 16;
   component.paddingRight = isRail ? 4 : 16;
-  component.paddingTop = 16;
-  component.paddingBottom = 16;
+  // Flush (GAP-199): the header at the top edge, the room under it to the
+  // navigation kept, and the bottom padded as before.
+  component.paddingTop = inset === "Flush" ? 0 : SIDEBAR_PADDING_Y;
+  component.paddingBottom = SIDEBAR_PADDING_Y;
   component.resizeWithoutConstraints(
     isRail ? SIDEBAR_RAIL_WIDTH : SIDEBAR_DEFAULT_WIDTH,
     SIDEBAR_DEFAULT_HEIGHT,
@@ -42598,8 +42880,17 @@ function layoutNavbarVariants(componentSet) {
     if (child.type !== "COMPONENT") continue;
     const props = parseNavbarVariantName(child.name);
     if (!props) continue;
-    child.x = NAVBAR_CONTENT.indexOf(props.content) * 780;
-    child.y = 0;
+    // A column per Content, the bar's width and 80 apart (at 780 apart the
+    // 880 bars overlapped by 100), and a row per NavigationAlign, Center on
+    // top so the set's top-left variant, its default, is React's; the
+    // LogoInset rows under those.
+    child.x =
+      NAVBAR_CONTENT.indexOf(props.content) * (NAVBAR_DEFAULT_WIDTH + 80);
+    child.y =
+      (NAVBAR_NAVIGATION_ALIGN.indexOf(props.navigationAlign) +
+        NAVBAR_LOGO_INSET.indexOf(props.logoInset) *
+          NAVBAR_NAVIGATION_ALIGN.length) *
+      (NAVBAR_DEFAULT_HEIGHT + 40);
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -42613,7 +42904,9 @@ function layoutSidebarVariants(componentSet) {
     const props = parseSidebarVariantName(child.name);
     if (!props) continue;
     child.x = SIDEBAR_CONTENT.indexOf(props.content) * 340;
-    child.y = 0;
+    // A row per Inset, Default on top: the set's default stays Basic, Default.
+    child.y =
+      SIDEBAR_INSETS.indexOf(props.inset) * (SIDEBAR_DEFAULT_HEIGHT + 40);
   }
 
   resizeComponentSetToContainChildren(componentSet);
@@ -42945,7 +43238,37 @@ async function configureTreeItemProperties(
   );
   configureFocusVisibleProperty(componentSet, stats);
   configureTreeActionVisibilityProperties(componentSet, stats);
+  configureTreeDividedProperty(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Divided, a boolean off by default, showing every row's divider and each open
+ * parent row's surface (GAP-201). Off, an instance draws as it did before the
+ * property existed.
+ */
+function configureTreeDividedProperty(componentSet, stats) {
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    TREE_DIVIDED_PROPERTY_NAME,
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    const kind = generatedKind(node);
+    if (kind === TREE_DIVIDER.kind || kind === TREE_DIVIDED_SURFACE.kind) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeDividedBindings = boundCount;
 }
 
 /**
@@ -59488,10 +59811,17 @@ async function updateDialogVariant(
   normalizeDialogVariantCompositeSizing(component);
 }
 
-async function createDrawerVariant({ value, variableByName, fonts, stats }) {
+async function createDrawerVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateDrawerVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -59511,31 +59841,45 @@ function parseDrawerVariantName(name) {
     values[key] = value;
   }
 
-  if (DRAWER_SIDES.indexOf(values.Side) === -1) {
+  // A variant built before the Placement axis existed parses as Fixed, so
+  // Update renames it in place and the node ids Code Connect pins survive.
+  const placement = values.Placement || "Fixed";
+  if (
+    DRAWER_SIDES.indexOf(values.Side) === -1 ||
+    DRAWER_PLACEMENTS.indexOf(placement) === -1
+  ) {
     return null;
   }
 
   return {
     value: values.Side,
+    second: placement,
   };
 }
 
-function drawerVariantSize(side) {
+/** A left or right inline drawer floats; a top or bottom one stays at its edge. */
+function drawerFloats(side, placement) {
+  return placement === "Inline" && (side === "Left" || side === "Right");
+}
+
+function drawerVariantSize(side, placement) {
   const horizontal = side === "Left" || side === "Right";
   return {
-    width: horizontal ? 408 : 520,
+    width: drawerFloats(side, placement) ? 420 : horizontal ? 408 : 520,
     height: horizontal ? 360 : 320,
   };
 }
 
 async function updateDrawerVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const side = value;
-  const size = drawerVariantSize(side);
+  const placement = second || "Fixed";
+  const floats = drawerFloats(side, placement);
+  const size = drawerVariantSize(side, placement);
 
-  component.name = `Side=${side}`;
+  component.name = `Side=${side}, Placement=${placement}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -59547,7 +59891,9 @@ async function updateDrawerVariant(
   component.paddingTop = 24;
   component.paddingBottom = 24;
   component.resizeWithoutConstraints(size.width, size.height);
-  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.cornerRadius = floats
+    ? KOZMOS_RADIUS.container
+    : KOZMOS_RADIUS.control;
   component.clipsContent = false;
   component.fills = [
     paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
@@ -59560,14 +59906,18 @@ async function updateDrawerVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Drawer");
   component.setSharedPluginData(RUN_NAMESPACE, "side", side);
+  component.setSharedPluginData(RUN_NAMESPACE, "placement", placement);
 
   await syncDrawerVariantChildren({
     component,
     side,
+    placement,
     variableByName,
     fonts,
     stats,
   });
+  // Last, past every resize: a floating card is as tall as its content.
+  if (floats) component.primaryAxisSizingMode = "AUTO";
 }
 
 async function createPopoverVariant({ value, variableByName, fonts, stats }) {
@@ -66595,6 +66945,7 @@ async function syncBottomSheetFooterAction({
 async function syncDrawerVariantChildren({
   component,
   side,
+  placement,
   variableByName,
   fonts,
   stats,
@@ -66610,7 +66961,8 @@ async function syncDrawerVariantChildren({
   );
   removeDirectChildrenExceptMany(component, Object.values(reusableSlots));
   const reusableContentSlot = reusableSlotNamed(reusableSlots, "Content Slot");
-  const size = drawerVariantSize(side);
+  const floats = drawerFloats(side, placement);
+  const size = drawerVariantSize(side, placement);
   const contentWidth = size.width - 48;
 
   const header = figma.createFrame();
@@ -66763,11 +67115,17 @@ async function syncDrawerVariantChildren({
     reusableSlot: reusableContentSlot,
     stats,
   });
-  setVerticalStackFillChildSizing(contentSlot);
+  if (floats) setVerticalStackChildSizing(contentSlot);
+  else setVerticalStackFillChildSizing(contentSlot);
 
   component.appendChild(body);
   setLayoutSizingHorizontal(body, "FILL");
-  setVerticalStackFillChildSizing(body);
+  if (floats) {
+    body.primaryAxisSizingMode = "AUTO";
+    setVerticalStackChildSizing(body);
+  } else {
+    setVerticalStackFillChildSizing(body);
+  }
 
   const footer = figma.createFrame();
   footer.name = "Drawer Footer";
@@ -66819,6 +67177,7 @@ async function syncDrawerVariantChildren({
   bindDrawerGeometryVariables(
     component,
     side,
+    floats,
     header,
     body,
     footer,

@@ -57,7 +57,11 @@ export function DrawerExample() {
 
 ## DrawerContent
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]; showClose?: boolean; side?: DrawerSide }`.
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { closeLabel?: string; portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]; showClose?: boolean; side?: DrawerSide }`.
+
+- `closeLabel`: `string`, optional, default `"Close drawer"`.
+
+  The close's accessible name, "Close drawer" by default, as Dialog's.
 
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]`, optional.
 - `showClose`: `boolean`, optional, default `true`.
@@ -105,17 +109,34 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## Drawer
 
-Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>`.
+Its props are `DrawerProps`, which is `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> & { placement?: DrawerPlacement }`.
+
+- `placement`: `DrawerPlacement`, optional, default `"fixed"`.
+
+  Where the drawer is drawn (GAP-198), as Backdrop's `placement`.
+  `"fixed"`, the default, slides over the window from its edge, in the
+  theme's portal, and is modal unless `modal={false}`. `"inline"` draws it
+  in place, `absolute` against the nearest positioned box, so a panel can
+  sit in the region under a fixed header instead of covering it. A left or
+  right one floats there (decisions 139 and 148): 16 from its side and the
+  top, 420 wide at most, as tall as its content up to 32 short of the
+  region, which leaves 16 under it, with its border and the container's
+  corners all round. It is not modal unless `modal` says so, and then it is
+  a panel beside the page, not a dialog: it takes focus only when its
+  DrawerTrigger opens it, Tab and Shift+Tab leave it, a press or focus
+  outside leaves it open (close it in `onInteractOutside`, which a press on
+  its trigger doesn't reach), and Escape closes it only from inside: Escape
+  in the page is the page's. Closing gives focus back only if it was inside.
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
-- `defaultOpen`: `boolean`, optional.
+- `defaultOpen`: `boolean`, optional, default `false`.
 - `onOpenChange`: `(open: boolean) => void`, optional.
-- `modal`: `boolean`, optional.
+- `modal`: `boolean`, optional, default `placement === "fixed"`.
 
 ## DrawerTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `DialogPrimitive.DialogTriggerProps`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<DialogPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
@@ -197,6 +218,14 @@ From `@kozmos-ds/react`.
 type DrawerSide = "left" | "right" | "top" | "bottom";
 ```
 
+### DrawerPlacement
+
+From `@kozmos-ds/react`.
+
+```ts
+type DrawerPlacement = "fixed" | "inline";
+```
+
 ## Also exported
 
 - `DrawerContentProps` (type).
@@ -205,6 +234,8 @@ type DrawerSide = "left" | "right" | "top" | "bottom";
   type DrawerContentProps = React.ComponentPropsWithoutRef<
     typeof DialogPrimitive.Content
   > & {
+    /** The close's accessible name, "Close drawer" by default, as Dialog's. */
+    closeLabel?: string;
     portalContainer?: React.ComponentPropsWithoutRef<
       typeof DialogPrimitive.Portal
     >["container"];

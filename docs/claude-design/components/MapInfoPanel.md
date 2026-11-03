@@ -91,11 +91,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `MapInfoProps`, which ext
   Hide the capability without hiding map content.
 
 - `content`: `MapInfoContent`, **required**.
+- `closeLabel`: `string`, optional.
 - `brand`: `React.ReactNode`, optional.
 
   Optional approved artwork. Caller supplies an accessible label for meaningful logos.
 
-- `closeLabel`: `string`, optional.
 - `faqLabel`: `string`, optional.
 - `copyrightLabel`: `string`, optional.
 

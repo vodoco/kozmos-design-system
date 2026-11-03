@@ -744,7 +744,7 @@ function figmaAxes() {
   return byComponent;
 }
 
-function compareAxes(component, platform, reference, target) {
+export function compareAxes(component, platform, reference, target) {
   const missingAxes = [];
   const missingValues = [];
   const booleanProps = [];
@@ -772,9 +772,15 @@ function compareAxes(component, platform, reference, target) {
     );
     const acceptable = [axis, ...aliases].map(normalizeRaw);
 
-    const targetAxis = Object.keys(target).find((candidate) =>
-      acceptable.includes(normalizeRaw(candidate)),
-    );
+    // Its own name first: Drawer's placement is an alias of side, and Figma's
+    // set has a Side and a Placement of its own.
+    const targetAxis =
+      Object.keys(target).find(
+        (candidate) => normalizeRaw(candidate) === normalizeRaw(axis),
+      ) ??
+      Object.keys(target).find((candidate) =>
+        acceptable.includes(normalizeRaw(candidate)),
+      );
 
     if (!targetAxis) {
       missingAxes.push(`${axis} (${values.join(", ")})`);

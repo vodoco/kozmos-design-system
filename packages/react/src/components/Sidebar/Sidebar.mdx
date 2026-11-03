@@ -24,6 +24,19 @@ between them. Its header and footer stay centred. See NavigationItem's Rail sect
 
 <Canvas of={SidebarStories.Rail} />
 
+## Flush under a header
+
+`inset="flush"` starts the sidebar's first slot at its top edge (GAP-199): a rail under a fixed
+header, its first item flush under it, as Pointr Cloud draws its side menu. The default
+pads the top 24, and the navigation 16 more, so the first item sits 40 below the edge. On a rail
+whose navigation is first, flush drops both: rail items ring their focus inside themselves, so the
+first one's ring is whole at the edge. With a `header`, the header starts at the edge and the
+navigation keeps its 16 below it. An expanded sidebar drops the 24 and keeps the 16, the room its
+items' rings take outside them, which the scrolling navigation would otherwise cut. The bottom keeps
+its room either way.
+
+<Canvas of={SidebarStories.Flush} />
+
 ## Implementation
 
 <div className="subheading">Code</div>

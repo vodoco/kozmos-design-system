@@ -61,4 +61,31 @@ describe("Navbar", () => {
 
     expect(screen.getByText("Legacy Site")).toBeInTheDocument();
   });
+
+  it("sets its navigation at the start, the centre or the end (GAP-196)", () => {
+    const { rerender } = render(<Navbar navigation={<a href="#">Maps</a>} />);
+    const nav = () => screen.getByRole("navigation");
+    // The default keeps the bar as it was drawn: centred.
+    expect(nav()).toHaveAttribute("data-align", "center");
+    for (const align of ["start", "end", "center"] as const) {
+      rerender(
+        <Navbar navigation={<a href="#">Maps</a>} navigationAlign={align} />,
+      );
+      expect(nav()).toHaveAttribute("data-align", align);
+      expect(nav()).toHaveClass("kozmos-navbar-navigation");
+    }
+  });
+
+  it("sets the logo in the rail's column only with logoInset (GAP-208)", () => {
+    const logo = () =>
+      document.querySelector('[data-slot="navbar-logo"]') as HTMLElement;
+    const { rerender } = render(<Navbar logo={<a href="#">Home</a>} />);
+    expect(logo()).not.toHaveAttribute("data-inset");
+    rerender(<Navbar logoInset logo={<a href="#">Home</a>} />);
+    expect(logo()).toHaveAttribute("data-inset", "true");
+    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    // No logo, no column.
+    rerender(<Navbar logoInset />);
+    expect(logo()).toBeNull();
+  });
 });

@@ -20,6 +20,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * The rail's width, its edge included. KozmosNavbar's `logoInset` column reads
+ * it too (GAP-208), so the two can't part.
+ */
+internal val KozmosRailWidth = 96.dp
+
 enum class KozmosSidebarVariant {
     Expanded,
     Rail
@@ -54,7 +60,7 @@ fun KozmosSidebar(
     // the edge begins; they stack with no gap between them.
     PermanentDrawerSheet(
         modifier = modifier
-            .width(if (isRail) 96.dp else 280.dp)
+            .width(if (isRail) KozmosRailWidth else 280.dp)
             .then(
                 if (isRail) {
                     Modifier.drawWithContent {
