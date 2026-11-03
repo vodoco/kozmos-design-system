@@ -331,6 +331,12 @@ jobs:
       - name: Verify Native Icons Are Generated From Pointr's Artwork
         run: pnpm icons:native:check
 
+      # Every alias has to resolve and every platform has to hold the web's
+      # names: a typo in the aliases draws nothing on the web and a stand-in on
+      # the natives, with nothing to say so.
+      - name: Verify The Icon Registry And Its Platforms Agree
+        run: pnpm icons:names:check
+
       - name: Parse React Code Connect
         run: pnpm figma:parse:linked
 
@@ -419,6 +425,29 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:stepper-dots
           ADAPTIVE_BROWSER=firefox pnpm test:stepper-dots
 
+      # GAP-038, decision 131: Progress's ring, read from the pixels each
+      # engine paints. The arc runs clockwise from 12 o'clock for value / max
+      # of the turn, right to left too; the band is its stroke all the way
+      # round at 1x and 2x; the theme fill is 3:1 on the track and the page;
+      # the centre label names or describes the bar once; reduced motion and
+      # forced colours (scripts/check-progress-ring.mjs).
+      - name: Verify Progress Ring
+        run: |
+          pnpm test:progress-ring
+          ADAPTIVE_BROWSER=webkit pnpm test:progress-ring
+          ADAPTIVE_BROWSER=firefox pnpm test:progress-ring
+      # GAP-028, GAP-130: the product's own actions. On a selected result they
+      # follow Go and Details in order, 44 or more and inside the card, their
+      # icon a hidden mark at their words' start in both directions; Tab
+      # reaches them and Enter and Space run each once with its id; on the
+      # details card they end the strip, which scrolls a focused one into
+      # view; axe finds nothing (scripts/check-host-actions.mjs).
+      - name: Verify Host Actions
+        run: |
+          pnpm test:host-actions
+          ADAPTIVE_BROWSER=webkit pnpm test:host-actions
+          ADAPTIVE_BROWSER=firefox pnpm test:host-actions
+
       # GAP-194: Card's padding. Content, or a footer, that is the card's
       # first child pays the top as well as its sides and bottom, in both
       # paddings (24, and 16 compact); a header-led card is drawn as before,
@@ -446,6 +475,43 @@ jobs:
           pnpm test:tour-step
           ADAPTIVE_BROWSER=webkit pnpm test:tour-step
           ADAPTIVE_BROWSER=firefox pnpm test:tour-step
+
+      # GAP-205: CardTitle's heading level. `as` takes h2 to h6 and the title
+      # is an h3 without it; a page titled with an h1 and a card titled
+      # as="h2" passes axe's heading-order, and every level looks the same
+      # (scripts/check-card-title-level.mjs).
+      - name: Verify Card Title Level
+        run: |
+          pnpm test:card-title-level
+          ADAPTIVE_BROWSER=webkit pnpm test:card-title-level
+          ADAPTIVE_BROWSER=firefox pnpm test:card-title-level
+
+      # GAP-167: toast() and Toaster. Each toast is announced once, at its
+      # tone's politeness and in the product's words, even while a modal
+      # Select hides the page; focus is never taken; the queue holds to its
+      # limit, oldest first; a toast pauses while hovered or focused and
+      # closes by its button, Escape, a swipe and its action; neither reduced
+      # motion moves it; each Toaster draws in its own provider's portal, once
+      # per id, untrapped by a box that isolates; it draws above an open
+      # Drawer and its style moves it clear of one; right to left it sits,
+      # swipes and leaves toward the inline end, and a closing toast slides
+      # out before it goes (scripts/check-toaster.mjs).
+      - name: Verify Toaster
+        run: |
+          pnpm test:toaster
+          ADAPTIVE_BROWSER=webkit pnpm test:toaster
+          ADAPTIVE_BROWSER=firefox pnpm test:toaster
+      # GAP-202: Link's external. A new tab with noopener noreferrer, a
+      # caller's own target and rel winning; the link's words, a space and
+      # "opens in a new tab" as each engine lays them out, never drawn; the
+      # new-tab icon hidden, the text's size and colour, at the inline end
+      # and mirrored right to left, and never alone on a line at any width,
+      # touch and compact (scripts/check-link-external.mjs).
+      - name: Verify Link External
+        run: |
+          pnpm test:link-external
+          ADAPTIVE_BROWSER=webkit pnpm test:link-external
+          ADAPTIVE_BROWSER=firefox pnpm test:link-external
 
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
@@ -529,6 +595,17 @@ jobs:
           pnpm test:field-styles
           ADAPTIVE_BROWSER=webkit pnpm test:field-styles
           ADAPTIVE_BROWSER=firefox pnpm test:field-styles
+
+      # 0.15.0's control props, measured in each engine, light and dark, touch
+      # and compact, both directions: IconButton's counter, placed, drawn and
+      # read with the name (GAP-197); CardHeader's actions at the header's end
+      # on the title's line (GAP-169); Input's copy action, which says it
+      # copied, and its pressed toggle (GAP-154) (scripts/check-control-props.mjs).
+      - name: Verify Control Props
+        run: |
+          pnpm test:control-props
+          ADAPTIVE_BROWSER=webkit pnpm test:control-props
+          ADAPTIVE_BROWSER=firefox pnpm test:control-props
 
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.

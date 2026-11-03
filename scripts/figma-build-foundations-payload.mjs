@@ -173,6 +173,10 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The theme's 600 is a word, a mark, an edge or a focus ring on the
   // surface (decision 59).
   ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],
+  // Theme 300 is a word on theme 900: Accordion's boxed label (decision 149).
+  ["Primitives/Colors/theme/300", ["TEXT_FILL"]],
+  // Theme 900 is the edge an open boxed header keeps, in its fill's colour.
+  ["Primitives/Colors/theme/900", ["STROKE_COLOR"]],
   // A status's words, its icon, and the edge and focus ring of a field,
   // control or alert in it.
   ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
@@ -192,6 +196,17 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
   // The themed emotion's ink is words on the themed surface as well.
   ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
+  // A progress ring's arc is its tone's text colour, an ellipse's arc
+  // filled (decision 131, owner 28 Oct: a status ring). A tone's text colour
+  // is also its icon, a toast's (GAP-167) and a complete small ring's check,
+  // an icon's stroke, so all six tones carry both scopes: a Map keeps a key's
+  // last row, and a row with only the ring's would take the stroke back.
+  ["Semantics/Emotion/neutral/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/themed/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/success/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/danger/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/informative/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/alert/text", ["STROKE_COLOR", "SHAPE_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's
   // star.

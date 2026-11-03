@@ -30,7 +30,7 @@ import {
   scrollbarFor,
 } from "../AdaptiveMapShell/map-shell-presentation";
 import { type ComboboxOption } from "../Combobox";
-import { type InputStatus } from "../Input/Input";
+import { type InputStatus } from "../Input/inputVariants";
 
 export interface MultiSelectProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,

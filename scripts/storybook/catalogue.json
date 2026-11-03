@@ -104,7 +104,7 @@
       "id": "data-display-accordion",
       "title": "Core/Data display/Accordion",
       "component": "Accordion",
-      "exports": ["Default"]
+      "exports": ["Default", "Boxed", "BoxedLoading", "BoxedStates"]
     },
     {
       "file": "packages/react/src/components/ActionCard/ActionCard.stories.tsx",
@@ -138,7 +138,10 @@
         "RegisteredBottomCorners",
         "RegisteredAttribution",
         "AttributionWithSheet",
-        "AttributionBesidePanel"
+        "AttributionBesidePanel",
+        "StatusAndTopCorners",
+        "StatusAndTopCornersBesidePanel",
+        "ExitBuilding"
       ]
     },
     {
@@ -257,7 +260,13 @@
       "id": "components-card",
       "title": "Core/Layout/Card",
       "component": "Card",
-      "exports": ["Default", "Padding", "WithoutHeader"]
+      "exports": [
+        "Default",
+        "TitleLevel",
+        "Padding",
+        "WithoutHeader",
+        "HeaderActions"
+      ]
     },
     {
       "file": "packages/react/src/components/CategoryField/CategoryField.stories.tsx",
@@ -438,7 +447,8 @@
         "CollapsibleSingleFloor",
         "CollapsibleOnYourLevel",
         "CollapsibleOpen",
-        "CollapsibleOpenRightToLeft"
+        "CollapsibleOpenRightToLeft",
+        "FromABuilding"
       ]
     },
     {
@@ -467,14 +477,20 @@
       "id": "action-iconbutton",
       "title": "Core/Actions/IconButton",
       "component": "IconButton",
-      "exports": ["Default", "Variants", "Sizes"]
+      "exports": ["Default", "Variants", "Sizes", "Counter"]
     },
     {
       "file": "packages/react/src/components/Input/Input.stories.tsx",
       "id": "components-input",
       "title": "Core/Inputs/Input",
       "component": "Input",
-      "exports": ["Default", "WithHelperText", "WithError", "ValidationStates"]
+      "exports": [
+        "Default",
+        "WithHelperText",
+        "WithError",
+        "ValidationStates",
+        "Actions"
+      ]
     },
     {
       "file": "packages/react/src/components/Itinerary/Itinerary.stories.tsx",
@@ -516,7 +532,13 @@
       "id": "navigation-link",
       "title": "Core/Actions/Link",
       "component": "Link",
-      "exports": ["Default", "Subtle"]
+      "exports": [
+        "Default",
+        "Subtle",
+        "External",
+        "ExternalInText",
+        "ExternalRightToLeft"
+      ]
     },
     {
       "file": "packages/react/src/components/List/List.stories.tsx",
@@ -776,7 +798,13 @@
       "id": "product-sdk-poidetailpanel",
       "title": "SDK/Place details/POIDetailPanel",
       "component": "POIDetailPanel",
-      "exports": ["Inline", "Sheet", "DesktopPanel", "PartialData"]
+      "exports": [
+        "Inline",
+        "Sheet",
+        "DesktopPanel",
+        "PartialData",
+        "HostActions"
+      ]
     },
     {
       "file": "packages/react/src/components/POIMediaGallery/POIMediaGallery.stories.tsx",
@@ -800,6 +828,7 @@
         "FeaturedSelected",
         "SelectedWithActions",
         "LongActionLabels",
+        "HostActions",
         "AlternativeBadge",
         "Tabs",
         "TabsInTheDark",
@@ -879,6 +908,11 @@
       "component": "Progress",
       "exports": [
         "Default",
+        "Circular",
+        "CircularSizes",
+        "CircularComplete",
+        "LevelsAdded",
+        "Tones",
         "SelectedSection",
         "LivePosition",
         "AnimatedUpdate"
@@ -1163,7 +1197,7 @@
       "id": "feedback-toast",
       "title": "Core/Feedback/Toast",
       "component": "Toast",
-      "exports": ["Default", "Open"]
+      "exports": ["Default", "Open", "FromACall", "Tones"]
     },
     {
       "file": "packages/react/src/components/ToggleButton/ToggleButton.stories.tsx",

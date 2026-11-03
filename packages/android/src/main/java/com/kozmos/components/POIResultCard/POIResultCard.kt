@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import com.kozmos.components.icon.KozmosIcon
+import com.kozmos.components.icon.knownIconVector
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +66,7 @@ import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultActionPresentation
+import com.kozmos.contracts.KozmosPOIHostActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.contracts.KozmosTravelTimeBand
 import com.kozmos.contracts.KozmosTravelTimeTone
@@ -177,6 +179,13 @@ fun KozmosPOIResultCard(
     onOpen: ((String) -> Unit)? = null,
     /** Names the open action TalkBack offers on the row when [onOpen] is set. */
     openLabel: String = "Open details",
+    /**
+     * Runs one of the product's own actions, `result.hostActions` (GAP-028),
+     * told its id and the POI's ID. They are drawn after `result.actions` in
+     * the same row; without it they are drawn disabled. Before [onAction], so
+     * that it stays the trailing lambda.
+     */
+    onHostAction: ((String, String) -> Unit)? = null,
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
@@ -213,6 +222,7 @@ fun KozmosPOIResultCard(
     // Shown only on the selected result: an action row on every card would be a
     // wall of buttons, and the tap that selects is the tap that asks.
     val visibleActions = if (result.selected && available) result.actions else emptyList()
+    val visibleHostActions = if (result.selected && available) result.hostActions else emptyList()
 
     // The band's words when the product set a band (decision 50), the exact
     // minutes when it did not: the details card keeps those either way.
@@ -467,7 +477,7 @@ fun KozmosPOIResultCard(
                     }
                 }
 
-                if (visibleActions.isNotEmpty()) {
+                if (visibleActions.isNotEmpty() || visibleHostActions.isNotEmpty()) {
                     Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
                     @OptIn(ExperimentalLayoutApi::class)
@@ -504,6 +514,32 @@ fun KozmosPOIResultCard(
                                             )
                                         )
                                         onAction?.invoke(entry.action, poi.id)
+                                    }
+                                }
+                            )
+                        }
+                        // The product's own, after the card's: reported as
+                        // `host` with its id, so one event counts every action.
+                        visibleHostActions.forEach { entry ->
+                            val canRun = !entry.disabled && onHostAction != null
+                            KozmosPOIResultHostActionButton(
+                                entry = entry,
+                                enabled = canRun,
+                                onClick = {
+                                    if (canRun) {
+                                        trackEvent(
+                                            KozmosAnalyticsEvent(
+                                                component = "POIResultCard",
+                                                eventName = "poi_result_action",
+                                                properties = mapOf(
+                                                    "poiId" to poi.id,
+                                                    "resultIndex" to result.resultIndex.toString(),
+                                                    "action" to "host",
+                                                    "hostActionId" to entry.id
+                                                )
+                                            )
+                                        )
+                                        onHostAction?.invoke(entry.id, poi.id)
                                     }
                                 }
                             )
@@ -768,6 +804,35 @@ fun KozmosPOIResultCard(
     appearance, onOpen = null, onAction = onAction
 )
 
+/**
+ * The full card as 0.14.0 declared it, with no [onHostAction]: onHostAction
+ * sits before [onAction], so that [onAction] stays the trailing lambda, and
+ * this overload keeps the positional call.
+ */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
+    appearance: KozmosPOIResultAppearance = KozmosPOIResultAppearance.Card,
+    onOpen: ((String) -> Unit)? = null,
+    openLabel: String = "Open details",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultCard(
+    poi, result, onSelect, modifier, featuredLabel, currentFloorId, selectionLabel,
+    actionsLabel, travelTimeBandLabels, numbered, languageNotListedLabel, presentationStyle,
+    appearance, onOpen, openLabel, onHostAction = null, onAction = onAction
+)
+
 /** The bands' words, and the only English the card holds for them. */
 internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = when (band) {
     KozmosTravelTimeBand.Nearby -> "Nearby"
@@ -799,6 +864,30 @@ private fun KozmosPOIResultActionButton(
         emotion = if (entry.primary) KozmosButtonEmotion.Themed else KozmosButtonEmotion.Neutral,
     ) {
         if (showsNavigationIcon) KozmosIcon("navigation-pointer-01")
+        Text(text = entry.label)
+    }
+}
+
+/**
+ * One of the product's own actions on a selected result (GAP-028): an
+ * outlined button with its words and, where Kozmos draws the name, its icon
+ * before them, which TalkBack does not read. A name Kozmos does not know
+ * draws no icon, never the stand-in.
+ */
+@Composable
+private fun KozmosPOIResultHostActionButton(
+    entry: KozmosPOIHostActionPresentation,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    KozmosButton(
+        onClick = onClick,
+        enabled = enabled,
+        variant = KozmosButtonVariant.Outline,
+        emotion = KozmosButtonEmotion.Neutral,
+    ) {
+        val iconName = entry.iconName
+        if (iconName != null && knownIconVector(iconName) != null) KozmosIcon(iconName)
         Text(text = entry.label)
     }
 }

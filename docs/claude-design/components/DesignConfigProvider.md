@@ -35,8 +35,8 @@ Its props are `DesignConfigProviderProps`, which extends `Omit<ThemeProviderProp
   Explicit, module-owned persistence key; controlled config ignores it.
 
 - `tokens`: `Record<string, string>`, optional.
-- `dir`: `"ltr" | "rtl"`, optional.
 - `children`: `React.ReactNode`, **required**.
+- `dir`: `"ltr" | "rtl"`, optional.
 - `density`: `ThemeDensity`, optional.
 
   The control sizes inside this provider and its portals; a nested provider

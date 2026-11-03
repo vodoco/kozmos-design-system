@@ -1,4 +1,5 @@
-// Progress.mdx's SwiftUI snippet, word for word below this comment:
+// Progress.mdx's SwiftUI snippet ("Implementation"), word for word below
+// this comment:
 // compiled here, so a renamed or removed parameter fails in this target
 // rather than in a reader's project. Change the two together.
 import SwiftUI

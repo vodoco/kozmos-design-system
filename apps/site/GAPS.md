@@ -118,7 +118,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible |
 | GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open         |
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
-| GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
+| GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | fixed        |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
 | GAP-81 | Components carried placeholder documentation                     | Core                   | fixed        |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
@@ -416,12 +416,15 @@ keep the table's four columns and its statuses as they are.
   says a venue's quick-access category artwork is the taxonomy's, carried as
   each category's `iconUrl` (its README), and the site cannot draw an image
   (GAP-10).
+- **Since icons 0.8.0** (GAP-79), all three have a name: `utensils`,
+  `accessibility` and `medical-cross`. Toilets and parking still have no glyph,
+  and no alias: the set takes no stand-in.
 - **Now (venue explorer, phone search, kiosk directory):** those categories
   are left out rather than drawn with a stand-in icon. The six they have
   (shops, information, transport, events, offices, Wi-Fi) use Kozmos icons.
-- **Follow-up:** food and drink, accessible facilities and first aid could
-  come back into the three examples, drawn with those components imported
-  from `@kozmos-ds/icons`; toilets and parking wait for a glyph.
+- **Follow-up:** food and drink, accessible facilities and first aid can
+  come back into the three examples, by name; toilets and parking wait for a
+  glyph.
 - **Lane:** Product / SDK (icons; the Pointr taxonomy's own sprites may be the
   source).
 
@@ -1790,12 +1793,18 @@ Text"])`) and the Get started page shows — touches it.
   definitions (General 20, Arrows 10, Maps & travel 7, Time 4, and a tail of
   ones and twos — no Taxonomy category any more) against 1,174 generated
   Pointr components.
-- **Now:** open. Kozmos 0.13.0 (icons 0.7.0, product GAP-179) adds 29 names:
-  the 23 wayfinding glyphs, `log-in-01`, `log-out-01`, `arrow-up-right`,
-  `arrow-down-right`, `layers-three-01` and `walking`. So `Icon name` reaches
+- **Was:** Kozmos 0.13.0 (icons 0.7.0, product GAP-179) added 29 names: the 23
+  wayfinding glyphs, `log-in-01`, `log-out-01`, `arrow-up-right`,
+  `arrow-down-right`, `layers-three-01` and `walking`. So `Icon name` reached
   103 keys (57 names, 17 aliases and the 29) against about 1,200 icon
-  components; the venue categories are still components only. GAP-07 and
-  GAP-15 list the particular glyphs the site and the examples went without.
+  components, and the venue categories were components only.
+- **Now:** fixed for icons 0.8.0 (product GAP-105). The registry holds a venue
+  set of 15 names in three categories, `Venue categories`, `Venue amenities` and
+  `Venue services`, with 40 new aliases, so `Icon name` reaches 158 keys (72
+  names, 57 aliases and the 29), the same on SwiftUI and Compose. The
+  `@kozmos-ds/icons` README lists the set, how it was chosen and what was left
+  out. A lookup by name costs 23.44 KB gzip, 19.84 before it. Toilets and
+  parking have no glyph, so GAP-15 keeps them.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** put the generated Pointr icons in the registry with
   their names, categories and aliases, so `Icon name="…"` reaches them and one

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "95f469ac5093";
+const PLUGIN_BUILD = "d0f38ffc01fd";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -155,7 +155,10 @@ const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
 const META_STRIP_LABELS = ["Hidden", "Shown"];
 const META_STRIP_ICONS = ["None", "Leading"];
-const ACCORDION_STATES = ["Closed", "Open"];
+const ACCORDION_STATES = ["Closed", "Open", "Disabled", "Loading"];
+// Decision 149. The set is sparse: the default form draws no disabled or
+// loading look of its own, so it stays Closed and Open.
+const ACCORDION_VARIANTS = ["Default", "Boxed"];
 const TAG_VARIANTS = ["Default", "Secondary", "Destructive", "Outline"];
 const TAG_REMOVABLE = ["False", "True"];
 // Decision 59 (Olcay, 2026-10-07): a prominent fill is the theme fill, the
@@ -188,6 +191,16 @@ const BUTTON_ICON_ON_FILL_PROPERTY = "Icon on Fill";
 const BUTTON_ICON_ON_ACCENT_PROPERTY = "Icon on Accent";
 const BUTTON_ICON_ON_NEUTRAL_PROPERTY = "Icon on Neutral";
 const ICON_BUTTON_SIZES = ["Default", "Small", "Large"];
+// IconButton's count (GAP-197): React's Counter at size sm in the brand tone,
+// over the icon's top-end corner. Its bottom edge sits on the button's centre
+// line and its start edge 2 past it, at every size (on the MAP-64 design's 28
+// help button, 4 above it and 6 past its end, decision 139), and it never
+// sizes the button. Drawn as a pill and a text in the component itself, not a nested
+// Counter, so the Counter Text property can drive the digits.
+const ICON_BUTTON_COUNTER_PROPERTY = "Counter";
+const ICON_BUTTON_COUNTER_TEXT_PROPERTY = "Counter Text";
+const ICON_BUTTON_COUNTER_DEFAULT_TEXT = "3";
+const ICON_BUTTON_COUNTER_OFFSET = 2;
 const TOGGLE_BUTTON_VARIANTS = ["Default", "Outline"];
 const TOGGLE_BUTTON_SIZES = ["Small", "Default", "Large"];
 const TOGGLE_BUTTON_STATES = ["Default", "Pressed", "Disabled", "Focus"];
@@ -228,6 +241,29 @@ const SWITCH_CHECKED = ["Unchecked", "Checked"];
 const SWITCH_STATES = ["Default", "Disabled", "Error"];
 const INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
+// Input's action (GAP-154): a button inside the field's end, drawn as
+// PasswordInput's reveal is. None is the field as it always was; Copy shows
+// copy-01, for a read-only value such as a feature's ID; Toggle and
+// TogglePressed are the Featured star at rest and pressed, its icon swappable
+// through Action Icon.
+const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed"];
+// A field another part nests: at rest and with no action, named in full, so
+// a set whose first State=Default, Status=Default variant draws a copy or a
+// toggle is never the one picked. A set from before the Action axis has no
+// variant that names it, and every one of its variants draws none: the
+// second choice picks there.
+const NESTED_INPUT_VARIANT = {
+  State: "Default",
+  Status: "Default",
+  Action: "None",
+};
+const NESTED_INPUT_VARIANTS = [
+  NESTED_INPUT_VARIANT,
+  { State: "Default", Status: "Default" },
+];
+const INPUT_ACTION_ICON_PROPERTY = "Action Icon";
+// A pressed toggle's disc: a pressed ToggleButton at size sm, 32 across.
+const INPUT_ACTION_PRESSED_FILL_SIZE = 32;
 const PASSWORD_INPUT_VISIBILITY = ["Hidden", "Visible"];
 const NUMBER_INPUT_STEPPERS = ["True", "False"];
 const OTP_INPUT_LENGTHS = ["4", "6"];
@@ -334,6 +370,29 @@ const STEPPER_LABELS = [
   "Done",
 ];
 const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
+// Decision 131 (GAP-038): Progress's Shape, the bar or a ring, a ring's
+// Size, and its Tone (owner, 28 Oct: a status ring), as React's `shape`,
+// `size` and `tone`. The tones are Tag's and Button's emotions. A bar has one
+// size and one tone, drawn as Medium and Themed. Build and Update walk the
+// bar's row, then a row of rings at each size and tone; a variant drawn
+// before the axes is the bar, and a ring drawn before Tone is Themed.
+const PROGRESS_SHAPES = ["Linear", "Circular"];
+const PROGRESS_SIZES = ["Small", "Medium", "Large"];
+const PROGRESS_TONES = [
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
+];
+// No spread: the plugin sandbox's parser refuses it.
+const PROGRESS_FORMS = ["Linear/Medium/Themed"];
+for (const size of PROGRESS_SIZES) {
+  for (const tone of PROGRESS_TONES) {
+    PROGRESS_FORMS.push(`Circular/${size}/${tone}`);
+  }
+}
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
@@ -359,6 +418,18 @@ const CARD_PADDINGS = ["Default", "Compact"];
 function cardPaddingLength(padding) {
   return padding === "Compact" ? 16 : 24;
 }
+// CardHeader's actions (GAP-169): a slot at the header's end, after the title
+// and description, which keep the room before it, 16 away. It is as tall as
+// the title's line, 24, and its actions are centred on it, so an icon button
+// hangs 10 into the padding above and below, as React's negative block margin
+// does, and the header grows no taller. Several actions sit 8 apart. Off by
+// default: the Header Actions boolean shows it, holding a ghost IconButton
+// with the pencil until a designer fills the slot.
+const CARD_HEADER_ACTIONS_PROPERTY = "Header Actions";
+const CARD_HEADER_ACTIONS_SLOT = "Header Actions Slot";
+const CARD_HEADER_ACTIONS_GAP = 16;
+const CARD_HEADER_ACTION_SPACING = 8;
+const CARD_TITLE_LINE_HEIGHT = 24;
 const LIST_DENSITIES = ["Default", "Compact"];
 const TABLE_DENSITIES = ["Default", "Compact"];
 // Product / SDK lane. These compose Core primitives and stay domain-specific,
@@ -622,6 +693,10 @@ const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
 const POPOVER_SIDES = ["Top", "Right", "Bottom", "Left"];
 const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 const TOAST_CONTENT = ["Basic", "Action"];
+// toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
+// in the tone's text colour, on the same surface. A variant drawn before the
+// axis is Neutral.
+const TOAST_TONES = ["Neutral", "Success", "Info", "Warning", "Critical"];
 const TABS_COUNTS = ["Two", "Three", "Four"];
 const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
@@ -1304,7 +1379,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Input",
-          variantName: "State=Default, Status=Default",
+          variantName: "State=Default, Status=Default, Action=None",
           text: { "Label Text": "Level", "Placeholder Text": "Choose level" },
         },
         {
@@ -1360,7 +1435,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Progress",
-          variantName: "Value=50",
+          variantName: "Shape=Linear, Size=Medium, Tone=Themed, Value=50",
         },
         {
           componentSetName: "Spinner",
@@ -2136,16 +2211,18 @@ const COMPONENT_DOCS = [
       "State maps to focus-visible examples in Code Connect.",
       "Link Text maps to children in Code Connect.",
       "Focus Visible controls the generated focus ring.",
+      "External maps to Link.external: the new-tab icon after the words.",
     ],
     properties: [
       "Variant: Default, Subtle",
       "State: Default, Focus",
-      "Link Text, Focus Visible",
+      "Link Text, Focus Visible, External",
     ],
     accessibility: [
       "Link text contrast passes in Light and Dark modes.",
       "The Focus state shows the generated keyboard focus ring.",
       "Product code should preserve native link semantics or accessible button semantics.",
+      "External's icon is decoration: the code says \"opens in a new tab\" after the link's name.",
     ],
   },
   {
@@ -2528,14 +2605,27 @@ const COMPONENT_DOCS = [
       "Use Closed for the default collapsed row.",
       "Use Open when the item content is visible and belongs under the trigger.",
       "Keep accordions for related, scannable content rather than primary navigation.",
+      "Use Variant=Boxed for a form in steps: a header of its own for each section, 8 apart, with the form under it in the panel's flow.",
     ],
     api: [
-      "State maps to the visual data-state examples for AccordionTrigger and AccordionContent.",
+      'Variant maps to Accordion\'s variant: Default, or Boxed for variant="boxed".',
+      "State maps to the visual data-state examples for AccordionTrigger and AccordionContent; Disabled and Loading are the boxed form's, AccordionItem's disabled and AccordionTrigger's loading.",
       "Trigger Text maps to AccordionTrigger children.",
       "Content Text maps to AccordionContent children.",
+      "Label Text maps to AccordionTrigger's label, the small line over the title. The words are the product's.",
+      "Icon maps to AccordionTrigger's icon.",
       "Root type, collapsible behavior, and animation remain product-code concerns.",
     ],
-    properties: ["State: Closed, Open", "Trigger Text", "Content Text"],
+    properties: [
+      "Variant: Default, Boxed",
+      "State: Closed, Open, Disabled, Loading",
+      "Trigger Text",
+      "Content Text",
+      "Label Text",
+      "Icon",
+      "Show Label",
+      "Show Icon",
+    ],
     accessibility: [
       "Product code uses Radix Accordion for keyboard and ARIA behavior.",
       "Trigger rows keep a 44px-or-larger visual target.",
@@ -2587,12 +2677,13 @@ const COMPONENT_DOCS = [
       "Size maps to IconButton.size: Default to icon, Small to sm, Large to lg.",
       "State maps to disabled and isLoading in Code Connect.",
       "Icon is an instance-swap slot with curated preferred values.",
+      "Counter shows IconButton.counter, a brand Counter over the icon's top-end corner; Counter Text is its count.",
     ],
     properties: [
       "Variant: Default, Destructive, Outline, Secondary, Ghost, Link, Glass",
       "Size: Default, Small, Large",
       "State: Default, Disabled, Loading",
-      "Icon, Focus Visible",
+      "Icon, Counter, Counter Text, Focus Visible",
     ],
     accessibility: [
       "All sizes use a 44px interaction frame.",
@@ -2852,10 +2943,13 @@ const COMPONENT_DOCS = [
       "Description Text maps to CardDescription children.",
       "Body Text maps to CardContent children.",
       "Full cards compose live Button instances for footer actions.",
+      "Header Actions shows Header Actions Slot, CardHeader.actions, at the header's end on the title's line; a ghost IconButton by default.",
     ],
     properties: [
       "Content: Basic, Header, Full",
+      "Padding: Default, Compact",
       "Title Text, Description Text, Body Text",
+      "Header Actions, Header Actions Slot",
     ],
     accessibility: [
       "Card is non-interactive unless composed inside or around a control.",
@@ -3365,12 +3459,14 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Content maps to composed Toast children in Code Connect.",
+      "Tone maps to toast()'s tone: neutral, success, info, warning or critical.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
     ],
     properties: [
       "Content: Basic, Action",
+      "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
     ],
     accessibility: [
@@ -3476,13 +3572,16 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus, disabled, and readOnly props in Code Connect.",
       "Status maps to default, error, warning, and success validation tones.",
+      "Action maps to Input.action: None, a copy button (Copy), or a toggle at rest or pressed (Toggle, TogglePressed), at the field's end.",
+      "Action Icon is the toggle's icon, the Featured star by default.",
       "Label Text, Placeholder Text, Helper Text, and Show Helper Text map to Input props.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
-      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Focus Visible",
+      "Action: None, Copy, Toggle, TogglePressed",
+      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Action Icon, Focus Visible",
     ],
     accessibility: [
       "Field height meets the 44px minimum target.",
@@ -4016,19 +4115,31 @@ const COMPONENT_DOCS = [
       "Progress communicates completion for determinate loading or task state.",
     usage: [
       "Use when a task has measurable completion.",
+      "Use the Circular shape for a count out of a total, with its count in the centre label.",
       "Use Spinner instead when progress cannot be estimated.",
       "Avoid using Progress as an interactive input.",
     ],
     api: [
       "Value maps to Progress.value in Code Connect.",
       "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
+      "Shape maps to Progress.shape; Size, Tone and Label to a ring's size, tone and label; Label Beside to labelPlacement end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label: \"100%\" does not fit. A product's own label wins in code; Show Label has nothing to draw on those variants.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
-    properties: ["Value: 0, 25, 50, 75, 100"],
+    properties: [
+      "Shape: Linear, Circular",
+      "Size: Small, Medium, Large (a ring's; a bar is Medium)",
+      "Tone: Themed, Neutral, Success, Danger, Informative, Alert (a ring's; a bar is Themed)",
+      "Value: 0, 25, 50, 75, 100",
+      "Label, Show Label, Label Beside",
+    ],
     accessibility: [
       "Track and fill pass non-text contrast guidance on Surface/0.",
+      "A ring's arc is its tone's emotion text colour on background/100: 4.8:1 or more, light and dark.",
+      "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
-      "Code should provide an accessible progress value.",
+      "Code should provide an accessible progress value; a ring's centre label names it.",
+      "A small ring's check is decoration: the ring still says 100%, in name and value.",
     ],
   },
   {
@@ -4539,7 +4650,153 @@ const KOSMOS_ICON_DEFINITIONS = [
     componentKey: "b2fc5c9bd985d3424e2491074f67e4263bed394f",
     description: "Order or shop.",
   },
+  {
+    name: "utensils",
+    figmaName: "Utensils",
+    category: "Venue categories",
+    source: "owned",
+    description: "Food and drink: a restaurant, a café, a food court.",
+  },
+  {
+    name: "medical-cross",
+    figmaName: "medical-cross",
+    category: "Venue categories",
+    componentKey: "c147611010d994a45fff844fdf9e792fd6fde412",
+    description: "Medical care: first aid, emergency, a clinic.",
+  },
+  {
+    name: "plane",
+    figmaName: "plane",
+    category: "Venue categories",
+    componentKey: "59bc5c24b7c676684dfd7de413ebc3f7e563d571",
+    description: "Flights: a boarding gate.",
+  },
+  {
+    name: "clapperboard",
+    figmaName: "clapperboard",
+    category: "Venue categories",
+    componentKey: "d9a79e7b32b4a75a2a4e5231d2cc81702da9c520",
+    description: "Entertainment: a cinema, a theatre.",
+  },
+  {
+    name: "graduation-hat-01",
+    figmaName: "graduation-hat-01",
+    category: "Venue categories",
+    componentKey: "d0779c4fc4ec27b59ef5c50b928c9ea6d49aa384",
+    description: "Learning and study: a classroom, a lecture hall.",
+  },
+  {
+    name: "beaker-01",
+    figmaName: "beaker-01",
+    category: "Venue categories",
+    componentKey: "895765bbebb1eebf3b6fce709b1793fe23f9317b",
+    description: "Research and labs: a laboratory.",
+  },
+  {
+    name: "accessibility",
+    figmaName: "Accessibility",
+    category: "Venue amenities",
+    source: "owned",
+    description: "Accessible places and accessibility services.",
+  },
+  {
+    name: "credit-card-01",
+    figmaName: "credit-card-01",
+    category: "Venue amenities",
+    componentKey: "18a3fe1d51769397787c70914bdebe9e268dffe0",
+    description: "Pay or take out money: an ATM, a checkout.",
+  },
+  {
+    name: "battery-charging-01",
+    figmaName: "battery-charging-01",
+    category: "Venue amenities",
+    componentKey: "7195e0204a1d93ba9152f19b8d6d0a59c5264c19",
+    description: "Device charging: a charging station.",
+  },
+  {
+    name: "droplets-01",
+    figmaName: "droplets-01",
+    category: "Venue amenities",
+    componentKey: "42b682288b822c5f97ea079c19ad9812cc8c8dce",
+    description: "Drinking water: a water refill station.",
+  },
+  {
+    name: "luggage-01",
+    figmaName: "luggage-01",
+    category: "Venue services",
+    componentKey: "02347084990867283652590d0acbd1ee8e3991e3",
+    description: "Check-in and baggage: bag drop, baggage reclaim.",
+  },
+  {
+    name: "passport",
+    figmaName: "passport",
+    category: "Venue services",
+    componentKey: "35bd79a91725550ea5ad9cc1d17f21adad4f9704",
+    description: "Passport control, customs and immigration.",
+  },
+  {
+    name: "ticket-01",
+    figmaName: "ticket-01",
+    category: "Venue services",
+    componentKey: "a75aeae0e3b9f929638ebff9d9613fa003256811",
+    description: "Tickets: a ticket office, a box office.",
+  },
+  {
+    name: "package",
+    figmaName: "package",
+    category: "Venue services",
+    componentKey: "519a1190542d2f0f7e92c1ddc7bc6f526dfba696",
+    description: "Order collection: click and collect, parcel pickup.",
+  },
+  {
+    name: "scissors-01",
+    figmaName: "scissors-01",
+    category: "Venue services",
+    componentKey: "4f4401f8bee7698633591736f3d77b3c68e7fe77",
+    description: "A salon: hair and barber services.",
+  },
 ];
+/**
+ * The UI icons the importer draws inside components that React's by-name
+ * registry (packages/icons/src/registry.ts) does not name, and must not.
+ *
+ * Decision 121 (owner, 27 Oct 2026, #406): a UI glyph stays a named import in
+ * React — Input's copy action imports `Copy01`, its Featured toggle `Star01`,
+ * a card's edit action `Pencil01` — and the by-name registry grows only by
+ * the curated venue set. So these are not moved into KOSMOS_ICON_DEFINITIONS
+ * or the registry to "fix" this list: Curated Icons imports them onto the
+ * Icons page beside the registry's from the Pointr icon library, and
+ * scripts/check-component-contracts.mjs holds each key to
+ * docs/figma-pointr-icon-catalog.json. Painters ask for them through
+ * findImporterIconSource, which draws no other glyph in their place.
+ */
+const IMPORTER_UI_ICON_DEFINITIONS = [
+  {
+    name: "copy-01",
+    figmaName: "copy-01",
+    category: "General",
+    componentKey: "f90143bf77fbbd4d74e1881d0d93b7d5f18829d6",
+    description: "Copy a value: Input's copy action (GAP-154).",
+  },
+  {
+    name: "pencil-01",
+    figmaName: "pencil-01",
+    category: "Editor",
+    componentKey: "0925eed827cc1c87a1907084369a9688259d5983",
+    description: "Edit: the action a Card's header carries (GAP-169).",
+  },
+  {
+    name: "star-01",
+    figmaName: "star-01",
+    category: "Shapes",
+    componentKey: "ff0eb2f124d6feedc853de839891884656c55adc",
+    description: "Featured: Input's toggle action (GAP-154).",
+  },
+];
+/** Every Pointr icon the importer imports: the registry's, then the UI's. */
+function importerPointrIconDefinitions() {
+  return KOSMOS_ICON_DEFINITIONS.concat(IMPORTER_UI_ICON_DEFINITIONS);
+}
 // <wayfinding-icons:generated>
 // Generated by scripts/generate-navigation-glyphs.mjs from packages/icons/src/owned/navigation-glyphs.json (Pointr Maps - Express). Edit the JSON, never this block.
 const KOZMOS_WAYFINDING_ICONS = [
@@ -4683,6 +4940,15 @@ const KOZMOS_WAYFINDING_ICONS = [
   },
 ];
 // </wayfinding-icons:generated>
+// <owned-icons:generated>
+// Generated by scripts/generate-native-icons.mjs from packages/icons/src/owned/icons.ts. Edit the source, never this block.
+const KOZMOS_OWNED_ICON_SVGS = {
+  accessibility:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="203.8 9.64 776.13 776.13" fill="none"><path d="M833.556,367.574c-7.753-7.955-18.586-12.155-29.656-11.549l-133.981,7.458l73.733-83.975 c10.504-11.962,13.505-27.908,9.444-42.157c-2.143-9.764-8.056-18.648-17.14-24.324c-0.279-0.199-176.247-102.423-176.247-102.423 c-14.369-8.347-32.475-6.508-44.875,4.552l-85.958,76.676c-15.837,14.126-17.224,38.416-3.097,54.254 c14.128,15.836,38.419,17.227,54.255,3.096l65.168-58.131l53.874,31.285l-95.096,108.305 c-39.433,6.431-74.913,24.602-102.765,50.801l49.66,49.66c22.449-20.412,52.256-32.871,84.918-32.871 c69.667,0,126.346,56.68,126.346,126.348c0,32.662-12.459,62.467-32.869,84.916l49.657,49.66 c33.08-35.166,53.382-82.484,53.382-134.576c0-31.035-7.205-60.384-20.016-86.482l51.861-2.889l-12.616,154.75 c-1.725,21.152,14.027,39.695,35.18,41.422c1.059,0.086,2.116,0.127,3.163,0.127c19.806,0,36.621-15.219,38.257-35.306 l16.193-198.685C845.235,386.445,841.305,375.527,833.556,367.574z" fill="black"/><path d="M762.384,202.965c35.523,0,64.317-28.797,64.317-64.322c0-35.523-28.794-64.323-64.317-64.323 c-35.527,0-64.323,28.8-64.323,64.323C698.061,174.168,726.856,202.965,762.384,202.965z" fill="black"/><path d="M535.794,650.926c-69.668,0-126.348-56.68-126.348-126.348c0-26.256,8.056-50.66,21.817-70.887l-50.196-50.195 c-26.155,33.377-41.791,75.393-41.791,121.082c0,108.535,87.983,196.517,196.518,196.517c45.691,0,87.703-15.636,121.079-41.792 l-50.195-50.193C586.452,642.867,562.048,650.926,535.794,650.926z" fill="black"/></svg>',
+  utensils:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2v20" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+// </owned-icons:generated>
 const COMPONENT_COLLECTION_NAME = "Kozmos Components";
 const TEXT_STYLE_GROUP_TEXT = "Text";
 const TEXT_STYLE_GROUP_HEADING = "Heading";
@@ -7019,6 +7285,12 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
+    name: "Toast/icon/size",
+    value: 16,
+    alias: "Button/icon/size",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
     name: "Toast/title/font-size",
     value: 14,
     alias: "Input/label/font-size",
@@ -8333,6 +8605,26 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Border Width/sm",
     scopes: ["STROKE_FLOAT"],
   },
+  // A ring's diameter, decision 131: the layout spacing tokens 600, 900 and
+  // 1000, as React, SwiftUI and Compose size it.
+  {
+    name: "Progress/ring/size/small",
+    value: 48,
+    alias: "Layout/spacing/600",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Progress/ring/size/medium",
+    value: 96,
+    alias: "Layout/spacing/900",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Progress/ring/size/large",
+    value: 128,
+    alias: "Layout/spacing/1000",
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "Spinner/size/small",
     value: 16,
@@ -8540,6 +8832,15 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-202: the new-tab icon is the text's size, React's 1em, after a gap
+  // as wide as its no-break space.
+  {
+    name: "Link/icon/size",
+    value: 14,
+    alias: "Link/font-size",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  { name: "Link/gap", value: 4, alias: "Layout/spacing/50", scopes: ["GAP"] },
   {
     name: "Label/font-size",
     value: 14,
@@ -8889,6 +9190,77 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Accordion/content/padding-bottom",
     value: 16,
     alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  // The boxed form (decision 149): 408, the building editor's panel. The
+  // header is at least a control's height, 44 at touch, and 40 compact once
+  // Figma has Density modes, as every Button in the file is (GAP-146), and it
+  // grows with a title that wraps. Its type is the
+  // tokens React reads, not the 12 and 14 of the text roles.
+  {
+    name: "Accordion/boxed/width/default",
+    value: 408,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/trigger/height",
+    value: 44,
+    alias: "Button/height/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/trigger/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Accordion/boxed/trigger/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Accordion/boxed/trigger/padding/y",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Accordion/boxed/trigger/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "Accordion/boxed/icon/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Accordion/boxed/label/font-size",
+    value: 11.008000373840332,
+    alias: "Typography/font/size/paragraph/xsmall",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Accordion/boxed/label/line-height",
+    value: 14,
+    alias: "Typography/line/height/50",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/title/font-size",
+    value: 13.008000373840332,
+    alias: "Typography/font/size/paragraph/small",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Accordion/boxed/title/line-height",
+    value: 17.503999710083008,
+    alias: "Typography/line/height/100",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "Accordion/boxed/content/padding-top",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
 ];
@@ -10214,8 +10586,9 @@ let lastSetProgressAt = 0;
  */
 const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
-  // TourStep's Close: x-close, tinted again after the swap.
-  IconButton: ["TourStep"],
+  // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
+  // each tinted again after the swap.
+  IconButton: ["TourStep", "Card"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -11489,10 +11862,7 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name: "Project Name Input",
       textProperties: {
         "Label Text": "Project name",
@@ -12216,7 +12586,12 @@ async function buildSdkRouteFlowExampleTemplate({
   sheet.appendChild(
     await createExampleInstance({
       componentSetName: "Progress",
-      variantProperties: { Value: "50" },
+      variantProperties: {
+        Shape: "Linear",
+        Size: "Medium",
+        Tone: "Themed",
+        Value: "50",
+      },
       name: "Route Progress",
       width: contentWidth - 40,
       height: 16,
@@ -14985,6 +15360,17 @@ function findComponentVariantByProperties(componentSet, properties) {
   return null;
 }
 
+/** Does any variant of the set name this axis? */
+function componentSetHasVariantAxis(componentSet, axis) {
+  if (!componentSet || !componentSet.children) return false;
+  const prefix = `${axis}=`;
+  return componentSet.children.some(
+    (child) =>
+      child.type === "COMPONENT" &&
+      child.name.split(",").some((part) => part.trim().startsWith(prefix)),
+  );
+}
+
 function componentVariantNameMatches(name, properties) {
   const actual = {};
   const parts = name.split(",");
@@ -15017,10 +15403,12 @@ async function createNestedComponentInstance(config) {
     return null;
   }
 
-  const variant = findComponentVariantByProperties(
-    componentSet,
-    config.variantProperties,
-  );
+  // The variant asked for, or a list of them, the first that the set has.
+  let variant = null;
+  for (const properties of [].concat(config.variantProperties)) {
+    variant = findComponentVariantByProperties(componentSet, properties);
+    if (variant) break;
+  }
   if (!variant) {
     if (config.stats && config.stats.warnings) {
       config.stats.warnings.push(
@@ -16019,9 +16407,9 @@ function formatTypographyIssueDetails(typography) {
 
 async function auditIconSources() {
   // The sandbox parses no spread: concat, as the rest of the plugin does.
-  const expectedNames = KOSMOS_ICON_DEFINITIONS.map(
-    (definition) => definition.name,
-  ).concat(KOZMOS_WAYFINDING_ICONS.map((icon) => icon.name));
+  const expectedNames = importerPointrIconDefinitions()
+    .map((definition) => definition.name)
+    .concat(KOZMOS_WAYFINDING_ICONS.map((icon) => icon.name));
   const foundNames = [];
   const foundByName = {};
   const issues = [];
@@ -16271,28 +16659,28 @@ function surfaceQaExpectedInstanceCount() {
 
 function auditIconSourceComponent(component, iconName) {
   const wayfinding = isWayfindingIconName(iconName);
-  // A taxonomy or wayfinding source is drawn, a frame of filled shapes; a
-  // Pointr source is an instance of the library's icon.
-  const taxonomy =
+  // An owned or wayfinding source is drawn, a frame of shapes; a Pointr source
+  // is an instance of the library's icon.
+  const drawn =
     wayfinding ||
-    isTaxonomyIconDefinition(
-      KOSMOS_ICON_DEFINITIONS.find(
+    isOwnedIconDefinition(
+      importerPointrIconDefinitions().find(
         (definition) => definition.name === iconName,
       ),
     );
   const sourceName = wayfinding
     ? "Wayfinding Source"
-    : taxonomy
-      ? "Taxonomy Source"
+    : drawn
+      ? "Owned Source"
       : "Pointr Source";
   const source = directChildNamed(component, sourceName);
   const issues = [];
 
-  if (!source || source.type !== (taxonomy ? "FRAME" : "INSTANCE")) {
+  if (!source || source.type !== (drawn ? "FRAME" : "INSTANCE")) {
     issues.push({
       icon: iconName,
       kind: "missing-source",
-      message: taxonomy
+      message: drawn
         ? `Icon source component is missing a direct ${sourceName} frame.`
         : "Icon source component is missing a direct Pointr Source instance.",
     });
@@ -16305,20 +16693,23 @@ function auditIconSourceComponent(component, iconName) {
     };
   }
 
-  // A taxonomy symbol is its filled shapes; a frame with none draws nothing.
+  // A drawn source is its shapes, solid or stroked; a frame with none draws
+  // nothing.
   if (
-    taxonomy &&
+    drawn &&
     !source.findOne(
       (node) =>
         node.type === "VECTOR" &&
-        Array.isArray(node.fills) &&
-        Boolean(firstVisibleSolidPaint(node.fills)),
+        ((Array.isArray(node.fills) &&
+          Boolean(firstVisibleSolidPaint(node.fills))) ||
+          (Array.isArray(node.strokes) &&
+            Boolean(firstVisibleSolidPaint(node.strokes)))),
     )
   ) {
     issues.push({
       icon: iconName,
       kind: "missing-source",
-      message: `${sourceName} draws no filled shape.`,
+      message: `${sourceName} draws no shape.`,
     });
   }
 
@@ -16885,7 +17276,7 @@ function auditComponentSet(
   }
 
   if (record.name === "Accordion") {
-    for (const baseName of ["Trigger Text", "Content Text"]) {
+    for (const baseName of ["Trigger Text", "Content Text", "Label Text"]) {
       const textProperty = textPropertyByBaseName[baseName];
       if (!textProperty || textProperty.boundTextNodes === 0) {
         record.warnings.push(
@@ -17505,6 +17896,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Accordion") {
     return {
+      Variant: ACCORDION_VARIANTS,
       State: ACCORDION_STATES,
     };
   }
@@ -17737,6 +18129,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Toast") {
     return {
       Content: TOAST_CONTENT,
+      Tone: TOAST_TONES,
     };
   }
 
@@ -17765,6 +18158,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       State: INPUT_STATES,
       Status: INPUT_STATUSES,
+      Action: INPUT_ACTIONS,
     };
   }
 
@@ -17918,6 +18312,9 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Progress") {
     return {
+      Shape: PROGRESS_SHAPES,
+      Size: PROGRESS_SIZES,
+      Tone: PROGRESS_TONES,
       Value: PROGRESS_VALUES,
     };
   }
@@ -19086,15 +19483,29 @@ function auditAccordionAutoLayoutIntegrity(componentSet, issues) {
         kind: "accordion-trigger-horizontal-sizing",
         variant: component.name,
       });
+      // The boxed header hugs its lines over a floor, as React's min-height
+      // does: a title that wraps grows it.
+      const boxed = props.variant === "Boxed";
       auditAutoLayoutSizing({
         node: trigger,
         issues,
         kind: "accordion-trigger-vertical-sizing",
         field: "layoutSizingVertical",
-        expected: "FIXED",
+        expected: boxed ? "HUG" : "FIXED",
         actual: trigger.layoutSizingVertical,
         variant: component.name,
       });
+      if (boxed && !(trigger.boundVariables || {}).minHeight) {
+        issues.push({
+          kind: "accordion-trigger-min-height-unbound",
+          variant: component.name,
+          node: trigger.name,
+          nodeType: trigger.type,
+          nodeId: trigger.id,
+          urlNodeId: nodeIdForUrl(trigger.id),
+          expected: "minHeight bound to Accordion/boxed/trigger/height",
+        });
+      }
       auditVisualOverflow(
         component.name,
         trigger,
@@ -19145,6 +19556,9 @@ function auditAccordionAutoLayoutIntegrity(componentSet, issues) {
         urlNodeId: nodeIdForUrl(content.id),
       });
     }
+
+    // The boxed form's edge is its header's, and its root draws none.
+    if (props.variant === "Boxed") continue;
 
     const divider = directChildNamed(component, "Accordion Divider");
     if (divider) {
@@ -23956,6 +24370,24 @@ function addComponentTextStyleSpecs(specs, fonts) {
     14,
     20,
   );
+  addTextStyleSpec(
+    specs,
+    "accordionBoxedTitle",
+    "Accordion / Boxed Title",
+    fonts.regular,
+    13,
+    17.5,
+    "Kozmos Accordion's boxed title: paragraph small, on line height 100.",
+  );
+  addTextStyleSpec(
+    specs,
+    "accordionBoxedLabel",
+    "Accordion / Boxed Label",
+    fonts.regular,
+    11,
+    14,
+    "Kozmos Accordion's boxed label: paragraph xsmall, on line height 50.",
+  );
 }
 
 function addTextStyleSpec(
@@ -24289,6 +24721,10 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     if (segmentedControlProps) return "segmentedControlLabel";
   }
 
+  // IconButton's count (GAP-197) is drawn with the Counter's small style.
+  if (setName === "IconButton" && textName === "Counter Text") {
+    return "counterSmall";
+  }
   if (setName === "Button") return "buttonLabel";
   if (setName === "Badge") return "badgeLabel";
   if (setName === "Link") return "linkText";
@@ -24307,11 +24743,19 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return textName === "Step Number" ? "fieldText" : "fieldMeta";
   }
   if (setName === "Accordion") {
+    const accordionProps = component
+      ? parseAccordionVariantName(component.name)
+      : null;
+    if (accordionProps && accordionProps.variant === "Boxed") {
+      if (textName === "Trigger Text") return "accordionBoxedTitle";
+      if (textName === "Label Text") return "accordionBoxedLabel";
+    }
     return textName === "Trigger Text"
       ? "accordionTrigger"
       : "accordionContent";
   }
   if (setName === "BottomNavigation") return "fieldMeta";
+  if (setName === "Progress") return "fieldMeta";
   if (setName === "NavigationItem") {
     return textStyleKeyForNavigationItemText(component, textName);
   }
@@ -26431,6 +26875,7 @@ function bindCardGeometryVariables(
   footer,
   variableByName,
   stats,
+  headerText,
 ) {
   bindFloatVariable(
     component,
@@ -26487,8 +26932,10 @@ function bindCardGeometryVariables(
       variableByName,
       stats,
     );
+    // Title to description, in the column the header holds them in since
+    // GAP-169; a header without one is an older drawing, and keeps its own.
     bindFloatVariable(
-      header,
+      headerText || header,
       "itemSpacing",
       "Card/header/gap",
       variableByName,
@@ -30289,6 +30736,7 @@ async function buildIconButtonComponent() {
     return stats;
   }
 
+  const fonts = await loadButtonFonts(stats);
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const iconComponent = await resolveDefaultIconSourceComponent(
     variableByName,
@@ -30306,6 +30754,7 @@ async function buildIconButtonComponent() {
           size,
           state,
           variableByName,
+          fonts,
           stats,
         });
         component.x = (index % 9) * 120;
@@ -30330,6 +30779,7 @@ async function buildIconButtonComponent() {
     "Size maps to IconButton.size: Default maps to icon, Small maps to sm, Large maps to lg.",
     "State maps to disabled/isLoading in Code Connect.",
     "Icon is an instance-swap slot. Swap with Pointr Icon Library symbols.",
+    "Counter shows IconButton.counter over the icon's top-end corner; Counter Text is the count.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -30349,6 +30799,7 @@ async function buildIconButtonComponent() {
     variableByName,
     stats,
   );
+  configureIconButtonCounterProperties(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
   return stats;
 }
@@ -30377,6 +30828,7 @@ async function updateIconButtonComponent() {
   }
   normalizeComponentSetNodeName(existing, "IconButton", stats);
 
+  const fonts = await loadButtonFonts(stats);
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const iconComponent = await resolveDefaultIconSourceComponent(
     variableByName,
@@ -30394,6 +30846,7 @@ async function updateIconButtonComponent() {
     "Size maps to IconButton.size: Default maps to icon, Small maps to sm, Large maps to lg.",
     "State maps to disabled/isLoading in Code Connect.",
     "Icon is an instance-swap slot. Swap with Pointr Icon Library symbols.",
+    "Counter shows IconButton.counter over the icon's top-end corner; Counter Text is the count.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -30415,6 +30868,7 @@ async function updateIconButtonComponent() {
       size: props.size,
       state: props.state,
       variableByName,
+      fonts,
       stats,
     });
     stats.variantsUpdated += 1;
@@ -30441,10 +30895,12 @@ async function updateIconButtonComponent() {
     stats,
   );
   await configureIconButtonSlot(existing, iconComponent, variableByName, stats);
+  configureIconButtonCounterProperties(existing, stats);
   configureFocusVisibleProperty(existing, stats);
   await refreshButtonSlotsIfPresent(page, variableByName, stats);
   await pruneLegacyGeneratedIconSlotComponents(stats);
-  // TourStep's Close is an IconButton whose x-close TourStep tints.
+  // TourStep's Close is an IconButton whose x-close TourStep tints, and Card's
+  // header action one whose pencil Card tints (GAP-169).
   noteSetsToUpdateNext("IconButton", stats);
   return stats;
 }
@@ -31282,6 +31738,7 @@ async function buildLinkComponent() {
     "State provides focus-visible examples.",
     "Link Text maps to children in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -31334,6 +31791,7 @@ async function updateLinkComponent() {
     "State provides focus-visible examples.",
     "Link Text maps to children in Code Connect.",
     "Focus Visible controls the generated focus ring.",
+    "External shows the new-tab icon, Link.external.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -32118,9 +32576,13 @@ async function buildAccordionComponent() {
     componentSetName: "Accordion",
     axisName: "State",
     values: ACCORDION_STATES,
+    axis2Name: "Variant",
+    axis2Values: ACCORDION_VARIANTS,
+    hasCombination: accordionCombinationExists,
     x: 80,
     y: 12100,
     xStep: 440,
+    yStep: 180,
     createVariant: createAccordionVariant,
     configureProperties: configureAccordionProperties,
     description: [
@@ -32128,6 +32590,7 @@ async function buildAccordionComponent() {
       "State maps to closed and open data-state examples.",
       "Trigger Text maps to AccordionTrigger children.",
       "Content Text maps to AccordionContent children when open.",
+      "Variant=Boxed is decision 149's form: Label Text and Icon are its own.",
     ],
   });
 }
@@ -32138,7 +32601,11 @@ async function updateAccordionComponent() {
     componentSetName: "Accordion",
     axisName: "State",
     values: ACCORDION_STATES,
+    axis2Name: "Variant",
+    axis2Values: ACCORDION_VARIANTS,
+    hasCombination: accordionCombinationExists,
     xStep: 440,
+    yStep: 180,
     createVariant: createAccordionVariant,
     updateVariant: updateAccordionVariant,
     parseVariantName: parseAccordionVariantName,
@@ -32147,6 +32614,7 @@ async function updateAccordionComponent() {
       "Kozmos Accordion component set generated from React Accordion anatomy.",
       "State maps to closed and open data-state examples.",
       "Trigger Text maps to AccordionTrigger children.",
+      "Variant=Boxed is decision 149's form: Label Text and Icon are its own.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -33949,29 +34417,25 @@ async function buildInputComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  for (let stateIndex = 0; stateIndex < INPUT_STATES.length; stateIndex += 1) {
-    const state = INPUT_STATES[stateIndex];
-    for (
-      let statusIndex = 0;
-      statusIndex < INPUT_STATUSES.length;
-      statusIndex += 1
-    ) {
-      const status = INPUT_STATUSES[statusIndex];
-      const component = await createInputVariant({
-        state,
-        status,
-        variableByName,
-        fonts,
-        stats,
-      });
-      component.x = statusIndex * 360;
-      component.y = stateIndex * 126;
-      page.appendChild(component);
-      components.push(component);
+  for (const action of INPUT_ACTIONS) {
+    for (const state of INPUT_STATES) {
+      for (const status of INPUT_STATUSES) {
+        const component = await createInputVariant({
+          state,
+          status,
+          action,
+          variableByName,
+          fonts,
+          stats,
+        });
+        page.appendChild(component);
+        components.push(component);
+      }
     }
   }
 
   const componentSet = figma.combineAsVariants(components, page);
+  layoutInputVariants(componentSet);
   componentSet.name = "Input";
   componentSet.x = 80;
   componentSet.y = 2220;
@@ -33982,6 +34446,7 @@ async function buildInputComponent() {
     "Kozmos Input component set generated from React Input API.",
     "State maps to focus, disabled, and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
+    "Action maps to Input.action: a copy or toggle button at the field's end; Action Icon is the toggle's icon.",
     "Label Text maps to Input.label.",
     "Placeholder Text maps to Input.placeholder.",
     "Helper Text maps to Input.helperText.",
@@ -34002,6 +34467,7 @@ async function buildInputComponent() {
   configurePlaceholderTextProperty(componentSet, "Placeholder", stats);
   configureHelperTextProperty(componentSet, "Helper text", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  await configureInputActionIconProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
   return stats;
 }
@@ -34041,6 +34507,7 @@ async function updateInputComponent() {
     "Kozmos Input component set generated from React Input API.",
     "State maps to focus, disabled, and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
+    "Action maps to Input.action: a copy or toggle button at the field's end; Action Icon is the toggle's icon.",
     "Label Text maps to Input.label.",
     "Placeholder Text maps to Input.placeholder.",
     "Helper Text maps to Input.helperText.",
@@ -34059,10 +34526,14 @@ async function updateInputComponent() {
       continue;
     }
 
-    seenKeys[`${props.state}/${props.status}`] = true;
+    // A variant drawn before the Action axis is named "State=…, Status=…" and
+    // parses as Action=None, so Update renames it rather than replacing it,
+    // and the node ids Code Connect pins survive.
+    seenKeys[`${props.state}/${props.status}/${props.action}`] = true;
     await updateInputVariant(child, {
       state: props.state,
       status: props.status,
+      action: props.action,
       variableByName,
       fonts,
       stats,
@@ -34070,21 +34541,24 @@ async function updateInputComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const state of INPUT_STATES) {
-    for (const status of INPUT_STATUSES) {
-      const key = `${state}/${status}`;
-      if (seenKeys[key]) continue;
+  for (const action of INPUT_ACTIONS) {
+    for (const state of INPUT_STATES) {
+      for (const status of INPUT_STATUSES) {
+        const key = `${state}/${status}/${action}`;
+        if (seenKeys[key]) continue;
 
-      const component = await createInputVariant({
-        state,
-        status,
-        variableByName,
-        fonts,
-        stats,
-      });
-      existing.appendChild(component);
-      seenKeys[key] = true;
-      stats.variantsCreated += 1;
+        const component = await createInputVariant({
+          state,
+          status,
+          action,
+          variableByName,
+          fonts,
+          stats,
+        });
+        existing.appendChild(component);
+        seenKeys[key] = true;
+        stats.variantsCreated += 1;
+      }
     }
   }
 
@@ -34102,6 +34576,7 @@ async function updateInputComponent() {
   configurePlaceholderTextProperty(existing, "Placeholder", stats);
   configureHelperTextProperty(existing, "Helper text", stats);
   configureHelperVisibilityProperty(existing, stats);
+  await configureInputActionIconProperty(existing, stats);
   configureFocusVisibleProperty(existing, stats);
   return stats;
 }
@@ -44260,6 +44735,9 @@ async function buildProgressComponent() {
     componentSetName: "Progress",
     axisName: "Value",
     values: PROGRESS_VALUES,
+    axis2Name: "Shape",
+    axis2Values: PROGRESS_FORMS,
+    yStep: 152,
     x: 80,
     y: 3700,
     xStep: 360,
@@ -44268,6 +44746,11 @@ async function buildProgressComponent() {
     description: [
       "Kozmos Progress component set generated from React Progress API.",
       "Value maps to Progress.value in Code Connect.",
+      "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
+      "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
+      "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
+      "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -44279,6 +44762,9 @@ async function updateProgressComponent() {
     componentSetName: "Progress",
     axisName: "Value",
     values: PROGRESS_VALUES,
+    axis2Name: "Shape",
+    axis2Values: PROGRESS_FORMS,
+    yStep: 152,
     xStep: 360,
     createVariant: createProgressVariant,
     updateVariant: updateProgressVariant,
@@ -44287,6 +44773,11 @@ async function updateProgressComponent() {
     description: [
       "Kozmos Progress component set generated from React Progress API.",
       "Value maps to Progress.value in Code Connect.",
+      "Shape maps to Progress.shape: Linear, the bar, or Circular, a ring from 12 o'clock clockwise.",
+      "Size maps to a ring's size: Small 48, Medium 96, Large 128; a bar has one size.",
+      "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
+      "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
+      "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -44473,6 +44964,9 @@ async function buildToastComponent() {
     componentSetName: "Toast",
     axisName: "Content",
     values: TOAST_CONTENT,
+    axis2Name: "Tone",
+    axis2Values: TOAST_TONES,
+    yStep: 160,
     x: 80,
     y: 6480,
     xStep: 480,
@@ -44481,6 +44975,7 @@ async function buildToastComponent() {
     description: [
       "Kozmos Toast component set generated from React Toast API.",
       "Content maps to composed Toast children.",
+      "Tone maps to toast()'s tone; Neutral draws no icon.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
@@ -44494,6 +44989,9 @@ async function updateToastComponent() {
     componentSetName: "Toast",
     axisName: "Content",
     values: TOAST_CONTENT,
+    axis2Name: "Tone",
+    axis2Values: TOAST_TONES,
+    yStep: 160,
     xStep: 480,
     createVariant: createToastVariant,
     updateVariant: updateToastVariant,
@@ -44502,6 +45000,7 @@ async function updateToastComponent() {
     description: [
       "Kozmos Toast component set generated from React Toast API.",
       "Content maps to composed Toast children.",
+      "Tone maps to toast()'s tone; Neutral draws no icon.",
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
@@ -48161,15 +48660,20 @@ async function updateAdaptiveMapShellVariant(
     height: 344,
   });
 
-  // The map surface hosts the controls slot: `controls` renders above the
-  // canvas, so it is modelled as a trailing-aligned child rather than a
-  // sibling column, which would read as a third pane.
+  // The map surface hosts the slots the shell places over the map, where
+  // React's shell puts them: the top corners under the top bar (SDK-UI-002),
+  // the controls column below the top end, and the bottom row with its two
+  // corners and, between them, the status level with them and the credits
+  // above it (GAP-123). Rows in flow rather than absolute children, so they
+  // follow the surface's width; `controls` stays a trailing child rather than
+  // a sibling column, which would read as a third pane.
   const mapSurface = productSdkFrame("Map Surface", {
-    direction: "horizontal",
+    direction: "vertical",
     primarySizing: "FIXED",
     counterSizing: "FIXED",
-    primaryAlign: "MAX",
+    primaryAlign: "MIN",
     counterAlign: "MIN",
+    spacing: 12,
     padding: 12,
     width: 432,
     height: 344,
@@ -48189,19 +48693,101 @@ async function updateAdaptiveMapShellVariant(
   ];
   mapSurface.strokeWeight = 1;
 
-  const controls = await productSdkSlot({
-    // Inside mapSurface, a `control`-radius panel with a 1px stroke — not the
-    // shell card, which is what the default assumes.
-    parentRadius: KOZMOS_RADIUS.control,
-    name: "Controls Slot",
-    label: "Controls",
-    width: 60,
+  // Inside mapSurface, a `control`-radius panel with a 1px stroke — not the
+  // shell card, which is what the default assumes.
+  const mapSlot = (name, label, width, height) =>
+    productSdkSlot({
+      parentRadius: KOZMOS_RADIUS.control,
+      name,
+      label,
+      width,
+      height,
+      fonts,
+      variableByName,
+      stats,
+    });
+  const mapRow = (name, counterAlign) =>
+    productSdkFrame(name, {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      primaryAlign: "SPACE_BETWEEN",
+      counterAlign,
+      width: 408,
+      height: 40,
+    });
+
+  const topRow = mapRow("Top Corners", "MIN");
+  appendWithSizing(
+    topRow,
+    await mapSlot("Top Start Slot", "Top start", 104, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(
+    topRow,
+    await mapSlot("Top End Slot", "Top end", 72, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, topRow, "FILL", "HUG");
+
+  const controlsRow = productSdkFrame("Controls Column", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "MAX",
+    width: 408,
     height: 152,
-    fonts,
-    variableByName,
-    stats,
   });
-  mapSurface.appendChild(controls);
+  appendWithSizing(
+    controlsRow,
+    await mapSlot("Controls Slot", "Controls", 60, 152),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, controlsRow, "FILL", "HUG");
+
+  // The map between them, undrawn: it takes what the rows leave.
+  const mapSpace = productSdkFrame("Map Space", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: 408,
+    height: 16,
+  });
+  appendWithSizing(mapSurface, mapSpace, "FILL", "FILL");
+
+  const bottomRow = mapRow("Bottom Row", "MAX");
+  appendWithSizing(
+    bottomRow,
+    await mapSlot("Bottom Start Slot", "Bottom start", 104, 40),
+    "FIXED",
+    "FIXED",
+  );
+  const middle = productSdkFrame("Status And Credits", {
+    counterAlign: "CENTER",
+    spacing: 12,
+  });
+  appendWithSizing(
+    middle,
+    await mapSlot("Attribution Slot", "Credits", 120, 24),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(
+    middle,
+    await mapSlot("Status Slot", "Status", 120, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(bottomRow, middle, "HUG", "HUG");
+  appendWithSizing(
+    bottomRow,
+    await mapSlot("Bottom End Slot", "Bottom end", 96, 40),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(mapSurface, bottomRow, "FILL", "HUG");
 
   const panel = await productSdkSlot({
     name: "Panel Slot",
@@ -48242,6 +48828,10 @@ const ADAPTIVE_MAP_SHELL_DESCRIPTION = [
   "PanelPlacement maps to AdaptiveMapShell.panelPlacement (start, end).",
   "Top Bar Slot maps to AdaptiveMapShell.topBar.",
   "Panel Slot maps to AdaptiveMapShell.panel, Controls Slot to .controls.",
+  "Top Start and Top End Slots map to .controlsTopStart and .controlsTopEnd; Exit building goes at the top start.",
+  "Bottom Start and Bottom End Slots map to .controlsBottomStart and .controlsBottomEnd.",
+  "Status Slot maps to .status, level with the bottom corners; Attribution Slot to .attribution, above it.",
+  "Start and end mirror in right to left. SwiftUI and Compose do not have the top corners or the status yet.",
   "Map Surface is renderer output; mapLabel and collisionInsets have no visual counterpart.",
 ];
 
@@ -48944,6 +49534,24 @@ async function updatePOIDetailPanelVariant(
     });
     appendWithSizing(actions, action, "HUG", "FIXED");
   }
+  // The product's own action, details.hostActions (GAP-130): last in the
+  // strip, outlined, with its own icon. Hidden until the Host Action property
+  // asks for it. The code's strip scrolls sideways and never wraps, so one
+  // past the card's edge is cut off at it here, as the strip shows it before
+  // it is scrolled.
+  const hostAction = await productSdkControlButton({
+    name: "Host Action",
+    glyph: "↗",
+    iconName: "map-01",
+    label: "Open in app",
+    filled: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(actions, hostAction, "HUG", "FIXED");
+  hostAction.visible = false;
+  actions.clipsContent = true;
   appendWithSizing(component, actions, "FILL", "FIXED");
 }
 
@@ -48969,6 +49577,21 @@ function configurePOIDetailPanelProperties(componentSet, stats) {
     "Speciality coffee and pastries beside the north atrium escalators.",
     stats,
   );
+  // The product's own action in the strip (GAP-130), with its own words.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Host Action",
+    "Host Action",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Host Action Label",
+    "Host Action Text",
+    "Open in app",
+    stats,
+  );
 }
 
 const POI_DETAIL_PANEL_DESCRIPTION = [
@@ -48977,6 +49600,7 @@ const POI_DETAIL_PANEL_DESCRIPTION = [
   "Title Text maps to poi.name, Subtitle Text to the category, floor, and availability labels.",
   "Description Text maps to poi.description.",
   "Actions Slot maps to poi.actions with actionLabels; actionStates stay product state.",
+  "Host Action, last in the Actions Slot, is a product's own action, details.hostActions (GAP-130): its words are Host Action Text, its icon the product's.",
   "Sheet paints no surface, border or shadow of its own — it sits on the sheet's grey, which draws the handle — rounds only its top corners at the control radius, and its inset blocks (media, services) go white; Inline has no surface chrome.",
 ];
 
@@ -49859,7 +50483,7 @@ async function configureCategoryFieldProperties(componentSet, stats) {
   );
   // The chosen category's own symbol is offered too, as on CategoryTile.
   const iconSourceComponents = await findKozmosIconSourceComponents({
-    withTaxonomy: true,
+    withOwned: true,
   });
   const preferredValues = iconPreferredValues(iconSourceComponents);
   const defaultIcon =
@@ -50344,7 +50968,7 @@ async function configureCategoryTileProperties(componentSet, stats) {
   // A category's own symbol is offered too: the taxonomy's quick-access
   // symbols are what the product's tiles draw.
   const iconSourceComponents = await findKozmosIconSourceComponents({
-    withTaxonomy: true,
+    withOwned: true,
   });
   const preferredValues = iconPreferredValues(iconSourceComponents);
   const defaultIcon =
@@ -50812,6 +51436,16 @@ async function updatePOIResultCardVariant(
   for (const action of [
     { name: "Primary Action", label: "Go", primary: true },
     { name: "Secondary Action", label: "Details", primary: false },
+    // The product's own action, result.hostActions (GAP-028): after the
+    // card's, outlined as Details is, with its own icon before its words.
+    // Hidden until the Host Action property asks for it.
+    {
+      name: "Host Action",
+      label: "Reserve a table",
+      primary: false,
+      iconName: "calendar",
+      hidden: true,
+    },
   ]) {
     const button = productSdkFrame(action.name, {
       direction: "horizontal",
@@ -50819,6 +51453,7 @@ async function updatePOIResultCardVariant(
       counterSizing: "FIXED",
       primaryAlign: "CENTER",
       counterAlign: "CENTER",
+      spacing: action.iconName ? 8 : 0,
       paddingLeft: 16,
       paddingRight: 16,
       width: 80,
@@ -50838,6 +51473,22 @@ async function updatePOIResultCardVariant(
         paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
       ];
       button.strokeWeight = 1;
+    }
+
+    const icon = action.iconName
+      ? await productSdkIconInstance({
+          iconName: action.iconName,
+          token: { name: "Colors/foreground/0", fallback: "#000000" },
+          size: 20,
+          sizeToken: null,
+          variableByName,
+          stats,
+          owner: "POIResultCard " + action.name,
+        })
+      : null;
+    if (icon) {
+      icon.name = action.name + " Icon";
+      button.appendChild(icon);
     }
 
     const label = await productSdkText({
@@ -50861,6 +51512,7 @@ async function updatePOIResultCardVariant(
     label.textAutoResize = "WIDTH_AND_HEIGHT";
     button.appendChild(label);
     appendWithSizing(actionsRow, button, "HUG", "FIXED");
+    if (action.hidden) button.visible = false;
   }
 
   appendWithSizing(component, actionsRow, "FILL", "FIXED");
@@ -50878,6 +51530,21 @@ function configurePOIResultCardProperties(componentSet, stats) {
     "Actions Row",
     "Actions",
     false,
+    stats,
+  );
+  // The product's own action in that row (GAP-028), with its own words.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Host Action",
+    "Host Action",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Host Action Text",
+    "Host Action Text",
+    "Reserve a table",
     stats,
   );
   configureNamedTextProperty(
@@ -50902,6 +51569,7 @@ const POI_RESULT_CARD_DESCRIPTION = [
   "Title Text maps to poi.name; Meta Text to floorLabel and travelEstimate.",
   "Featured uses a labelled badge, so a sponsored result is not identified by colour alone.",
   "Selection must stay in step with the matching LocationPin on the map.",
+  "Host Action, in the action row, is a product's own action, result.hostActions (GAP-028): its words are Host Action Text, its icon the product's.",
 ];
 
 async function buildPOIResultCardComponent() {
@@ -52671,8 +53339,15 @@ function generatedVariantCombinations(config) {
   const seconds = config.axis2Values || [null];
   const out = [];
   for (let i = 0; i < config.values.length; i += 1)
-    for (let j = 0; j < seconds.length; j += 1)
+    for (let j = 0; j < seconds.length; j += 1) {
+      // A sparse set says which pairs it draws.
+      if (
+        config.hasCombination &&
+        !config.hasCombination(config.values[i], seconds[j])
+      )
+        continue;
       out.push({ value: config.values[i], second: seconds[j], i, j });
+    }
   return out;
 }
 
@@ -53109,7 +53784,32 @@ function layoutFloatingActionButtonVariants(componentSet) {
   resizeComponentSetToContainChildren(componentSet);
 }
 
-function configureProgressProperties(_componentSet, _stats) {}
+function configureProgressProperties(componentSet, stats) {
+  // A ring's label, one text drawn in the hole or beside the ring at the
+  // inline end; a bar draws none.
+  configureNamedTextProperty(componentSet, "Label", "Label", "Label", stats);
+  configureNamedTextProperty(
+    componentSet,
+    "Label Beside",
+    "Label",
+    "Label",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Label",
+    "Show Label",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Label Beside",
+    "Label Beside",
+    false,
+    stats,
+  );
+}
 
 function configureSpinnerProperties(_componentSet, _stats) {}
 
@@ -53160,6 +53860,15 @@ function configureLinkProperties(componentSet, stats) {
     stats,
   );
   configureFocusVisibleProperty(componentSet, stats);
+  // GAP-202: External shows the new-tab icon (syncLinkExternalIcon), off
+  // by default, so a Link draws as it did.
+  configureNamedBooleanProperty(
+    componentSet,
+    LINK_EXTERNAL_ICON_NAME,
+    "External",
+    false,
+    stats,
+  );
 }
 
 function configureLabelProperties(componentSet, stats) {
@@ -53290,21 +53999,63 @@ function configurePaginationProperties(componentSet, stats) {
   );
 }
 
-function configureAccordionProperties(componentSet, stats) {
+async function configureAccordionProperties(
+  componentSet,
+  stats,
+  variableByName,
+) {
   configureNamedTextProperty(
     componentSet,
     "Trigger Text",
     "Trigger Text",
-    "Is it accessible?",
+    ACCORDION_TRIGGER_SAMPLE,
     stats,
   );
   configureNamedTextProperty(
     componentSet,
     "Content Text",
     "Content Text",
-    "Yes. It follows the WAI-ARIA disclosure pattern.",
+    ACCORDION_CONTENT_SAMPLE,
     stats,
   );
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    ACCORDION_LABEL_SAMPLE,
+    stats,
+  );
+
+  const labels = ensureBooleanProperty(componentSet, "Show Label", true, stats);
+  const icons = ensureBooleanProperty(componentSet, "Show Icon", true, stats);
+  // The icon the boxed variants paint: a default that differed would swap
+  // every one of them, and drop its tint, or be what a reset swaps to.
+  const iconComponent =
+    (await findKozmosIconSourceComponent(ACCORDION_BOXED_ICON)) ||
+    (await resolveDefaultIconSourceComponent(variableByName, stats));
+  const iconSourceComponents = await findKozmosIconSourceComponents();
+  const swap = iconComponent
+    ? ensureInstanceSwapProperty(
+        componentSet,
+        BUTTON_ICON_PROPERTY,
+        iconComponent.id,
+        stats,
+        iconPreferredValues(iconSourceComponents),
+      )
+    : null;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const props = parseAccordionVariantName(child.name);
+    if (!props || props.variant !== "Boxed") continue;
+    const trigger = directChildNamed(child, "Accordion Trigger");
+    const column = trigger && directChildNamed(trigger, "Accordion Text");
+    const label = column && directChildNamed(column, "Label Text");
+    const icon = trigger && directChildNamed(trigger, "Icon");
+    if (labels && label) bindVisibilityProperty(label, labels, stats);
+    if (swap && icon) bindInstanceSwapProperty(icon, swap, stats);
+    if (icons && icon) bindVisibilityProperty(icon, icons, stats);
+  }
 }
 
 function configureChipProperties(componentSet, stats) {
@@ -53460,6 +54211,7 @@ function configureEmptyStateProperties(componentSet, stats) {
 }
 
 function configureCardProperties(componentSet, stats) {
+  configureCardHeaderActionsProperties(componentSet, stats);
   configureNamedTextProperty(
     componentSet,
     "Title Text",
@@ -54431,6 +55183,7 @@ async function createIconButtonVariant({
   size,
   state,
   variableByName,
+  fonts,
   stats,
 }) {
   const component = figma.createComponent();
@@ -54439,6 +55192,7 @@ async function createIconButtonVariant({
     size,
     state,
     variableByName,
+    fonts,
     stats,
   });
   return component;
@@ -54473,7 +55227,7 @@ function parseIconButtonVariantName(name) {
 
 async function updateIconButtonVariant(
   component,
-  { variant, size, state, variableByName, stats },
+  { variant, size, state, variableByName, fonts, stats },
 ) {
   const config = buttonConfig(variant, state);
   const metrics = iconButtonMetrics(size);
@@ -54554,6 +55308,176 @@ async function updateIconButtonVariant(
     variableByName,
     stats,
   });
+
+  await syncIconButtonCounter(component, {
+    size,
+    variableByName,
+    fonts: fonts || (await loadButtonFonts(stats)),
+    stats,
+  });
+}
+
+/**
+ * A component float token's value, through its aliases: what a node bound to
+ * it draws, whatever the painter wrote first.
+ */
+function componentFloatTokenValue(name) {
+  for (let hops = 0; name && hops < 8; hops += 1) {
+    const token = COMPONENT_FLOAT_TOKENS.find((entry) => entry.name === name);
+    if (!token) return null;
+    if (typeof token.value === "number") return token.value;
+    name = token.alias;
+  }
+  return null;
+}
+
+/**
+ * The size an IconButton draws at: its size token's value, which the bound
+ * width and height take over whatever iconButtonMetrics wrote (Large is 48).
+ */
+function iconButtonBoxSize(size) {
+  const metrics = iconButtonMetrics(size);
+  return componentFloatTokenValue(metrics.sizeToken) || metrics.size;
+}
+
+/**
+ * Where IconButton's counter sits (GAP-197), as React's
+ * .kozmos-icon-button-counter places it: its start edge 2 past the button's
+ * centre and its bottom edge on the centre line. On a 44 button x is 24 and
+ * the bottom 22; on 48, 26 and 24.
+ */
+function iconButtonCounterPosition(size) {
+  const box = iconButtonBoxSize(size);
+  const height = counterMetrics("Small").height;
+  return {
+    x: box / 2 + ICON_BUTTON_COUNTER_OFFSET,
+    y: box / 2 - height,
+  };
+}
+
+/**
+ * IconButton's counter: a brand Counter at size sm, as React draws one, made
+ * of the Counter painter's own parts — its small metrics and typography, the
+ * theme fill and the theme foreground (decision 59) — out of the button's
+ * layout, so the button keeps its size. Hidden by default: the Counter
+ * property shows it, and Counter Text is its count.
+ */
+async function syncIconButtonCounter(
+  component,
+  { size, variableByName, fonts, stats },
+) {
+  const config = counterConfig("Brand");
+  const metrics = counterMetrics("Small");
+
+  let counter = directChildNamed(component, "Counter");
+  if (counter && counter.type !== "FRAME") {
+    counter.remove();
+    counter = null;
+  }
+  if (!counter) {
+    counter = figma.createFrame();
+    counter.name = "Counter";
+  }
+
+  counter.layoutMode = "HORIZONTAL";
+  counter.primaryAxisSizingMode = "AUTO";
+  counter.counterAxisSizingMode = "FIXED";
+  counter.primaryAxisAlignItems = "CENTER";
+  counter.counterAxisAlignItems = "CENTER";
+  counter.itemSpacing = 0;
+  counter.paddingLeft = metrics.paddingX;
+  counter.paddingRight = metrics.paddingX;
+  counter.paddingTop = 0;
+  counter.paddingBottom = 0;
+  counter.resizeWithoutConstraints(metrics.minWidth, metrics.height);
+  setNodePropertyIfSupported(counter, "minWidth", metrics.minWidth);
+  counter.cornerRadius = KOZMOS_RADIUS.pill;
+  counter.clipsContent = false;
+  counter.fills = [
+    paintFromVariable(
+      config.background,
+      config.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  counter.strokes = [];
+  counter.strokeWeight = 0;
+  counter.setSharedPluginData(RUN_NAMESPACE, "kind", "icon-button-counter");
+  bindCounterGeometryVariables(counter, metrics, variableByName, stats);
+
+  let text = directChildNamed(counter, "Counter Text");
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = "Counter Text";
+  }
+  removeDirectChildrenExcept(counter, text);
+  counter.appendChild(text);
+  await applyCounterTypography(text, "Small", fonts, variableByName, stats);
+  text.characters = ICON_BUTTON_COUNTER_DEFAULT_TEXT;
+  text.fills = [
+    paintFromVariable(
+      config.foreground,
+      config.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  text.textAlignVertical = "CENTER";
+  setHugChildSizing(text);
+
+  // Last, so it draws over the icon, as React's span follows the children.
+  component.appendChild(counter);
+  counter.layoutPositioning = "ABSOLUTE";
+  const position = iconButtonCounterPosition(size);
+  counter.x = position.x;
+  counter.y = position.y;
+  // Held to the button's centre, as React's 50% and calc(50% + 2px) are.
+  counter.constraints = { horizontal: "CENTER", vertical: "CENTER" };
+  // Off by default, as React draws no counter until one is given.
+  counter.visible = false;
+  return counter;
+}
+
+/**
+ * The Counter boolean (off by default, so every IconButton drawn so far is
+ * unchanged) shows the counter; Counter Text is its count. Run after the icon
+ * slot, which appends the icon last: the counter is put back above it.
+ */
+function configureIconButtonCounterProperties(componentSet, stats) {
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    raiseIconButtonCounter(child);
+  }
+  configureNamedBooleanProperty(
+    componentSet,
+    "Counter",
+    ICON_BUTTON_COUNTER_PROPERTY,
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Counter Text",
+    ICON_BUTTON_COUNTER_TEXT_PROPERTY,
+    ICON_BUTTON_COUNTER_DEFAULT_TEXT,
+    stats,
+  );
+}
+
+/** The counter above everything else in the variant, the icon included. */
+function raiseIconButtonCounter(variant) {
+  const counter = directChildNamed(variant, "Counter");
+  if (!counter || variant.children[variant.children.length - 1] === counter) {
+    return;
+  }
+  variant.appendChild(counter);
+  // Appending again puts it back in the flow in some runtimes: out again.
+  counter.layoutPositioning = "ABSOLUTE";
 }
 
 async function createToggleButtonVariant({
@@ -55488,6 +56412,18 @@ async function updateLinkVariant(
   ];
   component.appendChild(text);
 
+  // GAP-202: the new-tab icon after the words, hidden until External. The
+  // gap is React's no-break space; it counts only while the icon shows.
+  component.itemSpacing = 4;
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Link/gap",
+    variableByName,
+    stats,
+  );
+  syncLinkExternalIcon(component, config, variableByName, stats);
+
   syncFocusRing(component, {
     enabled: state === "Focus",
     width: 128,
@@ -55500,6 +56436,81 @@ async function updateLinkVariant(
   });
   const ring = directChildNamed(component, "Focus Ring");
   if (ring) ring.visible = state === "Focus";
+}
+
+// GAP-202, decision 122: Link's new-tab icon. Pointr's link-external-01
+// (node 1007:10029), which @kozmos-ds/icons exports as LinkExternal01 and
+// React draws at the link's end; decision 121 keeps it out of the by-name
+// icons, so it is drawn here from its path rather than placed from the Icons
+// page. The painters check holds the path to the package's.
+const LINK_EXTERNAL_ICON_NAME = "External Icon";
+const LINK_EXTERNAL_ICON_PATH =
+  "M15 3H21L21 9M21 3L13 11M10 5H7.8C6.11984 5 5.27976 5 4.63803 5.32698C4.07354 5.6146 3.6146 6.07354 3.32698 6.63803C3 7.27976 3 8.11984 3 9.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H14.2C15.8802 21 16.7202 21 17.362 20.673C17.9265 20.3854 18.3854 19.9265 18.673 19.362C19 18.7202 19 17.8802 19 16.2V14";
+
+/**
+ * The new-tab icon, after the link's words: the text's size, 14 (React's
+ * 1em), its outline stroked 2 × 14 / 24 with round caps and joins, in the
+ * variant's colour, as React's `currentColor`. Drawn again on every Update,
+ * hidden, as the option lists' group labels are: the set's External boolean
+ * shows it (configureLinkProperties).
+ */
+function syncLinkExternalIcon(component, config, variableByName, stats) {
+  const size = 14;
+  const existing = directChildNamed(component, LINK_EXTERNAL_ICON_NAME);
+  if (existing) existing.remove();
+  const icon = figma.createNodeFromSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="${LINK_EXTERNAL_ICON_PATH}" stroke="${config.foregroundFallback}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  );
+  icon.name = LINK_EXTERNAL_ICON_NAME;
+  icon.fills = [];
+  icon.strokes = [];
+  icon.clipsContent = false;
+  icon.setSharedPluginData(RUN_NAMESPACE, "kind", "link-external-icon");
+  icon.setSharedPluginData(
+    RUN_NAMESPACE,
+    "foreground-token",
+    config.foreground,
+  );
+  markDecorativeIcon(icon);
+  // Drawn on its 24 grid and resized with its shapes, as the wayfinding
+  // glyphs are placed (placeIconSource); the stroke is set below.
+  for (const shape of icon.findAll(() => true)) {
+    try {
+      shape.constraints = { horizontal: "SCALE", vertical: "SCALE" };
+    } catch (_error) {
+      // A group takes no constraints; its shapes do.
+    }
+  }
+  try {
+    icon.resize(size, size);
+  } catch (error) {
+    stats.warnings.push(
+      `Link: could not size the new-tab icon to ${size} (${messageFor(error)}).`,
+    );
+  }
+  const paint = paintFromVariable(
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  for (const shape of icon.findAll((node) => node.type === "VECTOR")) {
+    shape.fills = [];
+    shape.strokes = [paint];
+    shape.strokeCap = "ROUND";
+    shape.strokeJoin = "ROUND";
+  }
+  scaleIconStrokes(icon, size);
+  bindSizeVariables(
+    icon,
+    "Link/icon/size",
+    "Link/icon/size",
+    variableByName,
+    stats,
+  );
+  component.appendChild(icon);
+  icon.visible = false;
+  return icon;
 }
 
 async function createLabelVariant({ value, variableByName, fonts, stats }) {
@@ -56921,15 +57932,36 @@ function appendPaginationEllipsis(parent, metrics, variableByName, stats) {
   };
 }
 
-async function createAccordionVariant({ value, variableByName, fonts, stats }) {
+// One sample each, on every variant: a text bound to a property draws the
+// set's one default, so a sample a variant wrote of its own would never show.
+const ACCORDION_TRIGGER_SAMPLE = "Is it accessible?";
+const ACCORDION_CONTENT_SAMPLE =
+  "Yes. It follows the WAI-ARIA disclosure pattern.";
+const ACCORDION_LABEL_SAMPLE = "Step 1/5";
+const ACCORDION_BOXED_ICON = "home-line";
+
+async function createAccordionVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateAccordionVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
   });
   return component;
+}
+
+/** Which pairs the set draws: the default form is only Closed and Open. */
+function accordionCombinationExists(state, variant) {
+  if (ACCORDION_VARIANTS.indexOf(variant) === -1) return false;
+  return variant === "Boxed" || state === "Closed" || state === "Open";
 }
 
 function parseAccordionVariantName(name) {
@@ -56946,18 +57978,342 @@ function parseAccordionVariantName(name) {
 
   if (ACCORDION_STATES.indexOf(values.State) === -1) return null;
 
+  // A variant drawn before the axis existed reads as Default, so Update
+  // renames the two the file has, and Code Connect's node ids survive.
+  const variant = values.Variant === undefined ? "Default" : values.Variant;
+  if (!accordionCombinationExists(values.State, variant)) return null;
+
   return {
     value: values.State,
     state: values.State,
+    second: variant,
+    variant,
   };
 }
 
-async function updateAccordionVariant(
+/** What Accordion's boxed header paints in a state (decision 149). */
+function accordionBoxedPaint(state) {
+  if (state === "Disabled" || state === "Loading") {
+    return {
+      fill: "Colors/background/100",
+      fillFallback: "#E3E4E8",
+      edge: "Border/Subtle",
+      edgeFallback: "#C7CAD1",
+      ink: "Colors/foreground/400",
+      inkFallback: "#5D626F",
+      label: "Colors/foreground/400",
+      labelFallback: "#5D626F",
+    };
+  }
+  if (state === "Open") {
+    return {
+      fill: "Colors/theme/900",
+      fillFallback: "#082975",
+      edge: "Colors/theme/900",
+      edgeFallback: "#082975",
+      ink: "Colors/foreground/1000",
+      inkFallback: "#FFFFFF",
+      label: "Colors/theme/300",
+      labelFallback: "#7EA2F6",
+    };
+  }
+  return {
+    fill: "Colors/background/0",
+    fillFallback: "#FFFFFF",
+    edge: "Border/Subtle",
+    edgeFallback: "#C7CAD1",
+    ink: "Colors/foreground/0",
+    inkFallback: "#000000",
+    label: "Colors/foreground/400",
+    labelFallback: "#5D626F",
+  };
+}
+
+/**
+ * The boxed form: a header of its own, with a hairline that stays laid out
+ * while open, in the fill's colour, so nothing moves, as React's transparent
+ * edge does: a frame with no stroke lays out none. 8 inside that edge and 2
+ * above and below it, as React's padding is. It hugs its lines over a floor
+ * of the control's height, as React's min-height does: two short lines sit in
+ * the middle of 44, and a title that wraps grows the header.
+ */
+async function updateAccordionBoxedVariant(
   component,
   { value, variableByName, fonts, stats },
 ) {
   const isOpen = value === "Open";
-  component.name = `State=${value}`;
+  const paint = accordionBoxedPaint(value);
+  component.name = `Variant=Boxed, State=${value}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(408, 44);
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Accordion");
+  bindFloatVariable(
+    component,
+    "width",
+    "Accordion/boxed/width/default",
+    variableByName,
+    stats,
+  );
+  clearBoundVariable(component, "height", stats);
+  setLayoutSizingHorizontal(component, "FIXED");
+  setLayoutSizingVertical(component, "HUG");
+
+  const oldChildren = [];
+  for (const child of component.children || []) {
+    oldChildren.push(child);
+  }
+  for (const child of oldChildren) {
+    child.remove();
+  }
+
+  const trigger = figma.createFrame();
+  trigger.name = "Accordion Trigger";
+  trigger.layoutMode = "HORIZONTAL";
+  trigger.primaryAxisSizingMode = "FIXED";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "MIN";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = 8;
+  // Padding before the stroke: a frame takes both in, and stays grown.
+  trigger.paddingLeft = 8;
+  trigger.paddingRight = 8;
+  trigger.paddingTop = 2;
+  trigger.paddingBottom = 2;
+  trigger.resizeWithoutConstraints(408, 44);
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.fills = [
+    paintFromVariable(paint.fill, paint.fillFallback, variableByName, stats),
+  ];
+  setNodePropertyIfSupported(trigger, "strokesIncludedInLayout", true);
+  trigger.strokeWeight = 1;
+  trigger.strokeAlign = "INSIDE";
+  trigger.strokes = [
+    paintFromVariable(paint.edge, paint.edgeFallback, variableByName, stats),
+  ];
+  trigger.clipsContent = false;
+  component.appendChild(trigger);
+  setNodePropertyIfSupported(trigger, "minHeight", 44);
+  bindFloatVariable(
+    trigger,
+    "minHeight",
+    "Accordion/boxed/trigger/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "cornerRadius",
+    "Accordion/boxed/trigger/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "itemSpacing",
+    "Accordion/boxed/trigger/gap",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"]) {
+    bindFloatVariable(
+      trigger,
+      side,
+      "Accordion/boxed/trigger/padding/x",
+      variableByName,
+      stats,
+    );
+  }
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      trigger,
+      side,
+      "Accordion/boxed/trigger/padding/y",
+      variableByName,
+      stats,
+    );
+  }
+  // Fixed until its layers are in: it hugs them below.
+  setVerticalFixedFillChildSizing(trigger);
+
+  const mark = await createFixedIconInstance(
+    ACCORDION_BOXED_ICON,
+    paint.ink,
+    paint.inkFallback,
+    variableByName,
+    stats,
+    20,
+    "Accordion/boxed/icon/size",
+  );
+  trigger.appendChild(mark);
+  setHugChildSizing(mark);
+
+  // The lines hug: the column is as tall as they are, and they are as wide
+  // as it is, so a longer label wraps, and the header grows with it.
+  const column = figma.createFrame();
+  column.name = "Accordion Text";
+  column.layoutMode = "VERTICAL";
+  column.primaryAxisSizingMode = "AUTO";
+  column.counterAxisSizingMode = "FIXED";
+  column.primaryAxisAlignItems = "MIN";
+  column.counterAxisAlignItems = "MIN";
+  column.itemSpacing = 0;
+  column.paddingLeft = 0;
+  column.paddingRight = 0;
+  column.paddingTop = 0;
+  column.paddingBottom = 0;
+  column.fills = [];
+  column.strokes = [];
+  column.clipsContent = false;
+  trigger.appendChild(column);
+  setLayoutSizingHorizontal(column, "FILL");
+  setLayoutSizingVertical(column, "HUG");
+  column.layoutGrow = 1;
+
+  for (const line of [
+    {
+      name: "Label Text",
+      characters: ACCORDION_LABEL_SAMPLE,
+      fontToken: "Accordion/boxed/label/font-size",
+      lineHeightToken: "Accordion/boxed/label/line-height",
+      colorToken: paint.label,
+      colorFallback: paint.labelFallback,
+      styleKey: "accordionBoxedLabel",
+    },
+    {
+      name: "Trigger Text",
+      characters: ACCORDION_TRIGGER_SAMPLE,
+      fontToken: "Accordion/boxed/title/font-size",
+      lineHeightToken: "Accordion/boxed/title/line-height",
+      colorToken: paint.ink,
+      colorFallback: paint.inkFallback,
+      styleKey: "accordionBoxedTitle",
+    },
+  ]) {
+    const text = await appendAccordionText({
+      parent: column,
+      name: line.name,
+      characters: line.characters,
+      fontToken: line.fontToken,
+      lineHeightToken: line.lineHeightToken,
+      colorToken: line.colorToken,
+      colorFallback: line.colorFallback,
+      styleKey: line.styleKey,
+      fillHorizontal: true,
+      fonts,
+      variableByName,
+      stats,
+    });
+    // In a column, growing would be the column's height, not the line's.
+    text.layoutGrow = 0;
+    setLayoutSizingVertical(text, "HUG");
+  }
+
+  if (value === "Loading") {
+    const spinner = createSpinnerGlyph(
+      paint.ink,
+      paint.inkFallback,
+      variableByName,
+      stats,
+      20,
+      "Accordion/boxed/icon/size",
+    );
+    trigger.appendChild(spinner);
+    setHugChildSizing(spinner);
+  } else if (value !== "Disabled") {
+    const chevron = await appendAccordionChevron({
+      parent: trigger,
+      isOpen,
+      variableName: paint.ink,
+      fallback: paint.inkFallback,
+      size: 20,
+      sizeToken: "Accordion/boxed/icon/size",
+      variableByName,
+      stats,
+    });
+    chevron.name = "Accordion Chevron";
+  }
+
+  // Everything is in: the header hugs it now, and its floor holds short lines
+  // at 44. Read back, because a frame can come out larger than it was asked.
+  setLayoutSizingVertical(trigger, "HUG");
+  if (Math.round(trigger.height) !== 44) {
+    stats.warnings.push(
+      `Accordion's boxed ${value} header is ${trigger.height} tall, not 44.`,
+    );
+  }
+
+  if (isOpen) {
+    const content = figma.createFrame();
+    content.name = "Accordion Content";
+    content.layoutMode = "VERTICAL";
+    content.primaryAxisSizingMode = "AUTO";
+    content.counterAxisSizingMode = "FIXED";
+    content.primaryAxisAlignItems = "MIN";
+    content.counterAxisAlignItems = "MIN";
+    content.itemSpacing = 0;
+    content.paddingLeft = 0;
+    content.paddingRight = 0;
+    content.paddingTop = 8;
+    content.paddingBottom = 0;
+    content.resizeWithoutConstraints(408, 28);
+    content.fills = [];
+    content.strokes = [];
+    content.strokeWeight = 0;
+    content.clipsContent = false;
+    component.appendChild(content);
+    bindFloatVariable(
+      content,
+      "paddingTop",
+      "Accordion/boxed/content/padding-top",
+      variableByName,
+      stats,
+    );
+    setVerticalStackChildSizing(content);
+    await appendAccordionText({
+      parent: content,
+      name: "Content Text",
+      characters: ACCORDION_CONTENT_SAMPLE,
+      fontToken: "Accordion/content/font-size",
+      lineHeightToken: "Accordion/content/line-height",
+      colorToken: "Colors/foreground/0",
+      colorFallback: "#000000",
+      fillHorizontal: true,
+      fonts,
+      variableByName,
+      stats,
+    });
+  }
+}
+
+async function updateAccordionVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  if (second === "Boxed") {
+    await updateAccordionBoxedVariant(component, {
+      value,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
+  const isOpen = value === "Open";
+  component.name = `Variant=Default, State=${value}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -57037,7 +58393,7 @@ async function updateAccordionVariant(
   await appendAccordionText({
     parent: trigger,
     name: "Trigger Text",
-    characters: "Is it accessible?",
+    characters: ACCORDION_TRIGGER_SAMPLE,
     fontToken: "Accordion/trigger/font-size",
     lineHeightToken: "Accordion/trigger/line-height",
     colorToken: "Colors/foreground/0",
@@ -57092,7 +58448,7 @@ async function updateAccordionVariant(
     await appendAccordionText({
       parent: content,
       name: "Content Text",
-      characters: "Yes. It follows the WAI-ARIA disclosure pattern.",
+      characters: ACCORDION_CONTENT_SAMPLE,
       fontToken: "Accordion/content/font-size",
       lineHeightToken: "Accordion/content/line-height",
       colorToken: "Colors/foreground/400",
@@ -57115,6 +58471,7 @@ async function appendAccordionText({
   colorToken,
   colorFallback,
   fillHorizontal = false,
+  styleKey,
   fonts,
   variableByName,
   stats,
@@ -57126,7 +58483,8 @@ async function appendAccordionText({
   text.lineHeight = { unit: "PIXELS", value: 20 };
   await applyTextStyleToNodeAsync(
     text,
-    name === "Trigger Text" ? "accordionTrigger" : "accordionContent",
+    styleKey ||
+      (name === "Trigger Text" ? "accordionTrigger" : "accordionContent"),
     stats,
   );
   text.characters = characters;
@@ -57170,16 +58528,21 @@ async function appendAccordionText({
 async function appendAccordionChevron({
   parent,
   isOpen,
+  variableName = "Colors/foreground/400",
+  fallback = "#5D626F",
+  size = 16,
+  sizeToken,
   variableByName,
   stats,
 }) {
   const icon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
-    "Colors/foreground/400",
-    "#5D626F",
+    variableName,
+    fallback,
     variableByName,
     stats,
-    16,
+    size,
+    sizeToken,
   );
   parent.appendChild(icon);
   setHugChildSizing(icon);
@@ -58286,10 +59649,12 @@ async function updatePopoverVariant(
 // decision 136) and as React's TourStep draws it in Storybook. Popover's
 // surface (Surface/0, the subtle edge all round, the Control corner, the
 // overlay elevation), 372 wide, 16 inside, the sections 12 apart, and no top
-// edge. The header row holds the eyebrow (the tour and the position, XS
-// semibold in the theme ink, sentence case) and Close at its end
-// (IconButton's Ghost with x-close); the title is Heading 4 under it, the
-// whole width; the body Small in the muted ink. The instruction is Notice's
+// edge. The header hugs the eyebrow (the tour and the position, XS semibold in
+// the theme ink, sentence case) 8 over the title, Heading 4; with no eyebrow
+// the title starts at the top of the card. Close (IconButton's Ghost with
+// x-close) takes no row: it is out of the flow in the card's top corner, and
+// the eyebrow and the title wrap before it. The body is Small in the muted
+// ink. The instruction is Notice's
 // box: its tone's fill at 5 % behind and its edge at 50 %, as layers of
 // their own, the Container corner, a 1 border and 8/12 inside it, a 16 icon
 // on the words' middle (cursor-02 for info, drawn here, and alert-triangle
@@ -58302,7 +59667,7 @@ async function updatePopoverVariant(
 //
 // The set draws Touch, the one density the file has. The design and React's
 // stories are compact (ThemeProvider density="compact", decision 82): there
-// Close and the buttons are 32, and the card 24 shorter. Here they are live
+// Close and the buttons are 32, and the card 12 shorter. Here they are live
 // instances of Button and IconButton, whose every size is 44, and they stay
 // bound to it: a 32 written on an instance would be a size the library does
 // not have, and it would hold those instances out of the Density modes
@@ -58350,7 +59715,18 @@ const TOUR_STEP_PADDING = 16;
 const TOUR_STEP_GAP = 12;
 const TOUR_STEP_COUNT = 4;
 const TOUR_STEP_ARROW = { width: 24, height: 12 };
+const TOUR_STEP_EYEBROW_GAP = 8;
+const TOUR_STEP_EYEBROW_LINE = 16;
+const TOUR_STEP_TITLE_LINE = 28;
 const TOUR_STEP_CLOSE_ICON = 16;
+// Close at Touch, as owned-tour-step.css places it. Its 16 icon ends on the
+// padding, so its box stops 2 from the card's inner edge, and the words stop 8
+// before the box: 38 of the 338.
+const TOUR_STEP_CLOSE_SIZE = 44;
+const TOUR_STEP_CLOSE_INSET =
+  TOUR_STEP_PADDING + (TOUR_STEP_CLOSE_ICON - TOUR_STEP_CLOSE_SIZE) / 2;
+const TOUR_STEP_CLOSE_ROOM =
+  TOUR_STEP_CLOSE_INSET + TOUR_STEP_CLOSE_SIZE - TOUR_STEP_PADDING + 8;
 // Notice's summary: 14 semibold at leading-snug.
 const TOUR_STEP_INSTRUCTION_LINE = 19.25;
 // Notice's 8/12 and its 1 border, which the edge layer draws out of the flow.
@@ -58898,6 +60274,110 @@ async function tourStepProgress({ spec, width, variableByName, fonts, stats }) {
   return row;
 }
 
+/** Where Close's corner is on the card: its icon ends on the padding, on its line. */
+function tourStepClosePlace(spec) {
+  const edge = 1;
+  const line = spec.eyebrow ? TOUR_STEP_EYEBROW_LINE : TOUR_STEP_TITLE_LINE;
+  return {
+    x: spec.width - edge - TOUR_STEP_CLOSE_INSET - TOUR_STEP_CLOSE_SIZE,
+    y: edge + TOUR_STEP_PADDING + (line - TOUR_STEP_CLOSE_SIZE) / 2,
+  };
+}
+
+/**
+ * Close, out of the flow in the card's top corner, so it takes no row.
+ *
+ * It arrives after the Header, not before: an absolute layer starts as a child
+ * in the flow, and a hug frame takes it in, padding and all, and keeps that
+ * size if nothing else is left in the flow (the instruction's fill and edge
+ * stopped 16 short for it). With the Header there the card gives its 44 back.
+ * x and y are placeAbsolute's, after it leaves the flow: written before, they
+ * are lost. Held at the top and the end, it follows a card a designer widens,
+ * and stays put as the rows under it grow.
+ */
+async function tourStepClose(component, spec, variableByName, stats) {
+  // One variant for the instance and for the tint laid again after the swap:
+  // the design's ghost Close.
+  const closeVariant = "Ghost";
+  const close = await createTourStepInstance({
+    componentSetName: "IconButton",
+    variantProperties: {
+      Variant: closeVariant,
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Close",
+    role: "tour-step-close",
+    stats,
+  });
+  if (close.componentSet) {
+    const glyph = await findKozmosIconSourceComponent("x-close");
+    if (glyph) {
+      if (
+        setInstanceSwapProperty(
+          close.node,
+          close.componentSet,
+          BUTTON_ICON_PROPERTY,
+          glyph.id,
+          stats,
+        )
+      ) {
+        retintTourStepCloseIcon(
+          close.node,
+          closeVariant,
+          variableByName,
+          stats,
+        );
+      }
+    } else {
+      stats.warnings.push(
+        'TourStep: icon "x-close" was not found on the Icons page.',
+      );
+    }
+  }
+  component.appendChild(close.node);
+  const place = tourStepClosePlace(spec);
+  placeAbsolute(close.node, place.x, place.y);
+  close.node.constraints = { horizontal: "MAX", vertical: "MIN" };
+}
+
+/**
+ * Once the rows are in, Close is where it was put and the card is its rows,
+ * whatever the runtime did on the way: a band above the title is what this
+ * layout exists to remove. Either read back wrong says so in the run's log.
+ */
+function holdTourStepClose(component, spec, stats) {
+  const close = component.findChild((node) => node.name === "Close");
+  if (close) {
+    const place = tourStepClosePlace(spec);
+    close.x = place.x;
+    close.y = place.y;
+    if (
+      close.layoutPositioning !== "ABSOLUTE" ||
+      Math.abs(close.x - place.x) > 0.5 ||
+      Math.abs(close.y - place.y) > 0.5 ||
+      Math.abs(close.width - TOUR_STEP_CLOSE_SIZE) > 0.5 ||
+      Math.abs(close.height - TOUR_STEP_CLOSE_SIZE) > 0.5
+    ) {
+      stats.warnings.push(
+        `TourStep: Close is ${close.width} by ${close.height} at ${close.x}, ${close.y} (${close.layoutPositioning}), not a ${TOUR_STEP_CLOSE_SIZE} at ${place.x}, ${place.y}.`,
+      );
+    }
+  }
+  const rows = component.children.filter(
+    (node) => node.layoutPositioning !== "ABSOLUTE",
+  );
+  const height =
+    2 * (TOUR_STEP_PADDING + 1) +
+    rows.reduce((sum, node) => sum + node.height, 0) +
+    TOUR_STEP_GAP * (rows.length - 1);
+  if (Math.abs(component.height - height) > 0.5) {
+    stats.warnings.push(
+      `TourStep: ${component.name} is ${component.height} tall over rows of ${height}.`,
+    );
+  }
+}
+
 async function updateTourStepVariant(
   component,
   { props, variableByName, fonts, stats },
@@ -58930,99 +60410,54 @@ async function updateTourStepVariant(
   arrow.y = -TOUR_STEP_ARROW.height + 1;
   arrow.constraints = { horizontal: "CENTER", vertical: "MIN" };
 
-  // The tour's name and position, and Close at the end, on one row.
-  if (spec.eyebrow || spec.close) {
-    const header = productSdkFrame("Header", {
+  // The tour's name and position, 8 over the title. The group hugs them, so
+  // with no eyebrow the title starts at the top of the card; with a Close, and
+  // only then, they wrap before it.
+  const room = spec.close ? TOUR_STEP_CLOSE_ROOM : 0;
+  const header = productSdkFrame("Header", {
+    direction: "vertical",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: TOUR_STEP_EYEBROW_GAP,
+    paddingRight: room,
+    width: inner,
+    height: TOUR_STEP_TITLE_LINE,
+  });
+  if (spec.eyebrow) {
+    const eyebrow = productSdkFrame("Eyebrow", {
       direction: "horizontal",
       primarySizing: "FIXED",
       counterSizing: "AUTO",
-      // Close alone sits at the end, as in the code.
-      primaryAlign: spec.eyebrow ? "SPACE_BETWEEN" : "MAX",
-      counterAlign: "CENTER",
-      spacing: 8,
-      width: inner,
-      height: 44,
+      spacing: 4,
+      width: inner - room,
+      height: TOUR_STEP_EYEBROW_LINE,
     });
-    if (spec.eyebrow) {
-      const eyebrow = productSdkFrame("Eyebrow", {
-        direction: "horizontal",
-        primarySizing: "FIXED",
-        counterSizing: "AUTO",
-        spacing: 4,
-        width: inner - (spec.close ? 44 + 8 : 0),
-        height: 16,
-      });
-      setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
-      const parts = [["Tour Text", TOUR_STEP_SAMPLE.tour]];
-      if (spec.current) {
-        parts.push(["Separator", "·"]);
-        parts.push(["Position Text", tourStepPosition(spec)]);
-      }
-      for (const [name, characters] of parts) {
-        const text = await tourStepText({
-          name,
-          characters,
-          styleKey: "tourStepEyebrow",
-          fonts,
-          bold: true,
-          fontSize: 12,
-          lineHeight: 16,
-          colorToken: "Colors/theme/600",
-          colorFallback: "#1051E8",
-          variableByName,
-          stats,
-          width: inner,
-          hug: true,
-        });
-        eyebrow.appendChild(text);
-      }
-      appendWithSizing(header, eyebrow, "FILL", "HUG");
+    setNodePropertyIfSupported(eyebrow, "layoutWrap", "WRAP");
+    const parts = [["Tour Text", TOUR_STEP_SAMPLE.tour]];
+    if (spec.current) {
+      parts.push(["Separator", "·"]);
+      parts.push(["Position Text", tourStepPosition(spec)]);
     }
-    if (spec.close) {
-      // One variant for the instance and for the tint laid again after the
-      // swap: the design's ghost Close.
-      const closeVariant = "Ghost";
-      const close = await createTourStepInstance({
-        componentSetName: "IconButton",
-        variantProperties: {
-          Variant: closeVariant,
-          Size: "Default",
-          State: "Default",
-        },
-        name: "Close",
-        role: "tour-step-close",
+    for (const [name, characters] of parts) {
+      const text = await tourStepText({
+        name,
+        characters,
+        styleKey: "tourStepEyebrow",
+        fonts,
+        bold: true,
+        fontSize: 12,
+        lineHeight: TOUR_STEP_EYEBROW_LINE,
+        colorToken: "Colors/theme/600",
+        colorFallback: "#1051E8",
+        variableByName,
         stats,
+        width: inner - room,
+        hug: true,
       });
-      if (close.componentSet) {
-        const glyph = await findKozmosIconSourceComponent("x-close");
-        if (glyph) {
-          if (
-            setInstanceSwapProperty(
-              close.node,
-              close.componentSet,
-              BUTTON_ICON_PROPERTY,
-              glyph.id,
-              stats,
-            )
-          ) {
-            retintTourStepCloseIcon(
-              close.node,
-              closeVariant,
-              variableByName,
-              stats,
-            );
-          }
-        } else {
-          stats.warnings.push(
-            'TourStep: icon "x-close" was not found on the Icons page.',
-          );
-        }
-      }
-      header.appendChild(close.node);
+      eyebrow.appendChild(text);
     }
-    appendWithSizing(component, header, "FILL", "HUG");
+    appendWithSizing(header, eyebrow, "FILL", "HUG");
   }
-
   const title = await tourStepText({
     name: "Title Text",
     characters: TOUR_STEP_SAMPLE.title,
@@ -59030,14 +60465,16 @@ async function updateTourStepVariant(
     fonts,
     bold: true,
     fontSize: 20,
-    lineHeight: 28,
+    lineHeight: TOUR_STEP_TITLE_LINE,
     colorToken: "Colors/foreground/0",
     colorFallback: "#000000",
     variableByName,
     stats,
-    width: inner,
+    width: inner - room,
   });
-  appendWithSizing(component, title, "FILL", "HUG");
+  appendWithSizing(header, title, "FILL", "HUG");
+  appendWithSizing(component, header, "FILL", "HUG");
+  if (spec.close) await tourStepClose(component, spec, variableByName, stats);
 
   const body = await tourStepText({
     name: "Body Text",
@@ -59078,10 +60515,14 @@ async function updateTourStepVariant(
     appendWithSizing(component, progress, "FILL", "HUG");
   }
 
-  if (!spec.dismiss && !spec.back && !spec.secondary && !spec.next) return;
+  if (spec.dismiss || spec.back || spec.secondary || spec.next) {
+    await tourStepFooter(component, spec, inner, stats);
+  }
+  holdTourStepClose(component, spec, stats);
+}
 
-  // The dismiss link at the start; Back, the secondary action and Next at
-  // the end.
+/** The dismiss link at the start; Back, the secondary action and Next at the end. */
+async function tourStepFooter(component, spec, inner, stats) {
   const footer = productSdkFrame("Footer", {
     direction: "horizontal",
     primarySizing: "FIXED",
@@ -59211,8 +60652,8 @@ function tourStepComponentConfig() {
       "Content maps to the design's states: First step (no onBack), Step (onBack and onNext), Last step (nextDisabled), Warning (instructionTone warning, onSecondary, no onNext), Coachmark (no stepCount, onBack or onNext; GAP-157), Welcome (no onClose, onDismiss, onSecondary, 432 wide).",
       "Tour Text maps to tourLabel, Title Text to title, Body Text to body and Instruction Text to instruction; the Instruction boolean shows it, and the Arrow boolean the arrow. Their sample words are shared by all six variants, as a text property has one default.",
       "The position is the variant's own, in the eyebrow and beside the bar: React writes it from step and stepCount with positionLabel.",
-      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, as wide as their words, exposed; Close is IconButton Ghost with x-close.",
-      "Drawn at Touch density, the only one the file has (GAP-146): compact, as Pointr Cloud is, Close and the buttons are 32 and the card 24 shorter.",
+      "Back, the secondary action, Next and the dismiss link are live Button instances at Size Small, as wide as their words, exposed; Close is IconButton Ghost with x-close, out of the flow in the card's top corner, and the eyebrow and title wrap before it.",
+      "Drawn at Touch density, the only one the file has (GAP-146): compact, as Pointr Cloud is, Close and the buttons are 32 and the card 12 shorter.",
       "The card is drawn without its target: in code its arrow's tip is 3 past Backdrop's cut-out ring, and the card 14.",
     ],
   };
@@ -59544,6 +60985,7 @@ async function updateSwitchVariant(
 async function createInputVariant({
   state,
   status,
+  action = "None",
   variableByName,
   fonts,
   stats,
@@ -59552,6 +60994,7 @@ async function createInputVariant({
   await updateInputVariant(component, {
     state,
     status,
+    action,
     variableByName,
     fonts,
     stats,
@@ -59587,19 +61030,25 @@ function parseInputVariantName(name) {
     return null;
   }
 
+  const action = values.Action || "None";
+  if (INPUT_ACTIONS.indexOf(action) === -1) {
+    return null;
+  }
+
   return {
     state,
     status,
+    action,
   };
 }
 
 async function updateInputVariant(
   component,
-  { state, status, variableByName, fonts, stats },
+  { state, status, action = "None", variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
 
-  component.name = `State=${state}, Status=${status}`;
+  component.name = `State=${state}, Status=${status}, Action=${action}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -59622,6 +61071,7 @@ async function updateInputVariant(
     component,
     state,
     status,
+    action,
     config,
     variableByName,
     fonts,
@@ -59629,6 +61079,11 @@ async function updateInputVariant(
   });
 }
 
+/**
+ * A row per State and a column per Status, as the set has always been laid
+ * out, and under the None band a band per Action: the 16 variants already in
+ * the file keep their places, and the set never overlaps itself.
+ */
 function layoutInputVariants(componentSet) {
   if (!componentSet || !componentSet.children) return;
 
@@ -59640,9 +61095,13 @@ function layoutInputVariants(componentSet) {
 
     const stateIndex = INPUT_STATES.indexOf(props.state);
     const statusIndex = INPUT_STATUSES.indexOf(props.status);
+    const actionIndex = INPUT_ACTIONS.indexOf(props.action);
     child.x = statusIndex * 360;
-    child.y = stateIndex * 126;
+    child.y = (actionIndex * INPUT_STATES.length + stateIndex) * 126;
   }
+
+  // The set holds the Action bands it gained.
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createPasswordInputVariant({
@@ -61859,27 +63318,65 @@ function createStepperConnector({ index, active, variableByName, stats }) {
   return connector;
 }
 
-async function createProgressVariant({ value, variableByName, stats }) {
+async function createProgressVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateProgressVariant(component, {
     value,
+    second,
     variableByName,
+    fonts,
     stats,
   });
   return component;
 }
 
 function parseProgressVariantName(name) {
-  return parseSingleAxisVariantName(name, "Value", PROGRESS_VALUES);
+  const base = parseSingleAxisVariantName(name, "Value", PROGRESS_VALUES);
+  if (!base) return null;
+  // A variant drawn before the Shape, Size and Tone axes is the bar, and a
+  // ring drawn before Tone is Themed, so Update renames it rather than
+  // replacing it, and the node id Code Connect pins survives.
+  const shape = variantAxisValue(name, "Shape") || "Linear";
+  const size = variantAxisValue(name, "Size") || "Medium";
+  const tone = variantAxisValue(name, "Tone") || "Themed";
+  const second = `${shape}/${size}/${tone}`;
+  if (PROGRESS_FORMS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/** A Progress form's Shape, Size and Tone, from the row it is drawn in. */
+function progressForm(second) {
+  const form =
+    PROGRESS_FORMS.indexOf(second) === -1 ? PROGRESS_FORMS[0] : second;
+  const [shape, size, tone] = form.split("/");
+  return { shape, size, tone };
 }
 
 async function updateProgressVariant(
   component,
-  { value, variableByName, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
+  const form = progressForm(second);
+  if (form.shape === "Circular") {
+    await updateProgressRingVariant(component, {
+      value,
+      size: form.size,
+      tone: form.tone,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
   const config = progressConfig(value);
 
-  component.name = `Value=${value}`;
+  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}`;
   component.layoutMode = "NONE";
   component.resizeWithoutConstraints(320, 8);
   component.cornerRadius = KOZMOS_RADIUS.none;
@@ -61896,6 +63393,261 @@ async function updateProgressVariant(
     variableByName,
     stats,
   });
+}
+
+/**
+ * A ring's diameter and thickness: Small 48 and 4, Medium 96 and 8, Large 128
+ * and 12, the layout spacing tokens React, SwiftUI and Compose draw it at.
+ */
+function progressRingMetrics(size) {
+  if (size === "Small") {
+    return { diameter: 48, stroke: 4, sizeToken: "Progress/ring/size/small" };
+  }
+  if (size === "Large") {
+    return {
+      diameter: 128,
+      stroke: 12,
+      sizeToken: "Progress/ring/size/large",
+    };
+  }
+  return { diameter: 96, stroke: 8, sizeToken: "Progress/ring/size/medium" };
+}
+
+/**
+ * A tone's arc colour: the emotion's text colour, Semantics/Emotion/<tone>/
+ * text, the step of each ramp that reads 4.5:1 on background/100, as React's
+ * `--semantics-emotion-<tone>-text` draws it. Themed is theme 600, the bar's
+ * own fill.
+ */
+function progressRingToneFill(tone) {
+  const fallbacks = {
+    Themed: "#1051E8",
+    Neutral: "#5D626F",
+    Success: "#14653D",
+    Danger: "#B01736",
+    Informative: "#1C6082",
+    Alert: "#744D03",
+  };
+  const named = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
+  return {
+    name: `Emotion/${named.toLowerCase()}/text`,
+    fallback: fallbacks[named],
+  };
+}
+
+/**
+ * Progress's ring (decision 131): a Dial, holding a track, an arc over it
+ * and the label in the hole, or at Small and 100 a check, and beside it at
+ * the inline end, hidden until Label Beside, the same label. The variant hugs
+ * them in a row, 12 apart.
+ * The track and the arc are ellipses whose arcs are filled, inner radius and
+ * all, so neither is a disc inset in another and each binds its fill: the
+ * track background/100, the arc its tone's emotion text colour, from 12
+ * o'clock clockwise, as far round as the value. A progress ring does not
+ * mirror right to left.
+ */
+async function updateProgressRingVariant(
+  component,
+  { value, size, tone, variableByName, fonts, stats },
+) {
+  const metrics = progressRingMetrics(size);
+  const diameter = metrics.diameter;
+  const innerRadius = 1 - (2 * metrics.stroke) / diameter;
+  const start = -Math.PI / 2;
+  const sweep = (Number(value) / 100) * 2 * Math.PI;
+  const fill = progressRingToneFill(tone);
+  const toneName = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
+
+  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}`;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 12;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Progress");
+
+  // A ring drawn before the Dial held its parts directly: they move in.
+  let dial = directChildNamed(component, "Dial");
+  if (dial && dial.type !== "FRAME") {
+    dial.remove();
+    dial = null;
+  }
+  if (!dial) {
+    dial = figma.createFrame();
+    dial.name = "Dial";
+  }
+  dial.layoutMode = "NONE";
+  dial.resizeWithoutConstraints(diameter, diameter);
+  dial.fills = [];
+  dial.strokes = [];
+  dial.clipsContent = false;
+  dial.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-dial");
+  component.insertChild(0, dial);
+  setFixedChildSizing(dial);
+  bindSizeVariables(
+    dial,
+    metrics.sizeToken,
+    metrics.sizeToken,
+    variableByName,
+    stats,
+  );
+
+  const ellipse = (name) => {
+    let node =
+      directChildNamed(dial, name) || directChildNamed(component, name);
+    if (node && node.type !== "ELLIPSE") {
+      node.remove();
+      node = null;
+    }
+    if (!node) {
+      node = figma.createEllipse();
+      node.name = name;
+    }
+    dial.appendChild(node);
+    node.resize(diameter, diameter);
+    node.x = 0;
+    node.y = 0;
+    node.strokes = [];
+    return node;
+  };
+
+  const track = ellipse("Ring Track");
+  track.arcData = {
+    startingAngle: 0,
+    endingAngle: 2 * Math.PI,
+    innerRadius,
+  };
+  track.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  track.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-track");
+
+  // Nothing done draws no arc: an arc whose ends meet is a whole ring.
+  const arc = ellipse("Ring Arc");
+  arc.arcData = {
+    startingAngle: start,
+    endingAngle: start + Math.max(sweep, 0.0001),
+    innerRadius,
+  };
+  arc.visible = value !== "0";
+  arc.fills = [
+    paintFromVariable(fill.name, fill.fallback, variableByName, stats),
+  ];
+  arc.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-arc");
+
+  const text = async (parent, name) => {
+    let node =
+      directChildNamed(parent, name) || directChildNamed(component, name);
+    if (node && node.type !== "TEXT") {
+      node.remove();
+      node = null;
+    }
+    if (!node) {
+      node = figma.createText();
+      node.name = name;
+    }
+    parent.appendChild(node);
+    node.fontName = fonts.regular;
+    node.fontSize = 12;
+    node.lineHeight = { unit: "PIXELS", value: 16 };
+    node.characters = "Label";
+    await applyTextStyleToNodeAsync(node, "fieldMeta", stats);
+    node.fills = [
+      paintFromVariable(
+        "Colors/foreground/0",
+        "#000000",
+        variableByName,
+        stats,
+      ),
+    ];
+    return node;
+  };
+
+  // "100%" is 31.8 wide at 12, in the 28.28 square a Small hole holds (owner,
+  // 2 Nov), so the Small ring at 100 draws the check code draws with no label.
+  // Figma binds no inverse of Show Label, so the label cannot wait behind it:
+  // it goes, and Show Label has nothing to draw on these variants.
+  if (size === "Small" && value === "100") {
+    const stale =
+      directChildNamed(dial, "Label") || directChildNamed(component, "Label");
+    if (stale) stale.remove();
+    await syncProgressRingCheck(dial, diameter, fill, variableByName, stats);
+  } else {
+    const label = await text(dial, "Label");
+    label.textAlignHorizontal = "CENTER";
+    label.textAlignVertical = "CENTER";
+    // Inside the square the hole holds, centred, as React's label is.
+    const width = Math.floor((diameter - 2 * metrics.stroke) * Math.SQRT1_2);
+    label.resizeWithoutConstraints(width, 16);
+    setTextAutoResize(label, "HEIGHT");
+    label.x = Math.round((diameter - width) / 2);
+    label.y = Math.round((diameter - label.height) / 2);
+    label.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  }
+
+  // Beside the dial, at the inline end, hidden until Label Beside: the row
+  // hugs the dial alone until then.
+  const beside = await text(component, "Label Beside");
+  beside.textAlignHorizontal = "LEFT";
+  setTextAutoResize(beside, "WIDTH_AND_HEIGHT");
+  beside.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-label");
+  component.appendChild(beside);
+}
+
+/**
+ * A complete Small ring's check: the Icons page's, at its own 24, so its
+ * stroke is the 2 code draws (Figma keeps a stroke's weight on a resize),
+ * centred in the dial in the arc's colour. Retinted on every Update.
+ */
+async function syncProgressRingCheck(
+  dial,
+  diameter,
+  fill,
+  variableByName,
+  stats,
+) {
+  let check = directChildNamed(dial, "Done Check");
+  if (check && check.type !== "INSTANCE") {
+    check.remove();
+    check = null;
+  }
+  if (!check) {
+    const source = await findKozmosIconSourceComponent("check");
+    if (!source) {
+      stats.warnings.push(
+        "Progress: the Icons page has no check for the Small ring at 100. Run Icons, then Update Progress.",
+      );
+      return;
+    }
+    check = source.createInstance();
+    check.name = "Done Check";
+  }
+  dial.appendChild(check);
+  check.resize(24, 24);
+  check.x = (diameter - 24) / 2;
+  check.y = (diameter - 24) / 2;
+  check.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-check");
+  applyIconColorOverrides(
+    check,
+    fill.name,
+    fill.fallback,
+    variableByName,
+    stats,
+  );
 }
 
 async function createSpinnerVariant({ value, variableByName, stats }) {
@@ -62120,10 +63872,17 @@ async function updateEmptyStateVariant(
   });
 }
 
-async function createToastVariant({ value, variableByName, fonts, stats }) {
+async function createToastVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateToastVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -62132,14 +63891,53 @@ async function createToastVariant({ value, variableByName, fonts, stats }) {
 }
 
 function parseToastVariantName(name) {
-  return parseSingleAxisVariantName(name, "Content", TOAST_CONTENT);
+  const base = parseSingleAxisVariantName(name, "Content", TOAST_CONTENT);
+  if (!base) return null;
+  // A variant drawn before the Tone axis carries no Tone and is the neutral
+  // one, so Update renames it rather than replacing it and its node id
+  // survives.
+  const second = variantAxisValue(name, "Tone") || "Neutral";
+  if (TOAST_TONES.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/**
+ * Each tone's icon and its colour: the icons the Alert set draws for the same
+ * tones, in the tone's text colour (Semantics/Emotion/<tone>/text), as React's
+ * Toaster draws them. Neutral has none.
+ */
+function toastToneIcon(tone) {
+  const tones = {
+    Success: {
+      icon: "check",
+      color: "Emotion/success/text",
+      fallback: "#14653D",
+    },
+    Info: {
+      icon: "info-circle",
+      color: "Emotion/informative/text",
+      fallback: "#1C6082",
+    },
+    Warning: {
+      icon: "alert-triangle",
+      color: "Emotion/alert/text",
+      fallback: "#744D03",
+    },
+    Critical: {
+      icon: "alert-circle",
+      color: "Emotion/danger/text",
+      fallback: "#B01736",
+    },
+  };
+  return tones[tone] || null;
 }
 
 async function updateToastVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
-  component.name = `Content=${value}`;
+  const tone = TOAST_TONES.indexOf(second) === -1 ? "Neutral" : second;
+  component.name = `Content=${value}, Tone=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "AUTO";
@@ -62167,6 +63965,7 @@ async function updateToastVariant(
   await syncToastVariantChildren({
     component,
     value,
+    tone,
     variableByName,
     fonts,
     stats,
@@ -62804,13 +64603,21 @@ async function syncCardVariantChildren({
     header.name = "Card Header";
   }
 
+  let headerText = null;
   if (header && hasHeader) {
-    header.layoutMode = "VERTICAL";
-    header.primaryAxisSizingMode = "AUTO";
-    header.counterAxisSizingMode = "FIXED";
+    // A row, as React's header with actions is (GAP-169): the title and
+    // description in a column that fills it, then the actions at its end.
+    // With the actions hidden the column is the whole row, so the header
+    // draws as it always has.
+    header.layoutMode = "HORIZONTAL";
+    header.primaryAxisSizingMode = "FIXED";
+    header.counterAxisSizingMode = "AUTO";
     header.primaryAxisAlignItems = "MIN";
     header.counterAxisAlignItems = "MIN";
-    header.itemSpacing = 6;
+    // The 6 between title and description is the column's now; the header's
+    // own gap is the 16 before the actions, which no token names.
+    clearBoundVariable(header, "itemSpacing", stats);
+    header.itemSpacing = CARD_HEADER_ACTIONS_GAP;
     header.paddingLeft = pad;
     header.paddingRight = pad;
     header.paddingTop = pad;
@@ -62821,7 +64628,36 @@ async function syncCardVariantChildren({
     header.clipsContent = false;
     setLayoutSizingHorizontal(header, "FILL");
 
-    let title = directChildNamed(header, "Title Text");
+    headerText = directChildNamed(header, "Card Header Text");
+    if (headerText && headerText.type !== "FRAME") {
+      headerText.remove();
+      headerText = null;
+    }
+    if (!headerText) {
+      headerText = figma.createFrame();
+      headerText.name = "Card Header Text";
+    }
+    headerText.layoutMode = "VERTICAL";
+    headerText.primaryAxisSizingMode = "AUTO";
+    headerText.counterAxisSizingMode = "FIXED";
+    headerText.primaryAxisAlignItems = "MIN";
+    headerText.counterAxisAlignItems = "MIN";
+    headerText.itemSpacing = 6;
+    headerText.paddingLeft = 0;
+    headerText.paddingRight = 0;
+    headerText.paddingTop = 0;
+    headerText.paddingBottom = 0;
+    headerText.resizeWithoutConstraints(360 - pad * 2, 50);
+    headerText.fills = [];
+    headerText.strokes = [];
+    headerText.clipsContent = false;
+    headerText.setSharedPluginData(RUN_NAMESPACE, "kind", "card-header-text");
+
+    // A variant drawn before the column holds its texts in the header: they
+    // move into it, and keep their node ids.
+    let title =
+      directChildNamed(headerText, "Title Text") ||
+      directChildNamed(header, "Title Text");
     if (title && title.type !== "TEXT") {
       title.remove();
       title = null;
@@ -62843,7 +64679,9 @@ async function syncCardVariantChildren({
     title.resizeWithoutConstraints(312, 24);
     setTextAutoResize(title, "HEIGHT");
 
-    let description = directChildNamed(header, "Description Text");
+    let description =
+      directChildNamed(headerText, "Description Text") ||
+      directChildNamed(header, "Description Text");
     if (description && description.type !== "TEXT") {
       description.remove();
       description = null;
@@ -62870,10 +64708,19 @@ async function syncCardVariantChildren({
     description.resizeWithoutConstraints(312, 40);
     setTextAutoResize(description, "HEIGHT");
 
-    header.appendChild(title);
+    header.appendChild(headerText);
+    headerText.appendChild(title);
     setLayoutSizingHorizontal(title, "FILL");
-    header.appendChild(description);
+    headerText.appendChild(description);
     setLayoutSizingHorizontal(description, "FILL");
+    setLayoutSizingHorizontal(headerText, "FILL");
+    setLayoutSizingVertical(headerText, "HUG");
+    await syncCardHeaderActions({
+      component,
+      header,
+      variableByName,
+      stats,
+    });
     appendWithSizing(component, header, "FILL", "HUG");
   } else if (header) {
     header.remove();
@@ -62981,6 +64828,7 @@ async function syncCardVariantChildren({
     footer,
     variableByName,
     stats,
+    headerText,
   );
   if (body && value === "Basic") {
     bindFloatVariable(
@@ -62991,6 +64839,184 @@ async function syncCardVariantChildren({
       stats,
     );
   }
+}
+
+/**
+ * The header's actions (GAP-169): a frame as tall as the title's line, at the
+ * header's end, whose visibility the Header Actions boolean drives, holding
+ * the Header Actions Slot. The slot hugs what it holds, 8 apart, and is
+ * centred on the frame, so a 44 IconButton overflows it by 10 above and below
+ * and the header keeps its height. A frame holds the slot because a property
+ * drives no node inside a slot, and the slot is the one node a slot property
+ * binds to.
+ */
+async function syncCardHeaderActions({
+  component,
+  header,
+  variableByName,
+  stats,
+}) {
+  let actions = directChildNamed(header, CARD_HEADER_ACTIONS_PROPERTY);
+  if (actions && actions.type !== "FRAME") {
+    actions.remove();
+    actions = null;
+  }
+  if (!actions) {
+    actions = figma.createFrame();
+    actions.name = CARD_HEADER_ACTIONS_PROPERTY;
+  }
+  actions.layoutMode = "HORIZONTAL";
+  actions.primaryAxisSizingMode = "AUTO";
+  actions.counterAxisSizingMode = "FIXED";
+  actions.primaryAxisAlignItems = "MAX";
+  actions.counterAxisAlignItems = "CENTER";
+  actions.itemSpacing = 0;
+  actions.paddingLeft = 0;
+  actions.paddingRight = 0;
+  actions.paddingTop = 0;
+  actions.paddingBottom = 0;
+  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, CARD_TITLE_LINE_HEIGHT);
+  actions.fills = [];
+  actions.strokes = [];
+  actions.clipsContent = false;
+  actions.setSharedPluginData(RUN_NAMESPACE, "kind", "card-header-actions");
+  header.appendChild(actions);
+  setLayoutSizingHorizontal(actions, "HUG");
+  setLayoutSizingVertical(actions, "FIXED");
+
+  const existingSlot = directChildNamed(actions, CARD_HEADER_ACTIONS_SLOT);
+  const shell = createOrReuseShellSlot({
+    component,
+    reusableSlot:
+      existingSlot && isReusableSlotContainer(existingSlot)
+        ? existingSlot
+        : null,
+    ownerName: "Card",
+    stats,
+    slotName: CARD_HEADER_ACTIONS_SLOT,
+    width: FIELD_ACTION_SIZE,
+    height: FIELD_ACTION_SIZE,
+    layoutMode: "HORIZONTAL",
+    itemSpacing: CARD_HEADER_ACTION_SPACING,
+  });
+  const slot = shell.node;
+  removeDirectChildrenExcept(actions, slot);
+  actions.appendChild(slot);
+  setNodePropertyIfSupported(slot, "primaryAxisSizingMode", "AUTO");
+  setNodePropertyIfSupported(slot, "counterAxisSizingMode", "AUTO");
+  setNodePropertyIfSupported(slot, "primaryAxisAlignItems", "MAX");
+  setNodePropertyIfSupported(slot, "counterAxisAlignItems", "CENTER");
+  setHugChildSizing(slot);
+
+  if (!shell.reusedContent) {
+    const action = await createCardHeaderAction({ variableByName, stats });
+    if (action) slot.appendChild(action);
+  }
+
+  // Off by default, as React draws no actions until it is given some.
+  actions.visible = false;
+  return actions;
+}
+
+/**
+ * The slot's default: a ghost IconButton with the pencil (pencil-01, one of
+ * the UI icons the registry does not name), named "Edit". With no pencil on
+ * the Icons page the slot is left empty and the run says so: the IconButton's
+ * own default icon would be the wrong glyph.
+ */
+async function createCardHeaderAction({ variableByName, stats }) {
+  const pencil = await findImporterIconSource("pencil-01", "Card", stats);
+  if (!pencil) return null;
+
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Default", State: "Default" },
+    name: "Edit Action",
+    role: "card-header-action",
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      "Edit Action",
+      "Build IconButton before updating Card.",
+      stats,
+    );
+  }
+
+  const instance = created.instance;
+  setInstanceSwapProperty(
+    instance,
+    created.componentSet,
+    BUTTON_ICON_PROPERTY,
+    pencil.id,
+    stats,
+  );
+  retintCardHeaderActionIcon(instance, variableByName, stats);
+  return instance;
+}
+
+/**
+ * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
+ * the pencil would draw in its source's black in both themes: the tint the
+ * ghost button gives its icon is laid again on the swapped-in layers.
+ */
+function retintCardHeaderActionIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  // By the layer the Icon property swaps: named Icon, or bound to it.
+  const icon = instance.findOne(
+    (node) =>
+      node.type === "INSTANCE" &&
+      (node.name === "Icon" ||
+        Boolean(
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent,
+        )),
+  );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "card-header-action-icon",
+      "Card: the header's Edit Action has no Icon layer to tint.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+}
+
+function isGeneratedCardHeaderActionSlotChild(node) {
+  if (!node) return false;
+  const kind = generatedKind(node);
+  if (kind === "missing-nested-component") return true;
+  return (
+    isGeneratedNestedComponentInstance(node) &&
+    node.getSharedPluginData(RUN_NAMESPACE, "role") === "card-header-action"
+  );
+}
+
+/**
+ * Header Actions (off by default, so every Card drawn so far is unchanged)
+ * shows the header's actions; Header Actions Slot is what they are. Only the
+ * Header and Full variants draw a header, and so the slot.
+ */
+function configureCardHeaderActionsProperties(componentSet, stats) {
+  configureSharedSlotProperties(
+    componentSet,
+    [CARD_HEADER_ACTIONS_SLOT],
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    CARD_HEADER_ACTIONS_PROPERTY,
+    CARD_HEADER_ACTIONS_PROPERTY,
+    false,
+    stats,
+  );
 }
 
 async function syncCardFooterAction({ footer, name, label, primary, stats }) {
@@ -64247,10 +66273,7 @@ async function syncBottomSheetInput({ body, name, label, placeholder, stats }) {
   if (!input) {
     const created = await createNestedComponentInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name,
       stats,
     });
@@ -64308,10 +66331,11 @@ function applyCompositeInputInstanceProperties({
   markNestedComponentInstance(input, "Input");
 
   try {
-    input.setProperties({
-      State: "Default",
-      Status: "Default",
-    });
+    input.setProperties(
+      componentSetHasVariantAxis(inputSet, "Action")
+        ? NESTED_INPUT_VARIANT
+        : { State: "Default", Status: "Default" },
+    );
   } catch (error) {
     stats.warnings.push(
       `${ownerName} ${name}: could not set Input variant properties (${messageFor(error)}).`,
@@ -64347,10 +66371,7 @@ async function ensureCompositeFormInputChildSizing({
 
   const created = await createNestedComponentInstance({
     componentSetName: "Input",
-    variantProperties: {
-      State: "Default",
-      Status: "Default",
-    },
+    variantProperties: NESTED_INPUT_VARIANTS,
     name,
     stats,
   });
@@ -65434,10 +67455,7 @@ async function syncDialogInput({ body, name, label, placeholder, stats }) {
   if (!input) {
     const created = await createNestedComponentInstance({
       componentSetName: "Input",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      variantProperties: NESTED_INPUT_VARIANTS,
       name,
       stats,
     });
@@ -66144,10 +68162,29 @@ function syncMenuSeparator({ component, variableByName, stats }) {
 async function syncToastVariantChildren({
   component,
   value,
+  tone,
   variableByName,
   fonts,
   stats,
 }) {
+  // The tone's icon leads, centred on the row as React's is; redrawn each
+  // run, so its tint is always the tone's.
+  removeGeneratedButtonChild(component, "Icon", true);
+  const toneIcon = toastToneIcon(tone);
+  if (toneIcon) {
+    const icon = await createFixedIconInstance(
+      toneIcon.icon,
+      toneIcon.color,
+      toneIcon.fallback,
+      variableByName,
+      stats,
+      16,
+      "Toast/icon/size",
+    );
+    icon.name = "Icon";
+    component.insertChild(0, icon);
+  }
+
   let textGroup = directChildNamed(component, "Toast Content");
   if (textGroup && textGroup.type !== "FRAME") {
     textGroup.remove();
@@ -66499,6 +68536,12 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
 
   if (ownerName === "Navbar" && slotName === "Navigation Slot") {
     return slot.children.every(isGeneratedNavbarNavigationSlotChild);
+  }
+
+  // The header action the plugin put there is drawn again, so its pencil is
+  // swapped in and tinted on every Update; one a designer put there stays.
+  if (ownerName === "Card" && slotName === CARD_HEADER_ACTIONS_SLOT) {
+    return slot.children.every(isGeneratedCardHeaderActionSlotChild);
   }
 
   // NavigationItem's slot contents are state-dependent — the leading icon is
@@ -67167,6 +69210,7 @@ async function syncInputVariantChildren({
   component,
   state,
   status,
+  action = "None",
   config,
   variableByName,
   fonts,
@@ -67264,6 +69308,13 @@ async function syncInputVariantChildren({
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
 
+  await syncInputAction(field, {
+    action,
+    config,
+    variableByName,
+    stats,
+  });
+
   syncFocusRing(field, {
     enabled: state !== "Disabled",
     width: 320,
@@ -67303,12 +69354,191 @@ async function syncInputVariantChildren({
   helper.textAlignVertical = "CENTER";
 
   bindInputGeometryVariables(component, field, variableByName, stats);
+  if (action !== "None") {
+    // The room the action keeps at the field's end: as tall as the field and
+    // 4 more, React's padding-inline-end, which no token names; the binding
+    // to the field's 12 would draw over it.
+    clearBoundVariable(field, "paddingRight", stats);
+    field.paddingRight = FIELD_ACTION_SIZE + 4;
+  }
 
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Input's action (GAP-154), drawn as PasswordInput's reveal is and as
+ * React's .kozmos-input-action places it: a transparent square at the field's
+ * end, inside its border, as tall as the field (bound to its height, 44 in
+ * touch) and out of its line, the 16 icon centred. At rest the icon is the
+ * field's muted foreground, the reveal's colour. A pressed toggle is drawn as
+ * a pressed ToggleButton is, as the MAP-64 design draws its Featured star
+ * (decision 139): a 32 disc of the theme fill under the icon, held to the
+ * button's centre, and the icon in the fill's foreground, so pressed is a
+ * shape and not a colour alone (WCAG 1.4.1). Copy is copy-01; the toggle is
+ * star-01, which Action Icon swaps.
+ */
+async function syncInputAction(
+  field,
+  { action, config, variableByName, stats },
+) {
+  let button = directChildNamed(field, "Input Action");
+  if (action === "None") {
+    if (button) button.remove();
+    return null;
+  }
+  if (button && button.type !== "FRAME") {
+    button.remove();
+    button = null;
+  }
+  if (!button) {
+    button = figma.createFrame();
+    button.name = "Input Action";
+  }
+
+  button.layoutMode = "HORIZONTAL";
+  button.primaryAxisSizingMode = "FIXED";
+  button.counterAxisSizingMode = "FIXED";
+  button.primaryAxisAlignItems = "CENTER";
+  button.counterAxisAlignItems = "CENTER";
+  button.itemSpacing = 0;
+  button.paddingLeft = 0;
+  button.paddingRight = 0;
+  button.paddingTop = 0;
+  button.paddingBottom = 0;
+  button.resizeWithoutConstraints(FIELD_ACTION_SIZE, FIELD_ACTION_SIZE);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  button.fills = [];
+  button.strokes = [];
+  button.clipsContent = false;
+  button.setSharedPluginData(RUN_NAMESPACE, "kind", "input-action");
+  button.setSharedPluginData(RUN_NAMESPACE, "action", action);
+  button.setSharedPluginData(
+    RUN_NAMESPACE,
+    "aria-label",
+    action === "Copy" ? "Copy" : "Featured",
+  );
+  if (action !== "Copy") {
+    button.setSharedPluginData(
+      RUN_NAMESPACE,
+      "aria-pressed",
+      action === "TogglePressed" ? "true" : "false",
+    );
+  }
+  bindFloatVariable(
+    button,
+    "width",
+    "Input/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    button,
+    "height",
+    "Input/field/height",
+    variableByName,
+    stats,
+  );
+
+  for (const child of Array.from(button.children || [])) child.remove();
+  if (action === "TogglePressed") {
+    const disc = figma.createFrame();
+    disc.name = "Pressed Fill";
+    disc.resizeWithoutConstraints(
+      INPUT_ACTION_PRESSED_FILL_SIZE,
+      INPUT_ACTION_PRESSED_FILL_SIZE,
+    );
+    disc.cornerRadius = KOZMOS_RADIUS.control;
+    disc.fills = [
+      paintFromVariable(
+        THEME_FILL.name,
+        THEME_FILL.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    disc.strokes = [];
+    disc.clipsContent = false;
+    disc.setSharedPluginData(RUN_NAMESPACE, "kind", "input-action-pressed");
+    button.appendChild(disc);
+    disc.layoutPositioning = "ABSOLUTE";
+    disc.x = (FIELD_ACTION_SIZE - INPUT_ACTION_PRESSED_FILL_SIZE) / 2;
+    disc.y = (FIELD_ACTION_SIZE - INPUT_ACTION_PRESSED_FILL_SIZE) / 2;
+    disc.constraints = { horizontal: "CENTER", vertical: "CENTER" };
+  }
+  const tint = inputActionIconTint(action, config);
+  const source =
+    action === "Copy"
+      ? await findImporterIconSource("copy-01", "Input", stats)
+      : await findImporterIconSource("star-01", "Input", stats);
+  if (source) {
+    const icon = createIconSlotInstance(
+      source,
+      tint.token,
+      tint.fallback,
+      variableByName,
+      stats,
+      16,
+    );
+    icon.name = action === "Copy" ? "Copy Icon" : "Action Icon";
+    button.appendChild(icon);
+  }
+
+  field.appendChild(button);
+  button.layoutPositioning = "ABSOLUTE";
+  button.x = field.width - FIELD_ACTION_SIZE;
+  button.y = Math.max(0, (field.height - FIELD_ACTION_SIZE) / 2);
+  button.constraints = { horizontal: "MAX", vertical: "CENTER" };
+  return button;
+}
+
+/**
+ * The action's icon colour: the field's muted foreground, or pressed, the
+ * theme fill's foreground on its disc.
+ */
+function inputActionIconTint(action, config) {
+  if (action === "TogglePressed") {
+    return {
+      token: THEME_FILL_FOREGROUND.name,
+      fallback: THEME_FILL_FOREGROUND.fallback,
+    };
+  }
+  return { token: config.placeholder, fallback: config.placeholderFallback };
+}
+
+/**
+ * Action Icon: the toggle's icon, the Featured star by default, offered every
+ * icon on the Icons page. Copy keeps copy-01, as React's copy action does.
+ */
+async function configureInputActionIconProperty(componentSet, stats) {
+  const star = await findImporterIconSource("star-01", "Input", stats);
+  if (!star) return;
+  const preferredValues = iconPreferredValues(
+    await findKozmosIconSourceComponents(),
+  );
+  const propertyName = ensureInstanceSwapProperty(
+    componentSet,
+    INPUT_ACTION_ICON_PROPERTY,
+    star.id,
+    stats,
+    preferredValues,
+  );
+  if (!propertyName) return;
+  let bound = 0;
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const field = directChildNamed(child, "Input Field");
+    const button = field && directChildNamed(field, "Input Action");
+    const icon = button && directChildNamed(button, "Action Icon");
+    if (icon && icon.type === "INSTANCE") {
+      bindInstanceSwapProperty(icon, propertyName, stats);
+      bound += 1;
+    }
+  }
+  stats.inputActionIconBindings = bound;
 }
 
 async function syncPasswordInputVariantChildren({
@@ -75110,18 +77340,37 @@ async function findKozmosIconSourceComponent(name) {
   return findComponentByName(kozmosIconComponentName(name), [ICON_PAGE_NAME]);
 }
 
-function isTaxonomyIconDefinition(definition) {
-  return Boolean(definition && definition.source === "taxonomy");
+/**
+ * A UI icon a component means (IMPORTER_UI_ICON_DEFINITIONS), or null and a
+ * warning: never another glyph in its place. A copy button drawn with the
+ * default search icon would be a wrong part in the library, and Code Connect
+ * would disagree with the React that imports Copy01. Curated Icons puts the
+ * icon on the page; the painter then draws it on the next Update.
+ */
+async function findImporterIconSource(name, owner, stats) {
+  const component = await findKozmosIconSourceComponent(name);
+  if (component) return component;
+  pushUniqueWarning(
+    stats,
+    `missing-ui-icon:${owner}:${name}`,
+    `${owner}: Icon / ${name} is not on the Icons page, so it is drawn with no icon. Run Curated Icons, then Update ${owner}.`,
+  );
+  return null;
+}
+
+/** An icon the Pointr library has no outline for: the plugin draws it. */
+function isOwnedIconDefinition(definition) {
+  return Boolean(definition && definition.source === "owned");
 }
 
 /**
- * The Icons page's sources, in definition order. A taxonomy symbol is left out
- * unless asked for: it is a filled shape, and every icon slot but a category's
- * is tinted by a stroke override on a Pointr outline, which does not reach a
- * fill — offered to a Button, it would swap in black.
+ * The Icons page's sources, in definition order. An owned symbol is left out
+ * unless asked for: every icon slot but a category's is tinted by a stroke
+ * override keyed through a Pointr outline's layers, which does not reach its
+ * drawn layers — offered to a Button, it would swap in black.
  */
 async function findKozmosIconSourceComponents(options) {
-  const withTaxonomy = Boolean(options && options.withTaxonomy);
+  const withOwned = Boolean(options && options.withOwned);
   const page = figma.root.children.find(
     (child) => child.name === ICON_PAGE_NAME,
   );
@@ -75129,8 +77378,8 @@ async function findKozmosIconSourceComponents(options) {
 
   await page.loadAsync();
   const components = [];
-  for (const definition of KOSMOS_ICON_DEFINITIONS) {
-    if (isTaxonomyIconDefinition(definition) && !withTaxonomy) continue;
+  for (const definition of importerPointrIconDefinitions()) {
+    if (isOwnedIconDefinition(definition) && !withOwned) continue;
     const component = page.findOne(
       (node) =>
         node.type === "COMPONENT" &&
@@ -75177,7 +77426,8 @@ async function syncIconSourceLibrary() {
   const stats = {
     updated: true,
     page: ICON_PAGE_NAME,
-    planned: KOSMOS_ICON_DEFINITIONS.length + KOZMOS_WAYFINDING_ICONS.length,
+    planned:
+      importerPointrIconDefinitions().length + KOZMOS_WAYFINDING_ICONS.length,
     imported: 0,
     drawn: 0,
     created: 0,
@@ -75196,48 +77446,13 @@ async function syncIconSourceLibrary() {
   // Icons already on the page whose source had to be drawn again.
   const redrawn = [];
   for (let index = 0; index < KOSMOS_ICON_DEFINITIONS.length; index += 1) {
-    const definition = KOSMOS_ICON_DEFINITIONS[index];
-    const replacedBefore = stats.sourcesReplaced;
-    let existed = false;
-
-    try {
-      const sourceComponent = await figma.importComponentByKeyAsync(
-        definition.componentKey,
-      );
-      if (sourceComponent) stats.imported += 1;
-
-      let component = page.findOne(
-        (node) =>
-          node.type === "COMPONENT" &&
-          node.name === kozmosIconComponentName(definition.name),
-      );
-
-      if (!component) {
-        component = figma.createComponent();
-        component.name = kozmosIconComponentName(definition.name);
-        page.appendChild(component);
-        stats.created += 1;
-      } else {
-        existed = true;
-        stats.refreshed += 1;
-      }
-
-      await syncKozmosIconSourceComponent(
-        component,
-        sourceComponent,
-        definition,
-        index,
-        stats,
-      );
-    } catch (error) {
-      stats.failed += 1;
-      stats.warnings.push(
-        `Could not import icon "${definition.name}" (${messageFor(error)}).`,
-      );
-    }
-    if (existed && stats.sourcesReplaced > replacedBefore) {
-      redrawn.push(definition.name);
-    }
+    await syncPointrIconSource(
+      page,
+      KOSMOS_ICON_DEFINITIONS[index],
+      index,
+      redrawn,
+      stats,
+    );
   }
   for (let offset = 0; offset < KOZMOS_WAYFINDING_ICONS.length; offset += 1) {
     const icon = KOZMOS_WAYFINDING_ICONS[offset];
@@ -75274,6 +77489,21 @@ async function syncIconSourceLibrary() {
       redrawn.push(icon.name);
     }
   }
+  // The UI icons the registry does not name (decision 121), after the
+  // wayfinding glyphs, so every icon already on the page keeps its place.
+  for (
+    let offset = 0;
+    offset < IMPORTER_UI_ICON_DEFINITIONS.length;
+    offset += 1
+  ) {
+    await syncPointrIconSource(
+      page,
+      IMPORTER_UI_ICON_DEFINITIONS[offset],
+      KOSMOS_ICON_DEFINITIONS.length + KOZMOS_WAYFINDING_ICONS.length + offset,
+      redrawn,
+      stats,
+    );
+  }
   if (redrawn.length > 0) {
     stats.warnings.push(
       `Drew the source of ${redrawn.length} icon(s) already on the page anew (${redrawn.slice(0, 4).join(", ")}${redrawn.length > 4 ? ", …" : ""}), so the tints laid through the old source are gone. Update the sets that use them: Update All Core, then Update All Product / SDK.`,
@@ -75283,9 +77513,63 @@ async function syncIconSourceLibrary() {
   await refreshComponentIconSlotsAfterIconSync(stats);
   await applyCuratedIconSourcesToSlots(stats);
   stats.iconSourceCount =
-    (await findKozmosIconSourceComponents({ withTaxonomy: true })).length +
+    (await findKozmosIconSourceComponents({ withOwned: true })).length +
     (await findWayfindingIconSourceComponents()).length;
   return stats;
+}
+
+/**
+ * One registry icon on the Icons page, kept in the component the page already
+ * has for it, or a new one: a Pointr icon imported by its library key, an
+ * owned one drawn from the package's artwork.
+ */
+async function syncPointrIconSource(page, definition, index, redrawn, stats) {
+  const owned = isOwnedIconDefinition(definition);
+  const replacedBefore = stats.sourcesReplaced;
+  let existed = false;
+
+  try {
+    const sourceComponent = owned
+      ? null
+      : await figma.importComponentByKeyAsync(definition.componentKey);
+    if (sourceComponent) stats.imported += 1;
+
+    let component = page.findOne(
+      (node) =>
+        node.type === "COMPONENT" &&
+        node.name === kozmosIconComponentName(definition.name),
+    );
+
+    if (!component) {
+      component = figma.createComponent();
+      component.name = kozmosIconComponentName(definition.name);
+      page.appendChild(component);
+      stats.created += 1;
+    } else {
+      existed = true;
+      stats.refreshed += 1;
+    }
+
+    if (owned) {
+      await syncOwnedIconSourceComponent(component, definition, index, stats);
+    } else {
+      await syncKozmosIconSourceComponent(
+        component,
+        sourceComponent,
+        definition,
+        index,
+        stats,
+      );
+    }
+  } catch (error) {
+    stats.failed += 1;
+    stats.warnings.push(
+      `Could not ${owned ? "draw" : "import"} icon "${definition.name}" (${messageFor(error)}).`,
+    );
+  }
+  if (existed && stats.sourcesReplaced > replacedBefore) {
+    redrawn.push(definition.name);
+  }
 }
 
 /** What an icon source component says about itself, whatever draws it. */
@@ -75387,13 +77671,54 @@ function isWayfindingIconName(name) {
   return KOZMOS_WAYFINDING_ICONS.some((icon) => icon.name === name);
 }
 /** Which artwork a drawn source carries, so a kept one is known to be right. */
-function wayfindingArtworkStamp(svg) {
+function iconArtworkStamp(kind, svg) {
   let hash = 0x811c9dc5;
   for (let index = 0; index < svg.length; index += 1) {
     hash ^= svg.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
-  return `wayfinding:${hash.toString(16).padStart(8, "0")}`;
+  return `${kind}:${hash.toString(16).padStart(8, "0")}`;
+}
+/**
+ * A drawn icon's source: its SVG as a frame that fills the 24 component, its
+ * shapes in black and scaling with it. The frame is kept while it draws the
+ * same artwork, for the reason a Pointr Source is (see keepIconSourceLayer).
+ */
+async function drawIconSourceLayer(
+  component,
+  svg,
+  sourceName,
+  stamp,
+  definition,
+  stats,
+) {
+  let source = await keepIconSourceLayer(
+    component,
+    sourceName,
+    async (node) =>
+      node.type === "FRAME" &&
+      node.getSharedPluginData(RUN_NAMESPACE, "artwork") === stamp,
+  );
+  if (source) {
+    stats.sourcesKept += 1;
+  } else {
+    source = figma.createNodeFromSvg(svg);
+    source.name = sourceName;
+    source.fills = [];
+    source.clipsContent = false;
+    source.setSharedPluginData(RUN_NAMESPACE, "artwork", stamp);
+    for (const shape of source.findAll(() => true)) {
+      try {
+        shape.constraints = { horizontal: "SCALE", vertical: "SCALE" };
+      } catch (_error) {
+        // A group takes no constraints; its shapes do.
+      }
+    }
+    component.appendChild(source);
+    stats.sourcesReplaced += 1;
+    stats.drawn += 1;
+  }
+  placeIconSource(source, definition, stats);
 }
 /**
  * A wayfinding glyph on the Icons page: its SVG as a "Wayfinding Source"
@@ -75417,34 +77742,44 @@ async function syncWayfindingIconSourceComponent(
     `Pointr Maps - Express, Wayfinding Icons / ${icon.component} (node ${icon.figmaNodeId})`,
   );
   component.setSharedPluginData(RUN_NAMESPACE, "source-component-key", "");
-  const stamp = wayfindingArtworkStamp(icon.svg);
-  let source = await keepIconSourceLayer(
+  await drawIconSourceLayer(
     component,
+    icon.svg,
     "Wayfinding Source",
-    async (node) =>
-      node.type === "FRAME" &&
-      node.getSharedPluginData(RUN_NAMESPACE, "artwork") === stamp,
+    iconArtworkStamp("wayfinding", icon.svg),
+    definition,
+    stats,
   );
-  if (source) {
-    stats.sourcesKept += 1;
-  } else {
-    source = figma.createNodeFromSvg(icon.svg);
-    source.name = "Wayfinding Source";
-    source.fills = [];
-    source.clipsContent = false;
-    source.setSharedPluginData(RUN_NAMESPACE, "artwork", stamp);
-    for (const shape of source.findAll(() => true)) {
-      try {
-        shape.constraints = { horizontal: "SCALE", vertical: "SCALE" };
-      } catch (_error) {
-        // A group takes no constraints; its shapes do.
-      }
-    }
-    component.appendChild(source);
-    stats.sourcesReplaced += 1;
-    stats.drawn += 1;
-  }
-  placeIconSource(source, definition, stats);
+}
+
+/**
+ * A venue icon the Pointr library has no outline for, on the Icons page: this
+ * package's own artwork (KOZMOS_OWNED_ICON_SVGS), drawn as an "Owned Source"
+ * frame. A category's slot takes it; Button, IconButton and Badge do not
+ * (findKozmosIconSourceComponents).
+ */
+async function syncOwnedIconSourceComponent(
+  component,
+  definition,
+  index,
+  stats,
+) {
+  describeIconSourceComponent(
+    component,
+    definition,
+    index,
+    `Kozmos, packages/icons/src/owned/icons.ts / ${definition.figmaName}`,
+  );
+  component.setSharedPluginData(RUN_NAMESPACE, "source-component-key", "");
+  const svg = KOZMOS_OWNED_ICON_SVGS[definition.name];
+  await drawIconSourceLayer(
+    component,
+    svg,
+    "Owned Source",
+    iconArtworkStamp("owned", svg),
+    definition,
+    stats,
+  );
 }
 
 async function syncKozmosIconSourceComponent(
@@ -75729,6 +78064,8 @@ async function configureIconButtonSlot(
     child.appendChild(icon);
     bindInstanceSwapProperty(icon, propertyName, stats);
     stats.iconSlotsBound += 1;
+    // The icon was appended last; the counter (GAP-197) draws over it.
+    raiseIconButtonCounter(child);
   }
 }
 

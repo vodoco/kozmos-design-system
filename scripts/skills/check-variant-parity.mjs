@@ -109,6 +109,10 @@ const INTENTIONAL = {
     android:
       "decision 82: density is web only; SwiftUI and Compose stay touch.",
   },
+  "Progress.labelPlacement": {
+    figma:
+      "Modelled as the rings' Label Beside boolean, beside Show Label: the label is one Label text, drawn in the hole or beside the dial at the inline end. A variant axis would double the set's 90 rings for a layer's visibility.",
+  },
   "Sidebar.variant": {
     figma:
       "Modelled as part of the Content axis: SIDEBAR_CONTENT is Basic, Sections, Tools, Rail, so the rail variant is expressible. A separate Variant axis would multiply the set without adding a state designers cannot already pick.",
@@ -357,11 +361,21 @@ function braceBlock(source, from) {
   return null;
 }
 
-function reactAxes(component) {
-  const file = readIfExists(
-    path.join(REACT_DIR, component, `${component}.tsx`),
-  );
-  if (!file) return null;
+export function reactAxes(component) {
+  const own = readIfExists(path.join(REACT_DIR, component, `${component}.tsx`));
+  if (!own) return null;
+  // With the modules of its own folder that it imports: Input's recipe and
+  // status live in Input/inputVariants.ts (GAP-154), so the analysis read no
+  // axis on Input once they moved there.
+  const file = [
+    own,
+    ...[...own.matchAll(/from "\.\/([\w-]+)"/g)].map(
+      (m) =>
+        readIfExists(path.join(REACT_DIR, component, `${m[1]}.ts`)) ??
+        readIfExists(path.join(REACT_DIR, component, `${m[1]}.tsx`)) ??
+        "",
+    ),
+  ].join("\n");
 
   const axes = {};
 
