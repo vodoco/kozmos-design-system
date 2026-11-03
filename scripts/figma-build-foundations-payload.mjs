@@ -196,6 +196,17 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
   // The themed emotion's ink is words on the themed surface as well.
   ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
+  // A progress ring's arc is its tone's text colour, an ellipse's arc
+  // filled (decision 131, owner 28 Oct: a status ring). A tone's text colour
+  // is also its icon, a toast's (GAP-167) and a complete small ring's check,
+  // an icon's stroke, so all six tones carry both scopes: a Map keeps a key's
+  // last row, and a row with only the ring's would take the stroke back.
+  ["Semantics/Emotion/neutral/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/themed/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/success/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/danger/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/informative/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/alert/text", ["STROKE_COLOR", "SHAPE_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's
   // star.

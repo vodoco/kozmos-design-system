@@ -11,10 +11,15 @@
 // as syntax (never executed), as generate-navigation-glyphs.mjs reads the
 // canonical pointer, so both platforms draw the outline React draws.
 // IconNamesTest (Compose) and KozmosIconNamesTests (SwiftUI) fail when a web
-// registry name draws no artwork; `--check` fails when either output is stale.
+// registry name draws no artwork; `--check` fails when an output is stale.
+//
+// It also writes each platform's copy of the web's aliases, which were two
+// hand-kept lists until the venue set made them 57 (GAP-105), and the SVGs the
+// Figma plugin draws the venue set's two owned names from.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import prettier from "prettier";
 import typescript from "typescript";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,6 +27,7 @@ const kotlinOutput =
   "packages/android/src/main/java/com/kozmos/components/Icon/PointrIcons.generated.kt";
 const swiftOutput =
   "packages/ios/Sources/Components/Icon/PointrIcons.generated.swift";
+const pluginOutput = "figma/foundations-importer/code.js";
 
 /**
  * Registry names Compose and SwiftUI both draw from Pointr's artwork: neither
@@ -46,7 +52,30 @@ const REGISTRY_NAMES = [
   "shopping-bag-02",
   "stars-01",
   "switch-vertical-01",
+  // The venue set (GAP-105): Pointr's outlines, as the web draws them. A
+  // platform symbol would be a near-miss in another hand, which is what this
+  // list exists to end.
+  "battery-charging-01",
+  "beaker-01",
+  "clapperboard",
+  "credit-card-01",
+  "droplets-01",
+  "graduation-hat-01",
+  "luggage-01",
+  "medical-cross",
+  "package",
+  "passport",
+  "plane",
+  "scissors-01",
+  "ticket-01",
 ];
+
+/**
+ * The venue set's names the Pointr library has no outline for: this package's
+ * own artwork (owned/icons.ts), which both natives draw from its path data and
+ * the Figma plugin carries as SVGs, between the markers in its code.js.
+ */
+const OWNED_REGISTRY_NAMES = ["accessibility", "utensils"];
 
 /**
  * Registry names SwiftUI alone draws from Pointr's artwork: Compose's hand
@@ -67,11 +96,11 @@ const BEYOND_REGISTRY = [
 ];
 
 /**
- * Exports the web's details summary draws by component and the registry
- * does not name: Star01 for a rating, and the accessibility mark. Compose
- * draws them; SwiftUI's summary draws the product's own symbols.
+ * An export the web's details summary draws by component and the registry
+ * does not name: Star01 for a rating. Compose draws it; SwiftUI's summary
+ * draws the product's own symbols.
  */
-const SUMMARY_EXPORTS = ["Star01", "Accessibility"];
+const SUMMARY_EXPORTS = ["Star01"];
 
 /**
  * Exports a part draws by component, under no name, as React imports them
@@ -126,6 +155,34 @@ function registryComponents() {
   return components;
 }
 
+/** The aliases the registry accepts, `kozmosIconAliases`, each with the name it stands for. */
+function registryAliases() {
+  const source = read("packages/icons/src/registry.ts");
+  const declaration = source.statements
+    .filter(typescript.isVariableStatement)
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .find((item) => item.name.getText(source) === "kozmosIconAliases");
+  let map = declaration?.initializer;
+  while (
+    map &&
+    (typescript.isAsExpression(map) || typescript.isSatisfiesExpression(map))
+  )
+    map = map.expression;
+  if (!map || !typescript.isObjectLiteralExpression(map))
+    throw new Error("registry.ts: kozmosIconAliases not found");
+  return map.properties.map((property) => {
+    if (!typescript.isPropertyAssignment(property))
+      throw new Error("registry.ts: an alias is not `key: value`");
+    const key = property.name;
+    const alias =
+      typescript.isIdentifier(key) || typescript.isStringLiteralLike(key)
+        ? key.text
+        : null;
+    if (!alias) throw new Error("registry.ts: an alias has a computed key");
+    return [alias, stringOf(property.initializer, `registry.ts: ${alias}`)];
+  });
+}
+
 /**
  * Every createPointrIcon and createTaxonomyIcon export in a file: its paths,
  * the taxonomy symbol's viewBox, and the Pointr name and node its comment
@@ -171,10 +228,9 @@ function exportsOf(relative) {
         if (!value.d) throw new Error(`${where}: a path has no d`);
         return value;
       });
-      const comment = statement.getFullText(source).slice(
-        0,
-        statement.getLeadingTriviaWidth(source),
-      );
+      const comment = statement
+        .getFullText(source)
+        .slice(0, statement.getLeadingTriviaWidth(source));
       const provenance = comment.match(/Pointr `([^`]+)`, node `([^`]+)`/);
       found.set(name, {
         name,
@@ -196,6 +252,8 @@ const art = new Map([
 ]);
 const components = registryComponents();
 
+const aliases = registryAliases();
+
 const registered = (names) =>
   names.map((name) => {
     const component = components.get(name);
@@ -203,11 +261,19 @@ const registered = (names) =>
       throw new Error(`${name} is not a name the web registry knows`);
     return { name, component };
   });
+const owned = registered(OWNED_REGISTRY_NAMES);
+for (const { name, component } of owned)
+  if (art.get(component)?.file !== "packages/icons/src/owned/icons.ts")
+    throw new Error(`${name} is not this package's own artwork`);
+const ownedComponents = new Set(owned.map((w) => w.component));
 for (const { name } of BEYOND_REGISTRY)
   if (components.has(name))
-    throw new Error(`${name} is in the web registry: list it with the registry's names`);
+    throw new Error(
+      `${name} is in the web registry: list it with the registry's names`,
+    );
 const wanted = [
   ...registered(REGISTRY_NAMES),
+  ...owned,
   ...BEYOND_REGISTRY,
   ...SUMMARY_EXPORTS.map((component) => ({
     name: null,
@@ -222,6 +288,7 @@ const wanted = [
 ];
 const swiftWanted = [
   ...registered([...REGISTRY_NAMES, ...SWIFTUI_REGISTRY_NAMES]),
+  ...owned,
   ...BEYOND_REGISTRY,
 ];
 for (const { component } of PART_EXPORTS)
@@ -243,22 +310,34 @@ const float = (n) => {
 const vectors = wanted
   .map(({ name, component, drawnBy }) => {
     const icon = art.get(component);
-    if (!icon) throw new Error(`${component}: no Pointr artwork in packages/icons`);
+    if (!icon)
+      throw new Error(`${component}: no Pointr artwork in packages/icons`);
     const paths = icon.paths.map((p) => kotlinString(p.d)).join(", ");
     const what = name ? "" : `, drawn by ${drawnBy}`;
     let doc;
     let body;
     if (icon.factory === "createPointrIcon") {
-      if (!icon.pointr || !icon.node)
-        throw new Error(`${component}: no Pointr name and node in its comment`);
-      if (name && name !== icon.pointr)
-        throw new Error(`${name} draws ${component}, Pointr's ${icon.pointr}`);
-      doc = `Pointr \`${icon.pointr}\`, node \`${icon.node}\`${what}.`;
+      if (ownedComponents.has(component)) {
+        doc = `The outline in ${icon.file}, this package's own.`;
+      } else {
+        if (!icon.pointr || !icon.node)
+          throw new Error(
+            `${component}: no Pointr name and node in its comment`,
+          );
+        if (name && name !== icon.pointr)
+          throw new Error(
+            `${name} draws ${component}, Pointr's ${icon.pointr}`,
+          );
+        doc = `Pointr \`${icon.pointr}\`, node \`${icon.node}\`${what}.`;
+      }
       body = `outline("${component}", ${paths})`;
     } else {
       // A taxonomy-style symbol is solid, on its own squared viewBox.
       for (const p of icon.paths)
-        if ((p.fillRule ?? "nonzero") !== "nonzero" || (p.clipRule ?? "nonzero") !== "nonzero")
+        if (
+          (p.fillRule ?? "nonzero") !== "nonzero" ||
+          (p.clipRule ?? "nonzero") !== "nonzero"
+        )
           throw new Error(`${component}: only nonzero symbols are supported`);
       const [x, y, width, height] = icon.viewBox ?? [];
       if (!(width > 0) || width !== height)
@@ -274,6 +353,12 @@ const named = wanted
   .filter((w) => w.name)
   .map((w) => `        "${w.name}" -> ${w.component}`)
   .join("\n");
+
+const quoted = (value) => {
+  if (!/^[a-z0-9-]+$/.test(value))
+    throw new Error(`Unsupported name: ${value}`);
+  return `"${value}"`;
+};
 
 const kotlin = `// Generated by scripts/generate-native-icons.mjs from packages/icons/src (registry.ts, pointr/icons.generated.ts, owned/icons.ts). Edit the sources or the generator's lists, never this file.
 package com.kozmos.components.icon
@@ -322,19 +407,216 @@ ${named}
         clearGroup()
     }.build()
 }
+
+/** The web registry's aliases, \`kozmosIconAliases\`: the name each stands for, or the name itself. */
+internal object KozmosIconAliases {
+    fun resolve(name: String): String = when (name) {
+${aliases.map(([alias, target]) => `        ${quoted(alias)} -> ${quoted(target)}`).join("\n")}
+        else -> name
+    }
+}
 `;
 
 // SwiftUI reads each outline at run time with KozmosPointrGlyph.outline,
 // which takes absolute M, L, H, V, C and Z and gives nil for anything else, so
 // a path it could not read would draw the stand-in. Read it here as it does.
 const SWIFT_ARITY = { M: 2, L: 2, H: 1, V: 1, C: 6, Z: 0 };
+
+const rounded = (n) => String(Math.round(n * 10000) / 10000);
+
+/** An elliptical arc as cubics, by the SVG spec's conversion to centre form. */
+function arcToCubics(x1, y1, rx, ry, degrees, large, sweep, x2, y2) {
+  if (!rx || !ry) return [[x1, y1, x2, y2, x2, y2]];
+  if (x1 === x2 && y1 === y2) return [];
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
+  const phi = (degrees * Math.PI) / 180;
+  const cos = Math.cos(phi);
+  const sin = Math.sin(phi);
+  const dx = (x1 - x2) / 2;
+  const dy = (y1 - y2) / 2;
+  const x = cos * dx + sin * dy;
+  const y = -sin * dx + cos * dy;
+  const scale = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+  if (scale > 1) {
+    rx *= Math.sqrt(scale);
+    ry *= Math.sqrt(scale);
+  }
+  const numerator = rx * rx * ry * ry - rx * rx * y * y - ry * ry * x * x;
+  const denominator = rx * rx * y * y + ry * ry * x * x;
+  const root = Math.sqrt(Math.max(0, numerator / denominator));
+  const sign = large === sweep ? -1 : 1;
+  const cxp = (sign * root * (rx * y)) / ry;
+  const cyp = (sign * root * -(ry * x)) / rx;
+  const cx = cos * cxp - sin * cyp + (x1 + x2) / 2;
+  const cy = sin * cxp + cos * cyp + (y1 + y2) / 2;
+  const angle = (ux, uy, vx, vy) =>
+    Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+  const start = angle(1, 0, (x - cxp) / rx, (y - cyp) / ry);
+  let delta = angle(
+    (x - cxp) / rx,
+    (y - cyp) / ry,
+    (-x - cxp) / rx,
+    (-y - cyp) / ry,
+  );
+  if (sweep && delta < 0) delta += 2 * Math.PI;
+  if (!sweep && delta > 0) delta -= 2 * Math.PI;
+  const count = Math.max(1, Math.ceil(Math.abs(delta) / (Math.PI / 2) - 1e-9));
+  const step = delta / count;
+  const k = (4 / 3) * Math.tan(step / 4);
+  const point = (t, ax, ay) => [
+    cx + cos * rx * (Math.cos(t) + ax) - sin * ry * (Math.sin(t) + ay),
+    cy + sin * rx * (Math.cos(t) + ax) + cos * ry * (Math.sin(t) + ay),
+  ];
+  const cubics = [];
+  for (let index = 0; index < count; index += 1) {
+    const from = start + index * step;
+    const to = from + step;
+    const [c1x, c1y] = point(from, -k * Math.sin(from), k * Math.cos(from));
+    const [c2x, c2y] = point(to, k * Math.sin(to), -k * Math.cos(to));
+    const [ex, ey] = index === count - 1 ? [x2, y2] : point(to, 0, 0);
+    cubics.push([c1x, c1y, c2x, c2y, ex, ey]);
+  }
+  return cubics;
+}
+
+/**
+ * An SVG path in the absolute M, L, H, V, C and Z KozmosPointrGlyph.outline
+ * reads: this package's own artwork is written with relative commands and
+ * arcs, which Pointr's export is not. A path that is already absolute is left
+ * as it is.
+ */
+function absolutePath(d, where) {
+  if (/^[MLHVCZ0-9 ,.-]*$/.test(d)) return d;
+  const parameters = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, A: 7, Z: 0 };
+  let at = 0;
+  const skip = () => {
+    while (at < d.length && /[\s,]/.test(d[at])) at += 1;
+  };
+  const number = () => {
+    skip();
+    const pattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y;
+    pattern.lastIndex = at;
+    const match = pattern.exec(d);
+    if (!match) throw new Error(`${where}: expected a number at ${at}`);
+    at += match[0].length;
+    return Number(match[0]);
+  };
+  const flag = () => {
+    skip();
+    const value = d[at];
+    if (value !== "0" && value !== "1")
+      throw new Error(`${where}: expected an arc flag at ${at}`);
+    at += 1;
+    return value === "1";
+  };
+  const output = [];
+  const emit = (command, ...values) =>
+    output.push(command + values.map(rounded).join(" "));
+  let x = 0;
+  let y = 0;
+  let startX = 0;
+  let startY = 0;
+  let lastControlX = null;
+  let lastControlY = null;
+  let command = null;
+  for (skip(); at < d.length; skip()) {
+    if (/[A-Za-z]/.test(d[at])) {
+      command = d[at];
+      at += 1;
+      if (!(command.toUpperCase() in parameters))
+        throw new Error(`${where}: absolutePath reads no ${command}`);
+    } else if (!command) throw new Error(`${where}: a path begins with M`);
+    const upper = command.toUpperCase();
+    const relative = command !== upper;
+    if (upper === "Z") {
+      output.push("Z");
+      x = startX;
+      y = startY;
+      lastControlX = null;
+      continue;
+    }
+    if (upper === "M") {
+      x = number() + (relative ? x : 0);
+      y = number() + (relative ? y : 0);
+      startX = x;
+      startY = y;
+      emit("M", x, y);
+      // Further pairs after an M are lines.
+      command = relative ? "l" : "L";
+      lastControlX = null;
+    } else if (upper === "L") {
+      x = number() + (relative ? x : 0);
+      y = number() + (relative ? y : 0);
+      emit("L", x, y);
+      lastControlX = null;
+    } else if (upper === "H") {
+      x = number() + (relative ? x : 0);
+      emit("H", x);
+      lastControlX = null;
+    } else if (upper === "V") {
+      y = number() + (relative ? y : 0);
+      emit("V", y);
+      lastControlX = null;
+    } else if (upper === "C" || upper === "S") {
+      const base = relative ? [x, y] : [0, 0];
+      const smooth = upper === "S";
+      const c1x = smooth
+        ? lastControlX === null
+          ? x
+          : 2 * x - lastControlX
+        : number() + base[0];
+      const c1y = smooth
+        ? lastControlY === null
+          ? y
+          : 2 * y - lastControlY
+        : number() + base[1];
+      const c2x = number() + base[0];
+      const c2y = number() + base[1];
+      const endX = number() + base[0];
+      const endY = number() + base[1];
+      emit("C", c1x, c1y, c2x, c2y, endX, endY);
+      lastControlX = c2x;
+      lastControlY = c2y;
+      x = endX;
+      y = endY;
+    } else {
+      const rx = number();
+      const ry = number();
+      const rotation = number();
+      const large = flag();
+      const sweep = flag();
+      const endX = number() + (relative ? x : 0);
+      const endY = number() + (relative ? y : 0);
+      for (const cubic of arcToCubics(
+        x,
+        y,
+        rx,
+        ry,
+        rotation,
+        large,
+        sweep,
+        endX,
+        endY,
+      ))
+        emit("C", ...cubic);
+      x = endX;
+      y = endY;
+      lastControlX = null;
+    }
+  }
+  return output.join("");
+}
+
 function swiftOutline(d, where) {
   const commands = [];
   let number = "";
   const flush = () => {
     if (!number) return;
     if (!/^-?\d+(\.\d+)?$/.test(number) || !commands.length)
-      throw new Error(`${where}: KozmosPointrGlyph.outline cannot read ${number}`);
+      throw new Error(
+        `${where}: KozmosPointrGlyph.outline cannot read ${number}`,
+      );
     commands.at(-1).values.push(Number(number));
     number = "";
   };
@@ -342,7 +624,9 @@ function swiftOutline(d, where) {
     if (/[A-Za-z]/.test(character)) {
       flush();
       if (!(character in SWIFT_ARITY))
-        throw new Error(`${where}: KozmosPointrGlyph.outline reads no ${character}`);
+        throw new Error(
+          `${where}: KozmosPointrGlyph.outline reads no ${character}`,
+        );
       commands.push({ command: character, values: [] });
     } else if (character === " " || character === ",") flush();
     else if (character === "-") {
@@ -371,14 +655,19 @@ const swiftCases = swiftWanted
   .filter((w) => swiftIcon(w).factory === "createPointrIcon")
   .map(({ name, component }) => {
     const icon = art.get(component);
+    const swiftPaths = icon.paths
+      .map((p, index) => {
+        const where = `${component}, path ${index + 1}`;
+        return swiftOutline(absolutePath(p.d, where), where);
+      })
+      .join(", ");
+    if (ownedComponents.has(component))
+      return `        // The outline \`${component}\` in ${icon.file}, this package's own, in absolute commands.\n        case "${name}": return [${swiftPaths}]`;
     if (!icon.pointr || !icon.node)
       throw new Error(`${component}: no Pointr name and node in its comment`);
     if (name !== icon.pointr)
       throw new Error(`${name} draws ${component}, Pointr's ${icon.pointr}`);
-    const paths = icon.paths
-      .map((p, index) => swiftOutline(p.d, `${component}, path ${index + 1}`))
-      .join(", ");
-    return `        // Pointr \`${icon.pointr}\`, node \`${icon.node}\`.\n        case "${name}": return [${paths}]`;
+    return `        // Pointr \`${icon.pointr}\`, node \`${icon.node}\`.\n        case "${name}": return [${swiftPaths}]`;
   })
   .join("\n");
 
@@ -389,13 +678,19 @@ const swiftSymbolCases = swiftWanted
   .map(({ name, component }) => {
     const icon = art.get(component);
     for (const p of icon.paths)
-      if ((p.fillRule ?? "nonzero") !== "nonzero" || (p.clipRule ?? "nonzero") !== "nonzero")
+      if (
+        (p.fillRule ?? "nonzero") !== "nonzero" ||
+        (p.clipRule ?? "nonzero") !== "nonzero"
+      )
         throw new Error(`${component}: only nonzero symbols are supported`);
     const [x, y, width, height] = icon.viewBox ?? [];
     if (!(width > 0) || width !== height)
       throw new Error(`${component}: the viewBox is not square`);
     const paths = icon.paths
-      .map((p, index) => swiftOutline(p.d, `${component}, path ${index + 1}`))
+      .map((p, index) => {
+        const where = `${component}, path ${index + 1}`;
+        return swiftOutline(absolutePath(p.d, where), where);
+      })
       .join(", ");
     return `        // The solid mark \`${component}\` in ${icon.file}, on its own squared viewBox.\n        case "${name}": return (${x}, ${y}, ${width}, [${paths}])`;
   })
@@ -447,13 +742,62 @@ ${swiftPartCases}
         }
     }
 }
+
+/// The web registry's aliases, \`kozmosIconAliases\`: the name each stands for,
+/// or the name itself.
+enum KozmosIconAliases {
+    static func resolve(_ name: String) -> String {
+        switch name {
+${aliases.map(([alias, target]) => `        case ${quoted(alias)}: return ${quoted(target)}`).join("\n")}
+        default: return name
+        }
+    }
+}
 `;
+
+// The artwork the Figma plugin draws for the owned names (the Pointr library
+// it imports the rest from has no such outline), as code.js carries it between
+// its markers. A hand edit there fails --check, as the two outputs above do.
+const svgOf = (component) => {
+  const icon = art.get(component);
+  const open = (viewBox) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="${viewBox}" fill="none">`;
+  if (icon.factory === "createPointrIcon")
+    return `${open("0 0 24 24")}${icon.paths
+      .map(
+        (p) =>
+          `<path d="${p.d}" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+      )
+      .join("")}</svg>`;
+  return `${open(icon.viewBox.join(" "))}${icon.paths
+    .map((p) => `<path d="${p.d}" fill="black"/>`)
+    .join("")}</svg>`;
+};
+const pluginFile = path.join(root, pluginOutput);
+const pluginSource = fs.readFileSync(pluginFile, "utf8");
+const openMarker = "// <owned-icons:generated>\n";
+const closeMarker = "// </owned-icons:generated>\n";
+const openAt = pluginSource.indexOf(openMarker);
+const closeAt = pluginSource.indexOf(closeMarker);
+if (openAt < 0 || closeAt < openAt)
+  throw new Error(`${pluginOutput}: owned icon markers not found`);
+const pluginBlock = await prettier.format(
+  `// Generated by scripts/generate-native-icons.mjs from packages/icons/src/owned/icons.ts. Edit the source, never this block.\nconst KOZMOS_OWNED_ICON_SVGS = ${JSON.stringify(
+    Object.fromEntries(owned.map((w) => [w.name, svgOf(w.component)])),
+  )};\n`,
+  { ...(await prettier.resolveConfig(pluginFile)), filepath: pluginFile },
+);
+const plugin =
+  pluginSource.slice(0, openAt + openMarker.length) +
+  pluginBlock +
+  pluginSource.slice(closeAt);
 
 const check = process.argv.includes("--check");
 const stale = [];
 for (const [relative, content] of [
   [kotlinOutput, kotlin],
   [swiftOutput, swift],
+  [pluginOutput, plugin],
 ]) {
   const filename = path.join(root, relative);
   const current = fs.existsSync(filename)
@@ -469,5 +813,5 @@ if (stale.length)
     `Stale native icons: ${stale.join(", ")}. Run pnpm icons:native:generate.`,
   );
 console.log(
-  `Native icons ${check ? "verified" : "generated"} from Pointr's artwork: Compose ${REGISTRY_NAMES.length} registry names, ${BEYOND_REGISTRY.length} beyond it, ${SUMMARY_EXPORTS.length} summary marks and ${PART_EXPORTS.length} part glyph, SwiftUI ${swiftWanted.length - BEYOND_REGISTRY.length} registry names, ${BEYOND_REGISTRY.length} beyond it and ${PART_EXPORTS.length} part glyph`,
+  `Native icons ${check ? "verified" : "generated"} from Pointr's artwork: Compose ${REGISTRY_NAMES.length + owned.length} registry names, ${BEYOND_REGISTRY.length} beyond it, ${SUMMARY_EXPORTS.length} summary marks and ${PART_EXPORTS.length} part glyph, SwiftUI ${swiftWanted.length - BEYOND_REGISTRY.length} registry names, ${BEYOND_REGISTRY.length} beyond it and ${PART_EXPORTS.length} part glyph, ${aliases.length} aliases on both, and the plugin's ${owned.length} owned SVGs`,
 );

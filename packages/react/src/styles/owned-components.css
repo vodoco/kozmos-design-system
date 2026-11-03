@@ -83,6 +83,94 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
+     600, 900 and 1000), its label centred in the hole and kept inside the
+     square the hole holds, or beside the dial at the inline end. The arc is
+     the tone's emotion text colour, themed by default, theme 600 as the bar
+     is: every tone reads 4.8:1 or more on the background 100 track, light
+     and dark. */
+  .kozmos-progress-ring {
+    @apply text-xs;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    flex-shrink: 0;
+    vertical-align: middle;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-progress-ring-dial {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: calc(var(--primitives-layout-spacing-900) * 1px);
+    height: calc(var(--primitives-layout-spacing-900) * 1px);
+  }
+  .kozmos-progress-ring[data-size="sm"] > .kozmos-progress-ring-dial {
+    width: calc(var(--primitives-layout-spacing-600) * 1px);
+    height: calc(var(--primitives-layout-spacing-600) * 1px);
+  }
+  .kozmos-progress-ring[data-size="lg"] > .kozmos-progress-ring-dial {
+    width: calc(var(--primitives-layout-spacing-1000) * 1px);
+    height: calc(var(--primitives-layout-spacing-1000) * 1px);
+  }
+  .kozmos-progress-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .kozmos-progress-ring-track {
+    stroke: var(--primitives-colors-background-100);
+  }
+  .kozmos-progress-ring-arc {
+    stroke: var(
+      --kozmos-progress-ring-tone,
+      var(--semantics-emotion-themed-text)
+    );
+    transition: stroke-dasharray var(--semantics-motion-duration-standard)
+      var(--semantics-motion-easing-standard);
+  }
+  .kozmos-progress-ring-dial > .kozmos-progress-ring-label {
+    position: relative;
+    max-width: 57%;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  /* An `sm` ring's check at complete: the icon's own 24, inside the 28.28
+     square the hole holds, in the arc's colour. */
+  .kozmos-progress-ring-done {
+    position: relative;
+    color: var(--kozmos-progress-ring-tone);
+  }
+  /* No animated sweep under reduced motion, the system's or the config's. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-ring-arc {
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-ring-arc {
+    transition: none;
+  }
+  /* The system's palette, as the bar's: the arc Highlight, the track
+     GrayText. Only the drawing opts out; the label's text is forced as any
+     text is. */
+  @media (forced-colors: active) {
+    .kozmos-progress-ring-svg {
+      forced-color-adjust: none;
+    }
+    .kozmos-progress-ring-track {
+      stroke: GrayText;
+    }
+    .kozmos-progress-ring-arc {
+      stroke: Highlight;
+    }
+    /* An svg's own `color` escapes forcing in Chromium and WebKit, so the
+       check names the arc's system colour. */
+    .kozmos-progress-ring-done {
+      color: Highlight;
+    }
+  }
   .kozmos-route-track {
     position: relative;
     height: 48px;
@@ -1388,6 +1476,52 @@
   .kozmos-button-loader {
     @apply h-4 w-4;
   }
+  /* CardHeader's actions (GAP-169): at the header's inline end, after the
+     title and description, which keep the room before them and their own
+     6px apart. The actions are centred on the title's 24px line whatever
+     their size, so the header grows no taller for them. */
+  .kozmos-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .kozmos-card-header-text {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-inline-size: 0;
+  }
+  .kozmos-card-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+    /* The title's line: an action of any size is centred on it and spills
+       past it evenly, so the header grows no taller. */
+    block-size: 1.5rem;
+  }
+  /* IconButton's counter (GAP-197): over the icon's top-end corner, its
+     bottom edge on the button's centre line and its start edge 2px past it,
+     so it covers the same corner of the icon at every size and density, and
+     the top-left in right to left. On the 28 help button that is 4 above the
+     button and 6 past its end, where the MAP-64 design places its Counter
+     (decision 139). In forced colours, where its fill is dropped, an outline
+     keeps it apart from the icon. */
+  .kozmos-icon-button-counted {
+    position: relative;
+  }
+  .kozmos-icon-button-counter {
+    position: absolute;
+    inset-block-end: 50%;
+    inset-inline-start: calc(50% + 2px);
+    pointer-events: none;
+  }
+  @media (forced-colors: active) {
+    .kozmos-icon-button-counter {
+      outline: 1px solid CanvasText;
+    }
+  }
   .kozmos-popover {
     @apply z-50 w-72 rounded-control border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
   }
@@ -1583,6 +1717,22 @@
   }
   [data-kozmos-motion="reduced"] div.kozmos-accordion-content[data-state] {
     animation: none;
+  }
+  /* A Toaster's toast (GAP-167) arrives, leaves and springs back from a
+     swipe without moving, under either signal: the media query reached none
+     of it, and the config's scale left each a 0.15 ms cut. The type selector
+     and the two attributes outweigh Toast's own utilities (:scope, a class
+     and an attribute). Its swipe still follows the finger. */
+  @media (prefers-reduced-motion: reduce) {
+    li.kozmos-toast[data-state][data-swipe-direction] {
+      animation: none;
+      transition: none;
+    }
+  }
+  [data-kozmos-motion="reduced"]
+    li.kozmos-toast[data-state][data-swipe-direction] {
+    animation: none;
+    transition: none;
   }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a

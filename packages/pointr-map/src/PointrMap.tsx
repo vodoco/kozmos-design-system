@@ -1,17 +1,14 @@
 import * as React from "react";
 import { MapView, type MapViewVariant } from "@kozmos-ds/react";
 import type {
+  BuildingPresentation,
   FloorPresentation,
   MapCollisionInsets,
   MapReadiness,
+  SitePresentation,
 } from "@kozmos-ds/product-contracts";
 import type { PointrMapConfig } from "./config";
-import type {
-  PointrBuildingPresentation,
-  PointrPoiItem,
-  PointrSearchResponse,
-  PointrSitePresentation,
-} from "./convert";
+import type { PointrPoiItem, PointrSearchResponse } from "./convert";
 import { PointrMapError } from "./errors";
 import type { PointrMapLibreMap } from "./sdk";
 import { POINTR_SDK_VERSION } from "./sdk-versions";
@@ -64,11 +61,11 @@ export interface PointrMapProps {
   onPoiSelect?: (item: PointrPoiItem) => void;
   onLevelChange?: (
     floor: FloorPresentation,
-    building?: PointrBuildingPresentation,
+    building?: BuildingPresentation,
   ) => void;
   /** The building the map is in; undefined when it leaves every building. */
-  onBuildingChange?: (building?: PointrBuildingPresentation) => void;
-  onSiteChange?: (site?: PointrSitePresentation) => void;
+  onBuildingChange?: (building?: BuildingPresentation) => void;
+  onSiteChange?: (site?: SitePresentation) => void;
 }
 
 /** What a ref to PointrMap offers. Each call is safe before the map is ready. */
@@ -87,6 +84,15 @@ export interface PointrMapHandle {
    * string.
    */
   setLevel(level: number | string): boolean;
+  /**
+   * Leaves the open building for its site, as the SDK's own Exit button does
+   * (Kozmos hides that button; put a MapControlButton in AdaptiveMapShell's
+   * `controlsTopStart` instead). True means the SDK was asked, not that the
+   * map has left: it reports no building through `onBuildingChange` when it
+   * has, and below the site's zoom the SDK does nothing. False before the map
+   * is ready, outside a building, and with an SDK whose view has no such event.
+   */
+  exitBuilding(): boolean;
   /**
    * Searches the whole site, or the open building with `{ scope: "building" }`,
    * numbered from 1. Rejects with a non-fatal `data` PointrMapError before the
@@ -207,6 +213,7 @@ export const PointrMap = React.forwardRef<PointrMapHandle, PointrMapProps>(
         flyToPoi: (id, options) =>
           session.current?.flyToPoi(id, options) ?? false,
         setLevel: (level) => session.current?.setLevel(level) ?? false,
+        exitBuilding: () => session.current?.exitBuilding() ?? false,
         search: (query, options) =>
           session.current
             ? session.current.search(query, options)

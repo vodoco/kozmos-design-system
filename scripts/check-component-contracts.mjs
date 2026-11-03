@@ -218,10 +218,13 @@ const files = {
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
   reactInput: "packages/react/src/components/Input/Input.tsx",
+  reactInputVariants: "packages/react/src/components/Input/inputVariants.ts",
   reactInputFigma: "packages/react/src/components/Input/Input.figma.tsx",
   reactCombobox: "packages/react/src/components/Combobox/Combobox.tsx",
   reactComboboxFigma:
     "packages/react/src/components/Combobox/Combobox.figma.tsx",
+  reactAdaptiveMapShellFigma:
+    "packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.figma.tsx",
   reactMultiSelect: "packages/react/src/components/MultiSelect/MultiSelect.tsx",
   reactMultiSelectFigma:
     "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
@@ -873,6 +876,16 @@ assertContains(
   "formatCounterValue",
   "React Counter normalizes legacy wrapped values",
 );
+// The shell's map slots are frames, with no property to read them from, so an
+// example naming what they hold would hand a designer's copy controls and
+// words nobody drew.
+for (const prop of ["controlsTopStart", "controlsTopEnd", "status"])
+  assertNotContains(
+    files.reactAdaptiveMapShellFigma,
+    source.reactAdaptiveMapShellFigma,
+    new RegExp(`\\b${prop}=`),
+    `AdaptiveMapShell Code Connect example filling ${prop}`,
+  );
 assertContains(
   files.reactCounterFigma,
   source.reactCounterFigma,
@@ -994,8 +1007,8 @@ assertContains(
   "React Switch neutral unchecked track",
 );
 assertContains(
-  files.reactInput,
-  source.reactInput,
+  files.reactInputVariants,
+  source.reactInputVariants,
   "kozmos-reset kozmos-input",
   "React Input owned recipe",
 );
@@ -2392,9 +2405,70 @@ if (categoryTile.content.iconDecorative) {
   );
 }
 
+// Input's recipe, in a module of its own (GAP-154): a field that shares it
+// imports it from there and never through Input.tsx, whose copy and toggle
+// action would ride into every field's bundle (+0.35 KB to PasswordInput,
+// DatePicker, Search and the rest, measured on 28 Oct). The specifier is
+// resolved, so what counts is the module reached and not how it is spelled:
+// the file, its folder's barrel or the package's.
+{
+  const recipePath = "packages/react/src/components/Input/inputVariants.ts";
+  if (!fs.existsSync(path.join(root, recipePath))) {
+    fail(`${recipePath}: Input's recipe has no module of its own`);
+  }
+  const recipe = read(recipePath);
+  if (
+    !/export const inputVariants = cva\(/.test(recipe) ||
+    !/export type InputStatus\b/.test(recipe)
+  ) {
+    fail(`${recipePath}: inputVariants and InputStatus are not defined here`);
+  }
+  if (/from "\.\.?\//.test(recipe)) {
+    fail(`${recipePath}: the recipe imports another module of the package`);
+  }
+  const walk = (dir) =>
+    fs
+      .readdirSync(path.join(root, dir), { withFileTypes: true })
+      .flatMap((entry) =>
+        entry.isDirectory()
+          ? walk(`${dir}/${entry.name}`)
+          : /\.tsx?$/.test(entry.name) &&
+              !/\.(test|stories|figma)\.tsx?$/.test(entry.name)
+            ? [`${dir}/${entry.name}`]
+            : [],
+      );
+  const reachesInput =
+    /^packages\/react\/src(\/index|\/components\/Input(\/index|\/Input)?)?(\.tsx?)?$/;
+  const recipeNames = "(inputVariants|InputStatus)";
+  for (const file of walk("packages/react/src")) {
+    if (file.endsWith("/Input/Input.tsx")) continue;
+    const text = read(file);
+    for (const m of text.matchAll(
+      /\b(?:import|export)\s+([\w$*\s{},]*?)\s*from\s*["'](\.[^"']*)["']/g,
+    )) {
+      const module = path.posix.normalize(
+        path.posix.join(path.posix.dirname(file), m[2]),
+      );
+      if (!reachesInput.test(module)) continue;
+      const namespace = m[1].match(/\*\s+as\s+([\w$]+)/)?.[1];
+      if (
+        new RegExp(`\\b${recipeNames}\\b`).test(m[1]) ||
+        (namespace &&
+          new RegExp(`\\b${namespace}\\.${recipeNames}\\b`).test(text))
+      ) {
+        fail(
+          `${file}: takes Input's recipe through "${m[2]}", which brings Input.tsx; import it from Input/inputVariants, so Input's action stays out of its bundle`,
+        );
+      }
+    }
+  }
+}
+
 // The curated icons: the registry, the plugin's definitions and the catalog
 // agree, name for name and key for key, so a painter never asks the Icons
-// page for a symbol Curated Icons cannot import.
+// page for a symbol Curated Icons cannot import. An icon the importer draws is
+// the registry's (KOSMOS_ICON_DEFINITIONS) or one of the UI icons the registry
+// does not name (IMPORTER_UI_ICON_DEFINITIONS, decision 121), never both.
 {
   const registry = read("packages/icons/src/registry.ts");
   const namesBlock = registry.slice(
@@ -2404,27 +2478,45 @@ if (categoryTile.content.iconDecorative) {
   const names = [...namesBlock.matchAll(/^\s+"([a-z0-9-]+)",$/gm)].map(
     (m) => m[1],
   );
-  const start = source.figma.indexOf("const KOSMOS_ICON_DEFINITIONS = [");
-  const block = source.figma.slice(start, source.figma.indexOf("\n];", start));
+  // Decision 121: the UI glyphs components import by name stay out of the
+  // by-name registry. The check below stops an icon on both lists; this one
+  // stops one moved from the importer's UI list into the registry.
+  for (const glyph of ["copy-01", "star-01", "pencil-01"]) {
+    if (new RegExp(`["'\`]${glyph}["'\`]`).test(registry)) {
+      fail(
+        `packages/icons/src/registry.ts: "${glyph}" is a UI glyph that components import by name; it never joins the by-name registry (decision 121)`,
+      );
+    }
+  }
   // Entry by entry: a taxonomy symbol has no component key, and a pattern
   // spanning entries would pair its name with the next entry's key.
-  const definitions = new Map(
-    block
-      .split(/\n {2}\{\n/)
-      .slice(1)
-      .map((entry) => {
-        const field = (key, pattern) =>
-          (entry.match(new RegExp(`^ {4}${key}: "(${pattern})",$`, "m")) ||
-            [])[1];
-        return [
-          field("name", "[a-z0-9-]+"),
-          {
-            componentKey: field("componentKey", "[0-9a-f]+"),
-            source: field("source", "[a-z]+"),
-          },
-        ];
-      }),
-  );
+  const definitionsOf = (listName) => {
+    const start = source.figma.indexOf(`const ${listName} = [`);
+    if (start === -1) return null;
+    const block = source.figma.slice(
+      start,
+      source.figma.indexOf("\n];", start),
+    );
+    return new Map(
+      block
+        .split(/\n {2}\{\n/)
+        .slice(1)
+        .map((entry) => {
+          const field = (key, pattern) =>
+            (entry.match(new RegExp(`^ {4}${key}: "(${pattern})",$`, "m")) ||
+              [])[1];
+          return [
+            field("name", "[a-z0-9-]+"),
+            {
+              componentKey: field("componentKey", "[0-9a-f]+"),
+              source: field("source", "[a-z]+"),
+            },
+          ];
+        }),
+    );
+  };
+  const definitions = definitionsOf("KOSMOS_ICON_DEFINITIONS") || new Map();
+  const uiDefinitions = definitionsOf("IMPORTER_UI_ICON_DEFINITIONS");
   const catalog = JSON.parse(read("docs/figma-pointr-icon-catalog.json"));
   const items = Array.isArray(catalog)
     ? catalog
@@ -2432,20 +2524,20 @@ if (categoryTile.content.iconDecorative) {
   const keyByName = new Map(
     items.map((item) => [item.name, item.componentKey]),
   );
-  // The taxonomy's symbols: the art the plugin draws them from, and the
-  // registry's own record that they are the taxonomy's.
-  const svgStart = source.figma.indexOf("const TAXONOMY_ICON_SVGS = {");
+  // The icons the Pointr library has no outline for: the art the plugin draws
+  // them from, and the registry's own record that they are owned.
+  const svgStart = source.figma.indexOf("const KOZMOS_OWNED_ICON_SVGS = {");
   const drawn = new Set(
     [
       ...source.figma
         .slice(svgStart, source.figma.indexOf("\n};", svgStart))
-        .matchAll(/^ {2}"([a-z0-9-]+)":(?:$| ')/gm),
+        .matchAll(/^ {2}"?([a-z0-9-]+)"?:(?:$| ')/gm),
     ].map((m) => m[1]),
   );
-  const taxonomyInRegistry = new Set(
+  const ownedInRegistry = new Set(
     [
       ...registry.matchAll(
-        /name: "([a-z0-9-]+)",\s+figmaName: "[^"]+",\s+source: "taxonomy",/g,
+        /name: "([a-z0-9-]+)",\s+figmaName: "[^"]+",\s+source: "owned",/g,
       ),
     ].map((m) => m[1]),
   );
@@ -2455,15 +2547,15 @@ if (categoryTile.content.iconDecorative) {
       fail(
         `figma/foundations-importer/code.js: curated icon "${name}" is in the registry but has no KOSMOS_ICON_DEFINITIONS entry`,
       );
-    } else if (definition.source === "taxonomy") {
+    } else if (definition.source === "owned") {
       if (definition.componentKey || !drawn.has(name)) {
         fail(
-          `figma/foundations-importer/code.js: taxonomy symbol "${name}" needs its SVG in TAXONOMY_ICON_SVGS and no component key`,
+          `figma/foundations-importer/code.js: owned icon "${name}" needs its SVG in KOZMOS_OWNED_ICON_SVGS and no component key`,
         );
       }
-      if (!taxonomyInRegistry.has(name)) {
+      if (!ownedInRegistry.has(name)) {
         fail(
-          `packages/icons/src/registry.ts: "${name}" is a taxonomy symbol in the plugin, and its definition does not say source: "taxonomy"`,
+          `packages/icons/src/registry.ts: "${name}" is an owned icon in the plugin, and its definition does not say source: "owned"`,
         );
       }
     } else if (definition.componentKey !== keyByName.get(name)) {
@@ -2473,9 +2565,9 @@ if (categoryTile.content.iconDecorative) {
     }
   }
   for (const name of drawn) {
-    if (!definitions.has(name) || definitions.get(name).source !== "taxonomy") {
+    if (!definitions.has(name) || definitions.get(name).source !== "owned") {
       fail(
-        `figma/foundations-importer/code.js: TAXONOMY_ICON_SVGS draws "${name}", which no taxonomy definition names`,
+        `figma/foundations-importer/code.js: KOZMOS_OWNED_ICON_SVGS draws "${name}", which no owned definition names`,
       );
     }
   }
@@ -2484,6 +2576,52 @@ if (categoryTile.content.iconDecorative) {
       fail(
         `figma/foundations-importer/code.js: "${name}" is defined but packages/icons/src/registry.ts does not name it`,
       );
+    }
+  }
+  // The UI icons the importer draws for components that React imports by
+  // name (decision 121: Copy01, Star01, Pencil01), so the by-name registry
+  // never names them. Each is the catalog's icon, key for key, so Curated
+  // Icons imports the glyph the component means and no stand-in.
+  if (!uiDefinitions) {
+    fail(
+      "figma/foundations-importer/code.js: IMPORTER_UI_ICON_DEFINITIONS was not found",
+    );
+  } else {
+    for (const [name, definition] of uiDefinitions) {
+      if (!name) {
+        fail(
+          "figma/foundations-importer/code.js: an IMPORTER_UI_ICON_DEFINITIONS entry has no name",
+        );
+        continue;
+      }
+      if (names.includes(name) || definitions.has(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" is also a registry icon; it belongs on one list (decision 121)`,
+        );
+      }
+      if (!keyByName.has(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" is not in docs/figma-pointr-icon-catalog.json`,
+        );
+      } else if (!definition.componentKey) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" has no component key (the catalog's is ${keyByName.get(name)})`,
+        );
+      } else if (definition.componentKey !== keyByName.get(name)) {
+        fail(
+          `figma/foundations-importer/code.js: UI icon "${name}" carries key ${definition.componentKey}, which is not the catalog's ${keyByName.get(name)}`,
+        );
+      }
+    }
+    // A painter asks for a UI icon by name; the name is on one of the lists.
+    for (const m of source.figma.matchAll(
+      /findImporterIconSource\(\s*"([a-z0-9-]+)"/g,
+    )) {
+      if (!uiDefinitions.has(m[1]) && !definitions.has(m[1])) {
+        fail(
+          `figma/foundations-importer/code.js: a painter asks for icon "${m[1]}", which neither KOSMOS_ICON_DEFINITIONS nor IMPORTER_UI_ICON_DEFINITIONS names`,
+        );
+      }
     }
   }
 }
@@ -11598,15 +11736,20 @@ for (const [file, symbols] of [
     "tint: .blue",
     "SwiftUI Progress drawing SwiftUI's blue",
   );
+  // The bar alone: the ring below it is a prominent fill, theme 500.
+  const swiftBar = swiftContent.slice(
+    swiftContent.indexOf("ProgressView(value: value, total: total)"),
+    swiftContent.indexOf("private var ring"),
+  );
   assertNotContains(
     swift,
-    swiftContent,
+    swiftBar,
     "primitivesColorsTheme500",
     "SwiftUI Progress drawing theme 500, not React's 600",
   );
   assertContains(
     swift,
-    swiftContent,
+    swiftBar,
     ".tint(KozmosColors.primitivesColorsTheme600)",
     "SwiftUI Progress drawing React's primary",
   );
@@ -11625,6 +11768,59 @@ for (const [file, symbols] of [
     bar,
     "trackColor = KozmosThemeTokens.primitivesColorsBackground200",
     "Compose Progress drawing React's track",
+  );
+
+  // The ring (decision 131): its arc is its tone's emotion text colour,
+  // Tag's, and unset the themed one, theme 600, the bar's own fill (owner,
+  // 28 Oct), on a background 100 track, where every tone reads 4.8:1 or
+  // more in both themes. Every platform draws it so.
+  const css = read("packages/react/src/styles/owned-components.css");
+  const ringCss = css.slice(css.indexOf(".kozmos-progress-ring-track {"));
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    ".kozmos-progress-ring-track {\n    stroke: var(--primitives-colors-background-100);",
+    "React's ring track on background 100",
+  );
+  assertContains(
+    "packages/react/src/styles/owned-components.css",
+    ringCss,
+    "--kozmos-progress-ring-tone,\n      var(--semantics-emotion-themed-text)",
+    "React's ring arc in its tone, themed by default",
+  );
+  const swiftRing = swiftContent.slice(
+    swiftContent.indexOf("private var dial"),
+  );
+  for (const [needle, what] of [
+    [
+      ".strokeBorder(KozmosColors.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    ["                        tone.text,", "arc in its tone's text colour"],
+  ])
+    assertContains(swift, swiftRing, needle, `SwiftUI Progress ring ${what}`);
+  assertContains(
+    swift,
+    swiftContent,
+    "tone: KozmosEmotion = .themed",
+    "SwiftUI Progress ring tone themed by default",
+  );
+  const kotlinRing = kotlinContent.slice(
+    kotlinContent.indexOf("private fun KozmosProgressRing("),
+  );
+  for (const [needle, what] of [
+    [
+      "val track = KozmosThemeTokens.primitivesColorsBackground100",
+      "track on background 100",
+    ],
+    ["val fill = tone.text", "arc in its tone's text colour"],
+  ])
+    assertContains(kotlin, kotlinRing, needle, `Compose Progress ring ${what}`);
+  assertContains(
+    kotlin,
+    kotlinContent,
+    "tone: KozmosEmotion = KozmosEmotion.Themed",
+    "Compose Progress ring tone themed by default",
   );
 }
 
