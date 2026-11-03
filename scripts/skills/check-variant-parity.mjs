@@ -109,6 +109,10 @@ const INTENTIONAL = {
     android:
       "decision 82: density is web only; SwiftUI and Compose stay touch.",
   },
+  "Progress.labelPlacement": {
+    figma:
+      "Modelled as the rings' Label Beside boolean, beside Show Label: the label is one Label text, drawn in the hole or beside the dial at the inline end. A variant axis would double the set's 90 rings for a layer's visibility.",
+  },
   "Sidebar.variant": {
     figma:
       "Modelled as part of the Content axis: SIDEBAR_CONTENT is Basic, Sections, Tools, Rail, so the rail variant is expressible. A separate Variant axis would multiply the set without adding a state designers cannot already pick.",

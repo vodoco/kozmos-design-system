@@ -902,6 +902,11 @@
       "component": "Progress",
       "exports": [
         "Default",
+        "Circular",
+        "CircularSizes",
+        "CircularComplete",
+        "LevelsAdded",
+        "Tones",
         "SelectedSection",
         "LivePosition",
         "AnimatedUpdate"

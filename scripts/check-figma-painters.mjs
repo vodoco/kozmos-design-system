@@ -2029,6 +2029,400 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- Progress's ring (decision 131, GAP-038) -------------------------------------
+
+// A count out of a total: Progress gains Shape (Linear, Circular), a ring's
+// Size (Small 48, Medium 96, Large 128) and its Tone (owner, 28 Oct: a status
+// ring, in Tag's emotions). The ring is a Dial holding a track and an arc,
+// each an ellipse whose arc is filled, so neither is a disc inset in another;
+// the arc is its tone's emotion text colour from 12 o'clock clockwise (Themed
+// is theme 600, the bar's own fill), the track background/100, with the label
+// in the hole and, hidden until Label Beside, the same label beside the dial.
+// The Small ring at 100 draws a check in the hole instead of the label.
+section("Progress's ring (decision 131, GAP-038)");
+{
+  const ready =
+    Array.isArray(plugin.PROGRESS_FORMS) &&
+    Array.isArray(plugin.PROGRESS_TONES) &&
+    typeof plugin.updateProgressRingVariant === "function";
+  ok(ready, "Progress has Shape, Size and Tone axes and a ring painter");
+  if (ready) {
+    const tokens = payloadVariables([...variableByName.keys()]);
+    const TONES = [
+      "Themed",
+      "Neutral",
+      "Success",
+      "Danger",
+      "Informative",
+      "Alert",
+    ];
+    const axes = plugin.expectedVariantAxesForComponentSetName("Progress");
+    ok(
+      JSON.stringify(axes) ===
+        JSON.stringify({
+          Shape: ["Linear", "Circular"],
+          Size: ["Small", "Medium", "Large"],
+          Tone: TONES,
+          Value: ["0", "25", "50", "75", "100"],
+        }) && plugin.PROGRESS_FORMS.length === 19,
+      `the set's axes are Shape, Size, Tone and Value, a bar and 18 rings a value (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
+    );
+    const parsed = [
+      "Value=50",
+      "Shape=Circular, Size=Large, Value=25",
+      "Shape=Circular, Size=Large, Tone=Success, Value=25",
+      "Shape=Linear, Size=Large, Value=25",
+      "Shape=Linear, Size=Medium, Tone=Danger, Value=25",
+      "Shape=Oval, Size=Medium, Value=25",
+      "Shape=Circular, Size=Medium, Tone=Warning, Value=25",
+      "Shape=Circular, Size=Medium, Value=30",
+    ].map((name) => plugin.parseProgressVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "50", second: "Linear/Medium/Themed" },
+          { value: "25", second: "Circular/Large/Themed" },
+          { value: "25", second: "Circular/Large/Success" },
+          null,
+          null,
+          null,
+          null,
+          null,
+        ]),
+      `a variant from before the axes parses as the bar, a ring from before Tone as Themed; a sized or toned bar, an unknown Shape, Tone or Value is not one (${JSON.stringify(parsed)})`,
+    );
+
+    const ring = async (value, size, tone = "Themed") =>
+      plugin.createProgressVariant({
+        value,
+        second: `Circular/${size}/${tone}`,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    const close = (a, b) => Math.abs(a - b) < 1e-9;
+    for (const [size, diameter, stroke] of [
+      ["Small", 48, 4],
+      ["Medium", 96, 8],
+      ["Large", 128, 12],
+    ]) {
+      const variant = await ring("25", size);
+      const dial = named(variant, "Dial");
+      const track = dial && named(dial, "Ring Track");
+      const arc = dial && named(dial, "Ring Arc");
+      const label = dial && named(dial, "Label");
+      const beside = (variant.children || []).find(
+        (c) => c.name === "Label Beside",
+      );
+      const inner = 1 - (2 * stroke) / diameter;
+      ok(
+        variant.name ===
+          `Shape=Circular, Size=${size}, Tone=Themed, Value=25` &&
+          variant.layoutMode === "HORIZONTAL" &&
+          variant.itemSpacing === 12 &&
+          variant.counterAxisAlignItems === "CENTER" &&
+          variant.fills.length === 0 &&
+          (variant.children || []).map((c) => c.name).join() ===
+            "Dial,Label Beside" &&
+          dial &&
+          dial.width === diameter &&
+          dial.height === diameter &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Label",
+        `${size}: a row of the ${diameter} Dial, holding the track, the arc and the label, and the label beside it, 12 apart (${variant.name}, ${variant.layoutMode}, ${(variant.children || []).map((c) => c.name).join(", ")}; ${dial && (dial.children || []).map((c) => c.name).join(", ")})`,
+      );
+      ok(
+        track &&
+          arc &&
+          track.type === "ELLIPSE" &&
+          arc.type === "ELLIPSE" &&
+          [track, arc].every(
+            (node) =>
+              node.width === diameter &&
+              node.height === diameter &&
+              node.x === 0 &&
+              node.y === 0 &&
+              node.strokes.length === 0 &&
+              close(node.arcData.innerRadius, inner),
+          ),
+        `${size}: the track and the arc are both the whole ${diameter} circle, ${stroke} thick (inner radius ${inner.toFixed(4)}), filled, not stroked or inset (${track && JSON.stringify(track.arcData)}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          close(track.arcData.startingAngle, 0) &&
+          close(track.arcData.endingAngle, 2 * Math.PI) &&
+          close(arc.arcData.startingAngle, -Math.PI / 2) &&
+          close(arc.arcData.endingAngle, 0) &&
+          arc.visible !== false,
+        `${size}: the track is the whole turn; at 25 the arc runs from 12 o'clock a quarter turn clockwise (${arc && JSON.stringify(arc.arcData)})`,
+      );
+      ok(
+        track &&
+          arc &&
+          boundVariableName(track.fills[0]) === "Colors/background/100" &&
+          boundVariableName(arc.fills[0]) === "Emotion/themed/text",
+        `${size}: the track is background/100 and a Themed arc the themed emotion's text, theme 600 as the bar's fill (${track && boundVariableName(track.fills[0])}, ${arc && boundVariableName(arc.fills[0])})`,
+      );
+      const width = Math.floor((diameter - 2 * stroke) * Math.SQRT1_2);
+      ok(
+        label &&
+          label.type === "TEXT" &&
+          label.width === width &&
+          label.fontSize === 12 &&
+          label.textAlignHorizontal === "CENTER" &&
+          close(label.x, Math.round((diameter - width) / 2)) &&
+          boundVariableName(label.fills[0]) === "Colors/foreground/0" &&
+          beside &&
+          beside.type === "TEXT" &&
+          beside.fontSize === 12 &&
+          beside.textAutoResize === "WIDTH_AND_HEIGHT" &&
+          boundVariableName(beside.fills[0]) === "Colors/foreground/0",
+        `${size}: the label is 12, centred, ${width} wide, inside the square the hole holds; the one beside is 12 and hugs its words; both foreground/0 (${label && [label.width, label.fontSize, label.x, label.textAlignHorizontal].join(", ")}; ${beside && beside.textAutoResize})`,
+      );
+    }
+    for (const tone of TONES) {
+      const variant = await ring("75", "Medium", tone);
+      const arc = named(named(variant, "Dial"), "Ring Arc");
+      ok(
+        variant.name ===
+          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75` &&
+          arc &&
+          boundVariableName(arc.fills[0]) ===
+            `Emotion/${tone.toLowerCase()}/text`,
+        `${tone}: the arc is Emotion/${tone.toLowerCase()}/text (${variant.name}, ${arc && boundVariableName(arc.fills[0])})`,
+      );
+    }
+    for (const [value, end, visible] of [
+      ["0", null, false],
+      ["50", Math.PI / 2, true],
+      ["100", (3 * Math.PI) / 2, true],
+    ]) {
+      const arc = named(named(await ring(value, "Medium"), "Dial"), "Ring Arc");
+      ok(
+        arc &&
+          arc.visible === visible &&
+          (end === null || close(arc.arcData.endingAngle, end)),
+        `at ${value} the arc is ${visible ? `drawn to ${(end / Math.PI).toFixed(2)}π` : "hidden: an arc whose ends meet would be a whole ring"} (${arc && arc.visible}, ${arc && JSON.stringify(arc.arcData)})`,
+      );
+    }
+    // Owner, 2 Nov: "100%" is 31.8 wide at 12, in the 28.28 square a Small
+    // hole holds, so the Small ring at 100 draws the check code draws with no
+    // label: the Icons page's check at its own 24, in the ring's tone, where
+    // the label was. Figma binds no inverse, so the label cannot stand behind
+    // it, and Show Label has nothing to draw on those six variants.
+    for (const tone of TONES) {
+      const variant = await ring("100", "Small", tone);
+      const dial = named(variant, "Dial");
+      const check = dial && named(dial, "Done Check");
+      const vector = check && check.findOne((n) => n.type === "VECTOR");
+      ok(
+        dial &&
+          check &&
+          check.type === "INSTANCE" &&
+          check.mainComponent.name === "Icon / check" &&
+          check.width === 24 &&
+          check.height === 24 &&
+          check.x === 12 &&
+          check.y === 12 &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Done Check" &&
+          vector &&
+          boundVariableName(vector.strokes[0]) ===
+            `Emotion/${tone.toLowerCase()}/text`,
+        `Small at 100, ${tone}: the check at 24, centred in the 48 dial where the label was, in Emotion/${tone.toLowerCase()}/text (${dial && (dial.children || []).map((c) => c.name).join(", ")}; ${check && [check.type, check.width, check.x, check.y].join(", ")}; ${vector && boundVariableName(vector.strokes[0])})`,
+      );
+    }
+    for (const [value, size] of [
+      ["75", "Small"],
+      ["0", "Small"],
+      ["100", "Medium"],
+      ["100", "Large"],
+    ]) {
+      const dial = named(await ring(value, size), "Dial");
+      ok(
+        dial &&
+          !named(dial, "Done Check") &&
+          (dial.children || []).map((c) => c.name).join() ===
+            "Ring Track,Ring Arc,Label",
+        `${size} at ${value} keeps its label and draws no check (${dial && (dial.children || []).map((c) => c.name).join(", ")})`,
+      );
+    }
+    // An Update over a ring from before: the label goes, the check comes,
+    // and a second Update leaves one check, retinted.
+    {
+      const before = await ring("75", "Small");
+      const stale = named(named(before, "Dial"), "Label");
+      const again = () =>
+        plugin.updateProgressRingVariant(before, {
+          value: "100",
+          size: "Small",
+          tone: "Success",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        });
+      await again();
+      await again();
+      const dial = named(before, "Dial");
+      const checks = (dial.children || []).filter(
+        (c) => c.name === "Done Check",
+      );
+      const vector = checks[0] && checks[0].findOne((n) => n.type === "VECTOR");
+      ok(
+        stale &&
+          !named(dial, "Label") &&
+          checks.length === 1 &&
+          vector &&
+          boundVariableName(vector.strokes[0]) === "Emotion/success/text" &&
+          named(before, "Label Beside"),
+        `an Update over an older ring swaps its label for one check, and keeps the label beside (${(dial.children || []).map((c) => c.name).join(", ")}; ${vector && boundVariableName(vector.strokes[0])})`,
+      );
+    }
+    // A ring drawn before the Dial held its parts directly on the variant.
+    {
+      const before = await ring("75", "Small");
+      before.appendChild(named(named(before, "Dial"), "Label"));
+      await plugin.updateProgressRingVariant(before, {
+        value: "100",
+        size: "Small",
+        tone: "Themed",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      ok(
+        !named(before, "Label") && named(before, "Done Check"),
+        `an Update over a ring from before the Dial leaves no label behind (${(before.children || []).map((c) => c.name).join(", ")})`,
+      );
+    }
+    const bar = await plugin.createProgressVariant({
+      value: "50",
+      second: "Linear/Medium/Themed",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      bar.name === "Shape=Linear, Size=Medium, Tone=Themed, Value=50" &&
+        named(bar, "Progress Track") &&
+        !named(bar, "Dial") &&
+        !named(bar, "Label"),
+      `the bar is drawn as before, named with its Shape, Size and Tone (${bar.name})`,
+    );
+
+    // Update over the set as it is in the file today: five bars, named
+    // before the axes. Each keeps its node id and is renamed the Linear,
+    // Medium, Themed bar; the 90 rings are created beside them, and the
+    // label's properties bind every ring's two labels and nothing else.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Progress");
+    const oldNames = ["0", "25", "50", "75", "100"].map((v) => `Value=${v}`);
+    const oldIds = {};
+    for (const name of oldNames) {
+      const variant = new MockNode("COMPONENT", name);
+      liveSet.appendChild(variant);
+      oldIds[name] = variant.id;
+    }
+    livePage.appendChild(liveSet);
+    const setId = liveSet.id;
+    const liveIcons = new MockNode("PAGE", "Icons");
+    liveIcons.appendChild(mockIconComponent("check"));
+    const updatePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({
+        pages: [livePage, liveIcons],
+      }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await updatePlugin.updateProgressComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.componentSetId === setId &&
+        updated.variantsUpdated === 5 &&
+        updated.variantsCreated === 90 &&
+        liveSet.children.length === 95 &&
+        new Set(names).size === 95,
+      `Update keeps the set and its 5 bars, and adds 90 rings: 95 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+    );
+    ok(
+      oldNames.every((name) => {
+        const variant = byId.get(oldIds[name]);
+        return (
+          variant &&
+          variant.name === `Shape=Linear, Size=Medium, Tone=Themed, ${name}` &&
+          named(variant, "Progress Track")
+        );
+      }),
+      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+    );
+    const texts = (name) =>
+      liveSet.findAll((node) => node.type === "TEXT" && node.name === name);
+    const definitions = liveSet.componentPropertyDefinitions || {};
+    const key = (base, type) =>
+      Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === type,
+      );
+    const textKey = key("Label", "TEXT");
+    const showKey = key("Show Label", "BOOLEAN");
+    const besideKey = key("Label Beside", "BOOLEAN");
+    const inHole = texts("Label");
+    const besides = texts("Label Beside");
+    const checks = liveSet.findAll((node) => node.name === "Done Check");
+    ok(
+      inHole.length === 84 &&
+        besides.length === 90 &&
+        checks.length === 6 &&
+        checks.every(
+          (check) =>
+            !check.componentPropertyReferences ||
+            !check.componentPropertyReferences.visible,
+        ) &&
+        textKey &&
+        showKey &&
+        besideKey &&
+        definitions[showKey].defaultValue === true &&
+        definitions[besideKey].defaultValue === false &&
+        inHole.every(
+          (label) =>
+            label.componentPropertyReferences &&
+            label.componentPropertyReferences.characters === textKey &&
+            label.componentPropertyReferences.visible === showKey,
+        ) &&
+        besides.every(
+          (label) =>
+            label.componentPropertyReferences &&
+            label.componentPropertyReferences.characters === textKey &&
+            label.componentPropertyReferences.visible === besideKey,
+        ),
+      `the rings' labels share Label: 84 in the hole, shown by Show Label (on), and 90 beside, by Label Beside (off); the six Small rings at 100 draw a check, bound to neither (${inHole.length} in the hole, ${besides.length} beside, ${checks.length} checks, ${textKey}, ${showKey}, ${besideKey})`,
+    );
+    const boxes = liveSet.children.map((c) => [
+      c.x,
+      c.y,
+      c.x + c.width,
+      c.y + c.height,
+      c.name,
+    ]);
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1)
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const [a, b] = [boxes[i], boxes[j]];
+        if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+          overlaps.push(`${a[4]} / ${b[4]}`);
+      }
+    ok(
+      overlaps.length === 0,
+      `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
 // GAP-188: TourStep, as React's TourStep draws it, the MAP-64 design's card
 // (decision 136). Popover's surface 372 wide (432 for the welcome card), 16
 // inside, sections 12 apart, no top edge; an Arrow 24 by 12 out of the flow

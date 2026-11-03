@@ -17850,12 +17850,18 @@
           "aria-describedby",
           "aria-invalid",
           "aria-label",
+          "aria-labelledby",
           "children",
           "id",
+          "label",
+          "labelPlacement",
           "max",
           "role",
+          "shape",
+          "size",
           "tabIndex",
           "title",
+          "tone",
           "value"
         ],
         "variants": {}
