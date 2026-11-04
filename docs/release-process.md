@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-11-01): in use; React 0.14.0 is published (evidence below).
+Status (2026-11-04): in use; React 0.15.0 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -812,3 +812,85 @@ native snapshot, so both CHANGELOGs keep them under `Unreleased — repository s
 
 Figma is not finished: TourStep's set is on the live file (node 2307:10045), and its painter fix (#450) is on `main`,
 awaiting Olcay's Update. External Claude Design artifacts and product deployments are separate.
+
+### 0.15.0
+
+Published on 2026-11-04 from `08e9216c7f5440b45c1c3b9d0692b26113b05bb8`, the version merge
+[#469](https://github.com/vodoco/kozmos-design-system/pull/469). React 0.15.0, icons 0.8.0 and product-contracts 0.10.0 move; tokens 0.8.1 is unchanged and not
+planned. It carries the APIs of decision 119, less Stepper's objects (decision 149): Accordion's boxed form
+(GAP-209, #457), CardTitle's `as` (GAP-205, #438), IconButton's `counter`, CardHeader's `actions` and Input's `action`
+(GAP-197, GAP-169, GAP-154, #434), host actions on results and the details card (GAP-028, GAP-130, #430), Navbar's
+`navigationAlign` and `logoInset`, Sidebar's `inset`, Drawer's inline `placement` and Tree's `divided` (GAP-196,
+GAP-208, GAP-199, GAP-198, GAP-201, #433), Link's `external` (GAP-202, #441), Progress's ring (decision 131, #439),
+`toast()` and `<Toaster>` (GAP-167, #426), the venue icon names (GAP-105, #460), AdaptiveMapShell's status and top
+corners (GAP-123, #431), and `BuildingPresentation` and `SitePresentation` (GAP-175, #429). Production builds carry no
+component names, so an app's bundler leaves out every part it does not use (#447); the stylesheet lost 0.66 KB before
+what the release adds (#456); Notice draws each tone's own mark (#459); and TourStep's Close leaves the flow (#458).
+The published `style.css` is 32,085 bytes gzip, up from 0.14.0's 31,604 (`gzip -9`). On this commit CI's analyzer
+reads Everything at 95.74 of 100 KB and the stylesheet at 31.70 of 32 KB.
+
+Olcay approved this release in advance, for 0.15.0 only, on 1 Nov. Claude dispatched the release after the pre-flight
+passed and approved the protected `npm-release` deployment, as `vodoco`, for this release only, as for 0.12.2, 0.13.0
+and 0.14.0.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.15.0, icons 0.8.0 and product-contracts 0.10.0 on npm `latest`. React pins tokens 0.8.1, icons 0.8.0 and product-contracts 0.10.0 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Exact main-push CI      | [41852084260](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084260), all 17 jobs passing on attempt 1. [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084227), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084419), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084164) and [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084187) succeeded on the merge.                                                                                                                                                                                                                                                                                                                                                                   |
+| Preflight / publication | `pnpm release:preflight` against attempt 1 of that run passed on 4 Nov at 16:18 (credential placement, request, evidence and plan; none of the three on npm), once GitHub's job API, about two minutes behind the run, read every job complete: the first attempt refused a job it still read as running. [41865970503](https://github.com/vodoco/kozmos-design-system/actions/runs/41865970503) succeeded (guard, prepare, publish), and its publish job verified the approved tarballs in the registry.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Registry readback       | All three are on `latest` with SLSA v1 provenance naming `08e9216c`, `.github/workflows/release.yml` and `refs/heads/main`, run 41865970503. Each SHA-512 integrity equals the one the publish job printed: React `sha512-5tPBhdKbYaq6C…+lwtexuN6q6lw==` (provenance on Sigstore log index 3691295224, publish attestation 3691297338), icons `sha512-SKJUi/wODhjF+…KURssdrFsUmIQ==` (3691285972, 3691288430) and product-contracts `sha512-IMsjdQ9otMJL7…PwP1uJvZ59Fpw==` (3691288737, 3691294618). React unpacks 1,971,839 bytes in 180 files (0.14.0: 1,847,032 in 177), icons 4,851,605 in 10 (0.7.0: 4,802,893 in 10) and product-contracts 82,949 in 8 (0.9.1: 68,749 in 8).                                                                                                                                                                                                              |
+| Installed consumer      | A fresh npm installation of React 0.15.0 with React 19.3.1 and with React 18.3.1. Each resolved tokens 0.8.1, icons 0.8.0 and contracts 0.10.0 and exposed 276 exports from CJS and from the ESM entry (0.14.0: 274; `toast` and `Toaster` are new, and none went). Server rendering under ThemeProvider drew the boxed Accordion, CardTitle as an `h2` and as an `h3` without `as`, an external Link with `target="_blank"`, `noopener` and "opens in a new tab", a circular Progress, and an info Notice whose mark is not warning's; all 15 venue names resolve through `getIconComponent`. With `NODE_ENV=production`, Button has no `displayName`. The same probe against 0.14.0 fails every check (274 exports, `Button` named in production, none of the 15 venue names).                                                                                                                |
+| Tags / GitHub releases  | `release:tag` created `@kozmos-ds/react@0.15.0` (139 lines of notes), `@kozmos-ds/icons@0.8.0` (20) and `@kozmos-ds/product-contracts@0.10.0` (26) at `08e9216c`, and `git ls-remote` and `gh release list` read them back. React 0.15.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Website / Storybook     | [Pages 41852084474](https://github.com/vodoco/kozmos-design-system/actions/runs/41852084474) built and deployed this exact SHA. The live site was read on 4 Nov from the next deploy, [41893532341](https://github.com/vodoco/kozmos-design-system/actions/runs/41893532341) at `1f477743`, which changes no story, docs page or component source, only the Figma importer, its manifest, Toast's Code Connect files and two checks. Storybook's `index.json` has 675 entries (0.14.0: 647), among them Accordion's Boxed, Boxed Loading and Boxed States, Progress's Circular, Circular Sizes and Circular Complete, Link's External, Navbar's Navigation Align and Logo Inset, Toast's From A Call and Tones, and AdaptiveMapShell's Status And Top Corners and Exit Building. The Boxed and Circular iframes and the site's `components/accordion/` and `components/progress/` pages answer. |
+| Code Connect            | Not yet republished. Link's External mapping on all three platforms (#443) is in this release; Toast's Tone (#445) merged after it, and #464 to #467 are queued. Code Connect is published once they merge, and recorded then.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+Change details: [React](../packages/react/CHANGELOG.md#0150), [icons](../packages/icons/CHANGELOG.md#080),
+[product-contracts](../packages/product-contracts/CHANGELOG.md#0100) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.14.0:
+
+- **Production builds carry no component names.** Each part's `displayName` is set only when `process.env.NODE_ENV`
+  is not `"production"`, so React DevTools shows `ForwardRef` or `Anonymous` in a production build. Your bundler, or
+  the ESM CDN that serves the package, must replace `process.env.NODE_ENV`, as React itself needs: a page that loads
+  the files in `dist` unbundled, with nothing to replace it, now throws `process is not defined` when it imports them.
+  In 0.14.0 it threw later, when a `Backdrop` first rendered or a part reported an event with no `AnalyticsProvider`.
+- **55 utilities nothing in Kozmos uses left the stylesheet.** A class a product passes through `className` applies
+  only if Kozmos's stylesheet has it: `h-control`, `animate-spin`, `border-none` and the others the CHANGELOG lists now
+  need the product's own Tailwind or CSS. Values are written without inner spaces (`calc(a*b)`), which only a tool
+  reading `style.css` as text sees.
+- **Drawer mirrors right to left.** Its close, the room `DrawerHeader` leaves for it, and the header's words are on
+  logical sides. Left to right nothing moves.
+- **CardTitle's ref is typed `HTMLHeadingElement`;** it was `HTMLParagraphElement`. A ref of either type still fits. A
+  screen reader now hears its level; the title looks as it did.
+- **Notice draws each tone's own mark:** `info` an info circle and `critical` an alert circle, where every tone drew
+  the warning triangle. A caller's `icon` still wins.
+- **TourStep's Close leaves the flow.** With the same lines a step is 32 shorter at touch density and 20 at compact, a
+  coachmark 56 and 44, and the welcome card 4; a title beside Close may take one more line.
+  `.kozmos-tour-step-header` holds the title too and renders on every card.
+- **Progress past its `max` is full,** and `aria-valuenow` says `max`. On the web a bar drew empty and Radix logged an
+  error.
+- **Toasts follow the reading direction.** `ToastViewport` is at `sm:end-0` (the same left to right), and
+  `ToastProvider` takes its swipe direction from the ThemeProvider's `dir` when it isn't told.
+- **Icons:** `KozmosIconDefinition` gains `KozmosOwnedIconDefinition`, `source: "owned"`, for `utensils` and
+  `accessibility`, which have no `figmaNodeId`: narrow on `source` before reading it. A lookup by name costs 23.44 KB
+  gzip, up from 19.84; a named import costs what it did.
+- **`inputVariants` and `InputStatus`** move to a module of their own and are exported as before.
+
+Nothing else needs changing. No export or prop was removed, and every new prop is optional: a product that sets none
+of them draws as before, apart from the changes above.
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry. This version cut no
+native snapshot, so both CHANGELOGs keep them under `Unreleased — repository source`. Since 0.14.0:
+
+- **On both:** Accordion's boxed form (#457), Link's `external` (#441), the circular Progress (#439), Navbar's
+  `logoInset` (#433), the venue names (#460), host actions on results and the details panel (#430), the building and
+  site presentations (#429), card titles as headings (#438), and a card's first part paying the top (GAP-194, #437).
+  On Compose the card's, list's and group's `onHostAction` sits before `onAction`, with an overload that keeps
+  0.14.0's positional calls.
+- **On iOS:** a product's muted text on glass reads at 4.5:1 (GAP-203, #436).
+- **Not on either yet:** `toast()` and its tones, AdaptiveMapShell's status and top corners, and the props decision
+  134 leaves to 0.16.0 (IconButton's `counter`, CardHeader's `actions`, Input's `action`, Navbar's `navigationAlign`,
+  Sidebar's `inset`, Drawer's inline `placement` and Tree's `divided`).
+
+Figma is not finished: the importer at this commit draws 0.15.0's sets, and #470, after it, draws the parity rulings of
+4 Nov (decisions 156 to 158). The live library takes them at Olcay's next Import Foundations and Update. External
+Claude Design artifacts and product deployments are separate.

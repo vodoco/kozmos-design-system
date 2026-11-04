@@ -1798,7 +1798,7 @@ Text"])`) and the Get started page shows — touches it.
   `arrow-down-right`, `layers-three-01` and `walking`. So `Icon name` reached
   103 keys (57 names, 17 aliases and the 29) against about 1,200 icon
   components, and the venue categories were components only.
-- **Now:** fixed for icons 0.8.0 (product GAP-105). The registry holds a venue
+- **Now:** released in icons 0.8.0 and React 0.15.0 (#460, 2026-11-04; product GAP-105). The registry holds a venue
   set of 15 names in three categories, `Venue categories`, `Venue amenities` and
   `Venue services`, with 40 new aliases, so `Icon name` reaches 158 keys (72
   names, 57 aliases and the 29), the same on SwiftUI and Compose. The
