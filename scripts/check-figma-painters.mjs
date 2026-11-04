@@ -9928,18 +9928,25 @@ section("Drawer's floating form (GAP-198)");
         inline.width === fixed.width &&
         inline.height === fixed.height &&
         inline.primaryAxisSizingMode === "FIXED" &&
-        inline.cornerRadius === fixed.cornerRadius,
+        [
+          "cornerRadius",
+          "topLeftRadius",
+          "topRightRadius",
+          "bottomLeftRadius",
+          "bottomRightRadius",
+        ].every((field) => inline[field] === fixed[field]),
       `${side}: inline stays at its edge, drawn as Fixed (${inline.width}×${inline.height})`,
     );
   }
+  // Its corners, the edge's two square since 4 Nov, are read through their
+  // bindings in "Figma draws React's values".
   const fixed = await draw("Right", "Fixed");
   ok(
     fixed.name === "Side=Right, Placement=Fixed" &&
       fixed.width === 408 &&
       fixed.height === 360 &&
-      fixed.primaryAxisSizingMode === "FIXED" &&
-      fixed.cornerRadius === 16,
-    `Fixed is the Drawer as it was: 408×360, 16 corners (${fixed.name}, ${fixed.width}×${fixed.height}, ${fixed.cornerRadius})`,
+      fixed.primaryAxisSizingMode === "FIXED",
+    `Fixed is the Drawer as it was: 408×360 (${fixed.name}, ${fixed.width}×${fixed.height})`,
   );
   const issues = [];
   const auditSet = new MockNode("COMPONENT_SET", "Drawer");
@@ -12274,8 +12281,8 @@ section("A token split in two keeps its bindings");
   const tokenPlugin = loadPlugin({ pluginPath: PLUGIN, figma: tokenFigma });
   const renamed = tokenPlugin.RENAMED_COMPONENT_TOKENS || [];
   ok(
-    renamed.length === 5,
-    `five tokens are split: Card's padding, Container's inset, EmptyState's padding, gap and icon (${renamed.length})`,
+    renamed.length === 6,
+    `six tokens are split: Card's padding, Container's inset, EmptyState's padding, gap, icon and text gap (${renamed.length})`,
   );
   // The file as it stands: each old token, bound by id.
   const components = tokenFigma.variables.createVariableCollection(
@@ -12319,6 +12326,555 @@ section("A token split in two keeps its bindings");
       !(second.componentVariablesRenamed > 0) &&
       first.componentVariablesRenamed === renamed.length,
     `a second run renames and makes nothing (${first.componentVariablesRenamed} renamed, then ${second.componentVariablesRenamed || 0}; ${count} then ${variables.length} variables)`,
+  );
+}
+
+// --- Figma draws React's values ----------------------------------------------------
+
+// The triage of 4 Nov read the live file against React and found parts drawn
+// at another value: an alias that beat a right literal, a token that said the
+// old number, a text style that drew its own size over the variables bound
+// to it, and Examples sized past their parts. Figma follows the built parts
+// (GAP-184), with the owner's rulings of 4 Nov: a container's corner is 20
+// everywhere, Sidebar is 256, Tabs 40 and 32. Every number here is the one
+// Figma draws: a bound field's variable resolved through its aliases, and a
+// styled text's style.
+section("Figma draws React's values (the 4 Nov triage)");
+{
+  const floats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const payloadValue = new Map(
+    payload.variables.map((variable) => [
+      variable.figmaName,
+      variable.values.light,
+    ]),
+  );
+  const byCanonical = new Map(
+    payload.variables.map((variable) => [
+      variable.canonicalName,
+      variable.figmaName,
+    ]),
+  );
+  // A variable's value, through every alias it passes.
+  const resolve = (name, depth = 0) => {
+    if (!name || depth > 8) return undefined;
+    const token = floats.get(name);
+    if (token)
+      return token.alias ? resolve(token.alias, depth + 1) : token.value;
+    const value = payloadValue.get(name);
+    if (value && value.kind === "alias")
+      return resolve(byCanonical.get(value.path), depth + 1);
+    return value && value.value;
+  };
+  const boundName = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias && alias.id
+      ? String(alias.id).replace(/^VariableID:/, "")
+      : null;
+  };
+  // What Figma draws for a number: its variable's, when one is bound.
+  const shown = (node, field) => {
+    if (!node) return undefined;
+    const name = boundName(node, field);
+    return name ? resolve(name) : node[field];
+  };
+  // A corner: its own binding, else the one cornerRadius binds all four by,
+  // else its own value, else the frame's.
+  const corner = (node, field) => {
+    if (!node) return undefined;
+    const own = boundName(node, field);
+    if (own) return resolve(own);
+    const all = boundName(node, "cornerRadius");
+    if (all) return resolve(all);
+    return typeof node[field] === "number" ? node[field] : node.cornerRadius;
+  };
+  const corners = (node) =>
+    [
+      "topLeftRadius",
+      "topRightRadius",
+      "bottomRightRadius",
+      "bottomLeftRadius",
+    ].map((field) => corner(node, field));
+  // A styled text draws its style's size and leading; the variables bound
+  // to its own fields are inert under it (the triage's first finding).
+  const typeOf = (text) => {
+    if (!text) return "no text";
+    const style = text.textStyleId && mockTextStyleById(text.textStyleId);
+    if (style) return `${style.fontSize}/${style.lineHeight.value}`;
+    const leading = shown(text, "lineHeight");
+    return `${shown(text, "fontSize")}/${typeof leading === "number" ? leading : leading && leading.value}`;
+  };
+
+  // The file as Update paints it: its tokens, its text styles and its icons.
+  const tokens = payloadVariables(
+    [...floats.keys()].concat([...variableByName.keys()]),
+  );
+  const [components, icons] = pages();
+  const look = (properties, width, height, layoutMode) => ({
+    properties,
+    build: (variant) => {
+      variant.layoutMode = layoutMode || "HORIZONTAL";
+      variant.resize(width, height);
+    },
+  });
+  // The parts the Examples place, at their own sizes.
+  components.appendChild(
+    mockComponentSet("Navbar", [look({ Content: "Actions" }, 880, 64)]),
+  );
+  components.appendChild(
+    mockComponentSet("Sidebar", [
+      look({ Content: "Sections" }, 256, 360, "VERTICAL"),
+    ]),
+  );
+  components.appendChild(
+    mockComponentSet(
+      "Chip",
+      ["Small", "Default"].map((size) =>
+        look(
+          {
+            Variant: "Brand",
+            Size: size,
+            State: "Selected",
+            Removable: "True",
+          },
+          80,
+          size === "Small" ? 28 : 32,
+        ),
+      ),
+    ),
+  );
+  components.appendChild(
+    mockComponentSet("Switch", [
+      look({ Checked: "Checked", State: "Default" }, 220, 44),
+    ]),
+  );
+  components.appendChild(
+    mockComponentSet("Button", [
+      look({ Variant: "Default", Size: "Default", State: "Default" }, 112, 44),
+    ]),
+  );
+  components.appendChild(
+    mockComponentSet("Progress", [
+      look(
+        { Shape: "Linear", Size: "Medium", Tone: "Themed", Value: "50" },
+        320,
+        8,
+        "NONE",
+      ),
+    ]),
+  );
+  const fileFigma = createFigmaMock({
+    pages: [components, icons],
+    collections: tokens.collections,
+  });
+  fileFigma.createTextStyle = createMockTextStyle;
+  const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
+  await file.ensureKozmosTextStyles(FONTS, freshStats());
+  const args = {
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  };
+  // A painter that throws on an older build fails its assertions here
+  // instead of stopping the run.
+  const paint = async (painter, props) => {
+    try {
+      const component = fileFigma.createComponent();
+      await file[painter](component, Object.assign({}, args, props));
+      return component;
+    } catch (error) {
+      ok(false, `${painter} paints (${error.message})`);
+      return null;
+    }
+  };
+  const find = (root, name) =>
+    root ? root.findOne((node) => node.name === name) : null;
+
+  // A container's corner is 20 everywhere (owner, 4 Nov; decision 118).
+  const card = await paint("updateCardVariant", {
+    value: "Full",
+    second: "Default",
+  });
+  ok(
+    shown(card, "cornerRadius") === 20,
+    `Card draws React's rounded-container, 20 (${shown(card, "cornerRadius")} through ${boundName(card, "cornerRadius")})`,
+  );
+  const dialog = await paint("updateDialogVariant", { value: "Footer" });
+  ok(
+    shown(dialog, "cornerRadius") === 20,
+    `Dialog draws 20 (${shown(dialog, "cornerRadius")})`,
+  );
+  const alert = await paint("updateAlertVariant", { value: "Default" });
+  ok(
+    shown(alert, "cornerRadius") === 20 && alert && alert.cornerRadius === 20,
+    `Alert draws 20, and the painter writes it (${shown(alert, "cornerRadius")}, written ${alert && alert.cornerRadius})`,
+  );
+  const sheet = await paint("updateBottomSheetVariant", {
+    props: { content: "Footer" },
+  });
+  ok(
+    JSON.stringify(corners(sheet)) === JSON.stringify([20, 20, 0, 0]),
+    `BottomSheet rounds its top two corners 20, React's rounded-t-container (${JSON.stringify(corners(sheet))}, top-left clockwise)`,
+  );
+  // A drawer at its edge rounds the two corners that face the page; a
+  // floating one all four. Top-left, top-right, bottom-right, bottom-left.
+  const drawerCorners = {
+    "Right, Fixed": [20, 0, 0, 20],
+    "Left, Fixed": [0, 20, 20, 0],
+    "Top, Fixed": [0, 0, 20, 20],
+    "Bottom, Fixed": [20, 20, 0, 0],
+    "Top, Inline": [0, 0, 20, 20],
+    "Bottom, Inline": [20, 20, 0, 0],
+    "Right, Inline": [20, 20, 20, 20],
+    "Left, Inline": [20, 20, 20, 20],
+  };
+  for (const [key, expected] of Object.entries(drawerCorners)) {
+    const [side, placement] = key.split(", ");
+    const drawer = await paint("updateDrawerVariant", {
+      value: side,
+      second: placement,
+    });
+    ok(
+      JSON.stringify(corners(drawer)) === JSON.stringify(expected),
+      `Drawer ${key} draws ${JSON.stringify(expected)} (${JSON.stringify(corners(drawer))})`,
+    );
+  }
+  // Updated over a Drawer an older painter bound all round, the edge's two
+  // corners come square.
+  const kept = await paint("updateDrawerVariant", {
+    value: "Right",
+    second: "Fixed",
+  });
+  if (kept) {
+    kept.setBoundVariable(
+      "cornerRadius",
+      tokens.variableByName.get("Drawer/radius"),
+    );
+    kept.cornerRadius = 16;
+    await file.updateDrawerVariant(
+      kept,
+      Object.assign({}, args, { value: "Right", second: "Fixed" }),
+    );
+  }
+  ok(
+    JSON.stringify(corners(kept)) === JSON.stringify([20, 0, 0, 20]),
+    `an Update squares the edge of a Drawer bound all round (${JSON.stringify(corners(kept))})`,
+  );
+  const upload = await paint("updateFileUploadVariant", {
+    state: "Default",
+    status: "Default",
+    content: "Dropzone",
+  });
+  const dropzone = find(upload, "FileUpload Dropzone");
+  ok(
+    shown(dropzone, "cornerRadius") === 20 &&
+      shown(dropzone, "paddingLeft") === 16 &&
+      shown(dropzone, "paddingRight") === 16,
+    `FileUpload's dropzone draws 20 corners and React's px-4 (${shown(dropzone, "cornerRadius")}, ${shown(dropzone, "paddingLeft")} through ${boundName(dropzone, "paddingLeft")})`,
+  );
+
+  // The control's corner, 16.
+  const toggle = await paint("updateToggleButtonVariant", {
+    variant: "Default",
+    size: "Default",
+    state: "Pressed",
+  });
+  const toggleRing = find(toggle, "Focus Ring");
+  ok(
+    shown(toggle, "cornerRadius") === 16 &&
+      toggle.cornerRadius === 16 &&
+      toggleRing &&
+      toggleRing.cornerRadius === 16 + 4,
+    `ToggleButton draws 16, its ring 4 outside it concentric (${shown(toggle, "cornerRadius")}, written ${toggle && toggle.cornerRadius}, ring ${toggleRing && toggleRing.cornerRadius})`,
+  );
+  const floors = await paint("updateFloorSelectorVariant", {
+    value: "VerticalList",
+  });
+  const floorItems = floors
+    ? floors.children.filter((node) => /^Floor Item/.test(node.name))
+    : [];
+  ok(
+    floorItems.length === 3 &&
+      floorItems.every(
+        (item) =>
+          boundName(item, "cornerRadius") === "FloorSelector/item/radius" &&
+          shown(item, "cornerRadius") === 16,
+      ),
+    `each floor is a Button, 16, through FloorSelector/item/radius (${floorItems.map((item) => `${shown(item, "cornerRadius")} via ${boundName(item, "cornerRadius")}`).join(", ")})`,
+  );
+  // A control keeps its corner inside the tray: tokens:radius:nesting skips
+  // what carries the stamp, and a 16 floor in the 11 tray would fail it.
+  ok(
+    floorItems.length === 3 &&
+      floorItems.every(
+        (item) =>
+          item.getSharedPluginData("kozmos_ds_importer", "surface") ===
+          "control",
+      ),
+    `and each is stamped a control, so the nesting check reads it as one (${floorItems.map((item) => item.getSharedPluginData("kozmos_ds_importer", "surface") || "none").join(", ")})`,
+  );
+  ok(
+    floors && corner(floors, "topLeftRadius") === 11,
+    `and the tray keeps its 11 until its corner is ruled (${floors && corner(floors, "topLeftRadius")})`,
+  );
+  const picker = await paint("updateColorPickerVariant", {
+    state: "Default",
+    status: "Default",
+    content: "Open",
+    format: "HEX",
+  });
+  const presets = picker
+    ? picker.findAll((node) => /^Preset Swatch /.test(node.name))
+    : [];
+  const presetRow = find(picker, "ColorPicker Preset Row 1");
+  const perRow = presetRow ? presetRow.children.length : 0;
+  ok(
+    presets.length > 0 &&
+      presets.every(
+        (preset) =>
+          shown(preset, "width") === 32 &&
+          shown(preset, "height") === 32 &&
+          shown(preset, "cornerRadius") === 16,
+      ),
+    `ColorPicker's presets are 32 squares at 16, React's h-8 rounded-control (${presets.length} presets, the first ${shown(presets[0], "width")}×${shown(presets[0], "height")} r${shown(presets[0], "cornerRadius")})`,
+  );
+  ok(
+    perRow > 0 && perRow * 32 + (perRow - 1) * 8 <= 296,
+    `and a row holds as many as fit the popover's 296, 8 apart (${perRow})`,
+  );
+  const toast = await paint("updateToastVariant", {
+    value: "Action",
+    second: "Neutral",
+  });
+  const toastClose = find(toast, "Toast Close");
+  ok(
+    toastClose && shown(toastClose, "cornerRadius") === 16,
+    `Toast's close is rounded-control, 16 (${toastClose && shown(toastClose, "cornerRadius")})`,
+  );
+
+  // Gaps.
+  const dialogHeader = find(dialog, "Dialog Header Content");
+  ok(
+    shown(dialog, "itemSpacing") === 24 && dialog.itemSpacing === 24,
+    `Dialog's parts are 24 apart, React's gap-6 (${shown(dialog, "itemSpacing")}, written ${dialog && dialog.itemSpacing})`,
+  );
+  const drawerForHeader = await paint("updateDrawerVariant", {
+    value: "Right",
+    second: "Fixed",
+  });
+  const headers = [
+    ["Dialog", dialogHeader],
+    ["Drawer", find(drawerForHeader, "Drawer Header Content")],
+    ["BottomSheet", find(sheet, "BottomSheet Header Content")],
+  ];
+  for (const [name, header] of headers) {
+    ok(
+      header && shown(header, "itemSpacing") === 8 && header.itemSpacing === 8,
+      `${name}'s title is 8 over its description, React's gap-2 (${header && shown(header, "itemSpacing")}, written ${header && header.itemSpacing})`,
+    );
+  }
+  ok(
+    shown(sheet, "itemSpacing") === 16 && sheet && sheet.itemSpacing === 16,
+    `BottomSheet's parts are 16 apart, DrawerContent's gap-4 (${shown(sheet, "itemSpacing")}, written ${sheet && sheet.itemSpacing})`,
+  );
+  for (const [size, gap] of [
+    ["Compact", 2],
+    ["Default", 4],
+  ]) {
+    const empty = await paint("updateEmptyStateVariant", {
+      value: "Icon",
+      second: size,
+    });
+    const content = find(empty, "Content");
+    ok(
+      content &&
+        shown(content, "itemSpacing") === gap &&
+        content.itemSpacing === gap,
+      `EmptyState ${size}: the title is ${gap} over its description (${content && shown(content, "itemSpacing")} through ${boundName(content, "itemSpacing")})`,
+    );
+  }
+  const counter = await paint("updateCounterVariant", {
+    tone: "Brand",
+    size: "Small",
+  });
+  ok(
+    shown(counter, "paddingLeft") === 5 &&
+      shown(counter, "paddingRight") === 5 &&
+      shown(counter, "minWidth") === 18,
+    `Counter Small is React's px-[5px] and at least 18 wide (padding ${shown(counter, "paddingLeft")}, min width ${shown(counter, "minWidth")})`,
+  );
+
+  // Sizes.
+  const tabs = await paint("updateTabsVariant", {
+    count: "Three",
+    active: "One",
+    state: "Focus",
+  });
+  const trigger = find(tabs, "Tab 1 Trigger");
+  const tabsRing = find(trigger, "Focus Ring");
+  ok(
+    shown(tabs, "height") === 40 && tabs.height === 40,
+    `Tabs is React's h-10, 40 (${shown(tabs, "height")}, drawn ${tabs && tabs.height})`,
+  );
+  ok(
+    shown(trigger, "height") === 32 &&
+      trigger.height === 32 &&
+      tabsRing &&
+      tabsRing.height === 32 + 4 * 2,
+    `a tab is 32, inside 4 all round, its ring 4 outside it (${shown(trigger, "height")}, drawn ${trigger && trigger.height}, ring ${tabsRing && tabsRing.height})`,
+  );
+  let sidebar = null;
+  try {
+    sidebar = await file.createSidebarVariant(
+      Object.assign({}, args, {
+        props: { content: "Tools", inset: "Default" },
+      }),
+    );
+  } catch (error) {
+    ok(false, `Sidebar paints (${error.message})`);
+  }
+  const slots = sidebar
+    ? sidebar.children.filter((node) => / Slot$/.test(node.name))
+    : [];
+  ok(
+    shown(sidebar, "width") === 256 &&
+      sidebar.width === 256 &&
+      slots.length > 0 &&
+      slots.every((slot) => slot.width === 224),
+    `Sidebar is React's w-64, 256, its slots 224 inside 16 each side (${shown(sidebar, "width")}; slots ${slots.map((slot) => slot.width).join(", ")})`,
+  );
+  const sidebarIssues = [];
+  if (sidebar) {
+    const sidebarSet = new MockNode("COMPONENT_SET", "Sidebar");
+    sidebarSet.appendChild(sidebar);
+    file.auditSidebarAutoLayoutIntegrity(sidebarSet, sidebarIssues);
+  }
+  ok(
+    sidebar && sidebarIssues.length === 0,
+    `and the audit reads it clean (${sidebarIssues.map((issue) => issue.kind).join(", ")})`,
+  );
+
+  // Text: the style draws, so the style is React's.
+  const poi = await paint("updatePOICardVariant", { value: "Basic" });
+  const poiTitle = find(poi, "Title Text");
+  ok(
+    typeOf(poiTitle) === "20/28" &&
+      `${resolve("POICard/title/font-size")}/${resolve("POICard/title/line-height")}` ===
+        "20/28",
+    `POICard's title is React's text-xl, 20/28, in its style and its tokens (${typeOf(poiTitle)})`,
+  );
+  const route = await paint("updateWayfindingCardVariant", {
+    value: "Titled",
+  });
+  const routeTitle = find(route, "Title Text");
+  ok(
+    typeOf(routeTitle) === "14/20" &&
+      `${resolve("WayfindingCard/title/font-size")}/${resolve("WayfindingCard/title/line-height")}` ===
+        "14/20",
+    `WayfindingCard's title is React's text-sm, 14/20, in its style and its tokens (${typeOf(routeTitle)})`,
+  );
+  const listbox = await paint("updateListboxVariant", {
+    selection: "Single",
+    state: "Default",
+  });
+  const description = find(listbox, "Option 1 Description");
+  ok(
+    typeOf(description) === "12/16",
+    `Listbox's option description is React's text-xs, 12/16 (${typeOf(description)})`,
+  );
+  // No style is 10/12, so the attribution's style still draws Field / Meta's
+  // 12/16 (reported, not invented); its tokens say React's 10/12.
+  ok(
+    `${resolve("MapView/attribution/font-size")}/${resolve("MapView/attribution/line-height")}` ===
+      "10/12",
+    `MapView's attribution tokens are React's 10 at 1.2 (${resolve("MapView/attribution/font-size")}/${resolve("MapView/attribution/line-height")})`,
+  );
+  // An alias that drew another size than the token's own.
+  const textSizes = {
+    "Text/font-size/base": 16,
+    "Text/font-size/xl": 20,
+    "Text/font-size/2xl": 24,
+    "EmptyState/title/font-size": 16,
+  };
+  for (const [name, size] of Object.entries(textSizes)) {
+    ok(
+      resolve(name) === size,
+      `${name} draws ${size} (${resolve(name)}${floats.get(name) && floats.get(name).alias ? ` through ${floats.get(name).alias}` : ""})`,
+    );
+  }
+
+  // The Examples, as their parts are drawn.
+  const example = async (builder, key) => {
+    try {
+      const root = await file[builder]({
+        config: file.EXAMPLE_TEMPLATE_CONFIGS[key],
+        fonts: FONTS,
+        variableByName: tokens.variableByName,
+        stats: file.createExampleStats(key),
+      });
+      file.normalizeExampleDeferredChildSizing(root);
+      return root;
+    } catch (error) {
+      ok(false, `${builder} draws (${error.message})`);
+      return null;
+    }
+  };
+  const operations = await example(
+    "buildOperationsConsoleExampleTemplate",
+    "operationsConsole",
+  );
+  const navbar = find(operations, "Operations Navbar");
+  ok(
+    navbar &&
+      navbar.type === "INSTANCE" &&
+      navbar.height === 64 &&
+      navbar.layoutSizingVertical === "FIXED",
+    `Operations Console: the Navbar is 64 and holds it, React's min-block-size (${navbar && navbar.height}, ${navbar && navbar.layoutSizingVertical})`,
+  );
+  const opsSidebar = find(operations, "Operations Sidebar");
+  ok(
+    opsSidebar && opsSidebar.width === 256,
+    `Operations Console: the Sidebar is 256 (${opsSidebar && opsSidebar.width})`,
+  );
+  const chip = find(operations, "Live Filter Chip");
+  ok(
+    chip &&
+      chip.mainComponent &&
+      /Size=Default/.test(chip.mainComponent.name) &&
+      chip.height === 32,
+    `Operations Console: the 32 filter chip is the Default chip, React's h-8 (${chip && chip.mainComponent && chip.mainComponent.name}, ${chip && chip.height})`,
+  );
+  const kiosk = await example(
+    "buildKioskHandoffExampleTemplate",
+    "kioskHandoff",
+  );
+  const routeSwitch = find(kiosk, "Accessible Route Switch");
+  ok(
+    routeSwitch && routeSwitch.height === 44,
+    `Kiosk: the route switch is React's min-h-11 row, 44 (${routeSwitch && routeSwitch.height})`,
+  );
+  const findRoute = find(kiosk, "Kiosk Find Route Button");
+  ok(
+    findRoute &&
+      findRoute.height === 44 &&
+      findRoute.layoutSizingVertical === "FIXED" &&
+      findRoute.layoutSizingHorizontal === "FILL",
+    `Kiosk: Find route is 44 and holds it across the panel (${findRoute && findRoute.height}, ${findRoute && findRoute.layoutSizingHorizontal}/${findRoute && findRoute.layoutSizingVertical})`,
+  );
+  const sdk = await example("buildSdkRouteFlowExampleTemplate", "sdkRouteFlow");
+  const progress = find(sdk, "Route Progress");
+  ok(
+    progress &&
+      progress.height === 8 &&
+      progress.layoutSizingVertical === "FIXED",
+    `SDK Route Flow: the progress bar is React's h-2, 8 (${progress && progress.height}, ${progress && progress.layoutSizingVertical})`,
   );
 }
 
