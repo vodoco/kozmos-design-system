@@ -1,10 +1,13 @@
 import SwiftUI
 import Figma
 
+// Tone=Neutral only: SwiftUI's KozmosToast has no tone yet (GAP-167 is web and
+// Figma first), so a Success, Info, Warning or Critical instance shows no
+// SwiftUI snippet rather than a plain toast without its icon.
 struct KozmosToastBasicConnect: FigmaConnect {
     let component = KozmosToast.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189"
-    var variant = ["Content": "Basic"]
+    var variant = ["Content": "Basic", "Tone": "Neutral"]
 
     @FigmaString("Title Text")
     var title: String = "Notification"
@@ -25,7 +28,7 @@ struct KozmosToastBasicConnect: FigmaConnect {
 struct KozmosToastActionConnect: FigmaConnect {
     let component = KozmosToast.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189"
-    var variant = ["Content": "Action"]
+    var variant = ["Content": "Action", "Tone": "Neutral"]
 
     @FigmaString("Title Text")
     var title: String = "Notification"
