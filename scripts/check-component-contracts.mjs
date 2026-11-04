@@ -1562,8 +1562,14 @@ assertContains(
 assertContains(
   files.reactCardFigma,
   source.reactCardFigma,
-  "<CardHeader>",
-  "Card Code Connect header composition",
+  "<CardHeader actions={headerActions}>",
+  "Card Code Connect header composition, with its actions (GAP-169)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  'true: figma.slot("Header Actions Slot")',
+  "Card Code Connect header actions slot mapping",
 );
 assertContains(
   files.reactCardFigma,

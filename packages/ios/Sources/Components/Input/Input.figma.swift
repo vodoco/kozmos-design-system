@@ -1,9 +1,13 @@
 import SwiftUI
 import Figma
 
+// Action=None only: SwiftUI's input draws no action yet (GAP-154 is web and
+// Figma first), so a copy or toggle instance shows no SwiftUI snippet rather
+// than a field without its button.
 struct KozmosInputConnect: FigmaConnect {
     let component = KozmosInput.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1558"
+    var variant = ["Action": "None"]
 
     @FigmaString("Label Text")
     var label: String = "Email"
