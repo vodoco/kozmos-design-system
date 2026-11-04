@@ -40,7 +40,7 @@
     "react-docgen-typescript": "2.4.0",
     "storybook": "8.6.19",
     "storybook-addon-performance": "0.17.3",
-    "vite": "^6.4.3",
+    "vite": "^6.4.5",
     "vue": "^3.5.42"
   }
 }
