@@ -14661,7 +14661,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Accordion"],
-          "mappedProps": ["collapsible", "defaultValue", "type"],
+          "mappedProps": ["collapsible", "defaultValue", "type", "variant"],
           "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [

@@ -1502,13 +1502,13 @@ assertContains(
 assertContains(
   files.reactAccordionFigma,
   source.reactAccordionFigma,
-  'variant: { State: "Closed" }',
+  'variant: { Variant: "Default", State: "Closed" }',
   "Accordion Code Connect Closed variant filter",
 );
 assertContains(
   files.reactAccordionFigma,
   source.reactAccordionFigma,
-  'variant: { State: "Open" }',
+  'variant: { Variant: "Default", State: "Open" }',
   "Accordion Code Connect Open variant filter",
 );
 assertContains(
