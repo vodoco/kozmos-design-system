@@ -4990,6 +4990,64 @@ section("Variants keep their own room, and kept defaults are drawn again");
   );
 }
 
+// --- Navbar's kept slots are drawn again ------------------------------------------
+
+// The audit after #463 found the same thing in Navbar's other slots: its
+// oldest variant of each Content kept an Action, a Primary Action and a
+// Utility Button at radius 8, and an avatar at 16, beside the 16 and 20 the
+// variants added since were drawn with. What the plugin put in a slot is
+// drawn again on Update, and a designer's own content is kept.
+section("Navbar's kept slots are drawn again");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const drawn = { variableByName: tokens.variableByName, fonts: FONTS };
+  const variant = (content) => ({
+    content,
+    navigationAlign: "Center",
+    logoInset: "False",
+  });
+  const paint = (props) =>
+    plugin.createNavbarVariant({ props, ...drawn, stats: freshStats() });
+  const repaint = (component, props) =>
+    plugin.updateNavbarVariant(component, {
+      props,
+      ...drawn,
+      stats: freshStats(),
+    });
+  const inSlot = (component, slotName, layer) => {
+    const slot = named(component, slotName);
+    return slot && (slot.children || []).find((c) => c.name === layer);
+  };
+  for (const [content, slotName, layer] of [
+    ["Actions", "Actions Slot", "Action"],
+    ["Contextual", "Primary Action Slot", "Primary Action"],
+    ["Contextual", "Utility Slot", "Utility Button"],
+    ["Contextual", "Account Slot", "Account Avatar"],
+  ]) {
+    const props = variant(content);
+    const component = await paint(props);
+    const fresh = inSlot(component, slotName, layer);
+    const radius = fresh && fresh.cornerRadius;
+    // As an older painter left it.
+    if (fresh) fresh.cornerRadius = 8;
+    await repaint(component, props);
+    const again = inSlot(component, slotName, layer);
+    ok(
+      fresh && again && again !== fresh && again.cornerRadius === radius,
+      `Navbar ${content}: an Update draws the ${layer} in the ${slotName} again (${again ? again.cornerRadius : "none"} of ${radius}, ${again === fresh ? "the kept layer" : "a new layer"})`,
+    );
+  }
+  const designed = await paint(variant("Contextual"));
+  const utility = named(designed, "Utility Slot");
+  if (utility) utility.appendChild(new MockNode("FRAME", "Help Button"));
+  await repaint(designed, variant("Contextual"));
+  const kept = named(designed, "Utility Slot");
+  ok(
+    kept && named(kept, "Help Button"),
+    "Navbar: a designer's button in the Utility Slot is kept",
+  );
+}
+
 // --- Curated Icons ------------------------------------------------------------------
 
 // Every tint an icon slot carries is an override keyed through its icon
@@ -12123,11 +12181,15 @@ section("An edge takes room in every variant or in none");
     );
   }
 
-  // Slot content an Update keeps is not drawn again, so the Action the last
-  // Update laid in is kept out where it stands.
+  // Slot content an Update keeps is not drawn again: the plugin's own is,
+  // but beside a designer's layer the slot is kept as it stands, so the
+  // Action the last Update laid in is kept out where it stands.
   const kept = await variants.Navbar(["Actions", "Start", "True"]);
   const action = named(kept, "Action");
   if (action) action.strokesIncludedInLayout = true;
+  const actionsSlot = named(kept, "Actions Slot");
+  if (actionsSlot)
+    actionsSlot.appendChild(new MockNode("FRAME", "Help Button"));
   await plugin.updateNavbarVariant(kept, {
     props: { content: "Actions", navigationAlign: "Start", logoInset: "True" },
     ...drawn,

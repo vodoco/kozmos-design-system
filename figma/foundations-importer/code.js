@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "b60304d344e1";
+const PLUGIN_BUILD = "9384d80c73d2";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -69051,6 +69051,17 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
     return slot.children.every(isGeneratedSidebarNavigationSlotChild);
   }
 
+  // And what it puts in Navbar's other slots. Kept, the oldest variant of
+  // each Content held an Action, a Primary Action and a Utility Button at
+  // radius 8 and an avatar at 16, beside the 16 and 20 the rest were drawn
+  // with (2026-11-04).
+  if (ownerName === "Navbar" && NAVBAR_GENERATED_SLOT_CHILDREN[slotName]) {
+    const names = NAVBAR_GENERATED_SLOT_CHILDREN[slotName];
+    return slot.children.every(
+      (child) => child && names.indexOf(child.name) !== -1,
+    );
+  }
+
   // The header action the plugin put there is drawn again, so its pencil is
   // swapped in and tinted on every Update; one a designer put there stays.
   if (ownerName === "Card" && slotName === CARD_HEADER_ACTIONS_SLOT) {
@@ -69067,6 +69078,15 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
 
   return false;
 }
+
+// What Navbar's painters put in each slot, by the names they give it.
+const NAVBAR_GENERATED_SLOT_CHILDREN = {
+  "Context Slot": ["Context Label Text", "Context Selector"],
+  "Primary Action Slot": ["Primary Action"],
+  "Actions Slot": ["Action", "Account Icon"],
+  "Utility Slot": ["Utility Button"],
+  "Account Slot": ["Account Avatar", "Account Chevron"],
+};
 
 function isGeneratedBrandSlotChild(node) {
   if (!node) return false;
