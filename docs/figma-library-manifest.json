@@ -16426,6 +16426,7 @@
           "connectedComponents": ["IconButton"],
           "mappedProps": [
             "aria-label",
+            "counter",
             "disabled",
             "isLoading",
             "size",
@@ -16475,6 +16476,7 @@
           "issues": [],
           "connectedComponents": ["Input"],
           "mappedProps": [
+            "action",
             "autoFocus",
             "disabled",
             "helperText",
