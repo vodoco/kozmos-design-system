@@ -42,6 +42,7 @@ import {
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  strokeLayoutsThatDisagree,
 } from "./lib/figma-verify-rules.mjs";
 import { expectations } from "./verify-figma-library.mjs";
 
@@ -894,7 +895,8 @@ section("POIDetailPanel");
     `the host action is a hidden 44 outlined button, its icon before its words (${hostAction && hostAction.children.map((child) => `${child.type} ${child.name}`).join(", ")})`,
   );
   const variants = [];
-  for (const value of ["Inline", "Panel"]) variants.push((await paint(value)).component);
+  for (const value of ["Inline", "Panel"])
+    variants.push((await paint(value)).component);
   const set = figma.combineAsVariants(variants, figma.currentPage);
   set.name = "POIDetailPanel";
   plugin.configurePOIDetailPanelProperties(set, freshStats());
@@ -912,8 +914,8 @@ section("POIDetailPanel");
       definitions[hostText].defaultValue === "Open in app" &&
       variants.every(
         (variant) =>
-          named(variant, "Host Action")?.componentPropertyReferences?.visible ===
-            hostProperty &&
+          named(variant, "Host Action")?.componentPropertyReferences
+            ?.visible === hostProperty &&
           named(variant, "Host Action Label")?.componentPropertyReferences
             ?.characters === hostText,
       ),
@@ -3573,9 +3575,7 @@ section("Toast tones (GAP-167)");
         (child) => child.name === "Icon",
       );
       const [icon] = icons;
-      const shapes = icon
-        ? icon.findAll((node) => node.type === "VECTOR")
-        : [];
+      const shapes = icon ? icon.findAll((node) => node.type === "VECTOR") : [];
       const tints = shapes.flatMap((shape) =>
         (shape.strokes || []).map(boundVariableName).filter(Boolean),
       );
@@ -11719,8 +11719,11 @@ section("GAP-202: Link's External shows the new-tab icon");
       ok(
         component.children.filter((child) => child.name === "External Icon")
           .length === 1 &&
-          component.children.map((child) => child.name).indexOf("External Icon") ===
-            component.children.map((child) => child.name).indexOf("Link Text") + 1,
+          component.children
+            .map((child) => child.name)
+            .indexOf("External Icon") ===
+            component.children.map((child) => child.name).indexOf("Link Text") +
+              1,
         `${at}: an Update keeps one icon after the words`,
       );
     }
@@ -11776,6 +11779,176 @@ section("GAP-202: Link's External shows the new-tab icon");
   ok(
     describing.length === 2 && describing.every((name) => name === "Link"),
     `only Link's Build and Update describe External (${describing.join(", ")})`,
+  );
+}
+
+// --- An edge takes room in every variant or in none ------------------------------
+
+// Whether an auto-layout frame's edge takes room inside it is set when Figma
+// makes the frame, and the default moved: frames an Update keeps from before
+// leave the edge out, and frames it makes now lay it in. The Update of 3 Nov
+// 2026 added variants to seven old sets, and each came out a pixel smaller
+// inside on each side than its siblings: Sidebar's Flush slots 246 beside
+// Default's 248, Navbar's new Action 74 by 22 beside 72 by 20, a Toast tone's
+// message wrapped. Here each set's older variants are drawn under the old
+// default and its newer ones under today's, and figma:verify's rule reads the
+// set; then Navbar is updated over an Action the last Update left laid in.
+section("An edge takes room in every variant or in none");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const drawn = { variableByName: tokens.variableByName, fonts: FONTS };
+  const era = (laidIn, paint) =>
+    withNodeDefaults(
+      {
+        FRAME: { strokesIncludedInLayout: laidIn },
+        COMPONENT: { strokesIncludedInLayout: laidIn },
+      },
+      paint,
+    );
+  const variants = {
+    Card: (pair) =>
+      plugin.createCardVariant({
+        value: pair[0],
+        second: pair[1],
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Container: (pair) =>
+      plugin.createContainerVariant({
+        value: pair[0],
+        second: pair[1],
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Navbar: (pair) =>
+      plugin.createNavbarVariant({
+        props: {
+          content: pair[0],
+          navigationAlign: pair[1],
+          logoInset: pair[2],
+        },
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Sidebar: (pair) =>
+      plugin.createSidebarVariant({
+        props: { content: pair[0], inset: pair[1] },
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Drawer: (pair) =>
+      plugin.createDrawerVariant({
+        value: pair[0],
+        second: pair[1],
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Input: (pair) =>
+      plugin.createInputVariant({
+        state: pair[0],
+        status: pair[1],
+        action: pair[2],
+        ...drawn,
+        stats: freshStats(),
+      }),
+    Toast: (pair) =>
+      plugin.createToastVariant({
+        value: pair[0],
+        second: pair[1],
+        ...drawn,
+        stats: freshStats(),
+      }),
+  };
+  // The variants each set had before, and the ones the Update added to it.
+  const eras = {
+    Card: [
+      [
+        ["Basic", "Default"],
+        ["Full", "Default"],
+      ],
+      [
+        ["Basic", "Compact"],
+        ["Full", "Compact"],
+      ],
+    ],
+    Container: [[["True", "Window"]], [["True", "Panel"]]],
+    Navbar: [
+      [
+        ["Basic", "Center", "False"],
+        ["Actions", "Center", "False"],
+        ["Contextual", "Center", "False"],
+      ],
+      [
+        ["Basic", "Start", "True"],
+        ["Actions", "Start", "True"],
+        ["Contextual", "End", "False"],
+      ],
+    ],
+    Sidebar: [
+      [
+        ["Basic", "Default"],
+        ["Tools", "Default"],
+        ["Rail", "Default"],
+      ],
+      [
+        ["Basic", "Flush"],
+        ["Tools", "Flush"],
+        ["Rail", "Flush"],
+      ],
+    ],
+    Drawer: [[["Right", "Fixed"]], [["Right", "Inline"]]],
+    Input: [
+      [["Default", "Default", "None"]],
+      [
+        ["Default", "Default", "Copy"],
+        ["Focus", "Error", "Toggle"],
+      ],
+    ],
+    Toast: [
+      [
+        ["Basic", "Neutral"],
+        ["Action", "Neutral"],
+      ],
+      [
+        ["Basic", "Success"],
+        ["Action", "Info"],
+      ],
+    ],
+  };
+  for (const [name, [before, added]] of Object.entries(eras)) {
+    const set = new MockNode("COMPONENT_SET", name);
+    let drew = true;
+    try {
+      for (const pair of before)
+        set.appendChild(await era(false, () => variants[name](pair)));
+      for (const pair of added)
+        set.appendChild(await era(true, () => variants[name](pair)));
+    } catch (error) {
+      drew = false;
+      ok(false, `${name}: its variants draw (${error.message})`);
+    }
+    if (!drew) continue;
+    const disagree = strokeLayoutsThatDisagree(name, set);
+    ok(
+      disagree.length === 0,
+      `${name}: an edge takes room in every variant or in none, drawn before the default moved and after${disagree.length ? ` (${disagree.join("; ")})` : ""}`,
+    );
+  }
+
+  // Slot content an Update keeps is not drawn again, so the Action the last
+  // Update laid in is kept out where it stands.
+  const kept = await variants.Navbar(["Actions", "Start", "True"]);
+  const action = named(kept, "Action");
+  if (action) action.strokesIncludedInLayout = true;
+  await plugin.updateNavbarVariant(kept, {
+    props: { content: "Actions", navigationAlign: "Start", logoInset: "True" },
+    ...drawn,
+    stats: freshStats(),
+  });
+  const after = named(kept, "Action");
+  ok(
+    action && after === action && after.strokesIncludedInLayout === false,
+    `Navbar: the kept Action's edge is out of the layout after an Update (${after ? after.strokesIncludedInLayout : "no Action"}, ${after === action ? "the same layer" : "a new layer"})`,
   );
 }
 

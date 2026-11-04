@@ -72,3 +72,45 @@ export function layersShortOfTheirFrame(name, set) {
   })(set);
   return found;
 }
+
+const isStroked = (node) =>
+  (node.strokes || []).some((paint) => paint.visible !== false) &&
+  ((node.strokeWeight || 0) > 0 ||
+    Object.values(node.individualStrokeWeights || {}).some((w) => w > 0));
+
+/**
+ * Edges laid out in some of a set's variants and not in others, one line per
+ * layer, in `name`'s set.
+ *
+ * Whether an auto-layout frame's stroke takes room (strokesIncludedInLayout)
+ * is set when Figma makes the frame, and the default moved: frames an Update
+ * keeps from years back leave their edge out, and frames it makes today lay it
+ * in. So a variant added to an old set came out a pixel smaller inside on each
+ * side than its siblings: Sidebar's Flush slots were 246 beside Default's 248,
+ * and a Toast tone's message wrapped where Neutral's did not. A layer at the
+ * same place in every variant is one design, so its edge takes room in all of
+ * them or in none.
+ */
+export function strokeLayoutsThatDisagree(name, set) {
+  const byPath = new Map();
+  for (const variant of set.children || []) {
+    (function walk(node, at) {
+      if (node.layoutMode && node.layoutMode !== "NONE" && isStroked(node)) {
+        const split = byPath.get(at) || { in: [], out: [] };
+        split[node.strokesIncludedInLayout ? "in" : "out"].push(variant.name);
+        byPath.set(at, split);
+      }
+      for (const child of node.children || []) {
+        if (child.visible !== false) walk(child, `${at} > ${child.name}`);
+      }
+    })(variant, "");
+  }
+  const found = [];
+  for (const [at, split] of byPath) {
+    if (split.in.length === 0 || split.out.length === 0) continue;
+    found.push(
+      `${name} / ${at ? at.slice(3) : "variant root"} — laid out in ${split.in.length} variant(s) (${split.in[0]}), not in ${split.out.length} (${split.out[0]})`,
+    );
+  }
+  return found;
+}

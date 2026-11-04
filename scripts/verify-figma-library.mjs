@@ -15,6 +15,7 @@
  *   overflow  — a child wider or taller than the box its frame leaves it
  *   glyphs    — a symbol typed as a character where an icon belongs
  *   short     — a layer stretched over its frame that stops short of it
+ *   edges     — a layer whose stroke takes room in some variants, not others
  *
  * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read. With
  * `--page <file>` it reads a page saved as REST returns it instead, which is
@@ -26,6 +27,7 @@ import { fileURLToPath } from "node:url";
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  strokeLayoutsThatDisagree,
 } from "./lib/figma-verify-rules.mjs";
 
 const ROOT = process.cwd();
@@ -211,6 +213,7 @@ async function main() {
   const undefinedNames = [];
   const typedGlyphs = [];
   const shortLayers = [];
+  const strokeLayouts = [];
 
   for (const name of names) {
     if (!sets[name]) {
@@ -400,6 +403,12 @@ async function main() {
     shortLayers.push(...layersShortOfTheirFrame(name, set));
   }
 
+  // An edge that takes room in some variants and not in others: the default
+  // moved under the file, and see the rule in scripts/lib/figma-verify-rules.mjs.
+  for (const [name, set] of Object.entries(sets)) {
+    strokeLayouts.push(...strokeLayoutsThatDisagree(name, set));
+  }
+
   // WCAG 1.4.3 exempts inactive controls, and a dimmed layer is a deliberate
   // de-emphasis rather than a contrast bug. Without these the report is mostly
   // disabled states repeated once per variant.
@@ -502,6 +511,10 @@ async function main() {
   total += report(
     "layers stretched over a frame that stop short of it",
     shortLayers,
+  );
+  total += report(
+    "edges laid out in some variants and not in others",
+    strokeLayouts,
   );
 
   console.log(

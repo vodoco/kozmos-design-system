@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "de7928e1c973";
+const PLUGIN_BUILD = "000c7d42cc45";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -41160,6 +41160,7 @@ async function updateNavbarVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   component.strokeWeight = 1;
+  keepStrokeOutOfLayout(component);
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Navbar");
 
@@ -41784,7 +41785,10 @@ async function createNavbarActionsSlot({
     itemSpacing: 8,
   });
   const slot = shell.node;
-  if (shell.reusedContent) return slot;
+  if (shell.reusedContent) {
+    keepStrokeOutOfLayout(directChildNamed(slot, "Action"));
+    return slot;
+  }
 
   const action = figma.createFrame();
   action.name = "Action";
@@ -41806,6 +41810,7 @@ async function createNavbarActionsSlot({
     paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
   ];
   action.strokeWeight = 1;
+  keepStrokeOutOfLayout(action);
 
   const label = figma.createText();
   label.name = "Action Text";
@@ -41909,7 +41914,10 @@ async function createNavbarAccountSlot({
     itemSpacing: 6,
   });
   const slot = shell.node;
-  if (shell.reusedContent) return slot;
+  if (shell.reusedContent) {
+    keepStrokeOutOfLayout(directChildNamed(slot, "Account Avatar"));
+    return slot;
+  }
 
   const avatar = figma.createFrame();
   avatar.name = "Account Avatar";
@@ -41938,6 +41946,7 @@ async function createNavbarAccountSlot({
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   avatar.strokeWeight = 1;
+  keepStrokeOutOfLayout(avatar);
 
   const userIcon = await createFixedIconInstance(
     "user-01",
@@ -42012,6 +42021,7 @@ async function updateSidebarVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   component.strokeWeight = 1;
+  keepStrokeOutOfLayout(component);
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Sidebar");
 
@@ -57597,6 +57607,7 @@ async function updateContainerVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   content.strokeWeight = 1;
+  keepStrokeOutOfLayout(content);
   content.clipsContent = false;
 
   bindSizeVariables(
@@ -59387,6 +59398,7 @@ async function updateCardVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   component.strokeWeight = 1;
+  keepStrokeOutOfLayout(component);
   component.effects = [elevationEffect("raised")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Card");
@@ -59902,6 +59914,7 @@ async function updateDrawerVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   component.strokeWeight = 1;
+  keepStrokeOutOfLayout(component);
   component.effects = [elevationEffect("overlay")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Drawer");
@@ -64308,6 +64321,7 @@ async function updateToastVariant(
     paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
   ];
   component.strokeWeight = 1;
+  keepStrokeOutOfLayout(component);
   component.effects = [elevationEffect("floating")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Toast");
@@ -68652,6 +68666,7 @@ async function syncToastVariantChildren({
       paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
     ];
     action.strokeWeight = 1;
+    keepStrokeOutOfLayout(action);
     action.clipsContent = false;
     action.setSharedPluginData(RUN_NAMESPACE, "kind", "toast-action");
 
@@ -69639,6 +69654,7 @@ async function syncInputVariantChildren({
     ),
   ];
   field.strokeWeight = 1;
+  keepStrokeOutOfLayout(field);
   field.clipsContent = false;
 
   let placeholder = directChildNamed(field, "Placeholder Text");
@@ -76877,6 +76893,18 @@ function setLayoutSizingVertical(node, value) {
   if (node.layoutSizingVertical === value) return true;
   recordLayoutSizingFailure("layoutSizingVertical", node, value, null);
   return false;
+}
+
+// Whether an auto-layout frame's edge takes room inside it is fixed when Figma
+// makes the frame, and the default moved under the file: frames from before
+// leave the edge out, frames made now lay it in. A painter that never says so
+// draws a variant added to an old set a pixel smaller inside on each side than
+// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and a
+// Toast tone's message wrapped where Neutral's did not. These say it, and say
+// out, as every variant drawn before carries it. figma:verify names a layer
+// whose edge takes room in some variants and not in others.
+function keepStrokeOutOfLayout(node) {
+  setNodePropertyIfSupported(node, "strokesIncludedInLayout", false);
 }
 
 function setNodePropertyIfSupported(node, propertyName, value) {
