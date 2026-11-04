@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "000c7d42cc45";
+const PLUGIN_BUILD = "fa86312e5dfd";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -79,6 +79,11 @@ const GRID_PREVIEW_ROWS = 2;
 const CONTAINER_INSETS = ["Window", "Panel"];
 function containerInsetPadding(inset) {
   return inset === "Panel" ? 16 : 24;
+}
+function containerInsetToken(inset) {
+  return inset === "Panel"
+    ? "Container/padding/x/panel"
+    : "Container/padding/x/window";
 }
 const CONTAINER_CENTERED = ["True", "False"];
 const SCROLL_AREA_ORIENTATIONS = ["Vertical", "Horizontal", "Both"];
@@ -435,6 +440,11 @@ const CARD_CONTENT = ["Basic", "Header", "Full"];
 const CARD_PADDINGS = ["Default", "Compact"];
 function cardPaddingLength(padding) {
   return padding === "Compact" ? 16 : 24;
+}
+function cardPaddingToken(padding) {
+  return padding === "Compact"
+    ? "Card/padding/compact"
+    : "Card/padding/default";
 }
 // CardHeader's actions (GAP-169): a slot at the header's end, after the title
 // and description, which keep the room before it, 16 away. It is as tall as
@@ -1019,10 +1029,12 @@ function markControlSurface(node) {
   }
 }
 
-const FLOOR_SELECTOR_ITEM_RADIUS = 6;
-const FLOOR_SELECTOR_ITEM_INSET = 5;
-const FLOOR_SELECTOR_TRAY_RADIUS =
-  FLOOR_SELECTOR_ITEM_RADIUS + FLOOR_SELECTOR_ITEM_INSET;
+// Each floor is a React Button, rounded-control (FloorSelector.tsx).
+const FLOOR_SELECTOR_ITEM_RADIUS = KOZMOS_RADIUS.control;
+// The tray is a container, rounded-container in React (FloorSelector.tsx):
+// 20, the 16 floors' corner across its 4 inset. Decision 102's 16 is for map
+// buttons; the tray holds them (Olcay's 4 Nov ruling: containers are 20).
+const FLOOR_SELECTOR_TRAY_RADIUS = KOZMOS_RADIUS.container;
 
 const SIDEBAR_CONTENT = ["Basic", "Sections", "Tools", "Rail"];
 // The room above the first slot, as React's inset (GAP-199). Default pads the
@@ -1044,11 +1056,13 @@ const SIDEBAR_SLOT_NAMES = [
   "Tools Slot",
   "Footer Slot",
 ];
-const SIDEBAR_DEFAULT_WIDTH = 280;
+// React's w-64 (Sidebar.tsx).
+const SIDEBAR_DEFAULT_WIDTH = 256;
 // Code's rail, decision 42. Navbar's LogoInset column takes this width too.
 const SIDEBAR_RAIL_WIDTH = 96;
 const SIDEBAR_DEFAULT_HEIGHT = 360;
-const SIDEBAR_SLOT_WIDTH = 248;
+// The width less the 16 at each side.
+const SIDEBAR_SLOT_WIDTH = SIDEBAR_DEFAULT_WIDTH - 32;
 const SIDEBAR_RAIL_SLOT_WIDTH = 72;
 const SIDEBAR_HEADER_FOOTER_HEIGHT = 44;
 const SIDEBAR_NAVIGATION_HEIGHT = 220;
@@ -5028,6 +5042,22 @@ const BUTTON_LABEL_TEXT_STYLE_NAME = "Button / Label";
 let activeTextStyleByKey = {};
 let activeTextStyleSpecByKey = {};
 let activeTextStylesEnsured = false;
+// Component tokens whose name moved, renamed in place by Import Foundations
+// so each keeps its id and every binding to it. Made afresh instead, the old
+// variable would stay behind, bound; and the new names could not be made
+// beside it at all, since "Card/padding" cannot stay a variable once
+// "Card/padding/compact" makes it a group. Each split a token one axis bound
+// for every variant, which drew Compact and Panel as Default (2026-11-04).
+const RENAMED_COMPONENT_TOKENS = [
+  ["Card/padding", "Card/padding/default"],
+  ["Container/padding/x", "Container/padding/x/window"],
+  ["EmptyState/padding", "EmptyState/padding/default"],
+  ["EmptyState/gap", "EmptyState/gap/default"],
+  ["EmptyState/icon/container/size", "EmptyState/icon/container/size/default"],
+  // React's compact title sits 2 over its description, 4 by default.
+  ["EmptyState/text/gap", "EmptyState/text/gap/default"],
+];
+
 const COMPONENT_FLOAT_TOKENS = [
   { name: "Button/width/small", value: 96, scopes: ["WIDTH_HEIGHT"] },
   { name: "Button/width/default", value: 112, scopes: ["WIDTH_HEIGHT"] },
@@ -5188,9 +5218,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/0",
     scopes: ["GAP"],
   },
+  // React's rounded-control (ToggleButton.tsx), and SwiftUI's and Compose's.
   {
     name: "ToggleButton/radius",
-    value: 12,
+    value: 16,
+    alias: "Radius/Control",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -5333,10 +5365,11 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Counter/height/default", value: 20, scopes: ["WIDTH_HEIGHT"] },
   { name: "Counter/min-width/small", value: 18, scopes: ["WIDTH_HEIGHT"] },
   { name: "Counter/min-width/default", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  // React's px-[5px]. No alias: the layout scale has no 5 (50 is 4), and
+  // an alias is what Figma draws.
   {
     name: "Counter/padding/x/small",
     value: 5,
-    alias: "Layout/spacing/50",
     scopes: ["GAP"],
   },
   {
@@ -5676,10 +5709,18 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Card/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
+  // Default and Compact are two tokens, because one bound to both undoes the
+  // axis: Figma draws a bound field's variable, whatever the painter wrote.
   {
-    name: "Card/padding",
+    name: "Card/padding/default",
     value: 24,
     alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Card/padding/compact",
+    value: 16,
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
@@ -5700,10 +5741,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/150",
     scopes: ["GAP"],
   },
+  // A container's corner, 20 (decision 118): React's rounded-container.
   {
     name: "Card/radius",
-    value: 16,
-    alias: "Radius/lg",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -5855,9 +5897,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Radius/Control",
     scopes: ["CORNER_RADIUS"],
   },
+  // Each floor is a React Button, rounded-control.
   {
     name: "FloorSelector/item/radius",
-    value: 6,
+    value: 16,
+    alias: "Radius/Control",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -5955,9 +5999,10 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   { name: "MapView/attribution/font-size", value: 10, scopes: ["FONT_SIZE"] },
+  // React's line-height 1.2 on its 10.
   {
     name: "MapView/attribution/line-height",
-    value: 14,
+    value: 12,
     scopes: ["LINE_HEIGHT"],
   },
   { name: "POICard/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
@@ -5986,8 +6031,9 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Border Width/sm",
     scopes: ["STROKE_FLOAT"],
   },
-  { name: "POICard/title/font-size", value: 16, scopes: ["FONT_SIZE"] },
-  { name: "POICard/title/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
+  // React's Heading at text-xl (POICard.tsx): 20/28.
+  { name: "POICard/title/font-size", value: 20, scopes: ["FONT_SIZE"] },
+  { name: "POICard/title/line-height", value: 28, scopes: ["LINE_HEIGHT"] },
   { name: "POICard/subtitle/font-size", value: 14, scopes: ["FONT_SIZE"] },
   { name: "POICard/subtitle/line-height", value: 20, scopes: ["LINE_HEIGHT"] },
   {
@@ -6019,10 +6065,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Border Width/sm",
     scopes: ["STROKE_FLOAT"],
   },
-  { name: "WayfindingCard/title/font-size", value: 16, scopes: ["FONT_SIZE"] },
+  // React's CardTitle at text-sm (WayfindingCard.tsx): 14/20.
+  { name: "WayfindingCard/title/font-size", value: 14, scopes: ["FONT_SIZE"] },
   {
     name: "WayfindingCard/title/line-height",
-    value: 24,
+    value: 20,
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Tree/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
@@ -6341,10 +6388,11 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Tabs/width/two", value: 320, scopes: ["WIDTH_HEIGHT"] },
   { name: "Tabs/width/three", value: 480, scopes: ["WIDTH_HEIGHT"] },
   { name: "Tabs/width/four", value: 640, scopes: ["WIDTH_HEIGHT"] },
+  // React's h-10: a 32 trigger inside 4 all round. No alias: the Button's
+  // default height is 44.
   {
     name: "Tabs/list/height",
-    value: 44,
-    alias: "Button/height/default",
+    value: 40,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -6365,7 +6413,8 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Radius/lg",
     scopes: ["CORNER_RADIUS"],
   },
-  { name: "Tabs/trigger/height", value: 36, scopes: ["WIDTH_HEIGHT"] },
+  // React's py-1.5 round a 20 line.
+  { name: "Tabs/trigger/height", value: 32, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Tabs/trigger/padding/x",
     value: 12,
@@ -6942,16 +6991,18 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/300",
     scopes: ["GAP"],
   },
+  // React's gap-6 (Dialog.tsx).
   {
     name: "Dialog/gap",
-    value: 16,
-    alias: "Layout/spacing/200",
+    value: 24,
+    alias: "Layout/spacing/300",
     scopes: ["GAP"],
   },
+  // React's gap-2 between the title and its description.
   {
     name: "Dialog/header/gap",
-    value: 6,
-    alias: "Layout/spacing/75",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
   {
@@ -6972,10 +7023,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/height/default",
     scopes: ["WIDTH_HEIGHT"],
   },
+  // A container's corner, 20 (decision 118): React's rounded-container.
   {
     name: "Dialog/radius",
-    value: 16,
-    alias: "Radius/lg",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -7034,10 +7086,11 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
+  // React's DrawerHeader gap-2.
   {
     name: "Drawer/header/gap",
-    value: 6,
-    alias: "Layout/spacing/75",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
   {
@@ -7052,10 +7105,12 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Dialog/footer/height",
     scopes: ["WIDTH_HEIGHT"],
   },
+  // A container's corner, 20, on the edge that faces the page: React rounds
+  // only those two corners of a drawer at its edge (Drawer.tsx).
   {
     name: "Drawer/radius",
-    value: 16,
-    alias: "Radius/Control",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -7089,16 +7144,18 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/300",
     scopes: ["GAP"],
   },
+  // DrawerContent's gap-4, which BottomSheetContent keeps.
   {
     name: "BottomSheet/gap",
-    value: 8,
-    alias: "Layout/spacing/100",
+    value: 16,
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
+  // DrawerHeader's gap-2: BottomSheetHeader is DrawerHeader.
   {
     name: "BottomSheet/header/gap",
-    value: 6,
-    alias: "Layout/spacing/75",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
   {
@@ -7115,10 +7172,11 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "BottomSheet/handle/width", value: 48, scopes: ["WIDTH_HEIGHT"] },
   { name: "BottomSheet/handle/height", value: 5, scopes: ["WIDTH_HEIGHT"] },
+  // A container's corner, 20 (decision 118): React's rounded-t-container.
   {
     name: "BottomSheet/radius",
-    value: 16,
-    alias: "Radius/lg",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -8346,10 +8404,11 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 144,
     scopes: ["WIDTH_HEIGHT"],
   },
+  // React's px-4. The field's padding it aliased is 12.
   {
     name: "FileUpload/dropzone/padding/x",
     value: 16,
-    alias: "Input/field/padding/x",
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
@@ -8357,10 +8416,11 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 24,
     scopes: ["GAP"],
   },
+  // A container's corner, 20 (decision 118): React's rounded-container.
   {
     name: "FileUpload/dropzone/radius",
-    value: 16,
-    alias: "Combobox/listbox/radius",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -8579,22 +8639,19 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     scopes: ["WIDTH_HEIGHT"],
   },
+  // React's h-8, at least 2rem across.
   {
     name: "ColorPicker/preset/size",
-    value: 30,
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
+  // A preset is a React button, h-8 rounded-control (ColorPicker.tsx), not
+  // the field's swatch: it sits in the popover's grid, not inside the
+  // field, so the field's concentric 6 never applied to it.
   {
     name: "ColorPicker/preset/radius",
-    value: 6,
-    // No alias. It used to point at Radius/sm, which is 4 — and a bound
-    // variable beats the literal, so the swatch rendered 4 while every check
-    // reported the 6 that never reached the screen. 6 is also the right number
-    // rather than an arbitrary one: the swatch is 24x24 inside a 44-tall field
-    // with 10px of padding, and 6 + 10 = 16 is exactly the field's radius. The
-    // concentric rule derives it independently, which is how the mismatch was
-    // found. There is no primitive at 6 and adding one for a single component
-    // would be scale inflation, so this stays a deliberate off-scale literal.
+    value: 16,
+    alias: "Radius/Control",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -8746,10 +8803,11 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   { name: "Alert/gap", value: 8, alias: "Layout/spacing/100", scopes: ["GAP"] },
+  // A container's corner, 20 (decision 118): React's rounded-container.
   {
     name: "Alert/radius",
-    value: 12,
-    alias: "Radius/lg",
+    value: 20,
+    alias: "Radius/Container",
     scopes: ["CORNER_RADIUS"],
   },
   {
@@ -8794,26 +8852,50 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
-    name: "EmptyState/padding",
+    name: "EmptyState/padding/default",
     value: 32,
     alias: "Layout/spacing/400",
     scopes: ["GAP"],
   },
   {
-    name: "EmptyState/gap",
+    name: "EmptyState/padding/compact",
     value: 16,
     alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
-    name: "EmptyState/text/gap",
+    name: "EmptyState/gap/default",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "EmptyState/gap/compact",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  // React's title takes mb-1 over its description, and mb-0.5 compact.
+  {
+    name: "EmptyState/text/gap/default",
     value: 4,
     alias: "Layout/spacing/50",
     scopes: ["GAP"],
   },
   {
-    name: "EmptyState/icon/container/size",
+    name: "EmptyState/text/gap/compact",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "EmptyState/icon/container/size/default",
     value: 64,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "EmptyState/icon/container/size/compact",
+    value: 40,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -8827,10 +8909,10 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
+  // React's size="base". No alias: the Button's label is 14.
   {
     name: "EmptyState/title/font-size",
     value: 16,
-    alias: "Button/label/font-size",
     scopes: ["FONT_SIZE"],
   },
   {
@@ -8865,10 +8947,10 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // No alias: each it had drew another size (Input's label is 14).
   {
     name: "Text/font-size/base",
     value: 16,
-    alias: "Input/label/font-size",
     scopes: ["FONT_SIZE"],
   },
   { name: "Text/line-height/base", value: 24, scopes: ["LINE_HEIGHT"] },
@@ -8877,14 +8959,12 @@ const COMPONENT_FLOAT_TOKENS = [
   {
     name: "Text/font-size/xl",
     value: 20,
-    alias: "Card/title/font-size",
     scopes: ["FONT_SIZE"],
   },
   { name: "Text/line-height/xl", value: 28, scopes: ["LINE_HEIGHT"] },
   {
     name: "Text/font-size/2xl",
     value: 24,
-    alias: "Dialog/title/font-size",
     scopes: ["FONT_SIZE"],
   },
   { name: "Text/line-height/2xl", value: 32, scopes: ["LINE_HEIGHT"] },
@@ -9049,9 +9129,15 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
-    name: "Container/padding/x",
+    name: "Container/padding/x/window",
     value: 24,
     alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/x/panel",
+    value: 16,
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
@@ -12261,7 +12347,7 @@ async function buildOperationsConsoleExampleTemplate({
 }) {
   const contentWidth = config.width - 64;
   const shellHeight = config.height - 156;
-  const sidebarWidth = 248;
+  const sidebarWidth = SIDEBAR_DEFAULT_WIDTH;
   const mainWidth = contentWidth - sidebarWidth - 24;
   const root = createExampleFrame({
     name: config.name,
@@ -12281,8 +12367,10 @@ async function buildOperationsConsoleExampleTemplate({
       variantProperties: { Content: "Actions" },
       name: "Operations Navbar",
       width: contentWidth,
-      height: 72,
+      // React's min-block-size: 4rem. Hugging, it fell to its 32 contents.
+      height: NAVBAR_DEFAULT_HEIGHT,
       fillHorizontal: true,
+      fixedHeight: true,
       fonts,
       variableByName,
       stats,
@@ -12451,9 +12539,10 @@ async function buildOperationsConsoleExampleTemplate({
   filters.appendChild(
     await createExampleInstance({
       componentSetName: "Chip",
+      // 32 tall is the Default chip, React's h-8; Small is h-7, 28.
       variantProperties: {
         Variant: "Brand",
-        Size: "Small",
+        Size: "Default",
         State: "Selected",
         Removable: "True",
       },
@@ -12673,8 +12762,10 @@ async function buildSdkRouteFlowExampleTemplate({
       },
       name: "Route Progress",
       width: contentWidth - 40,
-      height: 16,
+      // React's h-2 bar.
+      height: 8,
       fillHorizontal: true,
+      fixedHeight: true,
       fonts,
       variableByName,
       stats,
@@ -12885,7 +12976,8 @@ async function buildKioskHandoffExampleTemplate({
       name: "Accessible Route Switch",
       textProperties: { "Label Text": "Step-free route" },
       width: 220,
-      height: 36,
+      // React's min-h-11 row.
+      height: 44,
       fonts,
       variableByName,
       stats,
@@ -12902,8 +12994,10 @@ async function buildKioskHandoffExampleTemplate({
       name: "Kiosk Find Route Button",
       textProperties: { "Label Text": "Find route" },
       width: 324,
+      // React's h-control. Hugging, it fell to its 20 line.
       height: 44,
       fillHorizontal: true,
+      fixedHeight: true,
       fonts,
       variableByName,
       stats,
@@ -13314,6 +13408,8 @@ function applyExampleChildSizing(node, sizingMode) {
     setHorizontalStackFillHugChildSizing(node);
   } else if (sizingMode === "vertical-fill") {
     setVerticalStackChildSizing(node);
+  } else if (sizingMode === "vertical-fill-fixed") {
+    setVerticalFixedFillChildSizing(node);
   } else if (sizingMode === "fixed") {
     setFixedChildSizing(node);
   } else if (sizingMode === "hug") {
@@ -13330,11 +13426,15 @@ async function createExampleInstance({
   width,
   height,
   fillHorizontal,
+  // With fillHorizontal: across the column, and as tall as `height`. A part
+  // that holds its own height (Navbar, a Button, a bar) hugs to its content.
+  fixedHeight,
   growHorizontal,
   fonts,
   variableByName,
   stats,
 }) {
+  const fillMode = fixedHeight ? "vertical-fill-fixed" : "vertical-fill";
   const created = await createNestedComponentInstance({
     componentSetName,
     variantProperties: variantProperties || {},
@@ -13360,7 +13460,7 @@ async function createExampleInstance({
         setExampleChildSizing(placeholder, "horizontal-fill-hug");
       }
     } else if (fillHorizontal) {
-      setExampleChildSizing(placeholder, "vertical-fill");
+      setExampleChildSizing(placeholder, fillMode);
     } else if (width && height) {
       setExampleChildSizing(placeholder, "fixed");
     } else {
@@ -13401,7 +13501,7 @@ async function createExampleInstance({
       setExampleChildSizing(instance, "horizontal-fill-hug");
     }
   } else if (fillHorizontal) {
-    setExampleChildSizing(instance, "vertical-fill");
+    setExampleChildSizing(instance, fillMode);
   } else if (width && height) {
     setExampleChildSizing(instance, "fixed");
   } else {
@@ -23732,6 +23832,36 @@ async function ensureComponentRuntimeVariables(stats) {
     variableByName.set(variable.name, variable);
   }
 
+  for (const pair of RENAMED_COMPONENT_TOKENS) {
+    const from = variableByCollectionAndName.get(`${collection.id}:${pair[0]}`);
+    if (!from) continue;
+    if (variableByCollectionAndName.has(`${collection.id}:${pair[1]}`)) {
+      pushUniqueWarning(
+        stats,
+        `renamed-component-token:${pair[0]}`,
+        `${pair[0]} and ${pair[1]} both exist; ${pair[0]} was left as it is.`,
+      );
+      continue;
+    }
+    try {
+      from.name = pair[1];
+      from.setSharedPluginData(
+        RUN_NAMESPACE,
+        "cssVariable",
+        cssVariableForComponentToken(pair[1]),
+      );
+      variableByCollectionAndName.delete(`${collection.id}:${pair[0]}`);
+      variableByCollectionAndName.set(`${collection.id}:${pair[1]}`, from);
+      variableByName.delete(pair[0]);
+      variableByName.set(pair[1], from);
+      incrementStat(stats, "componentVariablesRenamed");
+    } catch (error) {
+      stats.warnings.push(
+        `${pair[0]}: could not rename to ${pair[1]} (${messageFor(error)})`,
+      );
+    }
+  }
+
   for (const token of COMPONENT_FLOAT_TOKENS) {
     const key = `${collection.id}:${token.name}`;
     let variable = variableByCollectionAndName.get(key);
@@ -26786,13 +26916,19 @@ function bindBadgeGeometryVariables(
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "itemSpacing",
-    "Badge/gap",
-    variableByName,
-    stats,
-  );
+  // An icon badge holds its one mark and no gap; bound, it would draw
+  // Badge/gap's 4 whatever was written.
+  if (metrics.iconSize) {
+    clearBoundVariable(component, "itemSpacing", stats);
+  } else {
+    bindFloatVariable(
+      component,
+      "itemSpacing",
+      "Badge/gap",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "cornerRadius",
@@ -26939,6 +27075,13 @@ function bindCounterGeometryVariables(counter, metrics, variableByName, stats) {
   );
   bindFloatVariable(
     counter,
+    "minWidth",
+    metrics.minWidthToken,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    counter,
     "paddingLeft",
     metrics.paddingXToken,
     variableByName,
@@ -26968,7 +27111,9 @@ function bindCardGeometryVariables(
   variableByName,
   stats,
   headerText,
+  padding,
 ) {
+  const paddingToken = cardPaddingToken(padding);
   bindFloatVariable(
     component,
     "width",
@@ -26996,21 +27141,21 @@ function bindCardGeometryVariables(
     bindFloatVariable(
       section,
       "paddingLeft",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
     bindFloatVariable(
       section,
       "paddingRight",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
     bindFloatVariable(
       section,
       "paddingBottom",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
@@ -27020,7 +27165,7 @@ function bindCardGeometryVariables(
     bindFloatVariable(
       header,
       "paddingTop",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
@@ -27627,13 +27772,26 @@ function bindDrawerGeometryVariables(
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "cornerRadius",
-    floats ? "Drawer/radius/inline" : "Drawer/radius",
-    variableByName,
-    stats,
-  );
+  if (floats) {
+    bindFloatVariable(
+      component,
+      "cornerRadius",
+      "Drawer/radius/inline",
+      variableByName,
+      stats,
+    );
+  } else {
+    // Only the corners that face the page: the two at the edge stay square.
+    for (const field of drawerRoundedCorners(side, floats)) {
+      bindFloatVariable(
+        component,
+        field,
+        "Drawer/radius",
+        variableByName,
+        stats,
+      );
+    }
+  }
   bindFloatVariable(
     component,
     "strokeWeight",
@@ -30559,7 +30717,9 @@ function bindEmptyStateGeometryVariables(
   textStack,
   variableByName,
   stats,
+  size,
 ) {
+  const sized = size === "Compact" ? "compact" : "default";
   bindFloatVariable(
     component,
     "width",
@@ -30570,35 +30730,35 @@ function bindEmptyStateGeometryVariables(
   bindFloatVariable(
     component,
     "paddingLeft",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingRight",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingTop",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingBottom",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "itemSpacing",
-    "EmptyState/gap",
+    `EmptyState/gap/${sized}`,
     variableByName,
     stats,
   );
@@ -30607,7 +30767,7 @@ function bindEmptyStateGeometryVariables(
     bindFloatVariable(
       textStack,
       "itemSpacing",
-      "EmptyState/text/gap",
+      `EmptyState/text/gap/${sized}`,
       variableByName,
       stats,
     );
@@ -30616,8 +30776,8 @@ function bindEmptyStateGeometryVariables(
   if (iconContainer) {
     bindSizeVariables(
       iconContainer,
-      "EmptyState/icon/container/size",
-      "EmptyState/icon/container/size",
+      `EmptyState/icon/container/size/${sized}`,
+      `EmptyState/icon/container/size/${sized}`,
       variableByName,
       stats,
     );
@@ -42431,6 +42591,12 @@ async function createSidebarFooterSlot({
   return slot;
 }
 
+// The placeholder mark is a rounded square, as a product's logo and an app
+// icon are (Olcay, 2026-11-04). It was the control radius, and when that grew
+// to 16 a 32 mark became a circle in the variants drawn since, beside the
+// squares the older variants kept.
+const BRAND_MARK_RADIUS = 8;
+
 function createBrandMark(variableByName, stats, size) {
   const mark = figma.createFrame();
   mark.name = "Brand Mark";
@@ -42445,7 +42611,7 @@ function createBrandMark(variableByName, stats, size) {
   mark.paddingTop = 0;
   mark.paddingBottom = 0;
   mark.resizeWithoutConstraints(size, size);
-  mark.cornerRadius = KOZMOS_RADIUS.control;
+  mark.cornerRadius = BRAND_MARK_RADIUS;
   mark.fills = [
     paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
   ];
@@ -42601,7 +42767,8 @@ async function updateBottomSheetVariant(
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
+  // DrawerContent's gap-4, which BottomSheetContent keeps.
+  component.itemSpacing = 16;
   component.paddingLeft = 16;
   component.paddingRight = 16;
   component.paddingTop = 8;
@@ -45823,6 +45990,16 @@ async function updateFloorSelectorVariant(
     item.counterAxisAlignItems = "CENTER";
     item.resizeWithoutConstraints(44, 44);
     item.cornerRadius = FLOOR_SELECTOR_ITEM_RADIUS;
+    bindFloatVariable(
+      item,
+      "cornerRadius",
+      "FloorSelector/item/radius",
+      variableByName,
+      stats,
+    );
+    // A floor is a Button, so it keeps the control's corner inside the tray
+    // rather than nesting concentric in it (tokens:radius:nesting).
+    markControlSurface(item);
     item.strokes = [];
     // The selected floor is a prominent fill (decision 59): the theme fill,
     // theme 500 in both themes, under the theme foreground, white in both. It
@@ -46720,14 +46897,16 @@ async function updatePOICardVariant(
   heading.fills = [];
   heading.resizeWithoutConstraints(288, 48);
 
+  // React's Heading at text-xl (POICard.tsx): 20/28 bold, Heading / H4.
+  // The style is what Figma draws; the size variables bound below are not.
   const title = await productSdkText({
     name: "Title Text",
     characters: "Boots Pharmacy",
-    styleKey: "cardTitle",
+    styleKey: textStyleKeyForHeading("H4"),
     fonts,
     bold: true,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 28,
     colorToken: "Colors/foreground/0",
     colorFallback: "#000000",
     variableByName,
@@ -48360,14 +48539,16 @@ async function updateWayfindingCardVariant(
     header.fills = [];
     header.resizeWithoutConstraints(288, 24);
 
+    // React's CardTitle at text-sm font-medium (WayfindingCard.tsx): 14/20.
+    // The style is what Figma draws; the size variables bound below are not.
     const title = await productSdkText({
       name: "Title Text",
       characters: "Route to Gate 42",
-      styleKey: "cardTitle",
+      styleKey: textStyleKeyForText("Small", "Medium"),
       fonts,
       bold: true,
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: 14,
+      lineHeight: 20,
       colorToken: "Colors/foreground/0",
       colorFallback: "#000000",
       variableByName,
@@ -53920,9 +54101,17 @@ async function updateSingleAxisComponent(config) {
   return stats;
 }
 
+// A row starts at its step, or this far below the tallest variant of the
+// row above when its step would put it closer. Card's Full grew past its 220
+// step and covered the Compact row under it by 14, and EmptyState's by 8
+// (2026-11-04); every other set keeps the step it had.
+const SINGLE_AXIS_MIN_ROW_GAP = 24;
+
 function layoutSingleAxisVariants(componentSet, config) {
   if (!componentSet || !componentSet.children) return;
 
+  const placed = [];
+  const tallest = [];
   for (const child of componentSet.children) {
     if (child.type !== "COMPONENT") continue;
 
@@ -53933,9 +54122,20 @@ function layoutSingleAxisVariants(componentSet, config) {
     const secondIndex = config.axis2Values
       ? config.axis2Values.indexOf(props.second)
       : 0;
+    const row = secondIndex < 0 ? 0 : secondIndex;
     child.x = valueIndex * config.xStep;
-    child.y = (secondIndex < 0 ? 0 : secondIndex) * (config.yStep || 0);
+    placed.push({ child, row });
+    tallest[row] = Math.max(tallest[row] || 0, child.height);
   }
+
+  const rowTop = [0];
+  for (let row = 1; row < tallest.length; row += 1) {
+    rowTop[row] = Math.max(
+      row * (config.yStep || 0),
+      rowTop[row - 1] + (tallest[row - 1] || 0) + SINGLE_AXIS_MIN_ROW_GAP,
+    );
+  }
+  for (const entry of placed) entry.child.y = rowTop[entry.row];
 
   // A component set is a frame, and a frame keeps its size when its children
   // shrink. WayfindingCard was 700x1058 around 700x134 of variants -- 87% dead
@@ -55881,7 +56081,8 @@ async function updateToggleButtonVariant(
   component.paddingTop = 0;
   component.paddingBottom = 0;
   component.resizeWithoutConstraints(metrics.width, metrics.height);
-  component.cornerRadius = 12;
+  // React's rounded-control, as SwiftUI and Compose (decision 151).
+  component.cornerRadius = KOZMOS_RADIUS.control;
   component.clipsContent = false;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "ToggleButton");
@@ -55955,7 +56156,7 @@ async function updateToggleButtonVariant(
     enabled: state !== "Disabled",
     width: metrics.width,
     height: metrics.height,
-    radius: 12,
+    radius: KOZMOS_RADIUS.control,
     variableName: "Colors/theme/600",
     fallback: "#1051E8",
     variableByName,
@@ -57559,14 +57760,14 @@ async function updateContainerVariant(
   bindFloatVariable(
     component,
     "paddingLeft",
-    "Container/padding/x",
+    containerInsetToken(inset),
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingRight",
-    "Container/padding/x",
+    containerInsetToken(inset),
     variableByName,
     stats,
   );
@@ -59206,6 +59407,8 @@ async function updateCounterVariant(
   component.paddingTop = 0;
   component.paddingBottom = 0;
   component.resizeWithoutConstraints(metrics.minWidth, metrics.height);
+  // React's min-w-[18px] and min-w-5: a one-digit count hugs to less.
+  setNodePropertyIfSupported(component, "minWidth", metrics.minWidth);
   component.cornerRadius = KOZMOS_RADIUS.pill;
   component.clipsContent = false;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
@@ -59652,7 +59855,8 @@ async function updateTabsVariant(
   component.paddingRight = 4;
   component.paddingTop = 4;
   component.paddingBottom = 4;
-  component.resizeWithoutConstraints(width, 44);
+  // React's h-10: a 32 trigger inside 4 all round.
+  component.resizeWithoutConstraints(width, 40);
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -59794,7 +59998,7 @@ async function updateDialogVariant(
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
-  component.itemSpacing = 16;
+  component.itemSpacing = 24;
   component.paddingLeft = 24;
   component.paddingRight = 24;
   component.paddingTop = 24;
@@ -59874,6 +60078,50 @@ function drawerFloats(side, placement) {
   return placement === "Inline" && (side === "Left" || side === "Right");
 }
 
+const DRAWER_CORNER_FIELDS = [
+  "topLeftRadius",
+  "topRightRadius",
+  "bottomLeftRadius",
+  "bottomRightRadius",
+];
+
+/**
+ * The corners a drawer at its edge rounds: the two on the side that faces the
+ * page, as React's rounded-l-container on the right edge (Drawer.tsx), with
+ * the two against the edge square. A floating one rounds all four.
+ */
+function drawerRoundedCorners(side, floats) {
+  if (floats) return DRAWER_CORNER_FIELDS;
+  if (side === "Left") return ["topRightRadius", "bottomRightRadius"];
+  if (side === "Top") return ["bottomLeftRadius", "bottomRightRadius"];
+  if (side === "Bottom") return ["topLeftRadius", "topRightRadius"];
+  return ["topLeftRadius", "bottomLeftRadius"];
+}
+
+function setDrawerCorners(component, side, floats, stats) {
+  if (floats) {
+    component.cornerRadius = KOZMOS_RADIUS.container;
+    return;
+  }
+  // An older Update bound every corner through cornerRadius; each corner is
+  // its own now, so no binding holds an edge corner round.
+  clearBoundVariable(component, "cornerRadius", stats);
+  for (const field of DRAWER_CORNER_FIELDS) {
+    clearBoundVariable(component, field, stats);
+  }
+  const rounded = drawerRoundedCorners(side, floats);
+  try {
+    for (const field of DRAWER_CORNER_FIELDS) {
+      component[field] =
+        rounded.indexOf(field) === -1
+          ? KOZMOS_RADIUS.none
+          : KOZMOS_RADIUS.container;
+    }
+  } catch (_error) {
+    component.cornerRadius = KOZMOS_RADIUS.container;
+  }
+}
+
 function drawerVariantSize(side, placement) {
   const horizontal = side === "Left" || side === "Right";
   return {
@@ -59903,9 +60151,7 @@ async function updateDrawerVariant(
   component.paddingTop = 24;
   component.paddingBottom = 24;
   component.resizeWithoutConstraints(size.width, size.height);
-  component.cornerRadius = floats
-    ? KOZMOS_RADIUS.container
-    : KOZMOS_RADIUS.control;
+  setDrawerCorners(component, side, floats, stats);
   component.clipsContent = false;
   component.fills = [
     paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
@@ -64140,7 +64386,7 @@ async function updateAlertVariant(
   component.paddingTop = 16;
   component.paddingBottom = 16;
   component.resizeWithoutConstraints(360, 92);
-  component.cornerRadius = 12;
+  component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
     paintFromVariable(
@@ -65193,12 +65439,13 @@ async function syncCardVariantChildren({
     variableByName,
     stats,
     headerText,
+    padding,
   );
   if (body && value === "Basic") {
     bindFloatVariable(
       body,
       "paddingTop",
-      "Card/padding",
+      cardPaddingToken(padding),
       variableByName,
       stats,
     );
@@ -65739,7 +65986,7 @@ async function syncTabsVariantChildren({
     trigger.paddingRight = 12;
     trigger.paddingTop = 0;
     trigger.paddingBottom = 0;
-    trigger.resizeWithoutConstraints(triggerWidth, 36);
+    trigger.resizeWithoutConstraints(triggerWidth, 32);
     trigger.cornerRadius = 12;
     trigger.clipsContent = false;
     trigger.fills = config.background
@@ -65793,7 +66040,7 @@ async function syncTabsVariantChildren({
     syncFocusRing(trigger, {
       enabled: state === "Focus" && isActive,
       width: triggerWidth,
-      height: 36,
+      height: 32,
       radius: 12,
       variableName: "Colors/theme/600",
       fallback: "#1051E8",
@@ -66103,7 +66350,7 @@ async function syncDialogVariantChildren({
   headerContent.counterAxisSizingMode = "FIXED";
   headerContent.primaryAxisAlignItems = "MIN";
   headerContent.counterAxisAlignItems = "MIN";
-  headerContent.itemSpacing = 6;
+  headerContent.itemSpacing = 8;
   headerContent.paddingLeft = 0;
   headerContent.paddingRight = 0;
   headerContent.paddingTop = 0;
@@ -66388,7 +66635,7 @@ async function syncBottomSheetVariantChildren({
   headerContent.counterAxisSizingMode = "FIXED";
   headerContent.primaryAxisAlignItems = "MIN";
   headerContent.counterAxisAlignItems = "MIN";
-  headerContent.itemSpacing = 6;
+  headerContent.itemSpacing = 8;
   headerContent.paddingLeft = 0;
   headerContent.paddingRight = 0;
   headerContent.paddingTop = 0;
@@ -67003,7 +67250,7 @@ async function syncDrawerVariantChildren({
   headerContent.counterAxisSizingMode = "FIXED";
   headerContent.primaryAxisAlignItems = "MIN";
   headerContent.counterAxisAlignItems = "MIN";
-  headerContent.itemSpacing = 6;
+  headerContent.itemSpacing = 8;
   headerContent.paddingLeft = 0;
   headerContent.paddingRight = 0;
   headerContent.paddingTop = 0;
@@ -68719,6 +68966,8 @@ async function syncToastVariantChildren({
     name: "Toast Close",
     kind: "toast-close",
     size: 24,
+    // React's ToastClose is rounded-control (Toast.tsx).
+    radius: KOZMOS_RADIUS.control,
     iconSize: 16,
     iconSizeToken: "Toast/close/icon/size",
     variableByName,
@@ -68740,6 +68989,7 @@ async function syncInlineCloseButton({
   name,
   kind,
   size,
+  radius,
   iconSize,
   iconSizeToken,
   colorToken,
@@ -68758,7 +69008,8 @@ async function syncInlineCloseButton({
   }
   close.layoutMode = "NONE";
   close.resizeWithoutConstraints(size, size);
-  close.cornerRadius = Math.min(8, size / 2);
+  close.cornerRadius =
+    typeof radius === "number" ? radius : Math.min(8, size / 2);
   close.fills = [];
   close.strokes = [];
   close.clipsContent = false;
@@ -68912,6 +69163,35 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
     return slot.children.every(isGeneratedNavbarNavigationSlotChild);
   }
 
+  // The mark and name the plugin put in a header are drawn again, as the
+  // navigation is: kept, the variants drawn before a painter changed keep
+  // what it drew then, beside the ones drawn since. Navbar's three oldest
+  // variants and Sidebar's Default ones held a square mark the rest had
+  // drawn as a circle (2026-11-04). A designer's own content stays.
+  if (
+    (ownerName === "Navbar" && slotName === "Logo Slot") ||
+    (ownerName === "Sidebar" && slotName === "Header Slot")
+  ) {
+    return slot.children.every(isGeneratedBrandSlotChild);
+  }
+
+  // The tool rows too, which Sidebar's Default Tools variant kept 2 to the
+  // inline end of the rows above them.
+  if (ownerName === "Sidebar" && slotName === "Tools Slot") {
+    return slot.children.every(isGeneratedSidebarNavigationSlotChild);
+  }
+
+  // And what it puts in Navbar's other slots. Kept, the oldest variant of
+  // each Content held an Action, a Primary Action and a Utility Button at
+  // radius 8 and an avatar at 16, beside the 16 and 20 the rest were drawn
+  // with (2026-11-04).
+  if (ownerName === "Navbar" && NAVBAR_GENERATED_SLOT_CHILDREN[slotName]) {
+    const names = NAVBAR_GENERATED_SLOT_CHILDREN[slotName];
+    return slot.children.every(
+      (child) => child && names.indexOf(child.name) !== -1,
+    );
+  }
+
   // The header action the plugin put there is drawn again, so its pencil is
   // swapped in and tinted on every Update; one a designer put there stays.
   if (ownerName === "Card" && slotName === CARD_HEADER_ACTIONS_SLOT) {
@@ -68927,6 +69207,21 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
   }
 
   return false;
+}
+
+// What Navbar's painters put in each slot, by the names they give it.
+const NAVBAR_GENERATED_SLOT_CHILDREN = {
+  "Context Slot": ["Context Label Text", "Context Selector"],
+  "Primary Action Slot": ["Primary Action"],
+  "Actions Slot": ["Action", "Account Icon"],
+  "Utility Slot": ["Utility Button"],
+  "Account Slot": ["Account Avatar", "Account Chevron"],
+};
+
+function isGeneratedBrandSlotChild(node) {
+  if (!node) return false;
+  if (node.type === "FRAME" && node.name === "Brand Mark") return true;
+  return node.type === "TEXT" && /^(Logo Text|Title Text)$/.test(node.name);
 }
 
 function isGeneratedNavigationItemSlotChild(node) {
@@ -72229,7 +72524,9 @@ async function applyListboxDescriptionTypography(
   text.fontSize = 12;
   text.lineHeight = { unit: "PIXELS", value: 16 };
   text.textAutoResize = "WIDTH_AND_HEIGHT";
-  await applyTextStyleToNodeAsync(text, "fieldText", stats);
+  // React's text-xs (owned-selection.css): Field / Meta's 12/16. The style is
+  // what Figma draws; Field / Text drew 14/20 over the variables below.
+  await applyTextStyleToNodeAsync(text, "fieldMeta", stats);
 
   bindFloatVariable(
     text,
@@ -74532,6 +74829,7 @@ function createColorPickerSwatch({
   disabled,
   selected,
   size,
+  radius,
   variableByName,
   stats,
 }) {
@@ -74548,7 +74846,9 @@ function createColorPickerSwatch({
   swatch.paddingTop = 0;
   swatch.paddingBottom = 0;
   swatch.resizeWithoutConstraints(size, size);
-  swatch.cornerRadius = 6;
+  // The field's swatch is 6, concentric inside the field; a preset passes its
+  // own.
+  swatch.cornerRadius = typeof radius === "number" ? radius : 6;
   swatch.clipsContent = false;
   swatch.opacity = disabled ? 0.56 : 1;
   swatch.setSharedPluginData(RUN_NAMESPACE, "kind", "colorpicker-swatch");
@@ -75119,9 +75419,11 @@ function createColorPickerPresetGrid({ disabled, variableByName, stats }) {
     "#747B8B",
     "#C7CAD1",
   ];
-  const columns = 8;
-  const swatchSize = 30;
+  // React's grid: as many 2rem presets as fit, 8 apart (ColorPicker.tsx),
+  // which across the popover's 296 is seven.
+  const swatchSize = 32;
   const gap = 8;
+  const columns = Math.floor((296 + gap) / (swatchSize + gap));
   const rowCount = Math.ceil(presetValues.length / columns);
   grid.resizeWithoutConstraints(
     296,
@@ -75155,6 +75457,7 @@ function createColorPickerPresetGrid({ disabled, variableByName, stats }) {
         disabled,
         selected: index === 0,
         size: swatchSize,
+        radius: KOZMOS_RADIUS.control,
         variableByName,
         stats,
       });
@@ -76482,7 +76785,8 @@ async function syncEmptyStateVariantChildren({
   content.counterAxisSizingMode = "FIXED";
   content.primaryAxisAlignItems = "CENTER";
   content.counterAxisAlignItems = "CENTER";
-  content.itemSpacing = 4;
+  // React's title takes mb-1 over its description, mb-0.5 compact.
+  content.itemSpacing = size === "Compact" ? 2 : 4;
   content.paddingLeft = 0;
   content.paddingRight = 0;
   content.paddingTop = 0;
@@ -76545,6 +76849,7 @@ async function syncEmptyStateVariantChildren({
     content,
     variableByName,
     stats,
+    size,
   );
 }
 
@@ -76899,9 +77204,9 @@ function setLayoutSizingVertical(node, value) {
 // makes the frame, and the default moved under the file: frames from before
 // leave the edge out, frames made now lay it in. A painter that never says so
 // draws a variant added to an old set a pixel smaller inside on each side than
-// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and a
-// Toast tone's message wrapped where Neutral's did not. These say it, and say
-// out, as every variant drawn before carries it. figma:verify names a layer
+// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and
+// Navbar's new Action 74 by 22 beside 72 by 20. These say it, and say out, as
+// every variant drawn before carries it. figma:verify names a layer
 // whose edge takes room in some variants and not in others.
 function keepStrokeOutOfLayout(node) {
   setNodePropertyIfSupported(node, "strokesIncludedInLayout", false);
