@@ -4323,14 +4323,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  tokenValuePattern("Card/radius", 16),
-  "Card radius token",
+  tokenValuePattern("Card/radius", 20),
+  "Card radius token is the container's 20 (decision 118)",
 );
 assertContains(
   files.figma,
   source.figma,
-  tokenValuePattern("Tabs/list/height", 44),
-  "Tabs list height token",
+  tokenValuePattern("Tabs/list/height", 40),
+  "Tabs list height token is React's h-10",
 );
 assertContains(
   files.figma,
@@ -4341,8 +4341,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  tokenValuePattern("Tabs/trigger/height", 36),
-  "Tabs trigger height token",
+  tokenValuePattern("Tabs/trigger/height", 32),
+  "Tabs trigger height token is React's 32",
 );
 assertContains(
   files.figma,
@@ -5778,8 +5778,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  /async function updateToggleButtonVariant[\s\S]*?component\.cornerRadius = 12;[\s\S]*?syncFocusRing\(component,[\s\S]*?radius: 12,/,
-  "ToggleButton radius and focus ring radius use the same 12px base",
+  /async function updateToggleButtonVariant[\s\S]*?component\.cornerRadius = KOZMOS_RADIUS\.control;[\s\S]*?syncFocusRing\(component,[\s\S]*?radius: KOZMOS_RADIUS\.control,/,
+  "ToggleButton radius and focus ring radius use the same control base, 16",
 );
 assertContains(
   files.figma,
@@ -6156,7 +6156,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "const SIDEBAR_DEFAULT_WIDTH = 280",
+  "const SIDEBAR_DEFAULT_WIDTH = 256",
   "Figma Sidebar default width is a named shell dimension",
 );
 assertContains(
@@ -8442,8 +8442,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  tokenValuePattern("FileUpload/dropzone/radius", 16),
-  "Figma FileUpload dropzone radius token",
+  tokenValuePattern("FileUpload/dropzone/radius", 20),
+  "Figma FileUpload dropzone radius token is the container's 20",
 );
 assertContains(
   files.figma,
@@ -8640,8 +8640,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "const columns = 8",
-  "Figma ColorPicker preset grid uses an eight-column color stack",
+  "const columns = Math.floor((296 + gap) / (swatchSize + gap))",
+  "Figma ColorPicker preset grid fits as many 32 presets as React's auto-fit grid",
 );
 assertContains(
   files.figma,
