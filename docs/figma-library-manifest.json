@@ -16631,7 +16631,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Link"],
-          "mappedProps": ["href", "variant"],
+          "mappedProps": ["external", "href", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -19144,7 +19144,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Toast"],
-          "mappedProps": ["open"],
+          "mappedProps": ["open", "tone"],
           "unmappedProps": []
         },
         "props": [

@@ -11,9 +11,14 @@ figma.connect(
         Subtle: "subtle",
       }),
       children: figma.string("Link Text"),
+      // GAP-202: External shows the new-tab icon; off, the prop is left out.
+      external: figma.boolean("External", {
+        true: true,
+        false: undefined,
+      }),
     },
-    example: ({ children, variant }) => (
-      <Link href="#" variant={variant}>
+    example: ({ children, variant, external }) => (
+      <Link href="#" variant={variant} external={external}>
         {children}
       </Link>
     ),

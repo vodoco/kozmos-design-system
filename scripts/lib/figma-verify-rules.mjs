@@ -84,10 +84,10 @@ const isStroked = (node) =>
  *
  * Whether an auto-layout frame's stroke takes room (strokesIncludedInLayout)
  * is set when Figma makes the frame, and the default moved: frames an Update
- * keeps from years back leave their edge out, and frames it makes today lay it
- * in. So a variant added to an old set came out a pixel smaller inside on each
+ * keeps from before leave their edge out, and frames it makes now lay it in.
+ * So a variant added to an old set came out a pixel smaller inside on each
  * side than its siblings: Sidebar's Flush slots were 246 beside Default's 248,
- * and a Toast tone's message wrapped where Neutral's did not. A layer at the
+ * and Navbar's new Action 74 by 22 beside 72 by 20. A layer at the
  * same place in every variant is one design, so its edge takes room in all of
  * them or in none.
  */
@@ -111,6 +111,96 @@ export function strokeLayoutsThatDisagree(name, set) {
     found.push(
       `${name} / ${at ? at.slice(3) : "variant root"} — laid out in ${split.in.length} variant(s) (${split.in[0]}), not in ${split.out.length} (${split.out[0]})`,
     );
+  }
+  return found;
+}
+
+/**
+ * Variants that cover one another in `name`'s set, one line per pair.
+ *
+ * A set lays its variants out on a grid of fixed steps, and a variant that
+ * grows past its step covers the row under it: Card's Full grew to 234 on a
+ * 220 step and covered the Compact row by 14, EmptyState's by 8. Nothing
+ * else read where variants sit, so it showed only in a render.
+ */
+export function variantsThatOverlap(name, set) {
+  const boxes = (set.children || [])
+    .filter((child) => child.type === "COMPONENT" && child.visible !== false)
+    .map((child) => ({ name: child.name, box: child.absoluteBoundingBox }))
+    .filter((entry) => entry.box);
+  const found = [];
+  for (let i = 0; i < boxes.length; i += 1) {
+    for (let j = i + 1; j < boxes.length; j += 1) {
+      const a = boxes[i].box;
+      const b = boxes[j].box;
+      const across =
+        Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+      const down =
+        Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+      if (across > SHORT_TOLERANCE && down > SHORT_TOLERANCE) {
+        found.push(
+          `${name} / ${boxes[i].name} and ${boxes[j].name} — ${Math.round(across)}x${Math.round(down)} of one covers the other`,
+        );
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * One slot's content drawn with different numbers in different variants of
+ * `name`'s set, one line per slot.
+ *
+ * An Update keeps what a slot holds, so what the plugin put there stays as
+ * the painter of the day drew it, while a variant added later is drawn by
+ * today's. Navbar's oldest variants held an Action, a Primary Action and a
+ * Utility Button at radius 8 beside the 16 of the rest, and a brand mark the
+ * others drew as a circle (2026-11-04). The same layers, named and typed
+ * alike, with a different corner, gap or padding, are one content drawn twice.
+ */
+export function slotContentsThatDrift(name, set) {
+  const signature = (node) =>
+    `${node.name}:${node.type}${node.visible === false ? "/hidden" : ""}[r${node.cornerRadius ?? "-"} g${node.itemSpacing ?? "-"} p${node.paddingLeft ?? "-"}/${node.paddingTop ?? "-"}]` +
+    (node.children && node.type !== "INSTANCE"
+      ? `(${node.children.map(signature).join(",")})`
+      : "");
+  const shape = (drawn) => drawn.replace(/\[[^\]]*\]/g, "");
+  const bySlot = new Map();
+  for (const variant of set.children || []) {
+    if (variant.type !== "COMPONENT") continue;
+    (function find(node, depth) {
+      for (const child of node.children || []) {
+        if (
+          /Slot$/.test(child.name) &&
+          (child.type === "SLOT" || child.type === "FRAME")
+        ) {
+          const drawn = (child.children || []).map(signature).join(",");
+          if (!bySlot.has(child.name)) bySlot.set(child.name, new Map());
+          const forms = bySlot.get(child.name);
+          if (!forms.has(drawn)) forms.set(drawn, []);
+          forms.get(drawn).push(variant.name);
+        } else if (depth < 3) {
+          find(child, depth + 1);
+        }
+      }
+    })(variant, 0);
+  }
+  const found = [];
+  for (const [slot, forms] of bySlot) {
+    const byShape = new Map();
+    for (const [drawn, variants] of forms) {
+      const key = shape(drawn);
+      if (!byShape.has(key)) byShape.set(key, []);
+      byShape.get(key).push(variants);
+    }
+    for (const drawings of byShape.values()) {
+      if (drawings.length < 2) continue;
+      found.push(
+        `${name} / ${slot} — one content drawn ${drawings.length} ways: ${drawings
+          .map((variants) => `${variants.length} like ${variants[0]}`)
+          .join("; ")}`,
+      );
+    }
   }
   return found;
 }
