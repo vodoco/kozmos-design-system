@@ -17851,7 +17851,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Progress"],
-          "mappedProps": ["value"],
+          "mappedProps": [
+            "label",
+            "labelPlacement",
+            "shape",
+            "size",
+            "tone",
+            "value"
+          ],
           "unmappedProps": []
         },
         "props": [
