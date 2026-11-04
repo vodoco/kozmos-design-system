@@ -16,6 +16,7 @@
  *   glyphs    — a symbol typed as a character where an icon belongs
  *   short     — a layer stretched over its frame that stops short of it
  *   edges     — a layer whose stroke takes room in some variants, not others
+ *   overlap   — variants that cover one another in their set
  *
  * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read. With
  * `--page <file>` it reads a page saved as REST returns it instead, which is
@@ -28,6 +29,7 @@ import {
   isTypedGlyph,
   layersShortOfTheirFrame,
   strokeLayoutsThatDisagree,
+  variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
 
 const ROOT = process.cwd();
@@ -214,6 +216,7 @@ async function main() {
   const typedGlyphs = [];
   const shortLayers = [];
   const strokeLayouts = [];
+  const overlapping = [];
 
   for (const name of names) {
     if (!sets[name]) {
@@ -409,6 +412,11 @@ async function main() {
     strokeLayouts.push(...strokeLayoutsThatDisagree(name, set));
   }
 
+  // Variants that cover one another in their set: see the rule.
+  for (const [name, set] of Object.entries(sets)) {
+    overlapping.push(...variantsThatOverlap(name, set));
+  }
+
   // WCAG 1.4.3 exempts inactive controls, and a dimmed layer is a deliberate
   // de-emphasis rather than a contrast bug. Without these the report is mostly
   // disabled states repeated once per variant.
@@ -516,6 +524,7 @@ async function main() {
     "edges laid out in some variants and not in others",
     strokeLayouts,
   );
+  total += report("variants that cover one another in their set", overlapping);
 
   console.log(
     total === 0

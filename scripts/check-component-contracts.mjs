@@ -3142,8 +3142,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  `name: "Container/padding/x"`,
+  tokenValuePattern("Container/padding/x/window", 24),
   "Container padding component token",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  tokenValuePattern("Container/padding/x/panel", 16),
+  "Container panel padding component token",
 );
 assertContains(
   files.figmaUi,
@@ -4305,8 +4311,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  tokenValuePattern("Card/padding", 24),
+  tokenValuePattern("Card/padding/default", 24),
   "Card padding token",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  tokenValuePattern("Card/padding/compact", 16),
+  "Card compact padding token",
 );
 assertContains(
   files.figma,
@@ -7976,6 +7988,18 @@ assertContains(
   source.figma,
   "EmptyState/width/default",
   "EmptyState width token",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  tokenValuePattern("EmptyState/padding/compact", 16),
+  "EmptyState compact padding token",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  tokenValuePattern("EmptyState/icon/container/size/compact", 40),
+  "EmptyState compact icon container token",
 );
 assertContains(
   files.figma,

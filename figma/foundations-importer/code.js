@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "000c7d42cc45";
+const PLUGIN_BUILD = "b60304d344e1";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -79,6 +79,11 @@ const GRID_PREVIEW_ROWS = 2;
 const CONTAINER_INSETS = ["Window", "Panel"];
 function containerInsetPadding(inset) {
   return inset === "Panel" ? 16 : 24;
+}
+function containerInsetToken(inset) {
+  return inset === "Panel"
+    ? "Container/padding/x/panel"
+    : "Container/padding/x/window";
 }
 const CONTAINER_CENTERED = ["True", "False"];
 const SCROLL_AREA_ORIENTATIONS = ["Vertical", "Horizontal", "Both"];
@@ -435,6 +440,11 @@ const CARD_CONTENT = ["Basic", "Header", "Full"];
 const CARD_PADDINGS = ["Default", "Compact"];
 function cardPaddingLength(padding) {
   return padding === "Compact" ? 16 : 24;
+}
+function cardPaddingToken(padding) {
+  return padding === "Compact"
+    ? "Card/padding/compact"
+    : "Card/padding/default";
 }
 // CardHeader's actions (GAP-169): a slot at the header's end, after the title
 // and description, which keep the room before it, 16 away. It is as tall as
@@ -5028,6 +5038,20 @@ const BUTTON_LABEL_TEXT_STYLE_NAME = "Button / Label";
 let activeTextStyleByKey = {};
 let activeTextStyleSpecByKey = {};
 let activeTextStylesEnsured = false;
+// Component tokens whose name moved, renamed in place by Import Foundations
+// so each keeps its id and every binding to it. Made afresh instead, the old
+// variable would stay behind, bound; and the new names could not be made
+// beside it at all, since "Card/padding" cannot stay a variable once
+// "Card/padding/compact" makes it a group. Each split a token one axis bound
+// for every variant, which drew Compact and Panel as Default (2026-11-04).
+const RENAMED_COMPONENT_TOKENS = [
+  ["Card/padding", "Card/padding/default"],
+  ["Container/padding/x", "Container/padding/x/window"],
+  ["EmptyState/padding", "EmptyState/padding/default"],
+  ["EmptyState/gap", "EmptyState/gap/default"],
+  ["EmptyState/icon/container/size", "EmptyState/icon/container/size/default"],
+];
+
 const COMPONENT_FLOAT_TOKENS = [
   { name: "Button/width/small", value: 96, scopes: ["WIDTH_HEIGHT"] },
   { name: "Button/width/default", value: 112, scopes: ["WIDTH_HEIGHT"] },
@@ -5676,10 +5700,18 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Card/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
+  // Default and Compact are two tokens, because one bound to both undoes the
+  // axis: Figma draws a bound field's variable, whatever the painter wrote.
   {
-    name: "Card/padding",
+    name: "Card/padding/default",
     value: 24,
     alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Card/padding/compact",
+    value: 16,
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
@@ -8794,15 +8826,27 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
-    name: "EmptyState/padding",
+    name: "EmptyState/padding/default",
     value: 32,
     alias: "Layout/spacing/400",
     scopes: ["GAP"],
   },
   {
-    name: "EmptyState/gap",
+    name: "EmptyState/padding/compact",
     value: 16,
     alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "EmptyState/gap/default",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "EmptyState/gap/compact",
+    value: 8,
+    alias: "Layout/spacing/100",
     scopes: ["GAP"],
   },
   {
@@ -8812,8 +8856,13 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   {
-    name: "EmptyState/icon/container/size",
+    name: "EmptyState/icon/container/size/default",
     value: 64,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "EmptyState/icon/container/size/compact",
+    value: 40,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -9049,9 +9098,15 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
-    name: "Container/padding/x",
+    name: "Container/padding/x/window",
     value: 24,
     alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/x/panel",
+    value: 16,
+    alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
   {
@@ -23732,6 +23787,36 @@ async function ensureComponentRuntimeVariables(stats) {
     variableByName.set(variable.name, variable);
   }
 
+  for (const pair of RENAMED_COMPONENT_TOKENS) {
+    const from = variableByCollectionAndName.get(`${collection.id}:${pair[0]}`);
+    if (!from) continue;
+    if (variableByCollectionAndName.has(`${collection.id}:${pair[1]}`)) {
+      pushUniqueWarning(
+        stats,
+        `renamed-component-token:${pair[0]}`,
+        `${pair[0]} and ${pair[1]} both exist; ${pair[0]} was left as it is.`,
+      );
+      continue;
+    }
+    try {
+      from.name = pair[1];
+      from.setSharedPluginData(
+        RUN_NAMESPACE,
+        "cssVariable",
+        cssVariableForComponentToken(pair[1]),
+      );
+      variableByCollectionAndName.delete(`${collection.id}:${pair[0]}`);
+      variableByCollectionAndName.set(`${collection.id}:${pair[1]}`, from);
+      variableByName.delete(pair[0]);
+      variableByName.set(pair[1], from);
+      incrementStat(stats, "componentVariablesRenamed");
+    } catch (error) {
+      stats.warnings.push(
+        `${pair[0]}: could not rename to ${pair[1]} (${messageFor(error)})`,
+      );
+    }
+  }
+
   for (const token of COMPONENT_FLOAT_TOKENS) {
     const key = `${collection.id}:${token.name}`;
     let variable = variableByCollectionAndName.get(key);
@@ -26786,13 +26871,19 @@ function bindBadgeGeometryVariables(
     variableByName,
     stats,
   );
-  bindFloatVariable(
-    component,
-    "itemSpacing",
-    "Badge/gap",
-    variableByName,
-    stats,
-  );
+  // An icon badge holds its one mark and no gap; bound, it would draw
+  // Badge/gap's 4 whatever was written.
+  if (metrics.iconSize) {
+    clearBoundVariable(component, "itemSpacing", stats);
+  } else {
+    bindFloatVariable(
+      component,
+      "itemSpacing",
+      "Badge/gap",
+      variableByName,
+      stats,
+    );
+  }
   bindFloatVariable(
     component,
     "cornerRadius",
@@ -26968,7 +27059,9 @@ function bindCardGeometryVariables(
   variableByName,
   stats,
   headerText,
+  padding,
 ) {
+  const paddingToken = cardPaddingToken(padding);
   bindFloatVariable(
     component,
     "width",
@@ -26996,21 +27089,21 @@ function bindCardGeometryVariables(
     bindFloatVariable(
       section,
       "paddingLeft",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
     bindFloatVariable(
       section,
       "paddingRight",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
     bindFloatVariable(
       section,
       "paddingBottom",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
@@ -27020,7 +27113,7 @@ function bindCardGeometryVariables(
     bindFloatVariable(
       header,
       "paddingTop",
-      "Card/padding",
+      paddingToken,
       variableByName,
       stats,
     );
@@ -30559,7 +30652,9 @@ function bindEmptyStateGeometryVariables(
   textStack,
   variableByName,
   stats,
+  size,
 ) {
+  const sized = size === "Compact" ? "compact" : "default";
   bindFloatVariable(
     component,
     "width",
@@ -30570,35 +30665,35 @@ function bindEmptyStateGeometryVariables(
   bindFloatVariable(
     component,
     "paddingLeft",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingRight",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingTop",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingBottom",
-    "EmptyState/padding",
+    `EmptyState/padding/${sized}`,
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "itemSpacing",
-    "EmptyState/gap",
+    `EmptyState/gap/${sized}`,
     variableByName,
     stats,
   );
@@ -30616,8 +30711,8 @@ function bindEmptyStateGeometryVariables(
   if (iconContainer) {
     bindSizeVariables(
       iconContainer,
-      "EmptyState/icon/container/size",
-      "EmptyState/icon/container/size",
+      `EmptyState/icon/container/size/${sized}`,
+      `EmptyState/icon/container/size/${sized}`,
       variableByName,
       stats,
     );
@@ -42431,6 +42526,12 @@ async function createSidebarFooterSlot({
   return slot;
 }
 
+// The placeholder mark is a rounded square, as a product's logo and an app
+// icon are (Olcay, 2026-11-04). It was the control radius, and when that grew
+// to 16 a 32 mark became a circle in the variants drawn since, beside the
+// squares the older variants kept.
+const BRAND_MARK_RADIUS = 8;
+
 function createBrandMark(variableByName, stats, size) {
   const mark = figma.createFrame();
   mark.name = "Brand Mark";
@@ -42445,7 +42546,7 @@ function createBrandMark(variableByName, stats, size) {
   mark.paddingTop = 0;
   mark.paddingBottom = 0;
   mark.resizeWithoutConstraints(size, size);
-  mark.cornerRadius = KOZMOS_RADIUS.control;
+  mark.cornerRadius = BRAND_MARK_RADIUS;
   mark.fills = [
     paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
   ];
@@ -53920,9 +54021,17 @@ async function updateSingleAxisComponent(config) {
   return stats;
 }
 
+// A row starts at its step, or this far below the tallest variant of the
+// row above when its step would put it closer. Card's Full grew past its 220
+// step and covered the Compact row under it by 14, and EmptyState's by 8
+// (2026-11-04); every other set keeps the step it had.
+const SINGLE_AXIS_MIN_ROW_GAP = 24;
+
 function layoutSingleAxisVariants(componentSet, config) {
   if (!componentSet || !componentSet.children) return;
 
+  const placed = [];
+  const tallest = [];
   for (const child of componentSet.children) {
     if (child.type !== "COMPONENT") continue;
 
@@ -53933,9 +54042,20 @@ function layoutSingleAxisVariants(componentSet, config) {
     const secondIndex = config.axis2Values
       ? config.axis2Values.indexOf(props.second)
       : 0;
+    const row = secondIndex < 0 ? 0 : secondIndex;
     child.x = valueIndex * config.xStep;
-    child.y = (secondIndex < 0 ? 0 : secondIndex) * (config.yStep || 0);
+    placed.push({ child, row });
+    tallest[row] = Math.max(tallest[row] || 0, child.height);
   }
+
+  const rowTop = [0];
+  for (let row = 1; row < tallest.length; row += 1) {
+    rowTop[row] = Math.max(
+      row * (config.yStep || 0),
+      rowTop[row - 1] + (tallest[row - 1] || 0) + SINGLE_AXIS_MIN_ROW_GAP,
+    );
+  }
+  for (const entry of placed) entry.child.y = rowTop[entry.row];
 
   // A component set is a frame, and a frame keeps its size when its children
   // shrink. WayfindingCard was 700x1058 around 700x134 of variants -- 87% dead
@@ -57559,14 +57679,14 @@ async function updateContainerVariant(
   bindFloatVariable(
     component,
     "paddingLeft",
-    "Container/padding/x",
+    containerInsetToken(inset),
     variableByName,
     stats,
   );
   bindFloatVariable(
     component,
     "paddingRight",
-    "Container/padding/x",
+    containerInsetToken(inset),
     variableByName,
     stats,
   );
@@ -65193,12 +65313,13 @@ async function syncCardVariantChildren({
     variableByName,
     stats,
     headerText,
+    padding,
   );
   if (body && value === "Basic") {
     bindFloatVariable(
       body,
       "paddingTop",
-      "Card/padding",
+      cardPaddingToken(padding),
       variableByName,
       stats,
     );
@@ -68912,6 +69033,24 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
     return slot.children.every(isGeneratedNavbarNavigationSlotChild);
   }
 
+  // The mark and name the plugin put in a header are drawn again, as the
+  // navigation is: kept, the variants drawn before a painter changed keep
+  // what it drew then, beside the ones drawn since. Navbar's three oldest
+  // variants and Sidebar's Default ones held a square mark the rest had
+  // drawn as a circle (2026-11-04). A designer's own content stays.
+  if (
+    (ownerName === "Navbar" && slotName === "Logo Slot") ||
+    (ownerName === "Sidebar" && slotName === "Header Slot")
+  ) {
+    return slot.children.every(isGeneratedBrandSlotChild);
+  }
+
+  // The tool rows too, which Sidebar's Default Tools variant kept 2 to the
+  // inline end of the rows above them.
+  if (ownerName === "Sidebar" && slotName === "Tools Slot") {
+    return slot.children.every(isGeneratedSidebarNavigationSlotChild);
+  }
+
   // The header action the plugin put there is drawn again, so its pencil is
   // swapped in and tinted on every Update; one a designer put there stays.
   if (ownerName === "Card" && slotName === CARD_HEADER_ACTIONS_SLOT) {
@@ -68927,6 +69066,12 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
   }
 
   return false;
+}
+
+function isGeneratedBrandSlotChild(node) {
+  if (!node) return false;
+  if (node.type === "FRAME" && node.name === "Brand Mark") return true;
+  return node.type === "TEXT" && /^(Logo Text|Title Text)$/.test(node.name);
 }
 
 function isGeneratedNavigationItemSlotChild(node) {
@@ -76545,6 +76690,7 @@ async function syncEmptyStateVariantChildren({
     content,
     variableByName,
     stats,
+    size,
   );
 }
 
@@ -76899,9 +77045,9 @@ function setLayoutSizingVertical(node, value) {
 // makes the frame, and the default moved under the file: frames from before
 // leave the edge out, frames made now lay it in. A painter that never says so
 // draws a variant added to an old set a pixel smaller inside on each side than
-// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and a
-// Toast tone's message wrapped where Neutral's did not. These say it, and say
-// out, as every variant drawn before carries it. figma:verify names a layer
+// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and
+// Navbar's new Action 74 by 22 beside 72 by 20. These say it, and say out, as
+// every variant drawn before carries it. figma:verify names a layer
 // whose edge takes room in some variants and not in others.
 function keepStrokeOutOfLayout(node) {
   setNodePropertyIfSupported(node, "strokesIncludedInLayout", false);

@@ -43,6 +43,7 @@ import {
   isTypedGlyph,
   layersShortOfTheirFrame,
   strokeLayoutsThatDisagree,
+  variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
 import { expectations } from "./verify-figma-library.mjs";
 
@@ -4526,9 +4527,18 @@ section("Every binding is in its variable's scope");
       for (const each of Array.isArray(alias) ? alias : [alias]) {
         record(each, FIELD_SCOPES[field], node, owner);
       }
+      if (alias && !Array.isArray(alias) && typeof node[field] === "number") {
+        written.push({ alias, field, node, owner, value: node[field] });
+      }
     }
     for (const child of node.children || []) visit(child, owner);
   };
+  // Every number a painter wrote to a field it then bound. Figma draws the
+  // variable's value, not the painter's: on 2026-11-04 Card's Compact
+  // variants drew 24 all round, because the painter wrote 16 and bound every
+  // side to Card/padding, which is 24, and Container's Panel inset drew 24 for
+  // its 16 the same way. The harness keeps the painter's number.
+  const written = [];
 
   const sequence = [
     ...scoped.CORE_UPDATE_SEQUENCE,
@@ -4609,6 +4619,39 @@ section("Every binding is in its variable's scope");
   ok(
     unmapped.size === 0,
     `every bound field has a scope here (${[...unmapped].slice(0, 4).join(", ")})`,
+  );
+  // Variants a painter means to differ, drawn the same: one layer, written a
+  // different number in different variants of a set, and bound in all of them
+  // to one variable, whose value Figma draws in place of every one of them.
+  const byLayer = new Map();
+  for (const use of written) {
+    const variable = String(use.alias.id).replace(/^VariableID:/, "");
+    // A variant's root is named for its variant; it is one layer in all.
+    const layer =
+      use.node.parent && use.node.parent.type === "COMPONENT_SET"
+        ? "variant root"
+        : use.node.name;
+    const key = `${use.owner} / ${layer} ${use.field} bound to ${variable}`;
+    if (!byLayer.has(key))
+      byLayer.set(key, { values: new Set(), pills: 0, uses: 0 });
+    // A corner at half the shorter side or past it is a pill whatever its
+    // number, so FloatingActionButton's 24, 28 and 32 are one drawing.
+    const half = Math.min(use.node.width || 0, use.node.height || 0) / 2;
+    const layerUses = byLayer.get(key);
+    layerUses.values.add(use.value);
+    if (/Radius$/i.test(use.field) && half > 0 && use.value >= half) {
+      layerUses.pills += 1;
+    }
+    layerUses.uses += 1;
+  }
+  const flattened = [...byLayer]
+    .filter(([, layer]) => layer.values.size > 1 && layer.pills < layer.uses)
+    .map(
+      ([key, layer]) => `${key}, written ${[...layer.values].join(" and ")}`,
+    );
+  ok(
+    flattened.length === 0,
+    `no axis is undone by a binding: a layer written different numbers in different variants is not bound to one variable (${flattened.join("; ")})`,
   );
   const variables = new Set([...uses.values()].map((use) => use.variable));
   ok(
@@ -4799,6 +4842,151 @@ section("POIResultCard actions");
         );
       }),
     "every variant's host action shows through Host Action and says Host Action Text",
+  );
+}
+
+// --- Variants keep their own room, and kept defaults are drawn again --------------
+
+// Two things the renders of 2026-11-04 showed that no check read. Card's Full
+// grew to 234 on a 220 row step and covered the Compact row under it, as
+// EmptyState's did by 8: a row now starts at its step or 24 under the tallest
+// variant above it. And an Update kept what a header slot held, so Navbar's
+// three oldest variants and Sidebar's Default ones kept a square mark the
+// rest drew as a circle, and Sidebar's Default Tools rows kept an older
+// drawing 2 to the inline end: the plugin's own mark, name and tool rows are
+// drawn again, a designer's content is kept, and the mark is a rounded square
+// at 8 (Olcay).
+section("Variants keep their own room, and kept defaults are drawn again");
+{
+  const box = (node) => ({
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+  });
+  const laidOut = (heights, yStep) => {
+    const set = new MockNode("COMPONENT_SET", "Card");
+    for (const [index, height] of heights.entries()) {
+      const variant = new MockNode("COMPONENT", "");
+      variant.name = `Content=${["Basic", "Header", "Full"][index % 3]}, Padding=${index < 3 ? "Default" : "Compact"}`;
+      variant.resizeWithoutConstraints(360, height);
+      set.appendChild(variant);
+    }
+    plugin.layoutSingleAxisVariants(set, {
+      values: ["Basic", "Header", "Full"],
+      axis2Values: ["Default", "Compact"],
+      xStep: 420,
+      yStep,
+      parseVariantName: plugin.parseCardVariantName,
+    });
+    for (const variant of set.children) {
+      variant.absoluteBoundingBox = box(variant);
+    }
+    return set;
+  };
+  const grown = laidOut([92, 166, 234, 92, 150, 202], 220);
+  const covered = variantsThatOverlap("Card", grown);
+  const compactTop = grown.children[3].y;
+  ok(
+    covered.length === 0 && compactTop === 234 + 24,
+    `a row starts 24 under the tallest variant above it when its step is short (Compact at ${compactTop}; ${covered.join("; ")})`,
+  );
+  const roomy = laidOut([92, 120, 150, 92, 110, 130], 220);
+  ok(
+    roomy.children[3].y === 220,
+    `and keeps its step when that is room enough (${roomy.children[3].y})`,
+  );
+
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const drawn = { variableByName: tokens.variableByName, fonts: FONTS };
+  const markIn = (component, slotName) => {
+    const slot = named(component, slotName);
+    return slot && named(slot, "Brand Mark");
+  };
+  const checks = [
+    {
+      what: "Navbar",
+      slot: "Logo Slot",
+      props: {
+        content: "Basic",
+        navigationAlign: "Center",
+        logoInset: "False",
+      },
+      create: (props) =>
+        plugin.createNavbarVariant({ props, ...drawn, stats: freshStats() }),
+      update: (component, props) =>
+        plugin.updateNavbarVariant(component, {
+          props,
+          ...drawn,
+          stats: freshStats(),
+        }),
+    },
+    {
+      what: "Sidebar",
+      slot: "Header Slot",
+      props: { content: "Basic", inset: "Default" },
+      create: (props) =>
+        plugin.createSidebarVariant({ props, ...drawn, stats: freshStats() }),
+      update: (component, props) =>
+        plugin.updateSidebarVariant(component, {
+          props,
+          ...drawn,
+          stats: freshStats(),
+        }),
+    },
+  ];
+  for (const check of checks) {
+    const component = await check.create(check.props);
+    const fresh = markIn(component, check.slot);
+    ok(
+      fresh && fresh.cornerRadius === 8,
+      `${check.what}: the mark is a rounded square, 8 on its 32 (${fresh ? fresh.cornerRadius : "no mark"})`,
+    );
+    // As an older painter left it: the control radius, before it grew.
+    if (fresh) fresh.cornerRadius = 16;
+    await check.update(component, check.props);
+    const again = markIn(component, check.slot);
+    ok(
+      again && again.cornerRadius === 8,
+      `${check.what}: an Update draws the plugin's mark again (${again ? again.cornerRadius : "no mark"})`,
+    );
+
+    // A designer's logo in the slot keeps the slot as it is.
+    const designed = await check.create(check.props);
+    const slot = named(designed, check.slot);
+    const logo = new MockNode("FRAME", "Customer Logo");
+    if (slot) slot.appendChild(logo);
+    await check.update(designed, check.props);
+    const after = named(designed, check.slot);
+    ok(
+      after && named(after, "Customer Logo"),
+      `${check.what}: a designer's logo in the ${check.slot} is kept`,
+    );
+  }
+
+  // Sidebar's tool rows, kept from an older drawing, are drawn again.
+  const toolsProps = { content: "Tools", inset: "Default" };
+  const tools = await plugin.createSidebarVariant({
+    props: toolsProps,
+    ...drawn,
+    stats: freshStats(),
+  });
+  const toolRow = () => {
+    const slot = named(tools, "Tools Slot");
+    return slot && named(slot, "Tool Text Row");
+  };
+  const first = toolRow();
+  const freshGap = first && first.itemSpacing;
+  if (first) first.itemSpacing = freshGap + 2;
+  await plugin.updateSidebarVariant(tools, {
+    props: toolsProps,
+    ...drawn,
+    stats: freshStats(),
+  });
+  const redrawn = toolRow();
+  ok(
+    first && redrawn && redrawn !== first && redrawn.itemSpacing === freshGap,
+    `Sidebar: an Update draws the Tools rows again (${redrawn ? redrawn.itemSpacing : "none"} of ${freshGap}, ${redrawn === first ? "the kept row" : "a new row"})`,
   );
 }
 
@@ -11789,10 +11977,10 @@ section("GAP-202: Link's External shows the new-tab icon");
 // leave the edge out, and frames it makes now lay it in. The Update of 3 Nov
 // 2026 added variants to seven old sets, and each came out a pixel smaller
 // inside on each side than its siblings: Sidebar's Flush slots 246 beside
-// Default's 248, Navbar's new Action 74 by 22 beside 72 by 20, a Toast tone's
-// message wrapped. Here each set's older variants are drawn under the old
-// default and its newer ones under today's, and figma:verify's rule reads the
-// set; then Navbar is updated over an Action the last Update left laid in.
+// Default's 248, Navbar's new Action 74 by 22 beside 72 by 20. Here each set's
+// older variants are drawn under the old default and its newer ones under
+// today's, and figma:verify's rule reads the set; then Navbar is updated over
+// an Action the last Update left laid in.
 section("An edge takes room in every variant or in none");
 {
   const tokens = payloadVariables([...variableByName.keys()]);
@@ -11949,6 +12137,126 @@ section("An edge takes room in every variant or in none");
   ok(
     action && after === action && after.strokesIncludedInLayout === false,
     `Navbar: the kept Action's edge is out of the layout after an Update (${after ? after.strokesIncludedInLayout : "no Action"}, ${after === action ? "the same layer" : "a new layer"})`,
+  );
+}
+
+// --- A token split in two keeps its bindings ---------------------------------------
+
+// Card, Container and EmptyState bound one padding token for every variant, so
+// Compact and Panel drew as Default (2026-11-04). Each token is now two, and
+// the old name becomes the default one in place: Import Foundations renames
+// the variable, so it keeps its id and every node bound to it, and makes the
+// new sibling beside it. Run twice, the second run changes nothing.
+section("A token split in two keeps its bindings");
+{
+  const tokenFigma = createFigmaMock({
+    pages: [new MockNode("PAGE", "Components")],
+  });
+  const holder = (extra) =>
+    Object.assign(
+      {
+        data: {},
+        setSharedPluginData(_namespace, key, value) {
+          this.data[key] = value;
+        },
+        getSharedPluginData(_namespace, key) {
+          return this.data[key] || "";
+        },
+      },
+      extra,
+    );
+  const collections = [];
+  const variables = [];
+  tokenFigma.variables.getLocalVariableCollectionsAsync = async () =>
+    collections;
+  tokenFigma.variables.getLocalVariablesAsync = async () => variables;
+  tokenFigma.variables.createVariableCollection = (name) => {
+    const collection = holder({
+      id: `VariableCollectionId:${name}`,
+      name,
+      modes: [
+        { modeId: "light", name: "Light" },
+        { modeId: "dark", name: "Dark" },
+      ],
+      renameMode() {},
+      addMode(next) {
+        this.modes.push({ modeId: next.toLowerCase(), name: next });
+        return next.toLowerCase();
+      },
+    });
+    collections.push(collection);
+    return collection;
+  };
+  let made = 0;
+  tokenFigma.variables.createVariable = (name, collection, type) => {
+    made += 1;
+    const variable = holder({
+      id: `VariableID:made-${made}`,
+      name,
+      resolvedType: type,
+      variableCollectionId:
+        typeof collection === "string" ? collection : collection.id,
+      valuesByMode: {},
+      scopes: [],
+      codeSyntax: {},
+      setValueForMode(mode, value) {
+        this.valuesByMode[mode] = value;
+      },
+      setVariableCodeSyntax(platform, value) {
+        this.codeSyntax[platform] = value;
+      },
+    });
+    variables.push(variable);
+    return variable;
+  };
+  const tokenPlugin = loadPlugin({ pluginPath: PLUGIN, figma: tokenFigma });
+  const renamed = tokenPlugin.RENAMED_COMPONENT_TOKENS || [];
+  ok(
+    renamed.length === 5,
+    `five tokens are split: Card's padding, Container's inset, EmptyState's padding, gap and icon (${renamed.length})`,
+  );
+  // The file as it stands: each old token, bound by id.
+  const components = tokenFigma.variables.createVariableCollection(
+    tokenPlugin.COMPONENT_COLLECTION_NAME,
+  );
+  const before = new Map();
+  for (const [from] of renamed) {
+    const variable = tokenFigma.variables.createVariable(
+      from,
+      components,
+      "FLOAT",
+    );
+    before.set(from, variable.id);
+  }
+  const runOnce = async () => {
+    const stats = freshStats();
+    await tokenPlugin.ensureComponentRuntimeVariables(stats);
+    return stats;
+  };
+  const first = await runOnce();
+  const named = (name) => variables.filter((v) => v.name === name);
+  for (const [from, to] of renamed) {
+    const kept = variables.find((v) => v.id === before.get(from));
+    const sibling = to.replace(/\/(default|window)$/, (_m, which) =>
+      which === "window" ? "/panel" : "/compact",
+    );
+    ok(
+      kept &&
+        kept.name === to &&
+        named(from).length === 0 &&
+        named(to).length === 1 &&
+        named(sibling).length === 1,
+      `${from} becomes ${to} in place, with ${sibling} beside it (${kept ? kept.name : "gone"}; ${named(from).length} left under the old name)`,
+    );
+  }
+  const count = variables.length;
+  const second = await runOnce();
+  ok(
+    variables.length === count &&
+      renamed.every(([, to]) => named(to).length === 1) &&
+      !(second.componentVariablesRenamed > 0) &&
+      first.componentVariablesRenamed === renamed.length,
+    `a second run renames and makes nothing (${first.componentVariablesRenamed} renamed, then ${second.componentVariablesRenamed || 0}; ${count} then ${variables.length} variables)`,
   );
 }
 
