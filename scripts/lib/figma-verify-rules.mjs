@@ -84,10 +84,10 @@ const isStroked = (node) =>
  *
  * Whether an auto-layout frame's stroke takes room (strokesIncludedInLayout)
  * is set when Figma makes the frame, and the default moved: frames an Update
- * keeps from years back leave their edge out, and frames it makes today lay it
- * in. So a variant added to an old set came out a pixel smaller inside on each
+ * keeps from before leave their edge out, and frames it makes now lay it in.
+ * So a variant added to an old set came out a pixel smaller inside on each
  * side than its siblings: Sidebar's Flush slots were 246 beside Default's 248,
- * and a Toast tone's message wrapped where Neutral's did not. A layer at the
+ * and Navbar's new Action 74 by 22 beside 72 by 20. A layer at the
  * same place in every variant is one design, so its edge takes room in all of
  * them or in none.
  */
@@ -111,6 +111,38 @@ export function strokeLayoutsThatDisagree(name, set) {
     found.push(
       `${name} / ${at ? at.slice(3) : "variant root"} — laid out in ${split.in.length} variant(s) (${split.in[0]}), not in ${split.out.length} (${split.out[0]})`,
     );
+  }
+  return found;
+}
+
+/**
+ * Variants that cover one another in `name`'s set, one line per pair.
+ *
+ * A set lays its variants out on a grid of fixed steps, and a variant that
+ * grows past its step covers the row under it: Card's Full grew to 234 on a
+ * 220 step and covered the Compact row by 14, EmptyState's by 8. Nothing
+ * else read where variants sit, so it showed only in a render.
+ */
+export function variantsThatOverlap(name, set) {
+  const boxes = (set.children || [])
+    .filter((child) => child.type === "COMPONENT" && child.visible !== false)
+    .map((child) => ({ name: child.name, box: child.absoluteBoundingBox }))
+    .filter((entry) => entry.box);
+  const found = [];
+  for (let i = 0; i < boxes.length; i += 1) {
+    for (let j = i + 1; j < boxes.length; j += 1) {
+      const a = boxes[i].box;
+      const b = boxes[j].box;
+      const across =
+        Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+      const down =
+        Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+      if (across > SHORT_TOLERANCE && down > SHORT_TOLERANCE) {
+        found.push(
+          `${name} / ${boxes[i].name} and ${boxes[j].name} — ${Math.round(across)}x${Math.round(down)} of one covers the other`,
+        );
+      }
+    }
   }
   return found;
 }
