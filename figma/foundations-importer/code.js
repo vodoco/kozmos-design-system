@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "831424a69767";
+const PLUGIN_BUILD = "fa86312e5dfd";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1031,10 +1031,10 @@ function markControlSurface(node) {
 
 // Each floor is a React Button, rounded-control (FloorSelector.tsx).
 const FLOOR_SELECTOR_ITEM_RADIUS = KOZMOS_RADIUS.control;
-// The tray keeps the 11 it was drawn at (the old item's 6 across a 5 inset)
-// until its corner is ruled: React's tray is rounded-container, 20, and
-// decision 102 makes map controls 16.
-const FLOOR_SELECTOR_TRAY_RADIUS = 11;
+// The tray is a container, rounded-container in React (FloorSelector.tsx):
+// 20, the 16 floors' corner across its 4 inset. Decision 102's 16 is for map
+// buttons; the tray holds them (Olcay's 4 Nov ruling: containers are 20).
+const FLOOR_SELECTOR_TRAY_RADIUS = KOZMOS_RADIUS.container;
 
 const SIDEBAR_CONTENT = ["Basic", "Sections", "Tools", "Rail"];
 // The room above the first slot, as React's inset (GAP-199). Default pads the

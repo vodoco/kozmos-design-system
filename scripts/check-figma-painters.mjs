@@ -12609,8 +12609,9 @@ section("Figma draws React's values (the 4 Nov triage)");
       ),
     `each floor is a Button, 16, through FloorSelector/item/radius (${floorItems.map((item) => `${shown(item, "cornerRadius")} via ${boundName(item, "cornerRadius")}`).join(", ")})`,
   );
-  // A control keeps its corner inside the tray: tokens:radius:nesting skips
-  // what carries the stamp, and a 16 floor in the 11 tray would fail it.
+  // A control keeps its corner inside the tray: tokens:radius:nesting reads
+  // what carries the stamp as a control, and the 20 tray hugs its 16 floors
+  // across the 4 inset either way.
   ok(
     floorItems.length === 3 &&
       floorItems.every(
@@ -12621,8 +12622,8 @@ section("Figma draws React's values (the 4 Nov triage)");
     `and each is stamped a control, so the nesting check reads it as one (${floorItems.map((item) => item.getSharedPluginData("kozmos_ds_importer", "surface") || "none").join(", ")})`,
   );
   ok(
-    floors && corner(floors, "topLeftRadius") === 11,
-    `and the tray keeps its 11 until its corner is ruled (${floors && corner(floors, "topLeftRadius")})`,
+    floors && corner(floors, "topLeftRadius") === 20,
+    `and the tray is a container, 20, the floors' 16 across its 4 inset (${floors && corner(floors, "topLeftRadius")})`,
   );
   const picker = await paint("updateColorPickerVariant", {
     state: "Default",
