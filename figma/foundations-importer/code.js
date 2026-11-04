@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "000c7d42cc45";
+const PLUGIN_BUILD = "578341ffc89e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -42431,6 +42431,12 @@ async function createSidebarFooterSlot({
   return slot;
 }
 
+// The placeholder mark is a rounded square, as a product's logo and an app
+// icon are (Olcay, 2026-11-04). It was the control radius, and when that grew
+// to 16 a 32 mark became a circle in the variants drawn since, beside the
+// squares the older variants kept.
+const BRAND_MARK_RADIUS = 8;
+
 function createBrandMark(variableByName, stats, size) {
   const mark = figma.createFrame();
   mark.name = "Brand Mark";
@@ -42445,7 +42451,7 @@ function createBrandMark(variableByName, stats, size) {
   mark.paddingTop = 0;
   mark.paddingBottom = 0;
   mark.resizeWithoutConstraints(size, size);
-  mark.cornerRadius = KOZMOS_RADIUS.control;
+  mark.cornerRadius = BRAND_MARK_RADIUS;
   mark.fills = [
     paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
   ];
@@ -53920,9 +53926,17 @@ async function updateSingleAxisComponent(config) {
   return stats;
 }
 
+// A row starts at its step, or this far below the tallest variant of the
+// row above when its step would put it closer. Card's Full grew past its 220
+// step and covered the Compact row under it by 14, and EmptyState's by 8
+// (2026-11-04); every other set keeps the step it had.
+const SINGLE_AXIS_MIN_ROW_GAP = 24;
+
 function layoutSingleAxisVariants(componentSet, config) {
   if (!componentSet || !componentSet.children) return;
 
+  const placed = [];
+  const tallest = [];
   for (const child of componentSet.children) {
     if (child.type !== "COMPONENT") continue;
 
@@ -53933,9 +53947,20 @@ function layoutSingleAxisVariants(componentSet, config) {
     const secondIndex = config.axis2Values
       ? config.axis2Values.indexOf(props.second)
       : 0;
+    const row = secondIndex < 0 ? 0 : secondIndex;
     child.x = valueIndex * config.xStep;
-    child.y = (secondIndex < 0 ? 0 : secondIndex) * (config.yStep || 0);
+    placed.push({ child, row });
+    tallest[row] = Math.max(tallest[row] || 0, child.height);
   }
+
+  const rowTop = [0];
+  for (let row = 1; row < tallest.length; row += 1) {
+    rowTop[row] = Math.max(
+      row * (config.yStep || 0),
+      rowTop[row - 1] + (tallest[row - 1] || 0) + SINGLE_AXIS_MIN_ROW_GAP,
+    );
+  }
+  for (const entry of placed) entry.child.y = rowTop[entry.row];
 
   // A component set is a frame, and a frame keeps its size when its children
   // shrink. WayfindingCard was 700x1058 around 700x134 of variants -- 87% dead
@@ -68912,6 +68937,24 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
     return slot.children.every(isGeneratedNavbarNavigationSlotChild);
   }
 
+  // The mark and name the plugin put in a header are drawn again, as the
+  // navigation is: kept, the variants drawn before a painter changed keep
+  // what it drew then, beside the ones drawn since. Navbar's three oldest
+  // variants and Sidebar's Default ones held a square mark the rest had
+  // drawn as a circle (2026-11-04). A designer's own content stays.
+  if (
+    (ownerName === "Navbar" && slotName === "Logo Slot") ||
+    (ownerName === "Sidebar" && slotName === "Header Slot")
+  ) {
+    return slot.children.every(isGeneratedBrandSlotChild);
+  }
+
+  // The tool rows too, which Sidebar's Default Tools variant kept 2 to the
+  // inline end of the rows above them.
+  if (ownerName === "Sidebar" && slotName === "Tools Slot") {
+    return slot.children.every(isGeneratedSidebarNavigationSlotChild);
+  }
+
   // The header action the plugin put there is drawn again, so its pencil is
   // swapped in and tinted on every Update; one a designer put there stays.
   if (ownerName === "Card" && slotName === CARD_HEADER_ACTIONS_SLOT) {
@@ -68927,6 +68970,12 @@ function shouldRefreshGeneratedShellSlotDefaults(ownerName, slotName, slot) {
   }
 
   return false;
+}
+
+function isGeneratedBrandSlotChild(node) {
+  if (!node) return false;
+  if (node.type === "FRAME" && node.name === "Brand Mark") return true;
+  return node.type === "TEXT" && /^(Logo Text|Title Text)$/.test(node.name);
 }
 
 function isGeneratedNavigationItemSlotChild(node) {
@@ -76899,9 +76948,9 @@ function setLayoutSizingVertical(node, value) {
 // makes the frame, and the default moved under the file: frames from before
 // leave the edge out, frames made now lay it in. A painter that never says so
 // draws a variant added to an old set a pixel smaller inside on each side than
-// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and a
-// Toast tone's message wrapped where Neutral's did not. These say it, and say
-// out, as every variant drawn before carries it. figma:verify names a layer
+// its siblings: Sidebar's Flush slots came out 246 beside Default's 248, and
+// Navbar's new Action 74 by 22 beside 72 by 20. These say it, and say out, as
+// every variant drawn before carries it. figma:verify names a layer
 // whose edge takes room in some variants and not in others.
 function keepStrokeOutOfLayout(node) {
   setNodePropertyIfSupported(node, "strokesIncludedInLayout", false);
