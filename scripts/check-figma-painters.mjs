@@ -4526,9 +4526,18 @@ section("Every binding is in its variable's scope");
       for (const each of Array.isArray(alias) ? alias : [alias]) {
         record(each, FIELD_SCOPES[field], node, owner);
       }
+      if (alias && !Array.isArray(alias) && typeof node[field] === "number") {
+        written.push({ alias, field, node, owner, value: node[field] });
+      }
     }
     for (const child of node.children || []) visit(child, owner);
   };
+  // Every number a painter wrote to a field it then bound. Figma draws the
+  // variable's value, not the painter's: on 2026-11-04 Card's Compact
+  // variants drew 24 all round, because the painter wrote 16 and bound every
+  // side to Card/padding, which is 24, and Container's Panel inset drew 24 for
+  // its 16 the same way. The harness keeps the painter's number.
+  const written = [];
 
   const sequence = [
     ...scoped.CORE_UPDATE_SEQUENCE,
@@ -4609,6 +4618,39 @@ section("Every binding is in its variable's scope");
   ok(
     unmapped.size === 0,
     `every bound field has a scope here (${[...unmapped].slice(0, 4).join(", ")})`,
+  );
+  // Variants a painter means to differ, drawn the same: one layer, written a
+  // different number in different variants of a set, and bound in all of them
+  // to one variable, whose value Figma draws in place of every one of them.
+  const byLayer = new Map();
+  for (const use of written) {
+    const variable = String(use.alias.id).replace(/^VariableID:/, "");
+    // A variant's root is named for its variant; it is one layer in all.
+    const layer =
+      use.node.parent && use.node.parent.type === "COMPONENT_SET"
+        ? "variant root"
+        : use.node.name;
+    const key = `${use.owner} / ${layer} ${use.field} bound to ${variable}`;
+    if (!byLayer.has(key))
+      byLayer.set(key, { values: new Set(), pills: 0, uses: 0 });
+    // A corner at half the shorter side or past it is a pill whatever its
+    // number, so FloatingActionButton's 24, 28 and 32 are one drawing.
+    const half = Math.min(use.node.width || 0, use.node.height || 0) / 2;
+    const layerUses = byLayer.get(key);
+    layerUses.values.add(use.value);
+    if (/Radius$/i.test(use.field) && half > 0 && use.value >= half) {
+      layerUses.pills += 1;
+    }
+    layerUses.uses += 1;
+  }
+  const flattened = [...byLayer]
+    .filter(([, layer]) => layer.values.size > 1 && layer.pills < layer.uses)
+    .map(
+      ([key, layer]) => `${key}, written ${[...layer.values].join(" and ")}`,
+    );
+  ok(
+    flattened.length === 0,
+    `no axis is undone by a binding: a layer written different numbers in different variants is not bound to one variable (${flattened.join("; ")})`,
   );
   const variables = new Set([...uses.values()].map((use) => use.variable));
   ok(
@@ -11949,6 +11991,126 @@ section("An edge takes room in every variant or in none");
   ok(
     action && after === action && after.strokesIncludedInLayout === false,
     `Navbar: the kept Action's edge is out of the layout after an Update (${after ? after.strokesIncludedInLayout : "no Action"}, ${after === action ? "the same layer" : "a new layer"})`,
+  );
+}
+
+// --- A token split in two keeps its bindings ---------------------------------------
+
+// Card, Container and EmptyState bound one padding token for every variant, so
+// Compact and Panel drew as Default (2026-11-04). Each token is now two, and
+// the old name becomes the default one in place: Import Foundations renames
+// the variable, so it keeps its id and every node bound to it, and makes the
+// new sibling beside it. Run twice, the second run changes nothing.
+section("A token split in two keeps its bindings");
+{
+  const tokenFigma = createFigmaMock({
+    pages: [new MockNode("PAGE", "Components")],
+  });
+  const holder = (extra) =>
+    Object.assign(
+      {
+        data: {},
+        setSharedPluginData(_namespace, key, value) {
+          this.data[key] = value;
+        },
+        getSharedPluginData(_namespace, key) {
+          return this.data[key] || "";
+        },
+      },
+      extra,
+    );
+  const collections = [];
+  const variables = [];
+  tokenFigma.variables.getLocalVariableCollectionsAsync = async () =>
+    collections;
+  tokenFigma.variables.getLocalVariablesAsync = async () => variables;
+  tokenFigma.variables.createVariableCollection = (name) => {
+    const collection = holder({
+      id: `VariableCollectionId:${name}`,
+      name,
+      modes: [
+        { modeId: "light", name: "Light" },
+        { modeId: "dark", name: "Dark" },
+      ],
+      renameMode() {},
+      addMode(next) {
+        this.modes.push({ modeId: next.toLowerCase(), name: next });
+        return next.toLowerCase();
+      },
+    });
+    collections.push(collection);
+    return collection;
+  };
+  let made = 0;
+  tokenFigma.variables.createVariable = (name, collection, type) => {
+    made += 1;
+    const variable = holder({
+      id: `VariableID:made-${made}`,
+      name,
+      resolvedType: type,
+      variableCollectionId:
+        typeof collection === "string" ? collection : collection.id,
+      valuesByMode: {},
+      scopes: [],
+      codeSyntax: {},
+      setValueForMode(mode, value) {
+        this.valuesByMode[mode] = value;
+      },
+      setVariableCodeSyntax(platform, value) {
+        this.codeSyntax[platform] = value;
+      },
+    });
+    variables.push(variable);
+    return variable;
+  };
+  const tokenPlugin = loadPlugin({ pluginPath: PLUGIN, figma: tokenFigma });
+  const renamed = tokenPlugin.RENAMED_COMPONENT_TOKENS || [];
+  ok(
+    renamed.length === 5,
+    `five tokens are split: Card's padding, Container's inset, EmptyState's padding, gap and icon (${renamed.length})`,
+  );
+  // The file as it stands: each old token, bound by id.
+  const components = tokenFigma.variables.createVariableCollection(
+    tokenPlugin.COMPONENT_COLLECTION_NAME,
+  );
+  const before = new Map();
+  for (const [from] of renamed) {
+    const variable = tokenFigma.variables.createVariable(
+      from,
+      components,
+      "FLOAT",
+    );
+    before.set(from, variable.id);
+  }
+  const runOnce = async () => {
+    const stats = freshStats();
+    await tokenPlugin.ensureComponentRuntimeVariables(stats);
+    return stats;
+  };
+  const first = await runOnce();
+  const named = (name) => variables.filter((v) => v.name === name);
+  for (const [from, to] of renamed) {
+    const kept = variables.find((v) => v.id === before.get(from));
+    const sibling = to.replace(/\/(default|window)$/, (_m, which) =>
+      which === "window" ? "/panel" : "/compact",
+    );
+    ok(
+      kept &&
+        kept.name === to &&
+        named(from).length === 0 &&
+        named(to).length === 1 &&
+        named(sibling).length === 1,
+      `${from} becomes ${to} in place, with ${sibling} beside it (${kept ? kept.name : "gone"}; ${named(from).length} left under the old name)`,
+    );
+  }
+  const count = variables.length;
+  const second = await runOnce();
+  ok(
+    variables.length === count &&
+      renamed.every(([, to]) => named(to).length === 1) &&
+      !(second.componentVariablesRenamed > 0) &&
+      first.componentVariablesRenamed === renamed.length,
+    `a second run renames and makes nothing (${first.componentVariablesRenamed} renamed, then ${second.componentVariablesRenamed || 0}; ${count} then ${variables.length} variables)`,
   );
 }
 
