@@ -16631,7 +16631,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Link"],
-          "mappedProps": ["href", "variant"],
+          "mappedProps": ["external", "href", "variant"],
           "unmappedProps": []
         },
         "props": [
