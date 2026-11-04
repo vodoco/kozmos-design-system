@@ -17,6 +17,7 @@
  *   short     — a layer stretched over its frame that stops short of it
  *   edges     — a layer whose stroke takes room in some variants, not others
  *   overlap   — variants that cover one another in their set
+ *   slots     — one slot's content drawn with different numbers by variant
  *
  * Needs FIGMA_ACCESS_TOKEN (env or .env) with file_content:read. With
  * `--page <file>` it reads a page saved as REST returns it instead, which is
@@ -28,6 +29,7 @@ import { fileURLToPath } from "node:url";
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  slotContentsThatDrift,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
@@ -217,6 +219,7 @@ async function main() {
   const shortLayers = [];
   const strokeLayouts = [];
   const overlapping = [];
+  const slotDrift = [];
 
   for (const name of names) {
     if (!sets[name]) {
@@ -417,6 +420,12 @@ async function main() {
     overlapping.push(...variantsThatOverlap(name, set));
   }
 
+  // One slot's content drawn differently in different variants: an Update
+  // keeps what a slot holds. See the rule.
+  for (const [name, set] of Object.entries(sets)) {
+    slotDrift.push(...slotContentsThatDrift(name, set));
+  }
+
   // WCAG 1.4.3 exempts inactive controls, and a dimmed layer is a deliberate
   // de-emphasis rather than a contrast bug. Without these the report is mostly
   // disabled states repeated once per variant.
@@ -525,6 +534,10 @@ async function main() {
     strokeLayouts,
   );
   total += report("variants that cover one another in their set", overlapping);
+  total += report(
+    "slot content drawn differently in different variants",
+    slotDrift,
+  );
 
   console.log(
     total === 0

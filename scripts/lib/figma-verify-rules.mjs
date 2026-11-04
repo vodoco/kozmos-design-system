@@ -146,3 +146,61 @@ export function variantsThatOverlap(name, set) {
   }
   return found;
 }
+
+/**
+ * One slot's content drawn with different numbers in different variants of
+ * `name`'s set, one line per slot.
+ *
+ * An Update keeps what a slot holds, so what the plugin put there stays as
+ * the painter of the day drew it, while a variant added later is drawn by
+ * today's. Navbar's oldest variants held an Action, a Primary Action and a
+ * Utility Button at radius 8 beside the 16 of the rest, and a brand mark the
+ * others drew as a circle (2026-11-04). The same layers, named and typed
+ * alike, with a different corner, gap or padding, are one content drawn twice.
+ */
+export function slotContentsThatDrift(name, set) {
+  const signature = (node) =>
+    `${node.name}:${node.type}${node.visible === false ? "/hidden" : ""}[r${node.cornerRadius ?? "-"} g${node.itemSpacing ?? "-"} p${node.paddingLeft ?? "-"}/${node.paddingTop ?? "-"}]` +
+    (node.children && node.type !== "INSTANCE"
+      ? `(${node.children.map(signature).join(",")})`
+      : "");
+  const shape = (drawn) => drawn.replace(/\[[^\]]*\]/g, "");
+  const bySlot = new Map();
+  for (const variant of set.children || []) {
+    if (variant.type !== "COMPONENT") continue;
+    (function find(node, depth) {
+      for (const child of node.children || []) {
+        if (
+          /Slot$/.test(child.name) &&
+          (child.type === "SLOT" || child.type === "FRAME")
+        ) {
+          const drawn = (child.children || []).map(signature).join(",");
+          if (!bySlot.has(child.name)) bySlot.set(child.name, new Map());
+          const forms = bySlot.get(child.name);
+          if (!forms.has(drawn)) forms.set(drawn, []);
+          forms.get(drawn).push(variant.name);
+        } else if (depth < 3) {
+          find(child, depth + 1);
+        }
+      }
+    })(variant, 0);
+  }
+  const found = [];
+  for (const [slot, forms] of bySlot) {
+    const byShape = new Map();
+    for (const [drawn, variants] of forms) {
+      const key = shape(drawn);
+      if (!byShape.has(key)) byShape.set(key, []);
+      byShape.get(key).push(variants);
+    }
+    for (const drawings of byShape.values()) {
+      if (drawings.length < 2) continue;
+      found.push(
+        `${name} / ${slot} — one content drawn ${drawings.length} ways: ${drawings
+          .map((variants) => `${variants.length} like ${variants[0]}`)
+          .join("; ")}`,
+      );
+    }
+  }
+  return found;
+}
