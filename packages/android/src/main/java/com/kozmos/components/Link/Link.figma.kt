@@ -10,11 +10,16 @@ class KozmosLinkConnect {
     @FigmaProperty(FigmaType.Text, "Link Text")
     val label: String = "Docs"
 
+    // GAP-202: External shows the new-tab icon.
+    @FigmaProperty(FigmaType.Boolean, "External")
+    val external: Boolean = false
+
     @Composable
     fun ComponentExample() {
         KozmosLink(
             text = label,
-            onClick = {}
+            onClick = {},
+            external = external
         )
     }
 }

@@ -14661,7 +14661,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Accordion"],
-          "mappedProps": ["collapsible", "defaultValue", "type"],
+          "mappedProps": ["collapsible", "defaultValue", "type", "variant"],
           "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [
@@ -16426,6 +16426,7 @@
           "connectedComponents": ["IconButton"],
           "mappedProps": [
             "aria-label",
+            "counter",
             "disabled",
             "isLoading",
             "size",
@@ -16475,6 +16476,7 @@
           "issues": [],
           "connectedComponents": ["Input"],
           "mappedProps": [
+            "action",
             "autoFocus",
             "disabled",
             "helperText",
@@ -16631,7 +16633,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Link"],
-          "mappedProps": ["href", "variant"],
+          "mappedProps": ["external", "href", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -17853,7 +17855,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Progress"],
-          "mappedProps": ["value"],
+          "mappedProps": [
+            "label",
+            "labelPlacement",
+            "shape",
+            "size",
+            "tone",
+            "value"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -19153,7 +19162,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Toast"],
-          "mappedProps": ["open"],
+          "mappedProps": ["open", "tone"],
           "unmappedProps": []
         },
         "props": [
