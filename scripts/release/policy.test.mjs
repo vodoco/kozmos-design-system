@@ -491,3 +491,76 @@ test("stale tag on an existing version fails before any package can publish", as
     /tag differs/,
   );
 });
+
+// A changesets `fixed` group versions its packages together (react and styles,
+// since @kozmos-ds/styles): a plan that publishes one without the others
+// passes every check until the publish job refuses react's exact pin, after
+// the release was approved.
+const grouped = [
+  { name: "@kozmos-ds/react", version: "0.16.0" },
+  { name: "@kozmos-ds/styles", version: "0.16.0" },
+  { name: "@kozmos-ds/icons", version: "0.9.0" },
+];
+const fixed = [["@kozmos-ds/react", "@kozmos-ds/styles"]];
+const planOf = (...names) => ({
+  schemaVersion: 1,
+  tag: "latest",
+  packages: grouped.filter((p) => names.includes(p.name)),
+});
+test("a fixed group's packages are planned all together or not at all", () => {
+  validatePlan(
+    planOf("@kozmos-ds/react", "@kozmos-ds/styles"),
+    grouped,
+    [],
+    fixed,
+  );
+  validatePlan(planOf("@kozmos-ds/icons"), grouped, [], fixed);
+  validatePlan(
+    planOf("@kozmos-ds/react", "@kozmos-ds/styles", "@kozmos-ds/icons"),
+    grouped,
+    [],
+    fixed,
+  );
+  assert.throws(
+    () => validatePlan(planOf("@kozmos-ds/react"), grouped, [], fixed),
+    /@kozmos-ds\/react, @kozmos-ds\/styles release together: the plan lists @kozmos-ds\/react but not @kozmos-ds\/styles/,
+  );
+  assert.throws(
+    () =>
+      validatePlan(
+        planOf("@kozmos-ds/styles", "@kozmos-ds/icons"),
+        grouped,
+        [],
+        fixed,
+      ),
+    /the plan lists @kozmos-ds\/styles but not @kozmos-ds\/react/,
+  );
+});
+
+test("a fixed group's packages are planned at one version", () => {
+  const drifted = grouped.map((p) =>
+    p.name === "@kozmos-ds/styles" ? { ...p, version: "0.15.1" } : p,
+  );
+  assert.throws(
+    () =>
+      validatePlan(
+        {
+          schemaVersion: 1,
+          tag: "latest",
+          packages: drifted.filter((p) => p.name !== "@kozmos-ds/icons"),
+        },
+        drifted,
+        [],
+        fixed,
+      ),
+    /release together at one version/,
+  );
+});
+
+test("the fixed groups are read from the changesets config", async () => {
+  const { fixedGroupsFrom } = await import("./policy.mjs");
+  assert.deepEqual(fixedGroupsFrom(JSON.stringify({ fixed: fixed })), fixed);
+  assert.deepEqual(fixedGroupsFrom(JSON.stringify({ fixed: [] })), []);
+  assert.deepEqual(fixedGroupsFrom(JSON.stringify({})), []);
+  assert.deepEqual(fixedGroupsFrom(null), []);
+});

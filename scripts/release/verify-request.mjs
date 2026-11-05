@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { validateRequest, validateEvidence, validatePlan } from "./policy.mjs";
+import {
+  fixedGroupsFrom,
+  validateRequest,
+  validateEvidence,
+  validatePlan,
+} from "./policy.mjs";
 
 export function readWorkspace() {
   return fs
@@ -23,7 +28,10 @@ export function readPlan() {
   const pending = fs
     .readdirSync(".changeset")
     .filter((file) => file.endsWith(".md") && file !== "README.md");
-  return validatePlan(plan, readWorkspace(), pending);
+  const config = fs.existsSync(".changeset/config.json")
+    ? fs.readFileSync(".changeset/config.json", "utf8")
+    : null;
+  return validatePlan(plan, readWorkspace(), pending, fixedGroupsFrom(config));
 }
 
 export async function verifyRequest(

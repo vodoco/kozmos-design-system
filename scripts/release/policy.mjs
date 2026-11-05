@@ -140,7 +140,25 @@ export function validateEvidence({
   if (branches[0].type !== undefined) assert.equal(branches[0].type, "branch");
 }
 
-export function validatePlan(plan, manifests, pendingChangesets = []) {
+/**
+ * The changesets `fixed` groups in `.changeset/config.json`'s text: packages
+ * versioned together, so released together. None when the file is absent.
+ */
+export function fixedGroupsFrom(configText) {
+  if (configText == null) return [];
+  const fixed = JSON.parse(configText).fixed ?? [];
+  return fixed.filter(
+    (group) =>
+      Array.isArray(group) && group.every((n) => typeof n === "string"),
+  );
+}
+
+export function validatePlan(
+  plan,
+  manifests,
+  pendingChangesets = [],
+  fixedGroups = [],
+) {
   assert.equal(plan.schemaVersion, 1);
   assert.ok(
     ["next", "latest"].includes(plan.tag),
@@ -182,6 +200,27 @@ export function validatePlan(plan, manifests, pendingChangesets = []) {
         null,
         "Prereleases must not use latest",
       );
+  }
+  // A changesets fixed group is versioned together, and react pins styles
+  // exactly: a plan with one and not the other passes every check here
+  // until the publish job refuses the pin, after the release was approved.
+  for (const group of fixedGroups) {
+    const members = group.filter((name) => publicPackages.has(name));
+    const planned = plan.packages.filter((item) => members.includes(item.name));
+    if (planned.length === 0) continue;
+    const missing = members.filter((name) => !seen.has(name));
+    assert.equal(
+      missing.length,
+      0,
+      `${members.join(", ")} release together: the plan lists ` +
+        `${planned.map((item) => item.name).join(", ")} but not ${missing.join(", ")}`,
+    );
+    assert.equal(
+      new Set(planned.map((item) => item.version)).size,
+      1,
+      `${members.join(", ")} release together at one version: ` +
+        planned.map((item) => `${item.name}@${item.version}`).join(", "),
+    );
   }
   return plan;
 }
