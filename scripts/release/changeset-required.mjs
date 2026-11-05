@@ -118,11 +118,34 @@ export const STYLESHEET_SCANS = [
   },
 ];
 
-/** The published packages whose stylesheet `file` can change, through styles' Tailwind scan. */
+// The tokens' CSS styles' src/index.css imports (`imports`, which
+// changeset-required.test.mjs holds to that file), and which its build
+// inlines into style.css: packages/tokens/build.mjs builds it from the
+// light, dark and density sources. A change to one changes the stylesheet
+// styles ships and react copies, whatever either lists as a dependency:
+// styles takes tokens only as a build input, so a tokens release alone would
+// not carry it.
+export const STYLESHEET_TOKENS = {
+  imports: [
+    "@kozmos-ds/tokens/css/light.css",
+    "@kozmos-ds/tokens/css/dark.css",
+    "@kozmos-ds/tokens/css/density.css",
+  ],
+  matches: (file) =>
+    /^packages\/tokens\/(src\/tokens-(light|dark|density-[\w-]+)\.json|build\.mjs)$/.test(
+      file,
+    ),
+  packages: ["@kozmos-ds/styles", "@kozmos-ds/react"],
+};
+
+/**
+ * The published packages whose stylesheet `file` can change: through styles'
+ * Tailwind scan, or through the tokens' CSS styles inlines.
+ */
 export function stylesheetReaders(file) {
-  return STYLESHEET_SCANS.filter((scan) => scan.matches(file)).flatMap(
-    (scan) => scan.packages,
-  );
+  return [...STYLESHEET_SCANS, STYLESHEET_TOKENS]
+    .filter((input) => input.matches(file))
+    .flatMap((input) => input.packages);
 }
 
 /** The published package whose shipped files `file` belongs to, or null. */

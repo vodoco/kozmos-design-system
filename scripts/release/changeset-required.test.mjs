@@ -131,6 +131,51 @@ test("a Vue file the stylesheet does not scan needs none", () => {
   );
 });
 
+// styles' style.css inlines tokens' CSS, which packages/tokens/build.mjs
+// builds from these sources: a change to one changes the stylesheet styles
+// ships and react copies, whatever either lists as a dependency (styles takes
+// tokens only as a build input since #481).
+test("a token source styles' CSS inlines needs a changeset for tokens, styles and react", () => {
+  for (const file of [
+    "packages/tokens/src/tokens-light.json",
+    "packages/tokens/src/tokens-dark.json",
+    "packages/tokens/src/tokens-density-compact.json",
+    "packages/tokens/build.mjs",
+  ])
+    assert.deepEqual(
+      missingChangesets({ changedFiles: [file], changesets: [] }).map(
+        (m) => m.name,
+      ),
+      ["@kozmos-ds/react", "@kozmos-ds/tokens", "@kozmos-ds/styles"],
+      file,
+    );
+  // The token sources no CSS is built from release tokens alone.
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles: ["packages/tokens/src/tokens.json"],
+      changesets: [],
+    }).map((m) => m.name),
+    ["@kozmos-ds/tokens"],
+  );
+});
+
+test("the tokens' CSS styles imports is exactly what the rule counts", async () => {
+  const { STYLESHEET_TOKENS } = await import("./changeset-required.mjs");
+  const imported = [
+    ...fs
+      .readFileSync(
+        path.join(import.meta.dirname, "../../packages/styles/src/index.css"),
+        "utf8",
+      )
+      .matchAll(/@import\s+"(@kozmos-ds\/tokens\/[^"]+)"/g),
+  ].map((m) => m[1]);
+  assert.deepEqual(
+    imported,
+    STYLESHEET_TOKENS.imports,
+    "packages/styles/src/index.css imports other tokens CSS: update STYLESHEET_TOKENS in changeset-required.mjs",
+  );
+});
+
 test("the Vue files that count are exactly the ones styles' Tailwind build scans", async () => {
   const { STYLESHEET_SCANS } = await import("./changeset-required.mjs");
   const config = (await import("../../packages/styles/tailwind.config.js"))
