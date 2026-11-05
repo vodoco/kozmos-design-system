@@ -30,7 +30,8 @@ import { COMPOSABLES, PORTS, REPOSITORY, VUE_DIST, type Port } from "../ports";
  *   the same default; `value` is `modelValue`, as `v-model` names it;
  * - a controlled prop, one with an `on…Change`, is a `v-model`: Vue emits
  *   `update:<prop>` with the new value, which is all React's `on…Change`
- *   reports. An event of React's name (`themeChange`) may be added beside it;
+ *   reports, and nothing else: an event of React's name (`themeChange`)
+ *   beside it says the same thing twice (decision 160);
  * - any other callback `onPress` is an event (`press`), declared in camelCase
  *   so that Vue's types give its handler React's name, with the same
  *   arguments;
@@ -576,10 +577,21 @@ export function compareMembers(contract: PortContract): Finding[] {
     }
     if (isCallback(member)) {
       const value = controlledBy(member.name);
-      // A controlled prop's change is `update:<prop>`, required with the
-      // prop below; an event of React's own name may stand beside it.
+      // A controlled prop's change is `update:<prop>` alone, required with
+      // the prop below (decision 160): an event of React's name beside it
+      // says the same thing twice.
       if (value && reactNames.has(value)) {
-        if (handlers.has(member.name)) usedHandlers.add(member.name);
+        const twice = vueEmits.find(
+          (event) => handlerOf(event) === member.name,
+        );
+        if (twice) {
+          usedHandlers.add(member.name);
+          const update = `update:${vueNameOf(value)}`;
+          add(
+            `${twice}:duplicate-event`,
+            `${twice}: says what \`${update}\` says; a controlled prop's change is \`${update}\` alone (decision 160)`,
+          );
+        }
         continue;
       }
       usedHandlers.add(member.name);

@@ -61,7 +61,6 @@ export const PORTS: Port[] = [
     sample: { children: "Themed" },
     events: {
       "update:theme": "parity/mounted.parity.spec.ts",
-      themeChange: "parity/mounted.parity.spec.ts",
     },
   },
   {

@@ -151,7 +151,7 @@ describe("KozmosThemeProvider and KozmosDensityScope", () => {
         KozmosThemeProvider,
         {
           storageKey: "kz-theme",
-          onThemeChange: (theme: string) => emitted.push(theme),
+          "onUpdate:theme": (theme: string) => emitted.push(theme),
         },
         () => h(Setter),
       ),

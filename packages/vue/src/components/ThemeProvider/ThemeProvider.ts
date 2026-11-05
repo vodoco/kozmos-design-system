@@ -46,8 +46,9 @@ function isTheme(value: unknown): value is KozmosTheme {
  * ConfigProvider, as React's reaches Radix through DirectionProvider.
  *
  * `v-model:theme` controls the preference; without it the provider keeps its
- * own, persisted under `storageKey` when given. `themeChange` (`@theme-change`
- * in a template) reports every request, as React's `onThemeChange`.
+ * own, persisted under `storageKey` when given. `update:theme` reports every
+ * request, controlled or not, as React's `onThemeChange` does (decision 160:
+ * a controlled prop's change is `update:<prop>` alone).
  *
  * An outer Reka ConfigProvider's locale, scroll lock, nonce, teleport target
  * and id source carry on inside: only the direction is this provider's. Like
@@ -79,7 +80,6 @@ export const KozmosThemeProvider = defineComponent({
   },
   emits: {
     "update:theme": (theme: KozmosTheme) => isTheme(theme),
-    themeChange: (theme: KozmosTheme) => isTheme(theme),
   },
   /** What it scopes, as React's required `children`. */
   slots: Object as SlotsType<{ default: () => VNode[] }>,
@@ -137,7 +137,6 @@ export const KozmosThemeProvider = defineComponent({
         }
       }
       emit("update:theme", next);
-      emit("themeChange", next);
     };
 
     const state: KozmosThemeState = {

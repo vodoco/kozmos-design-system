@@ -122,7 +122,7 @@ describe("the contract's rules", () => {
     ).toEqual([]);
   });
 
-  it("takes update:<prop> alone for a controlled prop, value or open", () => {
+  it("takes update:<prop>, and only that, for a controlled prop, value or open", () => {
     const react = [
       member("open", "boolean"),
       member("onOpenChange", "(open: boolean) => void"),
@@ -133,18 +133,25 @@ describe("the contract's rules", () => {
     expect(
       ids({ react, vueProps, vueEmits: ["update:open", "update:modelValue"] }),
     ).toEqual([]);
-    // React's own name may stand beside it…
+    // React's own name beside it says the same thing twice (decision 160)…
     expect(
       ids({
         react,
         vueProps,
         vueEmits: ["update:open", "openChange", "update:modelValue"],
       }),
-    ).toEqual([]);
-    // …but never replace it.
+    ).toEqual(["KozmosPart.openChange:duplicate-event"]);
+    // …and in its place leaves v-model without its event.
     expect(
-      ids({ react, vueProps, vueEmits: ["openChange", "update:modelValue"] }),
-    ).toEqual(["KozmosPart.update:open:event"]);
+      ids({
+        react,
+        vueProps,
+        vueEmits: ["openChange", "update:modelValue"],
+      }).sort(),
+    ).toEqual([
+      "KozmosPart.openChange:duplicate-event",
+      "KozmosPart.update:open:event",
+    ]);
   });
 
   it("asks for an event in camelCase, so its handler is React's", () => {

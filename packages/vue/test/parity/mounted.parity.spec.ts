@@ -216,7 +216,6 @@ describe("useTheme().setTheme, as ThemeProvider's Default story calls it", () =>
   it("changes the theme, reports it and stores it, as React's", async () => {
     type Theme = "light" | "dark" | "system";
     const reported = { react: [] as string[], vue: [] as string[] };
-    const updated: string[] = [];
     let setReact: ((theme: Theme) => void) | undefined;
     let setVue: ((theme: Theme) => void) | undefined;
     // What each hook says the theme is: React's on every render, Vue's a ref.
@@ -255,9 +254,8 @@ describe("useTheme().setTheme, as ThemeProvider's Default story calls it", () =>
         KozmosThemeProvider,
         {
           storageKey: "vue",
-          onThemeChange: (theme: string) => reported.vue.push(theme),
-          // v-model:theme's half: React's one callback is both.
-          "onUpdate:theme": (theme: string) => updated.push(theme),
+          // v-model:theme reports what React's onThemeChange does.
+          "onUpdate:theme": (theme: string) => reported.vue.push(theme),
         },
         () => [h(VueProbe)],
       ),
@@ -274,7 +272,6 @@ describe("useTheme().setTheme, as ThemeProvider's Default story calls it", () =>
     expect(read().vue).toEqual(["dark", "dark"]);
     expect(reported.vue).toEqual(reported.react);
     expect(reported.vue).toEqual(["dark"]);
-    expect(updated).toEqual(reported.react);
     expect(localStorage.getItem("vue")).toBe(localStorage.getItem("react"));
     expect(localStorage.getItem("vue")).toBe("dark");
   });

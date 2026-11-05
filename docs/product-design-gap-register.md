@@ -89,7 +89,8 @@ sections' "Step n/5" caption is already AccordionTrigger's `label` (GAP-209, rel
 tags and role chips take Tag's height (decision 154), so neither is a row. ContextMenu's grouped sections are
 GAP-155's and Select's option counts GAP-164's, as they stand. Decisions 153 to 159 are the owner's rulings of the
 same day: the brand mark, Cloud adopting Kozmos's field labels and type (which closes GAP-042), the context
-switcher's chevron, and four rulings on Figma's parity with React. The next free decision is **160**.
+switcher's chevron, and four rulings on Figma's parity with React. Decision 160 (5 Nov) is how a Vue port says a
+controlled prop. The next free decision is **161**.
 
 Previous intake: **Kozmos Design System Gaps (6).md**, exported from Claude Design on 2026-10-27, with a
 read-only walk of Pointr Cloud QA the same day. Source SHA-256:
@@ -1186,6 +1187,9 @@ camera control, branding/provider policy and product ranking in their host adapt
     their pins move (#470).
   - **159, Table is framed (4 Nov):** a border with corners of 16, as Figma and the natives draw it. React gains
     `framed`, off by default for dense pages, in 0.16.0.
+  - **160, a Vue port's controlled prop is `v-model` alone (5 Nov):** it emits `update:<prop>` with the new value,
+    as Reka and Vue 2's `.sync` do, and no event of React's `on…Change` name beside it, which would say the same
+    thing twice. ThemeProvider's `themeChange` goes, and the API contract fails a port that emits both (#479).
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on
