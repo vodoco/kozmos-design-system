@@ -99,6 +99,32 @@ const SHIPPING_SCRIPTS = [
 const MODULE = /\.[cm]?[jt]sx?$/;
 const TSCONFIGS = ["tsconfig.json", "tsconfig.build.json"];
 
+// Outside styles, the sources its Tailwind build scans for the classes it
+// emits (`content.files` in packages/styles/tailwind.config.js): a class one
+// of them adds or drops changes the style.css styles ships and react copies
+// into its dist. React's own src already counts for react; Vue's counts for
+// both. `globs` are the config's, which changeset-required.test.mjs holds this
+// list to; `matches` is them as a repository path test.
+export const STYLESHEET_SCANS = [
+  {
+    globs: [
+      "../vue/src/**/*.{vue,js,ts}",
+      "!../vue/src/**/*.{spec,test,stories}.{js,ts}",
+    ],
+    matches: (file) =>
+      /^packages\/vue\/src\/.+\.(vue|js|ts)$/.test(file) &&
+      !/\.(spec|test|stories)\.(js|ts)$/.test(file),
+    packages: ["@kozmos-ds/styles", "@kozmos-ds/react"],
+  },
+];
+
+/** The published packages whose stylesheet `file` can change, through styles' Tailwind scan. */
+export function stylesheetReaders(file) {
+  return STYLESHEET_SCANS.filter((scan) => scan.matches(file)).flatMap(
+    (scan) => scan.packages,
+  );
+}
+
 /** The published package whose shipped files `file` belongs to, or null. */
 export function shippedPackage(file, packageJsonChanged = () => true) {
   for (const [name, dir] of Object.entries(PUBLISHED)) {
@@ -309,6 +335,7 @@ export function missingChangesets({
     const name = shippedPackage(file, packageJsonChanged);
     if (name) add(name, file);
     for (const reader of buildInputs.get(file) ?? []) add(reader, file);
+    for (const reader of stylesheetReaders(file)) add(reader, file);
   }
   if (changesets.some((changeset) => changeset.releases.length === 0))
     return [];

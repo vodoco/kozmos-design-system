@@ -89,6 +89,63 @@ test("an empty changeset says none is needed", () => {
   );
 });
 
+// Styles' Tailwind build scans Vue's sources for the classes it emits, so a
+// Vue part can change the style.css styles ships and react copies.
+test("a Vue source the stylesheet scans needs a changeset for styles and for react", () => {
+  const changedFiles = [
+    "packages/vue/src/components/Button.vue",
+    "packages/vue/src/index.ts",
+    "packages/vue/src/recipes/button.js",
+  ];
+  const styles = { name: "@kozmos-ds/styles", type: "minor" };
+  assert.deepEqual(missingChangesets({ changedFiles, changesets: [] }), [
+    { name: "@kozmos-ds/react", files: changedFiles },
+    { name: "@kozmos-ds/styles", files: changedFiles },
+  ]);
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles,
+      changesets: [{ releases: [react, styles] }],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    missingChangesets({ changedFiles, changesets: [{ releases: [react] }] }),
+    [{ name: "@kozmos-ds/styles", files: changedFiles }],
+  );
+});
+
+test("a Vue file the stylesheet does not scan needs none", () => {
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles: [
+        "packages/vue/src/components/Button.spec.ts",
+        "packages/vue/src/components/Button.test.ts",
+        "packages/vue/src/components/Button.stories.ts",
+        "packages/vue/src/README.md",
+        "packages/vue/package.json",
+        "packages/vue/vite.config.ts",
+      ],
+      changesets: [],
+    }),
+    [],
+  );
+});
+
+test("the Vue files that count are exactly the ones styles' Tailwind build scans", async () => {
+  const { STYLESHEET_SCANS } = await import("./changeset-required.mjs");
+  const config = (await import("../../packages/styles/tailwind.config.js"))
+    .default;
+  const vueGlobs = config.content.files.filter((glob) =>
+    glob.replace(/^!/, "").startsWith("../vue/"),
+  );
+  assert.deepEqual(
+    vueGlobs,
+    STYLESHEET_SCANS.map((scan) => scan.globs).flat(),
+    "packages/styles/tailwind.config.js scans other Vue files: update STYLESHEET_SCANS in changeset-required.mjs to match",
+  );
+});
+
 test("a change that ships nothing needs no changeset", () => {
   assert.deepEqual(
     missingChangesets({
