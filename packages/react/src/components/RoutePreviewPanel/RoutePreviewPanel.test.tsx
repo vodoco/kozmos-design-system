@@ -14,7 +14,7 @@ import { RoutePreviewPanel } from "./RoutePreviewPanel";
 const OWNED = readFileSync(
   resolvePath(
     dirname(fileURLToPath(import.meta.url)),
-    "../../styles/owned-components.css",
+    "../../../../styles/src/styles/owned-components.css",
   ),
   "utf8",
 );

@@ -68,7 +68,7 @@ else {
     else fail(`web: variables-light.css lacks ${name}`);
   }
 }
-const owned = read("packages/react/src/styles/owned-components.css");
+const owned = read("packages/styles/src/styles/owned-components.css");
 // Match what a rule says, not how it is laid out. Prettier wraps a long `transition` across lines,
 // and a needle written on one line then stops matching a rule nobody touched: that is why this
 // reported the sheet as reading no motion tokens while the sheet read them perfectly well.

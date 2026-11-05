@@ -129,7 +129,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 
 ### GAP-38 · The map sheet's handle is 4 px tall and its grip invisible
 
-- **Where:** `packages/react/src/styles/owned-components.css`, lines 156, 157
+- **Where:** `packages/styles/src/styles/owned-components.css`, lines 156, 157
   and 166:
   `height: var(--primitives-layout-spacing-200)`,
   `padding-top: var(--primitives-layout-spacing-75)`,
@@ -221,7 +221,7 @@ border-primary-foreground/20`.
 
 ### GAP-52 · The provider's preflight zeroes a caller's border
 
-- **Where:** `packages/react/postcss/scoped-css.cjs:56`. `compilerDefaults` is
+- **Where:** `packages/styles/postcss/scoped-css.cjs:56`. `compilerDefaults` is
   true for any rule whose selector is `*, ::before, ::after`, meant for
   Tailwind's `--tw-*` initialiser. The preflight's
   `border: 0 solid; box-sizing: border-box` rule has the same selector, so it
@@ -344,7 +344,7 @@ border-primary-foreground/20`.
   `--semantics-emotion-success-text` (`#197f4c`), which the outlined `Tag`
   reads (`utils/emotion.ts:38–42`). And Tailwind's `warning` and `success`
   colours, which are the primitives `emotional-alert-800` and
-  `emotional-success-800` (`packages/react/tailwind.config.js:75–82`), read by
+  `emotional-success-800` (`packages/styles/tailwind.config.js:75–82`), read by
   `Alert`'s variants (`Alert/Alert.tsx:15–16`) and the field messages
   (`styles/owned-components.css:92–96`).
 - **Why it breaks:** measured as text: alert 4.56:1 on white, 4.29 on

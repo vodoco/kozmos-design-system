@@ -1,6 +1,6 @@
 # Kozmos Design System - Publishing Guide
 
-> **Purpose:** How Kozmos packages reach a registry. Only the four npm packages are published, only by the `release.yml` workflow, and only when Olcay dispatches and approves it. [docs/release-process.md](../docs/release-process.md) is the full procedure; this is what an assistant needs to know about it.
+> **Purpose:** How Kozmos packages reach a registry. Only the five npm packages are published, only by the `release.yml` workflow, and only when Olcay dispatches and approves it. [docs/release-process.md](../docs/release-process.md) is the full procedure; this is what an assistant needs to know about it.
 
 ---
 

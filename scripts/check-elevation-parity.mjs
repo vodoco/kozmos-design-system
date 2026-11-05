@@ -104,7 +104,7 @@ for (const mode of ["light", "dark"]) {
 
 // 3. The web.
 {
-  const tailwind = read("packages/react/tailwind.config.js");
+  const tailwind = read("packages/styles/tailwind.config.js");
   for (const role of ["raised", "floating", "overlay"]) {
     const re = new RegExp(
       `^\\s*${role}:\\s*"var\\(--semantics-elevation-${role}\\)"`,
@@ -530,7 +530,7 @@ for (const mode of ["light", "dark"]) {
       );
     else fail(`dark: ${ROLE} does not deepen every layer against the light`);
 
-    const tailwind = read("packages/react/tailwind.config.js");
+    const tailwind = read("packages/styles/tailwind.config.js");
     if (
       /^\s*"map-control":\s*"var\(--semantics-elevation-map-control\)"/m.test(
         tailwind,

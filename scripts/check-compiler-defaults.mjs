@@ -7,7 +7,7 @@ import {
 } from "./lib/built-react-fixture.mjs";
 
 // Tailwind 3 declares its compiler variables' defaults on every element.
-// Kozmos registers them with @property instead (packages/react/postcss/
+// Kozmos registers them with @property instead (packages/styles/postcss/
 // scoped-css.cjs), so no element carries its own copy of them, which WebKit
 // rebuilds on every re-theme. Two things are proved here, on the built
 // stylesheet: nothing declares the defaults on every element any more, and
@@ -15,7 +15,7 @@ import {
 // next to a reference written out by hand, with a parent's value kept from
 // its child, in a light and a dark root.
 const require = createRequire(
-  new URL("../packages/react/package.json", import.meta.url),
+  new URL("../packages/styles/package.json", import.meta.url),
 );
 const postcss = require("postcss");
 // Every name Tailwind 3 initialises on every element.

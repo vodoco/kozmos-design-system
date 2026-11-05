@@ -83,7 +83,14 @@ const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");
 const ENTRY = path.join(DIST_DIR, "kozmos-react.mjs");
 const ESM_DIR = path.join(DIST_DIR, "esm");
-const STYLESHEET = path.join(DIST_DIR, "style.css");
+// The stylesheet is @kozmos-ds/styles's since 5 Nov 2026 (Vue 3 Phase 0), and
+// react ships it as its own ./style.css: measured where it is built, and held
+// to be the very file react ships.
+const STYLESHEET = path.resolve(
+  __dirname,
+  "../../packages/styles/dist/style.css",
+);
+const REACT_STYLESHEET = path.join(DIST_DIR, "style.css");
 
 interface RollupChunk {
   type: string;
@@ -292,6 +299,10 @@ async function main() {
     perExport.sort((a, b) => b[1] - a[1]);
     const button = perExport.find(([name]) => name === "Button");
     const cssGzip = gzipSync(fs.readFileSync(STYLESHEET)).length;
+    if (!fs.readFileSync(STYLESHEET).equals(fs.readFileSync(REACT_STYLESHEET)))
+      fail.push(
+        "packages/react/dist/style.css is not @kozmos-ds/styles's dist/style.css: react must ship the shared stylesheet byte for byte",
+      );
     const sorted = perExport.map(([, gzip]) => gzip).sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
 

@@ -1216,7 +1216,7 @@ New/current findings above were inspected against the main baseline, including:
   [assistant panel](../packages/react/src/components/AICompanionPanel/AICompanionPanel.tsx):
   icon fallback/wrapper, header padding and missing native counterparts.
 - [Result tabs](../packages/react/src/components/POIResultCard/POIResultCard.tsx),
-  [owned tab CSS](../packages/react/src/styles/owned-components.css),
+  [owned tab CSS](../packages/styles/src/styles/owned-components.css),
   [SwiftUI tabs](../packages/ios/Sources/Components/POIResultCard/POIResultCard.swift),
   [Compose tabs](../packages/android/src/main/java/com/kozmos/components/POIResultCard/POIResultCard.kt)
   and [LocationPin](../packages/react/src/components/LocationPin/LocationPin.tsx):

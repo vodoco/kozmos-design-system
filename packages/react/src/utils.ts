@@ -15,7 +15,7 @@ import { extendTailwindMerge } from "tailwind-merge";
  *
  * Every role a component can carry has to be listed here, or overriding it
  * from outside silently does nothing. The values mirror
- * `packages/react/tailwind.config.js`; the standard scale is already known and
+ * `packages/styles/tailwind.config.js`; the standard scale is already known and
  * is not repeated.
  */
 const RADIUS_ROLES = [

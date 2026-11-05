@@ -25,7 +25,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const TOKENS = path.join(ROOT, "packages/tokens/src/tokens-light.json");
 const PLUGIN = path.join(ROOT, "figma/foundations-importer/code.js");
-const TAILWIND = path.join(ROOT, "packages/react/tailwind.config.js");
+const TAILWIND = path.join(ROOT, "packages/styles/tailwind.config.js");
 const NATIVE_ROOTS = [
   "packages/ios/Sources/Components",
   "packages/android/src/main/java/com/kozmos/components",

@@ -6,9 +6,10 @@ Figma library they come from. This file is what a coding agent needs before chan
 
 ## What ships
 
-- **npm**, under `@kozmos-ds`: `react` (the components and their stylesheet), `tokens` (CSS, TS,
-  Swift and Kotlin), `icons`, and `product-contracts` (the shapes a product passes the Product /
-  SDK components). These four are the only public packages; `@kozmos-ds/vue` is private.
+- **npm**, under `@kozmos-ds`: `react` (the components, with a copy of the stylesheet), `styles`
+  (the stylesheet, built from React's and Vue's sources), `tokens` (CSS, TS, Swift and Kotlin),
+  `icons`, and `product-contracts` (the shapes a product passes the Product / SDK components).
+  These five are the only public packages; `@kozmos-ds/vue` is private.
 - **SwiftUI** in `packages/ios` (library `Kozmos`) and **Compose** in `packages/android`
   (`com.kozmos`), used from a checkout: neither is published to a package registry yet.
 - **The website**, built from `apps/site`, publishes from `main` to
@@ -19,22 +20,22 @@ Figma library they come from. This file is what a coding agent needs before chan
 
 ## Where things are
 
-| Path                                              | What                                                              |
-| ------------------------------------------------- | ----------------------------------------------------------------- |
-| `packages/{react,tokens,icons,product-contracts}` | the npm packages; tokens start in `packages/tokens/src`           |
-| `packages/ios`, `packages/android`                | SwiftUI and Compose                                               |
-| `packages/vue`                                    | a private harness that mounts the React components in Vue         |
-| `apps/docs`                                       | Storybook: stories, docs pages, and `stories/examples/`           |
-| `apps/site`                                       | the website; its `GAPS.md` lists what Kozmos cannot do yet        |
-| `apps/` (the rest)                                | playgrounds, the Pointr QA app and a product prototype            |
-| `figma/foundations-importer`                      | the Figma plugin that paints the Core Library                     |
-| `scripts/`                                        | the checks (tokens, parity, Figma, releases), run by name         |
-| `tests/visual`                                    | the visual review's suite and its committed baselines             |
-| `docs/`                                           | the written documentation                                         |
-| `docs/claude-design/`                             | what the Claude Design artifact carries, generated (below)        |
-| `docs/proposals/`                                 | designs that were never built, kept as history: none of it exists |
-| `.ai-skills/`                                     | the knowledge base for AI assistants, kept true by `skills:check` |
-| `.changeset/`, `release/`                         | changes waiting for a release, and the plan a release publishes   |
+| Path                                                     | What                                                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `packages/{react,styles,tokens,icons,product-contracts}` | the npm packages; tokens start in `packages/tokens/src`, the stylesheet in `packages/styles/src` |
+| `packages/ios`, `packages/android`                       | SwiftUI and Compose                                                                              |
+| `packages/vue`                                           | a private harness that mounts the React components in Vue                                        |
+| `apps/docs`                                              | Storybook: stories, docs pages, and `stories/examples/`                                          |
+| `apps/site`                                              | the website; its `GAPS.md` lists what Kozmos cannot do yet                                       |
+| `apps/` (the rest)                                       | playgrounds, the Pointr QA app and a product prototype                                           |
+| `figma/foundations-importer`                             | the Figma plugin that paints the Core Library                                                    |
+| `scripts/`                                               | the checks (tokens, parity, Figma, releases), run by name                                        |
+| `tests/visual`                                           | the visual review's suite and its committed baselines                                            |
+| `docs/`                                                  | the written documentation                                                                        |
+| `docs/claude-design/`                                    | what the Claude Design artifact carries, generated (below)                                       |
+| `docs/proposals/`                                        | designs that were never built, kept as history: none of it exists                                |
+| `.ai-skills/`                                            | the knowledge base for AI assistants, kept true by `skills:check`                                |
+| `.changeset/`, `release/`                                | changes waiting for a release, and the plan a release publishes                                  |
 
 ## Commands
 

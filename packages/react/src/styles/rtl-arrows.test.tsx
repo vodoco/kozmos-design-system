@@ -44,7 +44,12 @@ import { Link } from "../components/Link/Link";
 // holds the structure: every such arrow carries the mirror class, the owned
 // rule draws it from the variable, and no owned rule uses :dir(). What the
 // engines draw is scripts/check-direction-rules.mjs's, in all three of them.
-const STYLES = dirname(fileURLToPath(import.meta.url));
+// The owned stylesheets are @kozmos-ds/styles's since 5 Nov 2026 (Vue 3
+// Phase 0): one stylesheet for React and Vue.
+const STYLES = resolvePath(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../styles/src/styles",
+);
 const OWNED = readFileSync(resolvePath(STYLES, "owned-components.css"), "utf8");
 const OWNED_FILES = readdirSync(STYLES).filter((name) =>
   /^owned-.*\.css$/.test(name),

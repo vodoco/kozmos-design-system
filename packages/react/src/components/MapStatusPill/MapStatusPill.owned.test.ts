@@ -16,7 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 // The owned rules, read from the stylesheet the package ships: the map
 // controls' own file (decision 40), where the pill's surface comes from.
 const OWNED = readFileSync(
-  resolvePath(here, "../../styles/owned-map-controls.css"),
+  resolvePath(here, "../../../../styles/src/styles/owned-map-controls.css"),
   "utf8",
 );
 const variables = (mode: "light" | "dark") => {

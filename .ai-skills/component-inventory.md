@@ -10,6 +10,7 @@
 | `@kozmos-ds/icons`             | 0.8.0   |
 | `@kozmos-ds/product-contracts` | 0.10.0  |
 | `@kozmos-ds/react`             | 0.15.0  |
+| `@kozmos-ds/styles`            | 0.0.0   |
 | `@kozmos-ds/tokens`            | 0.8.1   |
 
 These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose

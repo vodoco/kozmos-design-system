@@ -66,7 +66,7 @@ const values = {};
 
 // 2. The web: the role reads the token's variables, not its own numbers.
 {
-  const css = read("packages/react/src/styles/owned-components.css");
+  const css = read("packages/styles/src/styles/owned-components.css");
   const block = /\.kozmos-surface-glass\s*\{([\s\S]*?)\n\s*\}/.exec(css);
   if (!block) fail("web: .kozmos-surface-glass is missing from owned-components.css");
   else {

@@ -150,7 +150,7 @@ internal `accent` role (theme 600, menu highlights): the name predates the accen
 
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
-and the Tailwind configuration in `packages/react/tailwind.config.js` show which roles the parts
+and the Tailwind configuration in `packages/styles/tailwind.config.js` show which roles the parts
 read.
 
 ---

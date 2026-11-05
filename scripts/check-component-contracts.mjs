@@ -200,7 +200,7 @@ const files = {
   reactCategoryField:
     "packages/react/src/components/CategoryField/CategoryField.tsx",
   reactLocationPin: "packages/react/src/components/LocationPin/LocationPin.tsx",
-  reactPOIDetailCss: "packages/react/src/styles/owned-poi-detail.css",
+  reactPOIDetailCss: "packages/styles/src/styles/owned-poi-detail.css",
   reactBadgeFigma: "packages/react/src/components/Badge/Badge.figma.tsx",
   reactCardFigma: "packages/react/src/components/Card/Card.figma.tsx",
   reactList: "packages/react/src/components/List/List.tsx",
@@ -293,7 +293,7 @@ const files = {
   reactEmptyState: "packages/react/src/components/EmptyState/EmptyState.tsx",
   reactEmptyStateFigma:
     "packages/react/src/components/EmptyState/EmptyState.figma.tsx",
-  reactTailwindConfig: "packages/react/tailwind.config.js",
+  reactTailwindConfig: "packages/styles/tailwind.config.js",
   reactTooltip: "packages/react/src/components/Tooltip/Tooltip.tsx",
   reactTooltipFigma: "packages/react/src/components/Tooltip/Tooltip.figma.tsx",
   reactDrawer: "packages/react/src/components/Drawer/Drawer.tsx",
@@ -796,7 +796,7 @@ assertContains(
   /icon:\s*["']kozmos-button-size-icon["']/,
   "owned icon Button recipe",
 );
-const ownedCssPath = "packages/react/src/styles/owned-components.css";
+const ownedCssPath = "packages/styles/src/styles/owned-components.css";
 const ownedCss = read(ownedCssPath);
 // Decision 82: the sizes read ThemeProvider's density. The recipes name the
 // density's keys, and the touch tokens hold the native platforms' 44 and 48,
@@ -7020,7 +7020,7 @@ assertContains(
   "React NumberInput exposes optional steppers",
 );
 const ownedNativeFieldsPath =
-  "packages/react/src/styles/owned-native-fields.css";
+  "packages/styles/src/styles/owned-native-fields.css";
 const ownedNativeFields = read(ownedNativeFieldsPath);
 assertContains(
   files.reactNumberInput,
@@ -11556,7 +11556,7 @@ for (const [key, needle, label] of [
     `${label} pads its popover to the concentric inset (12)`,
   );
 }
-const ownedSelectionPath = "packages/react/src/styles/owned-selection.css";
+const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";
 assertContains(
   files.reactListbox,
   source.reactListbox,
@@ -11761,9 +11761,9 @@ for (const [file, symbols] of [
 // on bg-secondary, background 200. SwiftUI drew SwiftUI's .blue, then theme
 // 500; Compose theme 500 on background 300, under 3:1 against its track.
 {
-  const tailwind = read("packages/react/tailwind.config.js");
+  const tailwind = read("packages/styles/tailwind.config.js");
   assertContains(
-    "packages/react/tailwind.config.js",
+    "packages/styles/tailwind.config.js",
     tailwind,
     'primary: {\n          DEFAULT: "var(--primitives-colors-theme-600)"',
     "React's primary is theme 600, the colour the native bars follow",
@@ -11814,16 +11814,16 @@ for (const [file, symbols] of [
   // Tag's, and unset the themed one, theme 600, the bar's own fill (owner,
   // 28 Oct), on a background 100 track, where every tone reads 4.8:1 or
   // more in both themes. Every platform draws it so.
-  const css = read("packages/react/src/styles/owned-components.css");
+  const css = read("packages/styles/src/styles/owned-components.css");
   const ringCss = css.slice(css.indexOf(".kozmos-progress-ring-track {"));
   assertContains(
-    "packages/react/src/styles/owned-components.css",
+    "packages/styles/src/styles/owned-components.css",
     ringCss,
     ".kozmos-progress-ring-track {\n    stroke: var(--primitives-colors-background-100);",
     "React's ring track on background 100",
   );
   assertContains(
-    "packages/react/src/styles/owned-components.css",
+    "packages/styles/src/styles/owned-components.css",
     ringCss,
     "--kozmos-progress-ring-tone,\n      var(--semantics-emotion-themed-text)",
     "React's ring arc in its tone, themed by default",
@@ -11975,7 +11975,7 @@ for (const [file, symbols] of [
     "packages/ios/Sources/Components/RouteSummary/RouteSummary.swift";
   const androidPath =
     "packages/android/src/main/java/com/kozmos/components/RouteSummary/RouteSummary.kt";
-  const cssPath = "packages/react/src/styles/owned-components.css";
+  const cssPath = "packages/styles/src/styles/owned-components.css";
   const mdxPath = "packages/react/src/components/RouteSummary/RouteSummary.mdx";
   const [react, ios, android, css, mdx] = [
     reactPath,

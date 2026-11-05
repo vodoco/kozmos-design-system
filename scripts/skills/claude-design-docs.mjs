@@ -511,6 +511,7 @@ function assertPrimitiveRadiiUnread(root) {
     }
   };
   walk(path.join(root, "packages/react/src"));
+  walk(path.join(root, "packages/styles/src"));
   if (found.length)
     throw new Error(
       `The README says no part reads --primitives-radius-button, -input or -card, but ${found.join("; ")}. Correct the README's Corners section.`,
@@ -703,7 +704,7 @@ function renderReadme({ root, api, cards, owner }) {
     '            href="#"',
     '            placement="top"',
     '            content="icon-only"',
-    '            icon={<Icon icon={HomeLine} />}',
+    "            icon={<Icon icon={HomeLine} />}",
     '            aria-label="Home"',
     "            selected",
     "          />",

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "src/**",
+        "package.json",
+        "postcss.config.*",
+        "postcss/**",
+        "tailwind.config.*",
+        "vite.config.*",
+        "$TURBO_ROOT$/packages/react/src/**",
+        "$TURBO_ROOT$/packages/vue/src/**"
+      ]
+    },
+    "test": {
+      "inputs": ["postcss/**", "tailwind.config.*", "package.json"]
+    }
+  }
+}
