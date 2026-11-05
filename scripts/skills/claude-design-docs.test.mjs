@@ -389,6 +389,29 @@ export declare const ReqUndef: React.ForwardRefExoticComponent<ReqUndefA | ReqUn
 interface ForbidA { kind: "a"; bar?: undefined; }
 interface ForbidB { kind: "b"; bar: string; }
 export declare const Forbid: React.ForwardRefExoticComponent<ForbidA | ForbidB>;
+interface DefA {
+  kind: "a";
+  /** @default "s" */
+  size?: string;
+}
+interface DefB { kind: "b"; size?: string; }
+export declare const DefCase: React.ForwardRefExoticComponent<DefA | DefB>;
+export interface FnProps { getLabel?: (x: string) => string | undefined; }
+export declare function FnPart(props: FnProps): React.JSX.Element;
+interface DupA { kind: "a"; r: string | undefined; }
+interface DupB { kind: "b"; r?: string; }
+export declare const Dup: React.ForwardRefExoticComponent<DupA | DupB>;
+interface GoneA {
+  kind: "a";
+  /** @deprecated use one */
+  gone?: string;
+}
+interface GoneB {
+  kind: "b";
+  /** @deprecated use two */
+  gone?: string;
+}
+export declare const Gone: React.ForwardRefExoticComponent<GoneA | GoneB>;
 `;
   const fixture = readPublishedApi(root, {
     declarations: file,
@@ -428,6 +451,39 @@ export declare const Forbid: React.ForwardRefExoticComponent<ForbidA | ForbidB>;
   const bar = prop("Forbid", "bar");
   assert.equal(bar.type, "string");
   assert.equal(bar.where, "Only in `ForbidB`, where it is **required**.");
+  // A @default only one member gives is that member's.
+  const size = prop("DefCase", "size");
+  assert.equal(size.default, null);
+  assert.match(size.where, /Defaults to `"s"` in `DefA`\./);
+  // A function's own `| undefined` is its return type's.
+  assert.equal(
+    prop("FnPart", "getLabel").type,
+    "(x: string) => string | undefined",
+  );
+  // Each member type once.
+  assert.equal(prop("Dup", "r").type, "string");
+  // Every member's deprecation, by member, when their words differ.
+  assert.equal(
+    prop("Gone", "gone").deprecated,
+    "In `GoneA`: use one In `GoneB`: use two",
+  );
+});
+
+test("a function prop keeps the undefined its return type takes", () => {
+  // BrowseCategoriesPanel's tint returns a CategoryTint or undefined; the
+  // card dropped the undefined, as if it were the prop's own (5 Nov 2026).
+  assert.match(
+    cards
+      .get("BrowseCategoriesPanel")
+      ?.parts.get("BrowseCategoriesPanel")
+      ?.get("tint") ?? "",
+    /^`\(category: CategoryPresentation\) => CategoryTint \| undefined`, optional/,
+  );
+  // A union's members' words differ: each is named.
+  assert.match(
+    cards.get("Accordion")?.text ?? "",
+    /In `AccordionPrimitive\.AccordionMultipleProps`: The controlled stateful value of the accordion items/,
+  );
 });
 
 test("no card counts the attributes it inherits from React or framer-motion", () => {

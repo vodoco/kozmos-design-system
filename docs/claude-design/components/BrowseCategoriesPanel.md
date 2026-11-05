@@ -94,7 +94,7 @@ It forwards its ref to `HTMLElement`. Its props are `BrowseCategoriesPanelProps`
 - `categories`: `readonly CategoryPresentation[]`, **required**.
 - `onSelect`: `(categoryId: string) => void`, **required**.
 - `renderIcon`: `(category: CategoryPresentation) => React.ReactNode`, **required**.
-- `tint`: `(category: CategoryPresentation) => CategoryTint`, optional.
+- `tint`: `(category: CategoryPresentation) => CategoryTint | undefined`, optional.
 
   A category's colours for its tile, or undefined for the theme's.
 

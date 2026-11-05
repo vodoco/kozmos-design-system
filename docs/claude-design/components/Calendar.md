@@ -58,9 +58,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `CalendarProps`, which is
 
   `string | null` in `CalendarSingleProps`; `DateRangeValue` in `CalendarRangeProps`.
 
-  The chosen day, `YYYY-MM-DD`, with `onValueChange`.
+  In `CalendarSingleProps`: The chosen day, `YYYY-MM-DD`, with `onValueChange`.
 
-  The chosen range, `YYYY-MM-DD` at each end, with `onValueChange`.
+  In `CalendarRangeProps`: The chosen range, `YYYY-MM-DD` at each end, with `onValueChange`.
 
 - `defaultValue`: `string | DateRangeValue`, optional.
 
@@ -70,9 +70,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `CalendarProps`, which is
 
   `(value: string) => void` in `CalendarSingleProps`; `(value: DateRangeValue) => void` in `CalendarRangeProps`.
 
-  Called with the day each time one is chosen, the chosen one included.
+  In `CalendarSingleProps`: Called with the day each time one is chosen, the chosen one included.
 
-  Called with `{ start }` when a first day is chosen, and with
+  In `CalendarRangeProps`: Called with `{ start }` when a first day is chosen, and with
   `{ start, end }`, in order, when the second is.
 
 - `months`: `1 | 2`, optional, default `1`.

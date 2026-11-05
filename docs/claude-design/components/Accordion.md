@@ -72,18 +72,18 @@ It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, whi
 
   `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
 
-  The controlled stateful value of the accordion item whose content is expanded.
+  In `AccordionPrimitive.AccordionSingleProps`: The controlled stateful value of the accordion item whose content is expanded.
 
-  The controlled stateful value of the accordion items whose contents are expanded.
+  In `AccordionPrimitive.AccordionMultipleProps`: The controlled stateful value of the accordion items whose contents are expanded.
 
 - `defaultValue`: `string | string[]`, optional.
 
   `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
 
-  The value of the item whose content is expanded when the accordion is initially rendered. Use
+  In `AccordionPrimitive.AccordionSingleProps`: The value of the item whose content is expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
 
-  The value of the items whose contents are expanded when the accordion is initially rendered. Use
+  In `AccordionPrimitive.AccordionMultipleProps`: The value of the items whose contents are expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
 
 - `onValueChange`: `((value: string) => void) | ((value: string[]) => void)`, optional.

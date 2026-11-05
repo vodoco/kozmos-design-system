@@ -395,9 +395,7 @@ export function describeComponent(api, name, defaults = new Map()) {
         origin: own ? originOf(own.getSourceFile().fileName) : null,
         // `?:` already says a member may leave it out.
         type: optional
-          ? typeOfProp(api, symbol, declarations, own)
-              .replace(/^undefined \| /, "")
-              .replace(/ \| undefined$/, "")
+          ? withoutUndefined(typeOfProp(api, symbol, declarations, own))
           : typeOfProp(api, symbol, declarations, own),
         optional,
         // `foo?: undefined` and `foo: never` forbid the prop; a required
@@ -428,30 +426,41 @@ export function describeComponent(api, name, defaults = new Map()) {
     const required =
       takers.length === members.length && requiring.length === members.length;
     const texts = [...new Set(takers.map((r) => r.type))];
-    let type =
-      texts.length > 1
-        ? texts
-            .map((text) => (/=>/.test(text) ? `(${text})` : text))
-            .join(" | ")
-        : texts[0];
-    // `?:` already says a prop may be left out.
-    if (!required) type = type.replace(/\s*\|\s*undefined$/, "");
+    let type = texts.length > 1 ? unionOf(texts) : texts[0];
+    // `?:` already says a prop may be left out; a function's own
+    // `| undefined` (`=> T | undefined`) is its return type's, and stays.
+    if (!required) type = withoutUndefined(type);
+    const name = (member) => code(memberName(member));
+    const names = (list) => list.map((r) => name(r.member)).join(" and ");
     const docs = takers.map((r) => documentation(r.symbol, checker));
-    // Each member's own words, a paragraph each.
-    const doc = [...new Set(docs.map((d) => d.text).filter(Boolean))].join(
-      "\n\n",
-    );
+    // Each member's own words, a paragraph each, named by member where the
+    // members' words differ.
+    const docTexts = [...new Set(docs.map((d) => d.text).filter(Boolean))];
+    const doc =
+      docTexts.length > 1
+        ? docTexts
+            .map(
+              (text) =>
+                `In ${names(takers.filter((r, i) => docs[i].text === text))}: ${text}`,
+            )
+            .join("\n\n")
+        : (docTexts[0] ?? "");
     const tagOf = (d, ...names) => d.tags.find((t) => names.includes(t.name));
     const deprecations = docs.map((d) => tagOf(d, "deprecated"));
     const defaultTags = docs.map((d) => tagOf(d, "default", "defaultValue"));
     const allDeprecated = deprecations.every(Boolean);
-    const defaultTexts = [
-      ...new Set(defaultTags.filter(Boolean).map((t) => t.text)),
+    const deprecationTexts = [
+      ...new Set(deprecations.filter(Boolean).map((t) => t.text ?? "")),
     ];
+    // A @default is the prop's only when every member that takes it gives
+    // the same one; otherwise it is each member's, in the note.
+    const sharedDefault =
+      defaultTags.every(Boolean) &&
+      new Set(defaultTags.map((t) => t.text)).size === 1
+        ? defaultTags[0].text
+        : null;
     let where = null;
     if (members.length > 1) {
-      const name = (member) => `\`${memberName(member)}\``;
-      const names = (list) => list.map((r) => name(r.member)).join(" and ");
       const notes = [];
       if (takers.length < members.length)
         notes.push(
@@ -479,7 +488,11 @@ export function describeComponent(api, name, defaults = new Map()) {
             )
             .join("; ")}.`,
         );
-      if (!defaults.has(propName) && defaultTexts.length > 1)
+      if (
+        !defaults.has(propName) &&
+        !sharedDefault &&
+        defaultTags.some(Boolean)
+      )
         notes.push(
           `Defaults to ${takers
             .map((r, i) =>
@@ -508,10 +521,16 @@ export function describeComponent(api, name, defaults = new Map()) {
       required,
       type,
       doc,
-      deprecated: allDeprecated ? (deprecations[0].text ?? "") : null,
+      deprecated: allDeprecated
+        ? deprecationTexts.length > 1
+          ? takers
+              .map((r, i) => `In ${name(r.member)}: ${deprecations[i].text}`)
+              .join(" ")
+          : (deprecationTexts[0] ?? "")
+        : null,
       default:
         defaults.get(propName) ??
-        (defaultTexts.length === 1 ? defaultTexts[0] : null),
+        (members.length > 1 ? sharedDefault : (defaultTags[0]?.text ?? null)),
       origin,
       where,
       node: first.own ?? null,
@@ -523,6 +542,49 @@ export function describeComponent(api, name, defaults = new Map()) {
   const rank = { kozmos: 0, radix: 1, react: 2, motion: 2 };
   listed.sort((a, b) => rank[a.origin] - rank[b.origin]);
   return { name, propsText, heritage, ref, props: listed, summarised, entry };
+}
+
+/**
+ * A type's members at its top level, as the compiler groups them: brackets
+ * nest, and a function type (`(x) => A | B`) is one member, its return type
+ * running to the end.
+ */
+export function unionMembers(text) {
+  const members = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if ("<([{".includes(c)) depth++;
+    else if (">)]}".includes(c) && text[i - 1] !== "=") depth--;
+    else if (depth === 0 && c === "=" && text[i + 1] === ">") break;
+    else if (depth === 0 && c === "|") {
+      members.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  members.push(text.slice(start).trim());
+  return members.filter(Boolean);
+}
+
+/** A type without the `undefined` an optional prop carries at its top level. */
+export function withoutUndefined(text) {
+  const kept = unionMembers(text).filter((member) => member !== "undefined");
+  return kept.length ? kept.join(" | ") : text;
+}
+
+/** Types joined as one union, each member once; a function in parentheses. */
+function unionOf(texts) {
+  const members = [];
+  for (const text of texts)
+    for (const member of unionMembers(text)) {
+      const written =
+        unionMembers(text).length === 1 && /=>/.test(member) && texts.length > 1
+          ? `(${member})`
+          : member;
+      if (!members.includes(written)) members.push(written);
+    }
+  return members.join(" | ");
 }
 
 /** A prop's type as one member of the props declares it. */
@@ -606,12 +668,11 @@ function memberNamer(api, members, declared, discriminant) {
       ),
     );
   const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // `AccordionSingleProps` as written: `AccordionPrimitive.AccordionSingleProps`.
   const asDeclared = (part) =>
-    /^\w+$/.test(part)
-      ? (declared.match(
-          new RegExp(`\\b((?:\\w+\\.)+${escaped(part)})\\b`),
-        )?.[1] ?? part)
-      : part;
+    declared.match(
+      new RegExp(`(?<![\\w.])((?:\\w+\\.)+${escaped(part)})(?![\\w])`),
+    )?.[1] ?? part;
   const parts = new Map(members.map((m) => [m, partsOf(m).map(asDeclared)]));
   return (member) => {
     const own = parts.get(member);
