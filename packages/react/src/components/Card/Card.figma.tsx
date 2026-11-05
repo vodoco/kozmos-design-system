@@ -29,10 +29,15 @@ figma.connect(Card, cardUrl, {
     title: figma.string("Title Text"),
     description: figma.string("Description Text"),
     body: figma.string("Body Text"),
+    // GAP-169: what acts on the card, at the header's end.
+    headerActions: figma.boolean("Header Actions", {
+      true: figma.slot("Header Actions Slot"),
+      false: undefined,
+    }),
   },
-  example: ({ body, description, title }) => (
+  example: ({ body, description, headerActions, title }) => (
     <Card>
-      <CardHeader>
+      <CardHeader actions={headerActions}>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
@@ -48,10 +53,15 @@ figma.connect(Card, cardUrl, {
     description: figma.string("Description Text"),
     body: figma.string("Body Text"),
     actions: figma.children(["Secondary Action", "Primary Action"]),
+    // GAP-169: what acts on the card, at the header's end.
+    headerActions: figma.boolean("Header Actions", {
+      true: figma.slot("Header Actions Slot"),
+      false: undefined,
+    }),
   },
-  example: ({ actions, body, description, title }) => (
+  example: ({ actions, body, description, headerActions, title }) => (
     <Card>
-      <CardHeader>
+      <CardHeader actions={headerActions}>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

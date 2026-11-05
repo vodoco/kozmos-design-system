@@ -36,13 +36,21 @@ figma.connect(
         Loading: true,
       }),
       icon: figma.instance("Icon"),
+      // GAP-197: the count over the icon's top-end corner, when Counter
+      // shows it. Counter Text is a sample in the design; in code the count
+      // is the product's number, which a snippet cannot read from text.
+      counter: figma.boolean("Counter", {
+        true: 3,
+        false: undefined,
+      }),
     },
-    example: ({ variant, size, disabled, isLoading, icon }) => (
+    example: ({ variant, size, disabled, isLoading, icon, counter }) => (
       <IconButton
         variant={variant}
         size={size}
         disabled={disabled}
         isLoading={isLoading}
+        counter={counter}
         aria-label="Icon action"
       >
         {icon}

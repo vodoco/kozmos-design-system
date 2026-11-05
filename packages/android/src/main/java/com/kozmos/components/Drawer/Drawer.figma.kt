@@ -8,8 +8,13 @@ import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
+import com.figma.code.connect.FigmaVariant
 
+// Placement=Fixed only: Compose's drawer has no inline form yet (GAP-198 is web
+// and Figma first, decision 134), so an Inline instance shows no Compose snippet
+// rather than a fixed one.
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=232-2042")
+@FigmaVariant("Placement", "Fixed")
 class KozmosDrawerConnect {
     @FigmaProperty(FigmaType.Text, "Title Text")
     val title: String = "Manage layers"
