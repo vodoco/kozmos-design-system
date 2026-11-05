@@ -5,85 +5,85 @@
   "runtimeAliases": [
     {
       "name": "Tailwind map marker dot",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "map-marker", "dot"],
       "value": "var(--semantics-map-marker-dot)"
     },
     {
       "name": "Tailwind map marker ring",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "map-marker", "ring"],
       "value": "var(--semantics-map-marker-ring)"
     },
     {
       "name": "Tailwind success fill",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "success", "DEFAULT"],
       "value": "var(--primitives-colors-emotional-success-800)"
     },
     {
       "name": "Tailwind success foreground",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "success", "foreground"],
       "value": "var(--primitives-colors-foreground-1000)"
     },
     {
       "name": "Tailwind warning fill",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "warning", "DEFAULT"],
       "value": "var(--primitives-colors-emotional-alert-800)"
     },
     {
       "name": "Tailwind warning foreground",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "warning", "foreground"],
       "value": "var(--primitives-colors-foreground-1000)"
     },
     {
       "name": "Tailwind info fill",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "info", "DEFAULT"],
       "value": "var(--primitives-colors-emotional-info-700)"
     },
     {
       "name": "Tailwind info foreground",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "info", "foreground"],
       "value": "var(--primitives-colors-foreground-1000)"
     },
     {
       "name": "Tailwind theme fill (decision 59)",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "theme-fill", "DEFAULT"],
       "value": "var(--primitives-colors-theme-500)"
     },
     {
       "name": "Tailwind theme foreground (decision 59)",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "theme-fill", "foreground"],
       "value": "var(--components-primary-buttons-themed-button-foreground-content-idle)"
     },
     {
       "name": "Tailwind destructive text",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "destructive", "text"],
       "value": "var(--semantics-emotion-danger-text)"
     },
     {
       "name": "Tailwind success text",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "success", "text"],
       "value": "var(--semantics-emotion-success-text)"
     },
     {
       "name": "Tailwind warning text",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "warning", "text"],
       "value": "var(--semantics-emotion-alert-text)"
     },
     {
       "name": "Tailwind info text",
-      "file": "packages/react/tailwind.config.js",
+      "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "info", "text"],
       "value": "var(--semantics-emotion-informative-text)"
     }

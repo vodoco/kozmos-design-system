@@ -182,7 +182,7 @@ Do not rerun a publication or move existing tags to include post-release documen
 
 The root `package.json` holds `pnpm.overrides` that lift transitive development dependencies past
 published advisories (#283, 17 Oct 2026; 161 open alerts became 2). No published package's own
-dependencies are overridden: the four public packages ship the dependency ranges their
+dependencies are overridden: the public packages ship the dependency ranges their
 `package.json` names, and consumers resolve those themselves.
 
 - **Each override is scoped to the vulnerable major** (`axios@^1`, not `axios`), so a parent that

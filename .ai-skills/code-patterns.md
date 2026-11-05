@@ -62,7 +62,7 @@ Banner.displayName = "Banner";
   `docs/claude-design` read a component's values from the built types, so a variant exists once
   it is in the recipe or the props: nothing else lists it.
 - **Colours are roles, never literals:** Tailwind's role classes (`bg-primary`, `text-foreground`,
-  `border-input`), defined in `packages/react/tailwind.config.js` over the tokens, or the token
+  `border-input`), defined in `packages/styles/tailwind.config.js` over the tokens, or the token
   variables themselves. A class must compile to something: `pnpm components:classes:check` reads
   the built CSS.
 - **A prominent fill is the theme fill (decision 59):** `bg-theme-fill text-theme-fill-foreground`,

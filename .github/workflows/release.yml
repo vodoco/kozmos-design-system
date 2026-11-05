@@ -105,10 +105,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && inputs.sha == github.sha
     runs-on: ubuntu-latest
     # Each package waits up to ten minutes for npm's read path to catch up with
-    # its own write (publisher.mjs). Four packages must fit inside this, with
+    # its own write (publisher.mjs). Five packages must fit inside this, with
     # room for checkout and install, or the runner kills the job before the
     # assertion can report which package the registry never showed.
-    timeout-minutes: 45
+    timeout-minutes: 60
     environment: npm-release
     # npm provenance (Olcay's decision 32): this job, and only this job, may
     # mint an OIDC token, so npm can attest that each package was built from

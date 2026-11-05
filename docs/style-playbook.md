@@ -335,7 +335,7 @@ In order, every time:
 | Figma importer plugin        | `figma/foundations-importer/code.js`, `ui.html`   |
 | Component number table       | same file, search `name: "<Component>/`           |
 | Foundations payload          | `docs/figma-foundations-payload.json` (generated) |
-| Web colour and radius map    | `packages/react/tailwind.config.js`               |
+| Web colour and radius map    | `packages/styles/tailwind.config.js`              |
 | Native colour and dimensions | `packages/{ios/Sources,android/src/...}/Kozmos*`  |
 | Checks                       | `scripts/check-*.mjs`                             |
 

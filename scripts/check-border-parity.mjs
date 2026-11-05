@@ -99,7 +99,7 @@ for (const mode of ["light", "dark"]) {
 }
 
 // 2. the web
-const tailwind = read("packages/react/tailwind.config.js");
+const tailwind = read("packages/styles/tailwind.config.js");
 for (const [key, role] of [
   ["border", "subtle"],
   ["input", "input"],

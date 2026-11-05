@@ -91,7 +91,7 @@ would change host override behaviour. Differing values remain separate. Duplicat
 declarations, importance differences, mixed recipes and repeated root definitions
 are not treated as interchangeable. Public token names and values are unchanged.
 
-The implementation and regression tests are in `packages/react/postcss/scoped-css.cjs`
+The implementation and regression tests are in `packages/styles/postcss/scoped-css.cjs`
 and `scoped-css.test.cjs`. `turbo.json` includes `postcss/**` in build inputs so helper
 edits invalidate cached CSS. Run `pnpm test:css-build` and the scoped/owned CSS browser
 checks after compiler changes. For a before/after preservation check, retain the

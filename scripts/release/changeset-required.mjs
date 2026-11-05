@@ -33,6 +33,8 @@ export const PUBLISHED = {
   "@kozmos-ds/icons": "packages/icons",
   "@kozmos-ds/product-contracts": "packages/product-contracts",
   "@kozmos-ds/tokens": "packages/tokens",
+  // The shared stylesheet (Vue 3 Phase 0), which react copies into its dist.
+  "@kozmos-ds/styles": "packages/styles",
 };
 
 // Under src/, what never reaches dist: tests, stories, docs pages, Code
@@ -40,9 +42,9 @@ export const PUBLISHED = {
 const NOT_SHIPPED =
   /(^|\/)(__tests__|tests?)\/|\.(test|spec|stories)\.[cm]?[jt]sx?$|\.figma\.tsx?$|\.mdx?$|\.snap$/;
 // Beside src/, the files that decide what dist holds: the build configs, the
-// PostCSS plugins react's build runs over every rule it ships
-// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins it runs
-// over every module (vite-plugins/), and tsconfig, whose `exclude` is what
+// PostCSS plugins styles' build runs over every rule it ships
+// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins react's
+// build runs over every module (vite-plugins/), and tsconfig, whose `exclude` is what
 // unplugin-dts publishes. tsconfig.node.json only types
 // the build config itself.
 const BUILD_FILES =

@@ -16,16 +16,16 @@ const icons = { name: "@kozmos-ds/icons", type: "minor" };
 test("what a published package ships counts, and nothing else does", () => {
   for (const file of [
     "packages/react/src/components/Chip/Chip.tsx",
-    "packages/react/src/styles/owned-components.css",
+    "packages/styles/src/styles/owned-components.css",
     "packages/react/tsconfig.json",
     "packages/react/vite.config.mts",
     "packages/react/vite-plugins/shakable-components.mjs",
     "packages/icons/vite.config.mts",
-    "packages/react/tailwind.config.js",
-    "packages/react/postcss.config.cjs",
-    // react's build runs these PostCSS plugins over every rule it ships
-    "packages/react/postcss/scoped-css.cjs",
-    "packages/react/postcss/token-alpha.cjs",
+    "packages/styles/tailwind.config.js",
+    "packages/styles/postcss.config.cjs",
+    // styles' build runs these PostCSS plugins over every rule it ships
+    "packages/styles/postcss/scoped-css.cjs",
+    "packages/styles/postcss/token-alpha.cjs",
     "packages/tokens/build.mjs",
     "packages/tokens/config.json",
   ])
@@ -38,7 +38,7 @@ test("what a published package ships counts, and nothing else does", () => {
     "packages/react/src/__tests__/a11y.tsx",
     "packages/react/tests/integration/adaptive-host.tsx",
     "packages/react/README.md",
-    "packages/react/postcss/scoped-css.test.cjs",
+    "packages/styles/postcss/scoped-css.test.cjs",
     "packages/react/tsconfig.node.json",
     "packages/react/vitest.config.ts",
     "packages/react/playwright.config.ts",

@@ -35,29 +35,22 @@ function toGlobalName(packageName: string) {
 }
 
 /**
- * Tailwind's preflight names theme values — `theme('fontFamily.sans', <its
- * default>)` — which only Tailwind resolves; a browser drops each such
- * declaration, so a page with the reset kept its serif. The host reset is not
- * built by Tailwind, so each value takes the default it names.
+ * The stylesheets are @kozmos-ds/styles's (Vue 3 Phase 0): it builds style.css
+ * and reset.css once for every Kozmos web package, from the sources and the
+ * PostCSS passes this build ran until 5 Nov 2026. This package still ships
+ * both, unchanged, as ./style.css, ./reset.css and ./dist/style.css, so no
+ * product's import moves. Read as bytes, so the copy is exact.
  */
-function resolvePreflightTheme(css: string) {
-  const resolved = css.replace(/theme\('[^']*',\s*([^;]*?)\)(?=;)/g, "$1");
-  if (resolved.includes("theme(")) {
-    throw new Error("reset.css: a theme() call has no default to resolve to");
-  }
-  return resolved;
-}
+const STYLESHEETS = ["style.css", "reset.css"];
 
 /**
- * The stylesheet and the JavaScript are built for the browsers package.json
- * declares, not for Vite's default target (Chrome 87, Edge 88, Safari 14,
- * Firefox 78). For that target esbuild split every `inset` into four longhands
- * and wrote prefixed copies of `appearance` and `tab-size` that no declared
- * browser reads, and rewrote every optional chain, `a?.b`, as
- * `a == null ? void 0 : a.b`: it trusts `?.` only from Chrome and Edge 91, for
- * a V8 bug no declared browser has. Android's WebView is Chrome's engine at the
- * same version. An entry this does not understand stops the build rather than
- * leaving a browser out.
+ * The JavaScript is built for the browsers package.json declares, not for
+ * Vite's default target (Chrome 87, Edge 88, Safari 14, Firefox 78), as
+ * @kozmos-ds/styles builds the stylesheet for the same list. For that target
+ * esbuild rewrote every optional chain, `a?.b`, as `a == null ? void 0 : a.b`:
+ * it trusts `?.` only from Chrome and Edge 91, for a V8 bug no declared browser
+ * has. Android's WebView is Chrome's engine at the same version. An entry this
+ * does not understand stops the build rather than leaving a browser out.
  */
 function targetFrom(browserslist: string[]) {
   const engines: Record<string, string> = {
@@ -90,19 +83,17 @@ export default defineConfig(async () => {
     plugins: [
       react(),
       {
-        name: "kozmos-opt-in-reset",
+        name: "kozmos-stylesheets-from-styles",
         async generateBundle() {
-          // A separate, deliberate host-page reset. The default CSS is scoped.
-          this.emitFile({
-            type: "asset",
-            fileName: "reset.css",
-            source: resolvePreflightTheme(
-              await readFile(
-                require.resolve("tailwindcss/lib/css/preflight.css"),
-                "utf8",
+          for (const fileName of STYLESHEETS) {
+            this.emitFile({
+              type: "asset",
+              fileName,
+              source: await readFile(
+                require.resolve(`@kozmos-ds/styles/${fileName}`),
               ),
-            ),
-          });
+            });
+          }
         },
       },
       // Component names in development only, and parts an app's bundler can
@@ -132,24 +123,7 @@ export default defineConfig(async () => {
       }),
       visualizerPlugin,
     ].filter(Boolean),
-    css: {
-      postcss: {
-        plugins: [
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          require("tailwindcss"),
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          require("autoprefixer"),
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          require("./postcss/shadow-reach.cjs")(),
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          require("./postcss/scoped-css.cjs")(),
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          require("./postcss/compact-css.cjs")(),
-        ],
-      },
-    },
     build: {
-      cssTarget: targetFrom(packageJson.browserslist),
       // ES2020 as well: the syntax stays what it was (the build already writes
       // `??`, so a consumer's parser sees nothing newer), and `x ??= y`, which
       // is ES2021, is still written out.
@@ -157,9 +131,6 @@ export default defineConfig(async () => {
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "KozmosReact",
-        // The stylesheet ships as dist/style.css, which package.json exports as ./style.css.
-        // Vite 6 names a library's CSS after the package (react.css) unless told otherwise.
-        cssFileName: "style",
       },
       rollupOptions: {
         external: dependencyExternals,

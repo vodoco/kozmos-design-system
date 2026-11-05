@@ -241,7 +241,19 @@ export function publicPackages(root) {
  */
 export function readPackageExports(root) {
   const packages = publicPackages(root);
-  const names = [...packages.keys()];
+  // A package with no module entry has no exports to read: @kozmos-ds/styles
+  // ships stylesheets alone (`@kozmos-ds/styles/style.css`), so an app
+  // imports a file of it, never the package itself.
+  const hasModule = ({ manifest }) =>
+    Boolean(
+      manifest.exports?.["."] ??
+      manifest.main ??
+      manifest.module ??
+      manifest.types,
+    );
+  const names = [...packages.keys()].filter((name) =>
+    hasModule(packages.get(name)),
+  );
   const file = path.join(exampleDirectory(root), "__kozmos-packages.ts");
   const source = `${names.map((name, i) => `import * as p${i} from ${JSON.stringify(name)};`).join("\n")}\nexport {};\n`;
   const program = ts.createProgram({
@@ -266,6 +278,9 @@ export function readPackageExports(root) {
         : `${names[i]} does not resolve from packages/react; build it first`,
     });
   });
+  for (const [name, entry] of packages)
+    if (!hasModule(entry))
+      result.set(name, { ...entry, exports: new Set(), unknown: null });
   return result;
 }
 

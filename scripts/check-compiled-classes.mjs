@@ -8,7 +8,7 @@
  * for three weeks: the control was transparent over the map, and its story centred
  * it on a white canvas, where transparent and white are the same picture.
  *
- * The cause is structural. Every colour role in packages/react/tailwind.config.js
+ * The cause is structural. Every colour role in packages/styles/tailwind.config.js
  * is a plain `var(--…)`, and Tailwind can only apply an opacity modifier to a
  * colour it can take apart — so `bg-black/5` compiles and `bg-background/90`
  * does not, and neither says so.
@@ -36,7 +36,10 @@ const postcss = createRequire(path.join(ROOT, "packages/react/package.json"))(
   "postcss",
 );
 const SRC = "packages/react/src";
-const CSS = "packages/react/dist/style.css";
+// The owned stylesheets and the build are @kozmos-ds/styles's since 5 Nov
+// 2026 (Vue 3 Phase 0); react ships a byte-identical copy of its style.css.
+const STYLES_SRC = "packages/styles/src";
+const CSS = "packages/styles/dist/style.css";
 const problems = [];
 const ok = (m) => console.log(`  ok    ${m}`);
 const fail = (m) => {
@@ -148,13 +151,16 @@ console.log("Classes that compile to nothing\n");
 const cssPath = path.join(ROOT, CSS);
 if (!fs.existsSync(cssPath)) {
   fail(
-    `${CSS} does not exist. Build it first — pnpm --filter "@kozmos-ds/react..." build — because this check reads what actually shipped, and without it every class would look absent.`,
+    `${CSS} does not exist. Build it first — pnpm --filter "@kozmos-ds/styles..." build — because this check reads what actually shipped, and without it every class would look absent.`,
   );
   console.log(`\n${problems.length} problem(s)`);
   process.exit(1);
 }
 
-const sources = walk(path.join(ROOT, SRC));
+const sources = [
+  ...walk(path.join(ROOT, SRC)),
+  ...walk(path.join(ROOT, STYLES_SRC)),
+];
 const cssTime = fs.statSync(cssPath).mtimeMs;
 const newer = sources.filter((file) => fs.statSync(file).mtimeMs > cssTime);
 if (newer.length > 0) {
@@ -241,7 +247,7 @@ if (current.occurrences > 0)
 // comparison, a `case` label or another call's argument is not a class. A
 // variant (`md:hidden`) is another class, and compiles.
 const config = createRequire(import.meta.url)(
-  path.join(ROOT, "packages/react/tailwind.config.js"),
+  path.join(ROOT, "packages/styles/tailwind.config.js"),
 );
 const blocked = new Set([
   ...(config.blocklist ?? []),

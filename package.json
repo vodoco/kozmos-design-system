@@ -63,7 +63,7 @@
     "test:map-sheet": "node scripts/check-map-sheet.mjs",
     "test:search-sheet": "node scripts/check-search-sheet.mjs",
     "test:poi-gallery": "node scripts/check-poi-gallery.mjs",
-    "test:css-build": "node --test packages/react/postcss/*.test.cjs",
+    "test:css-build": "node --test packages/styles/postcss/*.test.cjs",
     "test:declarations": "node --test scripts/emit-format-declarations.test.mjs",
     "lint": "turbo run lint",
     "ci:local": "node scripts/ci-local.mjs",

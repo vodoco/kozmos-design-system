@@ -31,7 +31,21 @@ module.exports = {
   // them only added a standalone utility for each word in them that reads as
   // a class, every word an @apply names and property names like `flex-shrink`.
   // No element carried any of the 55, a leftover of the owned-CSS migration.
-  content: ["./src/**/*.{js,ts,jsx,tsx}", "!./src/**/*.test.{js,ts,jsx,tsx}"],
+  //
+  // The sources are React's and Vue's (Vue 3 Phase 0): one stylesheet serves
+  // both, so a class either draws is generated. Paths are read from this
+  // file's folder, whatever directory a build or a check runs in. Vue's specs
+  // and stories are tests and examples, not parts, so they are left out like
+  // React's tests.
+  content: {
+    relative: true,
+    files: [
+      "../react/src/**/*.{js,ts,jsx,tsx}",
+      "!../react/src/**/*.test.{js,ts,jsx,tsx}",
+      "../vue/src/**/*.{vue,js,ts}",
+      "!../vue/src/**/*.{spec,test,stories}.{js,ts}",
+    ],
+  },
   // Public, and no part names it: the provider's pointer handler looks for
   // it, and a product can set it. Only one @apply kept it alive when the
   // stylesheets were scanned. scripts/check-config-isolation.mjs fails without

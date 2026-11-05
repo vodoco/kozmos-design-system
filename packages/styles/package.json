@@ -1,0 +1,60 @@
+{
+  "name": "@kozmos-ds/styles",
+  "version": "0.0.0",
+  "description": "The Kozmos design system stylesheet: tokens, the owned .kozmos-* rules and the utilities every Kozmos part draws with, shared by @kozmos-ds/react and the Vue package.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
+    "directory": "packages/styles"
+  },
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/styles#readme",
+  "bugs": {
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
+  },
+  "keywords": [
+    "kozmos",
+    "design-system",
+    "css",
+    "tailwind",
+    "maps",
+    "wayfinding"
+  ],
+  "exports": {
+    "./style.css": "./dist/style.css",
+    "./reset.css": "./dist/reset.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "THIRD-PARTY-NOTICES"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "browserslist": [
+    "chrome >= 118",
+    "edge >= 118",
+    "safari >= 17.4",
+    "firefox >= 146",
+    "android >= 118"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rm -rf dist && vite build",
+    "test": "node --test postcss/*.test.cjs"
+  },
+  "dependencies": {
+    "@kozmos-ds/tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.5.23",
+    "postcss-value-parser": "4.2.0",
+    "tailwindcss": "^3.4.3",
+    "tailwindcss-animate": "1.0.7",
+    "vite": "^6.4.5"
+  }
+}

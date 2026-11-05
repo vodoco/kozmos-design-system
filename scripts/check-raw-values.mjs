@@ -61,15 +61,18 @@ function cssSources(dir, result = []) {
   }
   return result;
 }
-const recipes = cssSources(path.join(ROOT, "packages/react/src")).map(
-  (file) => {
-    const classes = [];
-    postcss
-      .parse(fs.readFileSync(file, "utf8"), { from: file })
-      .walkAtRules("apply", (rule) => classes.push(rule.params));
-    return [path.relative(ROOT, file), classes.join(" ")];
-  },
-);
+// The owned stylesheets are @kozmos-ds/styles's since 5 Nov 2026 (Vue 3
+// Phase 0); React's src is read too, so a stylesheet added there still counts.
+const recipes = [
+  ...cssSources(path.join(ROOT, "packages/react/src")),
+  ...cssSources(path.join(ROOT, "packages/styles/src")),
+].map((file) => {
+  const classes = [];
+  postcss
+    .parse(fs.readFileSync(file, "utf8"), { from: file })
+    .walkAtRules("apply", (rule) => classes.push(rule.params));
+  return [path.relative(ROOT, file), classes.join(" ")];
+});
 
 for (const [kind, pattern] of Object.entries(PATTERNS)) {
   const byComponent = new Map();

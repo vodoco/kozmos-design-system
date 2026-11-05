@@ -839,7 +839,7 @@ keep the table's four columns and its statuses as they are.
 
 - **What:** `AdaptiveMapShell`'s bottom sheet has a drag handle
   (`role="slider"`, "Panel height") styled by `.kozmos-map-sheet-handle`
-  and `.kozmos-map-sheet-grip` in `packages/react/src/styles/owned-components.css`.
+  and `.kozmos-map-sheet-grip` in `packages/styles/src/styles/owned-components.css`.
   Three of their declarations use a layout token directly as a length —
   `height: var(--primitives-layout-spacing-200)`,
   `padding-top: var(--primitives-layout-spacing-75)` and
@@ -1111,7 +1111,7 @@ keep the table's four columns and its statuses as they are.
   proximity settles the tie for the preflight: a caller's `border` on its
   own box never draws. The plugin that scopes Kozmos's CSS means the
   preflight to weigh nothing — `:where(:scope …)`,
-  `packages/react/postcss/scoped-css.cjs:65–74` — but it takes every
+  `packages/styles/postcss/scoped-css.cjs:65–74` — but it takes every
   `*, ::before, ::after` rule for Tailwind's variable initialiser
   (`compilerDefaults`, line 56). The preflight's border reset has that
   selector too, so it keeps `:scope`'s weight (line 76).
@@ -1195,7 +1195,7 @@ keep the table's four columns and its statuses as they are.
 ## GAP-55 · A `Listbox`'s column is as wide as its widest option
 
 - **What:** `Listbox` is a grid with no column template
-  (`packages/react/src/styles/owned-selection.css:3`, `@apply grid …`), so
+  (`packages/styles/src/styles/owned-selection.css:3`, `@apply grid …`), so
   its one implicit column is as wide as its widest option's content. An
   option's label and description are single lines that cut off with an
   ellipsis (`truncate`), but only when their box is narrower than they are:
@@ -1220,7 +1220,7 @@ keep the table's four columns and its statuses as they are.
 ## GAP-56 · `Button` puts no space between an icon and its label
 
 - **What:** `Button` lays out its children in a row (`inline-flex`,
-  `packages/react/src/styles/owned-components.css:263`) with no gap. Only
+  `packages/styles/src/styles/owned-components.css:263`) with no gap. Only
   its own loading spinner is spaced from the label (`.kozmos-button-loader`,
   `mr-2`: 8px, as Figma's Button keeps 8px between its loading indicator and
   its label, node `77:857`). An `Icon` a caller puts beside the label — the
@@ -1248,7 +1248,7 @@ Text"])`) and the Get started page shows — touches it.
 ## GAP-57 · A `Button`'s label cannot wrap
 
 - **What:** `.kozmos-button` sets `white-space: nowrap`
-  (`packages/react/src/styles/owned-components.css:263`), which everything
+  (`packages/styles/src/styles/owned-components.css:263`), which everything
   inside it inherits. A label wider than the button cannot break: it
   overflows, and the page scrolls sideways. There is no prop for it. A class
   on the Button does win here (measured), but it would overturn a property

@@ -209,7 +209,10 @@ describe("ClientAppBanner", () => {
     }
 
     const css = readFileSync(
-      resolvePath(here, "../../styles/owned-client-app-banner.css"),
+      resolvePath(
+        here,
+        "../../../../styles/src/styles/owned-client-app-banner.css",
+      ),
       "utf8",
     );
     const rules: Rule[] = [];
@@ -241,7 +244,10 @@ describe("ClientAppBanner", () => {
     // without @scope — is scripts/check-client-app-banner.mjs, in all three
     // engines; this only holds the rules it measures in place.
     const css = readFileSync(
-      resolvePath(here, "../../styles/owned-client-app-banner.css"),
+      resolvePath(
+        here,
+        "../../../../styles/src/styles/owned-client-app-banner.css",
+      ),
       "utf8",
     );
     const declared = (selector: string) => {
@@ -286,7 +292,10 @@ describe("ClientAppBanner", () => {
     // rules say all of it, in pixels, as SwiftUI and Compose do: neither
     // grows with text. Under @scope the utilities say the same.
     const css = readFileSync(
-      resolvePath(here, "../../styles/owned-client-app-banner.css"),
+      resolvePath(
+        here,
+        "../../../../styles/src/styles/owned-client-app-banner.css",
+      ),
       "utf8",
     );
     const declared = (selector: string) => {

@@ -2330,6 +2330,10 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
+## `@kozmos-ds/styles` — current 0.0.0
+
+No changelog yet.
+
 ## `@kozmos-ds/tokens` — current 0.8.1
 
 ### 0.8.1
