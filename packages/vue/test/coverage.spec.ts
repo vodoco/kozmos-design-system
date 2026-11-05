@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as KozmosVue from "../src/index";
-import { COMPOSABLES, PORTS, REACT_SOURCE } from "./ports";
+import { COMPOSABLES, PORTS, REACT_SOURCE, type Port } from "./ports";
 import { readStoryArgs } from "./parity/story-args";
 
 /**
@@ -39,11 +39,12 @@ describe("every Vue export answers to React", () => {
 });
 
 /**
- * A spec, relative to test/, that exists, imports the Vue part from the
- * package's source and uses it: a comment or a string naming it is not a
- * drawing of it.
+ * A spec, relative to test/, that exists and draws the part in both: it
+ * imports the Vue part from the package's source and uses it, and it uses
+ * React's part from `@kozmos-ds/react`. A comment or a string naming either
+ * is not a drawing of it.
  */
-function drawsIn(spec: string, vue: string) {
+function drawsIn(spec: string, port: Port) {
   const file = path.join(TEST, spec);
   expect(fs.existsSync(file), `${spec} does not exist`).toBe(true);
   const source = ts.createSourceFile(
@@ -52,28 +53,83 @@ function drawsIn(spec: string, vue: string) {
     ts.ScriptTarget.Latest,
     true,
   );
-  let imported = false;
-  let used = false;
-  const visit = (node: ts.Node) => {
+  let vueImported = false;
+  let vueUsed = false;
+  let reactNamespace: string | null = null;
+  let reactNamed = false;
+  let reactUsed = false;
+  for (const statement of source.statements) {
     if (
-      ts.isImportDeclaration(node) &&
-      ts.isStringLiteral(node.moduleSpecifier) &&
-      /(^|\/)src\/index$|^\.\.\/\.\.\/index$/.test(node.moduleSpecifier.text)
-    ) {
-      const bindings = node.importClause?.namedBindings;
-      if (bindings && ts.isNamedImports(bindings))
-        imported ||= bindings.elements.some(
-          (element) => element.name.text === vue,
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    )
+      continue;
+    const from = statement.moduleSpecifier.text;
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings) continue;
+    if (
+      /(^|\/)src\/index$|^\.\.\/\.\.\/index$/.test(from) &&
+      ts.isNamedImports(bindings)
+    )
+      vueImported ||= bindings.elements.some((e) => e.name.text === port.vue);
+    if (from === "@kozmos-ds/react") {
+      if (ts.isNamespaceImport(bindings)) reactNamespace = bindings.name.text;
+      else
+        reactNamed ||= bindings.elements.some(
+          (e) => e.name.text === port.react,
         );
-      return;
     }
-    if (ts.isIdentifier(node) && node.text === vue) used = true;
+  }
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node)) return;
+    if (ts.isIdentifier(node) && node.text === port.vue) vueUsed = true;
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === reactNamespace &&
+      node.name.text === port.react
+    )
+      reactUsed = true;
+    if (reactNamed && ts.isIdentifier(node) && node.text === port.react)
+      reactUsed = true;
     ts.forEachChild(node, visit);
   };
   visit(source);
-  expect(imported, `${spec} does not import ${vue} from the source`).toBe(true);
-  expect(used, `${spec} imports ${vue} but never uses it`).toBe(true);
+  expect(
+    vueImported,
+    `${spec} does not import ${port.vue} from the source`,
+  ).toBe(true);
+  expect(vueUsed, `${spec} imports ${port.vue} but never uses it`).toBe(true);
+  expect(reactUsed, `${spec} never draws React's ${port.react}`).toBe(true);
   return source;
+}
+
+/**
+ * Whether a spec listens for an event on the part itself: a handler prop of
+ * that name in the props of `h(<the Vue part>, { … })`.
+ */
+function listensOn(source: ts.SourceFile, vue: string, handler: string) {
+  let found = false;
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "h" &&
+      node.arguments.length > 1 &&
+      ts.isIdentifier(node.arguments[0]) &&
+      node.arguments[0].text === vue &&
+      ts.isObjectLiteralExpression(node.arguments[1])
+    )
+      found ||= node.arguments[1].properties.some(
+        (p) =>
+          ts.isPropertyAssignment(p) &&
+          (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) &&
+          p.name.text === handler,
+      );
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
 }
 
 describe("every React story of a ported part is drawn in both", () => {
@@ -84,7 +140,7 @@ describe("every React story of a ported part is drawn in both", () => {
           port.drawnIn,
           `${port.vue} has no stories: name drawnIn`,
         ).toBeTruthy();
-        drawsIn(port.drawnIn!, port.vue);
+        drawsIn(port.drawnIn!, port);
         return;
       }
       const file = path.join(REACT_SOURCE, port.stories);
@@ -103,7 +159,7 @@ describe("every React story of a ported part is drawn in both", () => {
         elsewhere.sort(),
       );
       for (const spec of Object.values(port.elsewhere ?? {}))
-        drawsIn(spec, port.vue);
+        drawsIn(spec, port);
       // With no args story drawn, stories.parity.spec.ts draws only its
       // attributes.
       if (!stories.some((story) => !story.unread.length)) {
@@ -111,7 +167,7 @@ describe("every React story of a ported part is drawn in both", () => {
           port.drawnIn,
           `${port.stories} has no args story drawn: name drawnIn`,
         ).toBeTruthy();
-        drawsIn(port.drawnIn!, port.vue);
+        drawsIn(port.drawnIn!, port);
       }
     });
 });
@@ -129,20 +185,11 @@ describe("every event a port declares is seen to fire", () => {
         [...declared].sort(),
       );
       for (const [event, spec] of Object.entries(port.events ?? {})) {
-        const source = drawsIn(spec, port.vue);
-        // The spec listens for it, by the handler prop Vue's types give it.
+        const source = drawsIn(spec, port);
+        // The spec listens for it on the part, by the handler prop Vue's
+        // types give it.
         const handler = `on${event[0].toUpperCase()}${event.slice(1)}`;
-        let listens = false;
-        const visit = (node: ts.Node) => {
-          if (
-            ts.isPropertyAssignment(node) &&
-            (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
-            node.name.text === handler
-          )
-            listens = true;
-          ts.forEachChild(node, visit);
-        };
-        visit(source);
+        const listens = listensOn(source, port.vue, handler);
         expect(listens, `${spec} never listens for ${event} (${handler})`).toBe(
           true,
         );

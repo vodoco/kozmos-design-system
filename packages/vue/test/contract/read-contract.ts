@@ -24,22 +24,29 @@ import { COMPOSABLES, PORTS, REPOSITORY, VUE_DIST, type Port } from "../ports";
  * takes, are not listed: the parity check draws each part with attributes
  * added, and they must land where React's land.
  *
- * How one says the other:
+ * How one says the other (`planOf` decides it once, for both the names and
+ * the types):
  * - a value prop is a prop of the same name, of the same type (the compiler
  *   decides, `null` and `undefined` aside), required in both or neither, with
- *   the same default; `value` is `modelValue`, as `v-model` names it;
- * - a controlled prop, one with an `on…Change`, is a `v-model`: Vue emits
- *   `update:<prop>` with the new value, which is all React's `on…Change`
- *   reports, and nothing else: an event of React's name (`themeChange`)
- *   beside it says the same thing twice (decision 160);
- * - any other callback `onPress` is an event (`press`), declared in camelCase
- *   so that Vue's types give its handler React's name, with the same
- *   arguments;
+ *   the same default;
+ * - a controlled prop, one with an `on…Change` (or `value` with Kozmos's own
+ *   `onChange`), is a `v-model` (decision 160): Vue emits `update:<prop>` with
+ *   what React's callback passes, the new value first, and no other event
+ *   for it. A controlled `value` is `modelValue`, as `v-model` names it; a
+ *   `value` nothing controls (a tab's, an item's) keeps its name;
  * - a form field (React's element an input, textarea or select) takes
  *   `v-model` for its `value`, though React's `value` is an attribute;
- * - `children` is the default slot, and any other prop that takes a node is
- *   a slot of its own name, required alike. Vue's slots are always typed, so
- *   a slot React lacks is seen.
+ * - any other callback `onPress` (a function, as the compiler reads it) is
+ *   an event (`press`), declared in camelCase so that Vue's types give its
+ *   handler React's name, with the same arguments. A DOM event (`click`)
+ *   is not declared: it falls through to the element, as React's does;
+ * - `children` is the default slot (not for an input or a textarea, whose
+ *   `children` is only React's attribute), and any other prop that takes a
+ *   node is a slot of its own name, required alike. Vue's slots are always
+ *   typed, so a slot React lacks is seen. A render prop's slot props are a
+ *   decision for its port, recorded as an exception;
+ * - a DOM attribute Vue reads as a prop (Button's `disabled`) takes the
+ *   attribute's type and React's default, if React's parameter list gives one.
  * Vue may take no prop, event or slot React lacks. Whether an event fires is
  * not a matter of types: `coverage.spec.ts` asks each for the spec that
  * fires it.
@@ -53,6 +60,10 @@ export interface ReactMember {
   origin: string;
   /** React's default from the part's parameter list, as source text. */
   default: string | null;
+  /** A function, as the compiler reads the prop's type. */
+  callable: boolean;
+  /** A function that returns a node. */
+  returnsNode: boolean;
 }
 
 export interface VueProp {
@@ -71,6 +82,8 @@ export interface PortContract {
   reactAttributes: string[];
   /** The element React's ref reaches (`HTMLInputElement`), or null. */
   reactElement: string | null;
+  /** React's parameter-list defaults, DOM attributes' included (`type`). */
+  reactDefaults: Map<string, string>;
   vueProps: VueProp[];
   vueEmits: string[];
   /** Vue's slots, or null when its slots are untyped. */
@@ -102,30 +115,21 @@ function topLevelMembers(type: string): string[] {
 }
 const NODE_TYPE =
   /^(?:React\.)?(?:ReactNode|ReactElement(?:<.*>)?|ReactPortal)$|^JSX\.Element$/;
-/** A callback: `onPress`, a function. */
+/** A callback: `onPress`, a function as the compiler reads it. */
 const isCallback = (member: ReactMember) =>
-  /^on[A-Z]/.test(member.name) && /=>/.test(member.type);
+  /^on[A-Z]/.test(member.name) && member.callable;
 /**
  * A node: `children`, or a prop that takes one at its top level. A node
  * inside data (`items: { icon: ReactNode }[]`) is data, and compared as a
  * value: a Vue port that takes it otherwise is a decision to record.
  */
-const isNode = (member: ReactMember) =>
+export const isNode = (member: ReactMember) =>
   member.name === "children" ||
   topLevelMembers(member.type).some((t) => NODE_TYPE.test(t));
 /** A render prop: a function, not a callback, that returns a node. */
 const isRenderProp = (member: ReactMember) =>
-  !isCallback(member) &&
-  topLevelMembers(member.type).some((t) =>
-    /^\(?\(.*\)\s*=>\s*(?:React\.)?(?:ReactNode|ReactElement|JSX\.Element)/.test(
-      t,
-    ),
-  );
+  !isCallback(member) && member.returnsNode;
 
-/** The name `v-model` gives React's `value`; every other prop keeps its own. */
-export const vueNameOf = (react: string) =>
-  react === "value" ? "modelValue" : react;
-const reactNameOf = (vue: string) => (vue === "modelValue" ? "value" : vue);
 /**
  * The handler prop Vue's types give an event: `on` and the name, capitalised
  * and nothing more (`EmitsToProps`). `themeChange` is typed `onThemeChange`,
@@ -136,13 +140,68 @@ const reactNameOf = (vue: string) => (vue === "modelValue" ? "value" : vue);
 export const handlerOf = (event: string) => `on${capitalize(event)}`;
 /** The handler the runtime also finds for a kebab-case event. */
 const runtimeHandlerOf = (event: string) => `on${capitalize(camelize(event))}`;
-/** The prop an `on…Change` callback controls: `onOpenChange` → `open`. */
-const controlledBy = (callback: string) => {
-  const match = callback.match(/^on([A-Z]\w*)Change$/);
-  return match ? match[1][0].toLowerCase() + match[1].slice(1) : null;
-};
 /** Elements whose `value` is a form value, which Vue binds with `v-model`. */
 const FORM_FIELD = /^HTML(?:Input|TextArea|Select)Element$/;
+/** Elements whose `children` is only React's attribute: they draw none. */
+const CHILDLESS = /^HTML(?:Input|TextArea)Element$/;
+
+/** A v-model: React's prop, Vue's name for it, and React's change callback. */
+export interface Model {
+  react: string;
+  vue: string;
+  /** React's callback for its change, or null when it is the DOM's. */
+  change: string | null;
+}
+
+/**
+ * How a port's React props are said in Vue, decided once for the names
+ * rules and the type checks alike.
+ */
+export function planOf(contract: PortContract) {
+  const own = new Map(contract.react.map((m) => [m.name, m]));
+  const callbackOwn = (name: string) => {
+    const member = own.get(name);
+    return !!member && isCallback(member);
+  };
+  const models = new Map<string, Model>();
+  for (const member of contract.react) {
+    if (isCallback(member) || isNode(member) || isRenderProp(member)) continue;
+    const change =
+      [`on${capitalize(member.name)}Change`].find(callbackOwn) ??
+      (member.name === "value" && callbackOwn("onChange") ? "onChange" : null);
+    if (change)
+      models.set(member.name, {
+        react: member.name,
+        vue: member.name === "value" ? "modelValue" : member.name,
+        change,
+      });
+  }
+  // A form field's value is an attribute in React, and v-model in Vue.
+  if (
+    !own.has("value") &&
+    contract.reactElement !== null &&
+    FORM_FIELD.test(contract.reactElement) &&
+    contract.reactAttributes.includes("value")
+  )
+    models.set("value", { react: "value", vue: "modelValue", change: null });
+  const changes = new Set(
+    [...models.values()].map((m) => m.change).filter(Boolean),
+  );
+  return {
+    models,
+    /** React's callbacks that are not a model's change. */
+    callbacks: contract.react.filter(
+      (m) => isCallback(m) && !changes.has(m.name),
+    ),
+    /** React's change callbacks, by name, with their model. */
+    changes: new Map(
+      [...models.values()].filter((m) => m.change).map((m) => [m.change!, m]),
+    ),
+    vueName: (react: string) => models.get(react)?.vue ?? react,
+    reactName: (vue: string) =>
+      [...models.values()].find((m) => m.vue === vue)?.react ?? vue,
+  };
+}
 
 /**
  * React's defaults, from each part's parameter list, by the module that
@@ -168,6 +227,81 @@ function reactDefaultsReader(api: { entries: Map<string, unknown> }) {
   };
 }
 
+/** React's side of a port's contract. */
+export type ReactSide = Pick<
+  PortContract,
+  "react" | "reactAttributes" | "reactElement" | "reactDefaults"
+>;
+
+let readSides: ((name: string) => ReactSide) | undefined;
+/** What React's part takes, as the contract reads it, by export name; read once per run. */
+export function reactSides(): (name: string) => ReactSide {
+  if (readSides) return readSides;
+  const api = readPublishedApi(REPOSITORY);
+  const reactDefaults = reactDefaultsReader(api);
+  const checker = api.checker as ts.TypeChecker;
+  /** Whether a prop is a function, and one that returns a node, as the compiler reads it. */
+  const signature = (node: ts.Node | null, type: string) => {
+    if (!node)
+      return {
+        callable: /=>/.test(type),
+        returnsNode: topLevelMembers(type).some((t) =>
+          /=>\s*(?:React\.)?(?:ReactNode|ReactElement|JSX\.Element)/.test(t),
+        ),
+      };
+    const signatures = checker
+      .getNonNullableType(checker.getTypeAtLocation(node))
+      .getCallSignatures();
+    return {
+      callable: signatures.length > 0,
+      returnsNode: signatures.some((s) =>
+        /\b(?:ReactNode|ReactElement|JSX\.Element|ReactPortal)\b/.test(
+          checker.typeToString(s.getReturnType()),
+        ),
+      ),
+    };
+  };
+  const read = (name: string): ReactSide => {
+    const defaults = reactDefaults(name);
+    const described = describeComponent(api, name, defaults);
+    const element: string | null = described.ref ?? null;
+    // Kozmos's and Radix's props, and `children`: what the card lists. An
+    // input's or a textarea's `children` is only React's attribute.
+    const react: ReactMember[] = described.props
+      .filter(
+        (p: { name: string; origin: string }) =>
+          !(
+            p.name === "children" &&
+            p.origin === "react" &&
+            element &&
+            CHILDLESS.test(element)
+          ),
+      )
+      .map(
+        (
+          p: Omit<ReactMember, "callable" | "returnsNode"> & {
+            node: ts.Node | null;
+          },
+        ) => ({
+          name: p.name,
+          required: p.required,
+          type: p.type,
+          origin: p.origin,
+          default: p.default,
+          ...signature(p.node, p.type),
+        }),
+      );
+    return {
+      react,
+      reactAttributes: described.summarised.react as string[],
+      reactElement: element,
+      reactDefaults: defaults,
+    };
+  };
+  readSides = read;
+  return read;
+}
+
 /**
  * What each port takes, in React (its declarations and parameter lists) and
  * in Vue (its options, and its declarations for slots), with every type the
@@ -181,23 +315,10 @@ export function readContract(
   typeFindings: Finding[];
   composableFindings: Finding[];
 } {
-  const api = readPublishedApi(REPOSITORY);
-  const reactDefaults = reactDefaultsReader(api);
+  const side = reactSides();
   const contracts = ports.map((port): PortContract => {
-    const described = describeComponent(
-      api,
+    const { react, reactAttributes, reactElement, reactDefaults } = side(
       port.react,
-      reactDefaults(port.react),
-    );
-    // Kozmos's and Radix's props, and `children`: what the card lists.
-    const react: ReactMember[] = described.props.map(
-      (p: ReactMember & { node: unknown }) => ({
-        name: p.name,
-        required: p.required,
-        type: p.type,
-        origin: p.origin,
-        default: p.default,
-      }),
     );
     const component = vueExports[port.vue] as Component & {
       props?: Record<string, unknown> | string[];
@@ -238,8 +359,9 @@ export function readContract(
     return {
       port,
       react,
-      reactAttributes: described.summarised.react,
-      reactElement: described.ref ?? null,
+      reactAttributes,
+      reactElement,
+      reactDefaults,
       vueProps,
       vueEmits,
       vueSlots: null,
@@ -343,7 +465,7 @@ function compareTypes(contracts: PortContract[]): {
       `export type V_${n} = VueProps<typeof V.${port.vue}>;`,
       `export type S_${n} = VueSlots<typeof V.${port.vue}>;`,
     );
-    const vueProps = new Set(contract.vueProps.map((p) => p.name));
+    const plan = planOf(contract);
     const handlers = new Set(contract.vueEmits.map(handlerOf));
     const react = (name: string) => `NonNullable<PropOf<R_${n}, ${key(name)}>>`;
     const vue = (name: string) => `NonNullable<V_${n}[${key(name)}]>`;
@@ -355,7 +477,7 @@ function compareTypes(contracts: PortContract[]): {
       ...contract.react.map((m) => m.name),
       ...contract.reactAttributes,
     ]);
-    for (const member of contract.react.filter(isCallback))
+    for (const member of plan.callbacks)
       if (handlers.has(member.name))
         checks.push({
           id: `${port.vue}.${member.name}:payload`,
@@ -363,7 +485,7 @@ function compareTypes(contracts: PortContract[]): {
           react: `Payload<${react(member.name)}>`,
         });
     for (const prop of contract.vueProps) {
-      const reactName = reactNameOf(prop.name);
+      const reactName = plan.reactName(prop.name);
       if (!reactNames.has(reactName)) continue;
       checks.push({
         id: `${port.vue}.${prop.name}:type`,
@@ -371,15 +493,18 @@ function compareTypes(contracts: PortContract[]): {
         react: react(reactName),
       });
     }
-    for (const event of contract.vueEmits) {
-      const model = event.match(/^update:(\w+)$/)?.[1];
-      if (!model || !vueProps.has(model)) continue;
-      const reactName = reactNameOf(model);
-      if (!reactNames.has(reactName)) continue;
+    // update:<prop> carries what React's change callback passes, the new
+    // value first (Combobox's passes the option too); a form field's, the
+    // value.
+    for (const model of plan.models.values()) {
+      const handler = handlerOf(`update:${model.vue}`);
+      if (!handlers.has(handler)) continue;
       checks.push({
-        id: `${port.vue}.update:${model}:payload`,
-        vue: payload(handlerOf(event)),
-        react: `[${react(reactName)}]`,
+        id: `${port.vue}.update:${model.vue}:payload`,
+        vue: payload(handler),
+        react: model.change
+          ? `Payload<${react(model.change)}>`
+          : `[${react(model.react)}]`,
       });
     }
   });
@@ -502,6 +627,7 @@ const shownDefault = (value: unknown) =>
 /** Every rule but the types, for one port. */
 export function compareMembers(contract: PortContract): Finding[] {
   const { port, react, vueProps, vueEmits, vueSlots } = contract;
+  const plan = planOf(contract);
   const findings: Finding[] = [];
   const add = (id: string, message: string) =>
     findings.push({
@@ -510,7 +636,8 @@ export function compareMembers(contract: PortContract): Finding[] {
     });
   const props = new Map(vueProps.map((p) => [p.name, p]));
   const handlers = new Set(vueEmits.map(handlerOf));
-  const reactNames = new Set(react.map((m) => m.name));
+  const eventOf = (handler: string) =>
+    vueEmits.find((event) => handlerOf(event) === handler);
   const usedProps = new Set<string>();
   const usedHandlers = new Set<string>();
   const usedSlots = new Set<string>();
@@ -523,7 +650,7 @@ export function compareMembers(contract: PortContract): Finding[] {
 
   /** A prop React takes, under the name Vue gives it, compared. */
   const valueProp = (reactName: string, member: ReactMember | null) => {
-    const name = vueNameOf(reactName);
+    const name = plan.vueName(reactName);
     usedProps.add(name);
     const prop = props.get(name);
     if (!prop) {
@@ -536,7 +663,9 @@ export function compareMembers(contract: PortContract): Finding[] {
         `${name}:required`,
         `${name}: ${prop.required ? "required" : "optional"} in Vue, ${required ? "required" : "optional"} in React`,
       );
-    const expected = reactDefault(member?.default ?? null);
+    const expected = reactDefault(
+      member?.default ?? contract.reactDefaults.get(reactName) ?? null,
+    );
     if ("unreadable" in expected)
       add(
         `${name}:default`,
@@ -548,22 +677,18 @@ export function compareMembers(contract: PortContract): Finding[] {
         `${name}: defaults to ${shownDefault(prop.default)} in Vue, ${shownDefault(expected.value)} in React`,
       );
   };
-  /** `v-model:<prop>`: Vue emits `update:<prop>` for React's controlled prop. */
-  const model = (reactName: string) => {
-    const name = vueNameOf(reactName);
-    const update = handlerOf(`update:${name}`);
-    usedHandlers.add(update);
-    if (!handlers.has(update))
-      add(
-        `update:${name}:event`,
-        `update:${name}: no event, so \`v-model${name === "modelValue" ? "" : `:${name}`}\` cannot control React's \`${reactName}\``,
-      );
-  };
 
   for (const member of react) {
     if (isNode(member) || isRenderProp(member)) {
       const slot = member.name === "children" ? "default" : member.name;
       usedSlots.add(slot);
+      if (isRenderProp(member))
+        // What the slot's props are is the port's decision: React's render
+        // prop passes arguments, a Vue slot one props object.
+        add(
+          `${slot}:render-prop`,
+          `${slot}: React's \`${member.name}\` is a render prop (\`${member.type}\`); its slot's props are not compared, so record what they are as an exception`,
+        );
       if (vueSlots === null) continue; // reported once, above
       const found = vueSlots.find((s) => s.name === slot);
       if (!found)
@@ -576,20 +701,15 @@ export function compareMembers(contract: PortContract): Finding[] {
       continue;
     }
     if (isCallback(member)) {
-      const value = controlledBy(member.name);
-      // A controlled prop's change is `update:<prop>` alone, required with
-      // the prop below (decision 160): an event of React's name beside it
-      // says the same thing twice.
-      if (value && reactNames.has(value)) {
-        const twice = vueEmits.find(
-          (event) => handlerOf(event) === member.name,
-        );
+      const model = plan.changes.get(member.name);
+      if (model) {
+        // A model's change is `update:<prop>` alone (decision 160).
+        const twice = eventOf(member.name);
         if (twice) {
           usedHandlers.add(member.name);
-          const update = `update:${vueNameOf(value)}`;
           add(
             `${twice}:duplicate-event`,
-            `${twice}: says what \`${update}\` says; a controlled prop's change is \`${update}\` alone (decision 160)`,
+            `${twice}: says what \`update:${model.vue}\` says; a controlled prop's change is \`update:${model.vue}\` alone (decision 160)`,
           );
         }
         continue;
@@ -609,20 +729,20 @@ export function compareMembers(contract: PortContract): Finding[] {
       if (kebab) usedHandlers.add(handlerOf(kebab));
       continue;
     }
+    if (plan.models.has(member.name)) continue; // below, with its event
     valueProp(member.name, member);
-    if (reactNames.has(`on${capitalize(member.name)}Change`))
-      model(member.name);
   }
 
-  // A form field's value is an attribute in React, and `v-model` in Vue.
-  const formField =
-    contract.reactElement !== null &&
-    FORM_FIELD.test(contract.reactElement) &&
-    !reactNames.has("value") &&
-    contract.reactAttributes.includes("value");
-  if (formField) {
-    valueProp("value", null);
-    model("value");
+  // Each v-model: its prop, and `update:<prop>`.
+  for (const model of plan.models.values()) {
+    valueProp(model.react, react.find((m) => m.name === model.react) ?? null);
+    const update = handlerOf(`update:${model.vue}`);
+    usedHandlers.add(update);
+    if (!handlers.has(update))
+      add(
+        `update:${model.vue}:event`,
+        `update:${model.vue}: no event, so \`v-model${model.vue === "modelValue" ? "" : `:${model.vue}`}\` cannot control React's \`${model.react}\``,
+      );
   }
 
   for (const prop of vueProps) {
@@ -632,13 +752,22 @@ export function compareMembers(contract: PortContract): Finding[] {
         `${prop.name}: a Boolean prop with no \`default\`, which Vue reads as false when it is left out; React reads undefined. State the default.`,
       );
     if (usedProps.has(prop.name)) continue;
-    const reactName = reactNameOf(prop.name);
+    const reactName = plan.reactName(prop.name);
     if (contract.reactAttributes.includes(reactName)) {
-      // A DOM attribute Vue reads as a prop: the element has no default.
-      if (prop.hasDefault && prop.default !== undefined)
+      // A DOM attribute Vue reads as a prop: React's default, if its
+      // parameter list gives one (`type = "button"`), else the element's.
+      const expected = reactDefault(
+        contract.reactDefaults.get(reactName) ?? null,
+      );
+      if ("unreadable" in expected)
         add(
           `${prop.name}:default`,
-          `${prop.name}: defaults to ${shownDefault(prop.default)} in Vue; React's \`${reactName}\` is an attribute with none`,
+          `${prop.name}: React's default \`${expected.unreadable}\` is not a literal the contract can read; state it as an exception`,
+        );
+      else if (!sameDefault(prop.default, expected.value))
+        add(
+          `${prop.name}:default`,
+          `${prop.name}: defaults to ${shownDefault(prop.default)} in Vue, ${shownDefault(expected.value)} for React's \`${reactName}\``,
         );
       if (prop.required)
         add(
@@ -655,11 +784,16 @@ export function compareMembers(contract: PortContract): Finding[] {
   for (const event of vueEmits) {
     const handler = handlerOf(event);
     if (usedHandlers.has(handler)) continue;
-    if (contract.reactAttributes.includes(handler)) continue; // a DOM event, as `click`
-    add(
-      `${event}:extra-event`,
-      `${event}: an event React's ${port.react} has no callback for`,
-    );
+    if (contract.reactAttributes.includes(handler))
+      add(
+        `${event}:dom-event`,
+        `${event}: a DOM event declared as the part's own; left undeclared it reaches the element as React's \`${handler}\` does, and a declared one does not`,
+      );
+    else
+      add(
+        `${event}:extra-event`,
+        `${event}: an event React's ${port.react} has no callback for`,
+      );
   }
   for (const { name: slot } of vueSlots ?? [])
     if (!usedSlots.has(slot))

@@ -64,4 +64,36 @@ describe("readStoryArgs", () => {
     ]);
     expect(rendered).toEqual(["Drawn"]);
   });
+  it("inherits a spread story's render, honours the meta's, and reports what is not an object", () => {
+    const own = read(`
+      export default { args: { size: "sm" } };
+      const Template = { render: (args) => <X {...args} /> };
+      export const Base = { args: { children: "Go" } };
+      export const Spread = { ...Base, args: { children: "Again" } };
+      export const Rendered = { ...Template, args: { children: "Drawn" } };
+      export const Voice = voiceStory("idle");
+      export const Bound = Template.bind({});
+      export const Alias = Base;
+    `);
+    expect(
+      own.stories.map(({ name, args, unread }) => ({ name, args, unread })),
+    ).toEqual([
+      { name: "Base", args: { size: "sm", children: "Go" }, unread: [] },
+      // Its own args replace the spread story's.
+      { name: "Spread", args: { size: "sm", children: "Again" }, unread: [] },
+      { name: "Voice", args: { size: "sm" }, unread: ["story"] },
+      { name: "Bound", args: { size: "sm" }, unread: ["story"] },
+      { name: "Alias", args: { size: "sm", children: "Go" }, unread: [] },
+    ]);
+    expect(own.rendered).toEqual(["Rendered"]);
+    // A render on the meta draws every story.
+    const metaRendered = read(`
+      const meta = { render: () => <div />, args: { a: 1 } };
+      export default meta;
+      export const One = { args: { b: 2 } };
+      export const Two = {};
+    `);
+    expect(metaRendered.stories).toEqual([]);
+    expect(metaRendered.rendered).toEqual(["One", "Two"]);
+  });
 });

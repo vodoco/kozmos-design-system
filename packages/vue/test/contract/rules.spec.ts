@@ -21,6 +21,9 @@ const member = (
   required: false,
   origin: "kozmos",
   default: null,
+  // As the compiler would read these simple types.
+  callable: /=>/.test(type),
+  returnsNode: /=>\s*React\.ReactNode/.test(type),
   ...extra,
 });
 const prop = (name: string, extra: Partial<VueProp> = {}): VueProp => ({
@@ -36,6 +39,7 @@ const contract = (part: Partial<PortContract>): PortContract => ({
   react: [],
   reactAttributes: [],
   reactElement: null,
+  reactDefaults: new Map(),
   vueProps: [],
   vueEmits: [],
   vueSlots: [],
@@ -207,5 +211,83 @@ describe("the contract's rules", () => {
         vueProps: [prop("open", { isBoolean: true, hasDefault: false })],
       }),
     ).toEqual(["KozmosPart.open:boolean"]);
+  });
+  it("takes Kozmos's own onChange as a controlled value's change", () => {
+    // SearchBar, OTPInput, Rating: value and onChange(value), Kozmos's own.
+    const react = [
+      member("value", "string"),
+      member("onChange", "(value: string) => void"),
+    ];
+    expect(
+      ids({
+        react,
+        vueProps: [prop("modelValue")],
+        vueEmits: ["update:modelValue"],
+      }),
+    ).toEqual([]);
+    expect(
+      ids({
+        react,
+        vueProps: [prop("modelValue")],
+        vueEmits: ["update:modelValue", "change"],
+      }),
+    ).toEqual(["KozmosPart.change:duplicate-event"]);
+  });
+
+  it("keeps a value nothing controls as `value`", () => {
+    // TabsTrigger, AccordionItem, SelectItem: an identity, not a model.
+    const react = [member("value", "string", { required: true })];
+    expect(
+      ids({ react, vueProps: [prop("value", { required: true })] }),
+    ).toEqual([]);
+    expect(
+      ids({ react, vueProps: [prop("modelValue", { required: true })] }).sort(),
+    ).toEqual(["KozmosPart.modelValue:extra-prop", "KozmosPart.value:prop"]);
+  });
+
+  it("reads a callback by what it is, not by how its type is written", () => {
+    // DialogContent's onOpenAutoFocus is typed through Radix's aliases.
+    const react = [
+      member("onOpenAutoFocus", "DismissableLayerProps['onOpenAutoFocus']", {
+        callable: true,
+        origin: "radix",
+      }),
+    ];
+    expect(ids({ react, vueEmits: ["openAutoFocus"] })).toEqual([]);
+    expect(ids({ react, vueProps: [prop("onOpenAutoFocus")] })).toEqual([
+      "KozmosPart.onOpenAutoFocus:event",
+      "KozmosPart.onOpenAutoFocus:extra-prop",
+    ]);
+  });
+
+  it("leaves DOM events to fall through, and reads React's defaults on DOM attributes", () => {
+    const button = {
+      reactElement: "HTMLButtonElement",
+      reactAttributes: ["type", "onClick", "disabled"],
+      reactDefaults: new Map([["type", '"button"']]),
+    };
+    expect(ids({ ...button, vueEmits: ["click"] })).toEqual([
+      "KozmosPart.click:dom-event",
+    ]);
+    // AISearchButton's `type = "button"`.
+    expect(
+      ids({ ...button, vueProps: [prop("type", { default: "button" })] }),
+    ).toEqual([]);
+    expect(ids({ ...button, vueProps: [prop("type")] })).toEqual([
+      "KozmosPart.type:default",
+    ]);
+  });
+
+  it("asks a render prop's port to decide its slot's props", () => {
+    // BrowseCategoriesPanel's renderIcon(category).
+    const react = [
+      member(
+        "renderIcon",
+        "(category: CategoryPresentation) => React.ReactNode",
+      ),
+    ];
+    expect(
+      ids({ react, vueSlots: [{ name: "renderIcon", required: false }] }),
+    ).toEqual(["KozmosPart.renderIcon:render-prop"]);
   });
 });

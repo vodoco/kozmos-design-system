@@ -131,10 +131,16 @@ const property = (object: ts.ObjectLiteralExpression, name: string) =>
   )?.initializer;
 
 /**
- * Every story in a CSF file that is drawn from its args: an exported object
- * with no `render`. Read from the source, so the cases are the stories' own
- * and never a copy. A story with its own `render` is returned in `rendered`,
- * for the caller to cover another way.
+ * Every story in a CSF file: those drawn from their args, and the names of
+ * those that are not. Read from the source, so the cases are the stories'
+ * own and never a copy.
+ *
+ * A story is drawn from its args unless it, a story it spreads
+ * (`{ ...Default, args }`), or the meta has a `render`; those are returned
+ * in `rendered`, for the caller to cover another way. A story that is not
+ * an object (`voiceStory("…")`, `Template.bind({})`) is returned with
+ * `unread: ["story"]`, never dropped; one that names another story
+ * (`export const Default = Detailed`) is that story.
  */
 export function readStoryArgs(file: string): {
   stories: StoryCase[];
@@ -147,50 +153,90 @@ export function readStoryArgs(file: string): {
     true,
     ts.ScriptKind.TSX,
   );
-  const read = new Map<string, { args: StoryArgs; unread: string[] }>();
-  let meta: { args: StoryArgs; unread: string[] } = { args: {}, unread: [] };
+  interface Read {
+    args: StoryArgs;
+    unread: string[];
+    render: boolean;
+  }
+  const read = new Map<string, Read>();
+  let meta: Read = { args: {}, unread: [], render: false };
   const stories: StoryCase[] = [];
   const rendered: string[] = [];
   const unwrap = (node: ts.Expression): ts.Expression =>
-    ts.isSatisfiesExpression(node) || ts.isAsExpression(node)
+    ts.isSatisfiesExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isParenthesizedExpression(node)
       ? unwrap(node.expression)
       : node;
+  /** A story or meta object: its args, and whether it, or one it spreads, renders. */
+  const readStory = (value: ts.ObjectLiteralExpression): Read => {
+    let base: Read = { args: {}, unread: [], render: false };
+    for (const element of value.properties)
+      if (ts.isSpreadAssignment(element)) {
+        const from = ts.isIdentifier(element.expression)
+          ? read.get(element.expression.text)
+          : undefined;
+        base = from
+          ? {
+              args: { ...base.args, ...from.args },
+              unread: [...base.unread, ...from.unread],
+              render: base.render || from.render,
+            }
+          : {
+              ...base,
+              unread: [...base.unread, `...${element.expression.getText()}`],
+            };
+      }
+    const args = property(value, "args");
+    const own = args
+      ? readArgs(args, read)
+      : { args: {} as StoryArgs, unread: [] as string[] };
+    return {
+      // A story's own args replace the spread story's, key by key.
+      args: { ...(args ? {} : base.args), ...own.args },
+      unread: [...new Set([...(args ? [] : base.unread), ...own.unread])],
+      render: base.render || !!property(value, "render"),
+    };
+  };
   for (const statement of source.statements) {
     // `export default { … }`: the meta written in place.
     if (ts.isExportAssignment(statement) && !statement.isExportEquals) {
       const value = unwrap(statement.expression);
-      if (ts.isObjectLiteralExpression(value))
-        meta = readArgs(property(value, "args"), read);
+      if (ts.isObjectLiteralExpression(value)) meta = readStory(value);
       continue;
     }
     if (!ts.isVariableStatement(statement)) continue;
+    const exported = statement.modifiers?.some(
+      (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+    );
     for (const declaration of statement.declarationList.declarations) {
       if (!declaration.initializer || !ts.isIdentifier(declaration.name))
         continue;
-      const value = unwrap(declaration.initializer);
-      if (!ts.isObjectLiteralExpression(value)) continue;
       const name = declaration.name.text;
-      const exported = statement.modifiers?.some(
-        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
-      );
-      const own = readArgs(property(value, "args"), read);
-      read.set(name, own);
+      const value = unwrap(declaration.initializer);
+      let story: Read;
+      if (ts.isObjectLiteralExpression(value)) story = readStory(value);
+      else if (ts.isIdentifier(value) && read.has(value.text))
+        story = read.get(value.text)!;
+      else if (!exported) continue;
+      else story = { args: {}, unread: ["story"], render: false };
+      read.set(name, story);
       if (name === "meta" && !exported) {
-        meta = own;
+        meta = story;
         continue;
       }
       if (!exported) continue;
-      if (property(value, "render")) rendered.push(name);
+      if (story.render || meta.render) rendered.push(name);
       else
         stories.push({
           name,
-          args: { ...meta.args, ...own.args },
+          args: { ...meta.args, ...story.args },
           // The meta's unread keys count only where the story does not
           // set them itself.
           unread: [
             ...new Set([
-              ...meta.unread.filter((key) => !(key in own.args)),
-              ...own.unread,
+              ...meta.unread.filter((key) => !(key in story.args)),
+              ...story.unread,
             ]),
           ],
         });

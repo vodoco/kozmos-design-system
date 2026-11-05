@@ -1187,9 +1187,11 @@ camera control, branding/provider policy and product ranking in their host adapt
     their pins move (#470).
   - **159, Table is framed (4 Nov):** a border with corners of 16, as Figma and the natives draw it. React gains
     `framed`, off by default for dense pages, in 0.16.0.
-  - **160, a Vue port's controlled prop is `v-model` alone (5 Nov):** it emits `update:<prop>` with the new value,
-    as Reka and Vue 2's `.sync` do, and no event of React's `on…Change` name beside it, which would say the same
-    thing twice. ThemeProvider's `themeChange` goes, and the API contract fails a port that emits both (#479).
+  - **160, a Vue port's controlled prop is `v-model` alone (5 Nov):** it emits `update:<prop>`, as Reka and Vue 2's
+    `.sync` do, carrying what React's `on…Change` passes, the new value first (Combobox's passes the option too),
+    and no event of React's `on…Change` name beside it, which would say the same thing twice. A `value` with
+    Kozmos's own `onChange` is controlled too; a `value` nothing controls (a tab's) keeps its name. ThemeProvider's
+    `themeChange` goes, and the API contract fails a port that emits both (#479).
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on

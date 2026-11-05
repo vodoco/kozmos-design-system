@@ -47,8 +47,8 @@ function isTheme(value: unknown): value is KozmosTheme {
  *
  * `v-model:theme` controls the preference; without it the provider keeps its
  * own, persisted under `storageKey` when given. `update:theme` reports every
- * request, controlled or not, as React's `onThemeChange` does (decision 160:
- * a controlled prop's change is `update:<prop>` alone).
+ * request, controlled or not, with what React's `onThemeChange` passes
+ * (decision 160: a controlled prop's change is `update:<prop>` alone).
  *
  * An outer Reka ConfigProvider's locale, scroll lock, nonce, teleport target
  * and id source carry on inside: only the direction is this provider's. Like

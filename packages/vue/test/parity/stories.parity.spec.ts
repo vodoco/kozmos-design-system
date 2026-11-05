@@ -1,8 +1,9 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as KozmosVue from "../../src/index";
 import { PORTS, REACT_SOURCE, type Port } from "../ports";
+import { isNode, planOf, reactSides } from "../contract/read-contract";
 import { readStoryArgs, type StoryArgs } from "./story-args";
 import { renderBoth, type Drawn } from "./render";
 
@@ -16,8 +17,10 @@ import { renderBoth, type Drawn } from "./render";
  * or args it cannot read) is named in `ports.ts` with the spec that draws
  * it; `coverage.spec.ts` holds that list.
  *
- * Each part is drawn once more with attributes added, as an app adds them:
- * they land where React's land, or nowhere when React's takes none.
+ * Each part is drawn once more with attributes added, as an app adds them
+ * (an id, ARIA, data, a class and a style): they land where React's land,
+ * or nowhere when React's takes none. Listeners are not in a server render:
+ * `listeners.parity.spec.ts` mounts each part to see where they land.
  */
 
 /** React's DOM spelling of an attribute, as Vue writes it. */
@@ -29,30 +32,61 @@ const VUE_ATTRIBUTE: Record<string, string> = {
 const lookup = (exports: object, name: string) =>
   (exports as Record<string, unknown>)[name];
 
-/** Whether the Vue part declares a prop, as `modelValue`. */
-const declares = (port: Port, prop: string) => {
-  const props = (lookup(KozmosVue, port.vue) as { props?: object }).props;
-  return Array.isArray(props) ? props.includes(prop) : !!props && prop in props;
-};
+/** How each port's React props are said in Vue, read as the contract reads them. */
+let sayings: Map<
+  string,
+  { vueName: (react: string) => string; nodes: Set<string> }
+>;
+beforeAll(() => {
+  const side = reactSides();
+  sayings = new Map(
+    PORTS.map((port) => {
+      const reactSide = side(port.react);
+      const plan = planOf({
+        port,
+        vueProps: [],
+        vueEmits: [],
+        vueSlots: [],
+        ...reactSide,
+      });
+      return [
+        port.vue,
+        {
+          vueName: plan.vueName,
+          nodes: new Set(
+            reactSide.react
+              .filter((m) => isNode(m) && m.name !== "children")
+              .map((m) => m.name),
+          ),
+        },
+      ];
+    }),
+  );
+}, 120_000);
 
 /**
- * A port drawn from story args: `children` is its default slot's text, and
- * React's `value` is `modelValue` where the Vue part takes `v-model`.
+ * A port drawn from story args, each said as the contract says it: React's
+ * `children` is the default slot's text, a node prop (Badge's `counter`) a
+ * named slot's, a controlled `value` is `modelValue`, `className` is
+ * `class`.
  */
 export function drawn(port: Port, { children, ...args }: StoryArgs): Drawn {
-  const vueProps = Object.fromEntries(
-    Object.entries(args).map(([key, value]) => [
-      key === "value" && declares(port, "modelValue")
-        ? "modelValue"
-        : (VUE_ATTRIBUTE[key] ?? key),
-      value,
-    ]),
-  );
+  const saying = sayings.get(port.vue)!;
+  const vueProps: Record<string, unknown> = {};
+  const vueSlots: Record<string, string> = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (saying.nodes.has(key)) {
+      if (value !== null && value !== undefined) vueSlots[key] = String(value);
+      continue;
+    }
+    vueProps[VUE_ATTRIBUTE[key] ?? saying.vueName(key)] = value;
+  }
   return {
     react: lookup(KozmosReact, port.react) as Drawn["react"],
     vue: lookup(KozmosVue, port.vue) as Drawn["vue"],
     props: args,
     vueProps,
+    vueSlots,
     children:
       children === undefined || children === null ? [] : [String(children)],
   };
@@ -104,6 +138,8 @@ for (const port of PORTS) {
             id: "kozmos-parity",
             "aria-describedby": "kozmos-parity-note",
             "data-parity": "attribute",
+            className: "kozmos-parity",
+            style: { marginTop: "1px" },
           }),
         ),
       );

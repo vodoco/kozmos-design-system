@@ -29,6 +29,23 @@ describe("normalizeHtml settles spelling, never what is drawn", () => {
     differ("<b>Go now</b>", "<b>Go  now</b>");
     differ("<b><i></i></b>", "<b></b><i></i>");
   });
+
+  it("compares what refers to what, not how each framework spells an id", () => {
+    // React's Tabs and Reka's each generate their own ids.
+    same(
+      '<button id="radix-_R_0_-trigger-a" aria-controls="radix-_R_0_-content-a"></button><div id="radix-_R_0_-content-a" aria-labelledby="radix-_R_0_-trigger-a"></div>',
+      '<button id="reka-tabs-v-1-trigger-a" aria-controls="reka-tabs-v-1-content-a"></button><div id="reka-tabs-v-1-content-a" aria-labelledby="reka-tabs-v-1-trigger-a"></div>',
+    );
+    // A reference to the wrong element, or to none, still differs.
+    differ(
+      '<label for="a">A</label><input id="a"><input id="b">',
+      '<label for="b">A</label><input id="a"><input id="b">',
+    );
+    differ(
+      '<label for="a">A</label><input id="a">',
+      '<label>A</label><input id="a">',
+    );
+  });
 });
 
 describe("readStoryArgs reads a stories file's own args", () => {
