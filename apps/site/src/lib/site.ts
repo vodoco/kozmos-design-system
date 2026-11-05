@@ -5,7 +5,7 @@
 
 /**
  * Whether Kozmos's public packages are on npm: the first four since
- * 2026-09-23; @kozmos-ds/styles first publishes with React 0.16.0.
+ * 2026-09-23; @kozmos-ds/styles first publishes with React 0.15.1.
  * This flag is not a version: query npm or read the dated release evidence
  * in docs/release-process.md for package versions.
  */
