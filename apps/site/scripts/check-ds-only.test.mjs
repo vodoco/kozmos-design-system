@@ -40,6 +40,7 @@ test("imports from other UI libraries are refused; the Kozmos packages pass", ()
      import { Button } from "@kozmos-ds/react";
      import { kozmosIconNames } from "@kozmos-ds/icons";
      import "@kozmos-ds/react/style.css";
+     import "@kozmos-ds/styles/style.css";
      import light from "@kozmos-ds/tokens/dist/css/variables-light.css?raw";
      import { Link } from "react-router";`,
     "a.tsx",

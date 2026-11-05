@@ -22,7 +22,6 @@ test("what a published package ships counts, and nothing else does", () => {
     "packages/react/vite-plugins/shakable-components.mjs",
     "packages/icons/vite.config.mts",
     "packages/styles/tailwind.config.js",
-    "packages/styles/postcss.config.cjs",
     // styles' build runs these PostCSS plugins over every rule it ships
     "packages/styles/postcss/scoped-css.cjs",
     "packages/styles/postcss/token-alpha.cjs",

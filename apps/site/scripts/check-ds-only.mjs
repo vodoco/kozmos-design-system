@@ -44,7 +44,7 @@ const ALLOWED_MODULES = [
   /^react-router$/,
   /^@react-router\/dev\/(routes|config)$/,
   // A Kozmos package, a subpath of one, or its text (`?raw`) for the token pages.
-  /^@kozmos-ds\/(react|tokens|icons|product-contracts)(\/[\w./-]+)?(\?raw)?$/,
+  /^@kozmos-ds\/(react|styles|tokens|icons|product-contracts)(\/[\w./-]+)?(\?raw)?$/,
   /^\.{1,2}\//,
 ];
 
