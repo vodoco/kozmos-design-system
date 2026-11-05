@@ -1,0 +1,6 @@
+{
+  "main": "../dist/vue/index.cjs",
+  "module": "../dist/vue/index.mjs",
+  "types": "../dist/vue/index.d.ts",
+  "sideEffects": false
+}

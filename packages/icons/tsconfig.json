@@ -9,5 +9,7 @@
     "moduleResolution": "Bundler",
     "noEmit": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  // The Vue build's stand-ins (tsconfig.vue.json): never part of React's entry.
+  "exclude": ["node_modules", "dist", "build", "src/**/*.vue.ts"]
 }
