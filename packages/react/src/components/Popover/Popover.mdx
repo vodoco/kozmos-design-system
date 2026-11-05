@@ -38,7 +38,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosPopover } from "@kozmos-ds/vue"
+import { KozmosPopover } from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
@@ -153,7 +153,8 @@ export function AddDeskStep() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosAnchoredPopover, KozmosButton } from "@kozmos-ds/vue"
+import { KozmosButton } from "@kozmos-ds/vue"
+import { KozmosAnchoredPopover } from "@kozmos-ds/vue/react-bridge"
 
 // The harness mounts one React root per component, so the anchored popover
 // is one part. anchor takes an element, a component's template ref (its

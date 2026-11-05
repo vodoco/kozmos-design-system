@@ -9,7 +9,7 @@
 > (`packages/ios`) and Jetpack Compose (`packages/android`), and publishes `@kozmos-ds/react`,
 > `@kozmos-ds/tokens`, `@kozmos-ds/icons` and `@kozmos-ds/product-contracts` to npm; the package
 > names below were updated when the packages took that name. Vue waits (decision 2):
-> `@kozmos-ds/vue` is a private harness. There is no React Native package, no Lit Web Components,
+> `@kozmos-ds/vue` is private while Vue 3 Phase 0 builds it on Reka UI. There is no React Native package, no Lit Web Components,
 > no MCP server, no customer themes and no wide-gamut colour; the tokens are built with Style
 > Dictionary 5. [AGENTS.md](../AGENTS.md) says what ships, and [proposals/](proposals/README.md)
 > holds the plans that were not built.

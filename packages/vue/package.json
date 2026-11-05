@@ -2,40 +2,65 @@
   "name": "@kozmos-ds/vue",
   "version": "0.0.5",
   "private": true,
-  "description": "Internal: Vue wrappers that mount the Kozmos React components. Not published — it mounts a React root per instance, so it cannot server-render and would make every consumer ship React.",
+  "description": "Kozmos for Vue 3, on Reka UI: parts that draw the element their React counterparts draw, from the same recipes, with no React. Parts not yet ported are in ./react-bridge, which mounts the React components. Private until Vue 3 Phase 0 publishes it on next.",
   "license": "MIT",
-  "main": "dist/kozmos-vue.umd.cjs",
+  "main": "dist/kozmos-vue.cjs",
   "module": "dist/kozmos-vue.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/kozmos-vue.mjs",
-      "require": "./dist/kozmos-vue.umd.cjs"
-    }
+      "require": "./dist/kozmos-vue.cjs"
+    },
+    "./react-bridge": {
+      "types": "./dist/react-bridge/index.d.ts",
+      "import": "./dist/react-bridge.mjs",
+      "require": "./dist/react-bridge.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build && vue-tsc -p tsconfig.declarations.json",
+    "build": "rm -rf dist .recipes-types && vite build && tsc -p tsconfig.recipes.json && vue-tsc -p tsconfig.declarations.json",
     "dev": "vite build --watch",
     "test": "vitest run",
-    "typecheck": "vue-tsc -p tsconfig.declarations.json --noEmit"
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "vue": "^3.0.0",
+    "@kozmos-ds/react": "workspace:*",
     "react": "^18.2.0 || ^19.0.0",
-    "react-dom": "^18.2.0 || ^19.0.0"
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@kozmos-ds/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "dependencies": {
-    "@kozmos-ds/react": "workspace:*"
+    "@kozmos-ds/styles": "workspace:*",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "reka-ui": "2.11.0",
+    "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
+    "@kozmos-ds/react": "workspace:*",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-vue": "^5.0.4",
     "jsdom": "28.0.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "typescript": "^5.2.2",
     "vite": "^6.4.5",
     "vue": "^3.5.42",

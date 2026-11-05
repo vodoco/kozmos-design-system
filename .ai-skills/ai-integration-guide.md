@@ -27,7 +27,7 @@ own `dist/index.d.ts` is the authority.
   checkout of this repository.
 - **Packages:** `@kozmos-ds/react`, which installs `@kozmos-ds/tokens`, `@kozmos-ds/icons` and
   `@kozmos-ds/product-contracts` with it. There is no Vue package to install (`@kozmos-ds/vue` is
-  a private harness) and no React Native package.
+  private while Vue 3 Phase 0 builds it) and no React Native package.
 - **Setup:** import `@kozmos-ds/react/style.css` once, and put everything inside a
   `ThemeProvider`. Its styles are scoped to the provider: outside one, nothing is themed.
 

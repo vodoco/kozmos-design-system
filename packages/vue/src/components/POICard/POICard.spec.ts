@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KozmosPOICard } from "../../index";
+import { KozmosPOICard } from "../../react-bridge";
 
 describe("KozmosPOICard", () => {
   it("exports a Vue adapter component for the React POICard", () => {

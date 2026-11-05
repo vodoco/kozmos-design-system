@@ -79,3 +79,19 @@ test("An axis is read by its own name before an alias: Drawer's placement and Fi
   assert.deepEqual(missingValues, []);
   assert.deepEqual(missingAxes, []);
 });
+
+test("reads a recipe shared with Vue as the component's own (Button, Vue 3 Phase 0)", () => {
+  // Button's cva moved to packages/react/src/recipes/button.ts; its axes are
+  // still Button's.
+  const axes = reactAxes("Button");
+  assert.deepEqual(axes.variant, [
+    "default",
+    "destructive",
+    "outline",
+    "secondary",
+    "ghost",
+    "link",
+    "glass",
+  ]);
+  assert.deepEqual(axes.size, ["default", "sm", "lg", "icon"]);
+});

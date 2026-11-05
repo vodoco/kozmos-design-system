@@ -32,7 +32,14 @@
     },
     "test": {
       "dependsOn": ["build"],
-      "inputs": ["src/**", "tests/**", "package.json", "vitest.config.ts"],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "tests/**",
+        "package.json",
+        "vitest.config.*",
+        "vite.config.*"
+      ],
       "outputs": [],
       "cache": true
     },

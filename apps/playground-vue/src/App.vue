@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { KozmosButton, KozmosCheckbox, KozmosBadge, KozmosInput } from '@kozmos-ds/vue';
+import { KozmosButton } from '@kozmos-ds/vue';
+import { KozmosCheckbox, KozmosBadge, KozmosInput } from '@kozmos-ds/vue/react-bridge';
 
 interface Task {
   id: number;

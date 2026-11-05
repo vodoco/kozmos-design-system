@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ref } from "vue";
-import { KozmosBackdrop } from "../../index";
-import { toReactTarget } from "../../targets";
+import { KozmosBackdrop } from "../../react-bridge";
+import { toReactTarget } from "../../react-bridge/targets";
 
 describe("KozmosBackdrop", () => {
   it("is the Vue wrapper of the React Backdrop, under its name", () => {

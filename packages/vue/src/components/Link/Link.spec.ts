@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp, h, type App } from "vue";
-import { KozmosLink } from "../../index";
+import { KozmosLink } from "../../react-bridge";
 
 /** React renders on its own schedule: wait until `ready` holds. */
 async function until(ready: () => boolean) {

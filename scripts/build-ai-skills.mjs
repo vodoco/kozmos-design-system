@@ -185,11 +185,12 @@ lines.push(
   "(`packages/android`) are used from a checkout and are not published.",
 );
 lines.push(
-  "`@kozmos-ds/vue` exists in the workspace but is **private**: an internal",
+  "`@kozmos-ds/vue` exists in the workspace but is **private**: Kozmos for Vue 3,",
 );
 lines.push(
-  "harness, not something to install. There is no React Native package.",
+  "being built on Reka UI (Vue 3 Phase 0), and not yet something to install.",
 );
+lines.push("There is no React Native package.");
 lines.push("");
 lines.push(`## Components (${directories.length})`);
 lines.push("");

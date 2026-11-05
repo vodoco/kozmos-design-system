@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "src/**",
+        "package.json",
+        "vite.config.*",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/packages/react/src/recipes/**",
+        "$TURBO_ROOT$/packages/react/src/utils.ts"
+      ]
+    },
+    "test": {
+      "dependsOn": ["build", "@kozmos-ds/react#build"],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "package.json",
+        "vite.config.*",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/packages/react/src/**/*.stories.tsx",
+        "$TURBO_ROOT$/packages/react/src/recipes/**",
+        "$TURBO_ROOT$/packages/react/src/utils.ts"
+      ]
+    }
+  }
+}

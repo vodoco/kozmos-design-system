@@ -23,7 +23,7 @@ const platforms = [
     value: "vue",
     label: "Vue 3 · Internal",
     language: "html",
-    note: "Internal only: @kozmos-ds/vue is a private React-wrapper package, not a native Vue library or a published npm package. It requires React and React DOM and does not support server rendering. This reference snippet is not independently compiled.",
+    note: "Internal only: @kozmos-ds/vue is private and not yet published (Vue 3 Phase 0). Its main entry is native Vue on Reka UI, imports no React and renders on the server: KozmosThemeProvider, KozmosDensityScope and KozmosButton so far. @kozmos-ds/vue/react-bridge wraps the React parts not yet ported: those need React and React DOM and do not render on the server. This reference snippet is not independently compiled.",
   },
   {
     value: "swift",

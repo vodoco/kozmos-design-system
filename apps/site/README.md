@@ -864,7 +864,7 @@ No site gap is closed here without its acceptance test.
   has no such export (7.1.1 still declares the same range). The site uses the
   5.x line. mapscale-review and playground-web list 7.0.1 but never load it.
 - **CI runs Node 20,** which reached end of life on 2026-04-30.
-- **`@kozmos-ds/vue` is private**, an internal harness, so the site presents the
+- **`@kozmos-ds/vue` is private** while Vue 3 Phase 0 builds it, so the site presents the
   web, iOS and Android only.
 - **iOS and Android are not distributable yet.** The Swift package sits in
   `packages/ios`, not at the repository root, so it cannot be added by URL,

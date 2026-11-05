@@ -1,4 +1,5 @@
-import { KozmosStepper, KozmosThemeProvider } from "../../";
+import { KozmosThemeProvider } from "../../";
+import { KozmosStepper } from "../../react-bridge";
 
 export default {
   title: "Vue/Stepper",

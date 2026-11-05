@@ -116,7 +116,7 @@ There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack
 
 ## 7. Vue Component Creation
 
-Vue waits: `@kozmos-ds/vue` is a private harness that mounts the React components in Vue, so a component made for React reaches it with nothing more to write, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
+Vue is being built (Vue 3 Phase 0): `@kozmos-ds/vue` is private. A part with a Vue port draws from the same recipes as React's (`packages/react/src/recipes`), and a component made for React reaches Vue through `@kozmos-ds/vue/react-bridge` with nothing more to write until it is ported, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 

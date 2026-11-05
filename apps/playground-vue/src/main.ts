@@ -1,5 +1,6 @@
 import { createApp } from "vue";
-import "@kozmos-ds/react/dist/style.css";
+// The shared stylesheet, which Vue parts and the React bridge both draw with.
+import "@kozmos-ds/styles/style.css";
 import "./style.css";
 import App from "./App.vue";
 
