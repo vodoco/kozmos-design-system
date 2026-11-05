@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -34,6 +34,14 @@ afterEach(() => {
   vueApp = undefined;
   document.body.replaceChildren();
 });
+
+// What React's parts take, read once: reading React's declarations takes
+// seconds, more than a test's own time on CI.
+let takesAttributes: (react: string) => boolean;
+beforeAll(() => {
+  const side = reactSides();
+  takesAttributes = (react) => side(react).reactAttributes.length > 0;
+}, 120_000);
 
 const lookup = (exports: object, name: string) =>
   (exports as Record<string, unknown>)[name];
@@ -137,7 +145,7 @@ describe("an app's listeners land where React's land", () => {
       });
       expect(vue).toEqual(react);
       // A part React gives DOM attributes carries the app's, somewhere.
-      if (reactSides()(port.react).reactAttributes.length)
+      if (takesAttributes(port.react))
         expect(
           react.marked,
           `React's ${port.react} drew no element with the app's attributes`,

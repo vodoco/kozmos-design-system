@@ -463,7 +463,7 @@ import type * as R from "@kozmos-ds/react";
 import type * as V from "${VUE_ENTRY}";
 `;
 
-/** The helper types every comparison is written in. */
+/** The helper types every comparison is written in, needing no import. */
 const HELPERS = `
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -478,29 +478,47 @@ type Extends<A, B> = [A] extends [B] ? true : false;
 type Len<T> = T extends readonly unknown[] ? T["length"] : never;
 type At<T, I extends number> = T extends readonly unknown[] ? (I extends keyof T ? T[I] : never) : never;
 type Args<T> = [Len<T>, At<T, 0>, At<T, 1>, At<T, 2>, At<T, 3>];
+`;
+
+/** The helpers a composable's comparison needs, which read Vue's refs. */
+const VUE_HELPERS = `
 type Unwrapped<T> = { [K in keyof T]: UnwrapRef<T[K]> };
 type NotRefs<T> = { [K in keyof T]: T[K] extends Ref<any> | ((...args: any) => any) ? never : K }[keyof T];
 `;
 
-const PRELUDE = IMPORTS + HELPERS;
+const PRELUDE = IMPORTS + HELPERS + VUE_HELPERS;
 
 /**
- * Whether two types agree as a check would decide (`equal`, or Vue's
- * `within` React's), written in the helper types: how the helpers
- * themselves are held (rules.spec.ts).
+ * Whether each pair of types agrees as a check would decide (`equal`, or
+ * Vue's `within` React's), written in the helper types: how the helpers
+ * themselves are held (rules.spec.ts). One program for every pair, over the
+ * helpers alone, so it costs a compile without React's or Vue's types.
  */
 export function typesAgree(
-  vue: string,
-  react: string,
-  relation: "equal" | "within" = "equal",
-): boolean {
-  const text = `${PRELUDE}\nexport const agrees: ${relation === "within" ? "Extends" : "Equal"}<${vue}, ${react}> = true;\n`;
-  const built = program(text);
-  const errors = ts.getPreEmitDiagnostics(
-    built,
-    built.getSourceFile(CONTRACT_FILE),
+  pairs: { vue: string; react: string; relation?: "equal" | "within" }[],
+): boolean[] {
+  const lines = pairs.map(
+    ({ vue, react, relation }, i) =>
+      `export const agrees_${i}: ${relation === "within" ? "Extends" : "Equal"}<${vue}, ${react}> = true;`,
   );
-  return errors.length === 0;
+  const built = program(`${HELPERS}\n${lines.join("\n")}\n`);
+  const source = built.getSourceFile(CONTRACT_FILE)!;
+  const failed = new Set<number>();
+  for (const diagnostic of ts.getPreEmitDiagnostics(built, source)) {
+    const at = diagnostic.start ?? -1;
+    const statement = source.statements.find(
+      (s) => s.getStart() <= at && at < s.getEnd(),
+    );
+    const name =
+      statement && ts.isVariableStatement(statement)
+        ? statement.declarationList.declarations[0].name.getText()
+        : "";
+    const match = name.match(/^agrees_(\d+)$/);
+    // An error outside the pairs is a broken helper: no pair agrees then.
+    if (!match) return pairs.map(() => false);
+    failed.add(Number(match[1]));
+  }
+  return pairs.map((_, i) => !failed.has(i));
 }
 
 const key = (name: string) => JSON.stringify(name);

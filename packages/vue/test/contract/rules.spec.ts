@@ -292,27 +292,34 @@ describe("the contract's rules", () => {
     ).toEqual(["KozmosPart.renderIcon:render-prop"]);
   });
   it("compares a callback's arguments by position, and a DOM attribute's type as a range", () => {
-    // Accordion: Radix's single or multiple onValueChange; one Vue event
-    // carries either.
-    expect(
-      typesAgree(
-        "Args<[string] | [string[]]>",
-        "Args<[value: string | string[]]>",
-      ),
-    ).toBe(true);
-    // Without Args, the two shapes differ: the helper is what accepts it.
-    expect(
-      typesAgree("[string] | [string[]]", "[value: string | string[]]"),
-    ).toBe(false);
-    expect(typesAgree("Args<[x: string]>", "Args<[x: number]>")).toBe(false);
-    expect(
-      typesAgree("Args<[x: string]>", "Args<[x: string, y: number]>"),
-    ).toBe(false);
-    // A field reports a string, within what React's value attribute takes.
-    expect(
-      typesAgree("[string]", "[string | number | readonly string[]]", "within"),
-    ).toBe(true);
-    expect(typesAgree("[boolean]", "[string | number]", "within")).toBe(false);
-    expect(typesAgree("string", "string | number")).toBe(false);
-  });
+    const pairs: Parameters<typeof typesAgree>[0] = [
+      // Accordion: Radix's single or multiple onValueChange; one Vue event
+      // carries either.
+      {
+        vue: "Args<[string] | [string[]]>",
+        react: "Args<[value: string | string[]]>",
+      },
+      // Without Args, the two shapes differ: the helper is what accepts it.
+      { vue: "[string] | [string[]]", react: "[value: string | string[]]" },
+      { vue: "Args<[x: string]>", react: "Args<[x: number]>" },
+      { vue: "Args<[x: string]>", react: "Args<[x: string, y: number]>" },
+      // A field reports a string, within what React's value attribute takes.
+      {
+        vue: "[string]",
+        react: "[string | number | readonly string[]]",
+        relation: "within",
+      },
+      { vue: "[boolean]", react: "[string | number]", relation: "within" },
+      { vue: "string", react: "string | number" },
+    ];
+    expect(typesAgree(pairs)).toEqual([
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+    ]);
+  }, 60_000);
 });
