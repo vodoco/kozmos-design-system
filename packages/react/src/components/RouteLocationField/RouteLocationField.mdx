@@ -24,7 +24,7 @@ Localize the field, placeholder, status/empty text and clear/map/open/close labe
 Automatic selection analytics omit place IDs and query text. The host still receives the
 resolved suggestion through the explicit selection callback and owns its data/consent policy.
 
-The host owns requests, cancellation, focus restoration, keyboard/sheet insets and announcements. Ignore stale responses after selection, a newer query, clearing or leaving setup. Combobox may report a selected label through `onQueryChange` as well as calling `onSelect`; callback ordering is not a cross-platform contract. Drive requests from unresolved query state, not every callback without checking resolved identity.
+The host owns requests, cancellation, focus restoration, keyboard/sheet insets and announcements of a request's outcome (loading, error, empty, which the field shows as its supporting text). The field itself says its empty text whenever its list shows it (idle or ready with no suggestion to show), as Combobox does. Ignore stale responses after selection, a newer query, clearing or leaving setup. Combobox may report a selected label through `onQueryChange` as well as calling `onSelect`; callback ordering is not a cross-platform contract. Drive requests from unresolved query state, not every callback without checking resolved identity.
 
 ## Text-action design preview
 

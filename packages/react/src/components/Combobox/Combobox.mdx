@@ -283,12 +283,13 @@ var query by remember { mutableStateOf("") }
   user arrows through it.
 - Typing filters but never silently changes the selection; committing is an
   explicit choice.
-- `emptyText` is announced when filtering empties the list, so the absence of
-  results is not conveyed only by an empty box. A status in the field says it,
-  there from the first render, since a screen reader reads only a change in a
-  live region already in the page; the popup's copy is plain text, so it is
-  said once. When the field's supporting text already says the same words, the
-  status stays silent.
+- `emptyText` is announced whenever the popup shows it (typing empties the
+  list, or the list opens with nothing in it), so the absence of results is not
+  conveyed only by an empty box. A status in the field says it, there from the
+  first render, since a screen reader reads only a change in a live region
+  already in the page. The popup's copy is plain text, so it is said once. When
+  the field's supporting text already says the same words, the status stays
+  silent.
 - Grouped options sit in a `role="group"` named by its label, so the group is announced
   as the active option enters it; the label itself is never an option.
 

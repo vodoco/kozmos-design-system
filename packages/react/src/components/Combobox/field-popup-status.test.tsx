@@ -25,17 +25,8 @@ const options = [
 const fields = [
   [
     "Combobox",
-    (props: { emptyText?: string; actions?: boolean }) => (
-      <Combobox
-        label="Section"
-        options={options}
-        emptyText={props.emptyText}
-        popupActions={
-          props.actions
-            ? [{ id: "map", label: "Select from map", onAction: vi.fn() }]
-            : undefined
-        }
-      />
+    (props: { emptyText?: string }) => (
+      <Combobox label="Section" options={options} emptyText={props.emptyText} />
     ),
   ],
   [
@@ -125,11 +116,36 @@ describe("Combobox's empty list beside its commands", () => {
         options={[]}
         helperText="Locations unavailable"
         emptyText="Locations unavailable"
+        // A command keeps the popup open with no option, so only the
+        // supporting-text check keeps the status silent.
+        popupActions={[
+          { id: "map", label: "Select from map", onAction: vi.fn() },
+        ]}
       />,
     );
     const status = screen.getByRole("status");
     await user.click(screen.getByRole("combobox"));
-    // The description already reads it, and the popup draws nothing.
+    expect(
+      screen.getByRole("option", { name: "Select from map" }),
+    ).toBeVisible();
+    // The description already reads it, and the popup draws it once, below.
     expect(status).toBeEmptyDOMElement();
+    expect(screen.getAllByText("Locations unavailable")).toHaveLength(1);
+  });
+
+  it("speaks when the list opens with nothing to show, as the popup shows it", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        label="Origin"
+        options={[]}
+        popupActions={[
+          { id: "map", label: "Select from map", onAction: vi.fn() },
+        ]}
+      />,
+    );
+    const status = screen.getByRole("status");
+    await user.click(screen.getByRole("combobox"));
+    expect(status).toHaveTextContent("No results found");
   });
 });
