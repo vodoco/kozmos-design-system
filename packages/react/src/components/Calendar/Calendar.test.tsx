@@ -139,7 +139,18 @@ describe("Calendar", () => {
     expect(tabStops()).toEqual([day("Wednesday, July 1, 2026")]);
   });
 
-  it("moves by day, week, the week's ends, month and year from the keyboard", () => {
+  // The keyboard's moves, in four tests rather than one: each step finds its
+  // day by role and name, which jsdom computes over the whole grid, and the
+  // ten steps in one test ran at half the 5 s limit on CI and over it on a
+  // slow runner (main, 5 Nov). Each test checks its own steps from May 25.
+  const steps = (list: Array<[string, Partial<KeyboardEventInit>, string]>) => {
+    for (const [key, init, name] of list) {
+      press(key, init);
+      expect(focused(), `${key} lands on ${name}`).toBe(day(name));
+      expect(tabStops(), `${key} keeps one tab stop`).toEqual([day(name)]);
+    }
+  };
+  const fromMay25 = () => {
     const onValueChange = vi.fn();
     const onMonthChange = vi.fn();
     render(
@@ -152,33 +163,55 @@ describe("Calendar", () => {
       />,
     );
     expect(focused()).toBe(day("Monday, May 25, 2026"));
-    const steps: Array<[string, Partial<KeyboardEventInit>, string]> = [
+    return { onValueChange, onMonthChange };
+  };
+
+  it("moves by day and week from the keyboard", () => {
+    const { onMonthChange } = fromMay25();
+    steps([
       ["ArrowRight", {}, "Tuesday, May 26, 2026"],
       ["ArrowLeft", {}, "Monday, May 25, 2026"],
       ["ArrowDown", {}, "Monday, June 1, 2026"],
       ["ArrowUp", {}, "Monday, May 25, 2026"],
+    ]);
+    // Leaving the month showed June, then May again.
+    expect(onMonthChange.mock.calls.map(([month]) => month)).toEqual([
+      "2026-06",
+      "2026-05",
+    ]);
+  });
+
+  it("moves to the week's ends from the keyboard", () => {
+    const { onMonthChange } = fromMay25();
+    steps([
       ["End", {}, "Saturday, May 30, 2026"],
+      ["Home", {}, "Sunday, May 24, 2026"],
+    ]);
+    expect(onMonthChange).not.toHaveBeenCalled();
+  });
+
+  it("moves by month, and by year with Shift, from the keyboard", () => {
+    const { onMonthChange } = fromMay25();
+    steps([
       ["Home", {}, "Sunday, May 24, 2026"],
       ["PageDown", {}, "Wednesday, June 24, 2026"],
       ["PageUp", {}, "Sunday, May 24, 2026"],
       ["PageDown", { shiftKey: true }, "Monday, May 24, 2027"],
       ["PageUp", { shiftKey: true }, "Sunday, May 24, 2026"],
-    ];
-    for (const [key, init, name] of steps) {
-      press(key, init);
-      expect(focused(), `${key} lands on ${name}`).toBe(day(name));
-      expect(tabStops(), `${key} keeps one tab stop`).toEqual([day(name)]);
-    }
-    // Leaving the month showed June, then May 2027, then May again.
+    ]);
+    // June, May, then May 2027, and May again.
     expect(onMonthChange.mock.calls.map(([month]) => month)).toEqual([
-      "2026-06",
-      "2026-05",
       "2026-06",
       "2026-05",
       "2027-05",
       "2026-05",
     ]);
     expect(screen.getByRole("grid", { name: "May 2026" })).toBeInTheDocument();
+  });
+
+  it("chooses the focused day with Enter and Space", () => {
+    const { onValueChange } = fromMay25();
+    steps([["ArrowLeft", {}, "Sunday, May 24, 2026"]]);
     press("Enter");
     expect(onValueChange).toHaveBeenLastCalledWith("2026-05-24");
     press("ArrowRight");
