@@ -32,7 +32,9 @@ import {
   writeSnippetNegativeControl,
 } from "./lib/doc-snippets.mjs";
 import { parseArgs } from "node:util";
+import semver from "semver";
 import { writeCandidate } from "./release/candidate.mjs";
+import { unexpectedFiles } from "./release/tarball-files.mjs";
 import { readPlan } from "./release/verify-request.mjs";
 
 const { values: releaseOptions } = parseArgs({
@@ -80,16 +82,7 @@ const FORBIDDEN = [
   [/(^|\/)tsconfig[^/]*\.json$/, "a tsconfig"],
 ];
 
-// What a package may contain at all, by kind. FORBIDDEN names the leaks we know
-// about; this catches the ones nobody thought to name — a stats.html from a
-// bundle analyser, a stray .ts source, an image.
-// THIRD-PARTY-NOTICES carries the licences of what a package's build copies
-// into it (React's stylesheets hold Tailwind CSS's preflight and utilities).
-// A subpath's own package.json, one folder down (icons' `vue/package.json`),
-// points a resolver that ignores `exports` (TypeScript's node10) at that
-// subpath's files.
-const ALLOWED =
-  /^package\/(package\.json|README\.md|LICENSE|THIRD-PARTY-NOTICES|[a-z0-9-]+\/package\.json)$|\.(d\.ts|d\.mts|d\.cts|mjs|cjs|js|map|css|swift|kt|xml)$/;
+// What a package may contain at all, by kind: release/tarball-files.mjs.
 
 // All package declarations now match their ESM/CJS runtime format. Keep this
 // zero baseline: any new resolver problem fails publication checks.
@@ -224,7 +217,7 @@ for (const { dir, manifest } of publishable) {
       `${manifest.name}'s tarball carries ${leaked.length} file(s) that should not ship, e.g. ${leaked.slice(0, 3).join(", ")}`,
     );
   }
-  const unexpected = files.filter((entry) => !ALLOWED.test(entry));
+  const unexpected = unexpectedFiles(files, manifest);
   if (unexpected.length > 0) {
     fail(
       `${manifest.name}'s tarball carries ${unexpected.length} file(s) of a kind no package ships, e.g. ${unexpected.slice(0, 3).join(", ")}`,
@@ -351,12 +344,21 @@ for (const { manifest, files } of packed) {
 // README promising `@kozmos-ds/react/style.css` after the map dropped it would
 // otherwise pass, because a `*.css` declaration types any CSS import at all.
 const samples = [];
+// A README's `vue` blocks are single-file components: the Vue-only consumer
+// below type-checks them with vue-tsc, strict templates on.
+const vueSamples = [];
 for (const { manifest } of packed) {
   const short = manifest.name.split("/")[1];
   const readme = fs.readFileSync(
     path.join(PACKAGES, short, "README.md"),
     "utf8",
   );
+  for (const block of readme.matchAll(/```vue\n([\s\S]*?)```/g)) {
+    vueSamples.push({
+      file: `Readme${short.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}${vueSamples.length + 1}.vue`,
+      body: block[1],
+    });
+  }
   for (const block of readme.matchAll(/```(tsx|ts|css)\n([\s\S]*?)```/g)) {
     for (const found of block[2].matchAll(
       /(?:from\s+|import\s+|@import\s+)["'](@kozmos-ds\/[^"']+)["']/g,
@@ -706,6 +708,264 @@ declare module "*.css";
       .slice(0, 5);
     fail(
       `React ${major}: README samples or native Button API contract do not type-check:\n          ${lines.join("\n          ")}`,
+    );
+  }
+}
+
+// ---- a Vue-only consumer: @kozmos-ds/icons/vue with no React installed ----
+//
+// The icons tarball and Vue, nothing else: React is an optional peer of
+// icons, so it must not arrive. Vue is the version the repository's lockfile
+// resolves for icons, and the packages under it are held to the lockfile's
+// versions too, so the install reads only what the pnpm store already holds:
+// offline here, preferring the store on CI, whose install step reaches the
+// registry anyway. Then the Vue entry is imported and required and an icon
+// rendered on the server, and vue-tsc, strict templates on, checks the
+// README's `vue` blocks and a component passing the attributes an icon takes
+// beside its props.
+
+const iconsPacked = packed.find(
+  ({ manifest }) => manifest.name === "@kozmos-ds/icons",
+);
+if (iconsPacked && iconsPacked.manifest.exports?.["./vue"]) {
+  checkVueOnlyConsumer(iconsPacked);
+}
+
+function lockedTree(name, from) {
+  // Every package under `name`, at the version installed for `from`.
+  const versions = {};
+  const visit = (pkg, dir) => {
+    let real;
+    for (let at = dir; ; at = path.dirname(at)) {
+      const candidate = path.join(at, "node_modules", pkg);
+      if (fs.existsSync(path.join(candidate, "package.json"))) {
+        real = fs.realpathSync(candidate);
+        break;
+      }
+      if (path.dirname(at) === at) return;
+    }
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(real, "package.json"), "utf8"),
+    );
+    if (versions[manifest.name] === manifest.version) return;
+    versions[manifest.name] = manifest.version;
+    for (const dep of Object.keys(manifest.dependencies ?? {})) {
+      visit(dep, real);
+    }
+  };
+  visit(name, from);
+  return versions;
+}
+
+function checkVueOnlyConsumer({ tarball, manifest }) {
+  // The real folder: in the release fixture `packages` is a symlink, and the
+  // repository's own pnpm (its packageManager) and store are found from here.
+  const iconsDir = fs.realpathSync(path.join(PACKAGES, "icons"));
+  const tree = lockedTree("vue", iconsDir);
+  const { vue: vueVersion, ...under } = tree;
+  if (!vueVersion) {
+    fail("Vue only: vue is not installed for packages/icons; run pnpm install");
+    return;
+  }
+  // The peer range promises what this check tests: its floor is the minor
+  // installed here. Until 5 Nov it said ^3.4.0 while only 3.5.44 had run.
+  const floor = semver.minVersion(manifest.peerDependencies?.vue ?? "*");
+  if (
+    !floor ||
+    semver.major(floor) !== semver.major(vueVersion) ||
+    semver.minor(floor) !== semver.minor(vueVersion)
+  ) {
+    fail(
+      `Vue only: icons' vue peer (${manifest.peerDependencies?.vue}) starts at ${floor}, but the version tested is ${vueVersion}`,
+    );
+  }
+  const app = path.join(work, "vue-only");
+  fs.mkdirSync(app);
+  const rootManifest = JSON.parse(
+    fs.readFileSync(path.join(iconsDir, "..", "..", "package.json"), "utf8"),
+  );
+  fs.writeFileSync(
+    path.join(app, "package.json"),
+    JSON.stringify(
+      {
+        name: "kozmos-install-check-vue-only",
+        private: true,
+        type: "module",
+        packageManager: rootManifest.packageManager,
+        dependencies: { "@kozmos-ds/icons": `file:${tarball}`, vue: vueVersion },
+        pnpm: { overrides: under },
+      },
+      null,
+      2,
+    ),
+  );
+  let store;
+  try {
+    store = path.dirname(run("pnpm", ["store", "path"], iconsDir).trim());
+    run(
+      "pnpm",
+      [
+        "install",
+        process.env.CI ? "--prefer-offline" : "--offline",
+        "--ignore-scripts",
+        "--config.auto-install-peers=true",
+        "--store-dir",
+        store,
+      ],
+      app,
+    );
+  } catch (error) {
+    // pnpm writes its ERR_ line to stdout.
+    const said = `${error.stdout ?? ""}\n${error.stderr ?? ""}`
+      .split("\n")
+      .filter((line) => /ERR_PNPM|error/i.test(line))
+      .slice(0, 3);
+    fail(
+      `Vue only: pnpm install failed: ${said.join(" / ") || String(error).split("\n")[0]}`,
+    );
+    return;
+  }
+
+  const installed = fs.readdirSync(path.join(app, "node_modules", ".pnpm"));
+  const reactInstalled = installed.filter((dir) =>
+    /^(react|react-dom)@/.test(dir),
+  );
+  if (fs.existsSync(path.join(app, "node_modules", "react")) || reactInstalled.length) {
+    fail(`Vue only: React was installed with icons: ${reactInstalled.join(", ")}`);
+  }
+
+  fs.writeFileSync(
+    path.join(app, "probe.mjs"),
+    `import { createRequire } from "node:module";
+import { createSSRApp, h } from "vue";
+import { renderToString } from "vue/server-renderer";
+import { Calendar } from "@kozmos-ds/icons/vue";
+
+const require = createRequire(import.meta.url);
+const results = [];
+const render = async (Icon) =>
+  renderToString(createSSRApp({ render: () => h(Icon, { size: 20, class: "icon", "aria-label": "Calendar" }) }));
+const svg = /^<svg [^>]*width="20"[^>]*class="icon"[^>]*aria-label="Calendar"[^>]*>.*<path d="[^"]+"/;
+results.push([svg.test(await render(Calendar)), "import { Calendar } from @kozmos-ds/icons/vue renders an <svg> on the server"]);
+const cjs = require("@kozmos-ds/icons/vue");
+results.push([svg.test(await render(cjs.Calendar)), "require(@kozmos-ds/icons/vue).Calendar renders the same"]);
+results.push([Object.keys(cjs).length === Object.keys(await import("@kozmos-ds/icons/vue")).length, "require() and import() give the same exports"]);
+try {
+  await import("react");
+  results.push([false, "react is importable"]);
+} catch (error) {
+  results.push([error.code === "ERR_MODULE_NOT_FOUND", "react is not importable (" + error.code + ")"]);
+}
+process.stdout.write(JSON.stringify(results));
+`,
+  );
+  try {
+    const results = JSON.parse(run("node", ["probe.mjs"], app));
+    const failed = results.filter(([passed]) => !passed);
+    for (const [, what] of failed) fail(`Vue only: ${what}`);
+    if (failed.length === 0) {
+      ok(
+        `Vue only: icons and vue ${vueVersion} install with no React; @kozmos-ds/icons/vue imports, requires and renders on the server`,
+      );
+    }
+  } catch (error) {
+    fail(
+      `Vue only: the probe crashed: ${String(error.stderr || error)
+        .trim()
+        .split("\n")
+        .slice(0, 3)
+        .join(" / ")}`,
+    );
+  }
+
+  // vue-tsc, strict templates on: the README's vue blocks, and a component
+  // giving an icon the attributes it takes beside its props, which must
+  // type-check; and a negative control, which must not.
+  for (const { file, body } of vueSamples) {
+    fs.writeFileSync(path.join(app, file), body);
+  }
+  fs.writeFileSync(
+    path.join(app, "IconAttributes.vue"),
+    `<script setup lang="ts">
+import { Calendar, Heart, getIconComponent } from "@kozmos-ds/icons/vue";
+
+const Back = getIconComponent("back");
+</script>
+
+<template>
+  <Calendar :size="20" aria-label="Calendar" role="img" class="icon" />
+  <Heart aria-hidden="true" :stroke-width="1.5" color="red" style="vertical-align: middle" />
+  <component :is="Back" :size="24" aria-describedby="hint" />
+</template>
+`,
+  );
+  const tsconfig = (include) =>
+    JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "ESNext",
+        moduleResolution: "Bundler",
+        strict: true,
+        noEmit: true,
+        skipLibCheck: false,
+        jsx: "preserve",
+        types: [],
+      },
+      vueCompilerOptions: { strictTemplates: true },
+      include,
+    });
+  fs.writeFileSync(
+    path.join(app, "tsconfig.json"),
+    tsconfig(["IconAttributes.vue", ...vueSamples.map(({ file }) => file)]),
+  );
+  fs.writeFileSync(
+    path.join(app, "NegativeControl.vue"),
+    `<script setup lang="ts">
+import { Calendar } from "@kozmos-ds/icons/vue";
+</script>
+
+<template>
+  <Calendar :size="{ width: 20 }" />
+</template>
+`,
+  );
+  fs.writeFileSync(
+    path.join(app, "tsconfig.negative.json"),
+    tsconfig(["NegativeControl.vue"]),
+  );
+  const vueTsc = path.join(
+    path.dirname(
+      fs.realpathSync(
+        path.join(PACKAGES, "vue", "node_modules", "vue-tsc", "package.json"),
+      ),
+    ),
+    "bin",
+    "vue-tsc.js",
+  );
+  let negativeRejected = false;
+  try {
+    run("node", [vueTsc, "-p", "tsconfig.negative.json"], app);
+  } catch (error) {
+    negativeRejected = /error TS/.test(String(error.stdout || error.stderr));
+  }
+  if (!negativeRejected) {
+    fail("Vue only: vue-tsc accepted a negative control it must reject");
+  }
+  try {
+    run("node", [vueTsc, "-p", "tsconfig.json"], app);
+    if (negativeRejected) {
+      ok(
+        `Vue only: vue-tsc (strict templates) accepts ${vueSamples.length} README vue sample(s) and an icon's attributes, and rejects a negative control`,
+      );
+    }
+  } catch (error) {
+    const lines = String(error.stdout || error.stderr || error)
+      .trim()
+      .split("\n")
+      .filter((line) => line.includes("error TS"))
+      .slice(0, 5);
+    fail(
+      `Vue only: README vue samples or an icon's attributes do not type-check:\n          ${lines.join("\n          ")}`,
     );
   }
 }

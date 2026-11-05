@@ -4,13 +4,14 @@
  * unplugin-dts rolls the React entry's into dist/index.d.ts. It cannot roll
  * these itself: it rolls into package.json's `types`, which is React's.
  *
- * The roll must name no React: every icon there is a Vue functional
- * component. The build fails if it does.
+ * The roll must reach no React (react-in-declarations.mjs says what counts):
+ * every icon there is a Vue functional component. The build fails if it does.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Extractor, ExtractorConfig } from "@microsoft/api-extractor";
+import { reactImportsIn } from "./react-in-declarations.mjs";
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const typesDir = path.join(packageDir, "dist/vue/.types");
@@ -56,8 +57,10 @@ const result = Extractor.invoke(config, {
 if (!result.succeeded) {
   throw new Error(`API Extractor: ${result.errorCount} error(s)`);
 }
-const text = fs.readFileSync(rolled, "utf8");
-if (/from ['"]react['"]/.test(text)) {
-  throw new Error("dist/vue/index.d.ts imports from react");
+const leaks = reactImportsIn(fs.readFileSync(rolled, "utf8"), rolled);
+if (leaks.length > 0) {
+  throw new Error(
+    `dist/vue/index.d.ts reaches React: ${[...new Set(leaks)].join(", ")}`,
+  );
 }
 fs.rmSync(typesDir, { recursive: true, force: true });

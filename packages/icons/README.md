@@ -8,7 +8,9 @@ Icon components and the name registry for the Kozmos design system.
 npm install @kozmos-ds/icons react
 ```
 
-`react` is the only peer dependency. Every glyph is drawn here - the set was
+`react` and `vue` are its peer dependencies, both optional: the main entry needs
+React 18 or 19, and `@kozmos-ds/icons/vue` needs Vue 3.5 or later, so an app
+installs the one it uses and never the other. Every glyph is drawn here - the set was
 re-drawn from Pointr's own outlines and `lucide-react` was removed in 0.2.0,
 so nothing is pulled in behind it. The wayfinding glyphs (lifts, escalators,
 stairs and ramps up, down and without direction, entrance and exit, turns,
@@ -65,8 +67,9 @@ comes from data.
 ## Vue
 
 `@kozmos-ds/icons/vue` has every icon, name and lookup the React entry has, as
-Vue 3 functional components drawing the same `<svg>`. Vue is an optional peer
-dependency, so a React app installs nothing new:
+Vue 3 functional components drawing the same `<svg>`. Vue (3.5 or later) is an
+optional peer dependency, so a React app installs nothing new, and React is one
+too, so a Vue app installs no React:
 
 ```sh
 npm install @kozmos-ds/icons vue
@@ -86,8 +89,9 @@ const Back = getIconComponent("back");
 ```
 
 The props are React's: `size`, `color`, `strokeWidth` and `absoluteStrokeWidth`.
-`class`, `style`, `aria-*` and the rest fall through to the `<svg>`, and win
-over the icon's own, as React's spread does. A named import brings in that icon
+`class`, `style`, `aria-*`, `role` and the rest fall through to the `<svg>`, and
+win over the icon's own, as React's spread does; their types are Vue's
+`SVGAttributes`, so a strict template accepts them. A named import brings in that icon
 alone, as it does in React.
 
 ## Location symbols
