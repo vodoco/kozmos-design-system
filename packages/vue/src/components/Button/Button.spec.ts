@@ -5,9 +5,10 @@ import {
   KozmosButton,
   KozmosDensityScope,
   KozmosThemeProvider,
-  useKozmosDensity,
   useTheme,
 } from "../../index";
+// Internal: what the parts read their density with, not exported.
+import { useKozmosDensity } from "../../theme/injection";
 
 let app: App | undefined;
 afterEach(() => {
@@ -150,7 +151,7 @@ describe("KozmosThemeProvider and KozmosDensityScope", () => {
         KozmosThemeProvider,
         {
           storageKey: "kz-theme",
-          "onTheme-change": (theme: string) => emitted.push(theme),
+          onThemeChange: (theme: string) => emitted.push(theme),
         },
         () => h(Setter),
       ),

@@ -18,14 +18,21 @@ const plan = JSON.parse(
 );
 const task = (id) => plan.tasks.find((candidate) => candidate.taskId === id);
 
-test("Vue's tests count their own folder, and React's stories and recipes, as inputs", () => {
+test("Vue's tests count their own folder, React's stories and recipes, and the API readers, as inputs", () => {
   const inputs = Object.keys(task("@kozmos-ds/vue#test").inputs);
   for (const file of [
     "test/parity/button.parity.spec.ts",
+    "test/parity/stories.parity.spec.ts",
+    "test/contract/read-contract.ts",
+    "test/ports.ts",
     "test/react-free.spec.ts",
     "src/components/Button/Button.spec.ts",
     "../react/src/components/Button/Button.stories.tsx",
     "../react/src/recipes/button.ts",
+    // The API contract reads React's props as the Claude Design cards do.
+    "../../scripts/skills/claude-design-api.mjs",
+    "../../scripts/skills/claude-design-source.mjs",
+    "../../scripts/skills/claude-design-typescript.mjs",
   ])
     assert.ok(
       inputs.includes(file),

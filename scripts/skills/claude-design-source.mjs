@@ -243,18 +243,19 @@ function implementationOf(sources, name) {
   return null;
 }
 
-const shortText = (node) => {
+/** A default as one line, or null when it is longer than a card shows. */
+const shortText = (node, maxLength = 80) => {
   const text = node.getText().replace(/\s+/g, " ").trim();
-  return text.length <= 80 ? text : null;
+  return text.length <= maxLength ? text : null;
 };
 
 /** `{ a = 1, b: renamed = "x" }` → a: 1, b: "x". */
-function bindingDefaults(pattern, into) {
+function bindingDefaults(pattern, into, maxLength) {
   for (const element of pattern.elements) {
     if (!element.initializer || element.dotDotDotToken) continue;
     const key = element.propertyName ?? element.name;
     if (!ts.isIdentifier(key) && !ts.isStringLiteral(key)) continue;
-    const text = shortText(element.initializer);
+    const text = shortText(element.initializer, maxLength);
     if (text) into.set(key.text, text);
   }
 }
@@ -301,14 +302,16 @@ function cvaDefaults(sources) {
 /**
  * The defaults a component gives its props: those in its parameter list (or
  * in the first destructuring of its props), then the `defaultVariants` of the
- * cva recipes its props interface takes its variants from.
+ * cva recipes its props interface takes its variants from. A default longer
+ * than `maxLength` is left out, as a card shows none; the Vue API contract
+ * reads every one (`maxLength: Infinity`), since a missing one reads as none.
  */
-export function defaultsOf(module, name, propsText) {
+export function defaultsOf(module, name, propsText, { maxLength = 80 } = {}) {
   const defaults = new Map();
   const implementation = implementationOf(module.sources, name);
   const first = implementation?.parameters[0];
   if (first && ts.isObjectBindingPattern(first.name))
-    bindingDefaults(first.name, defaults);
+    bindingDefaults(first.name, defaults, maxLength);
   else if (
     first &&
     ts.isIdentifier(first.name) &&
@@ -322,7 +325,7 @@ export function defaultsOf(module, name, propsText) {
             ts.isObjectBindingPattern(d.name) &&
             d.initializer?.getText() === first.name.text
           )
-            bindingDefaults(d.name, defaults);
+            bindingDefaults(d.name, defaults, maxLength);
   if (propsText && /^\w+$/.test(propsText)) {
     const recipes = cvaDefaults([
       ...module.sources,
