@@ -4,16 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kozmos Playwright CT</title>
-    <!-- Inject system font for consistent typography regressions -->
-    <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        /* Override default playwright body margins to test edge bounds */
-        margin: 0;
-        padding: 16px; 
-        background: #171717; /* Dark background to test glassmorphism */
-      }
-    </style>
+    <!-- No page styles here. Until 5 Nov 2026 a <style> here (system font, body padding 16, a dark
+         background) never applied: Vite ran it through React's PostCSS config, whose scope pass
+         confined it to [data-kozmos-root]. With the stylesheet built by @kozmos-ds/styles that
+         config is gone, so it would have applied for the first time, moving every mounted part
+         8px and putting an opening Menu's first item under the click that opened it. -->
   </head>
   <body>
     <div id="root"></div>
