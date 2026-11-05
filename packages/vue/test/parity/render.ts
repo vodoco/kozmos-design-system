@@ -15,6 +15,11 @@ export interface Drawn {
   props?: Record<string, unknown>;
   /** Vue's props, where they are spelled differently (`class`, a style string). */
   vueProps?: Record<string, unknown>;
+  /**
+   * Vue's named slots, each drawing its text: a node React takes as a prop
+   * (Badge's `counter`) is a slot in Vue.
+   */
+  vueSlots?: Record<string, string>;
   children?: (Drawn | string)[];
 }
 
@@ -36,21 +41,27 @@ export const toVue = (node: Drawn | string): ReturnType<typeof h> | string =>
           node.vueProps ?? node.props ?? {},
           (node.children ?? []).map(toVue),
         )
-      : h(
-          node.vue,
-          node.vueProps ?? node.props ?? {},
-          node.children?.length
-            ? { default: () => node.children!.map(toVue) }
-            : undefined,
-        );
+      : h(node.vue, node.vueProps ?? node.props ?? {}, slotsOf(node));
+
+/** A part's slots: its children as the default slot, and its named slots. */
+function slotsOf(node: Drawn) {
+  const slots: Record<string, () => ReturnType<typeof toVue>[]> = {};
+  if (node.children?.length) slots.default = () => node.children!.map(toVue);
+  for (const [name, text] of Object.entries(node.vueSlots ?? {}))
+    slots[name] = () => [text];
+  return Object.keys(slots).length ? slots : undefined;
+}
 
 /** The tree's server render in each framework, normalised (`normalize-html.ts`). */
-export async function renderBoth(tree: Drawn) {
+export async function renderBoth(
+  tree: Drawn,
+  options: Parameters<typeof normalizeHtml>[1] = {},
+) {
   const react = reactToString(toReact(tree) as React.ReactElement);
   const vue = await vueToString(createSSRApp({ render: () => toVue(tree) }));
   return {
-    react: normalizeHtml(react),
-    vue: normalizeHtml(vue),
+    react: normalizeHtml(react, options),
+    vue: normalizeHtml(vue, options),
     raw: { react, vue },
   };
 }

@@ -14,7 +14,7 @@ import {
   ref,
   type App,
 } from "vue";
-import { KozmosThemeProvider } from "../../src/index";
+import { KozmosThemeProvider, useTheme } from "../../src/index";
 import { MotionKey } from "../../src/theme/injection";
 import { normalizeHtml } from "./normalize-html";
 
@@ -209,5 +209,70 @@ describe("the stored preference", () => {
     const [r3, v3] = await step({ storageKey: "a" });
     expect(v3).toBe(r3);
     expect(v3).toContain('data-theme="dark"');
+  });
+});
+
+describe("useTheme().setTheme, as ThemeProvider's Default story calls it", () => {
+  it("changes the theme, reports it and stores it, as React's", async () => {
+    type Theme = "light" | "dark" | "system";
+    const reported = { react: [] as string[], vue: [] as string[] };
+    let setReact: ((theme: Theme) => void) | undefined;
+    let setVue: ((theme: Theme) => void) | undefined;
+    // What each hook says the theme is: React's on every render, Vue's a ref.
+    let readReact: { theme: string; resolvedTheme: string } | undefined;
+    let readVue: ReturnType<typeof useTheme> | undefined;
+    const ReactProbe = () => {
+      const state = KozmosReact.useTheme();
+      setReact = state.setTheme;
+      readReact = state;
+      return null;
+    };
+    const VueProbe = defineComponent({
+      setup() {
+        readVue = useTheme();
+        setVue = readVue.setTheme;
+        return () => null;
+      },
+    });
+    const read = () => ({
+      react: [readReact!.theme, readReact!.resolvedTheme],
+      vue: [readVue!.theme.value, readVue!.resolvedTheme.value],
+    });
+    // Each its own key: both run in one document and one storage.
+    const reactHost = await mountReact(
+      React.createElement(
+        KozmosReact.ThemeProvider,
+        {
+          storageKey: "react",
+          onThemeChange: (theme: string) => reported.react.push(theme),
+        },
+        React.createElement(ReactProbe),
+      ),
+    );
+    const vueHost = await mountVue(() =>
+      h(
+        KozmosThemeProvider,
+        {
+          storageKey: "vue",
+          // v-model:theme reports what React's onThemeChange does.
+          "onUpdate:theme": (theme: string) => reported.vue.push(theme),
+        },
+        () => [h(VueProbe)],
+      ),
+    );
+    expect(rootMarks(vueHost)).toBe(rootMarks(reactHost));
+    expect(read().vue).toEqual(read().react);
+    await act(async () => setReact!("dark"));
+    setVue!("dark");
+    await nextTick();
+    expect(rootMarks(vueHost)).toBe(rootMarks(reactHost));
+    expect(rootMarks(vueHost)).toContain('data-theme="dark"');
+    // The composable's refs follow, as React's hook re-reads.
+    expect(read().vue).toEqual(read().react);
+    expect(read().vue).toEqual(["dark", "dark"]);
+    expect(reported.vue).toEqual(reported.react);
+    expect(reported.vue).toEqual(["dark"]);
+    expect(localStorage.getItem("vue")).toBe(localStorage.getItem("react"));
+    expect(localStorage.getItem("vue")).toBe("dark");
   });
 });

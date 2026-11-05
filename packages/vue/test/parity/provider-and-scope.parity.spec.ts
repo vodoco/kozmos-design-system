@@ -7,8 +7,9 @@ import {
   KozmosButton,
   KozmosDensityScope,
   KozmosThemeProvider,
-  useKozmosDensity,
 } from "../../src/index";
+// Internal: what the parts read their density with, not exported.
+import { useKozmosDensity } from "../../src/theme/injection";
 import { renderBoth, type Drawn } from "./render";
 import { normalizeHtml } from "./normalize-html";
 

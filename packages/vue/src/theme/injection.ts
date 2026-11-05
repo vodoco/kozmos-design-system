@@ -46,7 +46,11 @@ export const DensityKey: InjectionKey<ComputedRef<KozmosDensity>> =
 export const MotionKey: InjectionKey<ComputedRef<"reduced" | undefined>> =
   Symbol("KozmosMotion");
 
-/** The density where the caller renders, or undefined outside every provider and scope. */
+/**
+ * The density where the caller renders, or undefined outside every provider
+ * and scope. Internal, for the parts: React exports no density hook, so the
+ * main entry exports none either (the API contract, test/contract).
+ */
 export function useKozmosDensity(): ComputedRef<KozmosDensity> | undefined {
   return inject(DensityKey, undefined);
 }

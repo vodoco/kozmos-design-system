@@ -9,6 +9,7 @@ import {
   provide,
   Text,
   type PropType,
+  type SlotsType,
   type VNode,
 } from "vue";
 import { DensityKey, type KozmosDensity } from "../../theme/injection";
@@ -47,6 +48,8 @@ export const KozmosDensityScope = defineComponent({
     density: { type: String as PropType<KozmosDensity>, required: true },
     asChild: { type: Boolean, default: false },
   },
+  /** What it scopes, as React's required `children`. */
+  slots: Object as SlotsType<{ default: () => VNode[] }>,
   setup(props, { slots }) {
     provide(
       DensityKey,

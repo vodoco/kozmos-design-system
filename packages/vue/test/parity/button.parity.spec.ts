@@ -1,4 +1,3 @@
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import * as KozmosReact from "@kozmos-ds/react";
 import {
@@ -6,19 +5,15 @@ import {
   KozmosDensityScope,
   KozmosThemeProvider,
 } from "../../src/index";
-import { readStoryArgs } from "./story-args";
 import { renderBoth, type Drawn } from "./render";
 
 /**
- * Vue's Button draws the element React's draws (Vue 3 Phase 0): for every
- * Button story drawn from its args, read from React's own stories file, and
- * for the emotion matrix the Emotions story draws, React's and Vue's server
- * renders inside a ThemeProvider normalise to the same tree.
+ * Vue's Button draws the element React's draws (Vue 3 Phase 0): for the
+ * emotion matrix the Emotions story draws, and for what each framework spells
+ * its own way, React's and Vue's server renders inside a ThemeProvider
+ * normalise to the same tree. Button's args stories are drawn in both by
+ * `stories.parity.spec.ts`, as every port's are.
  */
-const STORIES = path.resolve(
-  __dirname,
-  "../../../react/src/components/Button/Button.stories.tsx",
-);
 
 const theme = (
   props: Record<string, unknown>,
@@ -38,34 +33,7 @@ const button = ({ children, ...props }: Record<string, unknown>): Drawn => ({
   children: children === undefined ? [] : [String(children)],
 });
 
-const { stories, rendered } = readStoryArgs(STORIES);
-
 describe("KozmosButton draws React's Button", () => {
-  it("reads every args story of Button.stories.tsx", () => {
-    // The stories file names these; a story added there is drawn here too.
-    expect(stories.map((story) => story.name)).toEqual([
-      "Default",
-      "Destructive",
-      "Outline",
-      "Secondary",
-      "Ghost",
-      "Link",
-      "Glass",
-      "Loading",
-      "Disabled",
-    ]);
-    // A story with its own render is covered below, by what it draws.
-    expect(rendered).toEqual(["Emotions"]);
-  });
-
-  for (const story of stories) {
-    it(`${story.name}: ${JSON.stringify(story.args)}`, async () => {
-      const { react, vue } = await renderBoth(theme({}, button(story.args)));
-      expect(vue).toBe(react);
-      expect(react).toContain("<button");
-    });
-  }
-
   // What the Emotions story draws: each variant it shows, in every emotion.
   // glass is in the recipe too, and takes no emotion; it is drawn here so a
   // change to that rule shows up in both.
