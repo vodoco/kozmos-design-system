@@ -25,8 +25,8 @@ Do not rely on an acknowledgement deadline until that setup is complete.
 
 ## What is in scope
 
-- The published packages: `@kozmos-ds/react`, `@kozmos-ds/tokens`,
-  `@kozmos-ds/icons`, `@kozmos-ds/product-contracts`.
+- The published packages: `@kozmos-ds/react`, `@kozmos-ds/styles`,
+  `@kozmos-ds/tokens`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts`.
 - The source in this repository, including the build and release scripts.
 - The website published from this repository.
 

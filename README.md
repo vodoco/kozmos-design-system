@@ -82,7 +82,8 @@ component, with every prop and an example that compiles.
 | Path                         | What                                                 |
 | ---------------------------- | ---------------------------------------------------- |
 | `packages/tokens`            | The tokens, from Figma, as CSS, TS, Swift and Kotlin |
-| `packages/react`             | The React components and their stylesheet            |
+| `packages/react`             | The React components, with a copy of the stylesheet  |
+| `packages/styles`            | The stylesheet, built from React's and Vue's sources |
 | `packages/icons`             | The icon set, named by stable keys                   |
 | `packages/product-contracts` | The shapes a product passes the product components   |
 | `packages/ios`               | The SwiftUI library                                  |

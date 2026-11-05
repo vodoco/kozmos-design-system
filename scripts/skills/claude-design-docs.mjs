@@ -523,6 +523,11 @@ function renderReadme({ root, api, cards, owner }) {
   const react = readJson(path.join(root, "packages/react/package.json"));
   const version = (name) =>
     readJson(path.join(root, "packages", name, "package.json")).version;
+  // The Kozmos packages react depends on, read from its manifest: a list of
+  // three went stale when @kozmos-ds/styles became the fourth.
+  const siblings = Object.keys(react.dependencies ?? {})
+    .filter((name) => name.startsWith("@kozmos-ds/"))
+    .sort();
   const stylesheet = Object.keys(react.exports).find(
     (key) => key.endsWith("style.css") && !key.startsWith("./dist/"),
   );
@@ -616,7 +621,7 @@ function renderReadme({ root, api, cards, owner }) {
     "npm install @kozmos-ds/react react react-dom",
     "```",
     "",
-    `\`@kozmos-ds/react\` ${version("react")} takes React \`${react.peerDependencies.react}\` as a peer, and brings \`@kozmos-ds/tokens\` ${version("tokens")}, \`@kozmos-ds/icons\` ${version("icons")} and \`@kozmos-ds/product-contracts\` ${version("product-contracts")} with it.`,
+    `\`@kozmos-ds/react\` ${version("react")} takes React \`${react.peerDependencies.react}\` as a peer, and brings ${list(siblings.map((name) => `\`${name}\` ${version(name.slice("@kozmos-ds/".length))}`))} with it.`,
     "",
     "### The stylesheet and the provider",
     "",
