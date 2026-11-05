@@ -12,7 +12,7 @@ This folder is what the Kozmos design-system artifact in Claude Design should ca
 npm install @kozmos-ds/react react react-dom
 ```
 
-`@kozmos-ds/react` 0.15.0 takes React `^18.2.0 || ^19.0.0` as a peer, and brings `@kozmos-ds/tokens` 0.8.1, `@kozmos-ds/icons` 0.8.0 and `@kozmos-ds/product-contracts` 0.10.0 with it.
+`@kozmos-ds/react` 0.15.0 takes React `^18.2.0 || ^19.0.0` as a peer, and brings `@kozmos-ds/icons` 0.8.0, `@kozmos-ds/product-contracts` 0.10.0, `@kozmos-ds/styles` 0.0.0 and `@kozmos-ds/tokens` 0.8.1 with it.
 
 ### The stylesheet and the provider
 

@@ -181,7 +181,7 @@ keep the table's four columns and its statuses as they are.
 - **Now:** fixed in 0.10.0 (#266, `3dae9d5`). The build gives each `theme()`
   call the default it names — the system sans and monospace stacks,
   `currentColor` borders, `#9ca3af` placeholders — and fails if one is left
-  (`resolvePreflightTheme`, `packages/react/vite.config.mts:42–45`).
+  (`resolvePreflightTheme`, `packages/styles/vite.config.mts:25–31`, since #474).
   `scripts/check-theme-isolation.mjs:186–190` asserts the shipped reset has
   no `theme()` left (`pnpm test:themes`). The site still does not import
   `reset.css`: the provider's scoped preflight covers everything inside it,

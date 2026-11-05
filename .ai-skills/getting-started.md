@@ -248,7 +248,7 @@ ESLint takes the flat configuration in [`eslint.config.mjs`](../eslint.config.mj
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [["@kozmos-ds/react", "@kozmos-ds/styles"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
