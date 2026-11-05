@@ -15,7 +15,6 @@
 - Updated dependencies [141c343]
   - @kozmos-ds/icons@0.9.0
   - @kozmos-ds/styles@0.15.1
-  - @kozmos-ds/tokens@0.8.1
 
 ## 0.15.0
 
