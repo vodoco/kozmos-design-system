@@ -3,7 +3,9 @@ import {
   h,
   normalizeClass,
   type PropType,
+  type SlotsType,
   type StyleValue,
+  type VNode,
 } from "vue";
 import {
   buttonEmotionTokens,
@@ -53,6 +55,8 @@ export const KozmosButton = defineComponent({
     isLoading: { type: Boolean, default: undefined },
     disabled: { type: Boolean, default: undefined },
   },
+  /** The label, as React's `children`. */
+  slots: Object as SlotsType<{ default?: () => VNode[] }>,
   setup(props, { attrs, slots }) {
     return () => {
       const { class: className, style, ...rest } = attrs;

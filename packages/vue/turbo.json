@@ -22,7 +22,10 @@
         "tsconfig*.json",
         "$TURBO_ROOT$/packages/react/src/**/*.stories.tsx",
         "$TURBO_ROOT$/packages/react/src/recipes/**",
-        "$TURBO_ROOT$/packages/react/src/utils.ts"
+        "$TURBO_ROOT$/packages/react/src/utils.ts",
+        "$TURBO_ROOT$/scripts/skills/claude-design-api.mjs",
+        "$TURBO_ROOT$/scripts/skills/claude-design-source.mjs",
+        "$TURBO_ROOT$/scripts/skills/claude-design-typescript.mjs"
       ]
     }
   }

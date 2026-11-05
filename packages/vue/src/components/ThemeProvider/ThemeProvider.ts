@@ -10,6 +10,8 @@ import {
   Teleport,
   watch,
   type PropType,
+  type SlotsType,
+  type VNode,
 } from "vue";
 import { ConfigProvider, injectConfigProviderContext } from "reka-ui";
 import {
@@ -44,8 +46,9 @@ function isTheme(value: unknown): value is KozmosTheme {
  * ConfigProvider, as React's reaches Radix through DirectionProvider.
  *
  * `v-model:theme` controls the preference; without it the provider keeps its
- * own, persisted under `storageKey` when given. `theme-change` reports every
- * request, as React's `onThemeChange`.
+ * own, persisted under `storageKey` when given. `update:theme` reports every
+ * request, controlled or not, with what React's `onThemeChange` passes
+ * (decision 160: a controlled prop's change is `update:<prop>` alone).
  *
  * An outer Reka ConfigProvider's locale, scroll lock, nonce, teleport target
  * and id source carry on inside: only the direction is this provider's. Like
@@ -77,8 +80,9 @@ export const KozmosThemeProvider = defineComponent({
   },
   emits: {
     "update:theme": (theme: KozmosTheme) => isTheme(theme),
-    "theme-change": (theme: KozmosTheme) => isTheme(theme),
   },
+  /** What it scopes, as React's required `children`. */
+  slots: Object as SlotsType<{ default: () => VNode[] }>,
   setup(props, { emit, slots }) {
     const parent = inject(ThemeKey, undefined);
     const inheritedDensity = inject(DensityKey, undefined);
@@ -133,7 +137,6 @@ export const KozmosThemeProvider = defineComponent({
         }
       }
       emit("update:theme", next);
-      emit("theme-change", next);
     };
 
     const state: KozmosThemeState = {

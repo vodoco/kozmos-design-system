@@ -29,6 +29,55 @@ describe("normalizeHtml settles spelling, never what is drawn", () => {
     differ("<b>Go now</b>", "<b>Go  now</b>");
     differ("<b><i></i></b>", "<b></b><i></i>");
   });
+
+  it("compares what refers to what, not how each framework spells an id", () => {
+    // React's Tabs and Reka's each generate their own ids.
+    same(
+      '<button id="radix-_R_0_-trigger-a" aria-controls="radix-_R_0_-content-a"></button><div id="radix-_R_0_-content-a" aria-labelledby="radix-_R_0_-trigger-a"></div>',
+      '<button id="reka-tabs-v-1-trigger-a" aria-controls="reka-tabs-v-1-content-a"></button><div id="reka-tabs-v-1-content-a" aria-labelledby="reka-tabs-v-1-trigger-a"></div>',
+    );
+    // A reference to the wrong element, or to none, still differs.
+    differ(
+      '<label for="a">A</label><input id="a"><input id="b">',
+      '<label for="b">A</label><input id="a"><input id="b">',
+    );
+    differ(
+      '<label for="a">A</label><input id="a">',
+      '<label>A</label><input id="a">',
+    );
+    // An SVG paint's reference, and a fragment link, are references too.
+    same(
+      '<svg><linearGradient id="r1"></linearGradient><circle fill="url(#r1)"></circle></svg>',
+      '<svg><linearGradient id="v-7"></linearGradient><circle fill="url(#v-7)"></circle></svg>',
+    );
+    same(
+      '<a href="#r1">A</a><b id="r1"></b>',
+      '<a href="#v-2">A</a><b id="v-2"></b>',
+    );
+  });
+
+  it("keeps the ids a test supplies, so an app's id that never lands is seen", () => {
+    const keep = { keepIds: ["app-id", "app-note"] };
+    expect(
+      normalizeHtml(
+        '<button id="app-id" aria-describedby="app-note"></button>',
+        keep,
+      ),
+    ).not.toBe(
+      normalizeHtml('<button id="v-0" aria-describedby="v-1"></button>', keep),
+    );
+    expect(
+      normalizeHtml(
+        '<button id="app-id" aria-controls="radix-1"></button><div id="radix-1"></div>',
+        keep,
+      ),
+    ).toBe(
+      normalizeHtml(
+        '<button id="app-id" aria-controls="reka-9"></button><div id="reka-9"></div>',
+        keep,
+      ),
+    );
+  });
 });
 
 describe("readStoryArgs reads a stories file's own args", () => {

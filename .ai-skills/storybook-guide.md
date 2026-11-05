@@ -62,7 +62,7 @@ apps/docs/
 │   ├── preview.tsx          # Global decorators & parameters
 │   ├── preview-head.html    # Custom head elements
 │   └── preview.css
-├── .storybook-vue/          # The private Vue harness's Storybook
+├── .storybook-vue/          # The private @kozmos-ds/vue's Storybook
 ├── src/                     # Documentation pages and stories
 └── stories/                 # Example stories
 packages/react/src/components/Button/
