@@ -5,8 +5,8 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: React 0.14.0 on `latest` with tokens 0.8.1, icons 0.7.0 and product-contracts 0.9.1 (published
-2026-11-01 from `5df3af1ff96e4670571564b067e33d68ac1696d5`; [release evidence](release-process.md#0140)).
+Baseline: React 0.15.0 on `latest` with icons 0.8.0, product-contracts 0.10.0 and tokens 0.8.1 (published
+2026-11-04 from `08e9216c7f5440b45c1c3b9d0692b26113b05bb8`; [release evidence](release-process.md#0150)).
 This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
 React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
 repository, not a native registry release. See [release evidence](release-process.md#080).
@@ -44,6 +44,14 @@ theme's portal, MapView is its own stacking context, live parts keep speaking un
 (GAP-193), a composed tree's rows are treeitems (GAP-204), and React's CardContent and CardFooter pay the top as a
 card's first child (GAP-194). A library release is not board, Figma or device acceptance. See
 [release evidence](release-process.md#0140).
+
+React 0.15.0 (2026-11-04, `08e9216c`; icons 0.8.0, product-contracts 0.10.0, tokens unchanged) carries decision
+119's APIs. For the SDK: AdaptiveMapShell's `status` slot and its top-start and top-end corners, placed clear of the
+top bar, panel, credits and floor lists, with a `status` occlusion in the contracts (GAP-123, SDK-UI-002), and exit
+building as a recipe in the top-start corner (SDK-UI-006), on React only; the product's own actions on a result and
+on the details card (GAP-028, GAP-130), `BuildingPresentation` and `SitePresentation` (GAP-175), and the venue icon
+names (GAP-105), on React with SwiftUI and Compose in the repository. A library release is not board, Figma or device
+acceptance. See [release evidence](release-process.md#0150).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
@@ -297,11 +305,11 @@ to bottom-left. Existing physical left/right APIs remain physical; logical start
 
 ### Shell foundation: released support and remaining boundaries
 
-| Target  | Current shell behavior                                                                                                                           | Required before claiming shared placement parity                                                                                  |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| React   | Legacy controls plus registered bottom-start/end, measured panel/top bar, conservative corner-region occlusion and opt-in camera padding.        | Per-corner rather than combined-envelope occlusions, credits/status coordination and consuming-host wiring.                       |
-| SwiftUI | Registered bottom corners, legacy top/bottom controls, measured edge insets, wrapping/RTL and bounded short hosts.                               | Full rectangle snapshot parity is not implemented; native keyboard/device/assistive-technology acceptance and host wiring remain. |
-| Compose | Registered bottom corners with wrapping/RTL, measured top-bar/panel/safe-area camera insets and short bounded hosts. Legacy top controls remain. | Full rectangle snapshot parity, IME/device/assistive-technology acceptance and host wiring remain.                                |
+| Target  | Current shell behavior                                                                                                                                                                                                             | Required before claiming shared placement parity                                                                                  |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| React   | Legacy controls plus registered bottom-start/end and, since 0.15.0, top-start/end and a `status` slot that the credits give way to (#431); measured panel/top bar, conservative corner-region occlusion and opt-in camera padding. | Per-corner rather than combined-envelope occlusions and consuming-host wiring.                                                    |
+| SwiftUI | Registered bottom corners, legacy top/bottom controls, measured edge insets, wrapping/RTL and bounded short hosts.                                                                                                                 | Full rectangle snapshot parity is not implemented; native keyboard/device/assistive-technology acceptance and host wiring remain. |
+| Compose | Registered bottom corners with wrapping/RTL, measured top-bar/panel/safe-area camera insets and short bounded hosts. Legacy top controls remain.                                                                                   | Full rectangle snapshot parity, IME/device/assistive-technology acceptance and host wiring remain.                                |
 
 Inspect the implementations under `packages/{react,ios,android}` before changing the API;
 the [adaptive-layout guide](adaptive-map-layout.md) distinguishes the React geometry contract
@@ -523,7 +531,9 @@ the separate Info pane retain their existing behavior.
 
 ## SDK-UI-006: exit building and other map actions
 
-The screenshot also exposes Exit Main Mall. A styled button alone is not the feature.
+The screenshot also exposes Exit Main Mall. A styled button alone is not the feature. Since 0.15.0 the React shell
+places it as a recipe (decision 119): `@kozmos-ds/pointr-map`'s `exitBuilding()` on a labelled MapControlButton in
+`controlsTopStart`, with no new part (AdaptiveMapShell's Exit building story). The list below is still the feature.
 
 - Host supplies the building-specific localized label, visibility and exit callback.
 - Agree whether exiting clears the route/POI/search or retains them, and which camera and
@@ -543,8 +553,9 @@ Do not let the new chrome conceal already-recorded behavior gaps:
 
 - **Product contracts:** GAP-021's optional language-not-listed field and localized disclosure
   are released in 0.8.0 (#187); real staff-query evidence and host grouping/ranking remain.
-  Still-open contracts include GAP-028 result booking, GAP-044 authored
-  name, GAP-046 area, GAP-047 travel breakdown and GAP-065 native/shared grouping. GAP-092's
+  GAP-028's and GAP-130's product-defined actions on results and the details card are released in 0.15.0 (#430).
+  GAP-044 authored name, GAP-046 area and GAP-065 native/shared grouping are closed as won't do (decision 135), and
+  GAP-047 travel breakdown is still open. GAP-092's
   result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks
   are released in 0.8.0 (#188); SDK data adoption and physical speech acceptance remain.
@@ -556,7 +567,8 @@ Do not let the new chrome conceal already-recorded behavior gaps:
   Compact-stepper RTL separators are fixed in 0.7.0. Do not
   equate the 44px product target with every WCAG minimum-target rule.
 - **Icons:** named chart/microphone/copy/star artwork exists, but named exports and the string
-  registry are different APIs. GAP-105 requires registry availability, not new artwork.
+  registry are different APIs. GAP-105's curated venue names joined the registry in icons 0.8.0 (#460); a UI glyph
+  such as copy or star stays a named import (decision 121).
 - **POI regression requirements:** one metadata row with at most three populated items,
   adaptive one/two/three-item alignment, centered rating, horizontally scrollable actions,
   taxonomy-defined property/value icon-versus-text rules, correct empty/missing data, and
