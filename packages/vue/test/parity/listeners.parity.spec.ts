@@ -8,15 +8,18 @@ import * as KozmosReact from "@kozmos-ds/react";
 import { createApp, h, nextTick, type App, type Component } from "vue";
 import * as KozmosVue from "../../src/index";
 import { PORTS, REACT_SOURCE, type Port } from "../ports";
+import { reactSides } from "../contract/read-contract";
 import { readStoryArgs, type StoryArgs } from "./story-args";
 
 /**
  * Where an app's listeners land, which a server render never shows: each
  * port is mounted in both frameworks with a click listener and a marker
  * attribute added, as an app adds them, and the element that carries the
- * marker is clicked. React's and Vue's must land on the same element and
- * fire alike; a part that takes no attributes, as ThemeProvider, takes
- * neither in either.
+ * marker, anywhere in the document (a portalled part's is in the body), is
+ * clicked. React's and Vue's must carry the marker on the same element, fire
+ * alike, and fire on that element (`currentTarget`), not on a wrapper around
+ * it. A part React gives DOM attributes must carry the marker; one that
+ * takes none, as ThemeProvider, carries neither in either.
  */
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -53,16 +56,29 @@ function host() {
 }
 
 /** What a click on the marked element reaches, in one framework. */
-async function clicks(mount: (onClick: () => void) => Promise<HTMLElement>) {
-  let count = 0;
-  const root = await mount(() => count++);
-  const marked = root.querySelector<HTMLElement>("[data-parity]");
+async function clicks(
+  mount: (onClick: (event: Event) => void) => Promise<HTMLElement>,
+) {
+  const landed: string[] = [];
+  let marked: HTMLElement | null = null;
+  await mount((event) =>
+    landed.push(
+      event.currentTarget === marked
+        ? "on the marked element"
+        : `on ${(event.currentTarget as Element | null)?.localName ?? "nothing"}`,
+    ),
+  );
+  marked = document.querySelector<HTMLElement>("[data-parity]");
   marked?.click();
   await nextTick();
-  return { marked: marked?.localName ?? null, count };
+  return { marked: marked?.localName ?? null, landed };
 }
 
-const asReact = (port: Port, args: StoryArgs, onClick: () => void) => {
+const asReact = (
+  port: Port,
+  args: StoryArgs,
+  onClick: (event: Event) => void,
+) => {
   const { children, ...props } = args;
   const part = React.createElement(
     lookup(KozmosReact, port.react) as React.ElementType,
@@ -74,7 +90,11 @@ const asReact = (port: Port, args: StoryArgs, onClick: () => void) => {
     : React.createElement(KozmosReact.ThemeProvider, null, part);
 };
 
-const asVue = (port: Port, args: StoryArgs, onClick: () => void) => {
+const asVue = (
+  port: Port,
+  args: StoryArgs,
+  onClick: (event: Event) => void,
+) => {
   const { children, ...props } = args;
   const part = () =>
     h(
@@ -103,6 +123,11 @@ describe("an app's listeners land where React's land", () => {
         await act(async () => reactRoot!.render(asReact(port, args!, onClick)));
         return element;
       });
+      // Each framework has the document to itself: a marker is looked for
+      // anywhere in it.
+      act(() => reactRoot?.unmount());
+      reactRoot = undefined;
+      document.body.replaceChildren();
       const vue = await clicks(async (onClick) => {
         const element = host();
         vueApp = createApp({ render: () => asVue(port, args!, onClick) });
@@ -111,5 +136,11 @@ describe("an app's listeners land where React's land", () => {
         return element;
       });
       expect(vue).toEqual(react);
+      // A part React gives DOM attributes carries the app's, somewhere.
+      if (reactSides()(port.react).reactAttributes.length)
+        expect(
+          react.marked,
+          `React's ${port.react} drew no element with the app's attributes`,
+        ).not.toBeNull();
     });
 });

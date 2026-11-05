@@ -53,12 +53,15 @@ function slotsOf(node: Drawn) {
 }
 
 /** The tree's server render in each framework, normalised (`normalize-html.ts`). */
-export async function renderBoth(tree: Drawn) {
+export async function renderBoth(
+  tree: Drawn,
+  options: Parameters<typeof normalizeHtml>[1] = {},
+) {
   const react = reactToString(toReact(tree) as React.ReactElement);
   const vue = await vueToString(createSSRApp({ render: () => toVue(tree) }));
   return {
-    react: normalizeHtml(react),
-    vue: normalizeHtml(vue),
+    react: normalizeHtml(react, options),
+    vue: normalizeHtml(vue, options),
     raw: { react, vue },
   };
 }

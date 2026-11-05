@@ -71,12 +71,13 @@ function keyOf(property: ts.ObjectLiteralElementLike): string | undefined {
 }
 
 /** A handler: it draws nothing, so leaving it out changes no render. */
-const isHandler = (node: ts.Expression) =>
-  ts.isArrowFunction(node) ||
-  ts.isFunctionExpression(node) ||
-  (ts.isCallExpression(node) &&
-    ts.isIdentifier(node.expression) &&
-    node.expression.text === "fn");
+const isHandler = (key: string, node: ts.Expression) =>
+  /^on[A-Z]/.test(key) &&
+  (ts.isArrowFunction(node) ||
+    ts.isFunctionExpression(node) ||
+    (ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "fn"));
 
 /**
  * An `args` object: its readable values, and the keys it could not read.
@@ -114,7 +115,9 @@ function readArgs(
       unread.push(key); // a shorthand or a method
       continue;
     }
-    if (isHandler(property.initializer)) continue;
+    // An `on…` function is a handler, which draws nothing; any other function
+    // (`tint`, `renderIcon`, `formatValue`) draws, and is not read.
+    if (isHandler(key, property.initializer)) continue;
     const value = literal(property.initializer);
     if (value === NOT_READ) unread.push(key);
     else args[key] = value;
@@ -122,13 +125,24 @@ function readArgs(
   return { args, unread };
 }
 
-const property = (object: ts.ObjectLiteralExpression, name: string) =>
-  object.properties.find(
-    (candidate): candidate is ts.PropertyAssignment =>
-      ts.isPropertyAssignment(candidate) &&
-      ts.isIdentifier(candidate.name) &&
-      candidate.name.text === name,
-  )?.initializer;
+/**
+ * A story's or the meta's property: its value, `true` for a method
+ * (`render(args) { … }`), an identifier for a shorthand (`{ args }`), or
+ * undefined when it has none.
+ */
+const property = (
+  object: ts.ObjectLiteralExpression,
+  name: string,
+): ts.Expression | true | undefined => {
+  for (const candidate of object.properties) {
+    if (!candidate.name || !ts.isIdentifier(candidate.name)) continue;
+    if (candidate.name.text !== name) continue;
+    if (ts.isPropertyAssignment(candidate)) return candidate.initializer;
+    if (ts.isShorthandPropertyAssignment(candidate)) return candidate.name;
+    if (ts.isMethodDeclaration(candidate)) return true;
+  }
+  return undefined;
+};
 
 /**
  * Every story in a CSF file: those drawn from their args, and the names of
@@ -188,9 +202,13 @@ export function readStoryArgs(file: string): {
             };
       }
     const args = property(value, "args");
-    const own = args
-      ? readArgs(args, read)
-      : { args: {} as StoryArgs, unread: [] as string[] };
+    // A shorthand (`{ args }`) names an object read elsewhere: not read here.
+    const own =
+      args === undefined
+        ? { args: {} as StoryArgs, unread: [] as string[] }
+        : args === true || ts.isIdentifier(args)
+          ? { args: {} as StoryArgs, unread: ["args"] }
+          : readArgs(args, read);
     return {
       // A story's own args replace the spread story's, key by key.
       args: { ...(args ? {} : base.args), ...own.args },

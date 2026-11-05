@@ -31,11 +31,14 @@ import { COMPOSABLES, PORTS, REPOSITORY, VUE_DIST, type Port } from "../ports";
  *   the same default;
  * - a controlled prop, one with an `on…Change` (or `value` with Kozmos's own
  *   `onChange`), is a `v-model` (decision 160): Vue emits `update:<prop>` with
- *   what React's callback passes, the new value first, and no other event
- *   for it. A controlled `value` is `modelValue`, as `v-model` names it; a
+ *   what React's callback passes, the new value first (compared position by
+ *   position, so a union of callbacks is one event), and no other event for
+ *   it. A controlled `value` is `modelValue`, as `v-model` names it; a
  *   `value` nothing controls (a tab's, an item's) keeps its name;
  * - a form field (React's element an input, textarea or select) takes
- *   `v-model` for its `value`, though React's `value` is an attribute;
+ *   `v-model` for its `value`, though React's `value` is an attribute, with
+ *   Kozmos's own change callback (NumberInput's) as its change if it has
+ *   one; a DOM attribute's wide type may be narrowed (`within`);
  * - any other callback `onPress` (a function, as the compiler reads it) is
  *   an event (`press`), declared in camelCase so that Vue's types give its
  *   handler React's name, with the same arguments. A DOM event (`click`)
@@ -126,9 +129,16 @@ const isCallback = (member: ReactMember) =>
 export const isNode = (member: ReactMember) =>
   member.name === "children" ||
   topLevelMembers(member.type).some((t) => NODE_TYPE.test(t));
-/** A render prop: a function, not a callback, that returns a node. */
+/**
+ * A render prop: a function, not a callback, written inline, that returns a
+ * node (`renderIcon: (category) => ReactNode`). A component type
+ * (Icon's `icon: KozmosIconComponent`) is a value: a Vue port takes a Vue
+ * component there, a decision its exception records.
+ */
 const isRenderProp = (member: ReactMember) =>
-  !isCallback(member) && member.returnsNode;
+  !isCallback(member) &&
+  member.returnsNode &&
+  topLevelMembers(member.type).some((t) => /=>/.test(t));
 
 /**
  * The handler prop Vue's types give an event: `on` and the name, capitalised
@@ -176,14 +186,20 @@ export function planOf(contract: PortContract) {
         change,
       });
   }
-  // A form field's value is an attribute in React, and v-model in Vue.
+  // A form field's value is an attribute in React, and v-model in Vue; its
+  // change is Kozmos's own callback when it has one (NumberInput's
+  // onValueChange), else the DOM's.
   if (
     !own.has("value") &&
     contract.reactElement !== null &&
     FORM_FIELD.test(contract.reactElement) &&
     contract.reactAttributes.includes("value")
   )
-    models.set("value", { react: "value", vue: "modelValue", change: null });
+    models.set("value", {
+      react: "value",
+      vue: "modelValue",
+      change: ["onValueChange", "onChange"].find(callbackOwn) ?? null,
+    });
   const changes = new Set(
     [...models.values()].map((m) => m.change).filter(Boolean),
   );
@@ -197,9 +213,15 @@ export function planOf(contract: PortContract) {
     changes: new Map(
       [...models.values()].filter((m) => m.change).map((m) => [m.change!, m]),
     ),
-    vueName: (react: string) => models.get(react)?.vue ?? react,
+    // A kebab-case prop React's part declares itself (TooltipContent's own
+    // `aria-label`) is camelCase in Vue's props, as Vue normalises it; a DOM
+    // attribute (`aria-describedby`, `data-*`) stays as it is written.
+    vueName: (react: string) =>
+      models.get(react)?.vue ?? (own.has(react) ? camelize(react) : react),
     reactName: (vue: string) =>
-      [...models.values()].find((m) => m.vue === vue)?.react ?? vue,
+      [...models.values()].find((m) => m.vue === vue)?.react ??
+      [...own.keys()].find((name) => camelize(name) === vue) ??
+      vue,
   };
 }
 
@@ -389,6 +411,12 @@ interface TypeCheck {
   /** The two sides, as type expressions over V_<n> and R_<n>. */
   vue: string;
   react: string;
+  /**
+   * `equal` (the default), or `within`: Vue's may be narrower than React's,
+   * for a DOM attribute's wide type (`value: string | number | readonly
+   * string[]`) a Vue port narrows to what its element takes.
+   */
+  relation?: "equal" | "within";
 }
 
 const compilerOptions: ts.CompilerOptions = {
@@ -428,20 +456,52 @@ const VUE_ENTRY = path
 // `PropOf` reads a prop of a union of props (Accordion's single or multiple)
 // from every member that has it; `NotRefs` names a composable's values that
 // are neither refs nor functions.
-const PRELUDE = `
+const IMPORTS = `
 import type { ComponentProps } from "react";
 import type { Ref, UnwrapRef } from "vue";
 import type * as R from "@kozmos-ds/react";
 import type * as V from "${VUE_ENTRY}";
+`;
+
+/** The helper types every comparison is written in. */
+const HELPERS = `
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type VueProps<C> = C extends abstract new (...args: any) => { $props: infer P } ? P : never;
 type VueSlots<C> = C extends abstract new (...args: any) => { $slots: infer S } ? S : never;
 type PropOf<P, K extends PropertyKey> = P extends unknown ? (K extends keyof P ? P[K] : never) : never;
 type Payload<F> = F extends (...args: infer A) => any ? A : never;
+type Extends<A, B> = [A] extends [B] ? true : false;
+// Arguments compared position by position: a union of callbacks (Accordion's
+// single or multiple onValueChange) passes [string] | [string[]], which one
+// Vue event says as [string | string[]].
+type Len<T> = T extends readonly unknown[] ? T["length"] : never;
+type At<T, I extends number> = T extends readonly unknown[] ? (I extends keyof T ? T[I] : never) : never;
+type Args<T> = [Len<T>, At<T, 0>, At<T, 1>, At<T, 2>, At<T, 3>];
 type Unwrapped<T> = { [K in keyof T]: UnwrapRef<T[K]> };
 type NotRefs<T> = { [K in keyof T]: T[K] extends Ref<any> | ((...args: any) => any) ? never : K }[keyof T];
 `;
+
+const PRELUDE = IMPORTS + HELPERS;
+
+/**
+ * Whether two types agree as a check would decide (`equal`, or Vue's
+ * `within` React's), written in the helper types: how the helpers
+ * themselves are held (rules.spec.ts).
+ */
+export function typesAgree(
+  vue: string,
+  react: string,
+  relation: "equal" | "within" = "equal",
+): boolean {
+  const text = `${PRELUDE}\nexport const agrees: ${relation === "within" ? "Extends" : "Equal"}<${vue}, ${react}> = true;\n`;
+  const built = program(text);
+  const errors = ts.getPreEmitDiagnostics(
+    built,
+    built.getSourceFile(CONTRACT_FILE),
+  );
+  return errors.length === 0;
+}
 
 const key = (name: string) => JSON.stringify(name);
 
@@ -477,12 +537,13 @@ function compareTypes(contracts: PortContract[]): {
       ...contract.react.map((m) => m.name),
       ...contract.reactAttributes,
     ]);
+    const own = new Set(contract.react.map((m) => m.name));
     for (const member of plan.callbacks)
       if (handlers.has(member.name))
         checks.push({
           id: `${port.vue}.${member.name}:payload`,
-          vue: payload(member.name),
-          react: `Payload<${react(member.name)}>`,
+          vue: `Args<${payload(member.name)}>`,
+          react: `Args<Payload<${react(member.name)}>>`,
         });
     for (const prop of contract.vueProps) {
       const reactName = plan.reactName(prop.name);
@@ -491,6 +552,9 @@ function compareTypes(contracts: PortContract[]): {
         id: `${port.vue}.${prop.name}:type`,
         vue: vue(prop.name),
         react: react(reactName),
+        // Kozmos's and Radix's own types are matched; a DOM attribute's may
+        // be narrowed.
+        relation: own.has(reactName) ? "equal" : "within",
       });
     }
     // update:<prop> carries what React's change callback passes, the new
@@ -499,13 +563,21 @@ function compareTypes(contracts: PortContract[]): {
     for (const model of plan.models.values()) {
       const handler = handlerOf(`update:${model.vue}`);
       if (!handlers.has(handler)) continue;
-      checks.push({
-        id: `${port.vue}.update:${model.vue}:payload`,
-        vue: payload(handler),
-        react: model.change
-          ? `Payload<${react(model.change)}>`
-          : `[${react(model.react)}]`,
-      });
+      checks.push(
+        model.change
+          ? {
+              id: `${port.vue}.update:${model.vue}:payload`,
+              vue: `Args<${payload(handler)}>`,
+              react: `Args<Payload<${react(model.change)}>>`,
+            }
+          : {
+              // The DOM's change: what the field reports, within what it takes.
+              id: `${port.vue}.update:${model.vue}:payload`,
+              vue: payload(handler),
+              react: `[${react(model.react)}]`,
+              relation: "within",
+            },
+      );
     }
   });
   const composableChecks: TypeCheck[] = [];
@@ -525,7 +597,7 @@ function compareTypes(contracts: PortContract[]): {
   const all = [...checks, ...composableChecks];
   const lines = all.map(
     (check, i) =>
-      `export type L_${i} = ${check.vue};\nexport type Rt_${i} = ${check.react};\nexport const check_${i}: Equal<L_${i}, Rt_${i}> = true;`,
+      `export type L_${i} = ${check.vue};\nexport type Rt_${i} = ${check.react};\nexport const check_${i}: ${check.relation === "within" ? "Extends" : "Equal"}<L_${i}, Rt_${i}> = true;`,
   );
   const text = [PRELUDE, ...declarations, ...lines].join("\n");
   const built = program(text);
@@ -572,7 +644,7 @@ function compareTypes(contracts: PortContract[]): {
         throw new Error(`${check.id}: ${alias} reads as any`);
   const toFinding = (check: TypeCheck, i: number): Finding => ({
     id: check.id,
-    message: `${check.id}: Vue's \`${shown(`L_${i}`)}\` is not React's \`${shown(`Rt_${i}`)}\``,
+    message: `${check.id}: Vue's \`${shown(`L_${i}`)}\` is not ${check.relation === "within" ? "within " : ""}React's \`${shown(`Rt_${i}`)}\``,
   });
   const findings = checks
     .map((check, i) => (failed.has(i) ? toFinding(check, i) : null))

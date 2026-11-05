@@ -79,4 +79,27 @@ describe("React's side of the contract", () => {
   it("reads React's default on a DOM attribute", () => {
     expect(side("AISearchButton").reactDefaults.get("type")).toBe('"button"');
   });
+  it("takes a form field's own change callback as its model's", () => {
+    // NumberInput: the input's value, and Kozmos's onValueChange(number | null).
+    expect(plan("NumberInput").models.get("value")).toEqual({
+      react: "value",
+      vue: "modelValue",
+      change: "onValueChange",
+    });
+    expect(plan("NumberInput").callbacks.map((m) => m.name)).not.toContain(
+      "onValueChange",
+    );
+  });
+
+  it("reads a component-typed prop as a value, not a render prop", () => {
+    const icon = member("Icon", "icon");
+    expect(icon?.callable).toBe(true);
+    expect(plan("Icon").callbacks.map((m) => m.name)).not.toContain("icon");
+  });
+
+  it("names a kebab-case React prop in camelCase", () => {
+    expect(member("TooltipContent", "aria-label")).toBeDefined();
+    expect(plan("TooltipContent").vueName("aria-label")).toBe("ariaLabel");
+    expect(plan("TooltipContent").reactName("ariaLabel")).toBe("aria-label");
+  });
 });

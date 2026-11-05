@@ -96,4 +96,20 @@ describe("readStoryArgs", () => {
     expect(metaRendered.stories).toEqual([]);
     expect(metaRendered.rendered).toEqual(["One", "Two"]);
   });
+  it("reads only on… functions as handlers, and a shorthand or method story as unread or rendered", () => {
+    const own = read(`
+      export const Tinted = { args: { tint: (c) => c.colour, onPick: () => {} } };
+      export const Formatted = { args: { formatValue: fn() } };
+      const args = { size: "sm" };
+      export const Short = { args };
+      export const Method = { args: { a: 1 }, render(props) { return <X {...props} />; } };
+    `);
+    expect(own.stories.map(({ name, unread }) => ({ name, unread }))).toEqual([
+      // A function that draws is not read; a handler is left out freely.
+      { name: "Tinted", unread: ["tint"] },
+      { name: "Formatted", unread: ["formatValue"] },
+      { name: "Short", unread: ["args"] },
+    ]);
+    expect(own.rendered).toEqual(["Method"]);
+  });
 });

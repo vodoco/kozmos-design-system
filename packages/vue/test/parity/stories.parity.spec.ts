@@ -23,6 +23,39 @@ import { renderBoth, type Drawn } from "./render";
  * `listeners.parity.spec.ts` mounts each part to see where they land.
  */
 
+/**
+ * React's style properties that take a bare number; every other number React
+ * writes in px, which a Vue app writes itself.
+ */
+const UNITLESS = new Set([
+  "animationIterationCount",
+  "aspectRatio",
+  "columnCount",
+  "flex",
+  "flexGrow",
+  "flexShrink",
+  "fontWeight",
+  "gridColumn",
+  "gridRow",
+  "lineHeight",
+  "opacity",
+  "order",
+  "orphans",
+  "scale",
+  "widows",
+  "zIndex",
+  "zoom",
+]);
+const vueStyle = (style: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(style).map(([name, value]) => [
+      name,
+      typeof value === "number" && value !== 0 && !UNITLESS.has(name)
+        ? `${value}px`
+        : value,
+    ]),
+  );
+
 /** React's DOM spelling of an attribute, as Vue writes it. */
 const VUE_ATTRIBUTE: Record<string, string> = {
   className: "class",
@@ -79,7 +112,13 @@ export function drawn(port: Port, { children, ...args }: StoryArgs): Drawn {
       if (value !== null && value !== undefined) vueSlots[key] = String(value);
       continue;
     }
-    vueProps[VUE_ATTRIBUTE[key] ?? saying.vueName(key)] = value;
+    vueProps[VUE_ATTRIBUTE[key] ?? saying.vueName(key)] =
+      key === "style" &&
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+        ? vueStyle(value as Record<string, unknown>)
+        : value;
   }
   return {
     react: lookup(KozmosReact, port.react) as Drawn["react"],
@@ -120,8 +159,16 @@ for (const port of PORTS) {
           inTheme(port, drawn(port, story.args)),
         );
         expect(vue).toBe(react);
-        // Something was drawn: two empty renders are equal too.
-        expect(react).toMatch(/^<\w/m);
+        // The part drew something inside its provider: two empty renders
+        // are equal too. A part React portals (Dialog's, Popover's,
+        // Select's content) draws nothing in a server render; such a story
+        // is named in `elsewhere`, with the mounted spec that draws it.
+        expect(
+          port.react === "ThemeProvider"
+            ? react
+            : react.split("\n").slice(1).join("\n"),
+          `${port.react} drew nothing in a server render: name ${story.name} in ports.ts' elsewhere, with a mounted spec`,
+        ).toMatch(/^\s*<\w/m);
       });
 
     it("puts an app's attributes where React's puts them", async () => {
@@ -138,10 +185,15 @@ for (const port of PORTS) {
             id: "kozmos-parity",
             "aria-describedby": "kozmos-parity-note",
             "data-parity": "attribute",
-            className: "kozmos-parity",
-            style: { marginTop: "1px" },
+            // Classes that meet a recipe's (Button's padding and corners):
+            // React's merges them over the recipe's, and Vue's must too.
+            className: "kozmos-parity p-0 rounded-none",
+            style: { marginTop: 1 },
           }),
         ),
+        // The app's ids land as written, or the comparison would not see
+        // one that never lands.
+        { keepIds: ["kozmos-parity", "kozmos-parity-note"] },
       );
       expect(vue).toBe(react);
     });
