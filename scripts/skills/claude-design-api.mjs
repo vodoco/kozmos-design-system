@@ -15,6 +15,17 @@ import { compilerOptions, hostWith, ts } from "./claude-design-typescript.mjs";
 
 export const DECLARATIONS = "packages/react/dist/index.d.ts";
 
+/** A code span that holds any text, backticks included. */
+export function code(text) {
+  const longest = Math.max(
+    0,
+    ...[...text.matchAll(/`+/g)].map((m) => m[0].length),
+  );
+  const fence = "`".repeat(longest + 1);
+  const pad = text.startsWith("`") || text.endsWith("`") ? " " : "";
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
+
 /** Where a declaration lives, which decides whether a card lists it. */
 export function originOf(file) {
   if (file.includes("/@types/react/")) return "react";
@@ -321,83 +332,359 @@ export function declarationsOf(checker, type, name, seen = new Set()) {
  * one; React's DOM attributes and framer-motion's animation props, which
  * every element of that kind takes, are counted and named by where they
  * come from rather than listed 260 times over.
+ *
+ * Props that are a union of props (RouteSummary's estimate or navigation
+ * layout, Accordion's single or multiple) are read member by member: a prop
+ * of any member is listed, with the types each member gives it, required
+ * only where every member requires it, and `where` says which members take
+ * it, require it, type it how, default it and deprecate it, where they
+ * differ. A member that makes a prop optional and `undefined`
+ * (`destination?: undefined`), or types it `never`, does not take it. A
+ * prop is Kozmos's or Radix's when any member declares it so, though another
+ * member takes it as a DOM attribute. `props?: P` is P, not a union.
  */
 export function describeComponent(api, name, defaults = new Map()) {
-  const { checker, dts } = api;
+  const { checker } = api;
   const entry = api.entries.get(name);
   if (!entry?.component) throw new Error(`${name} is not a component export`);
   const { propsText, heritage, ref } = propsDeclaration(api, entry);
+  const propsType = entry.component.propsType;
+  const nullish =
+    ts.TypeFlags.Undefined | ts.TypeFlags.Null | ts.TypeFlags.Void;
+  const union = propsType.isUnion()
+    ? propsType.types.filter((t) => !(t.flags & nullish))
+    : [propsType];
+  const members = union.length ? union : [propsType];
+  const memberName = memberNamer(
+    api,
+    members,
+    `${propsText} ${heritage}`,
+    discriminantOf(checker, members, api.dts),
+  );
+  // Each prop, by name, with the member and symbol each member gives it.
+  const byName = new Map();
+  for (const member of members)
+    for (const symbol of checker.getPropertiesOfType(member)) {
+      if (symbol.name === "key" || symbol.name === "ref") continue;
+      if (!byName.has(symbol.name)) byName.set(symbol.name, []);
+      byName.get(symbol.name).push({ member, symbol });
+    }
   const listed = [];
   const summarised = { react: [], motion: [] };
-  for (const prop of checker.getPropertiesOfType(entry.component.propsType)) {
-    const declarations = prop.declarations?.length
-      ? prop.declarations
-      : declarationsOf(checker, entry.component.propsType, prop.name);
-    const own =
-      declarations.find(
-        (d) => originOf(d.getSourceFile().fileName) === "kozmos",
-      ) ?? declarations[0];
-    const origin = own ? originOf(own.getSourceFile().fileName) : "kozmos";
-    if (prop.name === "key" || prop.name === "ref") continue;
+  for (const [propName, all] of byName) {
+    const read = all.map(({ member, symbol }) => {
+      const declarations = symbol.declarations?.length
+        ? symbol.declarations
+        : declarationsOf(checker, member, propName);
+      const own =
+        declarations.find(
+          (d) => originOf(d.getSourceFile().fileName) === "kozmos",
+        ) ?? declarations[0];
+      const optional = !!(symbol.flags & ts.SymbolFlags.Optional);
+      // Resolved only for a union: resolving a type early reorders the
+      // props TypeScript builds with mapped types (Grid's, Omit<…>'s), and
+      // every other card would move.
+      const flags =
+        members.length > 1
+          ? checker.getTypeOfSymbolAtLocation(symbol, api.dts).flags
+          : 0;
+      return {
+        member,
+        symbol,
+        own,
+        origin: own ? originOf(own.getSourceFile().fileName) : null,
+        // `?:` already says a member may leave it out.
+        type: optional
+          ? withoutUndefined(typeOfProp(api, symbol, declarations, own))
+          : typeOfProp(api, symbol, declarations, own),
+        optional,
+        // `foo?: undefined` and `foo: never` forbid the prop; a required
+        // `foo: undefined` takes it, as `undefined`.
+        forbids: optional
+          ? !!(flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Never))
+          : !!(flags & ts.TypeFlags.Never),
+      };
+    });
+    // Kozmos's or Radix's in any member, though another member takes it as a
+    // DOM attribute.
+    const first =
+      read.find((r) => r.origin === "kozmos") ??
+      read.find((r) => r.origin === "radix") ??
+      read.find((r) => r.own) ??
+      read[0];
+    const origin = first.origin ?? "kozmos";
     if (
       (origin === "react" || origin === "motion") &&
-      prop.name !== "children"
+      propName !== "children"
     ) {
-      summarised[origin].push(prop.name);
+      summarised[origin].push(propName);
       continue;
     }
-    let type;
-    // A prop of a union of props (Calendar's single or range) is declared
-    // once in each: it takes any of their types.
-    const each = declarations.filter(
-      (d) =>
-        originOf(d.getSourceFile().fileName) === "kozmos" &&
-        (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
-        d.type,
-    );
-    const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
-    if (texts.length > 1)
-      type = texts
-        .map((text) => (/=>/.test(text) ? `(${text})` : text))
-        .join(" | ");
-    else if (
-      own &&
-      (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
-      own.type
-    )
-      type = api.typeText(own.type);
-    else if (own && ts.isMethodSignature(own)) type = signatureText(api, own);
-    else
-      type = api.rename(
-        checker.typeToString(
-          checker.getTypeOfSymbolAtLocation(prop, dts),
-          undefined,
-          ts.TypeFormatFlags.NoTruncation |
-            ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
-        ),
-      );
-    const required = !(prop.flags & ts.SymbolFlags.Optional);
-    // `?:` already says a prop may be left out.
-    if (!required) type = type.replace(/\s*\|\s*undefined$/, "");
-    const doc = documentation(prop, checker);
-    const defaultTag = doc.tags.find(
-      (t) => t.name === "default" || t.name === "defaultValue",
-    );
+    const taking = members.length === 1 ? read : read.filter((r) => !r.forbids);
+    const takers = taking.length ? taking : read;
+    const requiring = takers.filter((r) => !r.optional);
+    const required =
+      takers.length === members.length && requiring.length === members.length;
+    const texts = [...new Set(takers.map((r) => r.type))];
+    let type = texts.length > 1 ? unionOf(texts) : texts[0];
+    // `?:` already says a prop may be left out; a function's own
+    // `| undefined` (`=> T | undefined`) is its return type's, and stays.
+    if (!required) type = withoutUndefined(type);
+    const name = (member) => code(memberName(member));
+    const names = (list) => list.map((r) => name(r.member)).join(" and ");
+    const docs = takers.map((r) => documentation(r.symbol, checker));
+    // Each member's own words, a paragraph each, named by member where the
+    // members' words differ.
+    const docTexts = [...new Set(docs.map((d) => d.text).filter(Boolean))];
+    const doc =
+      docTexts.length > 1
+        ? docTexts
+            .map(
+              (text) =>
+                `In ${names(takers.filter((r, i) => docs[i].text === text))}: ${text}`,
+            )
+            .join("\n\n")
+        : (docTexts[0] ?? "");
+    const tagOf = (d, ...names) => d.tags.find((t) => names.includes(t.name));
+    const deprecations = docs.map((d) => tagOf(d, "deprecated"));
+    const defaultTags = docs.map((d) => tagOf(d, "default", "defaultValue"));
+    const allDeprecated = deprecations.every(Boolean);
+    const deprecationTexts = [
+      ...new Set(deprecations.filter(Boolean).map((t) => t.text ?? "")),
+    ];
+    // A @default is the prop's only when every member that takes it gives
+    // the same one; otherwise it is each member's, in the note.
+    const sharedDefault =
+      defaultTags.every(Boolean) &&
+      new Set(defaultTags.map((t) => t.text)).size === 1
+        ? defaultTags[0].text
+        : null;
+    let where = null;
+    if (members.length > 1) {
+      const notes = [];
+      if (takers.length < members.length)
+        notes.push(
+          `Only in ${names(takers)}` +
+            (requiring.length === takers.length
+              ? ", where it is **required**."
+              : requiring.length
+                ? `; **required** in ${names(requiring)}.`
+                : "."),
+        );
+      else if (requiring.length && !required)
+        notes.push(
+          `**Required** in ${names(requiring)}; optional in ${members
+            .filter((m) => !requiring.some((r) => r.member === m))
+            .map(name)
+            .join(" and ")}.`,
+        );
+      // Which member takes which type, when they differ.
+      if (texts.length > 1)
+        notes.push(
+          `${texts
+            .map(
+              (text) =>
+                `${code(text)} in ${names(takers.filter((r) => r.type === text))}`,
+            )
+            .join("; ")}.`,
+        );
+      if (
+        !defaults.has(propName) &&
+        !sharedDefault &&
+        defaultTags.some(Boolean)
+      )
+        notes.push(
+          `Defaults to ${takers
+            .map((r, i) =>
+              defaultTags[i]
+                ? `${code(defaultTags[i].text)} in ${name(r.member)}`
+                : null,
+            )
+            .filter(Boolean)
+            .join("; ")}.`,
+        );
+      if (!allDeprecated && deprecations.some(Boolean))
+        notes.push(
+          takers
+            .map((r, i) =>
+              deprecations[i]
+                ? `**Deprecated** in ${name(r.member)}${deprecations[i].text ? `: ${deprecations[i].text}` : "."}`
+                : null,
+            )
+            .filter(Boolean)
+            .join(" "),
+        );
+      if (notes.length) where = notes.join(" ");
+    }
     listed.push({
-      name: prop.name,
+      name: propName,
       required,
       type,
-      doc: doc.text,
-      deprecated: doc.tags.find((t) => t.name === "deprecated")?.text ?? null,
-      default: defaults.get(prop.name) ?? defaultTag?.text ?? null,
+      doc,
+      deprecated: allDeprecated
+        ? deprecationTexts.length > 1
+          ? takers
+              .map((r, i) => `In ${name(r.member)}: ${deprecations[i].text}`)
+              .join(" ")
+          : (deprecationTexts[0] ?? "")
+        : null,
+      default:
+        defaults.get(propName) ??
+        (members.length > 1 ? sharedDefault : (defaultTags[0]?.text ?? null)),
       origin,
-      node: own ?? null,
+      where,
+      node: first.own ?? null,
+      // Every member's declaration: the types any of them takes.
+      nodes: takers.map((r) => r.own).filter(Boolean),
     });
   }
   // Kozmos's own first, then Radix's, then `children` when React declares it.
   const rank = { kozmos: 0, radix: 1, react: 2, motion: 2 };
   listed.sort((a, b) => rank[a.origin] - rank[b.origin]);
   return { name, propsText, heritage, ref, props: listed, summarised, entry };
+}
+
+/**
+ * A type's members at its top level, as the compiler groups them: brackets
+ * nest, and a function type (`(x) => A | B`) is one member, its return type
+ * running to the end.
+ */
+export function unionMembers(text) {
+  const members = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if ("<([{".includes(c)) depth++;
+    else if (">)]}".includes(c) && text[i - 1] !== "=") depth--;
+    else if (depth === 0 && c === "=" && text[i + 1] === ">") break;
+    else if (depth === 0 && c === "|") {
+      members.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  members.push(text.slice(start).trim());
+  return members.filter(Boolean);
+}
+
+/** A type without the `undefined` an optional prop carries at its top level. */
+export function withoutUndefined(text) {
+  const kept = unionMembers(text).filter((member) => member !== "undefined");
+  return kept.length ? kept.join(" | ") : text;
+}
+
+/** Types joined as one union, each member once; a function in parentheses. */
+function unionOf(texts) {
+  const members = [];
+  for (const text of texts)
+    for (const member of unionMembers(text)) {
+      const written =
+        unionMembers(text).length === 1 && /=>/.test(member) && texts.length > 1
+          ? `(${member})`
+          : member;
+      if (!members.includes(written)) members.push(written);
+    }
+  return members.join(" | ");
+}
+
+/** A prop's type as one member of the props declares it. */
+function typeOfProp(api, symbol, declarations, own) {
+  const { checker, dts } = api;
+  // A prop declared in more than one of Kozmos's own types takes any of
+  // their types.
+  const each = declarations.filter(
+    (d) =>
+      originOf(d.getSourceFile().fileName) === "kozmos" &&
+      (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
+      d.type,
+  );
+  const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
+  if (texts.length > 1)
+    return texts
+      .map((text) => (/=>/.test(text) ? `(${text})` : text))
+      .join(" | ");
+  if (
+    own &&
+    (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
+    own.type
+  )
+    return api.typeText(own.type);
+  if (own && ts.isMethodSignature(own)) return signatureText(api, own);
+  return api.rename(
+    checker.typeToString(
+      checker.getTypeOfSymbolAtLocation(symbol, dts),
+      undefined,
+      ts.TypeFormatFlags.NoTruncation |
+        ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
+    ),
+  );
+}
+
+/**
+ * The prop that tells a union's members apart, as `mode` does Calendar's:
+ * required in every member, and a different literal in each. A map from
+ * member to `{ mode: "a" }`, or null when no prop does.
+ */
+function discriminantOf(checker, members, dts) {
+  if (members.length < 2) return null;
+  const literal =
+    ts.TypeFlags.StringLiteral |
+    ts.TypeFlags.NumberLiteral |
+    ts.TypeFlags.BooleanLiteral;
+  for (const symbol of checker.getPropertiesOfType(members[0])) {
+    const each = members.map((member) => {
+      const own = checker.getPropertyOfType(member, symbol.name);
+      if (!own || own.flags & ts.SymbolFlags.Optional) return null;
+      const type = checker.getTypeOfSymbolAtLocation(own, dts);
+      return type.flags & literal ? checker.typeToString(type) : null;
+    });
+    if (each.every(Boolean) && new Set(each).size === members.length)
+      return new Map(
+        members.map((member, i) => [member, `{ ${symbol.name}: ${each[i]} }`]),
+      );
+  }
+  return null;
+}
+
+/**
+ * What a reader calls each member of a union of props: its own name
+ * (`RouteSummaryEstimateProps`), or, for an intersection, the parts no other
+ * member shares. A name is written as the props declaration writes it
+ * (`AccordionPrimitive.AccordionSingleProps`), so the card's reader finds it
+ * there; a member with no name is named by its discriminant
+ * (`{ mode: "a" }`).
+ */
+function memberNamer(api, members, declared, discriminant) {
+  const { checker } = api;
+  const partsOf = (member) =>
+    (member.isIntersection() ? member.types : [member]).map((part) =>
+      api.rename(
+        checker.typeToString(
+          part,
+          undefined,
+          ts.TypeFormatFlags.NoTruncation |
+            ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
+        ),
+      ),
+    );
+  const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // `AccordionSingleProps` as written: `AccordionPrimitive.AccordionSingleProps`.
+  const asDeclared = (part) =>
+    declared.match(
+      new RegExp(`(?<![\\w.])((?:\\w+\\.)+${escaped(part)})(?![\\w])`),
+    )?.[1] ?? part;
+  const parts = new Map(members.map((m) => [m, partsOf(m).map(asDeclared)]));
+  return (member) => {
+    const own = parts.get(member);
+    const distinct = own.filter(
+      (part) => !members.every((m) => parts.get(m).includes(part)),
+    );
+    const named = (distinct.length ? distinct : own).join(" & ");
+    // A member with no name of its own is named by what tells it apart.
+    return named.startsWith("{") && discriminant
+      ? discriminant.get(member)
+      : named;
+  };
 }
 
 /**

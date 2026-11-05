@@ -64,22 +64,39 @@ It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, whi
   section's content in the page's flow under it. Its height is the
   density's control height: 40 compact, 44 touch.
 
-- `type`: `'single'`, **required**.
-- `value`: `string`, optional.
+- `type`: `'single' | 'multiple'`, **required**.
 
-  The controlled stateful value of the accordion item whose content is expanded.
-  The controlled stateful value of the accordion items whose contents are expanded.
+  `'single'` in `AccordionPrimitive.AccordionSingleProps`; `'multiple'` in `AccordionPrimitive.AccordionMultipleProps`.
 
-- `defaultValue`: `string`, optional.
+- `value`: `string | string[]`, optional.
 
-  The value of the item whose content is expanded when the accordion is initially rendered. Use
+  `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
+
+  In `AccordionPrimitive.AccordionSingleProps`: The controlled stateful value of the accordion item whose content is expanded.
+
+  In `AccordionPrimitive.AccordionMultipleProps`: The controlled stateful value of the accordion items whose contents are expanded.
+
+- `defaultValue`: `string | string[]`, optional.
+
+  `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
+
+  In `AccordionPrimitive.AccordionSingleProps`: The value of the item whose content is expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
-  The value of the items whose contents are expanded when the accordion is initially rendered. Use
+
+  In `AccordionPrimitive.AccordionMultipleProps`: The value of the items whose contents are expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
 
-- `onValueChange`: `(value: string) => void`, optional.
+- `onValueChange`: `((value: string) => void) | ((value: string[]) => void)`, optional.
+
+  `(value: string) => void` in `AccordionPrimitive.AccordionSingleProps`; `(value: string[]) => void` in `AccordionPrimitive.AccordionMultipleProps`.
 
   The callback that fires when the state of the accordion changes.
+
+- `collapsible`: `boolean`, optional, default `false`.
+
+  Only in `AccordionPrimitive.AccordionSingleProps`.
+
+  Whether an accordion item can be collapsed after it has been opened.
 
 - `disabled`: `boolean`, optional, default `false`.
 
