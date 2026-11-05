@@ -1,0 +1,13 @@
+{
+  // The Vue entry, @kozmos-ds/icons/vue: the same sources, with each module
+  // that has a `.vue.ts` stand-in (the four icon factories and the props type)
+  // resolved to it. vite.vue.config.mts resolves `.vue.ts` first for the same
+  // reason, so the generated outlines are shared and never copied.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist/vue",
+    "moduleSuffixes": [".vue", ""]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.tsx", "src/iconProps.ts"]
+}
