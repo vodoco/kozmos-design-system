@@ -15,7 +15,11 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { describeComponent, readPublishedApi } from "./claude-design-api.mjs";
+import {
+  describeComponent,
+  originOf,
+  readPublishedApi,
+} from "./claude-design-api.mjs";
 import { CARDS_DIR, OUT_DIR } from "./claude-design-docs.mjs";
 import { compileModules } from "./claude-design-typescript.mjs";
 
@@ -286,6 +290,55 @@ test("a part whose props are a union lists each member's type for a prop", () =>
   assert.match(
     props.get("onValueChange"),
     /`\(\(value: string\) => void\) \| \(\(value: DateRangeValue\) => void\)`/,
+  );
+});
+
+test("a part whose props are a union lists every member's props, and which member takes each", () => {
+  // RouteSummary's estimate and navigation layouts, Accordion's single and
+  // multiple: the cards listed only what every member shares, so
+  // RouteSummary's gave neither etaText nor the navigation layout's props,
+  // Accordion's no collapsible, and a Radix prop only its first member's
+  // type (5 Nov 2026). Read here from the checker, member by member, not
+  // through describeComponent.
+  const unlisted = new Set();
+  for (const entry of api.entries.values()) {
+    if (!entry.component?.propsType.isUnion()) continue;
+    const listed = partsListed.get(entry.name)?.props;
+    for (const member of entry.component.propsType.types)
+      for (const symbol of api.checker.getPropertiesOfType(member)) {
+        const file = symbol.declarations?.[0]?.getSourceFile().fileName;
+        const origin = file ? originOf(file) : null;
+        if (["key", "ref"].includes(symbol.name)) continue;
+        if (origin === "react" || origin === "motion") continue;
+        if (!listed?.has(symbol.name))
+          unlisted.add(`${entry.name} does not list ${symbol.name}`);
+      }
+  }
+  assert.deepEqual([...unlisted], []);
+  const route = cards.get("RouteSummary")?.text ?? "";
+  assert.match(
+    route,
+    /- `etaText`: `string`, optional\.\n\n {2}Only in `RouteSummaryEstimateProps`, where it is \*\*required\*\*\./,
+  );
+  assert.match(
+    route,
+    /- `destination`: `string`, optional\.\n\n {2}Only in `RouteSummaryNavigationProps`, where it is \*\*required\*\*\./,
+  );
+  assert.match(
+    route,
+    /- `distanceText`: `string`, optional\.\n\n {2}\*\*Required\*\* in `RouteSummaryEstimateProps`; optional in `RouteSummaryNavigationProps`\./,
+  );
+  const accordion = cards.get("Accordion");
+  const props = accordion?.parts.get("Accordion");
+  assert.ok(props, "the Accordion card or its section is missing");
+  assert.match(
+    props.get("type"),
+    /^`'single' \| 'multiple'`, \*\*required\*\*/,
+  );
+  assert.match(props.get("value"), /^`string \| string\[\]`/);
+  assert.match(
+    accordion.text,
+    /- `collapsible`: `boolean`, optional, default `false`\.\n\n {2}Only in `AccordionPrimitive\.AccordionSingleProps`\./,
   );
 });
 

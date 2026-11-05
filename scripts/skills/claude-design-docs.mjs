@@ -98,6 +98,8 @@ function propLine(prop) {
   const notes = [];
   if (prop.deprecated !== null)
     notes.push(`**Deprecated.** ${prop.deprecated}`.trim());
+  // Which members of a union of props take it, when they differ.
+  if (prop.where) notes.push(prop.where);
   if (prop.doc) notes.push(prop.doc);
   return notes.length ? `${head}\n\n${indent(notes.join("\n\n"))}\n` : head;
 }

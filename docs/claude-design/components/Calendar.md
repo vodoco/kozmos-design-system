@@ -50,6 +50,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `CalendarProps`, which is
 
 - `mode`: `"single" | "range"`, optional, default `"single"`.
 
+  **Required** in `CalendarRangeProps`; optional in `CalendarSingleProps`.
+
   One day (the default), or a range of them.
 
 - `value`: `string | null | DateRangeValue`, optional.

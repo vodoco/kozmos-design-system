@@ -321,83 +321,186 @@ export function declarationsOf(checker, type, name, seen = new Set()) {
  * one; React's DOM attributes and framer-motion's animation props, which
  * every element of that kind takes, are counted and named by where they
  * come from rather than listed 260 times over.
+ *
+ * Props that are a union of props (RouteSummary's estimate or navigation
+ * layout, Accordion's single or multiple) are read member by member: a prop
+ * of any member is listed, with the types each member gives it, required
+ * only where every member requires it, and `where` says which members take
+ * it and require it when they differ. A member that types a prop `undefined`
+ * (`destination?: undefined`) does not take it.
  */
 export function describeComponent(api, name, defaults = new Map()) {
-  const { checker, dts } = api;
+  const { checker } = api;
   const entry = api.entries.get(name);
   if (!entry?.component) throw new Error(`${name} is not a component export`);
   const { propsText, heritage, ref } = propsDeclaration(api, entry);
+  const propsType = entry.component.propsType;
+  const members = propsType.isUnion() ? propsType.types : [propsType];
+  const memberName = memberNamer(api, members, `${propsText} ${heritage}`);
+  // Each prop, by name, with the member and symbol each member gives it.
+  const byName = new Map();
+  for (const member of members)
+    for (const symbol of checker.getPropertiesOfType(member)) {
+      if (symbol.name === "key" || symbol.name === "ref") continue;
+      if (!byName.has(symbol.name)) byName.set(symbol.name, []);
+      byName.get(symbol.name).push({ member, symbol });
+    }
   const listed = [];
   const summarised = { react: [], motion: [] };
-  for (const prop of checker.getPropertiesOfType(entry.component.propsType)) {
-    const declarations = prop.declarations?.length
-      ? prop.declarations
-      : declarationsOf(checker, entry.component.propsType, prop.name);
-    const own =
-      declarations.find(
-        (d) => originOf(d.getSourceFile().fileName) === "kozmos",
-      ) ?? declarations[0];
-    const origin = own ? originOf(own.getSourceFile().fileName) : "kozmos";
-    if (prop.name === "key" || prop.name === "ref") continue;
+  for (const [propName, all] of byName) {
+    const read = all.map(({ member, symbol }) => {
+      const declarations = symbol.declarations?.length
+        ? symbol.declarations
+        : declarationsOf(checker, member, propName);
+      const own =
+        declarations.find(
+          (d) => originOf(d.getSourceFile().fileName) === "kozmos",
+        ) ?? declarations[0];
+      return {
+        member,
+        symbol,
+        own,
+        type: typeOfProp(api, symbol, declarations, own),
+        optional: !!(symbol.flags & ts.SymbolFlags.Optional),
+      };
+    });
+    const first = read.find((r) => r.own) ?? read[0];
+    const origin = first.own
+      ? originOf(first.own.getSourceFile().fileName)
+      : "kozmos";
     if (
       (origin === "react" || origin === "motion") &&
-      prop.name !== "children"
+      propName !== "children"
     ) {
-      summarised[origin].push(prop.name);
+      summarised[origin].push(propName);
       continue;
     }
-    let type;
-    // A prop of a union of props (Calendar's single or range) is declared
-    // once in each: it takes any of their types.
-    const each = declarations.filter(
-      (d) =>
-        originOf(d.getSourceFile().fileName) === "kozmos" &&
-        (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
-        d.type,
+    // A member that types it `undefined` forbids it rather than takes it.
+    const taking = read.filter(
+      (r) => members.length === 1 || !/^(?:undefined|never)$/.test(r.type),
     );
-    const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
-    if (texts.length > 1)
-      type = texts
-        .map((text) => (/=>/.test(text) ? `(${text})` : text))
-        .join(" | ");
-    else if (
-      own &&
-      (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
-      own.type
-    )
-      type = api.typeText(own.type);
-    else if (own && ts.isMethodSignature(own)) type = signatureText(api, own);
-    else
-      type = api.rename(
-        checker.typeToString(
-          checker.getTypeOfSymbolAtLocation(prop, dts),
-          undefined,
-          ts.TypeFormatFlags.NoTruncation |
-            ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
-        ),
-      );
-    const required = !(prop.flags & ts.SymbolFlags.Optional);
+    const takers = taking.length ? taking : read;
+    const requiring = takers.filter((r) => !r.optional);
+    const required =
+      takers.length === members.length && requiring.length === members.length;
+    const texts = [...new Set(takers.map((r) => r.type))];
+    let type =
+      texts.length > 1
+        ? texts
+            .map((text) => (/=>/.test(text) ? `(${text})` : text))
+            .join(" | ")
+        : texts[0];
     // `?:` already says a prop may be left out.
     if (!required) type = type.replace(/\s*\|\s*undefined$/, "");
-    const doc = documentation(prop, checker);
-    const defaultTag = doc.tags.find(
+    const docs = takers.map((r) => documentation(r.symbol, checker));
+    const doc = [...new Set(docs.map((d) => d.text).filter(Boolean))].join(
+      "\n",
+    );
+    const tags = docs.flatMap((d) => d.tags);
+    const defaultTag = tags.find(
       (t) => t.name === "default" || t.name === "defaultValue",
     );
+    let where = null;
+    if (members.length > 1) {
+      const names = (list) =>
+        list.map((r) => `\`${memberName(r.member)}\``).join(" and ");
+      const others = members.filter(
+        (m) => !requiring.some((r) => r.member === m),
+      );
+      if (takers.length < members.length)
+        where =
+          `Only in ${names(takers)}` +
+          (requiring.length === takers.length
+            ? ", where it is **required**."
+            : requiring.length
+              ? `; **required** in ${names(requiring)}.`
+              : ".");
+      else if (requiring.length && !required)
+        where = `**Required** in ${names(requiring)}; optional in ${others
+          .map((m) => `\`${memberName(m)}\``)
+          .join(" and ")}.`;
+    }
     listed.push({
-      name: prop.name,
+      name: propName,
       required,
       type,
-      doc: doc.text,
-      deprecated: doc.tags.find((t) => t.name === "deprecated")?.text ?? null,
-      default: defaults.get(prop.name) ?? defaultTag?.text ?? null,
+      doc,
+      deprecated: tags.find((t) => t.name === "deprecated")?.text ?? null,
+      default: defaults.get(propName) ?? defaultTag?.text ?? null,
       origin,
-      node: own ?? null,
+      where,
+      node: first.own ?? null,
     });
   }
   // Kozmos's own first, then Radix's, then `children` when React declares it.
   const rank = { kozmos: 0, radix: 1, react: 2, motion: 2 };
   listed.sort((a, b) => rank[a.origin] - rank[b.origin]);
   return { name, propsText, heritage, ref, props: listed, summarised, entry };
+}
+
+/** A prop's type as one member of the props declares it. */
+function typeOfProp(api, symbol, declarations, own) {
+  const { checker, dts } = api;
+  // A prop declared in more than one of Kozmos's own types takes any of
+  // their types.
+  const each = declarations.filter(
+    (d) =>
+      originOf(d.getSourceFile().fileName) === "kozmos" &&
+      (ts.isPropertySignature(d) || ts.isPropertyDeclaration(d)) &&
+      d.type,
+  );
+  const texts = [...new Set(each.map((d) => api.typeText(d.type)))];
+  if (texts.length > 1)
+    return texts
+      .map((text) => (/=>/.test(text) ? `(${text})` : text))
+      .join(" | ");
+  if (
+    own &&
+    (ts.isPropertySignature(own) || ts.isPropertyDeclaration(own)) &&
+    own.type
+  )
+    return api.typeText(own.type);
+  if (own && ts.isMethodSignature(own)) return signatureText(api, own);
+  return api.rename(
+    checker.typeToString(
+      checker.getTypeOfSymbolAtLocation(symbol, dts),
+      undefined,
+      ts.TypeFormatFlags.NoTruncation |
+        ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
+    ),
+  );
+}
+
+/**
+ * What a reader calls each member of a union of props: its own name
+ * (`RouteSummaryEstimateProps`), or, for an intersection, the parts no other
+ * member shares. A name is written as the props declaration writes it
+ * (`AccordionPrimitive.AccordionSingleProps`), so the card's reader finds it
+ * there.
+ */
+function memberNamer(api, members, declared) {
+  const { checker } = api;
+  const partsOf = (member) =>
+    (member.isIntersection() ? member.types : [member]).map((part) =>
+      api.rename(
+        checker.typeToString(
+          part,
+          undefined,
+          ts.TypeFormatFlags.NoTruncation |
+            ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope,
+        ),
+      ),
+    );
+  const asDeclared = (part) =>
+    declared.match(new RegExp(`\\b((?:\\w+\\.)+${part})\\b`))?.[1] ?? part;
+  const parts = new Map(members.map((m) => [m, partsOf(m).map(asDeclared)]));
+  return (member) => {
+    const own = parts.get(member);
+    const distinct = own.filter(
+      (part) => !members.every((m) => parts.get(m).includes(part)),
+    );
+    return (distinct.length ? distinct : own).join(" & ");
+  };
 }
 
 /**
