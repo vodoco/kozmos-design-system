@@ -15,6 +15,8 @@ const drawerUrl =
 
 figma.connect(DrawerContent, drawerUrl, {
   props: {
+    // GAP-198: Fixed is the default, so its snippet says nothing.
+    placement: figma.enum("Placement", { Fixed: undefined, Inline: "inline" }),
     side: figma.enum("Side", {
       Top: "top",
       Right: "right",
@@ -27,8 +29,16 @@ figma.connect(DrawerContent, drawerUrl, {
     content: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
     actions: figma.children(["Secondary Action", "Primary Action"]),
   },
-  example: ({ actions, body, content, description, side, title }) => (
-    <Drawer>
+  example: ({
+    actions,
+    body,
+    content,
+    description,
+    placement,
+    side,
+    title,
+  }) => (
+    <Drawer placement={placement}>
       <DrawerTrigger asChild>
         <Button variant="outline">Open drawer</Button>
       </DrawerTrigger>
