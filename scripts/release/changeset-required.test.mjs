@@ -51,6 +51,71 @@ test("what a published package ships counts, and nothing else does", () => {
     assert.equal(shippedPackage(file), null, file);
 });
 
+test("a public package's other Vite configs, tsconfigs, build scripts and subpath manifests count", () => {
+  // icons builds its Vue entry with vite.vue.config.mts and tsconfig.vue.json,
+  // rolls its declarations with scripts/roll-vue-declarations.mjs (which
+  // imports scripts/react-in-declarations.mjs), and ships vue/package.json
+  // for resolvers that ignore `exports`. Until 5 Nov none of them counted.
+  for (const file of [
+    "packages/icons/vite.vue.config.mts",
+    "packages/icons/tsconfig.vue.json",
+    "packages/icons/scripts/roll-vue-declarations.mjs",
+    "packages/icons/scripts/react-in-declarations.mjs",
+    "packages/icons/vue/package.json",
+    "packages/react/vite.lib.config.ts",
+  ])
+    assert.equal(shippedPackage(file)?.startsWith("@kozmos-ds/"), true, file);
+  for (const file of [
+    // a test beside the build scripts, a nested folder's manifest, and the
+    // tsconfig that only types the build config, as before
+    "packages/icons/scripts/react-in-declarations.test.mjs",
+    "packages/icons/tests/fixtures/package.json",
+    "packages/icons/vue/nested/package.json",
+    "packages/react/tsconfig.node.json",
+    "packages/react/vitest.config.ts",
+    // only `pnpm typecheck` reads it: react's build names no tsconfig but
+    // tsconfig.json
+    "packages/react/tsconfig.typecheck.json",
+  ])
+    assert.equal(shippedPackage(file), null, file);
+});
+
+test("a tsconfig counts when the package's build reads it", () => {
+  // From a source, as a pull request's checkout gives one: the build script
+  // and Vite config name what they read, and a named tsconfig's `extends`
+  // is followed.
+  const files = {
+    "packages/icons/package.json": JSON.stringify({
+      name: "@kozmos-ds/icons",
+      scripts: {
+        build: "tsc --noEmit && tsc -p tsconfig.vue.json --noEmit && vite build",
+        typecheck: "tsc -p tsconfig.check.json --noEmit",
+      },
+    }),
+    "packages/icons/vite.config.mts": `dts({ tsconfigPath: "tsconfig.lib.json" })`,
+    "packages/icons/tsconfig.lib.json": `{ "extends": "./tsconfig.shared.json" }`,
+    "packages/icons/tsconfig.shared.json": "{}",
+    "packages/icons/tsconfig.vue.json": "{}",
+    "packages/icons/tsconfig.check.json": "{}",
+    "packages/icons/tsconfig.json": "{}",
+  };
+  const source = {
+    files: (dir) => Object.keys(files).filter((f) => f.startsWith(`${dir}/`)),
+    exists: (file) => file in files,
+    read: (file) => files[file] ?? null,
+  };
+  for (const name of ["tsconfig.json", "tsconfig.vue.json", "tsconfig.lib.json", "tsconfig.shared.json"])
+    assert.equal(
+      shippedPackage(`packages/icons/${name}`, () => true, source),
+      "@kozmos-ds/icons",
+      name,
+    );
+  assert.equal(
+    shippedPackage("packages/icons/tsconfig.check.json", () => true, source),
+    null,
+  );
+});
+
 test("a package.json counts only when a consumer-facing field changed", () => {
   const file = "packages/icons/package.json";
   assert.equal(
@@ -128,6 +193,51 @@ test("a Vue file the stylesheet does not scan needs none", () => {
       changesets: [],
     }),
     [],
+  );
+});
+
+// styles' style.css inlines tokens' CSS, which packages/tokens/build.mjs
+// builds from these sources: a change to one changes the stylesheet styles
+// ships and react copies, whatever either lists as a dependency (styles takes
+// tokens only as a build input since #481).
+test("a token source styles' CSS inlines needs a changeset for tokens, styles and react", () => {
+  for (const file of [
+    "packages/tokens/src/tokens-light.json",
+    "packages/tokens/src/tokens-dark.json",
+    "packages/tokens/src/tokens-density-compact.json",
+    "packages/tokens/build.mjs",
+  ])
+    assert.deepEqual(
+      missingChangesets({ changedFiles: [file], changesets: [] }).map(
+        (m) => m.name,
+      ),
+      ["@kozmos-ds/react", "@kozmos-ds/tokens", "@kozmos-ds/styles"],
+      file,
+    );
+  // The token sources no CSS is built from release tokens alone.
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles: ["packages/tokens/src/tokens.json"],
+      changesets: [],
+    }).map((m) => m.name),
+    ["@kozmos-ds/tokens"],
+  );
+});
+
+test("the tokens' CSS styles imports is exactly what the rule counts", async () => {
+  const { STYLESHEET_TOKENS } = await import("./changeset-required.mjs");
+  const imported = [
+    ...fs
+      .readFileSync(
+        path.join(import.meta.dirname, "../../packages/styles/src/index.css"),
+        "utf8",
+      )
+      .matchAll(/@import\s+"(@kozmos-ds\/tokens\/[^"]+)"/g),
+  ].map((m) => m[1]);
+  assert.deepEqual(
+    imported,
+    STYLESHEET_TOKENS.imports,
+    "packages/styles/src/index.css imports other tokens CSS: update STYLESHEET_TOKENS in changeset-required.mjs",
   );
 });
 
