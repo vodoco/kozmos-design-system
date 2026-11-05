@@ -130,9 +130,11 @@ Changesets version the packages here; they never publish them.
 pnpm changeset
 ```
 
-A pull request that changes what `@kozmos-ds/react`, `icons`, `product-contracts` or `tokens` ships
-needs a changeset naming the package, and CI's `scripts/release/changeset-required.mjs` fails
-without one. An empty changeset (`pnpm changeset --empty`) records that a change needs no release.
+A pull request that changes what `@kozmos-ds/react`, `styles`, `icons`, `product-contracts` or
+`tokens` ships needs a changeset naming the package, and CI's
+`scripts/release/changeset-required.mjs` fails without one. Styles' Tailwind build scans Vue's
+sources (`packages/vue/src`, not specs, tests or stories) for the classes it emits, so a change
+there needs changesets for styles and for react, which ships styles' stylesheet. An empty changeset (`pnpm changeset --empty`) records that a change needs no release.
 What ships includes files outside the package that its build runs or extends: an edit to
 `scripts/emit-format-declarations.mjs` needs changesets for react, icons and product-contracts, and
 one to `tsconfig.base.json` for icons and product-contracts. It also includes the consumer-facing
@@ -158,7 +160,7 @@ What changed, in the words the changelog will carry
   "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [["@kozmos-ds/react", "@kozmos-ds/styles"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
@@ -171,7 +173,9 @@ What changed, in the words the changelog will carry
 }
 ```
 
-Private packages are neither versioned nor tagged.
+Private packages are neither versioned nor tagged. The `fixed` group versions react and styles
+together, since react ships styles' stylesheet and pins it exactly: a release plan lists both at
+one version or neither, and preflight refuses one that splits them.
 
 ---
 

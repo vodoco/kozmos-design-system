@@ -386,6 +386,7 @@ const NATIVE_MARKS_ALLOWED = {
     "Stepper.tsx": "foreground-500",
   };
   const webOffenders = [];
+  let webFiles = 0;
   const walkWeb = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
@@ -394,6 +395,7 @@ const NATIVE_MARKS_ALLOWED = {
         /\.(tsx|ts|css)$/.test(entry.name) &&
         !/\.(test|stories)\./.test(entry.name)
       ) {
+        webFiles += 1;
         const src = fs.readFileSync(full, "utf8");
         for (const m of src.matchAll(
           /\b(?:border|divide|ring|outline)(?:-[trblxy])?-\[color:var\(--primitives-colors-(foreground-\d+)\)\]/g,
@@ -407,9 +409,14 @@ const NATIVE_MARKS_ALLOWED = {
       }
     }
   };
+  // React's parts, and the owned CSS @kozmos-ds/styles builds for them (Vue
+  // 3 Phase 0 moved it out of React's src).
   walkWeb(path.join(ROOT, "packages/react/src"));
+  walkWeb(path.join(ROOT, "packages/styles/src"));
   if (webOffenders.length === 0)
-    ok("web: no component edge reads a foreground primitive");
+    ok(
+      `web: no component edge reads a foreground primitive (${webFiles} files)`,
+    );
   else
     for (const k of webOffenders)
       fail(`web: ${k}; use border-input or border-border`);

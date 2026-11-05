@@ -502,7 +502,7 @@ process.stdout.write(JSON.stringify(results));
 // Until 2026-09-24 this installed lucide-react alongside the tarballs, at the
 // version @kozmos-ds/react asked for. It asks for nothing now: the last icon
 // that needed it, the wheelchair, is drawn by this estate. A consumer installs
-// the four packages and React, and that is all.
+// the public packages' tarballs and React, and that is all.
 
 // ---- install, use and type-check, once per React major ----
 

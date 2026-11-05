@@ -99,6 +99,7 @@ const IOS_INPUTS = [
   "scripts/check-ios-poi.mjs",
   "scripts/check-ios-interactions.mjs",
   "scripts/figma-connect-native.mjs",
+  "scripts/lib/figma-connect-run.mjs",
   ".github/workflows/ci.yml",
   "package.json",
   "pnpm-lock.yaml",

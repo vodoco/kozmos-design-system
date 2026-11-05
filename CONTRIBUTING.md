@@ -449,8 +449,8 @@ pnpm changeset
 ```
 
 **Every pull request that changes what a published package ships carries a changeset naming that
-package** — `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` or
-`@kozmos-ds/tokens`. "Ships" means its `src/` apart from tests, stories, `.mdx` pages and Code Connect
+package** — `@kozmos-ds/react`, `@kozmos-ds/styles`, `@kozmos-ds/icons`,
+`@kozmos-ds/product-contracts` or `@kozmos-ds/tokens`. "Ships" means its `src/` apart from tests, stories, `.mdx` pages and Code Connect
 files, the build files beside it (`tsconfig*.json`, `vite.config.*` and the like), the files outside
 it that its build runs or extends, and the consumer-facing fields of its `package.json`:
 
