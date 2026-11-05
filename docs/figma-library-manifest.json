@@ -14661,7 +14661,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Accordion"],
-          "mappedProps": ["collapsible", "defaultValue", "type"],
+          "mappedProps": ["collapsible", "defaultValue", "type", "variant"],
           "unmappedProps": ["collapsible", "defaultValue"]
         },
         "props": [
@@ -16002,7 +16002,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Drawer", "DrawerContent"],
-          "mappedProps": ["side"],
+          "mappedProps": ["placement", "side"],
           "unmappedProps": []
         },
         "props": [
@@ -16426,6 +16426,7 @@
           "connectedComponents": ["IconButton"],
           "mappedProps": [
             "aria-label",
+            "counter",
             "disabled",
             "isLoading",
             "size",
@@ -16475,6 +16476,7 @@
           "issues": [],
           "connectedComponents": ["Input"],
           "mappedProps": [
+            "action",
             "autoFocus",
             "disabled",
             "helperText",
@@ -17204,7 +17206,9 @@
             "actions",
             "context",
             "logo",
+            "logoInset",
             "navigation",
+            "navigationAlign",
             "primaryAction",
             "utilities"
           ],
@@ -17851,7 +17855,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Progress"],
-          "mappedProps": ["value"],
+          "mappedProps": [
+            "label",
+            "labelPlacement",
+            "shape",
+            "size",
+            "tone",
+            "value"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -18524,7 +18535,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Sidebar"],
-          "mappedProps": ["footer", "header", "navigation", "tools", "variant"],
+          "mappedProps": [
+            "footer",
+            "header",
+            "inset",
+            "navigation",
+            "tools",
+            "variant"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -19293,11 +19311,28 @@
           "needsNodeId": false,
           "status": "linked",
           "issues": [],
-          "connectedComponents": ["Tree"],
-          "mappedProps": ["ariaLabel", "density"],
+          "connectedComponents": [
+            "Tree",
+            "TreeChildItemRow",
+            "TreeItemRow",
+            "TreeParentItemRow"
+          ],
+          "mappedProps": [
+            "ariaLabel",
+            "count",
+            "density",
+            "depth",
+            "divided",
+            "expanded",
+            "hasChildren",
+            "name",
+            "selected"
+          ],
           "unmappedProps": []
         },
         "props": [
+          "actions",
+          "actionsVisibility",
           "activationMode",
           "aria-describedby",
           "aria-invalid",
@@ -19305,18 +19340,28 @@
           "ariaLabel",
           "bleed",
           "children",
+          "count",
           "data",
           "defaultExpandedIds",
           "defaultSelectedId",
           "density",
+          "depth",
+          "disabled",
           "divided",
+          "expanded",
           "expandedIds",
+          "focusVisible",
+          "hasChildren",
+          "icon",
           "id",
           "indent",
+          "meta",
+          "name",
           "renderActions",
           "renderIcon",
           "renderMeta",
           "role",
+          "selected",
           "selectedId",
           "tabIndex",
           "title"

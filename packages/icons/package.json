@@ -55,6 +55,6 @@
     "react": "19.2.4",
     "typescript": "^5.3.0",
     "unplugin-dts": "1.1.2",
-    "vite": "^6.4.3"
+    "vite": "^6.4.5"
   }
 }
