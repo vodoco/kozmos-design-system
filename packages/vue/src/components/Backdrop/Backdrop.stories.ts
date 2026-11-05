@@ -1,5 +1,6 @@
 import { ref } from "vue";
-import { KozmosBackdrop, KozmosButton, KozmosThemeProvider } from "../../";
+import { KozmosButton, KozmosThemeProvider } from "../../";
+import { KozmosBackdrop } from "../../react-bridge";
 
 export default {
   title: "Vue/Backdrop",

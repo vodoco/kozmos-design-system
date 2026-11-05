@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
-import { KozmosTourStep } from "../../index";
+import { KozmosTourStep } from "../../react-bridge";
 
 // GAP-188 in the harness: a tour's step mounted from Vue, beside an element
 // Vue draws, with its body from the #body slot and its buttons from Vue's

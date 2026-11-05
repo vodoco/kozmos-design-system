@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
-import { KozmosAnchoredPopover, KozmosButton } from "../../index";
+import { KozmosButton } from "../../index";
+import { KozmosAnchoredPopover, KozmosLink } from "../../react-bridge";
 
 // GAP-190 in the harness: the anchored popover is mounted from Vue, beside an
 // element Vue draws, opened and closed through v-model:open.
@@ -161,8 +162,8 @@ describe("KozmosAnchoredPopover", () => {
   });
 
   it("anchors to a Vue component's element, through a template ref", async () => {
-    // ref on a KozmosButton gives its component instance, whose $el is the
-    // wrapper's display: contents box: the anchor is the <button> in it.
+    // ref on a KozmosButton, a Vue part, gives its component instance, whose
+    // $el is the <button> itself.
     const open = ref(true);
     const target = ref<unknown>(null);
     const host = document.createElement("div");
@@ -197,5 +198,49 @@ describe("KozmosAnchoredPopover", () => {
     await until(() => open.value === false);
     // Nothing had focus as it opened: focus goes to the anchor, the button.
     await until(() => document.activeElement === button);
+  });
+
+  it("anchors to a bridged part's element, inside its display: contents box", async () => {
+    // A part from the React bridge mounts in a wrapper whose own box draws
+    // nothing (display: contents): its $el is that box, and the anchor is the
+    // element React draws inside it.
+    const open = ref(true);
+    const target = ref<unknown>(null);
+    const host = document.createElement("div");
+    document.body.append(host);
+    app = createApp({
+      setup: () => () => [
+        h(
+          KozmosLink,
+          { ref: target, href: "#desk" },
+          { default: () => "Desk" },
+        ),
+        h(
+          KozmosAnchoredPopover,
+          {
+            open: open.value,
+            "onUpdate:open": (next: boolean) => {
+              open.value = next;
+            },
+            anchor: target.value,
+            "aria-label": "Step 1 of 1",
+          },
+          { default: () => h("button", { type: "button" }, "Got it") },
+        ),
+      ],
+    });
+    app.mount(host);
+    const link = await until(() =>
+      [...document.querySelectorAll("a")].find(
+        (node) => node.textContent === "Desk",
+      ),
+    );
+    const step = await until(() => document.querySelector('[role="dialog"]'));
+    step.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await until(() => open.value === false);
+    // Nothing had focus as it opened: focus goes to the anchor, the link.
+    await until(() => document.activeElement === link);
   });
 });

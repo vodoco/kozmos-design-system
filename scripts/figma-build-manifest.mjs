@@ -354,6 +354,45 @@ function collectCvaVariants(sourceFile) {
   return variantsByName;
 }
 
+/**
+ * The cva recipes a component's file imports by a relative path: one in its
+ * own folder (Input/inputVariants.ts), or one shared with Vue
+ * (packages/react/src/recipes/button.ts, Vue 3 Phase 0). Its variants are
+ * still the component's.
+ */
+function importedCvaVariants(repoPath, sourceFile) {
+  const found = new Map();
+  for (const statement of sourceFile.statements) {
+    if (
+      !(
+        ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)
+      ) ||
+      !statement.moduleSpecifier ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      !statement.moduleSpecifier.text.startsWith(".")
+    )
+      continue;
+    const base = path.posix.join(
+      path.posix.dirname(repoPath),
+      statement.moduleSpecifier.text,
+    );
+    const target = [`${base}.ts`, `${base}.tsx`].find(exists);
+    if (!target) continue;
+    const content = read(target);
+    if (!/\bcva\(/.test(content)) continue;
+    const imported = ts.createSourceFile(
+      target,
+      content,
+      ts.ScriptTarget.Latest,
+      true,
+      target.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
+    for (const [name, axes] of collectCvaVariants(imported))
+      found.set(name, axes);
+  }
+  return found;
+}
+
 function collectPropTypeDefinitions(sourceFile) {
   const definitions = new Map();
 
@@ -704,7 +743,10 @@ function collectPropsFromFunctionLike(functionNode, context, props) {
     // A renamed binding (`{ "aria-describedby": describedBy }`) is the prop
     // before the colon, not the local name after it.
     if (element.propertyName) {
-      addProp(props, propNameFromNode(element.propertyName, context.sourceFile));
+      addProp(
+        props,
+        propNameFromNode(element.propertyName, context.sourceFile),
+      );
     } else if (ts.isIdentifier(element.name)) {
       addProp(props, element.name.text);
     }
@@ -836,7 +878,10 @@ function extractProps(repoPath, componentName) {
   const context = {
     sourceFile,
     definitions: collectPropTypeDefinitions(sourceFile),
-    cvaVariants: collectCvaVariants(sourceFile),
+    cvaVariants: new Map([
+      ...collectCvaVariants(sourceFile),
+      ...importedCvaVariants(repoPath, sourceFile),
+    ]),
     variants: {},
   };
   const propNames = new Set();

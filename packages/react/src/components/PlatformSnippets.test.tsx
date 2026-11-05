@@ -37,8 +37,13 @@ describe("PlatformSnippets", () => {
       screen.getByRole("tab", { name: "Vue 3 · Internal" }),
     );
     const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveTextContent("private React-wrapper package");
-    expect(panel).toHaveTextContent("does not support server rendering");
+    expect(panel).toHaveTextContent(
+      "main entry is native Vue on Reka UI, imports no React and renders on the server",
+    );
+    expect(panel).toHaveTextContent(
+      "@kozmos-ds/vue/react-bridge wraps the React parts not yet ported",
+    );
+    expect(panel).not.toHaveTextContent("React-wrapper package");
     expect(panel).toHaveTextContent("<KozmosButton />");
   });
 

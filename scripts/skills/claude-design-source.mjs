@@ -11,6 +11,9 @@ export const COMPONENTS = "packages/react/src/components";
 
 /** The modules outside components/ that export something, by card name. */
 const OTHER_MODULES = [
+  // Recipes React's parts and Vue's share (Vue 3 Phase 0): where a part's
+  // re-exported recipe, such as Button's buttonVariants, is declared.
+  "packages/react/src/recipes",
   "packages/react/src/context",
   "packages/react/src/theme",
   "packages/react/src/utils",
@@ -99,6 +102,47 @@ export function reexportedNames(source) {
   return names;
 }
 
+/**
+ * The files outside a component's directory that its sources import by a
+ * relative path and that build a `cva(…)` recipe: where a recipe shared with
+ * Vue lives (`packages/react/src/recipes`), so its `defaultVariants` are still
+ * the component's defaults.
+ */
+function importedRecipes(sources, dir) {
+  const found = new Map();
+  for (const source of sources)
+    for (const statement of source.statements) {
+      if (
+        !(
+          ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)
+        ) ||
+        !statement.moduleSpecifier ||
+        !ts.isStringLiteral(statement.moduleSpecifier) ||
+        !statement.moduleSpecifier.text.startsWith(".")
+      )
+        continue;
+      const base = path.resolve(
+        path.dirname(source.fileName),
+        statement.moduleSpecifier.text,
+      );
+      for (const file of [
+        `${base}.ts`,
+        `${base}.tsx`,
+        path.join(base, "index.ts"),
+      ])
+        if (
+          !file.startsWith(dir + path.sep) &&
+          !found.has(file) &&
+          fs.existsSync(file) &&
+          /\bcva\(/.test(fs.readFileSync(file, "utf8"))
+        ) {
+          found.set(file, parse(file));
+          break;
+        }
+    }
+  return [...found.values()];
+}
+
 function filesIn(target) {
   if (!fs.existsSync(target)) return [];
   if (fs.statSync(target).isFile()) return isSourceFile(target) ? [target] : [];
@@ -128,6 +172,7 @@ export function readModules(root, componentNames) {
       kind: "component",
       dir,
       sources,
+      recipeSources: importedRecipes(sources, dir),
       names: sources.flatMap(declaredExports),
       reexports: sources.flatMap(reexportedNames),
     });
@@ -279,7 +324,10 @@ export function defaultsOf(module, name, propsText) {
           )
             bindingDefaults(d.name, defaults);
   if (propsText && /^\w+$/.test(propsText)) {
-    const recipes = cvaDefaults(module.sources);
+    const recipes = cvaDefaults([
+      ...module.sources,
+      ...(module.recipeSources ?? []),
+    ]);
     for (const source of module.sources)
       for (const statement of source.statements)
         if (

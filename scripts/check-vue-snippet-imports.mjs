@@ -1,11 +1,14 @@
 /**
  * Verify that every Vue tab on the docs pages imports only what
- * `@kozmos-ds/vue` exports.
+ * `@kozmos-ds/vue` exports, from the entry that exports it.
  *
  * The docs pages draw their code tabs with `<PlatformSnippets>`, and each
- * `vue={`…`}` tab is a template literal in an `.mdx`. `@kozmos-ds/vue` is a
- * private harness that wraps the React components as `KozmosButton`,
- * `KozmosToast` and so on. On 16 Oct 2026, 14 of its 80 tabs imported names it
+ * `vue={`…`}` tab is a template literal in an `.mdx`. `@kozmos-ds/vue` has
+ * two entries (Vue 3 Phase 0): the Vue parts (`KozmosButton`,
+ * `KozmosThemeProvider`, …), and `@kozmos-ds/vue/react-bridge`, which wraps
+ * the React components not yet ported (`KozmosToast` and so on). Each import
+ * is held to its own entry's exports, and a name imported from the wrong one
+ * is reported with the entry it is in. On 16 Oct 2026, 14 of its 80 tabs imported names it
  * has never exported — `Accordion`, `AlertTitle`, `RadioGroupItem`, a
  * `useToast` that exists nowhere — copied from another library. The doc
  * snippet check passed them all: it looks only at `Kozmos*` identifiers, and
@@ -42,14 +45,19 @@ import { extractSnippets } from "./lib/doc-snippets.mjs";
 
 const ROOT = process.cwd();
 const PACKAGE = "@kozmos-ds/vue";
+// The package's two entries, each held to its own exports: the Vue parts,
+// and the bridge that mounts the React parts not yet ported (Vue 3 Phase 0).
+const ENTRIES = {
+  [PACKAGE]: "packages/vue/src/index.ts",
+  [`${PACKAGE}/react-bridge`]: "packages/vue/src/react-bridge/index.ts",
+};
 // The only modules a Vue tab may import from: the Kozmos harness, and Vue for
 // `ref` and the like. Nothing else is allowed today; see the header.
-const MODULES = [PACKAGE, "vue"];
+const MODULES = [...Object.keys(ENTRIES), "vue"];
 // A module the tab's text names in an import, export … from, import(…) or
 // require(…), counted against what the parser read.
 const WRITTEN =
   /\bfrom\s*["']([^"']+)["']|\bimport\s*["']([^"']+)["']|\b(?:import|require)\s*\(\s*["']([^"']+)["']/g;
-const ENTRY = path.join(ROOT, "packages/vue/src/index.ts");
 const DOC_ROOTS = ["packages/react/src/components", "apps/docs/stories"];
 
 function fail(message) {
@@ -155,10 +163,15 @@ function pascal(tag) {
     : tag;
 }
 
-if (!fs.existsSync(ENTRY)) fail(`${path.relative(ROOT, ENTRY)} does not exist`);
-const exported = valueExports(ENTRY);
-if (!exported.size)
-  fail(`${path.relative(ROOT, ENTRY)} exports nothing this check can read`);
+const exported = new Map();
+for (const [module, file] of Object.entries(ENTRIES)) {
+  const entry = path.join(ROOT, file);
+  if (!fs.existsSync(entry)) fail(`${file} does not exist`);
+  const names = valueExports(entry);
+  if (!names.size) fail(`${file} exports nothing this check can read`);
+  exported.set(module, names);
+}
+const importsPerModule = new Map();
 
 const problems = [];
 const tabsPerRoot = {};
@@ -250,35 +263,44 @@ for (const docRoot of DOC_ROOTS) {
         for (const statement of body.statements) {
           if (
             !ts.isImportDeclaration(statement) ||
-            statement.moduleSpecifier.text !== PACKAGE
+            !exported.has(statement.moduleSpecifier.text)
           )
             continue;
+          const module = statement.moduleSpecifier.text;
+          const names = exported.get(module);
           const line = lineOf(statement);
           const clause = statement.importClause;
           if (!clause) continue;
           if (clause.name) {
             importCount += 1;
             problems.push(
-              `${relative}:${line}: imports ${clause.name.text} as the default export of ${PACKAGE}, which has none`,
+              `${relative}:${line}: imports ${clause.name.text} as the default export of ${module}, which has none`,
             );
           }
           const bindings = clause.namedBindings;
           if (bindings && ts.isNamespaceImport(bindings)) {
             importCount += 1;
             problems.push(
-              `${relative}:${line}: imports ${PACKAGE} as a namespace (${bindings.name.text}); name each part the tab uses`,
+              `${relative}:${line}: imports ${module} as a namespace (${bindings.name.text}); name each part the tab uses`,
             );
           } else if (bindings) {
             for (const element of bindings.elements) {
               importCount += 1;
+              importsPerModule.set(
+                module,
+                (importsPerModule.get(module) ?? 0) + 1,
+              );
               const name = (element.propertyName ?? element.name).text;
               imported.add(element.name.text);
-              if (!exported.has(name)) {
+              if (!names.has(name)) {
+                const home = [...exported].find(([, other]) =>
+                  other.has(name),
+                )?.[0];
                 const shown = element.propertyName
                   ? `${name} as ${element.name.text}`
                   : name;
                 problems.push(
-                  `${relative}:${line}: imports { ${shown} } from ${PACKAGE}, which does not export ${name}`,
+                  `${relative}:${line}: imports { ${shown} } from ${module}, which does not export ${name}${home ? `: it is in ${home}` : ""}`,
                 );
               }
             }
@@ -319,7 +341,7 @@ for (const docRoot of DOC_ROOTS) {
             template[1].slice(0, tag.index).split("\n").length -
             1;
           problems.push(
-            `${relative}:${line}: draws <${tag[1]}> but does not import it from ${PACKAGE}`,
+            `${relative}:${line}: draws <${tag[1]}> but does not import it from ${Object.keys(ENTRIES).join(" or ")}`,
           );
         }
       }
@@ -329,7 +351,9 @@ for (const docRoot of DOC_ROOTS) {
 
 if (!tabCount) fail(`no Vue tab was found under ${DOC_ROOTS.join(" or ")}`);
 if (!importCount)
-  fail(`${tabCount} Vue tab(s) were found, but none imports from ${PACKAGE}`);
+  fail(
+    `${tabCount} Vue tab(s) were found, but none imports from ${Object.keys(ENTRIES).join(" or ")}`,
+  );
 
 const where = DOC_ROOTS.map((root) => `${tabsPerRoot[root]} in ${root}`).join(
   ", ",
@@ -338,7 +362,7 @@ const modules = [...moduleCounts]
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([module, count]) => `${module} ${count}`)
   .join(", ");
-const compared = `${tabCount} Vue tab(s) (${where}): ${referenceCount} module reference(s) (${modules}) against the ${MODULES.length} a tab may import from (${MODULES.join(", ")}), ${importCount} import(s) from ${PACKAGE} against its ${exported.size} exports, and ${tagCount} Kozmos tag(s) against the tab's own imports`;
+const compared = `${tabCount} Vue tab(s) (${where}): ${referenceCount} module reference(s) (${modules}) against the ${MODULES.length} a tab may import from (${MODULES.join(", ")}), ${importCount} import(s) (${[...exported].map(([module, names]) => `${importsPerModule.get(module) ?? 0} from ${module} against its ${names.size} exports`).join("; ")}), and ${tagCount} Kozmos tag(s) against the tab's own imports`;
 
 if (problems.length) {
   console.error(

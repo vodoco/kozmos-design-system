@@ -91,7 +91,7 @@ export function ContentTypePicker() {
     `}
     vue={`
 <script setup>
-import { KozmosCombobox } from "@kozmos-ds/vue"
+import { KozmosCombobox } from "@kozmos-ds/vue/react-bridge"
 
 const contentTypes = [
   { value: "office-desk", label: "Office Desk", group: "Interior Asset" },
@@ -200,7 +200,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosCombobox } from "@kozmos-ds/vue"
+import { KozmosCombobox } from "@kozmos-ds/vue/react-bridge"
 import { ref } from "vue"
 
 const venue = ref("")
