@@ -7,7 +7,15 @@ Follow each release's migration notes before upgrading. 0.x releases can change 
 and may require consumer changes even without a major version bump.
 Automated codemods are not guaranteed; apply and verify the documented migration steps.
 
-## `@kozmos-ds/icons` — current 0.8.0
+## `@kozmos-ds/icons` — current 0.9.0
+
+### 0.9.0
+
+#### Minor Changes
+
+- c1a9dec: **`@kozmos-ds/icons/vue`: every icon as a Vue 3 functional component** (Vue 3 Phase 0). It exports what the package's main entry exports, under the same names: the 1,206 icons, `kozmosIconNames`, the aliases, the definitions, the registry, `getIconComponent`, `resolveIconName`, `getIconDefinition`, `isKozmosIconKey` and `KozmosIconProps`. Each icon draws the same `<svg>` the React icon does, for every icon and for each of `size`, `color`, `strokeWidth` and `absoluteStrokeWidth`. `class`, `style`, `aria-*`, `role` and the rest fall through to the `<svg>` and win over the icon's own, as React's spread does, and `KozmosIconProps` types them with Vue's `SVGAttributes`, so a strict template accepts them. A named import brings in that icon alone.
+
+  It is built from the same generated outlines, so the two entries cannot drift. Vue (3.5 or later, as `@kozmos-ds/vue` asks, and the 3.5.44 it is tested with) is an optional peer dependency: a React app installs nothing new, and the main entry and its declarations are byte for byte what 0.8.0 shipped. A `vue/package.json` points resolvers that ignore `exports` (TypeScript's `node10`) at the Vue entry. React is now an optional peer dependency too, so a Vue-only app installs no React.
 
 ### 0.8.0
 
@@ -609,7 +617,24 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.15.0
+## `@kozmos-ds/react` — current 0.15.1
+
+### 0.15.1
+
+#### Patch Changes
+
+- 13a3908: Button's recipe (`buttonVariants`, its emotions' tiers and custom properties) and the loading arc's drawing move into a module of their own inside the package, `recipes`, which `@kozmos-ds/vue` builds its Button from, so the two draw the same element (Vue 3 Phase 0). Nothing changes for a product: `Button`, `buttonVariants`, `BUTTON_EMOTIONS` and `ButtonEmotion` are exported as before, the package exports the same 276 names, and Button, its stories, every variant and emotion, and Pagination render the same HTML. The published files gain `dist/esm/recipes/`, and Button's, SpinnerArc's and Pagination's modules import from it.
+- 141c343: **`@kozmos-ds/styles` is new: the Kozmos stylesheet, built once for every Kozmos web package** (Vue 3 Phase 0; Olcay's answer of 16 Oct). It holds `style.css` (the tokens for both themes and both densities, the owned `.kozmos-*` rules, the scoped preflight and the utilities the parts draw with) and `reset.css` (the opt-in host reset), exported as `@kozmos-ds/styles/style.css` and `@kozmos-ds/styles/reset.css`. Its Tailwind build reads React's and Vue's sources, so a class either draws is in it. It ships no JavaScript, and installs nothing else: the tokens are built into `style.css`, so `@kozmos-ds/tokens` is only what its build reads.
+
+  `@kozmos-ds/react` now takes its stylesheets from it and still ships both, byte for byte as before: `@kozmos-ds/react/style.css`, `@kozmos-ds/react/reset.css` and `@kozmos-ds/react/dist/style.css` resolve as they did, so nothing changes for a product. React pins `@kozmos-ds/styles` exactly, and the two are released together, at one version.
+
+  `@kozmos-ds/tokens` is named with no release: its check data (`src/contrast-contract.json`, which its tarball does not carry) points at the stylesheet sources' new folder.
+
+- Updated dependencies [c1a9dec]
+- Updated dependencies [141c343]
+  - @kozmos-ds/icons@0.9.0
+  - @kozmos-ds/styles@0.15.1
+  - @kozmos-ds/tokens@0.8.1
 
 ### 0.15.0
 
@@ -2330,9 +2355,17 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/styles` — current 0.0.0
+## `@kozmos-ds/styles` — current 0.15.1
 
-No changelog yet.
+### 0.15.1
+
+#### Patch Changes
+
+- 141c343: **`@kozmos-ds/styles` is new: the Kozmos stylesheet, built once for every Kozmos web package** (Vue 3 Phase 0; Olcay's answer of 16 Oct). It holds `style.css` (the tokens for both themes and both densities, the owned `.kozmos-*` rules, the scoped preflight and the utilities the parts draw with) and `reset.css` (the opt-in host reset), exported as `@kozmos-ds/styles/style.css` and `@kozmos-ds/styles/reset.css`. Its Tailwind build reads React's and Vue's sources, so a class either draws is in it. It ships no JavaScript, and installs nothing else: the tokens are built into `style.css`, so `@kozmos-ds/tokens` is only what its build reads.
+
+  `@kozmos-ds/react` now takes its stylesheets from it and still ships both, byte for byte as before: `@kozmos-ds/react/style.css`, `@kozmos-ds/react/reset.css` and `@kozmos-ds/react/dist/style.css` resolve as they did, so nothing changes for a product. React pins `@kozmos-ds/styles` exactly, and the two are released together, at one version.
+
+  `@kozmos-ds/tokens` is named with no release: its check data (`src/contrast-contract.json`, which its tarball does not carry) points at the stylesheet sources' new folder.
 
 ## `@kozmos-ds/tokens` — current 0.8.1
 

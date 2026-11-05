@@ -1,5 +1,22 @@
 # @kozmos-ds/react
 
+## 0.15.1
+
+### Patch Changes
+
+- 13a3908: Button's recipe (`buttonVariants`, its emotions' tiers and custom properties) and the loading arc's drawing move into a module of their own inside the package, `recipes`, which `@kozmos-ds/vue` builds its Button from, so the two draw the same element (Vue 3 Phase 0). Nothing changes for a product: `Button`, `buttonVariants`, `BUTTON_EMOTIONS` and `ButtonEmotion` are exported as before, the package exports the same 276 names, and Button, its stories, every variant and emotion, and Pagination render the same HTML. The published files gain `dist/esm/recipes/`, and Button's, SpinnerArc's and Pagination's modules import from it.
+- 141c343: **`@kozmos-ds/styles` is new: the Kozmos stylesheet, built once for every Kozmos web package** (Vue 3 Phase 0; Olcay's answer of 16 Oct). It holds `style.css` (the tokens for both themes and both densities, the owned `.kozmos-*` rules, the scoped preflight and the utilities the parts draw with) and `reset.css` (the opt-in host reset), exported as `@kozmos-ds/styles/style.css` and `@kozmos-ds/styles/reset.css`. Its Tailwind build reads React's and Vue's sources, so a class either draws is in it. It ships no JavaScript, and installs nothing else: the tokens are built into `style.css`, so `@kozmos-ds/tokens` is only what its build reads.
+
+  `@kozmos-ds/react` now takes its stylesheets from it and still ships both, byte for byte as before: `@kozmos-ds/react/style.css`, `@kozmos-ds/react/reset.css` and `@kozmos-ds/react/dist/style.css` resolve as they did, so nothing changes for a product. React pins `@kozmos-ds/styles` exactly, and the two are released together, at one version.
+
+  `@kozmos-ds/tokens` is named with no release: its check data (`src/contrast-contract.json`, which its tarball does not carry) points at the stylesheet sources' new folder.
+
+- Updated dependencies [c1a9dec]
+- Updated dependencies [141c343]
+  - @kozmos-ds/icons@0.9.0
+  - @kozmos-ds/styles@0.15.1
+  - @kozmos-ds/tokens@0.8.1
+
 ## 0.15.0
 
 ### Minor Changes
