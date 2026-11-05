@@ -41,14 +41,19 @@ export const PUBLISHED = {
 // Connect files and snapshots.
 const NOT_SHIPPED =
   /(^|\/)(__tests__|tests?)\/|\.(test|spec|stories)\.[cm]?[jt]sx?$|\.figma\.tsx?$|\.mdx?$|\.snap$/;
-// Beside src/, the files that decide what dist holds: the build configs, the
-// PostCSS plugins styles' build runs over every rule it ships
-// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins react's
-// build runs over every module (vite-plugins/), and tsconfig, whose `exclude` is what
-// unplugin-dts publishes. tsconfig.node.json only types
-// the build config itself.
+// Beside src/, the files that decide what dist holds: the build configs, any
+// Vite config (vite.config.mts, and icons' vite.vue.config.mts, which builds
+// its Vue entry), the PostCSS plugins styles' build runs over every rule it
+// ships (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins
+// react's build runs over every module (vite-plugins/), the modules under a
+// package's scripts/, which its build runs (icons' roll-vue-declarations.mjs
+// and what it imports), a subpath's own package.json one folder down (icons'
+// vue/package.json, which ships and resolves @kozmos-ds/icons/vue for
+// node10). A tsconfig counts when the build reads it (buildTsconfigs below),
+// since its `exclude` is what unplugin-dts publishes. Until 5 Nov the configs
+// matched by exact name, and icons' Vue build files counted for no package.
 const BUILD_FILES =
-  /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|vite-plugins\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;
+  /^(vite(\.[\w-]+)?\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|vite-plugins\/(?![^/]*\.test\.)[^/]+\.[cm]?js|scripts\/(?![^/]*\.test\.)[^/]+\.[cm]?[jt]s|[a-z0-9-]+\/package\.json|build\.mjs|config\.json)$/;
 // package.json fields a consumer's resolver, bundler or installer reads, or
 // that decide what the tarball holds and how it is published. A version bump
 // alone is the release itself, not a change to release.
@@ -148,13 +153,65 @@ export function stylesheetReaders(file) {
     .flatMap((input) => input.packages);
 }
 
+const TSCONFIG = /^tsconfig(\.[\w-]+)?\.json$/;
+
+/**
+ * The tsconfigs a published package's build reads, as names in `dir`, from
+ * `source` (`{ files(dir), read(file) }`): tsconfig.json, which tsc, Vite and
+ * unplugin-dts read unless told otherwise; any tsconfig its shipping scripts
+ * or its Vite configs name (icons' `tsc -p tsconfig.vue.json`, and
+ * vite.vue.config.mts's `tsconfigPath`); and what those extend inside it. A
+ * tsconfig nothing but a person or CI reads ships nothing: react's
+ * tsconfig.typecheck.json (`pnpm typecheck`), and tsconfig.node.json, a
+ * project reference that `tsc` without `-b` never builds.
+ */
+export function buildTsconfigs(dir, source) {
+  const text = source.read(`${dir}/package.json`);
+  const named = new Set(["tsconfig.json"]);
+  const naming = [
+    ...Object.values(shippingScripts(text ? JSON.parse(text) : {})),
+    ...source
+      .files(dir)
+      .filter((file) =>
+        /^vite(\.[\w-]+)?\.config\.[cm]?[jt]s$/.test(file.slice(dir.length + 1)),
+      )
+      .map((file) => source.read(file) ?? ""),
+  ];
+  for (const words of naming)
+    for (const [found] of words.matchAll(/tsconfig(?:\.[\w-]+)?\.json/g))
+      named.add(found);
+  const read = new Set();
+  const queue = [...named].map((name) => `${dir}/${name}`);
+  while (queue.length) {
+    const file = queue.shift();
+    if (read.has(file)) continue;
+    read.add(file);
+    const config = source.read(file);
+    if (config == null) continue;
+    for (const base of tsconfigExtends(file, config))
+      if (base.startsWith(`${dir}/`)) queue.push(base);
+  }
+  return new Set([...read].map((file) => file.slice(dir.length + 1)));
+}
+
+let checkout;
+/** This checkout's tracked files, read once. */
+const thisCheckout = () =>
+  (checkout ??= checkoutSource(fileURLToPath(new URL("../../", import.meta.url))));
+
 /** The published package whose shipped files `file` belongs to, or null. */
-export function shippedPackage(file, packageJsonChanged = () => true) {
+export function shippedPackage(
+  file,
+  packageJsonChanged = () => true,
+  source = thisCheckout(),
+) {
   for (const [name, dir] of Object.entries(PUBLISHED)) {
     if (!file.startsWith(`${dir}/`)) continue;
     const rest = file.slice(dir.length + 1);
     if (rest.startsWith("src/")) return NOT_SHIPPED.test(rest) ? null : name;
     if (rest === "package.json") return packageJsonChanged(file) ? name : null;
+    if (TSCONFIG.test(rest))
+      return buildTsconfigs(dir, source).has(rest) ? name : null;
     return BUILD_FILES.test(rest) ? name : null;
   }
   return null;
