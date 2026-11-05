@@ -1,10 +1,10 @@
-import { spawnSync } from "node:child_process";
+import { runFigmaConnect } from "./lib/figma-connect-run.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
 function findDotEnv(startDir) {
   let current = startDir;
-  while (true) {
+  for (;;) {
     const candidate = path.join(current, ".env");
     if (fs.existsSync(candidate)) return candidate;
 
@@ -16,7 +16,7 @@ function findDotEnv(startDir) {
 
 function findUp(startDir, fileName) {
   let current = startDir;
-  while (true) {
+  for (;;) {
     const candidate = path.join(current, fileName);
     if (fs.existsSync(candidate)) return candidate;
 
@@ -176,22 +176,18 @@ const publishArgs = normalizePublishArgs(process.argv.slice(2), workspaceRoot);
 
 blockPlaceholderPublishes(workspaceRoot, publishArgs);
 
-const result = spawnSync(
-  "pnpm",
-  [
-    "--filter",
-    "@kozmos-ds/react",
-    "exec",
-    "figma",
-    "connect",
-    "publish",
-    ...publishArgs,
-  ],
-  {
-    stdio: "inherit",
-    env,
-    cwd: workspaceRoot,
-  },
+process.exit(
+  await runFigmaConnect(
+    "pnpm",
+    [
+      "--filter",
+      "@kozmos-ds/react",
+      "exec",
+      "figma",
+      "connect",
+      "publish",
+      ...publishArgs,
+    ],
+    { env, cwd: workspaceRoot },
+  ),
 );
-
-process.exit(result.status ?? 1);
