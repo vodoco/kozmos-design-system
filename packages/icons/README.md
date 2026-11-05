@@ -62,6 +62,34 @@ category and description, 16.9 to 17.4 KB.
 Import the icon when you know which one you need, and look it up when the name
 comes from data.
 
+## Vue
+
+`@kozmos-ds/icons/vue` has every icon, name and lookup the React entry has, as
+Vue 3 functional components drawing the same `<svg>`. Vue is an optional peer
+dependency, so a React app installs nothing new:
+
+```sh
+npm install @kozmos-ds/icons vue
+```
+
+```vue
+<script setup lang="ts">
+import { Calendar, getIconComponent } from "@kozmos-ds/icons/vue";
+
+const Back = getIconComponent("back");
+</script>
+
+<template>
+  <Calendar :size="20" aria-hidden="true" />
+  <component :is="Back" :size="24" :stroke-width="1.5" class="me-2" />
+</template>
+```
+
+The props are React's: `size`, `color`, `strokeWidth` and `absoluteStrokeWidth`.
+`class`, `style`, `aria-*` and the rest fall through to the `<svg>`, and win
+over the icon's own, as React's spread does. A named import brings in that icon
+alone, as it does in React.
+
 ## Location symbols
 
 `LocationFollowing` and `LocationHeading` are the marks the map's location

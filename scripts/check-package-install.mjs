@@ -85,8 +85,11 @@ const FORBIDDEN = [
 // bundle analyser, a stray .ts source, an image.
 // THIRD-PARTY-NOTICES carries the licences of what a package's build copies
 // into it (React's stylesheets hold Tailwind CSS's preflight and utilities).
+// A subpath's own package.json, one folder down (icons' `vue/package.json`),
+// points a resolver that ignores `exports` (TypeScript's node10) at that
+// subpath's files.
 const ALLOWED =
-  /^package\/(package\.json|README\.md|LICENSE|THIRD-PARTY-NOTICES)$|\.(d\.ts|d\.mts|d\.cts|mjs|cjs|js|map|css|swift|kt|xml)$/;
+  /^package\/(package\.json|README\.md|LICENSE|THIRD-PARTY-NOTICES|[a-z0-9-]+\/package\.json)$|\.(d\.ts|d\.mts|d\.cts|mjs|cjs|js|map|css|swift|kt|xml)$/;
 
 // All package declarations now match their ESM/CJS runtime format. Keep this
 // zero baseline: any new resolver problem fails publication checks.
@@ -319,12 +322,19 @@ if (newTypeProblems.length === 0 && fixedTypeProblems.length === 0) {
 // ---- what a consumer's code will ask for ----
 
 const specifiers = [];
+// The subpaths CommonJS can ask for too: those whose entry has a `require`
+// condition, such as `@kozmos-ds/icons/vue`. Each must resolve through it as
+// well as through `import`.
+const requireSpecifiers = [];
 for (const { manifest, files } of packed) {
   for (const [key, target] of Object.entries(manifest.exports ?? {})) {
     if (!key.includes("*")) {
-      specifiers.push(
-        key === "." ? manifest.name : `${manifest.name}${key.slice(1)}`,
-      );
+      const specifier =
+        key === "." ? manifest.name : `${manifest.name}${key.slice(1)}`;
+      specifiers.push(specifier);
+      if (target && typeof target === "object" && target.require) {
+        requireSpecifiers.push(specifier);
+      }
       continue;
     }
     // A pattern export: prove it with a real file it should reach.
@@ -403,6 +413,13 @@ if (typeof import.meta.resolve !== "function") {
     } catch (error) {
       results.push([false, "resolves " + spec + " — " + error.message]);
     }
+  }
+}
+for (const spec of ${JSON.stringify(requireSpecifiers)}) {
+  try {
+    results.push([fs.existsSync(require.resolve(spec)), "require.resolve(" + spec + ")"]);
+  } catch (error) {
+    results.push([false, "require.resolve(" + spec + ") — " + error.message]);
   }
 }
 
@@ -539,7 +556,7 @@ for (const major of REACT_MAJORS) {
     for (const [, what] of failed) fail(`React ${major}: ${what}`);
     if (failed.length === 0) {
       ok(
-        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requirable.length} CommonJS entr(y/ies) load, a Button, a Calendar and a Toaster render on the server, with no warning`,
+        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requireSpecifiers.length} through require too, ${requirable.length} CommonJS entr(y/ies) load, a Button, a Calendar and a Toaster render on the server, with no warning`,
       );
     }
   } catch (error) {
