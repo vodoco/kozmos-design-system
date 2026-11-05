@@ -195,8 +195,8 @@ Nothing collects coverage: `@vitest/coverage-v8` is not installed, so `--coverag
 `release.yml` is the only workflow that publishes a package, and it publishes only to npm (§9).
 `pages.yml` publishes the website and Storybook (§4).
 
-- **npm:** `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` and
-  `@kozmos-ds/tokens`.
+- **npm:** `@kozmos-ds/react`, `@kozmos-ds/styles`, `@kozmos-ds/icons`,
+  `@kozmos-ds/product-contracts` and `@kozmos-ds/tokens`.
 - **iOS and Android:** not published. No workflow, script or tag releases the Swift package
   (`packages/ios`) or the Compose library (`packages/android`); they ship as source in this
   repository.

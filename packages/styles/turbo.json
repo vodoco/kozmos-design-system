@@ -6,7 +6,6 @@
       "inputs": [
         "src/**",
         "package.json",
-        "postcss.config.*",
         "postcss/**",
         "tailwind.config.*",
         "vite.config.*",

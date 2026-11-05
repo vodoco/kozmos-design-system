@@ -145,6 +145,15 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    Claude Design page names React's; it reads the built types, so build React first).
    Review the manifests, changelogs and plan together. A first release of something new
    begins on `next`; the checked-in plan is never an implied choice of versions.
+   - **React and styles are planned and released together.** `.changeset/config.json` puts
+     `@kozmos-ds/react` and `@kozmos-ds/styles` in one changesets `fixed` group, so they
+     version together, and react pins styles exactly. The plan lists both at one version or
+     neither; preflight and the release's guard refuse a plan that splits a fixed group, so
+     it never reaches the approval.
+   - **A package in React's fixed group takes React's tag,** first release or not: the "begins
+     on `next`" rule does not apply to it. `@kozmos-ds/styles` first publishes as 0.16.0 with
+     React 0.16.0 (Olcay, 5 Nov 2026). Its first publish under a new name needs the npm
+     token granted on the whole `@kozmos-ds` scope, as the setup above requires.
 3. Merge it once its checks pass on a branch up to date with `main`, and wait for the
    successful main-push CI run of that merge. A documentation-only main commit has no push
    CI because of path exclusions: do not substitute an older SHA or a PR run, and merge

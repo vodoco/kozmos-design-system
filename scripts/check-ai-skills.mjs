@@ -13,7 +13,7 @@
  *   - both cite codemods, `button-variant-rename` and `token-migration`, that
  *     do not exist.
  *   - `getting-started.md` lists `@kozmos-ds/vue` and `@kozmos-ds/react-native`
- *     as packages to install. There are four public packages and neither is
+ *     as packages to install. There are five public packages and neither is
  *     one; vue is a private internal harness.
  *   - `storybook-guide.md` teaches `<Button variant="primary">` as the
  *     canonical example.

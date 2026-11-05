@@ -24,7 +24,12 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { validateEvidence, validatePlan, validateRequest } from "./policy.mjs";
+import {
+  fixedGroupsFrom,
+  validateEvidence,
+  validatePlan,
+  validateRequest,
+} from "./policy.mjs";
 
 export const REPOSITORY = "vodoco/kozmos-design-system";
 
@@ -46,7 +51,13 @@ export function planAt(sha, git) {
     .split("\n")
     .map((file) => path.basename(file))
     .filter((file) => file.endsWith(".md") && file !== "README.md");
-  return validatePlan(plan, manifests, pending);
+  let config = null;
+  try {
+    config = git(["show", `${sha}:.changeset/config.json`]);
+  } catch {
+    // no changesets config, so no fixed groups
+  }
+  return validatePlan(plan, manifests, pending, fixedGroupsFrom(config));
 }
 
 /** Refuses a plan any of whose versions npm already has (see 4. above). */

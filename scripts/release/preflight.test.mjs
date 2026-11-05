@@ -239,3 +239,48 @@ for (const [label, input, message] of [
       message,
     );
   });
+
+// The commit's changesets config groups react and styles; a plan approving
+// react alone is refused before dispatch, not by the publish job after approval.
+test("a plan that splits a changesets fixed group is refused", async () => {
+  const files = {
+    [`${sha}:release/plan.json`]: JSON.stringify({
+      schemaVersion: 1,
+      tag: "latest",
+      packages: [{ name: "@kozmos-ds/react", version: "0.6.0" }],
+    }),
+    [`${sha}:packages/react/package.json`]: JSON.stringify({
+      name: "@kozmos-ds/react",
+      version: "0.6.0",
+    }),
+    [`${sha}:packages/styles/package.json`]: JSON.stringify({
+      name: "@kozmos-ds/styles",
+      version: "0.6.0",
+    }),
+    [`${sha}:.changeset/config.json`]: JSON.stringify({
+      fixed: [["@kozmos-ds/react", "@kozmos-ds/styles"]],
+    }),
+  };
+  const git = (args) => {
+    if (args[0] === "show") {
+      if (!(args[1] in files)) throw new Error(`no ${args[1]}`);
+      return files[args[1]];
+    }
+    if (args[0] === "ls-tree" && args[3] === "packages/")
+      return "packages/react\npackages/styles\n";
+    if (args[0] === "ls-tree" && args[3] === ".changeset/")
+      return ".changeset/config.json\n";
+    throw new Error(`unexpected git ${args.join(" ")}`);
+  };
+  await assert.rejects(
+    preflight({
+      sha,
+      runId: 7,
+      gh: github(),
+      git,
+      credentialCheck: ok,
+      getPackage: registry(),
+    }),
+    /the plan lists @kozmos-ds\/react but not @kozmos-ds\/styles/,
+  );
+});
