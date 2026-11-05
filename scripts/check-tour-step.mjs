@@ -141,9 +141,19 @@ async function until(page, test, arg, timeout = 5000) {
   return last;
 }
 
-/** The card's place, once its entry has finished, against the ring, the target and its arrow. */
-const placement = (page) =>
-  until(page, () => {
+/**
+ * The card's place, once its entry has finished and it has stopped moving,
+ * against the ring, the target and its arrow. WebKit reports the entry's zoom
+ * finished a frame before its layout reads drop the last scale: on 5 Nov a
+ * finished card still measured Close at 31.996 in 8 of 20 mounts, and main's
+ * CI failed on it. So the card's box must also read the same on two polls in
+ * a row. A card that never settles fails here, rather than being measured.
+ */
+const placement = async (page) => {
+  await page.evaluate(() => {
+    delete window.__kozmosPlacementBox;
+  });
+  const at = await until(page, () => {
     const card = document.getElementById("step");
     const ring = document.querySelector(
       ".kozmos-tour-step-backdrop .kozmos-backdrop-ring",
@@ -163,14 +173,26 @@ const placement = (page) =>
       };
     };
     const arrow = card.querySelector(".kozmos-tour-step-arrow");
-    const animating = card
-      .getAnimations()
-      .some((animation) => animation.playState === "running");
+    // The card's own entry, and any finite animation on a box that holds it
+    // or that it holds, still running or about to start.
+    const animating = document.getAnimations().some((animation) => {
+      const node = animation.effect?.target;
+      return (
+        node instanceof Element &&
+        (card.contains(node) || node.contains(card)) &&
+        animation.effect.getComputedTiming().iterations !== Infinity &&
+        (animation.pending || animation.playState === "running")
+      );
+    });
+    const placed =
+      card.closest("[data-radix-popper-content-wrapper]")?.style.transform !==
+      "translate(0, -200%)";
+    const now = JSON.stringify(box(card));
+    const steady = window.__kozmosPlacementBox === now;
+    window.__kozmosPlacementBox = now;
     return {
-      ok:
-        !animating &&
-        card.closest("[data-radix-popper-content-wrapper]")?.style.transform !==
-          "translate(0, -200%)",
+      ok: !animating && placed && steady,
+      why: { animating, placed, steady },
       card: box(card),
       ring: box(ring),
       target: box(target),
@@ -183,6 +205,9 @@ const placement = (page) =>
       lit: ring?.closest(".kozmos-backdrop")?.hasAttribute("data-lit") ?? false,
     };
   });
+  assert.ok(at?.ok, `the card settles in place: ${JSON.stringify(at?.why)}`);
+  return at;
+};
 
 function assertBeside(at, side, label) {
   assert.ok(at.ring, `${label}: the cut-out is lit (${JSON.stringify(at)})`);

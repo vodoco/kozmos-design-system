@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runFigmaConnect } from "./lib/figma-connect-run.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -23,7 +23,7 @@ function usage() {
 
 function findDotEnv(startDir) {
   let current = startDir;
-  while (true) {
+  for (;;) {
     const candidate = path.join(current, ".env");
     if (fs.existsSync(candidate)) return candidate;
 
@@ -35,7 +35,7 @@ function findDotEnv(startDir) {
 
 function findUp(startDir, fileName) {
   let current = startDir;
-  while (true) {
+  for (;;) {
     const candidate = path.join(current, fileName);
     if (fs.existsSync(candidate)) return candidate;
 
@@ -135,22 +135,18 @@ if (!fs.existsSync(figmaBin)) {
   process.exit(1);
 }
 
-const result = spawnSync(
-  figmaBin,
-  [
-    "connect",
-    command,
-    "--config",
-    config,
-    "--skip-update-check",
-    "--exit-on-unreadable-files",
-    ...extraArgs,
-  ],
-  {
-    stdio: "inherit",
-    env,
-    cwd: dir,
-  },
+process.exit(
+  await runFigmaConnect(
+    figmaBin,
+    [
+      "connect",
+      command,
+      "--config",
+      config,
+      "--skip-update-check",
+      "--exit-on-unreadable-files",
+      ...extraArgs,
+    ],
+    { env, cwd: dir },
+  ),
 );
-
-process.exit(result.status ?? 1);
