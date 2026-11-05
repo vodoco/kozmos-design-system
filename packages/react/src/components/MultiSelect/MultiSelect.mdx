@@ -181,8 +181,12 @@ fun FilterScreen(options: List<KozmosListboxOption>) {
   value, so "Remove Food" is announced rather than "Remove".
 - Backspace in an empty input removes the last chip, matching the behaviour
   keyboard users expect from token fields.
-- Reaching `maxSelected` disables the remaining options rather than hiding them,
-  and the limit is announced.
+- `emptyText` is announced when filtering empties the list, by a status in the
+  field that is there from the first render (as Combobox's is); the popup's copy
+  is plain text, so it is said once.
+- Reaching `maxSelected` disables the remaining options rather than hiding them:
+  a screen reader reads each as unavailable as the user reaches it. Reaching the
+  limit is not announced yet.
 
 ## Stories
 
