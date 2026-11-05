@@ -34,6 +34,7 @@ import {
 } from "../../apps/site/scripts/generate-reference.mjs";
 import {
   DECLARATIONS,
+  code,
   describeComponent,
   describeValue,
   firstSentence,
@@ -66,17 +67,6 @@ const GENERATED =
 
 /** How many stories a card tries before it draws its example from the types. */
 const STORIES_TRIED = 4;
-
-/** A code span that holds any text, backticks included. */
-function code(text) {
-  const longest = Math.max(
-    0,
-    ...[...text.matchAll(/`+/g)].map((m) => m[0].length),
-  );
-  const fence = "`".repeat(longest + 1);
-  const pad = text.startsWith("`") || text.endsWith("`") ? " " : "";
-  return `${fence}${pad}${text}${pad}${fence}`;
-}
 
 /** Continuation paragraphs of a list item, indented under it. */
 const indent = (text) =>
@@ -341,8 +331,10 @@ export async function buildClaudeDesignDocs(root) {
       api,
       parts.flatMap((p) =>
         p.props
-          .filter((prop) => prop.node && prop.origin !== "react")
-          .map((prop) => prop.node),
+          .filter((prop) => prop.origin !== "react")
+          // Every member's declaration of a prop of a union of props, so a
+          // type only a later member takes (Calendar's DateRangeValue) shows.
+          .flatMap((prop) => prop.nodes ?? (prop.node ? [prop.node] : [])),
       ),
       propsNames,
     );

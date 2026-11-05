@@ -65,19 +65,30 @@ It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, whi
   density's control height: 40 compact, 44 touch.
 
 - `type`: `'single' | 'multiple'`, **required**.
+
+  `'single'` in `AccordionPrimitive.AccordionSingleProps`; `'multiple'` in `AccordionPrimitive.AccordionMultipleProps`.
+
 - `value`: `string | string[]`, optional.
 
+  `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
+
   The controlled stateful value of the accordion item whose content is expanded.
+
   The controlled stateful value of the accordion items whose contents are expanded.
 
 - `defaultValue`: `string | string[]`, optional.
 
+  `string` in `AccordionPrimitive.AccordionSingleProps`; `string[]` in `AccordionPrimitive.AccordionMultipleProps`.
+
   The value of the item whose content is expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
+
   The value of the items whose contents are expanded when the accordion is initially rendered. Use
   `defaultValue` if you do not need to control the state of an accordion.
 
 - `onValueChange`: `((value: string) => void) | ((value: string[]) => void)`, optional.
+
+  `(value: string) => void` in `AccordionPrimitive.AccordionSingleProps`; `(value: string[]) => void` in `AccordionPrimitive.AccordionMultipleProps`.
 
   The callback that fires when the state of the accordion changes.
 

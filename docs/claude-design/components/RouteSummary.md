@@ -55,6 +55,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteSummaryProps`, whic
   **Required** in `RouteSummaryEstimateProps`; optional in `RouteSummaryNavigationProps`.
 
   Ends the route: required in the estimate layout, optional in the navigation layout.
+
   Ends the route. End is drawn only when it is passed; the route preview leaves it out.
 
 - `onStartNavigation`: `() => void`, optional.

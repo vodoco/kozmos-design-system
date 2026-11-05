@@ -342,6 +342,94 @@ test("a part whose props are a union lists every member's props, and which membe
   );
 });
 
+test("a union of props: Calendar's card says which member takes which type, and gives DateRangeValue", () => {
+  const calendar = cards.get("Calendar")?.text ?? "";
+  assert.match(
+    calendar,
+    /- `mode`: `"single" \| "range"`, optional, default `"single"`\.\n\n {2}\*\*Required\*\* in `CalendarRangeProps`; optional in `CalendarSingleProps`\. `"single"` in `CalendarSingleProps`; `"range"` in `CalendarRangeProps`\./,
+  );
+  assert.match(
+    calendar,
+    /`string \| null` in `CalendarSingleProps`; `DateRangeValue` in `CalendarRangeProps`\./,
+  );
+  // A type only a later member takes is shown with the others.
+  assert.match(calendar, /### DateRangeValue\n\nFrom `@kozmos-ds\/react`\./);
+});
+
+test("describeComponent reads every member of a union of props as the compiler does", () => {
+  // Cases no part has yet, each a way the first union reader went wrong
+  // (independent review, 5 Nov 2026).
+  const file = path.join(
+    root,
+    "packages/react/.claude-design-fixture/index.d.ts",
+  );
+  const text = `
+import * as React from "react";
+interface PlainA extends React.HTMLAttributes<HTMLDivElement> { kind: "a"; }
+interface OwnTitleB extends React.HTMLAttributes<HTMLDivElement> {
+  kind: "b";
+  /** Kozmos's own title. */
+  title: string;
+}
+export declare const OriginCase: React.ForwardRefExoticComponent<(PlainA | OwnTitleB) & React.RefAttributes<HTMLDivElement>>;
+export interface OptProps { label: string; size?: "s" | "m"; }
+export declare function OptionalParam(props?: OptProps): React.JSX.Element;
+interface Base { shared?: string; }
+export declare const Anon: React.ForwardRefExoticComponent<Base & ({ mode: "a"; v?: "x" | "y" } | { mode: "b"; w?: string[] })>;
+interface DepA {
+  kind: "a";
+  /** @deprecated use other */
+  old?: string;
+}
+interface DepB { kind: "b"; old?: string; }
+export declare const DepCase: React.ForwardRefExoticComponent<DepA | DepB>;
+interface ReqUndefA { kind: "a"; foo: undefined; }
+interface ReqUndefB { kind: "b"; foo?: string; }
+export declare const ReqUndef: React.ForwardRefExoticComponent<ReqUndefA | ReqUndefB>;
+interface ForbidA { kind: "a"; bar?: undefined; }
+interface ForbidB { kind: "b"; bar: string; }
+export declare const Forbid: React.ForwardRefExoticComponent<ForbidA | ForbidB>;
+`;
+  const fixture = readPublishedApi(root, {
+    declarations: file,
+    virtual: new Map([[file, text]]),
+  });
+  const prop = (part, name) => {
+    const described = describeComponent(fixture, part);
+    return {
+      ...described.props.find((p) => p.name === name),
+      inherited: described.summarised.react.includes(name),
+    };
+  };
+  // Kozmos's own in one member, React's attribute in the other: listed.
+  const title = prop("OriginCase", "title");
+  assert.equal(title.inherited, false);
+  assert.equal(title.origin, "kozmos");
+  assert.equal(title.type, "string");
+  assert.equal(
+    title.where,
+    "**Required** in `OwnTitleB`; optional in `PlainA`.",
+  );
+  // `props?: P` is P: its required prop stays required, with no note.
+  const label = prop("OptionalParam", "label");
+  assert.equal(label.required, true);
+  assert.equal(label.where, null);
+  // A member with no name is named by its discriminant.
+  assert.equal(prop("Anon", "v").where, 'Only in `{ mode: "a" }`.');
+  // One member's deprecation is that member's.
+  const old = prop("DepCase", "old");
+  assert.equal(old.deprecated, null);
+  assert.equal(old.where, "**Deprecated** in `DepA`: use other");
+  // A required `undefined` is taken; an optional one forbids the prop.
+  assert.match(
+    prop("ReqUndef", "foo").where,
+    /^\*\*Required\*\* in `ReqUndefA`/,
+  );
+  const bar = prop("Forbid", "bar");
+  assert.equal(bar.type, "string");
+  assert.equal(bar.where, "Only in `ForbidB`, where it is **required**.");
+});
+
 test("no card counts the attributes it inherits from React or framer-motion", () => {
   // Those counts are facts about whichever @types/react and framer-motion a
   // machine resolves, not about Kozmos: on 2026-09-29 one tree gave

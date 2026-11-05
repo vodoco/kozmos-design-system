@@ -50,19 +50,28 @@ It forwards its ref to `HTMLDivElement`. Its props are `CalendarProps`, which is
 
 - `mode`: `"single" | "range"`, optional, default `"single"`.
 
-  **Required** in `CalendarRangeProps`; optional in `CalendarSingleProps`.
+  **Required** in `CalendarRangeProps`; optional in `CalendarSingleProps`. `"single"` in `CalendarSingleProps`; `"range"` in `CalendarRangeProps`.
 
   One day (the default), or a range of them.
 
 - `value`: `string | null | DateRangeValue`, optional.
 
+  `string | null` in `CalendarSingleProps`; `DateRangeValue` in `CalendarRangeProps`.
+
   The chosen day, `YYYY-MM-DD`, with `onValueChange`.
+
   The chosen range, `YYYY-MM-DD` at each end, with `onValueChange`.
 
 - `defaultValue`: `string | DateRangeValue`, optional.
+
+  `string` in `CalendarSingleProps`; `DateRangeValue` in `CalendarRangeProps`.
+
 - `onValueChange`: `((value: string) => void) | ((value: DateRangeValue) => void)`, optional.
 
+  `(value: string) => void` in `CalendarSingleProps`; `(value: DateRangeValue) => void` in `CalendarRangeProps`.
+
   Called with the day each time one is chosen, the chosen one included.
+
   Called with `{ start }` when a first day is chosen, and with
   `{ start, end }`, in order, when the second is.
 
@@ -126,6 +135,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `CalendarProps`, which is
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### DateRangeValue
+
+From `@kozmos-ds/react`.
+
+```ts
+interface DateRangeValue {
+  end?: string;
+  start?: string;
+}
+```
 
 ## Also exported
 

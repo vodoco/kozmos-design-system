@@ -15,6 +15,17 @@ import { compilerOptions, hostWith, ts } from "./claude-design-typescript.mjs";
 
 export const DECLARATIONS = "packages/react/dist/index.d.ts";
 
+/** A code span that holds any text, backticks included. */
+export function code(text) {
+  const longest = Math.max(
+    0,
+    ...[...text.matchAll(/`+/g)].map((m) => m[0].length),
+  );
+  const fence = "`".repeat(longest + 1);
+  const pad = text.startsWith("`") || text.endsWith("`") ? " " : "";
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
+
 /** Where a declaration lives, which decides whether a card lists it. */
 export function originOf(file) {
   if (file.includes("/@types/react/")) return "react";
@@ -326,8 +337,11 @@ export function declarationsOf(checker, type, name, seen = new Set()) {
  * layout, Accordion's single or multiple) are read member by member: a prop
  * of any member is listed, with the types each member gives it, required
  * only where every member requires it, and `where` says which members take
- * it and require it when they differ. A member that types a prop `undefined`
- * (`destination?: undefined`) does not take it.
+ * it, require it, type it how, default it and deprecate it, where they
+ * differ. A member that makes a prop optional and `undefined`
+ * (`destination?: undefined`), or types it `never`, does not take it. A
+ * prop is Kozmos's or Radix's when any member declares it so, though another
+ * member takes it as a DOM attribute. `props?: P` is P, not a union.
  */
 export function describeComponent(api, name, defaults = new Map()) {
   const { checker } = api;
@@ -335,8 +349,18 @@ export function describeComponent(api, name, defaults = new Map()) {
   if (!entry?.component) throw new Error(`${name} is not a component export`);
   const { propsText, heritage, ref } = propsDeclaration(api, entry);
   const propsType = entry.component.propsType;
-  const members = propsType.isUnion() ? propsType.types : [propsType];
-  const memberName = memberNamer(api, members, `${propsText} ${heritage}`);
+  const nullish =
+    ts.TypeFlags.Undefined | ts.TypeFlags.Null | ts.TypeFlags.Void;
+  const union = propsType.isUnion()
+    ? propsType.types.filter((t) => !(t.flags & nullish))
+    : [propsType];
+  const members = union.length ? union : [propsType];
+  const memberName = memberNamer(
+    api,
+    members,
+    `${propsText} ${heritage}`,
+    discriminantOf(checker, members, api.dts),
+  );
   // Each prop, by name, with the member and symbol each member gives it.
   const byName = new Map();
   for (const member of members)
@@ -356,18 +380,41 @@ export function describeComponent(api, name, defaults = new Map()) {
         declarations.find(
           (d) => originOf(d.getSourceFile().fileName) === "kozmos",
         ) ?? declarations[0];
+      const optional = !!(symbol.flags & ts.SymbolFlags.Optional);
+      // Resolved only for a union: resolving a type early reorders the
+      // props TypeScript builds with mapped types (Grid's, Omit<…>'s), and
+      // every other card would move.
+      const flags =
+        members.length > 1
+          ? checker.getTypeOfSymbolAtLocation(symbol, api.dts).flags
+          : 0;
       return {
         member,
         symbol,
         own,
-        type: typeOfProp(api, symbol, declarations, own),
-        optional: !!(symbol.flags & ts.SymbolFlags.Optional),
+        origin: own ? originOf(own.getSourceFile().fileName) : null,
+        // `?:` already says a member may leave it out.
+        type: optional
+          ? typeOfProp(api, symbol, declarations, own)
+              .replace(/^undefined \| /, "")
+              .replace(/ \| undefined$/, "")
+          : typeOfProp(api, symbol, declarations, own),
+        optional,
+        // `foo?: undefined` and `foo: never` forbid the prop; a required
+        // `foo: undefined` takes it, as `undefined`.
+        forbids: optional
+          ? !!(flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Never))
+          : !!(flags & ts.TypeFlags.Never),
       };
     });
-    const first = read.find((r) => r.own) ?? read[0];
-    const origin = first.own
-      ? originOf(first.own.getSourceFile().fileName)
-      : "kozmos";
+    // Kozmos's or Radix's in any member, though another member takes it as a
+    // DOM attribute.
+    const first =
+      read.find((r) => r.origin === "kozmos") ??
+      read.find((r) => r.origin === "radix") ??
+      read.find((r) => r.own) ??
+      read[0];
+    const origin = first.origin ?? "kozmos";
     if (
       (origin === "react" || origin === "motion") &&
       propName !== "children"
@@ -375,10 +422,7 @@ export function describeComponent(api, name, defaults = new Map()) {
       summarised[origin].push(propName);
       continue;
     }
-    // A member that types it `undefined` forbids it rather than takes it.
-    const taking = read.filter(
-      (r) => members.length === 1 || !/^(?:undefined|never)$/.test(r.type),
-    );
+    const taking = members.length === 1 ? read : read.filter((r) => !r.forbids);
     const takers = taking.length ? taking : read;
     const requiring = takers.filter((r) => !r.optional);
     const required =
@@ -393,43 +437,86 @@ export function describeComponent(api, name, defaults = new Map()) {
     // `?:` already says a prop may be left out.
     if (!required) type = type.replace(/\s*\|\s*undefined$/, "");
     const docs = takers.map((r) => documentation(r.symbol, checker));
+    // Each member's own words, a paragraph each.
     const doc = [...new Set(docs.map((d) => d.text).filter(Boolean))].join(
-      "\n",
+      "\n\n",
     );
-    const tags = docs.flatMap((d) => d.tags);
-    const defaultTag = tags.find(
-      (t) => t.name === "default" || t.name === "defaultValue",
-    );
+    const tagOf = (d, ...names) => d.tags.find((t) => names.includes(t.name));
+    const deprecations = docs.map((d) => tagOf(d, "deprecated"));
+    const defaultTags = docs.map((d) => tagOf(d, "default", "defaultValue"));
+    const allDeprecated = deprecations.every(Boolean);
+    const defaultTexts = [
+      ...new Set(defaultTags.filter(Boolean).map((t) => t.text)),
+    ];
     let where = null;
     if (members.length > 1) {
-      const names = (list) =>
-        list.map((r) => `\`${memberName(r.member)}\``).join(" and ");
-      const others = members.filter(
-        (m) => !requiring.some((r) => r.member === m),
-      );
+      const name = (member) => `\`${memberName(member)}\``;
+      const names = (list) => list.map((r) => name(r.member)).join(" and ");
+      const notes = [];
       if (takers.length < members.length)
-        where =
+        notes.push(
           `Only in ${names(takers)}` +
-          (requiring.length === takers.length
-            ? ", where it is **required**."
-            : requiring.length
-              ? `; **required** in ${names(requiring)}.`
-              : ".");
+            (requiring.length === takers.length
+              ? ", where it is **required**."
+              : requiring.length
+                ? `; **required** in ${names(requiring)}.`
+                : "."),
+        );
       else if (requiring.length && !required)
-        where = `**Required** in ${names(requiring)}; optional in ${others
-          .map((m) => `\`${memberName(m)}\``)
-          .join(" and ")}.`;
+        notes.push(
+          `**Required** in ${names(requiring)}; optional in ${members
+            .filter((m) => !requiring.some((r) => r.member === m))
+            .map(name)
+            .join(" and ")}.`,
+        );
+      // Which member takes which type, when they differ.
+      if (texts.length > 1)
+        notes.push(
+          `${texts
+            .map(
+              (text) =>
+                `${code(text)} in ${names(takers.filter((r) => r.type === text))}`,
+            )
+            .join("; ")}.`,
+        );
+      if (!defaults.has(propName) && defaultTexts.length > 1)
+        notes.push(
+          `Defaults to ${takers
+            .map((r, i) =>
+              defaultTags[i]
+                ? `${code(defaultTags[i].text)} in ${name(r.member)}`
+                : null,
+            )
+            .filter(Boolean)
+            .join("; ")}.`,
+        );
+      if (!allDeprecated && deprecations.some(Boolean))
+        notes.push(
+          takers
+            .map((r, i) =>
+              deprecations[i]
+                ? `**Deprecated** in ${name(r.member)}${deprecations[i].text ? `: ${deprecations[i].text}` : "."}`
+                : null,
+            )
+            .filter(Boolean)
+            .join(" "),
+        );
+      if (notes.length) where = notes.join(" ");
     }
     listed.push({
       name: propName,
       required,
       type,
       doc,
-      deprecated: tags.find((t) => t.name === "deprecated")?.text ?? null,
-      default: defaults.get(propName) ?? defaultTag?.text ?? null,
+      deprecated: allDeprecated ? (deprecations[0].text ?? "") : null,
+      default:
+        defaults.get(propName) ??
+        (defaultTexts.length === 1 ? defaultTexts[0] : null),
       origin,
       where,
       node: first.own ?? null,
+      // Every member's declaration: the types any of them takes.
+      nodes: takers.map((r) => r.own).filter(Boolean),
     });
   }
   // Kozmos's own first, then Radix's, then `children` when React declares it.
@@ -472,13 +559,40 @@ function typeOfProp(api, symbol, declarations, own) {
 }
 
 /**
+ * The prop that tells a union's members apart, as `mode` does Calendar's:
+ * required in every member, and a different literal in each. A map from
+ * member to `{ mode: "a" }`, or null when no prop does.
+ */
+function discriminantOf(checker, members, dts) {
+  if (members.length < 2) return null;
+  const literal =
+    ts.TypeFlags.StringLiteral |
+    ts.TypeFlags.NumberLiteral |
+    ts.TypeFlags.BooleanLiteral;
+  for (const symbol of checker.getPropertiesOfType(members[0])) {
+    const each = members.map((member) => {
+      const own = checker.getPropertyOfType(member, symbol.name);
+      if (!own || own.flags & ts.SymbolFlags.Optional) return null;
+      const type = checker.getTypeOfSymbolAtLocation(own, dts);
+      return type.flags & literal ? checker.typeToString(type) : null;
+    });
+    if (each.every(Boolean) && new Set(each).size === members.length)
+      return new Map(
+        members.map((member, i) => [member, `{ ${symbol.name}: ${each[i]} }`]),
+      );
+  }
+  return null;
+}
+
+/**
  * What a reader calls each member of a union of props: its own name
  * (`RouteSummaryEstimateProps`), or, for an intersection, the parts no other
  * member shares. A name is written as the props declaration writes it
  * (`AccordionPrimitive.AccordionSingleProps`), so the card's reader finds it
- * there.
+ * there; a member with no name is named by its discriminant
+ * (`{ mode: "a" }`).
  */
-function memberNamer(api, members, declared) {
+function memberNamer(api, members, declared, discriminant) {
   const { checker } = api;
   const partsOf = (member) =>
     (member.isIntersection() ? member.types : [member]).map((part) =>
@@ -491,15 +605,24 @@ function memberNamer(api, members, declared) {
         ),
       ),
     );
+  const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const asDeclared = (part) =>
-    declared.match(new RegExp(`\\b((?:\\w+\\.)+${part})\\b`))?.[1] ?? part;
+    /^\w+$/.test(part)
+      ? (declared.match(
+          new RegExp(`\\b((?:\\w+\\.)+${escaped(part)})\\b`),
+        )?.[1] ?? part)
+      : part;
   const parts = new Map(members.map((m) => [m, partsOf(m).map(asDeclared)]));
   return (member) => {
     const own = parts.get(member);
     const distinct = own.filter(
       (part) => !members.every((m) => parts.get(m).includes(part)),
     );
-    return (distinct.length ? distinct : own).join(" & ");
+    const named = (distinct.length ? distinct : own).join(" & ");
+    // A member with no name of its own is named by what tells it apart.
+    return named.startsWith("{") && discriminant
+      ? discriminant.get(member)
+      : named;
   };
 }
 
