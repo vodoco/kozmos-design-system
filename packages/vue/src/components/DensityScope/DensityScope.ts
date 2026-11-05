@@ -1,4 +1,5 @@
 import {
+  cloneVNode,
   Comment,
   computed,
   defineComponent,
@@ -10,7 +11,6 @@ import {
   type PropType,
   type VNode,
 } from "vue";
-import { Slot } from "reka-ui";
 import { DensityKey, type KozmosDensity } from "../../theme/injection";
 
 /** The one element a slot gives, or null when it gives anything else. */
@@ -32,12 +32,16 @@ function onlyElement(nodes: VNode[] | undefined): VNode | null {
  * DensityScope. Its controls, the providers nested in it and the popovers it
  * opens take `density`; the theme and its tokens carry on unchanged.
  *
- * `as-child` marks the one child element instead of adding an element, through
- * Reka's Slot; anything but one element, a fragment included, gets an element
- * of its own, as without it.
+ * `as-child` marks the one child element instead of adding an element, as
+ * React's `cloneElement` does: the scope's density wins over one the child
+ * already carries. Anything but one element, a fragment included, gets an
+ * element of its own, as without it. It takes no other attribute: an outer
+ * as-child scope's mark is not this scope's, so it never reaches the element
+ * this one draws.
  */
 export const KozmosDensityScope = defineComponent({
   name: "KozmosDensityScope",
+  inheritAttrs: false,
   props: {
     /** The control sizes inside the scope, its nested providers and its popovers. */
     density: { type: String as PropType<KozmosDensity>, required: true },
@@ -50,12 +54,9 @@ export const KozmosDensityScope = defineComponent({
     );
     return () => {
       const children = slots.default?.();
-      if (props.asChild && onlyElement(children))
-        return h(
-          Slot,
-          { "data-kozmos-density": props.density },
-          () => children,
-        );
+      const child = props.asChild ? onlyElement(children) : null;
+      if (child)
+        return cloneVNode(child, { "data-kozmos-density": props.density });
       return h(
         "div",
         {

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
+import { computed } from "vue";
 import {
   KozmosButton,
   KozmosDensityScope,
@@ -42,10 +43,18 @@ const meta: Meta<typeof KozmosButton> = {
     disabled: { control: "boolean" },
     isLoading: { control: "boolean" },
   },
+  // `label` is the story's text: Button is given its own props only, so the
+  // label never becomes an attribute of the <button>.
   render: (args) => ({
     components: { KozmosButton, KozmosThemeProvider },
-    setup: () => ({ args }),
-    template: `<KozmosThemeProvider><KozmosButton v-bind="args">{{ args.label }}</KozmosButton></KozmosThemeProvider>`,
+    setup: () => ({
+      label: computed(() => (args as { label?: string }).label),
+      buttonProps: computed(() => {
+        const { label: _label, ...props } = args as Record<string, unknown>;
+        return props;
+      }),
+    }),
+    template: `<KozmosThemeProvider><KozmosButton v-bind="buttonProps">{{ label }}</KozmosButton></KozmosThemeProvider>`,
   }),
 };
 

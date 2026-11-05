@@ -161,7 +161,7 @@ try {
   assert.equal(await vue.getAttribute("aria-selected"), "true");
   assert.match(
     await section.getByRole("tabpanel").innerText(),
-    /private React-wrapper package/,
+    /main entry is native Vue on Reka UI/,
   );
   const a11y = await new AxeBuilder({ page })
     .include(".kozmos-platform-snippets")

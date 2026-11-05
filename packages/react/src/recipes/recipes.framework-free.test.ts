@@ -77,11 +77,15 @@ export function forbiddenImports(
   return problems;
 }
 
-const recipeFiles = () =>
-  fs
-    .readdirSync(RECIPES)
-    .filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"))
-    .map((name) => path.join(RECIPES, name));
+/** Every module in the folder, at any depth, `.ts` and `.tsx`, but its tests. */
+const recipeFiles = (dir = RECIPES): string[] =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return recipeFiles(full);
+    return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
+      ? [full]
+      : [];
+  });
 const read = (file: string) => ({
   file,
   source: fs.readFileSync(file, "utf8"),
@@ -89,7 +93,7 @@ const read = (file: string) => ({
 
 describe("recipes are framework-free", () => {
   it("reads every recipe module, and `../utils`", () => {
-    const names = recipeFiles().map((file) => path.basename(file));
+    const names = recipeFiles().map((file) => path.relative(RECIPES, file));
     expect(names).toEqual(
       expect.arrayContaining(["button.ts", "index.ts", "spinner-arc.ts"]),
     );

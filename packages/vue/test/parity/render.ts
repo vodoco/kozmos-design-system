@@ -5,20 +5,20 @@ import { renderToString as vueToString } from "vue/server-renderer";
 import { normalizeHtml } from "./normalize-html";
 
 /**
- * One node of a tree drawn in both frameworks: a part (React's and Vue's),
- * its props, and its children, which become React `children` and Vue's
- * default slot. A string child is text.
+ * One node of a tree drawn in both frameworks: a part (React's and Vue's) or
+ * an element (the same tag name in both), its props, and its children, which
+ * become React `children` and a part's default slot. A string child is text.
  */
 export interface Drawn {
   react: React.ElementType;
-  vue: Component;
+  vue: Component | string;
   props?: Record<string, unknown>;
   /** Vue's props, where they are spelled differently (`class`, a style string). */
   vueProps?: Record<string, unknown>;
   children?: (Drawn | string)[];
 }
 
-const toReact = (node: Drawn | string): React.ReactNode =>
+export const toReact = (node: Drawn | string): React.ReactNode =>
   typeof node === "string"
     ? node
     : React.createElement(
@@ -27,16 +27,22 @@ const toReact = (node: Drawn | string): React.ReactNode =>
         ...(node.children ?? []).map(toReact),
       );
 
-const toVue = (node: Drawn | string): ReturnType<typeof h> | string =>
+export const toVue = (node: Drawn | string): ReturnType<typeof h> | string =>
   typeof node === "string"
     ? node
-    : h(
-        node.vue,
-        node.vueProps ?? node.props ?? {},
-        node.children?.length
-          ? { default: () => node.children!.map(toVue) }
-          : undefined,
-      );
+    : typeof node.vue === "string"
+      ? h(
+          node.vue,
+          node.vueProps ?? node.props ?? {},
+          (node.children ?? []).map(toVue),
+        )
+      : h(
+          node.vue,
+          node.vueProps ?? node.props ?? {},
+          node.children?.length
+            ? { default: () => node.children!.map(toVue) }
+            : undefined,
+        );
 
 /** The tree's server render in each framework, normalised (`normalize-html.ts`). */
 export async function renderBoth(tree: Drawn) {

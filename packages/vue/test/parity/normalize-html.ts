@@ -7,12 +7,13 @@ import { JSDOM } from "jsdom";
  *
  * What it settles, and nothing else:
  * - attribute order (each framework writes its own);
- * - a boolean attribute's value (`disabled` and `disabled=""` are one);
  * - a style's spelling: declarations split, trimmed and kept in order, with
  *   no trailing `;` (React writes `a:b;c:d`, Vue `a:b;c:d;`);
- * - a class list's whitespace (its order is kept: both build it with `cn`);
- * - comments, which both frameworks use as anchors (`<!--[-->`, `<!-- -->`);
- * - whitespace between elements, and text split into adjacent nodes.
+ * - comments, which both frameworks use as anchors (`<!--[-->`, `<!-- -->`),
+ *   and the split text around them, joined exactly as it reads.
+ * Every other attribute value and every character of text is compared as it
+ * is: `disabled` and `disabled=""` parse to the same value already, and
+ * `hidden="until-found"` is not `hidden`.
  *
  * `ignore` names attributes a framework adds for itself, never drawn by the
  * part (none today; `data-v-*` would be Vue's scoped styles).
@@ -26,46 +27,37 @@ export function normalizeHtml(
     ignore.some((rule) =>
       typeof rule === "string" ? rule === name : rule.test(name),
     );
-  const BOOLEAN = new Set([
-    "disabled",
-    "checked",
-    "hidden",
-    "readonly",
-    "required",
-    "multiple",
-    "selected",
-    "open",
-    "inert",
-    "autofocus",
-  ]);
-  const value = (name: string, raw: string) => {
-    if (BOOLEAN.has(name)) return "";
-    if (name === "style")
-      return raw
-        .split(";")
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .map((part) => {
-          const colon = part.indexOf(":");
-          return `${part.slice(0, colon).trim()}:${part.slice(colon + 1).trim()}`;
-        })
-        .join(";");
-    if (name === "class") return raw.trim().split(/\s+/).join(" ");
-    return raw;
-  };
+  const value = (name: string, raw: string) =>
+    name === "style"
+      ? raw
+          .split(";")
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((part) => {
+            const colon = part.indexOf(":");
+            return `${part.slice(0, colon).trim()}:${part.slice(colon + 1).trim()}`;
+          })
+          .join(";")
+      : raw;
   const out: string[] = [];
+  let lastWasText = false;
   const walk = (node: ChildNode, depth: number) => {
     const pad = "  ".repeat(depth);
     if (node.nodeType === Node.TEXT_NODE) {
-      const text = (node.textContent ?? "").replace(/\s+/g, " ").trim();
-      if (!text) return;
+      const text = JSON.stringify(node.textContent ?? "");
+      if (text === '""') return;
       const last = out[out.length - 1];
-      // Adjacent text nodes (React splits around `<!-- -->`) are one text.
-      if (last?.startsWith(`${pad}"`) && last.endsWith('"'))
-        out[out.length - 1] = `${last.slice(0, -1)}${text}"`;
-      else out.push(`${pad}"${text}"`);
+      // Adjacent text nodes (React splits around `<!-- -->`) are one text,
+      // joined exactly.
+      if (last?.startsWith(`${pad}"`) && lastWasText)
+        out[out.length - 1] = `${last.slice(0, -1)}${text.slice(1)}`;
+      else out.push(`${pad}${text}`);
+      lastWasText = true;
       return;
     }
+    // A comment is an anchor: the text either side of it is one text.
+    if (node.nodeType === Node.COMMENT_NODE) return;
+    lastWasText = false;
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
     const attributes = [...element.attributes]

@@ -11,9 +11,10 @@ import {
   watch,
   type PropType,
 } from "vue";
-import { ConfigProvider } from "reka-ui";
+import { ConfigProvider, injectConfigProviderContext } from "reka-ui";
 import {
   DensityKey,
+  MotionKey,
   ThemeKey,
   type KozmosDensity,
   type KozmosResolvedTheme,
@@ -45,9 +46,15 @@ function isTheme(value: unknown): value is KozmosTheme {
  * `v-model:theme` controls the preference; without it the provider keeps its
  * own, persisted under `storageKey` when given. `theme-change` reports every
  * request, as React's `onThemeChange`.
+ *
+ * An outer Reka ConfigProvider's locale, scroll lock, nonce, teleport target
+ * and id source carry on inside: only the direction is this provider's. Like
+ * React's ThemeProvider, it takes no `class`, `id` or other attribute; its
+ * scope is `display: contents`, so style what it holds.
  */
 export const KozmosThemeProvider = defineComponent({
   name: "KozmosThemeProvider",
+  inheritAttrs: false,
   props: {
     defaultTheme: { type: String as PropType<KozmosTheme>, default: "system" },
     /** Controlled preference. In this mode the caller owns persistence. */
@@ -75,6 +82,10 @@ export const KozmosThemeProvider = defineComponent({
   setup(props, { emit, slots }) {
     const parent = inject(ThemeKey, undefined);
     const inheritedDensity = inject(DensityKey, undefined);
+    const motion = inject(MotionKey, undefined);
+    // The outer Reka config, or null: a ConfigProvider given only `dir` would
+    // set every other field back to Reka's default for the parts inside.
+    const outerConfig = injectConfigProviderContext(null);
     const root = ref<HTMLElement | null>(null);
     const portalContainer = ref<HTMLElement | null>(null);
     const mounted = ref(false);
@@ -153,20 +164,29 @@ export const KozmosThemeProvider = defineComponent({
       stopSystem = () => query.removeEventListener("change", update);
     };
 
+    // As React's effect on [theme, storageKey]: the stored preference is read
+    // once mounted, and again whenever the key changes or the theme stops
+    // being controlled.
+    const readStored = () => {
+      if (props.theme !== undefined || !props.storageKey) return;
+      try {
+        const stored =
+          root.value?.ownerDocument.defaultView?.localStorage.getItem(
+            props.storageKey,
+          );
+        if (isTheme(stored)) preference.value = stored;
+      } catch {
+        // Storage can be unavailable in sandboxed or privacy-restricted hosts.
+      }
+    };
+
     onMounted(() => {
       mounted.value = true;
-      if (props.theme === undefined && props.storageKey) {
-        try {
-          const stored =
-            root.value?.ownerDocument.defaultView?.localStorage.getItem(
-              props.storageKey,
-            );
-          if (isTheme(stored)) preference.value = stored;
-        } catch {
-          // Storage can be unavailable in sandboxed or privacy-restricted hosts.
-        }
-      }
+      readStored();
       followSystem();
+    });
+    watch([() => props.theme, () => props.storageKey], () => {
+      if (mounted.value) readStored();
     });
     watch(theme, followSystem);
     onBeforeUnmount(() => stopSystem?.());
@@ -182,7 +202,14 @@ export const KozmosThemeProvider = defineComponent({
     return () =>
       h(
         ConfigProvider,
-        { dir: dir.value },
+        {
+          dir: dir.value,
+          locale: outerConfig?.locale?.value,
+          scrollBody: outerConfig?.scrollBody?.value,
+          nonce: outerConfig?.nonce?.value,
+          teleportTo: outerConfig?.teleportTo?.value,
+          useId: outerConfig?.useId,
+        },
         {
           default: () => [
             h("div", { ref: root, ...attributes() }, slots.default?.()),
@@ -193,6 +220,10 @@ export const KozmosThemeProvider = defineComponent({
                   h("div", {
                     ref: portalContainer,
                     "data-kozmos-portal": "",
+                    // The config's reduced motion, marked on the portal as
+                    // React's MotionContext marks it: the portal is outside
+                    // the scope that carries it.
+                    "data-kozmos-motion": motion?.value,
                     ...attributes(),
                   }),
                 ])
