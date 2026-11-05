@@ -164,8 +164,25 @@ test("only the publish job may mint an OIDC token, for npm provenance", () => {
 test("every published package names this repository, as provenance requires", () => {
   // npm refuses a provenance statement whose source repository differs from
   // the package's `repository`. The manifests named the repository's old
-  // name, `kozmos-design-system-`, which only a redirect made work.
-  for (const dir of ["react", "icons", "product-contracts", "tokens"]) {
+  // name, `kozmos-design-system-`, which only a redirect made work. Every
+  // public package under packages/, read rather than listed: a list of four
+  // left @kozmos-ds/styles, the fifth, unchecked.
+  const dirs = fs
+    .readdirSync("packages", { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        fs.existsSync(`packages/${entry.name}/package.json`),
+    )
+    .map((entry) => entry.name)
+    .filter(
+      (dir) =>
+        JSON.parse(fs.readFileSync(`packages/${dir}/package.json`, "utf8"))
+          .private !== true,
+    );
+  for (const dir of ["react", "styles", "icons", "product-contracts", "tokens"])
+    assert.ok(dirs.includes(dir), `packages/${dir} is public`);
+  for (const dir of dirs) {
     const manifest = JSON.parse(
       fs.readFileSync(`packages/${dir}/package.json`, "utf8"),
     );
