@@ -14,7 +14,13 @@
       ]
     },
     "test": {
-      "inputs": ["src/**", "tests/**", "package.json", "scripts/**"]
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "package.json",
+        "scripts/**",
+        "README.md"
+      ]
     }
   }
 }

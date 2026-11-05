@@ -918,21 +918,13 @@ const Back = getIconComponent("back");
     path.join(app, "tsconfig.json"),
     tsconfig(["IconAttributes.vue", ...vueSamples.map(({ file }) => file)]),
   );
-  fs.writeFileSync(
-    path.join(app, "NegativeControl.vue"),
-    `<script setup lang="ts">
-import { Calendar } from "@kozmos-ds/icons/vue";
-</script>
-
-<template>
-  <Calendar :size="{ width: 20 }" />
-</template>
-`,
-  );
-  fs.writeFileSync(
-    path.join(app, "tsconfig.negative.json"),
-    tsconfig(["NegativeControl.vue"]),
-  );
+  // Two controls vue-tsc must reject. A wrong prop type fails with or
+  // without strict templates; an attribute an icon does not take fails only
+  // with them, so its rejection proves they are on.
+  const NEGATIVE_CONTROLS = {
+    "NegativeWrongPropType.vue": `<Calendar :size="{ width: 20 }" />`,
+    "NegativeUnknownAttribute.vue": `<Calendar bogus-attr="x" />`,
+  };
   const vueTsc = path.join(
     path.dirname(
       fs.realpathSync(
@@ -942,20 +934,40 @@ import { Calendar } from "@kozmos-ds/icons/vue";
     "bin",
     "vue-tsc.js",
   );
-  let negativeRejected = false;
-  try {
-    run("node", [vueTsc, "-p", "tsconfig.negative.json"], app);
-  } catch (error) {
-    negativeRejected = /error TS/.test(String(error.stdout || error.stderr));
+  const accepted = [];
+  for (const [file, template] of Object.entries(NEGATIVE_CONTROLS)) {
+    fs.writeFileSync(
+      path.join(app, file),
+      `<script setup lang="ts">
+import { Calendar } from "@kozmos-ds/icons/vue";
+</script>
+
+<template>
+  ${template}
+</template>
+`,
+    );
+    const config = `tsconfig.${file.replace(/\.vue$/, "")}.json`;
+    fs.writeFileSync(path.join(app, config), tsconfig([file]));
+    try {
+      run("node", [vueTsc, "-p", config], app);
+      accepted.push(file);
+    } catch (error) {
+      if (!/error TS/.test(String(error.stdout || error.stderr)))
+        accepted.push(`${file} (vue-tsc failed without a type error)`);
+    }
   }
+  const negativeRejected = accepted.length === 0;
   if (!negativeRejected) {
-    fail("Vue only: vue-tsc accepted a negative control it must reject");
+    fail(
+      `Vue only: vue-tsc accepted negative controls it must reject: ${accepted.join(", ")}`,
+    );
   }
   try {
     run("node", [vueTsc, "-p", "tsconfig.json"], app);
     if (negativeRejected) {
       ok(
-        `Vue only: vue-tsc (strict templates) accepts ${vueSamples.length} README vue sample(s) and an icon's attributes, and rejects a negative control`,
+        `Vue only: vue-tsc (strict templates) accepts ${vueSamples.length} README vue sample(s) and an icon's attributes, and rejects ${Object.keys(NEGATIVE_CONTROLS).length} negative controls, one of them an unknown attribute`,
       );
     }
   } catch (error) {

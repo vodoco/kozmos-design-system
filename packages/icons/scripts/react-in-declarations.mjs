@@ -6,7 +6,8 @@
  *
  * It reads the file's syntax, not its text, so it sees each way a declaration
  * names a module: an import or export declaration, an `import()` type,
- * `import x = require()`, and a `/// <reference types>` directive. Until
+ * `import x = require()`, a `/// <reference types>` directive, and a
+ * `declare module "react" { … }` augmentation. Until
  * 5 Nov it matched the text `from 'react'` alone, and a `react/jsx-runtime`
  * import passed it.
  */
@@ -36,7 +37,10 @@ export function reactImportsIn(text, fileName = "index.d.ts") {
           ? node.argument.literal
           : ts.isExternalModuleReference(node)
             ? node.expression
-            : undefined;
+            : // `declare module "react" { … }`, an augmentation of it
+              ts.isModuleDeclaration(node) && ts.isStringLiteral(node.name)
+              ? node.name
+              : undefined;
     if (specifier && ts.isStringLiteral(specifier)) check(specifier.text);
     ts.forEachChild(node, visit);
   };

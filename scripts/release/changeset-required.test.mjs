@@ -63,7 +63,6 @@ test("a public package's other Vite configs, tsconfigs, build scripts and subpat
     "packages/icons/scripts/react-in-declarations.mjs",
     "packages/icons/vue/package.json",
     "packages/react/vite.lib.config.ts",
-    "packages/react/tsconfig.typecheck.json",
   ])
     assert.equal(shippedPackage(file)?.startsWith("@kozmos-ds/"), true, file);
   for (const file of [
@@ -74,8 +73,47 @@ test("a public package's other Vite configs, tsconfigs, build scripts and subpat
     "packages/icons/vue/nested/package.json",
     "packages/react/tsconfig.node.json",
     "packages/react/vitest.config.ts",
+    // only `pnpm typecheck` reads it: react's build names no tsconfig but
+    // tsconfig.json
+    "packages/react/tsconfig.typecheck.json",
   ])
     assert.equal(shippedPackage(file), null, file);
+});
+
+test("a tsconfig counts when the package's build reads it", () => {
+  // From a source, as a pull request's checkout gives one: the build script
+  // and Vite config name what they read, and a named tsconfig's `extends`
+  // is followed.
+  const files = {
+    "packages/icons/package.json": JSON.stringify({
+      name: "@kozmos-ds/icons",
+      scripts: {
+        build: "tsc --noEmit && tsc -p tsconfig.vue.json --noEmit && vite build",
+        typecheck: "tsc -p tsconfig.check.json --noEmit",
+      },
+    }),
+    "packages/icons/vite.config.mts": `dts({ tsconfigPath: "tsconfig.lib.json" })`,
+    "packages/icons/tsconfig.lib.json": `{ "extends": "./tsconfig.shared.json" }`,
+    "packages/icons/tsconfig.shared.json": "{}",
+    "packages/icons/tsconfig.vue.json": "{}",
+    "packages/icons/tsconfig.check.json": "{}",
+    "packages/icons/tsconfig.json": "{}",
+  };
+  const source = {
+    files: (dir) => Object.keys(files).filter((f) => f.startsWith(`${dir}/`)),
+    exists: (file) => file in files,
+    read: (file) => files[file] ?? null,
+  };
+  for (const name of ["tsconfig.json", "tsconfig.vue.json", "tsconfig.lib.json", "tsconfig.shared.json"])
+    assert.equal(
+      shippedPackage(`packages/icons/${name}`, () => true, source),
+      "@kozmos-ds/icons",
+      name,
+    );
+  assert.equal(
+    shippedPackage("packages/icons/tsconfig.check.json", () => true, source),
+    null,
+  );
 });
 
 test("a package.json counts only when a consumer-facing field changed", () => {

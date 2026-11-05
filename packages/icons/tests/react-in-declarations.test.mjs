@@ -20,6 +20,9 @@ const PLANTED = {
   "a subpath of @kozmos-ds/react": `export type { ButtonProps } from '@kozmos-ds/react/button';`,
   "a reference directive": `/// <reference types="react" />\nexport declare const a: number;`,
   "require()": `import R = require("react");\nexport declare const a: typeof R;`,
+  "a module augmentation of react": `declare module "react" {\n  interface CSSProperties { [key: \`--\${string}\`]: string }\n}\nexport {};`,
+  "an augmentation of react/jsx-runtime": `declare module 'react/jsx-runtime' {\n  namespace JSX { interface IntrinsicElements { "kozmos-icon": object } }\n}\nexport {};`,
+  "an augmentation of @kozmos-ds/react": `declare module "@kozmos-ds/react" {\n  interface ButtonProps { tone?: string }\n}\nexport {};`,
 };
 
 for (const [what, text] of Object.entries(PLANTED)) {
@@ -36,6 +39,8 @@ test("finds nothing in the Vue entry's own imports", () => {
     `import { x } from "react-native-svg-ish";`,
     `import { y } from "@kozmos-ds/react-native";`,
     `import { z } from "preact";`,
+    `declare module "vue" {\n  interface ComponentCustomProperties { $kozmos: object }\n}`,
+    `declare namespace React {}`,
   ].join("\n");
   assert.deepEqual(reactImportsIn(clean), []);
 });
