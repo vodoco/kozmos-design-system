@@ -41,14 +41,20 @@ export const PUBLISHED = {
 // Connect files and snapshots.
 const NOT_SHIPPED =
   /(^|\/)(__tests__|tests?)\/|\.(test|spec|stories)\.[cm]?[jt]sx?$|\.figma\.tsx?$|\.mdx?$|\.snap$/;
-// Beside src/, the files that decide what dist holds: the build configs, the
-// PostCSS plugins styles' build runs over every rule it ships
-// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins react's
-// build runs over every module (vite-plugins/), and tsconfig, whose `exclude` is what
-// unplugin-dts publishes. tsconfig.node.json only types
-// the build config itself.
+// Beside src/, the files that decide what dist holds: the build configs, any
+// Vite config (vite.config.mts, and icons' vite.vue.config.mts, which builds
+// its Vue entry), the PostCSS plugins styles' build runs over every rule it
+// ships (postcss/scoped-css.cjs, postcss/token-alpha.cjs), the Vite plugins
+// react's build runs over every module (vite-plugins/), the modules under a
+// package's scripts/, which its build runs (icons' roll-vue-declarations.mjs
+// and what it imports), a subpath's own package.json one folder down (icons'
+// vue/package.json, which ships and resolves @kozmos-ds/icons/vue for
+// node10), and every tsconfig, whose `exclude` is what unplugin-dts publishes
+// (icons' tsconfig.vue.json declares its Vue entry). tsconfig.node.json only
+// types the build config itself. Until 5 Nov the configs matched by exact
+// name, and icons' Vue build files counted for no package.
 const BUILD_FILES =
-  /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|vite-plugins\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;
+  /^(tsconfig(\.(?!node\.)[\w-]+)?\.json|vite(\.[\w-]+)?\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|vite-plugins\/(?![^/]*\.test\.)[^/]+\.[cm]?js|scripts\/(?![^/]*\.test\.)[^/]+\.[cm]?[jt]s|[a-z0-9-]+\/package\.json|build\.mjs|config\.json)$/;
 // package.json fields a consumer's resolver, bundler or installer reads, or
 // that decide what the tarball holds and how it is published. A version bump
 // alone is the release itself, not a change to release.

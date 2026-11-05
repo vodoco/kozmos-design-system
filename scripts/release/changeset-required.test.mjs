@@ -51,6 +51,33 @@ test("what a published package ships counts, and nothing else does", () => {
     assert.equal(shippedPackage(file), null, file);
 });
 
+test("a public package's other Vite configs, tsconfigs, build scripts and subpath manifests count", () => {
+  // icons builds its Vue entry with vite.vue.config.mts and tsconfig.vue.json,
+  // rolls its declarations with scripts/roll-vue-declarations.mjs (which
+  // imports scripts/react-in-declarations.mjs), and ships vue/package.json
+  // for resolvers that ignore `exports`. Until 5 Nov none of them counted.
+  for (const file of [
+    "packages/icons/vite.vue.config.mts",
+    "packages/icons/tsconfig.vue.json",
+    "packages/icons/scripts/roll-vue-declarations.mjs",
+    "packages/icons/scripts/react-in-declarations.mjs",
+    "packages/icons/vue/package.json",
+    "packages/react/vite.lib.config.ts",
+    "packages/react/tsconfig.typecheck.json",
+  ])
+    assert.equal(shippedPackage(file)?.startsWith("@kozmos-ds/"), true, file);
+  for (const file of [
+    // a test beside the build scripts, a nested folder's manifest, and the
+    // tsconfig that only types the build config, as before
+    "packages/icons/scripts/react-in-declarations.test.mjs",
+    "packages/icons/tests/fixtures/package.json",
+    "packages/icons/vue/nested/package.json",
+    "packages/react/tsconfig.node.json",
+    "packages/react/vitest.config.ts",
+  ])
+    assert.equal(shippedPackage(file), null, file);
+});
+
 test("a package.json counts only when a consumer-facing field changed", () => {
   const file = "packages/icons/package.json";
   assert.equal(
