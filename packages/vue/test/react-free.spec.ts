@@ -35,7 +35,28 @@ export function reactImports(
   );
 }
 
-/** The main entry's built files: its bundles and every declaration outside react-bridge. */
+/**
+ * Every built file `entries` reach through relative imports: the entry
+ * bundles and any chunk they share, however deep. A shared chunk is where a
+ * React import would hide once the build splits code.
+ */
+export function reachable(
+  entries: string[],
+  read: (file: string) => string = (file) => fs.readFileSync(file, "utf8"),
+): string[] {
+  const seen = new Set<string>();
+  const visit = (file: string) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    for (const specifier of specifiers(read(file)))
+      if (specifier.startsWith("./") || specifier.startsWith("../"))
+        visit(path.resolve(path.dirname(file), specifier));
+  };
+  entries.forEach(visit);
+  return [...seen];
+}
+
+/** The main entry's built files: what its bundles reach, and every declaration outside react-bridge. */
 function mainEntryFiles() {
   const declarations: string[] = [];
   const walk = (dir: string) => {
@@ -48,8 +69,10 @@ function mainEntryFiles() {
   };
   walk(DIST);
   return [
-    path.join(DIST, "kozmos-vue.mjs"),
-    path.join(DIST, "kozmos-vue.cjs"),
+    ...reachable([
+      path.join(DIST, "kozmos-vue.mjs"),
+      path.join(DIST, "kozmos-vue.cjs"),
+    ]),
     ...declarations,
   ].map((file) => ({
     file: path.relative(DIST, file),
@@ -101,6 +124,37 @@ describe("the main entry is React-free", () => {
       "planted.mjs: react-dom/server",
       "planted.mjs: react/jsx-runtime",
     ]);
+  });
+
+  it("follows shared chunks to a React import two files deep", () => {
+    const files: Record<string, string> = {
+      "/dist/kozmos-vue.mjs":
+        'import { a } from "./chunks/a.mjs";\nimport { h } from "vue";',
+      "/dist/chunks/a.mjs": 'export * from "../shared/b.mjs";',
+      "/dist/shared/b.mjs": 'import { useState } from "react";',
+      "/dist/unrelated.mjs": 'import "react-dom";',
+    };
+    const found = reachable(["/dist/kozmos-vue.mjs"], (file) => files[file]);
+    expect(found.sort()).toEqual(
+      [
+        "/dist/chunks/a.mjs",
+        "/dist/kozmos-vue.mjs",
+        "/dist/shared/b.mjs",
+      ].sort(),
+    );
+    expect(
+      reactImports(found.map((file) => ({ file, text: files[file] }))),
+    ).toEqual(["/dist/shared/b.mjs: react"]);
+  });
+
+  it("never reaches the bridge's files from the main entry", () => {
+    const reached = reachable([
+      path.join(DIST, "kozmos-vue.mjs"),
+      path.join(DIST, "kozmos-vue.cjs"),
+    ]).map((file) => path.relative(DIST, file));
+    expect(reached.filter((file) => file.startsWith("react-bridge"))).toEqual(
+      [],
+    );
   });
 
   it("lets the bridge import React, which is what it is for", () => {
