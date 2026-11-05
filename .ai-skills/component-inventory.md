@@ -15,8 +15,9 @@
 
 These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 (`packages/android`) are used from a checkout and are not published.
-`@kozmos-ds/vue` exists in the workspace but is **private**: an internal
-harness, not something to install. There is no React Native package.
+`@kozmos-ds/vue` exists in the workspace but is **private**: Kozmos for Vue 3,
+being built on Reka UI (Vue 3 Phase 0), and not yet something to install.
+There is no React Native package.
 
 ## Components (122)
 

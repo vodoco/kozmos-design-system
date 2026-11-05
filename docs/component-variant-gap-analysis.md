@@ -296,8 +296,8 @@ Remaining:
    `SegmentedControlSize`, `StackDirection`) and reconcile `AlertStatus.Error`
    with React's `destructive`. Cosmetic, breaking, so do it with deprecated
    aliases.
-4. **Vue** — the components §3 lists as absent from Vue. Vue is a private harness, and its work
-   waits (decision 2).
+4. **Vue** — the components §3 lists as absent from Vue. Vue is private while Vue 3 Phase 0
+   builds it on Reka UI (decision 76).
 5. **TourStep on SwiftUI and Compose** — later, by decision 116 (GAP-188): it ships on the web
    and in Figma first. Its Figma `side` and `align` are where the card sits beside its target,
    which a drawing of the card alone does not show.

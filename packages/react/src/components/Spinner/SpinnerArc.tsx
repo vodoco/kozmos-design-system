@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
+import { SPINNER_ARC } from "../../recipes/spinner-arc";
 
 /**
  * The system's loading mark: one arc, drawn the same everywhere.
@@ -25,13 +26,13 @@ import { cn } from "../../utils";
  */
 export function SpinnerArc({
   className,
-  size = 24,
+  size = SPINNER_ARC.defaultSize,
   ...props
 }: Omit<React.SVGProps<SVGSVGElement>, "size"> & { size?: number }) {
   return (
     <svg
       aria-hidden="true"
-      className={cn("kozmos-spinner-arc", className)}
+      className={cn(SPINNER_ARC.className, className)}
       fill="none"
       // The size is an attribute as well as a class. An `svg` with neither is
       // a replaced element with no intrinsic size, and stretches to whatever
@@ -40,7 +41,7 @@ export function SpinnerArc({
       // browser without `@scope`, where the utility layer does not reach,
       // would have drawn a spinner as wide as the panel around it.
       height={size}
-      viewBox="0 0 24 24"
+      viewBox={SPINNER_ARC.viewBox}
       width={size}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
@@ -48,10 +49,10 @@ export function SpinnerArc({
       {/* From the top, three quarters of the way round. The large-arc flag is
           set because the sweep is over half a turn. */}
       <path
-        d="M12 3a9 9 0 1 1-9 9"
+        d={SPINNER_ARC.path}
         stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2"
+        strokeLinecap={SPINNER_ARC.strokeLinecap}
+        strokeWidth={SPINNER_ARC.strokeWidth}
       />
     </svg>
   );

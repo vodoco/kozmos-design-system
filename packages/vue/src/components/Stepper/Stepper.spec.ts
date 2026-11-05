@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KozmosStepper } from "../../index";
+import { KozmosStepper } from "../../react-bridge";
 
 describe("KozmosStepper", () => {
   it("is the Vue wrapper of the React Stepper, under its name", () => {

@@ -10,11 +10,12 @@
     "typecheck": "vue-tsc -b --noEmit"
   },
   "dependencies": {
-    "vue": "^3.5.42",
-    "@kozmos-ds/vue": "workspace:*",
     "@kozmos-ds/react": "workspace:*",
+    "@kozmos-ds/styles": "workspace:*",
+    "@kozmos-ds/vue": "workspace:*",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",

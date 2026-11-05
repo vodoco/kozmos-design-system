@@ -89,9 +89,10 @@ directory so that nothing here describes something that is not.
 
 Kozmos is a multi-platform design system for **Pointr's indoor navigation SDK**. It provides:
 
-- **3 platforms:** React, SwiftUI (iOS) and Jetpack Compose (Android). Vue waits: `@kozmos-ds/vue`
-  is a private harness that mounts the React components in Vue, not a package to install. There
-  is no React Native package.
+- **3 platforms:** React, SwiftUI (iOS) and Jetpack Compose (Android). Vue is being built: `@kozmos-ds/vue`
+  is private, Kozmos for Vue 3 on Reka UI (Vue 3 Phase 0), with the parts not yet ported mounted
+  from React through `@kozmos-ds/vue/react-bridge`; not a package to install yet. There is no React
+  Native package.
 - **Components** from primitives (Button, Input) to SDK-specific ones (MapView, WayfindingCard, the
   AI Companion): [component-inventory.md](./component-inventory.md) lists every one.
 - **Design tokens** in the DTCG format, built with Style Dictionary 5 into CSS, JavaScript, Swift

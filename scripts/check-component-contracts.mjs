@@ -190,6 +190,8 @@ const files = {
   reactAccordionFigma:
     "packages/react/src/components/Accordion/Accordion.figma.tsx",
   reactButton: "packages/react/src/components/Button/Button.tsx",
+  // Button's recipe, shared with Vue's KozmosButton (Vue 3 Phase 0).
+  reactButtonRecipe: "packages/react/src/recipes/button.ts",
   reactIconFigma: "packages/react/src/components/Icon/Icon.figma.tsx",
   reactIconButton: "packages/react/src/components/IconButton/IconButton.tsx",
   reactCounter: "packages/react/src/components/Counter/Counter.tsx",
@@ -302,6 +304,8 @@ const files = {
     "packages/react/src/components/SegmentedControl/SegmentedControl.tsx",
   reactIndex: "packages/react/src/index.ts",
   vueIndex: "packages/vue/src/index.ts",
+  // The React parts not yet ported to Vue, mounted through React (Vue 3 Phase 0).
+  vueBridge: "packages/vue/src/react-bridge/index.ts",
   figmaManifest: "docs/figma-library-manifest.json",
   figmaManifestScript: "scripts/figma-build-manifest.mjs",
   figmaNativeConnectScript: "scripts/figma-connect-native.mjs",
@@ -587,6 +591,12 @@ assertNotContains(
   "dev-only GlassSettingsPanel public Vue wrapper",
 );
 assertNotContains(
+  files.vueBridge,
+  source.vueBridge,
+  "KozmosGlassSettingsPanel",
+  "dev-only GlassSettingsPanel Vue bridge wrapper",
+);
+assertNotContains(
   files.figmaManifest,
   source.figmaManifest,
   "GlassSettingsPanel",
@@ -779,22 +789,29 @@ assertNotContains(
   "hardcoded documentation bold font constant",
 );
 assertContains(
-  files.reactButton,
-  source.reactButton,
+  files.reactButtonRecipe,
+  source.reactButtonRecipe,
   /default:\s*["']kozmos-button-size-default["']/,
   "owned default Button recipe",
 );
 assertContains(
-  files.reactButton,
-  source.reactButton,
+  files.reactButtonRecipe,
+  source.reactButtonRecipe,
   /sm:\s*["']kozmos-button-size-sm["']/,
   "owned small Button recipe",
 );
 assertContains(
-  files.reactButton,
-  source.reactButton,
+  files.reactButtonRecipe,
+  source.reactButtonRecipe,
   /icon:\s*["']kozmos-button-size-icon["']/,
   "owned icon Button recipe",
+);
+// React's Button draws from the shared recipe, so Vue's cannot drift from it.
+assertContains(
+  files.reactButton,
+  source.reactButton,
+  /buttonVariants[\s\S]*?\} from "\.\.\/\.\.\/recipes\/button"/,
+  "Button drawn from the shared recipe",
 );
 const ownedCssPath = "packages/styles/src/styles/owned-components.css";
 const ownedCss = read(ownedCssPath);
@@ -2073,27 +2090,35 @@ for (const [templatePath, sourcePath, label] of [
     `Linked Code Connect includes ${label} source`,
   );
 }
+// Button is a Vue port, drawn from React's recipe; one name is never two
+// components, so the bridge no longer wraps React's.
 assertContains(
   files.vueIndex,
   source.vueIndex,
-  "KozmosButton = createVueWrapper(ReactButton)",
-  "Vue Button wraps React Button",
+  'export { KozmosButton } from "./components/Button/Button"',
+  "Vue Button exported as a Vue port",
+);
+assertNotContains(
+  files.vueBridge,
+  source.vueBridge,
+  "KozmosButton = createVueWrapper",
+  "React Button wrapped in the Vue bridge as well",
 );
 assertContains(
-  files.vueIndex,
-  source.vueIndex,
+  files.vueBridge,
+  source.vueBridge,
   "KozmosCounter = createVueWrapper(ReactCounter)",
   "Vue Counter wraps React Counter",
 );
 assertContains(
-  files.vueIndex,
-  source.vueIndex,
+  files.vueBridge,
+  source.vueBridge,
   "KozmosBadge = createVueWrapper(ReactBadge)",
   "Vue Badge wraps React Badge",
 );
 assertContains(
-  files.vueIndex,
-  source.vueIndex,
+  files.vueBridge,
+  source.vueBridge,
   "KozmosIconButton = createVueWrapper(IconButton)",
   "Vue IconButton wraps React IconButton",
 );

@@ -30,7 +30,10 @@ const ANDROID_DIR = path.join(
   ROOT,
   "packages/android/src/main/java/com/kozmos/components",
 );
+// Vue's two entries (Vue 3 Phase 0): the Vue parts, and the bridge that
+// mounts the React parts not yet ported. A part in either is in Vue.
 const VUE_INDEX = path.join(ROOT, "packages/vue/src/index.ts");
+const VUE_BRIDGE = path.join(ROOT, "packages/vue/src/react-bridge/index.ts");
 const PLUGIN = path.join(ROOT, "figma/foundations-importer/code.js");
 
 // Axes that describe runtime behaviour rather than a visual variant. Native
@@ -366,7 +369,8 @@ export function reactAxes(component) {
   if (!own) return null;
   // With the modules of its own folder that it imports: Input's recipe and
   // status live in Input/inputVariants.ts (GAP-154), so the analysis read no
-  // axis on Input once they moved there.
+  // axis on Input once they moved there. And with the shared recipes it
+  // imports (packages/react/src/recipes, Vue 3 Phase 0): Button's moved there.
   const file = [
     own,
     ...[...own.matchAll(/from "\.\/([\w-]+)"/g)].map(
@@ -374,6 +378,10 @@ export function reactAxes(component) {
         readIfExists(path.join(REACT_DIR, component, `${m[1]}.ts`)) ??
         readIfExists(path.join(REACT_DIR, component, `${m[1]}.tsx`)) ??
         "",
+    ),
+    ...[...own.matchAll(/from "\.\.\/\.\.\/recipes\/([\w-]+)"/g)].map(
+      (m) =>
+        readIfExists(path.join(REACT_DIR, "..", "recipes", `${m[1]}.ts`)) ?? "",
     ),
   ].join("\n");
 
@@ -930,19 +938,22 @@ function renderGeneratedDoc(source, rows, withVariants, report, totals) {
 
 async function main() {
   const figma = figmaAxes();
-  // Vue has no per-component directories: every component is re-exported from
-  // index.ts through `createVueWrapper(ReactComponent)`. Counting directories
-  // reports 3/98 and is simply wrong.
+  // Vue's parts are named exports, not directories: a ported part is
+  // `export { KozmosButton } from …` in index.ts, and a bridged one
+  // `export const KozmosX = createVueWrapper(…)` in react-bridge/index.ts.
+  // Counting directories reports 3/98 and is simply wrong.
   const vueIndex = readIfExists(VUE_INDEX) || "";
+  const vueBridge = readIfExists(VUE_BRIDGE) || "";
   // A directory does not always export a component of the same name: the Radio
   // directory exports RadioGroup and RadioGroupItem.
   const VUE_DIRECTORY_ALIASES = { radio: "radiogroup" };
 
   const vueComponents = new Set(
     [
-      ...vueIndex.matchAll(
+      ...vueBridge.matchAll(
         /export const Kozmos([A-Za-z0-9]+)\s*=\s*\n?\s*createVueWrapper/g,
       ),
+      ...vueIndex.matchAll(/export\s*\{\s*Kozmos([A-Za-z0-9]+)\s*\}\s*from/g),
     ].map((match) => match[1].toLowerCase()),
   );
 

@@ -1,0 +1,2 @@
+# The shared recipes' declarations, which the build emits for vue-tsc (tsconfig.recipes.json).
+.recipes-types/

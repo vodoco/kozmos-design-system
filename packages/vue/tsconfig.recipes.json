@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": false,
+    "emitDeclarationOnly": true,
+    "sourceMap": false,
+    "rootDir": "../react/src",
+    "outDir": ".recipes-types"
+  },
+  "files": ["../react/src/recipes/index.ts"]
+}

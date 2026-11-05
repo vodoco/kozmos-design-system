@@ -1,4 +1,4 @@
-import { KozmosPOICard, KozmosMapOverlay } from "../../";
+import { KozmosPOICard, KozmosMapOverlay } from "../../react-bridge";
 
 export default {
   title: "Vue/POICard",
