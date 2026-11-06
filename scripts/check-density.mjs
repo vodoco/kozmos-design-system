@@ -17,8 +17,10 @@
  * - A caller's px-* sets a field's start; Combobox, MultiSelect and
  *   PasswordInput keep the room for their actions at the end.
  * - MultiSelect's clear and open are Combobox's (owner, 24 Oct): as tall as
- *   the field, which keeps its height, and the open runs to the inside of
- *   the field's border, whatever its width, in both directions.
+ *   the field, which keeps its height, and the open runs over the field's
+ *   1px edge to its outer end, as Combobox's does (decision 164); under a
+ *   caller's thicker border it ends that border less 1 inside it, in both
+ *   directions.
  *
  * SDK parts (SearchBar, AIInputBar) keep the SDK's touch geometry inside a
  * compact provider (decision 89): their roots are marked touch, which resets
@@ -90,25 +92,26 @@ const EXPECTED = {
   "combobox field": { owned: true, height: [44, 40] },
   "combobox action": { height: [44, 40], width: [44, 40] },
   // endGap: from an action's inline end to its field's outer inline end.
-  // Combobox's buttons cover its input's border; MultiSelect's sit inside
-  // its field's, so their gap is that border's width, read from the field
-  // ("border": its computed border-inline-end-width, unscaled).
+  // Combobox's buttons cover its input's border, and MultiSelect's cover its
+  // field's 1px edge (decision 164); under a caller's thicker border they
+  // end that border less 1 inside it ("border less 1": the field's computed
+  // border-inline-end-width less 1, unscaled).
   "combobox open": { endGap: [0, 0] },
   "multi-select field": { height: [44, 40] },
   // MultiSelect's clear and open, as Combobox's (owner, 24 Oct): as tall as
   // the field, where they were 28 at both; the field keeps its height with a
-  // choice in it, and the open runs to the inside of its border.
+  // choice in it, and the open runs to its outer end.
   "multi-select chosen field": { height: [44, 40] },
   "multi-select clear": { height: [44, 40], width: [44, 40] },
   "multi-select open": {
     height: [44, 40],
     width: [44, 40],
-    endGap: "border",
+    endGap: [0, 0],
   },
   "multi-select plain open": {
     height: [44, 40],
     width: [44, 40],
-    endGap: "border",
+    endGap: [0, 0],
   },
   "number-input field": { owned: true, height: [44, 40] },
   "number-input action": { owned: true, height: [44, 40], width: [44, 40] },
@@ -161,10 +164,10 @@ const EXPECTED = {
     webkit: { padStart: [12, 12] },
   },
   // MultiSelect's field is a <div>, which WebKit's @scope rules reach. With
-  // a caller's width and a 2px border too, its open still ends inside the
-  // field's border.
+  // a caller's width and a 2px border too, its open lies over the field's
+  // own 1px and ends 1 inside the 2px border.
   "multi-select px padding": { padStart: [16, 16], padEnd: [96, 88] },
-  "multi-select px open": { endGap: "border" },
+  "multi-select px open": { endGap: "border less 1" },
   // MultiSelect's input is the field less its padding and border.
   "multi-select input": { owned: true, height: [32, 28] },
   "dialog close": { height: [44, 32], width: [44, 32], overlay: "dialog" },
@@ -500,10 +503,11 @@ try {
         ]) {
           if (!expected[axis]) continue;
           reads += 1;
-          // "border": the field's own border width, which no root scales.
+          // "border less 1": the field's own border width, which no root
+          // scales, less the 1px edge the row lies over.
           const want =
-            expected[axis] === "border"
-              ? box.border
+            expected[axis] === "border less 1"
+              ? box.border - 1
               : (engine === "webkit" && expected.webkit?.[axis]
                   ? expected.webkit[axis]
                   : expected[axis])[column] * scale;

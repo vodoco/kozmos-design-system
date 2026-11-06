@@ -8,9 +8,12 @@
  * compact, left to right and right to left.
  *
  * - Hovered, each button draws its fill inside itself (decision 164): its
- *   ::before, 4 in from the button's edges (the field's 1px edge and a 3
- *   gap), so 36 across in touch and 32 in compact, its corners the field's
- *   less 4, also with the control radius set to 8 on the provider. The
+ *   ::before, 4 in from the button's edges, so 36 across in touch and 32 in
+ *   compact, and 4 in from the field's outer edge (its 1px edge and a 3
+ *   gap) on every side where the button lies on that edge, MultiSelect's
+ *   end too; its corners the field's less 4, also with the control radius
+ *   set to 8 on the provider. It fades in as transition-colors does (150ms,
+ *   Tailwind's ease), a cut under the design config's reduced motion. The
  *   button itself fills nothing; at rest, disabled, and in forced colours
  *   there is no fill; the button stays as tall as the field. Read from
  *   computed styles, and as pixels: hovered, the fill's middle is
@@ -283,13 +286,33 @@ const fillState = (page, part, index) =>
       const f = getComputedStyle(field);
       const s = getComputedStyle(button, "::before");
       const r = button.getBoundingClientRect();
+      const o = field.getBoundingClientRect();
       const drawn = s.content !== "none" && s.content !== "normal";
+      // The background colour's transition: its duration and easing, from
+      // the lists the transition's longhands hold.
+      const properties = s.transitionProperty.split(",").map((p) => p.trim());
+      const at = properties.findIndex(
+        (p) => p === "background-color" || p === "all",
+      );
+      const nth = (list, i) => {
+        const items = list.split(/,(?![^(]*\))/).map((v) => v.trim());
+        return items[i % items.length];
+      };
       return {
         label: button.getAttribute("aria-label"),
         hovered: button.matches(":hover"),
         disabled: button.disabled,
         box: { left: r.left, top: r.top, width: r.width, height: r.height },
+        field: { left: o.left, top: o.top, right: o.right, bottom: o.bottom },
+        border: parseFloat(f.borderTopWidth),
         own: getComputedStyle(button).backgroundColor,
+        fade:
+          at < 0
+            ? null
+            : {
+                duration: parseFloat(nth(s.transitionDuration, at)),
+                easing: nth(s.transitionTimingFunction, at),
+              },
         fieldRadius: parseFloat(
           f.direction === "rtl"
             ? f.borderTopLeftRadius
@@ -456,7 +479,43 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
         problems.push(
           `${step}: hovered, ${name}'s fill is ${fill.background}, not background-100 (${muted})`,
         );
+      // On each side where the button lies on the field's edge, the fill
+      // stands 4 in from the field's outer edge: its 1px edge and a 3 gap.
+      reads += 1;
+      const outer = now.field;
+      const edge = {
+        top: [box.top, box.top + fill.insets[0], -1],
+        right: [box.left + box.width, box.left + box.width - fill.insets[1], 1],
+        bottom: [
+          box.top + box.height,
+          box.top + box.height - fill.insets[2],
+          1,
+        ],
+        left: [box.left, box.left + fill.insets[3], -1],
+      };
+      for (const [side, [button, filled, outward]] of Object.entries(edge)) {
+        if (Math.abs(button - outer[side]) > now.border + 0.5) continue;
+        const gap = (outer[side] - filled) * outward;
+        if (Math.abs(gap - 4) > 0.5)
+          problems.push(
+            `${step}: hovered, ${name}'s fill is ${gap} from the field's outer edge at its ${side}, not 4 (the 1px edge and a 3 gap)`,
+          );
+      }
     }
+    // The fill fades in, as transition-colors fades the button's colours:
+    // 150ms, Tailwind's ease, scaled by the motion config.
+    reads += 1;
+    if (!now.fade || !(now.fade.duration > 0))
+      problems.push(
+        `${step}: hovered, ${name}'s fill does not fade: its background colour's transition is ${now.fade ? `${now.fade.duration}s` : "none"}`,
+      );
+    else if (
+      Math.abs(now.fade.duration - 0.15) > 0.001 ||
+      now.fade.easing !== "cubic-bezier(0.4, 0, 0.2, 1)"
+    )
+      problems.push(
+        `${step}: hovered, ${name}'s fill fades over ${now.fade.duration}s ${now.fade.easing}, not transition-colors' 0.15s cubic-bezier(0.4, 0, 0.2, 1)`,
+      );
     // As drawn: the fill's middle is background-100; the band round it, where
     // the field's edge is, and the fill's own corners stay as at rest.
     reads += 1;
@@ -486,6 +545,21 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
           );
   }
   await page.mouse.move(1, 1);
+}
+
+/**
+ * The design config's reduced motion (`motion: "reduced"`) scales every
+ * transition-colors duration to a thousandth through
+ * --semantics-motion-duration-scale, which the fill inherits from its
+ * button: there the fade is a cut. A guard: it holds with no fade too.
+ */
+async function fadeUnderReducedMotion(page, step, problems) {
+  const state = await fillState(page, "password-reduced", 0);
+  reads += 1;
+  if (state.fade && state.fade.duration > 0.001)
+    problems.push(
+      `${step}: under the config's reduced motion, the fill still fades over ${state.fade.duration}s`,
+    );
 }
 
 /**
@@ -752,6 +826,7 @@ for (const forced of ["none", "active"])
             );
           for (const part of [...parts, ...DISABLED])
             await hoverFill(page, part, mode, density, name, problems, fills);
+          await fadeUnderReducedMotion(page, name, problems);
           // The fill's corners follow the control radius a product sets.
           if (!mode.forced) {
             await setControlRadius(page, 8);

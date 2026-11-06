@@ -13,6 +13,17 @@
       var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
     );
   }
+  /* MultiSelect's clear and open lie on the field's edge at its top, bottom
+     and end, as Combobox's and Input's buttons do, so a hover fill stands 3
+     inside the edge on every side it touches (decision 164). The row covers
+     the field's border box, not only its inside: out over the 1px edge, in
+     logical insets, so the end follows the direction. The element as well
+     as the classes: the row's scoped inset utilities weigh two classes with
+     their :scope, and a scoped rule wins a tie with an owned one. */
+  .kozmos-multiselect-field > div.kozmos-combobox-actions {
+    inset-block: -1px;
+    inset-inline-end: -1px;
+  }
   /* MultiSelect's field rings for its input, as Combobox's input does: with
      its clear or open focused, the button rings alone, not inside the
      field's ring too. Its focus-within and :has() outweigh the field's

@@ -44,10 +44,13 @@
      stays drawn round it; nothing at rest, nothing disabled. The fill is the
      button's ::before at the back of the stacking context the button makes,
      so it is under all the button holds: Input's `icon` is a node, and a
-     wrapped icon, an image or text has no rule of its own to raise it. Owned,
-     not a utility, so it draws in a browser without @scope too, where no
-     utility does; so is Combobox's `position`, without which the fill is
-     placed against an ancestor and covers more than its button. */
+     wrapped icon, an image or text has no rule of its own to raise it. It
+     fades in and out as transition-colors fades the button's colours, 150ms
+     scaled by the motion config, which a reduced motion makes a cut; the
+     button's own transition does not reach its ::before. Owned, not a
+     utility, so it draws in a browser without @scope too, where no utility
+     does; so is Combobox's `position`, without which the fill is placed
+     against an ancestor and covers more than its button. */
   .kozmos-field-action,
   .kozmos-combobox-action {
     isolation: isolate;
@@ -57,6 +60,7 @@
   }
   .kozmos-field-action::before,
   .kozmos-combobox-action::before {
+    @apply transition-colors;
     content: "";
     position: absolute;
     inset: 4px;

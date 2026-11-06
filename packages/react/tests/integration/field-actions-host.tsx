@@ -3,6 +3,7 @@ import { Star01 } from "@kozmos-ds/icons";
 import {
   Combobox,
   DatePicker,
+  DesignConfigProvider,
   Input,
   MultiSelect,
   PasswordInput,
@@ -15,8 +16,9 @@ import {
  * scripts/check-field-actions.mjs: a Combobox with a choice, a MultiSelect
  * with one chip on one line, and a narrow MultiSelect whose three chips
  * wrap; Input's toggle action, PasswordInput's reveal, DatePicker's and
- * TimePicker's trigger; and a disabled Combobox and PasswordInput, in a
- * provider of the given theme, density and direction.
+ * TimePicker's trigger; a disabled Combobox and PasswordInput; and a
+ * PasswordInput under the design config's reduced motion, in a provider of
+ * the given theme, density and direction.
  */
 const options = [
   { value: "lisbon", label: "Lisbon" },
@@ -86,6 +88,11 @@ function mount({ theme, density, dir }: Mount) {
         <div data-part="password-disabled">
           <PasswordInput label="Locked" defaultValue="kozmos" disabled />
         </div>
+        <DesignConfigProvider initialConfig={{ motion: "reduced" }}>
+          <div data-part="password-reduced">
+            <PasswordInput label="Still" defaultValue="kozmos" />
+          </div>
+        </DesignConfigProvider>
       </div>
     </ThemeProvider>,
   );

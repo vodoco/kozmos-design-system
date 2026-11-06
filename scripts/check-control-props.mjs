@@ -138,10 +138,16 @@ const box = (page, selector) =>
     selector,
   );
 
-/** Waits for an element's transitions (a colour easing in) to finish. */
+/** Waits for the page's transitions (a colour easing in) to finish: the
+ * element's and its pseudo-elements', where a field action's fill fades. */
 const transitioned = (locator) =>
-  locator.evaluate((el) =>
-    Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
+  locator.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
+        .map((a) => a.finished.catch(() => {})),
+    ),
   );
 
 /** A colour a variable resolves to, in the fixture's provider. */
