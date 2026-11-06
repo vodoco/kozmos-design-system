@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import fs from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   defineComponent,
@@ -7,10 +6,10 @@ import {
   mergeProps,
   nextTick,
   ref,
+  setDevtoolsHook,
   type Component,
 } from "vue";
 import React from "react";
-import ts from "typescript";
 import {
   AccordionContent,
   AccordionItem,
@@ -25,10 +24,11 @@ import {
   TabsTrigger,
 } from "@kozmos-ds/react";
 import * as Bridge from "./index";
-import { createVueWrapper, modelsOf, RADIX_MODELS } from "./react-adapter";
+import { bridgeOf, createVueWrapper, RADIX_MODELS } from "./react-adapter";
 import {
   $,
   $$,
+  bridgedParts,
   byText,
   choose,
   commit,
@@ -96,6 +96,8 @@ interface Part {
   name: keyof typeof Bridge;
   /** The model, as Vue names it: `modelValue` is `v-model`. */
   model?: string;
+  /** What sets this row apart from another of the same model (its props). */
+  variant?: string;
   /** One of every wrapper's (RADIX_MODELS), not a model the wrapper names. */
   implicit?: boolean;
   /** What the part needs to draw. */
@@ -104,6 +106,11 @@ interface Part {
   env?: () => () => void;
   /** The model before the change. */
   start: unknown;
+  /**
+   * What the DOM shows of `start`, once the part has drawn it: what a
+   * visitor sees before they change it, and waits for.
+   */
+  before: unknown;
   /** The element a visitor uses, once React has drawn it. */
   field: () => Element | null | undefined;
   /** What the visitor does with it: types, clicks, presses a key. */
@@ -137,6 +144,7 @@ const textField = (
   name,
   props: { "aria-label": "Field" },
   start,
+  before: start,
   field: () => $<HTMLInputElement>(selector),
   change: (field) => type(field, next),
   next,
@@ -164,6 +172,7 @@ const PARTS: Part[] = [
     name: "KozmosNumberInput",
     props: { "aria-label": "Guests" },
     start: 1,
+    before: "1",
     field: () => $("input[type=number]"),
     change: (field) => type(field, "42"),
     next: 42,
@@ -177,6 +186,9 @@ const PARTS: Part[] = [
     name: "KozmosOTPInput",
     props: { length: 4 },
     start: "12",
+    // OTPInput draws its cells empty, then the code it is given, a render
+    // later (an effect): a visitor types once they see 1 and 2.
+    before: ["1", "2", "", ""],
     field: () => $$("input")[2],
     change: (field) => type(field, "3"),
     next: "123",
@@ -195,6 +207,7 @@ const PARTS: Part[] = [
     name: "KozmosColorPicker",
     props: { label: "Brand" },
     start: "#135BEC",
+    before: "#135BEC",
     field: () => $("input[type=text]"),
     change: (field) => type(field, "#abc"),
     next: "#AABBCC",
@@ -209,6 +222,7 @@ const PARTS: Part[] = [
     model: "alpha",
     props: { label: "Brand", open: true },
     start: 100,
+    before: "100",
     field: () => $("input[aria-label=Opacity]"),
     change: (range) => type(range, "40"),
     next: 40,
@@ -224,6 +238,7 @@ const PARTS: Part[] = [
     model: "format",
     props: { label: "Brand", open: true },
     start: "hsl",
+    before: "hsl",
     field: () => $("select[aria-label='Color format']"),
     change: (menu) => select(menu, "hex"),
     next: "hex",
@@ -241,6 +256,7 @@ const PARTS: Part[] = [
     implicit: true,
     props: { label: "Brand" },
     start: false,
+    before: "false",
     field: () => $("button[aria-expanded]"),
     change: (toggle) => toggle.click(),
     next: true,
@@ -254,6 +270,7 @@ const PARTS: Part[] = [
     name: "KozmosSlider",
     props: { "aria-label": "Volume", max: 10 },
     start: [3],
+    before: "3",
     field: () => $("[role=slider]"),
     change: (thumb) => press(thumb, "ArrowRight"),
     next: [4],
@@ -269,6 +286,7 @@ const PARTS: Part[] = [
     name: "KozmosRating",
     props: { label: "Your visit" },
     start: 2,
+    before: 2,
     field: () => $$("[role=radio]")[3],
     change: (star) => star.click(),
     next: 4,
@@ -284,6 +302,7 @@ const PARTS: Part[] = [
     name: "KozmosFloorSelector",
     props: { floors: ["1", "2", "3"], label: "Floor" },
     start: "1",
+    before: "1",
     field: () => byText("button", "2"),
     change: (floor) => floor.click(),
     next: "2",
@@ -296,6 +315,7 @@ const PARTS: Part[] = [
     name: "KozmosFileUpload",
     props: { label: "Floor plan" },
     start: [],
+    before: [],
     field: () => $("input[type=file]"),
     change: (input) => choose(input, [plan]),
     next: [plan],
@@ -317,6 +337,7 @@ const PARTS: Part[] = [
       ),
     },
     start: "walk",
+    before: "walk",
     field: () => $("[role=radio][value=drive]"),
     change: (radio) => radio.click(),
     next: "drive",
@@ -336,6 +357,7 @@ const PARTS: Part[] = [
       ],
     },
     start: "walk",
+    before: "Walk",
     field: () => byText("[role=radio]", "Drive"),
     change: (segment) => segment.click(),
     next: "drive",
@@ -350,6 +372,7 @@ const PARTS: Part[] = [
     name: "KozmosCombobox",
     props: { options: fruit, label: "Fruit" },
     start: "banana",
+    before: "Banana",
     field: () => $("input"),
     change: async (input) => {
       input.focus();
@@ -368,6 +391,7 @@ const PARTS: Part[] = [
     model: "inputValue",
     props: { options: fruit, label: "Fruit" },
     start: "",
+    before: "",
     field: () => $("input"),
     change: (input) => {
       input.focus();
@@ -384,6 +408,7 @@ const PARTS: Part[] = [
     name: "KozmosListbox",
     props: { options: fruit, "aria-label": "Fruit" },
     start: "apple",
+    before: ["Apple"],
     field: () => byText("[role=option]", "Banana"),
     change: (option) => option.click(),
     next: "banana",
@@ -396,8 +421,10 @@ const PARTS: Part[] = [
   {
     // Several options: nothing is an empty array (`empty` reads `multiple`).
     name: "KozmosListbox",
+    variant: "multiple",
     props: { options: fruit, "aria-label": "Fruit", multiple: true },
     start: ["apple"],
+    before: ["Apple"],
     field: () => byText("[role=option]", "Banana"),
     change: (option) => option.click(),
     next: ["apple", "banana"],
@@ -413,6 +440,7 @@ const PARTS: Part[] = [
     name: "KozmosMultiSelect",
     props: { options: fruit, label: "Fruit" },
     start: ["apple"],
+    before: ["Apple"],
     field: () => $("input"),
     change: async (input) => {
       input.focus();
@@ -432,6 +460,7 @@ const PARTS: Part[] = [
     model: "searchValue",
     props: { options: fruit, label: "Fruit" },
     start: "",
+    before: "",
     field: () => $("input"),
     change: (input) => {
       input.focus();
@@ -448,6 +477,7 @@ const PARTS: Part[] = [
     name: "KozmosDateRangePicker",
     props: { label: "Stay" },
     start: { start: "2026-11-01", end: "2026-11-05" },
+    before: ["2026-11-01", "2026-11-05"],
     field: () => $$("input[type=date]")[1],
     change: (end) => type(end, "2026-11-09"),
     next: { start: "2026-11-01", end: "2026-11-09" },
@@ -466,6 +496,7 @@ const PARTS: Part[] = [
     name: "KozmosCheckbox",
     props: { "aria-label": "Accept" },
     start: false,
+    before: "false",
     field: () => $("[role=checkbox]"),
     change: (box) => box.click(),
     next: true,
@@ -481,6 +512,7 @@ const PARTS: Part[] = [
     implicit: true,
     props: { "aria-label": "Accept" },
     start: false,
+    before: "false",
     field: () => $("[role=checkbox]"),
     change: (box) => box.click(),
     next: true,
@@ -494,6 +526,7 @@ const PARTS: Part[] = [
     name: "KozmosSwitch",
     props: { "aria-label": "Wi-Fi" },
     start: false,
+    before: "false",
     field: () => $("[role=switch]"),
     change: (toggle) => toggle.click(),
     next: true,
@@ -509,6 +542,7 @@ const PARTS: Part[] = [
     implicit: true,
     props: { "aria-label": "Wi-Fi" },
     start: false,
+    before: "false",
     field: () => $("[role=switch]"),
     change: (toggle) => toggle.click(),
     next: true,
@@ -522,6 +556,7 @@ const PARTS: Part[] = [
     name: "KozmosWayfindingInputRow",
     model: "originValue",
     start: "Entrance A",
+    before: "Entrance A",
     field: () => $$("input")[0],
     change: (origin) => type(origin, "Gate 42"),
     next: "Gate 42",
@@ -535,6 +570,7 @@ const PARTS: Part[] = [
     name: "KozmosWayfindingInputRow",
     model: "destinationValue",
     start: "Apple Store",
+    before: "Apple Store",
     field: () => $$("input")[1],
     change: (destination) => type(destination, "Lounge"),
     next: "Lounge",
@@ -565,6 +601,7 @@ const PARTS: Part[] = [
       ],
     },
     start: "apple",
+    before: "apple",
     field: () => $("[role=combobox]"),
     change: async (trigger) => {
       trigger.focus();
@@ -594,6 +631,7 @@ const PARTS: Part[] = [
       ),
     },
     start: "a",
+    before: ["Item a"],
     field: () => byText("button", "Item b"),
     change: (trigger) => trigger.click(),
     next: "b",
@@ -621,6 +659,7 @@ const PARTS: Part[] = [
       ],
     },
     start: "a",
+    before: "Tab a",
     field: () => byText("[role=tab]", "Tab b"),
     change: (tab) =>
       tab.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
@@ -636,6 +675,7 @@ const PARTS: Part[] = [
     model: "pressed",
     props: { "aria-label": "Bold" },
     start: false,
+    before: "false",
     field: () => $("button"),
     change: (button) => button.click(),
     next: true,
@@ -650,6 +690,7 @@ const PARTS: Part[] = [
     name: "KozmosMapControlsGroup",
     model: "stepFree",
     start: false,
+    before: "false",
     field: () => $("[data-map-control=step-free]"),
     change: (button) => button.click(),
     next: true,
@@ -669,6 +710,7 @@ const PARTS: Part[] = [
       media: photos,
     },
     start: 0,
+    before: "1 of 3",
     field: () => $("button[aria-label='Next image']"),
     change: (next) => next.click(),
     next: 1,
@@ -684,6 +726,7 @@ const PARTS: Part[] = [
     model: "visible",
     props: { "aria-label": "Password" },
     start: false,
+    before: "password",
     field: () => $("button[aria-label='Show password']"),
     change: (button) => button.click(),
     next: true,
@@ -699,6 +742,7 @@ const PARTS: Part[] = [
     model: "expandedIds",
     props: { data: tree },
     start: [],
+    before: [],
     field: () => byText("[role=treeitem]", "src"),
     change: (item) => item.click(),
     next: ["1"],
@@ -714,6 +758,7 @@ const PARTS: Part[] = [
     model: "selectedId",
     props: { data: tree },
     start: "1",
+    before: ["src"],
     field: () => byText("[role=treeitem]", "b.ts"),
     change: (item) => item.click(),
     next: "3",
@@ -733,6 +778,7 @@ const PARTS: Part[] = [
       return () => undo.forEach((step) => step());
     },
     start: "medium",
+    before: "Half height",
     field: () => $("[role=slider]"),
     change: (handle) => press(handle, "ArrowUp"),
     next: "large",
@@ -743,12 +789,177 @@ const PARTS: Part[] = [
     listener: "onPanelDetentChange",
     alone: "Expanded",
   },
+  // ------------------------------------------------------------------------
+  // A model whose nothing depends on the part's props (`empty` a function):
+  // a row for each thing the function reads, which a constant gets wrong.
+  // ------------------------------------------------------------------------
+  {
+    // Its default is where it starts with nothing given.
+    name: "KozmosSlider",
+    variant: "defaultValue",
+    props: { "aria-label": "Volume", max: 10, defaultValue: [5] },
+    start: [3],
+    before: "3",
+    field: () => $("[role=slider]"),
+    change: (thumb) => press(thumb, "ArrowRight"),
+    next: [4],
+    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
+    shows: "4",
+    nothing: "5",
+    fromNothing: { next: [6], shows: "6" },
+    listener: "onValueChange",
+    alone: "6",
+  },
+  {
+    // With no default, its thumbs start spread from its min to its max.
+    name: "KozmosSlider",
+    variant: "min, max and thumbCount",
+    props: { "aria-label": "Range", min: 2, max: 8, thumbCount: 2 },
+    start: [4, 6],
+    before: "4",
+    field: () => $("[role=slider]"),
+    change: (thumb) => press(thumb, "ArrowRight"),
+    next: [5, 6],
+    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
+    shows: "5",
+    nothing: "2",
+    fromNothing: { next: [3, 8], shows: "3" },
+    listener: "onValueChange",
+    alone: "3",
+  },
+  {
+    name: "KozmosColorPicker",
+    model: "alpha",
+    variant: "defaultAlpha",
+    props: { label: "Brand", open: true, defaultAlpha: 60 },
+    start: 100,
+    before: "100",
+    field: () => $("input[aria-label=Opacity]"),
+    change: (range) => type(range, "40"),
+    next: 40,
+    shown: () => $<HTMLInputElement>("input[aria-label=Opacity]")?.value,
+    shows: "40",
+    nothing: "60",
+    listener: "onAlphaChange",
+    alone: "40",
+  },
+  {
+    name: "KozmosColorPicker",
+    model: "format",
+    variant: "defaultFormat",
+    props: { label: "Brand", open: true, defaultFormat: "rgb" },
+    start: "hsl",
+    before: "hsl",
+    field: () => $("select[aria-label='Color format']"),
+    change: (menu) => select(menu, "hex"),
+    next: "hex",
+    shown: () =>
+      $<HTMLSelectElement>("select[aria-label='Color format']")?.value,
+    shows: "hex",
+    nothing: "rgb",
+    listener: "onFormatChange",
+    alone: "hex",
+  },
+  {
+    name: "KozmosPOIMediaGallery",
+    model: "activeIndex",
+    variant: "defaultActiveIndex",
+    props: {
+      label: "Photos",
+      positionLabel: (current: number, total: number) =>
+        `${current} of ${total}`,
+      media: photos,
+      defaultActiveIndex: 1,
+    },
+    start: 0,
+    before: "1 of 3",
+    field: () => $("button[aria-label='Next image']"),
+    change: (next) => next.click(),
+    next: 1,
+    shown: () => $("p[aria-live]")?.textContent,
+    shows: "2 of 3",
+    nothing: "2 of 3",
+    fromNothing: { next: 2, shows: "3 of 3" },
+    listener: "onActiveIndexChange",
+    alone: "3 of 3",
+  },
+  {
+    // Several open at once: nothing is an empty array (`empty` reads `type`).
+    name: "KozmosAccordion",
+    variant: "multiple",
+    props: {
+      type: "multiple",
+      children: ["a", "b"].map((value) =>
+        e(
+          AccordionItem,
+          { key: value, value },
+          e(AccordionTrigger, null, `Item ${value}`),
+          e(AccordionContent, null, `Body ${value}`),
+        ),
+      ),
+    },
+    start: ["a"],
+    before: ["Item a"],
+    field: () => byText("button", "Item b"),
+    change: (trigger) => trigger.click(),
+    next: ["a", "b"],
+    shown: () => texts("button[aria-expanded=true]"),
+    shows: ["Item a", "Item b"],
+    nothing: [],
+    fromNothing: { next: ["b"], shows: ["Item b"] },
+    listener: "onValueChange",
+    alone: ["Item b"],
+  },
+  {
+    // Where it rests unless told is its default.
+    name: "KozmosAdaptiveMapShell",
+    model: "panelDetent",
+    variant: "defaultPanelDetent",
+    props: { panel: "Gate 4", defaultPanelDetent: "collapsed" },
+    env: () => {
+      const undo = [stub("clientWidth", 390), stub("clientHeight", 844)];
+      return () => undo.forEach((step) => step());
+    },
+    start: "medium",
+    before: "Half height",
+    field: () => $("[role=slider]"),
+    change: (handle) => press(handle, "ArrowUp"),
+    next: "large",
+    shown: () => $("aside")?.getAttribute("data-detent"),
+    shows: "Expanded",
+    nothing: "Collapsed",
+    fromNothing: { next: "medium", shows: "Half height" },
+    listener: "onPanelDetentChange",
+    alone: "Half height",
+  },
+  {
+    // A fraction that is no number offers nothing: the shell rests at
+    // medium, as it does with no fraction.
+    name: "KozmosAdaptiveMapShell",
+    model: "panelDetent",
+    variant: "panelFraction NaN",
+    props: { panel: "Gate 4", panelFraction: Number.NaN },
+    env: () => {
+      const undo = [stub("clientWidth", 390), stub("clientHeight", 844)];
+      return () => undo.forEach((step) => step());
+    },
+    start: "medium",
+    before: "Half height",
+    field: () => $("[role=slider]"),
+    change: (handle) => press(handle, "ArrowUp"),
+    next: "large",
+    shown: () => $("aside")?.getAttribute("data-detent"),
+    shows: "Expanded",
+    nothing: "Half height",
+    listener: "onPanelDetentChange",
+    alone: "Expanded",
+  },
 ];
 
 const label = (part: Part) =>
-  part.model
-    ? `${part.name} v-model:${part.model}`
-    : `${part.name}${part.props?.multiple ? " (multiple)" : ""}`;
+  `${part.name}${part.model ? ` v-model:${part.model}` : ""}${
+    part.variant ? ` (${part.variant})` : ""
+  }`;
 const PARTS_BY = Object.fromEntries(
   PARTS.map((part) => [label(part), part]),
 ) as Record<string, Part>;
@@ -786,6 +997,22 @@ function mountPart(
   return { model, emitted };
 }
 const onTeardown: (() => void)[] = [];
+
+/**
+ * Waits, as a visitor does, until the part shows `expected`, and checks it
+ * still does once React and Vue have finished what they started: a value
+ * shown for a moment and then taken back fails. Fails saying what the part
+ * shows if it never shows it. A part may draw its value a render after its
+ * first (OTPInput copies it into its cells in an effect; Combobox's field
+ * follows its value the same way), and under load a render can take longer
+ * than any fixed wait.
+ */
+async function showing(part: Part, expected: unknown) {
+  const shows = () => JSON.stringify(part.shown()) === JSON.stringify(expected);
+  await until(shows).catch(() => undefined);
+  await settle();
+  expect(part.shown()).toEqual(expected);
+}
 afterEach(() => {
   while (onTeardown.length) onTeardown.pop()!();
 });
@@ -794,7 +1021,9 @@ describe("every wrapper with a v-model", () => {
   it("is in the table, with each of its models", () => {
     const named = Object.entries(Bridge).flatMap(([name, component]) =>
       Object.keys(
-        (component && typeof component === "object" && modelsOf(component)) ||
+        (component &&
+          typeof component === "object" &&
+          bridgeOf(component)?.models) ||
           {},
       ).map((model) =>
         model === "modelValue" ? name : `${name} v-model:${model}`,
@@ -814,19 +1043,21 @@ describe("every wrapper with a v-model", () => {
       it(`with v-model: the change reaches the model once, as ${JSON.stringify(part.next)}, never on mount, and the field shows it`, async () => {
         const { model, emitted } = mountPart(part, { vModel: true });
         const field = await until(part.field);
-        await settle();
+        await showing(part, part.before);
         expect(emitted).toEqual([]);
         await part.change(field);
         await settle();
         expect(emitted).toEqual([part.next]);
         expect(model.value).toEqual(part.next);
-        expect(part.shown()).toEqual(part.shows);
+        await showing(part, part.shows);
       });
 
       it(`with v-model: its own ${part.listener} is called as well`, async () => {
         const listener = vi.fn();
         const { emitted } = mountPart(part, { vModel: true, listener });
-        await part.change(await until(part.field));
+        const field = await until(part.field);
+        await showing(part, part.before);
+        await part.change(field);
         await settle();
         expect(listener).toHaveBeenCalledTimes(1);
         expect(emitted).toEqual([part.next]);
@@ -844,8 +1075,7 @@ describe("every wrapper with a v-model", () => {
         it("without v-model: it keeps a value of its own, as on main", async () => {
           mountPart(part, {});
           await part.change(await until(part.field));
-          await settle();
-          expect(part.shown()).toEqual(part.alone);
+          await showing(part, part.alone);
         });
 
       it(`a model that starts null shows nothing (${JSON.stringify(part.nothing)}), and takes a change`, async () => {
@@ -854,28 +1084,26 @@ describe("every wrapper with a v-model", () => {
           start: null,
         });
         const field = await until(part.field);
-        await settle();
-        expect(part.shown()).toEqual(part.nothing);
+        await showing(part, part.nothing);
         await part.change(field);
         await settle();
         expect(emitted).toEqual([from.next]);
         expect(model.value).toEqual(from.next);
-        expect(part.shown()).toEqual(from.shows);
+        await showing(part, from.shows);
       });
 
       it("a model reset to null after a change shows nothing", async () => {
         const { model } = mountPart(part, { vModel: true, start: null });
-        await part.change(await until(part.field));
-        await settle();
-        expect(part.shown()).toEqual(from.shows);
+        const field = await until(part.field);
+        await showing(part, part.nothing);
+        await part.change(field);
+        await showing(part, from.shows);
         model.value = null;
-        await settle();
-        expect(part.shown()).toEqual(part.nothing);
+        await showing(part, part.nothing);
         model.value = part.start;
-        await settle();
+        await showing(part, part.before);
         model.value = undefined;
-        await settle();
-        expect(part.shown()).toEqual(part.nothing);
+        await showing(part, part.nothing);
       });
     },
   );
@@ -890,15 +1118,6 @@ describe("every wrapper with a v-model", () => {
 // until its wrapper names a model for it.
 // --------------------------------------------------------------------------
 
-/** What React part each adapter in index.ts draws: its props are typed `any`. */
-const ADAPTERS: Record<string, string> = {
-  AvatarAdapter: "Avatar",
-  AlertAdapter: "Alert",
-  BackdropAdapter: "Backdrop",
-  TourStepAdapter: "TourStep",
-  AnchoredPopoverAdapter: "Popover",
-};
-
 /** Pairs that are not a value the visitor changes, each with why. */
 const NOT_MODELS: Record<string, string> = {
   // The product's minimum padding; the callback reports the insets the
@@ -907,62 +1126,25 @@ const NOT_MODELS: Record<string, string> = {
     "an input and a measurement, not a value",
 };
 
-/** Each `Kozmos*` export of index.ts, with the React export it wraps. */
-function wrappedParts(): [string, string][] {
-  const file = `${__dirname}/index.ts`;
-  const source = ts.createSourceFile(
-    file,
-    fs.readFileSync(file, "utf8"),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-  const imported = new Map<string, string>();
-  const parts: [string, string][] = [];
-  for (const node of source.statements) {
-    if (
-      ts.isImportDeclaration(node) &&
-      (node.moduleSpecifier as ts.StringLiteral).text === "@kozmos-ds/react"
-    )
-      for (const element of (
-        node.importClause!.namedBindings as ts.NamedImports
-      ).elements)
-        imported.set(
-          element.name.text,
-          (element.propertyName ?? element.name).text,
-        );
-    if (!ts.isVariableStatement(node)) continue;
-    for (const declaration of node.declarationList.declarations) {
-      const name = declaration.name.getText();
-      if (!name.startsWith("Kozmos")) continue;
-      let wrapped: string | null = null;
-      declaration.forEachChild(function find(child): void {
-        if (
-          ts.isCallExpression(child) &&
-          child.expression.getText() === "createVueWrapper"
-        )
-          wrapped = child.arguments[0].getText();
-        else child.forEachChild(find);
-      });
-      if (wrapped)
-        parts.push([name, imported.get(wrapped) ?? ADAPTERS[wrapped] ?? ""]);
-    }
-  }
-  return parts;
-}
-
 describe("every controlled pair is a model", () => {
-  const parts = wrappedParts();
+  // Read from the wrappers themselves (bridgedParts): however index.ts
+  // builds a wrapper, `createVueWrapper` recorded the part it mounts.
+  const parts = bridgedParts();
 
   it("has a model for each pair each React part has", () => {
     // Every wrapper's React part is read, and every exception says why.
     expect(parts.length).toBeGreaterThan(90);
-    expect(parts.filter(([, react]) => !react)).toEqual([]);
+    expect(
+      parts
+        .filter((part) => !part.bridge || !part.react)
+        .map((part) => part.name),
+    ).toEqual([]);
     for (const [pair, reason] of Object.entries(NOT_MODELS))
       expect(reason, pair).toMatch(/\w/);
     const side = reactSides();
     const missing: string[] = [];
-    for (const [wrapper, react] of parts) {
-      const reactSide = side(react);
+    for (const { name: wrapper, react, bridge } of parts) {
+      const reactSide = side(react!);
       const props = new Set(reactSide.react.map((member) => member.name));
       // The contract's rule, as the Vue ports' models are found.
       const pairs = new Map(
@@ -978,9 +1160,7 @@ describe("every controlled pair is a model", () => {
           controlled && controlled[0].toLowerCase() + controlled.slice(1);
         if (name && props.has(name) && !pairs.has(name)) pairs.set(name, "");
       }
-      const models = Object.values(
-        modelsOf(Bridge[wrapper as keyof typeof Bridge] as object) ?? {},
-      );
+      const models = Object.values(bridge!.models);
       for (const [prop, callback] of pairs) {
         if (NOT_MODELS[`${wrapper} ${prop}`]) continue;
         const covered =
@@ -1236,10 +1416,10 @@ describe("createVueWrapper's models", () => {
     expect(given).toEqual({ title: "kept" });
     expect(heard()).toEqual([
       expect.stringContaining(
-        "Probe has no v-model: its value and listener are not given to React.",
+        "Probe has no v-model: modelValue and its listener are not given to React. Give React's own prop instead, such as :value.",
       ),
       expect.stringContaining(
-        "Probe has no v-model:pressed: its listener is not given to React.",
+        "Probe has no v-model:pressed: its listener is not given to React. Listen to the part's own change callback instead.",
       ),
     ]);
   });
@@ -1256,6 +1436,219 @@ describe("createVueWrapper's models", () => {
     await settle();
     expect(badge.getAttributeNames()).not.toContain("modelvalue");
     expect(heard()).toEqual([expect.stringContaining("Badge has no v-model")]);
+  });
+
+  it("KozmosProgress with :model-value draws no value, and says to give React's :value instead, which it draws", async () => {
+    const page = (template: string) =>
+      defineComponent({
+        components: { KozmosProgress: Bridge.KozmosProgress },
+        template,
+      });
+    mount(page(`<KozmosProgress :model-value="40" />`));
+    const bar = await until(() => $("[role=progressbar]"));
+    await settle();
+    expect(bar.getAttribute("aria-valuenow")).not.toBe("40");
+    expect(heard()).toEqual([
+      expect.stringContaining(
+        "Progress has no v-model: modelValue and its listener are not given to React. Give React's own prop instead, such as :value.",
+      ),
+    ]);
+    unmount();
+    mount(page(`<KozmosProgress :value="40" />`));
+    const shown = await until(() => $("[role=progressbar]"));
+    await settle();
+    expect(shown.getAttribute("aria-valuenow")).toBe("40");
+  });
+});
+
+// --------------------------------------------------------------------------
+// What React is given while a model is null, for a model whose nothing is a
+// function of React's props: each thing the function reads, through the
+// adapter. A wrapper made of a part that records its props, with the real
+// wrapper's binding, is given what the real part would be.
+// --------------------------------------------------------------------------
+
+describe("a model's nothing, read from React's props", () => {
+  let given: Record<string, unknown> = {};
+  const Recorder = (props: Record<string, unknown>) => {
+    given = props;
+    return null;
+  };
+
+  it.each([
+    ["KozmosAccordion", "modelValue", { type: "multiple" }, []],
+    ["KozmosAccordion", "modelValue", { type: "single" }, ""],
+    ["KozmosListbox", "modelValue", { multiple: true }, []],
+    ["KozmosListbox", "modelValue", {}, ""],
+    ["KozmosSlider", "modelValue", { defaultValue: [5] }, [5]],
+    ["KozmosSlider", "modelValue", {}, [0]],
+    [
+      "KozmosSlider",
+      "modelValue",
+      { min: 2, max: 8, thumbCount: 3 },
+      [2, 5, 8],
+    ],
+    ["KozmosPOIMediaGallery", "activeIndex", { defaultActiveIndex: 2 }, 2],
+    ["KozmosPOIMediaGallery", "activeIndex", {}, 0],
+    ["KozmosColorPicker", "alpha", { defaultAlpha: 60 }, 60],
+    ["KozmosColorPicker", "alpha", {}, 100],
+    ["KozmosColorPicker", "format", { defaultFormat: "rgb" }, "rgb"],
+    ["KozmosColorPicker", "format", {}, "hsl"],
+    ["KozmosAdaptiveMapShell", "panelDetent", {}, "medium"],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { defaultPanelDetent: "collapsed" },
+      "collapsed",
+    ],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { panelSizing: "content" },
+      "content",
+    ],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { panelFraction: 0.4 },
+      { fraction: 0.4 },
+    ],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { panelFraction: Number.NaN },
+      "medium",
+    ],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { panelFraction: Number.POSITIVE_INFINITY },
+      "medium",
+    ],
+    [
+      "KozmosAdaptiveMapShell",
+      "panelDetent",
+      { panelDetents: ["collapsed", "large"] },
+      "large",
+    ],
+  ] as const)(
+    // %o, not %j: JSON writes NaN and Infinity as null.
+    "%s's %s, with %o, is %o",
+    async (name, model, props, nothing) => {
+      const binding = bridgeOf(Bridge[name])!.models[model];
+      const Wrapper = createVueWrapper(Recorder, { [model]: binding });
+      mount(() =>
+        h(Wrapper, {
+          ...props,
+          [model]: null,
+          [`onUpdate:${model}`]: () => {},
+        }),
+      );
+      await settle();
+      expect(given[binding.prop]).toEqual(nothing);
+    },
+  );
+
+  it("KozmosAccordion type=multiple from null: emits [b], then [b, a], and a reset to null shows nothing", async () => {
+    const part = PARTS_BY["KozmosAccordion (multiple)"];
+    const { model, emitted } = mountPart(part, { vModel: true, start: null });
+    await until(part.field);
+    await showing(part, []);
+    byText("button", "Item b")!.click();
+    await settle();
+    byText("button", "Item a")!.click();
+    await settle();
+    expect(emitted).toEqual([["b"], ["b", "a"]]);
+    expect(part.shown()).toEqual(["Item a", "Item b"]);
+    model.value = null;
+    await settle();
+    expect(part.shown()).toEqual([]);
+  });
+});
+
+// --------------------------------------------------------------------------
+// A change goes through Vue's `emit`, which Vue DevTools hears, and
+// @vue/test-utils' `wrapper.emitted()` reads from what DevTools hears (it
+// sets a DevTools hook that records "component:emit").
+// --------------------------------------------------------------------------
+
+describe("a model's change goes through Vue's emit", () => {
+  /** What Vue tells DevTools each wrapper emitted, as @vue/test-utils records it. */
+  function recordEmits() {
+    const emitted: [string, unknown[]][] = [];
+    setDevtoolsHook(
+      {
+        enabled: true,
+        emit(type: string, ...payload: unknown[]) {
+          if (type !== "component:emit") return;
+          const [, instance, event, args] = payload as [
+            unknown,
+            { type: unknown },
+            string,
+            unknown[],
+          ];
+          if (instance.type !== Bridge.KozmosInput) return;
+          emitted.push([event, args]);
+        },
+        on() {},
+        once() {},
+        off() {},
+      } as never,
+      {},
+    );
+    onTeardown.push(() => setDevtoolsHook(undefined as never, {}));
+    return emitted;
+  }
+
+  it("each change is emitted once, .trim applied, and the listener called once", async () => {
+    const emitted = recordEmits();
+    const listener = vi.fn();
+    const state = { name: ref("Ada"), listener };
+    mount(
+      defineComponent({
+        components: { KozmosInput: Bridge.KozmosInput },
+        setup: () => state,
+        template: `<KozmosInput aria-label="Name" v-model.trim="name" @update:model-value="listener" />`,
+      }),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Ada L ");
+    await settle();
+    expect(emitted).toEqual([["update:modelValue", ["Ada L"]]]);
+    expect(state.name.value).toBe("Ada L");
+    expect(listener.mock.calls).toEqual([["Ada L"]]);
+  });
+
+  it("a .once listener alone, which emit misses, is still called once, and the change still emitted", async () => {
+    const emitted = recordEmits();
+    const once = vi.fn();
+    mount(() =>
+      h(Bridge.KozmosInput, {
+        "aria-label": "Name",
+        modelValue: "Ada",
+        "onUpdate:modelValueOnce": once,
+      }),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Ada L");
+    await settle();
+    // The parent holds "Ada", which the field shows again.
+    expect(input.value).toBe("Ada");
+    type(input, "Ada M");
+    await settle();
+    expect(once.mock.calls).toEqual([["Ada L"]]);
+    expect(emitted).toEqual([
+      ["update:modelValue", ["Ada L"]],
+      ["update:modelValue", ["Ada M"]],
+    ]);
+  });
+});
+
+describe("the bridge's entry", () => {
+  it("exports the wrappers and createVueWrapper, and none of the bridge's own", () => {
+    expect(
+      Object.keys(Bridge).filter((name) => !name.startsWith("Kozmos")),
+    ).toEqual(["createVueWrapper"]);
   });
 });
 
@@ -1695,8 +2088,8 @@ describe("attributes reach React alone", () => {
   const PROBE = "[id=probe]";
 
   /**
-   * The wrapper's own boxes, which draw nothing, and the element React drew
-   * with the id inside the second of them, the box React draws in.
+   * The wrapper's own boxes, which draw nothing, React's host inside the
+   * second (React's root), and the element React drew with the id.
    */
   async function drawnByReact(host: HTMLElement) {
     const [own] = host.children;
@@ -1705,7 +2098,8 @@ describe("attributes reach React alone", () => {
       container.querySelector<HTMLElement>(PROBE),
     );
     await settle();
-    return { boxes: [own, container], element };
+    const [reactHost] = container.children;
+    return { boxes: [own, container, reactHost], element };
   }
 
   describe.each(KINDS.map((part) => [part.name, part.kind, part] as const))(

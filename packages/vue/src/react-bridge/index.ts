@@ -118,8 +118,14 @@ import {
 
 import { toReactTarget } from "./targets";
 
-// Core Translation Engine
-export * from "./react-adapter";
+// What a consumer needs to wrap a React part of its own. The rest of
+// react-adapter.ts is the bridge's.
+export { createVueWrapper } from "./react-adapter";
+export type {
+  ModelBinding,
+  ModelBindings,
+  WrapperOptions,
+} from "./react-adapter";
 
 // ----------------------------------------------------------------------
 // Custom Adapters for Complex Multi-Part Components (Avatar, Alert, Inputs)
@@ -379,7 +385,12 @@ export const KozmosFloorSelector = createVueWrapper(FloorSelector, {
     empty: undefined,
   },
 });
-export const KozmosPOICard = createVueWrapper(POICard);
+// Its `onClick` is the card's own button's (react-adapter.ts, `callbacks`).
+export const KozmosPOICard = createVueWrapper(
+  POICard,
+  {},
+  { callbacks: ["onClick"] },
+);
 export const KozmosBottomSheet = createVueWrapper(BottomSheet);
 export const KozmosOTPInput = createVueWrapper(ReactOTPInput, {
   modelValue: { prop: "value", callback: "onChange", empty: "" },
@@ -476,7 +487,8 @@ export const KozmosSwitch = createVueWrapper(Switch, {
 // Components added after the original adapter list was written.
 // ----------------------------------------------------------------------
 // Null is where the shell rests a sheet it is not told about: its default
-// detent, else medium, or the one detent its shorthands offer.
+// detent, else medium, or the one detent its shorthands offer. A fraction
+// that is not a finite number offers nothing, as the shell reads it.
 export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
   panelDetent: {
     prop: "panelDetent",
@@ -492,7 +504,7 @@ export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
         panelDetents ??
         (panelSizing === "content"
           ? ["content"]
-          : panelFraction !== undefined
+          : panelFraction !== undefined && Number.isFinite(panelFraction)
             ? [{ fraction: panelFraction }]
             : ["medium"]);
       return offered.includes("medium")
@@ -501,10 +513,18 @@ export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
     },
   },
 });
+// `onSelect` reports a choice, not the DOM's `select` (react-adapter.ts,
+// `callbacks`), here and on the four parts below.
 export const KozmosBrowseCategoriesPanel = createVueWrapper(
   BrowseCategoriesPanel,
+  {},
+  { callbacks: ["onSelect"] },
 );
-export const KozmosCategoryTile = createVueWrapper(CategoryTile);
+export const KozmosCategoryTile = createVueWrapper(
+  CategoryTile,
+  {},
+  { callbacks: ["onSelect"] },
+);
 export const KozmosMapControlButton = createVueWrapper(MapControlButton);
 export const KozmosNavigationItem = createVueWrapper(NavigationItem);
 export const KozmosPOIDetailPanel = createVueWrapper(POIDetailPanel);
@@ -515,27 +535,44 @@ export const KozmosPOIMediaGallery = createVueWrapper(POIMediaGallery, {
     empty: ({ defaultActiveIndex = 0 }) => defaultActiveIndex,
   },
 });
-export const KozmosPOIResultCard = createVueWrapper(POIResultCard);
-export const KozmosPOIResultList = createVueWrapper(POIResultList);
-export const KozmosRouteOptionCard = createVueWrapper(RouteOptionCard);
+export const KozmosPOIResultCard = createVueWrapper(
+  POIResultCard,
+  {},
+  { callbacks: ["onSelect"] },
+);
+export const KozmosPOIResultList = createVueWrapper(
+  POIResultList,
+  {},
+  { callbacks: ["onSelect"] },
+);
+export const KozmosRouteOptionCard = createVueWrapper(
+  RouteOptionCard,
+  {},
+  { callbacks: ["onSelect"] },
+);
 export const KozmosRoutePreviewPanel = createVueWrapper(RoutePreviewPanel);
 // The value-level callbacks, never the DOM's onChange: Combobox's and
 // MultiSelect's inputs hold the query, not the value, and NumberInput's
 // onChange reports a string.
-// Its opacity and format, with nothing chosen, are its defaults.
-export const KozmosColorPicker = createVueWrapper(ColorPicker, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-  alpha: {
-    prop: "alpha",
-    callback: "onAlphaChange",
-    empty: ({ defaultAlpha = 100 }) => defaultAlpha,
+// Its opacity and format, with nothing chosen, are its defaults. Its
+// `onChange` is its hex field's alone, not its other fields' (`callbacks`).
+export const KozmosColorPicker = createVueWrapper(
+  ColorPicker,
+  {
+    modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+    alpha: {
+      prop: "alpha",
+      callback: "onAlphaChange",
+      empty: ({ defaultAlpha = 100 }) => defaultAlpha,
+    },
+    format: {
+      prop: "format",
+      callback: "onFormatChange",
+      empty: ({ defaultFormat = "hsl" }) => defaultFormat,
+    },
   },
-  format: {
-    prop: "format",
-    callback: "onFormatChange",
-    empty: ({ defaultFormat = "hsl" }) => defaultFormat,
-  },
-});
+  { callbacks: ["onChange"] },
+);
 export const KozmosCombobox = createVueWrapper(Combobox, {
   modelValue: { prop: "value", callback: "onValueChange", empty: "" },
   inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
