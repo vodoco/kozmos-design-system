@@ -576,7 +576,7 @@ Do not let the new chrome conceal already-recorded behavior gaps:
 - **Developer/agent adoption:** generated API cards and typed examples now exist; external
   artifact upload/default configuration and new-session use remain independent checks.
 - **Platform claims:** React npm publication does not publish native packages or make the
-  private Vue harness a full Vue design system. Publish supported-target guidance honestly.
+  private `@kozmos-ds/vue`, native for its first ported parts and a React bridge for the rest, a full Vue design system. Publish supported-target guidance honestly.
 
 ## Product-gap implementation programme
 

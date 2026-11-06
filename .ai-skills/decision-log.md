@@ -462,7 +462,7 @@ Use **Turborepo** with **pnpm workspaces**.
 
 ### ADR-005: Lit Web Components for Vue Support
 
-**Status:** Not built. Vue waits (decision 2): `@kozmos-ds/vue` is a private harness that mounts the React components in Vue, and there is no Lit component. The plan is kept in docs/proposals/other-platforms.md
+**Status:** Superseded. Vue is Vue 3 on Reka UI (decisions 76 and 83), not Lit: `@kozmos-ds/vue` is private while Vue 3 Phase 0 builds it, its main entry native Vue for the parts ported so far, the rest mounted from React through `@kozmos-ds/vue/react-bridge`. There is no Lit component. The plan is kept in docs/proposals/other-platforms.md
 **Date:** 2026-01-25
 **Decision Makers:** Core Team
 

@@ -39,15 +39,97 @@ export function RouteSummaryExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `RouteSummaryProps`, which is `RouteSummaryEstimateProps | RouteSummaryNavigationProps`.
 
 - `distanceText`: `string`, optional.
-- `destination`: `undefined | string`, optional.
+
+  **Required** in `RouteSummaryEstimateProps`; optional in `RouteSummaryNavigationProps`.
+
+- `destination`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`, where it is **required**.
+
+- `etaText`: `string`, optional.
+
+  Only in `RouteSummaryEstimateProps`, where it is **required**.
+
 - `onEndRoute`: `() => void`, optional.
 
-  Ends the route: required in the estimate layout, optional in the navigation layout.
-  Ends the route. End is drawn only when it is passed; the route preview leaves it out.
+  **Required** in `RouteSummaryEstimateProps`; optional in `RouteSummaryNavigationProps`.
+
+  In `RouteSummaryEstimateProps`: Ends the route: required in the estimate layout, optional in the navigation layout.
+
+  In `RouteSummaryNavigationProps`: Ends the route. End is drawn only when it is passed; the route preview leaves it out.
+
+- `onStartNavigation`: `() => void`, optional.
+
+  Only in `RouteSummaryEstimateProps`.
+
+- `transportModeIcon`: `React.ReactNode`, optional.
+
+  Only in `RouteSummaryEstimateProps`.
+
+- `state`: `"preview" | "active"`, optional, default `"active"`.
+
+  Only in `RouteSummaryEstimateProps`.
+
+- `endRouteLabel`: `string`, optional, default `"End route"`.
+
+  Only in `RouteSummaryEstimateProps`.
+
+- `startNavigationLabel`: `string`, optional, default `"Start navigation"`.
+
+  Only in `RouteSummaryEstimateProps`.
 
 - `surface`: `SurfaceVariant`, optional, default `"solid"`.
 
   What the summary sits on: solid by default, glass where the product asks for it.
+
+- `locationText`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+  The place's line under the destination, muted: "Store · Level 1 · Harbour Point Mall".
+
+- `durationText`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+  Localized remaining estimate; omitted when the host cannot provide one.
+
+- `destinationImage`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+  Decorative destination image; failures retain a same-size map-pin fallback.
+
+- `presentation`: `"standalone" | "hosted"`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+  Hosted content has no independent surface, radius, shadow or outer
+  padding. Unset, it is hosted in the map shell's panel and standalone
+  anywhere else (decision 43).
+
+- `arrivalText`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+- `endLabel`: `string`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+- `progress`: `React.ReactNode`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+- `actions`: `React.ReactNode`, optional.
+
+  Only in `RouteSummaryNavigationProps`.
+
+  After the progress: the journey's actions — Previous and Next in static
+  wayfinding, Go and Details in the route preview. Drawn in equal columns in
+  reading order; a Kozmos Button here grows to two lines rather than
+  overflow, keeps its 44px, and reads unavailable through
+  `aria-disabled="true"`. The host owns what they do, when they are
+  unavailable, and announcing the new step.
 
 - `children`: `ReactNode`, optional.
 

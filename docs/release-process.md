@@ -151,9 +151,10 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
      neither; preflight and the release's guard refuse a plan that splits a fixed group, so
      it never reaches the approval.
    - **A package in React's fixed group takes React's tag,** first release or not: the "begins
-     on `next`" rule does not apply to it. `@kozmos-ds/styles` first publishes as 0.16.0 with
-     React 0.16.0 (Olcay, 5 Nov 2026). Its first publish under a new name needs the npm
-     token granted on the whole `@kozmos-ds` scope, as the setup above requires.
+     on `next`" rule does not apply to it. `@kozmos-ds/styles` first publishes as 0.15.1 with
+     React 0.15.1 (Olcay, 5 Nov 2026: 0.16.0 stays the release the register promises Phase 1's
+     parts to). Its first publish under a new name needs the npm token granted on the whole
+     `@kozmos-ds` scope, as the setup above requires.
 3. Merge it once its checks pass on a branch up to date with `main`, and wait for the
    successful main-push CI run of that merge. A documentation-only main commit has no push
    CI because of path exclusions: do not substitute an older SHA or a PR run, and merge

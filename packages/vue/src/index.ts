@@ -16,7 +16,6 @@ export type {
   KozmosButtonVariant,
 } from "./components/Button/types";
 export {
-  useKozmosDensity,
   useTheme,
   type KozmosDensity,
   type KozmosResolvedTheme,

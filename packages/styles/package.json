@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/styles",
-  "version": "0.0.0",
+  "version": "0.15.1",
   "description": "The Kozmos design system stylesheet: tokens, the owned .kozmos-* rules and the utilities every Kozmos part draws with, shared by @kozmos-ds/react and the Vue package.",
   "license": "MIT",
   "repository": {
@@ -46,10 +46,8 @@
     "build": "rm -rf dist && vite build",
     "test": "node --test postcss/*.test.cjs"
   },
-  "dependencies": {
-    "@kozmos-ds/tokens": "workspace:*"
-  },
   "devDependencies": {
+    "@kozmos-ds/tokens": "workspace:*",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.5.23",
     "postcss-value-parser": "4.2.0",
