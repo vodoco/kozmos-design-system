@@ -1,25 +1,56 @@
 // @vitest-environment jsdom
+import fs from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-import { createApp, h, ref, type App, type Component } from "vue";
+  defineComponent,
+  h,
+  mergeProps,
+  nextTick,
+  ref,
+  type Component,
+} from "vue";
 import React from "react";
-import { RadioGroupItem } from "@kozmos-ds/react";
+import ts from "typescript";
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  RadioGroupItem,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@kozmos-ds/react";
 import * as Bridge from "./index";
-import { createVueWrapper } from "./react-adapter";
+import { createVueWrapper, modelsOf, RADIX_MODELS } from "./react-adapter";
+import {
+  $,
+  $$,
+  byText,
+  choose,
+  commit,
+  heard,
+  mount,
+  press,
+  select,
+  settle,
+  texts,
+  type,
+  unmount,
+  until,
+} from "../../test/react-bridge-harness";
+import { planOf, reactSides } from "../../test/contract/read-contract";
 
 // v-model and attributes through the React bridge (react-adapter.ts); the
-// attributes are at the end. Each wrapper names
-// its models: React's prop for the value, and the callback that reports a
-// change. While the parent listens, React is given that callback, beside any
-// handler of its name the user gave; while nobody listens, it is given
-// nothing, and the part keeps the state it has of its own.
+// attributes are at the end, the listeners in Listeners.spec.ts. Each
+// wrapper names its models: React's prop for the value, the callback that
+// reports a change, and what React is given while the model is null. While
+// the parent passes the value and listens, React's part is controlled, and
+// given that callback beside any handler of its name the user gave; with a
+// listener alone, it keeps a value of its own and reports each change.
 //
 // Until then, a wrapper declared `update:modelValue`, and Vue keeps a
 // declared event's listener out of `attrs`, so React never heard of it:
@@ -29,100 +60,35 @@ import { createVueWrapper } from "./react-adapter";
 // so typing stopped filtering, typed MultiSelect's array into a string, and
 // dropped a user's `@change`.
 
-beforeAll(() => {
-  // Radix measures through ResizeObserver, which jsdom does not have.
-  globalThis.ResizeObserver ??= class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-});
-
-async function until<T>(read: () => T | null | undefined | false) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const value = read();
-    if (value) return value;
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  throw new Error("timed out");
-}
-
-/** Lets React and Vue finish what a change started. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 40));
-
-/** Types into a field React controls, as a browser's input event does. */
-function type(field: HTMLInputElement | HTMLTextAreaElement, text: string) {
-  const { set } = Object.getOwnPropertyDescriptor(
-    Object.getPrototypeOf(field),
-    "value",
-  )!;
-  set!.call(field, text);
-  field.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-/** Chooses files in a file input, as the browser's picker does. */
-function choose(input: HTMLInputElement, files: File[]) {
-  Object.defineProperty(input, "files", { value: files, configurable: true });
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-const press = (element: Element, key: string) =>
-  element.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
-
-const $ = <E extends Element = HTMLElement>(selector: string) =>
-  document.querySelector<E>(selector);
-const $$ = <E extends Element = HTMLElement>(selector: string) => [
-  ...document.querySelectorAll<E>(selector),
-];
-const byText = (selector: string, text: string) =>
-  $$(selector).find((element) => element.textContent?.trim() === text);
-const texts = (selector: string) =>
-  $$(selector).map((element) => element.textContent?.trim());
-
-// Whatever React, Radix or Vue says fails the test that made it say it: an
-// unknown event handler on a DOM element, a field switching between
-// controlled and uncontrolled, a value React cannot take. One thing is said
-// that is not about the bridge:
-const UNRELATED = [
-  // Analytics with no provider, once per run, at the first tracked change.
-  /No <AnalyticsProvider> found/,
-];
-let said: string[] = [];
-beforeEach(() => {
-  said = [];
-  for (const level of ["error", "warn"] as const)
-    vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
-      const text = `console.${level}: ${args.map(String).join(" ")}`;
-      if (!UNRELATED.some((pattern) => pattern.test(text))) said.push(text);
-    });
-});
-
-let app: App | null = null;
-afterEach(() => {
-  app?.unmount();
-  app = null;
-  document.body.replaceChildren();
-  vi.restoreAllMocks();
-  expect(said).toEqual([]);
-});
-
-function mount(render: () => ReturnType<typeof h>) {
-  const host = document.createElement("div");
-  document.body.append(host);
-  app = createApp({ setup: () => render });
-  app.mount(host);
-  return host;
-}
-
 const fruit = [
   { value: "apple", label: "Apple" },
   { value: "banana", label: "Banana" },
   { value: "cherry", label: "Cherry" },
 ];
 const plan = new File(["%PDF"], "plan.pdf", { type: "application/pdf" });
+const tree = [
+  { id: "1", name: "src", children: [{ id: "2", name: "a.ts" }] },
+  { id: "3", name: "b.ts" },
+];
+const photos = ["a", "b", "c"].map((id) => ({
+  id,
+  src: "data:,",
+  alt: id.toUpperCase(),
+}));
+const e = React.createElement;
+
+/** A property of every element, stubbed for one part and put back. */
+function stub(property: "clientWidth" | "clientHeight", value: number) {
+  const own = Object.getOwnPropertyDescriptor(Element.prototype, property)!;
+  Object.defineProperty(Element.prototype, property, {
+    configurable: true,
+    get: () => value,
+  });
+  return () => Object.defineProperty(Element.prototype, property, own);
+}
 
 // --------------------------------------------------------------------------
-// Every wrapper with a v-model, and how a visitor changes it.
+// Every model of every wrapper, and how a visitor changes it.
 // --------------------------------------------------------------------------
 
 interface Part {
@@ -130,8 +96,12 @@ interface Part {
   name: keyof typeof Bridge;
   /** The model, as Vue names it: `modelValue` is `v-model`. */
   model?: string;
+  /** One of every wrapper's (RADIX_MODELS), not a model the wrapper names. */
+  implicit?: boolean;
   /** What the part needs to draw. */
   props?: Record<string, unknown>;
+  /** What the page needs for it to draw (jsdom lays nothing out); undone after. */
+  env?: () => () => void;
   /** The model before the change. */
   start: unknown;
   /** The element a visitor uses, once React has drawn it. */
@@ -144,12 +114,16 @@ interface Part {
   shown: () => unknown;
   /** What it shows after the change, with v-model. */
   shows: unknown;
+  /** What it shows while the model is null: nothing chosen. */
+  nothing: unknown;
+  /** The model, and what it shows, after the same change from null; unset, `next` and `shows`. */
+  fromNothing?: { next: unknown; shows: unknown };
   /** The part's own callback for the change, which a user may listen to as well. */
   listener: string;
   /**
    * What it shows after the change without v-model, for a part with a value
    * of its own. Unset for one the product always controls (Rating,
-   * FloorSelector), which draws what it is given.
+   * FloorSelector, MapControlsGroup), which draws what it is given.
    */
   alone?: unknown;
 }
@@ -168,6 +142,7 @@ const textField = (
   next,
   shown: () => $<HTMLInputElement>(selector)?.value,
   shows: next,
+  nothing: "",
   listener: "onChange",
   alone: next,
 });
@@ -194,6 +169,7 @@ const PARTS: Part[] = [
     next: 42,
     shown: () => $<HTMLInputElement>("input[type=number]")?.value,
     shows: "42",
+    nothing: "",
     listener: "onValueChange",
     alone: "42",
   },
@@ -206,6 +182,11 @@ const PARTS: Part[] = [
     next: "123",
     shown: () => $$<HTMLInputElement>("input").map((cell) => cell.value),
     shows: ["1", "2", "3", ""],
+    nothing: ["", "", "", ""],
+    // OTPInput reports its cells joined, so a digit typed in the third of
+    // four empty cells is the code "3", and React's part keeps it drawn
+    // where it was typed: it redraws its cells only for another code.
+    fromNothing: { next: "3", shows: ["", "", "3", ""] },
     listener: "onChange",
     alone: ["", "", "3", ""],
   },
@@ -219,8 +200,55 @@ const PARTS: Part[] = [
     next: "#AABBCC",
     shown: () => $<HTMLInputElement>("input[type=text]")?.value,
     shows: "#AABBCC",
+    nothing: "",
     listener: "onValueChange",
     alone: "#abc",
+  },
+  {
+    name: "KozmosColorPicker",
+    model: "alpha",
+    props: { label: "Brand", open: true },
+    start: 100,
+    field: () => $("input[aria-label=Opacity]"),
+    change: (range) => type(range, "40"),
+    next: 40,
+    shown: () => $<HTMLInputElement>("input[aria-label=Opacity]")?.value,
+    shows: "40",
+    // Its own default, 100.
+    nothing: "100",
+    listener: "onAlphaChange",
+    alone: "40",
+  },
+  {
+    name: "KozmosColorPicker",
+    model: "format",
+    props: { label: "Brand", open: true },
+    start: "hsl",
+    field: () => $("select[aria-label='Color format']"),
+    change: (menu) => select(menu, "hex"),
+    next: "hex",
+    shown: () =>
+      $<HTMLSelectElement>("select[aria-label='Color format']")?.value,
+    shows: "hex",
+    // Its own default, HSL.
+    nothing: "hsl",
+    listener: "onFormatChange",
+    alone: "hex",
+  },
+  {
+    name: "KozmosColorPicker",
+    model: "open",
+    implicit: true,
+    props: { label: "Brand" },
+    start: false,
+    field: () => $("button[aria-expanded]"),
+    change: (toggle) => toggle.click(),
+    next: true,
+    shown: () => $("button[aria-expanded]")?.getAttribute("aria-expanded"),
+    shows: "true",
+    nothing: "false",
+    listener: "onOpenChange",
+    alone: "true",
   },
   {
     name: "KozmosSlider",
@@ -231,6 +259,9 @@ const PARTS: Part[] = [
     next: [4],
     shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
     shows: "4",
+    // Where it starts with nothing given: its minimum.
+    nothing: "0",
+    fromNothing: { next: [1], shows: "1" },
     listener: "onValueChange",
     alone: "1",
   },
@@ -246,6 +277,7 @@ const PARTS: Part[] = [
         (star) => star.getAttribute("aria-checked") === "true",
       ) + 1,
     shows: 4,
+    nothing: 0,
     listener: "onChange",
   },
   {
@@ -257,6 +289,7 @@ const PARTS: Part[] = [
     next: "2",
     shown: () => $("button[aria-pressed=true]")?.textContent?.trim(),
     shows: "2",
+    nothing: undefined,
     listener: "onFloorSelect",
   },
   {
@@ -268,6 +301,7 @@ const PARTS: Part[] = [
     next: [plan],
     shown: () => texts("li p:first-child"),
     shows: ["plan.pdf"],
+    nothing: [],
     listener: "onFilesChange",
     alone: ["plan.pdf"],
   },
@@ -279,11 +313,7 @@ const PARTS: Part[] = [
     props: {
       "aria-label": "Mode",
       children: ["walk", "drive"].map((value) =>
-        React.createElement(RadioGroupItem, {
-          key: value,
-          value,
-          label: value,
-        }),
+        e(RadioGroupItem, { key: value, value, label: value }),
       ),
     },
     start: "walk",
@@ -292,6 +322,7 @@ const PARTS: Part[] = [
     next: "drive",
     shown: () => $("[role=radio][aria-checked=true]")?.getAttribute("value"),
     shows: "drive",
+    nothing: undefined,
     listener: "onValueChange",
     alone: "drive",
   },
@@ -310,6 +341,7 @@ const PARTS: Part[] = [
     next: "drive",
     shown: () => $("[role=radio][aria-checked=true]")?.textContent?.trim(),
     shows: "Drive",
+    nothing: undefined,
     listener: "onValueChange",
     alone: "Drive",
   },
@@ -327,8 +359,26 @@ const PARTS: Part[] = [
     next: "apple",
     shown: () => $<HTMLInputElement>("input")?.value,
     shows: "Apple",
+    nothing: "",
     listener: "onValueChange",
     alone: "Apple",
+  },
+  {
+    name: "KozmosCombobox",
+    model: "inputValue",
+    props: { options: fruit, label: "Fruit" },
+    start: "",
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "Ap");
+    },
+    next: "Ap",
+    shown: () => $<HTMLInputElement>("input")?.value,
+    shows: "Ap",
+    nothing: "",
+    listener: "onInputValueChange",
+    alone: "Ap",
   },
   {
     name: "KozmosListbox",
@@ -339,6 +389,22 @@ const PARTS: Part[] = [
     next: "banana",
     shown: () => texts("[role=option][aria-selected=true]"),
     shows: ["Banana"],
+    nothing: [],
+    listener: "onValueChange",
+    alone: ["Banana"],
+  },
+  {
+    // Several options: nothing is an empty array (`empty` reads `multiple`).
+    name: "KozmosListbox",
+    props: { options: fruit, "aria-label": "Fruit", multiple: true },
+    start: ["apple"],
+    field: () => byText("[role=option]", "Banana"),
+    change: (option) => option.click(),
+    next: ["apple", "banana"],
+    shown: () => texts("[role=option][aria-selected=true]"),
+    shows: ["Apple", "Banana"],
+    nothing: [],
+    fromNothing: { next: ["banana"], shows: ["Banana"] },
     listener: "onValueChange",
     alone: ["Banana"],
   },
@@ -356,8 +422,27 @@ const PARTS: Part[] = [
     next: ["apple", "banana"],
     shown: () => texts('[data-slot="chip-label"]'),
     shows: ["Apple", "Banana"],
+    nothing: [],
+    fromNothing: { next: ["banana"], shows: ["Banana"] },
     listener: "onValueChange",
     alone: ["Banana"],
+  },
+  {
+    name: "KozmosMultiSelect",
+    model: "searchValue",
+    props: { options: fruit, label: "Fruit" },
+    start: "",
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "Ba");
+    },
+    next: "Ba",
+    shown: () => $<HTMLInputElement>("input")?.value,
+    shows: "Ba",
+    nothing: "",
+    listener: "onSearchValueChange",
+    alone: "Ba",
   },
   {
     name: "KozmosDateRangePicker",
@@ -368,6 +453,11 @@ const PARTS: Part[] = [
     next: { start: "2026-11-01", end: "2026-11-09" },
     shown: () => $$<HTMLInputElement>("input[type=date]").map((f) => f.value),
     shows: ["2026-11-01", "2026-11-09"],
+    nothing: ["", ""],
+    fromNothing: {
+      next: { start: "", end: "2026-11-09" },
+      shows: ["", "2026-11-09"],
+    },
     listener: "onValueChange",
     alone: ["", "2026-11-09"],
   },
@@ -381,6 +471,22 @@ const PARTS: Part[] = [
     next: true,
     shown: () => $("[role=checkbox]")?.getAttribute("aria-checked"),
     shows: "true",
+    nothing: "false",
+    listener: "onCheckedChange",
+    alone: "true",
+  },
+  {
+    name: "KozmosCheckbox",
+    model: "checked",
+    implicit: true,
+    props: { "aria-label": "Accept" },
+    start: false,
+    field: () => $("[role=checkbox]"),
+    change: (box) => box.click(),
+    next: true,
+    shown: () => $("[role=checkbox]")?.getAttribute("aria-checked"),
+    shows: "true",
+    nothing: "false",
     listener: "onCheckedChange",
     alone: "true",
   },
@@ -393,6 +499,22 @@ const PARTS: Part[] = [
     next: true,
     shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
     shows: "true",
+    nothing: "false",
+    listener: "onCheckedChange",
+    alone: "true",
+  },
+  {
+    name: "KozmosSwitch",
+    model: "checked",
+    implicit: true,
+    props: { "aria-label": "Wi-Fi" },
+    start: false,
+    field: () => $("[role=switch]"),
+    change: (toggle) => toggle.click(),
+    next: true,
+    shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
+    shows: "true",
+    nothing: "false",
     listener: "onCheckedChange",
     alone: "true",
   },
@@ -405,6 +527,7 @@ const PARTS: Part[] = [
     next: "Gate 42",
     shown: () => $$<HTMLInputElement>("input")[0]?.value,
     shows: "Gate 42",
+    nothing: "",
     listener: "onOriginChange",
     alone: "Gate 42",
   },
@@ -417,13 +540,217 @@ const PARTS: Part[] = [
     next: "Lounge",
     shown: () => $$<HTMLInputElement>("input")[1]?.value,
     shows: "Lounge",
+    nothing: "",
     listener: "onDestinationChange",
     alone: "Lounge",
   },
+  {
+    // Radix's Select, opened and chosen from with the keyboard; its parts
+    // below the root are React's, handed over as `children` (GAP-016).
+    name: "KozmosSelect",
+    props: {
+      children: [
+        e(
+          SelectTrigger,
+          { key: "trigger", "aria-label": "Fruit" },
+          e(SelectValue, { placeholder: "Pick one" }),
+        ),
+        e(
+          SelectContent,
+          { key: "content" },
+          ["apple", "banana"].map((value) =>
+            e(SelectItem, { key: value, value }, value),
+          ),
+        ),
+      ],
+    },
+    start: "apple",
+    field: () => $("[role=combobox]"),
+    change: async (trigger) => {
+      trigger.focus();
+      press(trigger, "Enter");
+      press(await until(() => byText("[role=option]", "banana"))!, "Enter");
+    },
+    next: "banana",
+    shown: () => $("[role=combobox]")?.textContent,
+    shows: "banana",
+    // Its placeholder.
+    nothing: "Pick one",
+    listener: "onValueChange",
+    alone: "banana",
+  },
+  {
+    name: "KozmosAccordion",
+    props: {
+      type: "single",
+      collapsible: true,
+      children: ["a", "b"].map((value) =>
+        e(
+          AccordionItem,
+          { key: value, value },
+          e(AccordionTrigger, null, `Item ${value}`),
+          e(AccordionContent, null, `Body ${value}`),
+        ),
+      ),
+    },
+    start: "a",
+    field: () => byText("button", "Item b"),
+    change: (trigger) => trigger.click(),
+    next: "b",
+    shown: () => texts("button[aria-expanded=true]"),
+    shows: ["Item b"],
+    nothing: [],
+    listener: "onValueChange",
+    alone: ["Item b"],
+  },
+  {
+    // Radix's Tabs choose a tab on mousedown.
+    name: "KozmosTabs",
+    props: {
+      children: [
+        e(
+          TabsList,
+          { key: "list" },
+          ["a", "b"].map((value) =>
+            e(TabsTrigger, { key: value, value }, `Tab ${value}`),
+          ),
+        ),
+        ...["a", "b"].map((value) =>
+          e(TabsContent, { key: value, value }, `Panel ${value}`),
+        ),
+      ],
+    },
+    start: "a",
+    field: () => byText("[role=tab]", "Tab b"),
+    change: (tab) =>
+      tab.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
+    next: "b",
+    shown: () => $("[role=tab][aria-selected=true]")?.textContent,
+    shows: "Tab b",
+    nothing: undefined,
+    listener: "onValueChange",
+    alone: "Tab b",
+  },
+  {
+    name: "KozmosToggleButton",
+    model: "pressed",
+    props: { "aria-label": "Bold" },
+    start: false,
+    field: () => $("button"),
+    change: (button) => button.click(),
+    next: true,
+    shown: () => $("button")?.getAttribute("aria-pressed"),
+    shows: "true",
+    nothing: "false",
+    listener: "onPressedChange",
+    alone: "true",
+  },
+  {
+    // Drawn only with a listener: the product always holds it.
+    name: "KozmosMapControlsGroup",
+    model: "stepFree",
+    start: false,
+    field: () => $("[data-map-control=step-free]"),
+    change: (button) => button.click(),
+    next: true,
+    shown: () =>
+      $("[data-map-control=step-free]")?.getAttribute("aria-pressed"),
+    shows: "true",
+    nothing: "false",
+    listener: "onStepFreeChange",
+  },
+  {
+    name: "KozmosPOIMediaGallery",
+    model: "activeIndex",
+    props: {
+      label: "Photos",
+      positionLabel: (current: number, total: number) =>
+        `${current} of ${total}`,
+      media: photos,
+    },
+    start: 0,
+    field: () => $("button[aria-label='Next image']"),
+    change: (next) => next.click(),
+    next: 1,
+    shown: () => $("p[aria-live]")?.textContent,
+    shows: "2 of 3",
+    // Its first image, its default.
+    nothing: "1 of 3",
+    listener: "onActiveIndexChange",
+    alone: "2 of 3",
+  },
+  {
+    name: "KozmosPasswordInput",
+    model: "visible",
+    props: { "aria-label": "Password" },
+    start: false,
+    field: () => $("button[aria-label='Show password']"),
+    change: (button) => button.click(),
+    next: true,
+    shown: () => $("input")?.getAttribute("type"),
+    shows: "text",
+    nothing: "password",
+    listener: "onVisibleChange",
+    alone: "text",
+  },
+  {
+    // Clicking a parent selects and opens it.
+    name: "KozmosTree",
+    model: "expandedIds",
+    props: { data: tree },
+    start: [],
+    field: () => byText("[role=treeitem]", "src"),
+    change: (item) => item.click(),
+    next: ["1"],
+    shown: () => texts("[role=treeitem][aria-expanded=true]"),
+    shows: ["src"],
+    nothing: [],
+    listener: "onExpandedChange",
+    alone: ["src"],
+  },
+  {
+    // Tree reports the item; the model is its id.
+    name: "KozmosTree",
+    model: "selectedId",
+    props: { data: tree },
+    start: "1",
+    field: () => byText("[role=treeitem]", "b.ts"),
+    change: (item) => item.click(),
+    next: "3",
+    shown: () => texts("[role=treeitem][aria-selected=true]"),
+    shows: ["b.ts"],
+    nothing: [],
+    listener: "onSelectionChange",
+    alone: ["b.ts"],
+  },
+  {
+    // A phone-sized shell, so the sheet and its handle are drawn.
+    name: "KozmosAdaptiveMapShell",
+    model: "panelDetent",
+    props: { panel: "Gate 4" },
+    env: () => {
+      const undo = [stub("clientWidth", 390), stub("clientHeight", 844)];
+      return () => undo.forEach((step) => step());
+    },
+    start: "medium",
+    field: () => $("[role=slider]"),
+    change: (handle) => press(handle, "ArrowUp"),
+    next: "large",
+    shown: () => $("aside")?.getAttribute("data-detent"),
+    shows: "Expanded",
+    // Where it rests unless told: medium.
+    nothing: "Half height",
+    listener: "onPanelDetentChange",
+    alone: "Expanded",
+  },
 ];
 
+const label = (part: Part) =>
+  part.model
+    ? `${part.name} v-model:${part.model}`
+    : `${part.name}${part.props?.multiple ? " (multiple)" : ""}`;
 const PARTS_BY = Object.fromEntries(
-  PARTS.filter((part) => !part.model).map((part) => [part.name, part]),
+  PARTS.map((part) => [label(part), part]),
 ) as Record<string, Part>;
 
 /**
@@ -432,11 +759,17 @@ const PARTS_BY = Object.fromEntries(
  */
 function mountPart(
   part: Part,
-  { vModel, listener }: { vModel?: boolean; listener?: () => void },
+  {
+    vModel,
+    listener,
+    start = part.start,
+  }: { vModel?: boolean; listener?: () => void; start?: unknown },
 ) {
   const name = part.model ?? "modelValue";
-  const model = ref(part.start);
+  const model = ref(start);
   const emitted: unknown[] = [];
+  const undo = part.env?.();
+  if (undo) onTeardown.push(undo);
   mount(() =>
     h(Bridge[part.name] as Component, {
       ...part.props,
@@ -452,28 +785,32 @@ function mountPart(
   );
   return { model, emitted };
 }
-
-const label = (part: Part) =>
-  part.model ? `${part.name} v-model:${part.model}` : part.name;
+const onTeardown: (() => void)[] = [];
+afterEach(() => {
+  while (onTeardown.length) onTeardown.pop()!();
+});
 
 describe("every wrapper with a v-model", () => {
   it("is in the table, with each of its models", () => {
-    const declared = Object.entries(Bridge).flatMap(([name, component]) => {
-      const emits = (component as { emits?: unknown }).emits;
-      return Array.isArray(emits)
-        ? emits.map((event: string) =>
-            event === "update:modelValue"
-              ? name
-              : `${name} v-model:${event.slice("update:".length)}`,
-          )
-        : [];
-    });
-    expect(PARTS.map(label).sort()).toEqual(declared.sort());
+    const named = Object.entries(Bridge).flatMap(([name, component]) =>
+      Object.keys(
+        (component && typeof component === "object" && modelsOf(component)) ||
+          {},
+      ).map((model) =>
+        model === "modelValue" ? name : `${name} v-model:${model}`,
+      ),
+    );
+    const listed = PARTS.filter((part) => !part.implicit).map((part) =>
+      part.model ? `${part.name} v-model:${part.model}` : part.name,
+    );
+    expect([...new Set(listed)].sort()).toEqual(named.sort());
   });
 
   describe.each(PARTS.map((part) => [label(part), part] as const))(
     "%s",
     (_, part) => {
+      const from = part.fromNothing ?? { next: part.next, shows: part.shows };
+
       it(`with v-model: the change reaches the model once, as ${JSON.stringify(part.next)}, never on mount, and the field shows it`, async () => {
         const { model, emitted } = mountPart(part, { vModel: true });
         const field = await until(part.field);
@@ -510,8 +847,156 @@ describe("every wrapper with a v-model", () => {
           await settle();
           expect(part.shown()).toEqual(part.alone);
         });
+
+      it(`a model that starts null shows nothing (${JSON.stringify(part.nothing)}), and takes a change`, async () => {
+        const { model, emitted } = mountPart(part, {
+          vModel: true,
+          start: null,
+        });
+        const field = await until(part.field);
+        await settle();
+        expect(part.shown()).toEqual(part.nothing);
+        await part.change(field);
+        await settle();
+        expect(emitted).toEqual([from.next]);
+        expect(model.value).toEqual(from.next);
+        expect(part.shown()).toEqual(from.shows);
+      });
+
+      it("a model reset to null after a change shows nothing", async () => {
+        const { model } = mountPart(part, { vModel: true, start: null });
+        await part.change(await until(part.field));
+        await settle();
+        expect(part.shown()).toEqual(from.shows);
+        model.value = null;
+        await settle();
+        expect(part.shown()).toEqual(part.nothing);
+        model.value = part.start;
+        await settle();
+        model.value = undefined;
+        await settle();
+        expect(part.shown()).toEqual(part.nothing);
+      });
     },
   );
+});
+
+// --------------------------------------------------------------------------
+// Every controlled pair a React part has is a model of its wrapper. The
+// pairs are read from React's built types, by the rule the Vue ports' API
+// contract uses (decision 160: a prop with an `on…Change`, or `value` with
+// Kozmos's own `onChange`, or a form field's value), and by its other
+// sign, a `default…` beside the prop. So a pair a part gains fails here
+// until its wrapper names a model for it.
+// --------------------------------------------------------------------------
+
+/** What React part each adapter in index.ts draws: its props are typed `any`. */
+const ADAPTERS: Record<string, string> = {
+  AvatarAdapter: "Avatar",
+  AlertAdapter: "Alert",
+  BackdropAdapter: "Backdrop",
+  TourStepAdapter: "TourStep",
+  AnchoredPopoverAdapter: "Popover",
+};
+
+/** Pairs that are not a value the visitor changes, each with why. */
+const NOT_MODELS: Record<string, string> = {
+  // The product's minimum padding; the callback reports the insets the
+  // shell measured, which the product never sets back.
+  "KozmosAdaptiveMapShell collisionInsets":
+    "an input and a measurement, not a value",
+};
+
+/** Each `Kozmos*` export of index.ts, with the React export it wraps. */
+function wrappedParts(): [string, string][] {
+  const file = `${__dirname}/index.ts`;
+  const source = ts.createSourceFile(
+    file,
+    fs.readFileSync(file, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const imported = new Map<string, string>();
+  const parts: [string, string][] = [];
+  for (const node of source.statements) {
+    if (
+      ts.isImportDeclaration(node) &&
+      (node.moduleSpecifier as ts.StringLiteral).text === "@kozmos-ds/react"
+    )
+      for (const element of (
+        node.importClause!.namedBindings as ts.NamedImports
+      ).elements)
+        imported.set(
+          element.name.text,
+          (element.propertyName ?? element.name).text,
+        );
+    if (!ts.isVariableStatement(node)) continue;
+    for (const declaration of node.declarationList.declarations) {
+      const name = declaration.name.getText();
+      if (!name.startsWith("Kozmos")) continue;
+      let wrapped: string | null = null;
+      declaration.forEachChild(function find(child): void {
+        if (
+          ts.isCallExpression(child) &&
+          child.expression.getText() === "createVueWrapper"
+        )
+          wrapped = child.arguments[0].getText();
+        else child.forEachChild(find);
+      });
+      if (wrapped)
+        parts.push([name, imported.get(wrapped) ?? ADAPTERS[wrapped] ?? ""]);
+    }
+  }
+  return parts;
+}
+
+describe("every controlled pair is a model", () => {
+  const parts = wrappedParts();
+
+  it("has a model for each pair each React part has", () => {
+    // Every wrapper's React part is read, and every exception says why.
+    expect(parts.length).toBeGreaterThan(90);
+    expect(parts.filter(([, react]) => !react)).toEqual([]);
+    for (const [pair, reason] of Object.entries(NOT_MODELS))
+      expect(reason, pair).toMatch(/\w/);
+    const side = reactSides();
+    const missing: string[] = [];
+    for (const [wrapper, react] of parts) {
+      const reactSide = side(react);
+      const props = new Set(reactSide.react.map((member) => member.name));
+      // The contract's rule, as the Vue ports' models are found.
+      const pairs = new Map(
+        [
+          ...planOf(reactSide as Parameters<typeof planOf>[0]).models.values(),
+        ].map((model) => [model.react, model.change ?? "onChange"]),
+      );
+      // A prop with a `default…` beside it is controlled as well, whatever
+      // reports its change (Tree's `selectedId`, by `onSelectionChange`).
+      for (const prop of props) {
+        const controlled = /^default([A-Z].*)$/.exec(prop)?.[1];
+        const name =
+          controlled && controlled[0].toLowerCase() + controlled.slice(1);
+        if (name && props.has(name) && !pairs.has(name)) pairs.set(name, "");
+      }
+      const models = Object.values(
+        modelsOf(Bridge[wrapper as keyof typeof Bridge] as object) ?? {},
+      );
+      for (const [prop, callback] of pairs) {
+        if (NOT_MODELS[`${wrapper} ${prop}`]) continue;
+        const covered =
+          models.some(
+            (model) =>
+              model.prop === prop && (!callback || model.callback === callback),
+          ) ||
+          Object.values(RADIX_MODELS).some(
+            (model) => model.prop === prop && model.callback === callback,
+          );
+        if (!covered)
+          missing.push(`${wrapper}: ${prop}${callback ? `/${callback}` : ""}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  }, 60_000);
 });
 
 // --------------------------------------------------------------------------
@@ -640,26 +1125,23 @@ describe("each model's other changes", () => {
     expect(input.value).toBe("A");
   });
 
-  for (const name of ["KozmosCheckbox", "KozmosSwitch"] as const)
-    it(`${name} takes v-model:checked as well`, async () => {
-      const checked = ref(false);
-      const emitted: unknown[] = [];
-      mount(() =>
-        h(Bridge[name], {
-          "aria-label": "Option",
-          checked: checked.value,
-          "onUpdate:checked": (next: boolean) => {
-            emitted.push(next);
-            checked.value = next;
-          },
-        }),
-      );
-      const control = await until(() => $("button"));
-      control.click();
-      await settle();
-      expect(emitted).toEqual([true]);
-      expect(control.getAttribute("aria-checked")).toBe("true");
+  it("KozmosCombobox chosen twice and reset to null shows nothing, not its first choice", async () => {
+    const { model } = mountPart(PARTS_BY.KozmosCombobox, {
+      vModel: true,
+      start: null,
     });
+    for (const label of ["Apple", "Banana"]) {
+      const input = await until(() => $<HTMLInputElement>("input"));
+      input.focus();
+      type(input, label.slice(0, 2));
+      (await until(() => byText("[role=option]", label)))!.click();
+      await settle();
+    }
+    expect(model.value).toBe("banana");
+    model.value = null;
+    await settle();
+    expect($<HTMLInputElement>("input")!.value).toBe("");
+  });
 });
 
 // --------------------------------------------------------------------------
@@ -682,16 +1164,20 @@ describe("createVueWrapper's models", () => {
     expect(given).toEqual({ value: "a" });
   });
 
-  it("hears a listener by each name Vue's emit calls", async () => {
-    for (const key of ["onUpdate:modelValue", "onUpdate:model-value"]) {
+  it("hears a listener by each name Vue's emit calls; with no value given, React keeps its own", async () => {
+    for (const key of [
+      "onUpdate:modelValue",
+      "onUpdate:model-value",
+      "onUpdate:modelValueOnce",
+      "onUpdate:model-valueOnce",
+    ]) {
       const listener = vi.fn();
       mount(() => h(Wrapper, { [key]: listener }));
       await settle();
-      expect(given.value, key).toBe("");
+      expect(given, key).not.toHaveProperty("value");
       (given.onValueChange as (value: string) => void)("b");
       expect(listener, key).toHaveBeenCalledWith("b");
-      app!.unmount();
-      app = null;
+      unmount();
     }
   });
 
@@ -734,6 +1220,425 @@ describe("createVueWrapper's models", () => {
     expect(opened).toHaveBeenCalledWith(false);
     expect(checked).toHaveBeenCalledWith(true);
   });
+
+  it("a wrapper with no model gives React neither modelValue nor its listener, and says so", async () => {
+    const listener = vi.fn();
+    mount(() =>
+      h(createVueWrapper(Probe), {
+        "model-value": "a",
+        modelModifiers: { trim: true },
+        "onUpdate:modelValue": listener,
+        "onUpdate:pressed": listener,
+        title: "kept",
+      }),
+    );
+    await settle();
+    expect(given).toEqual({ title: "kept" });
+    expect(heard()).toEqual([
+      expect.stringContaining(
+        "Probe has no v-model: its value and listener are not given to React.",
+      ),
+      expect.stringContaining(
+        "Probe has no v-model:pressed: its listener is not given to React.",
+      ),
+    ]);
+  });
+
+  it("KozmosBadge with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
+    mount(() =>
+      h(
+        Bridge.KozmosBadge,
+        { id: "badge", modelValue: "a", "onUpdate:modelValue": () => {} },
+        { default: () => "New" },
+      ),
+    );
+    const badge = await until(() => $("[id=badge]"));
+    await settle();
+    expect(badge.getAttributeNames()).not.toContain("modelvalue");
+    expect(heard()).toEqual([expect.stringContaining("Badge has no v-model")]);
+  });
+});
+
+// --------------------------------------------------------------------------
+// Every spelling of a model, as Vue's templates and render functions write
+// it. The wrapper declares each model and its listeners as props, so Vue
+// reads them all, and none reaches React as an attribute.
+// --------------------------------------------------------------------------
+
+describe("every spelling of a model", () => {
+  /** A template, compiled at runtime as an SFC's is at build. */
+  const page = (template: string, state: Record<string, unknown>) =>
+    defineComponent({
+      components: Bridge as Record<string, Component>,
+      setup: () => state,
+      template,
+    });
+
+  const name = ref("Bob");
+  const spellings = {
+    "h() camelCase": () =>
+      h(Bridge.KozmosInput, {
+        "aria-label": "Name",
+        modelValue: name.value,
+        "onUpdate:modelValue": (next: string) => (name.value = next),
+      }),
+    "h() kebab-case": () =>
+      h(Bridge.KozmosInput, {
+        "aria-label": "Name",
+        "model-value": name.value,
+        "onUpdate:model-value": (next: string) => (name.value = next),
+      }),
+    "h() kebab-case value, camelCase listener": () =>
+      h(Bridge.KozmosInput, {
+        "aria-label": "Name",
+        "model-value": name.value,
+        "onUpdate:modelValue": (next: string) => (name.value = next),
+      }),
+  };
+
+  for (const [spelling, render] of Object.entries(spellings))
+    it(`${spelling}: the field shows the model and takes a change`, async () => {
+      name.value = "Bob";
+      mount(render);
+      const input = await until(() => $<HTMLInputElement>("input"));
+      await settle();
+      expect(input.value).toBe("Bob");
+      type(input, "Bobby");
+      await settle();
+      expect(name.value).toBe("Bobby");
+      expect(input.value).toBe("Bobby");
+      expect(input.getAttributeNames()).toEqual(
+        expect.not.arrayContaining(["model-value", "modelvalue"]),
+      );
+    });
+
+  it("a template's :model-value and @update:model-value", async () => {
+    const state = { name: ref("Bob") };
+    mount(
+      page(
+        `<KozmosInput aria-label="Name" :model-value="name" @update:model-value="(next) => (name = next)" />`,
+        state,
+      ),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    await settle();
+    expect(input.value).toBe("Bob");
+    type(input, "Bobby");
+    await settle();
+    expect(state.name.value).toBe("Bobby");
+    expect(input.value).toBe("Bobby");
+    expect(input.getAttributeNames()).not.toContain("model-value");
+  });
+
+  it("a template's v-model:origin-value on KozmosWayfindingInputRow", async () => {
+    const state = { origin: ref("Entrance A") };
+    mount(
+      page(`<KozmosWayfindingInputRow v-model:origin-value="origin" />`, state),
+    );
+    const input = await until(() => $$<HTMLInputElement>("input")[0]);
+    await settle();
+    expect(input.value).toBe("Entrance A");
+    type(input, "Gate 42");
+    await settle();
+    expect(state.origin.value).toBe("Gate 42");
+    expect(input.value).toBe("Gate 42");
+    expect(input.getAttributeNames()).not.toContain("origin-value");
+  });
+
+  it("@update:model-value.once is called once, beside v-model", async () => {
+    const once = vi.fn();
+    const state = { name: ref("Bob"), once };
+    mount(
+      page(
+        `<KozmosInput aria-label="Name" v-model="name" @update:model-value.once="once" />`,
+        state,
+      ),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Bobb");
+    await settle();
+    type(input, "Bobby");
+    await settle();
+    expect(state.name.value).toBe("Bobby");
+    expect(once).toHaveBeenCalledTimes(1);
+    expect(once).toHaveBeenCalledWith("Bobb");
+  });
+
+  it("@update:model-value.once alone is called once, and then the parent holds the model", async () => {
+    const state = { name: ref("Bob") };
+    mount(
+      page(
+        `<KozmosInput aria-label="Name" :model-value="name" @update:model-value.once="(next) => (name = next)" />`,
+        state,
+      ),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Bobb");
+    await settle();
+    expect(state.name.value).toBe("Bobb");
+    type(input, "Bobby");
+    await settle();
+    expect(state.name.value).toBe("Bobb");
+    expect(input.value).toBe("Bobb");
+  });
+});
+
+// --------------------------------------------------------------------------
+// `.trim`, `.number` and `.lazy`, as `v-model` on an `<input>` takes them:
+// the field keeps what was typed, the model gets the trimmed or numeric
+// value, and the field shows the model's when it commits (`change`) or the
+// parent sets another.
+// --------------------------------------------------------------------------
+
+describe("v-model's modifiers", () => {
+  const page = (template: string, state: Record<string, unknown>) =>
+    defineComponent({
+      components: Bridge as Record<string, Component>,
+      setup: () => state,
+      template,
+    });
+
+  it(".trim: the field keeps a typed space, the model is trimmed, and a commit trims the field", async () => {
+    const state = { name: ref("Ada") };
+    mount(page(`<KozmosInput aria-label="Name" v-model.trim="name" />`, state));
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Ada ");
+    await settle();
+    expect(state.name.value).toBe("Ada");
+    expect(input.value).toBe("Ada ");
+    type(input, "Ada L ");
+    await settle();
+    expect(state.name.value).toBe("Ada L");
+    expect(input.value).toBe("Ada L ");
+    commit(input);
+    await settle();
+    expect(input.value).toBe("Ada L");
+    state.name.value = "Grace";
+    await settle();
+    expect(input.value).toBe("Grace");
+    expect(input.getAttributeNames()).not.toContain("modelmodifiers");
+  });
+
+  it(".trim on a named model, v-model:origin-value.trim", async () => {
+    const state = { origin: ref("") };
+    mount(
+      page(
+        `<KozmosWayfindingInputRow v-model:origin-value.trim="origin" />`,
+        state,
+      ),
+    );
+    const input = await until(() => $$<HTMLInputElement>("input")[0]);
+    type(input, " Gate 4 ");
+    await settle();
+    expect(state.origin.value).toBe("Gate 4");
+    expect(input.value).toBe(" Gate 4 ");
+  });
+
+  it(".number: the model is a number, and the field keeps what was typed", async () => {
+    const state = { guests: ref<unknown>(1) };
+    mount(
+      page(
+        `<KozmosInput aria-label="Guests" v-model.number="guests" />`,
+        state,
+      ),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "42");
+    await settle();
+    expect(state.guests.value).toBe(42);
+    type(input, "4.");
+    await settle();
+    expect(state.guests.value).toBe(4);
+    expect(input.value).toBe("4.");
+    commit(input);
+    await settle();
+    expect(input.value).toBe("4");
+    type(input, "four");
+    await settle();
+    // What parseFloat cannot read stays as typed, as Vue's looseToNumber leaves it.
+    expect(state.guests.value).toBe("four");
+    expect(input.getAttributeNames()).not.toContain("modelmodifiers");
+  });
+
+  it(".lazy is passed on and does nothing, as on any component's v-model", async () => {
+    const state = { name: ref("Ada") };
+    mount(page(`<KozmosInput aria-label="Name" v-model.lazy="name" />`, state));
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Ada L");
+    await settle();
+    expect(state.name.value).toBe("Ada L");
+    expect(input.getAttributeNames()).not.toContain("modelmodifiers");
+  });
+});
+
+// --------------------------------------------------------------------------
+// A handler given as an array: Vue merges a parent's and a root component's
+// listeners of one name into one, `[inner, outer]`, and calls each.
+// --------------------------------------------------------------------------
+
+describe("handlers given as an array", () => {
+  it("KozmosInput's @change and @update:model-value, each an array, call every handler once", async () => {
+    const inner = vi.fn();
+    const outer = vi.fn();
+    const first = vi.fn();
+    const value = ref("Ada");
+    mount(() =>
+      h(
+        Bridge.KozmosInput,
+        mergeProps(
+          {
+            "aria-label": "Name",
+            modelValue: value.value,
+            onChange: inner,
+            "onUpdate:modelValue": first,
+          },
+          {
+            onChange: outer,
+            "onUpdate:modelValue": (next: string) => (value.value = next),
+          },
+        ),
+      ),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    type(input, "Ada L");
+    await settle();
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(outer).toHaveBeenCalledTimes(1);
+    expect(first).toHaveBeenCalledWith("Ada L");
+    expect(value.value).toBe("Ada L");
+    expect(input.value).toBe("Ada L");
+  });
+
+  it("KozmosCombobox's @value-change as an array, beside v-model", async () => {
+    const inner = vi.fn();
+    const outer = vi.fn();
+    const { emitted } = mountPart(
+      {
+        ...PARTS_BY.KozmosCombobox,
+        props: {
+          ...PARTS_BY.KozmosCombobox.props,
+          onValueChange: [inner, outer],
+        },
+      },
+      { vModel: true },
+    );
+    await PARTS_BY.KozmosCombobox.change(await until(() => $("input")));
+    await settle();
+    // Combobox reports the option beside its value.
+    expect(inner).toHaveBeenCalledWith("apple", fruit[0]);
+    expect(outer).toHaveBeenCalledWith("apple", fruit[0]);
+    expect(emitted).toEqual(["apple"]);
+  });
+});
+
+// --------------------------------------------------------------------------
+// A listener added or taken away after mount. The model's listeners are
+// declared as props, not `emits`: Vue leaves a declared event's listener out
+// of what it compares, so a wrapper whose listener came or went alone was
+// never drawn again, and React kept the callback it had.
+// --------------------------------------------------------------------------
+
+describe("a listener that comes and goes after mount", () => {
+  /** A Listbox bound to "apple", with the listener `listeners` gives it now. */
+  const listbox = (
+    listeners: (listen: (next: string) => void) => Record<string, unknown>,
+  ) => {
+    const value = ref("apple");
+    const emitted: unknown[] = [];
+    const listen = (next: string) => {
+      emitted.push(next);
+      value.value = next;
+    };
+    mount(() =>
+      h(Bridge.KozmosListbox, {
+        options: fruit,
+        "aria-label": "Fruit",
+        modelValue: value.value,
+        ...listeners(listen),
+      }),
+    );
+    return { value, emitted };
+  };
+  const choose = async (label: string) => {
+    (await until(() => byText("[role=option]", label)))!.click();
+    await settle();
+  };
+  const chosen = () => texts("[role=option][aria-selected=true]");
+
+  it("as a key that is there or not", async () => {
+    const listening = ref(false);
+    const { emitted } = listbox((listen) =>
+      listening.value ? { "onUpdate:modelValue": listen } : {},
+    );
+    await choose("Banana");
+    expect(emitted).toEqual([]);
+    expect(chosen()).toEqual(["Apple"]);
+    listening.value = true;
+    await settle();
+    await choose("Banana");
+    expect(emitted).toEqual(["banana"]);
+    expect(chosen()).toEqual(["Banana"]);
+    listening.value = false;
+    await settle();
+    await choose("Cherry");
+    expect(emitted).toEqual(["banana"]);
+    expect(chosen()).toEqual(["Banana"]);
+  });
+
+  // The key stays; only its value changes. Under `emits`, Vue skipped the
+  // wrapper for the camelCase key, the one templates compile to.
+  for (const key of ["onUpdate:modelValue", "onUpdate:model-value"])
+    it(`as \`"${key}": listening ? fn : undefined\``, async () => {
+      const listening = ref(false);
+      const { emitted } = listbox((listen) => ({
+        [key]: listening.value ? listen : undefined,
+      }));
+      await choose("Banana");
+      expect(emitted).toEqual([]);
+      listening.value = true;
+      await settle();
+      await choose("Banana");
+      expect(emitted).toEqual(["banana"]);
+      listening.value = false;
+      await settle();
+      await choose("Cherry");
+      expect(emitted).toEqual(["banana"]);
+      expect(chosen()).toEqual(["Banana"]);
+    });
+
+  for (const event of ["update:modelValue", "update:model-value"])
+    it(`as a template's v-on="listening ? { '${event}': listen } : {}"`, async () => {
+      const state = {
+        fruit,
+        value: ref("apple"),
+        listening: ref(false),
+        emitted: [] as string[],
+      };
+      mount(
+        defineComponent({
+          components: { KozmosListbox: Bridge.KozmosListbox },
+          setup: () => ({
+            ...state,
+            listen: (next: string) => {
+              state.emitted.push(next);
+              state.value.value = next;
+            },
+          }),
+          template: `<KozmosListbox :options="fruit" aria-label="Fruit" :model-value="value" v-on="listening ? { '${event}': listen } : {}" />`,
+        }),
+      );
+      await choose("Banana");
+      expect(state.emitted).toEqual([]);
+      state.listening.value = true;
+      await nextTick();
+      await settle();
+      await choose("Banana");
+      expect(state.emitted).toEqual(["banana"]);
+      state.listening.value = false;
+      await settle();
+      await choose("Cherry");
+      expect(state.emitted).toEqual(["banana"]);
+    });
 });
 
 // --------------------------------------------------------------------------
@@ -867,5 +1772,27 @@ describe("attributes reach React alone", () => {
     const { element } = await drawnByReact(host);
     expect(element.style.color).toBe("rgb(255, 0, 0)");
     expect(element.style[name]).toBe("rgb(0, 0, 255)");
+  });
+
+  it("keeps a declaration given !important, without it, and says so", async () => {
+    const host = mount(() =>
+      h(
+        Bridge.KozmosBadge,
+        {
+          id: "probe",
+          style:
+            "color: rgb(255, 0, 0) !important; column-rule-color: rgb(0, 0, 255)",
+        },
+        { default: () => "New" },
+      ),
+    );
+    const { element } = await drawnByReact(host);
+    expect(element.style.color).toBe("rgb(255, 0, 0)");
+    expect(element.style.columnRuleColor).toBe("rgb(0, 0, 255)");
+    expect(heard()).toEqual([
+      expect.stringContaining(
+        "Badge's style color is given to React without !important",
+      ),
+    ]);
   });
 });
