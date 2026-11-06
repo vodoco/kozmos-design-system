@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Combobox } from "./Combobox";
@@ -90,7 +90,12 @@ describe("Combobox", () => {
       />,
     );
     expect(screen.getByText("Error")).toBeVisible();
-    expect(screen.getByText("Help")).toBeVisible();
+    // The popup draws the superseded helper's words, and the field's status
+    // says them (field-popup-status.test.tsx).
+    // In the theme's portal, outside the render's container.
+    const popup = document.querySelector<HTMLElement>("[data-combobox-popup]");
+    expect(within(popup!).getByText("Help")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Help");
   });
 
   it("retains the keyboard choice across host rerenders and uses the latest action", async () => {
