@@ -6,6 +6,7 @@ import {
   DesignConfigProvider,
   Input,
   MultiSelect,
+  NumberInput,
   PasswordInput,
   ThemeProvider,
   TimePicker,
@@ -16,9 +17,10 @@ import {
  * scripts/check-field-actions.mjs: a Combobox with a choice, a MultiSelect
  * with one chip on one line, and a narrow MultiSelect whose three chips
  * wrap; Input's toggle action, PasswordInput's reveal, DatePicker's and
- * TimePicker's trigger; a disabled Combobox and PasswordInput; and a
- * PasswordInput under the design config's reduced motion, in a provider of
- * the given theme, density and direction.
+ * TimePicker's trigger; a disabled Combobox and PasswordInput; a
+ * PasswordInput under the design config's reduced motion; and NumberInput,
+ * whose steps carry kozmos-field-action and keep their own hover, in a
+ * provider of the given theme, density and direction.
  */
 const options = [
   { value: "lisbon", label: "Lisbon" },
@@ -87,6 +89,9 @@ function mount({ theme, density, dir }: Mount) {
         </div>
         <div data-part="password-disabled">
           <PasswordInput label="Locked" defaultValue="kozmos" disabled />
+        </div>
+        <div data-part="number">
+          <NumberInput label="Count" defaultValue={3} />
         </div>
         <DesignConfigProvider initialConfig={{ motion: "reduced" }}>
           <div data-part="password-reduced">

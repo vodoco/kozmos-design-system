@@ -548,6 +548,137 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
 }
 
 /**
+ * Every button that carries kozmos-field-action or kozmos-combobox-action:
+ * a ::before it draws lies inside its own box, placed against the button and
+ * never against an ancestor, where it would lie over the field and take its
+ * clicks. Its box is the containing block's padding box plus the ::before's
+ * resolved offsets and size.
+ */
+async function fillsInsideButtons(page, step, problems) {
+  const outside = await page.evaluate((BUTTONS) => {
+    const holds = (el) => {
+      const s = getComputedStyle(el);
+      return (
+        s.position !== "static" ||
+        s.transform !== "none" ||
+        s.filter !== "none" ||
+        /paint|layout|strict|content/.test(s.contain)
+      );
+    };
+    const found = [];
+    for (const button of document.querySelectorAll(BUTTONS)) {
+      const s = getComputedStyle(button, "::before");
+      if (s.content === "none" || s.content === "normal") continue;
+      let block = button;
+      while (block.parentElement && !holds(block)) block = block.parentElement;
+      const c = block.getBoundingClientRect();
+      const cs = getComputedStyle(block);
+      const left = c.left + parseFloat(cs.borderLeftWidth) + parseFloat(s.left);
+      const top = c.top + parseFloat(cs.borderTopWidth) + parseFloat(s.top);
+      const fill = {
+        left,
+        top,
+        right: left + parseFloat(s.width),
+        bottom: top + parseFloat(s.height),
+      };
+      const b = button.getBoundingClientRect();
+      if (
+        fill.left < b.left - 0.5 ||
+        fill.top < b.top - 0.5 ||
+        fill.right > b.right + 0.5 ||
+        fill.bottom > b.bottom + 0.5
+      )
+        found.push(
+          `${button.getAttribute("aria-label")}'s ::before is ${Math.round(fill.right - fill.left)}x${Math.round(fill.bottom - fill.top)} at ${Math.round(fill.left)},${Math.round(fill.top)}, outside its ${Math.round(b.width)}x${Math.round(b.height)} box at ${Math.round(b.left)},${Math.round(b.top)} (placed against ${block === button ? "itself" : block.className || block.tagName})`,
+        );
+    }
+    return found;
+  }, BUTTONS);
+  reads += 1;
+  for (const what of outside) problems.push(`${step}: ${what}`);
+}
+
+/**
+ * NumberInput's steps are segments with an edge of their own, which they
+ * fill whole on hover (owned-native-fields.css): decision 164 is not
+ * theirs. They draw no ::before, their hover fills their own box with
+ * background-100, and a click at the middle of the field, of "−" and of
+ * "+" lands on that element.
+ */
+async function numberSteps(page, mode, step, problems) {
+  const host = '[data-part="number"]';
+  const state = () =>
+    page.evaluate((host) => {
+      const part = document.querySelector(host);
+      const steps = [...part.querySelectorAll("button")];
+      const input = part.querySelector("input");
+      const hit = (el) => {
+        const r = el.getBoundingClientRect();
+        const at = document.elementFromPoint(
+          r.left + r.width / 2,
+          r.top + r.height / 2,
+        );
+        return {
+          name: el.getAttribute("aria-label") ?? "field",
+          lands: el === at || el.contains(at),
+          on: at?.getAttribute("aria-label") ?? at?.tagName ?? "nothing",
+        };
+      };
+      return {
+        steps: steps.map((b) => ({
+          name: b.getAttribute("aria-label"),
+          content: getComputedStyle(b, "::before").content,
+          own: getComputedStyle(b).backgroundColor,
+          hovered: b.matches(":hover"),
+        })),
+        hits: [steps[0], input, steps[1]].map(hit),
+        value: input.value,
+      };
+    }, host);
+  await page.mouse.move(1, 1);
+  await settleLayout(page);
+  const rest = await state();
+  reads += 2;
+  for (const s of rest.steps)
+    if (s.content !== "none" && s.content !== "normal")
+      problems.push(
+        `${step}: NumberInput's ${s.name} draws a ::before (content ${s.content})`,
+      );
+  for (const h of rest.hits)
+    if (!h.lands)
+      problems.push(
+        `${step}: a click at the middle of NumberInput's ${h.name} lands on ${h.on}`,
+      );
+  // A real click in the field leaves its value as it was.
+  const field = await page.locator(`${host} input`).boundingBox();
+  await page.mouse.click(field.x + field.width / 2, field.y + field.height / 2);
+  await settleLayout(page);
+  reads += 1;
+  const after = (await state()).value;
+  if (after !== rest.value)
+    problems.push(
+      `${step}: a click in NumberInput's field changes its value from ${rest.value} to ${after}`,
+    );
+  await page.evaluate(() => document.activeElement?.blur());
+  if (mode.forced) return;
+  const muted = await resolve(page, "--primitives-colors-background-100");
+  for (const [index, name] of rest.steps.map((s) => s.name).entries()) {
+    const box = await page.locator(`${host} button`).nth(index).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await settleLayout(page);
+    const now = (await state()).steps[index];
+    reads += 1;
+    if (!now.hovered)
+      problems.push(`${step}: NumberInput's ${name} did not take the hover`);
+    else if (now.own !== muted)
+      problems.push(
+        `${step}: hovered, NumberInput's ${name} fills its own box with ${now.own}, not background-100 (${muted})`,
+      );
+  }
+  await page.mouse.move(1, 1);
+}
+
+/**
  * The design config's reduced motion (`motion: "reduced"`) scales every
  * transition-colors duration to a thousandth through
  * --semantics-motion-duration-scale, which the fill inherits from its
@@ -827,6 +958,8 @@ for (const forced of ["none", "active"])
           for (const part of [...parts, ...DISABLED])
             await hoverFill(page, part, mode, density, name, problems, fills);
           await fadeUnderReducedMotion(page, name, problems);
+          await fillsInsideButtons(page, name, problems);
+          await numberSteps(page, mode, name, problems);
           // The fill's corners follow the control radius a product sets.
           if (!mode.forced) {
             await setControlRadius(page, 8);

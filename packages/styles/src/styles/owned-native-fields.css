@@ -47,18 +47,26 @@
      wrapped icon, an image or text has no rule of its own to raise it. It
      fades in and out as transition-colors fades the button's colours, 150ms
      scaled by the motion config, which a reduced motion makes a cut; the
-     button's own transition does not reach its ::before. Owned, not a
-     utility, so it draws in a browser without @scope too, where no utility
-     does; so is Combobox's `position`, without which the fill is placed
-     against an ancestor and covers more than its button. */
-  .kozmos-field-action,
+     button's own transition does not reach its ::before.
+     These name the four buttons, never .kozmos-field-action: NumberInput's
+     steps carry it too, and they are segments with an edge of their own,
+     which they fill whole (below). Each button is positioned, so its fill is
+     placed against it and never against an ancestor: the first three
+     absolute by the rule above, Combobox's relative here. The fill takes no
+     pointer events, so it can never take a click. Owned, not a utility, so
+     it draws in a browser without @scope too, where no utility does. */
+  .kozmos-input-action,
+  .kozmos-password-toggle,
+  .kozmos-date-picker-trigger,
   .kozmos-combobox-action {
     isolation: isolate;
   }
   .kozmos-combobox-action {
     position: relative;
   }
-  .kozmos-field-action::before,
+  .kozmos-input-action::before,
+  .kozmos-password-toggle::before,
+  .kozmos-date-picker-trigger::before,
   .kozmos-combobox-action::before {
     @apply transition-colors;
     content: "";
@@ -66,8 +74,11 @@
     inset: 4px;
     z-index: -1;
     border-radius: calc(var(--semantics-radius-control) * 1px - 4px);
+    pointer-events: none;
   }
-  .kozmos-field-action:enabled:hover::before,
+  .kozmos-input-action:enabled:hover::before,
+  .kozmos-password-toggle:enabled:hover::before,
+  .kozmos-date-picker-trigger:enabled:hover::before,
   .kozmos-combobox-action:enabled:hover::before {
     background-color: var(--primitives-colors-background-100);
   }
@@ -101,7 +112,9 @@
      Canvas: hovered, there is none. Pressed is a Highlight fill with the
      icon in HighlightText there, hovered or not. */
   @media (forced-colors: active) {
-    .kozmos-field-action:enabled:hover::before,
+    .kozmos-input-action:enabled:hover::before,
+    .kozmos-password-toggle:enabled:hover::before,
+    .kozmos-date-picker-trigger:enabled:hover::before,
     .kozmos-combobox-action:enabled:hover::before {
       background-color: transparent;
     }
