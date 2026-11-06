@@ -21,10 +21,12 @@
  *   value and a polite live region, present before, says "Copied", again on
  *   a second copy; the copy icon gives way to a check. The toggle is a
  *   pressed button with its own name, Space flips it, and pressed it is a
- *   32 disc of the theme fill under the icon in the fill's foreground, 3:1 or
+ *   fill of the theme fill under the icon in the fill's foreground, 3:1 or
  *   more on the field, as a pressed ToggleButton is (not a colour alone,
- *   WCAG 1.4.1), and whatever `icon` is, a wrapped icon, an image or text is
- *   drawn on the disc, not under it; a Highlight disc in forced colours.
+ *   WCAG 1.4.1), in the hover fill's shape (decision 165): 4 in from the
+ *   button's edges, its corners the field's less 4, the themed Button's
+ *   hover when hovered. Whatever `icon` is, a wrapped icon, an image or text
+ *   is drawn on the fill, not under it; a Highlight fill in forced colours.
  *   Giving a field an action, or taking it away, keeps the same input, its
  *   focus and its typed value.
  *
@@ -525,15 +527,16 @@ for (const m of MATRIX) {
       },
     );
     await read(
-      "input toggle: a pressed button with its own name; Space flips it, drawn as a disc of the theme fill, not a colour alone",
+      "input toggle: a pressed button with its own name; Space flips it, drawn as a fill of the theme fill 4 inside the button, not a colour alone",
       async () => {
         const toggle = page.getByRole("button", { name: "Featured" });
         assert.equal(await toggle.count(), 1, "named Featured");
         assert.equal(await toggle.getAttribute("aria-pressed"), "false");
         const icon = await toggle.locator("svg").boundingBox();
         const button = await toggle.boundingBox();
-        // A point on the disc, clear of the icon: 12 from the centre, along
-        // the diagonal, inside the 32 disc and outside the 16 icon.
+        // A point on the fill, clear of the icon: 9 up and 9 across from the
+        // centre, inside the fill's rounded corner at either density and
+        // outside the 16 icon.
         const cx = button.x + button.width / 2;
         const cy = button.y + button.height / 2;
         const onDisc = [cx - 9, cy - 9];
@@ -550,18 +553,44 @@ for (const m of MATRIX) {
           page,
           "--components-primary-buttons-themed-button-foreground-content-idle",
         );
-        const disc = await toggle.evaluate((el) => {
+        const shape = (el) => {
           const s = getComputedStyle(el, "::before");
+          const field = getComputedStyle(el.previousElementSibling);
+          const r = el.getBoundingClientRect();
           return {
             background: s.backgroundColor,
-            width: s.width,
-            height: s.height,
+            width: parseFloat(s.width),
+            height: parseFloat(s.height),
+            insets: [s.top, s.right, s.bottom, s.left].map(parseFloat),
+            radii: [
+              s.borderTopLeftRadius,
+              s.borderTopRightRadius,
+              s.borderBottomRightRadius,
+              s.borderBottomLeftRadius,
+            ].map(parseFloat),
+            button: { width: r.width, height: r.height },
+            fieldRadius: parseFloat(
+              field.direction === "rtl"
+                ? field.borderTopLeftRadius
+                : field.borderTopRightRadius,
+            ),
             colour: getComputedStyle(el).color,
-            field: getComputedStyle(el.previousElementSibling).backgroundColor,
+            field: field.backgroundColor,
           };
-        });
-        assert.equal(disc.background, fill, "the disc: the theme fill");
-        assert.equal(`${disc.width} ${disc.height}`, "32px 32px", "32 across");
+        };
+        const disc = await toggle.evaluate(shape);
+        assert.equal(disc.background, fill, "the fill: the theme fill");
+        // Decision 165: the hover fill's shape, 4 in from the button's edges
+        // (36 across in touch, 32 in compact), its corners the field's less 4.
+        assert.deepEqual(
+          disc.insets,
+          [4, 4, 4, 4],
+          `4 in from each edge, not ${disc.insets.join(", ")}`,
+        );
+        near(disc.width, disc.button.width - 8, "its width", 0.5);
+        near(disc.height, disc.button.height - 8, "its height", 0.5);
+        for (const radius of disc.radii)
+          near(radius, disc.fieldRadius - 4, "its corners", 0.5);
         assert.equal(disc.colour, ink, "the icon: the fill's foreground");
         const field = rgb(disc.field);
         const lum = ([r, g, b]) =>
@@ -574,19 +603,19 @@ for (const m of MATRIX) {
         const [hi, lo] = [lum(rgb(fill)), lum(field)].sort((a, b) => b - a);
         assert.ok(
           (hi + 0.05) / (lo + 0.05) >= 3,
-          `the disc reads ${((hi + 0.05) / (lo + 0.05)).toFixed(2)}:1 on the field`,
+          `the fill reads ${((hi + 0.05) / (lo + 0.05)).toFixed(2)}:1 on the field`,
         );
         const shot = await page.screenshot();
         const [drawn] = await pixels(shot, [onDisc]);
         assert.ok(
           distance(drawn, rgb(fill)) <= 3,
-          `pressed, the disc is drawn: rgb(${drawn.slice(0, 3)})`,
+          `pressed, the fill is drawn: rgb(${drawn.slice(0, 3)})`,
         );
         assert.ok(
           distance(restDrawn, rgb(fill)) > 60,
-          `at rest, no disc: rgb(${restDrawn.slice(0, 3)})`,
+          `at rest, no fill: rgb(${restDrawn.slice(0, 3)})`,
         );
-        // The icon's stroke is drawn in the fill's foreground, on the disc.
+        // The icon's stroke is drawn in the fill's foreground, on the fill.
         const points = [];
         for (let x = 0; x < icon.width; x += 1)
           points.push([icon.x + x, icon.y + icon.height / 2]);
@@ -596,6 +625,24 @@ for (const m of MATRIX) {
           "the icon is drawn in the fill's foreground",
         );
         near(icon.width, 16, "the icon at 16", 0.5);
+        // Hovered, pressed keeps its shape in the themed Button's hover.
+        await toggle.hover();
+        await transitioned(toggle);
+        const hovered = await toggle.evaluate(shape);
+        assert.equal(
+          hovered.background,
+          await resolve(
+            page,
+            "--components-primary-buttons-themed-button-background-hover",
+          ),
+          "hovered, the themed Button's hover",
+        );
+        assert.deepEqual(
+          [hovered.width, hovered.height, ...hovered.insets, ...hovered.radii],
+          [disc.width, disc.height, ...disc.insets, ...disc.radii],
+          "hovered, the same shape",
+        );
+        await page.mouse.move(0, 0);
       },
     );
     await read(
@@ -635,8 +682,8 @@ for (const m of MATRIX) {
     );
   });
 }
-// `icon` is a node, so what shows on the disc is whatever a product passes:
-// the disc is under all of it, not only under a direct svg child.
+// `icon` is a node, so what shows on the fill is whatever a product passes:
+// the fill is under all of it, not only under a direct svg child.
 for (const m of MATRIX) {
   await scenario({ ...m, part: "pressed" }, async (page, read) => {
     const fill = rgb(await resolve(page, "--primitives-colors-theme-500"));
@@ -646,7 +693,7 @@ for (const m of MATRIX) {
         "--components-primary-buttons-themed-button-foreground-content-idle",
       ),
     );
-    /** The disc's colour beside the icon, and every pixel over the icon. */
+    /** The fill's colour beside the icon, and every pixel over the icon. */
     const drawn = async (name) => {
       const button = await page.getByRole("button", { name }).boundingBox();
       const cx = button.x + button.width / 2;
@@ -659,28 +706,28 @@ for (const m of MATRIX) {
     };
     for (const name of ["wrapped", "text"]) {
       await read(
-        `input toggle: a pressed ${name} icon is drawn on the disc, in the fill's foreground`,
+        `input toggle: a pressed ${name} icon is drawn on the fill, in the fill's foreground`,
         async () => {
           const { disc, icon } = await drawn(name);
           assert.ok(
             distance(disc, fill) <= 3,
-            `the disc is drawn: rgb(${disc.slice(0, 3)})`,
+            `the fill is drawn: rgb(${disc.slice(0, 3)})`,
           );
           const nearest = Math.min(...icon.map((p) => distance(p, ink)));
           assert.ok(
             nearest <= 40,
-            `nothing over the disc is the icon's ink: the nearest is ${nearest} off`,
+            `nothing over the fill is the icon's ink: the nearest is ${nearest} off`,
           );
         },
       );
     }
     await read(
-      "input toggle: a pressed image is drawn on the disc",
+      "input toggle: a pressed image is drawn on the fill",
       async () => {
         const { disc, icon } = await drawn("image");
         assert.ok(
           distance(disc, fill) <= 3,
-          `the disc is drawn: rgb(${disc.slice(0, 3)})`,
+          `the fill is drawn: rgb(${disc.slice(0, 3)})`,
         );
         const swatch = icon.filter((p) => distance(p, [255, 0, 255]) <= 3);
         assert.ok(
@@ -694,31 +741,42 @@ for (const m of MATRIX) {
 for (const m of [MATRIX[0], MATRIX[3]]) {
   await scenario({ ...m, part: "input", forced: true }, async (page, read) => {
     await read(
-      "input toggle: pressed is a Highlight disc under HighlightText in forced colours",
+      "input toggle: pressed is a Highlight fill under HighlightText in forced colours, hovered or not",
       async () => {
         const toggle = page.getByRole("button", { name: "Featured" });
         await toggle.click();
+        const state = () =>
+          page.evaluate(() => {
+            const system = (name) => {
+              const probe = document.createElement("div");
+              probe.style.cssText = `forced-color-adjust:none;color:${name}`;
+              document.body.append(probe);
+              const colour = getComputedStyle(probe).color;
+              probe.remove();
+              return colour;
+            };
+            const el = document.querySelector("[aria-pressed]");
+            return {
+              colour: getComputedStyle(el).color,
+              disc: getComputedStyle(el, "::before").backgroundColor,
+              highlight: system("Highlight"),
+              highlightText: system("HighlightText"),
+            };
+          });
         await page.mouse.move(0, 0);
         await transitioned(toggle);
-        const state = await page.evaluate(() => {
-          const system = (name) => {
-            const probe = document.createElement("div");
-            probe.style.cssText = `forced-color-adjust:none;color:${name}`;
-            document.body.append(probe);
-            const colour = getComputedStyle(probe).color;
-            probe.remove();
-            return colour;
-          };
-          const el = document.querySelector("[aria-pressed]");
-          return {
-            colour: getComputedStyle(el).color,
-            disc: getComputedStyle(el, "::before").backgroundColor,
-            highlight: system("Highlight"),
-            highlightText: system("HighlightText"),
-          };
-        });
-        assert.equal(state.disc, state.highlight, "the disc");
-        assert.equal(state.colour, state.highlightText, "the icon");
+        const rest = await state();
+        assert.equal(rest.disc, rest.highlight, "the fill");
+        assert.equal(rest.colour, rest.highlightText, "the icon");
+        await toggle.hover();
+        await transitioned(toggle);
+        const hovered = await state();
+        assert.equal(hovered.disc, hovered.highlight, "hovered, the fill");
+        assert.equal(
+          hovered.colour,
+          hovered.highlightText,
+          "hovered, the icon",
+        );
       },
     );
   });
@@ -732,5 +790,5 @@ if (failed.size) {
   process.exit(1);
 }
 console.log(
-  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words after counterSeparator, with aria-labelledby too, outlined in forced colours), CardHeader's actions (at the end, on the title's line at any size, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named, a disc of the theme fill under the fill's foreground, a wrapped icon, an image and text each drawn on the disc and not under it, a Highlight disc in forced colours; an action given or taken keeps the same input, its focus and its value)`,
+  `\nPASS control props: ${reads} reads in light and dark, touch and compact, left to right and right to left; IconButton's counter (placed at every size, the theme fill drawn, read with the name in counterLabel's words after counterSeparator, with aria-labelledby too, outlined in forced colours), CardHeader's actions (at the end, on the title's line at any size, no taller, the title clear, in Tab order), Input's actions (the copy inside the field's end, the text clear of it, Enter copies and a polite region says so twice; the toggle pressed, named, the theme fill under the fill's foreground, 4 inside the button with corners the field's less 4, the themed hover when hovered, a wrapped icon, an image and text each drawn on the fill and not under it, a Highlight fill in forced colours; an action given or taken keeps the same input, its focus and its value)`,
 );

@@ -116,7 +116,9 @@ fun SignInFields(
 
 `action` puts a button inside the field's end (GAP-154), drawn as PasswordInput's reveal is: as tall
 as the field, inside its border, with its own focus ring, and the field's text kept clear of it.
-It is disabled with the field.
+Hovered, it draws a fill inside itself, 4 px in from its edges (36 across in touch, 32 in compact),
+its corners the field's less 4, so the field's edge stays drawn round it (decision 164); it draws
+none at rest, disabled or in forced colours. It is disabled with the field.
 
 - `{ kind: "copy" }` copies the field's value: for a value a product shows and never edits, a
   feature's ID, with `readOnly`. Once copied, a polite live region says "Copied" (`copiedLabel`),
@@ -125,9 +127,10 @@ It is disabled with the field.
   receives the value.
 - `{ kind: "toggle" }` is a pressed button with its own name: the Featured star at a field's end.
   `label`, `icon`, `pressed` and `onPressedChange` are the product's. Pressed, it is drawn as a
-  pressed ToggleButton is, as the MAP-64 design draws its Featured star: a 32 disc of the theme
-  fill under the icon, in the fill's foreground, so the state is a shape and not a colour alone
-  (WCAG 1.4.1), whatever the icon; a Highlight disc in forced colours.
+  pressed ToggleButton is, as the MAP-64 design draws its Featured star: the theme fill under the
+  icon, in the fill's foreground, in the hover fill's shape (decision 165), so the state is a shape
+  and not a colour alone (WCAG 1.4.1), whatever the icon. Hovered, the fill is the themed Button's
+  hover; in forced colours it is Highlight, hovered or not.
 
 Giving a field an action, or taking it away, keeps the same input, its focus and a value typed
 into it.

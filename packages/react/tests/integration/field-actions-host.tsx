@@ -1,11 +1,22 @@
 import { createRoot, type Root } from "react-dom/client";
-import { Combobox, MultiSelect, ThemeProvider } from "@kozmos-ds/react";
+import { Star01 } from "@kozmos-ds/icons";
+import {
+  Combobox,
+  DatePicker,
+  Input,
+  MultiSelect,
+  PasswordInput,
+  ThemeProvider,
+  TimePicker,
+} from "@kozmos-ds/react";
 
 /**
- * Combobox's and MultiSelect's clear and open buttons in the built package,
- * for scripts/check-field-actions.mjs: a Combobox with a choice, a
- * MultiSelect with one chip on one line, and a narrow MultiSelect whose
- * three chips wrap, in a provider of the given theme, density and direction.
+ * The buttons at a field's end in the built package, for
+ * scripts/check-field-actions.mjs: a Combobox with a choice, a MultiSelect
+ * with one chip on one line, and a narrow MultiSelect whose three chips
+ * wrap; Input's toggle action, PasswordInput's reveal, DatePicker's and
+ * TimePicker's trigger; and a disabled Combobox and PasswordInput, in a
+ * provider of the given theme, density and direction.
  */
 const options = [
   { value: "lisbon", label: "Lisbon" },
@@ -47,6 +58,33 @@ function mount({ theme, density, dir }: Mount) {
             options={options}
             defaultValue={["lisbon", "porto", "faro"]}
           />
+        </div>
+        <div data-part="input">
+          <Input
+            label="Gate"
+            action={{
+              kind: "toggle",
+              label: "Featured",
+              icon: <Star01 aria-hidden="true" />,
+              pressed: false,
+              onPressedChange: () => {},
+            }}
+          />
+        </div>
+        <div data-part="password">
+          <PasswordInput label="Password" defaultValue="kozmos" />
+        </div>
+        <div data-part="date">
+          <DatePicker label="Date" />
+        </div>
+        <div data-part="time">
+          <TimePicker label="Time" />
+        </div>
+        <div data-part="combobox-disabled">
+          <Combobox label="Region" options={options} disabled />
+        </div>
+        <div data-part="password-disabled">
+          <PasswordInput label="Locked" defaultValue="kozmos" disabled />
         </div>
       </div>
     </ThemeProvider>,
