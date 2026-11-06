@@ -118,6 +118,7 @@ interface RollupChunk {
   code?: string;
   exports?: string[];
   imports?: string[];
+  dynamicImports?: string[];
 }
 interface RollupBundle {
   cache: unknown;
@@ -391,9 +392,14 @@ async function main() {
       "vue_react_bridge",
     );
     // The main entry draws no React: a bridge import in it would put the
-    // bridge's cost, and React itself, in every Vue app.
+    // bridge's cost, and React itself, in every Vue app. A dynamic
+    // import() counts as much as a static one: the app's bundler still
+    // builds React into a chunk it ships.
     const vueImports = vue.output
-      .flatMap((chunk) => chunk.imports ?? [])
+      .flatMap((chunk) => [
+        ...(chunk.imports ?? []),
+        ...(chunk.dynamicImports ?? []),
+      ])
       .filter((id) => /react/.test(id) && !/^reka-ui/.test(id));
     console.log(`\n📊 What an app pays for @kozmos-ds/vue (minified, gzip):`);
     console.log(`---------------------------------`);

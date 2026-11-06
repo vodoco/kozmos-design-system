@@ -5,7 +5,7 @@ import { drawStory, storiesIn } from "./capture";
 // dark. A story opts out with the tag `no-visual`, and says why beside it.
 // How a story is drawn and compared is ./capture.ts, which Vue's Storybook
 // (vue-stories.visual.ts) shares.
-const stories = storiesIn("apps/docs/storybook-static/index.json");
+const stories = storiesIn("apps/docs/storybook-static/index.json", "react");
 
 for (const story of stories) {
   for (const theme of ["light", "dark"] as const) {

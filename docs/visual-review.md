@@ -60,7 +60,8 @@ If the difference is what you meant, record new baselines. They are committed wi
 views (2-up, swipe, onion skin). Approving the pull request approves the look.
 
 - **With Docker** (`pnpm test:visual:update`) records the baselines of the stories that changed.
-  Build first:
+  Build both Storybooks first, React's and Vue's; both scripts stop, naming the build to run, when
+  either is missing:
   ```bash
   pnpm exec turbo run build --filter=@kozmos-ds/react...
   pnpm --filter @kozmos-ds/docs build-storybook

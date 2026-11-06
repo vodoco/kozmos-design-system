@@ -10,9 +10,14 @@
  *   root reads every token unset, and draws as the browser's defaults.
  * - No raw colour. Every colour a drawn element paints (its text, fill,
  *   borders, outline, shadows, an SVG's fill and stroke, its ::before and
- *   ::after) is the colour of a token of the root it is drawn in, or such a
- *   colour at a lower alpha. A story's own scaffolding is held to it too:
- *   examples use only Kozmos.
+ *   ::after) is taken from a colour token of the theme: read again with
+ *   every such token set to a sentinel colour of its own, it moves
+ *   (scripts/vue/in-page.mjs, colourProvenance). A token at a lower alpha,
+ *   mixed by color-mix(), or reached through currentColor moves with it; a
+ *   colour written in stays put, even one a token happens to hold, as black
+ *   and white are held in both themes. A story's own scaffolding is held
+ *   to it too: examples use only Kozmos. Everything drawn in <body> is read
+ *   but Storybook's own chrome.
  *
  * scripts/vue/coverage.mjs says which stories are drawn; one it does not
  * name fails here before any is.
@@ -58,7 +63,7 @@ try {
           await openStory(page, base, id, { theme });
           const { references, colours } = await page.evaluate(() => ({
             references: window.__kozmosVue.unresolvedReferences(),
-            colours: window.__kozmosVue.untokenedColours(),
+            colours: window.__kozmosVue.hardCodedColours(),
           }));
           const unset = references.problems.filter(
             ({ name }) => !Object.hasOwn(UNSET_BY_DESIGN, name),
@@ -72,7 +77,7 @@ try {
             );
           else if (!unset.length && !colours.problems.length)
             console.log(
-              `PASS ${at}: ${references.reads} var() reads over ${references.elements} elements resolve; ${colours.colours} colours are tokens`,
+              `PASS ${at}: ${references.reads} var() reads over ${references.elements} elements resolve; ${colours.colours} colours move with the theme's ${colours.tokens} colour tokens`,
             );
         } catch (error) {
           failures.push(`${at}: ${error.message}`);

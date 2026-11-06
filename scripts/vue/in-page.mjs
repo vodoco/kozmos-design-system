@@ -192,9 +192,10 @@ export function installVueProbes() {
   }
 
   /**
-   * The rules each element matches, as `{ element, rule, pseudo }`: the
-   * element's nearest root is marked while its elements are matched, so a
-   * scoped selector's :scope is that root and no farther one.
+   * The rules each element matches, as `{ rule, pseudo, part }` (the
+   * selector part it matched): the element's nearest root is marked while
+   * its elements are matched, so a scoped selector's :scope is that root and
+   * no farther one.
    */
   function matchedRules(elements, filter = () => true) {
     const rules = rulesNow().filter(filter);
@@ -211,7 +212,7 @@ export function installVueProbes() {
         for (const element of group)
           for (const rule of rules)
             for (const part of partsMatching(element, rule, root))
-              out.get(element).push({ rule, pseudo: part.pseudo });
+              out.get(element).push({ rule, pseudo: part.pseudo, part });
       } finally {
         root?.removeAttribute(MARK);
       }
@@ -219,26 +220,75 @@ export function installVueProbes() {
     return out;
   }
 
-  /** What a story draws: its root's elements and every Kozmos portal's. */
+  /**
+   * Storybook's own chrome in its preview page (iframe.html), each named
+   * exactly: the four status panels the page is served with (preparing a
+   * story, preparing docs, no preview, the error display), each a child of
+   * <body> that is a `div.sb-wrapper` with its own class and no other, and
+   * the two mount points, `#storybook-root` and `#storybook-docs`, as boxes
+   * of their own (what a story mounts in them is the story's). Nothing else
+   * in <body> is Storybook's: a Teleport to <body>, a bridged React part's
+   * portal that found no Kozmos root (React's ThemePortal falls back to
+   * <body>), anything a story or a part appends, is drawn by the story.
+   */
+  const STORYBOOK_PANELS = [
+    "sb-preparing-story",
+    "sb-preparing-docs",
+    "sb-nopreview",
+    "sb-errordisplay",
+  ];
+  const isStorybookPanel = (element) =>
+    element.parentElement === document.body &&
+    element.tagName === "DIV" &&
+    element.classList.length === 2 &&
+    element.classList.contains("sb-wrapper") &&
+    STORYBOOK_PANELS.some((name) => element.classList.contains(name));
+  const isStorybookMount = (element) =>
+    element.parentElement === document.body &&
+    element.tagName === "DIV" &&
+    (element.id === "storybook-root" || element.id === "storybook-docs");
+
+  /** Whether an element has text of its own (not only its children's). */
+  const hasOwnText = (element) =>
+    [...element.childNodes].some(
+      (node) => node.nodeType === 3 && node.textContent.trim(),
+    );
+
+  /** Whether a `display: contents` element's own text draws (it has no box of its own). */
+  function contentsTextDrawn(element) {
+    for (const node of element.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const box = range.getBoundingClientRect();
+      if (box.width >= 1 && box.height >= 1) return true;
+    }
+    return false;
+  }
+
+  /**
+   * What a story draws: every element in <body> that draws (a box of a pixel
+   * or more, or a `display: contents` element's own text), but Storybook's
+   * chrome (above) and what is never drawn (script, style, template,
+   * noscript).
+   */
   function drawn() {
-    const story = document.querySelector("#storybook-root");
-    const scopes = [
-      ...(story ? story.children : []),
-      ...document.querySelectorAll("[data-kozmos-portal]"),
-    ];
+    const panels = [...document.body.children].filter(isStorybookPanel);
     const out = [];
-    const seen = new Set();
-    for (const scope of scopes)
-      for (const element of [scope, ...scope.querySelectorAll("*")]) {
-        if (element.closest("script, style, template, noscript")) continue;
-        if (seen.has(element)) continue;
-        seen.add(element);
-        const style = getComputedStyle(element);
-        if (style.display === "none" || style.visibility === "hidden") continue;
-        const box = element.getBoundingClientRect();
-        if (box.width < 1 || box.height < 1) continue;
-        out.push(element);
+    for (const element of document.body.querySelectorAll("*")) {
+      if (element.closest("script, style, template, noscript")) continue;
+      if (isStorybookMount(element)) continue;
+      if (panels.some((panel) => panel.contains(element))) continue;
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      if (style.display === "contents") {
+        if (contentsTextDrawn(element)) out.push(element);
+        continue;
       }
+      const box = element.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) continue;
+      out.push(element);
+    }
     return out;
   }
 
@@ -354,80 +404,168 @@ export function installVueProbes() {
   const COLOUR_IN_TEXT =
     /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\((?:[^()]|\([^()]*\))*\)/g;
 
-  /** Every custom property any stylesheet or style attribute declares. */
-  function customPropertyNames() {
-    const names = new Set();
-    for (const rule of rulesNow())
-      for (const { property } of rule.declarations)
-        if (property.startsWith("--")) names.add(property);
-    for (const element of document.querySelectorAll("[style]"))
-      for (const { property } of declarations(element.style.cssText))
-        if (property.startsWith("--")) names.add(property);
-    return [...names];
-  }
+  const close = (x, y, by) => Math.abs(x - y) <= by;
+  /** Two colours that are the same to within rounding. */
+  const sameColour = (a, b) =>
+    close(a.r, b.r, 0.5 / 255) &&
+    close(a.g, b.g, 0.5 / 255) &&
+    close(a.b, b.b, 0.5 / 255) &&
+    close(a.a, b.a, 0.002);
 
-  /**
-   * The colours of every token where `root` is: each custom property's
-   * value, and each colour written inside one (a shadow's), as the browser
-   * computes them, with the tokens that hold each.
-   */
-  const palettes = new Map();
-  function paletteOf(root) {
-    if (palettes.has(root)) return palettes.get(root);
-    const probe = document.createElement("span");
-    probe.className = "kozmos-reset";
-    (root ?? document.body).append(probe);
-    const style = getComputedStyle(root ?? document.documentElement);
-    const palette = [];
-    const add = (value, token) => {
-      probe.style.color = "";
-      probe.style.color = value;
-      if (!probe.style.color) return;
-      const colour = readColour(getComputedStyle(probe).color);
-      palette.push({ ...colour, token });
+  /** A value with each colour in it (a shadow's, say) replaced by `by`. */
+  function replaceColours(value, by) {
+    let out = "";
+    let word = "";
+    let depth = 0;
+    const flush = () => {
+      out += word && CSS.supports("color", word) ? by : word;
+      word = "";
     };
-    for (const name of customPropertyNames()) {
-      const value = style.getPropertyValue(name).trim();
-      if (!value) continue;
-      if (CSS.supports("color", value)) add(value, name);
-      else
-        for (const [inner] of value.matchAll(COLOUR_IN_TEXT)) add(inner, name);
+    for (const c of value) {
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      if (depth === 0 && (c === "," || /\s/.test(c))) {
+        flush();
+        out += c;
+      } else word += c;
     }
-    probe.remove();
-    palettes.set(root, palette);
-    return palette;
+    flush();
+    return out;
   }
 
-  const close = (x, y, by = 1.01 / 255) => Math.abs(x - y) <= by;
-  const sameRgb = (c, p, by) =>
-    close(c.r, p.r, by) && close(c.g, p.g, by) && close(c.b, p.b, by);
+  /**
+   * A colour no token holds, the same for a name in every page and theme:
+   * three sRGB channels, 0.05 to 0.95, from the name's hash, to four
+   * places. Two of a theme's few hundred tokens sharing one, or one landing
+   * on a token's own colour, is a chance in billions, and the first stops
+   * the reading.
+   */
+  function sentinelChannels(name) {
+    let hash = 2166136261;
+    for (let i = 0; i < name.length; i++) {
+      hash ^= name.charCodeAt(i);
+      hash = Math.imul(hash, 16777619) >>> 0;
+    }
+    const channels = [];
+    for (let i = 0; i < 3; i++) {
+      // `^` gives a signed integer: `>>> 0` keeps each step unsigned, so
+      // every channel stays inside sRGB.
+      hash = (hash ^ (hash >>> 15)) >>> 0;
+      hash = Math.imul(hash, 2246822507) >>> 0;
+      hash = (hash ^ (hash >>> 13)) >>> 0;
+      channels.push(Number((0.05 + (hash % 9001) / 10000).toFixed(4)));
+    }
+    return channels;
+  }
+
+  // A token written as channels for a colour function to wrap, as
+  // `rgba(var(--kozmos-glass-rgb), .7)` reads `255,255,255`: three numbers
+  // up to 255, or a hue and two percentages for hsl().
+  const RGB_CHANNELS =
+    /^(\d{1,3}(?:\.\d+)?)(\s*,\s*|\s+)(\d{1,3}(?:\.\d+)?)\2(\d{1,3}(?:\.\d+)?)$/;
+  const HSL_CHANNELS = /^[\d.]+(?:deg)?(\s*,\s*|\s+)[\d.]+%\1[\d.]+%$/;
 
   /**
-   * The token a colour is, where `root` is: the same colour, or the same
-   * colour at a lower alpha (a token with an alpha modifier). Null when no
-   * token holds it.
+   * What stands in for a token's value: a sentinel colour for a colour, the
+   * sentinel's channels for channels, and for a value that holds colours (a
+   * shadow) the value with the sentinel for each. Null for anything else
+   * (a length, a duration, a name).
    */
-  function tokenFor(colour, root) {
-    const palette = paletteOf(root);
-    const exact = palette.find(
-      (p) => sameRgb(colour, p) && close(colour.a, p.a, 0.01),
+  function sentinelValue(name, value) {
+    const [r, g, b] = sentinelChannels(name);
+    if (CSS.supports("color", value)) return `color(srgb ${r} ${g} ${b})`;
+    const rgb = RGB_CHANNELS.exec(value);
+    if (rgb && [rgb[1], rgb[3], rgb[4]].every((n) => Number(n) <= 255))
+      return [r, g, b].map((c) => Math.round(c * 255)).join(rgb[2]);
+    const hsl = HSL_CHANNELS.exec(value);
+    if (hsl)
+      return [
+        `${Math.round(r * 360)}`,
+        `${Math.round(30 + g * 60)}%`,
+        `${Math.round(20 + b * 60)}%`,
+      ].join(hsl[1]);
+    const replaced = replaceColours(value, `color(srgb ${r} ${g} ${b})`);
+    return replaced === value ? null : replaced;
+  }
+
+  /** A selector part's subject: its last compound selector. */
+  function subjectOf(selector) {
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < selector.length; i++) {
+      const c = selector[i];
+      if (c === "(" || c === "[") depth++;
+      else if (c === ")" || c === "]") depth--;
+      else if (depth === 0 && /[\s>+~]/.test(c)) start = i + 1;
+    }
+    return selector.slice(start).trim();
+  }
+
+  /**
+   * The theme's colour tokens, each with the value that stands in for it
+   * (sentinelValue): every custom property a Kozmos root declares for
+   * itself, by a rule whose subject names it (the theme's
+   * `[data-kozmos-root]` block and its dark one) or on its style attribute
+   * (a provider's `tokens`), whose value there is a colour, a colour's
+   * channels, or holds colours (a shadow). Left out: what a part's rule
+   * declares on its own elements, a rule for every element (`*`), and
+   * Tailwind's own `--tw-*`. Those are how a colour is put together, and a
+   * colour written into one is the part's, not the theme's.
+   */
+  function themeTokens() {
+    const roots = [...document.querySelectorAll(ROOT)];
+    const names = new Set();
+    const matched = matchedRules(roots, (rule) =>
+      rule.declarations.some(({ property }) => property.startsWith("--")),
     );
-    if (exact) return exact.token;
-    const faded = palette.find(
-      (p) => sameRgb(colour, p, 2.01 / 255) && colour.a <= p.a + 0.01,
-    );
-    return faded ? `${faded.token} at ${colour.a.toFixed(2)}` : null;
+    for (const root of roots) {
+      for (const { rule, pseudo, part } of matched.get(root))
+        if (!pseudo && !subjectOf(part.match).startsWith("*"))
+          for (const { property } of rule.declarations)
+            if (property.startsWith("--")) names.add(property);
+      for (const { property } of declarations(root.style.cssText))
+        if (property.startsWith("--")) names.add(property);
+    }
+    const tokens = new Map();
+    const owners = new Map();
+    for (const name of [...names].sort()) {
+      if (name.startsWith("--tw-")) continue;
+      for (const root of roots) {
+        const value = getComputedStyle(root).getPropertyValue(name).trim();
+        if (!value) continue;
+        const stand = sentinelValue(name, value);
+        if (stand === null || stand === value) continue;
+        const sentinel = sentinelChannels(name).join(" ");
+        if (owners.has(sentinel))
+          throw new Error(
+            `${name} and ${owners.get(sentinel)} hash to one sentinel colour: change sentinelChannels (scripts/vue/in-page.mjs)`,
+          );
+        owners.set(sentinel, name);
+        tokens.set(name, stand);
+        break;
+      }
+    }
+    return tokens;
   }
 
   /** The colours an element paints, by property, skipping what draws nothing. */
   function paintedColours(element, pseudo = null) {
     const style = getComputedStyle(element, pseudo);
     const out = [];
+    // A `display: contents` element has no box: only its own text draws.
+    if (style.display === "contents") {
+      if (!pseudo && hasOwnText(element)) out.push(["color", style.color]);
+      return out
+        .map(([property, text]) => ({
+          property,
+          text,
+          colour: readColour(text),
+        }))
+        .filter(({ colour }) => colour.a > 0.001);
+    }
     const ownText =
       !pseudo &&
-      ([...element.childNodes].some(
-        (node) => node.nodeType === 3 && node.textContent.trim(),
-      ) ||
+      (hasOwnText(element) ||
         (/^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName) &&
           (element.value ?? "") !== ""));
     if (pseudo && style.content !== "none" && style.content !== "normal") {
@@ -467,55 +605,95 @@ export function installVueProbes() {
       .filter(({ colour }) => colour.a > 0.001);
   }
 
-  /**
-   * Every colour each drawn element paints, with the names of every token
-   * of its root that holds it, keyed by element index, pseudo-element and
-   * property: the same story drawn in the other theme is read the same way,
-   * and each colour must come from a token both readings share.
-   */
-  function colourTokens() {
-    const out = {};
-    drawn().forEach((element, index) => {
-      const root = element.closest(ROOT);
-      const palette = paletteOf(root);
-      for (const pseudo of [null, "::before", "::after"])
+  /** Each colour the elements paint, keyed by place, pseudo-element and property. */
+  function colourReadings(elements) {
+    const out = new Map();
+    elements.forEach((element, index) => {
+      for (const pseudo of [null, "::before", "::after"]) {
+        const count = {};
         for (const { property, text, colour } of paintedColours(
           element,
           pseudo,
         )) {
-          const names = palette
-            .filter(
-              (p) => sameRgb(colour, p, 2.01 / 255) && colour.a <= p.a + 0.01,
-            )
-            .map((p) => p.token);
-          out[`${index} ${describe(element)}${pseudo ?? ""} ${property}`] = {
-            text,
-            tokens: [...new Set(names)],
-          };
+          const nth = (count[property] = (count[property] ?? 0) + 1);
+          out.set(
+            `${index} ${describe(element)}${pseudo ?? ""} ${property}${nth > 1 ? ` ${nth}` : ""}`,
+            { text, colour },
+          );
         }
+      }
     });
     return out;
   }
 
-  /** Every colour a drawn element paints that no token of its theme holds. */
-  function untokenedColours() {
-    const problems = [];
-    let colours = 0;
-    for (const element of drawn()) {
-      const root = element.closest(ROOT);
-      for (const pseudo of [null, "::before", "::after"])
-        for (const { property, text, colour } of paintedColours(
-          element,
-          pseudo,
-        )) {
-          colours++;
-          if (!tokenFor(colour, root))
-            problems.push(
-              `${describe(element)}${pseudo ?? ""}: ${property} is ${text}, which no token of its ${root?.getAttribute("data-theme") ?? "unthemed"} root holds`,
-            );
-        }
+  function addStyle(id, css) {
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = css;
+    document.head.append(style);
+    return style;
+  }
+
+  /**
+   * Where each colour a drawn element paints comes from, keyed by its place,
+   * pseudo-element and property. Each is read twice, transitions off: as the
+   * page draws it, and with every colour token of the theme (themeTokens)
+   * set on every Kozmos root to a sentinel colour of its own. A colour taken
+   * from a token moves with it: the token itself, at any alpha, mixed by
+   * color-mix(), or reached through currentColor, inherit or another custom
+   * property. One that stays put was written in (`#000` text, a `#fff`
+   * fill, `rgba(0, 0, 0, .37)`), whatever token happens to hold the same
+   * value. `sentinel` is what it reads under the sentinels: one token reads
+   * one sentinel in either theme, so a colour that keeps its role across
+   * the themes reads the same there in both.
+   */
+  function colourProvenance() {
+    const elements = drawn();
+    const tokens = themeTokens();
+    const still = addStyle(
+      "kozmos-vue-still",
+      "*, *::before, *::after { transition: none !important; }",
+    );
+    try {
+      const before = colourReadings(elements);
+      const sentinels = addStyle(
+        "kozmos-vue-sentinels",
+        `${ROOT} { ${[...tokens].map(([name, value]) => `${name}: ${value} !important;`).join(" ")} }`,
+      );
+      let after;
+      try {
+        after = colourReadings(elements);
+      } finally {
+        sentinels.remove();
+        // Each element's style taken again as before while transitions are
+        // still off, so taking them back starts none from the sentinels.
+        colourReadings(elements);
+      }
+      const colours = {};
+      for (const [key, { text, colour }] of before) {
+        const moved = after.get(key);
+        colours[key] = {
+          text,
+          sentinel: moved?.text ?? "nothing",
+          fromToken: !moved || !sameColour(colour, moved.colour),
+        };
+      }
+      return { tokens: tokens.size, colours };
+    } finally {
+      still.remove();
     }
-    return { problems, colours };
+  }
+
+  /** Every colour a drawn element paints that no colour token of the theme gives it. */
+  function hardCodedColours() {
+    const { tokens, colours } = colourProvenance();
+    const problems = [];
+    for (const [key, { text, fromToken }] of Object.entries(colours))
+      if (!fromToken)
+        problems.push(
+          `${key.slice(key.indexOf(" ") + 1)} is ${text}, and stays ${text} when every colour token of the theme changes: it is written in, not taken from a token`,
+        );
+    return { problems, colours: Object.keys(colours).length, tokens };
   }
 
   /** Each Kozmos root and portal, with its theme and density marks. */
@@ -543,9 +721,10 @@ export function installVueProbes() {
   /**
    * Every drawn control whose size reads a density token: the property,
    * the token, the density its nearest mark gives it, the token's value
-   * there and the size it is drawn at.
+   * there, the size it is drawn at, and which of `selectors` (a suite's
+   * allowances) it matches.
    */
-  function densityControls() {
+  function densityControls(selectors = []) {
     const sized =
       /^(height|min-height|block-size|min-block-size|width|min-width|inline-size|min-inline-size)$/;
     const elements = drawn();
@@ -580,6 +759,7 @@ export function installVueProbes() {
             ),
             drawn: vertical ? box.height : box.width,
             minimum: property.startsWith("min-"),
+            matches: selectors.filter((selector) => element.matches(selector)),
           });
         }
       }
@@ -719,7 +899,6 @@ export function installVueProbes() {
         }
     }
     cachedRules = null;
-    palettes.clear();
     return removed;
   }
 
@@ -759,10 +938,10 @@ export function installVueProbes() {
     roots,
     outsideRoots,
     unresolvedReferences,
-    untokenedColours,
+    hardCodedColours,
     densityControls,
     unnamedOwnedClasses,
-    colourTokens,
+    colourProvenance,
     holdDrawn,
     addHostRules,
     removeHostRules,
@@ -770,7 +949,6 @@ export function installVueProbes() {
     removeScopedRules,
     reset: () => {
       cachedRules = null;
-      palettes.clear();
     },
   };
 }

@@ -76,8 +76,10 @@ async function serveBuild() {
 }
 
 /**
- * The stories a suite draws. Exits before any browser starts when the
- * register and the build disagree: a story nothing covers fails every suite.
+ * The stories a suite draws (`covered`; for the interaction suite, those
+ * with an interaction, though it scans all of `ids` with axe). Exits before
+ * any browser starts when the register and the build disagree: a story
+ * nothing covers fails every suite.
  */
 export async function storiesFor(suite) {
   const base = process.env.VUE_STORYBOOK_URL ?? (await serveBuild());
@@ -114,7 +116,11 @@ export async function storiesFor(suite) {
     `Vue ${suite}: ${covered.length} of ${ids.length} stories, from ${base}`,
   );
   for (const id of ids.filter(reasonFor))
-    console.log(`  not drawn by this suite: ${id} (${reasonFor(id)})`);
+    console.log(
+      suite === "interactions"
+        ? `  no interaction, an axe scan only: ${id} (${reasonFor(id)})`
+        : `  not drawn by this suite: ${id} (${reasonFor(id)})`,
+    );
   return { base, ids, covered };
 }
 

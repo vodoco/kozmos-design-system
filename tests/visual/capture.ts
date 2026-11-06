@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { storyIdProblems } from "../../scripts/vue/coverage.mjs";
 import { prepareStillPage } from "./stillness";
 
 // The visual review's drawing of one story in one theme, shared by React's
@@ -13,14 +14,24 @@ export interface IndexEntry {
   tags?: string[];
 }
 
-/** Every story a built Storybook indexes, less those tagged `no-visual`. */
-export function storiesIn(indexFile: string) {
+/**
+ * Every story a built Storybook indexes, less those tagged `no-visual`. The
+ * two Storybooks' baselines share one folder, named by story id, so only
+ * Vue's ids start `vue-` (scripts/vue/coverage.mjs): a story on the wrong
+ * side stops the run before anything is drawn.
+ */
+export function storiesIn(indexFile: string, storybook: "react" | "vue") {
   const index = JSON.parse(readFileSync(indexFile, "utf8")) as {
     entries: Record<string, IndexEntry>;
   };
-  return Object.values(index.entries).filter(
-    (entry) => entry.type === "story" && !entry.tags?.includes("no-visual"),
+  const stories = Object.values(index.entries).filter(
+    (entry) => entry.type === "story",
   );
+  const clashes: string[] = storyIdProblems({
+    [storybook]: stories.map((entry) => entry.id),
+  });
+  if (clashes.length) throw new Error(clashes.join("\n"));
+  return stories.filter((entry) => !entry.tags?.includes("no-visual"));
 }
 
 // One grey pixel for any image from outside the Storybook.

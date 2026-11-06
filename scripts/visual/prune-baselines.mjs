@@ -5,6 +5,7 @@
 // story was deleted or renamed would otherwise stay behind for ever.
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { storyIdProblems } from "../vue/coverage.mjs";
 
 const dir = "tests/visual/baselines";
 // Both builds, or neither: pruned against React's index alone, every Vue
@@ -20,14 +21,26 @@ for (const file of indexes)
     );
     process.exit(1);
   }
-const expected = new Set(
-  indexes.flatMap((file) =>
-    Object.values(JSON.parse(readFileSync(file, "utf8")).entries)
-      .filter(
-        (entry) => entry.type === "story" && !entry.tags?.includes("no-visual"),
-      )
-      .flatMap((entry) => [`${entry.id}--light.png`, `${entry.id}--dark.png`]),
+const [react, vue] = indexes.map((file) =>
+  Object.values(JSON.parse(readFileSync(file, "utf8")).entries).filter(
+    (entry) => entry.type === "story",
   ),
+);
+// The two Storybooks' baselines share this folder, named by story id: only
+// Vue's ids start `vue-` (scripts/vue/coverage.mjs), or a drawing of one
+// would overwrite, or prune, the other's.
+const clashes = storyIdProblems({
+  react: react.map((entry) => entry.id),
+  vue: vue.map((entry) => entry.id),
+});
+if (clashes.length) {
+  for (const clash of clashes) console.error(clash);
+  process.exit(1);
+}
+const expected = new Set(
+  [...react, ...vue]
+    .filter((entry) => !entry.tags?.includes("no-visual"))
+    .flatMap((entry) => [`${entry.id}--light.png`, `${entry.id}--dark.png`]),
 );
 
 const removed = readdirSync(dir).filter(

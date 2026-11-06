@@ -8,7 +8,7 @@ import { drawStory, storiesIn } from "./capture";
 // the story's URL sets, as it does React's DesignConfigProvider. Each story's
 // id starts `vue-`, so its baselines sit beside React's under names of their
 // own. The `vue` project in playwright.visual.config.ts serves this build.
-const stories = storiesIn("apps/docs/storybook-internal/vue/index.json");
+const stories = storiesIn("apps/docs/storybook-internal/vue/index.json", "vue");
 
 for (const story of stories) {
   for (const theme of ["light", "dark"] as const) {

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { VUE_STORIES, VUE_SUITES, coverageProblems } from "../vue/coverage.mjs";
+import {
+  VUE_STORIES,
+  VUE_SUITES,
+  coverageProblems,
+  storyIdProblems,
+} from "../vue/coverage.mjs";
 
 /**
  * The register the Vue browser suites hold the built Vue Storybook to
@@ -90,4 +95,48 @@ test("the register names only suites that run, and interactions the suite has", 
       fs.existsSync(new URL(`../check-vue-${name}.mjs`, import.meta.url)),
       `no scripts/check-vue-${name}.mjs`,
     );
+});
+
+test("a Vue story whose id does not start vue- fails, built or registered", () => {
+  const built = coverageProblems(["vue-a--one", "vue-a--two", "poicard--x"], {
+    ...register,
+    "poicard--x": { interaction: "button" },
+  });
+  assert.equal(built.length, 1);
+  assert.match(
+    built[0],
+    /^poicard--x is a Vue story whose id does not start "vue-"/,
+  );
+  const registered = coverageProblems(["vue-a--one", "vue-a--two"], {
+    ...register,
+    "button--y": { interaction: "button" },
+  });
+  assert.ok(
+    registered.some((problem) =>
+      /^button--y is a Vue story whose id does not start/.test(problem),
+    ),
+  );
+});
+
+test("a React story whose id starts vue- fails, and the two sides apart pass", () => {
+  assert.deepEqual(
+    storyIdProblems({
+      vue: ["vue-poicard--default"],
+      react: ["components-poicard--default", "core-actions-button--default"],
+    }),
+    [],
+  );
+  const problems = storyIdProblems({
+    vue: ["vue-poicard--default"],
+    react: ["components-poicard--default", "vue-poicard--default"],
+  });
+  assert.equal(problems.length, 1);
+  assert.match(
+    problems[0],
+    /^vue-poicard--default is a React story whose id starts "vue-"/,
+  );
+});
+
+test("every id in the register starts vue-", () => {
+  assert.deepEqual(storyIdProblems({ vue: Object.keys(VUE_STORIES) }), []);
 });

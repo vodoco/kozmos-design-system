@@ -6,9 +6,13 @@
  *
  * Each story names its interaction in scripts/vue/coverage.mjs; this file
  * holds them. A story with none says why there; a story in neither fails
- * here before any is drawn. After each interaction axe finds nothing at
- * WCAG 2.2 AA, as React's suite asks of its stories, and the page has
- * thrown nothing.
+ * here before any is drawn.
+ *
+ * Every story, with an interaction or without, is scanned by axe at WCAG
+ * 2.2 AA, light and dark, as it first draws (React's audit-storybook.mjs
+ * scans every React story so), and a story with an interaction again after
+ * it, when nothing it opened may sit outside a Kozmos root either. axe
+ * must find nothing, and the page must throw nothing.
  *
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit VUE_STORYBOOK_URL=… \
  *     node scripts/check-vue-interactions.mjs
@@ -124,6 +128,44 @@ async function pressButton(page, button, { tabbed = false } = {}) {
   return name;
 }
 
+/** A disabled or loading button: no stop for Tab, no click for the pointer. */
+async function unavailable(page) {
+  const button = controls(page, "button").first();
+  assert.equal(await button.isDisabled(), true, "the button is disabled");
+  await focusStart(page);
+  await page.keyboard.press("Tab");
+  await settle(page);
+  assert.equal(
+    await button.evaluate((el) => el === document.activeElement),
+    false,
+    "Tab passes the unavailable button",
+  );
+  const box = await button.boundingBox();
+  const before = await clicks(page);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await settle(page);
+  const landed = await page.evaluate(
+    (from) => window.__kozmosVue.clicks.slice(from),
+    before,
+  );
+  assert(
+    !landed.some((target) => target.includes("button.")),
+    `a click on the unavailable button reaches it (${landed.join("; ")})`,
+  );
+  return "unavailable to Tab and to a click";
+}
+
+/** axe at WCAG 2.2 AA over the page: what it finds, by rule and node. */
+async function axeFinds(page) {
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  return violations.map(
+    (v) =>
+      `${v.id}: ${v.nodes.map((n) => `${n.target} (${n.failureSummary?.split("\n").slice(1).join(" ").trim()})`).join(", ")}`,
+  );
+}
+
 /** The fields' values, in order. */
 const values = (page) =>
   controls(page, "input").evaluateAll((inputs) => inputs.map((i) => i.value));
@@ -137,43 +179,42 @@ const INTERACTIONS = {
     return `${name}: Tab, a focus, Enter, Space, a hover and a click`;
   },
 
-  /** A disabled or loading button: no stop for Tab, no click for the pointer. */
-  async "button-unavailable"(page) {
-    const button = controls(page, "button").first();
-    assert.equal(await button.isDisabled(), true, "the button is disabled");
-    await focusStart(page);
-    await page.keyboard.press("Tab");
-    await settle(page);
+  /** A disabled button: no stop for Tab, no click for the pointer, no loader. */
+  async "button-disabled"(page) {
+    const did = await unavailable(page);
+    const loader = await controls(page, "button")
+      .first()
+      .evaluate((el) => !!el.querySelector(".kozmos-button-loader"));
+    assert.equal(loader, false, "a disabled button draws no loading arc");
+    return did;
+  },
+
+  /**
+   * A loading button: unavailable as a disabled one is, and its arc leads
+   * the label, hidden from assistive technology. A loading story with no
+   * arc fails.
+   */
+  async "button-loading"(page) {
+    const did = await unavailable(page);
+    const arc = await controls(page, "button")
+      .first()
+      .evaluate((el) => {
+        const loader = el.querySelector(".kozmos-button-loader");
+        // The arc is the loader's own <svg> (SpinnerArc.ts).
+        return {
+          drawn: !!loader,
+          first: el.firstElementChild === loader && !!loader,
+          hidden: loader?.getAttribute("aria-hidden"),
+        };
+      });
+    assert.equal(arc.drawn, true, "the loading button draws its arc");
+    assert.equal(arc.first, true, "the loading arc leads the label");
     assert.equal(
-      await button.evaluate((el) => el === document.activeElement),
-      false,
-      "Tab passes the unavailable button",
+      arc.hidden,
+      "true",
+      "the loading arc is hidden from assistive technology",
     );
-    const box = await button.boundingBox();
-    const before = await clicks(page);
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await settle(page);
-    const landed = await page.evaluate(
-      (from) => window.__kozmosVue.clicks.slice(from),
-      before,
-    );
-    assert(
-      !landed.some((target) => target.includes("button.")),
-      `a click on the unavailable button reaches it (${landed.join("; ")})`,
-    );
-    const loading = await button.evaluate((el) =>
-      el.querySelector(".kozmos-button-loader")
-        ? el.firstElementChild?.classList.contains("kozmos-button-loader") &&
-          el.querySelector("svg").getAttribute("aria-hidden") === "true"
-        : null,
-    );
-    if (loading !== null)
-      assert.equal(
-        loading,
-        true,
-        "the loading arc leads the label, hidden from assistive technology",
-      );
-    return `unavailable to Tab and to a click${loading ? ", its arc before the label" : ""}`;
+    return `${did}, its arc before the label`;
   },
 
   /** Every button, Tab after Tab in reading order, each pressed and hovered. */
@@ -299,7 +340,7 @@ const INTERACTIONS = {
   },
 };
 
-const { base, covered } = await storiesFor(SUITE);
+const { base, ids, covered } = await storiesFor(SUITE);
 for (const id of covered) {
   const { interaction } = VUE_STORIES[id];
   if (!Object.hasOwn(INTERACTIONS, interaction)) {
@@ -312,34 +353,54 @@ for (const id of covered) {
 
 const browser = await launch({ pointer: "mouse" });
 const failures = [];
+let scans = 0;
+let interactions = 0;
 try {
   for (const theme of ["light", "dark"]) {
     const { context, page, errors } = await newStoryPage(browser, base);
     try {
-      for (const id of covered) {
-        const at = `${id} ${theme}`;
+      for (const id of ids) {
         const { interaction } = VUE_STORIES[id];
+        const at = `${id} ${theme}`;
+        let step = "as it draws";
         try {
           await openStory(page, base, id, { theme });
-          const did = await INTERACTIONS[interaction](page);
           await page.mouse.move(0, 0);
           await settle(page);
-          const { violations } = await new AxeBuilder({ page })
-            .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-            .analyze();
-          assert.deepEqual(
-            violations.map(
-              (v) => `${v.id}: ${v.nodes.map((n) => n.target).join(", ")}`,
-            ),
-            [],
-            "axe finds nothing",
+          const atRest = await axeFinds(page);
+          assert(
+            !atRest.length,
+            `axe finds ${atRest.join("; ")} as the story draws`,
           );
-          assert.deepEqual(errors.splice(0), [], "the page throws nothing");
-          console.log(`PASS ${at} ${interaction}: ${did}`);
+          scans++;
+          let did = "no interaction";
+          if (interaction) {
+            step = interaction;
+            did = await INTERACTIONS[interaction](page);
+            await page.mouse.move(0, 0);
+            await settle(page);
+            const outside = await page.evaluate(() =>
+              window.__kozmosVue.outsideRoots(),
+            );
+            assert(
+              !outside.length,
+              `${outside.join("; ")} is drawn outside every Kozmos root after the interaction`,
+            );
+            const after = await axeFinds(page);
+            assert(
+              !after.length,
+              `axe finds ${after.join("; ")} after the interaction`,
+            );
+            scans++;
+            interactions++;
+          }
+          const thrown = errors.splice(0);
+          assert(!thrown.length, `the page throws ${thrown.join("; ")}`);
+          console.log(
+            `PASS ${at} ${interaction ?? "(axe only)"}: ${did}; axe finds nothing${interaction ? " before or after" : ""}`,
+          );
         } catch (error) {
-          failures.push(
-            `${at} ${interaction}: ${error.message.split("\n")[0]}`,
-          );
+          failures.push(`${at} ${step}: ${error.message.split("\n")[0]}`);
           errors.splice(0);
         }
       }
@@ -350,4 +411,7 @@ try {
 } finally {
   await browser.close();
 }
-finish(SUITE, covered, failures);
+console.log(
+  `${interactions} interaction(s) run and ${scans} axe scan(s) clean, over ${ids.length} stories light and dark`,
+);
+finish(SUITE, ids, failures);
