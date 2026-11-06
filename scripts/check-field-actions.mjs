@@ -306,6 +306,7 @@ const fillState = (page, part, index) =>
         field: { left: o.left, top: o.top, right: o.right, bottom: o.bottom },
         border: parseFloat(f.borderTopWidth),
         own: getComputedStyle(button).backgroundColor,
+        fading: properties,
         fade:
           at < 0
             ? null
@@ -515,6 +516,16 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
     )
       problems.push(
         `${step}: hovered, ${name}'s fill fades over ${now.fade.duration}s ${now.fade.easing}, not transition-colors' 0.15s cubic-bezier(0.4, 0, 0.2, 1)`,
+      );
+    // The fill fades its background alone. It paints no text, but it inherits
+    // the button's colour, which changes on hover: with colour in its list it
+    // ran a transition of its own, which WebKit cancels when the hover ends
+    // under an opening modal, and anything awaiting every animation's
+    // `finished` then rejects (check-date-picker on CI, #487, 6 Nov).
+    reads += 1;
+    if (now.fading.join(",") !== "background-color")
+      problems.push(
+        `${step}: hovered, ${name}'s fill transitions ${now.fading.join(", ")}, not its background colour alone`,
       );
     // As drawn: the fill's middle is background-100; the band round it, where
     // the field's edge is, and the fill's own corners stay as at rest.

@@ -45,7 +45,7 @@
      button's ::before at the back of the stacking context the button makes,
      so it is under all the button holds: Input's `icon` is a node, and a
      wrapped icon, an image or text has no rule of its own to raise it. It
-     fades in and out as transition-colors fades the button's colours, 150ms
+     fades its background in and out on transition-colors' timing, 150ms
      scaled by the motion config, which a reduced motion makes a cut; the
      button's own transition does not reach its ::before.
      These name the four buttons, never .kozmos-field-action: NumberInput's
@@ -68,7 +68,13 @@
   .kozmos-password-toggle::before,
   .kozmos-date-picker-trigger::before,
   .kozmos-combobox-action::before {
-    @apply transition-colors;
+    /* transition-colors' timing on the background alone: the fill paints no
+       text, but inherits the button's colour, which changes on hover, and
+       with colour in its list it ran a second transition, which WebKit
+       cancels when the hover ends under an opening modal (#487). */
+    transition-property: background-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: calc(0.15s * var(--semantics-motion-duration-scale, 1));
     content: "";
     position: absolute;
     inset: 4px;
