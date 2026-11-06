@@ -2,7 +2,8 @@ import { render, fireEvent, screen } from "@testing-library/react";
 import React, { useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { OTPInput, type OTPInputProps } from "./OTPInput";
-import { describe, expect, it, vi } from "vitest";
+import { AnalyticsProvider, type AnalyticsEvent } from "../../utils/analytics";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The package's server-safe alias, which lint asks for. jsdom has a window,
 // so here it is useLayoutEffect: it runs inside the commit, before any
@@ -225,5 +226,104 @@ describe("OTPInput", () => {
 
     rerender(<CommitProbe length={1} onCommit={onCommit} />);
     expect(commits.at(-1)).toEqual(["1"]);
+  });
+
+  describe("completion analytics", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const COMPLETED = {
+      component: "OTPInput",
+      eventName: "otp_code_completed",
+      properties: { length: 4 },
+    };
+
+    /**
+     * Renders inside an AnalyticsProvider. `completions()` flushes its batch
+     * and returns every `otp_code_completed` dispatched so far.
+     */
+    function renderTracked(ui: React.ReactElement) {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const dispatch = vi.fn((events: AnalyticsEvent[]) => events);
+      const view = render(ui, {
+        wrapper: ({ children }) => (
+          <AnalyticsProvider onDispatch={dispatch}>
+            {children}
+          </AnalyticsProvider>
+        ),
+      });
+      const completions = () => {
+        vi.runOnlyPendingTimers();
+        return dispatch.mock.calls
+          .flatMap(([batch]) => batch)
+          .filter(({ eventName }) => eventName === "otp_code_completed");
+      };
+      return { ...view, completions, inputs: screen.getAllByRole("textbox") };
+    }
+
+    const type = (input: HTMLElement, digit: string) =>
+      fireEvent.change(input, { target: { value: digit } });
+    const paste = (input: HTMLElement, code: string) =>
+      fireEvent.paste(input, { clipboardData: { getData: () => code } });
+
+    it("tracks a code once when typing fills its last cell", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      ["1", "2", "3"].forEach((digit, index) => type(inputs[index], digit));
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a pasted full code once", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      paste(inputs[0], "12-34");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks nothing for a partial code, typed or pasted, until it is full", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      paste(inputs[0], "12");
+      type(inputs[2], "3");
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toHaveLength(1);
+    });
+
+    it("tracks a full code once while it is edited, and again once it is cleared and completed", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      paste(inputs[0], "1234");
+      type(inputs[1], "9");
+      paste(inputs[0], "5678");
+      expect(completions()).toHaveLength(1);
+
+      type(inputs[2], "");
+      expect(completions()).toHaveLength(1);
+
+      type(inputs[2], "7");
+      expect(completions()).toEqual([
+        expect.objectContaining(COMPLETED),
+        expect.objectContaining(COMPLETED),
+      ]);
+    });
+
+    it("tracks no controlled value, only the user's own completion", () => {
+      const { completions, inputs, rerender } = renderTracked(
+        <OTPInput length={4} value="1234" />,
+      );
+      rerender(<OTPInput length={4} value="" />);
+      rerender(<OTPInput length={4} value="5678" />);
+      rerender(<OTPInput length={4} value="123" />);
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toHaveLength(1);
+    });
   });
 });

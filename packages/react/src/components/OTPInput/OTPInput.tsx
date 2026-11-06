@@ -32,6 +32,8 @@ const toOtpCells = (source: string, cellCount: number) => {
   return cells;
 };
 
+const isOtpComplete = (cells: string[]) => cells.every((cell) => cell !== "");
+
 const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
   (
     {
@@ -98,6 +100,15 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     }, [autoFocus]);
 
+    // Analytics hears a code completed once: when the user's typing or paste
+    // fills the last empty cell. Editing a full code is the same completion,
+    // and a controlled value from the parent is not the user's.
+    const trackCompletion = (nextOtp: string[]) => {
+      if (!isOtpComplete(otp) && isOtpComplete(nextOtp)) {
+        trackEvent("OTPInput", "otp_code_completed", { length: cellCount });
+      }
+    };
+
     const handleChange = (
       event: React.ChangeEvent<HTMLInputElement>,
       index: number,
@@ -120,11 +131,8 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
       setOtp(nextOtp);
 
-      const joined = nextOtp.join("");
-      onChange?.(joined);
-      if (joined.length === cellCount && !joined.includes("")) {
-        trackEvent("OTPInput", "otp_code_completed", { length: cellCount });
-      }
+      onChange?.(nextOtp.join(""));
+      trackCompletion(nextOtp);
 
       if (filteredValue && index < cellCount - 1) {
         inputs.current[
@@ -156,6 +164,7 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       while (nextOtp.length < cellCount) nextOtp.push("");
       setOtp(nextOtp);
       onChange?.(nextOtp.join(""));
+      trackCompletion(nextOtp);
     };
 
     return (
