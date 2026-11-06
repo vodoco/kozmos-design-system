@@ -5,7 +5,8 @@
 
 /**
  * Whether Kozmos's public packages are on npm: the first four since
- * 2026-09-23; @kozmos-ds/styles first publishes with React 0.15.1.
+ * 2026-09-23, and @kozmos-ds/styles since 2026-11-06 (0.15.1, with React
+ * 0.15.1).
  * This flag is not a version: query npm or read the dated release evidence
  * in docs/release-process.md for package versions.
  */
@@ -31,11 +32,17 @@ export const PUBLIC_PACKAGES = [
   },
   {
     name: "@kozmos-ds/icons",
-    summary: "The icon registry and the outlines Kozmos owns.",
+    summary:
+      "The icon registry and the outlines Kozmos owns, as React components and, from @kozmos-ds/icons/vue, as Vue 3 components.",
   },
   {
     name: "@kozmos-ds/product-contracts",
     summary: "Platform-neutral shapes for POI, floor, route and map data.",
+  },
+  {
+    name: "@kozmos-ds/styles",
+    summary:
+      "The stylesheet alone, as plain CSS: the tokens for both themes and densities, the owned rules, the scoped preflight and the utilities. React ships the same file; an app without React imports it from here.",
   },
 ] as const;
 

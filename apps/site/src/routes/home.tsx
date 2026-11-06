@@ -45,7 +45,7 @@ const platforms = [
     technology: "React 18.2 and later, and 19",
     status: PACKAGES_PUBLISHED ? "On npm" : "npm soon",
     description: PACKAGES_PUBLISHED
-      ? "@kozmos-ds/react, with its tokens, icons and contracts."
+      ? "@kozmos-ds/react, with its stylesheet, tokens, icons and contracts."
       : "@kozmos-ds/react is packaged for npm and not yet published: release waits on an approved browser support matrix. Apps inside the repository use it today.",
   },
   {
