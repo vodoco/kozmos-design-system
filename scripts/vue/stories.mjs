@@ -240,6 +240,41 @@ export function densityTokens() {
   return blocks;
 }
 
+/**
+ * The colour allowances a suite's colour readings used, summed over its
+ * stories (scripts/vue/in-page.mjs names each, GLASS_EDGE alone today, and
+ * every reading counts them all, used or not): `add` each reading's
+ * `allowances`; `report` prints each one used and fails each one no story
+ * used, so an allowance cannot outlive its case.
+ */
+export function colourAllowances() {
+  const used = new Map();
+  return {
+    add(allowances) {
+      for (const { name, reason, count } of allowances) {
+        const seen = used.get(name) ?? { reason, count: 0 };
+        seen.count += count;
+        used.set(name, seen);
+      }
+    },
+    report(failures) {
+      if (!used.size)
+        failures.push(
+          "no colour reading named its allowances: the colour check read nothing",
+        );
+      for (const [name, { reason, count }] of used)
+        if (count)
+          console.log(
+            `${count} colour reading(s) allowed by ${name}: ${reason}`,
+          );
+        else
+          failures.push(
+            `no story drew a colour that ${name} allows (${reason}): remove the allowance from scripts/vue/in-page.mjs`,
+          );
+    },
+  };
+}
+
 /** Prints the result: every failure, or the stories it covered by name. */
 export function finish(suite, covered, failures) {
   const browser = process.env.ADAPTIVE_BROWSER ?? "chromium";

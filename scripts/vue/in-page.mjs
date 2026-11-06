@@ -412,6 +412,48 @@ export function installVueProbes() {
     close(a.b, b.b, 0.5 / 255) &&
     close(a.a, b.a, 0.002);
 
+  /**
+   * The one colour the colour checks allow without a colour token, by name:
+   * the 1px edge of a glass surface. Design ruling §5.13 makes it a light
+   * edge at Semantics.Effect.glass.border.opacity, the same in both themes,
+   * as SwiftUI and Compose draw it, and Figma's Effect/glass holds that
+   * opacity and no colour: decision 167 allows it here until design adds a
+   * colour token (GAP-229, "the glass edge colour has no token").
+   *
+   * Allowed only as exactly that: a border colour (border-*-color) of the
+   * element itself, not a pseudo-element's, on an element carrying a glass
+   * class; white (255, 255, 255); at the alpha the opacity token computes
+   * to on that element; and, read again with that token alone set to
+   * `sentinel` on every Kozmos root, at that alpha too, so the alpha is
+   * proven to follow the token. A white written in at the token's alpha
+   * (`rgba(255, 255, 255, .2)`) stays put there and fails, as does any
+   * other colour at the token's alpha, and the same edge on any other
+   * element. `tolerance` is an alpha's read-back, one 8-bit step: 0.2 can
+   * come back as 0.198. Every suite that reads colours fails when no story
+   * it draws uses the allowance, so it cannot outlive its case.
+   */
+  const GLASS_EDGE = {
+    name: "glass-edge",
+    reason:
+      "a glass surface's 1px edge is white at Semantics.Effect.glass.border.opacity in both themes, with no colour token for it yet (ruling §5.13, decision 167, GAP-229)",
+    classes: ["kozmos-button-glass", "kozmos-surface-glass"],
+    property: /^border-(top|right|bottom|left)-color$/,
+    token: "--semantics-effect-glass-border-opacity",
+    sentinel: 0.37,
+    tolerance: 1 / 255,
+  };
+  const isGlassEdge = (element, pseudo, property) =>
+    !pseudo &&
+    GLASS_EDGE.property.test(property) &&
+    GLASS_EDGE.classes.some((name) => element.classList.contains(name));
+  const glassEdgeAlpha = (element) =>
+    parseFloat(getComputedStyle(element).getPropertyValue(GLASS_EDGE.token));
+  /** Whether a colour is white at `alpha` (a number), to within read-back. */
+  const whiteAt = (colour, alpha) =>
+    Number.isFinite(alpha) &&
+    sameColour({ ...colour, a: 0 }, { r: 1, g: 1, b: 1, a: 0 }) &&
+    close(colour.a, alpha, GLASS_EDGE.tolerance);
+
   /** A value with each colour in it (a shadow's, say) replaced by `by`. */
   function replaceColours(value, by) {
     let out = "";
@@ -618,7 +660,7 @@ export function installVueProbes() {
           const nth = (count[property] = (count[property] ?? 0) + 1);
           out.set(
             `${index} ${describe(element)}${pseudo ?? ""} ${property}${nth > 1 ? ` ${nth}` : ""}`,
-            { text, colour },
+            { text, colour, element, pseudo, property },
           );
         }
       }
@@ -646,6 +688,11 @@ export function installVueProbes() {
    * value. `sentinel` is what it reads under the sentinels: one token reads
    * one sentinel in either theme, so a colour that keeps its role across
    * the themes reads the same there in both.
+   *
+   * A colour that stays put and is a glass edge is read a third time, with
+   * the glass edge's opacity token alone set to its sentinel: `allowance`
+   * names GLASS_EDGE on one it allows, and `refused` says why on one it
+   * does not. `allowances` counts each allowance's readings, none or more.
    */
   function colourProvenance() {
     const elements = drawn();
@@ -654,46 +701,105 @@ export function installVueProbes() {
       "kozmos-vue-still",
       "*, *::before, *::after { transition: none !important; }",
     );
-    try {
-      const before = colourReadings(elements);
-      const sentinels = addStyle(
-        "kozmos-vue-sentinels",
-        `${ROOT} { ${[...tokens].map(([name, value]) => `${name}: ${value} !important;`).join(" ")} }`,
-      );
-      let after;
+    // What `read` returns with `css` added to the page. Each element's style
+    // is taken again as before once it is gone, while transitions are still
+    // off, so taking it back starts none from the sentinels.
+    const under = (id, css, read) => {
+      const style = addStyle(id, css);
       try {
-        after = colourReadings(elements);
+        return read();
       } finally {
-        sentinels.remove();
-        // Each element's style taken again as before while transitions are
-        // still off, so taking them back starts none from the sentinels.
+        style.remove();
         colourReadings(elements);
       }
+    };
+    try {
+      const before = colourReadings(elements);
+      const after = under(
+        "kozmos-vue-sentinels",
+        `${ROOT} { ${[...tokens].map(([name, value]) => `${name}: ${value} !important;`).join(" ")} }`,
+        () => colourReadings(elements),
+      );
       const colours = {};
-      for (const [key, { text, colour }] of before) {
+      const edges = [];
+      for (const [key, { text, colour, element, pseudo, property }] of before) {
         const moved = after.get(key);
-        colours[key] = {
-          text,
-          sentinel: moved?.text ?? "nothing",
-          fromToken: !moved || !sameColour(colour, moved.colour),
-        };
+        const fromToken = !moved || !sameColour(colour, moved.colour);
+        colours[key] = { text, sentinel: moved?.text ?? "nothing", fromToken };
+        if (!fromToken && isGlassEdge(element, pseudo, property))
+          edges.push({
+            key,
+            colour,
+            element,
+            property,
+            alpha: glassEdgeAlpha(element),
+          });
       }
-      return { tokens: tokens.size, colours };
+      // GLASS_EDGE: each glass edge that stays put, read again with its
+      // opacity token alone set to the token's sentinel.
+      const atSentinel = edges.length
+        ? under(
+            "kozmos-vue-glass-edge",
+            `${ROOT} { ${GLASS_EDGE.token}: ${GLASS_EDGE.sentinel} !important; }`,
+            () =>
+              edges.map(({ element, property }) => {
+                const text =
+                  getComputedStyle(element).getPropertyValue(property);
+                return {
+                  alpha: glassEdgeAlpha(element),
+                  text,
+                  colour: readColour(text),
+                };
+              }),
+          )
+        : [];
+      let allowed = 0;
+      edges.forEach(({ key, colour, alpha }, i) => {
+        const moved = atSentinel[i];
+        if (
+          whiteAt(colour, alpha) &&
+          !close(alpha, GLASS_EDGE.sentinel, GLASS_EDGE.tolerance) &&
+          close(moved.alpha, GLASS_EDGE.sentinel, 1e-6) &&
+          whiteAt(moved.colour, GLASS_EDGE.sentinel)
+        ) {
+          colours[key].allowance = GLASS_EDGE.name;
+          allowed++;
+        } else
+          colours[key].refused =
+            `${GLASS_EDGE.name} allows a glass edge only as white at ${GLASS_EDGE.token}, following it: the token is ${alpha} here, and set alone to ${GLASS_EDGE.sentinel} it reads ${moved.alpha} and the edge ${moved.text}`;
+      });
+      return {
+        tokens: tokens.size,
+        colours,
+        allowances: [
+          { name: GLASS_EDGE.name, reason: GLASS_EDGE.reason, count: allowed },
+        ],
+      };
     } finally {
       still.remove();
     }
   }
 
-  /** Every colour a drawn element paints that no colour token of the theme gives it. */
+  /**
+   * Every colour a drawn element paints that no colour token of the theme
+   * gives it, and that no allowance (GLASS_EDGE) names.
+   */
   function hardCodedColours() {
-    const { tokens, colours } = colourProvenance();
+    const { tokens, colours, allowances } = colourProvenance();
     const problems = [];
-    for (const [key, { text, fromToken }] of Object.entries(colours))
-      if (!fromToken)
+    for (const [key, { text, fromToken, allowance, refused }] of Object.entries(
+      colours,
+    ))
+      if (!fromToken && !allowance)
         problems.push(
-          `${key.slice(key.indexOf(" ") + 1)} is ${text}, and stays ${text} when every colour token of the theme changes: it is written in, not taken from a token`,
+          `${key.slice(key.indexOf(" ") + 1)} is ${text}, and stays ${text} when every colour token of the theme changes: it is written in, not taken from a token${refused ? ` (${refused})` : ""}`,
         );
-    return { problems, colours: Object.keys(colours).length, tokens };
+    return {
+      problems,
+      colours: Object.keys(colours).length,
+      tokens,
+      allowances,
+    };
   }
 
   /** Each Kozmos root and portal, with its theme and density marks. */
