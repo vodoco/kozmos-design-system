@@ -1,9 +1,13 @@
 import {
   h,
+  camelize,
   defineComponent,
+  getCurrentInstance,
+  nextTick,
   onMounted,
   onBeforeUnmount,
   ref,
+  toHandlerKey,
   watch,
 } from "vue";
 import { createRoot, type Root } from "react-dom/client";
@@ -24,15 +28,94 @@ const VueSlotBridge = ({ slotWrapper }: { slotWrapper: HTMLElement }) => {
 };
 
 /**
+ * How one `v-model` of a wrapper reaches its React part. The wrapper declares
+ * `update:<model>`, hands React the model's value as `prop`, and, only while
+ * the parent listens, a `callback` that emits what `read` takes from the
+ * callback's arguments.
+ */
+export interface ModelBinding<P = Record<string, unknown>> {
+  /** The React prop that carries the value: `value`, `checked`, `selectedFloor`. */
+  prop: keyof P & string;
+  /** The React callback that reports a change: `onValueChange`, `onCheckedChange`, `onChange`. */
+  callback: keyof P & string;
+  /** The new value, read from the callback's arguments. Unset, the first argument. */
+  read?: (...args: any[]) => unknown;
+  /**
+   * What React is given while the parent listens and the model is null or
+   * undefined, so a controlled field stays controlled: `""` for a text
+   * field. Unset, React is given nothing, and the part keeps its own value
+   * until the model has one.
+   */
+  empty?: unknown;
+}
+
+/**
+ * A wrapper's models, by Vue's name for each: `modelValue` is `v-model`,
+ * `originValue` is `v-model:originValue`.
+ */
+export type ModelBindings<P = Record<string, unknown>> = Record<
+  string,
+  ModelBinding<P>
+>;
+
+/** A DOM change event's value: what an `<input>`'s `onChange` reports. */
+export const eventValue = (event: { target: { value: string } }) =>
+  event.target.value;
+
+/**
+ * `v-model:open` and `v-model:checked` on any wrapper, as Radix's controlled
+ * pairs, by the callback that reports each. No wrapper declares them, so
+ * their listeners arrive in `attrs`, and the value passes through under its
+ * own name.
+ */
+const RADIX_MODELS: Record<string, string> = {
+  open: "onOpenChange",
+  checked: "onCheckedChange",
+};
+
+/**
+ * A handler that calls `own` (the component's or the user's, if any) and then
+ * `model`, with the same arguments: neither replaces the other.
+ */
+function both(
+  own: unknown,
+  model: (...args: unknown[]) => void,
+): (...args: unknown[]) => void {
+  if (typeof own !== "function") return model;
+  return (...args) => {
+    own(...args);
+    model(...args);
+  };
+}
+
+/**
+ * Whether the parent listens for `event`, an `update:` event. A declared
+ * event's listener stays on the component's vnode, never in `attrs`; it is
+ * looked for under each name Vue's `emit` calls one by: as written,
+ * camelCase, and kebab-case (`onUpdate:model-value`).
+ */
+function listensFor(
+  vnodeProps: Record<string, unknown> | null,
+  event: string,
+): boolean {
+  if (!vnodeProps) return false;
+  const kebab = event.replace(/\B([A-Z])/g, "-$1").toLowerCase();
+  return [event, camelize(event), kebab].some(
+    (name) => vnodeProps[toHandlerKey(name)] != null,
+  );
+}
+
+/**
  * Creates a native Vue 3 wrapper component for a Kozmos React component.
  * This directly mounts the React VDOM inside a Vue node, completely bypassing Web Component serialization constraints.
  *
  * @param ReactComponent The Kozmos React component to wrap
- * @param emits Optional array of Vue event names to map (e.g., ['update:modelValue'])
+ * @param models Each `v-model` the wrapper takes, and how it reaches React
+ *   (`{ modelValue: { prop: "value", callback: "onValueChange" } }`)
  */
 export function createVueWrapper<P extends object>(
   ReactComponent: React.ElementType<P>,
-  emits: string[] = [],
+  models: ModelBindings<NoInfer<P>> = {},
 ) {
   return defineComponent({
     name:
@@ -42,10 +125,13 @@ export function createVueWrapper<P extends object>(
     props: {
       // Vue 3 accepts any fallthrough attributes via `attrs`, making strict prop mapping unnecessary for basic wrapper engines
     },
-    emits,
+    emits: Object.keys(models).map((name) => `update:${name}`),
     setup(props, { attrs, emit, slots }) {
+      const instance = getCurrentInstance()!;
       const containerRef = ref<HTMLElement | null>(null);
       const slotRefs: Record<string, { value: HTMLElement | null }> = {};
+      // The value a change has just emitted, by model, until Vue renders.
+      const emitted: Record<string, unknown> = {};
       let root: Root | null = null;
 
       const renderReact = () => {
@@ -67,48 +153,48 @@ export function createVueWrapper<P extends object>(
           delete reactProps.class;
         }
 
-        // Bridge Vue 'v-model' (modelValue) natively to React 'value' & 'onChange'
-        if (reactProps.modelValue !== undefined) {
-          reactProps.value = reactProps.modelValue;
-          delete reactProps.modelValue;
+        // Each model: its value as React's `prop`, and, while the parent
+        // listens, React's `callback` emitting the new value, beside any
+        // handler of that name the user gave. Without a listener React is
+        // given no callback, and a part with state of its own keeps it.
+        for (const [name, binding] of Object.entries(models)) {
+          const event = `update:${name}`;
+          const listening = listensFor(instance.vnode.props, event);
+          const value = name in emitted ? emitted[name] : reactProps[name];
+          delete reactProps[name];
+          if (value != null) reactProps[binding.prop] = value;
+          else if (listening && "empty" in binding)
+            reactProps[binding.prop] = binding.empty;
+          if (!listening) continue;
+          const read = binding.read ?? ((first: unknown) => first);
+          reactProps[binding.callback] = both(
+            reactProps[binding.callback],
+            (...args) => {
+              const next = read(...args);
+              emitted[name] = next;
+              emit(event, next);
+              // Drawn now, inside React's event: when it ends, React puts a
+              // controlled field back to the value it was last given, and
+              // Vue's render comes a tick later, so the field showed its old
+              // value for a moment and lost its caret. After Vue's render,
+              // React is given what Vue holds, whether the parent took the
+              // value or not.
+              renderReact();
+              void nextTick(settle);
+            },
+          );
         }
 
-        if (reactProps["onUpdate:modelValue"]) {
-          const originalHandler = reactProps["onUpdate:modelValue"];
-
-          // Re-route Standard HTML Inputs
-          reactProps.onChange = (e: any) => {
-            if (e && e.target !== undefined && e.target.value !== undefined) {
-              originalHandler(e.target.value);
-            } else {
-              originalHandler(e);
-            }
-          };
-
-          // Fallback for Radix UI Select Menus & Radios natively bound to standard v-model
-          reactProps.onValueChange = (val: string | number) => {
-            originalHandler(val);
-          };
-
-          delete reactProps["onUpdate:modelValue"];
-        }
-
-        // Bridge Radix UI 'v-model:checked' strictly to 'checked' & 'onCheckedChange'
-        if (reactProps["onUpdate:checked"]) {
-          const originalHandler = reactProps["onUpdate:checked"];
-          reactProps.onCheckedChange = (val: boolean) => {
-            originalHandler(val);
-          };
-          delete reactProps["onUpdate:checked"];
-        }
-
-        // Bridge Radix UI 'v-model:open' strictly to 'open' & 'onOpenChange' (Dialog, Drawer)
-        if (reactProps["onUpdate:open"]) {
-          const originalHandler = reactProps["onUpdate:open"];
-          reactProps.onOpenChange = (val: boolean) => {
-            originalHandler(val);
-          };
-          delete reactProps["onUpdate:open"];
+        // `v-model:open` and `v-model:checked`, undeclared: their listeners
+        // are in attrs, and are called beside any handler the user gave.
+        for (const [name, callback] of Object.entries(RADIX_MODELS)) {
+          const key = `onUpdate:${name}`;
+          const listener = reactProps[key];
+          if (name in models || !listener) continue;
+          delete reactProps[key];
+          reactProps[callback] = both(reactProps[callback], (value) => {
+            for (const call of [listener].flat()) call(value);
+          });
         }
 
         // Bridge ALL named Vue slots explicitly into their respective React Node props (e.g. #actions -> reactProps.actions)
@@ -126,6 +212,14 @@ export function createVueWrapper<P extends object>(
         root.render(React.createElement(ReactComponent, reactProps));
       };
 
+      /** Hands React the models Vue holds, in place of what was emitted. */
+      const settle = () => {
+        const names = Object.keys(emitted);
+        if (!names.length) return;
+        for (const name of names) delete emitted[name];
+        renderReact();
+      };
+
       onMounted(() => {
         renderReact();
       });
@@ -134,6 +228,8 @@ export function createVueWrapper<P extends object>(
       watch(
         () => ({ ...props, ...attrs }),
         () => {
+          // Vue's render has the parent's models now.
+          for (const name of Object.keys(emitted)) delete emitted[name];
           renderReact();
         },
         { deep: true },
