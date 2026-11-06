@@ -26,6 +26,12 @@ const sanitizeOtpValue = (nextValue: string, length: number) =>
 const normalizeOtpLength = (length: number) =>
   Math.max(1, Math.trunc(Number.isFinite(length) ? length : 1));
 
+const toOtpCells = (source: string, cellCount: number) => {
+  const cells = sanitizeOtpValue(source, cellCount).split("");
+  while (cells.length < cellCount) cells.push("");
+  return cells;
+};
+
 const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
   (
     {
@@ -47,7 +53,29 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     ref,
   ) => {
     const cellCount = normalizeOtpLength(length);
-    const [otp, setOtp] = useState<string[]>(new Array(cellCount).fill(""));
+    const [otp, setOtp] = useState(() => toOtpCells(value ?? "", cellCount));
+    // The cells follow `value` and the cell count during render, so no
+    // frame, the first included, draws cells the props have moved past
+    // (React's pattern for adjusting state when a prop changes). Without a
+    // value, a new count keeps the digits typed so far. Cells that already
+    // spell the new code stay as they are, so a digit typed into a later
+    // cell keeps its place when its code comes back as `value`.
+    const [drawnFrom, setDrawnFrom] = useState({ value, cellCount });
+    if (drawnFrom.value !== value || drawnFrom.cellCount !== cellCount) {
+      setDrawnFrom({ value, cellCount });
+      setOtp((currentOtp) => {
+        const nextOtp = toOtpCells(value ?? currentOtp.join(""), cellCount);
+
+        if (
+          nextOtp.length === currentOtp.length &&
+          nextOtp.join("") === currentOtp.join("")
+        ) {
+          return currentOtp;
+        }
+
+        return nextOtp;
+      });
+    }
     const inputs = useRef<(HTMLInputElement | null)[]>([]);
     const errorId = React.useId();
     const helperId = React.useId();
@@ -69,26 +97,6 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
         inputs.current[0]?.focus();
       }
     }, [autoFocus]);
-
-    useEffect(() => {
-      setOtp((currentOtp) => {
-        const source = sanitizeOtpValue(
-          value ?? currentOtp.join(""),
-          cellCount,
-        );
-        const nextOtp = source.split("").slice(0, cellCount);
-        while (nextOtp.length < cellCount) nextOtp.push("");
-
-        if (
-          nextOtp.length === currentOtp.length &&
-          nextOtp.join("") === currentOtp.join("")
-        ) {
-          return currentOtp;
-        }
-
-        return nextOtp;
-      });
-    }, [value, cellCount]);
 
     const handleChange = (
       event: React.ChangeEvent<HTMLInputElement>,

@@ -1,6 +1,32 @@
 import { render, fireEvent, screen } from "@testing-library/react";
-import { OTPInput } from "./OTPInput";
+import React, { useRef } from "react";
+import { renderToString } from "react-dom/server";
+import { OTPInput, type OTPInputProps } from "./OTPInput";
 import { describe, expect, it, vi } from "vitest";
+
+// The package's server-safe alias, which lint asks for. jsdom has a window,
+// so here it is useLayoutEffect: it runs inside the commit, before any
+// passive effect.
+const useCommitEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+const cellsIn = (root: ParentNode) =>
+  Array.from(root.querySelectorAll("input"), (input) => input.value);
+
+/**
+ * Reads the cells inside every commit of its own, before any passive effect
+ * runs, so a frame that draws stale cells is seen.
+ */
+function CommitProbe({
+  onCommit,
+  ...props
+}: OTPInputProps & { onCommit: (cells: string[]) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useCommitEffect(() => {
+    onCommit(cellsIn(ref.current!));
+  });
+  return <OTPInput ref={ref} {...props} />;
+}
 
 describe("OTPInput", () => {
   it("renders correct number of inputs", () => {
@@ -92,5 +118,112 @@ describe("OTPInput", () => {
       "3",
       "4",
     ]);
+  });
+
+  it("draws a controlled value's digits on the server", () => {
+    const page = new DOMParser().parseFromString(
+      renderToString(<OTPInput length={4} value="12" />),
+      "text/html",
+    );
+
+    expect(
+      Array.from(page.querySelectorAll("input"), (input) =>
+        input.getAttribute("value"),
+      ),
+    ).toEqual(["1", "2", "", ""]);
+  });
+
+  it("shows a controlled value in its first commit", () => {
+    const commits: string[][] = [];
+    render(
+      <CommitProbe
+        length={4}
+        onCommit={(cells) => commits.push(cells)}
+        value="12"
+      />,
+    );
+
+    expect(commits).toEqual([["1", "2", "", ""]]);
+  });
+
+  it("keeps a controlled value's digits when a digit arrives before effects run", () => {
+    // A "3" typed into the third cell inside the first commit: a keystroke
+    // that lands before passive effects run, as a busy page lets it.
+    const handleChange = vi.fn();
+    function TypesInItsFirstCommit() {
+      const ref = useRef<HTMLDivElement>(null);
+      useCommitEffect(() => {
+        const third = ref.current!.querySelectorAll("input")[2];
+        Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )!.set!.call(third, "3");
+        third.dispatchEvent(new Event("input", { bubbles: true }));
+      }, []);
+      return (
+        <OTPInput ref={ref} length={4} onChange={handleChange} value="12" />
+      );
+    }
+    render(<TypesInItsFirstCommit />);
+
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenCalledWith("123");
+  });
+
+  it("shows each new controlled value in the commit it arrives in", () => {
+    const commits: string[][] = [];
+    const onCommit = (cells: string[]) => commits.push(cells);
+    const { rerender } = render(
+      <CommitProbe length={4} onCommit={onCommit} value="12" />,
+    );
+
+    rerender(<CommitProbe length={4} onCommit={onCommit} value="345" />);
+    expect(commits.at(-1)).toEqual(["3", "4", "5", ""]);
+
+    rerender(<CommitProbe length={4} onCommit={onCommit} value="" />);
+    expect(commits.at(-1)).toEqual(["", "", "", ""]);
+  });
+
+  it("keeps its own digits while uncontrolled", () => {
+    const handleChange = vi.fn();
+    render(<OTPInput length={4} onChange={handleChange} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "1" } });
+    fireEvent.change(inputs[1], { target: { value: "2" } });
+
+    expect(handleChange.mock.calls).toEqual([["1"], ["12"]]);
+    expect(cellsIn(document)).toEqual(["1", "2", "", ""]);
+    expect(document.activeElement).toBe(inputs[2]);
+  });
+
+  it("redraws a controlled value for a new length in the commit it arrives in", () => {
+    const commits: string[][] = [];
+    const onCommit = (cells: string[]) => commits.push(cells);
+    const { rerender } = render(
+      <CommitProbe length={4} onCommit={onCommit} value="1234" />,
+    );
+
+    rerender(<CommitProbe length={6} onCommit={onCommit} value="1234" />);
+    expect(commits.at(-1)).toEqual(["1", "2", "3", "4", "", ""]);
+
+    rerender(<CommitProbe length={3} onCommit={onCommit} value="1234" />);
+    expect(commits.at(-1)).toEqual(["1", "2", "3"]);
+  });
+
+  it("keeps typed digits for a new length in the commit it arrives in", () => {
+    const commits: string[][] = [];
+    const onCommit = (cells: string[]) => commits.push(cells);
+    const { rerender } = render(<CommitProbe length={4} onCommit={onCommit} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "1" } });
+    fireEvent.change(inputs[1], { target: { value: "2" } });
+
+    rerender(<CommitProbe length={6} onCommit={onCommit} />);
+    expect(commits.at(-1)).toEqual(["1", "2", "", "", "", ""]);
+
+    rerender(<CommitProbe length={1} onCommit={onCommit} />);
+    expect(commits.at(-1)).toEqual(["1"]);
   });
 });
