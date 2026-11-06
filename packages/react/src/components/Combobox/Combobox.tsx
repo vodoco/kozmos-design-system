@@ -5,6 +5,7 @@ import {
   FieldPopupAnchor,
   FieldPopupContent,
   FieldPopupRoot,
+  FieldPopupStatus,
   keepFieldFocus,
 } from "./field-popup";
 import {
@@ -291,6 +292,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const activeOptionId =
       open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
     const listboxOpen = open && entries.length > 0;
+    // The popup shows its empty text: no option matches (commands may stay).
+    const showsEmptyText =
+      popupVisible && filteredOptions.length === 0 && showEmptyText;
 
     React.useEffect(() => {
       if (activeOptionId)
@@ -613,14 +617,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     )}
                     style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
+                    {/* Plain text: FieldPopupStatus says it aloud. */}
                     {filteredOptions.length === 0 &&
                       validActions.length > 0 &&
                       showEmptyText && (
-                        <div
-                          role="status"
-                          aria-live="polite"
-                          className="px-3 py-2 text-sm text-muted-foreground"
-                        >
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
                           {emptyText}
                         </div>
                       )}
@@ -629,18 +630,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       className="min-h-0 overflow-y-auto"
                       data-modality={modality}
                       data-kozmos-scrollbar={scrollbarFor(presentation)}
-                      role={
-                        listboxOpen
-                          ? "listbox"
-                          : showEmptyText
-                            ? "status"
-                            : undefined
-                      }
-                      // A status says its liveness as well (GAP-193); a
-                      // listbox is no live region.
-                      aria-live={
-                        !listboxOpen && showEmptyText ? "polite" : undefined
-                      }
+                      role={listboxOpen ? "listbox" : undefined}
                       aria-label={
                         listboxOpen ? (ariaLabel ?? label) : undefined
                       }
@@ -677,6 +667,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
               </PopupFrame>
             )}
           </div>
+          <FieldPopupStatus message={showsEmptyText ? emptyText : undefined} />
         </FieldPopupRoot>
       </FieldWrapper>
     );
