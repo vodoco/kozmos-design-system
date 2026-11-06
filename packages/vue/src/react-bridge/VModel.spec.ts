@@ -14,7 +14,8 @@ import { RadioGroupItem } from "@kozmos-ds/react";
 import * as Bridge from "./index";
 import { createVueWrapper } from "./react-adapter";
 
-// v-model through the React bridge (react-adapter.ts). Each wrapper names
+// v-model and attributes through the React bridge (react-adapter.ts); the
+// attributes are at the end. Each wrapper names
 // its models: React's prop for the value, and the callback that reports a
 // change. While the parent listens, React is given that callback, beside any
 // handler of its name the user gave; while nobody listens, it is given
@@ -80,15 +81,11 @@ const texts = (selector: string) =>
 
 // Whatever React, Radix or Vue says fails the test that made it say it: an
 // unknown event handler on a DOM element, a field switching between
-// controlled and uncontrolled, a value React cannot take. Two things are
-// said that are not about models:
+// controlled and uncontrolled, a value React cannot take. One thing is said
+// that is not about the bridge:
 const UNRELATED = [
   // Analytics with no provider, once per run, at the first tracked change.
   /No <AnalyticsProvider> found/,
-  // Vue writes each attribute on the wrapper's own box as well, and cannot
-  // write RadioGroup's React items there as `children`; it says so and goes
-  // on (KozmosRadioGroup in the table).
-  /Failed setting prop "children"/,
 ];
 let said: string[] = [];
 beforeEach(() => {
@@ -114,6 +111,7 @@ function mount(render: () => ReturnType<typeof h>) {
   document.body.append(host);
   app = createApp({ setup: () => render });
   app.mount(host);
+  return host;
 }
 
 const fruit = [
@@ -735,5 +733,139 @@ describe("createVueWrapper's models", () => {
     expect(ownOpen).toHaveBeenCalledWith(false);
     expect(opened).toHaveBeenCalledWith(false);
     expect(checked).toHaveBeenCalledWith(true);
+  });
+});
+
+// --------------------------------------------------------------------------
+// Attributes are React's alone. Vue also wrote each onto the wrapper's own
+// box (`display: contents`): an id was in the page twice, an aria-label and
+// a class sat on a box that draws nothing, and `@click` was a listener there
+// as well as React's, so one click ran it twice. A `style` string reached
+// React as a string, which React refuses.
+// --------------------------------------------------------------------------
+
+describe("attributes reach React alone", () => {
+  it("every Kozmos* wrapper hands its attrs to React only", () => {
+    const inherits = Object.entries(Bridge)
+      .filter(([name]) => name.startsWith("Kozmos"))
+      .filter(
+        ([, component]) =>
+          (component as { inheritAttrs?: boolean }).inheritAttrs !== false,
+      )
+      .map(([name]) => name);
+    expect(inherits).toEqual([]);
+  });
+
+  // One part of each kind, as React draws its attributes: the property
+  // above holds for every wrapper, and these show what React does with them.
+  const KINDS: {
+    name: keyof typeof Bridge;
+    kind: string;
+    props?: Record<string, unknown>;
+    slot?: string;
+  }[] = [
+    { name: "KozmosBadge", kind: "a plain element", slot: "New" },
+    { name: "KozmosCard", kind: "a box drawing a Vue slot", slot: "Gate 4" },
+    {
+      name: "KozmosAlert",
+      kind: "an adapter of several React parts",
+      props: { title: "Saved" },
+    },
+    {
+      name: "KozmosLink",
+      kind: "a wrapper with props declared",
+      props: { href: "#gate" },
+      slot: "Gate",
+    },
+    { name: "KozmosInput", kind: "a field, its <input> React's element" },
+    {
+      name: "KozmosSearchBar",
+      kind: "a field with a model, inside a row of its own",
+    },
+    { name: "KozmosCheckbox", kind: "a Radix part with a model" },
+  ];
+
+  // Every element with the id. jsdom reads `#probe` through getElementById,
+  // which finds one, the first, however many carry it.
+  const PROBE = "[id=probe]";
+
+  /**
+   * The wrapper's own boxes, which draw nothing, and the element React drew
+   * with the id inside the second of them, the box React draws in.
+   */
+  async function drawnByReact(host: HTMLElement) {
+    const [own] = host.children;
+    const [container] = own.children;
+    const element = await until(() =>
+      container.querySelector<HTMLElement>(PROBE),
+    );
+    await settle();
+    return { boxes: [own, container], element };
+  }
+
+  describe.each(KINDS.map((part) => [part.name, part.kind, part] as const))(
+    "%s, %s",
+    (_, __, part) => {
+      it("draws its id once; class, aria-* and data-* on React's element only; style; one click heard once", async () => {
+        const onClick = vi.fn();
+        const host = mount(() =>
+          h(
+            Bridge[part.name] as Component,
+            {
+              ...part.props,
+              id: "probe",
+              class: "probe",
+              "aria-label": "Probe",
+              "data-testid": "probe",
+              // An object, which React took before as well: a string is
+              // the test below.
+              style: { color: "rgb(255, 0, 0)", "--probe-gap": "4px" },
+              onClick,
+            },
+            part.slot ? { default: () => part.slot } : undefined,
+          ),
+        );
+        const { boxes, element } = await drawnByReact(host);
+        element.click();
+        await settle();
+        // Each is said, so a run shows every way the part goes wrong.
+        expect.soft(onClick).toHaveBeenCalledTimes(1);
+        expect.soft($$(PROBE)).toHaveLength(1);
+        expect.soft($$(".probe")).toEqual([element]);
+        expect.soft($$("[aria-label=Probe]")).toEqual([element]);
+        expect.soft($$("[data-testid=probe]")).toEqual([element]);
+        for (const box of boxes)
+          expect.soft(box.getAttributeNames()).toEqual(["style"]);
+        expect.soft(element.style.color).toBe("rgb(255, 0, 0)");
+        expect.soft(element.style.getPropertyValue("--probe-gap")).toBe("4px");
+      });
+    },
+  );
+
+  // Each with a kebab-case name of its own: React warns of one only once a
+  // run, so a name the cases shared would be heard in the first alone.
+  it.each([
+    [
+      "a string",
+      "color: rgb(255, 0, 0); background-color: rgb(0, 0, 255)",
+      "backgroundColor",
+    ],
+    [
+      "an object",
+      { color: "rgb(255, 0, 0)", "border-top-color": "rgb(0, 0, 255)" },
+      "borderTopColor",
+    ],
+    [
+      "an array",
+      ["outline-color: rgb(0, 0, 255)", { color: "rgb(255, 0, 0)" }],
+      "outlineColor",
+    ],
+  ] as const)("takes style as %s", async (_, style, name) => {
+    const host = mount(() =>
+      h(Bridge.KozmosBadge, { id: "probe", style }, { default: () => "New" }),
+    );
+    const { element } = await drawnByReact(host);
+    expect(element.style.color).toBe("rgb(255, 0, 0)");
+    expect(element.style[name]).toBe("rgb(0, 0, 255)");
   });
 });

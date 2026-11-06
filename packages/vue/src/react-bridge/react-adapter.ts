@@ -4,6 +4,7 @@ import {
   defineComponent,
   getCurrentInstance,
   nextTick,
+  normalizeStyle,
   onMounted,
   onBeforeUnmount,
   ref,
@@ -106,6 +107,20 @@ function listensFor(
 }
 
 /**
+ * Vue's `style`, a string, an object or an array of both, as React takes it:
+ * one object, its names camelCase but for custom properties (`--gap`).
+ */
+function toReactStyle(style: unknown): Record<string, unknown> {
+  const merged = normalizeStyle([style]) as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(merged ?? {}).map(([name, value]) => [
+      name.startsWith("--") ? name : camelize(name),
+      value,
+    ]),
+  );
+}
+
+/**
  * Creates a native Vue 3 wrapper component for a Kozmos React component.
  * This directly mounts the React VDOM inside a Vue node, completely bypassing Web Component serialization constraints.
  *
@@ -125,6 +140,11 @@ export function createVueWrapper<P extends object>(
     props: {
       // Vue 3 accepts any fallthrough attributes via `attrs`, making strict prop mapping unnecessary for basic wrapper engines
     },
+    // The attrs are React's alone. Vue would also write each onto the
+    // wrapper's own box: an id twice in the page, an aria-label on a box
+    // that draws nothing, and a listener (`@click`) on that box as well as on
+    // React's element, so it ran twice for one click.
+    inheritAttrs: false,
     emits: Object.keys(models).map((name) => `update:${name}`),
     setup(props, { attrs, emit, slots }) {
       const instance = getCurrentInstance()!;
@@ -152,6 +172,8 @@ export function createVueWrapper<P extends object>(
             : reactProps.class;
           delete reactProps.class;
         }
+        if (reactProps.style != null)
+          reactProps.style = toReactStyle(reactProps.style);
 
         // Each model: its value as React's `prop`, and, while the parent
         // listens, React's `callback` emitting the new value, beside any
