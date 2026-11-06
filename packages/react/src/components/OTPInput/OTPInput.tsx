@@ -59,7 +59,8 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     // The cells follow `value` and the cell count during render, so no
     // frame, the first included, draws cells the props have moved past
     // (React's pattern for adjusting state when a prop changes). Without a
-    // value, a new count keeps the digits typed so far. Cells that already
+    // value, a new count keeps the digits typed so far, closed up into the
+    // first cells and as many as fit, as it always has. Cells that already
     // spell the new code stay as they are, so a digit typed into a later
     // cell keeps its place when its code comes back as `value`.
     const [drawnFrom, setDrawnFrom] = useState({ value, cellCount });

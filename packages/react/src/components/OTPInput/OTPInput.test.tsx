@@ -325,5 +325,40 @@ describe("OTPInput", () => {
       type(inputs[3], "4");
       expect(completions()).toHaveLength(1);
     });
+
+    it("tracks a completion once when the parent echoes the code back as value", () => {
+      function EchoesTheCode() {
+        const [code, setCode] = React.useState("");
+        return <OTPInput length={4} onChange={setCode} value={code} />;
+      }
+      const { completions, inputs } = renderTracked(<EchoesTheCode />);
+
+      ["1", "2", "3"].forEach((digit, index) => type(inputs[index], digit));
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks each completion once under StrictMode", () => {
+      const { completions, inputs } = renderTracked(
+        <React.StrictMode>
+          <OTPInput length={4} />
+        </React.StrictMode>,
+      );
+
+      ["1", "2", "3"].forEach((digit, index) => type(inputs[index], digit));
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toHaveLength(1);
+
+      type(inputs[2], "");
+      paste(inputs[0], "5678");
+      expect(completions()).toEqual([
+        expect.objectContaining(COMPLETED),
+        expect.objectContaining(COMPLETED),
+      ]);
+    });
   });
 });
