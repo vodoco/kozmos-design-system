@@ -3,17 +3,19 @@
 // `figma connect publish` reports what it sent, not what Dev Mode shows. This
 // asks the Dev Mode server for every linked node on every platform, through its
 // read-only get_code_connect_map tool, and fails when a node shows nothing or a
-// snippet imports something a consumer cannot use. It needs Figma desktop with
-// Preferences → Enable Dev Mode MCP Server, and the Kozmos DS - Core Library
-// file open: node ids resolve in the file in front. Keep Figma in front: on
+// snippet imports something a consumer cannot use. It needs Figma desktop
+// serving its Dev Mode MCP server on 127.0.0.1:3845 (once Preferences → Enable
+// Dev Mode MCP Server; on 2026-11-05 that item was gone from Preferences and
+// the server was already serving), and the Kozmos DS - Core Library file
+// open: node ids resolve in the file in front. Keep Figma in front: on
 // 2026-09-21 the server answered no tool call for an hour and a half while
 // Figma sat in the background, and answered at once when it was brought
 // forward.
 //
 // Every call counts against a daily limit Figma sets per account, shared with
-// any other use of the Dev Mode server. A full pass is 534 calls (178 nodes on
-// each of three platforms: 98 component nodes and the 80 library icons), more
-// than one day's allowance: on 2026-09-21, after some 500 in the day, it
+// any other use of the Dev Mode server. A full pass asks every linked node on
+// each of three platforms, the component nodes and the library icons (about
+// 180 a platform in November 2026), more than one day's allowance: on 2026-09-21, after some 500 in the day, it
 // answered "Rate limit exceeded, please try again tomorrow". Run a full pass a
 // label at a time, and narrow with --label and --node when you can. The script
 // stops at the first rate-limit answer.
@@ -30,6 +32,7 @@
 //   pnpm figma:connect:readback -- --label SwiftUI --node 451:12870
 import fs from "node:fs";
 import path from "node:path";
+import { mapFromReply } from "./lib/figma-mcp-reply.mjs";
 
 const ROOT = process.cwd();
 const SERVER =
@@ -148,32 +151,16 @@ async function readMapping(nodeId, label) {
         name: "get_code_connect_map",
         arguments: { nodeId, codeConnectLabel: label },
       });
-      const text = (reply.result?.content || [])
-        .map((part) => part.text || "")
-        .join("");
       consecutiveTimeouts = 0;
-      // An answer with no text is not an empty map. Read as "{}", it was
-      // reported as "nothing published reads back", the verdict for a node
-      // with no mapping at all.
-      if (!reply.error && !reply.result?.isError && !text.trim()) {
-        lastError = "the server answered with no text";
-        continue;
-      }
-      if (reply.error || reply.result?.isError) {
-        lastError = JSON.stringify(reply.error || text).slice(0, 200);
-        // A retry spends another call of the day's allowance and fails the same way.
-        if (/rate limit/i.test(lastError)) {
-          rateLimited = rateLimited || lastError;
-          break;
-        }
-        continue;
-      }
-      const map = JSON.parse(text);
-      if (!map || typeof map !== "object" || Array.isArray(map)) {
-        lastError = `the server answered ${text.slice(0, 120)}, not a map`;
-        continue;
-      }
-      return { map };
+      // Each content part read on its own (lib/figma-mcp-reply.mjs): Figma
+      // sends the map with more text beside it.
+      const read = mapFromReply(reply);
+      if (read.map) return { map: read.map };
+      lastError = read.error;
+      if (read.rateLimited) rateLimited = rateLimited || read.rateLimited;
+      // A reply that holds no map answers the same when asked again, and a
+      // retry spends another call of the day's allowance.
+      if (!read.retry) break;
     } catch (error) {
       if (error.name === "TimeoutError") {
         consecutiveTimeouts += 1;
@@ -211,7 +198,7 @@ try {
     `Cannot reach the Dev Mode MCP server at ${SERVER} (${error.message}).`,
   );
   console.error(
-    "Open Figma desktop, enable Preferences → Enable Dev Mode MCP Server, and open the Kozmos DS - Core Library file.",
+    "Open Figma desktop with its Dev Mode MCP server serving on 127.0.0.1:3845, and open the Kozmos DS - Core Library file.",
   );
   process.exit(1);
 }
