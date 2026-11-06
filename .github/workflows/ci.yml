@@ -598,9 +598,12 @@ jobs:
       # every field computes as in Chromium, light and dark, both directions,
       # touch and compact, disabled and focused, and a caller's padding class
       # wins where @scope reaches a field (scripts/check-field-styles.mjs).
-      # Combobox's and MultiSelect's clear and open keep the field's edge
-      # drawn on hover, in forced colours too, and a focused one rings alone
-      # (scripts/check-field-actions.mjs).
+      # The buttons at a field's end (Combobox's and MultiSelect's clear and
+      # open, Input's action, PasswordInput's reveal, DatePicker's and
+      # TimePicker's trigger) draw their hover fill 4 inside themselves, its
+      # corners the field's less 4, and keep the field's edge drawn on hover,
+      # in forced colours too; a focused one rings alone
+      # (scripts/check-field-actions.mjs, decision 164).
       - name: Verify Field Styles
         run: |
           pnpm test:field-styles

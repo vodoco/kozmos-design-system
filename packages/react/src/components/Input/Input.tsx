@@ -14,15 +14,16 @@ export { inputVariants, type InputStatus };
 
 /**
  * A button inside the field's end (GAP-154), drawn as PasswordInput's reveal
- * is: as tall as the field, its ring its own.
+ * is: as tall as the field, its ring its own; hovered, a fill inside it, 4 in
+ * from its edges, its corners the field's less 4.
  *
  * - `copy` copies the field's value and says so: "Copied" in a polite live
  *   region, and a check in place of the copy icon for two seconds. For a
  *   read-only value a product shows and never edits, a feature's ID.
  * - `toggle` is a pressed button with its own name, as the reveal is: the
  *   Featured star at a field's end. `icon` is the product's; pressed, it is
- *   drawn as a pressed ToggleButton is, a disc of the theme fill under the
- *   icon, so the state is a shape and not a colour alone.
+ *   drawn as a pressed ToggleButton is, the theme fill under the icon in the
+ *   hover fill's shape, so the state is a shape and not a colour alone.
  */
 export type InputAction =
   | {

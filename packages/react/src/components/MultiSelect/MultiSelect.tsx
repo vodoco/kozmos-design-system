@@ -429,9 +429,11 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 </ChipGroup>
                 {/* Combobox's clear and open (field-actions.ts), each as tall
                     as the field: 44 in touch, 40 in compact. Out of the line,
-                    so the field keeps its height, and in the field, inside
-                    its border, so a caller's ref, width and border hold
-                    them and a hover fill never crosses the border. */}
+                    so the field keeps its height, and in the field, so a
+                    caller's ref, width and border hold them; the row lies on
+                    the field's edge at its end, as Combobox's does
+                    (owned-selection.css). A hover draws its fill 4 inside
+                    each button, 3 clear of that edge (decision 164). */}
                 <div className={FIELD_ACTIONS_ROW}>
                   {canClear && (
                     <button

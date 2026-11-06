@@ -13,16 +13,16 @@
       var(--density-field-height-md, 2.75rem) * 2 + 0.5rem
     );
   }
-  /* Combobox's and MultiSelect's clear and open (field-actions.ts) lie over
-     their field's edge. Forced colours (Windows' high contrast) repaint a
-     hover fill in the page's Canvas, which erased that edge, so there they
-     hover with no fill. Two classes and the element: the scoped hover
-     utility weighs three classes with its :scope, and a scoped rule wins a
-     tie with an owned one. */
-  @media (forced-colors: active) {
-    .kozmos-combobox-actions > button.kozmos-combobox-action:hover {
-      background-color: transparent;
-    }
+  /* MultiSelect's clear and open lie on the field's edge at its top, bottom
+     and end, as Combobox's and Input's buttons do, so a hover fill stands 3
+     inside the edge on every side it touches (decision 164). The row covers
+     the field's border box, not only its inside: out over the 1px edge, in
+     logical insets, so the end follows the direction. The element as well
+     as the classes: the row's scoped inset utilities weigh two classes with
+     their :scope, and a scoped rule wins a tie with an owned one. */
+  .kozmos-multiselect-field > div.kozmos-combobox-actions {
+    inset-block: -1px;
+    inset-inline-end: -1px;
   }
   /* MultiSelect's field rings for its input, as Combobox's input does: with
      its clear or open focused, the button rings alone, not inside the
