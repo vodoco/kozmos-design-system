@@ -19,74 +19,50 @@ import React, { useLayoutEffect, useRef } from "react";
 
 /*
  * How a bridged wrapper hands Vue's attributes, listeners and models to the
- * React part it mounts (`createVueWrapper`). The wrapper draws two boxes of
- * its own (`display: contents`), the second React's root, and React draws a
- * third inside it, round the part (the host). None of them draws anything,
- * and nothing Vue is given is written on them, but the listeners below.
+ * React part it mounts (`createVueWrapper`). The wrapper's own boxes
+ * (`display: contents`) draw nothing, and nothing Vue is given is written on
+ * them, but the native listeners below.
  *
- * Listeners. Vue names `@keydown` `onKeydown`, and React knows only
- * `onKeyDown`, so each listener is routed by its name (`routeListener`):
- * - a DOM event React synthesises (REACT_DOM_EVENTS, held to @types/react's
- *   DOMAttributes; REACT_UNTYPED_EVENTS, which React 18 and 19 handle and
- *   @types/react 18 does not declare) goes to the part by React's name, in
- *   any spelling (`onKeydown`, `onKeyDown`, `onDblclick`), so the part puts
- *   it where it puts that prop. React also hears it on the host, so it runs
- *   for anything the part draws, in place or in a portal (an open Dialog's
- *   content), even a part that draws no element of its own (Dialog, Select,
- *   AnalyticsProvider). The host takes the events an element hears from
- *   inside: those that bubble, and `mouseenter`, `mouseleave`,
- *   `pointerenter` and `pointerleave`, which reach every element entered.
- *   One that reaches only its target (`focus`, `blur`, `scroll`, `load`, the
- *   media events, TARGET_ONLY_EVENTS) is the part's alone, unless it is
- *   listened to with `.capture`;
- * - `.capture` is React's `…Capture`, on the part and on the host; `.once`
- *   runs once; `.passive`, which React cannot take, is a native listener on
- *   the wrapper's own box, as is `.capture` on the four events React has no
- *   capture phase for (`mouseenter`, `mouseleave`, `pointerenter`,
- *   `pointerleave`);
- * - a callback of the part named like a DOM event (SearchBar's
- *   `onChange(text)`, CategoryTile's `onSelect(id)`) is the part's alone: a
- *   model's callback is one, and the wrapper names the others (`callbacks`).
- *   It is never heard as that DOM event from what the part draws;
- * - the events only React 19 handles (REACT_19_EVENTS: `scrollend`,
- *   `beforetoggle`, `transitionrun`, `transitionstart`, `transitioncancel`)
- *   are native listeners on the box, under React 18 and 19 alike, and never
- *   given to React, which under 18 would ignore them and say so. The box
- *   listens to `scrollend` and `beforetoggle`, which do not bubble, in the
- *   capture phase, so it hears them from any element the part draws in
- *   place;
- * - `focusin` and `focusout`, which React does not synthesise, are native
- *   listeners on the box: they bubble, so the box hears them from inside;
- * - any other name is a React callback of the part (`onClose`, `onZoomIn`
- *   from `@zoom-in`, `onValueChange`) or a DOM event React does not know
- *   (a custom event): it goes to the part by its name and is bound natively
- *   on the box as well, as Vue does with an event a component does not
- *   declare. A part's callback never reaches the box as a DOM event, and
- *   React never hears a custom event, so each runs once. If the part hands
- *   an unknown name on to its element, React says so in development
- *   ("Unknown event handler property"); the native listener still hears it.
- *   With `.capture` or `.passive`, which only a DOM event has, it is native
- *   only.
- * A listener runs once for one native event, wherever it hears it first:
- * the part's element before the host, and the host before the box, in the
- * bubble phase; with `.capture`, the host before the part. It is given the
- * native event (`instanceof KeyboardEvent`); for one React makes from
- * another, the one it was made from (`onChange` from a field's `input`,
- * `onMouseEnter` from `mouseover`, `onFocus` from `focusin`). While it runs
- * on React's side, the event's `currentTarget` is the element React calls
- * it on, so `.self` means that element, and what it does to the event
- * (`.stop`, `.prevent`) is done to React's event as well. Key modifiers
- * (`.enter`) are compiled into the handler and read the native event. Each
- * handler is called as Vue calls a listener: an array is each of its
- * handlers, and an error goes to the app's errorHandler. The other
- * attributes go to React as they are, `class` as `className` and `style` as
- * one object.
+ * Listeners. Each listener goes to one place, by one rule:
+ * - if the part takes its prop, it is the part's alone. Vue names `@keydown`
+ *   `onKeydown`, and React knows only `onKeyDown`, so a DOM event React
+ *   synthesises is given by React's name, in any spelling (`onKeydown`,
+ *   `onKeyDown`, `onDblclick`), and `.capture` as React's `…Capture`. The
+ *   part decides what runs it, as it does for a React caller: LocationPin
+ *   runs `onClick` for one tap of a double tap, and a disabled
+ *   NavigationItem never;
+ * - if the part does not take it, it is a native listener on the wrapper's
+ *   own box, as Vue binds a listener a component does not declare on the
+ *   component's root element. It hears what the part draws in place, and,
+ *   as a listener on a component never hears what the component teleports,
+ *   nothing the part draws in a portal (an open Dialog's content).
+ * Which props a part takes is read from React's types: part-takes.ts, which
+ * scripts/bridge-takes.mjs writes, and Listeners.spec.ts holds to them.
+ * Dialog, Select, Menu, Drawer, Popover, BottomSheet, Tooltip and the
+ * providers take no DOM event, so their listeners are the box's; a part
+ * whose props carry React's DOM attributes takes every DOM event they
+ * declare, and its own callbacks (SearchBar's `onChange(text)`). A part
+ * `createVueWrapper` has no description of takes every React DOM event and
+ * every other name, as React's props contract has it, but those its
+ * `notTaken` names. `focusin`, `focusout` and the events only React 19 knows
+ * are never React's. The box listens to the events React's types do not
+ * declare and that do not bubble (`scrollend`, `toggle`: HEARD_ON_THE_WAY_DOWN)
+ * in the capture phase, since the box never scrolls or toggles itself.
  *
- * What is not heard: a native listener on the box hears nothing a part
- * draws in a portal (Radix's content, in document.body), and no event that
- * does not bubble unless it listens in the capture phase; React's host does
- * not hear what the part does not draw (a slot it does not take, which Vue
- * still draws in the box).
+ * The part's listener is given the native event when it is of the
+ * listener's own type (`click` for `onClick`), and React's event otherwise:
+ * React makes `onMouseEnter` from `mouseover`, `onFocus` from `focusin` and
+ * a field's `onChange` from `input`, and its own event says `mouseenter`,
+ * `focus` and `change`. Given the native event, its `currentTarget` is the
+ * element React calls the listener on while it runs, so `.self` means that
+ * element, and `.stop` and `.prevent` are done to React's event as well.
+ * Key modifiers (`.enter`) are compiled into the handler and read either
+ * event. `.once` runs once; `.passive`, which React cannot take, is dropped
+ * on the part (React's own touch and wheel listeners are passive), and kept
+ * on the box. Each handler is called as Vue calls a listener: an array is
+ * each of its handlers, and an error goes to the app's errorHandler. The
+ * other attributes go to React as they are, `class` as `className` and
+ * `style` as one object.
  *
  * Models (`ModelBinding`). Each wrapper names its `v-model`s, and declares
  * each, with its modifiers and its listeners, as props: Vue then reads every
@@ -273,9 +249,9 @@ export const REACT_DOM_EVENTS = {
 
 /**
  * DOM events React DOM 18 and 19 both synthesise, which @types/react 18's
- * `DOMAttributes` does not declare: routed as REACT_DOM_EVENTS are.
- * Listeners.spec.ts holds this, and REACT_19_EVENTS, to the events React DOM
- * itself knows.
+ * `DOMAttributes` does not declare. A part takes one only if its props
+ * declare it (WayfindingCard's `onClose`). Listeners.spec.ts holds this, and
+ * REACT_19_EVENTS, to the events React DOM itself knows.
  */
 export const REACT_UNTYPED_EVENTS = {
   onToggle: "toggle",
@@ -285,9 +261,9 @@ export const REACT_UNTYPED_EVENTS = {
 } as const;
 
 /**
- * DOM events only React DOM 19 synthesises. React 18 would ignore them, and
- * say so, so they are native listeners on the wrapper's box under both,
- * never given to React.
+ * DOM events only React DOM 19 synthesises. No part's types declare them
+ * (React's are @types/react 18's), so their listeners are native listeners
+ * on the wrapper's box, under React 18 and 19 alike.
  */
 export const REACT_19_EVENTS = {
   onScrollEnd: "scrollend",
@@ -306,10 +282,9 @@ export const REACT_CAPTURELESS_EVENTS = {
 } as const satisfies Record<CapturelessEvent, true>;
 
 /**
- * DOM events React does not synthesise, bound natively on the wrapper's box
- * and never handed to React. Both bubble, so the box hears them from any
- * element inside; React's `onFocus` and `onBlur` are the same events, heard
- * where the part puts them.
+ * DOM events React does not synthesise: a listener of theirs is always a
+ * native listener on the wrapper's box. Both bubble, so the box hears them
+ * from what the part draws in place.
  */
 export const NATIVE_DOM_EVENTS: ReadonlySet<string> = new Set([
   "focusin",
@@ -317,29 +292,37 @@ export const NATIVE_DOM_EVENTS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * DOM events an element never hears from inside in its bubble phase: they
- * do not bubble, and fire on their target alone. React's host does not take
- * them, but with `.capture`; the box listens to the React 19 ones among them
- * in the capture phase.
+ * The events React's types do not declare (REACT_UNTYPED_EVENTS,
+ * REACT_19_EVENTS) that do not bubble. A part never takes one by its types,
+ * and the wrapper's box (`display: contents`) never scrolls or toggles
+ * itself, so the box listens to them on their way down, in the capture
+ * phase: it hears them from what the part draws in place.
  */
-export const TARGET_ONLY_EVENTS: ReadonlySet<string> = new Set(
-  [
-    "focus blur scroll scrollend load error abort invalid",
-    "toggle beforetoggle close cancel resize",
-    // Media
-    "canplay canplaythrough durationchange emptied encrypted ended",
-    "loadeddata loadedmetadata loadstart pause play playing progress",
-    "ratechange seeked seeking stalled suspend timeupdate volumechange waiting",
-  ]
-    .join(" ")
-    .split(" "),
-);
+export const HEARD_ON_THE_WAY_DOWN: ReadonlySet<string> = new Set([
+  "scrollend",
+  "beforetoggle",
+  "toggle",
+  "close",
+  "cancel",
+  "resize",
+]);
 
 /** Every DOM event React synthesises under 18 and 19, by React's name. */
 const REACT_KNOWN: Readonly<Record<string, string>> = {
   ...REACT_DOM_EVENTS,
   ...REACT_UNTYPED_EVENTS,
 };
+
+/**
+ * React's DOM event props, as @types/react 18's `DOMAttributes` declares
+ * them: each event, and its `…Capture` but for the capture-less four. What a
+ * part's `dom` stands for in part-takes.ts.
+ */
+export const REACT_DOM_PROPS: ReadonlySet<string> = new Set(
+  Object.keys(REACT_DOM_EVENTS).flatMap((name) =>
+    name in REACT_CAPTURELESS_EVENTS ? [name] : [name, `${name}Capture`],
+  ),
+);
 
 /** React's name for each event, by every spelling: React's in any case, and Vue's (`onKeydown`, `onDblclick`). */
 const bySpelling = (events: Readonly<Record<string, string>>) =>
@@ -393,91 +376,96 @@ export function parseListener(key: string): ParsedListener {
 
 /**
  * A Vue key for a native listener on `event`, which Vue's runtime binds to
- * it: `onKeydown` for `keydown`. `.once` is never in it: the bridge runs a
- * `.once` listener once itself, wherever it hears it. (Spelled out, not
- * Vue's helper: the stylesheet's Tailwind reads this file, and would make a
- * utility of its name.)
+ * it, `.once`, `.capture` and `.passive` included: `onKeydown` for
+ * `keydown`. (Spelled out, not Vue's helper: the stylesheet's Tailwind reads
+ * this file, and would make a utility of its name.)
  */
-const nativeKey = (event: string, capture: boolean, passive: boolean) =>
+const nativeKey = (event: string, parsed: ParsedListener, capture: boolean) =>
   `on${event[0].toUpperCase()}${event.slice(1)}${capture ? "Capture" : ""}${
-    passive ? "Passive" : ""
-  }`;
+    parsed.once ? "Once" : ""
+  }${parsed.passive ? "Passive" : ""}`;
 
-/** Where one listener goes: the part, React's host round it, the wrapper's box. */
+/**
+ * Which `on…` props a React part takes (part-takes.ts, generated from
+ * React's types): every React DOM event prop (`dom`, REACT_DOM_PROPS) but
+ * those in `except`, and its own (`own`).
+ */
+export interface Takes {
+  dom: boolean;
+  except?: readonly string[];
+  own: readonly string[];
+}
+
+/** Whether a part described by `takes` takes the prop `prop`. */
+export const takesProp = (takes: Takes, prop: string) =>
+  takes.own.includes(prop) ||
+  (takes.dom && REACT_DOM_PROPS.has(prop) && !takes.except?.includes(prop));
+
+/**
+ * A part `createVueWrapper` has no description of (one of a consumer's):
+ * React's contract, every React DOM event (React 18's and the four React
+ * also synthesises) and every other name, as its props, but the DOM events
+ * React 18 does not synthesise (`focusin`, React 19's) and those named in
+ * `notTaken`.
+ */
+function takesByContract(notTaken: readonly string[] = []) {
+  return (prop: string) => {
+    if (notTaken.includes(prop)) return false;
+    const parsed = parseListener(prop);
+    if (parsed.react19) return false;
+    return !NATIVE_DOM_EVENTS.has(parsed.base.slice(2).toLowerCase());
+  };
+}
+
+/** Where one listener goes: the part, or the wrapper's box. */
 export interface ListenerRoute {
   /** React's prop for it on the part, or null. */
   react: string | null;
-  /** React's prop for it on the host round the part, or null. */
-  host: string | null;
-  /** The key Vue binds natively on the box, without `Once`, or null. */
+  /** The key Vue binds natively on the box, or null. */
   native: string | null;
+  /** A `.once` listener on the part, which the bridge runs once. */
   once: boolean;
 }
 
-const NO_CALLBACKS: ReadonlySet<string> = new Set();
-
 /**
- * Where one listener goes (the header says why). `callbacks` are the part's
- * own callbacks named like a DOM event, which are the part's alone.
+ * Where one listener goes: to the part, when the part takes its prop
+ * (`takes`), and only there; else natively to the wrapper's box, as Vue
+ * binds a listener a component does not declare on its root element.
  */
 export function routeListener(
   key: string,
-  callbacks: ReadonlySet<string> = NO_CALLBACKS,
+  takes: (prop: string) => boolean = takesByContract(),
 ): ListenerRoute {
-  const parsed = parseListener(key);
-  const { once, capture, passive } = parsed;
-  const native = (event: string, inCapture = capture) => ({
-    react: null,
-    host: null,
-    native: nativeKey(event, inCapture, passive),
-    once,
-  });
   // `on:click`: Vue's own spelling of a native, case-kept event.
-  if (key.startsWith("on:"))
-    return {
-      react: null,
-      host: null,
-      native: `${parsed.base}${capture ? "Capture" : ""}${passive ? "Passive" : ""}`,
-      once,
-    };
-  const callback = parsed.react ?? parsed.react19 ?? parsed.base;
-  if (callbacks.has(callback) && !passive)
-    return {
-      react: capture ? `${callback}Capture` : callback,
-      host: null,
-      native: null,
-      once,
-    };
-  if (parsed.react) {
-    const dom = REACT_KNOWN[parsed.react];
-    if (passive || (capture && parsed.react in REACT_CAPTURELESS_EVENTS))
-      return native(dom);
-    const name = capture ? `${parsed.react}Capture` : parsed.react;
-    return {
-      react: name,
-      host: capture || !TARGET_ONLY_EVENTS.has(dom) ? name : null,
-      native: null,
-      once,
-    };
-  }
-  if (parsed.react19) {
-    const dom = REACT_19_EVENTS[parsed.react19 as keyof typeof REACT_19_EVENTS];
-    return native(dom, capture || TARGET_ONLY_EVENTS.has(dom));
-  }
-  const event = parsed.base.slice(2).toLowerCase();
-  if (NATIVE_DOM_EVENTS.has(event)) return native(event);
-  if (capture || passive)
-    return {
-      react: null,
-      host: null,
-      native: `${parsed.base}${capture ? "Capture" : ""}${passive ? "Passive" : ""}`,
-      once,
-    };
-  return { react: parsed.base, host: null, native: parsed.base, once };
+  if (key.startsWith("on:")) return { react: null, native: key, once: false };
+  const parsed = parseListener(key);
+  const name = parsed.react ?? parsed.react19 ?? parsed.base;
+  const prop = parsed.capture ? `${name}Capture` : name;
+  // `.passive`, which React cannot take, is dropped: React's own touch and
+  // wheel listeners are passive.
+  if (takes(prop)) return { react: prop, native: null, once: parsed.once };
+  const dom = parsed.react
+    ? REACT_KNOWN[parsed.react]
+    : parsed.react19
+      ? REACT_19_EVENTS[parsed.react19 as keyof typeof REACT_19_EVENTS]
+      : NATIVE_DOM_EVENTS.has(parsed.base.slice(2).toLowerCase())
+        ? parsed.base.slice(2).toLowerCase()
+        : null;
+  if (!dom) return { react: null, native: key, once: false };
+  return {
+    react: null,
+    native: nativeKey(
+      dom,
+      parsed,
+      parsed.capture || HEARD_ON_THE_WAY_DOWN.has(dom),
+    ),
+    once: false,
+  };
 }
 
 /** A React synthetic event: what React hands a DOM event's handler. */
 interface SyntheticEvent {
+  type: string;
   nativeEvent: Event;
   currentTarget: EventTarget | null;
   isDefaultPrevented(): boolean;
@@ -567,14 +555,19 @@ export type ModelBindings<P = Record<string, unknown>> = Record<
   ModelBinding<P>
 >;
 
+/** A React DOM event prop: `onClick`, `onClickCapture`. */
+type ReactDomProp = DomAttributeKey;
+
 /** What else a wrapper says of its React part. */
-export interface WrapperOptions<P = Record<string, unknown>> {
+export interface WrapperOptions {
   /**
-   * The part's own callbacks named like a DOM event React knows
-   * (CategoryTile's `onSelect(id)`): given to the part alone, never heard as
-   * that event from what the part draws. A model's callback is one already.
+   * The React DOM event props the part does not take, though React's
+   * contract has every part take them: their listeners are native listeners
+   * on the wrapper's own box, as Vue binds a listener a component does not
+   * declare. Kozmos's own parts are described exactly by part-takes.ts, and
+   * this does not apply to them.
    */
-  callbacks?: readonly (string extends keyof P ? string : CallbackOf<P>)[];
+  notTaken?: readonly ReactDomProp[];
 }
 
 /** A DOM change event's value: what an `<input>`'s `onChange` reports. */
@@ -649,9 +642,9 @@ interface BoundModel {
   value: unknown;
 }
 
-/** One listener the parent gave, as the bridge calls it. */
+/** One listener the part takes, as the bridge calls it. */
 interface Entry {
-  /** The key the parent gave it under: one listener, wherever it is heard. */
+  /** The key the parent gave it under. */
   key: string;
   handler: unknown;
   once: boolean;
@@ -663,11 +656,24 @@ export interface Bridged {
   part: unknown;
   /** Its models, by Vue's name for each. */
   models: Readonly<Record<string, Readonly<LooseModelBinding>>>;
-  /** The part's own callbacks named like a DOM event, its models' among them. */
-  callbacks: ReadonlySet<string>;
+  /** Which `on…` props the part takes: part-takes.ts's entry, or null for React's contract. */
+  readonly takes: Takes | null;
 }
 
 const bridged = new WeakMap<object, Bridged>();
+
+/** Kozmos's parts, each with the `on…` props it takes (part-takes.ts). */
+const described = new WeakMap<object, Takes>();
+
+/**
+ * Says which `on…` props each React part takes: part-takes.ts's table, and
+ * index.ts's adapters. Read when a wrapper mounts.
+ */
+export function describeParts(
+  parts: Iterable<readonly [unknown, Takes]>,
+): void {
+  for (const [part, takes] of parts) described.set(part as object, takes);
+}
 
 /**
  * What a wrapper made by `createVueWrapper` mounts and binds, or undefined
@@ -710,9 +716,6 @@ function toReactStyle(
   );
 }
 
-/** The host's style: it draws no box of its own. */
-const HOST_STYLE = { display: "contents" } as const;
-
 /**
  * Creates a native Vue 3 wrapper component for a Kozmos React component.
  * This directly mounts the React VDOM inside a Vue node, completely bypassing Web Component serialization constraints.
@@ -720,8 +723,8 @@ const HOST_STYLE = { display: "contents" } as const;
  * @param ReactComponent The Kozmos React component to wrap
  * @param models Each `v-model` the wrapper takes, and how it reaches React
  *   (`{ modelValue: { prop: "value", callback: "onValueChange", empty: "" } }`)
- * @param options The part's own callbacks named like a DOM event
- *   (`{ callbacks: ["onSelect"] }`)
+ * @param options The React DOM event props the part does not take
+ *   (`{ notTaken: ["onClick"] }`), for a part of your own
  */
 export function createVueWrapper<P extends object, N extends string = never>(
   ReactComponent: React.ElementType<P>,
@@ -729,13 +732,15 @@ export function createVueWrapper<P extends object, N extends string = never>(
     N,
     ModelBinding<Deferred<P>>
   >,
-  options: WrapperOptions<Deferred<P>> = {},
+  options: WrapperOptions = {},
 ) {
   const bindings = models as Record<string, LooseModelBinding>;
-  const callbacks: ReadonlySet<string> = new Set([
-    ...((options.callbacks ?? []) as readonly string[]),
-    ...Object.values(bindings).map((binding) => binding.callback),
-  ]);
+  const byContract = takesByContract(options.notTaken);
+  /** Whether the part takes a prop: its description, else React's contract. */
+  const takes = (prop: string) => {
+    const description = described.get(ReactComponent as object);
+    return description ? takesProp(description, prop) : byContract(prop);
+  };
   const declared = Object.fromEntries(
     Object.keys(bindings).flatMap((name) => [
       [name, null],
@@ -772,12 +777,10 @@ export function createVueWrapper<P extends object, N extends string = never>(
         string,
         { shown: unknown; value: unknown; settled: boolean }
       >();
-      /** `.once` listeners that have run, by the key each was given under. */
+      /** The part's `.once` listeners that have run, by the key each was given under. */
       const onceRan = new Set<string>();
       /** The `.once` model listeners Vue's `emit` misses that have run. */
       const modelOnceRan = new Set<string>();
-      /** The listeners each native event has run, by key: one run per event. */
-      const heard = new WeakMap<Event, Set<string>>();
       const warned = new Set<string>();
       let root: Root | null = null;
 
@@ -795,22 +798,6 @@ export function createVueWrapper<P extends object, N extends string = never>(
           type,
           args,
         );
-
-      /**
-       * Whether a listener runs now: once for one native event, wherever it
-       * hears it first, and a `.once` one once.
-       */
-      const claim = (entry: Entry, event: Event | null) => {
-        if (entry.once && onceRan.has(entry.key)) return false;
-        if (event) {
-          let ran = heard.get(event);
-          if (!ran) heard.set(event, (ran = new Set()));
-          if (ran.has(entry.key)) return false;
-          ran.add(entry.key);
-        }
-        if (entry.once) onceRan.add(entry.key);
-        return true;
-      };
 
       /**
        * A DOM event's listener, called from React with the native event:
@@ -842,27 +829,34 @@ export function createVueWrapper<P extends object, N extends string = never>(
         }
       };
 
-      /** React's handler for the listeners given one React name. */
+      /**
+       * The part's handler for the listeners given one React prop. A DOM
+       * event's listener is given the native event when it is of the
+       * listener's own type (`click` for `onClick`), and React's otherwise:
+       * React makes `onMouseEnter` from `mouseover`, `onFocus` from
+       * `focusin`, `onChange` from `input`, and its own event says
+       * `mouseenter`, `focus`, `change`, with the target React gives it. A
+       * callback's arguments are the part's.
+       */
       const fromReact =
-        (entries: Entry[]) =>
+        (prop: string, entries: Entry[]) =>
         (...args: unknown[]) => {
           const event = isSynthetic(args[0]) ? args[0] : null;
+          const own = REACT_KNOWN[prop.replace(/Capture$/, "")];
           let result: unknown;
-          for (const entry of entries) {
-            if (!claim(entry, event?.nativeEvent ?? null)) continue;
-            result = event
-              ? callWithNative(entry.handler, event)
-              : call(entry.handler, args, ErrorCodes.COMPONENT_EVENT_HANDLER);
+          for (const { key, handler, once } of entries) {
+            if (once) {
+              if (onceRan.has(key)) continue;
+              onceRan.add(key);
+            }
+            result = !event
+              ? call(handler, args, ErrorCodes.COMPONENT_EVENT_HANDLER)
+              : own && event.nativeEvent.type === own
+                ? callWithNative(handler, event)
+                : call(handler, [event], ErrorCodes.NATIVE_EVENT_HANDLER);
           }
           return result;
         };
-
-      /** The box's native listener for the listeners given one key. */
-      const fromBox = (entries: Entry[]) => (event: Event) => {
-        for (const entry of entries)
-          if (claim(entry, event))
-            call(entry.handler, [event], ErrorCodes.NATIVE_EVENT_HANDLER);
-      };
 
       /** The props Vue gave the wrapper, as its vnode holds them. */
       const given = () =>
@@ -870,7 +864,7 @@ export function createVueWrapper<P extends object, N extends string = never>(
 
       /**
        * What the parent gave, sorted: each bound model, the listeners the
-       * part, the host and the box take, and the rest of the attrs.
+       * part takes and those the box takes, and the rest of the attrs.
        */
       const sort = () => {
         const raw = given();
@@ -922,21 +916,28 @@ export function createVueWrapper<P extends object, N extends string = never>(
               noModel("modelValue");
             }
 
+        // Each listener goes to one place: the part, when it takes its
+        // prop, else the box.
         const react: Record<string, Entry[]> = {};
-        const host = new Set<string>();
-        const native: Record<string, Entry[]> = {};
+        const native: Record<string, unknown[]> = {};
         for (const key of Object.keys(rest)) {
           if (!isListenerKey(key)) continue;
           const handler = rest[key];
           delete rest[key];
           if (handler == null) continue;
-          const route = routeListener(key, callbacks);
-          const entry = { key, handler, once: route.once };
-          if (route.native) (native[route.native] ??= []).push(entry);
-          if (route.react) (react[route.react] ??= []).push(entry);
-          if (route.host) host.add(route.host);
+          const route = routeListener(key, takes);
+          if (route.react)
+            (react[route.react] ??= []).push({
+              key,
+              handler,
+              once: route.once,
+            });
+          else if (route.native)
+            (native[route.native] ??= []).push(
+              ...(Array.isArray(handler) ? handler : [handler]),
+            );
         }
-        return { bound, react, host, native, rest };
+        return { bound, react, native, rest };
       };
 
       const renderReact = () => {
@@ -949,7 +950,6 @@ export function createVueWrapper<P extends object, N extends string = never>(
 
         const sorted = sort();
         const reactProps = sorted.rest as Record<string, any>;
-        const hostProps: Record<string, unknown> = { style: HOST_STYLE };
 
         // Force Vue's native HTML 'class' payload into React's JSX 'className' expectation
         if (reactProps.class !== undefined) {
@@ -965,17 +965,13 @@ export function createVueWrapper<P extends object, N extends string = never>(
             ),
           );
 
-        // The listeners React takes, by React's name: on the part, and on
-        // the host those it hears from inside.
-        for (const [name, entries] of Object.entries(sorted.react)) {
-          const handler = fromReact(entries);
-          reactProps[name] = handler;
-          if (sorted.host.has(name)) hostProps[name] = handler;
-        }
+        // The listeners the part takes, by React's name.
+        for (const [prop, entries] of Object.entries(sorted.react))
+          reactProps[prop] = fromReact(prop, entries);
         // A `.once` listener taken away and given again runs once more, as
         // Vue's native one does.
         const live = new Set(
-          [...Object.values(sorted.react), ...Object.values(sorted.native)]
+          Object.values(sorted.react)
             .flat()
             .map((entry) => entry.key),
         );
@@ -1033,14 +1029,8 @@ export function createVueWrapper<P extends object, N extends string = never>(
           }
         }
 
-        // Mount the React tree, inside the host that hears its events.
-        root.render(
-          React.createElement(
-            "div",
-            hostProps,
-            React.createElement(ReactComponent, reactProps as any),
-          ),
-        );
+        // Mount the React tree
+        root.render(React.createElement(ReactComponent, reactProps as any));
       };
 
       /**
@@ -1142,12 +1132,13 @@ export function createVueWrapper<P extends object, N extends string = never>(
           );
         });
 
-        // The listeners the box takes, as Vue binds a listener on an
-        // element: `.capture` and `.passive` included, `.once` the bridge's.
+        // The listeners the part does not take, as Vue binds a listener a
+        // component does not declare on its root element: modifiers,
+        // `.once`, `.capture` and `.passive` included.
         const native = Object.fromEntries(
-          Object.entries(sort().native).map(([key, entries]) => [
+          Object.entries(sort().native).map(([key, handlers]) => [
             key,
-            fromBox(entries),
+            handlers.length === 1 ? handlers[0] : handlers,
           ]),
         );
         return h("div", { style: { display: "contents" }, ...native }, [
@@ -1165,7 +1156,9 @@ export function createVueWrapper<P extends object, N extends string = never>(
         Object.freeze({ ...binding }),
       ]),
     ),
-    callbacks,
+    get takes() {
+      return described.get(ReactComponent as object) ?? null;
+    },
   });
   return wrapper;
 }

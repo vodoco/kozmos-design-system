@@ -1567,6 +1567,53 @@ describe("a model's nothing, read from React's props", () => {
 });
 
 // --------------------------------------------------------------------------
+// AdaptiveMapShell's nothing is where the shell itself rests a sheet it is
+// not told about (AdaptiveMapShell.tsx, `activeDetent`): the shell drawn
+// with no model, beside the shell drawn with a null one.
+// --------------------------------------------------------------------------
+
+describe("AdaptiveMapShell's nothing is where the shell rests", () => {
+  it.each([
+    ["nothing", {}],
+    ["a default detent", { defaultPanelDetent: "collapsed" }],
+    ["detents, in order", { panelDetents: ["collapsed", "large"] }],
+    ["detents, out of order", { panelDetents: ["large", "collapsed"] }],
+    [
+      "fractions, out of order",
+      { panelDetents: [{ fraction: 0.7 }, { fraction: 0.3 }] },
+    ],
+    ["content sizing", { panelSizing: "content" }],
+    ["a finite fraction", { panelFraction: 0.4 }],
+    ["a NaN fraction", { panelFraction: Number.NaN }],
+    ["an infinite fraction", { panelFraction: Number.POSITIVE_INFINITY }],
+  ] as const)("with %s", async (_, props) => {
+    const undo = [stub("clientWidth", 390), stub("clientHeight", 844)];
+    onTeardown.push(() => undo.forEach((step) => step()));
+    const rests = async (model: Record<string, unknown>) => {
+      mount(() =>
+        h(Bridge.KozmosAdaptiveMapShell, {
+          panel: "Gate 4",
+          ...props,
+          ...model,
+        }),
+      );
+      const sheet = await until(() => $("aside[data-detent]"));
+      await settle();
+      const detent = sheet.getAttribute("data-detent");
+      unmount();
+      return detent;
+    };
+    const itself = await rests({});
+    const nothing = await rests({
+      panelDetent: null,
+      "onUpdate:panelDetent": () => {},
+    });
+    expect(itself).toMatch(/\w/);
+    expect(nothing).toBe(itself);
+  });
+});
+
+// --------------------------------------------------------------------------
 // A change goes through Vue's `emit`, which Vue DevTools hears, and
 // @vue/test-utils' `wrapper.emitted()` reads from what DevTools hears (it
 // sets a DevTools hook that records "component:emit").
@@ -2088,8 +2135,8 @@ describe("attributes reach React alone", () => {
   const PROBE = "[id=probe]";
 
   /**
-   * The wrapper's own boxes, which draw nothing, React's host inside the
-   * second (React's root), and the element React drew with the id.
+   * The wrapper's own boxes, which draw nothing, and the element React drew
+   * with the id inside the second of them, the box React draws in.
    */
   async function drawnByReact(host: HTMLElement) {
     const [own] = host.children;
@@ -2098,8 +2145,7 @@ describe("attributes reach React alone", () => {
       container.querySelector<HTMLElement>(PROBE),
     );
     await settle();
-    const [reactHost] = container.children;
-    return { boxes: [own, container, reactHost], element };
+    return { boxes: [own, container], element };
   }
 
   describe.each(KINDS.map((part) => [part.name, part.kind, part] as const))(
