@@ -26,6 +26,7 @@
 | Package                                 | Registry | How                                      |
 | --------------------------------------- | -------- | ---------------------------------------- |
 | `@kozmos-ds/react`                      | npm      | `release.yml`                            |
+| `@kozmos-ds/styles`                     | npm      | `release.yml`, with React (first 0.15.1) |
 | `@kozmos-ds/icons`                      | npm      | `release.yml`                            |
 | `@kozmos-ds/product-contracts`          | npm      | `release.yml`                            |
 | `@kozmos-ds/tokens`                     | npm      | `release.yml`                            |

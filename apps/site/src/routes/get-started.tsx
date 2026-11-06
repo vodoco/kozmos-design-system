@@ -72,7 +72,7 @@ export default function GetStarted() {
 
       <Section
         title="Install"
-        lead="React 18.2 and later, and React 19, are supported. The tokens, icons and product contracts come with it."
+        lead="React 18.2 and later, and React 19, are supported. The stylesheet, tokens, icons and product contracts come with it."
       >
         <CodeBlock
           label="Install command"

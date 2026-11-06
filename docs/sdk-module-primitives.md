@@ -5,8 +5,9 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: React 0.15.0 on `latest` with icons 0.8.0, product-contracts 0.10.0 and tokens 0.8.1 (published
-2026-11-04 from `08e9216c7f5440b45c1c3b9d0692b26113b05bb8`; [release evidence](release-process.md#0150)).
+Baseline: React 0.15.1 on `latest` with `@kozmos-ds/styles` 0.15.1, icons 0.9.0, product-contracts 0.10.0 and
+tokens 0.8.1 (published 2026-11-06 from `4cc3d04119e9f6fe5494417d0bec14cc6de8f7b6`;
+[release evidence](release-process.md#0151)).
 This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
 React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
 repository, not a native registry release. See [release evidence](release-process.md#080).
@@ -52,6 +53,11 @@ building as a recipe in the top-start corner (SDK-UI-006), on React only; the pr
 on the details card (GAP-028, GAP-130), `BuildingPresentation` and `SitePresentation` (GAP-175), and the venue icon
 names (GAP-105), on React with SwiftUI and Compose in the repository. A library release is not board, Figma or device
 acceptance. See [release evidence](release-process.md#0150).
+
+React 0.15.1 (2026-11-06, `4cc3d041`; `@kozmos-ds/styles` first published at 0.15.1, icons 0.9.0, tokens and
+product-contracts unchanged) is a patch (decision 161) that changes nothing for the SDK: React's exports, HTML and
+stylesheet are 0.15.0's. It publishes the shared stylesheet as `@kozmos-ds/styles` (GAP-149) and the icons for Vue 3
+as `@kozmos-ds/icons/vue` (GAP-148). See [release evidence](release-process.md#0151).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by

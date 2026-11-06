@@ -19,6 +19,18 @@ The web packages are on npm under the `@kozmos-ds` scope:
 pnpm add @kozmos-ds/react @kozmos-ds/tokens @kozmos-ds/icons @kozmos-ds/product-contracts
 ```
 
+`@kozmos-ds/react` pins tokens, icons, product-contracts and styles at the
+versions it was released with, so `pnpm add @kozmos-ds/react` alone installs
+them too. Two entries serve an app that does not use React:
+
+- `@kozmos-ds/styles` is the stylesheet on its own, plain CSS with no
+  JavaScript: `@kozmos-ds/styles/style.css`, and the opt-in host reset
+  `@kozmos-ds/styles/reset.css`. React ships the same file as
+  `@kozmos-ds/react/style.css`, so a React app keeps importing that.
+- `@kozmos-ds/icons/vue` has every icon as a Vue 3 component, under the same
+  names as the main entry. Vue 3.5 or later is an optional peer, as React is,
+  so a Vue app installs no React.
+
 `@kozmos-ds/react` needs its stylesheet and a provider. Components read their
 colours from the theme, so nothing outside a `ThemeProvider` is themed:
 
