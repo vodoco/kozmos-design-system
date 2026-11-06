@@ -82,13 +82,13 @@ Against the 2026-10-28 export it:
   GAP-152, GAP-189 and GAP-202, as the 27 Oct intake below answered them) and one merged (its old GAP-204, into GAP-036
   and GAP-116);
 - updates the text of GAP-016 (MAP-619 joins), GAP-036 and GAP-116 (MAP-64 joins, with its old GAP-204), GAP-106
-  (MAP-64 joins, with its old GAP-211), GAP-105 (MAP-64 leaves, as here), GAP-201, GAP-209 and CLOUD-UI-005 (MAP-619
+  (MAP-64 joins, with its old GAP-211), GAP-105 (MAP-64 leaves, as here), GAP-201 and CLOUD-UI-005 (MAP-619
   joins, CLOUD-UI-005 with a Merge tool) and CLOUD-UI-009 (its stand-ins of 3 Nov), and marks 19 rows in its open
   sections "Done", each of which agrees with the row here.
 
 Here GAP-016 takes the source's text, with the 2026-10-28 export's list of the parts MAP-64's boards use, which this
-register had missed; GAP-038's Feature gets back MAP-64, and GAP-036's and GAP-116's take it (the source's old GAP-204,
-a page hero band, which the 27 Oct intake joined to them); and MAP-619 joins the Feature of GAP-016, GAP-151, GAP-201
+register had missed; GAP-038's Feature takes MAP-64 (its Level Manager donut), and GAP-036's and GAP-116's take it too (the
+source's old GAP-204, a page hero band, which the 27 Oct intake joined to them); and MAP-619 joins the Feature of GAP-016, GAP-151, GAP-201
 and GAP-209, is noted in CLOUD-UI-005, and is listed under Original feature evidence. The new rows' requirement
 columns are the source's, with its references written with this register's IDs. The source's IDs are noted in the
 rows they join. The owner's rulings of 6 Nov on this export are decision 166: GAP-154's filled grey read-only look
@@ -1335,9 +1335,9 @@ camera control, branding/provider policy and product ranking in their host adapt
     not fit the field's roundness. It is built after 0.15.1.
   - **165, Input's pressed toggle takes the same shape (5 Nov):** pressed, Input's toggle action draws its theme fill
     in decision 164's shape, 36 or 32 with corners of the control radius less 4, in place of the 32 disc drawn for
-    decision 139's Featured star, which this supersedes for that shape. Pressed and hover then share one rule:
-    pressed is the theme fill, pressed and hovered the themed Button's hover, and hovered alone `background-100`.
-    Figma's pressed toggle follows (GAP-154, GAP-227).
+    decision 139's Featured star, which this supersedes for that shape. Its colours stay as they are: the theme fill
+    pressed, and the themed Button's hover when pressed and hovered. Figma's pressed toggle follows (GAP-154,
+    GAP-227).
   - **166, the Gaps (8) intake (6 Nov):** this register's numbers win (decision 91). The export's GAP-216, 217, 218,
     220 and 221 keep their numbers; its GAP-210, keyword chips, is GAP-222; its GAP-212 joins GAP-160, its GAP-214
     joins GAP-210, its GAP-153 is GAP-193, and its old GAP-211 joins GAP-195 and GAP-106. GAP-215 stays unused,
