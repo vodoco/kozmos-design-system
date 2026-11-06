@@ -6,9 +6,13 @@ implement every historical suggestion without checking its current criterion.
 
 ## Baseline and scope
 
-Release reconciliation: React **0.15.0** on `latest` with icons 0.8.0, product-contracts 0.10.0 and tokens 0.8.1
-(published 2026-11-04 from `08e9216c7f5440b45c1c3b9d0692b26113b05bb8`; the
-[0.15.0 evidence](release-process.md#0150)). **Released in 0.15.0**: the APIs of decision 119, less Stepper's
+Release reconciliation: React **0.15.1** on `latest` with `@kozmos-ds/styles` 0.15.1, icons 0.9.0, product-contracts
+0.10.0 and tokens 0.8.1 (published 2026-11-06 from `4cc3d04119e9f6fe5494417d0bec14cc6de8f7b6`; the
+[0.15.1 evidence](release-process.md#0151)). **Released in 0.15.1**, a patch (decision 161): the web packages of Vue 3
+Phase 0, `@kozmos-ds/styles`, first published, which React takes its stylesheet from and pins exactly (GAP-149), and
+`@kozmos-ds/icons/vue` (GAP-148). React's exports, HTML and stylesheet are 0.15.0's, and none of the items promised
+for 0.16.0 is in it. **Released in 0.15.0** (published 2026-11-04 from `08e9216c7f5440b45c1c3b9d0692b26113b05bb8`;
+the [0.15.0 evidence](release-process.md#0150)): the APIs of decision 119, less Stepper's
 objects, parked by decision 149 (GAP-173). Accordion's boxed form (GAP-209), Navbar's `logoInset` (GAP-208, decision
 150), host actions on results and the details card (GAP-028, GAP-130), Link's `external` (GAP-202), Progress's ring
 (decision 131: GAP-038's Chart family stays open), the venue icon names (GAP-105), `BuildingPresentation` and
@@ -1194,6 +1198,42 @@ camera control, branding/provider policy and product ranking in their host adapt
     a `value` nothing controls (a tab's) keeps its name. Other props keep React's names, so Checkbox is
     `v-model:checked` where Reka's own Checkbox uses `v-model`. ThemeProvider's `themeChange` goes, and the API
     contract fails a port that emits both (#479).
+  - **161, the release after Vue Phase 0's P0.1 to P0.4 is 0.15.1 (5 Nov):** React 0.15.1, a patch, with
+    `@kozmos-ds/styles` first published with it at 0.15.1 (the two are one fixed group), and icons 0.9.0 with
+    `@kozmos-ds/icons/vue`. About 39 of this register's items are promised for 0.16.0 (decision 132's Cloud APIs, and
+    decisions 134, 152, 156 and 159), and this release carries none of them, so 0.16.0 stays the release the register
+    promises Phase 1's parts to. It supersedes the owner's answer of the same morning that styles first publishes as
+    0.16.0, given before the clash was seen. Published on 6 Nov ([0.15.1 evidence](release-process.md#0151)).
+  - **162, `next` releases are separate dispatches (5 Nov):** `@kozmos-ds/vue` on `next` and the other packages on
+    `latest` go out in separate release runs, each approved by the owner. A release plan names one tag, and the
+    workflow does not change.
+  - **163, Radix and Reka UI stay the behaviour layer (5 Nov):** owning the seven Radix parts that look trivial would
+    save 1 to 2 KB at most. Together they measured about 5.4 KB gzip (checkbox 1.64, switch 1.09, avatar 0.90, progress
+    0.84, toggle 0.38, separator 0.32 and label 0.28), and each is paid only where it is used. They are revisited only
+    with a concrete reason, recorded with numbers: a library blocking a design, React and Vue drifting apart, or
+    pressure on a budget.
+  - **164, a field-end button's hover follows the field's shape (5 Nov):** a button at a field's end draws its hover
+    as a fill inside itself, 4 in from its edges (the field's 1 px border and a 3 px gap), so 36 in touch and 32 in
+    compact, with corners of the control radius less 4 (16 to 12), and no fill at rest. Its hit target stays the
+    field's height, 44 or 40. It covers Combobox's and MultiSelect's open and clear buttons, Input's action,
+    PasswordInput's reveal, and DatePicker's and TimePicker's trigger, on every platform and in Figma. Today each
+    fills its whole box on hover, over the field's outline (GAP-227). The owner turned down a round disc, which does
+    not fit the field's roundness. It is built after 0.15.1.
+  - **165, Input's pressed toggle takes the same shape (5 Nov):** pressed, Input's toggle action draws its theme fill
+    in decision 164's shape, 36 or 32 with corners of the control radius less 4, in place of the 32 disc drawn for
+    decision 139's Featured star, which this supersedes for that shape. Pressed and hover then share one rule:
+    pressed is the theme fill, pressed and hovered the themed Button's hover, and hovered alone `background-100`.
+    Figma's pressed toggle follows (GAP-154, GAP-227).
+  - **166, the Gaps (8) intake (6 Nov):** this register's numbers win (decision 91). The export's GAP-216, 217, 218,
+    220 and 221 keep their numbers; its GAP-210, keyword chips, is GAP-222; its GAP-212 joins GAP-160, its GAP-214
+    joins GAP-210, its GAP-153 is GAP-193, and its old GAP-211 joins GAP-195 and GAP-106. GAP-215 stays unused,
+    because the export once used it. The Merge glyph (its GAP-213, MAP-619) is GAP-223: the icon set has no union of
+    two shapes, so one is added to Pointr's icon library in Figma and generated into `@kozmos-ds/icons`. GAP-219,
+    MAP-64's outlined fields with the label on the border, is a closed row, won't do by decision 154, so the number
+    the canvases cite stays traceable. GAP-154's filled grey read-only look is not an ask: Cloud adopts Kozmos's
+    read-only field as built (decision 154), and GAP-154 stays released in 0.15.0. GAP-152's filter tabs in a
+    Combobox's popup are the CLOUD-UI-002 type picker's: the module composes Combobox with Tabs, and Core Combobox
+    gains nothing until a second feature needs it.
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on

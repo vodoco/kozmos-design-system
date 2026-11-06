@@ -1,6 +1,7 @@
 # Controlled npm releases
 
-Status (2026-11-04): in use; React 0.15.0 is published (evidence below).
+Status (2026-11-06): in use; React 0.15.1 is published, with `@kozmos-ds/styles` 0.15.1 and icons 0.9.0 (evidence
+below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -151,10 +152,10 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
      neither; preflight and the release's guard refuse a plan that splits a fixed group, so
      it never reaches the approval.
    - **A package in React's fixed group takes React's tag,** first release or not: the "begins
-     on `next`" rule does not apply to it. `@kozmos-ds/styles` first publishes as 0.15.1 with
-     React 0.15.1 (Olcay, 5 Nov 2026: 0.16.0 stays the release the register promises Phase 1's
-     parts to). Its first publish under a new name needs the npm token granted on the whole
-     `@kozmos-ds` scope, as the setup above requires.
+     on `next`" rule does not apply to it. `@kozmos-ds/styles` was first published as 0.15.1, with
+     React 0.15.1, on 6 Nov 2026 (decision 161: 0.16.0 stays the release the register promises
+     Phase 1's parts to). Its first publish under a new name needed the npm token granted on the
+     whole `@kozmos-ds` scope, as the setup above requires.
 3. Merge it once its checks pass on a branch up to date with `main`, and wait for the
    successful main-push CI run of that merge. A documentation-only main commit has no push
    CI because of path exclusions: do not substitute an older SHA or a PR run, and merge
@@ -272,6 +273,12 @@ about nine for the first name published into the brand-new scope. The publish
 job's `timeout-minutes` is set to cover that budget for every package at once,
 so the assertion reports which package the registry never showed rather than
 the runner killing the job first. Change one and change the other. Native/Figma/component behavior is unchanged by this batch.
+
+A first publish under a new name can leave a placeholder version beside the planned one. `@kozmos-ds/styles`'s
+(0.15.1, 6 Nov 2026) left `0.0.0-stage`, npm's placeholder for staged publishing, as the job began publishing it,
+though the job ran a plain `npm publish` (the 0.15.1 record below). It is a prerelease, off `latest`, which no range
+matches. Expect one for the next new name, `@kozmos-ds/vue`; deprecating or unpublishing it, within npm's 72 hours,
+is Olcay's call.
 
 ### 0.5.0
 
@@ -904,3 +911,73 @@ native snapshot, so both CHANGELOGs keep them under `Unreleased — repository s
 Figma is not finished: the importer at this commit draws 0.15.0's sets, and #470, after it, draws the parity rulings of
 4 Nov (decisions 156 to 158). The live library takes them at Olcay's next Import Foundations and Update. External
 Claude Design artifacts and product deployments are separate.
+
+### 0.15.1
+
+Published on 2026-11-06 from `4cc3d04119e9f6fe5494417d0bec14cc6de8f7b6`, the version merge
+[#483](https://github.com/vodoco/kozmos-design-system/pull/483). React 0.15.1 and icons 0.9.0 move, and
+`@kozmos-ds/styles` is published for the first time, at 0.15.1, with React; tokens 0.8.1 and product-contracts 0.10.0
+are unchanged and not planned. It is a patch release (decision 161): about 39 of the register's items are promised for
+0.16.0, and this release carries none of them. It carries the web packages of Vue 3 Phase 0 (GAP-148): the shared
+stylesheet as a package of its own, which React takes its `style.css` and `reset.css` from and pins exactly
+(GAP-149, #474, a patch since #481); `@kozmos-ds/icons/vue`, every icon as a Vue 3 component (#475); and Button's
+recipe in a module of its own inside React, `recipes`, which `@kozmos-ds/vue` builds its Button from (#478). React's
+exports, its HTML and its stylesheet are 0.15.0's: the published `style.css` is 0.15.0's byte for byte, 232,421
+bytes and 32,085 gzip (`gzip -9`).
+
+Olcay gave Claude this release to run end to end on 5 Nov ("Yes, run it end to end"), for 0.15.1 only: merge the
+version PR, wait for main CI, run the pre-flight, dispatch, approve the protected `npm-release` deployment, and verify
+the registry, provenance, a clean install and the tags, stopping to ask at any step that was not clean. Claude merged
+#483, dispatched the release and approved the deployment, as `vodoco`, under that authority. It was not standing, and
+it is spent.
+
+A flaky test changed the order of the merges. On 5 Nov main CI on `7930b86f` (#479) failed once, on one test alone:
+Calendar's "moves by day, week, the week's ends, month and year from the keyboard" took 5,567 ms against its 5,000 ms
+limit (2,573 ms on `a06cb073`'s run). #479 changes no React code, and a re-run of the failed job passed. At 23:10 the
+same test timed out on #483's own CI (5,249 ms). So #485, which splits the test in four, merged first, at 00:06 on
+6 Nov as `b8222809`: it changes a test only and ships nothing, so 0.15.1's contents stayed as reviewed, and it took
+the flake out of the version merge's main CI, which the pre-flight needs green. Main CI on `b8222809` passed, #483 was
+brought up to date with it (head `d7a16613`, its diff against main unchanged), and it merged at 07:46 as `4cc3d041`.
+Times are UTC.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.15.1, `@kozmos-ds/styles` 0.15.1 and icons 0.9.0 on npm `latest`. React pins icons 0.9.0, styles 0.15.1, tokens 0.8.1 and product-contracts 0.10.0 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Exact main-push CI      | [42183089882](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089882), all 17 jobs passing on attempt 1, done at 08:51. [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089781), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089806), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089795) and [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089801) succeeded on the merge.                                                                                                                                                                                                                                                                                                                                                 |
+| Preflight / publication | `pnpm release:preflight` against attempt 1 of that run passed on 6 Nov (credential placement, request, evidence and plan; none of the three on npm). [42190882501](https://github.com/vodoco/kozmos-design-system/actions/runs/42190882501), dispatched at 08:53, succeeded: guard and prepare approved the candidate (React 0.15.1, styles 0.15.1 and icons 0.9.0 to `latest`), the `npm-release` deployment was approved at 08:56, and publish finished at 09:02. The publisher put dependencies first: icons 0.9.0 at 08:58:59, styles 0.15.1 at 09:01:02 and React 0.15.1 at 09:02:31, each with its provenance on Sigstore (log index 3713529173, 3713573873 and 3713601760), and it verified the approved tarballs in the registry.                                                                                                                                                    |
+| Registry readback       | All three are on `latest`: 0.15.1, 0.15.1 and 0.9.0. Each package's attestations answer 200, with a publish attestation (v0.1) and SLSA v1 provenance that name this repository and the package's directory.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Installed consumer      | A fresh npm installation of React 0.15.1 with React 19.3.1 and with React 18.3.1 exposed 276 exports from CJS and from the ESM entry, with the same names as 0.15.0. Against a clean installation of 0.15.0, 38 server renders (Button in every variant, size and emotion, `isLoading`, disabled, `buttonVariants`, and a composed Pagination) are identical, and React's `style.css` and `reset.css` are 0.15.0's and `@kozmos-ds/styles`' own, byte for byte. With `NODE_ENV=production`, Button has no `displayName`. `@kozmos-ds/styles` alone installs only itself. `@kozmos-ds/icons/vue`, with Vue 3.5.45 and no React, exposes 1,212 exports and renders on the server an `<svg>` that takes its size, colour, stroke, class and `aria-*`. The first probe passed `loading`, which is not a Button prop, and React warned; it was corrected to `isLoading`, and the rerun was clean. |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/styles@0.15.1`, `@kozmos-ds/icons@0.9.0` and `@kozmos-ds/react@0.15.1` at `4cc3d041`, and a second dry-run found all three in place. `git ls-remote` and `gh release list` read them back on 6 Nov. React 0.15.1 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Website / Storybook     | [Pages 42183089814](https://github.com/vodoco/kozmos-design-system/actions/runs/42183089814) built and deployed this exact SHA, and is the latest deploy. Read on 6 Nov: the site, its `get-started/` page and Storybook's iframe answer, and Storybook's `index.json` has 675 entries, as for 0.15.0; the release changes no story.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Code Connect            | Not republished: no `.figma.tsx`, `.figma.swift`, `.figma.kt`, linked config or native source changed since the last publish, from `d869d950` on 5 Nov. The Dev Mode readback (`figma:connect:readback`) run on 5 Nov read nothing back: all 299 replies failed to parse, as Figma now sends a reply in more than one part. Its fix is #482, open.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+npm holds two things the plan did not name. **`@kozmos-ds/styles` also carries `0.0.0-stage`,** published at
+08:59:24 under the `vodoco` npm user, the moment the publish job began publishing styles, a new name: 2 files, 339
+bytes, no provenance, and npm's own description, "Temporary package placeholder for staged publishing". 0.15.1 itself
+is dated 09:01:02, after npm printed "Your package is being processed and may take a few minutes to become
+available". The job ran a plain `npm publish` with the planned tarballs, and its log shows nothing else. npm's
+documentation of staged publishing says that staging a package that does not exist yet publishes a `0.0.0-stage`
+placeholder; it does not say why a direct publish of a new name made one, or what becomes of it. `latest` is 0.15.1,
+and no range matches a prerelease. It is expected for the next new name, `@kozmos-ds/vue`. Whether to deprecate or
+unpublish it is Olcay's call: npm allows unpublishing a version within 72 hours, so until 9 Nov at 08:59. **`next` is
+stale on four packages:** on react, icons, tokens and product-contracts it still points at 0.1.0, from the first
+release on 23 Sep, so `@kozmos-ds/react@next` installs 0.1.0. Removing it (`npm dist-tag rm <package> next`) needs
+Olcay's npm login. Decision 162 keeps `next` for separate prerelease dispatches, such as `@kozmos-ds/vue`'s.
+
+Change details: [React](../packages/react/CHANGELOG.md#0151), [styles](../packages/styles/CHANGELOG.md#0151),
+[icons](../packages/icons/CHANGELOG.md#090) and the [generated AI changelog](../.ai-skills/api-changelog.md).
+Upgrading from 0.15.0:
+
+- **Nothing needs changing.** React exports the same 276 names and renders the same HTML, and
+  `@kozmos-ds/react/style.css`, `@kozmos-ds/react/reset.css` and `@kozmos-ds/react/dist/style.css` resolve as they
+  did, to the same bytes.
+- **React depends on `@kozmos-ds/styles`,** pinned exactly, so an installation of React adds it. It ships no
+  JavaScript and depends on nothing. A web app without React can install it alone and import
+  `@kozmos-ds/styles/style.css` and `@kozmos-ds/styles/reset.css`.
+- **React's published files gain `dist/esm/recipes/`,** which Button's, SpinnerArc's and Pagination's modules import.
+- **Icons 0.9.0 adds `@kozmos-ds/icons/vue`,** for Vue 3.5 or later, an optional peer. The main entry and its
+  declarations are 0.8.0's byte for byte. React is an optional peer of icons now, so a Vue app installs no React.
+
+SwiftUI and Compose: nothing changed since 0.15.0 but the Code Connect files published on 5 Nov (#445, #464 to #467).
+Figma is unchanged by this release. Olcay keeps Pointr's Claude Design artifact as it is until 0.16.0 (5 Nov), so no
+0.15.1 kit is built.
