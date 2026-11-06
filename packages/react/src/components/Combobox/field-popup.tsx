@@ -45,6 +45,29 @@ export const FieldPopupContent = React.forwardRef<
 FieldPopupContent.displayName = "FieldPopupContent";
 
 /**
+ * What a field's popup says aloud: its empty text when typing empties the
+ * list, and nothing otherwise. Internal.
+ *
+ * It is in the field from the first render, outside the popup and its portal,
+ * and only its words change. A screen reader reads a change inside a live
+ * region that is already in the page. A region that arrives holding its words
+ * is often not read at all: the popup's own empty box was one, and VoiceOver on
+ * Safari said nothing (5 Nov). The popup's visible copy is plain text, so
+ * nothing announces the message twice.
+ *
+ * Polite, and said as well as implied by the role: an open modal popup hides
+ * every box not marked `aria-live` (GAP-193). A block, not a span, so WebKit
+ * does not run its words into the text after it.
+ */
+export function FieldPopupStatus({ message }: { message?: string }) {
+  return (
+    <div role="status" aria-live="polite" className="sr-only">
+      {message}
+    </div>
+  );
+}
+
+/**
  * The popup frame's mousedown: a press on a group's label, the frame's
  * padding or the gap between rows takes no focus from the field, so its
  * list stays open (the rows prevent their own). A press on a scroll box's
