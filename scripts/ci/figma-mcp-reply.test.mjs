@@ -4,11 +4,10 @@ import { mapFromReply } from "../lib/figma-mcp-reply.mjs";
 
 /**
  * How the Code Connect readback reads a Dev Mode MCP reply. On 2026-11-05
- * Figma desktop answered get_code_connect_map with the map in one text part
- * and more text after it, and the readback, which joined the parts and
- * JSON-parsed the join, read nothing: 299 of 299 replies failed with
- * "Unexpected non-whitespace character after JSON", and each was asked
- * twice, which spent the day's allowance.
+ * the readback, which joined the reply's text parts and JSON-parsed the join,
+ * read nothing: every one of the 299 nodes asked failed with "Unexpected
+ * non-whitespace character after JSON" (a JSON value, then more text), and
+ * each was asked twice, which spent the day's allowance.
  */
 const text = (...parts) => ({
   result: { content: parts.map((part) => ({ type: "text", text: part })) },
@@ -79,5 +78,33 @@ test("the rate limit stops the run; another error is retried", () => {
   assert.deepEqual(mapFromReply({ error: { code: -32000, message: "busy" } }), {
     error: '{"code":-32000,"message":"busy"}',
     retry: true,
+  });
+});
+
+test("a JSON object that is not a map of node ids is never taken for the map", () => {
+  // Metadata before the map: reading it as the map would report every node
+  // as clean (review of #482, 6 Nov).
+  assert.deepEqual(
+    mapFromReply(text('{"nodeId":"1:2","note":"metadata"}', JSON.stringify(MAP))),
+    { map: MAP },
+  );
+  assert.deepEqual(mapFromReply(text('{"error":"Node not found"}')), {
+    error: 'the server answered {"error":"Node not found"}, not a map',
+    retry: false,
+  });
+  // Instance ids are node ids too.
+  const nested = { "I1:2;3:4": { snippet: "<Icon />" } };
+  assert.deepEqual(mapFromReply(text(JSON.stringify(nested))), { map: nested });
+});
+
+test("an empty map gives way to a map with entries in a later part", () => {
+  assert.deepEqual(mapFromReply(text("{}", JSON.stringify(MAP))), { map: MAP });
+});
+
+test("a map split across parts is read from their join", () => {
+  const json = JSON.stringify(MAP);
+  const cut = json.indexOf(":") + 1;
+  assert.deepEqual(mapFromReply(text(json.slice(0, cut), json.slice(cut))), {
+    map: MAP,
   });
 });

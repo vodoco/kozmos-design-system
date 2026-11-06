@@ -13,9 +13,9 @@
 // forward.
 //
 // Every call counts against a daily limit Figma sets per account, shared with
-// any other use of the Dev Mode server. A full pass is 534 calls (178 nodes on
-// each of three platforms: 98 component nodes and the 80 library icons), more
-// than one day's allowance: on 2026-09-21, after some 500 in the day, it
+// any other use of the Dev Mode server. A full pass asks every linked node on
+// each of three platforms, the component nodes and the library icons (about
+// 180 a platform in November 2026), more than one day's allowance: on 2026-09-21, after some 500 in the day, it
 // answered "Rate limit exceeded, please try again tomorrow". Run a full pass a
 // label at a time, and narrow with --label and --node when you can. The script
 // stops at the first rate-limit answer.
@@ -198,7 +198,7 @@ try {
     `Cannot reach the Dev Mode MCP server at ${SERVER} (${error.message}).`,
   );
   console.error(
-    "Open Figma desktop, enable Preferences → Enable Dev Mode MCP Server, and open the Kozmos DS - Core Library file.",
+    "Open Figma desktop with its Dev Mode MCP server serving on 127.0.0.1:3845, and open the Kozmos DS - Core Library file.",
   );
   process.exit(1);
 }
