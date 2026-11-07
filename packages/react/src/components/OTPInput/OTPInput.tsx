@@ -26,6 +26,14 @@ const sanitizeOtpValue = (nextValue: string, length: number) =>
 const normalizeOtpLength = (length: number) =>
   Math.max(1, Math.trunc(Number.isFinite(length) ? length : 1));
 
+const toOtpCells = (source: string, cellCount: number) => {
+  const cells = sanitizeOtpValue(source, cellCount).split("");
+  while (cells.length < cellCount) cells.push("");
+  return cells;
+};
+
+const isOtpComplete = (cells: string[]) => cells.every((cell) => cell !== "");
+
 const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
   (
     {
@@ -47,7 +55,30 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     ref,
   ) => {
     const cellCount = normalizeOtpLength(length);
-    const [otp, setOtp] = useState<string[]>(new Array(cellCount).fill(""));
+    const [otp, setOtp] = useState(() => toOtpCells(value ?? "", cellCount));
+    // The cells follow `value` and the cell count during render, so no
+    // frame, the first included, draws cells the props have moved past
+    // (React's pattern for adjusting state when a prop changes). Without a
+    // value, a new count keeps the digits typed so far, closed up into the
+    // first cells and as many as fit, as it always has. Cells that already
+    // spell the new code stay as they are, so a digit typed into a later
+    // cell keeps its place when its code comes back as `value`.
+    const [drawnFrom, setDrawnFrom] = useState({ value, cellCount });
+    if (drawnFrom.value !== value || drawnFrom.cellCount !== cellCount) {
+      setDrawnFrom({ value, cellCount });
+      setOtp((currentOtp) => {
+        const nextOtp = toOtpCells(value ?? currentOtp.join(""), cellCount);
+
+        if (
+          nextOtp.length === currentOtp.length &&
+          nextOtp.join("") === currentOtp.join("")
+        ) {
+          return currentOtp;
+        }
+
+        return nextOtp;
+      });
+    }
     const inputs = useRef<(HTMLInputElement | null)[]>([]);
     const errorId = React.useId();
     const helperId = React.useId();
@@ -70,25 +101,14 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     }, [autoFocus]);
 
-    useEffect(() => {
-      setOtp((currentOtp) => {
-        const source = sanitizeOtpValue(
-          value ?? currentOtp.join(""),
-          cellCount,
-        );
-        const nextOtp = source.split("").slice(0, cellCount);
-        while (nextOtp.length < cellCount) nextOtp.push("");
-
-        if (
-          nextOtp.length === currentOtp.length &&
-          nextOtp.join("") === currentOtp.join("")
-        ) {
-          return currentOtp;
-        }
-
-        return nextOtp;
-      });
-    }, [value, cellCount]);
+    // Analytics hears a code completed once: when the user's typing or paste
+    // fills the last empty cell. Editing a full code is the same completion,
+    // and a controlled value from the parent is not the user's.
+    const trackCompletion = (nextOtp: string[]) => {
+      if (!isOtpComplete(otp) && isOtpComplete(nextOtp)) {
+        trackEvent("OTPInput", "otp_code_completed", { length: cellCount });
+      }
+    };
 
     const handleChange = (
       event: React.ChangeEvent<HTMLInputElement>,
@@ -112,11 +132,8 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
       setOtp(nextOtp);
 
-      const joined = nextOtp.join("");
-      onChange?.(joined);
-      if (joined.length === cellCount && !joined.includes("")) {
-        trackEvent("OTPInput", "otp_code_completed", { length: cellCount });
-      }
+      onChange?.(nextOtp.join(""));
+      trackCompletion(nextOtp);
 
       if (filteredValue && index < cellCount - 1) {
         inputs.current[
@@ -148,6 +165,7 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       while (nextOtp.length < cellCount) nextOtp.push("");
       setOtp(nextOtp);
       onChange?.(nextOtp.join(""));
+      trackCompletion(nextOtp);
     };
 
     return (
