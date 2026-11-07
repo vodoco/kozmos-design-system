@@ -24,6 +24,18 @@ async function until<T>(read: () => T | null | undefined | false) {
   throw new Error("timed out");
 }
 
+/**
+ * Whether Radix has placed the step beside its anchor: until floating-ui has
+ * measured, Radix keeps the step's wrapper off the page, at
+ * `translate(0, -200%)`, where no visitor sees it or presses Escape at it.
+ */
+function placed(step: Element) {
+  const wrapper = step.closest<HTMLElement>(
+    "[data-radix-popper-content-wrapper]",
+  );
+  return !!wrapper && !wrapper.style.transform.includes("-200%");
+}
+
 let app: App | null = null;
 afterEach(() => {
   app?.unmount();
@@ -192,6 +204,13 @@ describe("KozmosAnchoredPopover", () => {
       ),
     );
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // A visitor presses Escape at a step on the page, beside its anchor. On
+    // React 18, an Escape in the task the step first draws in is lost: Radix's
+    // dismiss layer counts itself one render after it mounts, with nothing in
+    // the page to show it, and focus has already moved in by then. Radix
+    // places the step once the anchor, which this ref gives a render late, is
+    // drawn, and by then the layer hears Escape on React 18 as on 19.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
