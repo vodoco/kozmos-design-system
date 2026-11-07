@@ -15,6 +15,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -23,6 +25,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.input.KozmosInputStatus
+import com.kozmos.providers.KozmosAnalyticsEvent
+import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -44,6 +48,12 @@ fun KozmosOTPInput(
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val displayValue = value.filter { char -> char.isDigit() }.take(cellCount)
+    val trackEvent = LocalKozmosAnalytics.current
+    // What an edit is measured against: the code as last drawn, or, since,
+    // as the field last passed it on. A host's new `value` resets it once it
+    // is drawn.
+    val held = remember { KozmosOtpHeldCode(displayValue) }
+    SideEffect { held.draw(displayValue) }
     val statusColor = when (effectiveStatus) {
         KozmosInputStatus.Error -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
         KozmosInputStatus.Warning -> KozmosThemeTokens.primitivesColorsEmotionalAlert600
@@ -81,9 +91,31 @@ fun KozmosOTPInput(
 
         BasicTextField(
             value = displayValue,
+            // The field calls this with what the user typed or pasted, and only
+            // then: a code the host passes as `value` is drawn, never handed
+            // here. So analytics hears a code completed here, as React's
+            // OTPInput does: once, when an edit fills the last empty cell. An
+            // edit to a full code is no new completion, a code the host sets is
+            // not the user's, and a code a shorter `length` makes full was
+            // typed into no cell. Each edit is measured against the code the
+            // field last passed on, not only against `value` as last drawn, so
+            // two edits before a recomposition, or a host that takes the code
+            // a frame or more later, still count one completion.
             onValueChange = { rawValue ->
                 if (enabled && !readOnly) {
-                    onValueChange(rawValue.filter { char -> char.isDigit() }.take(cellCount))
+                    val code = rawValue.filter { char -> char.isDigit() }.take(cellCount)
+                    val before = held.code
+                    held.code = code
+                    onValueChange(code)
+                    if (before.length < cellCount && code.length == cellCount) {
+                        trackEvent(
+                            KozmosAnalyticsEvent(
+                                component = "OTPInput",
+                                eventName = "otp_code_completed",
+                                properties = mapOf("length" to cellCount.toString())
+                            )
+                        )
+                    }
                 }
             },
             enabled = enabled,
@@ -154,6 +186,24 @@ fun KozmosOTPInput(
                 style = MaterialTheme.typography.bodyMedium,
                 color = helperColor
             )
+        }
+    }
+}
+
+/**
+ * The code an OTP edit is measured against. [code] is what the field last
+ * passed on, or the code as drawn once the host's value changes: [draw] runs
+ * after each composition, and resets [code] only when the drawn code is new.
+ * A host that ignores a write, or takes it later, leaves [code] at what the
+ * user entered until its value changes, as React's cells keep it.
+ */
+private class KozmosOtpHeldCode(private var drawn: String) {
+    var code: String = drawn
+
+    fun draw(displayValue: String) {
+        if (displayValue != drawn) {
+            drawn = displayValue
+            code = displayValue
         }
     }
 }
