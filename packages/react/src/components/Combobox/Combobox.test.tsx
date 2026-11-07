@@ -65,6 +65,23 @@ describe("Combobox: a prop change shows in the commit it arrives in", () => {
         );
     });
 
+    it("writes no label into its own text while the product holds inputValue, nor when it lets go", () => {
+      // A choice made while the product holds the text is not copied into
+      // the field's own text: letting go after `value` has moved shows the
+      // field's own text, not the new choice's label.
+      const { rerender } = render(
+        <Combobox options={options} value="overview" inputValue="Overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox");
+      rerender(
+        <Combobox options={options} value="details" inputValue="Overview" />,
+      );
+      expect(input).toHaveValue("Overview");
+      rerender(<Combobox options={options} value="details" />);
+      expect(input).toHaveValue("Overview");
+    });
+
     it.each(["disabled", "readOnly"] as const)(
       "draws no popup in the commit that makes it %s",
       async (lock) => {
