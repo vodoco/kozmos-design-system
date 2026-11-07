@@ -909,6 +909,15 @@ jobs:
       - name: Test @kozmos-ds/vue (Contract, Parity, Coverage, React-Free, Peer Range)
         run: pnpm --filter @kozmos-ds/vue test
 
+      # The same specs on React 18. The package's peers take react and
+      # react-dom 18 or 19, and the step above runs its devDependencies' 19.
+      # This one takes apps/docs's 18.3.1, the Vue Storybook's, for what Vite
+      # loads and what Node loads itself (Radix included), proves it loaded
+      # (test/react18/react18.probe.ts), and skips by name the one test that
+      # holds react-dom 19 alone (packages/vue/vitest.react18.config.mts).
+      - name: Test @kozmos-ds/vue On React 18
+        run: pnpm --filter @kozmos-ds/vue test:react18
+
       - name: Build The Vue Storybook
         run: pnpm --filter @kozmos-ds/docs build-storybook:vue
 
