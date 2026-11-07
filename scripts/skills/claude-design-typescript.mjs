@@ -7,8 +7,23 @@
  * and `react`, `@kozmos-ds/icons` and `@kozmos-ds/product-contracts` resolve
  * to what the package itself depends on. They are never written there: the
  * host serves them from memory, so a check leaves no file behind.
+ *
+ * React's types are the ones packages/react is built against, wherever they
+ * are imported from. A declarations file in node_modules that imports
+ * `react` and has no @types/react of its own (framer-motion's, which
+ * DynamicIsland's props extend) would otherwise get whichever @types/react
+ * pnpm hoisted into node_modules/.pnpm/node_modules, and the lockfile holds
+ * two: one install read React 19's DOM events into DynamicIsland's props and
+ * another did not, so the Vue bridge's part-takes.ts was fresh on one CI run
+ * and stale on the next (main, 7 Nov). `paths` sends every `react` and
+ * `react-dom` import to packages/react's own, `typeRoots` does the same for a
+ * `/// <reference types>`, and the host refuses any other copy, so a program
+ * here reads one React whatever was hoisted and wherever it is run.
  */
+import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 export { ts };
@@ -16,6 +31,58 @@ export { ts };
 /** Where the in-memory examples pretend to live. Nothing is written here. */
 export const exampleDirectory = (root) =>
   path.join(root, "packages/react/.claude-design-examples");
+
+const REPOSITORY = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
+
+/**
+ * The real directory of each React types package packages/react resolves:
+ * the copy every program here reads.
+ */
+export const PINNED_REACT_TYPES = Object.fromEntries(
+  ["@types/react", "@types/react-dom"].map((name) => [
+    name,
+    fs.realpathSync(
+      path.dirname(
+        createRequire(
+          path.join(REPOSITORY, "packages/react/package.json"),
+        ).resolve(`${name}/package.json`),
+      ),
+    ),
+  ]),
+);
+
+const pinnedPaths = Object.fromEntries(
+  Object.entries({ react: "@types/react", "react-dom": "@types/react-dom" })
+    .map(([module, types]) => [
+      [module, [PINNED_REACT_TYPES[types]]],
+      [`${module}/*`, [path.join(PINNED_REACT_TYPES[types], "*")]],
+    ])
+    .flat(),
+);
+
+/**
+ * The React types package `file` belongs to, if it is a copy other than the
+ * pinned one: what the host refuses.
+ */
+export function unpinnedReactTypes(file) {
+  const match = /[\\/]node_modules[\\/](@types[\\/]react(?:-dom)?)[\\/]/.exec(
+    file,
+  );
+  if (!match) return null;
+  const name = match[1].replace("\\", "/");
+  const real = (() => {
+    try {
+      return fs.realpathSync(file);
+    } catch {
+      return file;
+    }
+  })();
+  const pinned = PINNED_REACT_TYPES[name];
+  return real.startsWith(pinned + path.sep) ? null : name;
+}
 
 export const compilerOptions = {
   strict: true,
@@ -31,6 +98,18 @@ export const compilerOptions = {
   // under test here.
   skipLibCheck: true,
   types: [],
+  // One React, packages/react's: see the head of this file. `paths` answers
+  // `import … from "react"`; `typeRoots` answers `/// <reference
+  // types="react" />`, which `paths` does not, and whose default roots are
+  // the `node_modules/@types` folders above the current directory, so a run
+  // from the repository's root and one from packages/vue read different
+  // copies.
+  paths: pinnedPaths,
+  typeRoots: [
+    ...new Set(
+      Object.values(PINNED_REACT_TYPES).map((dir) => path.dirname(dir)),
+    ),
+  ],
 };
 
 // Parsed once per process: every program here reads the same lib, React and
@@ -70,6 +149,11 @@ export function hostWith(virtual = new Map(), options = compilerOptions) {
   host.readFile = (file) =>
     virtual.has(file) ? virtual.get(file) : readFile.call(host, file);
   host.getSourceFile = (file, language, onError, create) => {
+    const stray = unpinnedReactTypes(file);
+    if (stray)
+      throw new Error(
+        `${file} is a copy of ${stray} other than packages/react's (${PINNED_REACT_TYPES[stray]}): a program here must read one React. Map the import that reached it in claude-design-typescript.mjs's \`paths\`.`,
+      );
     if (virtual.has(file))
       return ts.createSourceFile(
         file,
