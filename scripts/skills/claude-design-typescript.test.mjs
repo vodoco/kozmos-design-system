@@ -354,6 +354,10 @@ test("an import that reaches another copy is refused by the file that made it", 
 });
 
 test("the published declarations, framer-motion's included, read only the pinned React", () => {
+  assert.ok(
+    fs.existsSync(path.join(ROOT, DECLARATIONS)),
+    `${DECLARATIONS} is missing: build @kozmos-ds/react first (pnpm --filter "@kozmos-ds/react..." build).`,
+  );
   const program = ts.createProgram({
     rootNames: [path.join(ROOT, DECLARATIONS)],
     options: compilerOptions,

@@ -235,8 +235,8 @@ dependencies are overridden: the public packages ship the dependency ranges thei
   and when an entry here matches no installed package. Look for the link, not the folder's name:
   `@xstate/react`'s and `storybook-addon-performance`'s names carried `@types+react@18.3.28`
   through a child's peer while nothing was linked inside. `@storybook/manager-api`, `theming`,
-  `router` and `types` are scoped to `@7`: only 7.6.24 is installed, and their 8.x releases only
-  re-export `storybook`'s.
+  `router` and `types` are scoped to `@7`: their installed 8.x copies only re-export `storybook`'s
+  (router and types have none).
 - **One runtime package can now be linked twice**, once per importer's React types: framer-motion
   is, for packages/react (18.3.28) and for playground-web and mapscale-review (19.2.14). A Vite app
   that imports it itself and renders Kozmos parts lists it in `resolve.dedupe`, as playground-web

@@ -30,6 +30,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const require = createRequire(import.meta.url);
 const semver = require("semver");
+const ts = require("typescript");
+const YAML = require("yaml");
 
 const REPOSITORY = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -40,26 +42,26 @@ const REPOSITORY = path.resolve(
 export const TYPES = { react: "@types/react", "react-dom": "@types/react-dom" };
 
 /**
- * `from "react"`, `import("react")`, `import "react"`, `require("react")`
- * and `/// <reference types="react" />`, subpaths included (`react/jsx-runtime`,
- * `react-dom/client`).
+ * The React types a declarations file uses: what TypeScript's own
+ * preprocessor reads as an import, a `/// <reference types>` or a `declare
+ * module` of `react` or `react-dom` (subpaths included), never a mention in
+ * a comment. Only declarations are read: this guards what TypeScript sees,
+ * not what a bundler runs.
  */
-const usesModule = (module) => {
-  const spec = `["']${module}(?:/[^"'\\s]*)?["']`;
-  return new RegExp(
-    [
-      `\\bfrom\\s*${spec}`,
-      `\\bimport\\s*\\(\\s*${spec}\\s*\\)`,
-      `\\bimport\\s+${spec}`,
-      `\\brequire\\s*\\(\\s*${spec}\\s*\\)`,
-      `///\\s*<reference\\s+types\\s*=\\s*${spec}`,
-    ].join("|"),
-  );
-};
-const PATTERNS = Object.entries(TYPES).map(([module, types]) => [
-  usesModule(module),
-  types,
-]);
+export function reactTypesUsedBy(text) {
+  const { importedFiles, typeReferenceDirectives, ambientExternalModules } =
+    ts.preProcessFile(text, true, true);
+  const names = [
+    ...importedFiles.map((ref) => ref.fileName),
+    ...typeReferenceDirectives.map((ref) => ref.fileName),
+    ...(ambientExternalModules ?? []),
+  ];
+  const used = new Set();
+  for (const [module, types] of Object.entries(TYPES))
+    if (names.some((name) => name === module || name.startsWith(`${module}/`)))
+      used.add(types);
+  return used;
+}
 
 /** The package a node_modules/.pnpm folder holds (`@scope+name@1.0.0_…`). */
 export function packageOfFolder(folder) {
@@ -86,6 +88,54 @@ function* declarations(dir) {
 }
 
 /**
+ * The node_modules/.pnpm folders this install uses: those each importer's
+ * node_modules links to (the importers are in node_modules/.pnpm/lock.yaml,
+ * the lockfile pnpm last installed), and those their folders link to in
+ * turn. A folder an earlier install left behind is never reached: installing
+ * one lockfile over another removes nothing.
+ */
+export function reachedFolders(root) {
+  const store = fs.realpathSync(path.join(root, "node_modules/.pnpm"));
+  const { importers = {} } =
+    YAML.parse(fs.readFileSync(path.join(store, "lock.yaml"), "utf8")) ?? {};
+  const reached = new Set();
+  const queue = [];
+  const follow = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue;
+      const link = path.join(dir, entry.name);
+      if (entry.name.startsWith("@") && entry.isDirectory()) {
+        follow(link);
+        continue;
+      }
+      if (!entry.isSymbolicLink()) continue;
+      let target;
+      try {
+        target = fs.realpathSync(link);
+      } catch {
+        continue;
+      }
+      if (!target.startsWith(store + path.sep)) continue;
+      const folder = path.relative(store, target).split(path.sep)[0];
+      if (!reached.has(folder)) {
+        reached.add(folder);
+        queue.push(folder);
+      }
+    }
+  };
+  for (const importer of Object.keys(importers))
+    follow(path.join(root, importer, "node_modules"));
+  while (queue.length) follow(path.join(store, queue.shift(), "node_modules"));
+  return reached;
+}
+
+/**
  * Every installed package, by name, with its versions; and each one whose
  * declarations use React's types with no copy of them linked beside it.
  */
@@ -96,11 +146,10 @@ export function scan(root) {
   const installed = new Map();
   const unlinked = [];
   const usingReact = new Set();
-  for (const entry of fs.readdirSync(store, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name === "node_modules") continue;
-    const name = packageOfFolder(entry.name);
+  for (const folder of reachedFolders(root)) {
+    const name = packageOfFolder(folder);
     if (!name) continue;
-    const linked = path.join(store, entry.name, "node_modules");
+    const linked = path.join(store, folder, "node_modules");
     const dir = path.join(linked, name);
     let version;
     try {
@@ -115,17 +164,15 @@ export function scan(root) {
     if (Object.values(TYPES).includes(name)) continue;
     const needs = new Set();
     for (const file of declarations(dir)) {
-      const text = fs.readFileSync(file, "utf8");
-      for (const [pattern, types] of PATTERNS)
-        if (pattern.test(text)) needs.add(types);
-      if (needs.size === PATTERNS.length) break;
+      for (const types of reactTypesUsedBy(fs.readFileSync(file, "utf8")))
+        needs.add(types);
+      if (needs.size === Object.keys(TYPES).length) break;
     }
     if (needs.size) usingReact.add(`${name}@${version}`);
     const absent = [...needs].filter(
       (types) => !fs.existsSync(path.join(linked, types)),
     );
-    if (absent.length)
-      unlinked.push({ name, version, folder: entry.name, absent });
+    if (absent.length) unlinked.push({ name, version, folder, absent });
   }
   return { installed, unlinked, usingReact };
 }
@@ -166,7 +213,7 @@ function main() {
         ([key, { absent, folders }]) =>
           `  ${key}: no ${[...absent].join(" or ")} (${folders.join(", ")})`,
       ),
-      `Give each an optional peer in the root package.json's pnpm.packageExtensions, as Radix declares it ({"peerDependencies": {"@types/react": "*"}, "peerDependenciesMeta": {"@types/react": {"optional": true}}}), and run pnpm install. If one still has none linked, its importer declares no @types/react. docs/design-system-maintenance.md, "Dependency overrides and pins", has the reasons.`,
+      `Give each an optional peer in the root package.json's pnpm.packageExtensions, as Radix declares it ({"peerDependencies": {"@types/react": "*"}, "peerDependenciesMeta": {"@types/react": {"optional": true}}}), and run pnpm install. If one still has none linked, its importer declares no @types/react. A folder no install uses would not be listed; if one is, remove node_modules and reinstall. docs/design-system-maintenance.md, "Dependency overrides and pins", has the reasons.`,
     );
   }
   if (stale.length)
