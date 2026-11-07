@@ -76,7 +76,7 @@ export const ciGates: readonly Gate[] = [
   {
     title: "Vue: build, contract, parity and browser suites",
     detail:
-      "The Vue package builds and type-checks, and its tests hold each part to the shared contract and to React’s own rendering, and its main entry free of React. Then every story in the Vue Storybook, which a register must name, is driven in Chromium, Firefox and WebKit: themes and densities, its stylesheet with and without @scope, every colour taken from a token, keyboard and pointer input, and axe on every story.",
+      "The Vue package builds and type-checks, and its tests hold each part to the shared contract and to React’s own rendering, and its main entry free of React. Then every story in the Vue Storybook, which a register must name, is driven in Chromium, Firefox and WebKit: themes and densities, its stylesheet with and without @scope, every colour taken from a token but the glass edge, which has no token yet and is allowed by name (decision 167, GAP-229), keyboard and pointer input, and axe on every story.",
     command: "pnpm test:vue-stories",
   },
   {
