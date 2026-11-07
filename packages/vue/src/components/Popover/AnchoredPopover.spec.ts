@@ -93,6 +93,8 @@ describe("KozmosAnchoredPopover", () => {
   it("closes through v-model:open on Escape and gives focus back", async () => {
     const { open, target } = mountStep();
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // As in the template-ref test below: Escape at a step on the page.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
@@ -207,9 +209,10 @@ describe("KozmosAnchoredPopover", () => {
     // A visitor presses Escape at a step on the page, beside its anchor. On
     // React 18, an Escape in the task the step first draws in is lost: Radix's
     // dismiss layer counts itself one render after it mounts, with nothing in
-    // the page to show it, and focus has already moved in by then. Radix
-    // places the step once the anchor, which this ref gives a render late, is
-    // drawn, and by then the layer hears Escape on React 18 as on 19.
+    // the page to show it, and focus has already moved in by then. Placement
+    // is observed to land after the layer has counted itself, here on React
+    // 18 and 19 alike (10 runs of 10 each, 7 Nov 2026): Radix does not
+    // guarantee that order, so if this test fails again, look there first.
     await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
