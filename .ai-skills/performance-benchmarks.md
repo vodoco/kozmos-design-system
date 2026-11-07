@@ -77,13 +77,14 @@ helpers) left out as the app's own:
 | Measure                                                       | Budget |
 | ------------------------------------------------------------- | ------ |
 | The main entry, every export at once                          | 3 KB   |
-| `./react-bridge`, on its own line (React's parts not counted) | 4 KB   |
+| `./react-bridge`, on its own line (React's parts not counted) | 9.5 KB |
 
-Each is the measurement on 2026-11-06 (2.69 and 3.58 KB) plus about a tenth, rounded up to the
-half kilobyte: the rule React's first budgets were set by (Everything 54.6 KB to 60, the
-stylesheet 26.4 to 30). The bridge mounts React, so it never counts towards the main entry, and the
-analyzer fails if the main entry imports React. `@kozmos-ds/tokens` and `@kozmos-ds/icons` have
-none.
+Each is the measurement plus about a tenth, rounded up to the half kilobyte: the main entry's of
+2026-11-06 (2.69 KB), and the bridge's of 2026-11-07 (8.42 KB), after #489 gave it v-model through
+each wrapper's models and its listener routing (it measured 3.58 KB before). It is the rule React's
+first budgets were set by (Everything 54.6 KB to 60, the stylesheet 26.4 to 30). The bridge mounts
+React, so it never counts towards the main entry, and the analyzer fails if the main entry imports
+React. `@kozmos-ds/tokens` and `@kozmos-ds/icons` have none.
 
 ### Component-Level Budgets (React)
 

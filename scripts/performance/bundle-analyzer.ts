@@ -93,9 +93,11 @@ const MAX_VUE_GZIP_KB = 3;
 // ./react-bridge, on a line of its own: it mounts React's parts, and an app
 // that imports it pays for @kozmos-ds/react, React and ReactDOM besides,
 // which are its peers and left out here as Vue's are. Its own code measured
-// 3.58 KB on 6 Nov 2026; the same rule gives 4. It never counts towards
-// the main entry's, which must not import it (packages/vue/test/react-free.spec.ts).
-const MAX_VUE_BRIDGE_GZIP_KB = 4;
+// 8.42 KB on 7 Nov 2026, with #489's bridge (v-model through each wrapper's
+// models, listener routing and part-takes.ts; main's measured 3.58 on 6 Nov);
+// the same rule gives 9.5. It never counts towards the main entry's, which
+// must not import it (packages/vue/test/react-free.spec.ts).
+const MAX_VUE_BRIDGE_GZIP_KB = 9.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");
