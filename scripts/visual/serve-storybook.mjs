@@ -2,12 +2,13 @@
 // Serves this checkout's static Storybook for the visual review, and nothing
 // else: the suite must measure this build, never whatever another worktree
 // has listening on 6006. Node only, so it runs the same in the Playwright
-// image as on a Mac.
+// image as on a Mac. `node serve-storybook.mjs <port> [folder]`: React's
+// build by default, Vue's with apps/docs/storybook-internal/vue.
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve, sep } from "node:path";
 
-const root = resolve("apps/docs/storybook-static");
+const root = resolve(process.argv[3] ?? "apps/docs/storybook-static");
 const port = Number(process.argv[2] ?? 6199);
 
 const types = {

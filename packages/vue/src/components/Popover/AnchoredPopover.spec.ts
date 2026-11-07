@@ -24,6 +24,18 @@ async function until<T>(read: () => T | null | undefined | false) {
   throw new Error("timed out");
 }
 
+/**
+ * Whether Radix has placed the step beside its anchor: until floating-ui has
+ * measured, Radix keeps the step's wrapper off the page, at
+ * `translate(0, -200%)`, where no visitor sees it or presses Escape at it.
+ */
+function placed(step: Element) {
+  const wrapper = step.closest<HTMLElement>(
+    "[data-radix-popper-content-wrapper]",
+  );
+  return !!wrapper && !wrapper.style.transform.includes("-200%");
+}
+
 let app: App | null = null;
 afterEach(() => {
   app?.unmount();
@@ -81,6 +93,8 @@ describe("KozmosAnchoredPopover", () => {
   it("closes through v-model:open on Escape and gives focus back", async () => {
     const { open, target } = mountStep();
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // As in the template-ref test below: Escape at a step on the page.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
@@ -192,6 +206,14 @@ describe("KozmosAnchoredPopover", () => {
       ),
     );
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // A visitor presses Escape at a step on the page, beside its anchor. On
+    // React 18, an Escape in the task the step first draws in is lost: Radix's
+    // dismiss layer counts itself one render after it mounts, with nothing in
+    // the page to show it, and focus has already moved in by then. Placement
+    // is observed to land after the layer has counted itself, here on React
+    // 18 and 19 alike (10 runs of 10 each, 7 Nov 2026): Radix does not
+    // guarantee that order, so if this test fails again, look there first.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
@@ -236,6 +258,8 @@ describe("KozmosAnchoredPopover", () => {
       ),
     );
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // As in the template-ref test above: Escape at a step on the page.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
