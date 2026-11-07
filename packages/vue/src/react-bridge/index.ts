@@ -361,12 +361,13 @@ export const KozmosTree = createVueWrapper(Tree, {
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
-// Its attrs are React's alone: a component given as `anchor` cannot be set
-// as an attribute on the wrapper's own box, where Vue would put it.
-export const KozmosAnchoredPopover = Object.assign(
-  createVueWrapper(AnchoredPopoverAdapter),
-  { inheritAttrs: false },
-);
+// Its attrs are React's alone, as every wrapper's are (createVueWrapper): a
+// component given as `anchor` is never set as an attribute on the wrapper's
+// own box. Not wrapped in an Object.assign() of its own: the declarations
+// then spelt its whole type out, with Vue's GlobalComponents where Vue's
+// own constraint refuses it, and an app that type-checks its libraries
+// failed to compile (TS2344; test/consumer-types.spec.ts).
+export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
 // Its attrs are React's alone, as KozmosAnchoredPopover's are: Vue would
 // write each onto the wrapper's own box, where a component given as target
 // or a function as positionLabel cannot be written, and title would be a
