@@ -87,6 +87,20 @@ import XCTest
       XCTAssertEqual(try XCTUnwrap(textFields(in: window).first).accessibilityHint, "4 Ziffern")
     }
 
+    /// The field is named by its drawn `label`, or without one by
+    /// `fieldLabel`, "Verification code" unless the product gives its own; a
+    /// `label` wins over `fieldLabel`.
+    @MainActor func testTheFieldIsNamedByItsLabelOrItsFieldLabel() async throws {
+      let unnamed = await host(KozmosOTPInput(value: .constant(""), fieldLabel: "Bestätigungscode"))
+      defer { unnamed.isHidden = true }
+      XCTAssertEqual(try XCTUnwrap(textFields(in: unnamed).first).accessibilityLabel, "Bestätigungscode")
+
+      let labelled = await host(KozmosOTPInput(value: .constant(""), label: "Code from your email",
+                                               fieldLabel: "Bestätigungscode"))
+      defer { labelled.isHidden = true }
+      XCTAssertEqual(try XCTUnwrap(textFields(in: labelled).first).accessibilityLabel, "Code from your email")
+    }
+
     /// Read-only: enabled, focused, and every edit refused: a typed digit,
     /// and Paste, which is not offered. Disabled: not enabled.
     @MainActor func testAReadOnlyFieldIsEnabledFocusableAndRefusesEveryEdit() async throws {
@@ -114,6 +128,10 @@ import XCTest
     @MainActor func testDigitsInAnyScriptAreKeptAsASCII() async throws {
       XCTAssertEqual(KozmosOTPInput.sanitize("١٢٣-४५६", length: 6), "123456")
       XCTAssertEqual(KozmosOTPInput.sanitize("½Ⅻ7", length: 6), "7", "only decimal digits are digits")
+      // A digit joined by a mark or a keycap into one character keeps its
+      // value, and the mark is dropped, as React's and Compose's do.
+      XCTAssertEqual(KozmosOTPInput.sanitize("1\u{301}\u{662}\u{302}", length: 6), "12")
+      XCTAssertEqual(KozmosOTPInput.sanitize("1\u{FE0F}\u{20E3}2", length: 6), "12")
       let box = Box("")
       let window = await host(KozmosOTPInput(value: Binding(get: { box.code }, set: { box.code = $0 })))
       defer { window.isHidden = true }

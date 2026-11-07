@@ -23,8 +23,10 @@ import org.junit.Test
 /**
  * Compose's OTPInput field, as SwiftUI's is and as React's cells are:
  *
- * - TalkBack is told how many digits the field takes, in the product's words
- *   (`digitCountLabel`), "6 digits" unless it gives its own;
+ * - TalkBack hears one field, named by its label, or by `fieldLabel`
+ *   ("Verification code") without one, and is told how many digits it
+ *   takes, in the product's words (`digitCountLabel`), "6 digits" unless it
+ *   gives its own;
  * - any decimal digit is taken as its ASCII digit, typed or pasted, so the
  *   host always receives ASCII;
  * - a paste replaces the code, whatever its length, a single digit included,
@@ -97,6 +99,53 @@ class KozmosOTPInputFieldTest {
         assertEquals("4 Ziffern", translated.stateDescription)
     }
 
+    /**
+     * TalkBack hears one field: its name is the drawn [label] (not heard again
+     * before it), its text the code, its state the digit count.
+     */
+    @Test
+    fun theFieldIsNamedByItsLabelWithTheCodeAndTheDigitCount() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosOTPInput(value = "123", onValueChange = {}, label = "Code from your email")
+            }
+        }
+        val field = tree.merged.single { it.setText != null }
+        assertEquals("Code from your email", field.description)
+        assertEquals("123", field.editableText)
+        assertEquals("6 digits", field.stateDescription)
+        assertEquals(
+            "the label is heard beside the field",
+            emptyList<String>(),
+            tree.merged.filter { it !== field && (it.description == "Code from your email" || "Code from your email" in it.texts) }
+                .map { it.words.orEmpty() }
+        )
+    }
+
+    /**
+     * Without a label, the field is named by [fieldLabel]: "Verification code"
+     * unless the product gives its own. A label wins over it.
+     */
+    @Test
+    fun withoutALabelTheFieldIsNamedByItsFieldLabel() {
+        val plain = paparazzi.readSemantics {
+            KozmosMaterialTheme { KozmosOTPInput(value = "", onValueChange = {}) }
+        }.merged.single { it.setText != null }
+        assertEquals("Verification code", plain.description)
+
+        val translated = paparazzi.readSemantics {
+            KozmosMaterialTheme { KozmosOTPInput(value = "", onValueChange = {}, fieldLabel = "Bestätigungscode") }
+        }.merged.single { it.setText != null }
+        assertEquals("Bestätigungscode", translated.description)
+
+        val labelled = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosOTPInput(value = "", onValueChange = {}, label = "Code from your email", fieldLabel = "Bestätigungscode")
+            }
+        }.merged.single { it.setText != null }
+        assertEquals("Code from your email", labelled.description)
+    }
+
     @Test
     fun digitsInAnyScriptArriveAsASCII() {
         val code = mutableStateOf("")
@@ -109,6 +158,13 @@ class KozmosOTPInputFieldTest {
             assertEquals("Devanagari digits pasted", "123456", code.value)
             assertEquals(2, completions())
         }
+    }
+
+    /** A digit joined by a mark or a keycap keeps its value, and the mark is dropped, as on SwiftUI and React. */
+    @Test
+    fun aDigitWithAMarkOrAKeycapKeepsItsValue() {
+        assertEquals("12", kozmosOtpCode("1\u0301\u0662\u0302", 6))
+        assertEquals("12", kozmosOtpCode("1\uFE0F\u20E32", 6))
     }
 
     @Test

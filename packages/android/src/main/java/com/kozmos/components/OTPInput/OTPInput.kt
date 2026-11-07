@@ -24,6 +24,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -44,10 +46,13 @@ import com.kozmos.tokens.KozmosThemeTokens
  * up to [length], so [onValueChange] always receives ASCII, as SwiftUI's does.
  * A paste replaces the code, whatever its length, as React's paste does.
  * Read-only, the field can be focused and read, and takes no edit; disabled,
- * it is dimmed.
+ * it is dimmed. TalkBack hears one field: named by [label], or [fieldLabel]
+ * without one, with the code as its text and [digitCountLabel] as its state.
  *
  * @param digitCountLabel The words TalkBack reads as the field's state for its
  * number of cells, "6 digits" unless the product gives its own.
+ * @param fieldLabel The field's name when no [label] is drawn: "Verification
+ * code" unless the product gives its own. A [label] names the field instead.
  */
 @Composable
 fun KozmosOTPInput(
@@ -62,7 +67,8 @@ fun KozmosOTPInput(
     error: Boolean = false,
     helperText: String? = null,
     errorMessage: String? = null,
-    digitCountLabel: (Int) -> String = { if (it == 1) "1 digit" else "$it digits" }
+    digitCountLabel: (Int) -> String = { if (it == 1) "1 digit" else "$it digits" },
+    fieldLabel: String = "Verification code"
 ) {
     val cellCount = length.coerceAtLeast(1)
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
@@ -110,7 +116,9 @@ fun KozmosOTPInput(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = statusColor ?: textColor
+                color = statusColor ?: textColor,
+                // The field's name, said with the field: not heard before it.
+                modifier = Modifier.clearAndSetSemantics {}
             )
         }
 
@@ -154,7 +162,10 @@ fun KozmosOTPInput(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { stateDescription = digitCountLabel(cellCount) },
+                    .semantics {
+                        contentDescription = label ?: fieldLabel
+                        stateDescription = digitCountLabel(cellCount)
+                    },
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier.fillMaxWidth()

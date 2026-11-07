@@ -17,10 +17,11 @@ import AppKit
 /// there. Until the host changes `value`, the cells keep the code the user
 /// entered, as React's do.
 ///
-/// VoiceOver hears one text field, named by `label` ("Verification code"
-/// without one), with the code as its value and `digitCountLabel(length)`,
-/// "6 digits" unless the product gives its own words, as its hint. React
-/// names each cell instead, "Digit 1 of 6". Read-only, the field is not
+/// VoiceOver hears one text field, named by `label`, or by `fieldLabel`
+/// ("Verification code" unless the product gives its own) without one, with
+/// the code as its value and `digitCountLabel(length)`, "6 digits" unless
+/// the product gives its own words, as its hint. React names each cell
+/// instead, "Digit 1 of 6". Read-only, the field is not
 /// dimmed: it can be focused and read, and takes no edit. Disabled, it is
 /// dimmed.
 public struct KozmosOTPInput: View {
@@ -35,6 +36,8 @@ public struct KozmosOTPInput: View {
     let errorMessage: String?
     /// The words VoiceOver hears as the field's hint, for its number of cells.
     let digitCountLabel: (Int) -> String
+    /// The field's name when no `label` is drawn.
+    let fieldLabel: String
     /// The code the field holds and the cells draw: the user's last edit, or
     /// what the host last put in `value`, kept to digits and `length`.
     @State private var code: String
@@ -59,7 +62,8 @@ public struct KozmosOTPInput: View {
         error: Bool = false,
         helperText: String? = nil,
         errorMessage: String? = nil,
-        digitCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 digit" : "\($0) digits" }
+        digitCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 digit" : "\($0) digits" },
+        fieldLabel: String = "Verification code"
     ) {
         self._value = value
         self.length = max(length, 1)
@@ -71,6 +75,7 @@ public struct KozmosOTPInput: View {
         self.helperText = helperText
         self.errorMessage = errorMessage
         self.digitCountLabel = digitCountLabel
+        self.fieldLabel = fieldLabel
         self._code = State(initialValue: Self.sanitize(value.wrappedValue, length: max(length, 1)))
     }
 
@@ -114,14 +119,16 @@ public struct KozmosOTPInput: View {
 
     /// The code in `text`: each decimal digit, in any script, as its ASCII
     /// digit ("٣" and "३" are 3), and nothing else, at most `length` of them.
-    /// Compose keeps the same rule, so the host always receives ASCII.
+    /// Read code point by code point, as React's and Compose's are, so a
+    /// digit keeps its value when a mark or a keycap joins it into one
+    /// character ("1́" and "1️⃣" are 1) and the mark is dropped. The host
+    /// always receives ASCII.
     static func sanitize(_ text: String, length: Int) -> String {
-        String(text.compactMap(asciiDigit).prefix(length))
+        String(text.unicodeScalars.compactMap(asciiDigit).prefix(length))
     }
 
-    private static func asciiDigit(_ character: Character) -> Character? {
-        guard character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first,
-              scalar.properties.numericType == .decimal,
+    private static func asciiDigit(_ scalar: Unicode.Scalar) -> Character? {
+        guard scalar.properties.numericType == .decimal,
               let value = scalar.properties.numericValue, value >= 0, value <= 9 else { return nil }
         return Character(String(Int(value)))
     }
@@ -219,7 +226,8 @@ public struct KozmosOTPInput: View {
 
     // MARK: The field
 
-    private var accessibilityName: String { label ?? "Verification code" }
+    /// The field's name: the drawn `label`, or `fieldLabel` without one.
+    private var accessibilityName: String { label ?? fieldLabel }
 
     private var accessibilityHint: String { digitCountLabel(length) }
 

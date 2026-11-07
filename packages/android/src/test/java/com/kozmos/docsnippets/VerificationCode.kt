@@ -8,8 +8,7 @@ import com.kozmos.components.otpinput.KozmosOTPInput
 
 // Six cells unless length says otherwise, digits only, and the code is yours
 // to hold: one hidden text field takes the typing, and the cells draw it. The
-// label is drawn above them but does not name the field, where React names
-// each cell "Digit 1 of 6".
+// label names that field, where React names each cell "Digit 1 of 6".
 @Composable
 fun VerificationCode(code: String, onCodeChange: (String) -> Unit) {
     KozmosOTPInput(
