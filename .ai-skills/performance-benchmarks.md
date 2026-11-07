@@ -81,7 +81,7 @@ helpers) left out as the app's own:
 
 Each is the measurement plus about a tenth, rounded up to the half kilobyte: the main entry's of
 2026-11-06 (2.69 KB), and the bridge's of 2026-11-07 (8.42 KB on a Mac, 8.47 on CI), after #489 gave it v-model through
-each wrapper's models and its listener routing (it measured 3.58 KB before), which gave 9.5. #493 raised it to 11.5: the bridge measured 10.08 KB on a Mac (about 10.13 on CI) once a bare boolean attribute reached React as `true`, since each bridged part's boolean props are read from React's types into `part-takes.ts`, and their 112 prop names alone gzip to about 700 B. It is the rule React's
+each wrapper's models and its listener routing (it measured 3.58 KB before), which gave 9.5. #493 raised it to 11.5: the bridge measured 10.18 KB on a Mac (about 10.23 on CI) once a bare boolean attribute reached React as `true`, since each bridged part's boolean props are read from React's types into `part-takes.ts`, and their 112 prop names alone gzip to about 700 B. It is the rule React's
 first budgets were set by (Everything 54.6 KB to 60, the stylesheet 26.4 to 30). The bridge mounts
 React, so it never counts towards the main entry, and the analyzer fails if the main entry imports
 React. `@kozmos-ds/tokens` and `@kozmos-ds/icons` have none.

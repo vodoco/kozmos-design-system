@@ -96,7 +96,7 @@ const MAX_VUE_GZIP_KB = 3;
 // 8.42 KB here and 8.47 KB on CI on 7 Nov 2026, with #489's bridge (v-model
 // through each wrapper's models, listener routing and part-takes.ts; main's
 // measured 3.58 on 6 Nov), and the same rule gave 9.5. #493 raised it to
-// 11.5: 10.08 KB here (about 10.13 on CI, which read #489's 0.05 above a Mac)
+// 11.5: 10.18 KB here (about 10.23 on CI, which read #489's 0.05 above a Mac)
 // once a bare boolean attribute reached React as true. Each bridged part's
 // boolean props are read from React's types into part-takes.ts, and the 112
 // prop names alone gzip to about 700 B; 110% of either figure, to the half,
