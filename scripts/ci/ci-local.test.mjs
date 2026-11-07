@@ -363,6 +363,7 @@ test("the condition evaluator reads literals, ==, !=, !, && and || with GitHub's
     // `&&` and `||` give back the operand that decided them.
     ["('' || 'x') == 'x'", local, true],
     ["(0 && 'x') == 0", local, true],
+    ["('a' || 'b') == 'a'", local, true],
     // && binds tighter than ||, == tighter than &&, ! tighter than ==.
     ["true || false && false", local, true],
     ["(true || false) && false", local, false],
@@ -427,9 +428,12 @@ test("the condition evaluator leaves undecided what only a runner can decide, an
     ["inputs.record", local, null],
     ["vars.FIGMA_VARIABLES_API_ENABLED == 'true'", local, null],
     ["runner.os == 'Linux'", local, null],
+    // ! keeps what it cannot decide undecided.
+    ["!(github.ref == 'x')", local, null],
+    ["!steps.b.outcome", after({ b: null }), null],
     ["github.ref == 'refs/heads/main'", local, null],
     ["steps.b.outputs.ios == 'true'", after({ b: PASSED }), null],
-    // Today's shortcut ran anything that mentioned always().
+    // The old shortcut ran any condition that mentioned always().
     ["always() && contains(github.ref, 'main')", local, null],
     ["github.event_name < 'z'", local, null],
     ["github['event_name'] == 'pull_request'", local, null],
@@ -625,4 +629,96 @@ test("--list shows a condition the run decides as decided as the job runs, not a
       " 8. RUN   Always",
     ],
   );
+});
+
+const ON_FAILURE = {
+  name: "On Failure",
+  if: "failure()",
+  run: "touch on-failure",
+};
+const ON_SUCCESS = {
+  name: "On Success",
+  if: "success()",
+  run: "touch on-success",
+};
+
+test("success() and failure() after a step that --from leaves out are undecided, never read as passed", (t) => {
+  const dir = withJobs(t, {
+    web: {
+      steps: [{ name: "Breaks", run: "false" }, ON_FAILURE, ON_SUCCESS],
+    },
+  });
+  const run = ciLocal(dir, "--from", "2");
+  // On Failure, undecided, is one more step this run did not see.
+  for (const [step, unseen] of [
+    [ON_FAILURE, "Breaks"],
+    [ON_SUCCESS, "Breaks, On Failure"],
+  ])
+    assert.ok(
+      run.log.includes(
+        `SKIP  ${step.name}  — runs only when ${step.if}, which this run cannot decide: whether a step before it failed: ${unseen} did not run here`,
+      ),
+      run.log,
+    );
+  assert.equal(fs.existsSync(path.join(dir, "on-failure")), false, run.log);
+  assert.equal(fs.existsSync(path.join(dir, "on-success")), false, run.log);
+});
+
+for (const breaks of [false, true]) {
+  test(`after steps skipped for needing a runner or a secret, ${breaks ? "a failure that ran decides failure() and success()" : "success() and failure() are undecided"}`, (t) => {
+    const dir = withJobs(t, {
+      web: {
+        steps: [
+          { name: "Checkout", uses: "actions/checkout@v4" },
+          {
+            name: "Needs A Secret",
+            env: { TOKEN: "${{ secrets.KOZMOS_CI_LOCAL_TEST_ABSENT }}" },
+            run: "true",
+          },
+          { name: "Here", run: breaks ? "false" : "true" },
+          ON_FAILURE,
+          ON_SUCCESS,
+        ],
+      },
+    });
+    const run = ciLocal(dir);
+    if (breaks) {
+      assert.match(run.log, /PASS\s+On Failure/, run.log);
+      assert.ok(
+        run.log.includes(
+          "SKIP  On Success  — runs only when success(), which is false here: a step before it failed",
+        ),
+        run.log,
+      );
+    } else {
+      for (const [step, unseen] of [
+        [ON_FAILURE, "Checkout, Needs A Secret"],
+        [ON_SUCCESS, "Checkout, Needs A Secret, On Failure"],
+      ])
+        assert.ok(
+          run.log.includes(
+            `SKIP  ${step.name}  — runs only when ${step.if}, which this run cannot decide: whether a step before it failed: ${unseen} did not run here`,
+          ),
+          run.log,
+        );
+    }
+    assert.equal(fs.existsSync(path.join(dir, "on-failure")), breaks, run.log);
+    assert.equal(fs.existsSync(path.join(dir, "on-success")), false, run.log);
+  });
+}
+
+test("a step that writes to $GITHUB_STEP_SUMMARY, $GITHUB_ENV and $GITHUB_OUTPUT has files to write to", (t) => {
+  const dir = withJobs(t, {
+    web: {
+      steps: [
+        {
+          name: "Writes Its Files",
+          run: 'set -eu; echo "## Summary" >> "$GITHUB_STEP_SUMMARY"; echo "X=1" >> "$GITHUB_ENV"; echo "y=2" >> "$GITHUB_OUTPUT"',
+        },
+      ],
+    },
+  });
+  const run = ciLocal(dir);
+  assert.equal(run.status, 0, run.log);
+  assert.match(run.log, /PASS\s+Writes Its Files/, run.log);
 });

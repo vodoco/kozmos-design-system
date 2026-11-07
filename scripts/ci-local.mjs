@@ -57,6 +57,10 @@ import { parse } from "yaml";
  * them and give that operand back, `==` ignores case between strings and
  * compares other mixed types as numbers, and false, 0, '', null and NaN are
  * false.
+ *
+ * GitHub also reads function and context names in any case (`Success()`,
+ * `GitHub.event_name`). This evaluator reads only the lowercase spellings
+ * the workflows use; any other spelling fails safe, to undecided.
  */
 
 const UNDECIDED = Symbol("undecided");
@@ -623,6 +627,9 @@ async function main() {
     ? null
     : fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-ci-local-logs-"));
   if (logDirectory) console.log(`Full step logs: ${logDirectory}\n`);
+  const stepFileDirectory =
+    logDirectory ??
+    fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-ci-local-step-files-"));
   let stepNumber = 0;
 
   // A step's condition is decided at its turn, from the steps before it in the
@@ -636,39 +643,77 @@ async function main() {
   // what is broken, and one run that shows every failure beats a run per
   // failure, each stopping at the next one. A condition that does call
   // success(), failure(), always() or cancelled() is read as CI reads it.
+  //
+  // What this run did not see, it does not guess. A step it did not run - left
+  // out by --only or --from, or skipped here because it needs a runner, a
+  // secret or a condition only a runner can decide - may have passed or
+  // failed on GitHub. `steps.<id>` of such a step is undecided, and so are
+  // success() and failure() after one, until a step that ran here fails:
+  // then failure() holds and success() does not, whatever the others did.
   const SKIPPED = { outcome: "skipped", conclusion: "skipped" };
   const results = new Map();
-  let shard;
-  let failedBefore = false;
+
+  /** The steps before `current` in its job run (a shard is a run of its own). */
+  const earlierThan = (current) =>
+    steps.filter(
+      (earlier) =>
+        earlier.shard === current.shard && earlier.number < current.number,
+    );
+
+  /**
+   * An earlier step's result as this run knows it: what it came to here, or
+   * `skipped` when its condition is false for any local run, or null when
+   * this run did not see it.
+   */
+  const resultOf = (earlier) =>
+    results.get(earlier) ?? (earlier.conditionFalse ? SKIPPED : null);
 
   /**
    * The `steps` context at a step's turn: each step before it in its job run
-   * that has an id, with its result, or null where this run did not see one -
-   * a step left out by --only or --from, or one skipped because it needs a
-   * runner. Only a condition that is false for any local run says `skipped`
-   * of a step this run did not reach.
+   * that has an id, with its result, or null where this run did not see one.
    */
   function stepsContext(current) {
     const context = {};
-    for (const earlier of steps) {
-      if (
-        earlier.shard !== current.shard ||
-        earlier.number >= current.number ||
-        !earlier.id
-      )
-        continue;
-      context[earlier.id] =
-        results.get(earlier) ?? (earlier.conditionFalse ? SKIPPED : null);
-    }
+    for (const earlier of earlierThan(current))
+      if (earlier.id) context[earlier.id] = resultOf(earlier);
     return context;
   }
 
+  /**
+   * Whether a step before `current` failed, for success() and failure(): true
+   * once one that ran here concluded as a failure, false when every one is
+   * known and none did, and null otherwise, with what this run did not see.
+   */
+  function failedBefore(current) {
+    const earlier = earlierThan(current);
+    if (earlier.some((step) => resultOf(step)?.conclusion === "failure"))
+      return { failed: true, unseen: [], unread: [] };
+    const unseen = earlier.filter((step) => resultOf(step) === null);
+    const unread = earlier.filter(
+      (step) => resultOf(step) && resultOf(step).conclusion === null,
+    );
+    return {
+      failed: unseen.length || unread.length ? null : false,
+      unseen,
+      unread,
+    };
+  }
+
+  const named = (list) =>
+    list.length > 3
+      ? `${list
+          .slice(0, 3)
+          .map((step) => step.name)
+          .join(", ")} and ${list.length - 3} more`
+      : list.map((step) => step.name).join(", ");
+
   /** Why a condition decided at a step's turn keeps the step from running. */
   function conditionSkip(step) {
+    const status = failedBefore(step);
     const context = {
       github: localGithub,
       steps: stepsContext(step),
-      failed: failedBefore,
+      failed: status.failed,
     };
     const holds = evaluateCondition(step.when, context);
     if (holds) return null;
@@ -681,7 +726,9 @@ async function main() {
       );
       if (reads.status)
         facts.push(
-          failedBefore ? "a step before it failed" : "no step before it failed",
+          status.failed
+            ? "a step before it failed"
+            : "no step before it failed",
         );
       return `runs only when ${step.when}, which is false here: ${facts.join(", ")}`;
     }
@@ -694,19 +741,21 @@ async function main() {
           `steps.${id}.${property} turns on a continue-on-error it cannot read`,
         );
     }
-    if (reads.status && failedBefore === null)
-      unknown.add(
-        "whether a step before it failed turns on a continue-on-error it cannot read",
-      );
+    if (reads.status && status.failed === null) {
+      if (status.unseen.length)
+        unknown.add(
+          `whether a step before it failed: ${named(status.unseen)} did not run here`,
+        );
+      if (status.unread.length)
+        unknown.add(
+          `whether a step before it failed turns on ${named(status.unread)}'s continue-on-error, which it cannot read`,
+        );
+    }
     return `runs only when ${step.when}, which this run cannot decide: ${unknown.size ? [...unknown].join(", ") : "it reads what only a runner has"}`;
   }
 
   for (const step of chosen) {
     stepNumber += 1;
-    if (step.shard !== shard) {
-      shard = step.shard;
-      failedBefore = false;
-    }
     const skip = step.skip ?? (step.when ? conditionSkip(step) : null);
     if (skip) {
       console.log(`  SKIP  ${step.name}  — ${skip}`);
@@ -717,11 +766,34 @@ async function main() {
     const logFile =
       logDirectory && path.join(logDirectory, `${stepNumber}.log`);
     const logFd = logFile ? fs.openSync(logFile, "w") : null;
+    // A runner gives every step files to append to: the job summary, and the
+    // environment and outputs it hands the steps after it. A step that writes
+    // to one with nowhere to write fails here with "No such file or
+    // directory" (visual.yml's summary, ios-next-xcode.yml's Xcode pick), so
+    // each step gets its own, beside its log. They are not read back:
+    // GITHUB_ENV and GITHUB_OUTPUT do not reach the steps after it here.
+    const stepFiles = Object.fromEntries(
+      [
+        ["GITHUB_STEP_SUMMARY", "summary.md"],
+        ["GITHUB_ENV", "env"],
+        ["GITHUB_OUTPUT", "output"],
+        ["GITHUB_PATH", "path"],
+      ].map(([name, suffix]) => {
+        const file = path.join(stepFileDirectory, `${stepNumber}.${suffix}`);
+        fs.writeFileSync(file, "");
+        return [name, file];
+      }),
+    );
     let result;
     try {
       result = spawnSync("bash", ["-lc", step.run], {
         cwd: step.cwd ? path.join(root, step.cwd) : root,
-        env: { ...process.env, ...resolveEnv(step.env), CI: "1" },
+        env: {
+          ...process.env,
+          ...stepFiles,
+          ...resolveEnv(step.env),
+          CI: "1",
+        },
         stdio: logFd === null ? "inherit" : ["ignore", logFd, logFd],
         encoding: "utf8",
       });
@@ -742,9 +814,6 @@ async function main() {
             ? "success"
             : "failure";
       results.set(step, { outcome: "failure", conclusion });
-      if (conclusion === "failure") failedBefore = true;
-      else if (conclusion === null && failedBefore === false)
-        failedBefore = null;
       console.log(`  FAIL  ${step.name}  (${took}s)`);
       failed += 1;
       failures.push({ step, result, logFile });
