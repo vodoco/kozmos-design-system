@@ -1,14 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { computed } from "vue";
-import {
-  KozmosButton,
-  KozmosDensityScope,
-  KozmosThemeProvider,
-} from "../../index";
+import { KozmosButton, KozmosDensityScope } from "../../index";
 
 /**
  * Vue's Button, the real port (Vue 3 Phase 0): the stories React's Button has,
- * with the same args, each inside a KozmosThemeProvider.
+ * with the same args, each inside the KozmosThemeProvider the Storybook's
+ * decorator gives every story at the toolbar's theme and density.
  * test/parity/button.parity.spec.ts holds every one to React's server render.
  */
 const meta: Meta<typeof KozmosButton> = {
@@ -46,7 +43,7 @@ const meta: Meta<typeof KozmosButton> = {
   // `label` is the story's text: Button is given its own props only, so the
   // label never becomes an attribute of the <button>.
   render: (args) => ({
-    components: { KozmosButton, KozmosThemeProvider },
+    components: { KozmosButton },
     setup: () => ({
       label: computed(() => (args as { label?: string }).label),
       buttonProps: computed(() => {
@@ -54,7 +51,7 @@ const meta: Meta<typeof KozmosButton> = {
         return props;
       }),
     }),
-    template: `<KozmosThemeProvider><KozmosButton v-bind="buttonProps">{{ label }}</KozmosButton></KozmosThemeProvider>`,
+    template: `<KozmosButton v-bind="buttonProps">{{ label }}</KozmosButton>`,
   }),
 };
 
@@ -81,7 +78,7 @@ export const Disabled = story({ disabled: true, label: "Disabled" });
 /** Each emotion on the three variants that take one, as React's Emotions story. */
 export const Emotions: Story = {
   render: () => ({
-    components: { KozmosButton, KozmosThemeProvider },
+    components: { KozmosButton },
     setup: () => ({
       variants: ["default", "outline", "ghost"],
       emotions: [
@@ -94,28 +91,24 @@ export const Emotions: Story = {
       ],
     }),
     template: `
-      <KozmosThemeProvider>
-        <div style="display: grid; gap: 12px">
-          <div v-for="variant in variants" :key="variant" style="display: flex; flex-wrap: wrap; gap: 8px">
-            <KozmosButton v-for="emotion in emotions" :key="emotion" :variant="variant" :emotion="emotion">{{ emotion }}</KozmosButton>
-          </div>
+      <div style="display: grid; gap: 12px">
+        <div v-for="variant in variants" :key="variant" style="display: flex; flex-wrap: wrap; gap: 8px">
+          <KozmosButton v-for="emotion in emotions" :key="emotion" :variant="variant" :emotion="emotion">{{ emotion }}</KozmosButton>
         </div>
-      </KozmosThemeProvider>`,
+      </div>`,
   }),
 };
 
 /** A compact region inside a touch page (decision 82). */
 export const CompactScope: Story = {
   render: () => ({
-    components: { KozmosButton, KozmosDensityScope, KozmosThemeProvider },
+    components: { KozmosButton, KozmosDensityScope },
     template: `
-      <KozmosThemeProvider>
-        <div style="display: flex; gap: 8px; align-items: center">
-          <KozmosButton>Touch</KozmosButton>
-          <KozmosDensityScope density="compact">
-            <KozmosButton>Compact</KozmosButton>
-          </KozmosDensityScope>
-        </div>
-      </KozmosThemeProvider>`,
+      <div style="display: flex; gap: 8px; align-items: center">
+        <KozmosButton>Touch</KozmosButton>
+        <KozmosDensityScope density="compact">
+          <KozmosButton>Compact</KozmosButton>
+        </KozmosDensityScope>
+      </div>`,
   }),
 };
