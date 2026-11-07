@@ -67,7 +67,7 @@ testing what uses it, and restart Storybook after a rebuild.
 
 ## Rules every change follows
 
-- **Merging** needs all 19 required checks green, on a branch that is up to date with `main`.
+- **Merging** needs all 20 required checks green, on a branch that is up to date with `main`.
   Changes reach `main` through a pull request.
 - **A changeset** for a pull request that changes what a published package ships: its `src/`
   apart from tests, stories, docs pages and Code Connect files, its build files, the files

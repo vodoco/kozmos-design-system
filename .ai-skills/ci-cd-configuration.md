@@ -24,7 +24,7 @@
 ### Pipeline
 
 - A pull request runs CI (`ci.yml`) and Visual Regression (`visual.yml`); one into `main` also runs
-  Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 19 checks
+  Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 20 checks
   listed under "GitHub Status Checks" (§10) are required on `main`, matched by name, and a pull
   request must be up to date with `main` to merge. One that changes the website, Storybook or a
   package also runs Site (`site.yml`), the website's own checks, which are not required.
@@ -40,7 +40,7 @@
 ```
 .github/
 └── workflows/
-    ├── ci.yml             # CI: web, twelve browser shards, core pipeline, iOS, Android
+    ├── ci.yml             # CI: web, twelve browser shards, core pipeline, iOS, Android, Vue
     ├── visual.yml         # Visual Regression: the "Visual Review" check, and recording baselines
     ├── lighthouse.yml     # Lighthouse CI over the built Storybook
     ├── bundle-size.yml    # Bundle Size Analysis: the "analyze-bundle" check
@@ -286,7 +286,8 @@ pull request and in the repository's Actions tab.
 # Required status checks (GitHub Actions only): every check a pull request runs —
 # Web Build & Test, Core Pipeline & POI Gallery, Android Build, iOS Build (skipped,
 # and so passing, on a pull request that doesn't touch what it builds), the twelve
-# browser shards, analyze-bundle, lighthouse and Visual Review. They are matched by
+# browser shards, "Vue (build, contract, parity, browser suites)" (required since
+# 7 Nov 2026), analyze-bundle, lighthouse and Visual Review. They are matched by
 # name: renaming a job or shard means updating this list in the same change. A pull
 # request must also be up to date with main to merge.
 
