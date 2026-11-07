@@ -454,15 +454,11 @@ export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
   modelValue: { prop: "value", callback: "onValueChange", empty: null },
 });
 export const KozmosLink = createVueWrapper(Link);
-// `external` is a Boolean prop, so a bare `external` in a template is true:
-// undeclared, Vue hands React the attribute's value, "", which reads as false.
 // `externalLabel` is declared so `external-label` reaches React by its name
-// (GAP-202).
+// (GAP-202). `external`, a boolean, is read as every bridged part's boolean
+// props are (react-adapter.ts): a bare `external` is true.
 Object.assign(KozmosLink, {
-  props: {
-    external: { type: Boolean, default: undefined },
-    externalLabel: { type: String, default: undefined },
-  },
+  props: { externalLabel: { type: String, default: undefined } },
 });
 export const KozmosIconButton = createVueWrapper(IconButton);
 // `counterLabel` is a function: declared as a prop, it is handed to React and

@@ -11,8 +11,10 @@
 // And its boolean props. `flags`: those whose type is `boolean`; `unions`:
 // those boolean in a union with other types (`error: boolean | string`). A
 // bare attribute of either (`<KozmosInput error>`, which Vue gives as "")
-// is `true` to React; so is a flag's name as its value (`disabled="disabled"`).
-// A prop that takes any ReactNode is a slot, and neither.
+// is `true` to React, and so is its own name as its value
+// (`disabled="disabled"`): a union is read Boolean first, as Vue reads a
+// `[Boolean, String]` prop. A prop that takes any ReactNode is a slot, and
+// neither.
 import {
   Box,
   Stack,

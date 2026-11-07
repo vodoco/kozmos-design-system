@@ -2,6 +2,7 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { defineComponent, h, type Component } from "vue";
+import { compileTemplate } from "vue/compiler-sfc";
 import React from "react";
 import * as KozmosReact from "@kozmos-ds/react";
 import { KozmosButton } from "../index";
@@ -34,9 +35,12 @@ import {
 // prop: absent, React is not given it, so React's default applies; bare, or
 // with its own name as its value (`disabled="disabled"`), it is true; bound
 // (`:disabled="false"`), React is given the value as it is. A prop boolean
-// in a union with other types (`error: boolean | string`) is true bare, and
-// keeps its strings, its name too. Which props are boolean is read from
-// React's types (part-takes.ts, scripts/bridge-takes.mjs).
+// in a union with other types (`error: boolean | string`) is read as Vue
+// reads a `[Boolean, String]` prop, Boolean first: bare or by its name it is
+// true, and its other strings are React's as they are. A model whose React
+// prop is a boolean is read the same way, by its own name. Which props are
+// boolean is read from React's types (part-takes.ts,
+// scripts/bridge-takes.mjs).
 
 const fruit = [
   { value: "apple", label: "Apple" },
@@ -80,8 +84,6 @@ interface Case {
   drawn: () => boolean;
   /** React's own default for it: what an absent attribute leaves. */
   byDefault: boolean;
-  /** Boolean in a union with other types: its name as its value is kept. */
-  union?: boolean;
   /** A string its type takes, which reaches React as it is. */
   text?: string;
 }
@@ -153,7 +155,6 @@ const CASES: Case[] = [
     template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
     drawn: () => $("[role=checkbox]")!.getAttribute("aria-checked") === "true",
     byDefault: false,
-    union: true,
   },
   {
     name: "KozmosCheckbox",
@@ -163,7 +164,6 @@ const CASES: Case[] = [
     template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
     drawn: () => $("[role=checkbox]")!.getAttribute("aria-invalid") === "true",
     byDefault: false,
-    union: true,
     text: "Required",
   },
   {
@@ -174,7 +174,6 @@ const CASES: Case[] = [
     template: (a) => `<KozmosInput aria-label="Gate" ${a} />`,
     drawn: () => $("input")!.getAttribute("aria-invalid") === "true",
     byDefault: false,
-    union: true,
     text: "Required",
   },
   {
@@ -239,7 +238,7 @@ const CASES: Case[] = [
 
 describe("a boolean prop's attribute, as Vue reads a declared Boolean prop", () => {
   it.each(CASES.map((c) => [`${c.name} ${c.attribute}`, c] as const))(
-    '%s: bare is true, absent is React\'s default and not given, :x="false" is false, its name is true (a union keeps it)',
+    '%s: bare is true, absent is React\'s default and not given, :x="false" is false, its name is true',
     async (_, c) => {
       const draw = async (attribute: string) => {
         const given = await propsOf(c.part, () =>
@@ -268,9 +267,9 @@ describe("a boolean prop's attribute, as Vue reads a declared Boolean prop", () 
       expect(on.given[c.prop]).toBe(true);
 
       const named = await draw(`${c.attribute}="${hyphenate(c.prop)}"`);
-      // A union's strings are its own: its name is one of them.
-      expect(named.given[c.prop]).toBe(c.union ? hyphenate(c.prop) : true);
-      if (!c.union) expect(named.drawn).toBe(true);
+      // A union's too: Boolean first, as Vue reads `[Boolean, String]`.
+      expect(named.given[c.prop]).toBe(true);
+      expect(named.drawn).toBe(true);
 
       if (c.text) {
         const text = await draw(`${c.attribute}="${c.text}"`);
@@ -406,11 +405,10 @@ describe("Button", () => {
   });
 });
 
-describe("a model is its model's", () => {
-  // The models whose React prop is a boolean. A declared one (each
-  // wrapper's own) is a Vue prop: its value is the model's, read as before,
-  // never an attribute. `open` and `checked` (RADIX_MODELS) are not
-  // declared, so they arrive as attributes, and are read as one.
+describe("a model whose React prop is a boolean", () => {
+  // Each wrapper's declared models whose React prop is a boolean, and
+  // `open` and `checked` (RADIX_MODELS), which arrive as attributes: each is
+  // read as a boolean attribute is, by the model's own name.
   const booleanModels = () =>
     bridgedParts().flatMap(({ name, bridge }) =>
       Object.entries(bridge!.models)
@@ -422,7 +420,7 @@ describe("a model is its model's", () => {
         .map(([model, binding]) => `${name} ${model} → ${binding.prop}`),
     );
 
-  it("the declared models whose React prop is a boolean, each given its model's value", async () => {
+  it("the declared ones, each bound with its listener: React is given the model's value", async () => {
     expect(booleanModels()).toEqual([
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
@@ -455,6 +453,182 @@ describe("a model is its model's", () => {
         unmount();
       }
   });
+
+  const MODELS: {
+    name: string;
+    part: unknown;
+    attribute: string;
+    prop: string;
+    template: (attribute: string) => string;
+    drawn?: () => boolean;
+  }[] = [
+    {
+      name: "KozmosToggleButton",
+      part: KozmosReact.ToggleButton,
+      attribute: "pressed",
+      prop: "pressed",
+      template: (a) =>
+        `<KozmosToggleButton aria-label="Bold" ${a}>B</KozmosToggleButton>`,
+      drawn: () => $("button")!.getAttribute("aria-pressed") === "true",
+    },
+    {
+      name: "KozmosMapControlsGroup",
+      part: KozmosReact.MapControlsGroup,
+      attribute: "step-free",
+      prop: "stepFree",
+      template: (a) => `<KozmosMapControlsGroup label="Map controls" ${a} />`,
+    },
+    {
+      name: "KozmosPasswordInput",
+      part: KozmosReact.PasswordInput,
+      attribute: "visible",
+      prop: "visible",
+      template: (a) => `<KozmosPasswordInput aria-label="Password" ${a} />`,
+      drawn: () => $<HTMLInputElement>("input")!.type === "text",
+    },
+    {
+      name: "KozmosCheckbox",
+      part: KozmosReact.Checkbox,
+      attribute: "model-value",
+      prop: "checked",
+      template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
+      drawn: () =>
+        $("[role=checkbox]")!.getAttribute("aria-checked") === "true",
+    },
+    {
+      name: "KozmosSwitch",
+      part: KozmosReact.Switch,
+      attribute: "model-value",
+      prop: "checked",
+      template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
+      drawn: () => $("[role=switch]")!.getAttribute("aria-checked") === "true",
+    },
+  ];
+
+  it.each(MODELS.map((m) => [`${m.name} ${m.attribute}`, m] as const))(
+    '%s without v-model: bare or by its name is true, absent is not given, :x="false" is false, :x="true" true',
+    async (_, m) => {
+      for (const [attribute, expected] of [
+        [m.attribute, true],
+        [`${m.attribute}="${m.attribute}"`, true],
+        ["", undefined],
+        [`:${m.attribute}="false"`, false],
+        [`:${m.attribute}="true"`, true],
+      ] as const) {
+        const given = await propsOf(m.part, () =>
+          mount(page(m.template(attribute))),
+        );
+        expect(given[m.prop], attribute || "absent").toBe(expected);
+        if (expected === undefined)
+          expect(m.prop in given, "absent").toBe(false);
+        if (m.drawn) expect(m.drawn(), attribute || "absent").toBe(!!expected);
+        unmount();
+      }
+    },
+  );
+});
+
+describe("a union, read Boolean first as Vue reads a [Boolean, String] prop", () => {
+  it.each([
+    ['checked="checked"', true, "true"],
+    ["checked", true, "true"],
+    ['checked="indeterminate"', "indeterminate", "mixed"],
+    [':checked="false"', false, "false"],
+  ] as const)(
+    "KozmosCheckbox %s: React is given %s, aria-checked is %s",
+    async (attribute, expected, aria) => {
+      const given = await propsOf(KozmosReact.Checkbox, () =>
+        mount(page(`<KozmosCheckbox aria-label="Accept" ${attribute} />`)),
+      );
+      expect(given.checked).toBe(expected);
+      expect($("[role=checkbox]")!.getAttribute("aria-checked")).toBe(aria);
+    },
+  );
+
+  it.each([
+    ['aria-hidden="aria-hidden"', true, "true"],
+    ["aria-hidden", true, "true"],
+    ['aria-hidden="false"', "false", "false"],
+  ] as const)(
+    "KozmosIconButton %s: React is given %s, the DOM aria-hidden=%s",
+    async (attribute, expected, dom) => {
+      const given = await propsOf(KozmosReact.IconButton, () =>
+        mount(
+          page(
+            `<KozmosIconButton aria-label="Go" ${attribute}>x</KozmosIconButton>`,
+          ),
+        ),
+      );
+      expect(given["aria-hidden"]).toBe(expected);
+      expect($("button")!.getAttribute("aria-hidden")).toBe(dom);
+    },
+  );
+
+  it('KozmosInput error="Required" keeps its message; error="error" is true', async () => {
+    const message = await propsOf(KozmosReact.Input, () =>
+      mount(page(`<KozmosInput aria-label="Gate" error="Required" />`)),
+    );
+    expect(message.error).toBe("Required");
+    expect(document.body.textContent).toContain("Required");
+    unmount();
+    const named = await propsOf(KozmosReact.Input, () =>
+      mount(page(`<KozmosInput aria-label="Gate" error="error" />`)),
+    );
+    expect(named.error).toBe(true);
+    expect($("input")!.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it('DynamicIsland\'s animate="animate" is true, and so is :animate="\'animate\'", the same string to the wrapper: a variant named animate is a list', () => {
+    const island = PART_BOOLEANS.get(KozmosReact.DynamicIsland)!;
+    expect(island.unions).toContain("animate");
+    expect(withBooleans({ animate: "animate" }, island)).toEqual({
+      animate: true,
+    });
+    expect(withBooleans({ animate: "visible" }, island)).toEqual({
+      animate: "visible",
+    });
+    expect(withBooleans({ animate: ["animate"] }, island)).toEqual({
+      animate: ["animate"],
+    });
+    // Vue compiles a bound string literal to what the attribute gives.
+    const props = (template: string) =>
+      /_createBlock\(_component_X, (\{[^}]*\})/.exec(
+        compileTemplate({ source: template, id: "x", filename: "x.vue" }).code,
+      )?.[1];
+    expect(props(`<X :animate="'animate'" />`)?.replace(/'/g, '"')).toBe(
+      props(`<X animate="animate" />`),
+    );
+  });
+});
+
+describe("KozmosLink's external, read by the rule, not a declared prop", () => {
+  // GAP-202 declared it a Vue Boolean prop: the rule now reads it as Vue
+  // read that, so the declaration is gone, and Link draws the same.
+  it.each([
+    ["external", true, true],
+    ['external="external"', true, true],
+    ["", undefined, false],
+    [':external="true"', true, true],
+    [':external="false"', false, false],
+  ] as const)(
+    "%s: React is given %s, and a new tab is %s",
+    async (attribute, expected, newTab) => {
+      const given = await propsOf(KozmosReact.Link, () =>
+        mount(
+          page(
+            `<KozmosLink href="https://example.com/datenschutz" external-label="öffnet in einem neuen Tab" ${attribute}>Datenschutz</KozmosLink>`,
+          ),
+        ),
+      );
+      expect(given.external).toBe(expected);
+      expect(given.externalLabel).toBe("öffnet in einem neuen Tab");
+      const link = $("a")!;
+      expect(link.getAttribute("target") === "_blank").toBe(newTab);
+      expect(link.querySelector(".kozmos-link-external-label") !== null).toBe(
+        newTab,
+      );
+    },
+  );
 });
 
 // --------------------------------------------------------------------------
@@ -500,7 +674,7 @@ describe("which props of each part are booleans", () => {
     }
   }, 60_000);
 
-  it("is exact both ways: every spelling of each boolean is it, read by its kind, and an attribute that spells none is passed on as it is", () => {
+  it("is exact both ways: every spelling of each boolean is it, bare or by its name true, and an attribute that spells none is passed on as it is", () => {
     const wrong: string[] = [];
     const entries: [string, Booleans, Booleans][] = [
       ...Object.entries(table.booleans.parts).map(
@@ -526,14 +700,9 @@ describe("which props of each part are booleans", () => {
     for (const name of ["value", "label", "children", "variant", "class"])
       every.add(name);
     for (const [name, computed, runtime] of entries) {
-      const kinds = new Map<string, [string, boolean]>();
-      for (const [props, union] of [
-        [computed.flags, false],
-        [computed.unions, true],
-      ] as const)
-        for (const prop of props)
-          for (const spelling of spellingsOf(prop))
-            kinds.set(spelling, [prop, union]);
+      const kinds = new Map<string, string>();
+      for (const prop of [...computed.flags, ...computed.unions])
+        for (const spelling of spellingsOf(prop)) kinds.set(spelling, prop);
       const check = (key: string, value: unknown, expected: object) => {
         const read = withBooleans({ [key]: value }, runtime);
         if (JSON.stringify(read) !== JSON.stringify(expected))
@@ -548,13 +717,12 @@ describe("which props of each part are booleans", () => {
             check(key, "", { [key]: "" });
             continue;
           }
-          const [boolean, union] = kind;
+          const boolean = kind;
           check(key, "", { [boolean]: true });
           check(key, false, { [boolean]: false });
           check(key, true, { [boolean]: true });
-          check(key, hyphenate(boolean), {
-            [boolean]: union ? hyphenate(boolean) : true,
-          });
+          check(key, hyphenate(boolean), { [boolean]: true });
+          check(key, boolean.toLowerCase(), { [boolean]: true });
           check(key, "maybe", { [boolean]: "maybe" });
         }
     }
