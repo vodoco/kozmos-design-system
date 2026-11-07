@@ -1582,6 +1582,37 @@ describe("AdaptiveMapShell's nothing is where the shell rests", () => {
       "fractions, out of order",
       { panelDetents: [{ fraction: 0.7 }, { fraction: 0.3 }] },
     ],
+    // The review's four (round 5): equal heights dropped, fractions clamped
+    // to 0.12 and 0.94, and a fraction ranked against large.
+    [
+      "a detent given twice",
+      { panelDetents: ["collapsed", "collapsed", "large"] },
+    ],
+    [
+      "fractions clamped to one height",
+      {
+        panelDetents: [
+          { fraction: 0.05 },
+          { fraction: 0.1 },
+          { fraction: 0.5 },
+        ],
+      },
+    ],
+    [
+      "fractions clamped to large's height",
+      {
+        panelDetents: [
+          { fraction: 0.2 },
+          { fraction: 0.5 },
+          { fraction: 0.95 },
+          { fraction: 0.99 },
+        ],
+      },
+    ],
+    [
+      "fractions and large, out of order",
+      { panelDetents: [{ fraction: 0.8 }, "large", { fraction: 0.3 }] },
+    ],
     ["content sizing", { panelSizing: "content" }],
     ["a finite fraction", { panelFraction: 0.4 }],
     ["a NaN fraction", { panelFraction: Number.NaN }],

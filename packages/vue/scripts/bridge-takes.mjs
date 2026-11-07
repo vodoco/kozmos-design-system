@@ -25,8 +25,8 @@ import { readPublishedApi } from "../../../scripts/skills/claude-design-api.mjs"
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY = path.resolve(HERE, "../../..");
-const BRIDGE = path.join(REPOSITORY, "packages/vue/src/react-bridge");
-export const TABLE = path.join(BRIDGE, "part-takes.ts");
+const BRIDGE = "packages/vue/src/react-bridge";
+export const TABLE = path.join(REPOSITORY, BRIDGE, "part-takes.ts");
 
 /**
  * The adapters `index.ts` defines, by name, with the React parts each hands
@@ -41,9 +41,13 @@ export const ADAPTERS = {
   AnchoredPopoverAdapter: ["Popover", "PopoverContent"],
 };
 
-/** The names `index.ts` imports from @kozmos-ds/react, in its order. */
-function importedParts() {
-  const file = path.join(BRIDGE, "index.ts");
+/**
+ * The parts `index.ts` imports from @kozmos-ds/react, in its order: each
+ * value it imports by a component's name (`Badge`, not `orderPanelDetents`,
+ * `DEFAULT_PANEL_DETENTS` or a type).
+ */
+function importedParts(root) {
+  const file = path.join(root, BRIDGE, "index.ts");
   const source = ts.createSourceFile(
     file,
     fs.readFileSync(file, "utf8"),
@@ -54,12 +58,20 @@ function importedParts() {
   for (const node of source.statements)
     if (
       ts.isImportDeclaration(node) &&
+      !node.importClause?.isTypeOnly &&
       node.moduleSpecifier.text === "@kozmos-ds/react" &&
       node.importClause?.namedBindings &&
       ts.isNamedImports(node.importClause.namedBindings)
     )
-      for (const element of node.importClause.namedBindings.elements)
-        names.push((element.propertyName ?? element.name).text);
+      for (const element of node.importClause.namedBindings.elements) {
+        const name = (element.propertyName ?? element.name).text;
+        if (
+          !element.isTypeOnly &&
+          /^[A-Z]/.test(name) &&
+          !/^[A-Z0-9_]+$/.test(name)
+        )
+          names.push(name);
+      }
   return names;
 }
 
@@ -86,15 +98,26 @@ function domProps(api) {
   );
 }
 
-/** Every `on…` prop a part's props take that is a function. */
-function handlersOf(api, name) {
+/**
+ * Every `on…` prop a part's props take that is a function. A part whose
+ * props are a union may have members that disagree on one:
+ * - on a React DOM event prop (`onClick`), whether the listener is the
+ *   part's or the wrapper's box changes what runs it, so generation fails
+ *   and a person decides;
+ * - on a callback of the part's own (RouteSummary's `onStartNavigation`,
+ *   which its estimate layout has and its navigation layout has not), it is
+ *   taken if any member declares it: a box listener for a name no DOM event
+ *   has can never run, so the part is the only place it can be heard.
+ */
+function handlersOf(api, name, dom) {
   const entry = api.entries.get(name);
-  if (!entry?.component) return null;
+  if (!entry?.component)
+    throw new Error(`${name} is not a component export of @kozmos-ds/react`);
   const { checker } = api;
   const props = entry.component.propsType;
   const members = props.isUnion() ? props.types : [props];
-  const names = new Set();
-  for (const member of members)
+  const sets = members.map((member) => {
+    const names = new Set();
     for (const symbol of checker.getPropertiesOfType(member)) {
       if (!isHandler(symbol.name)) continue;
       const type = checker.getNonNullableType(
@@ -102,7 +125,18 @@ function handlersOf(api, name) {
       );
       if (type.getCallSignatures().length > 0) names.add(symbol.name);
     }
-  return names;
+    return names;
+  });
+  const all = new Set(sets.flatMap((set) => [...set]));
+  const disputed = [...all]
+    .filter((handler) => dom.has(handler))
+    .filter((handler) => sets.some((set) => !set.has(handler)))
+    .sort();
+  if (disputed.length)
+    throw new Error(
+      `${name}: its props are a union whose members disagree on ${disputed.length} React DOM event prop(s) (${disputed.slice(0, 5).join(", ")}${disputed.length > 5 ? ", …" : ""}). Whether a listener of one is the part's or the wrapper's box changes what runs it, so a person decides: give the part one props type for them. A disagreement on a callback of the part's own is taken if any member declares it.`,
+    );
+  return all;
 }
 
 /** One part's entry: React's DOM events but `except`, and `own`; or `own` alone. */
@@ -119,27 +153,35 @@ function compress(handlers, dom) {
  * The table: each React part `index.ts` imports that is a component, and
  * each adapter, with the `on…` props it takes.
  */
-export function computeTakes(root = REPOSITORY) {
-  const api = readPublishedApi(root);
+export function computeTakes(
+  root = REPOSITORY,
+  {
+    // A declarations file and the parts to read from it, for a test's
+    // fixture; by default React's built declarations and index.ts's parts.
+    declarations,
+    virtual,
+    parts: partNames,
+    adapters: adapterTargets = ADAPTERS,
+  } = {},
+) {
+  const api = readPublishedApi(
+    root,
+    declarations ? { declarations, virtual } : {},
+  );
   const dom = domProps(api);
   const parts = {};
   /** Each part's and adapter's `on…` props, as a sorted list: what `parts` and `adapters` compress. */
   const handlers = {};
-  for (const name of importedParts()) {
-    const own = handlersOf(api, name);
-    if (!own) continue;
+  for (const name of partNames ?? importedParts(root)) {
+    const own = handlersOf(api, name, dom);
     parts[name] = compress(own, dom);
     handlers[name] = [...own].sort();
   }
   const adapters = {};
-  for (const [adapter, targets] of Object.entries(ADAPTERS)) {
+  for (const [adapter, targets] of Object.entries(adapterTargets)) {
     const all = new Set();
-    for (const target of targets) {
-      const own = handlersOf(api, target);
-      if (!own)
-        throw new Error(`${adapter}: ${target} is not a component export`);
-      for (const handler of own) all.add(handler);
-    }
+    for (const target of targets)
+      for (const handler of handlersOf(api, target, dom)) all.add(handler);
     adapters[adapter] = compress(all, dom);
     handlers[adapter] = [...all].sort();
   }
@@ -149,11 +191,26 @@ export function computeTakes(root = REPOSITORY) {
 /** The file `computeTakes()` writes. */
 export async function renderTakes(table = computeTakes()) {
   const names = Object.keys(table.parts);
-  // No \`pnpm --filter\` in it: the stylesheet's Tailwind reads this file,
-  // and would make a utility of the word.
-  const text = `// Generated by scripts/bridge-takes.mjs, the package's \`bridge:takes\`
-// script, from @kozmos-ds/react's built declarations. Do not edit:
-// Listeners.spec.ts fails when this differs from what React's types say.
+  const key = (takes) => JSON.stringify(takes);
+  // An entry more than one part or adapter has is written once.
+  const uses = new Map();
+  for (const takes of [
+    ...Object.values(table.parts),
+    ...Object.values(table.adapters),
+  ])
+    uses.set(key(takes), (uses.get(key(takes)) ?? 0) + 1);
+  const plain = key({ dom: true, own: [] });
+  const shared = new Map([[plain, "D"]]);
+  for (const name of names) {
+    const entry = key(table.parts[name]);
+    if (uses.get(entry) > 1 && !shared.has(entry))
+      shared.set(entry, `${name[0].toLowerCase()}${name.slice(1)}Takes`);
+  }
+  const ref = (takes) => shared.get(key(takes)) ?? key(takes);
+  const text = `// Generated by \`pnpm --filter @kozmos-ds/vue bridge:takes\`
+// (scripts/bridge-takes.mjs) from @kozmos-ds/react's built declarations. Do
+// not edit: Listeners.spec.ts fails when this differs from what React's
+// types say. The stylesheet's Tailwind does not read it.
 //
 // The \`on…\` props each React part the bridge mounts takes. \`dom\`: every
 // React DOM event (\`onClick\`, \`onClickCapture\`), but those in \`except\`;
@@ -164,16 +221,24 @@ ${names.map((name) => `  ${name},`).join("\n")}
 } from "@kozmos-ds/react";
 import type { Takes } from "./react-adapter";
 
-/** By React export name. */
-export const PART_TAKES_BY_NAME: Readonly<Record<string, Takes>> = ${JSON.stringify(table.parts)};
-
-/** By the adapter in index.ts that hands its props on to React parts. */
-export const ADAPTER_TAKES: Readonly<Record<string, Takes>> = ${JSON.stringify(table.adapters)};
+/** Every React DOM event, and nothing of its own: most parts. */
+const D: Takes = ${plain};
+${[...shared]
+  .filter(([, constant]) => constant !== "D")
+  .map(([entry, constant]) => `const ${constant}: Takes = ${entry};`)
+  .join("\n")}
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-${names.map((name) => `  [${name}, PART_TAKES_BY_NAME.${name}],`).join("\n")}
+${names.map((name) => `  [${name}, ${ref(table.parts[name])}],`).join("\n")}
 ]);
+
+/** By the adapter in index.ts that hands its props on to React parts. */
+export const ADAPTER_TAKES: Readonly<Record<string, Takes>> = {
+${Object.entries(table.adapters)
+  .map(([adapter, takes]) => `  ${adapter}: ${ref(takes)},`)
+  .join("\n")}
+};
 `;
   const options = (await prettier.resolveConfig(TABLE)) ?? {};
   return prettier.format(text, { ...options, filepath: TABLE });

@@ -18,7 +18,7 @@ import {
 } from "@kozmos-ds/react";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
-import { ADAPTER_TAKES, PART_TAKES, PART_TAKES_BY_NAME } from "./part-takes";
+import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
 import {
   HEARD_ON_THE_WAY_DOWN,
   NATIVE_DOM_EVENTS,
@@ -32,7 +32,7 @@ import {
   takesProp,
   type Takes,
 } from "./react-adapter";
-import { computeTakes } from "../../scripts/bridge-takes.mjs";
+import { REPOSITORY, computeTakes } from "../../scripts/bridge-takes.mjs";
 import {
   $,
   $$,
@@ -175,7 +175,7 @@ describe("React DOM's events", () => {
     expect(known).toEqual(listed);
   });
 
-  it("names each DOM event once; the box's own are none React takes", () => {
+  it("names each DOM event once; the box's own are none React takes; it hears only non-bubbling ones on the way down", () => {
     const dom = [
       ...Object.values(REACT_DOM_EVENTS),
       ...Object.values(REACT_UNTYPED_EVENTS),
@@ -183,13 +183,25 @@ describe("React DOM's events", () => {
     ];
     expect(new Set(dom).size).toBe(dom.length);
     for (const event of NATIVE_DOM_EVENTS) expect(dom).not.toContain(event);
-    // Heard on the way down: events React's types do not declare.
-    const undeclared = [
-      ...Object.values(REACT_UNTYPED_EVENTS),
-      ...Object.values(REACT_19_EVENTS),
-    ];
-    for (const event of HEARD_ON_THE_WAY_DOWN)
-      expect(undeclared).toContain(event);
+    for (const event of HEARD_ON_THE_WAY_DOWN) expect(dom).toContain(event);
+    // The box is entered and left itself: those reach it as its own.
+    for (const event of [
+      "mouseenter",
+      "mouseleave",
+      "pointerenter",
+      "pointerleave",
+    ])
+      expect(HEARD_ON_THE_WAY_DOWN.has(event)).toBe(false);
+    expect([...HEARD_ON_THE_WAY_DOWN]).toEqual(
+      expect.arrayContaining([
+        "focus",
+        "blur",
+        "scroll",
+        "scrollend",
+        "toggle",
+        "load",
+      ]),
+    );
   });
 });
 
@@ -201,16 +213,23 @@ describe("React DOM's events", () => {
 describe("which on… props each part takes", () => {
   const table = computeTakes();
 
+  /** The runtime table's entry for each React export the computed table names. */
+  const byName = () =>
+    Object.fromEntries(
+      Object.keys(table.parts).map((name) => [
+        name,
+        PART_TAKES.get(KozmosReact[name as keyof typeof KozmosReact]),
+      ]),
+    );
+
   it("part-takes.ts is what React's types say (else run pnpm --filter @kozmos-ds/vue bridge:takes)", () => {
-    expect(PART_TAKES_BY_NAME).toEqual(table.parts);
+    // Each React export is keyed by itself, with what its types take.
+    expect(byName()).toEqual(table.parts);
+    expect(new Set(PART_TAKES.values()).size).toBeLessThanOrEqual(
+      Object.keys(table.parts).length,
+    );
     expect(ADAPTER_TAKES).toEqual(table.adapters);
     expect([...REACT_DOM_PROPS].sort()).toEqual(table.domProps);
-    // Each React export is keyed by itself.
-    for (const [name, takes] of Object.entries(PART_TAKES_BY_NAME))
-      expect(
-        PART_TAKES.get(KozmosReact[name as keyof typeof KozmosReact]),
-        name,
-      ).toEqual(takes);
   }, 60_000);
 
   it("is exact both ways: a part takes each prop its types take, and no other", () => {
@@ -223,7 +242,7 @@ describe("which on… props each part takes", () => {
     ]);
     const wrong: string[] = [];
     const entries: [string, Takes][] = [
-      ...Object.entries(PART_TAKES_BY_NAME),
+      ...(Object.entries(byName()) as [string, Takes][]),
       ...Object.entries(ADAPTER_TAKES),
     ];
     for (const [name, takes] of entries) {
@@ -252,7 +271,7 @@ describe("which on… props each part takes", () => {
     expect(undescribed).toEqual([]);
   });
 
-  it("the parts that take no DOM event are those that draw no element of their own", () => {
+  it("the parts that take no onClick: the element-less eight, Tooltip, and two whose props omit it", () => {
     const none = bridgedParts()
       .filter(({ bridge }) => !takesProp(bridge!.takes!, "onClick"))
       .map(({ name }) => name)
@@ -268,6 +287,42 @@ describe("which on… props each part takes", () => {
       ].sort(),
     );
   });
+
+  // A part whose props are a union. Members that disagree on a React DOM
+  // event prop make the generator fail: whether a listener of it is the
+  // part's or the box's changes what runs it, so a person decides. Members
+  // that disagree on a callback of the part's own make it taken: a box
+  // listener for a name no DOM event has could never run.
+  const FIXTURE = path.join(
+    REPOSITORY,
+    "packages/react/dist/bridge-takes.fixture.d.ts",
+  );
+  const fixture = `import type * as React from "react";
+interface RowProps extends React.HTMLAttributes<HTMLDivElement> { kind: "row"; onPick?: () => void }
+interface ListProps { kind: "list"; items: string[] }
+export declare const Mixed: (props: RowProps | ListProps) => React.ReactElement | null;
+interface PickRowProps extends React.HTMLAttributes<HTMLDivElement> { kind: "row"; onPick?: () => void }
+interface PickListProps extends React.HTMLAttributes<HTMLDivElement> { kind: "list" }
+export declare const Picker: (props: PickRowProps | PickListProps) => React.ReactElement | null;
+`;
+  const fromFixture = (parts: string[]) =>
+    computeTakes(REPOSITORY, {
+      declarations: FIXTURE,
+      virtual: new Map([[FIXTURE, fixture]]),
+      parts,
+      adapters: {},
+    });
+
+  it("a union whose members disagree on a React DOM event prop fails generation, naming the part", () => {
+    expect(() => fromFixture(["Mixed"])).toThrow(
+      /^Mixed: its props are a union whose members disagree on 158 React DOM event prop\(s\) \(onAbort, onAbortCapture, /,
+    );
+  }, 60_000);
+
+  it("a union whose members disagree on a callback of the part's own takes it", () => {
+    const { parts } = fromFixture(["Picker"]);
+    expect(parts.Picker).toEqual({ dom: true, own: ["onPick"] });
+  }, 60_000);
 });
 
 // --------------------------------------------------------------------------
@@ -330,6 +385,13 @@ describe("routeListener", () => {
     ["onKeyDown", none, null, "onKeydown", false],
     ["onClickOnce", none, null, "onClickOnce", false],
     ["onClickCapture", none, null, "onClickCapture", false],
+    // One that does not bubble: on the way down, so the box hears it.
+    ["onFocus", none, null, "onFocusCapture", false],
+    ["onBlur", none, null, "onBlurCapture", false],
+    ["onScroll", none, null, "onScrollCapture", false],
+    ["onLoadOnce", none, null, "onLoadCaptureOnce", false],
+    // Not enter and leave: the box is entered and left itself.
+    ["onMouseenter", none, null, "onMouseenter", false],
     ["onOpenChange", none, "onOpenChange", null, false],
     // A callback of the part's own named like an event: the part's.
     ["onClose", closes, "onClose", null, false],
@@ -342,6 +404,18 @@ describe("routeListener", () => {
         native,
         once,
       });
+    },
+  );
+
+  it.each([
+    ["onMouseenterCapture", "onMouseenterCapture"],
+    ["onMouseleaveCapture", "onMouseleaveCapture"],
+    ["onPointerenterCapture", "onPointerenterCapture"],
+    ["onPointerLeaveCapture", "onPointerleaveCapture"],
+  ])(
+    "a part of a consumer's: %s, which React has no capture for, is the box's (%s)",
+    (key, native) => {
+      expect(routeListener(key)).toEqual({ react: null, native, once: false });
     },
   );
 
@@ -1074,7 +1148,7 @@ const a11y = (Title: unknown, Description: unknown) => [
 ];
 
 /** Each part, open, and how many times a press in its portal runs @click and @keydown. */
-const IN_PORTALS: [string, number, Record<string, unknown>][] = [
+const IN_PORTALS: [string, number, Record<string, unknown>, boolean][] = [
   // Element-less: what they draw in a portal is not heard.
   [
     "KozmosDialog",
@@ -1091,6 +1165,7 @@ const IN_PORTALS: [string, number, Record<string, unknown>][] = [
         ),
       ],
     },
+    true,
   ],
   [
     "KozmosDrawer",
@@ -1107,6 +1182,7 @@ const IN_PORTALS: [string, number, Record<string, unknown>][] = [
         ),
       ],
     },
+    true,
   ],
   [
     "KozmosPopover",
@@ -1115,6 +1191,7 @@ const IN_PORTALS: [string, number, Record<string, unknown>][] = [
       open: true,
       children: [inPlace(), e(PopoverContent, { key: "content" }, probe())],
     },
+    true,
   ],
   // They take onClick, and give it to what they draw in a portal.
   [
@@ -1125,15 +1202,16 @@ const IN_PORTALS: [string, number, Record<string, unknown>][] = [
       anchor: { getBoundingClientRect: () => new DOMRect(0, 0, 10, 10) },
       children: probe(),
     },
+    false,
   ],
-  ["KozmosBackdrop", 1, { children: probe() }],
-  ["KozmosTourStep", 1, { title: "Step", children: probe() }],
+  ["KozmosBackdrop", 1, { children: probe() }, false],
+  ["KozmosTourStep", 1, { title: "Step", children: probe() }, false],
 ];
 
 describe("what a part draws in a portal", () => {
   it.each(IN_PORTALS)(
     "%s: a press inside its portal runs @click and @keydown %s time(s)",
-    async (name, times, props) => {
+    async (name, times, props, drawsInPlace) => {
       const onClick = vi.fn();
       const onKeydown = vi.fn();
       const host = mount(() =>
@@ -1156,10 +1234,12 @@ describe("what a part draws in a portal", () => {
       expect
         .soft(onKeydown, "keydown in the portal")
         .toHaveBeenCalledTimes(times);
+      // What it draws in place beside the portal: the box hears it.
       const beside = $<HTMLElement>("[data-in-place]");
-      if (beside) {
+      expect(beside !== null).toBe(drawsInPlace);
+      if (drawsInPlace) {
         expect(host.contains(beside)).toBe(true);
-        beside.click();
+        beside!.click();
         await settle();
         expect.soft(onClick, "click in place").toHaveBeenCalledTimes(times + 1);
       }
@@ -1341,6 +1421,47 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
     await settle();
     expect(current).toBe(input);
     expect(self).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["gotpointercapture", "lostpointercapture"])(
+    "@%s, and with .capture: the native PointerEvent, its own type",
+    async (event) => {
+      const seen: Event[] = [];
+      const listen = (heard: Event) => seen.push(heard);
+      mount(
+        page(
+          `<KozmosInput aria-label="Field" @${event}="listen" @${event}.capture="listen" />`,
+          { listen },
+        ),
+      );
+      const input = await until(() => $<HTMLInputElement>("input"));
+      await settle();
+      input.dispatchEvent(new PointerEvent(event, { bubbles: true }));
+      await settle();
+      expect(seen).toHaveLength(2);
+      for (const heard of seen) {
+        expect(heard).toBeInstanceOf(PointerEvent);
+        expect(heard.type).toBe(event);
+      }
+    },
+  );
+
+  it("on the box, an event that does not bubble is heard from what the part draws in place: @focus, @blur and @scroll", async () => {
+    const seen: string[] = [];
+    const listen = (event: Event) => seen.push(event.type);
+    mount(
+      page(
+        `<KozmosDialog @focus="listen" @blur="listen" @scroll="listen"><button type="button" data-probe>Open</button><div data-scroller style="overflow: auto">Long</div></KozmosDialog>`,
+        { listen },
+      ),
+    );
+    const trigger = await until(() => $<HTMLElement>("[data-probe]"));
+    await settle();
+    trigger.focus();
+    trigger.blur();
+    $<HTMLElement>("[data-scroller]")!.dispatchEvent(new Event("scroll"));
+    await settle();
+    expect(seen).toEqual(["focus", "blur", "scroll"]);
   });
 
   it("on the box: the native event, as Vue gives a listener on an element", async () => {

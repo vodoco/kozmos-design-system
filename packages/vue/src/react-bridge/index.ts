@@ -97,6 +97,9 @@ import {
   ScrollArea,
   UserLocationMarker,
   AdaptiveMapShell,
+  DEFAULT_PANEL_DETENTS,
+  orderPanelDetents,
+  type PanelDetent,
   BrowseCategoriesPanel,
   CategoryTile,
   ColorPicker,
@@ -498,13 +501,18 @@ export const KozmosSwitch = createVueWrapper(Switch, {
 // Components added after the original adapter list was written.
 // ----------------------------------------------------------------------
 // Null is where the shell rests a sheet it is not told about
-// (AdaptiveMapShell.tsx, `activeDetent`): its default detent, else medium if
-// it offers it, else the middle of what it offers, ordered by height. A
-// fraction that is not a finite number offers nothing, as the shell reads
-// it. The named detents' heights always rank collapsed, medium, large
-// (panel-detents.ts) and fractions rank by value; a list that mixes them, or
-// holds `content` or a height, which the shell measures, is taken as given.
-const NAMED_DETENTS = ["collapsed", "medium", "large"] as const;
+// (AdaptiveMapShell.tsx, `activeDetent`): its default detent; else, of what
+// it offers ordered by height with equal heights dropped, medium if it is
+// there, else the middle one. A fraction that is not a finite number offers
+// nothing, as the shell reads it. The order is the shell's own
+// (`orderPanelDetents`), in a shell tall enough that its fixed sizes, such
+// as collapsed's 112 px floor, rank as they do in any phone's. What the
+// shell measures cannot be ranked here: content and an exact height, and
+// collapsed beside a fraction, since a peek anchor or a tall header can
+// raise it past one. A list with any of them is taken as given.
+const RANKING_HEIGHT = 1_000_000;
+const isFraction = (detent: PanelDetent) =>
+  typeof detent === "object" && "fraction" in detent;
 export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
   panelDetent: {
     prop: "panelDetent",
@@ -516,31 +524,26 @@ export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
       panelSizing,
     }) => {
       if (defaultPanelDetent !== undefined) return defaultPanelDetent;
-      const offered =
+      const offered: readonly PanelDetent[] =
         panelDetents ??
         (panelSizing === "content"
-          ? ["content" as const]
+          ? ["content"]
           : Number.isFinite(panelFraction)
             ? [{ fraction: panelFraction as number }]
-            : ["medium" as const]);
-      if (offered.includes("medium")) return "medium";
-      const rank = (detent: (typeof offered)[number]) =>
-        typeof detent === "string"
-          ? NAMED_DETENTS.indexOf(detent as (typeof NAMED_DETENTS)[number])
-          : "fraction" in detent
-            ? detent.fraction
-            : -1;
-      const named = offered.every(
-        (detent) => typeof detent === "string" && rank(detent) >= 0,
-      );
-      const fractions = offered.every(
-        (detent) => typeof detent === "object" && "fraction" in detent,
-      );
-      const ordered =
-        named || fractions
-          ? [...offered].sort((a, b) => rank(a) - rank(b))
-          : offered;
-      return ordered[Math.floor(ordered.length / 2)];
+            : DEFAULT_PANEL_DETENTS);
+      const measured =
+        offered.some(
+          (detent) =>
+            detent === "content" ||
+            (typeof detent === "object" && "height" in detent),
+        ) ||
+        (offered.includes("collapsed") && offered.some(isFraction));
+      const ordered = measured
+        ? offered
+        : orderPanelDetents(offered, RANKING_HEIGHT);
+      return ordered.includes("medium")
+        ? "medium"
+        : (ordered[Math.floor(ordered.length / 2)] ?? "medium");
     },
   },
 });

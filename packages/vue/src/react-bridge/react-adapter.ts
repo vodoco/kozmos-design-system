@@ -45,9 +45,11 @@ import React, { useLayoutEffect, useRef } from "react";
  * `createVueWrapper` has no description of takes every React DOM event and
  * every other name, as React's props contract has it, but those its
  * `notTaken` names. `focusin`, `focusout` and the events only React 19 knows
- * are never React's. The box listens to the events React's types do not
- * declare and that do not bubble (`scrollend`, `toggle`: HEARD_ON_THE_WAY_DOWN)
- * in the capture phase, since the box never scrolls or toggles itself.
+ * are never React's. The box hears the events that do not bubble (`focus`,
+ * `blur`, `scroll`, `scrollend`, `toggle`, the media events:
+ * HEARD_ON_THE_WAY_DOWN) from what the part draws in place: it listens to
+ * them in the capture phase, since the box is never focused or scrolled
+ * itself. `focusin` and `focusout` are focus's and blur's bubbling forms.
  *
  * The part's listener is given the native event when it is of the
  * listener's own type (`click` for `onClick`), and React's event otherwise:
@@ -55,7 +57,9 @@ import React, { useLayoutEffect, useRef } from "react";
  * a field's `onChange` from `input`, and its own event says `mouseenter`,
  * `focus` and `change`. Given the native event, its `currentTarget` is the
  * element React calls the listener on while it runs, so `.self` means that
- * element, and `.stop` and `.prevent` are done to React's event as well.
+ * element, and `.stop` and `.prevent` are done to React's event as well. On
+ * the box, `.self` never runs: the box draws no box (`display: contents`),
+ * so it is never an event's target.
  * Key modifiers (`.enter`) are compiled into the handler and read either
  * event. `.once` runs once; `.passive`, which React cannot take, is dropped
  * on the part (React's own touch and wheel listeners are passive), and kept
@@ -142,110 +146,130 @@ type CapturelessEvent = {
 }[ReactDomEvent];
 
 /**
- * React DOM's synthetic events, by React's name, with the DOM event each
- * stands for (what Vue's `@` names it). Held to @types/react's
- * `DOMAttributes` twice: `satisfies` fails `vue-tsc` when one has an event
- * the other lacks, and Listeners.spec.ts reads the declarations and fails
- * the same way.
+ * React DOM's synthetic events, by React's name. Held to @types/react's
+ * `DOMAttributes` twice: `satisfies` and `EveryEventListed` fail `vue-tsc`
+ * when one has an event the other lacks, and Listeners.spec.ts reads the
+ * declarations and fails the same way.
  */
-export const REACT_DOM_EVENTS = {
+const REACT_DOM_EVENT_NAMES = [
   // Clipboard
-  onCopy: "copy",
-  onCut: "cut",
-  onPaste: "paste",
+  "onCopy",
+  "onCut",
+  "onPaste",
   // Composition
-  onCompositionEnd: "compositionend",
-  onCompositionStart: "compositionstart",
-  onCompositionUpdate: "compositionupdate",
+  "onCompositionEnd",
+  "onCompositionStart",
+  "onCompositionUpdate",
   // Focus: React's listen for focusin and focusout, so they bubble in React
-  onFocus: "focus",
-  onBlur: "blur",
+  "onFocus",
+  "onBlur",
   // Form
-  onChange: "change",
-  onBeforeInput: "beforeinput",
-  onInput: "input",
-  onReset: "reset",
-  onSubmit: "submit",
-  onInvalid: "invalid",
+  "onChange",
+  "onBeforeInput",
+  "onInput",
+  "onReset",
+  "onSubmit",
+  "onInvalid",
   // Image
-  onLoad: "load",
-  onError: "error",
+  "onLoad",
+  "onError",
   // Keyboard
-  onKeyDown: "keydown",
-  onKeyPress: "keypress",
-  onKeyUp: "keyup",
+  "onKeyDown",
+  "onKeyPress",
+  "onKeyUp",
   // Media
-  onAbort: "abort",
-  onCanPlay: "canplay",
-  onCanPlayThrough: "canplaythrough",
-  onDurationChange: "durationchange",
-  onEmptied: "emptied",
-  onEncrypted: "encrypted",
-  onEnded: "ended",
-  onLoadedData: "loadeddata",
-  onLoadedMetadata: "loadedmetadata",
-  onLoadStart: "loadstart",
-  onPause: "pause",
-  onPlay: "play",
-  onPlaying: "playing",
-  onProgress: "progress",
-  onRateChange: "ratechange",
-  onSeeked: "seeked",
-  onSeeking: "seeking",
-  onStalled: "stalled",
-  onSuspend: "suspend",
-  onTimeUpdate: "timeupdate",
-  onVolumeChange: "volumechange",
-  onWaiting: "waiting",
+  "onAbort",
+  "onCanPlay",
+  "onCanPlayThrough",
+  "onDurationChange",
+  "onEmptied",
+  "onEncrypted",
+  "onEnded",
+  "onLoadedData",
+  "onLoadedMetadata",
+  "onLoadStart",
+  "onPause",
+  "onPlay",
+  "onPlaying",
+  "onProgress",
+  "onRateChange",
+  "onSeeked",
+  "onSeeking",
+  "onStalled",
+  "onSuspend",
+  "onTimeUpdate",
+  "onVolumeChange",
+  "onWaiting",
   // Mouse
-  onAuxClick: "auxclick",
-  onClick: "click",
-  onContextMenu: "contextmenu",
-  onDoubleClick: "dblclick",
-  onDrag: "drag",
-  onDragEnd: "dragend",
-  onDragEnter: "dragenter",
-  onDragExit: "dragexit",
-  onDragLeave: "dragleave",
-  onDragOver: "dragover",
-  onDragStart: "dragstart",
-  onDrop: "drop",
-  onMouseDown: "mousedown",
-  onMouseEnter: "mouseenter",
-  onMouseLeave: "mouseleave",
-  onMouseMove: "mousemove",
-  onMouseOut: "mouseout",
-  onMouseOver: "mouseover",
-  onMouseUp: "mouseup",
+  "onAuxClick",
+  "onClick",
+  "onContextMenu",
+  "onDoubleClick",
+  "onDrag",
+  "onDragEnd",
+  "onDragEnter",
+  "onDragExit",
+  "onDragLeave",
+  "onDragOver",
+  "onDragStart",
+  "onDrop",
+  "onMouseDown",
+  "onMouseEnter",
+  "onMouseLeave",
+  "onMouseMove",
+  "onMouseOut",
+  "onMouseOver",
+  "onMouseUp",
   // Selection
-  onSelect: "select",
+  "onSelect",
   // Touch
-  onTouchCancel: "touchcancel",
-  onTouchEnd: "touchend",
-  onTouchMove: "touchmove",
-  onTouchStart: "touchstart",
+  "onTouchCancel",
+  "onTouchEnd",
+  "onTouchMove",
+  "onTouchStart",
   // Pointer
-  onPointerDown: "pointerdown",
-  onPointerMove: "pointermove",
-  onPointerUp: "pointerup",
-  onPointerCancel: "pointercancel",
-  onPointerEnter: "pointerenter",
-  onPointerLeave: "pointerleave",
-  onPointerOver: "pointerover",
-  onPointerOut: "pointerout",
-  onGotPointerCapture: "gotpointercapture",
-  onLostPointerCapture: "lostpointercapture",
+  "onPointerDown",
+  "onPointerMove",
+  "onPointerUp",
+  "onPointerCancel",
+  "onPointerEnter",
+  "onPointerLeave",
+  "onPointerOver",
+  "onPointerOut",
+  "onGotPointerCapture",
+  "onLostPointerCapture",
   // UI
-  onScroll: "scroll",
+  "onScroll",
   // Wheel
-  onWheel: "wheel",
+  "onWheel",
   // Animation
-  onAnimationStart: "animationstart",
-  onAnimationEnd: "animationend",
-  onAnimationIteration: "animationiteration",
+  "onAnimationStart",
+  "onAnimationEnd",
+  "onAnimationIteration",
   // Transition
-  onTransitionEnd: "transitionend",
-} as const satisfies Record<ReactDomEvent, string>;
+  "onTransitionEnd",
+] as const satisfies readonly ReactDomEvent[];
+/** Fails `vue-tsc` with the name of any event @types/react declares that the list lacks. */
+type Listed<Missing extends never> = Missing;
+export type EveryEventListed = Listed<
+  Exclude<ReactDomEvent, (typeof REACT_DOM_EVENT_NAMES)[number]>
+>;
+
+/**
+ * Each React event name with the DOM event it stands for (what Vue's `@`
+ * names it): its name after `on`, in small letters, but `onDoubleClick`'s
+ * `dblclick`.
+ */
+const withDomNames = <N extends string>(names: readonly N[]) =>
+  Object.fromEntries(
+    names.map((name) => [
+      name,
+      name === "onDoubleClick" ? "dblclick" : name.slice(2).toLowerCase(),
+    ]),
+  ) as Readonly<Record<N, string>>;
+
+/** React DOM's synthetic events, by React's name, with the DOM event each stands for. */
+export const REACT_DOM_EVENTS = withDomNames(REACT_DOM_EVENT_NAMES);
 
 /**
  * DOM events React DOM 18 and 19 both synthesise, which @types/react 18's
@@ -253,25 +277,25 @@ export const REACT_DOM_EVENTS = {
  * declare it (WayfindingCard's `onClose`). Listeners.spec.ts holds this, and
  * REACT_19_EVENTS, to the events React DOM itself knows.
  */
-export const REACT_UNTYPED_EVENTS = {
-  onToggle: "toggle",
-  onClose: "close",
-  onCancel: "cancel",
-  onResize: "resize",
-} as const;
+export const REACT_UNTYPED_EVENTS = withDomNames([
+  "onToggle",
+  "onClose",
+  "onCancel",
+  "onResize",
+] as const);
 
 /**
  * DOM events only React DOM 19 synthesises. No part's types declare them
  * (React's are @types/react 18's), so their listeners are native listeners
  * on the wrapper's box, under React 18 and 19 alike.
  */
-export const REACT_19_EVENTS = {
-  onScrollEnd: "scrollend",
-  onBeforeToggle: "beforetoggle",
-  onTransitionRun: "transitionrun",
-  onTransitionStart: "transitionstart",
-  onTransitionCancel: "transitioncancel",
-} as const;
+export const REACT_19_EVENTS = withDomNames([
+  "onScrollEnd",
+  "onBeforeToggle",
+  "onTransitionRun",
+  "onTransitionStart",
+  "onTransitionCancel",
+] as const);
 
 /** The events React has no `…Capture` for: `.capture` on them is native. */
 export const REACT_CAPTURELESS_EVENTS = {
@@ -292,20 +316,26 @@ export const NATIVE_DOM_EVENTS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The events React's types do not declare (REACT_UNTYPED_EVENTS,
- * REACT_19_EVENTS) that do not bubble. A part never takes one by its types,
- * and the wrapper's box (`display: contents`) never scrolls or toggles
- * itself, so the box listens to them on their way down, in the capture
- * phase: it hears them from what the part draws in place.
+ * The DOM events that do not bubble, which the wrapper's box listens to on
+ * their way down, in the capture phase: a box (`display: contents`) is never
+ * focused, scrolled or loaded itself, so a plain listener there could never
+ * run, and in the capture phase it hears the elements the part draws in
+ * place. `focusin` and `focusout` are focus's and blur's bubbling forms.
+ * Not the mouse's and the pointer's enter and leave: the box is entered and
+ * left itself, and hears its own.
  */
-export const HEARD_ON_THE_WAY_DOWN: ReadonlySet<string> = new Set([
-  "scrollend",
-  "beforetoggle",
-  "toggle",
-  "close",
-  "cancel",
-  "resize",
-]);
+export const HEARD_ON_THE_WAY_DOWN: ReadonlySet<string> = new Set(
+  [
+    "focus blur scroll scrollend load error abort invalid",
+    "toggle beforetoggle close cancel resize",
+    // Media
+    "canplay canplaythrough durationchange emptied encrypted ended",
+    "loadeddata loadedmetadata loadstart pause play playing progress",
+    "ratechange seeked seeking stalled suspend timeupdate volumechange waiting",
+  ]
+    .join(" ")
+    .split(" "),
+);
 
 /** Every DOM event React synthesises under 18 and 19, by React's name. */
 const REACT_KNOWN: Readonly<Record<string, string>> = {
@@ -405,7 +435,8 @@ export const takesProp = (takes: Takes, prop: string) =>
  * A part `createVueWrapper` has no description of (one of a consumer's):
  * React's contract, every React DOM event (React 18's and the four React
  * also synthesises) and every other name, as its props, but the DOM events
- * React 18 does not synthesise (`focusin`, React 19's) and those named in
+ * React 18 does not synthesise (`focusin`, React 19's), the `.capture` of
+ * the four React has none for (`mouseenter`), and those named in
  * `notTaken`.
  */
 function takesByContract(notTaken: readonly string[] = []) {
@@ -413,6 +444,13 @@ function takesByContract(notTaken: readonly string[] = []) {
     if (notTaken.includes(prop)) return false;
     const parsed = parseListener(prop);
     if (parsed.react19) return false;
+    // React has no `…Capture` for these.
+    if (
+      parsed.capture &&
+      parsed.react &&
+      parsed.react in REACT_CAPTURELESS_EVENTS
+    )
+      return false;
     return !NATIVE_DOM_EVENTS.has(parsed.base.slice(2).toLowerCase());
   };
 }
@@ -842,7 +880,10 @@ export function createVueWrapper<P extends object, N extends string = never>(
         (prop: string, entries: Entry[]) =>
         (...args: unknown[]) => {
           const event = isSynthetic(args[0]) ? args[0] : null;
-          const own = REACT_KNOWN[prop.replace(/Capture$/, "")];
+          // `onGotPointerCapture` is an event's own name; its `.capture` is
+          // `onGotPointerCaptureCapture`.
+          const own =
+            REACT_KNOWN[prop] ?? REACT_KNOWN[prop.replace(/Capture$/, "")];
           let result: unknown;
           for (const { key, handler, once } of entries) {
             if (once) {
