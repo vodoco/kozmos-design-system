@@ -35,9 +35,10 @@ import {
 // prop: absent, React is not given it, so React's default applies; bare, or
 // with its own name as its value (`disabled="disabled"`), it is true; bound
 // (`:disabled="false"`), React is given the value as it is. A prop boolean
-// in a union with other types (`error: boolean | string`) is read as Vue
-// reads a `[Boolean, String]` prop, Boolean first: bare or by its name it is
-// true, and its other strings are React's as they are. A model whose React
+// in a union with literals only (`aria-hidden`, Checkbox's `checked`) is
+// read as Vue reads a `[Boolean, String]` prop, Boolean first: bare or by
+// its name it is true. One in a union with free text (`error: boolean |
+// string`) is read String first: "" and its name are its strings. A model whose React
 // prop is a boolean is read the same way, by its own name. Which props are
 // boolean is read from React's types (part-takes.ts,
 // scripts/bridge-takes.mjs).
@@ -155,26 +156,6 @@ const CASES: Case[] = [
     template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
     drawn: () => $("[role=checkbox]")!.getAttribute("aria-checked") === "true",
     byDefault: false,
-  },
-  {
-    name: "KozmosCheckbox",
-    part: KozmosReact.Checkbox,
-    prop: "error",
-    attribute: "error",
-    template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
-    drawn: () => $("[role=checkbox]")!.getAttribute("aria-invalid") === "true",
-    byDefault: false,
-    text: "Required",
-  },
-  {
-    name: "KozmosInput",
-    part: KozmosReact.Input,
-    prop: "error",
-    attribute: "error",
-    template: (a) => `<KozmosInput aria-label="Gate" ${a} />`,
-    drawn: () => $("input")!.getAttribute("aria-invalid") === "true",
-    byDefault: false,
-    text: "Required",
   },
   {
     name: "KozmosInput",
@@ -342,6 +323,16 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
     expect(given.readOnly).toBe(false);
     expect("read-only" in given).toBe(false);
   });
+
+  it("of two spellings neither of which is React's, the last given wins", () => {
+    const input = PART_BOOLEANS.get(KozmosReact.Input)!;
+    expect(withBooleans({ readonly: "", "read-only": false }, input)).toEqual({
+      readOnly: false,
+    });
+    expect(withBooleans({ "read-only": false, readonly: "" }, input)).toEqual({
+      readOnly: true,
+    });
+  });
 });
 
 describe("Button", () => {
@@ -397,10 +388,15 @@ describe("Button", () => {
       mount(() => h(Plain, { disabled: "" }, () => "Go")),
     );
     expect(given.disabled).toBe("");
-    expect(bridgeOf(Plain)!.booleans).toEqual({ flags: [], unions: [] });
+    expect(bridgeOf(Plain)!.booleans).toEqual({
+      flags: [],
+      unions: [],
+      texts: [],
+    });
     expect(bridgeOf(MyButton)!.booleans).toEqual({
       flags: ["disabled", "isLoading"],
       unions: [],
+      texts: [],
     });
   });
 });
@@ -413,9 +409,11 @@ describe("a model whose React prop is a boolean", () => {
     bridgedParts().flatMap(({ name, bridge }) =>
       Object.entries(bridge!.models)
         .filter(([, binding]) =>
-          [...bridge!.booleans.flags, ...bridge!.booleans.unions].includes(
-            binding.prop,
-          ),
+          [
+            ...bridge!.booleans.flags,
+            ...bridge!.booleans.unions,
+            ...bridge!.booleans.texts,
+          ].includes(binding.prop),
         )
         .map(([model, binding]) => `${name} ${model} → ${binding.prop}`),
     );
@@ -563,34 +561,58 @@ describe("a union, read Boolean first as Vue reads a [Boolean, String] prop", ()
       expect($("button")!.getAttribute("aria-hidden")).toBe(dom);
     },
   );
+});
 
-  it('KozmosInput error="Required" keeps its message; error="error" is true', async () => {
-    const message = await propsOf(KozmosReact.Input, () =>
-      mount(page(`<KozmosInput aria-label="Gate" error="Required" />`)),
-    );
-    expect(message.error).toBe("Required");
-    expect(document.body.textContent).toContain("Required");
-    unmount();
-    const named = await propsOf(KozmosReact.Input, () =>
-      mount(page(`<KozmosInput aria-label="Gate" error="error" />`)),
-    );
-    expect(named.error).toBe(true);
-    expect($("input")!.getAttribute("aria-invalid")).toBe("true");
-  });
+describe("a union with free text, read String first as Vue reads a [String, Boolean] prop", () => {
+  // `error: boolean | string`: "" and its own name are its strings. A
+  // bound empty message (`:error="msg"` while msg is "") sets no error, as
+  // on main; `:error="true"` sets one with no message.
+  it.each([
+    [`:error="''"`, "", false, ""],
+    ["error", "", false, ""],
+    [':error="true"', true, true, ""],
+    [`:error="'Required'"`, "Required", true, "Required"],
+    ['error="Required"', "Required", true, "Required"],
+    ['error="error"', "error", true, "error"],
+    [':error="false"', false, false, ""],
+  ] as const)(
+    "KozmosInput %s: React is given %j, aria-invalid is %s",
+    async (attribute, expected, invalid, message) => {
+      const given = await propsOf(KozmosReact.Input, () =>
+        mount(page(`<KozmosInput aria-label="Gate" ${attribute} />`)),
+      );
+      expect(given.error).toBe(expected);
+      expect($("input")!.getAttribute("aria-invalid") === "true").toBe(invalid);
+      if (message) expect(document.body.textContent).toContain(message);
+    },
+  );
 
-  it('DynamicIsland\'s animate="animate" is true, and so is :animate="\'animate\'", the same string to the wrapper: a variant named animate is a list', () => {
+  it.each([
+    [`:error="''"`, ""],
+    ["error", ""],
+    [':error="true"', true],
+  ] as const)(
+    "KozmosCheckbox %s: React is given %j",
+    async (attribute, expected) => {
+      const given = await propsOf(KozmosReact.Checkbox, () =>
+        mount(page(`<KozmosCheckbox aria-label="Accept" ${attribute} />`)),
+      );
+      expect(given.error).toBe(expected);
+    },
+  );
+
+  it('DynamicIsland\'s animate takes free text: animate="animate" and a bare animate are its strings', () => {
     const island = PART_BOOLEANS.get(KozmosReact.DynamicIsland)!;
-    expect(island.unions).toContain("animate");
+    expect(island.texts).toEqual(["animate", "dragElastic", "initial"]);
+    expect(island.unions).toEqual(expect.arrayContaining(["drag", "layout"]));
     expect(withBooleans({ animate: "animate" }, island)).toEqual({
-      animate: true,
+      animate: "animate",
     });
-    expect(withBooleans({ animate: "visible" }, island)).toEqual({
-      animate: "visible",
-    });
-    expect(withBooleans({ animate: ["animate"] }, island)).toEqual({
-      animate: ["animate"],
-    });
-    // Vue compiles a bound string literal to what the attribute gives.
+    expect(withBooleans({ animate: "" }, island)).toEqual({ animate: "" });
+    expect(withBooleans({ drag: "" }, island)).toEqual({ drag: true });
+    expect(withBooleans({ drag: "x" }, island)).toEqual({ drag: "x" });
+    // Vue compiles a bound string literal to what the attribute gives, so
+    // the two are read alike.
     const props = (template: string) =>
       /_createBlock\(_component_X, (\{[^}]*\})/.exec(
         compileTemplate({ source: template, id: "x", filename: "x.vue" }).code,
@@ -638,7 +660,8 @@ describe("KozmosLink's external, read by the rule, not a declared prop", () => {
 
 describe("which props of each part are booleans", () => {
   const table = computeTakes();
-  const sorted = ({ flags, unions }: Booleans) => ({
+  const sorted = ({ flags, unions, texts }: Booleans) => ({
+    texts: [...texts].sort(),
     flags: [...flags].sort(),
     unions: [...unions].sort(),
   });
@@ -669,7 +692,7 @@ describe("which props of each part are booleans", () => {
       ...PART_BOOLEANS.values(),
       ...Object.values(ADAPTER_BOOLEANS),
     ]) {
-      const all = [...entry.flags, ...entry.unions];
+      const all = [...entry.flags, ...entry.unions, ...entry.texts];
       expect(new Set(all).size).toBe(all.length);
     }
   }, 60_000);
@@ -695,14 +718,24 @@ describe("which props of each part are booleans", () => {
       ),
     ];
     const every = new Set(
-      entries.flatMap(([, { flags, unions }]) => [...flags, ...unions]),
+      entries.flatMap(([, { flags, unions, texts }]) => [
+        ...flags,
+        ...unions,
+        ...texts,
+      ]),
     );
     for (const name of ["value", "label", "children", "variant", "class"])
       every.add(name);
     for (const [name, computed, runtime] of entries) {
-      const kinds = new Map<string, string>();
-      for (const prop of [...computed.flags, ...computed.unions])
-        for (const spelling of spellingsOf(prop)) kinds.set(spelling, prop);
+      const kinds = new Map<string, [string, boolean]>();
+      for (const [props, cast] of [
+        [computed.flags, true],
+        [computed.unions, true],
+        [computed.texts, false],
+      ] as const)
+        for (const prop of props)
+          for (const spelling of spellingsOf(prop))
+            kinds.set(spelling, [prop, cast]);
       const check = (key: string, value: unknown, expected: object) => {
         const read = withBooleans({ [key]: value }, runtime);
         if (JSON.stringify(read) !== JSON.stringify(expected))
@@ -717,12 +750,16 @@ describe("which props of each part are booleans", () => {
             check(key, "", { [key]: "" });
             continue;
           }
-          const boolean = kind;
-          check(key, "", { [boolean]: true });
+          const [boolean, cast] = kind;
+          check(key, "", { [boolean]: cast ? true : "" });
           check(key, false, { [boolean]: false });
           check(key, true, { [boolean]: true });
-          check(key, hyphenate(boolean), { [boolean]: true });
-          check(key, boolean.toLowerCase(), { [boolean]: true });
+          check(key, hyphenate(boolean), {
+            [boolean]: cast ? true : hyphenate(boolean),
+          });
+          check(key, boolean.toLowerCase(), {
+            [boolean]: cast ? true : boolean.toLowerCase(),
+          });
           check(key, "maybe", { [boolean]: "maybe" });
         }
     }
@@ -750,7 +787,7 @@ describe("which props of each part are booleans", () => {
       ...PART_BOOLEANS.values(),
       ...Object.values(ADAPTER_BOOLEANS),
     ]
-      .flatMap(({ flags, unions }) => [...flags, ...unions])
+      .flatMap(({ flags, unions, texts }) => [...flags, ...unions, ...texts])
       .flatMap(spellingsOf)
       .filter((key) => /^on[^a-z]/.test(key));
     expect(listeners).toEqual([]);
@@ -768,7 +805,7 @@ describe("which props of each part are booleans", () => {
 interface RowProps { kind: "row"; multiple: true; dense?: boolean; onPick?: () => void }
 interface ListProps { kind: "list"; multiple?: false; caption?: string }
 export declare const Rows: (props: RowProps | ListProps) => React.ReactElement | null;
-interface BaseProps { loading?: boolean; error?: boolean | string; label?: React.ReactNode; tone?: "calm" | "loud"; constraints?: false | { top: number }; forceMount?: true }
+interface BaseProps { loading?: boolean; error?: boolean | string; label?: React.ReactNode; tone?: "calm" | "loud"; constraints?: false | { top: number }; forceMount?: true; fill?: boolean | "auto"; count?: boolean | number }
 export declare const Trimmed: (props: Omit<BaseProps, "loading"> & { open?: boolean }) => React.ReactElement | null;
 export declare const Forwarded: React.ForwardRefExoticComponent<BaseProps & React.RefAttributes<HTMLButtonElement>>;
 export declare const Clash: (props: { readOnly?: boolean; readonly?: string }) => React.ReactElement | null;
@@ -784,9 +821,19 @@ export declare const Clash: (props: { readOnly?: boolean; readonly?: string }) =
   it("reads a union of props types, an Omit<>, an intersection and a forwardRef from their types", () => {
     expect(fromFixture(["Rows", "Trimmed", "Forwarded"])).toEqual({
       // `multiple: true` beside `multiple?: false` is a boolean.
-      Rows: { flags: ["dense", "multiple"], unions: [] },
-      Trimmed: { flags: ["forceMount", "open"], unions: ["error"] },
-      Forwarded: { flags: ["forceMount", "loading"], unions: ["error"] },
+      Rows: { flags: ["dense", "multiple"], unions: [], texts: [] },
+      // A literal `"auto"` beside the boolean is a union; free text or a
+      // number, a text.
+      Trimmed: {
+        flags: ["forceMount", "open"],
+        unions: ["fill"],
+        texts: ["count", "error"],
+      },
+      Forwarded: {
+        flags: ["forceMount", "loading"],
+        unions: ["fill"],
+        texts: ["count", "error"],
+      },
     });
   }, 60_000);
 
@@ -830,6 +877,7 @@ export declare const Clash: (props: { readOnly?: boolean; readonly?: string }) =
         "draggable",
         "spellCheck",
       ],
+      texts: [],
     });
   });
 });

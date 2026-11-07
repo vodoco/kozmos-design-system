@@ -9,12 +9,14 @@
 // part's; any other is a native listener on the wrapper's own box.
 //
 // And its boolean props. `flags`: those whose type is `boolean`; `unions`:
-// those boolean in a union with other types (`error: boolean | string`). A
-// bare attribute of either (`<KozmosInput error>`, which Vue gives as "")
-// is `true` to React, and so is its own name as its value
-// (`disabled="disabled"`): a union is read Boolean first, as Vue reads a
-// `[Boolean, String]` prop. A prop that takes any ReactNode is a slot, and
-// neither.
+// those boolean in a union with literals only (`aria-checked`, Checkbox's
+// `checked`); `texts`: those boolean in a union with free text, a number
+// or an object (`error: boolean | string`). A bare attribute of a flag or a
+// union (which Vue gives as "") is `true` to React, and so is its own name
+// as its value (`disabled="disabled"`), as Vue reads a Boolean prop, or a
+// `[Boolean, String]` one; a text's "" and name are its strings, as Vue
+// reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
+// that takes any ReactNode is a slot, and none of them.
 import {
   Box,
   Stack,
@@ -413,7 +415,8 @@ export const ADAPTER_TAKES: Readonly<Record<string, Takes>> = {
 
 /**
  * React's `HTMLAttributes`' boolean props, which most parts take: `flags`,
- * whose type is `boolean`, and `unions`, boolean in a union with others.
+ * whose type is `boolean`; `unions`, boolean in a union with literals; and
+ * `texts`, boolean in a union with free text, a number or an object.
  */
 const HTML: Booleans = {
   flags: [
@@ -446,14 +449,17 @@ const HTML: Booleans = {
     "draggable",
     "spellCheck",
   ],
+  texts: [],
 };
 /** A part's booleans: React's `HTMLAttributes`', and its own. */
 const html = (
   flags: readonly string[] = [],
   unions: readonly string[] = [],
+  texts: readonly string[] = [],
 ): Booleans => ({
   flags: [...HTML.flags, ...flags],
   unions: [...HTML.unions, ...unions],
+  texts: [...HTML.texts, ...texts],
 });
 
 /** React's `HTMLAttributes`' booleans, and none of its own: most parts. */
@@ -462,9 +468,14 @@ const boxBooleans = html(["asChild"]);
 const textBooleans = html(["asChild", "truncate"]);
 const inputBooleans = html(
   ["checked", "disabled", "formNoValidate", "multiple", "readOnly", "required"],
-  ["capture", "error"],
+  ["capture"],
+  ["error"],
 );
-const menuBooleans = { flags: ["defaultOpen", "modal", "open"], unions: [] };
+const menuBooleans = {
+  flags: ["defaultOpen", "modal", "open"],
+  unions: [],
+  texts: [],
+};
 const backdropBooleans = html(["visible"]);
 const datePickerBooleans = html(
   [
@@ -477,7 +488,8 @@ const datePickerBooleans = html(
     "readOnly",
     "required",
   ],
-  ["capture", "error"],
+  ["capture"],
+  ["error"],
 );
 const floatingActionButtonBooleans = html([
   "disabled",
@@ -525,13 +537,14 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "focusable",
         "preserveAlpha",
       ],
+      texts: [],
     },
   ],
   [Counter, H],
   [Badge, html(["asChild", "showCounter"])],
   [Label, boxBooleans],
   [Input, inputBooleans],
-  [Textarea, html(["disabled", "readOnly", "required"], ["error"])],
+  [Textarea, html(["disabled", "readOnly", "required"], [], ["error"])],
   [
     Checkbox,
     {
@@ -568,22 +581,27 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "contentEditable",
         "defaultChecked",
         "draggable",
-        "error",
         "spellCheck",
       ],
+      texts: ["error"],
     },
   ],
   [
     Switch,
     html(
       ["asChild", "checked", "disabled", "formNoValidate", "required"],
+      [],
       ["error"],
     ),
   ],
   [Card, H],
   [
     Slider,
-    html(["asChild", "disabled", "inverted", "showValueTooltip"], ["error"]),
+    html(
+      ["asChild", "disabled", "inverted", "showValueTooltip"],
+      [],
+      ["error"],
+    ),
   ],
   [Search, inputBooleans],
   [
@@ -602,7 +620,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [
     Select,
-    { flags: ["defaultOpen", "disabled", "open", "required"], unions: [] },
+    {
+      flags: ["defaultOpen", "disabled", "open", "required"],
+      unions: [],
+      texts: [],
+    },
   ],
   [BottomNavigation, H],
   [Navbar, html(["logoInset"])],
@@ -630,7 +652,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Timeline, H],
   [
     Tooltip,
-    { flags: ["defaultOpen", "disableHoverableContent", "open"], unions: [] },
+    {
+      flags: ["defaultOpen", "disableHoverableContent", "open"],
+      unions: [],
+      texts: [],
+    },
   ],
   [Popover, menuBooleans],
   [PopoverAnchor, boxBooleans],
@@ -648,9 +674,9 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [FloorSelector, html(["showResultCounts"])],
   [POICard, H],
   [BottomSheet, menuBooleans],
-  [OTPInput, html(["disabled", "readOnly"], ["error"])],
+  [OTPInput, html(["disabled", "readOnly"], [], ["error"])],
   [Rating, html(["readOnly"])],
-  [FileUpload, html(["disabled", "multiple"], ["error"])],
+  [FileUpload, html(["disabled", "multiple"], [], ["error"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, floatingActionButtonBooleans],
@@ -669,6 +695,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     SegmentedControl,
     html(
       ["asChild", "disabled", "fullWidth", "loop", "rovingFocus"],
+      [],
       ["error"],
     ),
   ],
@@ -677,7 +704,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Tabs, boxBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
-  [AnalyticsProvider, { flags: [], unions: [] }],
+  [AnalyticsProvider, { flags: [], unions: [], texts: [] }],
   [Chip, html(["active", "disabled", "selected"])],
   [
     DynamicIsland,
@@ -694,15 +721,19 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "layoutRoot",
         "layoutScroll",
       ],
-      ["animate", "drag", "dragElastic", "initial", "layout"],
+      ["drag", "layout"],
+      ["animate", "dragElastic", "initial"],
     ),
   ],
   [EmptyState, H],
   [FeedbackCard, html(["isSubmitting"])],
-  [FieldWrapper, html(["group", "hideLabel", "required"], ["error"])],
+  [FieldWrapper, html(["group", "hideLabel", "required"], [], ["error"])],
   [MapControlsGroup, html(["locationRevealOnChange", "stepFree"])],
-  [NavigationAnnouncer, { flags: ["isActive"], unions: [] }],
-  [RadioGroup, html(["asChild", "disabled", "loop", "required"], ["error"])],
+  [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
+  [
+    RadioGroup,
+    html(["asChild", "disabled", "loop", "required"], [], ["error"]),
+  ],
   [
     RadioGroupItem,
     html([
@@ -737,7 +768,8 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "showPickerPanel",
         "showPresets",
       ],
-      ["capture", "error"],
+      ["capture"],
+      ["error"],
     ),
   ],
   [
@@ -753,7 +785,8 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "readOnly",
         "required",
       ],
-      ["capture", "error"],
+      ["capture"],
+      ["error"],
     ),
   ],
   [
@@ -767,6 +800,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "readOnly",
         "required",
       ],
+      [],
       ["error"],
     ),
   ],
@@ -784,7 +818,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [
     MultiSelect,
-    html(["clearable", "disabled", "readOnly", "required"], ["error"]),
+    html(["clearable", "disabled", "readOnly", "required"], [], ["error"]),
   ],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [
@@ -799,7 +833,8 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "required",
         "showSteppers",
       ],
-      ["capture", "error"],
+      ["capture"],
+      ["error"],
     ),
   ],
   [POIDetailPanel, H],
@@ -820,7 +855,8 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "showToggle",
         "visible",
       ],
-      ["capture", "error"],
+      ["capture"],
+      ["error"],
     ),
   ],
   [RouteOptionCard, categoryTileBooleans],

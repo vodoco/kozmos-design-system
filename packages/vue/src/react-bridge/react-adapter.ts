@@ -70,29 +70,34 @@ import React, { useLayoutEffect, useRef } from "react";
  *
  * Booleans. Vue gives a bare attribute (`<KozmosNavigationItem disabled>`)
  * as "", which React reads as false, so the part was not disabled. A part's
- * boolean prop is read as Vue reads a declared Boolean prop: bare, or with
- * its own name as its value (`disabled="disabled"`), it is `true`; bound
- * (`:disabled="false"`, `:disabled="x"`), React is given the value as it is
- * ("" too, and the prop's name, as Vue's own Boolean prop takes them);
- * absent, React is not given it, and its own default applies (Combobox
- * stays clearable). A prop that is boolean in a union with other types
- * (`error: boolean | string`) is read as Vue reads a `[Boolean, String]`
- * prop, Boolean first: bare, or with its own name, it is `true`, as
- * `<KozmosInput error>` means, and every other string is React's as it is
- * (`error="Required"`, `checked="indeterminate"`). So DynamicIsland's
- * `animate="animate"` is `true`, and so is `:animate="'animate'"`, which
- * Vue gives the wrapper as the same string: a motion variant named
- * "animate" is given as a list, `:animate="['animate']"`. Vue keeps an
- * attribute as the template spells it, so each spelling is React's prop:
- * `readOnly` (an SFC's), `readonly` (an in-DOM template's, which the
- * browser writes in small letters) and `read-only`; React's own wins when
- * two are given. A model whose React prop is a boolean follows the same
- * rule by the model's name: bare `<KozmosToggleButton pressed>`,
- * `<KozmosSwitch checked>` and `<KozmosCheckbox model-value>` are `true`.
- * Which props are booleans is read from React's types, as listeners' props
- * are: part-takes.ts, which Booleans.spec.ts holds to them. A prop that
- * takes any ReactNode is a slot, not a boolean. A part `createVueWrapper`
- * has no description of names its own (`options.booleans`); unnamed, its
+ * boolean prop is read by its kind, from React's types:
+ * - a flag (`disabled: boolean`) as Vue reads a declared Boolean prop: ""
+ *   (bare, or bound to "") or its own name (`disabled="disabled"`) is
+ *   `true`, and so, as the bridge's own extension, is its name in small
+ *   letters (`readonly="readonly"`);
+ * - a union with literals only (`aria-hidden: boolean | "true" | "false"`,
+ *   Checkbox's `checked: boolean | "indeterminate"`) as Vue reads a
+ *   `[Boolean, String]` prop, Boolean first: the same, so
+ *   `checked="checked"` is `true` and `checked="indeterminate"` its string;
+ * - a union with free text, a number or an object (`error: boolean |
+ *   string`, motion's `animate`) as Vue reads a `[String, Boolean]` prop:
+ *   "" and its own name are its strings, never cast. A bare `error`, or
+ *   `:error="msg"` while `msg` is "", is "" and sets no error; `:error="true"`
+ *   sets one with no message, and `error="error"` is the message "error".
+ * Any other value, bound or not, is React's as it is (`:disabled="false"`,
+ * `:error="'Required'"`); absent, React is not given the prop, and its own
+ * default applies (Combobox stays clearable). Vue keeps an attribute as the
+ * template spells it, so each spelling is React's prop: `readOnly` (an
+ * SFC's), `readonly` (an in-DOM template's, which the browser writes in
+ * small letters; the bridge's own extension) and `read-only`. React's own
+ * wins when two are given; of two others, the last. A model whose React
+ * prop is a boolean is read the same way, by the model's name: bare
+ * `<KozmosToggleButton pressed>`, `<KozmosSwitch checked>` and
+ * `<KozmosCheckbox model-value>` are `true`. Which props are booleans, and
+ * of which kind, is read from React's types, as listeners' props are:
+ * part-takes.ts, which Booleans.spec.ts holds to them. A prop that takes any
+ * ReactNode is a slot, not a boolean. A part `createVueWrapper` has no
+ * description of names its own (`options.booleans`); unnamed, its
  * attributes reach React as Vue gives them.
  *
  * Models (`ModelBinding`). Each wrapper names its `v-model`s, and declares
@@ -464,60 +469,75 @@ export const takesProp = (takes: Takes, prop: string) =>
 
 /**
  * Which of a React part's props are booleans (part-takes.ts, generated from
- * React's types): `flags`, whose type is `boolean`, and `unions`, boolean in
- * a union with other types (`error: boolean | string`). A prop that takes
- * any ReactNode is a slot, and neither. Both are read by one rule
- * (`asBoolean`); the table names them apart for the reader.
+ * React's types): `flags`, whose type is `boolean`; `unions`, boolean in a
+ * union with literals only (`boolean | "true" | "false"`); and `texts`,
+ * boolean in a union with free text, a number or an object (`error:
+ * boolean | string`). A prop that takes any ReactNode is a slot, and none.
  */
 export interface Booleans {
   flags: readonly string[];
   unions: readonly string[];
+  texts: readonly string[];
 }
 
-const spelt = new WeakMap<Booleans, ReadonlyMap<string, string>>();
+/** One boolean prop, as an attribute names it. */
+interface BooleanProp {
+  /** React's name for it. */
+  prop: string;
+  /** A flag's or a literal union's: "" and its name are `true`. */
+  cast: boolean;
+}
+
+const spelt = new WeakMap<Booleans, ReadonlyMap<string, BooleanProp>>();
 
 /**
- * A part's boolean props, React's name for each, by every spelling Vue may
- * give one's attribute: React's name (`readOnly`, as an SFC keeps it), in
- * small letters (`readonly`, as an in-DOM template has it) and in
- * kebab-case (`read-only`). The generator fails on a spelling two props
- * would share.
+ * A part's boolean props, by every spelling Vue may give one's attribute:
+ * React's name (`readOnly`, as an SFC keeps it), in small letters
+ * (`readonly`, as an in-DOM template has it) and in kebab-case
+ * (`read-only`). The generator fails on a spelling two props would share.
  */
 function spellings(booleans: Booleans) {
   let byKey = spelt.get(booleans);
   if (!byKey) {
-    const map = new Map<string, string>();
-    for (const prop of [...booleans.flags, ...booleans.unions])
-      for (const key of [prop.toLowerCase(), hyphenate(prop), prop])
-        map.set(key, prop);
+    const map = new Map<string, BooleanProp>();
+    for (const [props, cast] of [
+      [booleans.flags, true],
+      [booleans.unions, true],
+      [booleans.texts, false],
+    ] as const)
+      for (const prop of props)
+        for (const key of [prop.toLowerCase(), hyphenate(prop), prop])
+          map.set(key, { prop, cast });
     spelt.set(booleans, (byKey = map));
   }
   return byKey;
 }
 
-/** Whether `prop` is one of a part's boolean props, by React's name. */
-const isBooleanProp = (booleans: Booleans, prop: string) =>
-  spellings(booleans).get(prop) === prop;
+/** A part's boolean prop by React's name, if it is one. */
+const booleanProp = (booleans: Booleans, prop: string) => {
+  const found = spellings(booleans).get(prop);
+  return found?.prop === prop ? found : undefined;
+};
 
 /**
- * A boolean prop's value as React takes it, by Vue's rule for a declared
- * Boolean prop, Boolean before String for a union (`[Boolean, String]`): ""
- * (a bare attribute) is `true`, and so is the prop's own name, kebab-case or
- * in small letters (`disabled="disabled"`, `read-only="read-only"`,
- * `readonly="readonly"`, `checked="checked"`, `error="error"`). Any other
- * value is React's as it is (`:disabled="false"`, `error="Required"`,
- * `checked="indeterminate"`). `name` is the name it was given under: React's
- * prop for an attribute, the model's for a model.
+ * A boolean prop's value as React takes it. A flag's or a literal union's
+ * "" (a bare attribute, or one bound to "") and own name, kebab-case or in
+ * small letters (`disabled="disabled"`, `read-only="read-only"`,
+ * `readonly="readonly"`, `checked="checked"`), are `true`. A text's are its
+ * strings. Any other value is React's as it is (`:disabled="false"`,
+ * `checked="indeterminate"`). `name` is the name it was given under:
+ * React's prop for an attribute, the model's for a model.
  */
-const asBoolean = (value: unknown, name: string) =>
-  value === "" || value === hyphenate(name) || value === name.toLowerCase()
+const asBoolean = (value: unknown, name: string, { cast }: BooleanProp) =>
+  cast &&
+  (value === "" || value === hyphenate(name) || value === name.toLowerCase())
     ? true
     : value;
 
 /**
  * `attrs` (a copy), with each boolean prop's attribute under React's name
  * and as `asBoolean` reads it. React's own spelling wins over another
- * given beside it. An absent prop stays absent: React's default applies.
+ * given beside it; of two others, the last. An absent prop stays absent: React's default applies.
  */
 export function withBooleans(
   attrs: Record<string, unknown>,
@@ -526,13 +546,14 @@ export function withBooleans(
   const byKey = spellings(booleans);
   const given: Record<string, unknown> = { ...attrs };
   for (const [key, value] of Object.entries(attrs)) {
-    const prop = byKey.get(key);
-    if (!prop) continue;
+    const boolean = byKey.get(key);
+    if (!boolean) continue;
+    const { prop } = boolean;
     if (key !== prop) {
       delete given[key];
       if (hasOwn(attrs, prop)) continue;
     }
-    given[prop] = asBoolean(value, prop);
+    given[prop] = asBoolean(value, prop, boolean);
   }
   return given;
 }
@@ -719,14 +740,40 @@ export type FlagProp<P> = {
     : never;
 }[keyof Named<P>] &
   string;
-/** The props of `P` that are boolean in a union with other types, but a slot's (one that takes any ReactNode). */
+/** What `P`'s prop `K` takes besides a boolean. */
+type Besides<P, K extends keyof Named<P>> = Exclude<Named<P>[K], boolean>;
+/** Whether `T` holds free text, a number or an object, not literals only. */
+type Free<T> = string extends T
+  ? true
+  : number extends T
+    ? true
+    : [Extract<T, object>] extends [never]
+      ? false
+      : true;
+/** The props of `P` boolean in a union with literals only (`boolean | "auto"`). */
 export type UnionProp<P> = {
+  [K in keyof Named<P>]: true extends Named<P>[K]
+    ? [Named<P>[K]] extends [boolean]
+      ? never
+      : Free<Besides<P, K>> extends true
+        ? never
+        : K
+    : never;
+}[keyof Named<P>] &
+  string;
+/**
+ * The props of `P` boolean in a union with free text, a number or an object
+ * (`error: boolean | string`), but a slot's (one that takes any ReactNode).
+ */
+export type TextProp<P> = {
   [K in keyof Named<P>]: true extends Named<P>[K]
     ? [Named<P>[K]] extends [boolean]
       ? never
       : NonNullable<React.ReactNode> extends Named<P>[K]
         ? never
-        : K
+        : Free<Besides<P, K>> extends true
+          ? K
+          : never
     : never;
 }[keyof Named<P>] &
   string;
@@ -743,20 +790,21 @@ export interface WrapperOptions<P = Record<string, unknown>> {
   notTaken?: readonly ReactDomProp[];
   /**
    * The part's boolean props, which nothing at runtime can read from its
-   * types: a bare attribute of one (`<MyPart loading>`, which Vue gives as
-   * "") is given to React as `true`, as is one with its own name as its
-   * value (`loading="loading"`), in any spelling (`readonly`, `read-only`,
-   * `readOnly`). `flags` are props whose type is `boolean`; `unions` are
-   * boolean in a union with other types (`error: boolean | string`), read
-   * alike, Boolean first, so their other strings are given as they are. A
-   * bound value is React's as it is (`:loading="false"`), and an absent one
-   * is not given, so React's default applies. Unnamed, a prop's attribute reaches React as Vue gives
-   * it. Kozmos's own parts are described exactly by part-takes.ts, and this
-   * does not apply to them.
+   * types, each in any spelling (`readonly`, `read-only`, `readOnly`).
+   * `flags` are props whose type is `boolean`, and `unions` are boolean in a
+   * union with literals only (`boolean | "auto"`): "" (a bare attribute, or
+   * one bound to "") and the prop's own name (`loading="loading"`) are
+   * `true`. `texts` are boolean in a union with free text, a number or an
+   * object (`error: boolean | string`): "" and the name are its strings. Any
+   * other value, bound or not, is React's as it is (`:loading="false"`), and
+   * an absent one is not given, so React's default applies. Unnamed, a
+   * prop's attribute reaches React as Vue gives it. Kozmos's own parts are
+   * described exactly by part-takes.ts, and this does not apply to them.
    */
   booleans?: {
     flags?: readonly FlagProp<P>[];
     unions?: readonly UnionProp<P>[];
+    texts?: readonly TextProp<P>[];
   };
 }
 
@@ -951,6 +999,7 @@ export function createVueWrapper<P extends object, N extends string = never>(
   const named: Booleans = {
     flags: options.booleans?.flags ?? [],
     unions: options.booleans?.unions ?? [],
+    texts: options.booleans?.texts ?? [],
   };
   /** The part's boolean props: its description, else what the options name. */
   const booleans = () =>
@@ -1096,9 +1145,8 @@ export function createVueWrapper<P extends object, N extends string = never>(
           // A model whose React prop is a boolean is read as a boolean
           // attribute is, by its own name: bare `pressed`, `step-free` or
           // `model-value` is true.
-          const value = isBooleanProp(booleans(), binding.prop)
-            ? asBoolean(held, name)
-            : held;
+          const boolean = booleanProp(booleans(), binding.prop);
+          const value = boolean ? asBoolean(held, name, boolean) : held;
           for (const key of Object.values(keys).flat()) delete rest[key];
           if (present || listening)
             bound.push({

@@ -64,12 +64,14 @@ export const loose: ModelBindings = {
 
 // A part's boolean props, named for a part of the consumer's own: only its
 // own, each of its kind. `flags` are typed `boolean`; `unions` are boolean
-// in a union with others; a slot (any ReactNode) is neither, and an index
-// signature names no prop.
+// in a union with literals only; `texts` boolean in a union with free text;
+// a slot (any ReactNode) is none of them, and an index signature names no
+// prop.
 interface PickerProps {
   disabled?: boolean;
   multiple?: true;
   error?: boolean | string;
+  fill?: boolean | "auto";
   label?: string;
   icon?: React.ReactNode;
   onPick?: (value: string) => void;
@@ -79,17 +81,27 @@ declare const Picker: (props: PickerProps) => null;
 export const KozmosPicker = createVueWrapper(
   Picker,
   {},
-  { booleans: { flags: ["disabled", "multiple"], unions: ["error"] } },
+  {
+    booleans: {
+      flags: ["disabled", "multiple"],
+      unions: ["fill"],
+      texts: ["error"],
+    },
+  },
 );
 export const refused = [
-  // @ts-expect-error -- error is boolean | string: a union, not a flag
+  // @ts-expect-error -- error is boolean | string: a text, not a flag
   createVueWrapper(Picker, {}, { booleans: { flags: ["error"] } }),
+  // @ts-expect-error -- error takes free text: a text, not a literal union
+  createVueWrapper(Picker, {}, { booleans: { unions: ["error"] } }),
+  // @ts-expect-error -- fill's other member is a literal: a union, not a text
+  createVueWrapper(Picker, {}, { booleans: { texts: ["fill"] } }),
   // @ts-expect-error -- disabled is a flag, not a union
   createVueWrapper(Picker, {}, { booleans: { unions: ["disabled"] } }),
   // @ts-expect-error -- label is a string
   createVueWrapper(Picker, {}, { booleans: { flags: ["label"] } }),
   // @ts-expect-error -- icon takes any ReactNode: a slot
-  createVueWrapper(Picker, {}, { booleans: { unions: ["icon"] } }),
+  createVueWrapper(Picker, {}, { booleans: { texts: ["icon"] } }),
   // @ts-expect-error -- Picker has no prop of that name
   createVueWrapper(Picker, {}, { booleans: { flags: ["hidden"] } }),
 ];

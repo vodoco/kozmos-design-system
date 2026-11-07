@@ -133,8 +133,19 @@ export const spellingsOf = (prop) => [
  * ReactNode (`children`, `label`, `icon`): it is a slot, whose `boolean` is
  * React's "draw nothing"; nor one that takes `false` but never `true`
  * (DynamicIsland's `dragConstraints`), which no bare attribute can mean.
- * `props` is every prop the types declare.
+ * A union whose other members are all literals (`aria-checked`'s `"true" |
+ * "false" | "mixed"`, Checkbox's `"indeterminate"`) is one of `unions`; one
+ * that also takes free text, a number or an object (`error: boolean |
+ * string`, motion's `animate`) is one of `texts`, whose "" and own name are
+ * its strings. `props` is every prop the types declare.
  */
+/** A type that is one value: a string, number or enum literal. */
+const LITERAL =
+  ts.TypeFlags.StringLiteral |
+  ts.TypeFlags.NumberLiteral |
+  ts.TypeFlags.BigIntLiteral |
+  ts.TypeFlags.EnumLiteral;
+
 function booleansOf(api, types) {
   const { checker } = api;
   const slot = checker.getNonNullableType(reactType(api, "ReactNode"));
@@ -148,22 +159,29 @@ function booleansOf(api, types) {
         const seen = read.get(symbol.name) ?? {
           takesTrue: false,
           other: false,
+          free: false,
           slot: false,
         };
         if (checker.isTypeAssignableTo(slot, value)) seen.slot = true;
         for (const part of value.isUnion() ? value.types : [value])
           if (part.flags & ts.TypeFlags.BooleanLiteral) {
             if (checker.typeToString(part) === "true") seen.takesTrue = true;
-          } else seen.other = true;
+          } else {
+            seen.other = true;
+            if (!(part.flags & LITERAL)) seen.free = true;
+          }
         read.set(symbol.name, seen);
       }
   const flags = [];
   const unions = [];
+  const texts = [];
   for (const [name, seen] of read)
-    if (seen.takesTrue && !seen.slot) (seen.other ? unions : flags).push(name);
+    if (seen.takesTrue && !seen.slot)
+      (seen.free ? texts : seen.other ? unions : flags).push(name);
   return {
     flags: flags.sort(),
     unions: unions.sort(),
+    texts: texts.sort(),
     props: [...read.keys()],
   };
 }
@@ -183,10 +201,10 @@ function booleansOfParts(api, name, targets) {
       );
     return entry.component.propsType;
   });
-  const { flags, unions, props } = booleansOf(api, types);
+  const { flags, unions, texts, props } = booleansOf(api, types);
   const named = new Set(props);
   const spelt = new Map();
-  for (const prop of [...flags, ...unions])
+  for (const prop of [...flags, ...unions, ...texts])
     for (const spelling of spellingsOf(prop)) {
       const other =
         spelt.get(spelling) ??
@@ -197,7 +215,7 @@ function booleansOfParts(api, name, targets) {
         );
       spelt.set(spelling, prop);
     }
-  return { flags, unions };
+  return { flags, unions, texts };
 }
 
 /**
@@ -278,7 +296,7 @@ export function computeTakes(
   const handlers = {};
   const html = booleansOf(api, [reactType(api, "HTMLAttributes")]);
   const booleans = {
-    html: { flags: html.flags, unions: html.unions },
+    html: { flags: html.flags, unions: html.unions, texts: html.texts },
     parts: {},
     adapters: {},
   };
@@ -302,23 +320,20 @@ export function computeTakes(
 
 /**
  * The booleans' part of the file: each part's and adapter's entry, as
- * `html(flags, unions)` when it has React's `HTMLAttributes`' booleans and
- * those of its own, else as its lists; an entry more than one has, once.
+ * `html(flags, unions, texts)` when it has React's `HTMLAttributes`'
+ * booleans and those of its own, else as its lists; an entry more than one
+ * has, once.
  */
 function booleansSource({ html, parts, adapters }) {
+  const KINDS = ["flags", "unions", "texts"];
   const covers = (list, base) => base.every((name) => list.includes(name));
   const less = (list, base) => list.filter((name) => !base.includes(name));
   const list = (names) => JSON.stringify(names);
-  const entry = ({ flags, unions }) => {
-    if (!covers(flags, html.flags) || !covers(unions, html.unions))
-      return `{ flags: ${list(flags)}, unions: ${list(unions)} }`;
-    const ownFlags = less(flags, html.flags);
-    const ownUnions = less(unions, html.unions);
-    const own = ownUnions.length
-      ? [ownFlags, ownUnions]
-      : ownFlags.length
-        ? [ownFlags]
-        : [];
+  const entry = (booleans) => {
+    if (!KINDS.every((kind) => covers(booleans[kind], html[kind])))
+      return `{ ${KINDS.map((kind) => `${kind}: ${list(booleans[kind])}`).join(", ")} }`;
+    const own = KINDS.map((kind) => less(booleans[kind], html[kind]));
+    while (own.length && !own.at(-1).length) own.pop();
     return `html(${own.map(list).join(", ")})`;
   };
   const uses = new Map();
@@ -333,13 +348,19 @@ function booleansSource({ html, parts, adapters }) {
   const ref = (booleans) => shared.get(entry(booleans)) ?? entry(booleans);
   return `/**
  * React's \`HTMLAttributes\`' boolean props, which most parts take: \`flags\`,
- * whose type is \`boolean\`, and \`unions\`, boolean in a union with others.
+ * whose type is \`boolean\`; \`unions\`, boolean in a union with literals; and
+ * \`texts\`, boolean in a union with free text, a number or an object.
  */
-const HTML: Booleans = { flags: ${list(html.flags)}, unions: ${list(html.unions)} };
+const HTML: Booleans = { flags: ${list(html.flags)}, unions: ${list(html.unions)}, texts: ${list(html.texts)} };
 /** A part's booleans: React's \`HTMLAttributes\`', and its own. */
-const html = (flags: readonly string[] = [], unions: readonly string[] = []): Booleans => ({
+const html = (
+  flags: readonly string[] = [],
+  unions: readonly string[] = [],
+  texts: readonly string[] = [],
+): Booleans => ({
   flags: [...HTML.flags, ...flags],
   unions: [...HTML.unions, ...unions],
+  texts: [...HTML.texts, ...texts],
 });
 
 /** React's \`HTMLAttributes\`' booleans, and none of its own: most parts. */
@@ -395,12 +416,14 @@ export async function renderTakes(table = computeTakes()) {
 // part's; any other is a native listener on the wrapper's own box.
 //
 // And its boolean props. \`flags\`: those whose type is \`boolean\`; \`unions\`:
-// those boolean in a union with other types (\`error: boolean | string\`). A
-// bare attribute of either (\`<KozmosInput error>\`, which Vue gives as "")
-// is \`true\` to React, and so is its own name as its value
-// (\`disabled="disabled"\`): a union is read Boolean first, as Vue reads a
-// \`[Boolean, String]\` prop. A prop that takes any ReactNode is a slot, and
-// neither.
+// those boolean in a union with literals only (\`aria-checked\`, Checkbox's
+// \`checked\`); \`texts\`: those boolean in a union with free text, a number
+// or an object (\`error: boolean | string\`). A bare attribute of a flag or a
+// union (which Vue gives as "") is \`true\` to React, and so is its own name
+// as its value (\`disabled="disabled"\`), as Vue reads a Boolean prop, or a
+// \`[Boolean, String]\` one; a text's "" and name are its strings, as Vue
+// reads a \`[String, Boolean]\` one. Every spelling is React's prop. A prop
+// that takes any ReactNode is a slot, and none of them.
 import {
 ${names.map((name) => `  ${name},`).join("\n")}
 } from "@kozmos-ds/react";
