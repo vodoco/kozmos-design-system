@@ -3,6 +3,9 @@ package com.kozmos.components.otpinput
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import com.kozmos.components.LiveSemantics
 import com.kozmos.components.live
 import com.kozmos.components.semanticsPaparazzi
@@ -24,8 +27,8 @@ import org.junit.Test
  *
  * The host holds the code, as a product does, and some tests set it as the
  * host. The field is typed into through its SetText action, as TalkBack and an
- * IME's commit do: the whole of its new text, a digit longer each time for
- * typing, the whole code at once for a paste.
+ * IME's commit do: the whole of its new text, a digit longer each time. A
+ * paste is the field's PasteText action, from a clipboard the test holds.
  *
  * Every test ends with a completion the user makes, which is reported, so
  * against the field before it reported anything each fails, those that
@@ -36,6 +39,12 @@ class KozmosOTPInputAnalyticsTest {
     val paparazzi = semanticsPaparazzi()
 
     private val events = mutableListOf<KozmosAnalyticsEvent>()
+
+    private val clipboard = object : ClipboardManager {
+        var held: AnnotatedString? = null
+        override fun setText(annotatedString: AnnotatedString) { held = annotatedString }
+        override fun getText(): AnnotatedString? = held
+    }
 
     private fun completion(length: String) =
         KozmosAnalyticsEvent(component = "OTPInput", eventName = "otp_code_completed", properties = mapOf("length" to length))
@@ -51,7 +60,7 @@ class KozmosOTPInputAnalyticsTest {
         script: suspend LiveSemantics.() -> Unit
     ) = paparazzi.live(durationMillis = 8000, content = {
         KozmosMaterialTheme {
-            CompositionLocalProvider(LocalKozmosAnalytics provides { events += it }) {
+            CompositionLocalProvider(LocalKozmosAnalytics provides { events += it }, LocalClipboardManager provides clipboard) {
                 KozmosOTPInput(value = code.value, onValueChange = onValueChange ?: { code.value = it }, length = length.value)
             }
         }
@@ -61,6 +70,15 @@ class KozmosOTPInputAnalyticsTest {
     private suspend fun LiveSemantics.enter(text: String) {
         val field = read().merged.single { it.setText != null }
         assertTrue("the field took no text", field.setText!!.invoke(text))
+        frames(2)
+    }
+
+    /** Pastes [text] into the focused field from the clipboard, as TalkBack's Paste does. */
+    private suspend fun LiveSemantics.paste(text: String) {
+        clipboard.held = AnnotatedString(text)
+        read().merged.single { it.setText != null }.requestFocus?.invoke()
+        frames(2)
+        checkNotNull(read().merged.single { it.setText != null }.paste) { "the field offers no Paste" }()
         frames(2)
     }
 
@@ -88,7 +106,7 @@ class KozmosOTPInputAnalyticsTest {
     fun pastingAFullCodeReportsItOnce() {
         val code = mutableStateOf("")
         otp(code) {
-            enter("123-456")
+            paste("123-456")
             assertEquals("123456", code.value)
             assertEquals(listOf(completion(length = "6")), events)
         }

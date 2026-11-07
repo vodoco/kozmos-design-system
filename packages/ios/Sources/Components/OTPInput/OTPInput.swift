@@ -1,21 +1,28 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 /// A segmented numeric code field: one text field holds the whole code, and
 /// the cells are drawn from it, as Compose's is.
 ///
 /// Every edit goes through that one field, typed, deleted, pasted, filled by
-/// the keyboard's one-time code, from a hardware keyboard or from VoiceOver,
-/// and is kept to digits and `length`. A paste or a one-time code replaces the
-/// code, as React's paste does. The code is the host's: the field passes each
-/// edit on through `value`, and draws what the host puts there. Until the host
-/// changes `value`, the cells keep the code the user entered, as React's do.
+/// the keyboard's one-time code, from a hardware keyboard or from VoiceOver.
+/// Any decimal digit is taken, as its ASCII digit ("٣" is 3), and nothing
+/// else, up to `length`. A paste or a one-time code replaces the code,
+/// whatever its length, as React's paste does. The code is the host's: the
+/// field passes each edit on through `value`, and draws what the host puts
+/// there. Until the host changes `value`, the cells keep the code the user
+/// entered, as React's do.
 ///
 /// VoiceOver hears one text field, named by `label` ("Verification code"
-/// without one), with the code as its value and the number of digits as its
-/// hint. React names each cell instead, "Digit 1 of 6".
+/// without one), with the code as its value and `digitCountLabel(length)`,
+/// "6 digits" unless the product gives its own words, as its hint. React
+/// names each cell instead, "Digit 1 of 6". Read-only, the field is not
+/// dimmed: it can be focused and read, and takes no edit. Disabled, it is
+/// dimmed.
 public struct KozmosOTPInput: View {
     @Binding var value: String
     let length: Int
@@ -26,6 +33,8 @@ public struct KozmosOTPInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// The words VoiceOver hears as the field's hint, for its number of cells.
+    let digitCountLabel: (Int) -> String
     /// The code the field holds and the cells draw: the user's last edit, or
     /// what the host last put in `value`, kept to digits and `length`.
     @State private var code: String
@@ -33,9 +42,12 @@ public struct KozmosOTPInput: View {
     /// When the caret last moved, so it shows at once after an edit and then
     /// blinks, as a text field's caret does.
     @State private var caretEpoch = Date()
+    /// The caret's height, as UIKit gives a text field's caret in the cells'
+    /// font: the field reports it once laid out.
+    @State private var caretHeight: CGFloat?
     /// The product's analytics: `otp_code_completed`, as React's OTPInput sends it.
     @Environment(\.kozmosAnalytics) private var trackEvent
-    @Environment(\.displayScale) private var displayScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     public init(
         length: Int = 6,
@@ -46,7 +58,8 @@ public struct KozmosOTPInput: View {
         status: KozmosInputStatus = .default,
         error: Bool = false,
         helperText: String? = nil,
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        digitCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 digit" : "\($0) digits" }
     ) {
         self._value = value
         self.length = max(length, 1)
@@ -57,6 +70,7 @@ public struct KozmosOTPInput: View {
         self.error = error
         self.helperText = helperText
         self.errorMessage = errorMessage
+        self.digitCountLabel = digitCountLabel
         self._code = State(initialValue: Self.sanitize(value.wrappedValue, length: max(length, 1)))
     }
 
@@ -98,14 +112,18 @@ public struct KozmosOTPInput: View {
 
     // MARK: The code
 
-    /// Decimal digits only, at most `length` of them, as React's
-    /// `sanitizeOtpValue` and Compose's filter keep.
+    /// The code in `text`: each decimal digit, in any script, as its ASCII
+    /// digit ("٣" and "३" are 3), and nothing else, at most `length` of them.
+    /// Compose keeps the same rule, so the host always receives ASCII.
     static func sanitize(_ text: String, length: Int) -> String {
-        String(text.filter(isDigit).prefix(length))
+        String(text.compactMap(asciiDigit).prefix(length))
     }
 
-    private static func isDigit(_ character: Character) -> Bool {
-        character.unicodeScalars.count == 1 && character.unicodeScalars.first?.properties.numericType == .decimal
+    private static func asciiDigit(_ character: Character) -> Character? {
+        guard character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first,
+              scalar.properties.numericType == .decimal,
+              let value = scalar.properties.numericValue, value >= 0, value <= 9 else { return nil }
+        return Character(String(Int(value)))
     }
 
     /// The user's edit, from the one field, from the code it held to the
@@ -139,12 +157,14 @@ public struct KozmosOTPInput: View {
         let active = isFocused && index == activeIndex && !disabled && !readOnly
         let digit = digit(at: index)
         return ZStack {
+            // The digit's line box is centred in the cell, as Figma's painter
+            // centres it (auto layout CENTER, the text's line height).
             if let digit = digit {
                 Text(digit)
-                    // Where a text field drew it: a device pixel below centre.
-                    .offset(y: 1 / displayScale)
                     .overlay(alignment: .trailing) {
-                        if active { caret.offset(x: 3) }
+                        if active {
+                            caret.alignmentGuide(.trailing) { $0[.leading] }
+                        }
                     }
             } else if active {
                 caret
@@ -161,26 +181,47 @@ public struct KozmosOTPInput: View {
         .foregroundColor(textColor)
     }
 
-    /// The text field's caret, drawn where the next digit goes, as a text
-    /// field draws it: 2 wide and the line's height, in the tint, a device
-    /// pixel below centre as the digits are. The field itself draws nothing.
+    /// The text field's caret, drawn where the next digit goes: 2 wide, in
+    /// the tint, as tall as UIKit makes a text field's caret in the cells'
+    /// font (the line's height until the field reports it), centred on the
+    /// line. The field itself draws nothing.
     private var caret: some View {
-        TimelineView(.periodic(from: caretEpoch, by: 0.5)) { context in
+        let height = caretHeight ?? Self.lineHeight(for: dynamicTypeSize)
+        return TimelineView(.periodic(from: caretEpoch, by: 0.5)) { context in
             let phase = Int(max(0, context.date.timeIntervalSince(caretEpoch)) / 0.5)
             RoundedRectangle(cornerRadius: 1)
                 .fill(Color.accentColor)
-                .frame(width: 2, height: 19.6)
+                .frame(width: 2, height: height)
                 .opacity(phase % 2 == 0 ? 1 : 0)
         }
-        .frame(width: 2, height: 19.6)
-        .offset(y: 1 / displayScale)
+        .frame(width: 2, height: height)
     }
+
+    /// The cells' font's line height: the caret's height before the field
+    /// reports UIKit's.
+    private static func lineHeight(for size: DynamicTypeSize) -> CGFloat {
+        #if canImport(UIKit)
+        return cellFont(for: size).lineHeight
+        #else
+        return NSFont.preferredFont(forTextStyle: .subheadline).boundingRectForFont.height
+        #endif
+    }
+
+    #if canImport(UIKit)
+    /// The cells' font as UIKit names it: the subheadline style, semibold, at
+    /// the view's Dynamic Type size.
+    static func cellFont(for size: DynamicTypeSize) -> UIFont {
+        let traits = UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size))
+        let style = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traits)
+        return UIFont.systemFont(ofSize: style.pointSize, weight: .semibold)
+    }
+    #endif
 
     // MARK: The field
 
     private var accessibilityName: String { label ?? "Verification code" }
 
-    private var accessibilityHint: String { length == 1 ? "1 digit" : "\(length) digits" }
+    private var accessibilityHint: String { digitCountLabel(length) }
 
     @ViewBuilder
     private var field: some View {
@@ -188,13 +229,19 @@ public struct KozmosOTPInput: View {
         KozmosOTPField(
             code: code,
             length: length,
-            enabled: !disabled && !readOnly,
+            enabled: !disabled,
+            readOnly: readOnly,
             label: accessibilityName,
             hint: accessibilityHint,
+            font: Self.cellFont(for: dynamicTypeSize),
             isFocused: $isFocused,
+            caretHeight: $caretHeight,
             onFocus: { caretEpoch = Date() },
             onEdit: edit(from:to:)
         )
+        // SwiftUI's own element for the field reads this, not the UIKit
+        // field's: disabled, VoiceOver and XCUITest hear it dimmed.
+        .disabled(disabled)
         #else
         TextField("", text: Binding(
             get: { code },
@@ -202,7 +249,7 @@ public struct KozmosOTPInput: View {
         ))
         .textFieldStyle(.plain)
         .foregroundColor(.clear)
-        .disabled(disabled || readOnly)
+        .disabled(disabled)
         .accessibilityLabel(accessibilityName)
         .accessibilityHint(accessibilityHint)
         #endif
@@ -297,10 +344,16 @@ public struct KozmosOTPInput: View {
 struct KozmosOTPField: UIViewRepresentable {
     let code: String
     let length: Int
+    /// Not disabled: the field takes the focus and is read, not dimmed.
     let enabled: Bool
+    /// Focused and read, never edited: as React's read-only cells.
+    let readOnly: Bool
     let label: String
     let hint: String
+    /// The cells' font, so UIKit's caret is measured in it.
+    let font: UIFont
     @Binding var isFocused: Bool
+    @Binding var caretHeight: CGFloat?
     let onFocus: () -> Void
     let onEdit: (_ before: String, _ after: String) -> Void
 
@@ -309,6 +362,7 @@ struct KozmosOTPField: UIViewRepresentable {
     func makeUIView(context: Context) -> KozmosOTPTextField {
         let field = KozmosOTPTextField()
         field.delegate = context.coordinator
+        field.pasteDelegate = context.coordinator
         field.keyboardType = .numberPad
         field.textContentType = .oneTimeCode
         field.autocorrectionType = .no
@@ -327,6 +381,12 @@ struct KozmosOTPField: UIViewRepresentable {
         context.coordinator.parent = self
         if field.text != code { field.text = code }
         field.isEnabled = enabled
+        field.isReadOnly = readOnly
+        if field.font != font { field.font = font }
+        field.onCaretHeight = { height in
+            guard caretHeight != height else { return }
+            DispatchQueue.main.async { caretHeight = height }
+        }
         // Said outright, so VoiceOver is given them however UIKit's own
         // accessibility is loaded: the field's name, the code and its length.
         field.isAccessibilityElement = true
@@ -339,18 +399,21 @@ struct KozmosOTPField: UIViewRepresentable {
         CGSize(width: proposal.width ?? 0, height: proposal.height ?? 50)
     }
 
-    final class Coordinator: NSObject, UITextFieldDelegate {
+    final class Coordinator: NSObject, UITextFieldDelegate, UITextPasteDelegate {
         var parent: KozmosOTPField
 
         init(_ parent: KozmosOTPField) { self.parent = parent }
 
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
+            // Read-only: no edit at all, typed or deleted. (A paste comes
+            // through `performPasteOf` below.)
+            if parent.readOnly { return false }
             let before = textField.text ?? ""
             let after: String
             if string.count > 1 {
-                // A paste, or the keyboard's one-time code: the whole code,
-                // as React's paste replaces it.
+                // The keyboard's one-time code, or more than one character at
+                // once: the whole code, as a paste replaces it.
                 after = KozmosOTPInput.sanitize(string, length: parent.length)
                 if after.isEmpty { return false }
             } else {
@@ -364,6 +427,24 @@ struct KozmosOTPField: UIViewRepresentable {
             }
             KozmosOTPTextField.moveCaretToEnd(textField)
             return false
+        }
+
+        /// A paste, from the edit menu or a keyboard's Paste, whatever its
+        /// length: it replaces the code, as React's paste does. UIKit loads
+        /// the pasteboard after Paste is chosen and hands the text here. One
+        /// with no digit in it, or any paste while read-only, changes nothing.
+        func textPasteConfigurationSupporting(_ textPasteConfigurationSupporting: UITextPasteConfigurationSupporting,
+                                              performPasteOf attributedString: NSAttributedString,
+                                              to textRange: UITextRange) -> UITextRange {
+            guard let field = textPasteConfigurationSupporting as? UITextField else { return textRange }
+            let before = field.text ?? ""
+            let after = KozmosOTPInput.sanitize(attributedString.string, length: parent.length)
+            if !parent.readOnly, !after.isEmpty, after != before {
+                field.text = after
+                parent.onEdit(before, after)
+            }
+            let end = field.endOfDocument
+            return field.textRange(from: end, to: end) ?? textRange
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -389,13 +470,31 @@ struct KozmosOTPField: UIViewRepresentable {
 }
 
 /// A text field whose caret is always after the last digit: a tap anywhere
-/// over the cells puts it there, and only Paste is offered.
+/// over the cells puts it there, and only Paste is offered. Read-only, it
+/// still takes the focus, with no keyboard, and offers nothing.
 final class KozmosOTPTextField: UITextField {
+    var isReadOnly = false {
+        didSet {
+            guard isReadOnly != oldValue else { return }
+            // No keyboard while read-only: the field is focused and read only.
+            inputView = isReadOnly ? UIView() : nil
+            if isFirstResponder { reloadInputViews() }
+        }
+    }
+    /// Called with UIKit's caret height in the field's font, once laid out.
+    var onCaretHeight: ((CGFloat) -> Void)?
+
     static func moveCaretToEnd(_ field: UITextField) {
         let end = field.endOfDocument
         if field.selectedTextRange?.start != end || field.selectedTextRange?.isEmpty == false {
             field.selectedTextRange = field.textRange(from: end, to: end)
         }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let caret = caretRect(for: endOfDocument)
+        if caret.height > 0 { onCaretHeight?(caret.height) }
     }
 
     override func closestPosition(to point: CGPoint) -> UITextPosition? { endOfDocument }
@@ -405,7 +504,7 @@ final class KozmosOTPTextField: UITextField {
     override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] { [] }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-        action == #selector(UIResponderStandardEditActions.paste(_:))
+        action == #selector(UIResponderStandardEditActions.paste(_:)) && !isReadOnly
             ? super.canPerformAction(action, withSender: sender)
             : false
     }

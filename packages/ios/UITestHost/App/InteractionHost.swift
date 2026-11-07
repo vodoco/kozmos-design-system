@@ -45,8 +45,10 @@ private struct InteractionFixture: View {
     /// A field that starts disabled or read-only becomes usable on "Make usable".
     @State private var fieldUsable = false
     /// The OTP scenarios' code and cell count, the host's to hold: "otp-prefilled"
-    /// starts with a full code, "otp-length" with seven cells.
-    @State private var otpCode = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-prefilled" ? "123456" : ""
+    /// starts with a full code, "otp-read-only" and "otp-disabled" with a partial
+    /// one, "otp-length" with seven cells.
+    @State private var otpCode = ["otp-prefilled": "123456", "otp-read-only": "123", "otp-disabled": "123"][
+        ProcessInfo.processInfo.arguments.dropFirst().first ?? ""] ?? ""
     @State private var otpLength = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-length" ? 7 : 6
     @State private var otpSubmitted: [String] = []
 
@@ -416,6 +418,11 @@ private struct InteractionFixture: View {
                 Button("Host clears") { otpCode = "" }
                 Button("Host sets 6 cells") { otpLength = 6 }
             }
+        case "otp-read-only", "otp-disabled":
+            KozmosOTPInput(value: $otpCode, label: "Verification code", disabled: scenario == "otp-disabled",
+                           readOnly: scenario == "otp-read-only")
+                .environment(\.kozmosAnalytics, otpEvent)
+            Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
         case "otp-submit-clear", "otp-ignore-writes":
             // Hosts whose binding does not keep what it is given: one submits
             // a full code and clears it, the other keeps nothing.

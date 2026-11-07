@@ -1571,6 +1571,56 @@ final class InteractionTests: XCTestCase {
         received("otp_code_completed 6")
     }
 
+    /// A paste replaces the code, whatever its length, as React's does: a
+    /// single digit included. One with no digit in it changes nothing.
+    func testAPasteReplacesTheOTPCodeWhateverItsLength() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        pasteOTP("7")
+        XCTAssertEqual(otpCode, "7")
+        pasteOTP("abc")
+        XCTAssertEqual(otpCode, "7")
+        pasteOTP("654-321")
+        XCTAssertEqual(otpCode, "654321")
+        received("otp_code_completed 6|otp_code_completed 6")
+    }
+
+    /// Any decimal digit is taken as its ASCII digit, typed or pasted: the
+    /// host receives ASCII.
+    func testOTPDigitsInAnyScriptArriveAsASCII() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("١٢٣")
+        XCTAssertEqual(otpCode, "123", "Arabic-Indic digits typed")
+        pasteOTP("४५६७८९")
+        XCTAssertEqual(otpCode, "456789", "Devanagari digits pasted")
+        received("otp_code_completed 6")
+    }
+
+    /// Read-only, the field is read and focused, not dimmed, and takes no edit:
+    /// a digit typed is refused and Paste is not offered. XCUITest's `isEnabled`
+    /// is the element's not-enabled trait, what VoiceOver reads as dimmed: a
+    /// disabled field has it.
+    func testAReadOnlyOTPFieldIsReadNotDimmedAndTakesNoEdit() {
+        launch("otp-disabled")
+        XCTAssertFalse(app.textFields["Verification code"].isEnabled, "a disabled field is not dimmed")
+        app.terminate()
+        launch("otp-read-only")
+        let field = app.textFields["Verification code"]
+        XCTAssertTrue(field.isEnabled, "a read-only field is dimmed")
+        XCTAssertEqual(field.value as? String, "123")
+        field.tap()
+        XCTAssertTrue(hasKeyboardFocus(field), "a read-only field takes no focus")
+        typeOTP("4")
+        XCTAssertEqual(otpCode, "123")
+        field.press(forDuration: 1.2)
+        let paste = app.descendants(matching: .any).matching(identifier: "Paste").firstMatch
+        XCTAssertFalse(paste.waitForExistence(timeout: 2), "a read-only field offers Paste")
+        XCTAssertEqual(otpCode, "123")
+        received("none")
+    }
+
     /// The code the host holds, as the fixture shows it.
     private var otpCode: String {
         app.staticTexts["otp-code"].label
