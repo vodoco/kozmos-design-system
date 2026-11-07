@@ -1,0 +1,7 @@
+---
+"@kozmos-ds/react": patch
+---
+
+OTPInput accepts digits from any script and keeps their ASCII values. A decimal digit (Unicode general category Nd) typed, pasted or passed as `value` is kept as the ASCII digit of the same value: the Arabic-Indic `١٢٣٤`, the Extended Arabic-Indic `۱۲۳۴`, the Devanagari `१२३४` and the full-width `１２３４` all fill the cells with `1`, `2`, `3`, `4`, and `onChange` passes `"1234"`. A paste may mix scripts: `"١2३-4"` is `"1234"`. Until now a cell kept only the ASCII `0`–`9`, so a keyboard set to one of those scripts could not enter a code at all: what it typed was dropped, and so was a pasted code in those digits.
+
+The code the host receives is still only `0`–`9`, and everything that is not a decimal digit is still dropped, a letter, `²` or `½` among them. `length` counts digits, so a digit two UTF-16 units long, such as the double-struck `𝟙` or the Adlam `𞥑`, counts as one when it is pasted or passed as `value`; typed, Chromium, Firefox and WebKit keep it out of a cell, whose `maxLength` is 1. A code typed or pasted in another script reports `otp_code_completed` once, as an ASCII code does. No prop changes.

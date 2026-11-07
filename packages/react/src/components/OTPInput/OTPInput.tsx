@@ -20,8 +20,34 @@ export interface OTPInputProps extends Omit<
   wrapperClassName?: string;
 }
 
+const isDecimalDigit = (character: string) => /^\p{Nd}$/u.test(character);
+
+/**
+ * The ASCII digit of a decimal digit's value, in any script: "٣" (Arabic-
+ * Indic), "۳" (Extended Arabic-Indic), "३" (Devanagari) and "３" (full-width)
+ * are all "3". Unicode encodes every script's decimal digits as ten contiguous
+ * code points, zero first, and some sets sit back to back (five sets of
+ * mathematical digits run as one), so a digit's value is its distance from
+ * the start of its run of digits, modulo ten.
+ */
+const toAsciiDigit = (digit: string) => {
+  const codePoint = digit.codePointAt(0)!;
+  let zero = codePoint;
+  while (isDecimalDigit(String.fromCodePoint(zero - 1))) zero -= 1;
+  return String((codePoint - zero) % 10);
+};
+
+/**
+ * Keeps the decimal digits (general category Nd, in any script) as their
+ * ASCII values, at most `length` of them, and drops everything else, so the
+ * cells and `onChange` only ever hold "0"-"9". "²" and "½" are numbers but not
+ * decimal digits, so they are dropped.
+ */
 const sanitizeOtpValue = (nextValue: string, length: number) =>
-  nextValue.replace(/\D/g, "").slice(0, length);
+  Array.from(nextValue.replace(/\P{Nd}/gu, ""))
+    .slice(0, length)
+    .map(toAsciiDigit)
+    .join("");
 
 const normalizeOtpLength = (length: number) =>
   Math.max(1, Math.trunc(Number.isFinite(length) ? length : 1));

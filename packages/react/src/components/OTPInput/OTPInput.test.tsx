@@ -121,6 +121,103 @@ describe("OTPInput", () => {
     ]);
   });
 
+  describe("decimal digits from any script", () => {
+    // The code 1 2 3 4 in each script a phone's keyboard may type it in.
+    const SCRIPTS = [
+      ["Arabic-Indic", "١٢٣٤"],
+      ["Extended Arabic-Indic", "۱۲۳۴"],
+      ["Devanagari", "१२३४"],
+      ["full-width", "１２３４"],
+    ] as const;
+
+    const paste = (input: HTMLElement, code: string) =>
+      fireEvent.paste(input, { clipboardData: { getData: () => code } });
+
+    it.each(SCRIPTS)("takes %s digits typed one by one as ASCII", (_, code) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      const inputs = screen.getAllByRole("textbox");
+      Array.from(code).forEach((digit, index) =>
+        fireEvent.change(inputs[index], { target: { value: digit } }),
+      );
+
+      expect(handleChange.mock.calls).toEqual([
+        ["1"],
+        ["12"],
+        ["123"],
+        ["1234"],
+      ]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+      expect(document.activeElement).toBe(inputs[3]);
+    });
+
+    it.each(SCRIPTS)("takes a pasted %s code as ASCII", (_, code) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      paste(screen.getAllByRole("textbox")[0], code);
+
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+    });
+
+    it("keeps a mixed paste's digits in order, as ASCII", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      paste(screen.getAllByRole("textbox")[0], "١2३-4");
+
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+    });
+
+    it("drops what is not a decimal digit: letters, ², ½ and other numbers", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+
+      // Superscript two, one half, a circled one and the Roman numeral twelve
+      // are numbers, but none is a decimal digit (general category Nd).
+      fireEvent.change(inputs[0], { target: { value: "²" } });
+      fireEvent.change(inputs[0], { target: { value: "½" } });
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+
+      paste(inputs[0], "a²٣½b①Ⅻ4");
+      expect(handleChange.mock.calls).toEqual([["34"]]);
+      expect(cellsIn(document)).toEqual(["3", "4", "", ""]);
+    });
+
+    it("draws a controlled value's digits from any script as ASCII", () => {
+      const commits: string[][] = [];
+      const onCommit = (cells: string[]) => commits.push(cells);
+      const { rerender } = render(
+        <CommitProbe length={4} onCommit={onCommit} value="١٢٣" />,
+      );
+      expect(commits).toEqual([["1", "2", "3", ""]]);
+
+      rerender(<CommitProbe length={4} onCommit={onCommit} value="۴५６7" />);
+      expect(commits.at(-1)).toEqual(["4", "5", "6", "7"]);
+    });
+
+    it("trims to length by digits, two UTF-16 units or one", () => {
+      // The double-struck digits are each two UTF-16 units, and are the third
+      // of five sets of mathematical digits that run back to back.
+      const handleChange = vi.fn();
+      const { rerender } = render(
+        <OTPInput length={4} onChange={handleChange} />,
+      );
+
+      paste(screen.getAllByRole("textbox")[0], "𝟙𝟚𝟛𝟜𝟝");
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+
+      rerender(<OTPInput length={4} onChange={handleChange} value="٥٦٧٨٩" />);
+      expect(cellsIn(document)).toEqual(["5", "6", "7", "8"]);
+    });
+  });
+
   it("draws a controlled value's digits on the server", () => {
     const page = new DOMParser().parseFromString(
       renderToString(<OTPInput length={4} value="12" />),
@@ -338,6 +435,39 @@ describe("OTPInput", () => {
 
       type(inputs[3], "4");
       expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a code typed in another script once", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      ["١", "٢", "٣"].forEach((digit, index) => type(inputs[index], digit));
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "٤");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a code pasted in another script once, and its host holds it in ASCII", () => {
+      const handleChange = vi.fn();
+      function EchoesTheCode() {
+        const [code, setCode] = React.useState("");
+        return (
+          <OTPInput
+            length={4}
+            onChange={(next) => {
+              handleChange(next);
+              setCode(next);
+            }}
+            value={code}
+          />
+        );
+      }
+      const { completions, inputs } = renderTracked(<EchoesTheCode />);
+
+      paste(inputs[0], "१२३४");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
     });
 
     it("tracks each completion once under StrictMode", () => {
