@@ -6,7 +6,10 @@ const DOCS_DIR = join(__dirname, "..");
 /**
  * The React both Storybooks draw with, React's (`./main.ts`) and Vue's
  * (`../.storybook-vue/main.ts`): the `react` and `react-dom` apps/docs
- * declares (^18.2.0, 18.3.1 in the lockfile), resolved from apps/docs itself.
+ * declares, resolved from apps/docs itself. To move both Storybooks to
+ * another React, change `react` and `react-dom` in apps/docs/package.json,
+ * and this file follows. The checks that load a Storybook page hold its
+ * renderer to the same react-dom (scripts/lib/storybook-react-pin.mjs).
  *
  * Storybook's addon-docs aliases `react` and `react-dom` for every import in
  * the preview, the parts' own included, to this preset value. Storybook core
