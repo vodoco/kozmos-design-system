@@ -220,16 +220,28 @@ dependencies are overridden: the public packages ship the dependency ranges thei
   token-for-token identical: only the spaces between tokens moved.
 - **`pnpm.packageExtensions` gives 18 packages an optional `@types/react` peer**, and
   `react-router` and `@storybook/react-dom-shim` an optional `@types/react-dom` one too: every
-  package in the install whose declarations import or reference `react` and declare neither,
+  package in the install whose declarations import or reference `react` (or `react-dom`) and that
+  declares no `@types/react` (or `@types/react-dom`) of its own, as a peer or a dependency,
   framer-motion among them. pnpm links one copy of such a package for every importer, with no
   `@types/react` beside it, so TypeScript answers its `react` import through the hidden hoist
   (`node_modules/.pnpm/node_modules/@types/react`), which one lockfile can fill with 18.3.28 on
   one install and 19.2.14 on the next: main went red after #489 (7 Nov 2026) when DynamicIsland's
   props, which extend framer-motion's, read React 19's events. With the peer, pnpm links the
-  package per importer, as Radix declares it, and each copy reads its importer's React. A new
-  dependency whose declarations import `react` needs an entry of its own: its `.pnpm` folder
-  name carries no `@types+react`. `@storybook/manager-api` and `@storybook/theming` are scoped
-  to `@7`: their 8.x releases only re-export `storybook`'s.
+  package per importer, as Radix declares it, and each copy reads the React types of the importer
+  it is linked for. An importer that declares no `@types/react` gets whichever copy pnpm resolves
+  for it: the root's `@storybook/blocks` takes 19.2.14, the newest in the graph.
+  `pnpm deps:react-types:check` (CI's web job) fails when a package whose declarations import
+  React's types has no `node_modules/.pnpm/<folder>/node_modules/@types/react` linked beside it,
+  and when an entry here matches no installed package. Look for the link, not the folder's name:
+  `@xstate/react`'s and `storybook-addon-performance`'s names carried `@types+react@18.3.28`
+  through a child's peer while nothing was linked inside. `@storybook/manager-api`, `theming`,
+  `router` and `types` are scoped to `@7`: only 7.6.24 is installed, and their 8.x releases only
+  re-export `storybook`'s.
+- **One runtime package can now be linked twice**, once per importer's React types: framer-motion
+  is, for packages/react (18.3.28) and for playground-web and mapscale-review (19.2.14). A Vite app
+  that imports it itself and renders Kozmos parts lists it in `resolve.dedupe`, as playground-web
+  does; without that its bundle held both copies (+35.5 kB gzip), and its `AnimatePresence` and
+  `MotionConfig` never reached Kozmos's parts.
 - **Verify a dependency change by its output**, not only by green checks: build tokens, icons,
   product-contracts and react before and after and compare `dist` byte for byte, then explain
   each difference (#283's were two parentheses in react's UMD file and the spaces inside 25

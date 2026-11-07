@@ -148,6 +148,7 @@
     "ios:shapes:check": "node scripts/check-ios-shape-direction.mjs",
     "packages:install:check": "node scripts/check-package-install.mjs",
     "packages:scope:check": "node scripts/check-package-scope.mjs",
+    "deps:react-types:check": "node --test scripts/check-react-types-peers.test.mjs && node scripts/check-react-types-peers.mjs",
     "product:consumer:check": "node scripts/check-product-consumer.mjs",
     "native:check": "node scripts/check-native-builds.mjs",
     "native:check:ios": "node scripts/check-native-builds.mjs ios",
@@ -341,7 +342,7 @@
           }
         }
       },
-      "@storybook/router": {
+      "@storybook/router@7": {
         "peerDependencies": {
           "@types/react": "*"
         },
@@ -361,7 +362,7 @@
           }
         }
       },
-      "@storybook/types": {
+      "@storybook/types@7": {
         "peerDependencies": {
           "@types/react": "*"
         },

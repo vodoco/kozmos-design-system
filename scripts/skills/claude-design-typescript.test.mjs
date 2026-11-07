@@ -118,6 +118,8 @@ const withoutPin = (option) => {
 const pinnedCopy = (file, name) =>
   file?.startsWith(PINNED_REACT_TYPES[name] + path.sep) ?? false;
 
+const reactTypesFile = /[\\/]@types[\\/]react[\\/]/;
+
 test("the pinned React types are the versions the lockfile records for packages/react", () => {
   const lockfile = YAML.parse(
     fs.readFileSync(path.join(ROOT, "pnpm-lock.yaml"), "utf8"),
@@ -171,6 +173,32 @@ test("framer-motion's `react`, imported and referenced, reads the pinned copy an
     pinnedCopy(referenced, "@types/react"),
     `/// <reference types="react" /> reads ${referenced}, not packages/react's`,
   );
+});
+
+test("a program over framer-motion's declarations, resolved by the host's own hook, reads nothing from the hoist", () => {
+  // The tests above ask TypeScript's resolver directly; a program resolves
+  // its imports through hostWith's resolveModuleNameLiterals instead, with
+  // the options it derives there, so this holds that path.
+  const { host } = decoyHost();
+  const program = ts.createProgram({
+    rootNames: [FRAMER_MOTION],
+    options: compilerOptions,
+    host,
+  });
+  const files = program.getSourceFiles().map((file) => file.fileName);
+  assert.ok(
+    files.includes(FRAMER_MOTION),
+    "framer-motion's declarations are read",
+  );
+  assert.deepEqual(
+    files.filter((file) => file.startsWith(HOIST + path.sep)),
+    [],
+    "nothing is read from node_modules/.pnpm/node_modules",
+  );
+  const reactTypes = files.filter((file) => reactTypesFile.test(file));
+  assert.ok(reactTypes.length > 0, "React's types are read");
+  for (const file of reactTypes)
+    assert.ok(pinnedCopy(file, "@types/react"), `${file} is packages/react's`);
 });
 
 test("react-dom, react-dom/client and every other exported subpath, from a declarations file in node_modules, read the pinned copy", () => {

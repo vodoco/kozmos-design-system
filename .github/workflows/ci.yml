@@ -82,6 +82,14 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # A package whose declarations use React's types and have no copy of
+      # their own read whichever @types/react pnpm hoisted, 18 on one install
+      # and 19 on the next (main, 7 Nov 2026). Each installed one must have its
+      # importer's copy linked beside it (the root package.json's
+      # pnpm.packageExtensions), and each extension must name a package.
+      - name: Verify Every Package Reads Its Importer's React Types
+        run: pnpm deps:react-types:check
+
       - name: Verify Release Safeguards
         run: pnpm test:release
 

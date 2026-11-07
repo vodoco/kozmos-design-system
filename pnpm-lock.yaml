@@ -43,7 +43,7 @@ overrides:
   ws@^8: 8.21.3
   yaml@^2: 2.9.1
 
-packageExtensionsChecksum: 92a5b777f54dba3970c378301a1bdd6a
+packageExtensionsChecksum: 045520b338b251a73aad1c81712ebb38
 
 importers:
   .:
