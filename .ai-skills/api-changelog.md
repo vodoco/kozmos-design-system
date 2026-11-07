@@ -617,7 +617,39 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.15.1
+## `@kozmos-ds/react` — current 0.15.2
+
+### 0.15.2
+
+#### Patch Changes
+
+- cdd1137: Combobox's and MultiSelect's `emptyText` ("No results found") is now said aloud whenever the popup shows it: when typing empties the list, or when the list opens with nothing in it. RouteLocationField, built on Combobox, says its own ("No locations found") the same way whenever its list shows it (idle or ready with no suggestion to show). Until now the words arrived inside a live region mounted with them: a `role="status"` box that already held the text, or the listbox turned into one. Screen readers read only a change inside a live region that is already in the page, so VoiceOver on Safari said nothing.
+
+  Each field now holds a visually hidden status from its first render, outside the popup and its portal. The status says the empty text while the popup shows it, and is empty otherwise. The popup's copy is plain text, so the message is said once. Nothing changes on screen and no prop changes. Combobox's status stays silent when the field's supporting text already says the same words.
+
+- ee2bcaa: The buttons at a field's end draw their hover inside themselves (decision 164): Combobox's and MultiSelect's clear and open, Input's `action`, PasswordInput's reveal, and DatePicker's, DateRangePicker's and TimePicker's button. Hovered, each now draws a `background-100` fill 4 px in from its edges (the field's 1 px edge and a 3 px gap): 36 × 36 in touch and 32 × 32 in compact, its corners the control radius less 4 (12 at the default 16), so they follow a product's `--semantics-radius-control`. Until now each filled its whole box: Combobox's, Input's, PasswordInput's and the pickers' covered the field's outline at its top, bottom and end, and MultiSelect's, which sat 1 px inside the field's end, covered its top and bottom. The button itself fills nothing, so the outline stays drawn round it, 3 px clear of the fill on every side the button lies on; there is no fill at rest, on a disabled button, or in forced colours. The fill fades in and out over 150 ms, as Input's, PasswordInput's and the pickers' hover did, and now Combobox's and MultiSelect's do too; the design config's reduced motion makes it a cut. Each button keeps its hit target, as tall as the field, its focus ring and its icon.
+
+  MultiSelect's clear and open now lie on the field's edge at its end, as Combobox's do: they sat 1 px inside it, so the open button's fill stood 4 px from the outline there instead of 3. The chips and the typed text keep 9 px clear of the clear button, as Combobox's text does (8 before).
+
+  Input's pressed toggle `action` takes the same shape (decision 165): the theme fill 4 px in from the button's edges with the same corners, where it was a 32 px disc. Hovered, it is the themed Button's hover, as before; a disabled pressed toggle no longer changes on hover. In forced colours it stays a Highlight fill when hovered, where hovering used to drop it.
+
+  The fill is each button's `::before`, from owned CSS on `.kozmos-input-action`, `.kozmos-password-toggle`, `.kozmos-date-picker-trigger` and `.kozmos-combobox-action`; it takes no pointer events. Combobox's and MultiSelect's buttons no longer carry `hover:bg-muted`. NumberInput's steps are unchanged: segments with an edge of their own, they still fill their whole box on hover. No prop changes.
+
+- 6625dd6: A controlled OTPInput shows its value from its first render, on the server too, and shows each new `value` in the render it arrives with. Until now its cells started empty and took `value` only after the first commit, in an effect: `renderToString(<OTPInput value="12" />)` drew six empty cells, the browser's first frame did too, and a digit typed before the effect ran replaced the code (typing "3" into the third cell of `value="12"` called `onChange("3")`, not `onChange("123")`), while a code pasted then could be drawn over by the value's old digits. Every later change of `value` or `length` also drew the old cells for one commit.
+
+  An uncontrolled OTPInput, with no `value`, keeps its own digits as before. A new `length` still keeps the digits typed so far as it did: moved up into the first cells, with empty cells between them closed, and only as many as the new length holds (`["1", "2", "", "7"]` becomes `["1", "2", "7", "", "", ""]` at `length={6}`, and `["1"]` at `length={1}`). Digits are still sanitized as before, a digit typed into a later cell keeps its place when the code it makes comes back as `value`, and a `value` that does not change after a keystroke still leaves the typed digit drawn. No prop changes.
+
+  OTPInput now also reports a completed code to analytics, which it never did: an `AnalyticsProvider` receives `otp_code_completed` (component `OTPInput`, properties `{ length }`) once each time typing or a paste fills the last empty cell, and not again while the full code is edited, nor for a `value` set by the parent.
+
+- 1ef6038: Three parts now show a prop change in the render that brings it, where for one commit they showed what was there before:
+  - **Combobox**: when the product changes `value`, or renames the chosen option, the field shows the new label at once. It showed the old label for one commit first. Text the product holds through `inputValue` is still the product's to change.
+  - **Combobox and MultiSelect**: made `disabled` or `readOnly` with the popup open, the field closes the popup at once. For one commit the popup stayed drawn and was announced as open: the field kept `aria-expanded="true"` and an active option, and hovering still moved the active row. It never took a choice: a click or Enter in that commit chose nothing. Once the field can be used again, the popup stays closed until the visitor opens it, as before.
+  - **FloorSelector** (`collapsible`): when its floors are gone, or the map shell has no room for its column, the column closes at once. It stayed open for one commit. When it can open again, it waits for the visitor, as before.
+
+  Nothing else changes, and no prop changes.
+
+- Updated dependencies [ee2bcaa]
+  - @kozmos-ds/styles@0.15.2
 
 ### 0.15.1
 
@@ -2354,7 +2386,19 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/styles` — current 0.15.1
+## `@kozmos-ds/styles` — current 0.15.2
+
+### 0.15.2
+
+#### Patch Changes
+
+- ee2bcaa: The buttons at a field's end draw their hover inside themselves (decision 164): Combobox's and MultiSelect's clear and open, Input's `action`, PasswordInput's reveal, and DatePicker's, DateRangePicker's and TimePicker's button. Hovered, each now draws a `background-100` fill 4 px in from its edges (the field's 1 px edge and a 3 px gap): 36 × 36 in touch and 32 × 32 in compact, its corners the control radius less 4 (12 at the default 16), so they follow a product's `--semantics-radius-control`. Until now each filled its whole box: Combobox's, Input's, PasswordInput's and the pickers' covered the field's outline at its top, bottom and end, and MultiSelect's, which sat 1 px inside the field's end, covered its top and bottom. The button itself fills nothing, so the outline stays drawn round it, 3 px clear of the fill on every side the button lies on; there is no fill at rest, on a disabled button, or in forced colours. The fill fades in and out over 150 ms, as Input's, PasswordInput's and the pickers' hover did, and now Combobox's and MultiSelect's do too; the design config's reduced motion makes it a cut. Each button keeps its hit target, as tall as the field, its focus ring and its icon.
+
+  MultiSelect's clear and open now lie on the field's edge at its end, as Combobox's do: they sat 1 px inside it, so the open button's fill stood 4 px from the outline there instead of 3. The chips and the typed text keep 9 px clear of the clear button, as Combobox's text does (8 before).
+
+  Input's pressed toggle `action` takes the same shape (decision 165): the theme fill 4 px in from the button's edges with the same corners, where it was a 32 px disc. Hovered, it is the themed Button's hover, as before; a disabled pressed toggle no longer changes on hover. In forced colours it stays a Highlight fill when hovered, where hovering used to drop it.
+
+  The fill is each button's `::before`, from owned CSS on `.kozmos-input-action`, `.kozmos-password-toggle`, `.kozmos-date-picker-trigger` and `.kozmos-combobox-action`; it takes no pointer events. Combobox's and MultiSelect's buttons no longer carry `hover:bg-muted`. NumberInput's steps are unchanged: segments with an edge of their own, they still fill their whole box on hover. No prop changes.
 
 ### 0.15.1
 

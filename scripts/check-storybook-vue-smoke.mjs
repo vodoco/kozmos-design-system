@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import {
+  assertPinnedReact,
+  recordRenderers,
+  renderersIn,
+} from "./lib/storybook-react-pin.mjs";
 
 // This is a render smoke gate, not evidence of adapter/API/a11y parity.
 const base = process.env.VUE_STORYBOOK_URL ?? "http://127.0.0.1:6007";
@@ -12,6 +17,9 @@ assert(stories.length > 0, "Internal Vue harness must contain stories");
 const browser = await launchFixtureBrowser();
 try {
   const page = await browser.newPage();
+  // The react-dom each story's bridged parts draw with (the React pin).
+  await recordRenderers(page);
+  const renderers = [];
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   for (const story of stories) {
@@ -35,8 +43,10 @@ try {
       size && size.width > 0 && size.height > 0,
       `${story.id}: empty geometry`,
     );
+    renderers.push(...(await renderersIn(page)));
   }
   assert.deepEqual(errors, [], "Vue runtime errors");
+  console.log(assertPinnedReact(renderers, "The Vue Storybook"));
   console.log(
     `Internal Vue render smoke passed: ${stories.length} stories. Behavioural and accessibility parity are not asserted.`,
   );

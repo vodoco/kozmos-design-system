@@ -1,11 +1,15 @@
 import type { StorybookConfig } from "@storybook/vue3-vite";
 import { dirname, join } from "path";
+import { resolvedReact, type PinsReact } from "../.storybook/pinned-react";
 
 function getAbsolutePath(value: string): any {
   return dirname(require.resolve(join(value, "package.json")));
 }
 
-const config: StorybookConfig = {
+const config: StorybookConfig & PinsReact = {
+  // The bridged parts draw with apps/docs's React, never the hoist's
+  // (../.storybook/pinned-react.ts).
+  resolvedReact,
   stories: ["../../../packages/vue/src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
     getAbsolutePath("@storybook/addon-links"),

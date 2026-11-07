@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/styles",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "The Kozmos design system stylesheet: tokens, the owned .kozmos-* rules and the utilities every Kozmos part draws with, shared by @kozmos-ds/react and the Vue package.",
   "license": "MIT",
   "repository": {

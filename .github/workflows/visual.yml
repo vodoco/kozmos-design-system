@@ -3,7 +3,8 @@ name: Visual Regression
 # Kozmos's own visual review, run here rather than bought. Every story, in the
 # light theme and the dark, is drawn by the Playwright image and compared with
 # a baseline committed in the same commit as the code that changed it
-# (tests/visual/baselines). A change shows in the pull request's own image
+# (tests/visual/baselines): React's Storybook's and, since Vue 3 Phase 0
+# (P0.5), Vue's, each built here and served on a port of its own. A change shows in the pull request's own image
 # diff; an unexpected one fails `compare`, whose report shows the baseline,
 # the new drawing and the difference. docs/visual-review.md has the whole story.
 #
@@ -57,6 +58,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter '@kozmos-ds/react...' build
       - run: pnpm --filter @kozmos-ds/docs build-storybook
+      # Vue's Storybook (apps/docs/.storybook-vue): its stories import
+      # packages/vue's source and the React parts its bridge mounts from
+      # React's dist, built above.
+      - run: pnpm --filter @kozmos-ds/docs build-storybook:vue
       - name: Compare every story with its baseline
         run: pnpm exec playwright test -c playwright.visual.config.ts
       - name: Say which stories changed
@@ -94,6 +99,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter '@kozmos-ds/react...' build
       - run: pnpm --filter @kozmos-ds/docs build-storybook
+      - run: pnpm --filter @kozmos-ds/docs build-storybook:vue
       # Only a drawing that fails the comparison is redrawn. A baseline that
       # still matches keeps its bytes — redrawing everything committed a few
       # anti-aliased pixels one unit off as "changes" nobody could see — and

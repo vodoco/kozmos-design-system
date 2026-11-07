@@ -6,9 +6,11 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import * as React from "react";
 import { useState } from "react";
 import { ChevronUp } from "@kozmos-ds/icons";
 import { AnalyticsProvider } from "../../utils/analytics";
+import { MapPopupRegionContext } from "../AdaptiveMapShell/map-popup-region";
 import { FloorSelector } from "./FloorSelector";
 import { describe, it, expect, vi } from "vitest";
 
@@ -720,5 +722,87 @@ describe("FloorSelector collapsible", () => {
       expect(count).toHaveClass("bottom-0.5");
       expect(count).not.toHaveClass("top-0.5");
     });
+  });
+});
+
+describe("FloorSelector collapsible: a prop change shows in the commit it arrives in", () => {
+  const levels = [
+    { id: "2", label: "Second floor", shortLabel: "2F" },
+    { id: "1", label: "First floor", shortLabel: "1F" },
+    { id: "g", label: "Ground floor", shortLabel: "GF" },
+  ];
+  // The host's layout effect reads the DOM of each commit it makes, after
+  // React has written it and before any effect of the selector's own can
+  // correct it.
+  const useCommitEffect =
+    typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+  const noRoom = {
+    boundary: null,
+    available: false,
+    focusFallback: () => undefined,
+  };
+
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it.each([
+      ["its levels are gone", { floors: [] }],
+      ["the map has no room for it", { region: noRoom }],
+    ] as const)(
+      "closes the column in the commit where %s, and leaves it closed",
+      async (_, change) => {
+        const commits: { expanded?: string | null; column: string }[] = [];
+        function Host({
+          floors = levels,
+          region = null,
+        }: {
+          floors?: readonly (typeof levels)[number][];
+          region?: typeof noRoom | null;
+        }) {
+          useCommitEffect(() => {
+            const column = document.querySelector('[role="dialog"]');
+            commits.push({
+              expanded: document
+                .querySelector('[aria-haspopup="dialog"]')
+                ?.getAttribute("aria-expanded"),
+              // Radix keeps a closing column in the DOM, marked closed, for
+              // the commit that closes it.
+              column: column?.getAttribute("data-state") ?? "gone",
+            });
+          });
+          return (
+            <MapPopupRegionContext.Provider value={region}>
+              <FloorSelector
+                floors={[...floors]}
+                onFloorSelect={() => undefined}
+                selectedFloor="1"
+                variant="collapsible"
+              />
+            </MapPopupRegionContext.Provider>
+          );
+        }
+        const { rerender } = render(<Host />, { wrapper });
+        fireEvent.click(screen.getByRole("button", { name: "First floor" }));
+        await screen.findByRole("dialog", { name: "Floor selector" });
+
+        commits.length = 0;
+        rerender(<Host {...change} />);
+        expect(commits.length).toBeGreaterThan(0);
+        for (const commit of commits)
+          expect(commit).toEqual({
+            expanded: "false",
+            column: expect.stringMatching(/^(closed|gone)$/),
+          });
+        await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+        // Back as it was, the column waits for the visitor to open it.
+        rerender(<Host />);
+        expect(
+          screen.getByRole("button", { name: "First floor" }),
+        ).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("dialog")).toBeNull();
+      },
+    );
   });
 });

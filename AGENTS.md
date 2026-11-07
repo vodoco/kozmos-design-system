@@ -46,6 +46,7 @@ pnpm install --frozen-lockfile
 pnpm build                                     # every package and app, through Turborepo
 pnpm --filter "@kozmos-ds/react..." build      # React and what it needs; a fresh worktree has nothing built
 pnpm test
+pnpm --filter @kozmos-ds/vue test:react18      # Vue's tests on React 18, as CI runs them
 pnpm lint --filter='!mapscale-review'          # as CI runs it
 pnpm typecheck
 pnpm --filter @kozmos-ds/docs storybook:react  # Storybook on port 6006
@@ -75,9 +76,12 @@ testing what uses it, and restart Storybook after a rebuild.
   Run `pnpm changeset`, or `pnpm changeset --empty` when nothing needs releasing. CI runs
   `node scripts/release/changeset-required.mjs`; run it too.
 - **Visual Review baselines** are drawn only by the Playwright image's amd64 build, through
-  Docker: build Storybook, then `pnpm test:visual:update --grep <story>`, or use the Visual
-  Regression workflow's record run. Never record on a bare Mac: it draws text differently.
-  [`docs/visual-review.md`](docs/visual-review.md) has the steps.
+  Docker: build both Storybooks, React's (`pnpm --filter @kozmos-ds/docs build-storybook`) and
+  Vue's (`pnpm --filter @kozmos-ds/docs build-storybook:vue`), then
+  `pnpm test:visual:update --grep <story>`, or use the Visual Regression workflow's record run.
+  `scripts/visual/docker.sh` stops, naming the build to run, when either is missing. Never record
+  on a bare Mac: it draws text differently. [`docs/visual-review.md`](docs/visual-review.md) has
+  the steps.
 - **Compose's Paparazzi goldens** are recorded only in the Linux amd64 container, never on a bare
   Mac. Build its image once with `pnpm android:paparazzi build`, record one class with
   `pnpm android:paparazzi recordPaparazziDebug --tests '<class>'`, verify with

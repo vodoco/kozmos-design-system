@@ -5,9 +5,10 @@
 # for the stories you changed on purpose. Extra arguments go to Playwright,
 # e.g. `pnpm test:visual --grep chip`.
 #
-# Needs Docker running and a built Storybook:
+# Needs Docker running and both built Storybooks, React's and Vue's:
 #   pnpm exec turbo run build --filter=@kozmos-ds/react...
 #   pnpm --filter @kozmos-ds/docs build-storybook
+#   pnpm --filter @kozmos-ds/docs build-storybook:vue
 set -euo pipefail
 
 image="mcr.microsoft.com/playwright:v1.58.2-noble"
@@ -15,6 +16,10 @@ cd "$(git rev-parse --show-toplevel)"
 
 if [ ! -f apps/docs/storybook-static/index.json ]; then
   echo "No built Storybook. Run: pnpm --filter @kozmos-ds/docs build-storybook" >&2
+  exit 1
+fi
+if [ ! -f apps/docs/storybook-internal/vue/index.json ]; then
+  echo "No built Vue Storybook. Run: pnpm --filter @kozmos-ds/docs build-storybook:vue" >&2
   exit 1
 fi
 if ! docker info >/dev/null 2>&1; then
