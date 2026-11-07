@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Public XCUI queries and real input. These test the accessibility tree and
@@ -1375,5 +1376,274 @@ final class InteractionTests: XCTestCase {
     /// of it: the way out of a row of parts, whichever way the row reads.
     private func outward(_ element: XCUIElement) -> CGFloat {
         element.frame.midX > app.frame.midX ? 1 : -1
+    }
+
+    // MARK: OTPInput, one field (React's `otp_code_completed` and the field itself)
+    //
+    // SwiftUI's OTPInput is one text field that holds the code, with the cells
+    // drawn from it. These type with the keyboard, paste from the edit menu
+    // and set the code as the host; in the test process SwiftUI takes no
+    // synthetic input, so they run here.
+    //
+    // Analytics: a code completed is reported once, when the user's typing or
+    // paste fills the last empty cell: not again while a full code is edited;
+    // again once it has been cleared and completed; never for a code the host
+    // puts in its binding, and once when the user completes a partial code the
+    // host put there; never for a code a shorter `length` makes full; once per
+    // entry, whatever the host's binding does with it. Every analytics test
+    // ends with a completion the user makes, which is reported, so a field
+    // that reports nothing fails each, those that expect silence among them.
+
+    func testTypingAnOTPCodesFirstDigitDoesNotHang() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        let start = Date()
+        app.typeText("1")
+        XCTAssertEqual(otpCode, "1")
+        XCTAssertLessThan(Date().timeIntervalSince(start), 10, "typing one digit took \(Date().timeIntervalSince(start)) s")
+        typeOTP("23456")
+        XCTAssertEqual(otpCode, "123456")
+    }
+
+    func testBackspaceFromAnEmptyOTPCellMovesBackAndDeletes() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123")
+        for expected in ["12", "1", "empty"] {
+            app.typeText(XCUIKeyboardKey.delete.rawValue)
+            XCTAssertEqual(otpCode, expected)
+        }
+    }
+
+    func testAfterTheHostClearsAnOTPCodeTypingFillsFromTheFirstCell() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("12345")
+        app.buttons["Host clears"].tap()
+        XCTAssertEqual(otpCode, "empty")
+        typeOTP("9")
+        XCTAssertEqual(otpCode, "9")
+    }
+
+    func testPastingReplacesAFullOTPCode() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        pasteOTP("654-321")
+        XCTAssertEqual(otpCode, "654321")
+    }
+
+    /// The field is one element: named by the label, with the code as its
+    /// value, and no cell, digit or label read beside it. Its hint and its
+    /// one-time-code content type are read in the test process
+    /// (`KozmosOTPInputFieldTests`), which XCUITest cannot see.
+    func testAnOTPInputIsOneFieldNamedByItsLabelWithTheCodeAsItsValue() {
+        launch("otp")
+        XCTAssertEqual(app.textFields.count, 1)
+        let field = app.textFields["Verification code"]
+        XCTAssertTrue(field.exists, "no text field named Verification code")
+        field.tap()
+        typeOTP("123")
+        XCTAssertEqual(field.value as? String, "123")
+        XCTAssertFalse(app.staticTexts["Verification code"].exists, "the label is read beside the field")
+        for digit in ["1", "2", "3"] {
+            XCTAssertFalse(app.staticTexts[digit].exists, "a drawn digit is read beside the field")
+        }
+    }
+
+    func testTypingAnOTPCodesLastDigitReportsTheCodeOnce() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("12345")
+        XCTAssertEqual(otpCode, "12345")
+        received("none")
+        typeOTP("6")
+        XCTAssertEqual(otpCode, "123456")
+        received("otp_code_completed 6")
+    }
+
+    func testPastingAFullOTPCodeReportsItOnce() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        pasteOTP("123-456")
+        XCTAssertEqual(otpCode, "123456")
+        received("otp_code_completed 6")
+    }
+
+    func testAPartialOTPCodeReportsNothing() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("12")
+        pasteOTP("123")
+        XCTAssertEqual(otpCode, "123")
+        received("none")
+        typeOTP("456")
+        received("otp_code_completed 6")
+    }
+
+    func testEditingAFullOTPCodeReportsNothingMore() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        received("otp_code_completed 6")
+        // A seventh digit changes nothing; a paste replaces the full code.
+        typeOTP("7")
+        XCTAssertEqual(otpCode, "123456")
+        pasteOTP("654321")
+        XCTAssertEqual(otpCode, "654321")
+        received("otp_code_completed 6")
+    }
+
+    func testClearingAndCompletingAnOTPCodeReportsAgain() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        deleteOTP(6)
+        XCTAssertEqual(otpCode, "empty")
+        received("otp_code_completed 6")
+        typeOTP("654321")
+        XCTAssertEqual(otpCode, "654321")
+        received("otp_code_completed 6|otp_code_completed 6")
+    }
+
+    func testAnOTPCodeTheHostSetsReportsNothing() {
+        launch("otp-prefilled")
+        XCTAssertEqual(otpCode, "123456")
+        app.buttons["Host sets 654321"].tap()
+        app.buttons["Host clears"].tap()
+        app.buttons["Host sets 654321"].tap()
+        XCTAssertEqual(otpCode, "654321")
+        received("none")
+        // The host's full code, replaced by the user, is still no completion of theirs.
+        app.textFields.firstMatch.tap()
+        pasteOTP("111222")
+        XCTAssertEqual(otpCode, "111222")
+        received("none")
+        deleteOTP(6)
+        typeOTP("123456")
+        received("otp_code_completed 6")
+    }
+
+    func testAPartialOTPCodeTheHostSetsReportsOnceTheUserCompletesIt() {
+        launch("otp")
+        app.buttons["Host sets 123"].tap()
+        XCTAssertEqual(otpCode, "123")
+        received("none")
+        app.textFields.firstMatch.tap()
+        typeOTP("456")
+        XCTAssertEqual(otpCode, "123456")
+        received("otp_code_completed 6")
+    }
+
+    func testAnOTPCodeAShorterLengthMakesFullReportsNothing() {
+        launch("otp-length")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        app.buttons["Host sets 6 cells"].tap()
+        XCTAssertEqual(otpCode, "123456")
+        typeOTP("7")
+        received("none")
+        deleteOTP(6)
+        typeOTP("123456")
+        received("otp_code_completed 6")
+    }
+
+    /// A host that submits a full code and clears it in its binding's setter
+    /// hears one completion per entry, typed or pasted.
+    func testASubmitAndClearHostHearsOneOTPCompletionPerEntry() {
+        launch("otp-submit-clear")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        XCTAssertEqual(app.staticTexts["otp-submitted"].label, "123456")
+        XCTAssertEqual(otpCode, "empty")
+        received("otp_code_completed 6")
+        pasteOTP("654321")
+        XCTAssertEqual(app.staticTexts["otp-submitted"].label, "123456,654321")
+        received("otp_code_completed 6|otp_code_completed 6")
+    }
+
+    /// A host whose binding keeps nothing hears one completion per paste.
+    func testAHostThatIgnoresOTPWritesHearsOneCompletionPerPaste() {
+        launch("otp-ignore-writes")
+        app.textFields.firstMatch.tap()
+        pasteOTP("123456")
+        XCTAssertEqual(otpCode, "empty")
+        received("otp_code_completed 6")
+    }
+
+    /// A paste replaces the code, whatever its length, as React's does: a
+    /// single digit included. One with no digit in it changes nothing.
+    func testAPasteReplacesTheOTPCodeWhateverItsLength() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("123456")
+        pasteOTP("7")
+        XCTAssertEqual(otpCode, "7")
+        pasteOTP("abc")
+        XCTAssertEqual(otpCode, "7")
+        pasteOTP("654-321")
+        XCTAssertEqual(otpCode, "654321")
+        received("otp_code_completed 6|otp_code_completed 6")
+    }
+
+    /// Any decimal digit is taken as its ASCII digit, typed or pasted: the
+    /// host receives ASCII.
+    func testOTPDigitsInAnyScriptArriveAsASCII() {
+        launch("otp")
+        app.textFields.firstMatch.tap()
+        typeOTP("١٢٣")
+        XCTAssertEqual(otpCode, "123", "Arabic-Indic digits typed")
+        pasteOTP("४५६७८९")
+        XCTAssertEqual(otpCode, "456789", "Devanagari digits pasted")
+        received("otp_code_completed 6")
+    }
+
+    /// Read-only, the field is read and focused, not dimmed, and takes no edit:
+    /// a digit typed is refused and Paste is not offered. XCUITest's `isEnabled`
+    /// is the element's not-enabled trait, what VoiceOver reads as dimmed: a
+    /// disabled field has it.
+    func testAReadOnlyOTPFieldIsReadNotDimmedAndTakesNoEdit() {
+        launch("otp-disabled")
+        XCTAssertFalse(app.textFields["Verification code"].isEnabled, "a disabled field is not dimmed")
+        app.terminate()
+        launch("otp-read-only")
+        let field = app.textFields["Verification code"]
+        XCTAssertTrue(field.isEnabled, "a read-only field is dimmed")
+        XCTAssertEqual(field.value as? String, "123")
+        field.tap()
+        XCTAssertTrue(hasKeyboardFocus(field), "a read-only field takes no focus")
+        typeOTP("4")
+        XCTAssertEqual(otpCode, "123")
+        field.press(forDuration: 1.2)
+        let paste = app.descendants(matching: .any).matching(identifier: "Paste").firstMatch
+        XCTAssertFalse(paste.waitForExistence(timeout: 2), "a read-only field offers Paste")
+        XCTAssertEqual(otpCode, "123")
+        received("none")
+    }
+
+    /// The code the host holds, as the fixture shows it.
+    private var otpCode: String {
+        app.staticTexts["otp-code"].label
+    }
+
+    /// Types `digits` a key at a time into the field that has the focus.
+    private func typeOTP(_ digits: String) {
+        for digit in digits { app.typeText(String(digit)) }
+    }
+
+    /// Backspace, `count` times, a key at a time.
+    private func deleteOTP(_ count: Int) {
+        for _ in 0..<count { app.typeText(XCUIKeyboardKey.delete.rawValue) }
+    }
+
+    /// Pastes `text` from the edit menu of the focused OTP field.
+    private func pasteOTP(_ text: String) {
+        UIPasteboard.general.string = text
+        defer { UIPasteboard.general.items = [] }
+        app.textFields.firstMatch.press(forDuration: 1.2)
+        let paste = app.descendants(matching: .any).matching(identifier: "Paste").firstMatch
+        if !paste.waitForExistence(timeout: 3) { print("OTP paste: no Paste in\n\(app.debugDescription)") }
+        XCTAssertTrue(paste.exists, "no Paste in the field's edit menu")
+        paste.tap()
     }
 }

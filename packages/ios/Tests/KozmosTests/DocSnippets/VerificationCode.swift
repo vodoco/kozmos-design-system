@@ -5,7 +5,8 @@ import SwiftUI
 import Kozmos
 
 // Six cells unless length says otherwise, digits only, and the code is yours
-// to hold. The label is drawn above the cells but names none of them, where
+// to hold: one text field takes the typing, a paste or the keyboard's
+// one-time code, and the cells draw it. The label names that field, where
 // React names each cell "Digit 1 of 6".
 struct VerificationCode: View {
     @Binding var code: String
