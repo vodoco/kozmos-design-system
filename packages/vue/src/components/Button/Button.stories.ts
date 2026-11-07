@@ -47,7 +47,8 @@ const meta: Meta<typeof KozmosButton> = {
     setup: () => ({
       label: computed(() => (args as { label?: string }).label),
       buttonProps: computed(() => {
-        const { label: _label, ...props } = args as Record<string, unknown>;
+        const props: Record<string, unknown> = { ...args };
+        delete props.label;
         return props;
       }),
     }),

@@ -27,6 +27,7 @@
     "bridge:takes": "node scripts/bridge-takes.mjs",
     "build": "rm -rf dist .recipes-types && vite build && tsc -p tsconfig.recipes.json && vue-tsc -p tsconfig.declarations.json",
     "dev": "vite build --watch",
+    "lint": "eslint src test scripts vite.config.mts vitest.react18.config.mts",
     "test": "vitest run",
     "test:react18": "vitest run --config vitest.react18.config.mts",
     "typecheck": "vue-tsc -p tsconfig.json --noEmit"
