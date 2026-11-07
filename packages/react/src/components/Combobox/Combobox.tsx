@@ -211,6 +211,14 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const listboxId = React.useId();
     const inputId = id || defaultInputId;
     const [open, setOpen] = React.useState(false);
+    // Made disabled or read-only, the field closes its popup in the render
+    // that says so, not a commit later, and it stays closed when it is free
+    // again. State set while rendering: React renders again before it commits.
+    const [lockedFor, setLockedFor] = React.useState({ disabled, readOnly });
+    if (lockedFor.disabled !== disabled || lockedFor.readOnly !== readOnly) {
+      setLockedFor({ disabled, readOnly });
+      if (disabled || readOnly) setOpen(false);
+    }
     const [uncontrolledValue, setUncontrolledValue] = React.useState(
       defaultValue || "",
     );
@@ -218,13 +226,27 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const selectedOption = options.find(
       (option) => option.value === selectedValue,
     );
-    const previousSelection = React.useRef({
+    const [previousSelection, setPreviousSelection] = React.useState({
       value: selectedValue,
       label: selectedOption?.label,
     });
     const [uncontrolledInputValue, setUncontrolledInputValue] = React.useState(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
+    // A new choice, or a new label for it, puts that label in the field's own
+    // text in the same render, so no commit shows the old one. Text the
+    // product holds (inputValue) is the product's to change.
+    if (
+      previousSelection.value !== selectedValue ||
+      previousSelection.label !== selectedOption?.label
+    ) {
+      setPreviousSelection({
+        value: selectedValue,
+        label: selectedOption?.label,
+      });
+      if (inputValue === undefined)
+        setUncontrolledInputValue(selectedOption?.label ?? "");
+    }
     const visibleInputValue = inputValue ?? uncontrolledInputValue;
     // In the order they are drawn: under their groups (GAP-192).
     const filteredOptions = React.useMemo(
@@ -304,25 +326,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     }, [activeOptionId]);
     const canClear =
       clearable && !disabled && !readOnly && Boolean(visibleInputValue);
-
-    React.useEffect(() => {
-      if (disabled || readOnly) setOpen(false);
-    }, [disabled, readOnly]);
-
-    React.useEffect(() => {
-      const previous = previousSelection.current;
-      if (
-        inputValue === undefined &&
-        (previous.value !== selectedValue ||
-          previous.label !== selectedOption?.label)
-      ) {
-        setUncontrolledInputValue(selectedOption?.label ?? "");
-      }
-      previousSelection.current = {
-        value: selectedValue,
-        label: selectedOption?.label,
-      };
-    }, [inputValue, selectedValue, selectedOption?.label]);
 
     React.useEffect(() => {
       const queryChanged = previousQuery.current !== visibleInputValue;

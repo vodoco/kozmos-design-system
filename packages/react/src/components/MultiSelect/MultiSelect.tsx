@@ -137,6 +137,13 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const listboxId = React.useId();
     const inputId = id || defaultInputId;
     const [open, setOpen] = React.useState(false);
+    // Made disabled or read-only, the field closes its list in the render
+    // that says so, as Combobox does, and it stays closed when it is free.
+    const [lockedFor, setLockedFor] = React.useState({ disabled, readOnly });
+    if (lockedFor.disabled !== disabled || lockedFor.readOnly !== readOnly) {
+      setLockedFor({ disabled, readOnly });
+      if (disabled || readOnly) setOpen(false);
+    }
     const [uncontrolledValue, setUncontrolledValue] =
       React.useState<string[]>(defaultValue);
     const selectedValues = value ?? uncontrolledValue;
@@ -200,10 +207,6 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     React.useEffect(() => {
       setActiveIndex(firstEnabledIndex(navigableOptions));
     }, [navigableOptions]);
-
-    React.useEffect(() => {
-      if (disabled || readOnly) setOpen(false);
-    }, [disabled, readOnly]);
 
     React.useEffect(() => {
       if (!open) return undefined;

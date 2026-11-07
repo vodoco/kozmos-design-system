@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import * as React from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -9,6 +10,119 @@ const options = [
   { value: "details", label: "Details" },
   { value: "activity", label: "Activity" },
 ];
+
+// The host's layout effect reads the DOM of each commit it makes, after React
+// has written it and before any effect of the field's own can correct it.
+const useCommitEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+const strictModes = [
+  ["outside StrictMode", undefined],
+  ["under StrictMode", React.StrictMode],
+] as const;
+
+describe("Combobox: a prop change shows in the commit it arrives in", () => {
+  describe.each(strictModes)("%s", (_, wrapper) => {
+    it("shows the chosen option's label in the commit that chooses or renames it", () => {
+      const commits: { value: string; label?: string; shown?: string }[] = [];
+      function Host({
+        list = options,
+        value,
+      }: {
+        list?: typeof options;
+        value: string;
+      }) {
+        const input = React.useRef<HTMLInputElement>(null);
+        useCommitEffect(() => {
+          commits.push({
+            value,
+            label: list.find((option) => option.value === value)?.label ?? "",
+            shown: input.current?.value,
+          });
+        });
+        return <Combobox ref={input} options={list} value={value} />;
+      }
+      const { rerender } = render(<Host value="overview" />, { wrapper });
+      rerender(<Host value="details" />);
+      rerender(
+        <Host
+          list={options.map((option) =>
+            option.value === "details"
+              ? { ...option, label: "Details (renamed)" }
+              : option,
+          )}
+          value="details"
+        />,
+      );
+      rerender(<Host value="" />);
+
+      expect(commits.map(({ value }) => value)).toEqual(
+        expect.arrayContaining(["overview", "details", ""]),
+      );
+      expect(commits.map(({ label }) => label)).toContain("Details (renamed)");
+      for (const commit of commits)
+        expect(commit.shown, `the commit for "${commit.value}"`).toBe(
+          commit.label,
+        );
+    });
+
+    it.each(["disabled", "readOnly"] as const)(
+      "draws no popup in the commit that makes it %s",
+      async (lock) => {
+        const user = userEvent.setup();
+        const commits: { popup: boolean; expanded: string | null }[] = [];
+        function Host({ locked }: { locked: boolean }) {
+          const input = React.useRef<HTMLInputElement>(null);
+          useCommitEffect(() => {
+            commits.push({
+              popup: document.querySelector("[data-combobox-popup]") !== null,
+              expanded: input.current?.getAttribute("aria-expanded") ?? null,
+            });
+          });
+          return (
+            <Combobox
+              ref={input}
+              label="View"
+              options={options}
+              {...{ [lock]: locked }}
+            />
+          );
+        }
+        const { rerender } = render(<Host locked={false} />, { wrapper });
+        await user.click(screen.getByRole("combobox", { name: "View" }));
+        expect(screen.getByRole("listbox")).toBeVisible();
+
+        commits.length = 0;
+        rerender(<Host locked />);
+        expect(commits.length).toBeGreaterThan(0);
+        for (const commit of commits)
+          expect(commit).toEqual({ popup: false, expanded: "false" });
+        expect(screen.queryByRole("listbox")).toBeNull();
+      },
+    );
+
+    it.each(["disabled", "readOnly"] as const)(
+      "stays closed when it is no longer %s, until the visitor opens it",
+      async (lock) => {
+        const user = userEvent.setup();
+        const Host = ({ locked }: { locked: boolean }) => (
+          <Combobox label="View" options={options} {...{ [lock]: locked }} />
+        );
+        const { rerender } = render(<Host locked={false} />, { wrapper });
+        const input = screen.getByRole("combobox", { name: "View" });
+        await user.click(input);
+        expect(screen.getByRole("listbox")).toBeVisible();
+
+        rerender(<Host locked />);
+        rerender(<Host locked={false} />);
+        expect(input).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("listbox")).toBeNull();
+
+        await user.click(screen.getByRole("button", { name: "Open options" }));
+        expect(screen.getByRole("listbox")).toBeVisible();
+      },
+    );
+  });
+});
 
 describe("Combobox", () => {
   it("omits every ambiguous or blank command without confusing a same-ID value", async () => {

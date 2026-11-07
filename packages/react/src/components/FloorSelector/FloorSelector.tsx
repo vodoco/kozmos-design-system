@@ -278,12 +278,17 @@ const CollapsibleFloorSelector = React.forwardRef<
         if (movingFocus.current) event.preventDefault();
       },
     };
-    React.useEffect(() => {
+    // With no level to show, or no room to show them, the column closes in
+    // the render that says so, not a commit later, and stays closed when it
+    // can open again. State set while rendering: React renders again first.
+    const [couldExpand, setCouldExpand] = React.useState(canExpand);
+    if (couldExpand !== canExpand) {
+      setCouldExpand(canExpand);
       if (!canExpand) {
         setOpen(false);
         setHintOpen(false);
       }
-    }, [canExpand]);
+    }
     const theme = React.useContext(ThemeProviderContext);
     const tooltipSide = (props.dir ?? theme?.dir) === "rtl" ? "right" : "left";
     // The map control's own size, read off the tile as the column opens: the
