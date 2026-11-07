@@ -7,8 +7,18 @@
  * so one name is never two components.
  */
 import React from "react";
-import { createVueWrapper, describeParts, eventValue } from "./react-adapter";
-import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
+import {
+  createVueWrapper,
+  describeBooleans,
+  describeParts,
+  eventValue,
+} from "./react-adapter";
+import {
+  ADAPTER_BOOLEANS,
+  ADAPTER_TAKES,
+  PART_BOOLEANS,
+  PART_TAKES,
+} from "./part-takes";
 import {
   Box,
   Stack,
@@ -124,8 +134,10 @@ import { toReactTarget } from "./targets";
 
 // Which `on…` props each React part takes, read from React's types
 // (part-takes.ts): a listener whose prop the part takes is the part's, and
-// any other a native listener on the wrapper's box (react-adapter.ts).
+// any other a native listener on the wrapper's box (react-adapter.ts). And
+// which of its props are booleans: a bare attribute of one is true.
 describeParts(PART_TAKES);
+describeBooleans(PART_BOOLEANS);
 
 // What a consumer needs to wrap a React part of its own. The rest of
 // react-adapter.ts is the bridge's.
@@ -265,6 +277,13 @@ describeParts([
   [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
   [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
 ]);
+describeBooleans([
+  [AvatarAdapter, ADAPTER_BOOLEANS.AvatarAdapter],
+  [AlertAdapter, ADAPTER_BOOLEANS.AlertAdapter],
+  [BackdropAdapter, ADAPTER_BOOLEANS.BackdropAdapter],
+  [TourStepAdapter, ADAPTER_BOOLEANS.TourStepAdapter],
+  [AnchoredPopoverAdapter, ADAPTER_BOOLEANS.AnchoredPopoverAdapter],
+]);
 
 // ----------------------------------------------------------------------
 // v-model, wrapper by wrapper (react-adapter.ts, VModel.spec.ts): React's
@@ -361,12 +380,13 @@ export const KozmosTree = createVueWrapper(Tree, {
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
-// Its attrs are React's alone: a component given as `anchor` cannot be set
-// as an attribute on the wrapper's own box, where Vue would put it.
-export const KozmosAnchoredPopover = Object.assign(
-  createVueWrapper(AnchoredPopoverAdapter),
-  { inheritAttrs: false },
-);
+// Its attrs are React's alone, as every wrapper's are (createVueWrapper): a
+// component given as `anchor` is never set as an attribute on the wrapper's
+// own box. Not wrapped in an Object.assign() of its own: the declarations
+// then spelt its whole type out, with Vue's GlobalComponents where Vue's
+// own constraint refuses it, and an app that type-checks its libraries
+// failed to compile (TS2344; test/consumer-types.spec.ts).
+export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
 // Its attrs are React's alone, as KozmosAnchoredPopover's are: Vue would
 // write each onto the wrapper's own box, where a component given as target
 // or a function as positionLabel cannot be written, and title would be a
@@ -434,15 +454,11 @@ export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
   modelValue: { prop: "value", callback: "onValueChange", empty: null },
 });
 export const KozmosLink = createVueWrapper(Link);
-// `external` is a Boolean prop, so a bare `external` in a template is true:
-// undeclared, Vue hands React the attribute's value, "", which reads as false.
 // `externalLabel` is declared so `external-label` reaches React by its name
-// (GAP-202).
+// (GAP-202). `external`, a boolean, is read as every bridged part's boolean
+// props are (react-adapter.ts): a bare `external` is true.
 Object.assign(KozmosLink, {
-  props: {
-    external: { type: Boolean, default: undefined },
-    externalLabel: { type: String, default: undefined },
-  },
+  props: { externalLabel: { type: String, default: undefined } },
 });
 export const KozmosIconButton = createVueWrapper(IconButton);
 // `counterLabel` is a function: declared as a prop, it is handed to React and
