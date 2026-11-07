@@ -2,8 +2,8 @@
  * The main checks a pull request runs, from `.github/workflows/ci.yml` on
  * `main`, and the scripts they call. Grouped as the workflow's steps are.
  * The workflow also checks the documentation's code samples, an installed
- * product's build, the internal Vue harness and its own governance; those
- * are left out here. Kept by hand: change it when `ci.yml` changes.
+ * product's build and its own governance; those are left out here. Kept by
+ * hand: change it when `ci.yml` changes.
  */
 export interface Gate {
   title: string;
@@ -72,6 +72,12 @@ export const ciGates: readonly Gate[] = [
     detail:
       "Every React story is opened and checked with axe in Chromium; a set of stories' keyboard and scroll interactions run in three engines, and the documentation pages and the SDK’s POI reference screens are checked too.",
     command: "pnpm test:storybook-audit",
+  },
+  {
+    title: "Vue: build, contract, parity and browser suites",
+    detail:
+      "The Vue package builds and type-checks, and its tests, on React 19 and again on React 18, hold each part to the shared contract and to React’s own rendering, and its main entry free of React. Then every story in the Vue Storybook, which a register must name, is driven in Chromium, Firefox and WebKit: themes and densities, its stylesheet with and without @scope, every colour taken from a token but the glass edge, which has no colour token yet and is allowed by name (decision 167, GAP-229), keyboard and pointer input, and axe on every story.",
+    command: "pnpm test:vue-stories",
   },
   {
     title: "iOS: build, test and render",

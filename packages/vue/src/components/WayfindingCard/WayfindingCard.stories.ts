@@ -5,10 +5,14 @@ import {
 } from "../../react-bridge";
 import { ref } from "vue";
 
+// React's WayfindingCard through the bridge, its origin and destination held
+// in Vue (v-model) and swapped by @swap, on the classes React's stories use
+// for the map they stand in for.
 export default {
   title: "Vue/WayfindingCard",
   component: KozmosWayfindingCard,
   tags: ["autodocs"],
+  parameters: { layout: "centered" },
 };
 
 export const WayfindingFlow = {
@@ -27,8 +31,8 @@ export const WayfindingFlow = {
       return { args, originValue, destinationValue, handleSwap };
     },
     template: `
-            <KozmosWayfindingCard v-bind="args">
-                <KozmosWayfindingInputRow 
+            <KozmosWayfindingCard v-bind="args" class="w-full max-w-[360px]">
+                <KozmosWayfindingInputRow
                     v-model:originValue="originValue"
                     v-model:destinationValue="destinationValue"
                     @swap="handleSwap"
@@ -61,11 +65,11 @@ export const InsideMapOverlay = {
       return { args, originValue, destinationValue, handleSwap };
     },
     template: `
-            <div class="relative w-full min-w-[320px] md:min-w-[800px] h-[500px] bg-slate-100 rounded-xl overflow-hidden border">
+            <div class="relative w-full min-w-0 md:min-w-[800px] h-[500px] bg-muted rounded-panel overflow-hidden border">
                 <span class="absolute inset-0 flex items-center justify-center text-muted-foreground font-mono">Simulated Wayfinding Environment</span>
                 <KozmosMapOverlay position="top-left">
                     <KozmosWayfindingCard v-bind="args" class="w-full">
-                        <KozmosWayfindingInputRow 
+                        <KozmosWayfindingInputRow
                             v-model:originValue="originValue"
                             v-model:destinationValue="destinationValue"
                             @swap="handleSwap"

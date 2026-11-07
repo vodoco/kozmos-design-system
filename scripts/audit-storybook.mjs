@@ -3,6 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import {
+  assertPinnedReact,
+  recordRenderers,
+  renderersIn,
+} from "./lib/storybook-react-pin.mjs";
 
 // Discovery, not a replacement for stateful regressions. Every indexed story
 // group is represented, with Default preferred; no hand-picked consumer list.
@@ -37,6 +42,29 @@ const scenarios = selected.flatMap((story) =>
 );
 const browser = await launchFixtureBrowser();
 const browserVersion = browser.version();
+{
+  // First, the react-dom the stories draw with: apps/docs's, by the React
+  // pin, or the audit stops here (scripts/lib/storybook-react-pin.mjs).
+  const page = await browser.newPage();
+  await recordRenderers(page);
+  await page.goto(`${base}/iframe.html?id=${selected[0].id}&viewMode=story`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
+  await page
+    .waitForFunction(() => window.__kozmosRenderers?.length > 0, null, {
+      timeout: 20000,
+    })
+    .catch(() => {});
+  const renderers = await renderersIn(page);
+  await page.close();
+  try {
+    console.log(assertPinnedReact(renderers, "The React Storybook"));
+  } catch (error) {
+    await browser.close();
+    throw error;
+  }
+}
 const results = [];
 let cursor = 0;
 async function worker() {

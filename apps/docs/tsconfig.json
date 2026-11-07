@@ -1,29 +1,35 @@
 {
-    "compilerOptions": {
-        "target": "ES2020",
-        "useDefineForClassFields": true,
-        "lib": [
-            "ES2020",
-            "DOM",
-            "DOM.Iterable"
-        ],
-        "module": "ESNext",
-        "skipLibCheck": true,
-        /* Bundler mode */
-        "moduleResolution": "bundler",
-        "allowImportingTsExtensions": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "jsx": "react-jsx",
-        /* Linting */
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true
-    },
-    "include": [
-        ".storybook",
-        "stories" // Storybook stories
-    ]
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    // The Vue Storybook's preview imports packages/vue's source, which builds
+    // the shared recipes in, as .storybook-vue/main.ts aliases them.
+    "paths": {
+      "#kozmos-recipes": ["../../packages/react/src/recipes/index.ts"]
+    }
+  },
+  "include": [
+    // A dot-directory named alone is skipped: tsc checked neither
+    // Storybook config until these named their files.
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
+    ".storybook-vue/**/*.ts",
+    ".storybook-vue/**/*.tsx",
+    "stories" // Storybook stories
+  ]
 }

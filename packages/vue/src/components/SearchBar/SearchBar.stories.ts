@@ -1,9 +1,13 @@
-import { KozmosSearchBar, KozmosMapOverlay } from "../../react-bridge";
+import { ref } from "vue";
+import { KozmosMapOverlay, KozmosSearchBar } from "../../react-bridge";
 
+// React's SearchBar through the bridge, its value held in Vue (v-model), on
+// the classes React's stories use for the map they stand in for.
 export default {
   title: "Vue/SearchBar",
   component: KozmosSearchBar,
   tags: ["autodocs"],
+  parameters: { layout: "centered" },
   argTypes: {
     variant: {
       control: "select",
@@ -19,16 +23,15 @@ export const FloatingOverlay = {
   render: (args: any) => ({
     components: { KozmosSearchBar, KozmosMapOverlay },
     setup() {
-      return { args };
+      return { args, query: ref("") };
     },
     template: `
-            <div class="relative w-full min-w-[320px] md:min-w-[800px] h-[500px] bg-slate-100 rounded-xl overflow-hidden border">
-                <span class="absolute inset-0 flex items-center justify-center text-muted-foreground font-mono">Map rendering simulation</span>
-                <KozmosMapOverlay position="top-center">
-                    <KozmosSearchBar v-bind="args" />
-                </KozmosMapOverlay>
-            </div>
-        `,
+      <div class="relative w-full min-w-0 md:min-w-[800px] h-[500px] bg-muted rounded-panel overflow-hidden border">
+        <span class="absolute inset-0 flex items-center justify-center text-muted-foreground font-mono">Map rendering simulation</span>
+        <KozmosMapOverlay position="top-center">
+          <KozmosSearchBar v-bind="args" v-model="query" />
+        </KozmosMapOverlay>
+      </div>`,
   }),
   args: {
     variant: "floating",
@@ -40,9 +43,12 @@ export const Inline = {
   render: (args: any) => ({
     components: { KozmosSearchBar },
     setup() {
-      return { args };
+      return { args, query: ref("") };
     },
-    template: '<KozmosSearchBar v-bind="args" />',
+    template: `
+      <div class="w-[400px] max-w-full">
+        <KozmosSearchBar v-bind="args" v-model="query" />
+      </div>`,
   }),
   args: {
     variant: "inline",
