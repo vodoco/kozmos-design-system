@@ -75,22 +75,24 @@ describe("the React 18 run", () => {
       `react-dom@${REACT_VERSION}`,
     ]);
 
-    // What Node resolved itself, through ./hooks.mjs.
+    // What Node resolved itself, through ./hooks.mjs, in every worker so
+    // far. Every worker also fails on its own resolution outside React 18,
+    // and ./global-setup.mjs checks all of them once every worker is done.
     const log = process.env.KOZMOS_REACT18_LOG;
     expect(log, "the run sets KOZMOS_REACT18_LOG").toBeTruthy();
-    const mine = readFileSync(log!, "utf8")
+    const all = readFileSync(log!, "utf8")
       .split("\n")
       .filter(Boolean)
-      .map((line) => JSON.parse(line) as Resolution)
-      .filter((entry) => entry.pid === process.pid);
-    const elsewhere = mine.filter(
+      .map((line) => JSON.parse(line) as Resolution);
+    const mine = all.filter((entry) => entry.pid === process.pid);
+    const elsewhere = all.filter(
       ({ file }) =>
         !file.startsWith(`${REACT_DIR}/`) &&
         !file.startsWith(`${REACT_DOM_DIR}/`),
     );
     expect(
       elsewhere,
-      "every react and react-dom Node resolved is React 18's",
+      "every react and react-dom Node resolved, in any worker, is React 18's",
     ).toEqual([]);
     const fromRadix = mine.filter(
       ({ kind, parent }) => kind === "import" && /@radix-ui/.test(parent ?? ""),

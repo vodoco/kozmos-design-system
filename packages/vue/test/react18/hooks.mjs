@@ -5,19 +5,24 @@
 // react-remove-scroll and its helpers) resolve `react` themselves, next to
 // their own install, which is React 19: these hooks send those to React 18
 // too, for `import` (module.register, Node 20.6 and later) and for
-// `require` (Module._resolveFilename). Each resolution is written to
-// KOZMOS_REACT18_LOG, so react18.probe.ts can check that all of them reached
-// React 18.
+// `require` (Module._resolveFilename). A resolution outside React 18
+// throws in the worker that makes it, so the spec that loaded it fails. Each
+// resolution is also written to KOZMOS_REACT18_LOG, which global-setup.mjs
+// checks over every worker as the run ends, and react18.probe.ts reads.
 import Module, { register } from "node:module";
 import { appendFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { ANCHOR_URL, KNOWN, REACT_SPECIFIER } from "./react18.mjs";
+import { fileURLToPath } from "node:url";
+import { ANCHOR_URL, KNOWN, REACT_SPECIFIER, isReact18 } from "./react18.mjs";
 
 const log = process.env.KOZMOS_REACT18_LOG;
 const record = (entry) => {
   if (log)
     appendFileSync(log, `${JSON.stringify({ pid: process.pid, ...entry })}\n`);
+  if (!isReact18(entry.file))
+    throw new Error(
+      `the React 18 run resolved ${entry.specifier} to ${entry.file}, outside React 18 (test/react18/hooks.mjs)`,
+    );
 };
 
 // require(): resolved as if from inside react-dom 18.
@@ -40,17 +45,5 @@ Module._resolveFilename = function resolveReact18(request, parent, ...rest) {
   return file;
 };
 
-// import: the same, in Node's module loader.
-register("./esm-resolve.mjs", import.meta.url, {
-  data: {
-    known: Object.fromEntries(
-      Object.entries(KNOWN).map(([specifier, file]) => [
-        specifier,
-        pathToFileURL(file).href,
-      ]),
-    ),
-    anchor: ANCHOR_URL,
-    pattern: REACT_SPECIFIER.source,
-    log,
-  },
-});
+// import: the same, in Node's module loader (./esm-resolve.mjs).
+register("./esm-resolve.mjs", import.meta.url, { data: { log } });

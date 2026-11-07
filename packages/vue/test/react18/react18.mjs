@@ -46,3 +46,16 @@ export const ANCHOR_URL = pathToFileURL(`${REACT_DOM_DIR}/index.js`).href;
 
 /** Every `react…` and `react-dom…` specifier. */
 export const REACT_SPECIFIER = /^(react|react-dom)(\/.*)?$/;
+
+/**
+ * Where every worker writes each React file Node resolved: one fixed folder,
+ * which global-setup.mjs clears as the run starts and reads as it ends.
+ */
+export const LOG_DIR = fileURLToPath(
+  new URL("../../node_modules/.cache/kozmos-react18/", import.meta.url),
+);
+export const LOG_FILE = `${LOG_DIR}resolutions.jsonl`;
+
+/** Whether a resolved file is React 18's, react's or react-dom's. */
+export const isReact18 = (file) =>
+  file.startsWith(`${REACT_DIR}/`) || file.startsWith(`${REACT_DOM_DIR}/`);

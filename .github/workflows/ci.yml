@@ -898,6 +898,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build @kozmos-ds/vue And The Packages It Needs
+        id: build-vue
         run: pnpm --filter "@kozmos-ds/vue..." build
 
       - name: Type-Check @kozmos-ds/vue
@@ -908,15 +909,6 @@ jobs:
       # every part's own specs.
       - name: Test @kozmos-ds/vue (Contract, Parity, Coverage, React-Free, Peer Range)
         run: pnpm --filter @kozmos-ds/vue test
-
-      # The same specs on React 18. The package's peers take react and
-      # react-dom 18 or 19, and the step above runs its devDependencies' 19.
-      # This one takes apps/docs's 18.3.1, the Vue Storybook's, for what Vite
-      # loads and what Node loads itself (Radix included), proves it loaded
-      # (test/react18/react18.probe.ts), and skips by name the one test that
-      # holds react-dom 19 alone (packages/vue/vitest.react18.config.mts).
-      - name: Test @kozmos-ds/vue On React 18
-        run: pnpm --filter @kozmos-ds/vue test:react18
 
       - name: Build The Vue Storybook
         run: pnpm --filter @kozmos-ds/docs build-storybook:vue
@@ -947,6 +939,20 @@ jobs:
             ADAPTIVE_BROWSER="$browser" pnpm test:vue-stories || result=1
           done
           exit "$result"
+
+      # The same specs on React 18, last: the package's peers take react and
+      # react-dom 18 or 19, and the test step above runs its devDependencies'
+      # 19. This one takes apps/docs's 18.3.1, the Vue Storybook's, for what
+      # Vite loads and what Node loads itself (Radix included), proves it
+      # loaded (test/react18/react18.probe.ts), and skips by name the one
+      # test that holds react-dom 19 alone (packages/vue/vitest.react18.config.mts).
+      # It runs after the Storybook, its smoke test and pin guard, and the
+      # browser suites, so a failure on React 18 alone hides none of them.
+      # It needs only the build, and runs whatever the steps before it found;
+      # failing, it fails the job.
+      - name: Test @kozmos-ds/vue On React 18
+        if: ${{ !cancelled() && steps.build-vue.outcome == 'success' }}
+        run: pnpm --filter @kozmos-ds/vue test:react18
 
   # Whether a change touches what the iOS job builds: the iOS package, the
   # tokens it compiles against (the job builds @kozmos-ds/tokens first), the

@@ -46,6 +46,7 @@ pnpm install --frozen-lockfile
 pnpm build                                     # every package and app, through Turborepo
 pnpm --filter "@kozmos-ds/react..." build      # React and what it needs; a fresh worktree has nothing built
 pnpm test
+pnpm --filter @kozmos-ds/vue test:react18      # Vue's tests on React 18, as CI runs them
 pnpm lint --filter='!mapscale-review'          # as CI runs it
 pnpm typecheck
 pnpm --filter @kozmos-ds/docs storybook:react  # Storybook on port 6006

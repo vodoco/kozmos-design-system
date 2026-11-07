@@ -29,6 +29,7 @@
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
     ".storybook-vue/**/*.ts",
+    ".storybook-vue/**/*.tsx",
     "stories" // Storybook stories
   ]
 }

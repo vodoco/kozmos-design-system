@@ -4,13 +4,11 @@
 // apps/docs's React 18, the Vue Storybook's (test/react18/react18.mjs):
 // Vite's aliases below for what Vite loads, and test/react18/hooks.mjs for
 // what Node loads itself. test/react18/react18.probe.ts proves both.
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { configDefaults, defineConfig, mergeConfig } from "vitest/config";
 import base from "./vite.config.mts";
 import {
+  LOG_FILE,
   REACT_DIR,
   REACT_DOM_DIR,
   REACT_DOM_VERSION,
@@ -25,10 +23,7 @@ process.env.KOZMOS_REACT18 = JSON.stringify({
   reactVersion: REACT_VERSION,
   reactDomVersion: REACT_DOM_VERSION,
 });
-process.env.KOZMOS_REACT18_LOG ??= join(
-  mkdtempSync(join(tmpdir(), "kozmos-react18-")),
-  "resolutions.jsonl",
-);
+process.env.KOZMOS_REACT18_LOG = LOG_FILE;
 
 /**
  * The one test that holds react-dom 19 alone, and fails on any other React
@@ -37,6 +32,8 @@ process.env.KOZMOS_REACT18_LOG ??= join(
  * runs here.
  */
 const ONLY_ON_REACT_19 = "lists every DOM event react-dom 19 synthesises";
+/** The name as a pattern: every character a regex reads as syntax, escaped. */
+const literally = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default mergeConfig(
   base,
@@ -51,6 +48,11 @@ export default mergeConfig(
     },
     test: {
       include: [...configDefaults.include, "test/react18/react18.probe.ts"],
+      globalSetup: [
+        fileURLToPath(
+          new URL("./test/react18/global-setup.mjs", import.meta.url),
+        ),
+      ],
       execArgv: [
         "--import",
         pathToFileURL(
@@ -58,7 +60,7 @@ export default mergeConfig(
         ).href,
       ],
       // Skipped by name, the only test this run leaves out.
-      testNamePattern: new RegExp(`^(?!.*${ONLY_ON_REACT_19})`),
+      testNamePattern: new RegExp(`^(?!.*${literally(ONLY_ON_REACT_19)})`),
     },
   }),
 );

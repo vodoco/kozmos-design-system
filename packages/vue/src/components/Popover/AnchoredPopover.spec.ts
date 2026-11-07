@@ -258,6 +258,8 @@ describe("KozmosAnchoredPopover", () => {
       ),
     );
     const step = await until(() => document.querySelector('[role="dialog"]'));
+    // As in the template-ref test above: Escape at a step on the page.
+    await until(() => placed(step));
     step.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
