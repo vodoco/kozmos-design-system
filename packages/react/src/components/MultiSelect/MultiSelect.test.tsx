@@ -17,6 +17,80 @@ const options = [
   { value: "routes", label: "Routes" },
 ];
 
+// The host's layout effect reads the DOM of each commit it makes, after React
+// has written it and before any effect of the field's own can correct it.
+const useCommitEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+describe("MultiSelect: a prop change shows in the commit it arrives in", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it.each(["disabled", "readOnly"] as const)(
+      "draws no list in the commit that makes it %s",
+      async (lock) => {
+        const user = userEvent.setup();
+        const commits: { list: boolean; expanded: string | null }[] = [];
+        function Host({ locked }: { locked: boolean }) {
+          useCommitEffect(() => {
+            commits.push({
+              list: document.querySelector('[role="listbox"]') !== null,
+              expanded:
+                document
+                  .querySelector('[role="combobox"]')
+                  ?.getAttribute("aria-expanded") ?? null,
+            });
+          });
+          return (
+            <MultiSelect
+              label="Tools"
+              options={options}
+              {...{ [lock]: locked }}
+            />
+          );
+        }
+        const { rerender } = render(<Host locked={false} />, { wrapper });
+        await user.click(screen.getByRole("combobox", { name: "Tools" }));
+        expect(screen.getByRole("listbox")).toBeVisible();
+
+        commits.length = 0;
+        rerender(<Host locked />);
+        expect(commits.length).toBeGreaterThan(0);
+        for (const commit of commits)
+          expect(commit).toEqual({ list: false, expanded: "false" });
+        expect(screen.queryByRole("listbox")).toBeNull();
+      },
+    );
+
+    it.each(["disabled", "readOnly"] as const)(
+      "stays closed when it is no longer %s, until the visitor opens it",
+      async (lock) => {
+        const user = userEvent.setup();
+        const Host = ({ locked }: { locked: boolean }) => (
+          <MultiSelect
+            label="Tools"
+            options={options}
+            {...{ [lock]: locked }}
+          />
+        );
+        const { rerender } = render(<Host locked={false} />, { wrapper });
+        const input = screen.getByRole("combobox", { name: "Tools" });
+        await user.click(input);
+        expect(screen.getByRole("listbox")).toBeVisible();
+
+        rerender(<Host locked />);
+        rerender(<Host locked={false} />);
+        expect(input).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("listbox")).toBeNull();
+
+        await user.click(screen.getByRole("button", { name: "Open options" }));
+        expect(screen.getByRole("listbox")).toBeVisible();
+      },
+    );
+  });
+});
+
 describe("MultiSelect", () => {
   it("selects and removes multiple options", async () => {
     const user = userEvent.setup();

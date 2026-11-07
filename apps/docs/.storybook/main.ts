@@ -1,11 +1,15 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 import { dirname, join, resolve } from "path";
+import { resolvedReact, type PinsReact } from "./pinned-react";
 
 function getAbsolutePath(value: string): any {
   return dirname(require.resolve(join(value, "package.json")));
 }
 
-const config: StorybookConfig = {
+const config: StorybookConfig & PinsReact = {
+  // The stories draw with apps/docs's React, never the hoist's
+  // (./pinned-react.ts).
+  resolvedReact,
   stories: [
     "../src/**/*.mdx",
     "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)",

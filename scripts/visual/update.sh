@@ -3,6 +3,8 @@
 # removes the baselines of stories that are gone. Extra arguments go to
 # Playwright, e.g. `pnpm test:visual:update --grep chip`: as one package script
 # joined with `&&`, they reached the prune step instead, and every story ran.
+# docker.sh stops first, naming the build to run, when React's or Vue's built
+# Storybook is missing, and the prune refuses to run without both.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 bash "$here/docker.sh" --update-snapshots=changed "$@"
