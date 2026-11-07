@@ -7,8 +7,18 @@
  * so one name is never two components.
  */
 import React from "react";
-import { createVueWrapper, describeParts, eventValue } from "./react-adapter";
-import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
+import {
+  createVueWrapper,
+  describeBooleans,
+  describeParts,
+  eventValue,
+} from "./react-adapter";
+import {
+  ADAPTER_BOOLEANS,
+  ADAPTER_TAKES,
+  PART_BOOLEANS,
+  PART_TAKES,
+} from "./part-takes";
 import {
   Box,
   Stack,
@@ -124,8 +134,10 @@ import { toReactTarget } from "./targets";
 
 // Which `on…` props each React part takes, read from React's types
 // (part-takes.ts): a listener whose prop the part takes is the part's, and
-// any other a native listener on the wrapper's box (react-adapter.ts).
+// any other a native listener on the wrapper's box (react-adapter.ts). And
+// which of its props are booleans: a bare attribute of one is true.
 describeParts(PART_TAKES);
+describeBooleans(PART_BOOLEANS);
 
 // What a consumer needs to wrap a React part of its own. The rest of
 // react-adapter.ts is the bridge's.
@@ -264,6 +276,13 @@ describeParts([
   [BackdropAdapter, ADAPTER_TAKES.BackdropAdapter],
   [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
   [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
+]);
+describeBooleans([
+  [AvatarAdapter, ADAPTER_BOOLEANS.AvatarAdapter],
+  [AlertAdapter, ADAPTER_BOOLEANS.AlertAdapter],
+  [BackdropAdapter, ADAPTER_BOOLEANS.BackdropAdapter],
+  [TourStepAdapter, ADAPTER_BOOLEANS.TourStepAdapter],
+  [AnchoredPopoverAdapter, ADAPTER_BOOLEANS.AnchoredPopoverAdapter],
 ]);
 
 // ----------------------------------------------------------------------

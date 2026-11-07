@@ -65,8 +65,30 @@ import React, { useLayoutEffect, useRef } from "react";
  * on the part (React's own touch and wheel listeners are passive), and kept
  * on the box. Each handler is called as Vue calls a listener: an array is
  * each of its handlers, and an error goes to the app's errorHandler. The
- * other attributes go to React as they are, `class` as `className` and
- * `style` as one object.
+ * other attributes go to React as they are, `class` as `className`, `style`
+ * as one object, and a boolean prop's as below.
+ *
+ * Booleans. Vue gives a bare attribute (`<KozmosNavigationItem disabled>`)
+ * as "", which React reads as false, so the part was not disabled. A part's
+ * boolean prop is read as Vue reads a declared Boolean prop: bare, or with
+ * its own name as its value (`disabled="disabled"`), it is `true`; bound
+ * (`:disabled="false"`, `:disabled="x"`), React is given the value as it is
+ * ("" too, as Vue's own Boolean prop takes it); absent, React is not given
+ * it, and its own default applies (Combobox stays clearable). A prop that
+ * is boolean in a union with other types (`error: boolean | string`) is
+ * true bare as well, since that is what `<KozmosInput error>` means, and
+ * keeps every string it is given, its name too: `error="error"` is the
+ * message "error". Vue keeps an attribute as the template spells it, so
+ * each spelling is React's prop: `readOnly` (an SFC's), `readonly` (an
+ * in-DOM template's, which the browser writes in small letters) and
+ * `read-only`; React's own wins when two are given. `v-model:open` and
+ * `v-model:checked`, read from the attributes, follow the same rule; a
+ * declared model's value is its model's. Which props are booleans is read
+ * from React's types, as listeners' props are: part-takes.ts, which
+ * Booleans.spec.ts holds to them. A prop that takes any ReactNode is a
+ * slot, not a boolean. A part `createVueWrapper` has no description of
+ * names its own (`options.booleans`); unnamed, its attributes reach React
+ * as Vue gives them.
  *
  * Models (`ModelBinding`). Each wrapper names its `v-model`s, and declares
  * each, with its modifiers and its listeners, as props: Vue then reads every
@@ -431,6 +453,89 @@ export const takesProp = (takes: Takes, prop: string) =>
   takes.own.includes(prop) ||
   (takes.dom && REACT_DOM_PROPS.has(prop) && !takes.except?.includes(prop));
 
+// --------------------------------------------------------------------------
+// Boolean props
+// --------------------------------------------------------------------------
+
+/**
+ * Which of a React part's props are booleans (part-takes.ts, generated from
+ * React's types): `flags`, whose type is `boolean`, and `unions`, boolean in
+ * a union with other types (`error: boolean | string`). A prop that takes
+ * any ReactNode is a slot, and neither.
+ */
+export interface Booleans {
+  flags: readonly string[];
+  unions: readonly string[];
+}
+
+/** One boolean prop, as an attribute names it. */
+interface BooleanProp {
+  /** React's name for it. */
+  prop: string;
+  /** Boolean in a union with other types: its strings are its own. */
+  union: boolean;
+}
+
+const spelt = new WeakMap<Booleans, ReadonlyMap<string, BooleanProp>>();
+
+/**
+ * A part's boolean props by every spelling Vue may give one's attribute:
+ * React's name (`readOnly`, as an SFC keeps it), in small letters
+ * (`readonly`, as an in-DOM template has it) and in kebab-case
+ * (`read-only`). The generator fails on a spelling two props would share.
+ */
+function spellings(booleans: Booleans) {
+  let byKey = spelt.get(booleans);
+  if (!byKey) {
+    const map = new Map<string, BooleanProp>();
+    for (const [props, union] of [
+      [booleans.flags, false],
+      [booleans.unions, true],
+    ] as const)
+      for (const prop of props)
+        for (const key of [prop.toLowerCase(), hyphenate(prop), prop])
+          map.set(key, { prop, union });
+    spelt.set(booleans, (byKey = map));
+  }
+  return byKey;
+}
+
+/**
+ * A boolean prop's attribute as React takes it, by Vue's rule for a
+ * declared Boolean prop: "" (a bare attribute) is `true`, and so is a
+ * flag's own name (`disabled="disabled"`, `read-only="read-only"`,
+ * `readonly="readonly"`). Any other value is React's as it is
+ * (`:disabled="false"`, a union's `error="Required"`, and its name).
+ */
+const asBoolean = (value: unknown, { prop, union }: BooleanProp) =>
+  value === "" ||
+  (!union && (value === hyphenate(prop) || value === prop.toLowerCase()))
+    ? true
+    : value;
+
+/**
+ * `attrs` (a copy), with each boolean prop's attribute under React's name
+ * and as `asBoolean` reads it. React's own spelling wins over another
+ * given beside it. An absent prop stays absent: React's default applies.
+ */
+export function withBooleans(
+  attrs: Record<string, unknown>,
+  booleans: Booleans,
+): Record<string, unknown> {
+  const byKey = spellings(booleans);
+  const given: Record<string, unknown> = { ...attrs };
+  for (const [key, value] of Object.entries(attrs)) {
+    const boolean = byKey.get(key);
+    if (!boolean) continue;
+    if (key !== boolean.prop) {
+      delete given[key];
+      if (hasOwn(attrs, boolean.prop)) continue;
+    }
+    given[boolean.prop] = asBoolean(value, boolean);
+  }
+  return given;
+}
+
 /**
  * A part `createVueWrapper` has no description of (one of a consumer's):
  * React's contract, every React DOM event (React 18's and the four React
@@ -596,8 +701,37 @@ export type ModelBindings<P = Record<string, unknown>> = Record<
 /** A React DOM event prop: `onClick`, `onClickCapture`. */
 type ReactDomProp = DomAttributeKey;
 
+/** The props `P` names, each given or not: no string or number index signature's. */
+type Named<P> = {
+  [K in keyof P as string extends K
+    ? never
+    : number extends K
+      ? never
+      : K]-?: NonNullable<P[K]>;
+};
+/** The props of `P` whose type is `boolean` (or `true`). */
+export type FlagProp<P> = {
+  [K in keyof Named<P>]: true extends Named<P>[K]
+    ? [Named<P>[K]] extends [boolean]
+      ? K
+      : never
+    : never;
+}[keyof Named<P>] &
+  string;
+/** The props of `P` that are boolean in a union with other types, but a slot's (one that takes any ReactNode). */
+export type UnionProp<P> = {
+  [K in keyof Named<P>]: true extends Named<P>[K]
+    ? [Named<P>[K]] extends [boolean]
+      ? never
+      : NonNullable<React.ReactNode> extends Named<P>[K]
+        ? never
+        : K
+    : never;
+}[keyof Named<P>] &
+  string;
+
 /** What else a wrapper says of its React part. */
-export interface WrapperOptions {
+export interface WrapperOptions<P = Record<string, unknown>> {
   /**
    * The React DOM event props the part does not take, though React's
    * contract has every part take them: their listeners are native listeners
@@ -606,6 +740,23 @@ export interface WrapperOptions {
    * this does not apply to them.
    */
   notTaken?: readonly ReactDomProp[];
+  /**
+   * The part's boolean props, which nothing at runtime can read from its
+   * types: a bare attribute of one (`<MyPart loading>`, which Vue gives as
+   * "") is given to React as `true`, in any spelling (`readonly`,
+   * `read-only`, `readOnly`). `flags` are props whose type is `boolean`,
+   * true by their name as well (`loading="loading"`); `unions` are boolean
+   * in a union with other types (`error: boolean | string`), whose strings
+   * are given as they are. A bound value is React's as it is
+   * (`:loading="false"`), and an absent one is not given, so React's
+   * default applies. Unnamed, a prop's attribute reaches React as Vue gives
+   * it. Kozmos's own parts are described exactly by part-takes.ts, and this
+   * does not apply to them.
+   */
+  booleans?: {
+    flags?: readonly FlagProp<P>[];
+    unions?: readonly UnionProp<P>[];
+  };
 }
 
 /** A DOM change event's value: what an `<input>`'s `onChange` reports. */
@@ -696,12 +847,17 @@ export interface Bridged {
   models: Readonly<Record<string, Readonly<LooseModelBinding>>>;
   /** Which `on…` props the part takes: part-takes.ts's entry, or null for React's contract. */
   readonly takes: Takes | null;
+  /** Its boolean props: part-takes.ts's entry, else what its wrapper's options name. */
+  readonly booleans: Booleans;
 }
 
 const bridged = new WeakMap<object, Bridged>();
 
 /** Kozmos's parts, each with the `on…` props it takes (part-takes.ts). */
 const described = new WeakMap<object, Takes>();
+
+/** Kozmos's parts, each with its boolean props (part-takes.ts). */
+const describedBooleans = new WeakMap<object, Booleans>();
 
 /**
  * Says which `on…` props each React part takes: part-takes.ts's table, and
@@ -711,6 +867,17 @@ export function describeParts(
   parts: Iterable<readonly [unknown, Takes]>,
 ): void {
   for (const [part, takes] of parts) described.set(part as object, takes);
+}
+
+/**
+ * Says which props of each React part are booleans: part-takes.ts's table,
+ * and index.ts's adapters. Read when a wrapper renders.
+ */
+export function describeBooleans(
+  parts: Iterable<readonly [unknown, Booleans]>,
+): void {
+  for (const [part, booleans] of parts)
+    describedBooleans.set(part as object, booleans);
 }
 
 /**
@@ -761,8 +928,9 @@ function toReactStyle(
  * @param ReactComponent The Kozmos React component to wrap
  * @param models Each `v-model` the wrapper takes, and how it reaches React
  *   (`{ modelValue: { prop: "value", callback: "onValueChange", empty: "" } }`)
- * @param options The React DOM event props the part does not take
- *   (`{ notTaken: ["onClick"] }`), for a part of your own
+ * @param options For a part of your own: the React DOM event props it does
+ *   not take (`{ notTaken: ["onClick"] }`), and its boolean props
+ *   (`{ booleans: { flags: ["disabled"], unions: ["error"] } }`)
  */
 export function createVueWrapper<P extends object, N extends string = never>(
   ReactComponent: React.ElementType<P>,
@@ -770,7 +938,7 @@ export function createVueWrapper<P extends object, N extends string = never>(
     N,
     ModelBinding<Deferred<P>>
   >,
-  options: WrapperOptions = {},
+  options: WrapperOptions<Deferred<P>> = {},
 ) {
   const bindings = models as Record<string, LooseModelBinding>;
   const byContract = takesByContract(options.notTaken);
@@ -779,6 +947,13 @@ export function createVueWrapper<P extends object, N extends string = never>(
     const description = described.get(ReactComponent as object);
     return description ? takesProp(description, prop) : byContract(prop);
   };
+  const named: Booleans = {
+    flags: options.booleans?.flags ?? [],
+    unions: options.booleans?.unions ?? [],
+  };
+  /** The part's boolean props: its description, else what the options name. */
+  const booleans = () =>
+    describedBooleans.get(ReactComponent as object) ?? named;
   const declared = Object.fromEntries(
     Object.keys(bindings).flatMap((name) => [
       [name, null],
@@ -911,12 +1086,22 @@ export function createVueWrapper<P extends object, N extends string = never>(
         const raw = given();
         const rest: Record<string, unknown> = { ...attrs, ...props };
         const bound: BoundModel[] = [];
-        const read = (name: string, binding: LooseModelBinding) => {
+        const read = (
+          name: string,
+          binding: LooseModelBinding,
+          attribute = false,
+        ) => {
           const keys = modelKeys(name);
           const present = keys.value.some((key) => hasOwn(raw, key));
           const listening =
             first(raw, keys.listener) != null || first(raw, keys.once) != null;
-          const value = hasOwn(raw, name) ? raw[name] : raw[keys.value[1]];
+          const held = hasOwn(raw, name) ? raw[name] : raw[keys.value[1]];
+          // `open` and `checked` are attributes, not declared props: a
+          // bare one is true where React's prop is a boolean.
+          const boolean = attribute
+            ? spellings(booleans()).get(binding.prop)
+            : undefined;
+          const value = boolean ? asBoolean(held, boolean) : held;
           for (const key of Object.values(keys).flat()) delete rest[key];
           if (present || listening)
             bound.push({
@@ -930,7 +1115,7 @@ export function createVueWrapper<P extends object, N extends string = never>(
         for (const [name, binding] of Object.entries(bindings))
           read(name, binding);
         for (const [name, binding] of Object.entries(RADIX_MODELS))
-          if (!(name in bindings)) read(name, binding);
+          if (!(name in bindings)) read(name, binding, true);
 
         // A v-model the wrapper does not take: its listener and modifiers
         // never reach React, and neither does `modelValue`, which no React
@@ -978,7 +1163,7 @@ export function createVueWrapper<P extends object, N extends string = never>(
               ...(Array.isArray(handler) ? handler : [handler]),
             );
         }
-        return { bound, react, native, rest };
+        return { bound, react, native, rest: withBooleans(rest, booleans()) };
       };
 
       const renderReact = () => {
@@ -1199,6 +1384,9 @@ export function createVueWrapper<P extends object, N extends string = never>(
     ),
     get takes() {
       return described.get(ReactComponent as object) ?? null;
+    },
+    get booleans() {
+      return booleans();
     },
   });
   return wrapper;
