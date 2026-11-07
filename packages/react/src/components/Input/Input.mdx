@@ -36,7 +36,6 @@ export function Example() {
 <script setup>
 import { KozmosInput } from "@kozmos-ds/vue/react-bridge"
 import { ref } from "vue"
-// v-model does not reach KozmosInput: @kozmos-ds/vue declares its update:modelValue and never emits it, so bind :value and @change.
 
 const email = ref("")
 const password = ref("")
@@ -44,18 +43,16 @@ const password = ref("")
 
 <template>
   <KozmosInput
+    v-model="email"
     label="Email"
     type="email"
     placeholder="Enter your email"
-    :value="email"
-    @change="(event) => (email = event.target.value)"
   />
   <KozmosInput
+    v-model="password"
     label="Password"
     type="password"
     placeholder="Password"
-    :value="password"
-    @change="(event) => (password = event.target.value)"
   />
 </template>
   `}

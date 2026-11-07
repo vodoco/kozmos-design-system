@@ -7,7 +7,8 @@
  * so one name is never two components.
  */
 import React from "react";
-import { createVueWrapper } from "./react-adapter";
+import { createVueWrapper, describeParts, eventValue } from "./react-adapter";
+import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
 import {
   Box,
   Stack,
@@ -96,6 +97,9 @@ import {
   ScrollArea,
   UserLocationMarker,
   AdaptiveMapShell,
+  DEFAULT_PANEL_DETENTS,
+  orderPanelDetents,
+  type PanelDetent,
   BrowseCategoriesPanel,
   CategoryTile,
   ColorPicker,
@@ -118,8 +122,19 @@ import {
 
 import { toReactTarget } from "./targets";
 
-// Core Translation Engine
-export * from "./react-adapter";
+// Which `on…` props each React part takes, read from React's types
+// (part-takes.ts): a listener whose prop the part takes is the part's, and
+// any other a native listener on the wrapper's box (react-adapter.ts).
+describeParts(PART_TAKES);
+
+// What a consumer needs to wrap a React part of its own. The rest of
+// react-adapter.ts is the bridge's.
+export { createVueWrapper } from "./react-adapter";
+export type {
+  ModelBinding,
+  ModelBindings,
+  WrapperOptions,
+} from "./react-adapter";
 
 // ----------------------------------------------------------------------
 // Custom Adapters for Complex Multi-Part Components (Avatar, Alert, Inputs)
@@ -177,61 +192,6 @@ const TourStepAdapter = ({ target, ...props }: any) =>
     target: target === undefined ? undefined : toReactTarget(target),
   });
 TourStepAdapter.displayName = "TourStep";
-
-const CheckboxAdapter = ({
-  modelValue,
-  "onUpdate:modelValue": onUpdateModelValue,
-  checked,
-  onCheckedChange,
-  ...props
-}: any) =>
-  React.createElement(ReactCheckbox, {
-    ...props,
-    checked: modelValue !== undefined ? modelValue : checked,
-    onCheckedChange: (c: boolean) => {
-      if (onUpdateModelValue) onUpdateModelValue(c);
-      if (onCheckedChange) onCheckedChange(c);
-    },
-  });
-
-const SwitchAdapter = ({
-  modelValue,
-  "onUpdate:modelValue": onUpdateModelValue,
-  checked,
-  onCheckedChange,
-  ...props
-}: any) =>
-  React.createElement(Switch, {
-    ...props,
-    checked: modelValue !== undefined ? modelValue : checked,
-    onCheckedChange: (c: boolean) => {
-      if (onUpdateModelValue) onUpdateModelValue(c);
-      if (onCheckedChange) onCheckedChange(c);
-    },
-  });
-
-const WayfindingInputRowAdapter = ({
-  originValue,
-  "onUpdate:originValue": onUpdateOriginValue,
-  onOriginChange,
-  destinationValue,
-  "onUpdate:destinationValue": onUpdateDestinationValue,
-  onDestinationChange,
-  ...props
-}: any) =>
-  React.createElement(WayfindingInputRow, {
-    ...props,
-    originValue,
-    destinationValue,
-    onOriginChange: (val: string) => {
-      if (onUpdateOriginValue) onUpdateOriginValue(val);
-      if (onOriginChange) onOriginChange(val);
-    },
-    onDestinationChange: (val: string) => {
-      if (onUpdateDestinationValue) onUpdateDestinationValue(val);
-      if (onDestinationChange) onDestinationChange(val);
-    },
-  });
 
 // GAP-190: a popover the product opens beside an element or rect it does not
 // own. One part, not a PopoverAnchor of its own: every wrapper mounts its own
@@ -296,6 +256,35 @@ const AnchoredPopoverAdapter = ({
 };
 AnchoredPopoverAdapter.displayName = "AnchoredPopover";
 
+// What each adapter hands on, as React's types read the parts it hands it
+// to (part-takes.ts).
+describeParts([
+  [AvatarAdapter, ADAPTER_TAKES.AvatarAdapter],
+  [AlertAdapter, ADAPTER_TAKES.AlertAdapter],
+  [BackdropAdapter, ADAPTER_TAKES.BackdropAdapter],
+  [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
+  [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
+]);
+
+// ----------------------------------------------------------------------
+// v-model, wrapper by wrapper (react-adapter.ts, VModel.spec.ts): React's
+// prop for the value, the callback that reports a change, the value's own
+// where the part has one (onValueChange), the DOM's onChange only where it
+// has none, and what the part shows when the model is null (`empty`). Every
+// controlled pair a part has is a model (VModel.spec.ts holds each part's
+// pairs, read from its types, to this list): its `value` is `v-model`, any
+// other `v-model:<prop>`, as the Vue ports name theirs (decision 160), and
+// `open` and `checked` are every wrapper's (RADIX_MODELS).
+// ----------------------------------------------------------------------
+
+/** A text field's `v-model`: an `<input>`'s value and its DOM change event. */
+const textField = {
+  prop: "value",
+  callback: "onChange",
+  read: eventValue,
+  empty: "",
+} as const;
+
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
@@ -310,14 +299,28 @@ export const KozmosCounter = createVueWrapper(ReactCounter);
 export const KozmosBadge = createVueWrapper(ReactBadge);
 export const KozmosLabel = createVueWrapper(Label);
 export const KozmosCard = createVueWrapper(Card);
-export const KozmosSlider = createVueWrapper(ReactSlider, [
-  "update:modelValue",
-]);
-export const KozmosSearch = createVueWrapper(Search, ["update:modelValue"]);
-export const KozmosSearchBar = createVueWrapper(SearchBar, [
-  "update:modelValue",
-]);
-export const KozmosSelect = createVueWrapper(Select);
+// Null is where the slider starts: its default, else its own fallback.
+export const KozmosSlider = createVueWrapper(ReactSlider, {
+  modelValue: {
+    prop: "value",
+    callback: "onValueChange",
+    empty: ({ defaultValue, min = 0, max = 100, thumbCount = 1 }) =>
+      defaultValue ??
+      Array.from({ length: thumbCount }, (_, index) =>
+        thumbCount === 1 ? min : min + ((max - min) * index) / (thumbCount - 1),
+      ),
+  },
+});
+export const KozmosSearch = createVueWrapper(Search, {
+  modelValue: textField,
+});
+export const KozmosSearchBar = createVueWrapper(SearchBar, {
+  modelValue: { prop: "value", callback: "onChange", empty: "" },
+});
+// Radix's Select shows its placeholder for "".
+export const KozmosSelect = createVueWrapper(Select, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+});
 export const KozmosBottomNavigation = createVueWrapper(BottomNavigation);
 export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
@@ -345,7 +348,16 @@ export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
 export const KozmosTable = createVueWrapper(Table);
-export const KozmosTree = createVueWrapper(Tree);
+// Its selection is reported as the item; the model is the item's id.
+export const KozmosTree = createVueWrapper(Tree, {
+  expandedIds: { prop: "expandedIds", callback: "onExpandedChange", empty: [] },
+  selectedId: {
+    prop: "selectedId",
+    callback: "onSelectionChange",
+    read: (item) => item.id,
+    empty: "",
+  },
+});
 export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
@@ -364,39 +376,63 @@ Object.assign(KozmosTourStep, {
   inheritAttrs: false,
   props: { target: null, positionLabel: null },
 });
-export const KozmosAccordion = createVueWrapper(Accordion);
+export const KozmosAccordion = createVueWrapper(Accordion, {
+  modelValue: {
+    prop: "value",
+    callback: "onValueChange",
+    empty: ({ type }) => (type === "multiple" ? [] : ""),
+  },
+});
 export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);
 export const KozmosLocationPin = createVueWrapper(LocationPin);
 export const KozmosWayfindingCard = createVueWrapper(WayfindingCard);
-export const KozmosWayfindingInputRow = createVueWrapper(
-  WayfindingInputRowAdapter,
-  ["update:originValue", "update:destinationValue"],
-);
+export const KozmosWayfindingInputRow = createVueWrapper(WayfindingInputRow, {
+  originValue: { prop: "originValue", callback: "onOriginChange", empty: "" },
+  destinationValue: {
+    prop: "destinationValue",
+    callback: "onDestinationChange",
+    empty: "",
+  },
+});
 export const KozmosDirectionStep = createVueWrapper(DirectionStep);
-export const KozmosFloorSelector = createVueWrapper(FloorSelector, [
-  "update:modelValue",
-]);
+// FloorSelector has no floor of its own: given none, it marks none.
+export const KozmosFloorSelector = createVueWrapper(FloorSelector, {
+  modelValue: {
+    prop: "selectedFloor",
+    callback: "onFloorSelect",
+    empty: undefined,
+  },
+});
 export const KozmosPOICard = createVueWrapper(POICard);
 export const KozmosBottomSheet = createVueWrapper(BottomSheet);
-export const KozmosOTPInput = createVueWrapper(ReactOTPInput, [
-  "update:modelValue",
-]);
-export const KozmosRating = createVueWrapper(Rating, ["update:modelValue"]);
-export const KozmosFileUpload = createVueWrapper(ReactFileUpload, [
-  "update:modelValue",
-]);
-export const KozmosDatePicker = createVueWrapper(DatePicker, [
-  "update:modelValue",
-]);
-export const KozmosTimePicker = createVueWrapper(TimePicker, [
-  "update:modelValue",
-]);
+export const KozmosOTPInput = createVueWrapper(ReactOTPInput, {
+  modelValue: { prop: "value", callback: "onChange", empty: "" },
+});
+// 0 is "Not rated".
+export const KozmosRating = createVueWrapper(Rating, {
+  modelValue: { prop: "value", callback: "onChange", empty: 0 },
+});
+export const KozmosFileUpload = createVueWrapper(ReactFileUpload, {
+  modelValue: { prop: "value", callback: "onFilesChange", empty: [] },
+});
+export const KozmosDatePicker = createVueWrapper(DatePicker, {
+  modelValue: textField,
+});
+export const KozmosTimePicker = createVueWrapper(TimePicker, {
+  modelValue: textField,
+});
 export const KozmosFloatingActionButton =
   createVueWrapper(FloatingActionButton);
 export const KozmosSplitButton = createVueWrapper(SplitButton);
-export const KozmosToggleButton = createVueWrapper(ToggleButton);
-export const KozmosSegmentedControl = createVueWrapper(SegmentedControl);
+export const KozmosToggleButton = createVueWrapper(ToggleButton, {
+  pressed: { prop: "pressed", callback: "onPressedChange", empty: false },
+});
+// Nothing chosen is `null` to React: `undefined` hands the choice back to
+// the control.
+export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: null },
+});
 export const KozmosLink = createVueWrapper(Link);
 // `external` is a Boolean prop, so a bare `external` in a template is true:
 // undeclared, Vue hands React the attribute's value, "", which reads as false.
@@ -412,7 +448,9 @@ export const KozmosIconButton = createVueWrapper(IconButton);
 // `counterLabel` is a function: declared as a prop, it is handed to React and
 // never written onto the wrapper's element as an attribute (GAP-197).
 Object.assign(KozmosIconButton, { props: { counterLabel: null } });
-export const KozmosTabs = createVueWrapper(Tabs);
+export const KozmosTabs = createVueWrapper(Tabs, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+});
 export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosMapOverlay = createVueWrapper(MapOverlay);
 export const KozmosAnalyticsProvider = createVueWrapper(AnalyticsProvider);
@@ -421,11 +459,13 @@ export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosEmptyState = createVueWrapper(EmptyState);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
 export const KozmosFieldWrapper = createVueWrapper(FieldWrapper);
-export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup);
+export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
+  stepFree: { prop: "stepFree", callback: "onStepFreeChange", empty: false },
+});
 export const KozmosNavigationAnnouncer = createVueWrapper(NavigationAnnouncer);
-export const KozmosRadioGroup = createVueWrapper(ReactRadioGroup, [
-  "update:modelValue",
-]);
+export const KozmosRadioGroup = createVueWrapper(ReactRadioGroup, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+});
 export const KozmosRadioGroupItem = createVueWrapper(ReactRadioGroupItem);
 export const KozmosRouteSummary = createVueWrapper(RouteSummary);
 export const KozmosRoutingInputGroup = createVueWrapper(RoutingInputGroup);
@@ -434,22 +474,79 @@ export const KozmosScrollArea = createVueWrapper(ScrollArea);
 export const KozmosUserLocationMarker = createVueWrapper(UserLocationMarker);
 
 // Custom Input Binding Interfaces
-export const KozmosCheckbox = createVueWrapper(CheckboxAdapter, [
-  "update:modelValue",
-]);
-export const KozmosInput = createVueWrapper(ReactInput, ["update:modelValue"]);
+// `v-model` is `checked`, as `v-model:checked` is (react-adapter.ts).
+export const KozmosCheckbox = createVueWrapper(ReactCheckbox, {
+  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
+});
+export const KozmosInput = createVueWrapper(ReactInput, {
+  modelValue: textField,
+});
 // `action` is an object holding functions and an icon: declared as a prop, it
 // is handed to React, never written onto the wrapper's element (GAP-154).
-Object.assign(KozmosInput, { props: { action: null } });
-export const KozmosTextarea = createVueWrapper(Textarea, ["update:modelValue"]);
-export const KozmosSwitch = createVueWrapper(SwitchAdapter, [
-  "update:modelValue",
-]);
+// Beside its model's props, which it would replace.
+Object.assign(KozmosInput, {
+  props: {
+    ...(KozmosInput as unknown as { props: object }).props,
+    action: null,
+  },
+});
+export const KozmosTextarea = createVueWrapper(Textarea, {
+  modelValue: textField,
+});
+export const KozmosSwitch = createVueWrapper(Switch, {
+  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
+});
 
 // ----------------------------------------------------------------------
 // Components added after the original adapter list was written.
 // ----------------------------------------------------------------------
-export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell);
+// Null is where the shell rests a sheet it is not told about
+// (AdaptiveMapShell.tsx, `activeDetent`): its default detent; else, of what
+// it offers ordered by height with equal heights dropped, medium if it is
+// there, else the middle one. A fraction that is not a finite number offers
+// nothing, as the shell reads it. The order is the shell's own
+// (`orderPanelDetents`), in a shell tall enough that its fixed sizes, such
+// as collapsed's 112 px floor, rank as they do in any phone's. What the
+// shell measures cannot be ranked here: content and an exact height, and
+// collapsed beside a fraction, since a peek anchor or a tall header can
+// raise it past one. A list with any of them is taken as given.
+const RANKING_HEIGHT = 1_000_000;
+const isFraction = (detent: PanelDetent) =>
+  typeof detent === "object" && "fraction" in detent;
+export const KozmosAdaptiveMapShell = createVueWrapper(AdaptiveMapShell, {
+  panelDetent: {
+    prop: "panelDetent",
+    callback: "onPanelDetentChange",
+    empty: ({
+      defaultPanelDetent,
+      panelDetents,
+      panelFraction,
+      panelSizing,
+    }) => {
+      if (defaultPanelDetent !== undefined) return defaultPanelDetent;
+      const offered: readonly PanelDetent[] =
+        panelDetents ??
+        (panelSizing === "content"
+          ? ["content"]
+          : Number.isFinite(panelFraction)
+            ? [{ fraction: panelFraction as number }]
+            : DEFAULT_PANEL_DETENTS);
+      const measured =
+        offered.some(
+          (detent) =>
+            detent === "content" ||
+            (typeof detent === "object" && "height" in detent),
+        ) ||
+        (offered.includes("collapsed") && offered.some(isFraction));
+      const ordered = measured
+        ? offered
+        : orderPanelDetents(offered, RANKING_HEIGHT);
+      return ordered.includes("medium")
+        ? "medium"
+        : (ordered[Math.floor(ordered.length / 2)] ?? "medium");
+    },
+  },
+});
 export const KozmosBrowseCategoriesPanel = createVueWrapper(
   BrowseCategoriesPanel,
 );
@@ -457,25 +554,66 @@ export const KozmosCategoryTile = createVueWrapper(CategoryTile);
 export const KozmosMapControlButton = createVueWrapper(MapControlButton);
 export const KozmosNavigationItem = createVueWrapper(NavigationItem);
 export const KozmosPOIDetailPanel = createVueWrapper(POIDetailPanel);
-export const KozmosPOIMediaGallery = createVueWrapper(POIMediaGallery);
+export const KozmosPOIMediaGallery = createVueWrapper(POIMediaGallery, {
+  activeIndex: {
+    prop: "activeIndex",
+    callback: "onActiveIndexChange",
+    empty: ({ defaultActiveIndex = 0 }) => defaultActiveIndex,
+  },
+});
 export const KozmosPOIResultCard = createVueWrapper(POIResultCard);
 export const KozmosPOIResultList = createVueWrapper(POIResultList);
 export const KozmosRouteOptionCard = createVueWrapper(RouteOptionCard);
 export const KozmosRoutePreviewPanel = createVueWrapper(RoutePreviewPanel);
-export const KozmosColorPicker = createVueWrapper(ColorPicker, [
-  "update:modelValue",
-]);
-export const KozmosCombobox = createVueWrapper(Combobox, ["update:modelValue"]);
-export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, [
-  "update:modelValue",
-]);
-export const KozmosListbox = createVueWrapper(Listbox, ["update:modelValue"]);
-export const KozmosMultiSelect = createVueWrapper(MultiSelect, [
-  "update:modelValue",
-]);
-export const KozmosNumberInput = createVueWrapper(NumberInput, [
-  "update:modelValue",
-]);
-export const KozmosPasswordInput = createVueWrapper(PasswordInput, [
-  "update:modelValue",
-]);
+// The value-level callbacks, never the DOM's onChange: Combobox's and
+// MultiSelect's inputs hold the query, not the value, and NumberInput's
+// onChange reports a string.
+// Its opacity and format, with nothing chosen, are its defaults.
+export const KozmosColorPicker = createVueWrapper(ColorPicker, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+  alpha: {
+    prop: "alpha",
+    callback: "onAlphaChange",
+    empty: ({ defaultAlpha = 100 }) => defaultAlpha,
+  },
+  format: {
+    prop: "format",
+    callback: "onFormatChange",
+    empty: ({ defaultFormat = "hsl" }) => defaultFormat,
+  },
+});
+export const KozmosCombobox = createVueWrapper(Combobox, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
+});
+export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
+  modelValue: {
+    prop: "value",
+    callback: "onValueChange",
+    empty: { start: "", end: "" },
+  },
+});
+// One option is a string, several an array.
+export const KozmosListbox = createVueWrapper(Listbox, {
+  modelValue: {
+    prop: "value",
+    callback: "onValueChange",
+    empty: ({ multiple }) => (multiple ? [] : ""),
+  },
+});
+export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
+  searchValue: {
+    prop: "searchValue",
+    callback: "onSearchValueChange",
+    empty: "",
+  },
+});
+// A cleared field is `null` to Vue and "" to React's input.
+export const KozmosNumberInput = createVueWrapper(NumberInput, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
+});
+export const KozmosPasswordInput = createVueWrapper(PasswordInput, {
+  modelValue: textField,
+  visible: { prop: "visible", callback: "onVisibleChange", empty: false },
+});

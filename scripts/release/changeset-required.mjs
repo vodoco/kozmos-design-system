@@ -115,10 +115,12 @@ export const STYLESHEET_SCANS = [
     globs: [
       "../vue/src/**/*.{vue,js,ts}",
       "!../vue/src/**/*.{spec,test,stories}.{js,ts}",
+      "!../vue/src/react-bridge/part-takes.ts",
     ],
     matches: (file) =>
       /^packages\/vue\/src\/.+\.(vue|js|ts)$/.test(file) &&
-      !/\.(spec|test|stories)\.(js|ts)$/.test(file),
+      !/\.(spec|test|stories)\.(js|ts)$/.test(file) &&
+      file !== "packages/vue/src/react-bridge/part-takes.ts",
     packages: ["@kozmos-ds/styles", "@kozmos-ds/react"],
   },
 ];

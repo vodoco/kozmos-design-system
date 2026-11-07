@@ -106,8 +106,10 @@ testing what uses it, and restart Storybook after a rebuild.
 - **Generated files are regenerated, never edited:** `docs/status.md`, the data blocks of
   `docs/component-variant-gap-analysis.md`, `.ai-skills/component-inventory.md`,
   everything in `docs/claude-design/` (`pnpm skills:build`, after building React),
-  `docs/figma-*.json`, and the native token copies in `packages/ios` and `packages/android`
-  (`pnpm tokens:build`, then `pnpm tokens:native:copy`).
+  `docs/figma-*.json`, the native token copies in `packages/ios` and `packages/android`
+  (`pnpm tokens:build`, then `pnpm tokens:native:copy`), and the Vue bridge's
+  `packages/vue/src/react-bridge/part-takes.ts` (`pnpm --filter @kozmos-ds/vue bridge:takes`, after
+  building React).
 - **Examples use only Kozmos:** what `@kozmos-ds/react` exports, its tokens and its roles. A part
   Kozmos cannot express is recorded as a gap, never worked around. `apps/docs` has no Tailwind
   build of its own, so a story can use only the classes `packages/react` already emits.

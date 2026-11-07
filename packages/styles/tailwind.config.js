@@ -44,6 +44,8 @@ module.exports = {
       "!../react/src/**/*.test.{js,ts,jsx,tsx}",
       "../vue/src/**/*.{vue,js,ts}",
       "!../vue/src/**/*.{spec,test,stories}.{js,ts}",
+      // Generated data (the React bridge's `on…` props), never classes.
+      "!../vue/src/react-bridge/part-takes.ts",
     ],
   },
   // Public, and no part names it: the provider's pointer handler looks for
