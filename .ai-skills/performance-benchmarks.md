@@ -80,7 +80,7 @@ helpers) left out as the app's own:
 | `./react-bridge`, on its own line (React's parts not counted) | 9.5 KB |
 
 Each is the measurement plus about a tenth, rounded up to the half kilobyte: the main entry's of
-2026-11-06 (2.69 KB), and the bridge's of 2026-11-07 (8.42 KB), after #489 gave it v-model through
+2026-11-06 (2.69 KB), and the bridge's of 2026-11-07 (8.42 KB on a Mac, 8.47 on CI), after #489 gave it v-model through
 each wrapper's models and its listener routing (it measured 3.58 KB before). It is the rule React's
 first budgets were set by (Everything 54.6 KB to 60, the stylesheet 26.4 to 30). The bridge mounts
 React, so it never counts towards the main entry, and the analyzer fails if the main entry imports
