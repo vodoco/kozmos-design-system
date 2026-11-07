@@ -136,13 +136,20 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     };
 
-    const handleChange = (
-      event: React.ChangeEvent<HTMLInputElement>,
-      index: number,
-    ) => {
-      if (readOnly) return;
+    // An IME's composition is entered once, when it ends. A Japanese or
+    // Chinese IME composes a full-width digit, and the browser sends input
+    // events while it does: entering each one moved the focus on while the
+    // IME was still composing, so its commit landed in the next cell as well
+    // ("１" composed in Chromium gave 1 1 _ _, and onChange "1" then "11").
+    // Until compositionend, the cell draws the IME's text as it is, so React
+    // does not write over it, and the focus stays.
+    const composingCell = useRef<number | null>(null);
+    const [composition, setComposition] = useState<{
+      index: number;
+      text: string;
+    } | null>(null);
 
-      const nextValue = event.target.value;
+    const enterDigits = (nextValue: string, index: number) => {
       const filteredValue = sanitizeOtpValue(nextValue, cellCount - index);
       if (!filteredValue && nextValue) return;
 
@@ -168,10 +175,53 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     };
 
+    const handleChange = (
+      event: React.ChangeEvent<HTMLInputElement>,
+      index: number,
+    ) => {
+      if (readOnly) return;
+
+      const { inputType, isComposing } = event.nativeEvent as InputEvent;
+      if (isComposing || composingCell.current === index) {
+        setComposition({ index, text: event.target.value });
+        return;
+      }
+      // Input Events Level 2 sends a composition's text again after
+      // compositionend, which has already entered it.
+      if (
+        inputType === "insertFromComposition" ||
+        inputType === "deleteCompositionText"
+      )
+        return;
+
+      enterDigits(event.target.value, index);
+    };
+
+    const handleCompositionStart = (index: number) => {
+      composingCell.current = index;
+    };
+
+    const handleCompositionEnd = (
+      event: React.CompositionEvent<HTMLInputElement>,
+      index: number,
+    ) => {
+      composingCell.current = null;
+      setComposition(null);
+      if (readOnly) return;
+
+      // A composition cancelled, or one that left the cell as it was,
+      // enters nothing.
+      const { value } = event.currentTarget;
+      if (value === otp[index]) return;
+      enterDigits(value, index);
+    };
+
     const handleKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
       index: number,
     ) => {
+      // Backspace inside a composition edits the IME's text.
+      if (event.nativeEvent.isComposing) return;
       if (event.key === "Backspace" && !otp[index] && index > 0) {
         inputs.current[index - 1]?.focus();
       }
@@ -221,8 +271,10 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               inputMode="numeric"
               autoComplete={index === 0 ? "one-time-code" : "off"}
               maxLength={1}
-              value={digit}
+              value={composition?.index === index ? composition.text : digit}
               onChange={(event) => handleChange(event, index)}
+              onCompositionStart={() => handleCompositionStart(index)}
+              onCompositionEnd={(event) => handleCompositionEnd(event, index)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               onPaste={handlePaste}
               disabled={disabled}

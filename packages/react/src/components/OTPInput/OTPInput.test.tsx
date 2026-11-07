@@ -122,12 +122,14 @@ describe("OTPInput", () => {
   });
 
   describe("decimal digits from any script", () => {
-    // The code 1 2 3 4 in each script a phone's keyboard may type it in.
+    // The code 0 9 1 2 in each script a phone's keyboard may type it in:
+    // zero is where a digit's walk back to the start of its run stops at
+    // once, and nine is where it walks furthest.
     const SCRIPTS = [
-      ["Arabic-Indic", "١٢٣٤"],
-      ["Extended Arabic-Indic", "۱۲۳۴"],
-      ["Devanagari", "१२३४"],
-      ["full-width", "１２３４"],
+      ["Arabic-Indic", "٠٩١٢"],
+      ["Extended Arabic-Indic", "۰۹۱۲"],
+      ["Devanagari", "०९१२"],
+      ["full-width", "０９１２"],
     ] as const;
 
     const paste = (input: HTMLElement, code: string) =>
@@ -143,12 +145,12 @@ describe("OTPInput", () => {
       );
 
       expect(handleChange.mock.calls).toEqual([
-        ["1"],
-        ["12"],
-        ["123"],
-        ["1234"],
+        ["0"],
+        ["09"],
+        ["091"],
+        ["0912"],
       ]);
-      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+      expect(cellsIn(document)).toEqual(["0", "9", "1", "2"]);
       expect(document.activeElement).toBe(inputs[3]);
     });
 
@@ -158,8 +160,8 @@ describe("OTPInput", () => {
 
       paste(screen.getAllByRole("textbox")[0], code);
 
-      expect(handleChange.mock.calls).toEqual([["1234"]]);
-      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+      expect(handleChange.mock.calls).toEqual([["0912"]]);
+      expect(cellsIn(document)).toEqual(["0", "9", "1", "2"]);
     });
 
     it("keeps a mixed paste's digits in order, as ASCII", () => {
@@ -215,6 +217,115 @@ describe("OTPInput", () => {
 
       rerender(<OTPInput length={4} onChange={handleChange} value="٥٦٧٨٩" />);
       expect(cellsIn(document)).toEqual(["5", "6", "7", "8"]);
+    });
+  });
+
+  describe("IME composition", () => {
+    // An IME's events go to the cell that has the focus at each step, as
+    // Chromium's do: a commit lands wherever the focus went.
+    const focused = () => document.activeElement as HTMLInputElement;
+    const composing = (text: string) =>
+      fireEvent.input(focused(), {
+        target: { value: text },
+        isComposing: true,
+        inputType: "insertCompositionText",
+        data: text,
+      });
+    /**
+     * Composes `text` and commits it, in the order Chromium's IME sends:
+     * compositionstart, the text as it composes, the text committed, then
+     * compositionend.
+     */
+    const compose = (text: string) => {
+      fireEvent.compositionStart(focused(), { data: "" });
+      composing(text);
+      composing(text);
+      fireEvent.compositionEnd(focused(), { data: text });
+    };
+
+    it.each([
+      ["a full-width digit", "１"],
+      ["an ASCII digit", "1"],
+    ])("enters %s composed by an IME once, then moves on", (_, digit) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      compose(digit);
+
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("draws the IME's text, and keeps the focus and onChange, until the composition ends", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("あ");
+      expect(cellsIn(document)).toEqual(["あ", "", "", ""]);
+      composing("１");
+      expect(cellsIn(document)).toEqual(["１", "", "", ""]);
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("enters nothing for a composition that is cancelled or ends in no digit", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      composing("");
+      fireEvent.compositionEnd(inputs[0], { data: "" });
+
+      compose("一");
+
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[0]);
+    });
+
+    it("enters a composition once when its text arrives again after compositionend (Input Events Level 2)", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+      fireEvent.input(focused(), {
+        target: { value: "１" },
+        isComposing: false,
+        inputType: "insertFromComposition",
+        data: "１",
+      });
+
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+    });
+
+    it("keeps the focus on Backspace inside a composition", () => {
+      render(<OTPInput length={4} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[1].focus();
+
+      fireEvent.compositionStart(inputs[1], { data: "" });
+      fireEvent.keyDown(inputs[1], { key: "Backspace", isComposing: true });
+
+      expect(document.activeElement).toBe(inputs[1]);
     });
   });
 
