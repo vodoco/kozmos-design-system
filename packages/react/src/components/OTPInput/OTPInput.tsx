@@ -148,6 +148,13 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       index: number;
       text: string;
     } | null>(null);
+    // A composition React never hears end leaves no cell composing: one in a
+    // cell that is disabled or made read-only (no compositionend reaches
+    // React then), or in a cell a shorter `length` removes.
+    const composingGone = (index: number | null) =>
+      index !== null && (!!disabled || !!readOnly || index >= cellCount);
+    if (composingGone(composingCell.current)) composingCell.current = null;
+    if (composition && composingGone(composition.index)) setComposition(null);
 
     const enterDigits = (nextValue: string, index: number) => {
       const filteredValue = sanitizeOtpValue(nextValue, cellCount - index);
@@ -216,12 +223,21 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       enterDigits(value, index);
     };
 
+    // A composition the focus leaves without its compositionend reaching
+    // React is over too.
+    const handleBlur = (index: number) => {
+      if (composingCell.current !== index) return;
+      composingCell.current = null;
+      setComposition(null);
+    };
+
     const handleKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
       index: number,
     ) => {
-      // Backspace inside a composition edits the IME's text.
-      if (event.nativeEvent.isComposing) return;
+      // Backspace inside a composition edits the IME's text. Safari's
+      // keydown that ends a composition has keyCode 229 and no isComposing.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
       if (event.key === "Backspace" && !otp[index] && index > 0) {
         inputs.current[index - 1]?.focus();
       }
@@ -275,6 +291,7 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               onChange={(event) => handleChange(event, index)}
               onCompositionStart={() => handleCompositionStart(index)}
               onCompositionEnd={(event) => handleCompositionEnd(event, index)}
+              onBlur={() => handleBlur(index)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               onPaste={handlePaste}
               disabled={disabled}

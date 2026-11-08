@@ -10,13 +10,15 @@ import { PlatformSnippets } from "../PlatformSnippets";
 A segmented numeric code field with configurable length, paste handling and field feedback.
 Use its value callback to collect the code; verification and authentication belong to the host.
 
-In React, the cells take a decimal digit from any script, such as the Arabic-Indic ٣, the
-Devanagari ३ or the full-width ３, and hold the ASCII digit of the same value, so the code
-`onChange` passes and the cells draw is always `0`–`9`, typed, pasted or passed as `value`.
-Anything else, such as a letter, `²` or `½`, is dropped. A digit an IME composes, as a Japanese or
-Chinese IME composes a full-width one, is entered once, when the composition ends. A digit two
-UTF-16 units long, such as the Adlam 𞥑, can be pasted into React's cells but not typed: each
-cell's `maxLength` is 1.
+In React, the cells take a decimal digit from any script, such as the Arabic-Indic ٣, the Devanagari
+३ or the full-width ３, and hold the ASCII digit of the same value, so the code `onChange` passes and
+the cells draw is always `0`–`9`, typed, pasted or passed as `value`. Anything else, such as a
+letter, `²` or `½`, is dropped. A digit an IME composes, as a Japanese or Chinese IME composes a
+full-width one, is entered once, when the composition ends. Two digits composed at once enter only
+the first, since a cell's `maxLength` is 1. What reaches the cell while an IME composes, such as a
+paste or a new `value`, gives way to the digit the composition commits. A digit two UTF-16 units
+long, such as the Adlam 𞥑, can be pasted into React's cells but not typed: each cell's `maxLength`
+is 1.
 
 <Canvas>
   <Story of={OTPInputStories.Default} />

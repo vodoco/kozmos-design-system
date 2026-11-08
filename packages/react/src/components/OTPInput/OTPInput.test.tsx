@@ -317,6 +317,102 @@ describe("OTPInput", () => {
       expect(cellsIn(document)).toEqual(["1", "", "", ""]);
     });
 
+    it("holds a non-composing input that arrives mid-composition, and moves on only at compositionend", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      fireEvent.input(inputs[0], {
+        target: { value: "２" },
+        isComposing: false,
+        inputType: "insertFromComposition",
+        data: "２",
+      });
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+
+      fireEvent.compositionEnd(inputs[0], { data: "２" });
+      expect(handleChange.mock.calls).toEqual([["2"]]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("enters nothing when a read-only cell's composition ends", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} readOnly />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      (inputs[0] as HTMLInputElement).value = "１";
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+    });
+
+    // React never hears these compositions end. The cell must not stay
+    // composing, or what is typed into it later is drawn and never entered.
+    it.each([
+      ["disabled", { disabled: true }],
+      ["made read-only", { readOnly: true }],
+    ])(
+      "enters typing again after a composing cell is %s and then restored",
+      (_, props) => {
+        const handleChange = vi.fn();
+        const { rerender } = render(
+          <OTPInput length={4} onChange={handleChange} />,
+        );
+        const inputs = screen.getAllByRole("textbox");
+        inputs[0].focus();
+        fireEvent.compositionStart(inputs[0], { data: "" });
+        composing("１");
+
+        rerender(<OTPInput length={4} onChange={handleChange} {...props} />);
+        rerender(<OTPInput length={4} onChange={handleChange} />);
+        fireEvent.change(inputs[0], { target: { value: "2" } });
+
+        expect(handleChange.mock.calls).toEqual([["2"]]);
+        expect(cellsIn(document)).toEqual(["2", "", "", ""]);
+      },
+    );
+
+    it("enters typing again in a cell that was composing when a shorter length removed it", () => {
+      const handleChange = vi.fn();
+      const { rerender } = render(
+        <OTPInput length={4} onChange={handleChange} />,
+      );
+      screen.getAllByRole("textbox")[3].focus();
+      fireEvent.compositionStart(focused(), { data: "" });
+      composing("１");
+
+      rerender(<OTPInput length={3} onChange={handleChange} />);
+      rerender(<OTPInput length={4} onChange={handleChange} />);
+      fireEvent.change(screen.getAllByRole("textbox")[3], {
+        target: { value: "4" },
+      });
+
+      expect(handleChange.mock.calls).toEqual([["4"]]);
+      expect(cellsIn(document)).toEqual(["", "", "", "4"]);
+    });
+
+    it("enters typing again after the focus leaves a composing cell", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+
+      fireEvent.blur(inputs[0]);
+      fireEvent.change(inputs[0], { target: { value: "2" } });
+
+      expect(handleChange.mock.calls).toEqual([["2"]]);
+      expect(cellsIn(document)).toEqual(["2", "", "", ""]);
+    });
+
     it("keeps the focus on Backspace inside a composition", () => {
       render(<OTPInput length={4} />);
       const inputs = screen.getAllByRole("textbox");
@@ -324,7 +420,10 @@ describe("OTPInput", () => {
 
       fireEvent.compositionStart(inputs[1], { data: "" });
       fireEvent.keyDown(inputs[1], { key: "Backspace", isComposing: true });
+      expect(document.activeElement).toBe(inputs[1]);
 
+      // Safari's keydown that ends a composition: keyCode 229, no isComposing.
+      fireEvent.keyDown(inputs[1], { key: "Backspace", keyCode: 229 });
       expect(document.activeElement).toBe(inputs[1]);
     });
   });
