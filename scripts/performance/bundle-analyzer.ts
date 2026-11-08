@@ -95,10 +95,14 @@ const MAX_VUE_GZIP_KB = 3;
 // which are its peers and left out here as Vue's are. Its own code measured
 // 8.42 KB here and 8.47 KB on CI on 7 Nov 2026, with #489's bridge (v-model
 // through each wrapper's models, listener routing and part-takes.ts; main's
-// measured 3.58 on 6 Nov); the same rule gives 9.5 from either. It never
-// counts towards the main entry's, which must not import it
+// measured 3.58 on 6 Nov), and the same rule gave 9.5. #493 raised it to
+// 11.5: 10.18 KB here (about 10.23 on CI, which read #489's 0.05 above a Mac)
+// once a bare boolean attribute reached React as true. Each bridged part's
+// boolean props are read from React's types into part-takes.ts, and the 112
+// prop names alone gzip to about 700 B; 110% of either figure, to the half,
+// is 11.5. It never counts towards the main entry's, which must not import it
 // (packages/vue/test/react-free.spec.ts).
-const MAX_VUE_BRIDGE_GZIP_KB = 9.5;
+const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");

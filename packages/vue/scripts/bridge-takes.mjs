@@ -1,20 +1,25 @@
 #!/usr/bin/env node
 /**
- * Which `on…` props each React part the bridge mounts takes, read from
- * @kozmos-ds/react's built declarations (`packages/react/dist/index.d.ts`),
- * written to `src/react-bridge/part-takes.ts`. The bridge sends a listener to
- * the part when the part takes its prop, and binds it natively on the
- * wrapper's own box when it does not (react-adapter.ts).
+ * Which `on…` props each React part the bridge mounts takes, and which of
+ * its props are booleans, read from @kozmos-ds/react's built declarations
+ * (`packages/react/dist/index.d.ts`), written to
+ * `src/react-bridge/part-takes.ts`. The bridge sends a listener to the part
+ * when the part takes its prop, and binds it natively on the wrapper's own
+ * box when it does not; and it gives a boolean prop's bare attribute
+ * (`<KozmosNavigationItem disabled>`, which Vue gives as "") to React as
+ * `true` (react-adapter.ts).
  *
  *   pnpm --filter @kozmos-ds/vue bridge:takes          writes the file
  *   pnpm --filter @kozmos-ds/vue bridge:takes --check  fails when it is stale
  *
  * The parts are those `src/react-bridge/index.ts` imports from
  * @kozmos-ds/react, and the adapters it defines (ADAPTERS, below).
- * `Listeners.spec.ts` computes the same table and fails when the file
- * differs. React's own types decide: a part whose props carry React's DOM
- * attributes takes every React DOM event (`dom`), but any it omits
- * (`except`), and its other `on…` props are listed (`own`).
+ * `Listeners.spec.ts` and `Booleans.spec.ts` compute the same tables and
+ * fail when the file differs. React's own types decide: a part whose props
+ * carry React's DOM attributes takes every React DOM event (`dom`), but any
+ * it omits (`except`), and its other `on…` props are listed (`own`); its
+ * props whose type is `boolean` are its `flags`, and those boolean in a
+ * union with other types (`error: boolean | string`) its `unions`.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -77,8 +82,8 @@ function importedParts(root) {
 
 const isHandler = (name) => /^on[A-Z]/.test(name);
 
-/** React's DOM event props (`onClick`, `onClickCapture`), from `DOMAttributes`. */
-function domProps(api) {
+/** A type @types/react declares, by its name: `DOMAttributes`, `ReactNode`. */
+function reactType(api, name) {
   const react = api.program
     .getSourceFiles()
     .find((file) =>
@@ -86,16 +91,131 @@ function domProps(api) {
     );
   if (!react) throw new Error("@types/react is not among the program's files");
   const module = api.checker.getSymbolAtLocation(react);
-  const attributes = api.checker
+  const symbol = api.checker
     .getExportsOfModule(module)
-    .find((symbol) => symbol.name === "DOMAttributes");
-  if (!attributes) throw new Error("@types/react declares no DOMAttributes");
+    .find((exported) => exported.name === name);
+  if (!symbol) throw new Error(`@types/react declares no ${name}`);
+  return api.checker.getDeclaredTypeOfSymbol(symbol);
+}
+
+/** React's DOM event props (`onClick`, `onClickCapture`), from `DOMAttributes`. */
+function domProps(api) {
   return new Set(
     api.checker
-      .getPropertiesOfType(api.checker.getDeclaredTypeOfSymbol(attributes))
+      .getPropertiesOfType(reactType(api, "DOMAttributes"))
       .map((symbol) => symbol.name)
       .filter(isHandler),
   );
+}
+
+/** A prop's name in kebab-case, as Vue's `hyphenate` writes it: `read-only`. */
+export const hyphenate = (name) =>
+  name.replace(/\B([A-Z])/g, "-$1").toLowerCase();
+
+/**
+ * The spellings Vue may give a prop's attribute under, which the bridge
+ * reads as the prop: React's name (`readOnly`, an SFC's), in small letters
+ * (`readonly`, an in-DOM template's, which the browser lowercases), and in
+ * kebab-case (`read-only`).
+ */
+export const spellingsOf = (prop) => [
+  ...new Set([prop, prop.toLowerCase(), hyphenate(prop)]),
+];
+
+/**
+ * The boolean props of the props types `types`, read together: `flags`,
+ * each prop whose type is `boolean` (or `true`), and `unions`, each whose
+ * type is boolean in a union with other types (`error: boolean | string`,
+ * `aria-checked: boolean | "true" | "false" | "mixed"`). A union's members
+ * (`RowProps | ListProps`) are read together, as React reads them: a prop is
+ * what every member that declares it takes (`multiple: true` in one and
+ * `multiple?: false` in another is a flag). Neither is a prop that takes any
+ * ReactNode (`children`, `label`, `icon`): it is a slot, whose `boolean` is
+ * React's "draw nothing"; nor one that takes `false` but never `true`
+ * (DynamicIsland's `dragConstraints`), which no bare attribute can mean.
+ * A union whose other members are all literals (`aria-checked`'s `"true" |
+ * "false" | "mixed"`, Checkbox's `"indeterminate"`) is one of `unions`; one
+ * that also takes free text, a number or an object (`error: boolean |
+ * string`, motion's `animate`) is one of `texts`, whose "" and own name are
+ * its strings. `props` is every prop the types declare.
+ */
+/** A type that is one value: a string, number or enum literal. */
+const LITERAL =
+  ts.TypeFlags.StringLiteral |
+  ts.TypeFlags.NumberLiteral |
+  ts.TypeFlags.BigIntLiteral |
+  ts.TypeFlags.EnumLiteral;
+
+function booleansOf(api, types) {
+  const { checker } = api;
+  const slot = checker.getNonNullableType(reactType(api, "ReactNode"));
+  const read = new Map();
+  for (const type of types)
+    for (const member of type.isUnion() ? type.types : [type])
+      for (const symbol of checker.getPropertiesOfType(member)) {
+        const value = checker.getNonNullableType(
+          checker.getTypeOfSymbolAtLocation(symbol, api.dts),
+        );
+        const seen = read.get(symbol.name) ?? {
+          takesTrue: false,
+          other: false,
+          free: false,
+          slot: false,
+        };
+        if (checker.isTypeAssignableTo(slot, value)) seen.slot = true;
+        for (const part of value.isUnion() ? value.types : [value])
+          if (part.flags & ts.TypeFlags.BooleanLiteral) {
+            if (checker.typeToString(part) === "true") seen.takesTrue = true;
+          } else {
+            seen.other = true;
+            if (!(part.flags & LITERAL)) seen.free = true;
+          }
+        read.set(symbol.name, seen);
+      }
+  const flags = [];
+  const unions = [];
+  const texts = [];
+  for (const [name, seen] of read)
+    if (seen.takesTrue && !seen.slot)
+      (seen.free ? texts : seen.other ? unions : flags).push(name);
+  return {
+    flags: flags.sort(),
+    unions: unions.sort(),
+    texts: texts.sort(),
+    props: [...read.keys()],
+  };
+}
+
+/**
+ * The boolean props of the components `targets` hand theirs to (`name`'s
+ * own, or an adapter's parts). Each spelling of one (spellingsOf) must name
+ * it alone: one that is another boolean's, or another prop's own name, would
+ * give React the wrong prop, so generation fails and a person decides.
+ */
+function booleansOfParts(api, name, targets) {
+  const types = targets.map((target) => {
+    const entry = api.entries.get(target);
+    if (!entry?.component)
+      throw new Error(
+        `${target} is not a component export of @kozmos-ds/react`,
+      );
+    return entry.component.propsType;
+  });
+  const { flags, unions, texts, props } = booleansOf(api, types);
+  const named = new Set(props);
+  const spelt = new Map();
+  for (const prop of [...flags, ...unions, ...texts])
+    for (const spelling of spellingsOf(prop)) {
+      const other =
+        spelt.get(spelling) ??
+        (spelling !== prop && named.has(spelling) ? spelling : undefined);
+      if (other !== undefined && other !== prop)
+        throw new Error(
+          `${name}: the attribute ${spelling} would be its boolean ${prop} and its prop ${other}. Which one a template means cannot be read from it, so a person decides: rename one.`,
+        );
+      spelt.set(spelling, prop);
+    }
+  return { flags, unions, texts };
 }
 
 /**
@@ -150,8 +270,10 @@ function compress(handlers, dom) {
 }
 
 /**
- * The table: each React part `index.ts` imports that is a component, and
- * each adapter, with the `on…` props it takes.
+ * The tables: each React part `index.ts` imports that is a component, and
+ * each adapter, with the `on…` props it takes (`parts`, `adapters`), and its
+ * boolean props (`booleans`). `booleans.html` is React's `HTMLAttributes`'
+ * own, which most parts take: the file writes them once.
  */
 export function computeTakes(
   root = REPOSITORY,
@@ -172,10 +294,17 @@ export function computeTakes(
   const parts = {};
   /** Each part's and adapter's `on…` props, as a sorted list: what `parts` and `adapters` compress. */
   const handlers = {};
+  const html = booleansOf(api, [reactType(api, "HTMLAttributes")]);
+  const booleans = {
+    html: { flags: html.flags, unions: html.unions, texts: html.texts },
+    parts: {},
+    adapters: {},
+  };
   for (const name of partNames ?? importedParts(root)) {
     const own = handlersOf(api, name, dom);
     parts[name] = compress(own, dom);
     handlers[name] = [...own].sort();
+    booleans.parts[name] = booleansOfParts(api, name, [name]);
   }
   const adapters = {};
   for (const [adapter, targets] of Object.entries(adapterTargets)) {
@@ -184,8 +313,77 @@ export function computeTakes(
       for (const handler of handlersOf(api, target, dom)) all.add(handler);
     adapters[adapter] = compress(all, dom);
     handlers[adapter] = [...all].sort();
+    booleans.adapters[adapter] = booleansOfParts(api, adapter, targets);
   }
-  return { parts, adapters, handlers, domProps: [...dom].sort() };
+  return { parts, adapters, handlers, domProps: [...dom].sort(), booleans };
+}
+
+/**
+ * The booleans' part of the file: each part's and adapter's entry, as
+ * `html(flags, unions, texts)` when it has React's `HTMLAttributes`'
+ * booleans and those of its own, else as its lists; an entry more than one
+ * has, once.
+ */
+function booleansSource({ html, parts, adapters }) {
+  const KINDS = ["flags", "unions", "texts"];
+  const covers = (list, base) => base.every((name) => list.includes(name));
+  const less = (list, base) => list.filter((name) => !base.includes(name));
+  const list = (names) => JSON.stringify(names);
+  const entry = (booleans) => {
+    if (!KINDS.every((kind) => covers(booleans[kind], html[kind])))
+      return `{ ${KINDS.map((kind) => `${kind}: ${list(booleans[kind])}`).join(", ")} }`;
+    const own = KINDS.map((kind) => less(booleans[kind], html[kind]));
+    while (own.length && !own.at(-1).length) own.pop();
+    return `html(${own.map(list).join(", ")})`;
+  };
+  const uses = new Map();
+  for (const booleans of [...Object.values(parts), ...Object.values(adapters)])
+    uses.set(entry(booleans), (uses.get(entry(booleans)) ?? 0) + 1);
+  const shared = new Map([["html()", "H"]]);
+  for (const [name, booleans] of Object.entries(parts)) {
+    const text = entry(booleans);
+    if (uses.get(text) > 1 && !shared.has(text))
+      shared.set(text, `${name[0].toLowerCase()}${name.slice(1)}Booleans`);
+  }
+  const ref = (booleans) => shared.get(entry(booleans)) ?? entry(booleans);
+  return `/**
+ * React's \`HTMLAttributes\`' boolean props, which most parts take: \`flags\`,
+ * whose type is \`boolean\`; \`unions\`, boolean in a union with literals; and
+ * \`texts\`, boolean in a union with free text, a number or an object.
+ */
+const HTML: Booleans = { flags: ${list(html.flags)}, unions: ${list(html.unions)}, texts: ${list(html.texts)} };
+/** A part's booleans: React's \`HTMLAttributes\`', and its own. */
+const html = (
+  flags: readonly string[] = [],
+  unions: readonly string[] = [],
+  texts: readonly string[] = [],
+): Booleans => ({
+  flags: [...HTML.flags, ...flags],
+  unions: [...HTML.unions, ...unions],
+  texts: [...HTML.texts, ...texts],
+});
+
+/** React's \`HTMLAttributes\`' booleans, and none of its own: most parts. */
+const H = html();
+${[...shared]
+  .filter(([, constant]) => constant !== "H")
+  .map(([text, constant]) => `const ${constant} = ${text};`)
+  .join("\n")}
+
+/** By React part. */
+export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<unknown, Booleans>([
+${Object.entries(parts)
+  .map(([name, booleans]) => `  [${name}, ${ref(booleans)}],`)
+  .join("\n")}
+]);
+
+/** By the adapter in index.ts that hands its props on to React parts. */
+export const ADAPTER_BOOLEANS: Readonly<Record<string, Booleans>> = {
+${Object.entries(adapters)
+  .map(([adapter, booleans]) => `  ${adapter}: ${ref(booleans)},`)
+  .join("\n")}
+};
+`;
 }
 
 /** The file `computeTakes()` writes. */
@@ -209,17 +407,27 @@ export async function renderTakes(table = computeTakes()) {
   const ref = (takes) => shared.get(key(takes)) ?? key(takes);
   const text = `// Generated by \`pnpm --filter @kozmos-ds/vue bridge:takes\`
 // (scripts/bridge-takes.mjs) from @kozmos-ds/react's built declarations. Do
-// not edit: Listeners.spec.ts fails when this differs from what React's
-// types say. The stylesheet's Tailwind does not read it.
+// not edit: Listeners.spec.ts and Booleans.spec.ts fail when this differs
+// from what React's types say. The stylesheet's Tailwind does not read it.
 //
 // The \`on…\` props each React part the bridge mounts takes. \`dom\`: every
 // React DOM event (\`onClick\`, \`onClickCapture\`), but those in \`except\`;
 // \`own\`: its other \`on…\` props. A listener whose prop the part takes is the
 // part's; any other is a native listener on the wrapper's own box.
+//
+// And its boolean props. \`flags\`: those whose type is \`boolean\`; \`unions\`:
+// those boolean in a union with literals only (\`aria-checked\`, Checkbox's
+// \`checked\`); \`texts\`: those boolean in a union with free text, a number
+// or an object (\`error: boolean | string\`). A bare attribute of a flag or a
+// union (which Vue gives as "") is \`true\` to React, and so is its own name
+// as its value (\`disabled="disabled"\`), as Vue reads a Boolean prop, or a
+// \`[Boolean, String]\` one; a text's "" and name are its strings, as Vue
+// reads a \`[String, Boolean]\` one. Every spelling is React's prop. A prop
+// that takes any ReactNode is a slot, and none of them.
 import {
 ${names.map((name) => `  ${name},`).join("\n")}
 } from "@kozmos-ds/react";
-import type { Takes } from "./react-adapter";
+import type { Booleans, Takes } from "./react-adapter";
 
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = ${plain};
@@ -239,7 +447,8 @@ ${Object.entries(table.adapters)
   .map(([adapter, takes]) => `  ${adapter}: ${ref(takes)},`)
   .join("\n")}
 };
-`;
+
+${booleansSource(table.booleans)}`;
   const options = (await prettier.resolveConfig(TABLE)) ?? {};
   return prettier.format(text, { ...options, filepath: TABLE });
 }
