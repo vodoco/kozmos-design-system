@@ -23,6 +23,21 @@ import XCTest
     /// The code the host holds.
     private final class Box { var code: String; init(_ code: String) { self.code = code } }
 
+    /// A host whose code it can change itself, redrawing the field.
+    private final class Host: ObservableObject {
+      @Published var code: String
+      init(_ code: String) { self.code = code }
+    }
+
+    private struct Hosted: View {
+      @ObservedObject var host: Host
+      var body: some View { KozmosOTPInput(value: $host.code) }
+    }
+
+    @MainActor private func settle() async {
+      for _ in 0..<4 { try? await Task.sleep(nanoseconds: 30_000_000) }
+    }
+
     /// Types `text` as the keyboard does: the field's delegate is asked to
     /// insert it at the caret. Returns whether the field took the text itself.
     @MainActor private func type(_ text: String, into field: UITextField) -> Bool {
@@ -150,6 +165,85 @@ import XCTest
       XCTAssertEqual(field.text, "12", "a composed letter stayed in the field")
       XCTAssertEqual(box.code, "12")
       field.resignFirstResponder()
+    }
+
+    /// A host that changes the code while a keyboard composes redraws the
+    /// cells, and leaves the composition to the keyboard: it is still marked.
+    /// The digit committed then joins the host's code as it is now, so the
+    /// host's clear is kept, and the field holds the code the cells draw.
+    @MainActor func testAHostsChangeMidCompositionIsKeptAndTheCommitJoinsIt() async throws {
+      let host = Host("12")
+      let window = await self.host(Hosted(host: host))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      field.setMarkedText("３", selectedRange: NSRange(location: 1, length: 0))
+      await settle()
+      host.code = ""
+      await settle()
+      XCTAssertNotNil(field.markedTextRange, "the host's redraw ended the composition")
+      field.unmarkText()
+      await settle()
+      XCTAssertEqual(host.code, "3", "the commit undid the host's clear")
+      XCTAssertEqual(field.text, "3")
+      field.resignFirstResponder()
+    }
+
+    /// A full code the host clears mid composition, and a commit with no
+    /// digit: no edit, and the field holds the cleared code the cells draw,
+    /// so the next digit typed is the first.
+    @MainActor func testACodeClearedMidCompositionLeavesTheFieldHoldingTheCode() async throws {
+      let host = Host("123456")
+      let window = await self.host(Hosted(host: host))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      field.setMarkedText("x", selectedRange: NSRange(location: 1, length: 0))
+      await settle()
+      host.code = ""
+      await settle()
+      field.unmarkText()
+      await settle()
+      XCTAssertEqual(field.text, "", "the field kept a code the cells do not draw")
+      XCTAssertEqual(host.code, "")
+      _ = type("4", into: field)
+      await settle()
+      XCTAssertEqual(host.code, "4")
+      field.resignFirstResponder()
+    }
+
+    /// A keyboard that commits its composition by inserting the text over
+    /// it, not by unmarking it, is entered the same way.
+    @MainActor func testACompositionCommittedByInsertingTextIsEntered() async throws {
+      let box = Box("")
+      let window = await host(KozmosOTPInput(value: Binding(get: { box.code }, set: { box.code = $0 })))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      _ = type("1", into: field)
+      await settle()
+      field.setMarkedText("２", selectedRange: NSRange(location: 1, length: 0))
+      field.insertText("２")
+      await settle()
+      XCTAssertNil(field.markedTextRange)
+      XCTAssertEqual(field.text, "12", "the field and the code disagree")
+      XCTAssertEqual(box.code, "12")
+      field.resignFirstResponder()
+    }
+
+    /// Losing the focus mid composition commits it.
+    @MainActor func testLosingTheFocusMidCompositionCommitsIt() async throws {
+      let box = Box("1")
+      let window = await host(KozmosOTPInput(value: Binding(get: { box.code }, set: { box.code = $0 })))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      field.setMarkedText("２", selectedRange: NSRange(location: 1, length: 0))
+      field.resignFirstResponder()
+      await settle()
+      XCTAssertNil(field.markedTextRange, "the text was left marked")
+      XCTAssertEqual(field.text, "12")
+      XCTAssertEqual(box.code, "12")
     }
 
     /// Any decimal digit is the host's as its ASCII digit: Arabic-Indic and

@@ -382,6 +382,7 @@ struct KozmosOTPField: UIViewRepresentable {
         field.tintColor = .clear
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.addTarget(context.coordinator, action: #selector(Coordinator.editingChanged(_:)), for: .editingChanged)
         return field
     }
 
@@ -423,22 +424,40 @@ struct KozmosOTPField: UIViewRepresentable {
             settled = parent.code
         }
 
-        /// A composition committed: a keyboard's marked text (a Japanese
+        /// A keyboard's composition committed. Its marked text (a Japanese
         /// keyboard's full-width "２", say) reaches the field with no word to
-        /// its delegate, so once it is no longer marked, what the field holds
-        /// is made the code, as React enters a composed digit once, when the
-        /// composition ends. Read-only, the field goes back to its code.
+        /// its delegate, so once nothing is marked, whatever the keyboard put
+        /// in after the text the field last held is entered into the code as
+        /// it is drawn now: the host may have changed it meanwhile. One
+        /// character joins the code, more replace it, as a typed digit and the
+        /// one-time code do, and only digits count, as ASCII; React enters a
+        /// composed digit the same way, once, at `compositionend`. Read-only,
+        /// nothing is entered. The field is always left holding the code.
         func settle(_ field: UITextField) {
             guard field.markedTextRange == nil else { return }
-            let before = settled
             let held = field.text ?? ""
-            guard held != before else { return }
-            let after = parent.readOnly ? before : KozmosOTPInput.sanitize(held, length: parent.length)
+            // Nothing the keyboard did behind the delegate's back.
+            guard held != settled else { return }
+            let before = parent.code
+            let committed = held.hasPrefix(settled) ? String(held.dropFirst(settled.count)) : held
+            var after = before
+            if !parent.readOnly {
+                let digits = KozmosOTPInput.sanitize(committed, length: parent.length)
+                if committed.count > 1 {
+                    if !digits.isEmpty { after = digits }
+                } else {
+                    after = KozmosOTPInput.sanitize(before + digits, length: parent.length)
+                }
+            }
             field.text = after
             settled = after
             KozmosOTPTextField.moveCaretToEnd(field)
             if after != before { parent.onEdit(before, after) }
         }
+
+        /// The field's text changed: settle anything a keyboard committed
+        /// without the delegate, whichever way it ended the composition.
+        @objc func editingChanged(_ field: UITextField) { settle(field) }
 
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
@@ -495,6 +514,9 @@ struct KozmosOTPField: UIViewRepresentable {
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
+            // Losing the focus mid-composition commits it, as a keyboard
+            // would, rather than leaving the text marked.
+            if textField.markedTextRange != nil { textField.unmarkText() }
             let parent = parent
             DispatchQueue.main.async { parent.isFocused = false }
         }
@@ -544,6 +566,14 @@ final class KozmosOTPTextField: UITextField {
     /// A keyboard's composition ends: what it committed becomes the code.
     override func unmarkText() {
         super.unmarkText()
+        (delegate as? KozmosOTPField.Coordinator)?.settle(self)
+    }
+
+    /// Text inserted over a composition ends it without `unmarkText` or the
+    /// delegate; settled the same way. Typed text has been through the
+    /// delegate, so it is already the code, and settling leaves it.
+    override func insertText(_ text: String) {
+        super.insertText(text)
         (delegate as? KozmosOTPField.Coordinator)?.settle(self)
     }
 

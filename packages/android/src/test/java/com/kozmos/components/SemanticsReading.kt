@@ -115,6 +115,11 @@ data class ReadNode(
      * keyboard's suggestion chip (a clipboard chip, an SMS code) commits it.
      */
     val insertText: ((String) -> Boolean)? = null,
+    /**
+     * How a text field's selection is set, as TalkBack's cursor moves set it
+     * (traversal mode: no selection handles, which this host cannot draw).
+     */
+    val setSelection: ((Int, Int) -> Boolean)? = null,
     /** Set, the node is a pane TalkBack names by it: Compose's nearest to a named region. */
     val paneTitle: String? = null,
     /** TalkBack says "heading" after it, and its headings navigation stops on it. */
@@ -363,6 +368,8 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     paste = node.config.getOrNull(SemanticsActions.PasteText)?.action,
     insertText = node.config.getOrNull(SemanticsActions.InsertTextAtCursor)?.action
         ?.let { insert -> { text: String -> insert(AnnotatedString(text)) } },
+    setSelection = node.config.getOrNull(SemanticsActions.SetSelection)?.action
+        ?.let { select -> { start: Int, end: Int -> select(start, end, true) } },
     paneTitle = node.config.getOrNull(SemanticsProperties.PaneTitle),
     heading = node.config.contains(SemanticsProperties.Heading),
     traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,
