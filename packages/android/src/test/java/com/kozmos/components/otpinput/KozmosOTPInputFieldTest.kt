@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ClipboardManager
+import android.view.inputmethod.EditorInfo
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalTextToolbar
@@ -373,6 +374,51 @@ class KozmosOTPInputFieldTest {
         assertEquals("9", kozmosOtpEdit(TextFieldValue("123", TextRange(1, 2)), TextFieldValue("193", TextRange(2))))
         assertEquals("a Backspace inserts nothing", null, kozmosOtpEdit(TextFieldValue("123", TextRange(3)), TextFieldValue("12", TextRange(2))))
         assertEquals("deleting a selection inserts nothing", "", kozmosOtpEdit(TextFieldValue("123", TextRange(1, 2)), TextFieldValue("13", TextRange(1))))
+    }
+
+    /**
+     * A code the host sets puts the cursor after it, so typing goes on from
+     * there: it is not put in before the host's digits.
+     */
+    @Test
+    fun aCodeTheHostSetsPutsTheCursorAfterIt() {
+        val code = mutableStateOf("")
+        otp(code) {
+            field().requestFocus?.invoke()
+            frames(2)
+            code.value = "12"
+            frames(2)
+            insert("3")
+            assertEquals("a digit typed after a host's code went before it", "123", code.value)
+            code.value = "123456"
+            frames(2)
+            insert("7")
+            assertEquals("a digit typed into a host's full code went before it", "123456", code.value)
+        }
+    }
+
+    /**
+     * An IME that composes (as a Japanese keyboard composes digits) keeps its
+     * composition across the field's edits: the next composing text replaces
+     * the composed text, it is not put in after it. Driven through the
+     * field's own InputConnection, as an IME drives it.
+     */
+    @Test
+    fun anImesCompositionIsKeptAcrossEdits() {
+        val code = mutableStateOf("")
+        otp(code) {
+            field().requestFocus?.invoke()
+            frames(4)
+            val connection = checkNotNull(view.onCreateInputConnection(EditorInfo())) { "the field opened no input connection" }
+            connection.setComposingText("1", 1)
+            frames(2)
+            assertEquals("1", code.value)
+            connection.setComposingText("12", 1)
+            frames(2)
+            connection.finishComposingText()
+            frames(2)
+            assertEquals("the composition was cut off and typed again", "12", code.value)
+        }
     }
 
     @Test

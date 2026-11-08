@@ -94,7 +94,10 @@ fun KozmosOTPInput(
     // Bumped by every edit, so this composes again after each one: the field
     // is then handed `shown` again, and its editor reset to it.
     var edits by remember { mutableIntStateOf(0) }
-    val shown = editor.copy(text = displayValue)
+    // The editor as the field last left it, while its text is the drawn
+    // code; a code from the host (set, cleared, or not taken) puts the
+    // cursor after it.
+    val shown = if (editor.text == displayValue) editor else TextFieldValue(displayValue, TextRange(displayValue.length))
     val generation = edits
     SideEffect {
         held.draw(displayValue)
@@ -146,11 +149,14 @@ fun KozmosOTPInput(
         CompositionLocalProvider(LocalClipboardManager provides watchedClipboard) {
             // The code as an edit leaves it, passed on, with analytics told when
             // the edit fills the last empty cell.
-            fun enter(code: String) {
+            // `edited` is kept, its cursor and any composition an IME holds in
+            // it, when the code is its text; otherwise the cursor goes after
+            // the code.
+            fun enter(code: String, edited: TextFieldValue? = null) {
                 if (!enabled || readOnly) return
                 val before = held.code
                 held.code = code
-                editor = TextFieldValue(code, TextRange(code.length))
+                editor = if (edited != null && edited.text == code) edited else TextFieldValue(code, TextRange(code.length))
                 onValueChange(code)
                 if (before.length < cellCount && code.length == cellCount) {
                     trackEvent(
@@ -200,7 +206,7 @@ fun KozmosOTPInput(
                     }
                     val code = kozmosOtpCode(replacement ?: edited.text, cellCount)
                     if (replacement != null && code.isEmpty()) return@BasicTextField
-                    enter(code)
+                    enter(code, edited)
                 },
                 enabled = enabled,
                 readOnly = readOnly,

@@ -382,7 +382,6 @@ struct KozmosOTPField: UIViewRepresentable {
         field.tintColor = .clear
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        field.addTarget(context.coordinator, action: #selector(Coordinator.editingChanged(_:)), for: .editingChanged)
         return field
     }
 
@@ -424,40 +423,44 @@ struct KozmosOTPField: UIViewRepresentable {
             settled = parent.code
         }
 
-        /// A keyboard's composition committed. Its marked text (a Japanese
-        /// keyboard's full-width "２", say) reaches the field with no word to
-        /// its delegate, so once nothing is marked, whatever the keyboard put
-        /// in after the text the field last held is entered into the code as
-        /// it is drawn now: the host may have changed it meanwhile. One
-        /// character joins the code, more replace it, as a typed digit and the
-        /// one-time code do, and only digits count, as ASCII; React enters a
-        /// composed digit the same way, once, at `compositionend`. Read-only,
-        /// nothing is entered. The field is always left holding the code.
+        /// Whether a keyboard has marked text in the field since it was last
+        /// settled.
+        var composing = false
+
+        /// A keyboard's composition committed or cancelled. Its marked text
+        /// (a Japanese keyboard's full-width "３４", say) reaches the field
+        /// with no word to its delegate, so once nothing is marked, whatever
+        /// the keyboard put in after the text the field last held is typed
+        /// into the code as it is drawn now, which the host may have changed
+        /// meanwhile: its digits are appended, as ASCII, up to the length,
+        /// however many there are, as React enters a composed digit at
+        /// `compositionend`. (A paste and the one-time code never arrive as
+        /// marked text; they replace the code through the delegate.)
+        /// Read-only, nothing is entered. A cancelled composition enters
+        /// nothing, and leaves the field holding the code as drawn now.
         func settle(_ field: UITextField) {
             guard field.markedTextRange == nil else { return }
+            let wasComposing = composing
+            composing = false
             let held = field.text ?? ""
-            // Nothing the keyboard did behind the delegate's back.
-            guard held != settled else { return }
+            if held == settled {
+                // Nothing entered behind the delegate's back. After a
+                // composition, the host may have changed the code under it.
+                if wasComposing, held != parent.code {
+                    field.text = parent.code
+                    settled = parent.code
+                    KozmosOTPTextField.moveCaretToEnd(field)
+                }
+                return
+            }
             let before = parent.code
             let committed = held.hasPrefix(settled) ? String(held.dropFirst(settled.count)) : held
-            var after = before
-            if !parent.readOnly {
-                let digits = KozmosOTPInput.sanitize(committed, length: parent.length)
-                if committed.count > 1 {
-                    if !digits.isEmpty { after = digits }
-                } else {
-                    after = KozmosOTPInput.sanitize(before + digits, length: parent.length)
-                }
-            }
+            let after = parent.readOnly ? before : KozmosOTPInput.sanitize(before + committed, length: parent.length)
             field.text = after
             settled = after
             KozmosOTPTextField.moveCaretToEnd(field)
             if after != before { parent.onEdit(before, after) }
         }
-
-        /// The field's text changed: settle anything a keyboard committed
-        /// without the delegate, whichever way it ended the composition.
-        @objc func editingChanged(_ field: UITextField) { settle(field) }
 
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
@@ -562,6 +565,12 @@ final class KozmosOTPTextField: UITextField {
     override func closestPosition(to point: CGPoint, within range: UITextRange) -> UITextPosition? { endOfDocument }
 
     override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] { [] }
+
+    /// A keyboard starts or changes a composition.
+    override func setMarkedText(_ markedText: String?, selectedRange: NSRange) {
+        (delegate as? KozmosOTPField.Coordinator)?.composing = true
+        super.setMarkedText(markedText, selectedRange: selectedRange)
+    }
 
     /// A keyboard's composition ends: what it committed becomes the code.
     override func unmarkText() {

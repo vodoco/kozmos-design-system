@@ -225,6 +225,49 @@ class KozmosOTPInputAnalyticsTest {
     }
 
     /**
+     * The same, typed on the keyboard (InsertTextAtCursor, the IME's commit
+     * path through the field's own edit): the second digit is read against
+     * what the first left in the field, not against the code as last drawn.
+     */
+    @Test
+    fun twoKeyboardEditsBeforeARecompositionReportOneCompletion() {
+        val code = mutableStateOf("")
+        otp(code) {
+            type("12345")
+            val field = read().merged.single { it.setText != null }
+            field.requestFocus?.invoke()
+            frames(2)
+            val insert = checkNotNull(read().merged.single { it.setText != null }.insertText)
+            assertTrue(insert("6"))
+            assertTrue(insert("7"))
+            frames(2)
+            assertEquals("123456", code.value)
+            assertEquals(listOf(completion(length = "6")), events)
+        }
+    }
+
+    /** A host that takes the code later, typed on the keyboard: one completion. */
+    @Test
+    fun aHostThatTakesTheCodeLaterHearsOneCompletionFromTheKeyboard() {
+        val code = mutableStateOf("12345")
+        val pending = mutableListOf<String>()
+        otp(code, onValueChange = { pending += it }) {
+            read().merged.single { it.setText != null }.requestFocus?.invoke()
+            frames(2)
+            checkNotNull(read().merged.single { it.setText != null }.insertText)("6")
+            frames(2)
+            assertEquals("12345", read().merged.single { it.setText != null }.editableText)
+            checkNotNull(read().merged.single { it.setText != null }.insertText)("7")
+            frames(2)
+            assertEquals(listOf("123456", "123457"), pending)
+            code.value = pending.last()
+            frames(2)
+            assertEquals("123457", code.value)
+            assertEquals(listOf(completion(length = "6")), events)
+        }
+    }
+
+    /**
      * A host that takes the code a frame or more later, as one updating
      * through a view model may, hears one completion, though the field shows
      * its old code again meanwhile and the user, seeing five digits, types a

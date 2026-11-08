@@ -246,6 +246,45 @@ import XCTest
       XCTAssertEqual(box.code, "12")
     }
 
+    /// A composition of more than one digit is typing, not a paste: its
+    /// digits join the code, they do not replace it.
+    @MainActor func testAComposedRunOfDigitsIsTypedNotPasted() async throws {
+      let box = Box("12")
+      let window = await host(KozmosOTPInput(value: Binding(get: { box.code }, set: { box.code = $0 })))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      field.setMarkedText("３４", selectedRange: NSRange(location: 2, length: 0))
+      field.unmarkText()
+      await settle()
+      XCTAssertEqual(box.code, "1234", "a composed run of digits replaced the code")
+      XCTAssertEqual(field.text, "1234")
+      field.resignFirstResponder()
+    }
+
+    /// A composition cancelled after the host cleared the code enters
+    /// nothing, and the field holds the cleared code the cells draw, so the
+    /// next digit typed is the first.
+    @MainActor func testACancelledCompositionAfterAHostsClearLeavesTheFieldHoldingTheCode() async throws {
+      let host = Host("123456")
+      let window = await self.host(Hosted(host: host))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      field.setMarkedText("x", selectedRange: NSRange(location: 1, length: 0))
+      await settle()
+      host.code = ""
+      await settle()
+      field.setMarkedText("", selectedRange: NSRange(location: 0, length: 0))
+      field.unmarkText()
+      await settle()
+      XCTAssertEqual(field.text, "", "the field kept a code the cells do not draw")
+      _ = type("4", into: field)
+      await settle()
+      XCTAssertEqual(host.code, "4", "the next digit was lost")
+      field.resignFirstResponder()
+    }
+
     /// Any decimal digit is the host's as its ASCII digit: Arabic-Indic and
     /// Devanagari, typed through the field's delegate, and a host's own.
     @MainActor func testDigitsInAnyScriptAreKeptAsASCII() async throws {
