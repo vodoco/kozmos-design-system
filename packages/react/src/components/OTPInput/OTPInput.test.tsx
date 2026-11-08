@@ -121,6 +121,313 @@ describe("OTPInput", () => {
     ]);
   });
 
+  describe("decimal digits from any script", () => {
+    // The code 0 9 1 2 in each script a phone's keyboard may type it in:
+    // zero is where a digit's walk back to the start of its run stops at
+    // once, and nine is where it walks furthest.
+    const SCRIPTS = [
+      ["Arabic-Indic", "٠٩١٢"],
+      ["Extended Arabic-Indic", "۰۹۱۲"],
+      ["Devanagari", "०९१२"],
+      ["full-width", "０９１２"],
+    ] as const;
+
+    const paste = (input: HTMLElement, code: string) =>
+      fireEvent.paste(input, { clipboardData: { getData: () => code } });
+
+    it.each(SCRIPTS)("takes %s digits typed one by one as ASCII", (_, code) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      const inputs = screen.getAllByRole("textbox");
+      Array.from(code).forEach((digit, index) =>
+        fireEvent.change(inputs[index], { target: { value: digit } }),
+      );
+
+      expect(handleChange.mock.calls).toEqual([
+        ["0"],
+        ["09"],
+        ["091"],
+        ["0912"],
+      ]);
+      expect(cellsIn(document)).toEqual(["0", "9", "1", "2"]);
+      expect(document.activeElement).toBe(inputs[3]);
+    });
+
+    it.each(SCRIPTS)("takes a pasted %s code as ASCII", (_, code) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      paste(screen.getAllByRole("textbox")[0], code);
+
+      expect(handleChange.mock.calls).toEqual([["0912"]]);
+      expect(cellsIn(document)).toEqual(["0", "9", "1", "2"]);
+    });
+
+    it("keeps a mixed paste's digits in order, as ASCII", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+
+      paste(screen.getAllByRole("textbox")[0], "١2३-4");
+
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+    });
+
+    it("drops what is not a decimal digit: letters, ², ½ and other numbers", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+
+      // Superscript two, one half, a circled one and the Roman numeral twelve
+      // are numbers, but none is a decimal digit (general category Nd).
+      fireEvent.change(inputs[0], { target: { value: "²" } });
+      fireEvent.change(inputs[0], { target: { value: "½" } });
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+
+      paste(inputs[0], "a²٣½b①Ⅻ4");
+      expect(handleChange.mock.calls).toEqual([["34"]]);
+      expect(cellsIn(document)).toEqual(["3", "4", "", ""]);
+    });
+
+    it("draws a controlled value's digits from any script as ASCII", () => {
+      const commits: string[][] = [];
+      const onCommit = (cells: string[]) => commits.push(cells);
+      const { rerender } = render(
+        <CommitProbe length={4} onCommit={onCommit} value="١٢٣" />,
+      );
+      expect(commits).toEqual([["1", "2", "3", ""]]);
+
+      rerender(<CommitProbe length={4} onCommit={onCommit} value="۴५６7" />);
+      expect(commits.at(-1)).toEqual(["4", "5", "6", "7"]);
+    });
+
+    it("trims to length by digits, two UTF-16 units or one", () => {
+      // The double-struck digits are each two UTF-16 units, and are the third
+      // of five sets of mathematical digits that run back to back.
+      const handleChange = vi.fn();
+      const { rerender } = render(
+        <OTPInput length={4} onChange={handleChange} />,
+      );
+
+      paste(screen.getAllByRole("textbox")[0], "𝟙𝟚𝟛𝟜𝟝");
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+
+      rerender(<OTPInput length={4} onChange={handleChange} value="٥٦٧٨٩" />);
+      expect(cellsIn(document)).toEqual(["5", "6", "7", "8"]);
+    });
+  });
+
+  describe("IME composition", () => {
+    // An IME's events go to the cell that has the focus at each step, as
+    // Chromium's do: a commit lands wherever the focus went.
+    const focused = () => document.activeElement as HTMLInputElement;
+    const composing = (text: string) =>
+      fireEvent.input(focused(), {
+        target: { value: text },
+        isComposing: true,
+        inputType: "insertCompositionText",
+        data: text,
+      });
+    /**
+     * Composes `text` and commits it, in the order Chromium's IME sends:
+     * compositionstart, the text as it composes, the text committed, then
+     * compositionend.
+     */
+    const compose = (text: string) => {
+      fireEvent.compositionStart(focused(), { data: "" });
+      composing(text);
+      composing(text);
+      fireEvent.compositionEnd(focused(), { data: text });
+    };
+
+    it.each([
+      ["a full-width digit", "１"],
+      ["an ASCII digit", "1"],
+    ])("enters %s composed by an IME once, then moves on", (_, digit) => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      compose(digit);
+
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("draws the IME's text, and keeps the focus and onChange, until the composition ends", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("あ");
+      expect(cellsIn(document)).toEqual(["あ", "", "", ""]);
+      composing("１");
+      expect(cellsIn(document)).toEqual(["１", "", "", ""]);
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("enters nothing for a composition that is cancelled or ends in no digit", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      composing("");
+      fireEvent.compositionEnd(inputs[0], { data: "" });
+
+      compose("一");
+
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+      expect(document.activeElement).toBe(inputs[0]);
+    });
+
+    it("enters a composition once when its text arrives again after compositionend (Input Events Level 2)", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+      fireEvent.input(focused(), {
+        target: { value: "１" },
+        isComposing: false,
+        inputType: "insertFromComposition",
+        data: "１",
+      });
+
+      expect(handleChange.mock.calls).toEqual([["1"]]);
+      expect(cellsIn(document)).toEqual(["1", "", "", ""]);
+    });
+
+    it("holds a non-composing input that arrives mid-composition, and moves on only at compositionend", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+      fireEvent.input(inputs[0], {
+        target: { value: "２" },
+        isComposing: false,
+        inputType: "insertFromComposition",
+        data: "２",
+      });
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+
+      fireEvent.compositionEnd(inputs[0], { data: "２" });
+      expect(handleChange.mock.calls).toEqual([["2"]]);
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+
+    it("enters nothing when a read-only cell's composition ends", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} readOnly />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      (inputs[0] as HTMLInputElement).value = "１";
+      fireEvent.compositionEnd(inputs[0], { data: "１" });
+
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(inputs[0]);
+    });
+
+    // React never hears these compositions end. The cell must not stay
+    // composing, or what is typed into it later is drawn and never entered.
+    it.each([
+      ["disabled", { disabled: true }],
+      ["made read-only", { readOnly: true }],
+    ])(
+      "enters typing again after a composing cell is %s and then restored",
+      (_, props) => {
+        const handleChange = vi.fn();
+        const { rerender } = render(
+          <OTPInput length={4} onChange={handleChange} />,
+        );
+        const inputs = screen.getAllByRole("textbox");
+        inputs[0].focus();
+        fireEvent.compositionStart(inputs[0], { data: "" });
+        composing("１");
+
+        rerender(<OTPInput length={4} onChange={handleChange} {...props} />);
+        rerender(<OTPInput length={4} onChange={handleChange} />);
+        fireEvent.change(inputs[0], { target: { value: "2" } });
+
+        expect(handleChange.mock.calls).toEqual([["2"]]);
+        expect(cellsIn(document)).toEqual(["2", "", "", ""]);
+      },
+    );
+
+    it("enters typing again in a cell that was composing when a shorter length removed it", () => {
+      const handleChange = vi.fn();
+      const { rerender } = render(
+        <OTPInput length={4} onChange={handleChange} />,
+      );
+      screen.getAllByRole("textbox")[3].focus();
+      fireEvent.compositionStart(focused(), { data: "" });
+      composing("１");
+
+      rerender(<OTPInput length={3} onChange={handleChange} />);
+      rerender(<OTPInput length={4} onChange={handleChange} />);
+      fireEvent.change(screen.getAllByRole("textbox")[3], {
+        target: { value: "4" },
+      });
+
+      expect(handleChange.mock.calls).toEqual([["4"]]);
+      expect(cellsIn(document)).toEqual(["", "", "", "4"]);
+    });
+
+    it("enters typing again after the focus leaves a composing cell", () => {
+      const handleChange = vi.fn();
+      render(<OTPInput length={4} onChange={handleChange} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[0].focus();
+      fireEvent.compositionStart(inputs[0], { data: "" });
+      composing("１");
+
+      fireEvent.blur(inputs[0]);
+      fireEvent.change(inputs[0], { target: { value: "2" } });
+
+      expect(handleChange.mock.calls).toEqual([["2"]]);
+      expect(cellsIn(document)).toEqual(["2", "", "", ""]);
+    });
+
+    it("keeps the focus on Backspace inside a composition", () => {
+      render(<OTPInput length={4} />);
+      const inputs = screen.getAllByRole("textbox");
+      inputs[1].focus();
+
+      fireEvent.compositionStart(inputs[1], { data: "" });
+      fireEvent.keyDown(inputs[1], { key: "Backspace", isComposing: true });
+      expect(document.activeElement).toBe(inputs[1]);
+
+      // Safari's keydown that ends a composition: keyCode 229, no isComposing.
+      fireEvent.keyDown(inputs[1], { key: "Backspace", keyCode: 229 });
+      expect(document.activeElement).toBe(inputs[1]);
+    });
+  });
+
   it("draws a controlled value's digits on the server", () => {
     const page = new DOMParser().parseFromString(
       renderToString(<OTPInput length={4} value="12" />),
@@ -338,6 +645,39 @@ describe("OTPInput", () => {
 
       type(inputs[3], "4");
       expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a code typed in another script once", () => {
+      const { completions, inputs } = renderTracked(<OTPInput length={4} />);
+
+      ["١", "٢", "٣"].forEach((digit, index) => type(inputs[index], digit));
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "٤");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a code pasted in another script once, and its host holds it in ASCII", () => {
+      const handleChange = vi.fn();
+      function EchoesTheCode() {
+        const [code, setCode] = React.useState("");
+        return (
+          <OTPInput
+            length={4}
+            onChange={(next) => {
+              handleChange(next);
+              setCode(next);
+            }}
+            value={code}
+          />
+        );
+      }
+      const { completions, inputs } = renderTracked(<EchoesTheCode />);
+
+      paste(inputs[0], "१२३४");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+      expect(handleChange.mock.calls).toEqual([["1234"]]);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
     });
 
     it("tracks each completion once under StrictMode", () => {

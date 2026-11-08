@@ -20,8 +20,34 @@ export interface OTPInputProps extends Omit<
   wrapperClassName?: string;
 }
 
+const isDecimalDigit = (character: string) => /^\p{Nd}$/u.test(character);
+
+/**
+ * The ASCII digit of a decimal digit's value, in any script: "٣" (Arabic-
+ * Indic), "۳" (Extended Arabic-Indic), "३" (Devanagari) and "３" (full-width)
+ * are all "3". Unicode encodes every script's decimal digits as ten contiguous
+ * code points, zero first, and some sets sit back to back (five sets of
+ * mathematical digits run as one), so a digit's value is its distance from
+ * the start of its run of digits, modulo ten.
+ */
+const toAsciiDigit = (digit: string) => {
+  const codePoint = digit.codePointAt(0)!;
+  let zero = codePoint;
+  while (isDecimalDigit(String.fromCodePoint(zero - 1))) zero -= 1;
+  return String((codePoint - zero) % 10);
+};
+
+/**
+ * Keeps the decimal digits (general category Nd, in any script) as their
+ * ASCII values, at most `length` of them, and drops everything else, so the
+ * cells and `onChange` only ever hold "0"-"9". "²" and "½" are numbers but not
+ * decimal digits, so they are dropped.
+ */
 const sanitizeOtpValue = (nextValue: string, length: number) =>
-  nextValue.replace(/\D/g, "").slice(0, length);
+  Array.from(nextValue.replace(/\P{Nd}/gu, ""))
+    .slice(0, length)
+    .map(toAsciiDigit)
+    .join("");
 
 const normalizeOtpLength = (length: number) =>
   Math.max(1, Math.trunc(Number.isFinite(length) ? length : 1));
@@ -110,13 +136,27 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     };
 
-    const handleChange = (
-      event: React.ChangeEvent<HTMLInputElement>,
-      index: number,
-    ) => {
-      if (readOnly) return;
+    // An IME's composition is entered once, when it ends. A Japanese or
+    // Chinese IME composes a full-width digit, and the browser sends input
+    // events while it does: entering each one moved the focus on while the
+    // IME was still composing, so its commit landed in the next cell as well
+    // ("１" composed in Chromium gave 1 1 _ _, and onChange "1" then "11").
+    // Until compositionend, the cell draws the IME's text as it is, so React
+    // does not write over it, and the focus stays.
+    const composingCell = useRef<number | null>(null);
+    const [composition, setComposition] = useState<{
+      index: number;
+      text: string;
+    } | null>(null);
+    // A composition React never hears end leaves no cell composing: one in a
+    // cell that is disabled or made read-only (no compositionend reaches
+    // React then), or in a cell a shorter `length` removes.
+    const composingGone = (index: number | null) =>
+      index !== null && (!!disabled || !!readOnly || index >= cellCount);
+    if (composingGone(composingCell.current)) composingCell.current = null;
+    if (composition && composingGone(composition.index)) setComposition(null);
 
-      const nextValue = event.target.value;
+    const enterDigits = (nextValue: string, index: number) => {
       const filteredValue = sanitizeOtpValue(nextValue, cellCount - index);
       if (!filteredValue && nextValue) return;
 
@@ -142,10 +182,62 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       }
     };
 
+    const handleChange = (
+      event: React.ChangeEvent<HTMLInputElement>,
+      index: number,
+    ) => {
+      if (readOnly) return;
+
+      const { inputType, isComposing } = event.nativeEvent as InputEvent;
+      if (isComposing || composingCell.current === index) {
+        setComposition({ index, text: event.target.value });
+        return;
+      }
+      // Input Events Level 2 sends a composition's text again after
+      // compositionend, which has already entered it.
+      if (
+        inputType === "insertFromComposition" ||
+        inputType === "deleteCompositionText"
+      )
+        return;
+
+      enterDigits(event.target.value, index);
+    };
+
+    const handleCompositionStart = (index: number) => {
+      composingCell.current = index;
+    };
+
+    const handleCompositionEnd = (
+      event: React.CompositionEvent<HTMLInputElement>,
+      index: number,
+    ) => {
+      composingCell.current = null;
+      setComposition(null);
+      if (readOnly) return;
+
+      // A composition cancelled, or one that left the cell as it was,
+      // enters nothing.
+      const { value } = event.currentTarget;
+      if (value === otp[index]) return;
+      enterDigits(value, index);
+    };
+
+    // A composition the focus leaves without its compositionend reaching
+    // React is over too.
+    const handleBlur = (index: number) => {
+      if (composingCell.current !== index) return;
+      composingCell.current = null;
+      setComposition(null);
+    };
+
     const handleKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
       index: number,
     ) => {
+      // Backspace inside a composition edits the IME's text. Safari's
+      // keydown that ends a composition has keyCode 229 and no isComposing.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
       if (event.key === "Backspace" && !otp[index] && index > 0) {
         inputs.current[index - 1]?.focus();
       }
@@ -195,8 +287,11 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               inputMode="numeric"
               autoComplete={index === 0 ? "one-time-code" : "off"}
               maxLength={1}
-              value={digit}
+              value={composition?.index === index ? composition.text : digit}
               onChange={(event) => handleChange(event, index)}
+              onCompositionStart={() => handleCompositionStart(index)}
+              onCompositionEnd={(event) => handleCompositionEnd(event, index)}
+              onBlur={() => handleBlur(index)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               onPaste={handlePaste}
               disabled={disabled}
