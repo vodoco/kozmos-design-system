@@ -1032,5 +1032,5 @@ Change details: [React](../packages/react/CHANGELOG.md#0152), [styles](../packag
 longer covers the field's outline (decision 164).
 
 SwiftUI and Compose are unchanged by this release: SwiftUI's OTPInput rebuild and the natives' `otp_code_completed`
-(decision 170) are in #492, still open. Figma's field-end hover and pressed variants follow decision 164
+(decision 170) came after it, in #492 (merged on 8 Nov, `b60a0d0d`). Figma's field-end hover and pressed variants follow decision 164
 separately, and Olcay keeps Pointr's Claude Design artifact as it is until 0.16.0, so no 0.15.2 kit is built.
