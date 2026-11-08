@@ -1,7 +1,6 @@
 # Controlled npm releases
 
-Status (2026-11-06): in use; React 0.15.1 is published, with `@kozmos-ds/styles` 0.15.1 and icons 0.9.0 (evidence
-below).
+Status (2026-11-07): in use; React 0.15.2 is published, with `@kozmos-ds/styles` 0.15.2 (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -277,8 +276,8 @@ the runner killing the job first. Change one and change the other. Native/Figma/
 A first publish under a new name can leave a placeholder version beside the planned one. `@kozmos-ds/styles`'s
 (0.15.1, 6 Nov 2026) left `0.0.0-stage`, npm's placeholder for staged publishing, as the job began publishing it,
 though the job ran a plain `npm publish` (the 0.15.1 record below). It is a prerelease, off `latest`, which no ordinary
-range matches. Expect one for the next new name, `@kozmos-ds/vue`; deprecating it, or unpublishing it within npm's
-72 hours, is Olcay's call.
+range matches. Olcay deprecated styles' on 7 Nov (the 0.15.2 record below). Expect one for the next new name,
+`@kozmos-ds/vue`; deprecating it, or unpublishing it within npm's 72 hours, is Olcay's call.
 
 ### 0.5.0
 
@@ -981,3 +980,57 @@ Upgrading from 0.15.0:
 SwiftUI and Compose: nothing changed since 0.15.0 but the Code Connect files published on 5 Nov (#445, #464 to #467).
 Figma is unchanged by this release. Olcay keeps Pointr's Claude Design artifact as it is until 0.16.0 (5 Nov), so no
 0.15.1 kit is built.
+
+### 0.15.2
+
+Published on 2026-11-07 from `c3da4baa2bae761ecc1aebd8e50ecbe94d40a92e`, the version merge
+[#498](https://github.com/vodoco/kozmos-design-system/pull/498). React 0.15.2 and `@kozmos-ds/styles` 0.15.2 move
+together (one fixed group, React pinning styles exactly); icons 0.9.0, tokens 0.8.1 and product-contracts 0.10.0 are
+unchanged and not planned. It is a patch release: decision 171 ships the patches first, as 0.15.2, and the minors
+build toward 0.16.0, so it carries none of the items the register promises for 0.16.0. It carries four fixes:
+
+- **#484, "No results found" is said** (GAP-224, React): Combobox, MultiSelect and RouteLocationField keep a visually
+  hidden status mounted from the start and change its words, so a screen reader announces it. Olcay confirmed it with
+  VoiceOver on Safari on 7 Nov, arrow navigation with Quick Nav off included. #484 also corrects MultiSelect's docs, which said
+  reaching `maxSelected` was announced (GAP-225).
+- **#487, the field-end hover** (GAP-227, decisions 164 and 165): the buttons at a field's end draw their hover inside
+  themselves, and Input's pressed toggle takes the same shape.
+- **#490, OTPInput's first frame:** a controlled OTPInput shows its value from its first render, on the server too,
+  and OTPInput now sends `otp_code_completed` once each time typing or a paste fills the last empty cell, never for a
+  `value` the parent sets (decision 170 asks the same of SwiftUI and Compose).
+- **#491, a prop change in its own commit:** Combobox, MultiSelect and FloorSelector show a prop change in the commit
+  it arrives in.
+
+Olcay gave this release to run end to end on 7 Nov, for 0.15.2 only, and the `npm-release` gate was approved under
+that authority. It was not standing, and it is spent. Times are UTC.
+
+Three merges of 7 Nov ship nothing in it. **#489** (10:01, `74a74d69`): the Vue bridge's `v-model` goes through the
+models each bridged wrapper names, and its listeners are routed by decision 168. **#494** (12:25, `8ccf76da`): the
+types reader that writes the bridge's `part-takes.ts` reads packages/react's own React types. Main went red after
+#489: pnpm's hidden hoist (`node_modules/.pnpm/node_modules`) served `@types/react` 19 on one install and 18 on
+another, and with 19 the generated table changed. **#488** (21:11, `a21a2607`, after the publish): the Vue CI job
+"Vue (build, contract, parity, browser suites)", four browser suites over the Vue Storybook, Vue visual baselines, a
+React 18 test step, Storybook's React pin and a 9.5 KB budget for the bridge. `@kozmos-ds/vue` stays private. The Vue
+job joined the required checks the same evening (below).
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.15.2 and `@kozmos-ds/styles` 0.15.2 on npm `latest`. React pins styles 0.15.2, and icons 0.9.0, tokens 0.8.1 and product-contracts 0.10.0, exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Exact main-push CI      | [42408159915](https://github.com/vodoco/kozmos-design-system/actions/runs/42408159915), on `c3da4baa`, done at 20:59. All six workflows on the merge succeeded: CI, [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/42408160122), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/42408159900), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/42408159906), [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/42408159897) and [Pages](https://github.com/vodoco/kozmos-design-system/actions/runs/42408160058). |
+| Preflight / publication | `pnpm release:preflight` against that run saw its 17 jobs succeed and passed. [42413861626](https://github.com/vodoco/kozmos-design-system/actions/runs/42413861626), dispatched at 21:01, succeeded: guard and prepare approved the candidate (React 0.15.2 and styles 0.15.2 to `latest`), the `npm-release` deployment was approved under the 7 Nov authority, and publish finished at 21:08.                                                                                                                                                                                                                                   |
+| Registry readback       | Both are on `latest` at 0.15.2, and each has its provenance attestations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Installed consumer      | Clean installations of React 0.15.2 with React 18.3.1 and with React 19.3.1, each in development and with `NODE_ENV=production`, exposed 276 exports from CJS and from the ESM entry. React's `style.css` is `@kozmos-ds/styles`' own, byte for byte. `renderToString(<OTPInput value="12" length={4} />)` draws 1 and 2 in its first two boxes, the first frame #490 fixes.                                                                                                                                                                                                                                                       |
+| Tags / GitHub releases  | `@kozmos-ds/styles@0.15.2` and `@kozmos-ds/react@0.15.2` at `c3da4baa`, each with its GitHub Release. React 0.15.2 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+npm's two leftovers of 0.15.1 are settled. The same evening Olcay removed the stale `next` dist-tag, which still
+pointed at 0.1.0, from react, icons, tokens and product-contracts, and deprecated `@kozmos-ds/styles@0.0.0-stage`, as
+he chose on 6 Nov. Both were read back on npm.
+
+Change details: [React](../packages/react/CHANGELOG.md#0152), [styles](../packages/styles/CHANGELOG.md#0152) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.15.1 needs nothing: React exports the same
+276 names and no prop changes. A field-end button's hover is now its `::before`, a fill 4 px in from its edges, and no
+longer covers the field's outline (decision 164).
+
+SwiftUI and Compose are unchanged by this release: SwiftUI's OTPInput rebuild and the natives' `otp_code_completed`
+(decision 170) are in #492, still open. Figma's field-end hover and pressed variants follow decision 164
+separately, and Olcay keeps Pointr's Claude Design artifact as it is until 0.16.0, so no 0.15.2 kit is built.
