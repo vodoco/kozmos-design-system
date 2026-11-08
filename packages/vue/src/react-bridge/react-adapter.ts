@@ -10,9 +10,10 @@ import {
   onMounted,
   onBeforeUnmount,
   onUpdated,
-  isRef,
   ref,
+  shallowRef,
   toRaw,
+  watch,
   warn,
 } from "vue";
 import { createRoot, type Root } from "react-dom/client";
@@ -657,29 +658,23 @@ const first = (source: Record<string, unknown>, keys: string[]) => {
   return key === undefined ? undefined : source[key];
 };
 
-/**
- * Reads every value inside `value`, as a `deep` watch does (Vue's own
- * `traverse`, which `vue` does not export): read in the wrapper's render, a
- * reactive object or array the parent changes in place (`style.color = …`,
- * `items.push(…)`) re-renders the wrapper, as it re-renders a Vue child that
- * draws it. Only refs, arrays, Maps, Sets and plain objects are entered, and
- * none marked raw.
- */
-function readDeep(value: unknown, seen = new Set<unknown>()): void {
-  if (typeof value !== "object" || value === null || seen.has(value)) return;
-  if ((value as { __v_skip?: boolean }).__v_skip) return;
-  seen.add(value);
-  if (isRef(value)) readDeep(value.value, seen);
-  else if (Array.isArray(value)) for (const item of value) readDeep(item, seen);
-  else if (value instanceof Map || value instanceof Set)
-    value.forEach((item: unknown) => readDeep(item, seen));
-  else if (Object.prototype.toString.call(value) === "[object Object]") {
-    const object = value as Record<PropertyKey, unknown>;
-    for (const key in object) readDeep(object[key], seen);
-    for (const key of Object.getOwnPropertySymbols(object))
-      if (Object.prototype.propertyIsEnumerable.call(object, key))
-        readDeep(object[key], seen);
-  }
+/** A vnode's own keys, which Vue never gives a component: `key`, `ref`, `onVnode*`. */
+const isReservedKey = (key: string) =>
+  key === "key" ||
+  key === "ref" ||
+  key === "ref_for" ||
+  key === "ref_key" ||
+  key.startsWith("onVnode");
+
+/** Whether two vnodes' props give a component the same, key by key. */
+function sameProps(a: Record<string, unknown>, b: Record<string, unknown>) {
+  const keys = (props: Record<string, unknown>) =>
+    Object.keys(props).filter((key) => !isReservedKey(key));
+  const given = keys(a);
+  return (
+    given.length === keys(b).length &&
+    given.every((key) => hasOwn(b, key) && Object.is(a[key], b[key]))
+  );
 }
 
 /** `.trim` and `.number`, as Vue's `emit` applies them. */
@@ -847,6 +842,13 @@ export function createVueWrapper<P extends object, N extends string = never>(
       const modelOnceRan = new Set<string>();
       const warned = new Set<string>();
       let root: Root | null = null;
+      /**
+       * What the wrapper was given when React was last drawn: its vnode's
+       * props, and the names of its slots, each a prop of React's.
+       */
+      let drawnFrom: Record<string, unknown> = {};
+      let drawnSlots = "";
+      const slotNames = () => Object.keys(slots).join("\n");
 
       const warnOnce = (message: string) => {
         if (warned.has(message)) return;
@@ -1009,6 +1011,8 @@ export function createVueWrapper<P extends object, N extends string = never>(
 
       const renderReact = () => {
         if (!containerRef.value) return;
+        drawnFrom = { ...given() };
+        drawnSlots = slotNames();
 
         // Initialize the React root once
         if (!root) {
@@ -1172,22 +1176,27 @@ export function createVueWrapper<P extends object, N extends string = never>(
       });
 
       /*
-       * React is drawn again after each of the wrapper's own renders, and
-       * only then: one draw for each Vue update, of what the wrapper was
-       * given in it. A wrapper (`inheritAttrs: false` changes nothing here)
-       * is rendered again when
-       * - its parent renders a vnode whose props differ from the last
-       *   (`shouldUpdateComponent`): an attribute or a listener added,
-       *   removed or changed, a model's value or listener, which, with no
-       *   `emits` declared, are all among the props Vue compares; or slots
-       *   that are not stable;
-       * - something its render read changes: each value it was given, read
-       *   to the bottom by `readDeep` below, so a reactive object or array
-       *   changed in place counts, and what its slots read.
-       * Vue calls `onUpdated` after each such render, once, however many of
-       * those changed in one tick, and never for a parent's render that
-       * gives the wrapper what it had. A slot's change draws React once more
-       * with what it had: React's part is given the same slot box.
+       * React is drawn again when what the wrapper was given changes, once a
+       * tick however many ways it changed, and not otherwise. Two things say
+       * it changed:
+       *
+       * - `onUpdated`, for what the parent gives: an attribute, a listener
+       *   or a model added, removed or changed. Vue renders the wrapper
+       *   again when its parent renders a vnode whose props differ from the
+       *   last (`shouldUpdateComponent`; with no `emits` declared, listeners
+       *   and models are among the props it compares, and `inheritAttrs:
+       *   false` changes nothing here), and calls `onUpdated` after. It
+       *   renders it again too when its slots are not stable (a render
+       *   function's `{ default: () => … }`, given anew each time) or what a
+       *   slot reads changes: then, when the props and the slots' names are
+       *   what React was drawn from (`drawnFrom`, `drawnSlots`), React,
+       *   given the same slot boxes, is not drawn. A slot given or taken
+       *   away is a prop of React's given or taken away, and is drawn.
+       * - a deep watch of the props, for a reactive object or array the
+       *   parent changes in place (`items.push(…)`), which no render of the
+       *   parent's or the wrapper's sees. It walks the values only when they
+       *   change, never in a render: a slot showing `{{ query }}` beside a
+       *   list of 10,000 rows costs no walk of the rows.
        *
        * It was a watch of `{ ...props, ...attrs }`: a spread reads only the
        * attributes that are there, so a wrapper given none tracked none, and
@@ -1196,14 +1205,32 @@ export function createVueWrapper<P extends object, N extends string = never>(
        * The models: `emitModel` draws React itself, inside React's event,
        * and `settle` after Vue's render, should the parent take nothing.
        */
-      onUpdated(() => {
+      let pending = false;
+      let unmounted = false;
+      /** Draws React once, after this tick's renders, for each change in it. */
+      const redraw = () => {
         // Vue's render has the parent's models now.
         for (const change of typed.values()) change.settled = true;
-        renderReact();
+        if (pending) return;
+        pending = true;
+        void nextTick(() => {
+          pending = false;
+          if (!unmounted) renderReact();
+        });
+      };
+      /** The props the wrapper's vnode holds, for the deep watch. */
+      const givenNow = shallowRef(given());
+      onUpdated(() => {
+        const now = given();
+        if (sameProps(now, drawnFrom) && slotNames() === drawnSlots) return;
+        givenNow.value = now;
+        redraw();
       });
+      watch(givenNow, redraw, { deep: true });
 
       // Cleanly unmount the React Virtual DOM when the Vue Component is destroyed
       onBeforeUnmount(() => {
+        unmounted = true;
         containerRef.value?.removeEventListener("change", commit);
         if (root) {
           root.unmount();
@@ -1213,10 +1240,6 @@ export function createVueWrapper<P extends object, N extends string = never>(
       // Render a style-neutral transport container ensuring flex/grid cascades natively.
       // Construct unique Virtual DOM containers for every configured slot dynamically natively bridging arrays.
       return () => {
-        // What `onUpdated` above redraws React for: every value given,
-        // read to the bottom, so a change made in place renders the wrapper.
-        readDeep(props);
-        readDeep(attrs);
         const slotVNodes = Object.entries(slots).map(([name, slotFn]) => {
           if (!slotRefs[name]) slotRefs[name] = { value: null };
           return h(

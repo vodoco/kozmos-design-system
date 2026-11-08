@@ -138,18 +138,101 @@ describe("React is drawn once per change", () => {
     });
   });
 
-  it("one draw when a value given is changed in place", async () => {
-    const style = reactive({ color: "red" });
+  it("one draw for each change made in place to a reactive value given", async () => {
+    // Not `style`: a parent's `v-bind` copies a style object as it renders,
+    // and so sees its change itself. Nothing the parent or the wrapper
+    // renders reads these: only the bridge's deep watch sees them change.
     const items = reactive(["a"]);
-    bindProbe({ style, items });
+    const filter = reactive({ query: "" });
+    bindProbe({ items, filter });
+    await settle();
+    const counts: Record<string, number> = {};
+    const step = async (name: string, change: () => void) => {
+      const before = draws;
+      change();
+      await settle();
+      counts[name] = draws - before;
+    };
+    await step("item pushed", () => items.push("b"));
+    await step("item replaced", () => (items[0] = "z"));
+    await step("nested key set", () => (filter.query = "gate"));
+    await step("two changes in one tick", () => {
+      items.push("c");
+      filter.query = "gate 4";
+    });
+    expect(counts).toEqual({
+      "item pushed": 1,
+      "item replaced": 1,
+      "nested key set": 1,
+      "two changes in one tick": 1,
+    });
+    expect(given.items).toEqual(["z", "b", "c"]);
+    expect(given.filter).toEqual({ query: "gate 4" });
+  });
+
+  it("no draw when only what a template's slot shows changes", async () => {
+    const query = ref("a");
+    const items = reactive(Array.from({ length: 100 }, (_, index) => index));
+    mount(
+      defineComponent({
+        components: { Wrapper },
+        setup: () => ({ query, items }),
+        template: `<Wrapper :items="items" title="t">{{ query }}</Wrapper>`,
+      }),
+    );
     await settle();
     const before = draws;
-    style.color = "blue";
+    query.value = "b";
     await settle();
-    expect(given.style).toEqual({ color: "blue" });
+    expect(document.body.textContent).toContain("b");
+    expect(draws - before).toBe(0);
+  });
+
+  it("no draw when a render function renders the wrapper again with the same props", async () => {
+    const tick = ref(0);
+    const items = reactive(["a"]);
+    const onClick = () => {};
+    mount(() =>
+      h("div", { "data-tick": tick.value }, [
+        h(
+          Wrapper,
+          { title: "t", items, onClick },
+          { default: () => `tick ${tick.value}` },
+        ),
+      ]),
+    );
+    await settle();
+    const before = draws;
+    tick.value += 1;
+    await settle();
+    expect(document.body.textContent).toContain("tick 1");
+    expect(draws - before).toBe(0);
+    // And the same parent's change is drawn once.
     items.push("b");
     await settle();
-    expect(given.items).toEqual(["a", "b"]);
+    expect(draws - before).toBe(1);
+  });
+
+  it("one draw for a slot given or taken away after mount, which React is given as a prop", async () => {
+    const shown = ref(false);
+    mount(() =>
+      h(
+        Wrapper,
+        { title: "t" },
+        shown.value
+          ? { default: () => "Gate", actions: () => "Open" }
+          : { default: () => "Gate" },
+      ),
+    );
+    await settle();
+    expect(given).not.toHaveProperty("actions");
+    const before = draws;
+    shown.value = true;
+    await settle();
+    expect(given).toHaveProperty("actions");
+    shown.value = false;
+    await settle();
+    expect(given).not.toHaveProperty("actions");
     expect(draws - before).toBe(2);
   });
 
@@ -184,8 +267,11 @@ describe("React is drawn once per change", () => {
     await settle();
     // One inside React's event, so the field keeps what was typed and its
     // caret (`emitModel`), and one after Vue's render with the parent's
-    // model: `onUpdated` when the parent takes it, `settle` when it does
-    // not. A third would be a draw Vue did not ask for.
+    // model: the redraw `onUpdated` asks for when the parent takes it,
+    // `settle` when it does not. A third would be a draw Vue did not ask for.
+    // React 19 batches the last two however many are asked for, so only
+    // React 18, which `test:react18` runs in CI's Vue job, sees a third:
+    // `settle` drawing again after the parent took the change.
     const typed = async (text: string) => {
       const before = fieldDraws;
       type(field, text);
