@@ -9,7 +9,9 @@ import {
   normalizeStyle,
   onMounted,
   onBeforeUnmount,
+  onUpdated,
   ref,
+  shallowRef,
   toRaw,
   watch,
   warn,
@@ -856,6 +858,25 @@ const first = (source: Record<string, unknown>, keys: string[]) => {
   return key === undefined ? undefined : source[key];
 };
 
+/** A vnode's own keys, which Vue never gives a component: `key`, `ref`, `onVnode*`. */
+const isReservedKey = (key: string) =>
+  key === "key" ||
+  key === "ref" ||
+  key === "ref_for" ||
+  key === "ref_key" ||
+  key.startsWith("onVnode");
+
+/** Whether two vnodes' props give a component the same, key by key. */
+function sameProps(a: Record<string, unknown>, b: Record<string, unknown>) {
+  const keys = (props: Record<string, unknown>) =>
+    Object.keys(props).filter((key) => !isReservedKey(key));
+  const given = keys(a);
+  return (
+    given.length === keys(b).length &&
+    given.every((key) => hasOwn(b, key) && Object.is(a[key], b[key]))
+  );
+}
+
 /** `.trim` and `.number`, as Vue's `emit` applies them. */
 function applyModifiers(
   value: unknown,
@@ -1046,6 +1067,13 @@ export function createVueWrapper<P extends object, N extends string = never>(
       const modelOnceRan = new Set<string>();
       const warned = new Set<string>();
       let root: Root | null = null;
+      /**
+       * What the wrapper was given when React was last drawn: its vnode's
+       * props, and the names of its slots, each a prop of React's.
+       */
+      let drawnFrom: Record<string, unknown> = {};
+      let drawnSlots = "";
+      const slotNames = () => Object.keys(slots).join("\n");
 
       const warnOnce = (message: string) => {
         if (warned.has(message)) return;
@@ -1213,6 +1241,8 @@ export function createVueWrapper<P extends object, N extends string = never>(
 
       const renderReact = () => {
         if (!containerRef.value) return;
+        drawnFrom = { ...given() };
+        drawnSlots = slotNames();
 
         // Initialize the React root once
         if (!root) {
@@ -1338,11 +1368,20 @@ export function createVueWrapper<P extends object, N extends string = never>(
         void nextTick(settle);
       };
 
-      /** After Vue's render: the parent's model decides what React shows. */
+      /**
+       * After Vue's render: the parent's model decides what React shows.
+       * When the parent took the change, Vue rendered the wrapper, and
+       * `onUpdated` has settled it and drawn React already; drawn again,
+       * React was given what it had.
+       */
       const settle = () => {
-        if (!typed.size) return;
-        for (const change of typed.values()) change.settled = true;
-        renderReact();
+        let drawn = true;
+        for (const change of typed.values())
+          if (!change.settled) {
+            change.settled = true;
+            drawn = false;
+          }
+        if (!drawn) renderReact();
       };
 
       /**
@@ -1366,19 +1405,70 @@ export function createVueWrapper<P extends object, N extends string = never>(
         containerRef.value?.addEventListener("change", commit);
       });
 
-      // Synchronize Vue reactivity into the React Engine silently
-      watch(
-        () => ({ ...props, ...attrs }),
-        () => {
-          // Vue's render has the parent's models now.
-          for (const change of typed.values()) change.settled = true;
-          renderReact();
-        },
-        { deep: true },
-      );
+      /*
+       * React is drawn again when what the wrapper was given changes, once a
+       * tick however many ways it changed, and not otherwise. Two things say
+       * it changed:
+       *
+       * - `onUpdated`, for what the parent gives: an attribute, a listener
+       *   or a model added, removed or changed. Vue renders the wrapper
+       *   again when its parent renders a vnode whose props differ from the
+       *   last (`shouldUpdateComponent`; with no `emits` declared, listeners
+       *   and models are among the props it compares, and `inheritAttrs:
+       *   false` changes nothing here), and calls `onUpdated` after. It
+       *   renders it again too when its slots are not stable (a render
+       *   function's `{ default: () => … }`, given anew each time) or what a
+       *   slot reads changes: then, when the props and the slots' names are
+       *   what React was drawn from (`drawnFrom`, `drawnSlots`), React,
+       *   given the same slot boxes, is not drawn. A slot given or taken
+       *   away is a prop of React's given or taken away, and is drawn.
+       * - a deep watch of the props, for a reactive object or array the
+       *   parent changes in place (`items.push(…)`), which no render of the
+       *   parent's or the wrapper's sees. It walks the values only when they
+       *   change, never in a render: a slot showing `{{ query }}` beside a
+       *   list of 10,000 rows costs no walk of the rows.
+       *
+       * It was a watch of `{ ...props, ...attrs }`: a spread reads only the
+       * attributes that are there, so a wrapper given none tracked none, and
+       * an attribute or a listener given to it later never reached React.
+       *
+       * The models: `emitModel` draws React itself, inside React's event,
+       * and `settle` after Vue's render, should the parent take nothing.
+       */
+      let pending = false;
+      let unmounted = false;
+      /** Draws React once, after this tick's renders, for each change in it. */
+      const redraw = () => {
+        // Vue's render has the parent's models now.
+        for (const change of typed.values()) change.settled = true;
+        if (pending) return;
+        pending = true;
+        void nextTick(() => {
+          pending = false;
+          if (!unmounted) renderReact();
+        });
+      };
+      /**
+       * What the wrapper is given, for the deep watch: its vnode's props
+       * but `key`, `ref` and `onVnode*`. A `<script setup>` ref in a v-for
+       * (`ref: items, ref_for: true`) is an array Vue pushes each row's
+       * instance into; walked, each row added drew every row's React again.
+       */
+      const passed = () =>
+        Object.fromEntries(
+          Object.entries(given()).filter(([key]) => !isReservedKey(key)),
+        );
+      const givenNow = shallowRef(passed());
+      onUpdated(() => {
+        if (sameProps(given(), drawnFrom) && slotNames() === drawnSlots) return;
+        givenNow.value = passed();
+        redraw();
+      });
+      watch(givenNow, redraw, { deep: true });
 
       // Cleanly unmount the React Virtual DOM when the Vue Component is destroyed
       onBeforeUnmount(() => {
+        unmounted = true;
         containerRef.value?.removeEventListener("change", commit);
         if (root) {
           root.unmount();
