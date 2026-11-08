@@ -12,6 +12,10 @@ import {
   exportOwners,
   readModules,
 } from "../../../../scripts/skills/claude-design-source.mjs";
+import {
+  compilerOptions as shared,
+  hostWith,
+} from "../../../../scripts/skills/claude-design-typescript.mjs";
 import { COMPOSABLES, PORTS, REPOSITORY, VUE_DIST, type Port } from "../ports";
 
 /**
@@ -419,6 +423,14 @@ interface TypeCheck {
   relation?: "equal" | "within";
 }
 
+// React's types are packages/react's, whatever pnpm hoisted, as for the
+// Claude Design cards whose reader this contract shares: `paths` and
+// `typeRoots` from claude-design-typescript.mjs, and its host, which refuses
+// any other copy. framer-motion's declarations, which DynamicIsland's props
+// extend, import `react` with no @types/react of their own, so without the
+// pin a program reads whichever copy pnpm hoisted (main, 7 Nov). The other
+// options are this program's: `noUnusedLocals` would flag the helpers a
+// comparison does not use.
 const compilerOptions: ts.CompilerOptions = {
   strict: true,
   noEmit: true,
@@ -428,23 +440,15 @@ const compilerOptions: ts.CompilerOptions = {
   lib: ["lib.es2022.d.ts", "lib.dom.d.ts"],
   skipLibCheck: true,
   types: [],
+  paths: shared.paths,
+  typeRoots: shared.typeRoots,
 };
 
 function program(text: string) {
-  const host = ts.createCompilerHost(compilerOptions, true);
-  const { readFile, fileExists, getSourceFile } = host;
-  host.fileExists = (file) =>
-    file === CONTRACT_FILE || fileExists.call(host, file);
-  host.readFile = (file) =>
-    file === CONTRACT_FILE ? text : readFile.call(host, file);
-  host.getSourceFile = (file, language, onError, create) =>
-    file === CONTRACT_FILE
-      ? ts.createSourceFile(file, text, language, true, ts.ScriptKind.TS)
-      : getSourceFile.call(host, file, language, onError, create);
   return ts.createProgram({
     rootNames: [CONTRACT_FILE],
     options: compilerOptions,
-    host,
+    host: hostWith(new Map([[CONTRACT_FILE, text]]), compilerOptions),
   });
 }
 

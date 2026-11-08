@@ -78,6 +78,27 @@ const MAX_TOTAL_GZIP_KB = 100;
 // tree). CI reads the stylesheet the same as a Mac.
 const MAX_CSS_GZIP_KB = 32;
 const MIN_ESM_MODULES = 50;
+// @kozmos-ds/vue (Vue 3 Phase 0, P0.5), measured as React is: an app's
+// production build of every export at once, its dependencies (vue, reka-ui,
+// class-variance-authority, clsx, tailwind-merge) left out as the app's own,
+// minified and gzipped. Its stylesheet is @kozmos-ds/styles's, held above.
+//
+// The budget follows the rule React's first budgets were set by (22 Sep,
+// a03d3fd7b): the measurement plus about a tenth, to a round figure
+// (Everything 54.6 KB to 60, the stylesheet 26.4 to 30), here to the next
+// half kilobyte, the step React's later budgets take (8.5, 30.5). On 6 Nov
+// 2026 the main entry measured 2.69 KB here, and 110% of that, rounded up
+// to the half, is 3. Raise it only with the measurement that justifies it.
+const MAX_VUE_GZIP_KB = 3;
+// ./react-bridge, on a line of its own: it mounts React's parts, and an app
+// that imports it pays for @kozmos-ds/react, React and ReactDOM besides,
+// which are its peers and left out here as Vue's are. Its own code measured
+// 8.42 KB here and 8.47 KB on CI on 7 Nov 2026, with #489's bridge (v-model
+// through each wrapper's models, listener routing and part-takes.ts; main's
+// measured 3.58 on 6 Nov); the same rule gives 9.5 from either. It never
+// counts towards the main entry's, which must not import it
+// (packages/vue/test/react-free.spec.ts).
+const MAX_VUE_BRIDGE_GZIP_KB = 9.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");
@@ -91,11 +112,16 @@ const STYLESHEET = path.resolve(
   "../../packages/styles/dist/style.css",
 );
 const REACT_STYLESHEET = path.join(DIST_DIR, "style.css");
+const VUE_PKG_DIR = path.resolve(__dirname, "../../packages/vue");
+const VUE_ENTRY = path.join(VUE_PKG_DIR, "dist/kozmos-vue.mjs");
+const VUE_BRIDGE = path.join(VUE_PKG_DIR, "dist/react-bridge.mjs");
 
 interface RollupChunk {
   type: string;
   code?: string;
   exports?: string[];
+  imports?: string[];
+  dynamicImports?: string[];
 }
 interface RollupBundle {
   cache: unknown;
@@ -161,18 +187,19 @@ const isExternal = (id: string) =>
 
 async function main() {
   console.log(
-    "🔄 Building @kozmos-ds/react and its dependencies for performance analysis...",
+    "🔄 Building @kozmos-ds/react, @kozmos-ds/vue and their dependencies for performance analysis...",
   );
   try {
     // turbo builds the transitive dependencies, such as @kozmos-ds/tokens, first
-    execSync("ANALYZE=true pnpm turbo run build --filter=@kozmos-ds/react", {
-      stdio: "inherit",
-    });
+    execSync(
+      "ANALYZE=true pnpm turbo run build --filter=@kozmos-ds/react --filter=@kozmos-ds/vue",
+      { stdio: "inherit" },
+    );
   } catch {
     console.error("❌ Build failed! Bundle analysis aborted.");
     process.exit(1);
   }
-  for (const file of [ENTRY, STYLESHEET]) {
+  for (const file of [ENTRY, STYLESHEET, VUE_ENTRY, VUE_BRIDGE]) {
     if (!fs.existsSync(file)) {
       console.error(`❌ Output file not found: ${file}`);
       process.exit(1);
@@ -357,6 +384,47 @@ async function main() {
         `the stylesheet is ${kb(cssGzip).toFixed(2)} KB, over ${MAX_CSS_GZIP_KB} KB`,
       );
     }
+
+    // @kozmos-ds/vue: the main entry, and ./react-bridge on its own line.
+    const vue = await cost(
+      `import * as kozmos from ${JSON.stringify(VUE_ENTRY)}; console.log(kozmos);`,
+      "vue_everything",
+    );
+    const bridge = await cost(
+      `import * as bridge from ${JSON.stringify(VUE_BRIDGE)}; console.log(bridge);`,
+      "vue_react_bridge",
+    );
+    // The main entry draws no React: a bridge import in it would put the
+    // bridge's cost, and React itself, in every Vue app. A dynamic
+    // import() counts as much as a static one: the app's bundler still
+    // builds React into a chunk it ships.
+    const vueImports = vue.output
+      .flatMap((chunk) => [
+        ...(chunk.imports ?? []),
+        ...(chunk.dynamicImports ?? []),
+      ])
+      .filter((id) => /react/.test(id) && !/^reka-ui/.test(id));
+    console.log(`\n📊 What an app pays for @kozmos-ds/vue (minified, gzip):`);
+    console.log(`---------------------------------`);
+    console.log(
+      `Main entry:        ${kb(vue.gzip).toFixed(2)} KB / ${MAX_VUE_GZIP_KB.toFixed(2)} KB (${kb(vue.raw).toFixed(2)} KB minified)`,
+    );
+    console.log(
+      `./react-bridge:    ${kb(bridge.gzip).toFixed(2)} KB / ${MAX_VUE_BRIDGE_GZIP_KB.toFixed(2)} KB (${kb(bridge.raw).toFixed(2)} KB minified; React's parts, React and ReactDOM besides)`,
+    );
+    console.log(`---------------------------------`);
+    if (vueImports.length)
+      fail.push(
+        `@kozmos-ds/vue's main entry imports ${vueImports.join(", ")}: React belongs in ./react-bridge alone`,
+      );
+    if (kb(vue.gzip) > MAX_VUE_GZIP_KB)
+      fail.push(
+        `@kozmos-ds/vue's main entry costs ${kb(vue.gzip).toFixed(2)} KB, over ${MAX_VUE_GZIP_KB} KB`,
+      );
+    if (kb(bridge.gzip) > MAX_VUE_BRIDGE_GZIP_KB)
+      fail.push(
+        `@kozmos-ds/vue/react-bridge costs ${kb(bridge.gzip).toFixed(2)} KB, over ${MAX_VUE_BRIDGE_GZIP_KB} KB`,
+      );
   } finally {
     fs.rmSync(work, { recursive: true, force: true });
   }

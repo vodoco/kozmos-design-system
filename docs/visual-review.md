@@ -6,9 +6,13 @@ had no visual review), at a price Olcay chose not to pay (decision 11, 2026-09-2
 
 ## What it checks
 
-Every story in the built Storybook, in the **light and the dark theme**, drawn by Chromium in the
-official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and compared with a
-**baseline committed beside the code**: `tests/visual/baselines/<story-id>--<theme>.png`.
+Every story in the built Storybooks, React's and Vue's, in the **light and the dark theme**, drawn
+by Chromium in the official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and
+compared with a **baseline committed beside the code**: `tests/visual/baselines/<story-id>--<theme>.png`.
+Vue's Storybook (`apps/docs/.storybook-vue`, built into `apps/docs/storybook-internal/vue`) is the
+suite's `vue` project; its story ids start `vue-`, so its baselines sit beside React's under names of
+their own. Its decorator gives every story a `KozmosThemeProvider` at the toolbar's theme, as React's
+gives a `DesignConfigProvider`.
 
 - **One renderer.** Baselines are drawn only in that image, on CI or on your machine through Docker,
   so the same fonts and the same Chromium draw both sides of every comparison. A bare Mac draws text
@@ -35,8 +39,10 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   transitions are prevented before the first render, the caret is hidden, and the page asks for reduced motion.
 - **Opting out.** Give a story the tag `no-visual`, with a comment saying why.
 
-The suite is `tests/visual/stories.visual.ts`; its configuration is `playwright.visual.config.ts`;
-CI runs it in `.github/workflows/visual.yml` ("Visual Review").
+The suite is `tests/visual/stories.visual.ts` for React's stories and
+`tests/visual/vue-stories.visual.ts` for Vue's, both drawing through `tests/visual/capture.ts`; its
+configuration is `playwright.visual.config.ts`, which serves each build on a port of its own (6199
+and 6198); CI runs it in `.github/workflows/visual.yml` ("Visual Review").
 
 ## Reading a difference
 
@@ -54,10 +60,12 @@ If the difference is what you meant, record new baselines. They are committed wi
 views (2-up, swipe, onion skin). Approving the pull request approves the look.
 
 - **With Docker** (`pnpm test:visual:update`) records the baselines of the stories that changed.
-  Build first:
+  Build both Storybooks first, React's and Vue's; both scripts stop, naming the build to run, when
+  either is missing:
   ```bash
   pnpm exec turbo run build --filter=@kozmos-ds/react...
   pnpm --filter @kozmos-ds/docs build-storybook
+  pnpm --filter @kozmos-ds/docs build-storybook:vue
   pnpm test:visual:update          # or: pnpm test:visual:update --grep "chip"
   ```
   then commit `tests/visual/baselines`. Only drawings that fail the comparison are redrawn, so

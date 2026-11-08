@@ -1,4 +1,3 @@
-import { KozmosThemeProvider } from "../../";
 import { KozmosStepper } from "../../react-bridge";
 
 export default {
@@ -9,7 +8,7 @@ export default {
 // GAP-191: a tour's dots, named "Step 2 of 5" in the product's words.
 export const Dots = {
   render: () => ({
-    components: { KozmosStepper, KozmosThemeProvider },
+    components: { KozmosStepper },
     setup() {
       const steps = [
         "Choose a floor",
@@ -23,16 +22,14 @@ export const Dots = {
       return { steps, position };
     },
     template: `
-      <KozmosThemeProvider>
-        <div class="p-6">
-          <KozmosStepper
-            variant="dots"
-            :steps="steps"
-            :currentStep="1"
-            :positionLabel="position"
-          />
-        </div>
-      </KozmosThemeProvider>
+      <div class="p-6">
+        <KozmosStepper
+          variant="dots"
+          :steps="steps"
+          :currentStep="1"
+          :positionLabel="position"
+        />
+      </div>
     `,
   }),
 };
