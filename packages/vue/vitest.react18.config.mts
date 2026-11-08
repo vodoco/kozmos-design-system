@@ -17,6 +17,8 @@ import {
 
 // What the probe holds the run to, from the React 18 install itself, and
 // where the hooks write each React file Node resolved.
+// Listeners.spec.ts skips its one react-dom 19 test by it: a name filter
+// would be replaced by any `-t` the run is given.
 process.env.KOZMOS_REACT18 = JSON.stringify({
   reactDir: REACT_DIR,
   reactDomDir: REACT_DOM_DIR,
@@ -24,16 +26,6 @@ process.env.KOZMOS_REACT18 = JSON.stringify({
   reactDomVersion: REACT_DOM_VERSION,
 });
 process.env.KOZMOS_REACT18_LOG = LOG_FILE;
-
-/**
- * The one test that holds react-dom 19 alone, and fails on any other React
- * by design: Listeners.spec.ts' "… lists every DOM event react-dom 19
- * synthesises". Its React 18 half is test/react-dom-events.spec.ts, which
- * runs here.
- */
-const ONLY_ON_REACT_19 = "lists every DOM event react-dom 19 synthesises";
-/** The name as a pattern: every character a regex reads as syntax, escaped. */
-const literally = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default mergeConfig(
   base,
@@ -59,8 +51,6 @@ export default mergeConfig(
           fileURLToPath(new URL("./test/react18/hooks.mjs", import.meta.url)),
         ).href,
       ],
-      // Skipped by name, the only test this run leaves out.
-      testNamePattern: new RegExp(`^(?!.*${literally(ONLY_ON_REACT_19)})`),
     },
   }),
 );
