@@ -30,7 +30,11 @@ import org.junit.Test
  * - any decimal digit is taken as its ASCII digit, typed or pasted, so the
  *   host always receives ASCII;
  * - a paste replaces the code, whatever its length, a single digit included,
- *   as React's paste does; a paste with no digit changes nothing;
+ *   as React's paste does; a paste with no digit changes nothing, and one
+ *   that changes nothing leaves the next keystroke typed;
+ * - a code a keyboard inserts in one edit (InsertTextAtCursor, as a
+ *   clipboard chip or an SMS-code suggestion commits it) replaces the code,
+ *   as SwiftUI's field takes it;
  * - read-only, the field is read and not dimmed, and takes no edit, typed or
  *   pasted; disabled, it is dimmed.
  *
@@ -188,6 +192,72 @@ class KozmosOTPInputFieldTest {
             assertEquals("654321", code.value)
             assertEquals(2, completions())
         }
+    }
+
+    /** Inserts [text] at the field's cursor in one edit, as a keyboard's clipboard chip or SMS-code suggestion does. */
+    private suspend fun LiveSemantics.insert(text: String) {
+        field().requestFocus?.invoke()
+        frames(2)
+        val insert = checkNotNull(field().insertText) { "the field takes no inserted text" }
+        assertTrue("the field took no inserted text", insert(text))
+        frames(2)
+    }
+
+    /**
+     * A whole code a keyboard inserts at once, with no clipboard read, as
+     * Gboard's clipboard chip and SMS-code suggestion insert it, replaces the
+     * code, as a paste does and as SwiftUI's field takes it: it is not put in
+     * at the cursor and cut to the length.
+     */
+    @Test
+    fun aCodeTheKeyboardInsertsReplacesTheCode() {
+        val code = mutableStateOf("")
+        otp(code) {
+            enter("12")
+            insert("789012")
+            assertEquals("an inserted code was put in after the digits there", "789012", code.value)
+            assertEquals(1, completions())
+            insert("654321")
+            assertEquals("an inserted code left a full code unchanged", "654321", code.value)
+            assertEquals("editing a full code is no new completion", 1, completions())
+            insert("ab")
+            assertEquals("an insertion with no digit changed the code", "654321", code.value)
+            enter("")
+            insert("1")
+            insert("2")
+            assertEquals("one character inserted is typed", "12", code.value)
+        }
+    }
+
+    /**
+     * A paste that changes nothing, from an empty clipboard, leaves the next
+     * keystroke a keystroke: what the paste read is not used for an edit it
+     * did not make.
+     */
+    @Test
+    fun aPasteThatChangesNothingLeavesTheNextKeystrokeTyped() {
+        val code = mutableStateOf("")
+        otp(code) {
+            enter("12")
+            paste("")
+            assertEquals("12", code.value)
+            enter("123")
+            assertEquals("the keystroke after an empty paste was lost", "123", code.value)
+        }
+    }
+
+    /**
+     * What an edit inserted, and whether it is a paste's: "21" pasted inside
+     * "12" reads as "12" put after it, and is still that paste.
+     */
+    @Test
+    fun anEditIsReadAsWhatItInserted() {
+        assertEquals("789012", kozmosOtpInsertion("12", "12789012"))
+        assertEquals("12", kozmosOtpInsertion("12", "1212"))
+        assertTrue(kozmosOtpInserts("12", "1212", "21"))
+        assertTrue(kozmosOtpInserts("123456", "654321", "654321"))
+        assertTrue(!kozmosOtpInserts("12", "123", ""))
+        assertTrue(!kozmosOtpInserts("12", "123", "4"))
     }
 
     @Test

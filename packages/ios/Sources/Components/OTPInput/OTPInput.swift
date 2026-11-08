@@ -387,7 +387,12 @@ struct KozmosOTPField: UIViewRepresentable {
 
     func updateUIView(_ field: KozmosOTPTextField, context: Context) {
         context.coordinator.parent = self
-        if field.text != code { field.text = code }
+        // Not while a keyboard composes: its marked text is the field's until
+        // it is committed, and `settle` then makes it the code.
+        if field.markedTextRange == nil {
+            if field.text != code { field.text = code }
+            context.coordinator.settled = code
+        }
         field.isEnabled = enabled
         field.isReadOnly = readOnly
         if field.font != font { field.font = font }
@@ -409,8 +414,31 @@ struct KozmosOTPField: UIViewRepresentable {
 
     final class Coordinator: NSObject, UITextFieldDelegate, UITextPasteDelegate {
         var parent: KozmosOTPField
+        /// The code the field last held outside a composition: what an edit
+        /// starts from.
+        var settled: String
 
-        init(_ parent: KozmosOTPField) { self.parent = parent }
+        init(_ parent: KozmosOTPField) {
+            self.parent = parent
+            settled = parent.code
+        }
+
+        /// A composition committed: a keyboard's marked text (a Japanese
+        /// keyboard's full-width "２", say) reaches the field with no word to
+        /// its delegate, so once it is no longer marked, what the field holds
+        /// is made the code, as React enters a composed digit once, when the
+        /// composition ends. Read-only, the field goes back to its code.
+        func settle(_ field: UITextField) {
+            guard field.markedTextRange == nil else { return }
+            let before = settled
+            let held = field.text ?? ""
+            guard held != before else { return }
+            let after = parent.readOnly ? before : KozmosOTPInput.sanitize(held, length: parent.length)
+            field.text = after
+            settled = after
+            KozmosOTPTextField.moveCaretToEnd(field)
+            if after != before { parent.onEdit(before, after) }
+        }
 
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
@@ -431,6 +459,7 @@ struct KozmosOTPField: UIViewRepresentable {
             }
             if after != before {
                 textField.text = after
+                settled = after
                 parent.onEdit(before, after)
             }
             KozmosOTPTextField.moveCaretToEnd(textField)
@@ -449,6 +478,7 @@ struct KozmosOTPField: UIViewRepresentable {
             let after = KozmosOTPInput.sanitize(attributedString.string, length: parent.length)
             if !parent.readOnly, !after.isEmpty, after != before {
                 field.text = after
+                settled = after
                 parent.onEdit(before, after)
             }
             let end = field.endOfDocument
@@ -510,6 +540,12 @@ final class KozmosOTPTextField: UITextField {
     override func closestPosition(to point: CGPoint, within range: UITextRange) -> UITextPosition? { endOfDocument }
 
     override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] { [] }
+
+    /// A keyboard's composition ends: what it committed becomes the code.
+    override func unmarkText() {
+        super.unmarkText()
+        (delegate as? KozmosOTPField.Coordinator)?.settle(self)
+    }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         action == #selector(UIResponderStandardEditActions.paste(_:)) && !isReadOnly

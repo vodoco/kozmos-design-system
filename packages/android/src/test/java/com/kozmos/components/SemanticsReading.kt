@@ -110,6 +110,11 @@ data class ReadNode(
     val setText: ((String) -> Boolean)? = null,
     /** How a text field is pasted into, from the clipboard, as TalkBack's Paste does. */
     val paste: (() -> Boolean)? = null,
+    /**
+     * How text is inserted at a text field's cursor in one edit, as a
+     * keyboard's suggestion chip (a clipboard chip, an SMS code) commits it.
+     */
+    val insertText: ((String) -> Boolean)? = null,
     /** Set, the node is a pane TalkBack names by it: Compose's nearest to a named region. */
     val paneTitle: String? = null,
     /** TalkBack says "heading" after it, and its headings navigation stops on it. */
@@ -356,6 +361,8 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     requestFocus = node.config.getOrNull(SemanticsActions.RequestFocus)?.action,
     setText = node.config.getOrNull(SemanticsActions.SetText)?.action?.let { set -> { text: String -> set(AnnotatedString(text)) } },
     paste = node.config.getOrNull(SemanticsActions.PasteText)?.action,
+    insertText = node.config.getOrNull(SemanticsActions.InsertTextAtCursor)?.action
+        ?.let { insert -> { text: String -> insert(AnnotatedString(text)) } },
     paneTitle = node.config.getOrNull(SemanticsProperties.PaneTitle),
     heading = node.config.contains(SemanticsProperties.Heading),
     traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,

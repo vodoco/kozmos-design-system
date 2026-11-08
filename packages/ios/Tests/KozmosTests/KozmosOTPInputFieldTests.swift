@@ -123,6 +123,35 @@ import XCTest
       XCTAssertFalse(try XCTUnwrap(textFields(in: disabled).first).isEnabled)
     }
 
+    /// A keyboard's composition (marked text, as a Japanese keyboard
+    /// composes a full-width digit) reaches the field without its delegate.
+    /// Once committed, the field and the code agree: the composed digit is
+    /// entered once, as its ASCII digit, as React enters it at
+    /// compositionend, with the caret after it. A host's redraw mid
+    /// composition leaves the marked text to the keyboard.
+    @MainActor func testAComposedDigitIsEnteredOnceItIsCommitted() async throws {
+      let box = Box("")
+      let window = await host(KozmosOTPInput(value: Binding(get: { box.code }, set: { box.code = $0 })))
+      defer { window.isHidden = true }
+      let field = try XCTUnwrap(textFields(in: window).first)
+      XCTAssertTrue(field.becomeFirstResponder())
+      _ = type("1", into: field)
+      for _ in 0..<4 { try? await Task.sleep(nanoseconds: 30_000_000) }
+      field.setMarkedText("２", selectedRange: NSRange(location: 1, length: 0))
+      for _ in 0..<4 { try? await Task.sleep(nanoseconds: 30_000_000) }
+      XCTAssertNotNil(field.markedTextRange, "a redraw ended the composition")
+      field.unmarkText()
+      for _ in 0..<4 { try? await Task.sleep(nanoseconds: 30_000_000) }
+      XCTAssertEqual(field.text, "12", "the field and the code disagree")
+      XCTAssertEqual(box.code, "12", "the composed digit was not entered")
+      XCTAssertEqual(field.selectedTextRange?.start, field.endOfDocument)
+      field.setMarkedText("x", selectedRange: NSRange(location: 1, length: 0))
+      field.unmarkText()
+      XCTAssertEqual(field.text, "12", "a composed letter stayed in the field")
+      XCTAssertEqual(box.code, "12")
+      field.resignFirstResponder()
+    }
+
     /// Any decimal digit is the host's as its ASCII digit: Arabic-Indic and
     /// Devanagari, typed through the field's delegate, and a host's own.
     @MainActor func testDigitsInAnyScriptAreKeptAsASCII() async throws {

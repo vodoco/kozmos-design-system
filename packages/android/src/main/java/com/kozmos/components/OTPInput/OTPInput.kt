@@ -44,7 +44,9 @@ import com.kozmos.tokens.KozmosThemeTokens
  *
  * Any decimal digit is taken, as its ASCII digit ("٣" is 3), and nothing else,
  * up to [length], so [onValueChange] always receives ASCII, as SwiftUI's does.
- * A paste replaces the code, whatever its length, as React's paste does.
+ * A paste replaces the code, whatever its length, as React's paste does, and
+ * so does more than one character a keyboard inserts at once (its clipboard
+ * chip, an SMS code), as SwiftUI's field takes it.
  * Read-only, the field can be focused and read, and takes no edit; disabled,
  * it is dimmed. TalkBack hears one field: named by [label], or [fieldLabel]
  * without one, with the code as its text and [digitCountLabel] as its state.
@@ -79,7 +81,11 @@ fun KozmosOTPInput(
     // as the field last passed it on. A host's new `value` resets it once it
     // is drawn.
     val held = remember { KozmosOtpHeldCode(displayValue) }
-    SideEffect { held.draw(displayValue) }
+    SideEffect {
+        held.draw(displayValue)
+        // Drawn again, the field holds the drawn code.
+        held.field = displayValue
+    }
     // A paste reads the clipboard just before it hands the field its edit, so
     // the field knows the edit is a paste, and what was pasted.
     val clipboard = LocalClipboardManager.current
@@ -135,12 +141,21 @@ fun KozmosOTPInput(
                 // field last passed on, not only against `value` as last drawn, so
                 // two edits before a recomposition, or a host that takes the code
                 // a frame or more later, still count one completion.
-                // A paste replaces the code, whatever its length, as React's does;
-                // one with no digit in it changes nothing.
+                // A paste replaces the code, whatever its length, as React's does,
+                // and so does more than one character inserted in one edit, as a
+                // keyboard's clipboard chip or SMS-code suggestion commits it,
+                // with no clipboard read, as SwiftUI's field takes it. Either,
+                // with no digit in it, changes nothing.
                 onValueChange = { rawValue ->
-                    val pasted = paste.take()
-                    val code = kozmosOtpCode(pasted ?: rawValue, cellCount)
-                    if (enabled && !readOnly && !(pasted != null && code.isEmpty())) {
+                    val shown = held.field
+                    held.field = rawValue
+                    val inserted = kozmosOtpInsertion(shown, rawValue)
+                    // The clipboard's text is this edit's only when the edit
+                    // inserted it: a paste that changed nothing left it unread.
+                    val pasted = paste.take()?.takeIf { kozmosOtpInserts(shown, rawValue, it) }
+                    val replacement = pasted ?: inserted.takeIf { kozmosOtpCharacterCount(it) > 1 }
+                    val code = kozmosOtpCode(replacement ?: rawValue, cellCount)
+                    if (enabled && !readOnly && !(replacement != null && code.isEmpty())) {
                         val before = held.code
                         held.code = code
                         onValueChange(code)
@@ -243,6 +258,12 @@ fun KozmosOTPInput(
 private class KozmosOtpHeldCode(private var drawn: String) {
     var code: String = drawn
 
+    /**
+     * The text the field holds, which its next edit starts from: what the
+     * last edit left in it, or the code as last drawn.
+     */
+    var field: String = drawn
+
     fun draw(displayValue: String) {
         if (displayValue != drawn) {
             drawn = displayValue
@@ -268,9 +289,59 @@ internal fun kozmosOtpCode(text: String, length: Int): String {
 }
 
 /**
+ * The text an edit from [before] to [after] put in: [after] less the longest
+ * start and end the two share. Typing gives one character, and a keyboard's
+ * suggestion chip or a paste gives all it inserted.
+ */
+internal fun kozmosOtpInsertion(before: String, after: String): String {
+    val shared = minOf(before.length, after.length)
+    var start = 0
+    while (start < shared && before[start] == after[start]) start++
+    var end = 0
+    while (end < shared - start && before[before.length - 1 - end] == after[after.length - 1 - end]) end++
+    return after.substring(start, after.length - end)
+}
+
+/**
+ * Whether [after] is [before] with [inserted] put in at one place, over a
+ * selection or none: what a paste of [inserted] makes. [kozmosOtpInsertion]
+ * alone cannot say, since "21" pasted inside "12" reads as "12" put after it.
+ */
+internal fun kozmosOtpInserts(before: String, after: String, inserted: String): Boolean {
+    if (inserted.isEmpty()) return false
+    for (start in 0..(after.length - inserted.length)) {
+        if (!before.startsWith(after.substring(0, start))) return false
+        val rest = after.substring(start + inserted.length)
+        if (after.startsWith(inserted, start) && before.endsWith(rest) && before.length - rest.length >= start) return true
+    }
+    return false
+}
+
+/**
+ * How many characters [text] holds, a mark or a keycap joined to the one
+ * before it: so a digit with a mark is one character, as SwiftUI counts it.
+ */
+internal fun kozmosOtpCharacterCount(text: String): Int {
+    var count = 0
+    var index = 0
+    while (index < text.length) {
+        val codePoint = text.codePointAt(index)
+        when (Character.getType(codePoint).toByte()) {
+            Character.NON_SPACING_MARK, Character.ENCLOSING_MARK, Character.COMBINING_SPACING_MARK -> {}
+            else -> count++
+        }
+        index += Character.charCount(codePoint)
+    }
+    return count
+}
+
+/**
  * What a paste read from the clipboard, held until the field's next edit,
- * which is the paste's. The clipboard is watched only where a paste reads it:
- * asking whether it holds text, as the toolbar does, records nothing.
+ * and used only if that edit inserted it: a paste that changed nothing (an
+ * empty clipboard, or the same code pasted over itself) hands the field no
+ * edit, and the next keystroke is no paste. The clipboard is watched only
+ * where a paste reads it: asking whether it holds text, as the toolbar does,
+ * records nothing.
  */
 private class KozmosOtpPaste {
     private var text: String? = null

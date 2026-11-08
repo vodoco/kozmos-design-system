@@ -1549,7 +1549,10 @@ final class InteractionTests: XCTestCase {
     }
 
     /// A host that submits a full code and clears it in its binding's setter
-    /// hears one completion per entry, typed or pasted.
+    /// hears one completion per entry: a typed code, then a paste. (A typed
+    /// code's clearing shows in the cells, so the paste fills them anew. A
+    /// paste into empty cells stays drawn, as React's cells keep it, so a
+    /// second paste to this host is not reported, as in React.)
     func testASubmitAndClearHostHearsOneOTPCompletionPerEntry() {
         launch("otp-submit-clear")
         app.textFields.firstMatch.tap()
@@ -1562,7 +1565,9 @@ final class InteractionTests: XCTestCase {
         received("otp_code_completed 6|otp_code_completed 6")
     }
 
-    /// A host whose binding keeps nothing hears one completion per paste.
+    /// A host whose binding keeps nothing hears its paste's completion once.
+    /// (The cells keep the pasted code, as React's do, so a second paste to
+    /// this host arrives over a full code and is not reported, as in React.)
     func testAHostThatIgnoresOTPWritesHearsOneCompletionPerPaste() {
         launch("otp-ignore-writes")
         app.textFields.firstMatch.tap()
