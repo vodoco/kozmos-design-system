@@ -236,6 +236,41 @@ describe("React is drawn once per change", () => {
     expect(draws - before).toBe(2);
   });
 
+  it("one draw for a row added to a v-for whose wrappers are held in a template ref array", async () => {
+    // A `<script setup>` `ref="items"` in a v-for compiles to these three
+    // keys, the ref itself an array Vue pushes each row's instance into and
+    // splices it out of: a part of the vnode, never given to the wrapper, so
+    // no change to it is a change to what React was given. JSX and render
+    // functions hold the same ref object.
+    const rows = ref([1, 2, 3]);
+    const items = ref<unknown[]>([]);
+    mount(() =>
+      h(
+        "div",
+        rows.value.map((row) =>
+          h(Wrapper, {
+            key: row,
+            ref: items,
+            ref_for: true,
+            ref_key: "items",
+            title: String(row),
+          }),
+        ),
+      ),
+    );
+    await settle();
+    expect(draws).toBe(3);
+    expect(items.value).toHaveLength(3);
+    rows.value = [...rows.value, 4];
+    await settle();
+    expect(items.value).toHaveLength(4);
+    expect(draws).toBe(4);
+    rows.value = rows.value.slice(1);
+    await settle();
+    expect(items.value).toHaveLength(3);
+    expect(draws).toBe(4);
+  });
+
   it("two draws for a change typed into React's field, whether the parent takes it or not", async () => {
     /** A field React controls, drawn by a part that counts its draws. */
     let fieldDraws = 0;

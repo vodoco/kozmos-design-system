@@ -1448,12 +1448,20 @@ export function createVueWrapper<P extends object, N extends string = never>(
           if (!unmounted) renderReact();
         });
       };
-      /** The props the wrapper's vnode holds, for the deep watch. */
-      const givenNow = shallowRef(given());
+      /**
+       * What the wrapper is given, for the deep watch: its vnode's props
+       * but `key`, `ref` and `onVnode*`. A `<script setup>` ref in a v-for
+       * (`ref: items, ref_for: true`) is an array Vue pushes each row's
+       * instance into; walked, each row added drew every row's React again.
+       */
+      const passed = () =>
+        Object.fromEntries(
+          Object.entries(given()).filter(([key]) => !isReservedKey(key)),
+        );
+      const givenNow = shallowRef(passed());
       onUpdated(() => {
-        const now = given();
-        if (sameProps(now, drawnFrom) && slotNames() === drawnSlots) return;
-        givenNow.value = now;
+        if (sameProps(given(), drawnFrom) && slotNames() === drawnSlots) return;
+        givenNow.value = passed();
         redraw();
       });
       watch(givenNow, redraw, { deep: true });
