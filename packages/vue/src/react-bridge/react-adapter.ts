@@ -9,9 +9,10 @@ import {
   normalizeStyle,
   onMounted,
   onBeforeUnmount,
+  onUpdated,
+  isRef,
   ref,
   toRaw,
-  watch,
   warn,
 } from "vue";
 import { createRoot, type Root } from "react-dom/client";
@@ -656,6 +657,31 @@ const first = (source: Record<string, unknown>, keys: string[]) => {
   return key === undefined ? undefined : source[key];
 };
 
+/**
+ * Reads every value inside `value`, as a `deep` watch does (Vue's own
+ * `traverse`, which `vue` does not export): read in the wrapper's render, a
+ * reactive object or array the parent changes in place (`style.color = …`,
+ * `items.push(…)`) re-renders the wrapper, as it re-renders a Vue child that
+ * draws it. Only refs, arrays, Maps, Sets and plain objects are entered, and
+ * none marked raw.
+ */
+function readDeep(value: unknown, seen = new Set<unknown>()): void {
+  if (typeof value !== "object" || value === null || seen.has(value)) return;
+  if ((value as { __v_skip?: boolean }).__v_skip) return;
+  seen.add(value);
+  if (isRef(value)) readDeep(value.value, seen);
+  else if (Array.isArray(value)) for (const item of value) readDeep(item, seen);
+  else if (value instanceof Map || value instanceof Set)
+    value.forEach((item: unknown) => readDeep(item, seen));
+  else if (Object.prototype.toString.call(value) === "[object Object]") {
+    const object = value as Record<PropertyKey, unknown>;
+    for (const key in object) readDeep(object[key], seen);
+    for (const key of Object.getOwnPropertySymbols(object))
+      if (Object.prototype.propertyIsEnumerable.call(object, key))
+        readDeep(object[key], seen);
+  }
+}
+
 /** `.trim` and `.number`, as Vue's `emit` applies them. */
 function applyModifiers(
   value: unknown,
@@ -1108,11 +1134,20 @@ export function createVueWrapper<P extends object, N extends string = never>(
         void nextTick(settle);
       };
 
-      /** After Vue's render: the parent's model decides what React shows. */
+      /**
+       * After Vue's render: the parent's model decides what React shows.
+       * When the parent took the change, Vue rendered the wrapper, and
+       * `onUpdated` has settled it and drawn React already; drawn again,
+       * React was given what it had.
+       */
       const settle = () => {
-        if (!typed.size) return;
-        for (const change of typed.values()) change.settled = true;
-        renderReact();
+        let drawn = true;
+        for (const change of typed.values())
+          if (!change.settled) {
+            change.settled = true;
+            drawn = false;
+          }
+        if (!drawn) renderReact();
       };
 
       /**
@@ -1136,16 +1171,36 @@ export function createVueWrapper<P extends object, N extends string = never>(
         containerRef.value?.addEventListener("change", commit);
       });
 
-      // Synchronize Vue reactivity into the React Engine silently
-      watch(
-        () => ({ ...props, ...attrs }),
-        () => {
-          // Vue's render has the parent's models now.
-          for (const change of typed.values()) change.settled = true;
-          renderReact();
-        },
-        { deep: true },
-      );
+      /*
+       * React is drawn again after each of the wrapper's own renders, and
+       * only then: one draw for each Vue update, of what the wrapper was
+       * given in it. A wrapper (`inheritAttrs: false` changes nothing here)
+       * is rendered again when
+       * - its parent renders a vnode whose props differ from the last
+       *   (`shouldUpdateComponent`): an attribute or a listener added,
+       *   removed or changed, a model's value or listener, which, with no
+       *   `emits` declared, are all among the props Vue compares; or slots
+       *   that are not stable;
+       * - something its render read changes: each value it was given, read
+       *   to the bottom by `readDeep` below, so a reactive object or array
+       *   changed in place counts, and what its slots read.
+       * Vue calls `onUpdated` after each such render, once, however many of
+       * those changed in one tick, and never for a parent's render that
+       * gives the wrapper what it had. A slot's change draws React once more
+       * with what it had: React's part is given the same slot box.
+       *
+       * It was a watch of `{ ...props, ...attrs }`: a spread reads only the
+       * attributes that are there, so a wrapper given none tracked none, and
+       * an attribute or a listener given to it later never reached React.
+       *
+       * The models: `emitModel` draws React itself, inside React's event,
+       * and `settle` after Vue's render, should the parent take nothing.
+       */
+      onUpdated(() => {
+        // Vue's render has the parent's models now.
+        for (const change of typed.values()) change.settled = true;
+        renderReact();
+      });
 
       // Cleanly unmount the React Virtual DOM when the Vue Component is destroyed
       onBeforeUnmount(() => {
@@ -1158,6 +1213,10 @@ export function createVueWrapper<P extends object, N extends string = never>(
       // Render a style-neutral transport container ensuring flex/grid cascades natively.
       // Construct unique Virtual DOM containers for every configured slot dynamically natively bridging arrays.
       return () => {
+        // What `onUpdated` above redraws React for: every value given,
+        // read to the bottom, so a change made in place renders the wrapper.
+        readDeep(props);
+        readDeep(attrs);
         const slotVNodes = Object.entries(slots).map(([name, slotFn]) => {
           if (!slotRefs[name]) slotRefs[name] = { value: null };
           return h(
