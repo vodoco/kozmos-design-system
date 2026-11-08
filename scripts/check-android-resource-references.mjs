@@ -17,7 +17,8 @@ import { unresolvedReferences } from "./lib/android-resource-references.mjs";
 const ROOT = process.cwd();
 const RES_DIRS = [
   { res: "packages/android/src/main/res", required: true },
-  { res: "packages/tokens/dist/android/src/main/res", required: false },
+  // Built by the token build; CI's web job builds it first, so there it must be there.
+  { res: "packages/tokens/dist/android/src/main/res", required: process.env.CI === "true" },
 ];
 
 let failed = 0;
