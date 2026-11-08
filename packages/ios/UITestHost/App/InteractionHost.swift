@@ -44,6 +44,13 @@ private struct InteractionFixture: View {
     @State private var multiLocked = false
     /// A field that starts disabled or read-only becomes usable on "Make usable".
     @State private var fieldUsable = false
+    /// The OTP scenarios' code and cell count, the host's to hold: "otp-prefilled"
+    /// starts with a full code, "otp-read-only" and "otp-disabled" with a partial
+    /// one, "otp-length" with seven cells.
+    @State private var otpCode = ["otp-prefilled": "123456", "otp-read-only": "123", "otp-disabled": "123"][
+        ProcessInfo.processInfo.arguments.dropFirst().first ?? ""] ?? ""
+    @State private var otpLength = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-length" ? 7 : 6
+    @State private var otpSubmitted: [String] = []
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -169,6 +176,16 @@ private struct InteractionFixture: View {
             Spacer(minLength: 0)
         }
         .padding(16)
+    }
+
+    /// The OTP scenarios' analytics: each `OTPInput` event as `<name> <length>`.
+    private func otpEvent(_ event: KozmosAnalyticsEvent) {
+        guard event.component == "OTPInput" else { return }
+        if case .int(let length)? = event.properties?["length"] {
+            events.append("\(event.eventName) \(length)")
+        } else {
+            events.append("\(event.eventName) with no length")
+        }
     }
 
     @ViewBuilder private var fixture: some View {
@@ -388,6 +405,40 @@ private struct InteractionFixture: View {
             }
         case "manoeuvre-closed":
             ManoeuvreToggleFixture { events.append($0) }
+        case "otp", "otp-prefilled", "otp-length":
+            KozmosOTPInput(length: otpLength, value: $otpCode, label: "Verification code")
+                .environment(\.kozmosAnalytics, otpEvent)
+            Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
+            // The host's own writes, as a product makes them: never the user's typing.
+            HStack {
+                Button("Host sets 654321") { otpCode = "654321" }
+                Button("Host sets 123") { otpCode = "123" }
+            }
+            HStack {
+                Button("Host clears") { otpCode = "" }
+                Button("Host sets 6 cells") { otpLength = 6 }
+            }
+        case "otp-read-only", "otp-disabled":
+            KozmosOTPInput(value: $otpCode, label: "Verification code", disabled: scenario == "otp-disabled",
+                           readOnly: scenario == "otp-read-only")
+                .environment(\.kozmosAnalytics, otpEvent)
+            Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
+        case "otp-submit-clear", "otp-ignore-writes":
+            // Hosts whose binding does not keep what it is given: one submits
+            // a full code and clears it, the other keeps nothing.
+            KozmosOTPInput(value: Binding(get: { otpCode }, set: { code in
+                guard scenario == "otp-submit-clear" else { return }
+                if code.count == 6 {
+                    otpSubmitted.append(code)
+                    otpCode = ""
+                } else {
+                    otpCode = code
+                }
+            }), label: "Verification code")
+                .environment(\.kozmosAnalytics, otpEvent)
+            Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
+            Text(otpSubmitted.isEmpty ? "nothing submitted" : otpSubmitted.joined(separator: ","))
+                .accessibilityIdentifier("otp-submitted")
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})
