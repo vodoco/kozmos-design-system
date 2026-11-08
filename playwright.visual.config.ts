@@ -10,6 +10,8 @@ import { defineConfig, devices } from "@playwright/test";
 // what CI uses, and a Mac draws text differently.
 
 const port = Number(process.env.VISUAL_PORT ?? 6199);
+// The Vue Storybook (apps/docs/storybook-internal/vue), on a port of its own.
+const vuePort = Number(process.env.VISUAL_VUE_PORT ?? 6198);
 
 export default defineConfig({
   testDir: "./tests/visual",
@@ -57,13 +59,35 @@ export default defineConfig({
     // drawn is their still state.
     reducedMotion: "reduce",
   },
-  projects: [{ name: "chromium" }],
-  // This suite's own server for this checkout's static Storybook, on a port of
-  // its own: never whatever another worktree has listening on 6006.
-  webServer: {
-    command: `node scripts/visual/serve-storybook.mjs ${port}`,
-    url: `http://127.0.0.1:${port}/index.json`,
-    reuseExistingServer: false,
-    timeout: 30_000,
-  },
+  // React's Storybook, and Vue's (Vue 3 Phase 0, P0.5): the same capture
+  // (tests/visual/capture.ts), each project reading its own build from its
+  // own server. Both draw into tests/visual/baselines; Vue's story ids start
+  // `vue-`, so no name is shared.
+  projects: [
+    {
+      name: "chromium",
+      testMatch: ["stories.visual.ts", "stillness.visual.ts"],
+    },
+    {
+      name: "vue",
+      testMatch: "vue-stories.visual.ts",
+      use: { baseURL: `http://127.0.0.1:${vuePort}` },
+    },
+  ],
+  // This suite's own servers for this checkout's static Storybooks, on ports
+  // of their own: never whatever another worktree has listening on 6006.
+  webServer: [
+    {
+      command: `node scripts/visual/serve-storybook.mjs ${port}`,
+      url: `http://127.0.0.1:${port}/index.json`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command: `node scripts/visual/serve-storybook.mjs ${vuePort} apps/docs/storybook-internal/vue`,
+      url: `http://127.0.0.1:${vuePort}/index.json`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+  ],
 });

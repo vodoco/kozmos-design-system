@@ -5,9 +5,9 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: React 0.15.1 on `latest` with `@kozmos-ds/styles` 0.15.1, icons 0.9.0, product-contracts 0.10.0 and
-tokens 0.8.1 (published 2026-11-06 from `4cc3d04119e9f6fe5494417d0bec14cc6de8f7b6`;
-[release evidence](release-process.md#0151)).
+Baseline: React 0.15.2 on `latest` with `@kozmos-ds/styles` 0.15.2, icons 0.9.0, product-contracts 0.10.0 and
+tokens 0.8.1 (published 2026-11-07 from `c3da4baa2bae761ecc1aebd8e50ecbe94d40a92e`;
+[release evidence](release-process.md#0152)).
 This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
 React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
 repository, not a native registry release. See [release evidence](release-process.md#080).
@@ -58,6 +58,12 @@ React 0.15.1 (2026-11-06, `4cc3d041`; `@kozmos-ds/styles` first published at 0.1
 product-contracts unchanged) is a patch (decision 161) that changes nothing for the SDK: React's exports, HTML and
 stylesheet are 0.15.0's. It publishes the shared stylesheet as `@kozmos-ds/styles` (GAP-149) and the icons for Vue 3
 as `@kozmos-ds/icons/vue` (GAP-148). See [release evidence](release-process.md#0151).
+
+React 0.15.2 (2026-11-07, `c3da4baa`; `@kozmos-ds/styles` 0.15.2, icons, tokens and product-contracts unchanged) is a
+patch (decision 171). For the SDK: RouteLocationField says "No locations found" when its list shows it (GAP-224,
+#484), and FloorSelector's collapsible column closes at once when its floors are gone or the map shell has no room for it
+(#491). See
+[release evidence](release-process.md#0152).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
@@ -694,7 +700,7 @@ These do not block P01 or initial reproduction work in P02:
    product-register reconciliation and Figma mapping requirements. Build React dependencies,
    regenerate API cards with `pnpm skills:build`, then run `pnpm skills:check` when APIs/docs
    change. Add a changeset for shipped output; no hand-edited generated artifacts.
-7. **Merge readiness:** after hook formatting, verify all 19 required checks on the exact
+7. **Merge readiness:** after hook formatting, verify all 20 required checks on the exact
    up-to-date PR head, plus selected Site/visual/bundle/browser workflows. No bypass or blind
    rerun. After merge verify exact-main CI and relevant deployment before continuing merges.
    Focused local suites keep iteration fast; they do not replace required gates.

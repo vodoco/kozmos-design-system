@@ -24,7 +24,7 @@
 ### Pipeline
 
 - A pull request runs CI (`ci.yml`) and Visual Regression (`visual.yml`); one into `main` also runs
-  Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 19 checks
+  Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 20 checks
   listed under "GitHub Status Checks" (§10) are required on `main`, matched by name, and a pull
   request must be up to date with `main` to merge. One that changes the website, Storybook or a
   package also runs Site (`site.yml`), the website's own checks, which are not required.
@@ -40,7 +40,7 @@
 ```
 .github/
 └── workflows/
-    ├── ci.yml             # CI: web, twelve browser shards, core pipeline, iOS, Android
+    ├── ci.yml             # CI: web, twelve browser shards, core pipeline, iOS, Android, Vue
     ├── visual.yml         # Visual Regression: the "Visual Review" check, and recording baselines
     ├── lighthouse.yml     # Lighthouse CI over the built Storybook
     ├── bundle-size.yml    # Bundle Size Analysis: the "analyze-bundle" check
@@ -85,14 +85,15 @@ Playwright, and any `--with-deps` or apt install.
 Runs on every pull request and on pushes to `main`. A newer push to the same branch cancels the run
 in progress, which a job reports as "The operation was canceled".
 
-| Job (check name)              | Runner                                 | What it runs                                                                                                                                                                                                                                                                                        |
-| ----------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Web Build & Test`            | ubuntu-latest, in the Playwright image | `pnpm test:release`; `pnpm test:ci`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
-| Twelve browser shards         | ubuntu-latest, in the Playwright image | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                          |
-| `Core Pipeline & POI Gallery` | ubuntu-latest, in the Playwright image | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                           |
-| `Changes`                     | ubuntu-latest                          | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                           |
-| `iOS Build`                   | macos-26 with Xcode 26.6 (pinned)      | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                 |
-| `Android Build`               | ubuntu-latest                          | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                          |
+| Job (check name)                                | Runner                                 | What it runs                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Web Build & Test`                              | ubuntu-latest, in the Playwright image | `pnpm test:release`; `pnpm test:ci`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit                    |
+| Twelve browser shards                           | ubuntu-latest, in the Playwright image | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                                             |
+| `Core Pipeline & POI Gallery`                   | ubuntu-latest, in the Playwright image | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                                              |
+| `Vue (build, contract, parity, browser suites)` | ubuntu-latest, in the Playwright image | Builds `@kozmos-ds/vue` and the packages it needs, type-checks it and runs its tests (contract, parity, coverage, React-free, peer range), builds and smoke-tests the Vue Storybook, runs the four Vue browser suites in Chromium, Firefox and WebKit, then the Vue tests again on React 18. Required since 7 Nov 2026 |
+| `Changes`                                       | ubuntu-latest                          | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                                              |
+| `iOS Build`                                     | macos-26 with Xcode 26.6 (pinned)      | `swift build` and `swift test` in `packages/ios`, the whole test target on the pinned simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                                    |
+| `Android Build`                                 | ubuntu-latest                          | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                                             |
 
 `iOS Build` names its image (`macos-26`) and its Xcode (`DEVELOPER_DIR`, Xcode 26.6) rather than following
 `macos-latest`, so a new Xcode reaches CI only through a pull request that moves the two. The
@@ -101,9 +102,9 @@ same iOS steps on the newest Xcode the image has: read it before moving the pin.
 run is cancelled by its newer push; a run on `main` never is, so every commit on `main` has a finished
 run.
 
-`node scripts/ci-local.mjs --job <job>` runs one of `ci.yml`'s jobs on your machine: `web` (the
-default), `browsers`, `pipeline`, `ios` or `android`. `--job browsers` runs the twelve shards one
-after another, and `--shard` picks one by its name (`--shard "Documentation (webkit)"`). It uses
+`node scripts/ci-local.mjs --job <job>` runs one of `ci.yml`'s jobs on your machine, named by its
+key: `web` (the default), `browsers`, `pipeline`, `vue`, `changes`, `ios` or `android`.
+`--job browsers` runs the twelve shards one after another, and `--shard` picks one by its name (`--shard "Documentation (webkit)"`). It uses
 fixed ports, so only one session at a time may run it, and it reads only `ci.yml`: the bundle check
 (`pnpm tsx scripts/performance/bundle-analyzer.ts`), Lighthouse CI and Visual Review are run by
 their own commands.
@@ -286,7 +287,8 @@ pull request and in the repository's Actions tab.
 # Required status checks (GitHub Actions only): every check a pull request runs —
 # Web Build & Test, Core Pipeline & POI Gallery, Android Build, iOS Build (skipped,
 # and so passing, on a pull request that doesn't touch what it builds), the twelve
-# browser shards, analyze-bundle, lighthouse and Visual Review. They are matched by
+# browser shards, "Vue (build, contract, parity, browser suites)" (required since
+# 7 Nov 2026), analyze-bundle, lighthouse and Visual Review. They are matched by
 # name: renaming a job or shard means updating this list in the same change. A pull
 # request must also be up to date with main to merge.
 

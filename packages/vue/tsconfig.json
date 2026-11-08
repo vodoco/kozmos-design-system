@@ -3,6 +3,10 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "strict": true,
+    // As apps/docs, which type-checks this source through the Vue
+    // Storybook's preview: a change that passes here passes there.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "jsx": "preserve",
     "target": "ESNext",
     "module": "ESNext",

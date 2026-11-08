@@ -82,6 +82,14 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # A package whose declarations use React's types and have no copy of
+      # their own read whichever @types/react pnpm hoisted, 18 on one install
+      # and 19 on the next (main, 7 Nov 2026). Each installed one must have its
+      # importer's copy linked beside it (the root package.json's
+      # pnpm.packageExtensions), and each extension must name a package.
+      - name: Verify Every Package Reads Its Importer's React Types
+        run: pnpm deps:react-types:check
+
       - name: Verify Release Safeguards
         run: pnpm test:release
 
@@ -634,12 +642,8 @@ jobs:
           done
           exit "$result"
 
-      - name: Build and Smoke Test Internal Vue Harness
-        run: |
-          pnpm --filter @kozmos-ds/docs build-storybook:vue
-          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "VUE,TEST" \
-            "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-internal/vue" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; VUE_STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:storybook-vue-smoke'"
+      # The Vue Storybook's build and smoke test moved to the Vue job below,
+      # with the Vue browser suites that read the same build.
 
       - name: Preserve Storybook Audit Evidence
         if: always()
@@ -856,6 +860,107 @@ jobs:
           path: test-results/poi-gallery
           if-no-files-found: ignore
           retention-days: 7
+
+  # @kozmos-ds/vue's own job (Vue 3 Phase 0, P0.5), so Vue has a check of
+  # its name. The Web job's turbo runs still build, type-check and test it
+  # with every package; here they run again by name, beside what reads the
+  # Vue Storybook: its smoke test and the four Vue browser suites (themes and
+  # densities, owned CSS, token references, interactions; scripts/vue/
+  # coverage.mjs) in each engine React's counterparts run in.
+  #
+  # Its own job, not steps of the Web job or shards of the matrix above: the
+  # Web job is the longest already, and the suites over 19 stories take a
+  # few minutes in all three engines together, so they run end to end here
+  # rather than paying three installs and builds as three shards. It builds
+  # only Vue and what Vue needs (React, the stylesheet, tokens, icons), not
+  # the apps. One red browser must not hide the others: every engine runs
+  # whatever the one before it found.
+  vue:
+    name: Vue (build, contract, parity, browser suites)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # The web job's container, fonts and shell: why is written there.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @kozmos-ds/vue And The Packages It Needs
+        id: build-vue
+        run: pnpm --filter "@kozmos-ds/vue..." build
+
+      - name: Type-Check @kozmos-ds/vue
+        run: pnpm --filter @kozmos-ds/vue typecheck
+
+      # The API contract and DOM parity against React (P0.4), the coverage
+      # guard over ports.ts, no React in the main entry, the peer ranges, and
+      # every part's own specs.
+      - name: Test @kozmos-ds/vue (Contract, Parity, Coverage, React-Free, Peer Range)
+        run: pnpm --filter @kozmos-ds/vue test
+
+      - name: Build The Vue Storybook
+        run: pnpm --filter @kozmos-ds/docs build-storybook:vue
+
+      # As in the web job: the image's own builds, nothing from apt.
+      - name: Install Playwright
+        run: pnpm --filter @kozmos-ds/react exec playwright install chromium firefox webkit
+
+      - name: Verify The Browsers Have The Runner's Fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
+
+      - name: Smoke Test The Vue Storybook
+        run: |
+          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "VUE,TEST" \
+            "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-internal/vue" \
+            "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; VUE_STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:storybook-vue-smoke'"
+
+      # Each suite serves the built Storybook itself, on a port the system
+      # picks (scripts/vue/stories.mjs), and holds the register in
+      # scripts/vue/coverage.mjs to it first: a Vue story nothing covers
+      # fails all four. Every engine runs whatever the one before found, and
+      # each runs every suite (scripts/vue/run-suites.mjs).
+      - name: Vue Browser Suites (chromium, firefox, webkit)
+        run: |
+          result=0
+          for browser in chromium firefox webkit; do
+            ADAPTIVE_BROWSER="$browser" pnpm test:vue-stories || result=1
+          done
+          exit "$result"
+
+      # The same specs on React 18, last: the package's peers take react and
+      # react-dom 18 or 19, and the test step above runs its devDependencies'
+      # 19. This one takes apps/docs's 18.3.1, the Vue Storybook's, for what
+      # Vite loads and what Node loads itself (Radix included), proves it
+      # loaded (test/react18/react18.probe.ts), and skips by name the one
+      # test that holds react-dom 19 alone (packages/vue/vitest.react18.config.mts).
+      # It runs after the Storybook, its smoke test and pin guard, and the
+      # browser suites, so a failure on React 18 alone hides none of them.
+      # It needs only the build, and runs whatever the steps before it found;
+      # failing, it fails the job.
+      - name: Test @kozmos-ds/vue On React 18
+        if: ${{ !cancelled() && steps.build-vue.outcome == 'success' }}
+        run: pnpm --filter @kozmos-ds/vue test:react18
 
   # Whether a change touches what the iOS job builds: the iOS package, the
   # tokens it compiles against (the job builds @kozmos-ds/tokens first), the

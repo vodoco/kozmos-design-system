@@ -7,8 +7,30 @@
  * and `react`, `@kozmos-ds/icons` and `@kozmos-ds/product-contracts` resolve
  * to what the package itself depends on. They are never written there: the
  * host serves them from memory, so a check leaves no file behind.
+ *
+ * React's types are the ones packages/react is built against, wherever they
+ * are imported from. A declarations file in node_modules that imports
+ * `react` and has no @types/react of its own (framer-motion's, which
+ * DynamicIsland's props extend) would otherwise get whichever @types/react
+ * pnpm hoisted into node_modules/.pnpm/node_modules, and the lockfile holds
+ * two: one install read React 19's DOM events into DynamicIsland's props and
+ * another did not, so the Vue bridge's part-takes.ts was fresh on one CI run
+ * and stale on the next (main, 7 Nov). The root package.json's
+ * `pnpm.packageExtensions` removes that cause: it gives framer-motion and
+ * every other such package an optional @types/react peer, so pnpm links each
+ * per importer with the importer's React beside it. This file holds the line
+ * on its own as well, for a package that arrives later without one: `paths`
+ * sends each subpath the React types packages export (`react`,
+ * `react/jsx-runtime`, `react-dom/client` …) to packages/react's copy, and
+ * only those, so a deep import an app could not make fails here too;
+ * `typeRoots` does the same for a `/// <reference types>`; and the host
+ * refuses any other copy, naming the file whose import reached it, so a
+ * program here reads one React whatever was hoisted and wherever it is run.
  */
+import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 export { ts };
@@ -16,6 +38,104 @@ export { ts };
 /** Where the in-memory examples pretend to live. Nothing is written here. */
 export const exampleDirectory = (root) =>
   path.join(root, "packages/react/.claude-design-examples");
+
+const REPOSITORY = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
+
+/**
+ * The real directory of each React types package packages/react resolves:
+ * the copy every program here reads.
+ */
+export const PINNED_REACT_TYPES = Object.fromEntries(
+  ["@types/react", "@types/react-dom"].map((name) => [
+    name,
+    fs.realpathSync(
+      path.dirname(
+        createRequire(
+          path.join(REPOSITORY, "packages/react/package.json"),
+        ).resolve(`${name}/package.json`),
+      ),
+    ),
+  ]),
+);
+
+/**
+ * `paths` for React: each subpath a pinned package's `exports` lists, sent to
+ * the file TypeScript resolves it to from packages/react. Only those: a
+ * wildcard (`react/*`) would also answer `react/index` or
+ * `react/jsx-runtime.js`, which `exports` refuses an app.
+ */
+export const PINNED_REACT_SUBPATHS = (() => {
+  const from = path.join(REPOSITORY, "packages/react/index.ts");
+  const options = {
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    target: ts.ScriptTarget.ES2022,
+    types: [],
+  };
+  const subpaths = {};
+  for (const [module, types] of Object.entries({
+    react: "@types/react",
+    "react-dom": "@types/react-dom",
+  })) {
+    const pinned = PINNED_REACT_TYPES[types];
+    const { exports } = JSON.parse(
+      fs.readFileSync(path.join(pinned, "package.json"), "utf8"),
+    );
+    for (const key of Object.keys(exports ?? {})) {
+      if (key === "./package.json") continue;
+      if (key.includes("*"))
+        throw new Error(
+          `${types} exports a pattern, ${key}: map what it matches in claude-design-typescript.mjs.`,
+        );
+      const specifier = module + key.slice(1);
+      const file = ts.resolveModuleName(specifier, from, options, ts.sys)
+        .resolvedModule?.resolvedFileName;
+      if (!file?.startsWith(pinned + path.sep))
+        throw new Error(
+          `${specifier}, which ${types} exports, resolves from packages/react to ${file ?? "nothing"}, not into ${pinned}.`,
+        );
+      subpaths[specifier] = file;
+    }
+    if (!(module in subpaths))
+      throw new Error(`${types} exports no "." for ${module}.`);
+  }
+  return subpaths;
+})();
+
+const pinnedPaths = Object.fromEntries(
+  Object.entries(PINNED_REACT_SUBPATHS).map(([specifier, file]) => [
+    specifier,
+    [file],
+  ]),
+);
+
+/**
+ * The React types package `file` belongs to, if it is a copy other than the
+ * pinned one: what the host refuses.
+ */
+export function unpinnedReactTypes(file) {
+  const match = /[\\/]node_modules[\\/](@types[\\/]react(?:-dom)?)[\\/]/.exec(
+    file,
+  );
+  if (!match) return null;
+  const name = match[1].replace("\\", "/");
+  const real = (() => {
+    try {
+      return fs.realpathSync(file);
+    } catch {
+      return file;
+    }
+  })();
+  const pinned = PINNED_REACT_TYPES[name];
+  return real.startsWith(pinned + path.sep) ? null : name;
+}
+
+/** Why the host refuses a copy of `name`, and which option sends it home. */
+const strayMessage = (name) =>
+  `a copy of ${name} other than packages/react's (${PINNED_REACT_TYPES[name]}). A program here must read one React: in claude-design-typescript.mjs, \`paths\` sends an import to packages/react's copy, and \`typeRoots\` a \`/// <reference types>\`.`;
 
 export const compilerOptions = {
   strict: true,
@@ -31,6 +151,18 @@ export const compilerOptions = {
   // under test here.
   skipLibCheck: true,
   types: [],
+  // One React, packages/react's: see the head of this file. `paths` answers
+  // `import … from "react"`; `typeRoots` answers `/// <reference
+  // types="react" />`, which `paths` does not, and whose default roots are
+  // the `node_modules/@types` folders above the current directory, so a run
+  // from the repository's root and one from packages/vue read different
+  // copies.
+  paths: pinnedPaths,
+  typeRoots: [
+    ...new Set(
+      Object.values(PINNED_REACT_TYPES).map((dir) => path.dirname(dir)),
+    ),
+  ],
 };
 
 // Parsed once per process: every program here reads the same lib, React and
@@ -69,7 +201,66 @@ export function hostWith(virtual = new Map(), options = compilerOptions) {
   host.fileExists = (file) => virtual.has(file) || fileExists.call(host, file);
   host.readFile = (file) =>
     virtual.has(file) ? virtual.get(file) : readFile.call(host, file);
+  // The host resolves imports itself, as the program would (TypeScript's own
+  // loader calls ts.resolveModuleName in the mode ts.getModeForUsageLocation
+  // gives, through one cache per set of options), for two things the program
+  // does not offer. It names the file whose import reached a copy of React's
+  // types other than the pinned one. And it resolves imports without
+  // `typeRoots`, which are there for `/// <reference types>` alone:
+  // TypeScript also answers an import that nothing else resolves from the
+  // type roots, past the package's `exports`, so `react/index` would resolve.
+  const resolvers = new Map();
+  host.resolveModuleNameLiterals = (
+    literals,
+    containingFile,
+    redirectedReference,
+    programOptions,
+    containingSourceFile,
+  ) => {
+    if (!resolvers.has(programOptions)) {
+      const options = { ...programOptions };
+      delete options.typeRoots;
+      resolvers.set(programOptions, {
+        options,
+        cache: ts.createModuleResolutionCache(
+          host.getCurrentDirectory(),
+          host.getCanonicalFileName,
+          options,
+        ),
+      });
+    }
+    const { options, cache } = resolvers.get(programOptions);
+    return literals.map((literal) => {
+      const resolution = ts.resolveModuleName(
+        literal.text,
+        containingFile,
+        options,
+        host,
+        cache,
+        redirectedReference,
+        ts.getModeForUsageLocation(containingSourceFile, literal, options),
+      );
+      const reached = resolution.resolvedModule?.resolvedFileName;
+      const stray = reached && unpinnedReactTypes(reached);
+      if (stray)
+        throw new Error(
+          `${containingFile} imports "${literal.text}", which resolves to ${reached}, ${strayMessage(stray)}`,
+        );
+      return resolution;
+    });
+  };
+  // A `/// <reference types>` is left to the program: the mode TypeScript
+  // resolves one in comes from a function it does not export, and
+  // `typeRoots` answers "react" and "react-dom" before any node_modules
+  // lookup. The refusal below is what would catch one, or a root file, and
+  // it cannot say who asked: a host's getSourceFile is told only the file to
+  // read.
   host.getSourceFile = (file, language, onError, create) => {
+    const stray = unpinnedReactTypes(file);
+    if (stray)
+      throw new Error(
+        `${file} is ${strayMessage(stray)} (The host is not told which file reached it.)`,
+      );
     if (virtual.has(file))
       return ts.createSourceFile(
         file,

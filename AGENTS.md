@@ -46,6 +46,7 @@ pnpm install --frozen-lockfile
 pnpm build                                     # every package and app, through Turborepo
 pnpm --filter "@kozmos-ds/react..." build      # React and what it needs; a fresh worktree has nothing built
 pnpm test
+pnpm --filter @kozmos-ds/vue test:react18      # Vue's tests on React 18, as CI runs them
 pnpm lint --filter='!mapscale-review'          # as CI runs it
 pnpm typecheck
 pnpm --filter @kozmos-ds/docs storybook:react  # Storybook on port 6006
@@ -66,7 +67,7 @@ testing what uses it, and restart Storybook after a rebuild.
 
 ## Rules every change follows
 
-- **Merging** needs all 19 required checks green, on a branch that is up to date with `main`.
+- **Merging** needs all 20 required checks green, on a branch that is up to date with `main`.
   Changes reach `main` through a pull request.
 - **A changeset** for a pull request that changes what a published package ships: its `src/`
   apart from tests, stories, docs pages and Code Connect files, its build files, the files
@@ -75,9 +76,12 @@ testing what uses it, and restart Storybook after a rebuild.
   Run `pnpm changeset`, or `pnpm changeset --empty` when nothing needs releasing. CI runs
   `node scripts/release/changeset-required.mjs`; run it too.
 - **Visual Review baselines** are drawn only by the Playwright image's amd64 build, through
-  Docker: build Storybook, then `pnpm test:visual:update --grep <story>`, or use the Visual
-  Regression workflow's record run. Never record on a bare Mac: it draws text differently.
-  [`docs/visual-review.md`](docs/visual-review.md) has the steps.
+  Docker: build both Storybooks, React's (`pnpm --filter @kozmos-ds/docs build-storybook`) and
+  Vue's (`pnpm --filter @kozmos-ds/docs build-storybook:vue`), then
+  `pnpm test:visual:update --grep <story>`, or use the Visual Regression workflow's record run.
+  `scripts/visual/docker.sh` stops, naming the build to run, when either is missing. Never record
+  on a bare Mac: it draws text differently. [`docs/visual-review.md`](docs/visual-review.md) has
+  the steps.
 - **Compose's Paparazzi goldens** are recorded only in the Linux amd64 container, never on a bare
   Mac. Build its image once with `pnpm android:paparazzi build`, record one class with
   `pnpm android:paparazzi recordPaparazziDebug --tests '<class>'`, verify with
@@ -106,8 +110,10 @@ testing what uses it, and restart Storybook after a rebuild.
 - **Generated files are regenerated, never edited:** `docs/status.md`, the data blocks of
   `docs/component-variant-gap-analysis.md`, `.ai-skills/component-inventory.md`,
   everything in `docs/claude-design/` (`pnpm skills:build`, after building React),
-  `docs/figma-*.json`, and the native token copies in `packages/ios` and `packages/android`
-  (`pnpm tokens:build`, then `pnpm tokens:native:copy`).
+  `docs/figma-*.json`, the native token copies in `packages/ios` and `packages/android`
+  (`pnpm tokens:build`, then `pnpm tokens:native:copy`), and the Vue bridge's
+  `packages/vue/src/react-bridge/part-takes.ts` (`pnpm --filter @kozmos-ds/vue bridge:takes`, after
+  building React).
 - **Examples use only Kozmos:** what `@kozmos-ds/react` exports, its tokens and its roles. A part
   Kozmos cannot express is recorded as a gap, never worked around. `apps/docs` has no Tailwind
   build of its own, so a story can use only the classes `packages/react` already emits.

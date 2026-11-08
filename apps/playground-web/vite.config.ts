@@ -13,11 +13,16 @@ export default defineConfig({
     include: ["@kozmos-ds/icons"],
   },
   resolve: {
+    // framer-motion too: the app imports it, and so does @kozmos-ds/react,
+    // and pnpm links one copy per importer's @types/react (packageExtensions
+    // in the root package.json). Two copies would double the bundle and keep
+    // the app's AnimatePresence and MotionConfig from reaching Kozmos's parts.
     dedupe: [
       "react",
       "react-dom",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
+      "framer-motion",
     ],
   },
 });

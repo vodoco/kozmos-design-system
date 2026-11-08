@@ -24,6 +24,22 @@ async function until<T>(read: () => T | null | undefined | false) {
   throw new Error("timed out");
 }
 
+/**
+ * Whether Radix has placed the step beside its target: until floating-ui has
+ * measured, Radix keeps the step's wrapper off the page, at
+ * `translate(0, -200%)`, where no visitor sees it or presses Escape at it.
+ * On React 18 an Escape before then can be lost: Radix's dismiss layer counts
+ * itself one render after it mounts (AnchoredPopover.spec.ts has the
+ * measurements). Placement is observed to land after that, an order Radix
+ * does not guarantee.
+ */
+function placed(step: Element) {
+  const wrapper = step.closest<HTMLElement>(
+    "[data-radix-popper-content-wrapper]",
+  );
+  return !!wrapper && !wrapper.style.transform.includes("-200%");
+}
+
 let app: App | null = null;
 afterEach(() => {
   app?.unmount();
@@ -134,6 +150,7 @@ describe("KozmosTourStep", () => {
         ? document.querySelector<HTMLElement>('[role="dialog"]')
         : null,
     );
+    await until(() => placed(second));
     second.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
