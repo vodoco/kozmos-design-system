@@ -47,6 +47,14 @@ export interface MultiSelectProps extends Omit<
   helperText?: string;
   label?: string;
   maxSelected?: number;
+  /**
+   * What a screen reader is told, politely and once, when the selection
+   * reaches `maxSelected` and the remaining options are disabled: given the
+   * limit, it returns the words, in the product's language. Said again only
+   * after the selection drops below the limit and reaches it again.
+   * "Limit of 3 reached" by default.
+   */
+  maxSelectedLabel?: (max: number) => string;
   onSearchValueChange?: (value: string) => void;
   onValueChange?: (value: string[], options: ComboboxOption[]) => void;
   options: ComboboxOption[];
@@ -104,6 +112,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       id,
       label,
       maxSelected,
+      maxSelectedLabel = (max) => `Limit of ${max} reached`,
       onSearchValueChange,
       onValueChange,
       options,
@@ -191,6 +200,29 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     );
     const atSelectionLimit =
       typeof maxSelected === "number" && selectedValues.length >= maxSelected;
+    // The limit is said when the selection reaches it (GAP-225): not on
+    // the first render, not on a render that changes nothing, and again only
+    // after it drops below. The words stay while the field is at the limit,
+    // so a re-render leaves the region alone; they go below it, so reaching
+    // it again is a change a screen reader reads. A field already at its
+    // limit when it mounts, or given a limit it already meets in the render
+    // that mounts the region, says nothing: no region was there to change.
+    const limited = typeof maxSelected === "number";
+    const [limitSeen, setLimitSeen] = React.useState({
+      limited,
+      atLimit: atSelectionLimit,
+      say: false,
+    });
+    if (
+      limitSeen.limited !== limited ||
+      limitSeen.atLimit !== atSelectionLimit
+    ) {
+      setLimitSeen({
+        limited,
+        atLimit: atSelectionLimit,
+        say: limitSeen.limited && limited && atSelectionLimit,
+      });
+    }
     const navigableOptions = React.useMemo(
       () =>
         filteredOptions.map((option) => ({
@@ -551,6 +583,18 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
               open && filteredOptions.length === 0 ? emptyText : undefined
             }
           />
+          {/* A region of its own, mounted with the limit, empty: sharing
+              the empty text's would say the limit again each time "No
+              results found" came and went. */}
+          {typeof maxSelected === "number" && (
+            <FieldPopupStatus
+              message={
+                limitSeen.say && atSelectionLimit
+                  ? maxSelectedLabel(maxSelected)
+                  : undefined
+              }
+            />
+          )}
         </FieldPopupRoot>
       </FieldWrapper>
     );
