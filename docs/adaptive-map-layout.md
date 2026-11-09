@@ -135,7 +135,7 @@ The top corners pad the camera's top only with `controlsPadCamera`, and the stat
 A status moves only what it reaches: a tall side panel or `controls` column clear of it and the credits keeps its height.
 `pnpm test:map-controls` measures them in Chromium, WebKit and Firefox
 (`scripts/check-shell-slots.mjs`). SwiftUI and Compose have them from 0.16.0 (decision 134), with
-`topControlsLabel` and `topControlsPadCamera`; they report collision insets, which the status never
+`topControlsLabel` and `controlsPadCamera`; they report collision insets, which the status never
 changes. `KozmosMapShellStatusTopCornersTests` and `KozmosAdaptiveMapShellStatusTopCornersTest`
 measure them.
 

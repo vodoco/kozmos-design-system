@@ -185,7 +185,7 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// (SDK-UI-006), the map's information at the end. They share a row, or the
 /// start sits above the end when both do not fit, and a `controls` column
 /// starts 16 below them. They share one container, `topControlsLabel`. They
-/// pad the camera's top only with `topControlsPadCamera`. With no room above
+/// pad the camera's top only with `controlsPadCamera`. With no room above
 /// the sheet they stay in the hierarchy but leave the screen's interaction
 /// and VoiceOver, as the bottom corners do.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
@@ -221,7 +221,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let controlsTopEnd: AnyView
     private let hasTopControls: Bool
     private let topControlsLabel: String
-    private let topControlsPadCamera: Bool
+    private let controlsPadCamera: Bool
     /// The top corners' height, and the status's size, whether or not shown.
     @State private var topControlsHeight: CGFloat = 0
     @State private var statusSize: CGSize = .zero
@@ -308,7 +308,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
         topControlsLabel: String = "Map top corner controls",
-        topControlsPadCamera: Bool = false,
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder status: () -> Status = { EmptyView() },
@@ -346,7 +346,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         self.controlsTopEnd = AnyView(controlsTopEnd())
         self.hasTopControls = TopStart.self != EmptyView.self || TopEnd.self != EmptyView.self
         self.topControlsLabel = topControlsLabel
-        self.topControlsPadCamera = topControlsPadCamera
+        self.controlsPadCamera = controlsPadCamera
         self.topBar = topBar()
         self.panel = panel()
         self.panelHeader = PanelHeader.self == EmptyView.self ? nil : AnyView(panelHeader())
@@ -570,7 +570,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         let safeRight = layoutDirection == .leftToRight ? safeArea.trailing : safeArea.leading
         // The top corners pad the camera's top only when asked; the status
         // never pads it, so the map does not move as a status comes and goes.
-        let topCorners = topControlsPadCamera && topControlsShown(in: size, safeArea: safeArea)
+        let topCorners = controlsPadCamera && topControlsShown(in: size, safeArea: safeArea)
             ? topControlsTop(safeArea: safeArea) + topControlsHeight : 0
         let top = max(collisionInsets.top, Double(max(topBarInset + safeArea.top, topCorners)))
         let right = max(
@@ -1153,8 +1153,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 Color.clear.preference(key: KozmosMapShellStatusSizeKey.self, value: proxy.size)
             })
             .frame(width: max(0, innerWidth - (above ? 0 : reserve * 2)))
-            // Not drawn without room; still there, so a pill still announces.
-            .opacity(shown ? 1 : 0)
+            // Not drawn without room, and still in VoiceOver's tree, as the
+            // web's clipped status is: masked out, not made transparent, since
+            // SwiftUI drops a view at opacity 0 from the tree.
+            .mask { shown ? Color.black : Color.clear }
             .allowsHitTesting(shown)
             .padding(.horizontal, above ? 0 : reserve)
             .padding(.horizontal, gap)
@@ -1535,7 +1537,7 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
         topControlsLabel: String = "Map top corner controls",
-        topControlsPadCamera: Bool = false,
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder status: () -> Status = { EmptyView() },
@@ -1563,7 +1565,7 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
             controlsLabel: controlsLabel,
             bottomControlsLabel: bottomControlsLabel,
             topControlsLabel: topControlsLabel,
-            topControlsPadCamera: topControlsPadCamera,
+            controlsPadCamera: controlsPadCamera,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
             status: status,
@@ -1596,7 +1598,7 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
         topControlsLabel: String = "Map top corner controls",
-        topControlsPadCamera: Bool = false,
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder status: () -> Status = { EmptyView() },
@@ -1622,7 +1624,7 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
             controlsLabel: controlsLabel,
             bottomControlsLabel: bottomControlsLabel,
             topControlsLabel: topControlsLabel,
-            topControlsPadCamera: topControlsPadCamera,
+            controlsPadCamera: controlsPadCamera,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
             status: status,

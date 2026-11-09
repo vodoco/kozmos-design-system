@@ -62,7 +62,7 @@ final class KozmosMapShellStatusTopCornersTests: XCTestCase {
         KozmosAdaptiveMapShell(
             onCollisionInsetsChange: { reported?.insets = $0 },
             attribution: AnyView(Self.cyan.frame(height: 20)),
-            topControlsPadCamera: padCamera,
+            controlsPadCamera: padCamera,
             controlsBottomStart: { Self.yellow.frame(width: 44, height: 44) },
             controlsBottomEnd: { Self.yellow.frame(width: 44, height: 44) },
             status: { if status { Self.magenta.frame(width: 160, height: 32) } },
@@ -140,6 +140,33 @@ final class KozmosMapShellStatusTopCornersTests: XCTestCase {
         XCTAssertNotNil(with.boundingBox(in: CGRect(origin: .zero, size: wide), where: Self.isMagenta), "the status is not drawn")
     }
 
+    /// With no room for the status, the credits keep their place, level
+    /// with where the status would sit, unraised.
+    @MainActor func testWithNoRoomForTheStatusTheCreditsKeepTheirPlace() async throws {
+        let short = CGSize(width: 390, height: 130)
+        let pixels = try await render(phoneShell(), size: short, "gap-123-credits-no-room")
+        let credits = try box(pixels, short, "the credits", Self.isCyan)
+        XCTAssertEqual(credits.maxY, short.height - 16, accuracy: 1, "the credits were raised by a status with no room: \(credits)")
+    }
+
+    /// Not drawn for want of room, the status stays in VoiceOver's tree, so
+    /// what it says is still there to read.
+    @MainActor func testWithNoRoomTheStatusStaysReadable() async throws {
+        let view = KozmosAdaptiveMapShell(
+            attribution: AnyView(Self.cyan.frame(height: 20)),
+            status: { Text("Route updated") },
+            controlsTopStart: { Self.green.frame(width: 120, height: 44) },
+            map: { Color.red },
+            mapStatusContent: { EmptyView() },
+            controls: { EmptyView() },
+            panel: { EmptyView() }
+        )
+        .environment(\.horizontalSizeClass, .compact)
+        try await inspectAccessibility(view, size: CGSize(width: 390, height: 130)) { window in
+            XCTAssertNoThrow(try accessibilityElement(named: "Route updated", in: window))
+        }
+    }
+
     // MARK: The top corners
 
     /// 16 under the top edge, at the logical start and end, in one row.
@@ -175,6 +202,14 @@ final class KozmosMapShellStatusTopCornersTests: XCTestCase {
         let start = try box(pixels, phone, "the top start", Self.isGreen)
         let column = try box(pixels, phone, "the controls column", Self.isBlack)
         XCTAssertEqual(column.minY - start.maxY, 16, accuracy: 1, "the controls are not 16 below the corners: \(start) \(column)")
+    }
+
+    /// With no room above the bottom chrome they leave the screen.
+    @MainActor func testWithNoRoomTheTopCornersLeave() async throws {
+        let short = CGSize(width: 390, height: 100)
+        let pixels = try await render(phoneShell(), size: short, "gap-123-top-no-room")
+        XCTAssertNil(pixels.boundingBox(in: CGRect(origin: .zero, size: short), where: Self.isGreen), "the top start is drawn with no room")
+        XCTAssertNil(pixels.boundingBox(in: CGRect(origin: .zero, size: short), where: Self.isBlue), "the top end is drawn with no room")
     }
 
     /// They pad the camera's top only when asked, to their bottom edge.

@@ -74,7 +74,7 @@ class KozmosAdaptiveMapShellStatusTopCornersTest {
                     controlsTopStart = Box("Exit building", startWidth, 44),
                     controlsTopEnd = Box("Map information", 44, 44),
                     controls = if (controls) Box("Locate", 44, 88) else null,
-                    topControlsPadCamera = padCamera,
+                    controlsPadCamera = padCamera,
                     onCollisionInsetsChange = { insets = it }
                 )
             }

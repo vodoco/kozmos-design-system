@@ -99,5 +99,29 @@ final class KozmosTreeDividedTests: XCTestCase {
         let rebuilt = [Node(value: "Main building", children: [Node(value: "Ground floor")])]
         XCTAssertEqual(KozmosTree.dividedRows(rebuilt, expanded: [[0]]).count, 2, "a rebuilt node lost its open state")
     }
+
+    /// A parent row says whether it is open; a leaf row says nothing. The
+    /// row is read on its own: the tree's scroll view gives the walk no
+    /// elements in a unit test.
+    @MainActor func testAParentRowSaysWhetherItIsOpen() async throws {
+        let parent = Node(value: "Main building", children: [Node(value: "Ground floor")])
+        let rows = VStack(spacing: 0) {
+            KozmosTreeDividedRow(node: parent, depth: 0, isParent: true, open: true, density: .default, bleed: 0) {}
+            KozmosTreeDividedRow(node: Node(value: "Car park", children: [Node(value: "P1")]), depth: 0, isParent: true,
+                                 open: false, density: .default, bleed: 0) {}
+            KozmosTreeDividedRow(node: Node(value: "Lobby"), depth: 1, isParent: false, open: false, density: .default, bleed: 0) {}
+        }
+        try await inspectAccessibility(rows, size: size) { window in
+            let elements = accessibilityElements(window)
+            @MainActor func row(_ words: String) throws -> NSObject {
+                try XCTUnwrap(elements.first { $0.accessibilityLabel?.contains(words) == true },
+                              "no row for \(words):\n\(describeAccessibility(window))")
+            }
+            XCTAssertEqual(try row("Main building").accessibilityValue, "Expanded")
+            XCTAssertEqual(try row("Car park").accessibilityValue, "Collapsed")
+            XCTAssertTrue(try row("Lobby").accessibilityValue?.isEmpty ?? true, "a leaf has a value")
+            XCTAssertTrue(try row("Main building").accessibilityTraits.contains(.button))
+        }
+    }
 }
 #endif

@@ -25,6 +25,7 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.readSettledSemantics
+import com.kozmos.components.live
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -53,23 +54,34 @@ class KozmosInputActionTest {
         override fun setText(annotatedString: AnnotatedString) { kept = annotatedString }
     }
 
+    /**
+     * Pressed in a live composition, so the state the press writes is sent on
+     * at a frame: a click on what readSettledSemantics returned writes it
+     * outside one and stalls Compose's shared main dispatcher for every later
+     * test (the hazard `live` documents).
+     */
     @Test fun copyCopiesAReadOnlyFieldsValueAndSaysSo() {
         val clipboard = Clipboard()
         var copied: String? = null
-        val tree = paparazzi.readSettledSemantics {
+        paparazzi.live(content = {
             CompositionLocalProvider(LocalClipboardManager provides clipboard) {
                 KozmosMaterialTheme {
                     KozmosInput(value = "FID-0042", onValueChange = {}, label = "Feature ID", readOnly = true,
                         action = KozmosInputAction.Copy(onCopy = { copied = it }))
                 }
             }
+        }) {
+            frames(2)
+            val copy = read().named("Copy")
+            assertTrue("a read-only field's copy is disabled", copy.enabled)
+            val polite = { read().merged.single { it.liveRegion == LiveRegionMode.Polite } }
+            assertNull("it says something before a copy", polite().description)
+            assertTrue(copy.click!!.invoke())
+            frames(3)
+            assertEquals("FID-0042", clipboard.kept?.text)
+            assertEquals("FID-0042", copied)
+            assertEquals("the live region does not say it copied", "Copied", polite().description)
         }
-        val copy = tree.named("Copy")
-        assertTrue("a read-only field's copy is disabled", copy.enabled)
-        assertTrue(copy.click!!.invoke())
-        assertEquals("FID-0042", clipboard.kept?.text)
-        assertEquals("FID-0042", copied)
-        assertNotNull("no live region for what it says", tree.merged.firstOrNull { it.liveRegion == LiveRegionMode.Polite })
     }
 
     @Test fun copyTakesItsName() {

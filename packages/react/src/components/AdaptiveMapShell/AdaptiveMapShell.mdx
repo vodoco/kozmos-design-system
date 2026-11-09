@@ -153,7 +153,8 @@ the answer comes through `onBuildingChange`. That package's README has the code.
 SwiftUI and Compose have the three slots too, from 0.16.0 (decision 134): `status`,
 `controlsTopStart` and `controlsTopEnd`, with `topControlsLabel`, placed as they are here. They
 report collision insets, not occlusions: the status never changes them, and the top corners pad the
-camera's top only with `topControlsPadCamera`, their name for `controlsPadCamera`. A status with no
+camera's top only with `controlsPadCamera`, as here; their `controls` column pads it whatever
+that says, as it always has on those platforms. A status with no
 room is not drawn and stays in the accessibility tree, so `KozmosMapStatusPill` still announces it.
 
 <Canvas of={Stories.SheetPanelHeader} />

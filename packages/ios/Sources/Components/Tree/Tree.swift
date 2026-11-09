@@ -64,23 +64,9 @@ public struct KozmosTree: View {
             dividedTree
         } else {
             List(nodes, children: \.children) { node in
-                label(for: node)
+                Self.label(for: node)
                     .padding(.vertical, density.verticalPadding)
             }
-        }
-    }
-
-    private func label(for node: Node) -> some View {
-        HStack {
-            if node.children != nil {
-               // A theme-coloured icon: theme 600 (decision 59).
-               Image(systemName: "folder")
-                    .foregroundColor(KozmosColors.primitivesColorsTheme600)
-            } else {
-                Image(systemName: "doc")
-                    .foregroundColor(.gray)
-            }
-            Text(node.value)
         }
     }
 
@@ -121,13 +107,46 @@ public struct KozmosTree: View {
 
     private func dividedRow(_ row: DividedRow) -> some View {
         let open = row.isParent && expanded.contains(row.path)
-        return Button {
-            guard row.isParent else { return }
+        return KozmosTreeDividedRow(node: row.node, depth: row.depth, isParent: row.isParent, open: open,
+                                    density: density, bleed: bleed) {
             if open { expanded.remove(row.path) } else { expanded.insert(row.path) }
+        }
+    }
+
+    static func label(for node: Node) -> some View {
+        HStack {
+            if node.children != nil {
+               // A theme-coloured icon: theme 600 (decision 59).
+               Image(systemName: "folder")
+                    .foregroundColor(KozmosColors.primitivesColorsTheme600)
+            } else {
+                Image(systemName: "doc")
+                    .foregroundColor(.gray)
+            }
+            Text(node.value)
+        }
+    }
+}
+
+/// A divided tree's row (GAP-201): the row, an open parent's surface under
+/// it, and the stroke under the row, outside its height. A parent says to
+/// VoiceOver whether it is open.
+struct KozmosTreeDividedRow: View {
+    let node: Node
+    let depth: Int
+    let isParent: Bool
+    let open: Bool
+    let density: KozmosTreeDensity
+    let bleed: CGFloat
+    let toggle: () -> Void
+
+    var body: some View {
+        Button {
+            if isParent { toggle() }
         } label: {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 Group {
-                    if row.isParent {
+                    if isParent {
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .rotationEffect(.degrees(open ? 90 : 0))
@@ -135,10 +154,10 @@ public struct KozmosTree: View {
                     }
                 }
                 .frame(width: 16)
-                label(for: row.node)
+                KozmosTree.label(for: node)
                 Spacer(minLength: 0)
             }
-            .padding(.leading, CGFloat(row.depth) * 20)
+            .padding(.leading, CGFloat(depth) * 20)
             .padding(.vertical, density.verticalPadding)
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
             .frame(minHeight: 44)
@@ -153,6 +172,6 @@ public struct KozmosTree: View {
         .background(alignment: .bottom) {
             KozmosColors.semanticsBorderSubtle.frame(height: 1)
         }
-        .accessibilityValue(row.isParent ? (open ? "Expanded" : "Collapsed") : "")
+        .accessibilityValue(isParent ? (open ? "Expanded" : "Collapsed") : "")
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -202,6 +203,57 @@ fun KozmosDrawer(
     )
 }
 
+/**
+ * The signature before `placement` (GAP-198), kept for positional calls:
+ * `placement` and `label` sit before the lambdas, so a call that passed
+ * `drawerContent` by position would otherwise not compile.
+ */
+@Composable
+fun KozmosDrawer(
+    open: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier,
+    side: KozmosDrawerSide,
+    showCloseButton: Boolean,
+    drawerContent: @Composable ColumnScope.() -> Unit,
+    content: @Composable () -> Unit
+) = KozmosDrawer(
+    open = open,
+    onDismissRequest = onDismissRequest,
+    modifier = modifier,
+    side = side,
+    showCloseButton = showCloseButton,
+    placement = KozmosDrawerPlacement.Fixed,
+    label = null,
+    drawerContent = drawerContent,
+    content = content
+)
+
+/** The title signature before `placement` (GAP-198), kept for positional calls. */
+@Composable
+fun KozmosDrawer(
+    open: Boolean,
+    onDismissRequest: () -> Unit,
+    title: String,
+    modifier: Modifier,
+    description: String?,
+    bodyText: String?,
+    side: KozmosDrawerSide,
+    showCloseButton: Boolean,
+    content: @Composable () -> Unit
+) = KozmosDrawer(
+    open = open,
+    onDismissRequest = onDismissRequest,
+    title = title,
+    modifier = modifier,
+    description = description,
+    bodyText = bodyText,
+    side = side,
+    showCloseButton = showCloseButton,
+    placement = KozmosDrawerPlacement.Fixed,
+    content = content
+)
+
 @Composable
 fun DrawerHeader(
     title: String,
@@ -345,15 +397,13 @@ private fun androidx.compose.foundation.layout.BoxScope.drawerSurfaceModifier(si
     when (side) {
         KozmosDrawerSide.Left -> Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.88f)
-            .widthIn(max = 384.dp)
+            .kozmosFixedDrawerWidth()
             .align(Alignment.CenterStart)
             .shadow(KozmosShadows.semanticsElevationOverlay, drawerShape(side))
 
         KozmosDrawerSide.Right -> Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.88f)
-            .widthIn(max = 384.dp)
+            .kozmosFixedDrawerWidth()
             .align(Alignment.CenterEnd)
             .shadow(KozmosShadows.semanticsElevationOverlay, drawerShape(side))
 
@@ -369,6 +419,18 @@ private fun androidx.compose.foundation.layout.BoxScope.drawerSurfaceModifier(si
             .align(Alignment.BottomCenter)
             .shadow(KozmosShadows.semanticsElevationOverlay, drawerShape(side))
     }
+
+/**
+ * A fixed side drawer's width: 88% of its box, at most 384. `fillMaxWidth`
+ * then `widthIn` never capped it, since a cap cannot undo the fill before it:
+ * in an 800 box it was 704.
+ */
+private fun Modifier.kozmosFixedDrawerWidth(): Modifier = layout { measurable, constraints ->
+    val width = minOf((constraints.maxWidth * 0.88f).toInt(), 384.dp.roundToPx())
+        .coerceAtLeast(constraints.minWidth)
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+    layout(placeable.width, placeable.height) { placeable.placeRelative(0, 0) }
+}
 
 private fun androidx.compose.foundation.layout.BoxScope.closeButtonModifier(side: KozmosDrawerSide): Modifier =
     when (side) {

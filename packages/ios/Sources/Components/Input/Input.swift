@@ -21,7 +21,8 @@ public enum KozmosInputAction {
     /// a read-only field too.
     case copy(label: String = "Copy", copiedLabel: String = "Copied", onCopy: ((String) -> Void)? = nil)
     /// A pressed button with its own name, as the reveal is: the Featured
-    /// star at a field's end. `iconName` is a Kozmos icon name. Pressed, it is
+    /// star at a field's end. `icon` is the product's image, drawn at 16 in the
+    /// button's colour, `Image(systemName: "star")`. Pressed, it is
     /// drawn as a pressed ToggleButton is, the theme fill under the icon in a
     /// shape inside the button (decisions 164 and 165), so pressed is a shape
     /// and not a colour alone; it is selected to VoiceOver.

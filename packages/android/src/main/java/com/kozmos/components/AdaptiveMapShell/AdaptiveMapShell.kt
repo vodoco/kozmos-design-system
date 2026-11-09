@@ -281,14 +281,14 @@ fun KozmosAdaptiveMapShell(
      * Exit building at the start (SDK-UI-006), the map's information at the
      * end. They share a row, or the start sits above the end when both do not
      * fit, and [controls] start 16 below them. They pad the camera's top only
-     * with [topControlsPadCamera]. With no room above the sheet they stay
+     * with [controlsPadCamera]. With no room above the sheet they stay
      * composed but are not placed, as the bottom corners.
      */
     controlsTopStart: (@Composable () -> Unit)? = null,
     controlsTopEnd: (@Composable () -> Unit)? = null,
     /** Translatable name shared by both top corners. */
     topControlsLabel: String = "Map top corner controls",
-    topControlsPadCamera: Boolean = false,
+    controlsPadCamera: Boolean = false,
     onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -405,7 +405,7 @@ fun KozmosAdaptiveMapShell(
         val left = maxOf(cleanInset(collisionInsets.left), (safeLeft + if (!panelRight) sidePanel else 0.dp).value.toDouble()).coerceIn(0.0, availableWidth.value.toDouble())
         // The top corners pad the camera's top only when asked; the status
         // never pads it, so the map does not move as a status comes and goes.
-        val topCornersPadding = if (topControlsPadCamera && topControlsShown) topControlsTop + topControlsHeight else 0.dp
+        val topCornersPadding = if (controlsPadCamera && topControlsShown) topControlsTop + topControlsHeight else 0.dp
         val top = maxOf(cleanInset(collisionInsets.top), maxOf(safeTop + topInset, topCornersPadding).value.toDouble()).coerceIn(0.0, availableHeight.value.toDouble())
         val resolvedInsets = KozmosMapCollisionInsets(
             top = top,
@@ -703,6 +703,51 @@ fun KozmosAdaptiveMapShell(
         }
     }
 }
+
+/**
+ * The signature before the status and the top corners (GAP-123), kept for
+ * positional calls: the new parameters sit before `onPanelDetentChange`, so
+ * a call that passed every parameter by position, the labels included, would
+ * otherwise not compile.
+ */
+@Composable
+fun KozmosAdaptiveMapShell(
+    map: @Composable () -> Unit,
+    modifier: Modifier,
+    mapLabel: String,
+    mapStatus: KozmosMapReadiness,
+    mapStatusContent: (@Composable () -> Unit)?,
+    controls: (@Composable () -> Unit)?,
+    topBar: (@Composable () -> Unit)?,
+    panel: (@Composable () -> Unit)?,
+    panelHeader: (@Composable () -> Unit)?,
+    panelLabel: String,
+    panelPlacement: KozmosMapPanelPlacement,
+    collisionInsets: KozmosMapCollisionInsets,
+    onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Unit)?,
+    panelSurface: KozmosSurfaceStyle,
+    panelDetents: List<KozmosMapPanelDetent>,
+    panelDetent: KozmosMapPanelDetent?,
+    controlsBottomStart: (@Composable () -> Unit)?,
+    controlsBottomEnd: (@Composable () -> Unit)?,
+    bottomControlsPadCamera: Boolean,
+    attribution: (@Composable () -> Unit)?,
+    controlsLabel: String,
+    bottomControlsLabel: String,
+    onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)?
+) = KozmosAdaptiveMapShell(
+    map = map, modifier = modifier, mapLabel = mapLabel, mapStatus = mapStatus,
+    mapStatusContent = mapStatusContent, controls = controls, topBar = topBar,
+    panel = panel, panelHeader = panelHeader, panelLabel = panelLabel,
+    panelPlacement = panelPlacement, collisionInsets = collisionInsets,
+    onCollisionInsetsChange = onCollisionInsetsChange, panelSurface = panelSurface,
+    panelDetents = panelDetents, panelDetent = panelDetent,
+    controlsBottomStart = controlsBottomStart, controlsBottomEnd = controlsBottomEnd,
+    bottomControlsPadCamera = bottomControlsPadCamera, attribution = attribution,
+    controlsLabel = controlsLabel, bottomControlsLabel = bottomControlsLabel,
+    status = null, controlsTopStart = null, controlsTopEnd = null,
+    onPanelDetentChange = onPanelDetentChange
+)
 
 /** The 0.7 positional signature, including its trailing detent callback. */
 @Composable

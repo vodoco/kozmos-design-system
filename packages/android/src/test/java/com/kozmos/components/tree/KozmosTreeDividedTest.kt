@@ -16,6 +16,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.readSettledSemantics
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -104,5 +105,23 @@ class KozmosTreeDividedTest {
         val y2 = bled.strokes(140f).first()
         assertTrue("the stroke does not reach the panel's start", bled.isStroke(1f, y2))
         assertTrue("the stroke does not reach the panel's end", bled.isStroke(169f, y2))
+    }
+
+    /** With the bleed, the strokes reach past the tree and the rows stay where they are, at the tree's start and end. */
+    @Test fun withBleedTheRowsStayWhereTheyAre() {
+        var px = 1f
+        val tree = paparazzi.readSettledSemantics {
+            px = LocalDensity.current.density
+            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
+                KozmosMaterialTheme {
+                    Box(Modifier.size(170.dp, 300.dp).padding(16.dp)) {
+                        KozmosTree(data, divided = true, bleed = 16.dp, expandedIds = setOf("main"))
+                    }
+                }
+            }
+        }
+        val row = tree.merged.first { it.click != null && "P" in it.texts }.bounds
+        assertEquals("the row moved off the tree's start", 16f, row.left / px, 1f)
+        assertEquals("the row moved off the tree's end", 154f, row.right / px, 1f)
     }
 }

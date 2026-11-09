@@ -140,4 +140,20 @@ class KozmosDrawerInlineTest {
         val panel = tree.panel().dp()
         assertTrue(panel.contains(tree.named("Close drawer").dp().center))
     }
+
+    /**
+     * The fixed side drawer is 88% of its box, at most 384: in an 800 box its
+     * body, inside the 24 padding, is 336. `fillMaxWidth(0.88f)` before
+     * `widthIn(max = 384)` never capped it: it was 704.
+     */
+    @Test fun aFixedSideDrawerIsAtMost384Wide() {
+        val body = read(placement = KozmosDrawerPlacement.Fixed).named("Body").dp()
+        assertEquals(384f - 48f, body.width, 1f)
+    }
+
+    /** On a phone it is still 88% of the box. */
+    @Test fun aFixedSideDrawerOnAPhoneIs88Percent() {
+        val body = read(width = 360, placement = KozmosDrawerPlacement.Fixed).named("Body").dp()
+        assertEquals(360f * 0.88f - 48f, body.width, 1.5f)
+    }
 }
