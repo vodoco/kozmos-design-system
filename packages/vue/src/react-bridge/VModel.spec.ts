@@ -1322,6 +1322,29 @@ describe("each model's other changes", () => {
     await settle();
     expect($<HTMLInputElement>("input")!.value).toBe("");
   });
+
+  it("KozmosCombobox keeps each character typed when the product clears its model as the visitor types (GAP-232)", async () => {
+    const value = ref<string | null>("banana");
+    mount(() =>
+      h(Bridge.KozmosCombobox, {
+        options: fruit,
+        label: "Fruit",
+        modelValue: value.value,
+        "onUpdate:modelValue": (next: string | null) => (value.value = next),
+        "onUpdate:inputValue": () => (value.value = null),
+      }),
+    );
+    const input = await until(() => $<HTMLInputElement>("input"));
+    await settle();
+    expect(input.value).toBe("Banana");
+    input.focus();
+    for (const text of ["C", "Ch", "Che"]) {
+      type(input, text);
+      await settle();
+      expect(input.value).toBe(text);
+    }
+    expect(value.value).toBeNull();
+  });
 });
 
 // --------------------------------------------------------------------------

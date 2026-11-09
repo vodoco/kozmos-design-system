@@ -48,6 +48,10 @@ RouteLocationField's `filterMode` so identity and readiness guards remain in pla
 
 `defaultInputValue` is an initial search draft, not a selected entity. A later selection
 change updates uncontrolled display text. Controlled `inputValue` remains host-owned.
+Text the visitor has typed is kept: a new label for the same choice replaces the text only
+while the field still shows the old label, a choice whose option leaves `options` (an async
+search) keeps its text, and a choice cleared to nothing, as when a product clears `value`
+in `onInputValueChange`, empties only a field the visitor was not editing.
 
 Web's existing generic `option_selected` analytics includes the value by default for
 compatibility. Set `includeValueInAnalytics={false}` for sensitive values. RouteLocationField

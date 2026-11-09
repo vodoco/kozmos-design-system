@@ -141,6 +141,146 @@ describe("Combobox: a prop change shows in the commit it arrives in", () => {
   });
 });
 
+describe("Combobox: the visitor's typed text is kept (GAP-232)", () => {
+  // Replaces the field's whole text, as a visitor who selects it and types.
+  const replacing = (input: HTMLInputElement) => ({
+    initialSelectionStart: 0,
+    initialSelectionEnd: input.value.length,
+  });
+
+  describe.each(strictModes)("%s", (_, wrapper) => {
+    it("keeps every character typed while an async search drops the chosen option", async () => {
+      const user = userEvent.setup();
+      // A server search: each query brings only the options that match it,
+      // so the chosen "Overview" leaves `options` as "Act" is typed.
+      function AsyncSearch() {
+        const [list, setList] = React.useState(options);
+        return (
+          <Combobox
+            label="View"
+            options={list}
+            defaultValue="overview"
+            filterOption={() => true}
+            onInputValueChange={(query) =>
+              setList(
+                options.filter((option) =>
+                  option.label.toLowerCase().includes(query.toLowerCase()),
+                ),
+              )
+            }
+          />
+        );
+      }
+      render(<AsyncSearch />, { wrapper });
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      expect(input).toHaveValue("Overview");
+
+      await user.type(input, "Act", replacing(input));
+      expect(input).toHaveValue("Act");
+      expect(
+        screen.getAllByRole("option").map((option) => option.textContent),
+      ).toEqual(["Activity"]);
+    });
+
+    it("keeps every character typed when the product clears value in onInputValueChange", async () => {
+      const user = userEvent.setup();
+      const changes: string[] = [];
+      // "Typing clears the choice": the text no longer names the option.
+      function ClearsOnType() {
+        const [value, setValue] = React.useState("overview");
+        return (
+          <Combobox
+            label="View"
+            options={options}
+            value={value}
+            onValueChange={setValue}
+            onInputValueChange={(text) => {
+              changes.push(text);
+              setValue("");
+            }}
+          />
+        );
+      }
+      render(<ClearsOnType />, { wrapper });
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      expect(input).toHaveValue("Overview");
+
+      await user.type(input, "Det", replacing(input));
+      expect(input).toHaveValue("Det");
+      expect(changes).toEqual(["D", "De", "Det"]);
+
+      // A choice made after typing still shows its label.
+      await user.click(screen.getByRole("option", { name: "Details" }));
+      expect(input).toHaveValue("Details");
+    });
+
+    it("shows a new value's label when the host sets it, even over typed text", async () => {
+      const user = userEvent.setup();
+      const { rerender } = render(
+        <Combobox label="View" options={options} value="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      await user.type(input, "Ac", replacing(input));
+      expect(input).toHaveValue("Ac");
+
+      rerender(<Combobox label="View" options={options} value="details" />);
+      expect(input).toHaveValue("Details");
+    });
+
+    it("keeps typed text when the chosen option is renamed, and follows a rename while it shows the label", async () => {
+      const user = userEvent.setup();
+      const renamed = (label: string) =>
+        options.map((option) =>
+          option.value === "overview" ? { ...option, label } : option,
+        );
+      const { rerender } = render(
+        <Combobox label="View" options={options} defaultValue="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      rerender(
+        <Combobox
+          label="View"
+          options={renamed("Summary")}
+          defaultValue="overview"
+        />,
+      );
+      expect(input).toHaveValue("Summary");
+
+      await user.type(input, "Su", replacing(input));
+      rerender(
+        <Combobox
+          label="View"
+          options={renamed("Synopsis")}
+          defaultValue="overview"
+        />,
+      );
+      expect(input).toHaveValue("Su");
+    });
+
+    it("keeps the chosen label shown when its option leaves options, the choice unchanged", () => {
+      const { rerender } = render(
+        <Combobox label="View" options={options} value="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox", { name: "View" });
+      rerender(
+        <Combobox label="View" options={options.slice(1)} value="overview" />,
+      );
+      expect(input).toHaveValue("Overview");
+    });
+  });
+});
+
 describe("Combobox", () => {
   it("omits every ambiguous or blank command without confusing a same-ID value", async () => {
     const user = userEvent.setup();

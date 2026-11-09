@@ -233,9 +233,14 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const [uncontrolledInputValue, setUncontrolledInputValue] = React.useState(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
-    // A new choice, or a new label for it, puts that label in the field's own
-    // text in the same render, so no commit shows the old one. Text the
-    // product holds (inputValue) is the product's to change.
+    // A new choice puts its label in the field's own text in the same render,
+    // so no commit shows the old one. Anything else leaves text the visitor
+    // has typed as it is (GAP-232): a new label for the same choice follows
+    // only while the field still shows the old label; a choice whose option
+    // has left `options` (an async search) keeps its text; and a choice
+    // cleared to no option empties only a field that was not being edited
+    // (a product that clears `value` as the visitor types). Text the product
+    // holds (inputValue) is the product's to change.
     if (
       previousSelection.value !== selectedValue ||
       previousSelection.label !== selectedOption?.label
@@ -244,8 +249,17 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         value: selectedValue,
         label: selectedOption?.label,
       });
-      if (inputValue === undefined)
-        setUncontrolledInputValue(selectedOption?.label ?? "");
+      const choiceChanged = previousSelection.value !== selectedValue;
+      const showsPreviousLabel =
+        uncontrolledInputValue === (previousSelection.label ?? "");
+      const nextLabel = selectedOption?.label;
+      if (
+        inputValue === undefined &&
+        (nextLabel === undefined
+          ? choiceChanged && showsPreviousLabel
+          : choiceChanged || showsPreviousLabel)
+      )
+        setUncontrolledInputValue(nextLabel ?? "");
     }
     const visibleInputValue = inputValue ?? uncontrolledInputValue;
     // In the order they are drawn: under their groups (GAP-192).
