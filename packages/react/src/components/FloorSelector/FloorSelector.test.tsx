@@ -12,7 +12,7 @@ import { ChevronUp } from "@kozmos-ds/icons";
 import { AnalyticsProvider } from "../../utils/analytics";
 import { MapPopupRegionContext } from "../AdaptiveMapShell/map-popup-region";
 import { FloorSelector } from "./FloorSelector";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 
 describe("FloorSelector", () => {
   it("preserves an absent selection and cannot step until the host selects a supplied floor", () => {
@@ -804,5 +804,282 @@ describe("FloorSelector collapsible: a prop change shows in the commit it arrive
         expect(screen.queryByRole("dialog")).toBeNull();
       },
     );
+  });
+});
+
+describe("FloorSelector collapsible: GAP-233", () => {
+  const levels = [
+    { id: "2", label: "Second floor", shortLabel: "2F" },
+    { id: "1", label: "First floor", shortLabel: "1F" },
+    { id: "g", label: "Ground floor", shortLabel: "GF" },
+  ];
+
+  describe("a closing column", () => {
+    // jsdom runs no animation, so Radix would unmount the column in the
+    // commit that closes it. A stylesheet that names an exit animation keeps
+    // it mounted, marked closed, until its animationend: the window a tap or
+    // a key could land in.
+    let sheet: HTMLStyleElement;
+    beforeEach(() => {
+      sheet = document.createElement("style");
+      sheet.textContent =
+        ".kozmos-floor-selector-list[data-state='open'] { animation-name: enter; }" +
+        ".kozmos-floor-selector-list[data-state='closed'] { animation-name: exit; }";
+      document.head.append(sheet);
+    });
+    afterEach(() => sheet.remove());
+
+    function Controlled({ onSelect }: { onSelect: (floor: string) => void }) {
+      const [floor, setFloor] = useState("1");
+      return (
+        <FloorSelector
+          floors={levels}
+          onFloorSelect={(next) => {
+            onSelect(next);
+            setFloor(next);
+          }}
+          selectedFloor={floor}
+          variant="collapsible"
+        />
+      );
+    }
+
+    async function openAndCloseOnEscape(onSelect: (floor: string) => void) {
+      render(<Controlled onSelect={onSelect} />);
+      fireEvent.click(screen.getByRole("button", { name: "First floor" }));
+      const column = await screen.findByRole("dialog", {
+        name: "Floor selector",
+      });
+      const first = within(column).getByRole("button", {
+        name: "First floor",
+      });
+      await waitFor(() => expect(first).toHaveFocus());
+      fireEvent.keyDown(first, { key: "Escape" });
+      // Still drawn, playing its exit animation.
+      expect(column).toHaveAttribute("data-state", "closed");
+      expect(column).toBeInTheDocument();
+      return column;
+    }
+
+    it("takes no pointer, and a tap on a level as it closes chooses nothing", async () => {
+      const onSelect = vi.fn();
+      const column = await openAndCloseOnEscape(onSelect);
+      expect(column).toHaveStyle({ pointerEvents: "none" });
+      // Inert, so assistive technology neither reads nor acts on it.
+      expect(column).toHaveAttribute("inert");
+      fireEvent.click(
+        within(column).getByRole("button", { name: "Ground floor" }),
+      );
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("hands focus to the tile as it starts to close, never to the page, and a level a key still reaches chooses nothing", async () => {
+      const onSelect = vi.fn();
+      const column = await openAndCloseOnEscape(onSelect);
+      const tile = within(
+        screen.getByRole("group", { name: "Floor selector" }),
+      ).getByRole("button", { name: "First floor" });
+      // In the commit that closes it, before inert would blur the level.
+      expect(tile).toHaveFocus();
+      // A button activated from the keyboard is clicked.
+      const level = within(column).getByRole("button", {
+        name: "First floor",
+      });
+      fireEvent.keyDown(level, { key: "Enter" });
+      fireEvent.click(level);
+      fireEvent.keyDown(level, { key: " " });
+      fireEvent.click(level);
+      expect(onSelect).not.toHaveBeenCalled();
+      // The exit animation ends; jsdom's events carry no animationName.
+      const end = new Event("animationend");
+      Object.defineProperty(end, "animationName", { value: "exit" });
+      act(() => {
+        column.dispatchEvent(end);
+      });
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      expect(tile).toHaveFocus();
+    });
+
+    it("opened again before it is gone, it takes the pointer, is no longer inert, and focus goes to the current level", async () => {
+      const onSelect = vi.fn();
+      const column = await openAndCloseOnEscape(onSelect);
+      expect(column).toHaveAttribute("inert");
+      // Enter on the tile again: it has focus, and is clicked.
+      const tile = within(
+        screen.getByRole("group", { name: "Floor selector" }),
+      ).getByRole("button", { name: "First floor" });
+      act(() => tile.focus());
+      fireEvent.click(tile);
+      expect(column).toHaveAttribute("data-state", "open");
+      expect(column).not.toHaveAttribute("inert");
+      expect(column.style.pointerEvents).toBe("");
+      // Focus goes where an opening puts it: the current level.
+      expect(
+        within(column).getByRole("button", { name: "First floor" }),
+      ).toHaveFocus();
+      fireEvent.click(
+        within(column).getByRole("button", { name: "Ground floor" }),
+      );
+      expect(onSelect).toHaveBeenCalledWith("g");
+    });
+
+    it("an open column takes the pointer and chooses as before", async () => {
+      const onSelect = vi.fn();
+      render(<Controlled onSelect={onSelect} />);
+      fireEvent.click(screen.getByRole("button", { name: "First floor" }));
+      const column = await screen.findByRole("dialog", {
+        name: "Floor selector",
+      });
+      expect(column.style.pointerEvents).toBe("");
+      fireEvent.click(
+        within(column).getByRole("button", { name: "Ground floor" }),
+      );
+      expect(onSelect).toHaveBeenCalledTimes(1);
+      expect(onSelect).toHaveBeenCalledWith("g");
+    });
+  });
+
+  describe("a reopened column's first commit", () => {
+    // jsdom lays nothing out: the list overflows when the test says so.
+    let overflows = false;
+    beforeEach(() => {
+      overflows = false;
+      vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return this.classList.contains("kozmos-floor-selector-scroll") &&
+            overflows
+            ? 400
+            : 0;
+        },
+      );
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return this.classList.contains("kozmos-floor-selector-scroll")
+            ? 200
+            : 0;
+        },
+      );
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    // A Profiler is told of every commit in the selector's tree, its own
+    // state's included, after React has written the DOM and before the
+    // browser paints it: it reads each commit as it is drawn.
+    type Commit = {
+      open: boolean;
+      scrollable: string | null;
+      bar: string | null;
+    };
+    function Host({
+      floors,
+      commits,
+    }: {
+      floors: readonly (typeof levels)[number][];
+      commits: Commit[];
+    }) {
+      return (
+        <React.Profiler
+          id="floor-selector"
+          onRender={() => {
+            const column = document.querySelector('[role="dialog"]');
+            if (column?.getAttribute("data-state") !== "open") return;
+            commits.push({
+              open: true,
+              scrollable: column.getAttribute("data-scrollable"),
+              bar:
+                column
+                  .querySelector(".kozmos-floor-selector-scroll")
+                  ?.getAttribute("data-kozmos-scrollbar") ?? null,
+            });
+          }}
+        >
+          <FloorSelector
+            floors={[...floors]}
+            onFloorSelect={() => undefined}
+            selectedFloor="1"
+            variant="collapsible"
+          />
+        </React.Profiler>
+      );
+    }
+
+    async function openColumn() {
+      fireEvent.click(screen.getByRole("button", { name: "First floor" }));
+      return screen.findByRole("dialog", { name: "Floor selector" });
+    }
+    async function closeColumn(column: HTMLElement) {
+      fireEvent.keyDown(column, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    }
+
+    it("does not draw the last opening's scroll affordance when the list no longer overflows", async () => {
+      const commits: Commit[] = [];
+      const many = [
+        ...levels,
+        ...["b1", "b2", "b3", "b4", "b5"].map((id) => ({
+          id,
+          label: id,
+          shortLabel: id,
+        })),
+      ];
+      overflows = true;
+      const { rerender } = render(<Host floors={many} commits={commits} />);
+      let column = await openColumn();
+      await waitFor(() =>
+        expect(column).toHaveAttribute("data-scrollable", "true"),
+      );
+      await closeColumn(column);
+
+      // Fewer levels between the openings: this list fits.
+      overflows = false;
+      rerender(<Host floors={levels} commits={commits} />);
+      commits.length = 0;
+      column = await openColumn();
+      expect(commits[0]).toEqual({ open: true, scrollable: null, bar: null });
+      for (const commit of commits)
+        expect(commit).toEqual({ open: true, scrollable: null, bar: null });
+      expect(column).not.toHaveAttribute("data-scrollable");
+    });
+
+    it("measures its own opening when the list overflows now and did not before", async () => {
+      const commits: Commit[] = [];
+      const { rerender } = render(<Host floors={levels} commits={commits} />);
+      let column = await openColumn();
+      expect(column).not.toHaveAttribute("data-scrollable");
+      await closeColumn(column);
+
+      overflows = true;
+      rerender(<Host floors={levels} commits={commits} />);
+      commits.length = 0;
+      column = await openColumn();
+      // Unplaced, the column has no height to overflow: its first commit
+      // draws no scroll affordance, and its measure then draws its own.
+      expect(commits[0]).toEqual({ open: true, scrollable: null, bar: null });
+      await waitFor(() =>
+        expect(column).toHaveAttribute("data-scrollable", "true"),
+      );
+    });
+
+    it("keeps the scroll affordance while the column plays its exit animation", async () => {
+      const sheet = document.createElement("style");
+      sheet.textContent =
+        ".kozmos-floor-selector-list[data-state='open'] { animation-name: enter; }" +
+        ".kozmos-floor-selector-list[data-state='closed'] { animation-name: exit; }";
+      document.head.append(sheet);
+      try {
+        overflows = true;
+        render(<Host floors={levels} commits={[]} />);
+        const column = await openColumn();
+        await waitFor(() =>
+          expect(column).toHaveAttribute("data-scrollable", "true"),
+        );
+        fireEvent.keyDown(column, { key: "Escape" });
+        expect(column).toHaveAttribute("data-state", "closed");
+        // A list that stopped scrolling mid-exit would jump to its top.
+        expect(column).toHaveAttribute("data-scrollable", "true");
+      } finally {
+        sheet.remove();
+      }
+    });
   });
 });
