@@ -10054,7 +10054,13 @@ assertAllVariants(
 assertContains(
   files.iosIconButton,
   source.iosIconButton,
-  ".frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)",
+  ".frame(width: side, height: side)",
+  "iOS IconButton frame at its side",
+);
+assertContains(
+  files.iosIconButton,
+  source.iosIconButton,
+  "private var side: CGFloat { size == .lg ? 48 : 44 }",
   "iOS IconButton 44px frame, 48 for the large size",
 );
 assertContains(
