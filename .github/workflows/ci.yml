@@ -959,8 +959,9 @@ jobs:
       # react-dom 18 or 19, and the test step above runs its devDependencies'
       # 19. This one takes apps/docs's 18.3.1, the Vue Storybook's, for what
       # Vite loads and what Node loads itself (Radix included), proves it
-      # loaded (test/react18/react18.probe.ts), and skips by name the one
-      # test that holds react-dom 19 alone (packages/vue/vitest.react18.config.mts).
+      # loaded (test/react18/react18.probe.ts), and skips the one test that
+      # holds react-dom 19 alone, by the KOZMOS_REACT18 the run sets
+      # (packages/vue/src/react-bridge/Listeners.spec.ts).
       # It runs after the Storybook, its smoke test and pin guard, and the
       # browser suites, so a failure on React 18 alone hides none of them.
       # It needs only the build, and runs whatever the steps before it found;
