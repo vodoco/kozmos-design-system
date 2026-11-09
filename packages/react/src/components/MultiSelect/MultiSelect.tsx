@@ -204,9 +204,15 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const canClear =
       clearable && !disabled && !readOnly && selectedValues.length > 0;
 
-    React.useEffect(() => {
+    // New options, or new typed text, make the first enabled option active in
+    // the render that brings them, so no commit names a stale one (GAP-231).
+    const [activeFor, setActiveFor] = React.useState<
+      typeof navigableOptions | null
+    >(null);
+    if (activeFor !== navigableOptions) {
+      setActiveFor(navigableOptions);
       setActiveIndex(firstEnabledIndex(navigableOptions));
-    }, [navigableOptions]);
+    }
 
     React.useEffect(() => {
       if (!open) return undefined;
