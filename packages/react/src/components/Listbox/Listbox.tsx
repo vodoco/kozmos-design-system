@@ -105,10 +105,13 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         ? `${listboxId}-option-${activeIndex}`
         : undefined;
 
-    React.useEffect(() => {
+    // New options move the active one in the render that brings them, so no
+    // commit names a stale option (GAP-231). A choice does not move it.
+    const [activeFor, setActiveFor] = React.useState(options);
+    if (activeFor !== options) {
+      setActiveFor(options);
       setActiveIndex(firstEnabledIndex(options, selectedValues));
-      // Only for new options; a choice does not move the active one.
-    }, [options]);
+    }
 
     React.useEffect(() => {
       const root = rootRef.current;
