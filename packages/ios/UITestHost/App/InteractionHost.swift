@@ -51,6 +51,10 @@ private struct InteractionFixture: View {
         ProcessInfo.processInfo.arguments.dropFirst().first ?? ""] ?? ""
     @State private var otpLength = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-length" ? 7 : 6
     @State private var otpSubmitted: [String] = []
+    // Decision 132's field ends: Search's clear, NumberInput's unit, Slider's readout.
+    @State private var searchQuery = "Gate 12"
+    @State private var widthMetres: Double? = 15
+    @State private var floorPlanOpacity = 0.6
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -439,6 +443,29 @@ private struct InteractionFixture: View {
             Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
             Text(otpSubmitted.isEmpty ? "nothing submitted" : otpSubmitted.joined(separator: ","))
                 .accessibilityIdentifier("otp-submitted")
+        case "search-clear":
+            KozmosSearch(text: $searchQuery, placeholder: "Search places", clearable: true,
+                         onClear: { events.append("clear") })
+                .environment(\.kozmosAnalytics) { event in
+                    if event.component == "Search" { events.append(event.eventName) }
+                }
+            Text(searchQuery.isEmpty ? "empty" : searchQuery).accessibilityIdentifier("search-query")
+        case "number-unit":
+            KozmosNumberInput(value: $widthMetres, label: "Width", unit: "m", unitLabel: "metres")
+            Button("Inspect field accessibility") {
+                fieldAccessibilityReport = accessibleLabels().filter { $0 != "Inspect field accessibility" }
+                    .joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
+        case "slider-readout":
+            KozmosSlider(value: $floorPlanOpacity, showValue: true,
+                         formatValue: { "\(Int(($0 * 100).rounded())) %" })
+                .accessibilityLabel("Floor-plan opacity")
+            Button("Inspect field accessibility") {
+                fieldAccessibilityReport = accessibleLabels().filter { $0 != "Inspect field accessibility" }
+                    .joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})

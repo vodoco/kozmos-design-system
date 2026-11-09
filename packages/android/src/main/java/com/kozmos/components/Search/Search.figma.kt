@@ -10,12 +10,16 @@ class KozmosSearchConnect {
     @FigmaProperty(FigmaType.Text, "Placeholder Text")
     val placeholder: String = "Search"
 
+    @FigmaProperty(FigmaType.Boolean, "Show Clear")
+    val clearable: Boolean = false
+
     @Composable
     fun ComponentExample() {
         KozmosSearch(
             value = "",
             onValueChange = {},
-            placeholder = placeholder
+            placeholder = placeholder,
+            clearable = clearable
         )
     }
 }

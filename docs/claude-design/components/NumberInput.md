@@ -38,6 +38,16 @@ It forwards its ref to `HTMLInputElement`. Its props are `NumberInputProps`, whi
 - `showSteppers`: `boolean`, optional, default `true`.
 - `status`: `InputStatus`, optional, default `"default"`.
 - `wrapperClassName`: `string`, optional.
+- `unit`: `string`, optional.
+
+  A unit drawn inside the field after the value, "m" or "%" (GAP-098). It
+  is never part of the value, and it is read after the value, as
+  `unitLabel` when one is given.
+
+- `unitLabel`: `string`, optional.
+
+  The unit's spoken name, in the page's language: "metres" for "m".
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

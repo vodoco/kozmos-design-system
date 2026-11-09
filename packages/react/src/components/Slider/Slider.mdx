@@ -83,3 +83,97 @@ fun VolumeSlider(volume: Float, onVolumeChange: (Float) -> Unit) {
 `}
 
 />
+
+## A readout that stays
+
+`showValue` draws the value at the slider's end, beside the track, at rest as well as while
+it moves; a range shows its two ends, "20 – 80". `formatValue` words it, "60%". The readout
+is for the eye: a screen reader hears the value from the thumb, in `formatValue`'s words when
+it returns text, and not again from the readout. SwiftUI and Compose take `showValue` and a
+`formatValue` that returns text.
+
+<Canvas>
+  <Story of={SliderStories.WithReadout} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Slider } from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <Slider
+      label="Floor-plan opacity"
+      defaultValue={[60]}
+      max={100}
+      step={5}
+      showValue
+      formatValue={(value) => `${value}%`}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosSlider } from "@kozmos-ds/vue/react-bridge"
+const percent = (value) => `${value}%`
+</script>
+
+<template>
+  <KozmosSlider
+    label="Floor-plan opacity"
+    :default-value="[60]"
+    :max="100"
+    :step="5"
+    show-value
+    :format-value="percent"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The readout stays at the slider's end, at rest too. VoiceOver hears the
+// value once, from the slider, in the readout's words.
+struct FloorPlanOpacity: View {
+    @Binding var opacity: Double
+
+    var body: some View {
+        KozmosFieldWrapper(label: "Floor-plan opacity") {
+            KozmosSlider(
+                value: $opacity,
+                range: 0...1,
+                showValue: true,
+                formatValue: { "\(Int(($0 * 100).rounded()))%" }
+            )
+            .accessibilityLabel("Floor-plan opacity")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.KozmosFieldWrapper
+import com.kozmos.components.slider.KozmosSlider
+import kotlin.math.roundToInt
+
+// The readout stays at the slider's end, at rest too. TalkBack hears the
+// value once, from the slider, in the readout's words.
+@Composable
+fun FloorPlanOpacity(opacity: Float, onOpacityChange: (Float) -> Unit) {
+    KozmosFieldWrapper(label = "Floor-plan opacity") {
+        KozmosSlider(
+            value = opacity,
+            onValueChange = onOpacityChange,
+            showValue = true,
+            formatValue = { "${(it * 100).roundToInt()}%" },
+            modifier = Modifier.semantics { contentDescription = "Floor-plan opacity" }
+        )
+    }
+}
+`}
+
+/>

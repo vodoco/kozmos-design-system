@@ -26,6 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,7 +52,14 @@ fun KozmosNumberInput(
     step: Double = 1.0,
     min: Double? = null,
     max: Double? = null,
-    showSteppers: Boolean = true
+    showSteppers: Boolean = true,
+    /**
+     * A unit drawn inside the field after the value, "m" (GAP-098): never part
+     * of the value, and at the field's end, left in a right-to-left layout.
+     */
+    unit: String? = null,
+    /** The unit's spoken name, "metres" for "m", read after the value; [unit] when unset. */
+    unitLabel: String? = null
 ) {
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
@@ -82,6 +92,7 @@ fun KozmosNumberInput(
     }
     val stepperEnabled = enabled && !readOnly
     val textValue = formatNumberInputValue(value)
+    val spokenUnit = (unitLabel ?: unit)?.takeIf { it.isNotBlank() }
 
     fun clampValue(nextValue: Double): Double {
         var clampedValue = nextValue
@@ -154,23 +165,47 @@ fun KozmosNumberInput(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .semantics {
+                        // The unit is read once, after the value: "15 metres".
+                        if (spokenUnit != null && textValue.isNotEmpty()) {
+                            stateDescription = "$textValue $spokenUnit"
+                        }
+                    },
                 decorationBox = { innerTextField ->
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
                             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
-                        contentAlignment = if (showSteppers) Alignment.Center else Alignment.CenterStart
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (textValue.isEmpty()) {
+                        // The value keeps clear of the unit: the unit takes its width, the value the rest.
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = if (showSteppers) Alignment.Center else Alignment.CenterStart
+                        ) {
+                            if (textValue.isEmpty()) {
+                                Text(
+                                    text = placeholder,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = placeholderColor
+                                )
+                            }
+                            innerTextField()
+                        }
+                        if (!unit.isNullOrBlank()) {
                             Text(
-                                text = placeholder,
+                                text = unit,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = placeholderColor
+                                color = placeholderColor,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .padding(start = KozmosDimensions.primitivesLayoutSpacing50)
+                                    // Heard with the value, through the field's state, not again here.
+                                    .clearAndSetSemantics { }
                             )
                         }
-                        innerTextField()
                     }
                 }
             )

@@ -129,6 +129,7 @@ import type { Booleans, Takes } from "./react-adapter";
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = { dom: true, own: [] };
 const checkboxTakes: Takes = { dom: true, own: ["onCheckedChange"] };
+const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
 const datePickerTakes: Takes = { dom: true, own: ["onOpenChange"] };
@@ -163,8 +164,8 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Switch, checkboxTakes],
   [Card, D],
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
-  [Search, D],
-  [SearchBar, { dom: true, own: ["onClear"] }],
+  [Search, searchTakes],
+  [SearchBar, searchTakes],
   [Select, { dom: false, own: ["onOpenChange", "onValueChange"] }],
   [BottomNavigation, D],
   [Navbar, D],
@@ -466,11 +467,6 @@ const html = (
 const H = html();
 const boxBooleans = html(["asChild"]);
 const textBooleans = html(["asChild", "truncate"]);
-const inputBooleans = html(
-  ["checked", "disabled", "formNoValidate", "multiple", "readOnly", "required"],
-  ["capture"],
-  ["error"],
-);
 const menuBooleans = {
   flags: ["defaultOpen", "modal", "open"],
   unions: [],
@@ -543,7 +539,21 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Counter, H],
   [Badge, html(["asChild", "showCounter"])],
   [Label, boxBooleans],
-  [Input, inputBooleans],
+  [
+    Input,
+    html(
+      [
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "multiple",
+        "readOnly",
+        "required",
+      ],
+      ["capture"],
+      ["error"],
+    ),
+  ],
   [Textarea, html(["disabled", "readOnly", "required"], [], ["error"])],
   [
     Checkbox,
@@ -598,12 +608,27 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Slider,
     html(
-      ["asChild", "disabled", "inverted", "showValueTooltip"],
+      ["asChild", "disabled", "inverted", "showValue", "showValueTooltip"],
       [],
       ["error"],
     ),
   ],
-  [Search, inputBooleans],
+  [
+    Search,
+    html(
+      [
+        "checked",
+        "clearable",
+        "disabled",
+        "formNoValidate",
+        "multiple",
+        "readOnly",
+        "required",
+      ],
+      ["capture"],
+      ["error"],
+    ),
+  ],
   [
     SearchBar,
     html(

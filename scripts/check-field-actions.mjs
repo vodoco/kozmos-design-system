@@ -3,7 +3,7 @@
  * (packages/react/tests/integration/field-actions-host.tsx): Combobox's and
  * MultiSelect's clear and open, on a Combobox with a choice, a MultiSelect
  * with one chip, and a narrow MultiSelect whose chips wrap; Input's toggle
- * action, PasswordInput's reveal, DatePicker's and TimePicker's trigger; and
+ * action, Search's clear (GAP-161), PasswordInput's reveal, DatePicker's and TimePicker's trigger; and
  * a disabled Combobox and PasswordInput. In light and dark, touch and
  * compact, left to right and right to left.
  *
@@ -76,6 +76,7 @@ const PARTS = [
   "multiselect",
   "multiselect-wrapped",
   "input",
+  "search",
   "password",
   "date",
   "time",
@@ -1010,5 +1011,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS field actions: ${reads} reads; hovered, Combobox's and MultiSelect's clear and open, Input's action, PasswordInput's reveal${ownDatePicker ? "" : ", DatePicker's"} and TimePicker's trigger each draw background-100 inside themselves, 4 in, corners the field's less 4 (${[...fills].sort().join("; ")}), nothing at rest, disabled or in forced colours, each as tall as the field${ownDatePicker ? " (DatePicker keeps the browser's own picker in this engine: no button to read)" : ""}; hovering leaves the field's top, bottom and end edges drawn, in normal and forced colours; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; MultiSelect's input draws no box of its own inside the field, at rest or focused, and Combobox's paints no outline at rest${noForcedPalette ? " (forced colours repaint nothing in this engine: there the input's box was read from computed styles only)" : ""}; light and dark, touch and compact, both directions`,
+  `\nPASS field actions: ${reads} reads; hovered, Combobox's and MultiSelect's clear and open, Input's action, Search's clear, PasswordInput's reveal${ownDatePicker ? "" : ", DatePicker's"} and TimePicker's trigger each draw background-100 inside themselves, 4 in, corners the field's less 4 (${[...fills].sort().join("; ")}), nothing at rest, disabled or in forced colours, each as tall as the field${ownDatePicker ? " (DatePicker keeps the browser's own picker in this engine: no button to read)" : ""}; hovering leaves the field's top, bottom and end edges drawn, in normal and forced colours; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; MultiSelect's input draws no box of its own inside the field, at rest or focused, and Combobox's paints no outline at rest${noForcedPalette ? " (forced colours repaint nothing in this engine: there the input's box was read from computed styles only)" : ""}; light and dark, touch and compact, both directions`,
 );

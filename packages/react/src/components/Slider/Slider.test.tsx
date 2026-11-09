@@ -139,4 +139,83 @@ describe("Slider", () => {
     fireEvent.pointerEnter(screen.getByRole("slider"));
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
+
+  describe("showValue (GAP-163)", () => {
+    const readout = (container: HTMLElement) =>
+      container.querySelector(".kozmos-slider-readout");
+
+    it("shows the value at rest, beside the track, and none unless asked", () => {
+      const { container, rerender } = render(
+        <Slider defaultValue={[60]} label="Opacity" />,
+      );
+      expect(readout(container)).toBeNull();
+      rerender(<Slider defaultValue={[60]} label="Opacity" showValue />);
+      const shown = readout(container);
+      expect(shown).toHaveTextContent(/^60$/);
+      // Beside the slider, not in it: inside, it would shorten the range the
+      // thumbs are placed against.
+      const slider = screen.getByRole("slider").closest(".kozmos-slider-row");
+      expect(slider).toContainElement(shown as HTMLElement);
+      const root = container.querySelector(".touch-none");
+      expect(root).toContainElement(screen.getByRole("slider"));
+      expect(root).not.toContainElement(shown as HTMLElement);
+    });
+
+    it("formats the readout with formatValue, and follows the value", () => {
+      const { container } = render(
+        <Slider
+          defaultValue={[60]}
+          label="Opacity"
+          showValue
+          formatValue={(v) => `${v}%`}
+        />,
+      );
+      expect(readout(container)).toHaveTextContent("60%");
+      fireEvent.keyDown(screen.getByRole("slider"), { key: "ArrowRight" });
+      expect(readout(container)).toHaveTextContent("61%");
+    });
+
+    it("shows a range's two ends", () => {
+      const { container } = render(
+        <Slider defaultValue={[20, 80]} showValue />,
+      );
+      expect(readout(container)).toHaveTextContent("20 \u2013 80");
+    });
+
+    it("is not said twice: hidden from the reader, said by the thumb", () => {
+      const { container } = render(
+        <Slider
+          defaultValue={[60]}
+          label="Opacity"
+          showValue
+          formatValue={(v) => `${v}%`}
+        />,
+      );
+      expect(readout(container)).toHaveAttribute("aria-hidden", "true");
+      expect(screen.getByRole("slider", { name: "Opacity" })).toHaveAttribute(
+        "aria-valuetext",
+        "60%",
+      );
+    });
+
+    it("leaves the bare number to the thumb when the format is not words", () => {
+      render(
+        <Slider
+          defaultValue={[60]}
+          label="Opacity"
+          formatValue={(v) => <b>{v}</b>}
+        />,
+      );
+      expect(screen.getByRole("slider")).not.toHaveAttribute("aria-valuetext");
+    });
+
+    it("puts the caller's class on the row, so it sizes the slider and its readout", () => {
+      const { container } = render(
+        <Slider defaultValue={[60]} showValue className="w-3/5" />,
+      );
+      expect(container.querySelector(".kozmos-slider-row")).toHaveClass(
+        "w-3/5",
+      );
+    });
+  });
 });

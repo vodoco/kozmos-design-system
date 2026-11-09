@@ -74,7 +74,9 @@
        cancels when the hover ends under an opening modal (#487). */
     transition-property: background-color;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: calc(0.15s * var(--semantics-motion-duration-scale, 1));
+    transition-duration: calc(
+      0.15s * var(--semantics-motion-duration-scale, 1)
+    );
     content: "";
     position: absolute;
     inset: 4px;
@@ -139,6 +141,31 @@
   .kozmos-number-input {
     @apply min-w-0 flex-1 text-foreground text-start;
     appearance: textfield;
+  }
+  /* NumberInput's unit (GAP-098). Without one, the input's wrapper draws no
+     box of its own, so the input lays out in the field's row as it did with
+     no wrapper. With one, the wrapper is the room between the steppers, and
+     the unit lies inside the input's box at its end, after the value, end
+     and start following the field's direction, 12 in from the field's
+     outer edge. The input's end padding, inside its 1px edge, is the unit's
+     measured width, its 12 inset and a 4 gap less that edge, so the text
+     stops 4 short of the unit and never runs under it; the utility on the input holds it against a
+     caller's px-*, this rule where no @scope rule reaches an <input>. The
+     unit is drawn, never typed: it takes no pointer, so a press on it
+     focuses the input under it. */
+  .kozmos-number-control {
+    display: contents;
+  }
+  .kozmos-number-unit-field {
+    @apply relative flex min-w-0 flex-1 items-stretch;
+  }
+  .kozmos-input.kozmos-number-with-unit {
+    padding-inline-end: calc(
+      var(--kozmos-number-unit-width, 1rem) + 0.75rem + 0.25rem - 1px
+    );
+  }
+  .kozmos-number-unit {
+    @apply pointer-events-none absolute inset-y-0 end-3 flex items-center whitespace-nowrap text-sm text-muted-foreground;
   }
   .kozmos-number-input::-webkit-inner-spin-button,
   .kozmos-number-input::-webkit-outer-spin-button {
@@ -254,5 +281,20 @@
      no edge, 64 left at the end for the swap button, and a 1 ring. */
   .kozmos-input.kozmos-wayfinding-input {
     @apply h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1;
+  }
+  /* Slider's readout (GAP-163): the value at the row's end, beside the
+     track, at rest as well as while it moves. Tabular figures, so the track
+     does not shift as the digits change width; it never wraps or shrinks,
+     and the slider takes the rest. Drawn for the eye only (aria-hidden): the
+     thumb says the value. Disabled, it dims as the thumb does. */
+  .kozmos-slider-row {
+    @apply flex w-full min-w-0 items-center gap-3;
+  }
+  .kozmos-slider-readout {
+    @apply shrink-0 whitespace-nowrap text-sm text-muted-foreground;
+    font-variant-numeric: tabular-nums;
+  }
+  .kozmos-slider-readout[data-disabled] {
+    opacity: var(--primitives-opacity-50);
   }
 }

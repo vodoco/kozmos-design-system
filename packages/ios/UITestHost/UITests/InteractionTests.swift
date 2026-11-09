@@ -1378,6 +1378,45 @@ final class InteractionTests: XCTestCase {
         element.frame.midX > app.frame.midX ? 1 : -1
     }
 
+    // MARK: Decision 132: Search's clear, NumberInput's unit, Slider's readout
+
+    /// GAP-161: the clear empties the field through its binding, tells the
+    /// product, sends `search_cleared`, and the field has the keyboard again.
+    func testSearchClearEmptiesTheFieldAndKeepsTheKeyboardInIt() {
+        launch("search-clear")
+        let clear = app.buttons["Clear search"]
+        XCTAssertTrue(clear.exists)
+        XCTAssertGreaterThanOrEqual(clear.frame.height, 44)
+        clear.tap()
+        received("clear|search_cleared")
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertFalse(app.buttons["Clear search"].exists, "the clear is drawn on an empty field")
+        let field = app.textFields.firstMatch
+        XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true, "the field lost the focus")
+    }
+
+    /// GAP-098: VoiceOver hears the unit after the value, by its spoken name,
+    /// once: the drawn "m" is no element of its own.
+    func testNumberInputsUnitIsHeardAfterTheValue() {
+        launch("number-unit")
+        XCTAssertEqual(app.textFields.firstMatch.value as? String, "15 metres")
+        // XCUI's `exists` counts accessibility-hidden views: the app reads the tree VoiceOver walks.
+        app.buttons["Inspect field accessibility"].tap()
+        let said = app.staticTexts["field-accessibility-report"].label.components(separatedBy: "|")
+        XCTAssertFalse(said.contains("m"), "the drawn unit is heard on its own: \(said)")
+    }
+
+    /// GAP-163: the slider says the formatted value; the readout beside it,
+    /// drawn the same, is not said again.
+    func testSliderReadoutIsHeardOnceFromTheSlider() {
+        launch("slider-readout")
+        XCTAssertEqual(app.sliders["Floor-plan opacity"].value as? String, "60 %")
+        app.buttons["Inspect field accessibility"].tap()
+        let said = app.staticTexts["field-accessibility-report"].label.components(separatedBy: "|")
+        XCTAssertFalse(said.contains("60 %"), "the readout is heard on its own: \(said)")
+        XCTAssertEqual(said.filter { $0 == "Floor-plan opacity" }.count, 1, "the slider's name is heard \(said)")
+    }
+
     // MARK: OTPInput, one field (React's `otp_code_completed` and the field itself)
     //
     // SwiftUI's OTPInput is one text field that holds the code, with the cells
