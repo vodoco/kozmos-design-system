@@ -17,6 +17,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -45,12 +51,30 @@ enum class KozmosDrawerSide {
     Bottom
 }
 
+/** Where a drawer is drawn (GAP-198), as React's `placement`. */
+enum class KozmosDrawerPlacement {
+    /** Over the whole box from its edge, over a scrim that closes it: the drawer as it always was. */
+    Fixed,
+
+    /**
+     * In place, over the box it is given, with no scrim: a panel beside the
+     * page, so a header above the box stays usable and the page keeps its
+     * touches. A left or right one floats there (decisions 139 and 148).
+     */
+    Inline
+}
+
+/** A floating inline drawer's widest, and its distance from every edge of its region. */
+internal val KozmosDrawerInlineMaxWidth = 420.dp
+internal val KozmosDrawerInlineEdge = KozmosDimensions.primitivesLayoutSpacing200
+
 data class KozmosDrawerContent(
     val title: String,
     val description: String? = null,
     val bodyText: String? = null,
     val side: KozmosDrawerSide = KozmosDrawerSide.Right,
-    val showCloseButton: Boolean = true
+    val showCloseButton: Boolean = true,
+    val placement: KozmosDrawerPlacement = KozmosDrawerPlacement.Fixed
 )
 
 @Composable
@@ -60,13 +84,19 @@ fun KozmosDrawer(
     modifier: Modifier = Modifier,
     side: KozmosDrawerSide = KozmosDrawerSide.Right,
     showCloseButton: Boolean = true,
+    /** [KozmosDrawerPlacement.Inline]: a panel in this box, with no scrim (GAP-198). */
+    placement: KozmosDrawerPlacement = KozmosDrawerPlacement.Fixed,
+    /** The inline panel's name, its pane title: what a screen reader calls it. */
+    label: String? = null,
     drawerContent: @Composable ColumnScope.() -> Unit,
     content: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         content()
 
-        if (open) {
+        if (open && placement == KozmosDrawerPlacement.Inline) {
+            InlineDrawer(side, showCloseButton, label, onDismissRequest, drawerContent)
+        } else if (open) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -116,6 +146,7 @@ fun KozmosDrawer(
     bodyText: String? = null,
     side: KozmosDrawerSide = KozmosDrawerSide.Right,
     showCloseButton: Boolean = true,
+    placement: KozmosDrawerPlacement = KozmosDrawerPlacement.Fixed,
     content: @Composable () -> Unit
 ) {
     KozmosDrawer(
@@ -126,7 +157,8 @@ fun KozmosDrawer(
             description = description,
             bodyText = bodyText,
             side = side,
-            showCloseButton = showCloseButton
+            showCloseButton = showCloseButton,
+            placement = placement
         ),
         modifier = modifier,
         screenContent = content
@@ -146,12 +178,16 @@ fun KozmosDrawer(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         side = content.side,
-        showCloseButton = content.showCloseButton,
+        // Inline, the close is the header's own, in its row: the panel's
+        // title never runs under it.
+        showCloseButton = content.showCloseButton && content.placement == KozmosDrawerPlacement.Fixed,
+        placement = content.placement,
+        label = content.title,
         drawerContent = {
             DrawerHeader(
                 title = content.title,
                 description = content.description,
-                showCloseButton = false,
+                showCloseButton = content.showCloseButton && content.placement == KozmosDrawerPlacement.Inline,
                 onDismissRequest = onDismissRequest
             )
 
@@ -224,6 +260,86 @@ fun KozmosDrawer(
         content = content
     )
 }
+
+/**
+ * Inline (GAP-198): a panel in its box, not a modal, so there is no scrim and
+ * nothing outside it closes it. A left or right one floats (decisions 139 and
+ * 148): 16 from every edge of its region, 420 wide or the region less 16 each
+ * side, as tall as its content up to the region less 16 above and below, and
+ * then it scrolls, with the container's corners and its border all the way
+ * round. A top or bottom one stays at its edge, across the region.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.InlineDrawer(
+    side: KozmosDrawerSide,
+    showCloseButton: Boolean,
+    label: String?,
+    onDismissRequest: () -> Unit,
+    drawerContent: @Composable ColumnScope.() -> Unit
+) {
+    val floats = side == KozmosDrawerSide.Left || side == KozmosDrawerSide.Right
+    val shape = if (floats) RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer) else drawerShape(side)
+    Surface(
+        modifier = inlineDrawerModifier(side)
+            .shadow(KozmosShadows.semanticsElevationOverlay, shape)
+            // A panel beside the page, named by its title, its parts read in
+            // turn: a pane, as a sheet is, with no modal state.
+            .semantics {
+                isTraversalGroup = true
+                if (label != null) paneTitle = label
+            },
+        shape = shape,
+        color = KozmosThemeTokens.semanticsSurface0,
+        border = BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
+    ) {
+        Box {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(KozmosDimensions.primitivesLayoutSpacing300),
+                verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing300),
+                content = drawerContent
+            )
+            if (showCloseButton) {
+                IconButton(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(KozmosDimensions.primitivesLayoutSpacing200)
+                        .size(44.dp),
+                    onClick = onDismissRequest
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close drawer",
+                        tint = KozmosThemeTokens.primitivesColorsForeground400
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun androidx.compose.foundation.layout.BoxScope.inlineDrawerModifier(side: KozmosDrawerSide): Modifier =
+    when (side) {
+        // Logical, as the fixed drawer's sides are here: Left is the start.
+        KozmosDrawerSide.Left, KozmosDrawerSide.Right -> Modifier
+            .align(if (side == KozmosDrawerSide.Left) Alignment.TopStart else Alignment.TopEnd)
+            .padding(KozmosDrawerInlineEdge)
+            // Capped, then filled: a cap after the fill cannot undo it.
+            .widthIn(max = KozmosDrawerInlineMaxWidth)
+            .fillMaxWidth()
+            .wrapContentHeight(Alignment.Top)
+
+        KozmosDrawerSide.Top -> Modifier
+            .align(Alignment.TopCenter)
+            .fillMaxWidth()
+            .heightIn(max = 360.dp)
+
+        KozmosDrawerSide.Bottom -> Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .heightIn(max = 360.dp)
+    }
 
 private fun androidx.compose.foundation.layout.BoxScope.drawerSurfaceModifier(side: KozmosDrawerSide): Modifier =
     when (side) {

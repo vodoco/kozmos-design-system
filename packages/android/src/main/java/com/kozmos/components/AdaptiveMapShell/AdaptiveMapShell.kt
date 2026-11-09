@@ -72,6 +72,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.draw.alpha
+import kotlin.math.abs
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -262,6 +264,31 @@ fun KozmosAdaptiveMapShell(
     controlsLabel: String = "Map controls",
     /** Translatable name shared by both registered bottom corners. */
     bottomControlsLabel: String = "Map corner controls",
+    /**
+     * The map's status (GAP-123, decision 119): a `KozmosMapStatusPill`
+     * saying "Route updated" or "Calculating step-free route", between the
+     * bottom corners and level with them, centred on the map as the credits
+     * are, with the credits directly above it. With no middle slot between
+     * the corners it rises above them, and the credits above it. With no room
+     * above the sheet it is not drawn, and stays in the semantics, so a pill
+     * still announces. It never pads the camera, so a status coming and going
+     * does not move the map, and it moves only what it reaches: a side panel
+     * or a controls column clear of it and the credits keeps its height.
+     */
+    status: (@Composable () -> Unit)? = null,
+    /**
+     * The logical top corners, 16 under the top bar and beside a side panel:
+     * Exit building at the start (SDK-UI-006), the map's information at the
+     * end. They share a row, or the start sits above the end when both do not
+     * fit, and [controls] start 16 below them. They pad the camera's top only
+     * with [topControlsPadCamera]. With no room above the sheet they stay
+     * composed but are not placed, as the bottom corners.
+     */
+    controlsTopStart: (@Composable () -> Unit)? = null,
+    controlsTopEnd: (@Composable () -> Unit)? = null,
+    /** Translatable name shared by both top corners. */
+    topControlsLabel: String = "Map top corner controls",
+    topControlsPadCamera: Boolean = false,
     onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -283,6 +310,12 @@ fun KozmosAdaptiveMapShell(
     var attributionFullHeight by remember { mutableStateOf(0.dp) }
     var attributionCompact by remember { mutableStateOf(false) }
     var shellOrigin by remember { mutableStateOf(IntOffset.Zero) }
+    // The top corners' height, the status's size and the controls column's
+    // width, whether or not they are drawn (GAP-123).
+    var topControlsHeight by remember { mutableStateOf(0.dp) }
+    var statusHeight by remember { mutableStateOf(0.dp) }
+    var statusWidth by remember { mutableStateOf(0.dp) }
+    var controlsWidth by remember { mutableStateOf(0.dp) }
 
     BoxWithConstraints(
         modifier = modifier
@@ -305,13 +338,27 @@ fun KozmosAdaptiveMapShell(
         val chromeWidth = (availableWidth - sidePanel - safeLeft - safeRight).coerceAtLeast(0.dp)
         val footerWidth = (availableWidth - safeLeft - safeRight).coerceAtLeast(0.dp)
         val topInset = if (topBar != null) topHeight + gap else 0.dp
-        val band = (availableHeight - bottomPanel - safeTop - (if (bottomPanel > 0.dp) 0.dp else safeBottom) - topInset - gap * 2).coerceAtLeast(0.dp)
+        val footerHeight = if (attribution != null) attributionHeight else 0.dp
+        // The credits and the gap above them, which the top corners and the
+        // status leave them: the credits are never clipped.
+        val creditsReserve = if (footerHeight > 0.dp) footerHeight + gap else 0.dp
+        // The top corners, 16 under the top bar, drawn when they and the
+        // credits fit above the sheet (GAP-123).
+        val topControlsTop = safeTop + topInset + gap
+        val footerBottom = availableHeight - bottomPanel - gap - (if (bottomPanel > 0.dp) 0.dp else safeBottom)
+        val topControlsShown = (controlsTopStart != null || controlsTopEnd != null) && topControlsHeight > 0.dp &&
+            topControlsTop + topControlsHeight + creditsReserve <= footerBottom
+        val topControlsInset = if (topControlsShown) topControlsHeight + gap else 0.dp
+        val band = (availableHeight - bottomPanel - safeTop - (if (bottomPanel > 0.dp) 0.dp else safeBottom) - topInset - gap * 2 - topControlsInset).coerceAtLeast(0.dp)
+        // The status, drawn when it and the credits fit the band; it raises
+        // the credits by its height and a gap.
+        val statusShown = status != null && statusHeight > 0.dp && statusHeight + creditsReserve <= band
+        val statusRaise = if (statusShown) statusHeight + gap else 0.dp
         // Very long or localized credits reserve at most half of the band
         // between the top bar and the bottom edge, so they never take the
         // panel's place. Drawn, the attribution is never clipped (GAP-135).
         val attributionCap = (availableHeight - safeTop - safeBottom - topInset - gap * 3).coerceAtLeast(0.dp) / 2
         val reservedFooterHeight = if (attribution != null) minOf(attributionFullHeight, attributionCap) else 0.dp
-        val footerHeight = if (attribution != null) attributionHeight else 0.dp
         val attributionReserve = if (footerHeight > 0.dp) footerHeight + gap else 0.dp
         val bottomBand = (band - (if (controls != null) controlsHeight + gap else 0.dp)).coerceAtLeast(0.dp)
         val cornersFit = bottomControlsHeight > 0.dp && bottomControlsHeight <= bottomBand
@@ -327,22 +374,39 @@ fun KozmosAdaptiveMapShell(
         // they fit, the brand gives way (decision 58); the credits keep their
         // height.
         val compactAttribution = attribution != null &&
-            attributionFullHeight > minOf(attributionCap, (band - liftOverCorners).coerceAtLeast(0.dp))
+            attributionFullHeight > minOf(attributionCap, (band - liftOverCorners - statusRaise).coerceAtLeast(0.dp))
         SideEffect { if (attributionCompact != compactAttribution) attributionCompact = compactAttribution }
         // Then the corners: credits still too tall to sit above them send them
         // away and return to the bottom row. The credits never clip.
-        val cornersGiveWay = attributionCompact && liftOverCorners > 0.dp && footerHeight + liftOverCorners > band
+        val cornersGiveWay = attributionCompact && liftOverCorners > 0.dp && footerHeight + statusRaise + liftOverCorners > band
         val cornersVisible = cornersFit && !cornersGiveWay
         val attributionCornerReserve = if (cornersVisible) cornerReserve else 0.dp
         val attributionAboveCorners = cornersVisible && liftOverCorners > 0.dp
         val attributionLift = if (attributionAboveCorners) liftOverCorners else 0.dp
+        // What a status costs a box at x, this wide: its raise when the box
+        // reaches the status or the credits it raises, centred on the map, and
+        // nothing when it is clear of them (GAP-123).
+        val innerFooterWidth = (footerWidth - gap * 2).coerceAtLeast(0.dp)
+        val creditsSlotWidth = if (attributionAboveCorners) innerFooterWidth else (innerFooterWidth - attributionCornerReserve * 2).coerceAtLeast(0.dp)
+        val raisedWidth = maxOf(statusWidth, if (footerHeight > 0.dp) creditsSlotWidth else 0.dp)
+        val footerCentre = safeLeft + gap + innerFooterWidth / 2
+        fun statusCost(x: Dp, width: Dp): Dp =
+            if (statusRaise > 0.dp && abs((x + width / 2 - footerCentre).value) < ((width + raisedWidth) / 2 + gap).value) statusRaise else 0.dp
+        val panelRightForStatus = (panelPlacement == KozmosMapPanelPlacement.End) == (direction == LayoutDirection.Ltr)
+        val controlsStatusCost = statusCost(
+            if (panelRightForStatus) safeLeft + gap else availableWidth - safeRight - gap - controlsWidth,
+            controlsWidth
+        )
         val chromeAlignment = if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.BottomStart else Alignment.BottomEnd
         val panelRight = (panelPlacement == KozmosMapPanelPlacement.End) == (direction == LayoutDirection.Ltr)
         fun cleanInset(value: Double) = if (value.isFinite()) maxOf(0.0, value) else 0.0
         val cornerPadding = if ((controlsBottomStart != null || controlsBottomEnd != null) && bottomControlsPadCamera && cornersVisible) bottomPanel + minOf(bottomControlsHeight, bottomBand) + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
         val attributionPadding = if (footerHeight > 0.dp) bottomPanel + footerHeight + attributionLift + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
         val left = maxOf(cleanInset(collisionInsets.left), (safeLeft + if (!panelRight) sidePanel else 0.dp).value.toDouble()).coerceIn(0.0, availableWidth.value.toDouble())
-        val top = maxOf(cleanInset(collisionInsets.top), (safeTop + topInset).value.toDouble()).coerceIn(0.0, availableHeight.value.toDouble())
+        // The top corners pad the camera's top only when asked; the status
+        // never pads it, so the map does not move as a status comes and goes.
+        val topCornersPadding = if (topControlsPadCamera && topControlsShown) topControlsTop + topControlsHeight else 0.dp
+        val top = maxOf(cleanInset(collisionInsets.top), maxOf(safeTop + topInset, topCornersPadding).value.toDouble()).coerceIn(0.0, availableHeight.value.toDouble())
         val resolvedInsets = KozmosMapCollisionInsets(
             top = top,
             left = left,
@@ -388,8 +452,28 @@ fun KozmosAdaptiveMapShell(
             }
         }
 
+        if (controlsTopStart != null || controlsTopEnd != null) {
+            Box(
+                modifier = Modifier
+                    .align(if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.TopStart else Alignment.TopEnd)
+                    .padding(top = topInset)
+                    .width(chromeWidth)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(gap)
+            ) {
+                TopControlsLayout(
+                    start = controlsTopStart,
+                    end = controlsTopEnd,
+                    shown = topControlsShown,
+                    label = topControlsLabel,
+                    modifier = Modifier.fillMaxWidth(),
+                    onHeight = { topControlsHeight = with(density) { it.toDp() } }
+                )
+            }
+        }
+
         if (controls != null) {
-            val controlsFit = attribution == null || controlsHeight <= (band - attributionReserve).coerceAtLeast(0.dp)
+            val controlsFit = attribution == null || controlsHeight <= (band - attributionReserve - controlsStatusCost).coerceAtLeast(0.dp)
             Box(
                 modifier = Modifier
                     .then(if (controlsFit) Modifier.semantics {
@@ -402,9 +486,10 @@ fun KozmosAdaptiveMapShell(
                             if (controlsFit) placeable.place(0, 0)
                         }
                     }
-                    .padding(top = topInset)
+                    // Under the top corners too, 16 below them (GAP-123).
+                    .padding(top = topInset + topControlsInset)
                     .widthIn(max = chromeWidth)
-                    .heightIn(max = (band - attributionReserve).coerceAtLeast(0.dp) + safeTop + gap * 2)
+                    .heightIn(max = (band - attributionReserve - controlsStatusCost).coerceAtLeast(0.dp) + safeTop + gap * 2)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                     .padding(KozmosDimensions.primitivesLayoutSpacing200)
                     .align(
@@ -417,7 +502,10 @@ fun KozmosAdaptiveMapShell(
             ) {
                 Box(Modifier
                     .then(if (attribution != null) Modifier.wrapContentHeight(unbounded = true) else Modifier)
-                    .onSizeChanged { controlsHeight = with(density) { it.height.toDp() } }) { controls() }
+                    .onSizeChanged {
+                        controlsHeight = with(density) { it.height.toDp() }
+                        controlsWidth = with(density) { it.width.toDp() }
+                    }) { controls() }
             }
         }
 
@@ -474,7 +562,9 @@ fun KozmosAdaptiveMapShell(
                     .padding(start = if (direction == LayoutDirection.Ltr) safeLeft else safeRight,
                              end = if (direction == LayoutDirection.Ltr) safeRight else safeLeft)
                     .width(footerWidth)
-                    .offset(y = -(bottomPanel + gap + attributionLift + if (bottomPanel > 0.dp) 0.dp else safeBottom))
+                    // A status sits where the credits rested, and they rise
+                    // directly above it.
+                    .offset(y = -(bottomPanel + gap + attributionLift + statusRaise + if (bottomPanel > 0.dp) 0.dp else safeBottom))
                     .padding(horizontal = gap)
                     .padding(horizontal = if (attributionAboveCorners) 0.dp else attributionCornerReserve),
                 contentAlignment = Alignment.Center
@@ -503,6 +593,28 @@ fun KozmosAdaptiveMapShell(
                 }
             }
         }
+        if (status != null) {
+            // Level with the bottom corners, in the credits' slot and centred
+            // on the map; above the corners when they leave no middle slot.
+            // Not drawn without room, and still in the semantics, so a pill's
+            // live region still announces.
+            Box(
+                Modifier.align(Alignment.BottomCenter)
+                    .padding(start = if (direction == LayoutDirection.Ltr) safeLeft else safeRight,
+                             end = if (direction == LayoutDirection.Ltr) safeRight else safeLeft)
+                    .width(footerWidth)
+                    .offset(y = -(bottomPanel + gap + attributionLift + if (bottomPanel > 0.dp) 0.dp else safeBottom))
+                    .padding(horizontal = gap)
+                    .padding(horizontal = if (attributionAboveCorners) 0.dp else attributionCornerReserve)
+                    .alpha(if (statusShown) 1f else 0f),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(Modifier.onSizeChanged {
+                    statusHeight = with(density) { it.height.toDp() }
+                    statusWidth = with(density) { it.width.toDp() }
+                }) { status() }
+            }
+        }
         if (panel != null) {
             val radius = KozmosDimensions.semanticsRadiusPanel
 
@@ -511,9 +623,15 @@ fun KozmosAdaptiveMapShell(
                 // chained, because `widthIn` before `fillMaxWidth` would take
                 // the fraction of the cap instead of capping the fraction.
                 val panelWidth = minOf(416.dp, availableWidth * 0.42f)
+                // A status raises the credits over the panel only where it
+                // reaches it: a panel clear of it keeps its height (GAP-123).
+                val panelStatusCost = statusCost(
+                    if (panelRightForStatus) availableWidth - safeRight - gap - panelWidth else safeLeft + gap,
+                    panelWidth
+                )
                 val sidePanelCap = (availableHeight - safeTop - safeBottom - gap * 2 -
                     maxOf(if (cornersVisible) bottomControlsHeight + gap else 0.dp,
-                        if (footerHeight > 0.dp) footerHeight + attributionLift + gap else 0.dp)).coerceAtLeast(0.dp)
+                        if (footerHeight > 0.dp) footerHeight + attributionLift + gap + panelStatusCost else panelStatusCost)).coerceAtLeast(0.dp)
 
                 Surface(
                     modifier = Modifier
