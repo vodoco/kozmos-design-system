@@ -68,8 +68,8 @@ const MAX_BUTTON_GZIP_KB = 2;
 // after 0.14.0's tour family and fixes, Everything measures about 93.9 KB, leaving no room for
 // them. A trim pass runs alongside, reported before 0.15.0.
 // Olcay approved 112 KB on 2026-11-09 (decision 175) for 0.16.0, which carries every item the register
-// promises for it (decision 174): about 35, among them new parts (ContextMenu, Kbd, the Cloud modules)
-// and Tree's range selection. Main measured about 96.4 KB on CI before them.
+// promises for it (decision 174): more than 40, among them new parts (ContextMenu, Kbd, the Cloud
+// modules) and Tree's range selection. Main measured 96.53 KB on CI before them.
 const MAX_TOTAL_GZIP_KB = 112;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
@@ -79,7 +79,7 @@ const MAX_TOTAL_GZIP_KB = 112;
 // duplication: the SDK's markers in owned CSS (about 1 KB gzip alone) and the density rules.
 // The room above them is for the next density groups (chips, tags, rows, tabs, the table, the
 // tree). CI reads the stylesheet the same as a Mac.
-// 36 KB on 2026-11-09 (decision 175, Olcay's): main measured 31.78 KB, and Button's subtle tier with
+// 36 KB on 2026-11-09 (decision 175, Olcay's): main measured 31.79 KB on CI, and Button's subtle tier with
 // CardHeader's tone and CardTitle's size (#515) alone take it to 32.20 KB, before the rest of 0.16.0
 // (decision 174).
 const MAX_CSS_GZIP_KB = 36;
