@@ -133,9 +133,17 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
           : undefined;
     const { trackEvent } = useKozmosAnalytics();
 
+    // autoFocus puts the caret where the next digit goes: the first empty
+    // cell, or the last when the code is full. A filled cell takes no key
+    // (each holds one digit), so focusing the first cell of a code the host
+    // started, by `value` or `defaultValue`, left typing doing nothing.
     useEffect(() => {
       if (autoFocus) {
-        inputs.current[0]?.focus();
+        const cells = inputs.current.filter(
+          (input): input is HTMLInputElement => !!input?.isConnected,
+        );
+        const firstEmpty = cells.findIndex((input) => input.value === "");
+        cells[firstEmpty === -1 ? cells.length - 1 : firstEmpty]?.focus();
       }
     }, [autoFocus]);
 

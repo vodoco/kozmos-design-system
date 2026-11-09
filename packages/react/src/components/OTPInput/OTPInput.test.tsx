@@ -536,6 +536,39 @@ describe("OTPInput", () => {
   });
 
   describe("defaultValue", () => {
+    it("is outranked by an empty value, as a v-model bound to an empty code is", () => {
+      render(<OTPInput defaultValue="1234" length={4} value="" />);
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+    });
+
+    it("keeps what its cells hold, not its defaultValue, when an uncontrolled field's length changes", () => {
+      const { rerender } = render(<OTPInput defaultValue="12" length={4} />);
+      fireEvent.change(screen.getAllByRole("textbox")[2], {
+        target: { value: "7" },
+      });
+      rerender(<OTPInput defaultValue="12" length={6} />);
+      expect(cellsIn(document)).toEqual(["1", "2", "7", "", "", ""]);
+      rerender(<OTPInput defaultValue="12" length={2} />);
+      expect(cellsIn(document)).toEqual(["1", "2"]);
+    });
+
+    it("with autoFocus, focuses the first empty cell, or the last when the code is full", () => {
+      const { unmount } = render(
+        <OTPInput autoFocus defaultValue="12" length={4} />,
+      );
+      expect(document.activeElement).toBe(screen.getAllByRole("textbox")[2]);
+      unmount();
+
+      const full = render(
+        <OTPInput autoFocus defaultValue="1234" length={4} />,
+      );
+      expect(document.activeElement).toBe(screen.getAllByRole("textbox")[3]);
+      full.unmount();
+
+      render(<OTPInput autoFocus length={4} />);
+      expect(document.activeElement).toBe(screen.getAllByRole("textbox")[0]);
+    });
+
     it("starts an uncontrolled field with its code, and a controlled value wins over it", () => {
       const handleChange = vi.fn();
       const { unmount } = render(
