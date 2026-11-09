@@ -873,16 +873,22 @@ describe("FloorSelector collapsible: GAP-233", () => {
       expect(onSelect).not.toHaveBeenCalled();
     });
 
-    it("chooses nothing by Enter or Space on the level that keeps focus as it closes, and focus still goes back to the tile", async () => {
+    it("hands focus to the tile as it starts to close, never to the page, and a level a key still reaches chooses nothing", async () => {
       const onSelect = vi.fn();
       const column = await openAndCloseOnEscape(onSelect);
-      const focused = document.activeElement as HTMLElement;
-      expect(column).toContainElement(focused);
+      const tile = within(
+        screen.getByRole("group", { name: "Floor selector" }),
+      ).getByRole("button", { name: "First floor" });
+      // In the commit that closes it, before inert would blur the level.
+      expect(tile).toHaveFocus();
       // A button activated from the keyboard is clicked.
-      fireEvent.keyDown(focused, { key: "Enter" });
-      fireEvent.click(focused);
-      fireEvent.keyDown(focused, { key: " " });
-      fireEvent.click(focused);
+      const level = within(column).getByRole("button", {
+        name: "First floor",
+      });
+      fireEvent.keyDown(level, { key: "Enter" });
+      fireEvent.click(level);
+      fireEvent.keyDown(level, { key: " " });
+      fireEvent.click(level);
       expect(onSelect).not.toHaveBeenCalled();
       // The exit animation ends; jsdom's events carry no animationName.
       const end = new Event("animationend");
@@ -891,26 +897,26 @@ describe("FloorSelector collapsible: GAP-233", () => {
         column.dispatchEvent(end);
       });
       await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-      await waitFor(() =>
-        expect(
-          screen.getByRole("button", { name: "First floor" }),
-        ).toHaveFocus(),
-      );
+      expect(tile).toHaveFocus();
     });
 
-    it("opened again before it is gone, it takes the pointer and is no longer inert", async () => {
+    it("opened again before it is gone, it takes the pointer, is no longer inert, and focus goes to the current level", async () => {
       const onSelect = vi.fn();
       const column = await openAndCloseOnEscape(onSelect);
       expect(column).toHaveAttribute("inert");
-      fireEvent.click(
-        within(screen.getByRole("group", { name: "Floor selector" })).getByRole(
-          "button",
-          { name: "First floor" },
-        ),
-      );
+      // Enter on the tile again: it has focus, and is clicked.
+      const tile = within(
+        screen.getByRole("group", { name: "Floor selector" }),
+      ).getByRole("button", { name: "First floor" });
+      act(() => tile.focus());
+      fireEvent.click(tile);
       expect(column).toHaveAttribute("data-state", "open");
       expect(column).not.toHaveAttribute("inert");
       expect(column.style.pointerEvents).toBe("");
+      // Focus goes where an opening puts it: the current level.
+      expect(
+        within(column).getByRole("button", { name: "First floor" }),
+      ).toHaveFocus();
       fireEvent.click(
         within(column).getByRole("button", { name: "Ground floor" }),
       );
