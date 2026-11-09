@@ -33,9 +33,6 @@ enum class AlertStatus {
     Default, Info, Success, Warning, Error
 }
 
-/** A container's corner, 20, as React's rounded-container (decision 156). */
-internal val KozmosAlertShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)
-
 @Composable
 fun KozmosAlert(
     modifier: Modifier = Modifier,
@@ -50,8 +47,9 @@ fun KozmosAlert(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .background(KozmosThemeTokens.semanticsSurface0, KozmosAlertShape)
-                .border(1.dp, borderColor, KozmosAlertShape)
+                // A container's corner, 20, as React's rounded-container (decision 156).
+                .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
+                .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
                 .padding(KozmosDimensions.primitivesLayoutSpacing200),
             verticalAlignment = Alignment.Top
         ) {

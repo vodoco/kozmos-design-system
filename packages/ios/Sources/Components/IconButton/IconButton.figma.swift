@@ -29,30 +29,26 @@ struct KozmosIconButtonConnect: FigmaConnect {
     )
     var size: KozmosIconButtonSize = .default
 
-    @FigmaEnum(
-        "State",
-        mapping: [
-            "Default": "default",
-            "Disabled": "disabled",
-            "Loading": "loading"
-        ]
-    )
-    var state: String = "default"
+    @FigmaEnum("State", mapping: ["Default": false, "Disabled": true, "Loading": false])
+    var isDisabled: Bool = false
+
+    @FigmaEnum("State", mapping: ["Default": false, "Disabled": false, "Loading": true])
+    var isLoading: Bool = false
 
     // GAP-197: Counter shows the count over the icon's top-end corner. Counter
     // Text is a sample in the design; in code the count is the product's
     // number, which a snippet cannot read from text.
-    @FigmaBoolean("Counter")
-    var showCounter: Bool = false
+    @FigmaBoolean("Counter", mapping: [true: 3, false: nil])
+    var counter: Int? = nil
 
     var body: some View {
         KozmosIconButton(
             iconName: "magnifyingglass",
             variant: self.iconVariant,
             size: self.size,
-            isDisabled: self.state == "disabled",
-            isLoading: self.state == "loading",
-            counter: self.showCounter ? 3 : nil,
+            isDisabled: self.isDisabled,
+            isLoading: self.isLoading,
+            counter: self.counter,
             action: {}
         )
     }

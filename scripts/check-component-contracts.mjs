@@ -399,6 +399,10 @@ const files = {
     "packages/ios/Sources/Components/NavigationItem/NavigationItem.figma.swift",
   iosNavbar: "packages/ios/Sources/Components/Navbar/Navbar.swift",
   iosNavbarFigma: "packages/ios/Sources/Components/Navbar/Navbar.figma.swift",
+  iosIconButtonFigma:
+    "packages/ios/Sources/Components/IconButton/IconButton.figma.swift",
+  androidIconButtonFigma:
+    "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.figma.kt",
   iosSidebar: "packages/ios/Sources/Components/Sidebar/Sidebar.swift",
   iosSidebarFigma:
     "packages/ios/Sources/Components/Sidebar/Sidebar.figma.swift",
@@ -6609,6 +6613,27 @@ assertNotContains(
   source.androidSidebarFigma,
   /@FigmaVariant\("Inset"/,
   "Android Sidebar Code Connect restricted to one Inset",
+);
+// GAP-197: the counter is a mapped property, never a ternary over a raw
+// boolean, which Code Connect prints as code that names an undefined
+// `showCounter`; State's flags are mapped the same way.
+assertContains(
+  files.iosIconButtonFigma,
+  source.iosIconButtonFigma,
+  /@FigmaBoolean\("Counter", mapping: \[true: 3, false: nil\]\)\s*var counter: Int\? = nil[\s\S]*?counter: self\.counter,/,
+  "iOS IconButton Code Connect maps Counter to the count",
+);
+assertNotContains(
+  files.iosIconButtonFigma,
+  source.iosIconButtonFigma,
+  /self\.\w+ \?|self\.state ==/,
+  "iOS IconButton Code Connect expression over a raw property",
+);
+assertContains(
+  files.androidIconButtonFigma,
+  source.androidIconButtonFigma,
+  /@FigmaProperty\(FigmaType\.Boolean, "Counter"\)\s*val counter: Int\? = Figma\.mapping\([\s\S]*?counter = counter/,
+  "Android IconButton Code Connect maps Counter to the count",
 );
 assertContains(
   files.figma,

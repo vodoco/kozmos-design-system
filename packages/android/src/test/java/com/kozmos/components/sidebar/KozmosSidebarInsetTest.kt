@@ -10,6 +10,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
@@ -125,5 +128,32 @@ class KozmosSidebarInsetTest {
         }
         assertEquals(0f, top(KozmosSidebarInset.Flush), 0.5f)
         assertEquals(24f, top(KozmosSidebarInset.Default), 0.5f)
+    }
+
+    /**
+     * Flush, the sheet takes no window insets: Material's drawer pads the top by
+     * the status bar, which would push the first item down under a header that
+     * has already taken it. By default it keeps Material's insets, as before.
+     * Paparazzi's window has no status bar, so this reads the insets the sheet
+     * is given rather than a layout.
+     */
+    @Test
+    fun aFlushSheetTakesNoWindowInsets() {
+        val density = Density(1f)
+        val statusBar = WindowInsets(left = 4.dp, top = 24.dp, right = 8.dp, bottom = 16.dp)
+        val flush = kozmosSidebarWindowInsets(KozmosSidebarInset.Flush, statusBar)
+        val default = kozmosSidebarWindowInsets(KozmosSidebarInset.Default, statusBar)
+        assertEquals(
+            listOf(0, 0, 0, 0),
+            listOf(flush.getTop(density), flush.getBottom(density), flush.getLeft(density, LayoutDirection.Ltr), flush.getRight(density, LayoutDirection.Ltr))
+        )
+        assertEquals("by default, Material's", 24, default.getTop(density))
+    }
+
+    /** Decision 157: an expanded sidebar is 256, as React's w-64 and SwiftUI's; a rail 96. */
+    @Test
+    fun anExpandedSidebarIs256() {
+        assertEquals(256f, laidOut(KozmosSidebarVariant.Expanded, null, slots = false).sidebar.width, 0.5f)
+        assertEquals(96f, laidOut(KozmosSidebarVariant.Rail, null, slots = false).sidebar.width, 0.5f)
     }
 }
