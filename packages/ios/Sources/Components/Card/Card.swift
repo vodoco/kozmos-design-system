@@ -21,6 +21,44 @@ public enum KozmosCardPadding: Sendable, Hashable, CaseIterable {
     }
 }
 
+/// How a card's header is drawn.
+///
+/// `default` is the header on the card's own surface, as it always was.
+/// `subtle` is Pointr Cloud's form side panel header (CLOUD-UI-001; decisions
+/// 135 and 139): a pale theme strip, theme 0, full-bleed to the card's edges
+/// and inside its top corners, at least 52 tall, with a title of the strip's
+/// size unless the title says otherwise. React's `CardHeader tone="subtle"`.
+public enum KozmosCardHeaderTone: Sendable, Hashable, CaseIterable {
+    case `default`
+    case subtle
+
+    /// The strip's least height: decision 139's compact 52 strip.
+    static let subtleMinHeight: CGFloat = 52
+}
+
+/// How large a card's title is drawn (GAP-035, decision 132): `default` is
+/// the title as it always was, `sm` a compact card's or a dashboard section
+/// card's (React's 18), and `xs` the subtle strip's (React's 14). Each is the
+/// platform's own text style, so it follows Dynamic Type: `.title3`,
+/// `.headline` and `.subheadline`.
+public enum KozmosCardTitleSize: Sendable, Hashable, CaseIterable {
+    case `default`
+    case sm
+    case xs
+
+    var font: Font {
+        switch self {
+        case .default: return KozmosTypography.title3
+        case .sm: return KozmosTypography.headline
+        case .xs: return KozmosTypography.subheadline
+        }
+    }
+}
+
+private struct KozmosCardHeaderToneKey: EnvironmentKey {
+    static let defaultValue: KozmosCardHeaderTone = .default
+}
+
 private struct KozmosCardPaddingKey: EnvironmentKey {
     static let defaultValue: KozmosCardPadding = .default
 }
@@ -29,6 +67,12 @@ extension EnvironmentValues {
     var kozmosCardPadding: KozmosCardPadding {
         get { self[KozmosCardPaddingKey.self] }
         set { self[KozmosCardPaddingKey.self] = newValue }
+    }
+
+    /// The tone of the header a title is in, for the title's size.
+    var kozmosCardHeaderTone: KozmosCardHeaderTone {
+        get { self[KozmosCardHeaderToneKey.self] }
+        set { self[KozmosCardHeaderToneKey.self] = newValue }
     }
 }
 
@@ -201,17 +245,39 @@ struct KozmosCardColumn: Layout {
 
 public struct KozmosCardHeader<Content: View>: View {
     @Environment(\.kozmosCardPadding) private var padding
+    let tone: KozmosCardHeaderTone
     let content: Content
 
-    public init(@ViewBuilder content: () -> Content) {
+    /// `tone: .subtle` draws the header as the pale theme strip of
+    /// CLOUD-UI-001 (decisions 135 and 139).
+    public init(tone: KozmosCardHeaderTone = .default, @ViewBuilder content: () -> Content) {
+        self.tone = tone
         self.content = content()
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-            content
+        switch tone {
+        case .default:
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                content
+            }
+            .padding(padding.length)
+        case .subtle:
+            // The strip: the card's padding at its sides, 12 above and below
+            // the words, at least 52 tall, and as wide as the card, whose
+            // corner clips the tint into its own. Below the tint it keeps
+            // the card's padding, as the default header's own bottom does,
+            // so content under it starts where it starts under any header.
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                content
+            }
+            .padding(.horizontal, padding.length)
+            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing150)
+            .frame(maxWidth: .infinity, minHeight: KozmosCardHeaderTone.subtleMinHeight, alignment: .leading)
+            .background(KozmosColors.primitivesColorsTheme0)
+            .padding(.bottom, padding.length)
+            .environment(\.kozmosCardHeaderTone, .subtle)
         }
-        .padding(padding.length)
     }
 }
 
@@ -221,15 +287,25 @@ public struct KozmosCardHeader<Content: View>: View {
 /// move from card to card by its title. SwiftUI's header trait has no level:
 /// React's `as` sets one on the web.
 public struct KozmosCardTitle: View {
+    @Environment(\.kozmosCardHeaderTone) private var tone
     let title: String
-    
-    public init(_ title: String) {
+    let size: KozmosCardTitleSize?
+
+    /// `size` is how large the title is drawn (GAP-035). Unset, it is
+    /// `.default`, and `.xs` in a `tone: .subtle` header, the strip's title.
+    public init(_ title: String, size: KozmosCardTitleSize? = nil) {
         self.title = title
+        self.size = size
     }
-    
+
+    /// The size the title is drawn at, in the header it is in.
+    var drawnSize: KozmosCardTitleSize {
+        size ?? (tone == .subtle ? .xs : .default)
+    }
+
     public var body: some View {
         Text(title)
-            .font(KozmosTypography.title3)
+            .font(drawnSize.font)
             .fontWeight(.semibold)
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
             .accessibilityAddTraits(.isHeader)

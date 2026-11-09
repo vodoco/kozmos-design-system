@@ -40,6 +40,125 @@ title in the reading and tab order. Without `actions`, the header is drawn as it
 
 <Canvas of={CardStories.HeaderActions} />
 
+## Subtle header
+
+`tone="subtle"` on `CardHeader` draws it as a pale theme strip (CLOUD-UI-001; decisions 135 and
+139): theme 0, full-bleed to the card's edges and inside its top corners, at least 52 tall, its
+title 14. It is Pointr Cloud's form side panel header, with the panel's title, its "building /
+level" line and its close. Its sides follow the card's `padding`, its block padding is 12, and it
+keeps the card's padding below the tint, so the content under it starts where it starts under any
+header. With `actions`, the title and the actions are centred in the strip. A `CardTitle` in it is
+14 unless its `size` says otherwise. Title, description and a ghost action's ink all read 4.5:1 on
+theme 0 in both themes (`tokens:contrast:check`). On SwiftUI it is `KozmosCardHeader(tone:
+.subtle)` and on Compose `KozmosCardHeader(tone = KozmosCardHeaderTone.Subtle)`.
+
+<Canvas of={CardStories.SubtleHeader} />
+
+## Title size
+
+`size` on `CardTitle` (GAP-035, decision 132): `default` is 24, the title as it always was; `sm`
+is 18, for a compact card on a phone or a dashboard's section card; `xs` is 14, the subtle strip's
+title. The weight, the tight tracking and the one-line leading stay at every size, and the
+heading level stays `as`'s. With `actions`, they are centred on the smaller title's line. SwiftUI
+and Compose draw the platform's own steps: `.title3`, `.headline` and `.subheadline` on SwiftUI,
+and `titleLarge`, `titleMedium` and `titleSmall` on Compose.
+
+<Canvas of={CardStories.TitleSize} />
+
+<PlatformSnippets
+    react={`
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  IconButton,
+} from "@kozmos-ds/react";
+import { X } from "@kozmos-ds/icons";
+export function Example() {
+  return (
+    <>
+      <Card padding="compact">
+        <CardHeader
+          tone="subtle"
+          actions={
+            <IconButton aria-label="Close" size="sm">
+              <X aria-hidden="true" />
+            </IconButton>
+          }
+        >
+          <CardTitle>Add beacon</CardTitle>
+          <CardDescription>Terminal A / Level 2</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>The form</p>
+        </CardContent>
+      </Card>
+      <Card padding="compact">
+        <CardHeader>
+          <CardTitle size="sm">Lunch nearby</CardTitle>
+        </CardHeader>
+      </Card>
+    </>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct FormPanelHeader: View {
+    var body: some View {
+        KozmosCard(padding: .compact) {
+            KozmosCardHeader(tone: .subtle) {
+                KozmosCardTitle("Add beacon")
+                KozmosCardDescription("Terminal A / Level 2")
+            }
+            KozmosCardContent {
+                KozmosText("The form")
+            }
+        }
+        KozmosCard(padding: .compact) {
+            KozmosCardHeader {
+                KozmosCardTitle("Lunch nearby", size: .sm)
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.card.KozmosCard
+import com.kozmos.components.card.KozmosCardContent
+import com.kozmos.components.card.KozmosCardDescription
+import com.kozmos.components.card.KozmosCardHeader
+import com.kozmos.components.card.KozmosCardHeaderTone
+import com.kozmos.components.card.KozmosCardPadding
+import com.kozmos.components.card.KozmosCardTitle
+import com.kozmos.components.card.KozmosCardTitleSize
+import com.kozmos.components.text.KozmosText
+
+@Composable
+fun FormPanelHeader() {
+    KozmosCard(padding = KozmosCardPadding.Compact) {
+        KozmosCardHeader(tone = KozmosCardHeaderTone.Subtle) {
+            KozmosCardTitle(title = "Add beacon")
+            KozmosCardDescription(description = "Terminal A / Level 2")
+        }
+        KozmosCardContent {
+            KozmosText(text = "The form")
+        }
+    }
+    KozmosCard(padding = KozmosCardPadding.Compact) {
+        KozmosCardHeader {
+            KozmosCardTitle(title = "Lunch nearby", size = KozmosCardTitleSize.Sm)
+        }
+    }
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

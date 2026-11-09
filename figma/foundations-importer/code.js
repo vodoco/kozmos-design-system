@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "fa86312e5dfd";
+const PLUGIN_BUILD = "c51be11bce0a";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -199,6 +199,19 @@ const THEME_FILL_FOREGROUND = {
   fallback: "#FFFFFF",
 };
 const BUTTON_VARIANTS = [
+  "Default",
+  "Destructive",
+  "Outline",
+  "Secondary",
+  "Ghost",
+  "Link",
+  "Glass",
+  "Subtle",
+];
+// IconButton keeps the seven it had: the subtle variant (GAP-200) is the
+// labelled Button's, Pointr Cloud's "+ Add additional field" and Delete
+// Feature, and no board draws an icon-only one.
+const ICON_BUTTON_VARIANTS = [
   "Default",
   "Destructive",
   "Outline",
@@ -445,6 +458,83 @@ function cardPaddingToken(padding) {
   return padding === "Compact"
     ? "Card/padding/compact"
     : "Card/padding/default";
+}
+// CardHeader's tone (CLOUD-UI-001; decisions 135 and 139): Subtle is the form
+// side panel's header, a pale theme strip, theme 0, full-bleed inside the
+// card's top corners, 12 above and below its words and the card's padding at
+// its sides and below it, with a 14 title. Default is the header as it was.
+const CARD_HEADER_TONES = ["Default", "Subtle"];
+// CardTitle's size (GAP-035, decision 132): Default 24, Small 18 for a
+// compact or dashboard card, XSmall 14. In a Subtle header the title's
+// Default is the strip's 14, as React's unset size is there, so the strip is
+// drawn at Default alone and Code Connect says nothing of the size.
+const CARD_TITLE_SIZES = ["Default", "Small", "XSmall"];
+const CARD_SUBTLE_HEADER_PADDING_Y = 12;
+// The actions' line in the strip: React's 1.75rem, so a 44 IconButton spills
+// 8 into the 12 above and below it.
+const CARD_SUBTLE_HEADER_ACTIONS_LINE = 28;
+/**
+ * The second axis the set is laid out by: Padding, HeaderTone and TitleSize
+ * together, one row each, as `Padding|HeaderTone|TitleSize`. A variant drawn
+ * before the HeaderTone and TitleSize axes is Default in both.
+ */
+function cardSecond(padding, tone, size) {
+  return `${padding}|${tone}|${size}`;
+}
+function cardSecondParts(second) {
+  const [padding, tone, size] = String(second || "").split("|");
+  return {
+    padding: padding || "Default",
+    tone: tone || "Default",
+    size: size || "Default",
+  };
+}
+function cardSecondValues() {
+  const out = [];
+  for (const padding of CARD_PADDINGS)
+    for (const tone of CARD_HEADER_TONES)
+      for (const size of CARD_TITLE_SIZES)
+        // The strip is drawn at its own title size alone: no empty row.
+        if (tone !== "Subtle" || size === "Default")
+          out.push(cardSecond(padding, tone, size));
+  return out;
+}
+const CARD_SECONDS = cardSecondValues();
+/** A card with no header has no tone or title; the strip's title is its own. */
+function cardHasCombination(content, second) {
+  const { tone, size } = cardSecondParts(second);
+  if (content === "Basic") return tone === "Default" && size === "Default";
+  if (tone === "Subtle") return size === "Default";
+  return true;
+}
+/** The size a title is drawn at: the strip's 14 for a Subtle header's Default. */
+function cardTitleDrawnSize(tone, size) {
+  return tone === "Subtle" && size === "Default" ? "XSmall" : size;
+}
+function cardTitleMetrics(drawnSize) {
+  if (drawnSize === "Small")
+    return {
+      fontSize: 18,
+      lineHeight: 18,
+      fontSizeToken: "Card/title/sm/font-size",
+      lineHeightToken: "Card/title/sm/line-height",
+      styleKey: "cardTitleSmall",
+    };
+  if (drawnSize === "XSmall")
+    return {
+      fontSize: 14,
+      lineHeight: 14,
+      fontSizeToken: "Card/title/xs/font-size",
+      lineHeightToken: "Card/title/xs/line-height",
+      styleKey: "cardTitleXSmall",
+    };
+  return {
+    fontSize: 24,
+    lineHeight: 24,
+    fontSizeToken: "Card/title/font-size",
+    lineHeightToken: "Card/title/line-height",
+    styleKey: "cardTitle",
+  };
 }
 // CardHeader's actions (GAP-169): a slot at the header's end, after the title
 // and description, which keep the room before it, 16 away. It is as tall as
@@ -5756,6 +5846,23 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Card/title/font-size", value: 24, scopes: ["FONT_SIZE"] },
   { name: "Card/title/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
+  // CardTitle's sizes (GAP-035): 18 and 14, on one line as React draws them.
+  { name: "Card/title/sm/font-size", value: 18, scopes: ["FONT_SIZE"] },
+  { name: "Card/title/sm/line-height", value: 18, scopes: ["LINE_HEIGHT"] },
+  {
+    name: "Card/title/xs/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  { name: "Card/title/xs/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
+  // CardHeader's subtle strip: 12 above and below its words (CLOUD-UI-001).
+  {
+    name: "Card/header/subtle/padding-y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
   {
     name: "Card/description/font-size",
     value: 14,
@@ -18090,7 +18197,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "IconButton") {
     return {
-      Variant: BUTTON_VARIANTS,
+      Variant: ICON_BUTTON_VARIANTS,
       Size: ICON_BUTTON_SIZES,
       State: BUTTON_STATES,
     };
@@ -18162,6 +18269,8 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: CARD_CONTENT,
       Padding: CARD_PADDINGS,
+      HeaderTone: CARD_HEADER_TONES,
+      TitleSize: CARD_TITLE_SIZES,
     };
   }
 
@@ -24297,6 +24406,24 @@ function addComponentTextStyleSpecs(specs, fonts) {
     "Typography contract for the current manoeuvre's instruction: 20/25 semibold.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
+  // CardTitle's sizes (GAP-035): Small for a compact or dashboard card,
+  // XSmall the subtle strip's.
+  addTextStyleSpec(
+    specs,
+    "cardTitleSmall",
+    "Card / Title Small",
+    fonts.medium,
+    18,
+    18,
+  );
+  addTextStyleSpec(
+    specs,
+    "cardTitleXSmall",
+    "Card / Title XSmall",
+    fonts.medium,
+    14,
+    14,
+  );
   addTextStyleSpec(
     specs,
     "cardDescription",
@@ -24999,7 +25126,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       : "emptyStateDescription";
   }
   if (setName === "Card") {
-    if (textName === "Title Text") return "cardTitle";
+    if (textName === "Title Text") {
+      const cardProps = component ? parseCardVariantName(component.name) : null;
+      if (!cardProps) return "cardTitle";
+      const { tone, size } = cardSecondParts(cardProps.second);
+      return cardTitleMetrics(cardTitleDrawnSize(tone, size)).styleKey;
+    }
     if (textName === "Description Text") return "cardDescription";
     return "cardBody";
   }
@@ -25306,24 +25438,32 @@ async function applyCounterTypography(
   );
 }
 
-async function applyCardTitleTypography(text, fonts, variableByName, stats) {
+async function applyCardTitleTypography(
+  text,
+  fonts,
+  variableByName,
+  stats,
+  metrics = cardTitleMetrics("Default"),
+) {
+  // The size is the title's own style and tokens (GAP-035): a style's field
+  // written over detaches the style, so each size is a style of its own.
   text.fontName = fonts.medium;
-  text.fontSize = 24;
-  text.lineHeight = { unit: "PIXELS", value: 24 };
+  text.fontSize = metrics.fontSize;
+  text.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
   text.textAutoResize = "HEIGHT";
-  await applyTextStyleToNodeAsync(text, "cardTitle", stats);
+  await applyTextStyleToNodeAsync(text, metrics.styleKey, stats);
 
   bindFloatVariable(
     text,
     "fontSize",
-    "Card/title/font-size",
+    metrics.fontSizeToken,
     variableByName,
     stats,
   );
   bindFloatVariable(
     text,
     "lineHeight",
-    "Card/title/line-height",
+    metrics.lineHeightToken,
     variableByName,
     stats,
   );
@@ -27112,6 +27252,7 @@ function bindCardGeometryVariables(
   stats,
   headerText,
   padding,
+  subtle = false,
 ) {
   const paddingToken = cardPaddingToken(padding);
   bindFloatVariable(
@@ -27152,6 +27293,7 @@ function bindCardGeometryVariables(
       variableByName,
       stats,
     );
+    if (section === header && subtle) continue;
     bindFloatVariable(
       section,
       "paddingBottom",
@@ -27161,7 +27303,21 @@ function bindCardGeometryVariables(
     );
   }
 
-  if (header) {
+  if (header && subtle) {
+    // The strip's 12 above and below its words (CLOUD-UI-001), and its top
+    // corners the card's.
+    for (const side of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        header,
+        side,
+        "Card/header/subtle/padding-y",
+        variableByName,
+        stats,
+      );
+    for (const corner of ["topLeftRadius", "topRightRadius"])
+      bindFloatVariable(header, corner, "Card/radius", variableByName, stats);
+  }
+  if (header && !subtle) {
     bindFloatVariable(
       header,
       "paddingTop",
@@ -30882,6 +31038,7 @@ async function updateButtonComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
+    variantsCreated: 0,
     variantsMissing: 0,
     iconSlotsBound: 0,
     warnings: [],
@@ -30941,17 +31098,35 @@ async function updateButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // A variant the set does not have yet is drawn and added where Build would
+  // have put it, so Update grows the set (the subtle variant, GAP-200) and
+  // the variants already there keep their node ids.
+  let index = 0;
   for (const variant of BUTTON_VARIANTS) {
     for (const size of BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
         if (!seenKeys[key]) {
-          stats.variantsMissing += 1;
-          stats.warnings.push(`Missing Button variant ${key}.`);
+          const component = await createButtonVariant({
+            variant,
+            size,
+            state,
+            variableByName,
+            fonts,
+            textStyle,
+            stats,
+          });
+          component.x = (index % 12) * 180;
+          component.y = Math.floor(index / 12) * 96;
+          existing.appendChild(component);
+          seenKeys[key] = true;
+          stats.variantsCreated += 1;
         }
+        index += 1;
       }
     }
   }
+  if (stats.variantsCreated > 0) resizeComponentSetToContainChildren(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -31006,7 +31181,7 @@ async function buildIconButtonComponent() {
 
   const components = [];
   let index = 0;
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const component = await createIconButtonVariant({
@@ -31134,7 +31309,7 @@ async function updateIconButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
@@ -33658,7 +33833,8 @@ async function buildCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     x: 80,
     y: 4300,
     xStep: 420,
@@ -33682,7 +33858,8 @@ async function updateCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     xStep: 420,
     yStep: 220,
     createVariant: createCardVariant,
@@ -55744,7 +55921,7 @@ function parseIconButtonVariantName(name) {
   }
 
   if (
-    BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
+    ICON_BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
     ICON_BUTTON_SIZES.indexOf(values.Size) === -1 ||
     BUTTON_STATES.indexOf(values.State) === -1
   ) {
@@ -59563,11 +59740,20 @@ function parseCardVariantName(name) {
 
   // A variant drawn before the Padding axis carries no Padding, and is the
   // card as it was: 24. Reading it as Default is what lets Update rename it
-  // instead of replacing it, so its node id survives.
-  const second = values.Padding || "Default";
-  if (CARD_PADDINGS.indexOf(second) === -1) {
+  // instead of replacing it, so its node id survives. The HeaderTone and
+  // TitleSize axes (CLOUD-UI-001, GAP-035) read the same way.
+  const padding = values.Padding || "Default";
+  const tone = values.HeaderTone || "Default";
+  const size = values.TitleSize || "Default";
+  if (
+    CARD_PADDINGS.indexOf(padding) === -1 ||
+    CARD_HEADER_TONES.indexOf(tone) === -1 ||
+    CARD_TITLE_SIZES.indexOf(size) === -1
+  ) {
     return null;
   }
+  const second = cardSecond(padding, tone, size);
+  if (!cardHasCombination(values.Content, second)) return null;
 
   return {
     value: values.Content,
@@ -59579,8 +59765,14 @@ async function updateCardVariant(
   component,
   { value, second, variableByName, fonts, stats },
 ) {
-  const padding = CARD_PADDINGS.indexOf(second) === -1 ? "Default" : second;
-  component.name = `Content=${value}, Padding=${padding}`;
+  const parts = cardSecondParts(second);
+  const padding =
+    CARD_PADDINGS.indexOf(parts.padding) === -1 ? "Default" : parts.padding;
+  const tone =
+    CARD_HEADER_TONES.indexOf(parts.tone) === -1 ? "Default" : parts.tone;
+  const size =
+    CARD_TITLE_SIZES.indexOf(parts.size) === -1 ? "Default" : parts.size;
+  component.name = `Content=${value}, Padding=${padding}, HeaderTone=${tone}, TitleSize=${size}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -59610,6 +59802,8 @@ async function updateCardVariant(
     component,
     value,
     padding,
+    tone,
+    size,
     variableByName,
     fonts,
     stats,
@@ -65194,6 +65388,8 @@ async function syncCardVariantChildren({
   component,
   value,
   padding,
+  tone = "Default",
+  size = "Default",
   variableByName,
   fonts,
   stats,
@@ -65201,6 +65397,8 @@ async function syncCardVariantChildren({
   const pad = cardPaddingLength(padding);
   const hasHeader = value === "Header" || value === "Full";
   const hasFooter = value === "Full";
+  const subtle = hasHeader && tone === "Subtle";
+  const titleMetrics = cardTitleMetrics(cardTitleDrawnSize(tone, size));
 
   let header = directChildNamed(component, "Card Header");
   if (header && header.type !== "FRAME") {
@@ -65223,17 +65421,27 @@ async function syncCardVariantChildren({
     header.primaryAxisSizingMode = "FIXED";
     header.counterAxisSizingMode = "AUTO";
     header.primaryAxisAlignItems = "MIN";
-    header.counterAxisAlignItems = "MIN";
+    // The strip centres its words and its actions in it.
+    header.counterAxisAlignItems = subtle ? "CENTER" : "MIN";
     // The 6 between title and description is the column's now; the header's
     // own gap is the 16 before the actions, which no token names.
     clearBoundVariable(header, "itemSpacing", stats);
     header.itemSpacing = CARD_HEADER_ACTIONS_GAP;
     header.paddingLeft = pad;
     header.paddingRight = pad;
-    header.paddingTop = pad;
-    header.paddingBottom = pad;
+    header.paddingTop = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
+    header.paddingBottom = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
     header.resizeWithoutConstraints(360, 80);
-    header.fills = [];
+    // The strip is theme 0, full-bleed: the card does not clip, so the tint
+    // takes the card's top corners itself, under the card's own edge.
+    header.fills = subtle
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+    const headerTop = subtle ? KOZMOS_RADIUS.container : KOZMOS_RADIUS.none;
+    setNodePropertyIfSupported(header, "topLeftRadius", headerTop);
+    setNodePropertyIfSupported(header, "topRightRadius", headerTop);
+    setNodePropertyIfSupported(header, "bottomLeftRadius", KOZMOS_RADIUS.none);
+    setNodePropertyIfSupported(header, "bottomRightRadius", KOZMOS_RADIUS.none);
     header.strokes = [];
     header.clipsContent = false;
     setLayoutSizingHorizontal(header, "FILL");
@@ -65276,7 +65484,13 @@ async function syncCardVariantChildren({
       title = figma.createText();
       title.name = "Title Text";
     }
-    await applyCardTitleTypography(title, fonts, variableByName, stats);
+    await applyCardTitleTypography(
+      title,
+      fonts,
+      variableByName,
+      stats,
+      titleMetrics,
+    );
     title.characters = cardTitleText(value);
     title.fills = [
       paintFromVariable(
@@ -65330,6 +65544,10 @@ async function syncCardVariantChildren({
       header,
       variableByName,
       stats,
+      // Centred on the title's line, or in the strip on its own 28.
+      lineHeight: subtle
+        ? CARD_SUBTLE_HEADER_ACTIONS_LINE
+        : titleMetrics.lineHeight,
     });
     appendWithSizing(component, header, "FILL", "HUG");
   } else if (header) {
@@ -65355,7 +65573,10 @@ async function syncCardVariantChildren({
   body.itemSpacing = 12;
   body.paddingLeft = pad;
   body.paddingRight = pad;
-  body.paddingTop = hasHeader ? 0 : 24;
+  // Under the strip the content keeps the card's padding above it, as React's
+  // strip keeps it below its tint; under any other header, none; with no
+  // header, the card's padding, as the token bound to it says.
+  body.paddingTop = subtle || !hasHeader ? pad : 0;
   body.paddingBottom = pad;
   body.resizeWithoutConstraints(360, 92);
   body.fills = [];
@@ -65440,7 +65661,17 @@ async function syncCardVariantChildren({
     stats,
     headerText,
     padding,
+    subtle,
   );
+  if (body && subtle) {
+    bindFloatVariable(
+      body,
+      "paddingTop",
+      cardPaddingToken(padding),
+      variableByName,
+      stats,
+    );
+  }
   if (body && value === "Basic") {
     bindFloatVariable(
       body,
@@ -65466,6 +65697,7 @@ async function syncCardHeaderActions({
   header,
   variableByName,
   stats,
+  lineHeight = CARD_TITLE_LINE_HEIGHT,
 }) {
   let actions = directChildNamed(header, CARD_HEADER_ACTIONS_PROPERTY);
   if (actions && actions.type !== "FRAME") {
@@ -65486,7 +65718,7 @@ async function syncCardHeaderActions({
   actions.paddingRight = 0;
   actions.paddingTop = 0;
   actions.paddingBottom = 0;
-  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, CARD_TITLE_LINE_HEIGHT);
+  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, lineHeight);
   actions.fills = [];
   actions.strokes = [];
   actions.clipsContent = false;
@@ -80525,6 +80757,25 @@ function buttonConfig(variant, state) {
       foregroundFallback: "#000000",
       strokeFallback: "#FFFFFF80",
     },
+    // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
+    // theme 600, the theme as text (decision 59). Disabled, it is the
+    // filled Buttons' disabled pair, the same in every tier, which the
+    // subtle tier does not repeat.
+    Subtle:
+      state === "Disabled"
+        ? {
+            background: "Primary Buttons/themed/button/background/disabled",
+            foreground:
+              "Primary Buttons/themed/button/foreground/content/disabled",
+            backgroundFallback: "#2E3138",
+            foregroundFallback: "#464A53",
+          }
+        : {
+            background: "Subtle Buttons/themed/button/background/idle",
+            foreground: "Subtle Buttons/themed/button/foreground/content/idle",
+            backgroundFallback: "#F1F5FE",
+            foregroundFallback: "#1051E8",
+          },
   };
 
   return configs[variant] || configs.Default;

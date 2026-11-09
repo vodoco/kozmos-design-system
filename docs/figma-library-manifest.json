@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 696,
-      "dark": 696
+      "light": 744,
+      "dark": 744
     },
     "light": [
       {
@@ -7153,6 +7153,582 @@
         "name": "Components/Tertiary Buttons/neutral/foreground/dimmed/content/focus",
         "type": "color",
         "value": "#747B8B",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.600}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.background.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.background.300}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.background.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -14416,6 +14992,582 @@
         ]
       },
       {
+        "name": "Components/Subtle Buttons/themed/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.600}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/themed/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.theme.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/success/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.success.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/alert/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.700}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/danger/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.danger.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.1000}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/informative/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.info.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.background.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.background.300}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.background.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/background/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.background.300}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/idle",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/hover",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/pressed",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Components/Subtle Buttons/neutral/button/foreground/content/focus",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Components/HTML elements/headings/h1/font/family",
         "type": "fontFamilies",
         "value": "Readex Pro",
@@ -15335,7 +16487,8 @@
             "glass",
             "link",
             "outline",
-            "secondary"
+            "secondary",
+            "subtle"
           ]
         }
       },

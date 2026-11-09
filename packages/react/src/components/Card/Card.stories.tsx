@@ -9,7 +9,7 @@ import {
 } from "./Card";
 import { Button } from "../Button/Button";
 import { IconButton } from "../IconButton/IconButton";
-import { Pencil01 } from "@kozmos-ds/icons";
+import { HelpCircle, Pencil01, X } from "@kozmos-ds/icons";
 import { Input } from "../Input/Input";
 import { Label } from "../Label/Label";
 import { Heading } from "../Heading/Heading";
@@ -152,5 +152,71 @@ export const HeaderActions: Story = {
         <p className="text-sm">Changes awaiting publish.</p>
       </CardContent>
     </Card>
+  ),
+};
+
+/**
+ * CardHeader's subtle tone (CLOUD-UI-001; decisions 135 and 139): Pointr
+ * Cloud's form side panel header, a pale theme strip, theme 0, full-bleed
+ * inside the card's top corners, at least 52 tall, with a 14 title. Its
+ * sides follow the card's padding, and its actions are centred in it.
+ */
+export const SubtleHeader: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      <Card padding="compact" className="w-[400px] max-w-full">
+        <CardHeader
+          tone="subtle"
+          actions={
+            <>
+              <IconButton aria-label="Help" size="sm">
+                <HelpCircle aria-hidden="true" className="h-5 w-5" />
+              </IconButton>
+              <IconButton aria-label="Close" size="sm">
+                <X aria-hidden="true" className="h-5 w-5" />
+              </IconButton>
+            </>
+          }
+        >
+          <CardTitle>Add beacon</CardTitle>
+          <CardDescription>Terminal A / Level 2</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="subtle" className="w-full">
+            + Add additional field
+          </Button>
+        </CardContent>
+      </Card>
+      <Card className="w-[320px] max-w-full">
+        <CardHeader tone="subtle">
+          <CardTitle>Landmark directions</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          A lone title: the strip stays 52.
+        </CardContent>
+      </Card>
+    </div>
+  ),
+};
+
+/**
+ * CardTitle's size (GAP-035, decision 132): 24 by default, 18 at `sm` for a
+ * compact card on a phone or a dashboard's section card, and 14 at `xs`, the
+ * subtle strip's own. The level stays `as`'s.
+ */
+export const TitleSize: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      {(["default", "sm", "xs"] as const).map((size) => (
+        <Card key={size} padding="compact" className="w-[240px] max-w-full">
+          <CardHeader>
+            <CardTitle size={size}>Lunch nearby</CardTitle>
+            <CardDescription>size=&quot;{size}&quot;</CardDescription>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
   ),
 };

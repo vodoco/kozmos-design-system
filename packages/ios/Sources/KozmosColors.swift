@@ -6244,4 +6244,628 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var componentsSubtleButtonsThemedButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#051C4F") : UIColor(hex: "#F1F5FE")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#051C4F") : NSColor(hex: "#F1F5FE")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#082975") : UIColor(hex: "#CAD9FC")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#082975") : NSColor(hex: "#CAD9FC")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#0B369C") : UIColor(hex: "#A4BEF9")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#0B369C") : NSColor(hex: "#A4BEF9")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#082975") : UIColor(hex: "#CAD9FC")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#082975") : NSColor(hex: "#CAD9FC")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#5887F3") : UIColor(hex: "#1051E8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#5887F3") : NSColor(hex: "#1051E8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#7EA2F6") : UIColor(hex: "#0D44C2")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#7EA2F6") : NSColor(hex: "#0D44C2")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#A4BEF9") : UIColor(hex: "#0B369C")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#A4BEF9") : NSColor(hex: "#0B369C")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsThemedButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#7EA2F6") : UIColor(hex: "#0D44C2")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#7EA2F6") : NSColor(hex: "#0D44C2")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#0F4C2D") : UIColor(hex: "#F6FDF9")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#0F4C2D") : NSColor(hex: "#F6FDF9")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#14653D") : UIColor(hex: "#CBF5E0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#14653D") : NSColor(hex: "#CBF5E0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#197F4C") : UIColor(hex: "#A0ECC6")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#197F4C") : NSColor(hex: "#A0ECC6")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#14653D") : UIColor(hex: "#CBF5E0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#14653D") : NSColor(hex: "#CBF5E0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#A0ECC6") : UIColor(hex: "#197F4C")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#A0ECC6") : NSColor(hex: "#197F4C")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#CBF5E0") : UIColor(hex: "#14653D")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#CBF5E0") : NSColor(hex: "#14653D")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#F6FDF9") : UIColor(hex: "#0F4C2D")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#F6FDF9") : NSColor(hex: "#0F4C2D")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsSuccessButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#CBF5E0") : UIColor(hex: "#14653D")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#CBF5E0") : NSColor(hex: "#14653D")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#472F02") : UIColor(hex: "#FFFCF8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#472F02") : NSColor(hex: "#FFFCF8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#744D03") : UIColor(hex: "#FEEED0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#744D03") : NSColor(hex: "#FEEED0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#744D03") : UIColor(hex: "#FDE0A8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#744D03") : NSColor(hex: "#FDE0A8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#744D03") : UIColor(hex: "#FEEED0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#744D03") : NSColor(hex: "#FEEED0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FEEED0") : UIColor(hex: "#744D03")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FEEED0") : NSColor(hex: "#744D03")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFCF8") : UIColor(hex: "#472F02")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFCF8") : NSColor(hex: "#472F02")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFCF8") : UIColor(hex: "#472F02")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFCF8") : NSColor(hex: "#472F02")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsAlertButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFCF8") : UIColor(hex: "#472F02")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFCF8") : NSColor(hex: "#472F02")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#430915") : UIColor(hex: "#FCEAEE")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#430915") : NSColor(hex: "#FCEAEE")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#670E20") : UIColor(hex: "#F8C6D0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#670E20") : NSColor(hex: "#F8C6D0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#8C132B") : UIColor(hex: "#F3A2B3")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#8C132B") : NSColor(hex: "#F3A2B3")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#670E20") : UIColor(hex: "#F8C6D0")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#670E20") : NSColor(hex: "#F8C6D0")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#EE7E95") : UIColor(hex: "#B01736")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#EE7E95") : NSColor(hex: "#B01736")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#F3A2B3") : UIColor(hex: "#8C132B")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#F3A2B3") : NSColor(hex: "#8C132B")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#F8C6D0") : UIColor(hex: "#670E20")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#F8C6D0") : NSColor(hex: "#670E20")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsDangerButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#F3A2B3") : UIColor(hex: "#8C132B")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#F3A2B3") : NSColor(hex: "#8C132B")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#0E2E3F") : UIColor(hex: "#ECF6FB")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#0E2E3F") : NSColor(hex: "#ECF6FB")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#154761") : UIColor(hex: "#CAE6F3")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#154761") : NSColor(hex: "#CAE6F3")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#1C6082") : UIColor(hex: "#A9D6EC")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#1C6082") : NSColor(hex: "#A9D6EC")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#154761") : UIColor(hex: "#CAE6F3")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#154761") : NSColor(hex: "#CAE6F3")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#A9D6EC") : UIColor(hex: "#1C6082")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#A9D6EC") : NSColor(hex: "#1C6082")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#CAE6F3") : UIColor(hex: "#154761")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#CAE6F3") : NSColor(hex: "#154761")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ECF6FB") : UIColor(hex: "#0E2E3F")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#ECF6FB") : NSColor(hex: "#0E2E3F")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsInformativeButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#CAE6F3") : UIColor(hex: "#154761")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#CAE6F3") : NSColor(hex: "#154761")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonBackgroundIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#2E3138") : UIColor(hex: "#E3E4E8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#2E3138") : NSColor(hex: "#E3E4E8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonBackgroundHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#464A53") : UIColor(hex: "#C7CAD1")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#464A53") : NSColor(hex: "#C7CAD1")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonBackgroundPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#6f6a5d") : UIColor(hex: "#ABAFBA")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#6f6a5d") : NSColor(hex: "#ABAFBA")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonBackgroundFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#464A53") : UIColor(hex: "#C7CAD1")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#464A53") : NSColor(hex: "#C7CAD1")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonForegroundContentIdle: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#000000")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#000000")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonForegroundContentHover: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#000000")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#000000")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonForegroundContentPressed: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#000000")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#000000")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var componentsSubtleButtonsNeutralButtonForegroundContentFocus: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#000000")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#000000")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
 }

@@ -3204,4 +3204,315 @@ object KozmosThemeTokens {
             KozmosColors.componentsTertiaryButtonsNeutralForegroundDimmedContentFocus,
             KozmosColorsDark.componentsTertiaryButtonsNeutralForegroundDimmedContentFocus
         )
+
+    /**
+     * GAP-200, decision 135: the subtle Button's fill, theme 0, the theme's
+     * palest step, with the theme as its words (theme 600, decision 59).
+     * Hovered and focused it is theme 100 and pressed theme 200, and its words
+     * step with it, to 700 and 800, so each state reads 4.5:1: theme 600 on
+     * theme 100 reads 4.41:1 in light. Every state is a step of the theme
+     * ramp, so a client's ramp carries it.
+     */
+    val componentsSubtleButtonsThemedButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsThemedButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsThemedButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsThemedButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonBackgroundFocus
+        )
+
+    /**
+     * GAP-200: the subtle Button's words, theme 600, the theme as text
+     * (decision 59): 5.72:1 on theme 0 in light and 4.80:1 in dark.
+     */
+    val componentsSubtleButtonsThemedButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsThemedButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsThemedButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsThemedButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsThemedButtonForegroundContentFocus
+        )
+
+    val componentsSubtleButtonsSuccessButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsSuccessButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsSuccessButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsSuccessButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonBackgroundFocus
+        )
+
+    val componentsSubtleButtonsSuccessButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsSuccessButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsSuccessButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsSuccessButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsSuccessButtonForegroundContentFocus
+        )
+
+    val componentsSubtleButtonsAlertButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsAlertButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsAlertButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsAlertButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonBackgroundFocus
+        )
+
+    val componentsSubtleButtonsAlertButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsAlertButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsAlertButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsAlertButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsAlertButtonForegroundContentFocus
+        )
+
+    /**
+     * Decision 139: the subtle Button in a destructive tone, Pointr Cloud's
+     * Delete Feature: danger 0, a rose fill, under danger 700, the danger text
+     * role. Hovered danger 100 under 800, pressed danger 200 under 900.
+     */
+    val componentsSubtleButtonsDangerButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsDangerButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsDangerButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsDangerButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonBackgroundFocus
+        )
+
+    val componentsSubtleButtonsDangerButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsDangerButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsDangerButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsDangerButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsDangerButtonForegroundContentFocus
+        )
+
+    val componentsSubtleButtonsInformativeButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsInformativeButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsInformativeButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsInformativeButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonBackgroundFocus
+        )
+
+    val componentsSubtleButtonsInformativeButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsInformativeButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsInformativeButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsInformativeButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsInformativeButtonForegroundContentFocus
+        )
+
+    /**
+     * The neutral subtle Button: a grey fill under foreground 0, background
+     * 100, 200 and 300 in light; background 200, 300 and 400 in dark, where
+     * background 100 is 1.19:1 on the black page and barely seen (decision
+     * 173).
+     */
+    val componentsSubtleButtonsNeutralButtonBackgroundIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundIdle,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonBackgroundIdle
+        )
+
+    val componentsSubtleButtonsNeutralButtonBackgroundHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundHover,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonBackgroundHover
+        )
+
+    val componentsSubtleButtonsNeutralButtonBackgroundPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundPressed,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonBackgroundPressed
+        )
+
+    val componentsSubtleButtonsNeutralButtonBackgroundFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundFocus,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonBackgroundFocus
+        )
+
+    val componentsSubtleButtonsNeutralButtonForegroundContentIdle: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentIdle,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonForegroundContentIdle
+        )
+
+    val componentsSubtleButtonsNeutralButtonForegroundContentHover: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentHover,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonForegroundContentHover
+        )
+
+    val componentsSubtleButtonsNeutralButtonForegroundContentPressed: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentPressed,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonForegroundContentPressed
+        )
+
+    val componentsSubtleButtonsNeutralButtonForegroundContentFocus: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentFocus,
+            KozmosColorsDark.componentsSubtleButtonsNeutralButtonForegroundContentFocus
+        )
 }

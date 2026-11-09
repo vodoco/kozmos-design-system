@@ -1,6 +1,10 @@
 package com.kozmos.components.card
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -67,6 +71,39 @@ enum class KozmosCardPadding {
 }
 
 private val LocalKozmosCardPadding = compositionLocalOf { KozmosCardPadding.Default }
+
+/**
+ * How a card's header is drawn.
+ *
+ * [Default] is the header on the card's own surface, as it always was.
+ * [Subtle] is Pointr Cloud's form side panel header (CLOUD-UI-001; decisions
+ * 135 and 139): a pale theme strip, theme 0, full-bleed to the card's edges and
+ * inside its top corners, at least 52 tall, with a title of the strip's size
+ * unless the title says otherwise. React's `CardHeader tone="subtle"`.
+ */
+enum class KozmosCardHeaderTone {
+    Default,
+    Subtle;
+
+    internal companion object {
+        /** The strip's least height: decision 139's compact 52 strip. */
+        val SubtleMinHeight: Dp = 52.dp
+    }
+}
+
+/**
+ * How large a card's title is drawn (GAP-035, decision 132): [Default] is the
+ * title as it always was, [Sm] a compact card's or a dashboard section card's
+ * (React's 18), and [Xs] the subtle strip's (React's 14). Each is Material's
+ * own title style: `titleLarge`, `titleMedium` and `titleSmall`.
+ */
+enum class KozmosCardTitleSize {
+    Default,
+    Sm,
+    Xs
+}
+
+private val LocalKozmosCardHeaderTone = compositionLocalOf { KozmosCardHeaderTone.Default }
 
 @Composable
 fun KozmosCard(
@@ -349,12 +386,36 @@ private class KozmosCardColumnPolicy(private val lead: Dp) : MeasurePolicy {
 @Composable
 fun KozmosCardHeader(
     modifier: Modifier = Modifier,
+    tone: KozmosCardHeaderTone = KozmosCardHeaderTone.Default,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        modifier = modifier.padding(LocalKozmosCardPadding.current.length)
-    ) {
-        content()
+    val padding = LocalKozmosCardPadding.current.length
+    when (tone) {
+        KozmosCardHeaderTone.Default -> Column(
+            modifier = modifier.padding(padding)
+        ) {
+            content()
+        }
+        // The strip: the card's padding at its sides, 12 above and below the
+        // words, at least 52 tall, and as wide as the card, whose shape clips
+        // the tint into its corners. Below the tint it keeps the card's
+        // padding, as the default header's own bottom does, so content under
+        // it starts where it starts under any header.
+        KozmosCardHeaderTone.Subtle -> CompositionLocalProvider(
+            LocalKozmosCardHeaderTone provides KozmosCardHeaderTone.Subtle
+        ) {
+            Column(
+                modifier = modifier
+                    .padding(bottom = padding)
+                    .fillMaxWidth()
+                    .heightIn(min = KozmosCardHeaderTone.SubtleMinHeight)
+                    .background(KozmosThemeTokens.primitivesColorsTheme0)
+                    .padding(horizontal = padding, vertical = KozmosDimensions.primitivesLayoutSpacing150),
+                verticalArrangement = Arrangement.Center
+            ) {
+                content()
+            }
+        }
     }
 }
 
@@ -368,11 +429,23 @@ fun KozmosCardHeader(
 @Composable
 fun KozmosCardTitle(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // How large the title is drawn (GAP-035). Unset, Default, and Xs in a
+    // Subtle header, the strip's title.
+    size: KozmosCardTitleSize? = null
 ) {
+    val drawn = size ?: if (LocalKozmosCardHeaderTone.current == KozmosCardHeaderTone.Subtle) {
+        KozmosCardTitleSize.Xs
+    } else {
+        KozmosCardTitleSize.Default
+    }
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
+        style = when (drawn) {
+            KozmosCardTitleSize.Default -> MaterialTheme.typography.titleLarge
+            KozmosCardTitleSize.Sm -> MaterialTheme.typography.titleMedium
+            KozmosCardTitleSize.Xs -> MaterialTheme.typography.titleSmall
+        },
         fontWeight = FontWeight.SemiBold,
         color = KozmosThemeTokens.primitivesColorsForeground100,
         modifier = modifier.semantics { heading() }

@@ -56,6 +56,62 @@ describe("Button", () => {
     },
   );
 
+  describe("subtle", () => {
+    // GAP-200: "+ Add additional field" is one Kozmos Button, a pale theme
+    // fill under theme words, with no wrapper. With no emotion it is drawn
+    // as the themed emotion of its own tier, so the stylesheet needs no rule
+    // of its own for it.
+    it("is its own variant, the subtle tier's themed tokens with no emotion given", () => {
+      render(<Button variant="subtle">+ Add additional field</Button>);
+      const button = screen.getByRole("button", {
+        name: "+ Add additional field",
+      });
+      expect(button.className).toContain("kozmos-button-subtle");
+      expect(button.className).not.toContain("kozmos-button-default");
+      expect(button.className).toContain("kozmos-button-emotion-filled");
+      const prefix = "--components-subtle-buttons-themed-button";
+      for (const [property, token] of [
+        ["--kz-button-bg", "background-idle"],
+        ["--kz-button-bg-hover", "background-hover"],
+        ["--kz-button-bg-focus", "background-focus"],
+        ["--kz-button-bg-pressed", "background-pressed"],
+        ["--kz-button-fg", "foreground-content-idle"],
+        ["--kz-button-fg-hover", "foreground-content-hover"],
+        ["--kz-button-fg-focus", "foreground-content-focus"],
+        ["--kz-button-fg-pressed", "foreground-content-pressed"],
+      ])
+        expect(button.style.getPropertyValue(property)).toBe(
+          `var(${prefix}-${token})`,
+        );
+    });
+
+    it("lets a caller's own style win over the subtle tier's", () => {
+      render(
+        <Button
+          variant="subtle"
+          style={{ "--kz-button-bg": "red" } as React.CSSProperties}
+        >
+          Override
+        </Button>,
+      );
+      expect(
+        screen.getByRole("button").style.getPropertyValue("--kz-button-bg"),
+      ).toBe("red");
+    });
+
+    it("fills its row through a class, as every Button does", () => {
+      render(
+        <Button variant="subtle" className="w-full">
+          + Add additional field
+        </Button>,
+      );
+      expect(screen.getByRole("button")).toHaveClass(
+        "kozmos-button-subtle",
+        "w-full",
+      );
+    });
+  });
+
   describe("emotion", () => {
     it("changes nothing when it is not set", () => {
       render(<Button>Plain</Button>);
@@ -137,6 +193,61 @@ describe("Button", () => {
         "var(--components-primary-buttons-informative-button-background-idle)",
       );
     });
+
+    // The subtle variant (GAP-200, decision 135) is a fill of its own tier,
+    // so an emotion on it reads the Subtle Buttons tokens, not the Primary
+    // ones, through the filled treatment: decision 139's destructive tone is
+    // `variant="subtle" emotion="danger"`.
+    it.each(BUTTON_EMOTIONS)(
+      "reads the subtle tier for a subtle %s",
+      (emotion) => {
+        render(
+          <Button variant="subtle" emotion={emotion}>
+            Add field
+          </Button>,
+        );
+        const button = screen.getByRole("button");
+        const prefix = `--components-subtle-buttons-${emotion}-button`;
+        expect(button.style.getPropertyValue("--kz-button-bg")).toBe(
+          `var(${prefix}-background-idle)`,
+        );
+        expect(button.style.getPropertyValue("--kz-button-bg-hover")).toBe(
+          `var(${prefix}-background-hover)`,
+        );
+        expect(button.style.getPropertyValue("--kz-button-bg-pressed")).toBe(
+          `var(${prefix}-background-pressed)`,
+        );
+        expect(button.className).toContain("kozmos-button-subtle");
+        expect(button.className).toContain("kozmos-button-emotion-filled");
+      },
+    );
+
+    // The subtle tier's words step with its fill, so the filled treatment
+    // is told the words of every state, not only at rest and hovered.
+    it.each([
+      ["subtle", "subtle"],
+      ["default", "primary"],
+    ] as const)(
+      "gives a %s emotion its words in every state",
+      (variant, tier) => {
+        render(
+          <Button variant={variant} emotion="danger">
+            Delete feature
+          </Button>,
+        );
+        const button = screen.getByRole("button");
+        const prefix = `--components-${tier}-buttons-danger-button-foreground-content`;
+        for (const [property, state] of [
+          ["--kz-button-fg", "idle"],
+          ["--kz-button-fg-hover", "hover"],
+          ["--kz-button-fg-focus", "focus"],
+          ["--kz-button-fg-pressed", "pressed"],
+        ])
+          expect(button.style.getPropertyValue(property)).toBe(
+            `var(${prefix}-${state})`,
+          );
+      },
+    );
 
     it("lets a caller's own style win", () => {
       render(

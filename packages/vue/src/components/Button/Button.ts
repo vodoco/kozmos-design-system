@@ -63,7 +63,7 @@ export const KozmosButton = defineComponent({
       const emotional = buttonEmotionTokens(props.variant, props.emotion);
       // A style only when there is one: an empty one is written as style="".
       const drawnStyle = emotional
-        ? [emotionCustomProperties(emotional.tier, props.emotion!), style]
+        ? [emotionCustomProperties(emotional.tier, emotional.emotion), style]
         : style;
       return h(
         "button",

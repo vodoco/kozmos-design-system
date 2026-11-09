@@ -48,4 +48,86 @@ describe("Card", () => {
       header.querySelector('[data-slot="card-header-actions"]'),
     ).toBeNull();
   });
+
+  describe("CardHeader tone (CLOUD-UI-001, decisions 135 and 139)", () => {
+    it("draws the subtle strip: its class, the strip's block padding, the card's sides", () => {
+      render(
+        <Card padding="compact">
+          <CardHeader tone="subtle">
+            <CardTitle>Add beacon</CardTitle>
+            <CardDescription>Terminal A / Level 2</CardDescription>
+          </CardHeader>
+        </Card>,
+      );
+      const header = screen.getByRole("heading", {
+        name: "Add beacon",
+      }).parentElement!;
+      expect(header).toHaveAttribute("data-tone", "subtle");
+      expect(header).toHaveClass(
+        "kozmos-card-header-subtle",
+        "p-4",
+        "py-3",
+        // The card's padding below the tint, as a header's own bottom pays.
+        "mb-4",
+      );
+    });
+
+    it("draws the subtle strip with actions, the actions at its end", () => {
+      render(
+        <Card>
+          <CardHeader
+            tone="subtle"
+            actions={<button type="button">Close</button>}
+          >
+            <CardTitle>Add beacon</CardTitle>
+          </CardHeader>
+        </Card>,
+      );
+      const actions = screen.getByRole("button", {
+        name: "Close",
+      }).parentElement!;
+      const header = actions.parentElement!;
+      expect(header).toHaveClass(
+        "kozmos-card-header",
+        "kozmos-card-header-subtle",
+        "p-6",
+        "py-3",
+        "mb-6",
+      );
+      expect(header.lastElementChild).toBe(actions);
+    });
+
+    it("gives its title the strip's 14 unless the title says otherwise", () => {
+      render(
+        <Card>
+          <CardHeader tone="subtle">
+            <CardTitle>Strip</CardTitle>
+            <CardTitle size="sm">Chosen</CardTitle>
+          </CardHeader>
+        </Card>,
+      );
+      const strip = screen.getByRole("heading", { name: "Strip" });
+      expect(strip).toHaveAttribute("data-size", "xs");
+      expect(strip).toHaveClass("text-sm");
+      expect(strip).not.toHaveClass("text-2xl");
+      const chosen = screen.getByRole("heading", { name: "Chosen" });
+      expect(chosen).toHaveAttribute("data-size", "sm");
+      expect(chosen).toHaveClass("text-lg");
+    });
+
+    it("is the default tone unset, with no tint and the 24 title", () => {
+      render(
+        <Card>
+          <CardHeader>
+            <CardTitle>Plain</CardTitle>
+          </CardHeader>
+        </Card>,
+      );
+      const title = screen.getByRole("heading", { name: "Plain" });
+      expect(title).not.toHaveAttribute("data-size");
+      expect(title).toHaveClass("text-2xl");
+      expect(title.parentElement).not.toHaveAttribute("data-tone");
+      expect(title.parentElement).not.toHaveClass("kozmos-card-header-subtle");
+    });
+  });
 });

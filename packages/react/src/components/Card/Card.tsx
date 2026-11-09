@@ -31,17 +31,19 @@ export type CardPadding = "default" | "compact";
  */
 const PADDING: Record<
   CardPadding,
-  { all: string; sides: string; lead: string }
+  { all: string; sides: string; lead: string; below: string }
 > = {
   default: {
     all: "p-6",
     sides: "px-6 pb-6",
     lead: "[&>:first-child]:[--kozmos-card-lead:1.5rem]",
+    below: "mb-6",
   },
   compact: {
     all: "p-4",
     sides: "px-4 pb-4",
     lead: "[&>:first-child]:[--kozmos-card-lead:1rem]",
+    below: "mb-4",
   },
 };
 
@@ -51,6 +53,33 @@ const PADDING: Record<
 const LEAD = "[--kozmos-card-lead:0px] pt-[var(--kozmos-card-lead)]";
 
 const CardPaddingContext = React.createContext<CardPadding>("default");
+
+/**
+ * How a CardHeader is drawn. `default` is the header as it always was, on
+ * the card's own surface. `subtle` is Pointr Cloud's form panel header
+ * (CLOUD-UI-001, GAP-169; decisions 135 and 139): a pale theme strip, theme
+ * 0, full-bleed to the card's edges and inside its top corners, at least 52
+ * tall, and its title 14 unless the title says otherwise.
+ */
+export type CardHeaderTone = "default" | "subtle";
+
+/**
+ * CardTitle's size (GAP-035, decision 132). `default` is 24, the card's
+ * title as it always was; `sm` is 18, for a compact card on a phone or a
+ * dashboard's section card; `xs` is 14, the subtle header strip's title
+ * (decision 139). The weight, the tight tracking and the one-line leading
+ * stay at every size.
+ */
+export type CardTitleSize = "default" | "sm" | "xs";
+
+const TITLE_SIZE: Record<CardTitleSize, string> = {
+  default: "text-2xl",
+  sm: "text-lg",
+  xs: "text-sm",
+};
+
+/** The header's tone, for the title's size inside it. */
+const CardHeaderToneContext = React.createContext<CardHeaderTone>("default");
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   padding?: CardPadding;
@@ -77,6 +106,14 @@ Card.displayName = "Card";
 
 export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
+   * `subtle` draws the header as a pale theme strip, theme 0, full-bleed
+   * inside the card's top corners, at least 52 tall, with its title 14
+   * (CLOUD-UI-001; decisions 135 and 139): the form side panel's header.
+   * Its sides follow the card's `padding`. `default`, the header on the
+   * card's own surface, without it.
+   */
+  tone?: CardHeaderTone;
+  /**
    * What acts on the card, at the header's inline end (GAP-169): an edit
    * IconButton beside the site's name, a menu. The title and description
    * keep the room before it, and the actions are centred on the title's
@@ -86,31 +123,45 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
-  ({ className, actions, children, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        actions ? "kozmos-card-header" : "flex flex-col space-y-1.5",
-        PADDING[React.useContext(CardPaddingContext)].all,
-        className,
-      )}
-      {...props}
-    >
-      {actions ? (
-        <>
-          <div className="kozmos-card-header-text">{children}</div>
-          <div
-            data-slot="card-header-actions"
-            className="kozmos-card-header-actions"
-          >
-            {actions}
-          </div>
-        </>
-      ) : (
-        children
-      )}
-    </div>
-  ),
+  ({ className, actions, tone = "default", children, ...props }, ref) => {
+    const padding = PADDING[React.useContext(CardPaddingContext)];
+    return (
+      <CardHeaderToneContext.Provider value={tone}>
+        <div
+          ref={ref}
+          data-tone={tone === "subtle" ? tone : undefined}
+          className={cn(
+            actions ? "kozmos-card-header" : "flex flex-col space-y-1.5",
+            padding.all,
+            // The strip's block padding is its own, 12, so a 14 title sits in
+            // its 52; its sides stay the card's. Below the tint it keeps the
+            // card's padding, as a header's own bottom padding does, so the
+            // content under it starts where it starts under any header.
+            tone === "subtle" && [
+              "kozmos-card-header-subtle py-3",
+              padding.below,
+            ],
+            className,
+          )}
+          {...props}
+        >
+          {actions ? (
+            <>
+              <div className="kozmos-card-header-text">{children}</div>
+              <div
+                data-slot="card-header-actions"
+                className="kozmos-card-header-actions"
+              >
+                {actions}
+              </div>
+            </>
+          ) : (
+            children
+          )}
+        </div>
+      </CardHeaderToneContext.Provider>
+    );
+  },
 );
 CardHeader.displayName = "CardHeader";
 
@@ -123,19 +174,32 @@ export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement>
    * the title looks. There is no `h1`: that is the page's own title.
    */
   as?: "h2" | "h3" | "h4" | "h5" | "h6";
+  /**
+   * How large the title is drawn (GAP-035): `default` 24, `sm` 18 for a
+   * compact or dashboard card, `xs` 14. Unset, it is 24, and 14 in a
+   * `tone="subtle"` header, the strip's title (decision 139). It changes
+   * how the title looks, not its heading level, which is `as`.
+   */
+  size?: CardTitleSize;
 }
 
 const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
-  ({ as: Tag = "h3", className, ...props }, ref) => (
-    <Tag
-      ref={ref}
-      className={cn(
-        "text-2xl font-semibold leading-none tracking-tight",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  ({ as: Tag = "h3", size, className, ...props }, ref) => {
+    const tone = React.useContext(CardHeaderToneContext);
+    const drawn = size ?? (tone === "subtle" ? "xs" : "default");
+    return (
+      <Tag
+        ref={ref}
+        data-size={drawn === "default" ? undefined : drawn}
+        className={cn(
+          TITLE_SIZE[drawn],
+          "font-semibold leading-none tracking-tight",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
 );
 CardTitle.displayName = "CardTitle";
 

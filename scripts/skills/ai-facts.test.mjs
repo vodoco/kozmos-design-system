@@ -86,6 +86,7 @@ test("Button's axes include emotion, an indexed-access union", () => {
         "ghost",
         "link",
         "glass",
+        "subtle",
       ],
       size: ["default", "sm", "lg", "icon"],
       emotion: EMOTIONS,

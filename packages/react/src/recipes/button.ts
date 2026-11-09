@@ -31,7 +31,8 @@ export type ButtonVariant =
   | "secondary"
   | "ghost"
   | "link"
-  | "glass";
+  | "glass"
+  | "subtle";
 
 export type ButtonSize = "default" | "sm" | "lg" | "icon";
 
@@ -41,12 +42,18 @@ export type ButtonSize = "default" | "sm" | "lg" | "icon";
  * Primary is filled, Secondary is bordered, Tertiary is text — so a variant
  * maps to a tier and a treatment, and the emotion picks the colour within it.
  *
+ * `subtle` is a fill of its own tier (GAP-200, decision 135): the emotion's
+ * palest step under its words, theme 0 under theme 600 unset, and the
+ * destructive tone's rose under red with `emotion="danger"` (decision 139).
+ *
  * `glass` is an effect rather than a weight and takes no emotion.
  */
+export type ButtonTier = "primary" | "secondary" | "subtle";
+
 export const VARIANT_TOKENS: Record<
   ButtonVariant,
   {
-    tier: "primary" | "secondary";
+    tier: ButtonTier;
     treatment: "filled" | "outline" | "text";
   } | null
 > = {
@@ -56,6 +63,7 @@ export const VARIANT_TOKENS: Record<
   outline: { tier: "secondary", treatment: "outline" },
   ghost: { tier: "secondary", treatment: "text" },
   link: { tier: "secondary", treatment: "text" },
+  subtle: { tier: "subtle", treatment: "filled" },
   glass: null,
 };
 
@@ -72,7 +80,7 @@ export const TREATMENT_CLASSES = {
 
 /** The custom properties an emotion sets on a button, in the order it sets them. */
 export function emotionCustomProperties(
-  tier: "primary" | "secondary",
+  tier: ButtonTier,
   emotion: ButtonEmotion,
 ): Record<`--${string}`, string> {
   const prefix = `--components-${tier}-buttons-${emotion}`;
@@ -83,19 +91,27 @@ export function emotionCustomProperties(
     "--kz-button-bg-pressed": `var(${prefix}-button-background-pressed)`,
     "--kz-button-fg": `var(${prefix}-button-foreground-content-idle)`,
     "--kz-button-fg-hover": `var(${prefix}-button-foreground-content-hover)`,
+    // The subtle tier's words step with its fill (GAP-200); the Primary
+    // tier's are one colour in every state, so these change nothing there.
+    "--kz-button-fg-focus": `var(${prefix}-button-foreground-content-focus)`,
+    "--kz-button-fg-pressed": `var(${prefix}-button-foreground-content-pressed)`,
   };
 }
 
 /**
- * The tier and treatment an explicit emotion draws with on a variant, or null
- * when it draws the variant's own colours: no emotion given, or `glass`.
+ * The tier, treatment and emotion a variant draws with through the emotion's
+ * custom properties, or null when it draws the variant's own colours: no
+ * emotion given, or `glass`. The subtle variant always draws this way, as
+ * `themed` with no emotion given, so its colours are its tier's tokens alone
+ * and the stylesheet carries no rule of its own for them (GAP-200).
  */
 export function buttonEmotionTokens(
   variant: ButtonVariant | null | undefined,
   emotion: ButtonEmotion | null | undefined,
 ) {
   const tokens = VARIANT_TOKENS[variant ?? "default"];
-  return emotion && tokens ? tokens : null;
+  const drawn = emotion || (variant === "subtle" ? "themed" : null);
+  return drawn && tokens ? { ...tokens, emotion: drawn } : null;
 }
 
 export const buttonVariants = cva("kozmos-reset kozmos-button", {
@@ -108,6 +124,7 @@ export const buttonVariants = cva("kozmos-reset kozmos-button", {
       ghost: "kozmos-button-ghost",
       link: "kozmos-button-link",
       glass: "kozmos-button-glass",
+      subtle: "kozmos-button-subtle",
     },
     size: {
       default: "kozmos-button-size-default",

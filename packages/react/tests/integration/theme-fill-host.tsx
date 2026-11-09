@@ -2,6 +2,9 @@ import { createRoot } from "react-dom/client";
 import {
   Badge,
   Button,
+  Card,
+  CardHeader,
+  CardTitle,
   CategoryField,
   Checkbox,
   Chip,
@@ -59,6 +62,23 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       {/* Decision 61 (Olcay, 2026-10-08): the secondary variant, with no
           emotion, is the neutral Primary Buttons fill in every state, with
           the neutral ink; IconButton's secondary is the same Button. */}
+      {/* GAP-200 (decision 135): the subtle variant, theme 0 under theme
+          600; decision 139's destructive tone is its danger emotion. */}
+      <Button data-testid={id("button-subtle")} variant="subtle">
+        + Add additional field
+      </Button>
+      <Button
+        data-testid={id("button-subtle-danger")}
+        emotion="danger"
+        variant="subtle"
+      >
+        Delete feature
+      </Button>
+      <Card data-testid={id("card-header-subtle")}>
+        <CardHeader tone="subtle">
+          <CardTitle>Add beacon</CardTitle>
+        </CardHeader>
+      </Card>
       <Button data-testid={id("button-secondary")} variant="secondary">
         Later
       </Button>

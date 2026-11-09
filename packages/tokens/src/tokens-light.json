@@ -5618,6 +5618,264 @@
         }
       }
     },
+    "Subtle Buttons": {
+      "themed": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.theme.0}",
+              "$description": "GAP-200, decision 135: the subtle Button's fill, theme 0, the theme's palest step, with the theme as its words (theme 600, decision 59). Hovered and focused it is theme 100 and pressed theme 200, and its words step with it, to 700 and 800, so each state reads 4.5:1: theme 600 on theme 100 reads 4.41:1 in light. Every state is a step of the theme ramp, so a client's ramp carries it."
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.theme.100}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.theme.200}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.theme.100}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.theme.600}",
+                "$description": "GAP-200: the subtle Button's words, theme 600, the theme as text (decision 59): 5.72:1 on theme 0 in light and 4.80:1 in dark."
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.theme.700}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.theme.800}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.theme.700}"
+              }
+            }
+          }
+        }
+      },
+      "success": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.success.0}"
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.success.100}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.success.200}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.success.100}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.success.800}"
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.success.900}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.success.1000}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.success.900}"
+              }
+            }
+          }
+        }
+      },
+      "alert": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.alert.0}"
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.alert.100}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.alert.200}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.alert.100}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.alert.900}"
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.alert.1000}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.alert.1000}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.alert.1000}"
+              }
+            }
+          }
+        }
+      },
+      "danger": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.danger.0}",
+              "$description": "Decision 139: the subtle Button in a destructive tone, Pointr Cloud's Delete Feature: danger 0, a rose fill, under danger 700, the danger text role. Hovered danger 100 under 800, pressed danger 200 under 900."
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.danger.100}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.danger.200}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.danger.100}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.danger.700}"
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.danger.800}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.danger.900}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.danger.800}"
+              }
+            }
+          }
+        }
+      },
+      "informative": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.info.0}"
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.info.100}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.info.200}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.emotional.info.100}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.info.800}"
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.info.900}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.info.1000}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.emotional.info.900}"
+              }
+            }
+          }
+        }
+      },
+      "neutral": {
+        "button": {
+          "background": {
+            "idle": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.background.100}",
+              "$description": "The neutral subtle Button: a grey fill under foreground 0, background 100, 200 and 300 in light; background 200, 300 and 400 in dark, where background 100 is 1.19:1 on the black page and barely seen (decision 173)."
+            },
+            "hover": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.background.200}"
+            },
+            "pressed": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.background.300}"
+            },
+            "focus": {
+              "$type": "color",
+              "$value": "{Primitives.Colors.background.200}"
+            }
+          },
+          "foreground": {
+            "content": {
+              "idle": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.foreground.0}"
+              },
+              "hover": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.foreground.0}"
+              },
+              "pressed": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.foreground.0}"
+              },
+              "focus": {
+                "$type": "color",
+                "$value": "{Primitives.Colors.foreground.0}"
+              }
+            }
+          }
+        }
+      }
+    },
     "HTML elements": {
       "headings": {
         "h1": {
