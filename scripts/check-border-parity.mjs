@@ -245,9 +245,9 @@ for (const [file, needle, label] of [
     "Separator",
   ],
   [
-    "packages/react/src/components/Menu/Menu.tsx",
+    "packages/react/src/components/Menu/menu-parts.tsx",
     "h-px bg-border",
-    "Menu separator",
+    "Menu and ContextMenu separator",
   ],
   [
     "packages/react/src/components/Timeline/Timeline.tsx",

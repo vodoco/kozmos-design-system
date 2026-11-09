@@ -133,6 +133,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
   Used to force mounting when more control is needed. Useful when
   controlling animation with React animation libraries.
 
+- `onOpenAutoFocus`: `FocusScopeProps['onMountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on open.
+  Can be prevented.
+
+- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on close.
+  Can be prevented.
+
 - `onEscapeKeyDown`: `(event: KeyboardEvent) => void`, optional.
 
   Event handler called when the escape key is down.
@@ -152,16 +162,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
 
   Event handler called when an interaction happens outside the `DismissableLayer`.
   Specifically, when a `pointerdown` event happens outside or focus moves outside of it.
-  Can be prevented.
-
-- `onOpenAutoFocus`: `FocusScopeProps['onMountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on open.
-  Can be prevented.
-
-- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on close.
   Can be prevented.
 
 - `children`: `ReactNode`, optional.

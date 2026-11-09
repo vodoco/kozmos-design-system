@@ -122,6 +122,27 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<PopoverPrimitive.Po
   Used to force mounting when more control is needed. Useful when
   controlling animation with React animation libraries.
 
+- `onOpenAutoFocus`: `FocusScopeProps['onMountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on open.
+  Can be prevented.
+
+- `side`: `Side`, optional.
+- `sideOffset`: `number`, optional, default `4`.
+- `align`: `Align`, optional, default `"center"`.
+- `alignOffset`: `number`, optional.
+- `arrowPadding`: `number`, optional.
+- `avoidCollisions`: `boolean`, optional.
+- `collisionBoundary`: `Boundary | Boundary[]`, optional.
+- `collisionPadding`: `number | Partial<Record<Side, number>>`, optional.
+- `sticky`: `'partial' | 'always'`, optional.
+- `hideWhenDetached`: `boolean`, optional.
+- `updatePositionStrategy`: `'optimized' | 'always'`, optional.
+- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on close.
+  Can be prevented.
+
 - `onEscapeKeyDown`: `(event: KeyboardEvent) => void`, optional.
 
   Event handler called when the escape key is down.
@@ -143,27 +164,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<PopoverPrimitive.Po
   Specifically, when a `pointerdown` event happens outside or focus moves outside of it.
   Can be prevented.
 
-- `onOpenAutoFocus`: `FocusScopeProps['onMountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on open.
-  Can be prevented.
-
-- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on close.
-  Can be prevented.
-
-- `side`: `Side`, optional.
-- `sideOffset`: `number`, optional, default `4`.
-- `align`: `Align`, optional, default `"center"`.
-- `alignOffset`: `number`, optional.
-- `arrowPadding`: `number`, optional.
-- `avoidCollisions`: `boolean`, optional.
-- `collisionBoundary`: `Boundary | Boundary[]`, optional.
-- `collisionPadding`: `number | Partial<Record<Side, number>>`, optional.
-- `sticky`: `'partial' | 'always'`, optional.
-- `hideWhenDetached`: `boolean`, optional.
-- `updatePositionStrategy`: `'optimized' | 'always'`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

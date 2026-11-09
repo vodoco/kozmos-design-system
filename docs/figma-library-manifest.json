@@ -14538,10 +14538,10 @@
   },
   "components": {
     "summary": {
-      "total": 122,
-      "stories": 122,
-      "tests": 122,
-      "exported": 122,
+      "total": 124,
+      "stories": 124,
+      "tests": 124,
+      "exported": 124,
       "codeConnectFiles": 98,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 98
@@ -15749,6 +15749,36 @@
         "variants": {}
       },
       {
+        "name": "ContextMenu",
+        "source": "packages/react/src/components/ContextMenu/ContextMenu.tsx",
+        "story": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
+        "test": "packages/react/src/components/ContextMenu/ContextMenu.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "modal",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Counter",
         "source": "packages/react/src/components/Counter/Counter.tsx",
         "story": "packages/react/src/components/Counter/Counter.stories.tsx",
@@ -16554,6 +16584,37 @@
           "originLabel",
           "role",
           "steps",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "Kbd",
+        "source": "packages/react/src/components/Kbd/Kbd.tsx",
+        "story": "packages/react/src/components/Kbd/Kbd.stories.tsx",
+        "test": "packages/react/src/components/Kbd/Kbd.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "keys",
+          "label",
+          "role",
           "tabIndex",
           "title"
         ],

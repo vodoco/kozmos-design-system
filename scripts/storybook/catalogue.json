@@ -325,6 +325,13 @@
       "exports": ["Default", "Fluid", "InAPanel"]
     },
     {
+      "file": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
+      "id": "navigation-contextmenu",
+      "title": "Core/Layout/ContextMenu",
+      "component": "ContextMenu",
+      "exports": ["Default"]
+    },
+    {
       "file": "packages/react/src/components/Counter/Counter.stories.tsx",
       "id": "components-counter",
       "title": "Core/Inputs/Counter",
@@ -504,6 +511,13 @@
         "NoCurrentStep",
         "WithEndpointEdit"
       ]
+    },
+    {
+      "file": "packages/react/src/components/Kbd/Kbd.stories.tsx",
+      "id": "data-display-kbd",
+      "title": "Core/Data display/Kbd",
+      "component": "Kbd",
+      "exports": ["Default", "Combination", "InAHint"]
     },
     {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
@@ -696,7 +710,7 @@
       "id": "navigation-menu",
       "title": "Core/Layout/Menu",
       "component": "Menu",
-      "exports": ["Default"]
+      "exports": ["Default", "ExternalItem"]
     },
     {
       "file": "packages/react/src/components/MetaStrip/MetaStrip.stories.tsx",

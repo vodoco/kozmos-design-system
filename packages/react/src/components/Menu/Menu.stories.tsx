@@ -35,3 +35,25 @@ export const Default: Story = {
     </Menu>
   ),
 };
+
+/**
+ * An item that opens a page in a new tab draws the new-tab icon at its end
+ * and is read "Documentation opens in a new tab" (decision 152).
+ */
+export const ExternalItem: Story = {
+  render: () => (
+    <Menu>
+      <MenuTrigger asChild>
+        <Button variant="outline">Account</Button>
+      </MenuTrigger>
+      <MenuContent>
+        <MenuItem>Settings</MenuItem>
+        <MenuItem external asChild>
+          <a href="https://docs.pointr.tech">Documentation</a>
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem>Sign out</MenuItem>
+      </MenuContent>
+    </Menu>
+  ),
+};
