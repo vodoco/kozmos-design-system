@@ -17197,6 +17197,7 @@
           "id",
           "label",
           "maxSelected",
+          "maxSelectedLabel",
           "options",
           "placeholder",
           "readOnly",

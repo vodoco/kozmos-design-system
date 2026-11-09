@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import {
   Tree,
@@ -17,6 +18,78 @@ const sampleData: TreeItem[] = [
     children: [{ id: "2", name: "Child" }],
   },
 ];
+
+// Tree's tab stops in a commit, read by a Profiler as React commits it:
+// every commit, the tree's own included, not just the last.
+function tabStopsNow() {
+  return Array.from(document.querySelectorAll<HTMLElement>('[role="treeitem"]'))
+    .filter((item) => item.tabIndex === 0)
+    .map(
+      (item) =>
+        `${item.textContent?.trim()}${item.getAttribute("aria-disabled") === "true" ? " (disabled)" : ""}`,
+    );
+}
+
+describe("Tree: the tab stop moves in the commit that changes the items (GAP-231)", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    const Host = ({ data }: { data: TreeItem[] }) => {
+      return (
+        <React.Profiler id="tree" onRender={() => commits.push(tabStopsNow())}>
+          <Tree data={data} />
+        </React.Profiler>
+      );
+    };
+    let commits: string[][] = [];
+
+    it("has exactly one tab stop, on a drawn item, in every commit after its item goes", () => {
+      commits = [];
+      const { rerender } = render(
+        <Host
+          data={[
+            { id: "a", name: "Alpha" },
+            { id: "b", name: "Beta" },
+          ]}
+        />,
+        { wrapper },
+      );
+      expect(tabStopsNow()).toEqual(["Alpha"]);
+
+      commits.length = 0;
+      rerender(<Host data={[{ id: "b", name: "Beta" }]} />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toEqual(["Beta"]);
+    });
+
+    it("has exactly one tab stop, on an enabled item, in every commit after its item is disabled", () => {
+      commits = [];
+      const { rerender } = render(
+        <Host
+          data={[
+            { id: "a", name: "Alpha" },
+            { id: "b", name: "Beta" },
+          ]}
+        />,
+        { wrapper },
+      );
+      expect(tabStopsNow()).toEqual(["Alpha"]);
+
+      commits.length = 0;
+      rerender(
+        <Host
+          data={[
+            { id: "a", name: "Alpha", disabled: true },
+            { id: "b", name: "Beta" },
+          ]}
+        />,
+      );
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toEqual(["Beta"]);
+    });
+  });
+});
 
 describe("Tree", () => {
   it("renders with tree semantics", () => {

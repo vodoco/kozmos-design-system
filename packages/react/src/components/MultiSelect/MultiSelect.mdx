@@ -20,6 +20,17 @@ group of `Checkbox` controls is clearer than a dropdown.
 
 `maxSelected` caps the selection; the remaining options become unselectable
 rather than disappearing, so the user can see what they are trading away.
+Reaching it is said to a screen reader; pass `maxSelectedLabel` with your
+translation:
+
+```tsx
+<MultiSelect
+  label={t("amenities.label")}
+  options={amenities}
+  maxSelected={3}
+  maxSelectedLabel={(max) => t("amenities.limit", { max })}
+/>
+```
 
 `onValueChange` receives both the values and the matching options, so the label
 for each chip does not need a second lookup.
@@ -186,7 +197,16 @@ fun FilterScreen(options: List<KozmosListboxOption>) {
   there from the first render, as Combobox's is. The popup's copy is plain text,
   so it is said once.
 - Reaching `maxSelected` disables the remaining options rather than hiding them,
-  and the arrow keys pass over them. Reaching the limit is not announced yet.
+  and the arrow keys pass over them. A screen reader is told politely, once:
+  "Limit of 3 reached" by default, or the words `maxSelectedLabel` returns for
+  the limit, in the product's language. A status of its own says it, in the
+  field from the first render and empty, so only its words change. A value
+  the host sets that reaches the limit, or goes past it, is said too. It is
+  not said again while the selection stays at the limit, unless the limit or
+  its words change (a new `maxSelected` or `maxSelectedLabel`, say for another
+  language), nor for a field that mounts already there or is given a limit it
+  already meets. Removing a choice clears it, and reaching the limit again
+  says it again.
 
 ## Stories
 
