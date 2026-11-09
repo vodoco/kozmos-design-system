@@ -140,6 +140,22 @@ function reactDomKnows(events: Iterable<string>) {
   return known;
 }
 
+/** The React 18 run's own description of its React, not any value a shell
+ * happens to hold. */
+const onTheReact18Run = () => {
+  try {
+    const run = JSON.parse(process.env.KOZMOS_REACT18 ?? "null") as {
+      reactVersion?: unknown;
+    } | null;
+    return (
+      typeof run?.reactVersion === "string" &&
+      run.reactVersion.startsWith("18.")
+    );
+  } catch {
+    return false;
+  }
+};
+
 describe("React DOM's events", () => {
   it("REACT_DOM_EVENTS lists every event @types/react declares, and no other", () => {
     const keys = new Set(domAttributes());
@@ -156,24 +172,31 @@ describe("React DOM's events", () => {
     expect([...REACT_DOM_PROPS].sort()).toEqual([...keys].sort());
   });
 
-  it("with REACT_UNTYPED_EVENTS and REACT_19_EVENTS, lists every DOM event react-dom 19 synthesises, by React's name", () => {
-    expect(React.version).toMatch(/^19\./);
-    const tables = {
-      ...REACT_DOM_EVENTS,
-      ...REACT_UNTYPED_EVENTS,
-      ...REACT_19_EVENTS,
-    };
-    const listed = Object.fromEntries(
-      Object.entries(tables).map(([react, dom]) => [dom, react]),
-    );
-    const known = reactDomKnows(
-      new Set([...libDomEvents(), ...Object.values(tables)]),
-    );
-    // React's own `focusin` and `focusout` are its onFocus and onBlur.
-    delete known.focusin;
-    delete known.focusout;
-    expect(known).toEqual(listed);
-  });
+  // react-dom 19's own list, so the React 18 run (vitest.react18.config.mts,
+  // which describes its React 18 in KOZMOS_REACT18) skips it here, whatever
+  // `-t` it is given; its React 18 half is test/react-dom-events.spec.ts.
+  // Every other run holds it, and fails it on any React but 19.
+  it.skipIf(onTheReact18Run())(
+    "with REACT_UNTYPED_EVENTS and REACT_19_EVENTS, lists every DOM event react-dom 19 synthesises, by React's name",
+    () => {
+      expect(React.version).toMatch(/^19\./);
+      const tables = {
+        ...REACT_DOM_EVENTS,
+        ...REACT_UNTYPED_EVENTS,
+        ...REACT_19_EVENTS,
+      };
+      const listed = Object.fromEntries(
+        Object.entries(tables).map(([react, dom]) => [dom, react]),
+      );
+      const known = reactDomKnows(
+        new Set([...libDomEvents(), ...Object.values(tables)]),
+      );
+      // React's own `focusin` and `focusout` are its onFocus and onBlur.
+      delete known.focusin;
+      delete known.focusout;
+      expect(known).toEqual(listed);
+    },
+  );
 
   it("names each DOM event once; the box's own are none React takes; it hears only non-bubbling ones on the way down", () => {
     const dom = [
