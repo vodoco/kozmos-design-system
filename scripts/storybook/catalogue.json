@@ -762,6 +762,8 @@
         "WithHelperText",
         "ValidationStates",
         "WithoutSteppers",
+        "WithUnit",
+        "WithUnitRightToLeft",
         "RightToLeft",
         "ReadOnly"
       ]
@@ -1054,7 +1056,7 @@
       "id": "inputs-search",
       "title": "Core/Inputs/Search",
       "component": "Search",
-      "exports": ["Default"]
+      "exports": ["Default", "Clearable"]
     },
     {
       "file": "packages/react/src/components/SearchBar/SearchBar.stories.tsx",
@@ -1103,7 +1105,7 @@
       "id": "components-slider",
       "title": "Core/Inputs/Slider",
       "component": "Slider",
-      "exports": ["Default", "Range"]
+      "exports": ["Default", "Range", "WithReadout"]
     },
     {
       "file": "packages/react/src/components/Spinner/Spinner.stories.tsx",
