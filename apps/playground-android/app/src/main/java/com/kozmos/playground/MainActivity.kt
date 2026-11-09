@@ -24,6 +24,7 @@ import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.checkbox.KozmosCheckbox
 import com.kozmos.components.input.KozmosInput
 import com.kozmos.components.otpinput.KozmosOTPInput
+import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -157,9 +158,10 @@ private fun OtpCheck() {
     val events = remember { mutableStateListOf<String>() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("OTPInput", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        CompositionLocalProvider(
-            LocalKozmosAnalytics provides { event -> events.add("${event.eventName} ${event.properties.orEmpty()}") }
-        ) {
+        val track: (KozmosAnalyticsEvent) -> Unit = remember {
+            { event -> events.add("${event.eventName} ${event.properties.orEmpty()}") }
+        }
+        CompositionLocalProvider(LocalKozmosAnalytics provides track) {
             KozmosOTPInput(value = code, onValueChange = { code = it }, length = 6, label = "Verification code")
         }
         Text("Code: \"$code\"")
