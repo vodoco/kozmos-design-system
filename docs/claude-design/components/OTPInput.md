@@ -34,7 +34,16 @@ export function OTPInputExample() {
 
 ## OTPInput
 
-It forwards its ref to `HTMLDivElement`. Its props are `OTPInputProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">`.
+It forwards its ref to `HTMLDivElement`. Its props are `OTPInputProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange">`.
+
+- `defaultValue`: `string`, optional.
+
+  The code an uncontrolled field starts with, read on mount only: its
+  decimal digits in any script, as ASCII and at most `length` of them, as
+  `value`'s are. `value` wins when both are given. It calls no `onChange`
+  and is no completion the user made, so it tracks no `otp_code_completed`;
+  a full one the user edits is a full code. A new `key` starts the field
+  with it again.
 
 - `disabled`: `boolean`, optional.
 - `error`: `boolean | string`, optional.

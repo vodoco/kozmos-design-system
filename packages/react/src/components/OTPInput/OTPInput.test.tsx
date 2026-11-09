@@ -535,6 +535,97 @@ describe("OTPInput", () => {
     expect(commits.at(-1)).toEqual(["1"]);
   });
 
+  describe("defaultValue", () => {
+    it("starts an uncontrolled field with its code, and a controlled value wins over it", () => {
+      const handleChange = vi.fn();
+      const { unmount } = render(
+        <OTPInput defaultValue="1234" length={4} onChange={handleChange} />,
+      );
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+      expect(handleChange).not.toHaveBeenCalled();
+      unmount();
+
+      render(<OTPInput defaultValue="9876" length={4} value="12" />);
+      expect(cellsIn(document)).toEqual(["1", "2", "", ""]);
+    });
+
+    it("keeps a defaultValue's decimal digits from any script as ASCII, cut to length", () => {
+      render(<OTPInput defaultValue="١2a-٣ ४５6" length={4} />);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+    });
+
+    it("draws a defaultValue in its first commit and on the server", () => {
+      const commits: string[][] = [];
+      render(
+        <CommitProbe
+          defaultValue="12"
+          length={4}
+          onCommit={(cells) => commits.push(cells)}
+        />,
+      );
+      expect(commits).toEqual([["1", "2", "", ""]]);
+
+      const page = new DOMParser().parseFromString(
+        renderToString(<OTPInput defaultValue="12" length={4} />),
+        "text/html",
+      );
+      expect(
+        Array.from(page.querySelectorAll("input"), (input) =>
+          input.getAttribute("value"),
+        ),
+      ).toEqual(["1", "2", "", ""]);
+    });
+
+    it("reads defaultValue on mount only", () => {
+      const { rerender } = render(<OTPInput defaultValue="12" length={4} />);
+      expect(cellsIn(document)).toEqual(["1", "2", "", ""]);
+
+      rerender(<OTPInput defaultValue="5678" length={4} />);
+      expect(cellsIn(document)).toEqual(["1", "2", "", ""]);
+
+      fireEvent.change(screen.getAllByRole("textbox")[2], {
+        target: { value: "3" },
+      });
+      rerender(<OTPInput defaultValue="" length={4} />);
+      expect(cellsIn(document)).toEqual(["1", "2", "3", ""]);
+    });
+
+    it("edits a full defaultValue as a full code", () => {
+      const handleChange = vi.fn();
+      render(
+        <OTPInput defaultValue="1234" length={4} onChange={handleChange} />,
+      );
+      const inputs = screen.getAllByRole("textbox");
+
+      fireEvent.change(inputs[1], { target: { value: "9" } });
+      expect(handleChange.mock.calls).toEqual([["1934"]]);
+      expect(cellsIn(document)).toEqual(["1", "9", "3", "4"]);
+      expect(document.activeElement).toBe(inputs[2]);
+    });
+
+    it("is cleared by the user, and a remount starts with it again", () => {
+      const handleChange = vi.fn();
+      const field = (key: string) => (
+        <OTPInput
+          defaultValue="12"
+          key={key}
+          length={4}
+          onChange={handleChange}
+        />
+      );
+      const { rerender } = render(field("first"));
+      const inputs = screen.getAllByRole("textbox");
+
+      fireEvent.change(inputs[1], { target: { value: "" } });
+      fireEvent.change(inputs[0], { target: { value: "" } });
+      expect(handleChange.mock.calls).toEqual([["1"], [""]]);
+      expect(cellsIn(document)).toEqual(["", "", "", ""]);
+
+      rerender(field("second"));
+      expect(cellsIn(document)).toEqual(["1", "2", "", ""]);
+    });
+  });
+
   describe("completion analytics", () => {
     afterEach(() => {
       vi.useRealTimers();
@@ -631,6 +722,32 @@ describe("OTPInput", () => {
 
       type(inputs[3], "4");
       expect(completions()).toHaveLength(1);
+    });
+
+    it("tracks no defaultValue, and edits a full one as a full code", () => {
+      const { completions, inputs } = renderTracked(
+        <OTPInput defaultValue="1234" length={4} />,
+      );
+      expect(cellsIn(document)).toEqual(["1", "2", "3", "4"]);
+      expect(completions()).toEqual([]);
+
+      type(inputs[1], "9");
+      paste(inputs[0], "5678");
+      expect(completions()).toEqual([]);
+
+      type(inputs[2], "");
+      type(inputs[2], "7");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
+    });
+
+    it("tracks a partial defaultValue once the user completes it", () => {
+      const { completions, inputs } = renderTracked(
+        <OTPInput defaultValue="123" length={4} />,
+      );
+      expect(completions()).toEqual([]);
+
+      type(inputs[3], "4");
+      expect(completions()).toEqual([expect.objectContaining(COMPLETED)]);
     });
 
     it("tracks a completion once when the parent echoes the code back as value", () => {

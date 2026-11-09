@@ -1,0 +1,5 @@
+---
+"@kozmos-ds/react": minor
+---
+
+OTPInput takes `defaultValue`: the code an uncontrolled field starts with, such as one the host read from a message. It is read on mount only, and its digits are kept as `value`'s are: a decimal digit from any script as its ASCII value, at most `length` of them, and everything else dropped, so `defaultValue="١2a-٣4"` starts four cells with `1`, `2`, `3`, `4`. `value` wins when both are given. The code it gives is the host's, not the user's: it calls no `onChange` and reports no `otp_code_completed`, and a full one the user then edits stays a full code, so the event is sent only once the user empties a cell and fills the code again. A partial one reports the event when the user fills its last cell. A new `key` starts the field with it again. Until now `defaultValue` was typed as the `<div>`'s own attribute and passed to it, where it did nothing.

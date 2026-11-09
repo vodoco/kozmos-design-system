@@ -771,7 +771,12 @@
       "id": "components-otpinput",
       "title": "Core/Inputs/OTPInput",
       "component": "OTPInput",
-      "exports": ["Default", "WithError", "ValidationStates"]
+      "exports": [
+        "Default",
+        "WithError",
+        "WithDefaultValue",
+        "ValidationStates"
+      ]
     },
     {
       "file": "packages/react/src/components/POICard/POICard.stories.tsx",
