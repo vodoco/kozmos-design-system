@@ -142,7 +142,9 @@ function checkStateSteps(mode, variables) {
   if (!rules) return;
   const declarations = tokenDeclarations(readCss(mode));
   const page = relativeLuminance(
-    hexToRgb(colorFor(variables, "primitives-colors-background-0", mode, "page")),
+    hexToRgb(
+      colorFor(variables, "primitives-colors-background-0", mode, "page"),
+    ),
   );
   for (const emotion of rules.emotions) {
     const exception = (rules.exceptions ?? []).find(
@@ -187,7 +189,10 @@ function checkStateSteps(mode, variables) {
     // The ramp's own steps, in order: one step is the next one along it.
     const prefix = `--primitives-colors-${idle.ramp}-`;
     const ladder = [...declarations.keys()]
-      .filter((name) => name.startsWith(prefix) && /^\d+$/.test(name.slice(prefix.length)))
+      .filter(
+        (name) =>
+          name.startsWith(prefix) && /^\d+$/.test(name.slice(prefix.length)),
+      )
       .map((name) => Number(name.slice(prefix.length)))
       .sort((a, b) => a - b);
     const at = (entry) => ladder.indexOf(entry.step);
@@ -207,7 +212,8 @@ function checkStateSteps(mode, variables) {
       continue;
     }
     checked += 1;
-    const further = (a, b) => (away ? distance(b) > distance(a) : distance(b) < distance(a));
+    const further = (a, b) =>
+      away ? distance(b) > distance(a) : distance(b) < distance(a);
     if (!further(idle, hover) || !further(hover, pressed)) {
       failures.push(
         `${where}: ${idle.ramp} ${idle.step} → ${hover.step} → ${pressed.step} steps ${
@@ -240,12 +246,80 @@ for (const alias of contract.runtimeAliases ?? []) {
   }
 }
 
+// Where the hover fill must be drawn (GAP-228, decision 173): a source holds
+// the rule, read with its whitespace folded. A part that moves back to muted
+// fails here, not only in a browser.
+const folded = (text) => text.replace(/\s+/g, " ");
+const sourceHolds = (file, contains) =>
+  folded(fs.readFileSync(path.join(root, file), "utf8")).includes(
+    folded(contains),
+  );
+for (const use of contract.hoverFillUses ?? []) {
+  checked += 1;
+  if (!sourceHolds(use.file, use.contains))
+    failures.push(
+      `${use.name}: ${use.file} no longer holds ${JSON.stringify(use.contains)}`,
+    );
+}
+// The named exceptions: parts that keep the muted step under the pointer or
+// when selected, because an ink they draw falls under its minimum on the
+// hover fill. Each must still be drawn as it says, its inks must pass on the
+// surface it keeps, and they must fail on the hover fill in some theme, or
+// the exception is no longer needed and is taken out.
+const exceptionVariables = Object.fromEntries(
+  modes.map((mode) => [mode, readCssVariables(mode)]),
+);
+for (const exception of contract.hoverFillExceptions ?? []) {
+  for (const { file, contains } of exception.sources) {
+    checked += 1;
+    if (!sourceHolds(file, contains))
+      failures.push(
+        `${exception.name}: ${file} no longer holds ${JSON.stringify(contains)}`,
+      );
+  }
+  let needed = false;
+  for (const mode of modes) {
+    const variables = exceptionVariables[mode];
+    const kept = colorFor(variables, exception.keeps, mode, exception.name);
+    const fill = colorFor(
+      variables,
+      "semantics-hover-fill",
+      mode,
+      exception.name,
+    );
+    for (const ink of exception.inks) {
+      const colour = colorFor(variables, ink, mode, exception.name);
+      checked += 1;
+      const onKept = contrastRatio(kept, colour);
+      if (onKept < exception.minimum)
+        failures.push(
+          `${mode} ${exception.name}: --${ink} ${colour} on the kept ${kept} = ${onKept.toFixed(2)}; expected >= ${exception.minimum}`,
+        );
+      if (contrastRatio(fill, colour) < exception.minimum) needed = true;
+    }
+  }
+  checked += 1;
+  if (!needed)
+    failures.push(
+      `${exception.name}: every ink reaches ${exception.minimum}:1 on the hover fill in both themes; the exception is no longer needed`,
+    );
+}
+
 for (const mode of modes) {
   const variables = readCssVariables(mode);
 
   // A category's count pill or counter: the ink on the fill reaches 4.5:1 in
   // both modes (the palette is the taxonomy's, the same in light and dark).
-  for (const name of ["yellow", "orange", "turquoise", "red", "blue", "navy", "green", "pink"]) {
+  for (const name of [
+    "yellow",
+    "orange",
+    "turquoise",
+    "red",
+    "blue",
+    "navy",
+    "green",
+    "pink",
+  ]) {
     contract.pairs.push({
       name: `category ${name} fill / on-fill`,
       background: `semantics-category-fill-${name}`,

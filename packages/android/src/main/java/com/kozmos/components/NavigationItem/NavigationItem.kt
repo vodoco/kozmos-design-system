@@ -110,6 +110,9 @@ fun KozmosNavigationItem(
     // it is foreground/400, the muted foreground.
     val backgroundColor = when {
         isRail && isSelected -> KozmosThemeTokens.primitivesColorsTheme0
+        // Selected keeps background/100, as React's does: its theme 600 label
+        // reads 3.83:1 on the dark hover fill (decision 173, held for the
+        // owner; contrast-contract.json's hoverFillExceptions).
         isSelected || state == KozmosNavigationItemState.Focus ->
             KozmosThemeTokens.primitivesColorsBackground100
         // Hovered, the hover fill: background/100 in light, one step further

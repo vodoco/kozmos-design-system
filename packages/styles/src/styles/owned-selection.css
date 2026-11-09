@@ -103,11 +103,14 @@
   .kozmos-option-description {
     @apply block truncate text-xs text-muted-foreground;
   }
-  /* The row under the pointer or the keyboard is a light row, background/50,
-     in full ink; the chosen row is background/100 and wins. */
+  /* The row under the pointer or the keyboard takes the hover fill, in full
+     ink: background/100 in light and background/200 in dark (GAP-228,
+     decision 173; it was background/50, #0C0D0E in dark). The chosen row is
+     background/100 and wins: in light the two are one grey, and the chosen
+     row is told by its check. */
   .kozmos-option[data-active="true"],
   .kozmos-option[data-highlighted] {
-    background-color: var(--primitives-colors-background-50);
+    background-color: var(--semantics-hover-fill);
     color: var(--primitives-colors-foreground-0);
   }
   .kozmos-option[aria-selected="true"],
@@ -115,8 +118,9 @@
     background-color: var(--primitives-colors-background-100);
   }
   /* Reached by the keyboard (decision 26), the active row also draws a 2px
-     inset ring in theme 600, 4.9:1 or more against it in both themes, where
-     the light row alone reads 1.1:1; under the pointer it draws none. Inset,
+     inset ring in theme 600, 3:1 or more against it in both themes (4.91:1
+     in light, 3.83:1 on the dark hover fill), where the row alone reads
+     1.27:1 in light; under the pointer it draws none. Inset,
      so nothing moves. The list says which hand moved last
      (utils/input-modality.ts): Radix Select focuses its items under the
      pointer too, and Combobox's rows never take focus. */

@@ -418,6 +418,18 @@
       "minimum": 3
     },
     {
+      "name": "full ink on a highlighted option, on the hover fill (decision 173)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-foreground-0",
+      "minimum": 4.5
+    },
+    {
+      "name": "a highlighted option's keyboard ring, theme 600, on the hover fill (non-text, decision 26)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-theme-600",
+      "minimum": 3
+    },
+    {
       "name": "scrollbar thumb on the page and the panel (non-text)",
       "background": "primitives-colors-background-0",
       "foreground": "semantics-scrollbar-thumb",
@@ -428,6 +440,60 @@
       "background": "primitives-colors-background-0",
       "foreground": "semantics-scrollbar-thumb-hover",
       "minimum": 3
+    }
+  ],
+  "hoverFillUses": [
+    {
+      "name": "a highlighted option, under the pointer or the keyboard, takes the hover fill: Listbox, Combobox, MultiSelect, Select, TimePicker (decision 173)",
+      "file": "packages/styles/src/styles/owned-selection.css",
+      "contains": ".kozmos-option[data-active=\"true\"], .kozmos-option[data-highlighted] { background-color: var(--semantics-hover-fill);"
+    },
+    {
+      "name": "a selected Tree row draws the hover fill at full strength (decision 173)",
+      "file": "packages/react/src/components/Tree/Tree.tsx",
+      "contains": "selected && \"bg-hover-fill text-foreground\""
+    },
+    {
+      "name": "a selected Table row draws the hover fill at full strength (decision 173)",
+      "file": "packages/react/src/components/Table/Table.tsx",
+      "contains": "data-[state=selected]:bg-hover-fill"
+    }
+  ],
+  "hoverFillExceptions": [
+    {
+      "name": "Button's emotion outline and text treatments keep the muted hover (decision 173, ruling c): the themed and danger hover inks read 3.83:1 and 3.84:1 on the dark hover fill",
+      "keeps": "primitives-colors-background-100",
+      "inks": [
+        "components-secondary-buttons-themed-button-foreground-content-hover",
+        "components-secondary-buttons-danger-button-foreground-content-hover"
+      ],
+      "minimum": 4.5,
+      "sources": [
+        {
+          "file": "packages/styles/src/styles/owned-components.css",
+          "contains": ".kozmos-button-emotion-outline { @apply border-[var(--kz-button-fg)] text-[var(--kz-button-fg)] hover:bg-muted"
+        },
+        {
+          "file": "packages/styles/src/styles/owned-components.css",
+          "contains": ".kozmos-button-emotion-text { @apply text-[var(--kz-button-fg)] hover:bg-muted"
+        }
+      ]
+    },
+    {
+      "name": "a selected NavigationItem (top and side) and BottomNavigation item keep the muted fill: their theme 600 label reads 3.83:1 on the dark hover fill (decision 173 ruling b, held for the owner)",
+      "keeps": "primitives-colors-background-100",
+      "inks": ["primitives-colors-theme-600"],
+      "minimum": 4.5,
+      "sources": [
+        {
+          "file": "packages/react/src/components/NavigationItem/NavigationItem.tsx",
+          "contains": "selected: \"bg-muted text-primary\""
+        },
+        {
+          "file": "packages/react/src/components/BottomNavigation/BottomNavigation.tsx",
+          "contains": "true: \"bg-muted text-primary\""
+        }
+      ]
     }
   ]
 }

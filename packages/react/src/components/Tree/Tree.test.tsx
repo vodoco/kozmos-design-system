@@ -387,7 +387,7 @@ describe("Tree", () => {
       <Tree data={data} divided defaultExpandedIds={["a"]} selectedId="a" />,
     );
     expect(row("Terminal A")).toHaveAttribute("aria-expanded", "true");
-    expect(row("Terminal A")).toHaveClass("bg-muted", "rounded-control");
+    expect(row("Terminal A")).toHaveClass("bg-hover-fill", "rounded-control");
     expect(divider("Terminal A")).toHaveClass(surface);
 
     // Not divided, the tree as it was drawn, with no box round its rows.

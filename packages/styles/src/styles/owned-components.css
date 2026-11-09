@@ -1458,9 +1458,11 @@
   .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
     background-color: var(--kz-button-bg);
   }
-  /* The outline and text treatments keep the muted hover in both themes: on
-     the hover fill's dark step (GAP-228, decision 173) the themed and danger
-     hover inks, #5887F3 and #E95A77, read 3.83:1 and 3.84:1, under AA. */
+  /* A named exception (decision 173, ruling c; contrast-contract.json's
+     hoverFillExceptions): the outline and text treatments keep the muted
+     hover in both themes. On the hover fill's dark step (GAP-228) the themed
+     and danger hover inks, #5887F3 and #E95A77, read 3.83:1 and 3.84:1, under
+     AA; on background/100 they pass. */
   .kozmos-button-emotion-outline {
     @apply border-[var(--kz-button-fg)] text-[var(--kz-button-fg)] hover:bg-muted hover:border-[var(--kz-button-fg-hover)] hover:text-[var(--kz-button-fg-hover)];
   }

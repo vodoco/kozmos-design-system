@@ -585,7 +585,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           // Divided, the ring is drawn inside the row: outside it, the next
           // row's surface covered it, and a panel's edge could cut it.
           divided && "focus-visible:ring-inset focus-visible:ring-offset-0",
-          selected && "bg-muted text-foreground",
+          selected && "bg-hover-fill text-foreground",
           focusVisible &&
             (divided
               ? "ring-2 ring-inset ring-ring"
