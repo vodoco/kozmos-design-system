@@ -206,12 +206,31 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
     // New options, or new typed text, make the first enabled option active in
     // the render that brings them, so no commit names a stale one (GAP-231).
-    const [activeFor, setActiveFor] = React.useState<
-      typeof navigableOptions | null
-    >(null);
-    if (activeFor !== navigableOptions) {
-      setActiveFor(navigableOptions);
+    // The list is known by what it draws, not by identity: a choice, or a
+    // host that passes an equal options array anew, leaves the active option
+    // where the visitor put it.
+    const drawnList = React.useMemo(
+      () =>
+        JSON.stringify([
+          visibleSearchValue,
+          filteredOptions.map((option) => option.value),
+        ]),
+      [filteredOptions, visibleSearchValue],
+    );
+    const [activeFor, setActiveFor] = React.useState<string | null>(null);
+    if (activeFor !== drawnList) {
+      setActiveFor(drawnList);
       setActiveIndex(firstEnabledIndex(navigableOptions));
+    } else if (navigableOptions[activeIndex]?.disabled !== false) {
+      // The active option can no longer be chosen (the choice reached
+      // maxSelected, or the product disabled it): the next enabled one, on
+      // from it, takes over. At maxSelected only chosen options are enabled,
+      // so it lands on one the visitor can un-choose.
+      const next =
+        activeIndex >= 0
+          ? enabledIndex(navigableOptions, activeIndex, 1)
+          : firstEnabledIndex(navigableOptions);
+      if (next !== activeIndex) setActiveIndex(next);
     }
 
     React.useEffect(() => {

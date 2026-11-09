@@ -63,6 +63,37 @@ describe("Listbox: the active option moves in the commit that changes it (GAP-23
   });
 });
 
+describe("Listbox: a choice leaves the active option where it is", () => {
+  it("keeps it when the product holds the choice and passes its options anew", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    function Held() {
+      const [value, setValue] = React.useState<string[]>(["alpha"]);
+      return (
+        <Listbox
+          aria-label="Routes"
+          multiple
+          options={options.map((option) => ({ ...option }))}
+          value={value}
+          onValueChange={(next) => {
+            setValue(next as string[]);
+            onValueChange(next);
+          }}
+        />
+      );
+    }
+    render(<Held />);
+    await user.tab();
+    await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+    expect(activeOptionNow()).toBe("Gamma");
+    await user.keyboard("{Enter}");
+    expect(onValueChange.mock.calls.map(([values]) => values)).toEqual([
+      ["alpha", "gamma"],
+      ["alpha"],
+    ]);
+  });
+});
+
 describe("Listbox", () => {
   it("selects a single option", async () => {
     const user = userEvent.setup();
