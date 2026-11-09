@@ -8,6 +8,7 @@ import android.view.View
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -49,12 +50,14 @@ class KozmosContextMenuAreaTest {
 
     @Test fun talkBackOffersTheMenuAsTheLongPressAction() {
         val tree = paparazzi.readSemantics {
-            KozmosMaterialTheme { KozmosContextMenuArea(menu = menu, onItemClick = {}) { Text("Gate A12") } }
+            KozmosMaterialTheme { KozmosContextMenuArea(menu = menu, onItemClick = {}) { Text("Gate A12", Modifier.kozmosContextMenuTarget()) } }
         }
         assertEquals("Show menu", tree.saying("Gate A12").longClickLabel)
         val german = paparazzi.readSemantics {
             KozmosMaterialTheme {
-                KozmosContextMenuArea(menu = menu, onItemClick = {}, showMenuLabel = "Menü anzeigen") { Text("Gate A12") }
+                KozmosContextMenuArea(menu = menu, onItemClick = {}, showMenuLabel = "Menü anzeigen") {
+                    Text("Gate A12", Modifier.kozmosContextMenuTarget())
+                }
             }
         }
         assertEquals("Menü anzeigen", german.saying("Gate A12").longClickLabel)
@@ -72,6 +75,57 @@ class KozmosContextMenuAreaTest {
                 val start = if (direction == LayoutDirection.Ltr) 0 else width
                 assertEquals("$direction: open at the start", IntOffset(start, 0), state.openAt)
             }
+        }
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun TwoButtons(state: KozmosContextMenuState) = KozmosMaterialTheme {
+        Box {
+            KozmosContextMenuArea(menu, {}, Modifier, "Show menu", state) {
+                Column {
+                    KozmosButton(onClick = {}, modifier = Modifier.kozmosContextMenuTarget()) { Text("Gate A12") }
+                    KozmosButton(onClick = {}, modifier = Modifier.kozmosContextMenuTarget()) { Text("Gate B7") }
+                }
+            }
+        }
+    }
+
+    /**
+     * Controls inside the area stay focus stops of their own, each a button
+     * that offers the menu as its long-press action and opens it at itself.
+     */
+    @Test fun eachControlInsideIsItsOwnStopOfferingTheMenuAtItself() {
+        val state = KozmosContextMenuState()
+        paparazzi.live(content = { TwoButtons(state) }) {
+            frames(2)
+            val tree = read()
+            val a = tree.saying("Gate A12")
+            val b = tree.saying("Gate B7")
+            assertNotNull("Gate A12 is a button of its own", a.click)
+            assertNotNull("Gate B7 is a button of its own", b.click)
+            assertEquals("Gate A12 offers the menu", "Show menu", a.longClickLabel)
+            assertEquals("Gate B7 offers the menu", "Show menu", b.longClickLabel)
+            b.longClick!!.invoke()
+            frames(2)
+            assertEquals("open at Gate B7", IntOffset(0, (b.bounds.top - a.bounds.top).toInt()), state.openAt)
+        }
+    }
+
+    /** From a keyboard, the Menu key opens it at the focused control. */
+    @Test fun theMenuKeyOpensTheMenuAtTheFocusedControl() {
+        val state = KozmosContextMenuState()
+        paparazzi.live(content = { TwoButtons(state) }) {
+            frames(2)
+            val tree = read()
+            val a = tree.saying("Gate A12")
+            val b = tree.saying("Gate B7")
+            b.requestFocus!!.invoke()
+            frames(2)
+            val now = SystemClock.uptimeMillis()
+            view.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MENU, 0))
+            view.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MENU, 0))
+            frames(2)
+            assertEquals("open at Gate B7", IntOffset(0, (b.bounds.top - a.bounds.top).toInt()), state.openAt)
         }
     }
 
@@ -207,7 +261,7 @@ class KozmosContextMenuAreaTest {
                 // would stretch it to its own.
                 Box {
                     KozmosContextMenuArea(menu, {}, Modifier.size(200.dp, 80.dp), "Show menu", state) {
-                        Box(Modifier.size(200.dp, 80.dp)) { Text("Gate A12") }
+                        Box(Modifier.size(200.dp, 80.dp)) { Text("Gate A12", Modifier.kozmosContextMenuTarget()) }
                     }
                 }
             }

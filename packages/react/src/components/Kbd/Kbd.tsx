@@ -60,8 +60,16 @@ export interface KbdProps extends React.HTMLAttributes<HTMLElement> {
   label?: string;
 }
 
+// Inline boxes all the way down, never flex: a flex item is a block, and
+// copied text breaks a line around each block, so "Press Esc to clear" was
+// copied across three lines. 20 tall: a 16 line, a pixel of padding and a
+// pixel of border above and below.
 const capClass =
-  "inline-flex h-5 min-w-5 align-middle items-center justify-center rounded-marker border border-border bg-muted px-1 font-sans text-xs font-medium leading-none text-foreground";
+  "inline-block min-w-5 rounded-marker border border-border bg-muted px-1 py-px text-center align-middle font-sans text-xs font-medium leading-4 text-foreground";
+
+// The name a screen reader reads where the glyph differs: never drawn, and
+// never copied, so copying the hint copies what it shows.
+const nameClass = "sr-only select-none";
 
 /** One cap: its glyph drawn, its name read where the two differ. */
 const Cap = React.forwardRef<
@@ -76,7 +84,7 @@ const Cap = React.forwardRef<
       {differs ? (
         <>
           <span aria-hidden="true">{glyph}</span>
-          <span className="sr-only">{spoken}</span>
+          <span className={nameClass}>{spoken}</span>
         </>
       ) : (
         glyph
@@ -103,7 +111,9 @@ const Kbd = React.forwardRef<HTMLElement, KbdProps>(
     // A combination is a <kbd> of <kbd>s, as HTML writes one.
     const drawn = keys.map((key, index) => (
       <React.Fragment key={`${index}-${key}`}>
-        {index > 0 ? <span className="text-muted-foreground">+</span> : null}
+        {index > 0 ? (
+          <span className="mx-1 text-muted-foreground">+</span>
+        ) : null}
         {label === undefined ? (
           <Cap glyph={key} />
         ) : (
@@ -114,20 +124,15 @@ const Kbd = React.forwardRef<HTMLElement, KbdProps>(
     return (
       <kbd
         ref={ref}
-        className={cn(
-          "inline-flex items-center gap-1 align-middle font-sans text-xs",
-          className,
-        )}
+        className={cn("inline-block align-middle font-sans text-xs", className)}
         {...props}
       >
         {label === undefined ? (
           drawn
         ) : (
           <>
-            <span aria-hidden="true" className="inline-flex items-center gap-1">
-              {drawn}
-            </span>
-            <span className="sr-only">{label}</span>
+            <span aria-hidden="true">{drawn}</span>
+            <span className={nameClass}>{label}</span>
           </>
         )}
       </kbd>

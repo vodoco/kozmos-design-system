@@ -11582,6 +11582,37 @@ for (const [key, needle, label] of [
     `${label} pads its popover to the concentric inset (12)`,
   );
 }
+// Menu's classes live in menu-parts.tsx, read above, and Menu and
+// ContextMenu (GAP-155) draw with them: a part that spelled its own classes
+// again would drift from both the check above and the other menu.
+for (const [file, from] of [
+  ["packages/react/src/components/Menu/Menu.tsx", "./menu-parts"],
+  [
+    "packages/react/src/components/ContextMenu/ContextMenu.tsx",
+    "../Menu/menu-parts",
+  ],
+]) {
+  const content = read(file);
+  assertContains(
+    file,
+    content,
+    new RegExp(`from "${from.replace(/[./]/g, "\\$&")}";`),
+    "Menu's shared classes, imported from menu-parts",
+  );
+  for (const name of [
+    "menuContentClass",
+    "menuItemClass",
+    "menuIndicatorItemClass",
+    "menuSeparatorClass",
+  ])
+    assertContains(file, content, `cn(${name}`, `its parts drawn with ${name}`);
+  assertNotContains(
+    file,
+    content,
+    /bg-popover|rounded-marker px-2|ps-8 pe-2|h-px bg-border/,
+    "a menu class spelled in the part instead of menu-parts",
+  );
+}
 const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";
 assertContains(
   files.reactListbox,

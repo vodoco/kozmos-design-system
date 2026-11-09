@@ -58,6 +58,17 @@ function opensFromKeyboard(event: React.KeyboardEvent) {
   );
 }
 
+/**
+ * The reading direction the item is in: its nearest `dir` of "rtl" or
+ * "ltr", else (`dir="auto"`, or none) its computed direction, which the
+ * browser resolves.
+ */
+function readsRightToLeft(item: HTMLElement) {
+  const dir = item.closest("[dir]")?.getAttribute("dir")?.toLowerCase();
+  if (dir === "rtl" || dir === "ltr") return dir === "rtl";
+  return getComputedStyle(item).direction === "rtl";
+}
+
 const ContextMenuTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Trigger>
@@ -72,12 +83,7 @@ const ContextMenuTrigger = React.forwardRef<
       event.preventDefault();
       const item = event.target as HTMLElement;
       const box = item.getBoundingClientRect();
-      // The reading direction the item is in: its nearest `dir`, else its
-      // computed direction.
-      const dir = item.closest("[dir]")?.getAttribute("dir")?.toLowerCase();
-      const rtl = dir
-        ? dir === "rtl"
-        : getComputedStyle(item).direction === "rtl";
+      const rtl = readsRightToLeft(item);
       // Radix opens the menu at a contextmenu event's point.
       item.dispatchEvent(
         new MouseEvent("contextmenu", {
@@ -129,7 +135,7 @@ const ContextMenuContent = React.forwardRef<
       typeof ContextMenuPrimitive.Portal
     >["container"];
   }
->(({ className, portalContainer, ...props }, ref) => {
+>(({ className, portalContainer, onContextMenu, ...props }, ref) => {
   const modal = React.useContext(ContextMenuModalContext);
   const release = React.useRef<(() => void) | undefined>();
   const contentRef = React.useCallback(
@@ -155,6 +161,14 @@ const ContextMenuContent = React.forwardRef<
       <ContextMenuPrimitive.Content
         ref={contentRef}
         className={cn(menuContentClass, className)}
+        // Chromium on Windows fires `contextmenu` on the menu key's keyup,
+        // after its keydown opened this menu and moved focus into it: the
+        // browser's own menu would open on top of it. Nothing in the menu
+        // asks for another.
+        onContextMenu={(event) => {
+          onContextMenu?.(event);
+          event.preventDefault();
+        }}
         {...props}
       />
     </ContextMenuPortal>

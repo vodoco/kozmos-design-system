@@ -23,6 +23,26 @@ describe("Kbd (GAP-156)", () => {
     expect(hint).toHaveTextContent("Press EscEscape to clear");
   });
 
+  it("is named by the key's name, and its name is never selected to copy", () => {
+    render(
+      <button type="button">
+        Press <Kbd>Esc</Kbd> to clear, or <Kbd keys={["Ctrl", "K"]} /> to
+        search.
+      </button>,
+    );
+    const button = screen.getByRole("button", {
+      name: "Press Escape to clear, or Control+K to search.",
+    });
+    // The names are read, never drawn or copied; the caps are inline boxes,
+    // never flex items, which copied text breaks a line around
+    // (scripts/check-kbd.mjs reads the copied text in each engine).
+    const names = button.querySelectorAll("kbd .sr-only");
+    expect(names).toHaveLength(2);
+    for (const name of names) expect(name).toHaveClass("select-none");
+    for (const kbd of button.querySelectorAll("kbd"))
+      expect(kbd.className).not.toMatch(/\b(inline-)?flex\b/);
+  });
+
   it("reads a key whose name is how it is drawn once", () => {
     const { container } = render(<Kbd>K</Kbd>);
     const key = container.querySelector("kbd")!;
@@ -108,7 +128,9 @@ describe("Kbd (GAP-156)", () => {
     expect(ref.current).toBe(key);
     expect(key).toHaveAttribute("title", "Escape key");
     for (const name of [
-      "h-5",
+      "inline-block",
+      "leading-4",
+      "py-px",
       "min-w-5",
       "rounded-marker",
       "border-border",

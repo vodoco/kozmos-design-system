@@ -329,7 +329,7 @@
       "id": "navigation-contextmenu",
       "title": "Core/Layout/ContextMenu",
       "component": "ContextMenu",
-      "exports": ["Default"]
+      "exports": ["Default", "Open"]
     },
     {
       "file": "packages/react/src/components/Counter/Counter.stories.tsx",
@@ -710,7 +710,7 @@
       "id": "navigation-menu",
       "title": "Core/Layout/Menu",
       "component": "Menu",
-      "exports": ["Default", "ExternalItem"]
+      "exports": ["Default", "ExternalItem", "ExternalItemOpen"]
     },
     {
       "file": "packages/react/src/components/MetaStrip/MetaStrip.stories.tsx",

@@ -12,6 +12,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.composed
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -39,9 +46,13 @@ import com.kozmos.components.menu.KozmosMenuItems
  *
  * - A long press (touch) or a secondary (right) click opens it at the press.
  * - From a keyboard, the Menu key or Shift+F10, while focus is inside, opens
- *   it at the area's start.
- * - TalkBack offers it as the area's long-press action, labelled
- *   [showMenuLabel].
+ *   it at the focused [kozmosContextMenuTarget], or else at the area's start.
+ * - TalkBack: the content keeps its own focus stops; nothing is merged, so
+ *   buttons and rows inside stay separate. Each element marked with
+ *   [Modifier.kozmosContextMenuTarget] offers the menu as its long-press
+ *   action, labelled [showMenuLabel], and opens it at that element. Mark
+ *   what TalkBack stops on: each control, or the text of an area of words.
+ *   The area itself carries the action too, for services that act on it.
  *
  * It closes when dismissed and after an item is picked, which calls
  * [onItemClick].
@@ -74,11 +85,15 @@ internal fun KozmosContextMenuArea(
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    // The area's start: its left, or right to left its right.
-    val openAtStart = { state.openAt = IntOffset(if (rtl) size.width else 0, 0) }
+    val target = remember { KozmosContextMenuTargets() }
+    target.label = showMenuLabel
+    target.open = { at -> state.openAt = at }
+    // The focused target's start, or the area's: its left, or right to left its right.
+    val openAtStart = { state.openAt = target.focused?.invoke() ?: IntOffset(if (rtl) size.width else 0, 0) }
     Box(
         modifier = modifier
             .onSizeChanged { size = it }
+            .onGloballyPositioned { target.area = it }
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -119,14 +134,15 @@ internal fun KozmosContextMenuArea(
                 if (asks) openAtStart()
                 asks
             }
-            .semantics(mergeDescendants = true) {
+            // Not merged: the content's controls stay focus stops of their own.
+            .semantics {
                 onLongClick(label = showMenuLabel) {
                     openAtStart()
                     true
                 }
             }
     ) {
-        content()
+        CompositionLocalProvider(LocalKozmosContextMenuTargets provides target) { content() }
         // The menu's anchor: an empty box where it was asked for.
         Box(Modifier.absoluteOffset { state.openAt ?: IntOffset.Zero }.size(0.dp)) {
             DropdownMenu(
@@ -141,4 +157,54 @@ internal fun KozmosContextMenuArea(
             }
         }
     }
+}
+
+/** What an area tells the targets inside it. */
+internal class KozmosContextMenuTargets {
+    var label: String = "Show menu"
+    var open: (IntOffset) -> Unit = {}
+    var area: LayoutCoordinates? = null
+    /** The focused target's start, in the area's pixels; null when none is focused. */
+    var focused: (() -> IntOffset)? = null
+}
+
+internal val LocalKozmosContextMenuTargets = staticCompositionLocalOf<KozmosContextMenuTargets?> { null }
+
+/**
+ * Marks an element inside a [KozmosContextMenuArea] that TalkBack stops on —
+ * a button, a row, or the text of an area of words — as one the area's menu
+ * opens from: TalkBack offers the menu as its long-press action, labelled
+ * with the area's `showMenuLabel`, and the menu opens at the element's start.
+ * Focused from a keyboard, the Menu key or Shift+F10 opens it there too.
+ * Outside an area it does nothing.
+ *
+ * Put it on the element's own modifier, so it is the same node as what
+ * TalkBack stops on: `KozmosButton(onClick, Modifier.kozmosContextMenuTarget())`.
+ */
+fun Modifier.kozmosContextMenuTarget(): Modifier = composed {
+    val targets = LocalKozmosContextMenuTargets.current ?: return@composed this
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val place = remember { KozmosContextMenuTargetPlace() }
+    val start: () -> IntOffset = remember(place) { { place.start } }
+    this
+        .onGloballyPositioned { coordinates ->
+            val area = targets.area ?: return@onGloballyPositioned
+            if (!area.isAttached) return@onGloballyPositioned
+            val at = area.localPositionOf(coordinates, Offset.Zero)
+            place.start = IntOffset((at.x + if (rtl) coordinates.size.width else 0).toInt(), at.y.toInt())
+        }
+        .onFocusChanged { focus ->
+            if (focus.hasFocus) targets.focused = start else if (targets.focused == start) targets.focused = null
+        }
+        .semantics {
+            onLongClick(label = targets.label) {
+                targets.open(place.start)
+                true
+            }
+        }
+}
+
+/** Where a target starts in its area, kept as it is laid out. */
+private class KozmosContextMenuTargetPlace {
+    var start: IntOffset = IntOffset.Zero
 }

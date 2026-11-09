@@ -69,7 +69,8 @@ describe("ContextMenu (GAP-155)", () => {
     item.getBoundingClientRect = () =>
       DOMRect.fromRect({ x: 40, y: 100, width: 200, height: 32 });
     item.focus();
-    fireEvent.keyDown(item, key);
+    // The key is the menu's: the browser does nothing more with it.
+    expect(fireEvent.keyDown(item, key)).toBe(false);
     expect(await screen.findByRole("menu")).toBeInTheDocument();
     // At the item: its inline start, below it.
     expect(onContextMenu).toHaveReturnedWith({ x: 40, y: 132 });
@@ -90,6 +91,47 @@ describe("ContextMenu (GAP-155)", () => {
     expect(onContextMenu).toHaveReturnedWith(240);
   });
 
+  it("cancels the contextmenu event the menu key's keyup fires in the open menu, so the browser's menu stays shut", async () => {
+    render(<Tree />);
+    fireEvent.keyDown(row(), { key: "ContextMenu" });
+    await screen.findByRole("menu");
+    // Chromium on Windows fires it at what has focus once the key is up.
+    const focused = document.activeElement!;
+    expect(focused.closest('[role="menu"]')).not.toBeNull();
+    expect(fireEvent.contextMenu(focused)).toBe(false);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  it("opens from the keyboard at the item's inline start in a dir=auto that resolves right to left", async () => {
+    const onContextMenu = vi.fn((event: React.MouseEvent) => event.clientX);
+    render(
+      <div dir="auto">
+        <Tree onContextMenu={onContextMenu} />
+      </div>,
+    );
+    const item = row();
+    item.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 200, height: 32 });
+    // The browser resolves "auto" from the text; jsdom doesn't, so the
+    // resolved direction is given as the browser would compute it.
+    const computed = window.getComputedStyle;
+    const spy = vi
+      .spyOn(window, "getComputedStyle")
+      .mockImplementation((element, pseudo) => {
+        const style = computed(element, pseudo);
+        return element === item
+          ? ({ ...style, direction: "rtl" } as CSSStyleDeclaration)
+          : style;
+      });
+    try {
+      fireEvent.keyDown(item, { key: "ContextMenu" });
+      await screen.findByRole("menu");
+    } finally {
+      spy.mockRestore();
+    }
+    expect(onContextMenu).toHaveReturnedWith(240);
+  });
+
   it("leaves other keys, and F10 without Shift, alone", () => {
     render(<Tree />);
     for (const key of [
@@ -98,7 +140,7 @@ describe("ContextMenu (GAP-155)", () => {
       { key: "Enter" },
       { key: "m" },
     ])
-      fireEvent.keyDown(row(), key);
+      expect(fireEvent.keyDown(row(), key)).toBe(true);
     expect(screen.queryByRole("menu")).toBeNull();
   });
 

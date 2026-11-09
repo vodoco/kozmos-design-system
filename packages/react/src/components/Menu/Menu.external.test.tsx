@@ -117,6 +117,19 @@ describe.each([
     expect(item).toHaveAttribute("rel", "noopener");
   });
 
+  it("adds noopener noreferrer to a caller's own new-tab target without a rel", async () => {
+    await open(
+      <Item external asChild>
+        <a href="https://docs.example.com" target="docs">
+          Documentation
+        </a>
+      </Item>,
+    );
+    const item = screen.getByRole("menuitem");
+    expect(item).toHaveAttribute("target", "docs");
+    expect(item).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it.each(["_self", "_TOP", "_parent", ""])(
     "says nothing of a new tab when the caller's target is %j",
     async (target) => {

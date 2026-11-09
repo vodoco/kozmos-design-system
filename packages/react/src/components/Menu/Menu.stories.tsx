@@ -57,3 +57,27 @@ export const ExternalItem: Story = {
     </Menu>
   ),
 };
+
+/**
+ * ExternalItem, open, so the visual review draws the item with its new-tab
+ * icon.
+ */
+export const ExternalItemOpen: Story = {
+  render: () => (
+    <div style={{ height: 200 }}>
+      <Menu defaultOpen modal={false}>
+        <MenuTrigger asChild>
+          <Button variant="outline">Account</Button>
+        </MenuTrigger>
+        <MenuContent align="start">
+          <MenuItem>Settings</MenuItem>
+          <MenuItem external asChild>
+            <a href="https://docs.pointr.tech">Documentation</a>
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem>Sign out</MenuItem>
+        </MenuContent>
+      </Menu>
+    </div>
+  ),
+};

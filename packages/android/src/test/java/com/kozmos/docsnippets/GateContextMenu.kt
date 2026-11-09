@@ -10,16 +10,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.kozmos.components.contextmenu.KozmosContextMenuArea
+import com.kozmos.components.contextmenu.kozmosContextMenuTarget
 import com.kozmos.components.menu.KozmosMenuContent
 import com.kozmos.components.menu.KozmosMenuItem
 import com.kozmos.components.text.KozmosText
 import com.kozmos.tokens.KozmosDimensions
 
-// The area opens KozmosMenu's items where it is pressed: a long press, a
-// right click, or the Menu key (Shift+F10) at its start. TalkBack offers it
-// as the area's "Show menu" action. Picking an item hands it to you and
-// closes the menu.
+// The area opens KozmosMenu's items where it is pressed: a long press or a
+// right click, or the Menu key (Shift+F10) at what has focus. Mark what
+// TalkBack stops on with kozmosContextMenuTarget(): it offers "Show menu" as
+// that element's action. Picking an item hands it to you and closes the menu.
 @Composable
 fun GateContextMenu() {
     var picked by remember { mutableStateOf("Nothing yet") }
@@ -30,7 +32,7 @@ fun GateContextMenu() {
             ),
             onItemClick = { picked = it.text }
         ) {
-            KozmosText(text = "Gate A12")
+            KozmosText(text = "Gate A12", modifier = Modifier.kozmosContextMenuTarget())
         }
         KozmosText(text = "Picked: $picked")
     }
