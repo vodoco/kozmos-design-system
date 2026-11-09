@@ -153,6 +153,36 @@ final class KozmosFieldEndsTests: XCTestCase {
         XCTAssertLessThan(with, without - 8, "the readout took no room beside the track")
     }
 
+    /// The readout is foreground 400; disabled, it is dimmed with the slider,
+    /// to foreground 500, as NumberInput's unit is. Read from the ink.
+    @MainActor func testADisabledSlidersReadoutIsDimmed() async throws {
+        func readoutInk(_ enabled: Bool) async throws -> (r: UInt8, g: UInt8, b: UInt8) {
+            let size = CGSize(width: 320, height: 44)
+            let view = KozmosSlider(value: .constant(50), range: 0...100, showValue: true)
+                .disabled(!enabled)
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+            let pixels = try await RenderedPixels.render(view, size: size)
+            var best: (r: UInt8, g: UInt8, b: UInt8) = (255, 255, 255)
+            var y: CGFloat = 0
+            while y < size.height {
+                var x: CGFloat = 290
+                while x < size.width {
+                    let c = pixels.color(at: CGPoint(x: x, y: y))
+                    if Int(c.r) + Int(c.g) + Int(c.b) < Int(best.r) + Int(best.g) + Int(best.b) { best = c }
+                    x += 1 / pixels.scale
+                }
+                y += 1 / pixels.scale
+            }
+            return best
+        }
+        let enabled = try await readoutInk(true)
+        let disabled = try await readoutInk(false)
+        // #5D626F and #747B8B.
+        XCTAssertEqual(Double(enabled.r), 0x5D, accuracy: 8, "the readout is not foreground 400: \(enabled)")
+        XCTAssertEqual(Double(disabled.r), 0x74, accuracy: 8, "a disabled readout is not foreground 500: \(disabled)")
+    }
+
     @MainActor func testTheReadoutIsTheNumberOrTheProductsFormat() {
         XCTAssertEqual(KozmosSlider(value: .constant(50), range: 0...100, showValue: true).readout, "50")
         XCTAssertEqual(KozmosSlider(value: .constant(0.25), showValue: true).readout, "0.25")

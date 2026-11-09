@@ -8,13 +8,14 @@ import SwiftUI
 /// numbers with no decimal point, as React shows a number. The readout is
 /// hidden from VoiceOver, which hears the slider's own value: with a
 /// `formatValue`, that formatted text in place of the number, so the two say
-/// the same once.
+/// the same once. Disabled, the readout is dimmed with the slider.
 public struct KozmosSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     let showValue: Bool
     let formatValue: ((Double) -> String)?
     @Environment(\.kozmosAnalytics) var trackEvent
+    @Environment(\.isEnabled) private var isEnabled
 
     public init(
         value: Binding<Double>,
@@ -53,7 +54,10 @@ public struct KozmosSlider: View {
                 Text(readout)
                     .font(KozmosTypography.subheadline)
                     .monospacedDigit()
-                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                    // Dimmed with the slider when it is disabled, as
+                    // NumberInput's unit and React's readout are.
+                    .foregroundColor(isEnabled ? KozmosColors.primitivesColorsForeground400
+                                               : KozmosColors.primitivesColorsForeground500)
                     .lineLimit(1)
                     .fixedSize()
                     // The slider says its value: heard here too, it is said twice.

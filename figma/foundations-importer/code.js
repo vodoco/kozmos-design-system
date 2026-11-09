@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "230f7cb7dee7";
+const PLUGIN_BUILD = "c688b08713f0";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -4161,6 +4161,7 @@ const COMPONENT_DOCS = [
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
       "Show Value maps to Slider.showValue, the readout at the track's end that stays at rest; Value Text is formatValue's words (GAP-163).",
+      "Code draws the readout in tabular figures; Figma draws it in the font's own, because the Plugin API cannot set OpenType features.",
       "Focus follows the React focus-visible ring on the thumb.",
     ],
     properties: [

@@ -182,9 +182,16 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
                 : "kozmos-number-control"
             }
             style={
-              hasUnit && unitWidth !== null
+              hasUnit
                 ? ({
-                    "--kozmos-number-unit-width": `${unitWidth}px`,
+                    // Before it is measured (a server render, the first
+                    // paint), the room is the unit's length in the font's
+                    // "0" widths, so a long unit is not run under; then its
+                    // measured width.
+                    "--kozmos-number-unit-width":
+                      unitWidth !== null
+                        ? `${unitWidth}px`
+                        : `${Array.from(unit ?? "").length}ch`,
                   } as React.CSSProperties)
                 : undefined
             }

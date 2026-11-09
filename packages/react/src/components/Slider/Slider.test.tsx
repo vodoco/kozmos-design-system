@@ -217,5 +217,13 @@ describe("Slider", () => {
         "w-3/5",
       );
     });
+
+    it("keeps the caller's class on the slider when there is no readout", () => {
+      const { container } = render(
+        <Slider defaultValue={[60]} className="w-3/5" />,
+      );
+      expect(container.querySelector(".kozmos-slider-row")).toBeNull();
+      expect(container.querySelector(".touch-none")).toHaveClass("w-3/5");
+    });
   });
 });

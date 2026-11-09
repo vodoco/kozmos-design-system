@@ -76,8 +76,8 @@ class KozmosSearchClearTest {
         val clears = mutableListOf<Unit>()
         search(query, clears) {
             assertTrue(field().requestFocus!!.invoke()); frames(2)
-            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE))
-            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ESCAPE))
+            view.dispatchKeyEvent(escapeKey(KeyEvent.ACTION_DOWN))
+            view.dispatchKeyEvent(escapeKey(KeyEvent.ACTION_UP))
             frames(3)
             assertEquals("", query.value)
             assertEquals(1, clears.size)

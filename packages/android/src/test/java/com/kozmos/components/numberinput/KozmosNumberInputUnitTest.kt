@@ -1,5 +1,6 @@
 package com.kozmos.components.numberinput
 
+import com.kozmos.components.ReadNode
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
@@ -8,13 +9,17 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * NumberInput's unit (GAP-098): drawn in the field after the value, read once
- * with it in its spoken form, and never part of the value.
+ * NumberInput's unit (GAP-098): drawn in the field after the value, and heard
+ * once, after the value, which is heard once too: TalkBack reads the merged
+ * field, its text then its state, "15, metres". The unit is never the value.
  */
 class KozmosNumberInputUnitTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
 
-    @Test fun theUnitIsReadOnceWithTheValueAndIsNotTheValue() {
+    /** Everything TalkBack can read off a merged node, in its order. */
+    private fun ReadNode.spoken() = listOfNotNull(description) + texts + listOfNotNull(editableText, stateDescription)
+
+    @Test fun theMergedFieldSaysTheValueOnceThenTheUnitOnce() {
         val tree = paparazzi.readSemantics {
             KozmosMaterialTheme {
                 KozmosNumberInput(value = 15.0, onValueChange = {}, label = "Width", unit = "m", unitLabel = "metres")
@@ -22,15 +27,20 @@ class KozmosNumberInputUnitTest {
         }
         val field = tree.merged.single { it.setText != null }
         assertEquals("15", field.editableText)
-        assertEquals("15 metres", field.stateDescription)
-        // Drawn for the eye, not heard a second time.
-        assertEquals(emptyList<String>(), tree.unmerged.filter { "m" in it.texts }.map { it.texts.joinToString() })
+        assertEquals("metres", field.stateDescription)
+        val heard = tree.merged.flatMap { it.spoken() }
+        assertEquals("the value was heard ${heard.count { "15" in it }} times in $heard", 1, heard.count { "15" in it })
+        assertEquals("the unit was heard ${heard.count { "metres" in it }} times in $heard", 1, heard.count { "metres" in it })
+        // The drawn "m" is for the eye: heard once already, as "metres".
+        assertEquals(emptyList<String>(), heard.filter { it == "m" })
     }
 
     @Test fun theUnitIsSpokenAsWrittenWithoutAUnitLabel() {
         val tree = paparazzi.readSemantics {
             KozmosMaterialTheme { KozmosNumberInput(value = 20.0, onValueChange = {}, unit = "km") }
         }
-        assertEquals("20 km", tree.merged.single { it.setText != null }.stateDescription)
+        val field = tree.merged.single { it.setText != null }
+        assertEquals("20", field.editableText)
+        assertEquals("km", field.stateDescription)
     }
 }

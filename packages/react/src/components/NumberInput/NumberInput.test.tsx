@@ -170,5 +170,13 @@ describe("NumberInput", () => {
       expect(screen.getByRole("spinbutton")).toBe(input);
       expect(input).not.toHaveAccessibleDescription();
     });
+
+    it("keeps room for a long unit before it is measured, as a server render draws it", async () => {
+      const { renderToString } = await import("react-dom/server");
+      const html = renderToString(
+        <NumberInput label="Speed" defaultValue={12} unit="km/h" />,
+      );
+      expect(html).toContain("--kozmos-number-unit-width:4ch");
+    });
   });
 });

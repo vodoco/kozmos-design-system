@@ -167,9 +167,10 @@ fun KozmosNumberInput(
                     .weight(1f)
                     .fillMaxHeight()
                     .semantics {
-                        // The unit is read once, after the value: "15 metres".
-                        if (spokenUnit != null && textValue.isNotEmpty()) {
-                            stateDescription = "$textValue $spokenUnit"
+                        // The unit is read once, after the value the field already
+                        // says as its text: "15, metres". The value is not repeated here.
+                        if (spokenUnit != null) {
+                            stateDescription = spokenUnit
                         }
                     },
                 decorationBox = { innerTextField ->

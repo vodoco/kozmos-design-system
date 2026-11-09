@@ -1,4 +1,5 @@
 import React from "react";
+import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { SearchMd as SearchIcon, X } from "@kozmos-ds/icons";
 import { inputVariants } from "../Input/inputVariants";
 import { cn, mergeAriaIds } from "../../utils";
@@ -51,6 +52,8 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
       clearLabel = "Clear search",
       onClear,
       onKeyDown,
+      onFocus,
+      onBlur,
       "aria-describedby": ariaDescribedBy,
       "aria-invalid": ariaInvalid,
       ...props
@@ -68,6 +71,7 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
     );
     const { trackEvent } = useKozmosAnalytics();
     const mirror = useUncontrolledValue(props.value, props.defaultValue);
+    const [focused, setFocused] = React.useState(false);
     const canClear =
       clearable &&
       !props.disabled &&
@@ -120,6 +124,14 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
             )}
             type="search"
             {...props}
+            onFocus={(event) => {
+              setFocused(true);
+              onFocus?.(event);
+            }}
+            onBlur={(event) => {
+              setFocused(false);
+              onBlur?.(event);
+            }}
             onInput={(event) => {
               mirror.onInput?.(event);
               props.onInput?.(event);
@@ -148,6 +160,18 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
               hasError && typeof error === "string" ? errorId : undefined,
             )}
           />
+          {canClear && focused ? (
+            // While the field has the focus and Escape would clear it, the
+            // field is the top dismissable layer, as Combobox's open list
+            // is: a Dialog's or Popover's Escape, heard on the document
+            // first, gives way to it, so the first Escape clears and the
+            // next closes. It dismisses nothing itself (no onDismiss), and
+            // goes with the text or the focus, so Escape elsewhere in the
+            // dialog closes it as before.
+            <DismissableLayer asChild>
+              <span hidden />
+            </DismissableLayer>
+          ) : null}
           {canClear ? (
             // Drawn as Input's action is: as tall as the field, no fill at
             // rest, and hovered a fill 4 in from its edges (decision 164).

@@ -50,6 +50,8 @@ fun KozmosSearch(
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val focus = remember { FocusRequester() }
+    // Whether the Escape now held down cleared the field: its release is ours too.
+    val escapeClears = remember { booleanArrayOf(false) }
     val canClear = clearable && value.isNotEmpty() && enabled && !readOnly
     val clear = {
         onValueChange("")
@@ -82,11 +84,22 @@ fun KozmosSearch(
             .fillMaxWidth()
             .focusRequester(focus)
             .onPreviewKeyEvent { event ->
-                if (event.key == Key.Escape && canClear) {
-                    if (event.type == KeyEventType.KeyDown) clear()
-                    true
-                } else {
-                    false
+                when {
+                    event.key != Key.Escape -> false
+                    // Escape in a field holding text clears it, and the press is the
+                    // field's, down and up: a Dialog or sheet around it never starts
+                    // tracking it, so it is not dismissed as well.
+                    event.type == KeyEventType.KeyDown && canClear -> {
+                        escapeClears[0] = true
+                        clear()
+                        true
+                    }
+                    event.type == KeyEventType.KeyUp && escapeClears[0] -> {
+                        escapeClears[0] = false
+                        true
+                    }
+                    // An empty field leaves Escape to the screen, so it can close.
+                    else -> false
                 }
             },
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
