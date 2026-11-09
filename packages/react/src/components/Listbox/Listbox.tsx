@@ -107,19 +107,25 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
 
     // New options move the active one in the render that brings them, so no
     // commit names a stale option (GAP-231). A choice does not move it, nor
-    // does a host passing equal options anew: the list is known by what it
-    // draws, not by identity.
+    // does a host passing equal options anew: the list is known by the values
+    // it draws, not by identity.
     const drawnList = React.useMemo(
-      () =>
-        JSON.stringify(
-          options.map((option) => [option.value, Boolean(option.disabled)]),
-        ),
+      () => JSON.stringify(options.map((option) => option.value)),
       [options],
     );
     const [activeFor, setActiveFor] = React.useState(drawnList);
     if (activeFor !== drawnList) {
       setActiveFor(drawnList);
       setActiveIndex(firstEnabledIndex(options, selectedValues));
+    } else if (!options[activeIndex] || options[activeIndex].disabled) {
+      // The active option can no longer be chosen (a limit the product
+      // draws with `disabled`): the next enabled one, on from it, takes over,
+      // or none when none is enabled.
+      const next =
+        activeIndex >= 0
+          ? nextEnabledIndex(options, activeIndex, 1)
+          : firstEnabledIndex(options, selectedValues);
+      if (next !== activeIndex) setActiveIndex(next);
     }
 
     React.useEffect(() => {

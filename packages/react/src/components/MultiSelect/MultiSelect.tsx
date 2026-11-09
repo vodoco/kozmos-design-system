@@ -218,9 +218,19 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       [filteredOptions, visibleSearchValue],
     );
     const [activeFor, setActiveFor] = React.useState<string | null>(null);
+    // A choice made while text is typed clears the text: the option just
+    // chosen stays active in the full list that comes back, so the visitor
+    // keeps their place. Read once, in the render the choice brings.
+    const [keptValue, setKeptValue] = React.useState<string | null>(null);
     if (activeFor !== drawnList) {
       setActiveFor(drawnList);
-      setActiveIndex(firstEnabledIndex(navigableOptions));
+      const kept =
+        keptValue === null
+          ? -1
+          : navigableOptions.findIndex(
+              (option) => option.value === keptValue && !option.disabled,
+            );
+      setActiveIndex(kept >= 0 ? kept : firstEnabledIndex(navigableOptions));
     } else if (navigableOptions[activeIndex]?.disabled !== false) {
       // The active option can no longer be chosen (the choice reached
       // maxSelected, or the product disabled it): the next enabled one, on
@@ -232,6 +242,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           : firstEnabledIndex(navigableOptions);
       if (next !== activeIndex) setActiveIndex(next);
     }
+    if (keptValue !== null) setKeptValue(null);
 
     React.useEffect(() => {
       if (!open) return undefined;
@@ -284,6 +295,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         : [...selectedValues, option.value];
 
       commitValue(nextValues);
+      if (visibleSearchValue) setKeptValue(option.value);
       setSearch("");
       setOpen(true);
       trackEvent("MultiSelect", exists ? "option_removed" : "option_selected", {

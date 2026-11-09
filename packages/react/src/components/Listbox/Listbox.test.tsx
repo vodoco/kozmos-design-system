@@ -94,6 +94,91 @@ describe("Listbox: a choice leaves the active option where it is", () => {
   });
 });
 
+describe("Listbox: an option the product disables moves the active one on", () => {
+  it("keeps the active option when a choice reaches a limit drawn with disabled", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const commits: (string | null)[] = [];
+    function Limited() {
+      const [value, setValue] = React.useState<string[]>(["alpha"]);
+      return (
+        <React.Profiler
+          id="list"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <Listbox
+            aria-label="Routes"
+            multiple
+            options={options.map((option) => ({
+              ...option,
+              disabled: value.length >= 2 && !value.includes(option.value),
+            }))}
+            value={value}
+            onValueChange={(next) => {
+              setValue(next as string[]);
+              onValueChange(next);
+            }}
+          />
+        </React.Profiler>
+      );
+    }
+    render(<Limited />);
+    await user.tab();
+    await user.keyboard("{ArrowDown}");
+    expect(activeOptionNow()).toBe("Beta");
+
+    // Choosing Beta reaches the limit: Gamma is disabled, Beta stays active.
+    commits.length = 0;
+    await user.keyboard("{Enter}");
+    const choiceCommits = [...commits];
+    await user.keyboard("{Enter}");
+    expect(onValueChange.mock.calls.map(([values]) => values)).toEqual([
+      ["alpha", "beta"],
+      ["alpha"],
+    ]);
+    expect(choiceCommits.length).toBeGreaterThan(0);
+    for (const commit of choiceCommits) expect(commit).toBe("Beta");
+  });
+
+  it("moves on to the next enabled option, to none, and back to the first", async () => {
+    const user = userEvent.setup();
+    const commits: (string | null)[] = [];
+    const Host = ({ off }: { off: string[] }) => (
+      <React.Profiler
+        id="list"
+        onRender={() => commits.push(activeOptionNow())}
+      >
+        <Listbox
+          aria-label="Routes"
+          options={options.map((option) => ({
+            ...option,
+            disabled: off.includes(option.value),
+          }))}
+        />
+      </React.Profiler>
+    );
+    const { rerender } = render(<Host off={[]} />);
+    await user.tab();
+    await user.keyboard("{ArrowDown}");
+    expect(activeOptionNow()).toBe("Beta");
+
+    commits.length = 0;
+    rerender(<Host off={["beta"]} />);
+    expect(commits.length).toBeGreaterThan(0);
+    for (const commit of commits) expect(commit).toBe("Gamma");
+
+    commits.length = 0;
+    rerender(<Host off={["alpha", "beta", "gamma"]} />);
+    expect(commits.length).toBeGreaterThan(0);
+    for (const commit of commits) expect(commit).toBeNull();
+
+    commits.length = 0;
+    rerender(<Host off={[]} />);
+    expect(commits.length).toBeGreaterThan(0);
+    for (const commit of commits) expect(commit).toBe("Alpha");
+  });
+});
+
 describe("Listbox", () => {
   it("selects a single option", async () => {
     const user = userEvent.setup();

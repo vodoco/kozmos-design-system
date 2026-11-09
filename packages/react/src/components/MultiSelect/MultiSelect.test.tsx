@@ -262,6 +262,91 @@ describe("MultiSelect: a choice leaves the active option where it is", () => {
       for (const commit of commits) expect(commit).toBe("Routes");
     });
 
+    it("keeps the option chosen while text is typed active when the text clears", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      // "ers" draws Filters and Layers.
+      await user.keyboard("ers{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("combobox", { name: "Tools" })).toHaveValue("");
+      expect(screen.getAllByRole("option")).toHaveLength(3);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Layers");
+    });
+
+    it("starts again at the first option when new options of the same count arrive", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ list }: { list: typeof options }) => (
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={list} />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host list={options} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Routes");
+
+      commits.length = 0;
+      rerender(
+        <Host
+          list={[
+            { value: "floors", label: "Floors" },
+            { value: "zones", label: "Zones" },
+            { value: "pins", label: "Pins" },
+          ]}
+        />,
+      );
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Floors");
+    });
+
+    it("names no option while every option is disabled, and the first when they are enabled again", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ off }: { off: boolean }) => (
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect
+            label="Tools"
+            options={options.map((option) => ({ ...option, disabled: off }))}
+          />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host off={false} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      rerender(<Host off />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBeNull();
+
+      commits.length = 0;
+      rerender(<Host off={false} />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Filters");
+    });
+
     it("moves on from an option that maxSelected disables, to the next it can choose", async () => {
       const user = userEvent.setup();
       const commits: (string | null)[] = [];
