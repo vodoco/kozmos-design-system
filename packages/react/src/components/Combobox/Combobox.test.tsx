@@ -141,6 +141,76 @@ describe("Combobox: a prop change shows in the commit it arrives in", () => {
   });
 });
 
+// What `aria-activedescendant` names in a commit, read by a Profiler as React
+// commits it: every commit, the field's own included, not just the last.
+function activeOptionNow() {
+  const id = document
+    .querySelector('[role="combobox"]')
+    ?.getAttribute("aria-activedescendant");
+  if (!id) return null;
+  const option = document.getElementById(id);
+  if (!option) return `undrawn ${id}`;
+  const disabled = option.getAttribute("aria-disabled") === "true";
+  return `${option.textContent?.trim()}${disabled ? " (disabled)" : ""}`;
+}
+
+describe("Combobox: the active option moves in the commit that changes it (GAP-231)", () => {
+  describe.each(strictModes)("%s", (_, wrapper) => {
+    it("names the first matching option in every commit after typing", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <Combobox label="View" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox", { name: "View" });
+      await user.click(input);
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Activity");
+
+      // "t" keeps Activity drawn, but new text starts at the first match.
+      commits.length = 0;
+      await user.keyboard("t");
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Details");
+    });
+
+    it("names the first enabled option in every commit after its options change", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ list }: { list: typeof options }) => (
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <Combobox label="View" options={list} />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host list={options} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "View" }));
+      await user.keyboard("{ArrowDown}");
+      expect(activeOptionNow()).toBe("Details");
+
+      // Details is still drawn, but no longer enabled.
+      commits.length = 0;
+      rerender(
+        <Host
+          list={options.map((option) =>
+            option.value === "details" ? { ...option, disabled: true } : option,
+          )}
+        />,
+      );
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Overview");
+    });
+  });
+});
+
 describe("Combobox", () => {
   it("omits every ambiguous or blank command without confusing a same-ID value", async () => {
     const user = userEvent.setup();

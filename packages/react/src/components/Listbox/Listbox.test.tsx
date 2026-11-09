@@ -1,7 +1,9 @@
 import "@testing-library/jest-dom/vitest";
+import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { type ComboboxOption } from "../Combobox";
 import { Listbox } from "./Listbox";
 
 const options = [
@@ -9,6 +11,57 @@ const options = [
   { value: "beta", label: "Beta" },
   { value: "gamma", label: "Gamma" },
 ];
+
+// What `aria-activedescendant` names in a commit, read by a Profiler as React
+// commits it: every commit, the list's own included, not just the last.
+function activeOptionNow() {
+  const id = document
+    .querySelector('[role="listbox"]')
+    ?.getAttribute("aria-activedescendant");
+  if (!id) return null;
+  const option = document.getElementById(id);
+  if (!option) return `undrawn ${id}`;
+  const disabled = option.getAttribute("aria-disabled") === "true";
+  return `${option.textContent?.trim()}${disabled ? " (disabled)" : ""}`;
+}
+
+describe("Listbox: the active option moves in the commit that changes it (GAP-231)", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it("names the first enabled option in every commit after its options change", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ list }: { list: ComboboxOption[] }) => (
+        <React.Profiler
+          id="list"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <Listbox aria-label="Routes" options={list} />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host list={options} />, { wrapper });
+      await user.tab();
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Gamma");
+
+      // The third row of the new options cannot be used.
+      commits.length = 0;
+      rerender(
+        <Host
+          list={[
+            { value: "delta", label: "Delta" },
+            { value: "epsilon", label: "Epsilon" },
+            { value: "zeta", label: "Zeta", disabled: true },
+          ]}
+        />,
+      );
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Delta");
+    });
+  });
+});
 
 describe("Listbox", () => {
   it("selects a single option", async () => {
