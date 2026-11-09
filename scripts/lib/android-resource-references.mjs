@@ -67,3 +67,23 @@ export function unresolvedReferences(files) {
   }
   return missing;
 }
+
+/**
+ * Every `<dimen>` written in `px`. On Android `px` is a device pixel, so a
+ * CSS length must arrive as `dp`: 44px, a touch target on the web, is 44dp
+ * on a phone and about 15dp if it is written `44px` on a 3x screen. The token
+ * build wrote the px-valued tokens (border widths, the grid, the touch sizes,
+ * the full radius) as `px` until 9 Nov 2026, while Compose's KozmosDimensions
+ * carried the same numbers in dp.
+ */
+export function pixelDimensions(xml) {
+  const found = [];
+  xml.split("\n").forEach((text, index) => {
+    for (const [, name, value] of text.matchAll(
+      /<(?:dimen\b[^>]*|item\b(?=[^>]*\btype="dimen")[^>]*)\bname="([^"]+)"[^>]*>\s*(-?[0-9.]+px)\s*</g,
+    )) {
+      found.push({ name, value, line: index + 1 });
+    }
+  });
+  return found;
+}

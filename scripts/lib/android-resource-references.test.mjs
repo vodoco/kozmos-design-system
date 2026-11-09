@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   declaredIn,
+  pixelDimensions,
   referencedIn,
   unresolvedReferences,
 } from "./android-resource-references.mjs";
@@ -59,4 +60,19 @@ test("a resolved file reports nothing", () => {
     }),
     [],
   );
+});
+
+test("a dimen written in px is found, and dp, sp and references are not: the 9 Nov touch sizes", () => {
+  const found = pixelDimensions(
+    xml(`  <dimen name="primitives_touch_min">44px</dimen>
+  <item name="b" type="dimen">2px</item>
+  <dimen name="c">44dp</dimen>
+  <dimen name="d">14sp</dimen>
+  <dimen name="e">@dimen/c</dimen>
+  <string name="f">4px</string>`),
+  );
+  assert.deepEqual(found, [
+    { name: "primitives_touch_min", value: "44px", line: 3 },
+    { name: "b", value: "2px", line: 4 },
+  ]);
 });
