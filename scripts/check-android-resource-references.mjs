@@ -73,4 +73,4 @@ if (failed) {
   console.error(`\n${failed} Android resource problem(s)`);
   process.exit(1);
 }
-console.log(`\n${checked} Android resource file(s): every reference names a resource of its type, and every dimen is in dp or sp`);
+console.log(`\n${checked} Android resource file(s): every reference names a resource of its type, and no dimen is in px`);

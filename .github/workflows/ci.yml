@@ -222,8 +222,10 @@ jobs:
       # A library never links its own resources, so the Android build passes
       # with a reference to nothing and an app built against it fails. The
       # semantic radii named dimens that were integers from 2026-09-13 to
-      # 11-08. Reads the library's resources and the build step's.
-      - name: Verify Android Resource References Resolve
+      # 11-08. It also fails a <dimen> in px, which Android reads as device
+      # pixels: the px-valued lengths were px until 11-09. Reads the library's
+      # resources and the build step's.
+      - name: Verify Android Resources Resolve and Lengths Are dp
         run: node --test scripts/lib/android-resource-references.test.mjs && pnpm tokens:android:refs:check
 
       # Figma's Import Foundations reads this payload, built from the token
@@ -1118,18 +1120,18 @@ jobs:
         working-directory: packages/android
         run: ./gradlew assembleDebug
 
-      - name: Test Android Library
-        working-directory: packages/android
-        run: ./gradlew verifyPaparazziDebug
-
       # An app links the library's resources and pins the plugins the library
       # builds with; the library's own build does neither. A reference to no
       # resource (#503) and a playground on another Android Gradle Plugin than
-      # the library (#504) both passed the step above and failed only when an
+      # the library (#504) both passed the library build and failed only when an
       # app was built, by hand.
       - name: Build Android Playground
         working-directory: apps/playground-android
         run: ./gradlew :app:assembleDebug
+
+      - name: Test Android Library
+        working-directory: packages/android
+        run: ./gradlew verifyPaparazziDebug
 
       # Retain the executed test inventory on success as well as failure.
       # A green task alone does not prove which native tests actually ran.

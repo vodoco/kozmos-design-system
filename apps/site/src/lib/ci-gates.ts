@@ -88,7 +88,7 @@ export const ciGates: readonly Gate[] = [
   {
     title: "Android: build and screenshot tests",
     detail:
-      "The Compose library builds, its Paparazzi screenshots are compared, and the Compose Code Connect parses.",
+      "The Compose library builds, the Android playground app builds against it, which links the library's resources, its Paparazzi screenshots are compared, and the Compose Code Connect parses.",
     command: "./gradlew verifyPaparazziDebug",
   },
 ];
