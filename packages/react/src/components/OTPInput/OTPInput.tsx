@@ -6,8 +6,17 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface OTPInputProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
-  "onChange"
+  "defaultValue" | "onChange"
 > {
+  /**
+   * The code an uncontrolled field starts with, read on mount only: its
+   * decimal digits in any script, as ASCII and at most `length` of them, as
+   * `value`'s are. `value` wins when both are given. It calls no `onChange`
+   * and is no completion the user made, so it tracks no `otp_code_completed`;
+   * a full one the user edits is a full code. A new `key` starts the field
+   * with it again.
+   */
+  defaultValue?: string;
   disabled?: boolean;
   error?: boolean | string;
   helperText?: string;
@@ -65,6 +74,7 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     {
       autoFocus,
       className,
+      defaultValue,
       disabled,
       error,
       helperText,
@@ -81,7 +91,9 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     ref,
   ) => {
     const cellCount = normalizeOtpLength(length);
-    const [otp, setOtp] = useState(() => toOtpCells(value ?? "", cellCount));
+    const [otp, setOtp] = useState(() =>
+      toOtpCells(value ?? defaultValue ?? "", cellCount),
+    );
     // The cells follow `value` and the cell count during render, so no
     // frame, the first included, draws cells the props have moved past
     // (React's pattern for adjusting state when a prop changes). Without a
@@ -121,9 +133,17 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
           : undefined;
     const { trackEvent } = useKozmosAnalytics();
 
+    // autoFocus puts the caret where the next digit goes: the first empty
+    // cell, or the last when the code is full. A filled cell takes no key
+    // (each holds one digit), so focusing the first cell of a code the host
+    // started, by `value` or `defaultValue`, left typing doing nothing.
     useEffect(() => {
       if (autoFocus) {
-        inputs.current[0]?.focus();
+        const cells = inputs.current.filter(
+          (input): input is HTMLInputElement => !!input?.isConnected,
+        );
+        const firstEmpty = cells.findIndex((input) => input.value === "");
+        cells[firstEmpty === -1 ? cells.length - 1 : firstEmpty]?.focus();
       }
     }, [autoFocus]);
 

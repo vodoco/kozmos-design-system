@@ -17435,6 +17435,7 @@
           "aria-label",
           "autoFocus",
           "children",
+          "defaultValue",
           "disabled",
           "error",
           "helperText",

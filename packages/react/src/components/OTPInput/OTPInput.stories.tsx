@@ -51,6 +51,26 @@ export const WithError: Story = {
   ),
 };
 
+/**
+ * An uncontrolled field that starts with a code: `defaultValue` is read on
+ * mount, and the field keeps what is typed after it. A code the host passes
+ * this way is not the user's, so it tracks no completion.
+ */
+export const WithDefaultValue: Story = {
+  args: {
+    defaultValue: "135826",
+    helperText: "We filled in the code from your message.",
+    label: "Verification code",
+    length: 6,
+  },
+  render: (args) => (
+    <div className="w-80">
+      {/* defaultValue is read on mount: a new key draws the control's code. */}
+      <OTPInput key={args.defaultValue} {...args} />
+    </div>
+  ),
+};
+
 export const ValidationStates: Story = {
   render: () => (
     <div className="grid w-80 gap-4">

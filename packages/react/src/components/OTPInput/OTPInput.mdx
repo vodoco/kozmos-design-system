@@ -30,6 +30,19 @@ Compose take the whole code in one text field, so they have no per-cell limit.
 
 <Controls />
 
+## A code to start with
+
+In React, an uncontrolled OTPInput starts with the code `defaultValue` gives it, read on mount
+only: its digits are normalised to ASCII and cut to `length` as `value`'s are. `value` wins when
+both are given. A code passed this way is not the user's: it calls no `onChange` and tracks no
+`otp_code_completed`, and a full one the user then edits stays a full code. To start again from
+it, give the field a new `key`. SwiftUI and Compose hold no code of their own: the code they start
+with is the one the host's binding or state starts with.
+
+<Canvas>
+  <Story of={OTPInputStories.WithDefaultValue} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>

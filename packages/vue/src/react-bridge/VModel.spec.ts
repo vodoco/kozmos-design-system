@@ -186,8 +186,8 @@ const PARTS: Part[] = [
     name: "KozmosOTPInput",
     props: { length: 4 },
     start: "12",
-    // OTPInput draws its cells empty, then the code it is given, a render
-    // later (an effect): a visitor types once they see 1 and 2.
+    // OTPInput draws the code it is given in its first render (since #490);
+    // a visitor types once they see 1 and 2.
     before: ["1", "2", "", ""],
     field: () => $$("input")[2],
     change: (field) => type(field, "3"),
@@ -1003,8 +1003,8 @@ const onTeardown: (() => void)[] = [];
  * still does once React and Vue have finished what they started: a value
  * shown for a moment and then taken back fails. Fails saying what the part
  * shows if it never shows it. A part may draw its value a render after its
- * first (OTPInput copies it into its cells in an effect; Combobox's field
- * follows its value the same way), and under load a render can take longer
+ * first (Combobox's field follows its value in an effect; OTPInput has drawn
+ * its code in its first render since #490), and under load a render can take longer
  * than any fixed wait.
  */
 async function showing(part: Part, expected: unknown) {
