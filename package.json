@@ -124,6 +124,7 @@
     "tokens:border:check": "node scripts/check-border-parity.mjs",
     "tokens:theme:check": "node scripts/check-theme-parity.mjs",
     "tokens:copies:check": "node scripts/check-native-token-copies.mjs",
+    "tokens:android:refs:check": "node scripts/check-android-resource-references.mjs",
     "tokens:native:copy": "node scripts/copy-native-tokens.mjs",
     "tokens:radius:nesting": "node scripts/check-nested-radius.mjs",
     "tokens:typography:check": "node scripts/check-typography-parity.mjs",

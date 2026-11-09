@@ -219,6 +219,13 @@ jobs:
       - name: Verify Native Token Copies Match the Build
         run: pnpm tokens:copies:check
 
+      # A library never links its own resources, so the Android build passes
+      # with a reference to nothing and an app built against it fails. The
+      # semantic radii named dimens that were integers from 2026-09-13 to
+      # 11-08. Reads the library's resources and the build step's.
+      - name: Verify Android Resource References Resolve
+        run: node --test scripts/lib/android-resource-references.test.mjs && pnpm tokens:android:refs:check
+
       # Figma's Import Foundations reads this payload, built from the token
       # sources. Nothing compared the two: it went without seven tokens from
       # 2026-09-28 to 10-05.

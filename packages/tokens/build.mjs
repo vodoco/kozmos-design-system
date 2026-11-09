@@ -126,6 +126,25 @@ function fixAndroidXML(filePath) {
       '<dimen name="$1">$2px</dimen>',
     );
 
+    // A dimension that aliases a unitless length (the semantic radii alias
+    // Primitives.Layout.radius.*, which are bare numbers) was written as a
+    // reference to a dimen that does not exist: the number is an <integer>.
+    // A library never links its own resources, so only an app built against
+    // it failed. Write the number in dp, as Compose's KozmosDimensions does.
+    // Only Primitives.Layout's numbers are lengths (spacing and radius); a
+    // dimension aliasing any other number (a layer, a column count) stays a
+    // reference, which scripts/check-android-resource-references.mjs fails.
+    const integers = new Map(
+      [...content.matchAll(/<integer name="(primitives_layout_[^"]+)">(-?[0-9]+)<\/integer>/g)].map(
+        ([, name, value]) => [name, value],
+      ),
+    );
+    content = content.replace(
+      /<dimen name="([^"]+)">@dimen\/([^<]+)<\/dimen>/g,
+      (match, name, target) =>
+        integers.has(target) ? `<dimen name="${name}">${integers.get(target)}dp</dimen>` : match,
+    );
+
     // Ensure all names are valid for AAPT (no hyphens, no periods)
     content = content.replace(/name="([^"]+)"/g, (match, name) => {
       let sanitized = name.replace(/[-.\s]/g, "_");
