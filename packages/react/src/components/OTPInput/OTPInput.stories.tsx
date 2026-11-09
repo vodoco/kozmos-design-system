@@ -65,7 +65,8 @@ export const WithDefaultValue: Story = {
   },
   render: (args) => (
     <div className="w-80">
-      <OTPInput {...args} />
+      {/* defaultValue is read on mount: a new key draws the control's code. */}
+      <OTPInput key={args.defaultValue} {...args} />
     </div>
   ),
 };
