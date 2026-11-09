@@ -111,8 +111,8 @@ It forwards its ref to `HTMLHeadingElement`. Its props are `CardTitleProps`, whi
 
 - `size`: `CardTitleSize`, optional.
 
-  How large the title is drawn (GAP-035): `default` 24, `sm` 18 for a
-  compact or dashboard card, `xs` 14. Unset, it is 24, and 14 in a
+  How large the title is drawn (GAP-035): `lg` 24, `md` 18 for a
+  compact or dashboard card, `sm` 14. Unset, it is `lg`, and `sm` in a
   `tone="subtle"` header, the strip's title (decision 139). It changes
   how the title looks, not its heading level, which is `as`.
 
@@ -181,11 +181,12 @@ From `@kozmos-ds/react`.
 
 ```ts
 /**
- * CardTitle's size (GAP-035, decision 132). `default` is 24, the card's
- * title as it always was; `sm` is 18, for a compact card on a phone or a
- * dashboard's section card; `xs` is 14, the subtle header strip's title
- * (decision 139). The weight, the tight tracking and the one-line leading
- * stay at every size.
+ * CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov).
+ * `lg` is 24, the default, the card's title as it always was; `md` is 18,
+ * for a compact card on a phone or a dashboard's section card; `sm` is 14,
+ * the subtle header strip's title (decision 139), as `sm` is 14 on Text.
+ * The weight, the tight tracking and the one-line leading stay at every
+ * size.
  */
-type CardTitleSize = "default" | "sm" | "xs";
+type CardTitleSize = "lg" | "md" | "sm";
 ```

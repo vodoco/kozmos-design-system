@@ -92,15 +92,16 @@ enum class KozmosCardHeaderTone {
 }
 
 /**
- * How large a card's title is drawn (GAP-035, decision 132): [Default] is the
- * title as it always was, [Sm] a compact card's or a dashboard section card's
- * (React's 18), and [Xs] the subtle strip's (React's 14). Each is Material's
- * own title style: `titleLarge`, `titleMedium` and `titleSmall`.
+ * How large a card's title is drawn (GAP-035, decision 132; the owner's ruling
+ * of 9 Nov): [Lg] is the title as it always was and the default, [Md] a
+ * compact card's or a dashboard section card's (React's 18), and [Sm] the
+ * subtle strip's (React's 14). Each is Material's own title style:
+ * `titleLarge`, `titleMedium` and `titleSmall`.
  */
 enum class KozmosCardTitleSize {
-    Default,
-    Sm,
-    Xs
+    Lg,
+    Md,
+    Sm
 }
 
 private val LocalKozmosCardHeaderTone = compositionLocalOf { KozmosCardHeaderTone.Default }
@@ -430,21 +431,21 @@ fun KozmosCardHeader(
 fun KozmosCardTitle(
     title: String,
     modifier: Modifier = Modifier,
-    // How large the title is drawn (GAP-035). Unset, Default, and Xs in a
-    // Subtle header, the strip's title.
+    // How large the title is drawn (GAP-035). Unset, Lg, and Sm in a Subtle
+    // header, the strip's title.
     size: KozmosCardTitleSize? = null
 ) {
     val drawn = size ?: if (LocalKozmosCardHeaderTone.current == KozmosCardHeaderTone.Subtle) {
-        KozmosCardTitleSize.Xs
+        KozmosCardTitleSize.Sm
     } else {
-        KozmosCardTitleSize.Default
+        KozmosCardTitleSize.Lg
     }
     Text(
         text = title,
         style = when (drawn) {
-            KozmosCardTitleSize.Default -> MaterialTheme.typography.titleLarge
-            KozmosCardTitleSize.Sm -> MaterialTheme.typography.titleMedium
-            KozmosCardTitleSize.Xs -> MaterialTheme.typography.titleSmall
+            KozmosCardTitleSize.Lg -> MaterialTheme.typography.titleLarge
+            KozmosCardTitleSize.Md -> MaterialTheme.typography.titleMedium
+            KozmosCardTitleSize.Sm -> MaterialTheme.typography.titleSmall
         },
         fontWeight = FontWeight.SemiBold,
         color = KozmosThemeTokens.primitivesColorsForeground100,

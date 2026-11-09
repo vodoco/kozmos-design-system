@@ -102,16 +102,16 @@ describe("Card", () => {
         <Card>
           <CardHeader tone="subtle">
             <CardTitle>Strip</CardTitle>
-            <CardTitle size="sm">Chosen</CardTitle>
+            <CardTitle size="md">Chosen</CardTitle>
           </CardHeader>
         </Card>,
       );
       const strip = screen.getByRole("heading", { name: "Strip" });
-      expect(strip).toHaveAttribute("data-size", "xs");
+      expect(strip).toHaveAttribute("data-size", "sm");
       expect(strip).toHaveClass("text-sm");
       expect(strip).not.toHaveClass("text-2xl");
       const chosen = screen.getByRole("heading", { name: "Chosen" });
-      expect(chosen).toHaveAttribute("data-size", "sm");
+      expect(chosen).toHaveAttribute("data-size", "md");
       expect(chosen).toHaveClass("text-lg");
     });
 

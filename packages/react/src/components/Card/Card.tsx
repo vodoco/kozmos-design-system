@@ -64,18 +64,19 @@ const CardPaddingContext = React.createContext<CardPadding>("default");
 export type CardHeaderTone = "default" | "subtle";
 
 /**
- * CardTitle's size (GAP-035, decision 132). `default` is 24, the card's
- * title as it always was; `sm` is 18, for a compact card on a phone or a
- * dashboard's section card; `xs` is 14, the subtle header strip's title
- * (decision 139). The weight, the tight tracking and the one-line leading
- * stay at every size.
+ * CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov).
+ * `lg` is 24, the default, the card's title as it always was; `md` is 18,
+ * for a compact card on a phone or a dashboard's section card; `sm` is 14,
+ * the subtle header strip's title (decision 139), as `sm` is 14 on Text.
+ * The weight, the tight tracking and the one-line leading stay at every
+ * size.
  */
-export type CardTitleSize = "default" | "sm" | "xs";
+export type CardTitleSize = "lg" | "md" | "sm";
 
 const TITLE_SIZE: Record<CardTitleSize, string> = {
-  default: "text-2xl",
-  sm: "text-lg",
-  xs: "text-sm",
+  lg: "text-2xl",
+  md: "text-lg",
+  sm: "text-sm",
 };
 
 /** The header's tone, for the title's size inside it. */
@@ -175,8 +176,8 @@ export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement>
    */
   as?: "h2" | "h3" | "h4" | "h5" | "h6";
   /**
-   * How large the title is drawn (GAP-035): `default` 24, `sm` 18 for a
-   * compact or dashboard card, `xs` 14. Unset, it is 24, and 14 in a
+   * How large the title is drawn (GAP-035): `lg` 24, `md` 18 for a
+   * compact or dashboard card, `sm` 14. Unset, it is `lg`, and `sm` in a
    * `tone="subtle"` header, the strip's title (decision 139). It changes
    * how the title looks, not its heading level, which is `as`.
    */
@@ -186,11 +187,11 @@ export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement>
 const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ as: Tag = "h3", size, className, ...props }, ref) => {
     const tone = React.useContext(CardHeaderToneContext);
-    const drawn = size ?? (tone === "subtle" ? "xs" : "default");
+    const drawn = size ?? (tone === "subtle" ? "sm" : "lg");
     return (
       <Tag
         ref={ref}
-        data-size={drawn === "default" ? undefined : drawn}
+        data-size={drawn === "lg" ? undefined : drawn}
         className={cn(
           TITLE_SIZE[drawn],
           "font-semibold leading-none tracking-tight",

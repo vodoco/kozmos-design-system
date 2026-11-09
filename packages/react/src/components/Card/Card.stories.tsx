@@ -201,15 +201,16 @@ export const SubtleHeader: Story = {
 };
 
 /**
- * CardTitle's size (GAP-035, decision 132): 24 by default, 18 at `sm` for a
- * compact card on a phone or a dashboard's section card, and 14 at `xs`, the
- * subtle strip's own. The level stays `as`'s.
+ * CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov): 24
+ * at `lg`, the default, 18 at `md` for a compact card on a phone or a
+ * dashboard's section card, and 14 at `sm`, the subtle strip's own. The
+ * level stays `as`'s.
  */
 export const TitleSize: Story = {
   parameters: { layout: "padded" },
   render: () => (
     <div className="flex flex-wrap gap-6">
-      {(["default", "sm", "xs"] as const).map((size) => (
+      {(["lg", "md", "sm"] as const).map((size) => (
         <Card key={size} padding="compact" className="w-[240px] max-w-full">
           <CardHeader>
             <CardTitle size={size}>Lunch nearby</CardTitle>

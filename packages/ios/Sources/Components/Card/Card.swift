@@ -36,21 +36,21 @@ public enum KozmosCardHeaderTone: Sendable, Hashable, CaseIterable {
     static let subtleMinHeight: CGFloat = 52
 }
 
-/// How large a card's title is drawn (GAP-035, decision 132): `default` is
-/// the title as it always was, `sm` a compact card's or a dashboard section
-/// card's (React's 18), and `xs` the subtle strip's (React's 14). Each is the
-/// platform's own text style, so it follows Dynamic Type: `.title3`,
-/// `.headline` and `.subheadline`.
+/// How large a card's title is drawn (GAP-035, decision 132; the owner's
+/// ruling of 9 Nov): `lg` is the title as it always was and the default,
+/// `md` a compact card's or a dashboard section card's (React's 18), and `sm`
+/// the subtle strip's (React's 14). Each is the platform's own text style, so
+/// it follows Dynamic Type: `.title3`, `.headline` and `.subheadline`.
 public enum KozmosCardTitleSize: Sendable, Hashable, CaseIterable {
-    case `default`
+    case lg
+    case md
     case sm
-    case xs
 
     var font: Font {
         switch self {
-        case .default: return KozmosTypography.title3
-        case .sm: return KozmosTypography.headline
-        case .xs: return KozmosTypography.subheadline
+        case .lg: return KozmosTypography.title3
+        case .md: return KozmosTypography.headline
+        case .sm: return KozmosTypography.subheadline
         }
     }
 }
@@ -291,8 +291,8 @@ public struct KozmosCardTitle: View {
     let title: String
     let size: KozmosCardTitleSize?
 
-    /// `size` is how large the title is drawn (GAP-035). Unset, it is
-    /// `.default`, and `.xs` in a `tone: .subtle` header, the strip's title.
+    /// `size` is how large the title is drawn (GAP-035). Unset, it is `.lg`,
+    /// and `.sm` in a `tone: .subtle` header, the strip's title.
     public init(_ title: String, size: KozmosCardTitleSize? = nil) {
         self.title = title
         self.size = size
@@ -300,7 +300,7 @@ public struct KozmosCardTitle: View {
 
     /// The size the title is drawn at, in the header it is in.
     var drawnSize: KozmosCardTitleSize {
-        size ?? (tone == .subtle ? .xs : .default)
+        size ?? (tone == .subtle ? .sm : .lg)
     }
 
     public var body: some View {

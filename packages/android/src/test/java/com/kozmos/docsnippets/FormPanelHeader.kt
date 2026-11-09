@@ -27,7 +27,7 @@ fun FormPanelHeader() {
     }
     KozmosCard(padding = KozmosCardPadding.Compact) {
         KozmosCardHeader {
-            KozmosCardTitle(title = "Lunch nearby", size = KozmosCardTitleSize.Sm)
+            KozmosCardTitle(title = "Lunch nearby", size = KozmosCardTitleSize.Md)
         }
     }
 }

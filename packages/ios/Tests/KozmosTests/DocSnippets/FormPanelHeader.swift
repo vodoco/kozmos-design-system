@@ -17,7 +17,7 @@ struct FormPanelHeader: View {
         }
         KozmosCard(padding: .compact) {
             KozmosCardHeader {
-                KozmosCardTitle("Lunch nearby", size: .sm)
+                KozmosCardTitle("Lunch nearby", size: .md)
             }
         }
     }

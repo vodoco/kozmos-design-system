@@ -88,21 +88,21 @@ class KozmosCardSubtleHeaderTest {
     fun theTitleSizesStepDownAndTheStripsTitleIsTheSmallest() {
         val frames = measure {
             KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("unset"))
-            KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("default"), size = KozmosCardTitleSize.Default)
+            KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("lg"), size = KozmosCardTitleSize.Lg)
+            KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("md"), size = KozmosCardTitleSize.Md)
             KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("sm"), size = KozmosCardTitleSize.Sm)
-            KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("xs"), size = KozmosCardTitleSize.Xs)
             KozmosCard {
                 KozmosCardHeader(tone = KozmosCardHeaderTone.Subtle) {
                     KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("strip"))
-                    KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("strip-sm"), size = KozmosCardTitleSize.Sm)
+                    KozmosCardTitle(title = "Lunch nearby", modifier = Modifier.testTag("strip-md"), size = KozmosCardTitleSize.Md)
                 }
             }
         }
         val height = { tag: String -> frames.getValue(tag).height }
-        assertEquals("unset is the default size", height("default"), height("unset"), 0.5f)
-        assertTrue("sm is smaller than the default: ${height("sm")} of ${height("default")}", height("sm") < height("default"))
-        assertTrue("xs is smaller than sm: ${height("xs")} of ${height("sm")}", height("xs") < height("sm"))
-        assertEquals("the strip's unset title is xs", height("xs"), height("strip"), 0.5f)
-        assertEquals("a size given in the strip wins", height("sm"), height("strip-sm"), 0.5f)
+        assertEquals("unset is lg", height("lg"), height("unset"), 0.5f)
+        assertTrue("md is smaller than lg: ${height("md")} of ${height("lg")}", height("md") < height("lg"))
+        assertTrue("sm is smaller than md: ${height("sm")} of ${height("md")}", height("sm") < height("md"))
+        assertEquals("the strip's unset title is sm", height("sm"), height("strip"), 0.5f)
+        assertEquals("a size given in the strip wins", height("md"), height("strip-md"), 0.5f)
     }
 }

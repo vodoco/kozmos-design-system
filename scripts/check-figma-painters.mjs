@@ -8527,7 +8527,7 @@ section("Card");
   const full = await card("Full", "Default");
   ok(
     full.name ===
-      "Content=Full, Padding=Default, HeaderTone=Default, TitleSize=Default",
+      "Content=Full, Padding=Default, HeaderTone=Default, TitleSize=Large",
     `a variant carries every axis, a bare padding its Default tone and title (got "${full.name}")`,
   );
 
@@ -8552,8 +8552,8 @@ section("Card");
 
   ok(
     JSON.stringify(plugin.parseCardVariantName("Content=Full")) ===
-      JSON.stringify({ value: "Full", second: "Default|Default|Default" }),
-    "a variant with no Padding, HeaderTone or TitleSize reads as Default in each, so Update renames rather than replaces",
+      JSON.stringify({ value: "Full", second: "Default|Default|Large" }),
+    "a variant with no Padding, HeaderTone or TitleSize reads as Default, Default and Large, so Update renames rather than replaces",
   );
   ok(
     plugin.parseCardVariantName("Content=Full, Padding=Roomy") === null,
@@ -8675,7 +8675,7 @@ section("Button subtle, CardHeader subtle and CardTitle size");
     JSON.stringify(cardAxes?.HeaderTone) ===
       JSON.stringify(["Default", "Subtle"]) &&
       JSON.stringify(cardAxes?.TitleSize) ===
-        JSON.stringify(["Default", "Small", "XSmall"]),
+        JSON.stringify(["Large", "Medium", "Small"]),
     `Card expects a HeaderTone and a TitleSize (${JSON.stringify(cardAxes?.HeaderTone)}; ${JSON.stringify(cardAxes?.TitleSize)})`,
   );
   const combos =
@@ -8706,13 +8706,13 @@ section("Button subtle, CardHeader subtle and CardTitle size");
     }
     return component;
   };
-  const strip = await paintCard("Header", "Compact|Subtle|Default");
+  const strip = await paintCard("Header", "Compact|Subtle|Small");
   const stripHeader = strip && named(strip, "Card Header");
   const stripTitle = strip && named(strip, "Title Text");
   const stripBody = strip && named(strip, "Card Content");
   ok(
     strip?.name ===
-      "Content=Header, Padding=Compact, HeaderTone=Subtle, TitleSize=Default",
+      "Content=Header, Padding=Compact, HeaderTone=Subtle, TitleSize=Small",
     `the strip's variant is named for its axes (${strip?.name})`,
   );
   ok(
@@ -8736,12 +8736,12 @@ section("Button subtle, CardHeader subtle and CardTitle size");
   );
   ok(
     stripTitle && stripTitle.fontSize === 14,
-    `the strip's title is 14 at its Default size (${stripTitle?.fontSize})`,
+    `the strip's title is 14, its Small size (${stripTitle?.fontSize})`,
   );
   for (const [size, want] of [
-    ["Default", 24],
-    ["Small", 18],
-    ["XSmall", 14],
+    ["Large", 24],
+    ["Medium", 18],
+    ["Small", 14],
   ]) {
     const sized = await paintCard("Header", `Default|Default|${size}`);
     const title = sized && named(sized, "Title Text");
@@ -11657,7 +11657,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     });
     // The six are renamed with the Default tone and title, and Update adds
     // the twelve the HeaderTone and TitleSize axes bring (CLOUD-UI-001,
-    // GAP-035): the strip, and the Small and XSmall titles, on Header and
+    // GAP-035): the strip, and the Medium and Small titles, on Header and
     // Full in both paddings.
     ok(
       updated &&
@@ -11668,7 +11668,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           ([name, id]) =>
             byId.get(id) &&
             byId.get(id).name ===
-              `${name}, HeaderTone=Default, TitleSize=Default`,
+              `${name}, HeaderTone=Default, TitleSize=Large`,
         ) &&
         textsKept &&
         propertyNamed(liveSet, "Header Actions", "BOOLEAN") &&

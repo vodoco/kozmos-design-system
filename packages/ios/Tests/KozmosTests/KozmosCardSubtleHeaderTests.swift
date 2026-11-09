@@ -72,19 +72,19 @@ final class KozmosCardSubtleHeaderTests: XCTestCase {
 
     @MainActor func testTheTitleSizesStepDownAndTheStripsTitleIsTheSmallest() throws {
         let large = try titleHeight(KozmosCardTitle("Lunch nearby"))
-        let explicitDefault = try titleHeight(KozmosCardTitle("Lunch nearby", size: .default))
-        let small = try titleHeight(KozmosCardTitle("Lunch nearby", size: .sm))
-        let smallest = try titleHeight(KozmosCardTitle("Lunch nearby", size: .xs))
-        XCTAssertEqual(large, explicitDefault, "unset is not the default size")
-        XCTAssertGreaterThan(large, small, "sm is not smaller than the default (\(large), \(small))")
-        XCTAssertGreaterThan(small, smallest, "xs is not smaller than sm (\(small), \(smallest))")
+        let explicitDefault = try titleHeight(KozmosCardTitle("Lunch nearby", size: .lg))
+        let small = try titleHeight(KozmosCardTitle("Lunch nearby", size: .md))
+        let smallest = try titleHeight(KozmosCardTitle("Lunch nearby", size: .sm))
+        XCTAssertEqual(large, explicitDefault, "unset is not lg")
+        XCTAssertGreaterThan(large, small, "md is not smaller than lg (\(large), \(small))")
+        XCTAssertGreaterThan(small, smallest, "sm is not smaller than md (\(small), \(smallest))")
 
-        // In the strip an unset title is xs, and a size given wins.
+        // In the strip an unset title is sm, and a size given wins.
         let inStrip = try titleHeight(
             KozmosCardTitle("Lunch nearby").environment(\.kozmosCardHeaderTone, .subtle))
         let chosenInStrip = try titleHeight(
-            KozmosCardTitle("Lunch nearby", size: .sm).environment(\.kozmosCardHeaderTone, .subtle))
-        XCTAssertEqual(inStrip, smallest, "the strip's title is not xs")
+            KozmosCardTitle("Lunch nearby", size: .md).environment(\.kozmosCardHeaderTone, .subtle))
+        XCTAssertEqual(inStrip, smallest, "the strip's title is not sm")
         XCTAssertEqual(chosenInStrip, small, "a size given in the strip does not win")
     }
 }

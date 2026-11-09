@@ -43,12 +43,13 @@ title in the reading and tab order. Without `actions`, the header is drawn as it
 ## Subtle header
 
 `tone="subtle"` on `CardHeader` draws it as a pale theme strip (CLOUD-UI-001; decisions 135 and
-139): theme 0, full-bleed to the card's edges and inside its top corners, at least 52 tall, its
-title 14. It is Pointr Cloud's form side panel header, with the panel's title, its "building /
+139): theme 0, full-bleed to the card's edges and, as the card's first child, inside its top
+corners; at least 52 tall and taller as its content needs (the owner's ruling of 9 Nov), its title
+14. It is Pointr Cloud's form side panel header, with the panel's title, its "building /
 level" line and its close. Its sides follow the card's `padding`, its block padding is 12, and it
 keeps the card's padding below the tint, so the content under it starts where it starts under any
 header. With `actions`, the title and the actions are centred in the strip. A `CardTitle` in it is
-14 unless its `size` says otherwise. Title, description and a ghost action's ink all read 4.5:1 on
+`sm`, 14, unless its `size` says otherwise. Title, description and a ghost action's ink all read 4.5:1 on
 theme 0 in both themes (`tokens:contrast:check`). On SwiftUI it is `KozmosCardHeader(tone:
 .subtle)` and on Compose `KozmosCardHeader(tone = KozmosCardHeaderTone.Subtle)`.
 
@@ -56,9 +57,9 @@ theme 0 in both themes (`tokens:contrast:check`). On SwiftUI it is `KozmosCardHe
 
 ## Title size
 
-`size` on `CardTitle` (GAP-035, decision 132): `default` is 24, the title as it always was; `sm`
-is 18, for a compact card on a phone or a dashboard's section card; `xs` is 14, the subtle strip's
-title. The weight, the tight tracking and the one-line leading stay at every size, and the
+`size` on `CardTitle` (GAP-035, decision 132; the owner's ruling of 9 Nov): `lg` is 24, the
+default, the title as it always was; `md` is 18, for a compact card on a phone or a dashboard's
+section card; `sm` is 14, the subtle strip's title, as `sm` is 14 on `Text`. The weight, the tight tracking and the one-line leading stay at every size, and the
 heading level stays `as`'s. With `actions`, they are centred on the smaller title's line. SwiftUI
 and Compose draw the platform's own steps: `.title3`, `.headline` and `.subheadline` on SwiftUI,
 and `titleLarge`, `titleMedium` and `titleSmall` on Compose.
@@ -97,7 +98,7 @@ export function Example() {
       </Card>
       <Card padding="compact">
         <CardHeader>
-          <CardTitle size="sm">Lunch nearby</CardTitle>
+          <CardTitle size="md">Lunch nearby</CardTitle>
         </CardHeader>
       </Card>
     </>
@@ -121,7 +122,7 @@ struct FormPanelHeader: View {
         }
         KozmosCard(padding: .compact) {
             KozmosCardHeader {
-                KozmosCardTitle("Lunch nearby", size: .sm)
+                KozmosCardTitle("Lunch nearby", size: .md)
             }
         }
     }
@@ -152,7 +153,7 @@ fun FormPanelHeader() {
     }
     KozmosCard(padding = KozmosCardPadding.Compact) {
         KozmosCardHeader {
-            KozmosCardTitle(title = "Lunch nearby", size = KozmosCardTitleSize.Sm)
+            KozmosCardTitle(title = "Lunch nearby", size = KozmosCardTitleSize.Md)
         }
     }
 }

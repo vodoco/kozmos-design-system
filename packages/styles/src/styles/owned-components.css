@@ -1542,16 +1542,16 @@
     block-size: 1.5rem;
   }
   /* A smaller title (GAP-035) has a shorter line, and its actions are
-     centred on that one: 18 for `sm`, 14 for `xs`. The subtle strip
+     centred on that one: 18 for `md`, 14 for `sm`. The subtle strip
      centres its own, below. */
   .kozmos-card-header:not(.kozmos-card-header-subtle):has(
-      > .kozmos-card-header-text > [data-size="sm"]
+      > .kozmos-card-header-text > [data-size="md"]
     )
     > .kozmos-card-header-actions {
     block-size: 1.125rem;
   }
   .kozmos-card-header:not(.kozmos-card-header-subtle):has(
-      > .kozmos-card-header-text > [data-size="xs"]
+      > .kozmos-card-header-text > [data-size="sm"]
     )
     > .kozmos-card-header-actions {
     block-size: 0.875rem;

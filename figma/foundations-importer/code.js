@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c51be11bce0a";
+const PLUGIN_BUILD = "18fe0094fd6c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -464,11 +464,11 @@ function cardPaddingToken(padding) {
 // card's top corners, 12 above and below its words and the card's padding at
 // its sides and below it, with a 14 title. Default is the header as it was.
 const CARD_HEADER_TONES = ["Default", "Subtle"];
-// CardTitle's size (GAP-035, decision 132): Default 24, Small 18 for a
-// compact or dashboard card, XSmall 14. In a Subtle header the title's
-// Default is the strip's 14, as React's unset size is there, so the strip is
-// drawn at Default alone and Code Connect says nothing of the size.
-const CARD_TITLE_SIZES = ["Default", "Small", "XSmall"];
+// CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov):
+// Large 24, the default; Medium 18 for a compact or dashboard card; Small 14,
+// the subtle strip's. The strip is drawn at Small alone, as React's unset
+// size is `sm` there.
+const CARD_TITLE_SIZES = ["Large", "Medium", "Small"];
 const CARD_SUBTLE_HEADER_PADDING_Y = 12;
 // The actions' line in the strip: React's 1.75rem, so a 44 IconButton spills
 // 8 into the 12 above and below it.
@@ -476,17 +476,23 @@ const CARD_SUBTLE_HEADER_ACTIONS_LINE = 28;
 /**
  * The second axis the set is laid out by: Padding, HeaderTone and TitleSize
  * together, one row each, as `Padding|HeaderTone|TitleSize`. A variant drawn
- * before the HeaderTone and TitleSize axes is Default in both.
+ * before the HeaderTone and TitleSize axes is Default in its tone and Large
+ * in its title, the card as it was.
  */
 function cardSecond(padding, tone, size) {
   return `${padding}|${tone}|${size}`;
+}
+/** A title size a variant names, or the size its tone draws when none. */
+function cardTitleSizeOf(tone, size) {
+  if (size && size !== "Default") return size;
+  return tone === "Subtle" ? "Small" : "Large";
 }
 function cardSecondParts(second) {
   const [padding, tone, size] = String(second || "").split("|");
   return {
     padding: padding || "Default",
     tone: tone || "Default",
-    size: size || "Default",
+    size: cardTitleSizeOf(tone || "Default", size),
   };
 }
 function cardSecondValues() {
@@ -495,7 +501,7 @@ function cardSecondValues() {
     for (const tone of CARD_HEADER_TONES)
       for (const size of CARD_TITLE_SIZES)
         // The strip is drawn at its own title size alone: no empty row.
-        if (tone !== "Subtle" || size === "Default")
+        if (tone !== "Subtle" || size === "Small")
           out.push(cardSecond(padding, tone, size));
   return out;
 }
@@ -503,30 +509,30 @@ const CARD_SECONDS = cardSecondValues();
 /** A card with no header has no tone or title; the strip's title is its own. */
 function cardHasCombination(content, second) {
   const { tone, size } = cardSecondParts(second);
-  if (content === "Basic") return tone === "Default" && size === "Default";
-  if (tone === "Subtle") return size === "Default";
+  if (content === "Basic") return tone === "Default" && size === "Large";
+  if (tone === "Subtle") return size === "Small";
   return true;
 }
-/** The size a title is drawn at: the strip's 14 for a Subtle header's Default. */
+/** The size a title is drawn at in its header. */
 function cardTitleDrawnSize(tone, size) {
-  return tone === "Subtle" && size === "Default" ? "XSmall" : size;
+  return cardTitleSizeOf(tone, size);
 }
 function cardTitleMetrics(drawnSize) {
-  if (drawnSize === "Small")
+  if (drawnSize === "Medium")
     return {
       fontSize: 18,
       lineHeight: 18,
-      fontSizeToken: "Card/title/sm/font-size",
-      lineHeightToken: "Card/title/sm/line-height",
-      styleKey: "cardTitleSmall",
+      fontSizeToken: "Card/title/md/font-size",
+      lineHeightToken: "Card/title/md/line-height",
+      styleKey: "cardTitleMedium",
     };
-  if (drawnSize === "XSmall")
+  if (drawnSize === "Small")
     return {
       fontSize: 14,
       lineHeight: 14,
-      fontSizeToken: "Card/title/xs/font-size",
-      lineHeightToken: "Card/title/xs/line-height",
-      styleKey: "cardTitleXSmall",
+      fontSizeToken: "Card/title/sm/font-size",
+      lineHeightToken: "Card/title/sm/line-height",
+      styleKey: "cardTitleSmall",
     };
   return {
     fontSize: 24,
@@ -5846,16 +5852,17 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Card/title/font-size", value: 24, scopes: ["FONT_SIZE"] },
   { name: "Card/title/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
-  // CardTitle's sizes (GAP-035): 18 and 14, on one line as React draws them.
-  { name: "Card/title/sm/font-size", value: 18, scopes: ["FONT_SIZE"] },
-  { name: "Card/title/sm/line-height", value: 18, scopes: ["LINE_HEIGHT"] },
+  // CardTitle's sizes (GAP-035): md 18 and sm 14, on one line as React draws
+  // them.
+  { name: "Card/title/md/font-size", value: 18, scopes: ["FONT_SIZE"] },
+  { name: "Card/title/md/line-height", value: 18, scopes: ["LINE_HEIGHT"] },
   {
-    name: "Card/title/xs/font-size",
+    name: "Card/title/sm/font-size",
     value: 14,
     alias: "Input/text/font-size",
     scopes: ["FONT_SIZE"],
   },
-  { name: "Card/title/xs/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
+  { name: "Card/title/sm/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
   // CardHeader's subtle strip: 12 above and below its words (CLOUD-UI-001).
   {
     name: "Card/header/subtle/padding-y",
@@ -24406,20 +24413,20 @@ function addComponentTextStyleSpecs(specs, fonts) {
     "Typography contract for the current manoeuvre's instruction: 20/25 semibold.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
-  // CardTitle's sizes (GAP-035): Small for a compact or dashboard card,
-  // XSmall the subtle strip's.
+  // CardTitle's sizes (GAP-035): Medium for a compact or dashboard card,
+  // Small the subtle strip's.
   addTextStyleSpec(
     specs,
-    "cardTitleSmall",
-    "Card / Title Small",
+    "cardTitleMedium",
+    "Card / Title Medium",
     fonts.medium,
     18,
     18,
   );
   addTextStyleSpec(
     specs,
-    "cardTitleXSmall",
-    "Card / Title XSmall",
+    "cardTitleSmall",
+    "Card / Title Small",
     fonts.medium,
     14,
     14,
@@ -59744,7 +59751,7 @@ function parseCardVariantName(name) {
   // TitleSize axes (CLOUD-UI-001, GAP-035) read the same way.
   const padding = values.Padding || "Default";
   const tone = values.HeaderTone || "Default";
-  const size = values.TitleSize || "Default";
+  const size = cardTitleSizeOf(tone, values.TitleSize);
   if (
     CARD_PADDINGS.indexOf(padding) === -1 ||
     CARD_HEADER_TONES.indexOf(tone) === -1 ||
@@ -59771,7 +59778,9 @@ async function updateCardVariant(
   const tone =
     CARD_HEADER_TONES.indexOf(parts.tone) === -1 ? "Default" : parts.tone;
   const size =
-    CARD_TITLE_SIZES.indexOf(parts.size) === -1 ? "Default" : parts.size;
+    CARD_TITLE_SIZES.indexOf(parts.size) === -1
+      ? cardTitleSizeOf(tone)
+      : parts.size;
   component.name = `Content=${value}, Padding=${padding}, HeaderTone=${tone}, TitleSize=${size}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
@@ -65389,7 +65398,7 @@ async function syncCardVariantChildren({
   value,
   padding,
   tone = "Default",
-  size = "Default",
+  size = "Large",
   variableByName,
   fonts,
   stats,
