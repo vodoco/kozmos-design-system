@@ -36,7 +36,7 @@ const navigationItemVariants = cva(
         hover: "bg-hover-fill/70 text-foreground",
         // A named exception (contrast-contract.json's hoverFillExceptions):
         // selected keeps muted, as its theme 600 label reads 3.83:1 on the
-        // dark hover fill (decision 173, ruling b, held for the owner).
+        // dark hover fill: the owner's ruling of 9 Nov (decision 173).
         selected: "bg-muted text-primary",
         focus: "text-foreground ring-2 ring-ring ring-offset-2",
         disabled:

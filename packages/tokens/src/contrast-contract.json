@@ -480,7 +480,7 @@
       ]
     },
     {
-      "name": "a selected NavigationItem (top and side) and BottomNavigation item keep the muted fill: their theme 600 label reads 3.83:1 on the dark hover fill (decision 173 ruling b, held for the owner)",
+      "name": "a selected NavigationItem (top and side) and BottomNavigation item keep the muted fill: their theme 600 label reads 3.83:1 on the dark hover fill (the owner's ruling of 9 Nov, decision 173)",
       "keeps": "primitives-colors-background-100",
       "inks": ["primitives-colors-theme-600"],
       "minimum": 4.5,
