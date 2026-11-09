@@ -78,40 +78,36 @@ export const TREATMENT_CLASSES = {
   text: "kozmos-button-emotion-text",
 } as const;
 
-/** The custom properties an emotion sets on a button, in the order it sets them. */
+/**
+ * The custom properties an emotion sets on a button: its tier's fill and
+ * words in each state. The subtle tier's words step with its fill (GAP-200);
+ * the Primary tier's are one colour in every state.
+ */
 export function emotionCustomProperties(
   tier: ButtonTier,
   emotion: ButtonEmotion,
 ): Record<`--${string}`, string> {
-  const prefix = `--components-${tier}-buttons-${emotion}`;
-  return {
-    "--kz-button-bg": `var(${prefix}-button-background-idle)`,
-    "--kz-button-bg-hover": `var(${prefix}-button-background-hover)`,
-    "--kz-button-bg-focus": `var(${prefix}-button-background-focus)`,
-    "--kz-button-bg-pressed": `var(${prefix}-button-background-pressed)`,
-    "--kz-button-fg": `var(${prefix}-button-foreground-content-idle)`,
-    "--kz-button-fg-hover": `var(${prefix}-button-foreground-content-hover)`,
-    // The subtle tier's words step with its fill (GAP-200); the Primary
-    // tier's are one colour in every state, so these change nothing there.
-    "--kz-button-fg-focus": `var(${prefix}-button-foreground-content-focus)`,
-    "--kz-button-fg-pressed": `var(${prefix}-button-foreground-content-pressed)`,
-  };
+  const properties: Record<`--${string}`, string> = {};
+  for (const state of ["", "-hover", "-focus", "-pressed"])
+    for (const [short, part] of [
+      ["bg", "background"],
+      ["fg", "foreground-content"],
+    ])
+      properties[`--kz-button-${short}${state}`] =
+        `var(--components-${tier}-buttons-${emotion}-button-${part}${state || "-idle"})`;
+  return properties;
 }
 
 /**
- * The tier, treatment and emotion a variant draws with through the emotion's
- * custom properties, or null when it draws the variant's own colours: no
- * emotion given, or `glass`. The subtle variant always draws this way, as
- * `themed` with no emotion given, so its colours are its tier's tokens alone
- * and the stylesheet carries no rule of its own for them (GAP-200).
+ * The tier and treatment an explicit emotion draws with on a variant, or null
+ * when it draws the variant's own colours: no emotion given, or `glass`.
  */
 export function buttonEmotionTokens(
   variant: ButtonVariant | null | undefined,
   emotion: ButtonEmotion | null | undefined,
 ) {
   const tokens = VARIANT_TOKENS[variant ?? "default"];
-  const drawn = emotion || (variant === "subtle" ? "themed" : null);
-  return drawn && tokens ? { ...tokens, emotion: drawn } : null;
+  return emotion && tokens ? tokens : null;
 }
 
 export const buttonVariants = cva("kozmos-reset kozmos-button", {

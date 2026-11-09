@@ -50,4 +50,20 @@ describe("SplitButton", () => {
       screen.getByRole("button", { name: "More options" }),
     ).toBeInTheDocument();
   });
+
+  // GAP-200: on the subtle variant's pale fill the filled variants' seam,
+  // white at a fifth, does not show; its seam is the fill's pressed step.
+  it("draws a subtle SplitButton's seam in its fill's pressed step", () => {
+    render(<SplitButton variant="subtle">Add field</SplitButton>);
+    const main = screen.getByRole("button", { name: "Add field" });
+    expect(main).toHaveClass("border-e-[var(--kz-button-bg-pressed)]");
+    expect(main).not.toHaveClass("border-e-theme-fill-foreground/20");
+  });
+
+  it("keeps the white seam on a filled SplitButton", () => {
+    render(<SplitButton>Directions</SplitButton>);
+    expect(screen.getByRole("button", { name: "Directions" })).toHaveClass(
+      "border-e-theme-fill-foreground/20",
+    );
+  });
 });

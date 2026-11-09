@@ -88,7 +88,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             ? {
                 ...(emotionCustomProperties(
                   emotional.tier,
-                  emotional.emotion,
+                  emotion!,
                 ) as React.CSSProperties),
                 ...style,
               }

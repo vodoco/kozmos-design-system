@@ -1,7 +1,9 @@
 import { createRef } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { Button, BUTTON_EMOTIONS } from "./Button";
+import fs from "node:fs";
+import path from "node:path";
+import { Button, BUTTON_EMOTIONS, buttonVariants } from "./Button";
 
 describe("Button", () => {
   it("renders correctly", () => {
@@ -57,19 +59,19 @@ describe("Button", () => {
   );
 
   describe("subtle", () => {
-    // GAP-200: "+ Add additional field" is one Kozmos Button, a pale theme
-    // fill under theme words, with no wrapper. With no emotion it is drawn
-    // as the themed emotion of its own tier, so the stylesheet needs no rule
-    // of its own for it.
-    it("is its own variant, the subtle tier's themed tokens with no emotion given", () => {
-      render(<Button variant="subtle">+ Add additional field</Button>);
-      const button = screen.getByRole("button", {
-        name: "+ Add additional field",
-      });
-      expect(button.className).toContain("kozmos-button-subtle");
-      expect(button.className).not.toContain("kozmos-button-default");
-      expect(button.className).toContain("kozmos-button-emotion-filled");
-      const prefix = "--components-subtle-buttons-themed-button";
+    // buttonVariants is public, for links: its subtle class must carry the
+    // tier's colours itself, as Button sets none with no emotion given
+    // (check-theme-fill reads them drawn on a link).
+    it("draws through buttonVariants alone: its class sets the tier's properties", () => {
+      const css = fs.readFileSync(
+        path.resolve(
+          __dirname,
+          "../../../../styles/src/styles/owned-components.css",
+        ),
+        "utf8",
+      );
+      const rule = css.match(/\.kozmos-button-subtle\s*\{([^}]*)\}/)?.[1];
+      expect(rule).toBeDefined();
       for (const [property, token] of [
         ["--kz-button-bg", "background-idle"],
         ["--kz-button-bg-hover", "background-hover"],
@@ -80,9 +82,26 @@ describe("Button", () => {
         ["--kz-button-fg-focus", "foreground-content-focus"],
         ["--kz-button-fg-pressed", "foreground-content-pressed"],
       ])
-        expect(button.style.getPropertyValue(property)).toBe(
-          `var(${prefix}-${token})`,
+        expect(rule!.replace(/\s+/g, "")).toContain(
+          `${property}:var(--components-subtle-buttons-themed-button-${token})`,
         );
+      expect(buttonVariants({ variant: "subtle" })).toContain(
+        "kozmos-button-subtle",
+      );
+    });
+
+    // GAP-200: "+ Add additional field" is one Kozmos Button, a pale theme
+    // fill under theme words, with no wrapper. With no emotion its class
+    // draws it, as buttonVariants does on a link: no inline colour.
+    it("is its own variant, drawn by its class with no emotion given", () => {
+      render(<Button variant="subtle">+ Add additional field</Button>);
+      const button = screen.getByRole("button", {
+        name: "+ Add additional field",
+      });
+      expect(button.className).toContain("kozmos-button-subtle");
+      expect(button.className).not.toContain("kozmos-button-default");
+      expect(button.className).not.toContain("kozmos-button-emotion-filled");
+      expect(button.getAttribute("style")).toBeNull();
     });
 
     it("lets a caller's own style win over the subtle tier's", () => {

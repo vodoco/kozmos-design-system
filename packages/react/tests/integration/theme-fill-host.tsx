@@ -2,7 +2,9 @@ import { createRoot } from "react-dom/client";
 import {
   Badge,
   Button,
+  buttonVariants,
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
   CategoryField,
@@ -74,9 +76,40 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       >
         Delete feature
       </Button>
+      {/* buttonVariants alone draws the subtle variant, on a link too. */}
+      <a
+        className={buttonVariants({ variant: "subtle" })}
+        data-testid={id("link-subtle")}
+        href="#fields"
+      >
+        Add a field
+      </a>
+      <Button
+        aria-disabled="true"
+        data-testid={id("button-subtle-unavailable")}
+        variant="subtle"
+      >
+        + Add additional field
+      </Button>
+      <div data-testid={id("split-button-subtle")}>
+        <SplitButton
+          menuItems={[{ label: "Later", onClick: () => undefined }]}
+          variant="subtle"
+        >
+          Add field
+        </SplitButton>
+      </div>
+      {/* CLOUD-UI-001: the strip, with a lone title, first in its card; and
+          one under content, which keeps square corners. */}
       <Card data-testid={id("card-header-subtle")}>
         <CardHeader tone="subtle">
           <CardTitle>Add beacon</CardTitle>
+        </CardHeader>
+      </Card>
+      <Card data-testid={id("card-header-subtle-second")}>
+        <CardContent>Fields</CardContent>
+        <CardHeader tone="subtle">
+          <CardTitle>More</CardTitle>
         </CardHeader>
       </Card>
       <Button data-testid={id("button-secondary")} variant="secondary">
