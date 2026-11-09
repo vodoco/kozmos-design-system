@@ -16,7 +16,8 @@ whether its text was typed or written by the field itself:
   you reset a form by setting `value` to `""` after the visitor typed, their draft stays: hold
   the text in `inputValue`, or give the field a new `key`, to clear it too.
 - A `defaultInputValue` draft is no longer replaced when the chosen option's label first
-  arrives in `options`.
+  arrives in `options`. A blank `defaultInputValue` (`""`) is no draft, so the label still
+  shows.
 - When the chosen option leaves `options` while the visitor has not typed, the field keeps
   showing its label instead of emptying.
 

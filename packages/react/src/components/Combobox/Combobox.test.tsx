@@ -331,6 +331,127 @@ describe("Combobox: the visitor's typed text is kept (GAP-232)", () => {
       },
     );
 
+    it("follows a rename again once the visitor chooses the same option they typed over", async () => {
+      const user = userEvent.setup();
+      const renamed = options.map((option) =>
+        option.value === "overview" ? { ...option, label: "Summary" } : option,
+      );
+      const { rerender } = render(
+        <Combobox label="View" options={options} defaultValue="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      await user.type(input, "Ov", replacing(input));
+      await user.click(screen.getByRole("option", { name: "Overview" }));
+      expect(input).toHaveValue("Overview");
+      rerender(
+        <Combobox label="View" options={renamed} defaultValue="overview" />,
+      );
+      expect(input).toHaveValue("Summary");
+    });
+
+    it("keeps a defaultInputValue draft when options arrive after the first render", () => {
+      const { rerender } = render(
+        <Combobox
+          label="View"
+          options={[]}
+          defaultValue="overview"
+          defaultInputValue="Ov"
+        />,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox", { name: "View" });
+      rerender(
+        <Combobox
+          label="View"
+          options={options}
+          defaultValue="overview"
+          defaultInputValue="Ov"
+        />,
+      );
+      expect(input).toHaveValue("Ov");
+    });
+
+    it('shows a late label when defaultInputValue is "", which is no draft', () => {
+      const { rerender } = render(
+        <Combobox
+          label="View"
+          options={[]}
+          value="overview"
+          defaultInputValue=""
+        />,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox", { name: "View" });
+      expect(input).toHaveValue("");
+      rerender(
+        <Combobox
+          label="View"
+          options={options}
+          value="overview"
+          defaultInputValue=""
+        />,
+      );
+      expect(input).toHaveValue("Overview");
+    });
+
+    it("follows a rename after the product lets go of inputValue it held while the visitor typed", async () => {
+      const user = userEvent.setup();
+      function Host({ held, list }: { held: boolean; list: typeof options }) {
+        const [text, setText] = React.useState("Overview");
+        return (
+          <Combobox
+            label="View"
+            options={list}
+            value="overview"
+            inputValue={held ? text : undefined}
+            onInputValueChange={setText}
+          />
+        );
+      }
+      const { rerender } = render(<Host held list={options} />, { wrapper });
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      await user.type(input, "Ov", replacing(input));
+      expect(input).toHaveValue("Ov");
+      rerender(<Host held={false} list={options} />);
+      expect(input).toHaveValue("Overview");
+      rerender(
+        <Host
+          held={false}
+          list={options.map((option) =>
+            option.value === "overview"
+              ? { ...option, label: "Summary" }
+              : option,
+          )}
+        />,
+      );
+      expect(input).toHaveValue("Summary");
+    });
+
+    it("shows a late label for a value the host sets after the visitor typed and pressed Clear", async () => {
+      const user = userEvent.setup();
+      const later = [...options, { value: "later", label: "Later" }];
+      const { rerender } = render(
+        <Combobox label="View" options={options} value="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      await user.type(input, "Ov", replacing(input));
+      await user.click(screen.getByRole("button", { name: "Clear selection" }));
+      expect(input).toHaveValue("");
+      rerender(<Combobox label="View" options={options} value="" />);
+      // The host chooses before its options hold the choice.
+      rerender(<Combobox label="View" options={options} value="later" />);
+      rerender(<Combobox label="View" options={later} value="later" />);
+      expect(input).toHaveValue("Later");
+    });
+
     it("keeps the chosen label shown when its option leaves options, the choice unchanged", () => {
       const { rerender } = render(
         <Combobox label="View" options={options} value="overview" />,

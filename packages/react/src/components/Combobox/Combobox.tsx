@@ -235,9 +235,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     );
     // Who last wrote the field's own text: the field, with the chosen
     // option's label (or the empty text of no choice), or the visitor, by
-    // typing. A draft from defaultInputValue counts as the visitor's.
+    // typing into the field's own text (not text the product holds). A
+    // nonblank draft from defaultInputValue counts as the visitor's.
     const [textByVisitor, setTextByVisitor] = React.useState(
-      defaultInputValue !== undefined,
+      defaultInputValue !== undefined && defaultInputValue !== "",
     );
     // A new choice puts its label in the field's own text in the same render,
     // so no commit shows the old one. Anything else leaves text the visitor
@@ -554,7 +555,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   }}
                   onChange={(event) => {
                     setInputValue(event.target.value);
-                    setTextByVisitor(true);
+                    if (inputValue === undefined) setTextByVisitor(true);
                     if (!open) setOpen(true);
                   }}
                   onKeyDown={(event) => {
