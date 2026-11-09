@@ -52,8 +52,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `MultiSelectProps`, which
 
   What a screen reader is told, politely and once, when the selection
   reaches `maxSelected` and the remaining options are disabled: given the
-  limit, it returns the words, in the product's language. Said again only
-  after the selection drops below the limit and reaches it again.
+  limit, it returns the words, in the product's language. A value the host
+  sets that reaches the limit is said too. Said again only after the
+  selection drops below the limit and reaches it again, or when the limit
+  or these words change while the selection is at it.
   "Limit of 3 reached" by default.
 
 - `onSearchValueChange`: `(value: string) => void`, optional.

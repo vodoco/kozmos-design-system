@@ -200,10 +200,13 @@ fun FilterScreen(options: List<KozmosListboxOption>) {
   and the arrow keys pass over them. A screen reader is told politely, once:
   "Limit of 3 reached" by default, or the words `maxSelectedLabel` returns for
   the limit, in the product's language. A status of its own says it, in the
-  field from the first render and empty, so only its words change. It is not
-  said again while the selection stays at the limit, nor for a field that
-  mounts already there; removing a choice clears it, and reaching the limit
-  again says it again.
+  field from the first render and empty, so only its words change. A value
+  the host sets that reaches the limit, or goes past it, is said too. It is
+  not said again while the selection stays at the limit, unless the limit or
+  its words change (a new `maxSelected` or `maxSelectedLabel`, say for another
+  language), nor for a field that mounts already there or is given a limit it
+  already meets. Removing a choice clears it, and reaching the limit again
+  says it again.
 
 ## Stories
 
