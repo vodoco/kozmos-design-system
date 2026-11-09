@@ -23,6 +23,11 @@ import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.checkbox.KozmosCheckbox
 import com.kozmos.components.input.KozmosInput
+import com.kozmos.components.otpinput.KozmosOTPInput
+import com.kozmos.providers.KozmosAnalyticsEvent
+import com.kozmos.providers.LocalKozmosAnalytics
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import java.util.UUID
 
 data class TodoTask(val id: UUID, val text: String, var completed: Boolean)
@@ -45,6 +50,7 @@ class MainActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                         .padding(32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -61,6 +67,8 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     
+                    OtpCheck()
+
                     // Input Capture Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -132,6 +140,35 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * OTPInput on a device, for what a test cannot press: a real keyboard, a
+ * composing IME (Gboard's Japanese keyboard, full-width digits), the SMS
+ * one-time code, paste and TalkBack. It shows the code the field passes on
+ * and every analytics event it sends: `otp_code_completed` once, when the
+ * user's typing or paste fills the last box, and never for a code the host
+ * sets ("Host sets 1234").
+ */
+@Composable
+private fun OtpCheck() {
+    var code by remember { mutableStateOf("") }
+    val events = remember { mutableStateListOf<String>() }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("OTPInput", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        val track: (KozmosAnalyticsEvent) -> Unit = remember {
+            { event -> events.add("${event.eventName} ${event.properties.orEmpty()}") }
+        }
+        CompositionLocalProvider(LocalKozmosAnalytics provides track) {
+            KozmosOTPInput(value = code, onValueChange = { code = it }, length = 6, label = "Verification code")
+        }
+        Text("Code: \"$code\"")
+        Text("Events: ${if (events.isEmpty()) "none" else events.joinToString("; ")}")
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            KozmosButton(variant = KozmosButtonVariant.Outline, onClick = { code = "1234" }) { Text("Host sets 1234") }
+            KozmosButton(variant = KozmosButtonVariant.Outline, onClick = { code = ""; events.clear() }) { Text("Clear") }
         }
     }
 }
