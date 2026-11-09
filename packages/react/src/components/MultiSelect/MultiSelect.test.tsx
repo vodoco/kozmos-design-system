@@ -91,6 +91,72 @@ describe("MultiSelect: a prop change shows in the commit it arrives in", () => {
   });
 });
 
+// What `aria-activedescendant` names in a commit, read by a Profiler as React
+// commits it: every commit, the field's own included, not just the last.
+function activeOptionNow() {
+  const id = document
+    .querySelector('[role="combobox"]')
+    ?.getAttribute("aria-activedescendant");
+  if (!id) return null;
+  const option = document.getElementById(id);
+  if (!option) return `undrawn ${id}`;
+  const disabled = option.getAttribute("aria-disabled") === "true";
+  return `${option.textContent?.trim()}${disabled ? " (disabled)" : ""}`;
+}
+
+describe("MultiSelect: the active option moves in the commit that changes it (GAP-231)", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it("names the first enabled option in every commit after typing", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Routes");
+
+      // "e" keeps every option drawn; new text starts at the first.
+      commits.length = 0;
+      await user.keyboard("e");
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Filters");
+    });
+
+    it("names the first option in every commit after typing narrows the list", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Routes");
+
+      // "l" draws Filters and Layers: the third row is gone.
+      commits.length = 0;
+      await user.keyboard("l");
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Filters");
+    });
+  });
+});
+
 describe("MultiSelect", () => {
   it("selects and removes multiple options", async () => {
     const user = userEvent.setup();

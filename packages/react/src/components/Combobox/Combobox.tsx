@@ -283,6 +283,26 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const [activeKey, setActiveKey] = React.useState<string | null>(() =>
       firstAutomaticKey(entries),
     );
+    // New typed text makes the first option active, and new entries keep the
+    // active one only while it is still drawn and enabled: worked out in the
+    // render that brings them, so no commit names a stale option (GAP-231).
+    const [activeFor, setActiveFor] = React.useState({
+      entries,
+      query: visibleInputValue,
+    });
+    if (
+      activeFor.entries !== entries ||
+      activeFor.query !== visibleInputValue
+    ) {
+      setActiveFor({ entries, query: visibleInputValue });
+      if (
+        activeFor.query !== visibleInputValue ||
+        !entries.some(
+          (entry) => !entry.disabled && entryKey(entry) === activeKey,
+        )
+      )
+        setActiveKey(firstAutomaticKey(entries));
+    }
     const activeIndex = entries.findIndex(
       (entry) => !entry.disabled && entryKey(entry) === activeKey,
     );
@@ -295,7 +315,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         return entries[index] ? entryKey(entries[index]) : null;
       });
     };
-    const previousQuery = React.useRef(visibleInputValue);
     const resolvedStatus: InputStatus = error ? "error" : status;
     const supportingText =
       typeof error === "string" && error ? error : helperText;
@@ -326,21 +345,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     }, [activeOptionId]);
     const canClear =
       clearable && !disabled && !readOnly && Boolean(visibleInputValue);
-
-    React.useEffect(() => {
-      const queryChanged = previousQuery.current !== visibleInputValue;
-      previousQuery.current = visibleInputValue;
-      setActiveKey((previous) => {
-        if (
-          !queryChanged &&
-          entries.some(
-            (entry) => !entry.disabled && entryKey(entry) === previous,
-          )
-        )
-          return previous;
-        return firstAutomaticKey(entries);
-      });
-    }, [entries, visibleInputValue]);
 
     React.useEffect(() => {
       if (!open) return undefined;
