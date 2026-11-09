@@ -267,6 +267,70 @@ describe("Combobox: the visitor's typed text is kept (GAP-232)", () => {
       expect(input).toHaveValue("Su");
     });
 
+    it("keeps nothing typed when an async search brings the chosen option back after the visitor erased their text", async () => {
+      const user = userEvent.setup();
+      function AsyncSearch() {
+        const [list, setList] = React.useState(options);
+        return (
+          <Combobox
+            label="View"
+            options={list}
+            defaultValue="overview"
+            filterOption={() => true}
+            onInputValueChange={(query) =>
+              setList(
+                options.filter((option) =>
+                  option.label.toLowerCase().includes(query.toLowerCase()),
+                ),
+              )
+            }
+          />
+        );
+      }
+      render(<AsyncSearch />, { wrapper });
+      const input = screen.getByRole<HTMLInputElement>("combobox", {
+        name: "View",
+      });
+      await user.type(input, "x", replacing(input));
+      expect(input).toHaveValue("x");
+      // Erased, the query is empty and the search brings "Overview" back.
+      await user.type(input, "{Backspace}");
+      expect(screen.getByRole("option", { name: "Overview" })).toBeVisible();
+      expect(input).toHaveValue("");
+    });
+
+    it("empties the label it kept when the host clears the choice later", () => {
+      const { rerender } = render(
+        <Combobox label="View" options={options} value="overview" />,
+        { wrapper },
+      );
+      const input = screen.getByRole("combobox", { name: "View" });
+      rerender(
+        <Combobox label="View" options={options.slice(1)} value="overview" />,
+      );
+      expect(input).toHaveValue("Overview");
+      // A later render, as a dependent field reset by the product.
+      rerender(<Combobox label="View" options={options.slice(1)} value="" />);
+      expect(input).toHaveValue("");
+    });
+
+    it.each([
+      ["value", { value: "details" }],
+      ["defaultValue", { defaultValue: "details" }],
+    ] as const)(
+      "shows the label when options arrive after %s",
+      (_name, choice) => {
+        const { rerender } = render(
+          <Combobox label="View" options={[]} {...choice} />,
+          { wrapper },
+        );
+        const input = screen.getByRole("combobox", { name: "View" });
+        expect(input).toHaveValue("");
+        rerender(<Combobox label="View" options={options} {...choice} />);
+        expect(input).toHaveValue("Details");
+      },
+    );
+
     it("keeps the chosen label shown when its option leaves options, the choice unchanged", () => {
       const { rerender } = render(
         <Combobox label="View" options={options} value="overview" />,
