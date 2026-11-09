@@ -865,6 +865,8 @@ describe("FloorSelector collapsible: GAP-233", () => {
       const onSelect = vi.fn();
       const column = await openAndCloseOnEscape(onSelect);
       expect(column).toHaveStyle({ pointerEvents: "none" });
+      // Inert, so assistive technology neither reads nor acts on it.
+      expect(column).toHaveAttribute("inert");
       fireEvent.click(
         within(column).getByRole("button", { name: "Ground floor" }),
       );
@@ -894,6 +896,25 @@ describe("FloorSelector collapsible: GAP-233", () => {
           screen.getByRole("button", { name: "First floor" }),
         ).toHaveFocus(),
       );
+    });
+
+    it("opened again before it is gone, it takes the pointer and is no longer inert", async () => {
+      const onSelect = vi.fn();
+      const column = await openAndCloseOnEscape(onSelect);
+      expect(column).toHaveAttribute("inert");
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Floor selector" })).getByRole(
+          "button",
+          { name: "First floor" },
+        ),
+      );
+      expect(column).toHaveAttribute("data-state", "open");
+      expect(column).not.toHaveAttribute("inert");
+      expect(column.style.pointerEvents).toBe("");
+      fireEvent.click(
+        within(column).getByRole("button", { name: "Ground floor" }),
+      );
+      expect(onSelect).toHaveBeenCalledWith("g");
     });
 
     it("an open column takes the pointer and chooses as before", async () => {

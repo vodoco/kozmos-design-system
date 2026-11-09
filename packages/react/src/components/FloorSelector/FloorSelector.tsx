@@ -207,6 +207,9 @@ function UserLevelDot() {
  */
 const COLUMN_INSET = 4;
 
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
 interface CollapsibleFloorSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
   options: FloorPresentation[];
   selectedFloor: string;
@@ -302,18 +305,39 @@ const CollapsibleFloorSelector = React.forwardRef<
     const [popup, setPopup] = React.useState<HTMLDivElement | null>(null);
     // Whether the open column's list overflows, and so scrolls: it draws
     // `data-scrollable` and the scrollbar. Held with the list element it was
-    // measured on, so that it belongs to one opening. A column that closes
-    // keeps it through its exit animation, where the list is still drawn; a
-    // column that opens again draws a new list, and its first commit reads
-    // not scrollable, which it is: until Radix has placed it the column has
-    // no available height to overflow (GAP-233).
+    // measured on, so that it belongs to one opening: a column that opens
+    // again draws a new list, which starts out not scrollable, and a column
+    // that closes keeps it through its exit animation, where the list is
+    // still drawn (GAP-233).
     const [measured, setMeasured] = React.useState<{
       list: HTMLDivElement | null;
       scrollable: boolean;
     }>({ list: null, scrollable: false });
     const scrollable =
       content !== null && measured.list === content && measured.scrollable;
-    React.useEffect(() => {
+    // How many times Radix has placed the column. Until it is placed the
+    // column has no available height, so nothing overflows; the commit that
+    // places it gives it one, and its layout effect calls `onPlaced`. The
+    // measure below runs again then, in a layout effect, so the state it
+    // sets is drawn before the placed column is painted: no painted frame of
+    // an opening shows a list spilling out of its column, or the scroll
+    // affordance of another opening (GAP-233).
+    const [placements, setPlacements] = React.useState(0);
+    // Popover's types leave out `onPlaced`, but its content passes it on to
+    // Radix's Popper, which calls it.
+    const placedProps = {
+      onPlaced: () => setPlacements((count) => count + 1),
+    } as object;
+    // A closing column is going away: inert, so assistive technology neither
+    // reads nor acts on it and the keyboard cannot reach it, through its exit
+    // animation. Set in a layout effect, before the closing frame is painted;
+    // cleared if it opens again before it is gone. The browser moves focus
+    // off it to the page, and `onCloseAutoFocus` hands it to the tile once
+    // the column is gone, as it did before.
+    useIsomorphicLayoutEffect(() => {
+      popup?.toggleAttribute("inert", !open);
+    }, [open, popup]);
+    useIsomorphicLayoutEffect(() => {
       if (!open || typeof ResizeObserver === "undefined") return;
       if (!content) return;
       const revealCurrent = () => {
@@ -340,7 +364,7 @@ const CollapsibleFloorSelector = React.forwardRef<
       observer.observe(content);
       revealCurrent();
       return () => observer.disconnect();
-    }, [open, content, scrollable, selectedFloor, options.length]);
+    }, [open, content, placements, scrollable, selectedFloor, options.length]);
 
     const setOpenState = (next: boolean) => {
       if (next && !canExpand) return;
@@ -454,6 +478,7 @@ const CollapsibleFloorSelector = React.forwardRef<
                 collisionPadding={0}
                 updatePositionStrategy="always"
                 ref={setPopup}
+                {...placedProps}
                 data-scrollable={scrollable ? "true" : undefined}
                 // A closing column plays its exit animation where it was, but
                 // a level in it can no longer be chosen: it takes no pointer
