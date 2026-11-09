@@ -6511,8 +6511,8 @@ assertNotContains(
 assertContains(
   files.iosNavbarFigma,
   source.iosNavbarFigma,
-  /var variant = \["Content": "Basic", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Actions", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Contextual", "NavigationAlign": "Center"\]/,
-  "iOS Navbar Code Connect maps static content variants at the default NavigationAlign",
+  /var variant = \["Content": "Basic"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign[\s\S]*?var variant = \["Content": "Actions"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign[\s\S]*?var variant = \["Content": "Contextual"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign/,
+  "iOS Navbar Code Connect maps static content variants and NavigationAlign (GAP-196)",
 );
 assertContains(
   files.iosNavbarFigma,
@@ -6547,8 +6547,8 @@ assertContains(
 assertContains(
   files.iosSidebarFigma,
   source.iosSidebarFigma,
-  /var variant = \["Content": "Basic", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Sections", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Tools", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Rail", "Inset": "Default"\]/,
-  "iOS Sidebar Code Connect maps static content variants at the default Inset",
+  /var variant = \["Content": "Basic"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Sections"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Tools"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Rail"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset/,
+  "iOS Sidebar Code Connect maps static content variants and Inset (GAP-199)",
 );
 assertNotContains(
   files.iosSidebarFigma,
@@ -6568,6 +6568,18 @@ assertContains(
   /KozmosNavbar\([\s\S]*?logo =[\s\S]*?context =[\s\S]*?navigation =[\s\S]*?primaryAction =[\s\S]*?actions =[\s\S]*?utilities =[\s\S]*?account =/,
   "Android Navbar Code Connect uses the named shell slot API",
 );
+assertContains(
+  files.androidNavbarFigma,
+  source.androidNavbarFigma,
+  /@FigmaProperty\(FigmaType\.Enum, "NavigationAlign"\)[\s\S]*?navigationAlign = navigationAlign/,
+  "Android Navbar Code Connect maps NavigationAlign (GAP-196)",
+);
+assertNotContains(
+  files.androidNavbarFigma,
+  source.androidNavbarFigma,
+  /@FigmaVariant\("NavigationAlign"/,
+  "Android Navbar Code Connect restricted to one NavigationAlign",
+);
 assertNotContains(
   files.androidNavbarFigma,
   source.androidNavbarFigma,
@@ -6585,6 +6597,18 @@ assertContains(
   source.androidSidebarFigma,
   /KozmosSidebar\([\s\S]*?variant =[\s\S]*?header =[\s\S]*?navigation =[\s\S]*?tools =[\s\S]*?footer =/,
   "Android Sidebar Code Connect uses the named shell slot API",
+);
+assertContains(
+  files.androidSidebarFigma,
+  source.androidSidebarFigma,
+  /@FigmaProperty\(FigmaType\.Enum, "Inset"\)[\s\S]*?inset = inset/,
+  "Android Sidebar Code Connect maps Inset (GAP-199)",
+);
+assertNotContains(
+  files.androidSidebarFigma,
+  source.androidSidebarFigma,
+  /@FigmaVariant\("Inset"/,
+  "Android Sidebar Code Connect restricted to one Inset",
 );
 assertContains(
   files.figma,

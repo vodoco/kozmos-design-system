@@ -1,17 +1,19 @@
 import SwiftUI
 import Figma
 
-// Inset=Default only: SwiftUI has no inset yet (GAP-199 is web and Figma
-// first), so a Flush instance shows no SwiftUI snippet rather than a padded one.
-
 struct KozmosSidebarBasicConnect: FigmaConnect {
     let component = KozmosSidebar<AnyView>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6807"
-    var variant = ["Content": "Basic", "Inset": "Default"]
+    var variant = ["Content": "Basic"]
+
+    // GAP-199: the room above the first slot.
+    @FigmaEnum("Inset", mapping: ["Default": KozmosSidebarInset.`default`, "Flush": KozmosSidebarInset.flush])
+    var inset: KozmosSidebarInset = .default
 
     var body: some View {
         KozmosSidebar(
             variant: .expanded,
+            inset: self.inset,
             header: {
                 Text("Header")
             },
@@ -31,11 +33,16 @@ struct KozmosSidebarBasicConnect: FigmaConnect {
 struct KozmosSidebarSectionsConnect: FigmaConnect {
     let component = KozmosSidebar<AnyView>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6807"
-    var variant = ["Content": "Sections", "Inset": "Default"]
+    var variant = ["Content": "Sections"]
+
+    // GAP-199: the room above the first slot.
+    @FigmaEnum("Inset", mapping: ["Default": KozmosSidebarInset.`default`, "Flush": KozmosSidebarInset.flush])
+    var inset: KozmosSidebarInset = .default
 
     var body: some View {
         KozmosSidebar(
             variant: .expanded,
+            inset: self.inset,
             header: {
                 Text("Header")
             },
@@ -60,11 +67,16 @@ struct KozmosSidebarSectionsConnect: FigmaConnect {
 struct KozmosSidebarToolsConnect: FigmaConnect {
     let component = KozmosSidebar<AnyView>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6807"
-    var variant = ["Content": "Tools", "Inset": "Default"]
+    var variant = ["Content": "Tools"]
+
+    // GAP-199: the room above the first slot.
+    @FigmaEnum("Inset", mapping: ["Default": KozmosSidebarInset.`default`, "Flush": KozmosSidebarInset.flush])
+    var inset: KozmosSidebarInset = .default
 
     var body: some View {
         KozmosSidebar(
             variant: .expanded,
+            inset: self.inset,
             header: {
                 Text("Header")
             },
@@ -89,11 +101,16 @@ struct KozmosSidebarToolsConnect: FigmaConnect {
 struct KozmosSidebarRailConnect: FigmaConnect {
     let component = KozmosSidebar<AnyView>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6807"
-    var variant = ["Content": "Rail", "Inset": "Default"]
+    var variant = ["Content": "Rail"]
+
+    // GAP-199: the room above the first slot.
+    @FigmaEnum("Inset", mapping: ["Default": KozmosSidebarInset.`default`, "Flush": KozmosSidebarInset.flush])
+    var inset: KozmosSidebarInset = .default
 
     var body: some View {
         KozmosSidebar(
             variant: .rail,
+            inset: self.inset,
             header: {
                 Text("Header")
             },

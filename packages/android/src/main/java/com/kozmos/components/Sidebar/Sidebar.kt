@@ -26,6 +26,18 @@ import com.kozmos.tokens.KozmosThemeTokens
  */
 internal val KozmosRailWidth = 96.dp
 
+/** The room above [KozmosSidebar]'s first slot, as React's `inset` (GAP-199). */
+enum class KozmosSidebarInset {
+    /** The top padded as the bottom is: 24. */
+    Default,
+    /**
+     * No room above the first slot, so it starts at the sidebar's top edge: a
+     * rail's first item flush under a fixed header, as Pointr Cloud draws its
+     * side menu. The bottom keeps its 24.
+     */
+    Flush
+}
+
 enum class KozmosSidebarVariant {
     Expanded,
     Rail
@@ -34,10 +46,12 @@ enum class KozmosSidebarVariant {
 @Composable
 fun KozmosSidebar(
     modifier: Modifier = Modifier,
+    inset: KozmosSidebarInset = KozmosSidebarInset.Default,
     content: @Composable ColumnScope.() -> Unit
 ) {
     KozmosSidebar(
         modifier = modifier,
+        inset = inset,
         navigation = content
     )
 }
@@ -46,6 +60,8 @@ fun KozmosSidebar(
 fun KozmosSidebar(
     modifier: Modifier = Modifier,
     variant: KozmosSidebarVariant = KozmosSidebarVariant.Expanded,
+    // Before the slots, so a trailing lambda is still the footer.
+    inset: KozmosSidebarInset = KozmosSidebarInset.Default,
     header: @Composable ColumnScope.() -> Unit = {},
     navigation: @Composable ColumnScope.() -> Unit,
     tools: @Composable ColumnScope.() -> Unit = {},
@@ -83,7 +99,11 @@ fun KozmosSidebar(
                 .padding(
                     start = if (isRail) 0.dp else KozmosDimensions.primitivesLayoutSpacing200,
                     end = if (isRail) 1.dp else KozmosDimensions.primitivesLayoutSpacing200,
-                    top = KozmosDimensions.primitivesLayoutSpacing300,
+                    // Flush, the first slot starts at the top edge (GAP-199).
+                    // React drops its navigation's own 16 there too, on a rail
+                    // with no header; this navigation has none, so the 24 is
+                    // all there is.
+                    top = if (inset == KozmosSidebarInset.Flush) 0.dp else KozmosDimensions.primitivesLayoutSpacing300,
                     bottom = KozmosDimensions.primitivesLayoutSpacing300
                 )
                 .fillMaxHeight(),

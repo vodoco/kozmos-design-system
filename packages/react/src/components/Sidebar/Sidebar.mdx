@@ -35,6 +35,11 @@ navigation keeps its 16 below it. An expanded sidebar drops the 24 and keeps the
 items' rings take outside them, which the scrolling navigation would otherwise cut. The bottom keeps
 its room either way.
 
+SwiftUI's and Compose's `KozmosSidebar` take it as `inset: .flush` and
+`inset = KozmosSidebarInset.Flush` (`KozmosSidebarInset`, `.default` by default). Their navigation has
+no 16 of its own, so flush drops the 24 alone, in either variant: their items ring their focus on
+their own edge, not outside it.
+
 <Canvas of={SidebarStories.Flush} />
 
 ## Implementation

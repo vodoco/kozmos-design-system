@@ -49,9 +49,10 @@ public struct KozmosAlert<Content: View>: View {
         .environment(\.kozmosAlertVariant, variant.shared)
         .padding()
         .background(KozmosColors.semanticsSurface0)
-        .cornerRadius(KozmosDimensions.semanticsRadiusControl)
+        // A container's corner, 20, as React's rounded-container (decision 156).
+        .cornerRadius(KozmosDimensions.semanticsRadiusContainer)
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer)
                 .stroke(variant.borderColor, lineWidth: 1)
         )
     }

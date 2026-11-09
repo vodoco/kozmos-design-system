@@ -21,6 +21,20 @@ import com.kozmos.components.sidebar.KozmosRailWidth
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
+/**
+ * Where [KozmosNavbar]'s navigation sits in the room between the leading slots
+ * (logo, context, primary action) and the trailing ones (actions, utilities,
+ * account), as React's `navigationAlign` (GAP-196).
+ */
+enum class KozmosNavbarNavigationAlign {
+    /** Right after the leading slots. */
+    Start,
+    /** Centred in the room, as the bar has always drawn it: the default. */
+    Center,
+    /** Beside the trailing slots, as Pointr Cloud draws its main sections. */
+    End
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KozmosNavbar(
@@ -42,11 +56,18 @@ fun KozmosNavbar(
  * the bar's edge (GAP-208), over a rail at the screen's start: the logo centred
  * over the rail's items, and what follows past the rail. Right to left, the
  * column mirrors.
+ * @param navigationAlign Where [navigation] sits in the room between the leading
+ * slots and the trailing ones (GAP-196): [KozmosNavbarNavigationAlign.Center],
+ * the default, centres it; Start sets it right after the logo, context and
+ * primary action; End beside the actions, utilities and account. Start and end
+ * follow the layout direction, so End is the left right to left. TalkBack's
+ * order is unchanged: only where the items are drawn moves.
  */
 @Composable
 fun KozmosNavbar(
     modifier: Modifier = Modifier,
     logoInset: Boolean = false,
+    navigationAlign: KozmosNavbarNavigationAlign = KozmosNavbarNavigationAlign.Center,
     logo: @Composable RowScope.() -> Unit = {},
     context: @Composable RowScope.() -> Unit = {},
     navigation: @Composable RowScope.() -> Unit = {},
@@ -83,7 +104,13 @@ fun KozmosNavbar(
             primaryAction()
             Row(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Center,
+                // The room the navigation fills, from its start, its middle or
+                // to its end: Compose mirrors Start and End right to left.
+                horizontalArrangement = when (navigationAlign) {
+                    KozmosNavbarNavigationAlign.Start -> Arrangement.Start
+                    KozmosNavbarNavigationAlign.Center -> Arrangement.Center
+                    KozmosNavbarNavigationAlign.End -> Arrangement.End
+                },
                 verticalAlignment = Alignment.CenterVertically,
                 content = navigation
             )

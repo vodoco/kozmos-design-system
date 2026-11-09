@@ -39,6 +39,12 @@ struct KozmosIconButtonConnect: FigmaConnect {
     )
     var state: String = "default"
 
+    // GAP-197: Counter shows the count over the icon's top-end corner. Counter
+    // Text is a sample in the design; in code the count is the product's
+    // number, which a snippet cannot read from text.
+    @FigmaBoolean("Counter")
+    var showCounter: Bool = false
+
     var body: some View {
         KozmosIconButton(
             iconName: "magnifyingglass",
@@ -46,6 +52,7 @@ struct KozmosIconButtonConnect: FigmaConnect {
             size: self.size,
             isDisabled: self.state == "disabled",
             isLoading: self.state == "loading",
+            counter: self.showCounter ? 3 : nil,
             action: {}
         )
     }

@@ -22,14 +22,32 @@ public struct KozmosIconButton: View {
     let size: KozmosIconButtonSize
     let isDisabled: Bool
     let isLoading: Bool
+    let counter: Int?
+    let counterLabel: (Int) -> String
     let action: () -> Void
     
+    /// - Parameters:
+    ///   - counter: A count at the button's top-end corner (GAP-197): the tours
+    ///     left on a help button, unread notices. Drawn as `KozmosCounter` is,
+    ///     small, in the theme fill (`.brand`), not a `KozmosBadge`, which is a
+    ///     status (decision 93). Its bottom edge is on the button's centre line
+    ///     and its leading edge 2 past it, so it covers the icon's top-trailing
+    ///     corner, and the top-left right to left. VoiceOver reads the count
+    ///     as the button's value, after its name: "Help, 3". The number drawn
+    ///     is hidden, so it is not read twice. `nil`, the default, draws no
+    ///     counter: pass `nil` rather than 0 to hide it.
+    ///   - counterLabel: What the count is read as, in the product's language:
+    ///     `{ "\($0) tours left" }`. The number alone by default. React's
+    ///     `counterSeparator` has no counterpart: VoiceOver pauses between a
+    ///     name and a value itself.
     public init(
         iconName: String,
         variant: KozmosIconButtonVariant = .ghost,
         size: KozmosIconButtonSize = .default,
         isDisabled: Bool = false,
         isLoading: Bool = false,
+        counter: Int? = nil,
+        counterLabel: @escaping (Int) -> String = { String($0) },
         action: @escaping () -> Void
     ) {
         self.iconName = iconName
@@ -37,6 +55,8 @@ public struct KozmosIconButton: View {
         self.size = size
         self.isDisabled = isDisabled
         self.isLoading = isLoading
+        self.counter = counter
+        self.counterLabel = counterLabel
         self.action = action
     }
     
@@ -59,7 +79,7 @@ public struct KozmosIconButton: View {
                 }
                 .foregroundColor(foregroundColor)
                 // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
-                .frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)
+                .frame(width: side, height: side)
                 .kozmosButtonSurface(
                     variant == .glass ? .glass : nil,
                     fill: backgroundColor(isPressed: isPressed, isFocused: isFocused),
@@ -67,12 +87,39 @@ public struct KozmosIconButton: View {
                     strokeWidth: variant == .outline ? 1 : 0,
                     shape: Circle()
                 )
+                .overlay(alignment: .topLeading) { counterMark }
             }
         }
         .disabled(isDisabled || isLoading)
+        // The count is the button's value: VoiceOver says the name a caller
+        // gives with `accessibilityLabel`, then the count, as React's name
+        // reads "Help, 3".
+        // An empty value is no value: a button with no counter reads as it
+        // did, and one whose count comes and goes keeps its identity.
+        .accessibilityValue(Text(verbatim: counter.map(counterLabel) ?? ""))
         // Loading, it is disabled, and drawn at half as a disabled part is.
         .opacity(isDisabled || isLoading ? 0.5 : 1)
         .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
+    }
+
+    private var side: CGFloat { size == .lg ? 48 : 44 }
+
+    /// The counter (GAP-197), as React's `.kozmos-icon-button-counter`: its
+    /// bottom edge on the button's centre line and its leading edge 2 past
+    /// it, at every size. Inside the label, so it dims with a disabled button
+    /// as React's does, but it takes no tap and VoiceOver skips it.
+    @ViewBuilder private var counterMark: some View {
+        if let counter {
+            KozmosCounter(String(counter), tone: .brand, size: .sm)
+                .fixedSize()
+                // From the top-leading corner: half the button and 2 across,
+                // and down to where its 18 ends on the centre line. Leading
+                // padding is mirrored right to left, as React's inset-inline is.
+                .padding(.leading, side / 2 + 2)
+                .padding(.top, side / 2 - 18)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     /// The emotion whose Primary Buttons tokens fill the button at rest,
@@ -140,3 +187,4 @@ public struct KozmosIconButton: View {
         }
     }
 }
+
