@@ -38,7 +38,7 @@ const bottomNavigationItemVariants = cva(
       selected: {
         true: "bg-muted text-primary",
         false:
-          "text-foreground hover:bg-muted/70 hover:text-foreground active:bg-muted",
+          "text-foreground hover:bg-hover-fill/70 hover:text-foreground active:bg-hover-fill",
       },
     },
     defaultVariants: {

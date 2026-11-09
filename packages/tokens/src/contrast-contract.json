@@ -4,6 +4,12 @@
   "description": "AA contrast pairs for public semantic tokens and Core runtime component aliases. Pairs are checked in both light and dark modes from generated CSS token output.",
   "runtimeAliases": [
     {
+      "name": "Tailwind hover fill",
+      "file": "packages/styles/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "hover-fill"],
+      "value": "var(--semantics-hover-fill)"
+    },
+    {
       "name": "Tailwind map marker dot",
       "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "map-marker", "dot"],
@@ -89,6 +95,18 @@
     }
   ],
   "pins": [
+    {
+      "name": "the hover fill is background 100 in light, the muted fill it always was (decision 173)",
+      "token": "semantics-hover-fill",
+      "sameAs": "primitives-colors-background-100",
+      "modes": ["light"]
+    },
+    {
+      "name": "the hover fill is background 200 in dark, 1.61:1 on the page where background 100 is 1.19:1 (GAP-228, decision 173)",
+      "token": "semantics-hover-fill",
+      "sameAs": "primitives-colors-background-200",
+      "modes": ["dark"]
+    },
     {
       "name": "the theme fill is theme 500, the client's base colour, in both themes (decision 59)",
       "token": "components-primary-buttons-themed-button-background-idle",
@@ -380,6 +398,24 @@
       "background": "primitives-colors-theme-900",
       "foreground": "primitives-colors-theme-300",
       "minimum": 4.5
+    },
+    {
+      "name": "body ink on the hover fill: a hovered row, item or ghost control (GAP-228)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-foreground-100",
+      "minimum": 4.5
+    },
+    {
+      "name": "muted ink on the hover fill: ToggleButton's hovered label (GAP-228)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-foreground-400",
+      "minimum": 4.5
+    },
+    {
+      "name": "danger text on the hover fill: AIInputBar's voice button in error, hovered (non-text, GAP-228)",
+      "background": "semantics-hover-fill",
+      "foreground": "semantics-emotion-danger-text",
+      "minimum": 3
     },
     {
       "name": "scrollbar thumb on the page and the panel (non-text)",

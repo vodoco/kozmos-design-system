@@ -32,8 +32,8 @@ const navigationItemVariants = cva(
       },
       state: {
         default:
-          "text-foreground hover:bg-muted/70 hover:text-foreground active:bg-muted",
-        hover: "bg-muted/70 text-foreground",
+          "text-foreground hover:bg-hover-fill/70 hover:text-foreground active:bg-hover-fill",
+        hover: "bg-hover-fill/70 text-foreground",
         selected: "bg-muted text-primary",
         focus: "text-foreground ring-2 ring-ring ring-offset-2",
         disabled:

@@ -60,7 +60,7 @@ const BottomSheetContent = React.forwardRef<
     ) : null}
     {children}
     {showClose ? (
-      <BottomSheetClose className="absolute right-0 top-2 inline-flex h-11 w-11 items-start justify-end rounded-control p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+      <BottomSheetClose className="absolute right-0 top-2 inline-flex h-11 w-11 items-start justify-end rounded-control p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
         <X aria-hidden="true" className="h-4 w-4" />
         <span className="sr-only">Close bottom sheet</span>
       </BottomSheetClose>

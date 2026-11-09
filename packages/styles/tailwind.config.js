@@ -157,6 +157,10 @@ module.exports = {
           DEFAULT: "var(--primitives-colors-background-100)",
           foreground: "var(--primitives-colors-foreground-400)",
         },
+        // The fill under the pointer (GAP-228, decision 173): muted in
+        // light, one step further in dark, where muted is 1.19:1 on the
+        // page. A hover or a press takes this; a fill at rest stays muted.
+        "hover-fill": "var(--semantics-hover-fill)",
         accent: {
           DEFAULT: "var(--primitives-colors-theme-600)",
           foreground: "var(--primitives-colors-foreground-1000)",

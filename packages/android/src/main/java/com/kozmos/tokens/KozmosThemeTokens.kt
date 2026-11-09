@@ -1259,6 +1259,21 @@ object KozmosThemeTokens {
             KozmosColorsDark.semanticsScrollbarThumbhover
         )
 
+    /**
+     * The fill under the pointer: a row, an item or a ghost control a pointer
+     * is over, and the same fill pressed where the press has no token of its
+     * own. background/100 in light; background/200 in dark (#2E3138, 1.61:1 on
+     * the page and 1.35:1 on background/100), because background/100 there,
+     * #17191C, is 1.19:1 on the black page and barely seen (GAP-228, decision
+     * 173). Fills that are not a hover — a selected row, a placeholder, a
+     * track — stay on muted.
+     */
+    val semanticsHoverFill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsHoverFill,
+            KozmosColorsDark.semanticsHoverFill
+        )
+
     val semanticsDiffNew: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsDiffNew,

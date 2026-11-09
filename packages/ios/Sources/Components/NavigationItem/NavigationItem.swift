@@ -350,8 +350,14 @@ public struct KozmosNavigationItem: View {
         if placement == .rail && isSelected {
             return KozmosColors.primitivesColorsTheme0
         }
-        if isSelected || state == .hover || state == .focus {
+        if isSelected || state == .focus {
             return KozmosColors.primitivesColorsBackground100
+        }
+        // Hovered, the hover fill: background/100 in light, one step further
+        // in dark, where background/100 is 1.19:1 on the page (GAP-228,
+        // decision 173).
+        if state == .hover {
+            return KozmosColors.semanticsHoverFill
         }
         return Color.clear
     }

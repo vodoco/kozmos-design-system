@@ -256,8 +256,11 @@ for (const mode of modes) {
   // Pins a contrast ratio cannot express: a token that must be another
   // token's colour, or one colour, in this mode. Decision 59's theme fill is
   // theme 500 in both themes and its foreground white in both; a ratio alone
-  // passed the old light-blue fill with black on it.
+  // passed the old light-blue fill with black on it. A pin that names its
+  // modes holds in those alone: the hover fill is one step in light and
+  // another in dark (GAP-228).
   for (const pin of contract.pins ?? []) {
+    if (pin.modes && !pin.modes.includes(mode)) continue;
     const actual = colorFor(variables, pin.token, mode, pin.name).toLowerCase();
     const expected = (
       pin.sameAs ? colorFor(variables, pin.sameAs, mode, pin.name) : pin.value

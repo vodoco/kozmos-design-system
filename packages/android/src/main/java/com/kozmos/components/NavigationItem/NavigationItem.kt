@@ -110,8 +110,12 @@ fun KozmosNavigationItem(
     // it is foreground/400, the muted foreground.
     val backgroundColor = when {
         isRail && isSelected -> KozmosThemeTokens.primitivesColorsTheme0
-        isSelected || state == KozmosNavigationItemState.Hover || state == KozmosNavigationItemState.Focus ->
+        isSelected || state == KozmosNavigationItemState.Focus ->
             KozmosThemeTokens.primitivesColorsBackground100
+        // Hovered, the hover fill: background/100 in light, one step further
+        // in dark, where background/100 is 1.19:1 on the page (GAP-228,
+        // decision 173).
+        state == KozmosNavigationItemState.Hover -> KozmosThemeTokens.semanticsHoverFill
         else -> Color.Transparent
     }
     val contentColor = when {
