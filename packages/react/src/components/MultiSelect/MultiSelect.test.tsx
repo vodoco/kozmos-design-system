@@ -157,6 +157,44 @@ describe("MultiSelect: the active option moves in the commit that changes it (GA
   });
 });
 
+describe("MultiSelect: opening names no option until it is drawn (GAP-231)", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it.each(["the pointer", "ArrowDown"] as const)(
+      "names a drawn option, or none, in every commit of opening with %s",
+      async (how) => {
+        const user = userEvent.setup();
+        const commits: (string | null)[] = [];
+        render(
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <MultiSelect label="Tools" options={options} />
+          </React.Profiler>,
+          { wrapper },
+        );
+        const input = screen.getByRole("combobox", { name: "Tools" });
+        if (how === "ArrowDown") {
+          input.focus();
+          await user.keyboard("{Escape}");
+        }
+        commits.length = 0;
+        if (how === "ArrowDown") await user.keyboard("{ArrowDown}");
+        else await user.click(input);
+        expect(screen.getByRole("listbox")).toBeVisible();
+        expect(commits.length).toBeGreaterThan(0);
+        // Drawn and enabled, or none: never an option still to be drawn.
+        for (const commit of commits)
+          expect(commit ?? "none").not.toMatch(/undrawn|\(disabled\)/);
+        expect(commits.at(-1)).not.toBeNull();
+      },
+    );
+  });
+});
+
 describe("MultiSelect: a choice leaves the active option where it is", () => {
   describe.each([
     ["outside StrictMode", undefined],
@@ -285,6 +323,42 @@ describe("MultiSelect: a choice leaves the active option where it is", () => {
       expect(screen.getAllByRole("option")).toHaveLength(3);
       expect(commits.length).toBeGreaterThan(0);
       for (const commit of commits) expect(commit).toBe("Layers");
+    });
+
+    it("moves on from the option chosen under typed text when the product disables it", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      // The product disables an option once it is chosen.
+      function Host() {
+        const [value, setValue] = React.useState<string[]>([]);
+        return (
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <MultiSelect
+              label="Tools"
+              options={options.map((option) => ({
+                ...option,
+                disabled: value.includes(option.value),
+              }))}
+              value={value}
+              onValueChange={setValue}
+            />
+          </React.Profiler>
+        );
+      }
+      render(<Host />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      // "ers" draws Filters and Layers.
+      await user.keyboard("ers{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      await user.keyboard("{Enter}");
+      expect(screen.getAllByRole("option")).toHaveLength(3);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Routes");
     });
 
     it("starts again at the first option when new options of the same count arrive", async () => {

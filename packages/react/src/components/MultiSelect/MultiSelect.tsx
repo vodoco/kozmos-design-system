@@ -128,7 +128,15 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const rootRef = React.useRef<HTMLDivElement>(null);
     // The popup is in a portal, outside the root: a press or focus inside
     // it is still inside the field.
-    const popupRef = React.useRef<HTMLDivElement>(null);
+    const popupRef = React.useRef<HTMLDivElement | null>(null);
+    // The popup's list is drawn a commit after the popup opens (its portal
+    // mounts then): the field names an active option only once the list is
+    // in the page, so no commit names an option still to be drawn (GAP-231).
+    const [listboxDrawn, setListboxDrawn] = React.useState(false);
+    const setPopupNode = React.useCallback((node: HTMLDivElement | null) => {
+      popupRef.current = node;
+      setListboxDrawn(node !== null);
+    }, []);
     const presentation = React.useContext(MapShellPresentationContext);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const defaultInputId = React.useId();
@@ -176,7 +184,9 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           : undefined;
     const activeOption = activeIndex >= 0 ? filteredOptions[activeIndex] : null;
     const activeOptionId =
-      open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
+      open && listboxDrawn && activeOption
+        ? `${inputId}-option-${activeIndex}`
+        : undefined;
     const listboxOpen = open && filteredOptions.length > 0;
 
     React.useEffect(() => {
@@ -224,13 +234,19 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const [keptValue, setKeptValue] = React.useState<string | null>(null);
     if (activeFor !== drawnList) {
       setActiveFor(drawnList);
+      // The option just chosen, or, if the product has disabled it, the next
+      // enabled one on from it; with no choice, the first enabled one.
       const kept =
         keptValue === null
           ? -1
-          : navigableOptions.findIndex(
-              (option) => option.value === keptValue && !option.disabled,
-            );
-      setActiveIndex(kept >= 0 ? kept : firstEnabledIndex(navigableOptions));
+          : navigableOptions.findIndex((option) => option.value === keptValue);
+      setActiveIndex(
+        kept < 0
+          ? firstEnabledIndex(navigableOptions)
+          : navigableOptions[kept].disabled
+            ? enabledIndex(navigableOptions, kept, 1)
+            : kept,
+      );
     } else if (navigableOptions[activeIndex]?.disabled !== false) {
       // The active option can no longer be chosen (the choice reached
       // maxSelected, or the product disabled it): the next enabled one, on
@@ -527,7 +543,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   }}
                 >
                   <div
-                    ref={popupRef}
+                    ref={setPopupNode}
                     onMouseDown={keepFieldFocus}
                     data-kozmos-scrollbar={scrollbarFor(presentation)}
                     id={listboxOpen ? listboxId : undefined}

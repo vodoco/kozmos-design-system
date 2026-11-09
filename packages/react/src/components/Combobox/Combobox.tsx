@@ -204,6 +204,14 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     // The overlay popup is in a portal, outside the root: a press or focus
     // inside it is still inside the field.
     const popupRef = React.useRef<HTMLDivElement>(null);
+    // The popup's list is drawn a commit after the popup opens (its portal
+    // mounts then): the field names an active option only once the list is
+    // in the page, so no commit names an option still to be drawn (GAP-231).
+    const [listboxDrawn, setListboxDrawn] = React.useState(false);
+    const setListboxNode = React.useCallback(
+      (node: HTMLDivElement | null) => setListboxDrawn(node !== null),
+      [],
+    );
     const presentation = React.useContext(MapShellPresentationContext);
     const defaultInputId = React.useId();
     const errorId = React.useId();
@@ -331,7 +339,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
           : undefined;
     const activeOption = activeIndex >= 0 ? entries[activeIndex] : null;
     const activeOptionId =
-      open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
+      open && listboxDrawn && activeOption
+        ? `${inputId}-option-${activeIndex}`
+        : undefined;
     const listboxOpen = open && entries.length > 0;
     // The popup shows its empty text: no option matches (commands may stay).
     const showsEmptyText =
@@ -633,6 +643,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                         </div>
                       )}
                     <div
+                      ref={setListboxNode}
                       id={listboxOpen ? listboxId : undefined}
                       className="min-h-0 overflow-y-auto"
                       data-modality={modality}
