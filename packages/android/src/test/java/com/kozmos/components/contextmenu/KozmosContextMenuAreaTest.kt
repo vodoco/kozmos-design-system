@@ -111,6 +111,52 @@ class KozmosContextMenuAreaTest {
         }
     }
 
+    /**
+     * While a child is marked, the action is the child's: the area offers
+     * none of its own, so TalkBack finds no nameless stop.
+     */
+    @Test fun withAMarkedChildTheAreaIsNoStopOfItsOwn() {
+        val state = KozmosContextMenuState()
+        paparazzi.live(content = { TwoButtons(state) }) {
+            frames(2)
+            val offering = read().merged.filter { it.longClick != null }
+            assertEquals(
+                "the nodes offering the menu, by their words",
+                listOf("Gate A12", "Gate B7"),
+                offering.map { it.words ?: "(nameless)" }
+            )
+        }
+    }
+
+    /** With nothing marked, the area is one stop named "More options" that offers the menu. */
+    @Test fun withNothingMarkedTheAreaIsANamedStopOfferingTheMenu() {
+        val state = KozmosContextMenuState()
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Box { KozmosContextMenuArea(menu, {}, Modifier, "Show menu", state) { Text("Gate A12") } }
+            }
+        }) {
+            frames(2)
+            val offering = read().merged.filter { it.longClick != null }
+            assertEquals("one node offers the menu", 1, offering.size)
+            assertEquals("named", "More options", offering.single().description)
+            assertEquals("Show menu", offering.single().longClickLabel)
+            offering.single().longClick!!.invoke()
+            frames(2)
+            assertEquals("open at the area's start", IntOffset(0, 0), state.openAt)
+        }
+    }
+
+    /** The area's name is the product's own words. */
+    @Test fun theAreasNameIsTheProductsOwnWords() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosContextMenuArea(menu = menu, onItemClick = {}, label = "Weitere Optionen") { Text("Gate A12") }
+            }
+        }
+        assertEquals("Weitere Optionen", tree.merged.single { it.longClick != null }.description)
+    }
+
     /** From a keyboard, the Menu key opens it at the focused control. */
     @Test fun theMenuKeyOpensTheMenuAtTheFocusedControl() {
         val state = KozmosContextMenuState()

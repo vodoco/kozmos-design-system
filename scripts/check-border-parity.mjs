@@ -272,7 +272,9 @@ for (const file of [
   const content = read(file);
   const name = file.split("/").at(-2);
   if (
-    content.includes("cn(menuSeparatorClass") &&
+    // Exactly the shared class and the caller's: nothing drawn beside it.
+    (content.match(/\bcn\(menuSeparatorClass\b[^)]*\)/g) ?? []).join() ===
+      "cn(menuSeparatorClass, className)" &&
     /menuSeparatorClass,[\s\S]*?\} from "(?:\.\.\/Menu|\.)\/menu-parts";/.test(
       content,
     ) &&

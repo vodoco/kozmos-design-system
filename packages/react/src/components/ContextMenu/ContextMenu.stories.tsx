@@ -95,7 +95,7 @@ export const Open: Story = {
               ref={area}
               tabIndex={0}
               aria-label="Gate A12, map feature"
-              className="flex h-40 w-72 items-center justify-center rounded-control border border-dashed border-border"
+              className="flex h-40 w-72 items-center justify-center rounded-control border border-dashed border-border focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <Text size="sm" color="muted">
                 Right click, or long press, here

@@ -118,17 +118,28 @@ private struct InteractionFixture: View {
     /// the system menu is open (decision 152): each item's name, its hint and
     /// whether the row shows an image, read every 100ms while the fixture is
     /// up. XCUI reads no hints; the menu is UIKit's, drawn from what SwiftUI
-    /// gave it, so this reads the open menu itself, not Kozmos's rows.
-    private func reportMenuItems() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let names = ["Help centre", "Keyboard shortcuts"]
+    /// gave it, so this reads the open menu itself, not Kozmos's rows. While
+    /// the menu opens, UIKit holds a second copy of each row for a moment,
+    /// so each change is reported, and the poll stops once each item is
+    /// there once, after 30 seconds, or when the fixture goes (its `.task`
+    /// is cancelled).
+    @MainActor private func reportMenuItems() async {
+        let names = ["Help centre", "Keyboard shortcuts"]
+        var last = ""
+        for _ in 0..<300 {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            if Task.isCancelled { return }
             let found = Self.elements().filter { names.contains($0.accessibilityLabel ?? "") }
+            guard Set(found.compactMap(\.accessibilityLabel)) == Set(names) else { continue }
             let report = found.map { node -> String in
                 let image = (node as? UIView).map { Self.showsImage($0) } ?? false
                 return "\(node.accessibilityLabel ?? "")=\(node.accessibilityHint ?? "no hint")=\(image ? "image" : "no image")"
             }.sorted().joined(separator: "|")
-            if !report.isEmpty, report != controlAccessibilityReport { controlAccessibilityReport = report }
-            reportMenuItems()
+            if report != last {
+                last = report
+                controlAccessibilityReport = report
+            }
+            if found.count == names.count { return }
         }
     }
 
@@ -738,7 +749,8 @@ private struct InteractionFixture: View {
                     .kozmosContextMenu(content, onItemSelect: { events.append($0.text) })
             }
             Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
-                .onAppear { reportMenuItems() }
+                // One poll per appearance, cancelled when the fixture goes.
+                .task { await reportMenuItems() }
         default:
             Text("Unknown fixture: \(scenario)")
         }

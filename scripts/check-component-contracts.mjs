@@ -11599,13 +11599,39 @@ for (const [file, from] of [
     new RegExp(`from "${from.replace(/[./]/g, "\\$&")}";`),
     "Menu's shared classes, imported from menu-parts",
   );
-  for (const name of [
-    "menuContentClass",
-    "menuItemClass",
-    "menuIndicatorItemClass",
-    "menuSeparatorClass",
+  // Every class a part draws is exactly menu-parts' and the caller's: no
+  // class added beside the shared one, and each part checked on its own
+  // (two indicator items, two content panels), in Menu's and ContextMenu's
+  // order alike.
+  const drawn = [...content.matchAll(/\bcn\(([^)]*)\)/g)]
+    .map((match) => match[1].replace(/\s+/g, " ").trim())
+    .sort();
+  const expected = [
+    "menuContentClass, className",
+    "menuContentClass, className",
+    "menuIndicatorItemClass, className",
+    "menuIndicatorItemClass, className",
+    'menuItemClass, inset && "ps-8", className',
+    'menuLabelClass, inset && "ps-8", className',
+    "menuSeparatorClass, className",
+    "menuShortcutClass, className",
+    'menuSubTriggerClass, inset && "ps-8", className',
+  ];
+  if (JSON.stringify(drawn) !== JSON.stringify(expected))
+    fail(
+      `${file}: its parts draw ${JSON.stringify(drawn)}, not exactly menu-parts' classes and the caller's ${JSON.stringify(expected)}`,
+    );
+  for (const [needle, count] of [
+    ["className={menuIndicatorClass}", 2],
+    ["className={menuSubIconClass}", 1],
   ])
-    assertContains(file, content, `cn(${name}`, `its parts drawn with ${name}`);
+    assertOccurrenceCount(
+      file,
+      content,
+      new RegExp(needle.replace(/[{}]/g, "\\$&"), "g"),
+      count,
+      needle,
+    );
   assertNotContains(
     file,
     content,

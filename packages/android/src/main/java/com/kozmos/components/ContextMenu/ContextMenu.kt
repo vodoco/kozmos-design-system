@@ -13,6 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.onFocusChanged
@@ -30,6 +32,7 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
@@ -52,7 +55,16 @@ import com.kozmos.components.menu.KozmosMenuItems
  *   [Modifier.kozmosContextMenuTarget] offers the menu as its long-press
  *   action, labelled [showMenuLabel], and opens it at that element. Mark
  *   what TalkBack stops on: each control, or the text of an area of words.
- *   The area itself carries the action too, for services that act on it.
+ *   While any element is marked, the area offers no action of its own, so
+ *   it is never a stop of its own. With none marked, the area is one stop
+ *   named [label] that offers the menu, so the menu is never out of reach
+ *   and never on a nameless stop.
+ *
+ * @param showMenuLabel The long-press action's label, which TalkBack reads
+ *   as "Double-tap and hold to show menu": "Show menu" by default.
+ * @param label The area's name when no element in it is marked: "More
+ *   options" by default, the words SplitButton's menu half and React's
+ *   `aria-label` for an overflow menu use. Pass the product's own words.
  *
  * It closes when dismissed and after an item is picked, which calls
  * [onItemClick].
@@ -63,10 +75,11 @@ fun KozmosContextMenuArea(
     onItemClick: (KozmosMenuItem) -> Unit,
     modifier: Modifier = Modifier,
     showMenuLabel: String = "Show menu",
+    label: String = "More options",
     content: @Composable () -> Unit
 ) {
     val state = remember { KozmosContextMenuState() }
-    KozmosContextMenuArea(menu, onItemClick, modifier, showMenuLabel, state, content)
+    KozmosContextMenuArea(menu, onItemClick, modifier, showMenuLabel, state, label, content)
 }
 
 /** Where the menu is open, in the area's pixels from its top left; null while closed. */
@@ -81,6 +94,7 @@ internal fun KozmosContextMenuArea(
     modifier: Modifier,
     showMenuLabel: String,
     state: KozmosContextMenuState,
+    label: String = "More options",
     content: @Composable () -> Unit
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -135,12 +149,21 @@ internal fun KozmosContextMenuArea(
                 asks
             }
             // Not merged: the content's controls stay focus stops of their own.
-            .semantics {
-                onLongClick(label = showMenuLabel) {
-                    openAtStart()
-                    true
+            // While one is marked, the action is theirs; with none, the area
+            // is a stop of its own, named, that offers the menu.
+            .then(
+                if (target.marked == 0) {
+                    Modifier.semantics {
+                        contentDescription = label
+                        onLongClick(label = showMenuLabel) {
+                            openAtStart()
+                            true
+                        }
+                    }
+                } else {
+                    Modifier
                 }
-            }
+            )
     ) {
         CompositionLocalProvider(LocalKozmosContextMenuTargets provides target) { content() }
         // The menu's anchor: an empty box where it was asked for.
@@ -164,6 +187,8 @@ internal class KozmosContextMenuTargets {
     var label: String = "Show menu"
     var open: (IntOffset) -> Unit = {}
     var area: LayoutCoordinates? = null
+    /** How many targets are marked inside: while any is, the area offers no action itself. */
+    var marked by mutableIntStateOf(0)
     /** The focused target's start, in the area's pixels; null when none is focused. */
     var focused: (() -> IntOffset)? = null
 }
@@ -186,6 +211,10 @@ fun Modifier.kozmosContextMenuTarget(): Modifier = composed {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val place = remember { KozmosContextMenuTargetPlace() }
     val start: () -> IntOffset = remember(place) { { place.start } }
+    DisposableEffect(targets) {
+        targets.marked++
+        onDispose { targets.marked-- }
+    }
     this
         .onGloballyPositioned { coordinates ->
             val area = targets.area ?: return@onGloballyPositioned

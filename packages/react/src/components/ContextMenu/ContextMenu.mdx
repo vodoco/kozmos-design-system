@@ -28,10 +28,17 @@ at the item that has focus. Its parts are Menu's, named `ContextMenu…`, and dr
 - **Compose**: `KozmosContextMenuArea` opens KozmosMenu's items where the area is pressed: a long press on touch, a
   right click with a mouse, and the Menu key or Shift+F10 at what has focus. Its content keeps its own focus stops: mark
   each element TalkBack stops on with `Modifier.kozmosContextMenuTarget()`, which offers "Show menu" as that
-  element's action and opens the menu at it.
+  element's action and opens the menu at it. With nothing marked, the area is one stop named by its `label` ("More
+  options" by default; pass the product's words) that offers the menu.
 
 Touch has no right click, so a long press is the context menu everywhere: don't give a long press another meaning in
 the same place.
+
+## The browser's own menu
+
+An open ContextMenu cancels the browser's own context menu inside it, so a right click in the open menu, or the menu
+key's release on Windows, never opens the browser's menu over Kozmos's. That includes a field you put in the menu: it
+loses the browser's menu (Paste, spell check) while the menu is open. Keep fields out of a context menu.
 
 ## Implementation
 
