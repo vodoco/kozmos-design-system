@@ -107,7 +107,7 @@ export function Example() {
       max={100}
       step={5}
       showValue
-      formatValue={(value) => `${value}%`}
+      formatValue={(value) => \`\${value}%\`}
     />
   );
 }
@@ -115,7 +115,7 @@ export function Example() {
     vue={`
 <script setup>
 import { KozmosSlider } from "@kozmos-ds/vue/react-bridge"
-const percent = (value) => `${value}%`
+const percent = (value) => \`\${value}%\`
 </script>
 
 <template>
@@ -144,7 +144,7 @@ struct FloorPlanOpacity: View {
                 value: $opacity,
                 range: 0...1,
                 showValue: true,
-                formatValue: { "\(Int(($0 * 100).rounded()))%" }
+                formatValue: { "\\(Int(($0 * 100).rounded()))%" }
             )
             .accessibilityLabel("Floor-plan opacity")
         }
@@ -169,7 +169,7 @@ fun FloorPlanOpacity(opacity: Float, onOpacityChange: (Float) -> Unit) {
             value = opacity,
             onValueChange = onOpacityChange,
             showValue = true,
-            formatValue = { "${(it * 100).roundToInt()}%" },
+            formatValue = { "\${(it * 100).roundToInt()}%" },
             modifier = Modifier.semantics { contentDescription = "Floor-plan opacity" }
         )
     }

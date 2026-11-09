@@ -1,4 +1,4 @@
-// NumberInput.mdx's SwiftUI snippet, word for word below this comment:
+// NumberInput.mdx's SwiftUI snippet ("A unit"), word for word below this comment:
 // compiled here, so a renamed or removed parameter fails in this target
 // rather than in a reader's project. Change the two together.
 import SwiftUI

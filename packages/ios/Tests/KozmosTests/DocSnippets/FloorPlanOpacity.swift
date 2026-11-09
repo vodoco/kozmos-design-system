@@ -1,4 +1,4 @@
-// Slider.mdx's SwiftUI snippet, word for word below this comment:
+// Slider.mdx's SwiftUI snippet ("A readout that stays"), word for word below this comment:
 // compiled here, so a renamed or removed parameter fails in this target
 // rather than in a reader's project. Change the two together.
 import SwiftUI
