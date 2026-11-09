@@ -300,14 +300,30 @@ const CollapsibleFloorSelector = React.forwardRef<
     const currentRef = React.useRef<HTMLButtonElement>(null);
     const [content, setContent] = React.useState<HTMLDivElement | null>(null);
     const [popup, setPopup] = React.useState<HTMLDivElement | null>(null);
-    const [scrollable, setScrollable] = React.useState(false);
+    // Whether the open column's list overflows, and so scrolls: it draws
+    // `data-scrollable` and the scrollbar. Held with the list element it was
+    // measured on, so that it belongs to one opening. A column that closes
+    // keeps it through its exit animation, where the list is still drawn; a
+    // column that opens again draws a new list, and its first commit reads
+    // not scrollable, which it is: until Radix has placed it the column has
+    // no available height to overflow (GAP-233).
+    const [measured, setMeasured] = React.useState<{
+      list: HTMLDivElement | null;
+      scrollable: boolean;
+    }>({ list: null, scrollable: false });
+    const scrollable =
+      content !== null && measured.list === content && measured.scrollable;
     React.useEffect(() => {
       if (!open || typeof ResizeObserver === "undefined") return;
       if (!content) return;
       const revealCurrent = () => {
         const current = currentRef.current;
         const overflows = content.scrollHeight > content.clientHeight;
-        setScrollable(overflows);
+        setMeasured((previous) =>
+          previous.list === content && previous.scrollable === overflows
+            ? previous
+            : { list: content, scrollable: overflows },
+        );
         if (!current || content.clientHeight <= 0 || !overflows) return;
         // Positioning supplies the scroll viewport after autofocus. Scroll
         // this list only; never move the embedding page to reveal the floor.
@@ -439,6 +455,12 @@ const CollapsibleFloorSelector = React.forwardRef<
                 updatePositionStrategy="always"
                 ref={setPopup}
                 data-scrollable={scrollable ? "true" : undefined}
+                // A closing column plays its exit animation where it was, but
+                // a level in it can no longer be chosen: it takes no pointer
+                // (GAP-233). A tap there lands on the column's positioning
+                // box, which does nothing, rather than falling through to the
+                // tile under it and opening the column again.
+                style={open ? undefined : { pointerEvents: "none" }}
                 align="end"
                 alignOffset={-COLUMN_INSET}
                 aria-label={label}
@@ -519,6 +541,11 @@ const CollapsibleFloorSelector = React.forwardRef<
                               )}
                               disabled={floor.disabled}
                               onClick={() => {
+                                // Closing, the column chooses nothing: not
+                                // by a tap that lands as it starts to close,
+                                // nor by Enter or Space on the level that
+                                // keeps focus until it is gone (GAP-233).
+                                if (!open) return;
                                 onChoose(floor.id);
                                 setOpen(false);
                               }}
