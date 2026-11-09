@@ -1,7 +1,8 @@
 /**
  * Every `@type/name` in the Android library's resources, and in the token
  * build's Android resources when they are built, names a resource of that
- * type.
+ * type, and no `<dimen>` is written in `px`, which Android reads as device
+ * pixels where every Kozmos length is a CSS pixel, a dp.
  *
  * The library's own build never links its resources, so it passes with a
  * reference to nothing, and the first to find out is an app built against
@@ -12,7 +13,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { unresolvedReferences } from "./lib/android-resource-references.mjs";
+import { pixelDimensions, unresolvedReferences } from "./lib/android-resource-references.mjs";
 
 const ROOT = process.cwd();
 const RES_DIRS = [
@@ -57,11 +58,19 @@ for (const { res, required } of RES_DIRS) {
     console.error(`  FAIL  ${file}:${line} @${ref} names no ${ref.split("/")[0]}`);
   }
   failed += missing.length;
-  if (!missing.length) console.log(`  ok    ${res}: ${count} file(s), every reference resolves`);
+  const pixels = Object.values(files)
+    .flat()
+    .flatMap(({ file, xml }) => pixelDimensions(xml).map((found) => ({ file, ...found })));
+  for (const { file, line, name, value } of pixels) {
+    console.error(`  FAIL  ${file}:${line} dimen ${name} is ${value}: Android reads px as device pixels; write dp`);
+  }
+  failed += pixels.length;
+  if (!missing.length && !pixels.length)
+    console.log(`  ok    ${res}: ${count} file(s), every reference resolves, no dimen in px`);
 }
 
 if (failed) {
-  console.error(`\n${failed} Android resource reference problem(s)`);
+  console.error(`\n${failed} Android resource problem(s)`);
   process.exit(1);
 }
-console.log(`\n${checked} Android resource file(s): every reference names a resource of its type`);
+console.log(`\n${checked} Android resource file(s): every reference names a resource of its type, and every dimen is in dp or sp`);

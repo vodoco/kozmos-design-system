@@ -120,10 +120,12 @@ function fixAndroidXML(filePath) {
       },
     );
 
-    // Convert px string to dimen
+    // Convert px string to dimen. A Kozmos px is a CSS pixel, which is a dp
+    // on Android, as Compose's KozmosDimensions writes it; Android's own px is
+    // a device pixel, so 44px (the touch target) was about 15dp on a 3x phone.
     content = content.replace(
       /<string name="([^"]+)">([-0-9.]+)px<\/string>/g,
-      '<dimen name="$1">$2px</dimen>',
+      '<dimen name="$1">$2dp</dimen>',
     );
 
     // A dimension that aliases a unitless length (the semantic radii alias

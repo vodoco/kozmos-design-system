@@ -1122,6 +1122,15 @@ jobs:
         working-directory: packages/android
         run: ./gradlew verifyPaparazziDebug
 
+      # An app links the library's resources and pins the plugins the library
+      # builds with; the library's own build does neither. A reference to no
+      # resource (#503) and a playground on another Android Gradle Plugin than
+      # the library (#504) both passed the step above and failed only when an
+      # app was built, by hand.
+      - name: Build Android Playground
+        working-directory: apps/playground-android
+        run: ./gradlew :app:assembleDebug
+
       # Retain the executed test inventory on success as well as failure.
       # A green task alone does not prove which native tests actually ran.
       - name: Upload Android Test Results
