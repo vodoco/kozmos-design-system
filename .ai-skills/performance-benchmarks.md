@@ -60,12 +60,12 @@ budgets, gzipped:
 | ------------------------------------ | ------ |
 | Any one public export, bundled alone | 8.5 KB |
 | `Button` alone                       | 2 KB   |
-| Every export at once                 | 100 KB |
-| The stylesheet                       | 32 KB  |
+| Every export at once                 | 112 KB |
+| The stylesheet                       | 36 KB  |
 
 The whole library's budget went from 64 to 68 KB on 2026-09-28 (decision 53), to 80 KB on 2026-09-30
-to 88 KB on 2026-10-06 (decision 56), to 92 KB on 2026-10-21 (decision 114), for the web's date and time panels, to 94 KB on 2026-10-26 (decision 117), for MAP-64's tour family, and to 100 KB on 2026-10-28 (decision 126), for 0.15.0's approved APIs; the stylesheet's from 30 to 30.5 KB on 2026-10-02 and to 32 KB on 2026-10-16 (decision 97), when Track 2's markers
-and compact density together measured 30.63 KB, with room for the next density groups; and the per-export budget from 8 to 8.5 KB on 2026-10-16 (decision
+to 88 KB on 2026-10-06 (decision 56), to 92 KB on 2026-10-21 (decision 114), for the web's date and time panels, to 94 KB on 2026-10-26 (decision 117), for MAP-64's tour family, to 100 KB on 2026-10-28 (decision 126), for 0.15.0's approved APIs, and to 112 KB on 2026-11-09 (decision 175), for 0.16.0's promised items; the stylesheet's from 30 to 30.5 KB on 2026-10-02, to 32 KB on 2026-10-16 (decision 97), when Track 2's markers
+and compact density together measured 30.63 KB, with room for the next density groups, and to 36 KB on 2026-11-09 (decision 175), for 0.16.0; and the per-export budget from 8 to 8.5 KB on 2026-10-16 (decision
 90), when compact density's `DensityScope` took `AdaptiveMapShell` to 8.03 KB on CI. Each was Olcay's decision. The `Button` budget is unchanged.
 
 ### Package-Level Budgets
@@ -333,20 +333,21 @@ The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.
 2026-10-06, and 0.1.0 to 0.5.0 of `@kozmos-ds/tokens`. The bundle is the one measure with a history, which
 `scripts/performance/bundle-analyzer.ts` records in its opening comment:
 
-| Date       | What changed                                                                                                                                    |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| to 09-22   | The ES build was one file, held to 300 KB raw and 70 KB gzipped; importing `Button` cost an app 48.7 KB                                         |
-| 2026-09-22 | One file per module: everything 54.6 KB, the stylesheet 26.4 KB, the heaviest export 6.15 KB                                                    |
-| 2026-09-27 | Everything's budget went from 60 to 64 KB, with Olcay's agreement; main measured 59.63 KB                                                       |
-| 2026-09-28 | Everything's budget went from 64 to 68 KB (decision 53); main measured 63.61 KB                                                                 |
-| 2026-09-30 | Everything's budget went from 68 to 80 KB for the SDK controls (#175); the candidate measured 74.01 KB                                          |
-| 2026-10-02 | The stylesheet's budget went from 30 to 30.5 KB for the SDK result look (#190); it measured 30.12 KB                                            |
-| 2026-10-06 | Everything's budget went from 80 to 88 KB (decision 56); 0.9.0 measured 79.86 KB on CI, 79.21 KB here after two lossless trims                  |
-| 2026-10-16 | The per-export budget went from 8 to 8.5 KB (decision 90); `AdaptiveMapShell` measured 8.03 KB on CI with compact density                       |
-| 2026-10-16 | The stylesheet's budget went from 30.5 to 32 KB (decision 97); Track 2 and compact density together measured 30.63 KB                           |
-| 2026-10-21 | Everything's budget went from 88 to 92 KB (decision 114); the web's date and time panels (#352, #361, #366, #369) measured about 87.93 KB on CI |
-| 2026-10-26 | Everything's budget went from 92 to 94 KB (decision 117); MAP-64's tour parts (#408–#411) measured about 91.2 KB on CI before TourStep          |
-| 2026-10-28 | Everything's budget went from 94 to 100 KB (decision 126); after 0.14.0 it measures about 93.9 KB, before 0.15.0's approved APIs (decision 119) |
+| Date       | What changed                                                                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| to 09-22   | The ES build was one file, held to 300 KB raw and 70 KB gzipped; importing `Button` cost an app 48.7 KB                                                                             |
+| 2026-09-22 | One file per module: everything 54.6 KB, the stylesheet 26.4 KB, the heaviest export 6.15 KB                                                                                        |
+| 2026-09-27 | Everything's budget went from 60 to 64 KB, with Olcay's agreement; main measured 59.63 KB                                                                                           |
+| 2026-09-28 | Everything's budget went from 64 to 68 KB (decision 53); main measured 63.61 KB                                                                                                     |
+| 2026-09-30 | Everything's budget went from 68 to 80 KB for the SDK controls (#175); the candidate measured 74.01 KB                                                                              |
+| 2026-10-02 | The stylesheet's budget went from 30 to 30.5 KB for the SDK result look (#190); it measured 30.12 KB                                                                                |
+| 2026-10-06 | Everything's budget went from 80 to 88 KB (decision 56); 0.9.0 measured 79.86 KB on CI, 79.21 KB here after two lossless trims                                                      |
+| 2026-10-16 | The per-export budget went from 8 to 8.5 KB (decision 90); `AdaptiveMapShell` measured 8.03 KB on CI with compact density                                                           |
+| 2026-10-16 | The stylesheet's budget went from 30.5 to 32 KB (decision 97); Track 2 and compact density together measured 30.63 KB                                                               |
+| 2026-10-21 | Everything's budget went from 88 to 92 KB (decision 114); the web's date and time panels (#352, #361, #366, #369) measured about 87.93 KB on CI                                     |
+| 2026-10-26 | Everything's budget went from 92 to 94 KB (decision 117); MAP-64's tour parts (#408–#411) measured about 91.2 KB on CI before TourStep                                              |
+| 2026-10-28 | Everything's budget went from 94 to 100 KB (decision 126); after 0.14.0 it measures about 93.9 KB, before 0.15.0's approved APIs (decision 119)                                     |
+| 2026-11-09 | Everything's budget went from 100 to 112 KB and the stylesheet's from 32 to 36 KB (decision 175), for 0.16.0's promised items (decision 174); main measured about 96.4 and 31.78 KB |
 
 No render or Core Web Vitals history is recorded.
 
