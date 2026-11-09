@@ -449,14 +449,24 @@
       "contains": ".kozmos-option[data-active=\"true\"], .kozmos-option[data-highlighted] { background-color: var(--semantics-hover-fill);"
     },
     {
-      "name": "a selected Tree row draws the hover fill at full strength (decision 173)",
+      "name": "a selected Tree row draws the hover fill at full strength, under the pointer too; the hover's half step is for rows not selected (decision 173)",
       "file": "packages/react/src/components/Tree/Tree.tsx",
-      "contains": "selected && \"bg-hover-fill text-foreground\""
+      "contains": "selected ? \"bg-hover-fill text-foreground\" : \"hover:bg-hover-fill/50\""
     },
     {
       "name": "a selected Table row draws the hover fill at full strength (decision 173)",
       "file": "packages/react/src/components/Table/Table.tsx",
       "contains": "data-[state=selected]:bg-hover-fill"
+    },
+    {
+      "name": "SwiftUI NavigationItem's Hover state takes the hover fill (decision 173)",
+      "file": "packages/ios/Sources/Components/NavigationItem/NavigationItem.swift",
+      "contains": "if state == .hover { return KozmosColors.semanticsHoverFill }"
+    },
+    {
+      "name": "Compose NavigationItem's Hover state takes the hover fill (decision 173)",
+      "file": "packages/android/src/main/java/com/kozmos/components/NavigationItem/NavigationItem.kt",
+      "contains": "state == KozmosNavigationItemState.Hover -> KozmosThemeTokens.semanticsHoverFill"
     }
   ],
   "hoverFillExceptions": [
@@ -492,8 +502,28 @@
         {
           "file": "packages/react/src/components/BottomNavigation/BottomNavigation.tsx",
           "contains": "true: \"bg-muted text-primary\""
+        },
+        {
+          "file": "packages/ios/Sources/Components/NavigationItem/NavigationItem.swift",
+          "contains": "if isSelected || state == .focus { return KozmosColors.primitivesColorsBackground100 }"
+        },
+        {
+          "file": "packages/android/src/main/java/com/kozmos/components/NavigationItem/NavigationItem.kt",
+          "contains": "isSelected || state == KozmosNavigationItemState.Focus -> KozmosThemeTokens.primitivesColorsBackground100"
         }
       ]
+    }
+  ],
+  "mutedHoverAllowed": [
+    {
+      "name": "Button's emotion outline and text hover, a named exception (hoverFillExceptions)",
+      "file": "packages/styles/src/styles/owned-components.css",
+      "count": 2
+    },
+    {
+      "name": "FileUpload's disabled zone holds its muted fill under the pointer: not a hover",
+      "file": "packages/react/src/components/FileUpload/FileUpload.tsx",
+      "count": 1
     }
   ]
 }

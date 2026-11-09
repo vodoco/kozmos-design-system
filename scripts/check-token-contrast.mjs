@@ -261,6 +261,56 @@ for (const use of contract.hoverFillUses ?? []) {
       `${use.name}: ${use.file} no longer holds ${JSON.stringify(use.contains)}`,
     );
 }
+// No hover or press falls back to the muted step (GAP-228, decision 173): a
+// class such as hover:bg-muted, hover:bg-muted/50 or active:bg-muted, or the
+// background/50 or /100 primitive behind a hover variant, anywhere in React's
+// or the stylesheet's sources outside the counts allowed below, and no owned
+// :hover rule that paints background/50 or /100. Tests are fixtures.
+{
+  const { execFileSync } = await import("node:child_process");
+  const postcss = createRequire(path.join(root, "packages/react/package.json"))(
+    "postcss",
+  );
+  const files = execFileSync(
+    "git",
+    ["ls-files", "packages/react/src", "packages/styles/src"],
+    { cwd: root, encoding: "utf8" },
+  )
+    .split("\n")
+    .filter(
+      (file) =>
+        /\.(tsx?|css)$/.test(file) && !/\.(test|spec)\.[jt]sx?$/.test(file),
+    );
+  const muted =
+    /(?<![\w-])(?:[\w[\]=&-]+:)*(?:hover|active):(?:[\w[\]=&-]+:)*bg-(?:muted|surface-(?:50|100)|\[var\(--primitives-colors-background-(?:50|100)\)\])(?:\/[\w.[\]]+)?(?![\w-])/g;
+  const allowed = Object.fromEntries(
+    (contract.mutedHoverAllowed ?? []).map((entry) => [entry.file, entry]),
+  );
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(root, file), "utf8");
+    const found = text.match(muted) ?? [];
+    const allowance = allowed[file]?.count ?? 0;
+    checked += 1;
+    if (found.length !== allowance)
+      failures.push(
+        `${file}: ${found.length} hover or press class(es) on the muted step (${found.join(", ") || "none"}); ${allowance} allowed${
+          allowed[file] ? ` (${allowed[file].name})` : ""
+        }. A hover takes bg-hover-fill (decision 173)`,
+      );
+    if (!file.endsWith(".css")) continue;
+    postcss.parse(text).walkRules((rule) => {
+      if (!/:hover|\[data-highlighted\]|\[data-active/.test(rule.selector))
+        return;
+      rule.walkDecls(/^background(-color)?$/, (decl) => {
+        if (/--primitives-colors-background-(50|100)\b/.test(decl.value))
+          failures.push(
+            `${file}: ${rule.selector.replace(/\s+/g, " ")} paints ${decl.value} under the pointer; a hover takes var(--semantics-hover-fill) (decision 173)`,
+          );
+      });
+    });
+  }
+}
+
 // The named exceptions: parts that keep the muted step under the pointer or
 // when selected, because an ink they draw falls under its minimum on the
 // hover fill. Each must still be drawn as it says, its inks must pass on the

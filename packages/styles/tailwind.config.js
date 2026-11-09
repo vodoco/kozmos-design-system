@@ -159,7 +159,10 @@ module.exports = {
         },
         // The fill under the pointer (GAP-228, decision 173): muted in
         // light, one step further in dark, where muted is 1.19:1 on the
-        // page. A hover or a press takes this; a fill at rest stays muted.
+        // page. A hover, a press, a highlighted option and a selected Tree
+        // or Table row take this; a fill at rest (a placeholder, a track, a
+        // disabled field) stays muted, as do the named exceptions in
+        // contrast-contract.json's hoverFillExceptions.
         "hover-fill": "var(--semantics-hover-fill)",
         accent: {
           DEFAULT: "var(--primitives-colors-theme-600)",

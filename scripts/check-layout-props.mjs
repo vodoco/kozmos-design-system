@@ -1334,6 +1334,27 @@ for (const m of MATRIX) {
             );
         },
       );
+      // Under the pointer, a selected row keeps its full fill: the hover's
+      // half step is for the rows that are not selected (decision 173).
+      await read(
+        "tree divided: a selected row keeps its full fill under the pointer",
+        async () => {
+          await page.mouse.move(
+            (open.box.left + open.box.right) / 2,
+            open.box.top + open.box.height / 2,
+          );
+          await settleLayout(page);
+          const hovered = (await rows(page)).rows.find((r) =>
+            r.name.startsWith("Terminal A"),
+          );
+          await page.mouse.move(0, 0);
+          assert.equal(
+            hovered.background,
+            state.tokens.selected,
+            "the selected fill under the pointer",
+          );
+        },
+      );
     },
   );
   await scenario({ ...m, part: "tree" }, async (page, read) => {

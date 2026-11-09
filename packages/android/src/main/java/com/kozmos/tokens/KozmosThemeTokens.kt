@@ -1265,8 +1265,12 @@ object KozmosThemeTokens {
      * own. background/100 in light; background/200 in dark (#2E3138, 1.61:1 on
      * the page and 1.35:1 on background/100), because background/100 there,
      * #17191C, is 1.19:1 on the black page and barely seen (GAP-228, decision
-     * 173). Fills that are not a hover — a selected row, a placeholder, a
-     * track — stay on muted.
+     * 173). A highlighted option and a selected Tree or Table row take it too,
+     * the selection at full strength. Fills at rest that are not an
+     * interaction — a placeholder, a track, today in a calendar, a disabled
+     * field — stay on muted, and two named exceptions keep muted where an ink
+     * would fall under AA on the dark step: Button's emotion outline and text
+     * hover, and a selected NavigationItem or BottomNavigation item.
      */
     val semanticsHoverFill: Color
         @Composable @ReadOnlyComposable get() = themed(
