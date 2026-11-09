@@ -302,19 +302,21 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       [activateItem, expandedSet, focusItem, toggleExpanded, visibleItems],
     );
 
-    React.useEffect(() => {
-      if (
-        focusedId &&
-        visibleItems.some((visible) => visible.item.id === focusedId)
-      )
-        return;
-      setFocusedId(
-        currentSelectedId &&
-          visibleItems.some((visible) => visible.item.id === currentSelectedId)
-          ? currentSelectedId
-          : visibleItems.find((visible) => !visible.item.disabled)?.item.id,
+    // The tab stop moves off an item that is no longer drawn, or can no
+    // longer be used, in the render that says so, so every commit has one
+    // (GAP-231): to the chosen item if it is drawn and enabled, else the
+    // first enabled one.
+    const isTabStop = (id: string | undefined) =>
+      Boolean(id) &&
+      visibleItems.some(
+        (visible) => visible.item.id === id && !visible.item.disabled,
       );
-    }, [currentSelectedId, focusedId, visibleItems]);
+    if (!isTabStop(focusedId)) {
+      const nextFocusedId = isTabStop(currentSelectedId)
+        ? currentSelectedId
+        : visibleItems.find((visible) => !visible.item.disabled)?.item.id;
+      if (nextFocusedId !== focusedId) setFocusedId(nextFocusedId);
+    }
 
     return (
       <div
