@@ -97,16 +97,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<TooltipPrimitive.To
   Used to force mounting when more control is needed. Useful when
   controlling animation with React animation libraries.
 
-- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
-
-  Event handler called when the escape key is down.
-  Can be prevented.
-
-- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
-
-  Event handler called when the a `pointerdown` event happens outside of the `Tooltip`.
-  Can be prevented.
-
 - `side`: `Side`, optional.
 - `sideOffset`: `number`, optional, default `4`.
 - `align`: `Align`, optional.
@@ -118,6 +108,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<TooltipPrimitive.To
 - `sticky`: `'partial' | 'always'`, optional.
 - `hideWhenDetached`: `boolean`, optional.
 - `updatePositionStrategy`: `'optimized' | 'always'`, optional.
+- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
+
+  Event handler called when the escape key is down.
+  Can be prevented.
+
+- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
+
+  Event handler called when the a `pointerdown` event happens outside of the `Tooltip`.
+  Can be prevented.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

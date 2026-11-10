@@ -245,9 +245,9 @@ for (const [file, needle, label] of [
     "Separator",
   ],
   [
-    "packages/react/src/components/Menu/Menu.tsx",
+    "packages/react/src/components/Menu/menu-parts.tsx",
     "h-px bg-border",
-    "Menu separator",
+    "Menu and ContextMenu separator",
   ],
   [
     "packages/react/src/components/Timeline/Timeline.tsx",
@@ -262,6 +262,26 @@ for (const [file, needle, label] of [
 ]) {
   if (read(file).includes(needle)) ok(`web: ${label} reads the border role`);
   else fail(`web: ${label} does not use \`${needle}\``);
+}
+// Menu's and ContextMenu's separators are menu-parts' (read above), not a
+// class of their own.
+for (const file of [
+  "packages/react/src/components/Menu/Menu.tsx",
+  "packages/react/src/components/ContextMenu/ContextMenu.tsx",
+]) {
+  const content = read(file);
+  const name = file.split("/").at(-2);
+  if (
+    // Exactly the shared class and the caller's: nothing drawn beside it.
+    (content.match(/\bcn\(menuSeparatorClass\b[^)]*\)/g) ?? []).join() ===
+      "cn(menuSeparatorClass, className)" &&
+    /menuSeparatorClass,[\s\S]*?\} from "(?:\.\.\/Menu|\.)\/menu-parts";/.test(
+      content,
+    ) &&
+    !/h-px|bg-border/.test(content)
+  )
+    ok(`web: ${name} separator is menu-parts' border role`);
+  else fail(`web: ${name} separator is not menu-parts' menuSeparatorClass`);
 }
 
 // 4. the native outputs

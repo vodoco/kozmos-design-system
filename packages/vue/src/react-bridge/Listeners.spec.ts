@@ -294,7 +294,7 @@ describe("which on… props each part takes", () => {
     expect(undescribed).toEqual([]);
   });
 
-  it("the parts that take no onClick: the element-less eight, Tooltip, and two whose props omit it", () => {
+  it("the parts that take no onClick: the element-less nine, Tooltip, and two whose props omit it", () => {
     const none = bridgedParts()
       .filter(({ bridge }) => !takesProp(bridge!.takes!, "onClick"))
       .map(({ name }) => name)
@@ -783,6 +783,8 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosNavbar: { slot: true },
   KozmosSidebar: { slot: true },
   KozmosMenu: { slot: true },
+  KozmosContextMenu: { slot: true },
+  KozmosKbd: { props: { keys: ["Esc"] } },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
   KozmosPagination: { slot: true },
@@ -968,6 +970,7 @@ const ELEMENTLESS = [
   "KozmosDialog",
   "KozmosSelect",
   "KozmosMenu",
+  "KozmosContextMenu",
   "KozmosDrawer",
   "KozmosPopover",
   "KozmosBottomSheet",

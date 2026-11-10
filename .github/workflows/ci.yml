@@ -540,6 +540,15 @@ jobs:
           pnpm test:link-external
           ADAPTIVE_BROWSER=webkit pnpm test:link-external
           ADAPTIVE_BROWSER=firefox pnpm test:link-external
+      # GAP-156 and GAP-155: a hint with Kbd is named by its keys' names and
+      # copied as it is drawn, on one line; its caps are 20 tall; and the
+      # context-menu key opens ContextMenu at the focused row, whose own
+      # contextmenu event is cancelled (scripts/check-kbd.mjs).
+      - name: Verify Kbd and ContextMenu keyboard
+        run: |
+          pnpm test:kbd
+          ADAPTIVE_BROWSER=webkit pnpm test:kbd
+          ADAPTIVE_BROWSER=firefox pnpm test:kbd
 
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),

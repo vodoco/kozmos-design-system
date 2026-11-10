@@ -5,6 +5,19 @@ import { cn } from "../../utils";
 import { Check, ChevronRight, Circle } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
+import {
+  externalItemChildren,
+  menuContentClass,
+  menuIndicatorClass,
+  menuIndicatorItemClass,
+  menuItemClass,
+  menuLabelClass,
+  menuSeparatorClass,
+  menuShortcutClass,
+  menuSubIconClass,
+  menuSubTriggerClass,
+  type MenuItemExternalProps,
+} from "./menu-parts";
 
 // Whether the menu is modal, as Radix's `modal` says (true unless set false).
 // False outside Kozmos's Menu: a MenuContent under some other root makes
@@ -34,15 +47,11 @@ const MenuSubTrigger = React.forwardRef<
 >(({ className, inset, children, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
-    className={cn(
-      "flex cursor-default select-none items-center rounded-marker px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent",
-      inset && "ps-8",
-      className,
-    )}
+    className={cn(menuSubTriggerClass, inset && "ps-8", className)}
     {...props}
   >
     {children}
-    <ChevronRight className="kozmos-rtl-mirror ms-auto h-4 w-4" />
+    <ChevronRight className={menuSubIconClass} />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 MenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;
@@ -53,10 +62,7 @@ const MenuSubContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
-    className={cn(
-      "z-50 min-w-32 overflow-hidden rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className,
-    )}
+    className={cn(menuContentClass, className)}
     {...props}
   />
 ));
@@ -99,10 +105,7 @@ const MenuContent = React.forwardRef<
       <DropdownMenuPrimitive.Content
         ref={contentRef}
         sideOffset={sideOffset}
-        className={cn(
-          "z-50 min-w-32 overflow-hidden rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          className,
-        )}
+        className={cn(menuContentClass, className)}
         {...props}
       />
     </MenuPortal>
@@ -112,27 +115,41 @@ MenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const MenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
-    inset?: boolean;
-  }
->(({ className, inset, onSelect, ...props }, ref) => {
-  const { trackEvent } = useKozmosAnalytics();
-  return (
-    <DropdownMenuPrimitive.Item
-      ref={ref}
-      className={cn(
-        "relative flex cursor-default select-none items-center rounded-marker px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        inset && "ps-8",
-        className,
-      )}
-      onSelect={(e) => {
-        trackEvent("Menu", "menu_item_selected");
-        onSelect?.(e);
-      }}
-      {...props}
-    />
-  );
-});
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> &
+    MenuItemExternalProps & {
+      inset?: boolean;
+    }
+>(
+  (
+    {
+      className,
+      inset,
+      onSelect,
+      external,
+      externalLabel,
+      asChild,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
+    const { trackEvent } = useKozmosAnalytics();
+    return (
+      <DropdownMenuPrimitive.Item
+        ref={ref}
+        className={cn(menuItemClass, inset && "ps-8", className)}
+        onSelect={(e) => {
+          trackEvent("Menu", "menu_item_selected");
+          onSelect?.(e);
+        }}
+        asChild={asChild}
+        {...props}
+      >
+        {externalItemChildren({ external, externalLabel, asChild, children })}
+      </DropdownMenuPrimitive.Item>
+    );
+  },
+);
 MenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 
 const MenuCheckboxItem = React.forwardRef<
@@ -141,14 +158,11 @@ const MenuCheckboxItem = React.forwardRef<
 >(({ className, children, checked, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-marker py-1.5 ps-8 pe-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className,
-    )}
+    className={cn(menuIndicatorItemClass, className)}
     checked={checked}
     {...props}
   >
-    <span className="absolute start-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className={menuIndicatorClass}>
       <DropdownMenuPrimitive.ItemIndicator>
         <Check className="h-4 w-4" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -164,13 +178,10 @@ const MenuRadioItem = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-marker py-1.5 ps-8 pe-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className,
-    )}
+    className={cn(menuIndicatorItemClass, className)}
     {...props}
   >
-    <span className="absolute start-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className={menuIndicatorClass}>
       <DropdownMenuPrimitive.ItemIndicator>
         <Circle className="h-2 w-2 fill-current" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -188,11 +199,7 @@ const MenuLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn(
-      "px-2 py-1.5 text-sm font-semibold",
-      inset && "ps-8",
-      className,
-    )}
+    className={cn(menuLabelClass, inset && "ps-8", className)}
     {...props}
   />
 ));
@@ -204,7 +211,7 @@ const MenuSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-border", className)}
+    className={cn(menuSeparatorClass, className)}
     {...props}
   />
 ));
@@ -214,12 +221,7 @@ const MenuShortcut = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
-    <span
-      className={cn("ms-auto text-xs tracking-widest opacity-50", className)}
-      {...props}
-    />
-  );
+  return <span className={cn(menuShortcutClass, className)} {...props} />;
 };
 MenuShortcut.displayName = "MenuShortcut";
 

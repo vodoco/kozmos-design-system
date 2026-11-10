@@ -14,12 +14,16 @@ const GLYPH = /^[^A-Za-z0-9%*\s]{1,2}$/;
  * position: React writes it as `<span aria-hidden>·</span>`, an icon library
  * has no business with it, and it is exempt only as a layer named Separator, so
  * a dot typed anywhere else, and any other glyph typed in a Separator, counts.
+ * The plus between a key combination's caps is the same: React's Kbd writes it
+ * as text between the caps (GAP-156), and it is exempt only as Kbd's layer
+ * named Plus.
  */
 export function isTypedGlyph(node) {
   if (node.type !== "TEXT") return false;
   const characters = (node.characters || "").trim();
   if (!GLYPH.test(characters)) return false;
-  return !(node.name === "Separator" && characters === "·");
+  if (node.name === "Separator" && characters === "·") return false;
+  return !(node.name === "Plus" && characters === "+");
 }
 
 // What rounding leaves; the overflow rule's tolerance, for the same reason.

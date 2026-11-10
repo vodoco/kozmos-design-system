@@ -25,6 +25,112 @@ A disabled `MenuItem` takes no pointer and the arrow keys pass over it, so no to
 
 Don't leave a greyed-out item to explain itself.
 
+## An item that leaves the app
+
+An item that opens a page in a new tab takes `external`, as Link does (decision 152): the new-tab icon at its end, and
+"opens in a new tab" read after its name. Around your `<a>` (`asChild`), it opens a new tab that isn't handed the
+page (`target="_blank"`, `rel="noopener noreferrer"`); your own `target` and `rel` win. `externalLabel` takes the
+product's words. SwiftUI says "Opens in your browser", as a hint, and Compose "open in your browser", as the click's
+label (decision 142); opening the page is yours there.
+
+<Canvas>
+  <Story of={MenuStories.ExternalItem} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  Button,
+} from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <Menu>
+      <MenuTrigger asChild>
+        <Button variant="outline">Help</Button>
+      </MenuTrigger>
+      <MenuContent>
+        <MenuItem>Keyboard shortcuts</MenuItem>
+        <MenuItem external asChild>
+          <a href="https://help.example.com">Help centre</a>
+        </MenuItem>
+      </MenuContent>
+    </Menu>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// external draws Pointr's new-tab icon at the item's end and gives VoiceOver
+// the hint "Opens in your browser"; externalLabel takes your words. Opening
+// the page is still yours, in onItemSelect.
+struct HelpMenu: View {
+    @Environment(\\.openURL) private var openURL
+
+    var body: some View {
+        KozmosMenu(
+            title: "Help",
+            content: KozmosMenuContent(items: [
+                KozmosMenuItem(text: "Keyboard shortcuts"),
+                KozmosMenuItem(text: "Help centre", external: true),
+            ]),
+            onItemSelect: { item in
+                if item.external, let url = URL(string: "https://help.example.com") {
+                    openURL(url)
+                }
+            }
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalUriHandler
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.menu.KozmosMenu
+import com.kozmos.components.menu.KozmosMenuContent
+import com.kozmos.components.menu.KozmosMenuItem
+
+// external draws Pointr's new-tab icon at the item's end and labels its
+// click "open in your browser", which TalkBack reads as "Double-tap to open
+// in your browser"; externalLabel takes your words. Opening the page is
+// still yours, in onItemClick.
+@Composable
+fun HelpMenu() {
+    var expanded by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    Box {
+        KozmosButton(onClick = { expanded = true }) { Text("Help") }
+        KozmosMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            content = KozmosMenuContent(
+                items = listOf(
+                    KozmosMenuItem(text = "Keyboard shortcuts"),
+                    KozmosMenuItem(text = "Help centre", external = true)
+                )
+            ),
+            onItemClick = { item ->
+                if (item.external) uriHandler.openUri("https://help.example.com")
+            }
+        )
+    }
+}
+`}
+
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

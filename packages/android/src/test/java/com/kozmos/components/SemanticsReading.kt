@@ -143,6 +143,10 @@ data class ReadNode(
     val editableText: String? = null,
     /** The click's label, which TalkBack reads as "Double-tap to <label>". */
     val clickLabel: String? = null,
+    /** The long click, which TalkBack offers as "Double-tap and hold to <label>". */
+    val longClick: (() -> Boolean)? = null,
+    /** The long click's label. */
+    val longClickLabel: String? = null,
     /** A text's layout as it was drawn: its lines and its inline content's places. */
     val textLayout: TextLayoutResult? = null,
     /** The weight a text lays its words out in, where it says one. */
@@ -384,6 +388,8 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
         ?.associate { it.label to it.action }.orEmpty(),
     editableText = node.config.getOrNull(SemanticsProperties.EditableText)?.text,
     clickLabel = node.config.getOrNull(SemanticsActions.OnClick)?.label,
+    longClick = node.config.getOrNull(SemanticsActions.OnLongClick)?.action,
+    longClickLabel = node.config.getOrNull(SemanticsActions.OnLongClick)?.label,
     textLayout = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.let { get ->
         mutableListOf<TextLayoutResult>().also { get(it) }.firstOrNull()
     },
