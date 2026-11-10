@@ -4,6 +4,7 @@ import {
   FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
   FieldPopupContent,
+  FieldPopupDrawn,
   FieldPopupRoot,
   FieldPopupStatus,
   keepFieldFocus,
@@ -208,10 +209,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     // mounts then): the field names an active option only once the list is
     // in the page, so no commit names an option still to be drawn (GAP-231).
     const [listboxDrawn, setListboxDrawn] = React.useState(false);
-    const setListboxNode = React.useCallback(
-      (node: HTMLDivElement | null) => setListboxDrawn(node !== null),
-      [],
-    );
     const presentation = React.useContext(MapShellPresentationContext);
     const defaultInputId = React.useId();
     const errorId = React.useId();
@@ -666,7 +663,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                         </div>
                       )}
                     <div
-                      ref={setListboxNode}
                       id={listboxOpen ? listboxId : undefined}
                       className="min-h-0 overflow-y-auto"
                       data-modality={modality}
@@ -677,6 +673,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       }
                       aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     >
+                      <FieldPopupDrawn onDrawn={setListboxDrawn} />
                       {entries.length === 0
                         ? showEmptyText && (
                             <div className="px-3 py-2 text-sm text-muted-foreground">
