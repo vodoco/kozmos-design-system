@@ -38,6 +38,9 @@ their own spacing, and the actions are centred on the title's line, whatever the
 extra height for an icon button at either density. In right to left the actions are at the left. They come after the
 title in the reading and tab order. Without `actions`, the header is drawn as it was.
 
+SwiftUI's `KozmosCardHeader { … } actions: { … }` and Compose's `KozmosCardHeader(actions = { … })`
+draw them the same way, centred on the title's line, which grows with the text size there.
+
 <Canvas of={CardStories.HeaderActions} />
 
 ## Implementation

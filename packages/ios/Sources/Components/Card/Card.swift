@@ -201,17 +201,58 @@ struct KozmosCardColumn: Layout {
 
 public struct KozmosCardHeader<Content: View>: View {
     @Environment(\.kozmosCardPadding) private var padding
+    /// The title's line: 24 at the default text size, as React's 24px title
+    /// sits on a 24px line, and growing with the title as Dynamic Type grows
+    /// it.
+    @ScaledMetric(relativeTo: .title3) private var titleLine: CGFloat = 24
     let content: Content
+    let actions: AnyView?
 
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
+        self.actions = nil
+    }
+
+    /// A header with what acts on the card at its trailing end (GAP-169): an
+    /// edit `KozmosIconButton` beside the site's name, a menu. The title and
+    /// description keep the room before it, 16 from the actions, which are 8
+    /// apart and centred on the title's line whatever their size, so a 44
+    /// icon button makes the header no taller. Right to left, the actions are
+    /// at the left. VoiceOver reads them after the title and description.
+    public init<Actions: View>(
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder actions: () -> Actions
+    ) {
+        self.content = content()
+        self.actions = AnyView(actions())
     }
 
     public var body: some View {
+        Group {
+            if let actions {
+                HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
+                    text
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                        actions
+                    }
+                    .fixedSize()
+                    // The title's line, which a taller action spills past
+                    // evenly, as React's 24px box: the header grows no taller
+                    // for it.
+                    .frame(height: titleLine)
+                }
+            } else {
+                text
+            }
+        }
+        .padding(padding.length)
+    }
+
+    private var text: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             content
         }
-        .padding(padding.length)
     }
 }
 
