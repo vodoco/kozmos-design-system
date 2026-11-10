@@ -536,6 +536,41 @@ describe("Combobox: the active option moves in the commit that changes it (GAP-2
   });
 });
 
+describe("Combobox: opening names no option until it is drawn (GAP-231)", () => {
+  describe.each(strictModes)("%s", (_, wrapper) => {
+    it.each(["the pointer", "ArrowDown"] as const)(
+      "names a drawn option, or none, in every commit of opening with %s",
+      async (how) => {
+        const user = userEvent.setup();
+        const commits: (string | null)[] = [];
+        render(
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <Combobox label="View" options={options} />
+          </React.Profiler>,
+          { wrapper },
+        );
+        const input = screen.getByRole("combobox", { name: "View" });
+        if (how === "ArrowDown") {
+          input.focus();
+          await user.keyboard("{Escape}");
+        }
+        commits.length = 0;
+        if (how === "ArrowDown") await user.keyboard("{ArrowDown}");
+        else await user.click(input);
+        expect(screen.getByRole("listbox")).toBeVisible();
+        expect(commits.length).toBeGreaterThan(0);
+        // Drawn and enabled, or none: never an option still to be drawn.
+        for (const commit of commits)
+          expect(commit ?? "none").not.toMatch(/undrawn|\(disabled\)/);
+        expect(commits.at(-1)).not.toBeNull();
+      },
+    );
+  });
+});
+
 describe("Combobox", () => {
   it("omits every ambiguous or blank command without confusing a same-ID value", async () => {
     const user = userEvent.setup();

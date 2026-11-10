@@ -157,6 +157,303 @@ describe("MultiSelect: the active option moves in the commit that changes it (GA
   });
 });
 
+describe("MultiSelect: opening names no option until it is drawn (GAP-231)", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    it.each(["the pointer", "ArrowDown"] as const)(
+      "names a drawn option, or none, in every commit of opening with %s",
+      async (how) => {
+        const user = userEvent.setup();
+        const commits: (string | null)[] = [];
+        render(
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <MultiSelect label="Tools" options={options} />
+          </React.Profiler>,
+          { wrapper },
+        );
+        const input = screen.getByRole("combobox", { name: "Tools" });
+        if (how === "ArrowDown") {
+          input.focus();
+          await user.keyboard("{Escape}");
+        }
+        commits.length = 0;
+        if (how === "ArrowDown") await user.keyboard("{ArrowDown}");
+        else await user.click(input);
+        expect(screen.getByRole("listbox")).toBeVisible();
+        expect(commits.length).toBeGreaterThan(0);
+        // Drawn and enabled, or none: never an option still to be drawn.
+        for (const commit of commits)
+          expect(commit ?? "none").not.toMatch(/undrawn|\(disabled\)/);
+        expect(commits.at(-1)).not.toBeNull();
+      },
+    );
+  });
+});
+
+describe("MultiSelect: a choice leaves the active option where it is", () => {
+  describe.each([
+    ["outside StrictMode", undefined],
+    ["under StrictMode", React.StrictMode],
+  ] as const)("%s", (_, wrapper) => {
+    // A host that holds the choice, and passes its options anew each render,
+    // as a product mapping its data does.
+    function Held({
+      initial = [],
+      maxSelected,
+      onValueChange,
+      onCommit,
+    }: {
+      initial?: string[];
+      maxSelected?: number;
+      onValueChange?: (values: string[]) => void;
+      onCommit?: () => void;
+    }) {
+      const [value, setValue] = React.useState(initial);
+      return (
+        <React.Profiler id="field" onRender={() => onCommit?.()}>
+          <MultiSelect
+            label="Tools"
+            maxSelected={maxSelected}
+            options={options.map((option) => ({ ...option }))}
+            value={value}
+            onValueChange={(next) => {
+              setValue(next);
+              onValueChange?.(next);
+            }}
+          />
+        </React.Profiler>
+      );
+    }
+
+    it.each([
+      ["chosen by the field", "uncontrolled"],
+      ["held by the product, options passed anew", "controlled"],
+    ] as const)(
+      "chooses two options with ArrowDown, Enter, ArrowDown, Enter (%s)",
+      async (_, mode) => {
+        const user = userEvent.setup();
+        const onValueChange = vi.fn();
+        const commits: (string | null)[] = [];
+        render(
+          mode === "uncontrolled" ? (
+            <React.Profiler
+              id="field"
+              onRender={() => commits.push(activeOptionNow())}
+            >
+              <MultiSelect
+                label="Tools"
+                options={options}
+                onValueChange={onValueChange}
+              />
+            </React.Profiler>
+          ) : (
+            <Held
+              onValueChange={onValueChange}
+              onCommit={() => commits.push(activeOptionNow())}
+            />
+          ),
+          { wrapper },
+        );
+        await user.click(screen.getByRole("combobox", { name: "Tools" }));
+        await user.keyboard("{ArrowDown}");
+        expect(activeOptionNow()).toBe("Layers");
+
+        commits.length = 0;
+        await user.keyboard("{Enter}");
+        const choiceCommits = [...commits];
+        await user.keyboard("{ArrowDown}{Enter}");
+        expect(onValueChange.mock.calls.map(([values]) => values)).toEqual([
+          ["layers"],
+          ["layers", "routes"],
+        ]);
+        expect(activeOptionNow()).toBe("Routes");
+        // Every commit of the first choice kept Layers, the option chosen.
+        expect(choiceCommits.length).toBeGreaterThan(0);
+        for (const commit of choiceCommits) expect(commit).toBe("Layers");
+      },
+    );
+
+    it("keeps the option chosen with the pointer active", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.hover(screen.getByRole("option", { name: "Routes" }));
+      expect(activeOptionNow()).toBe("Routes");
+
+      commits.length = 0;
+      await user.click(screen.getByRole("option", { name: "Routes" }));
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Routes");
+    });
+
+    it("keeps the option chosen while text is typed active when the text clears", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      render(
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={options} />
+        </React.Profiler>,
+        { wrapper },
+      );
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      // "ers" draws Filters and Layers.
+      await user.keyboard("ers{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("combobox", { name: "Tools" })).toHaveValue("");
+      expect(screen.getAllByRole("option")).toHaveLength(3);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Layers");
+    });
+
+    it("moves on from the option chosen under typed text when the product disables it", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      // The product disables an option once it is chosen.
+      function Host() {
+        const [value, setValue] = React.useState<string[]>([]);
+        return (
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <MultiSelect
+              label="Tools"
+              options={options.map((option) => ({
+                ...option,
+                disabled: value.includes(option.value),
+              }))}
+              value={value}
+              onValueChange={setValue}
+            />
+          </React.Profiler>
+        );
+      }
+      render(<Host />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      // "ers" draws Filters and Layers.
+      await user.keyboard("ers{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      await user.keyboard("{Enter}");
+      expect(screen.getAllByRole("option")).toHaveLength(3);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Routes");
+    });
+
+    it("starts again at the first option when new options of the same count arrive", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ list }: { list: typeof options }) => (
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect label="Tools" options={list} />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host list={options} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(activeOptionNow()).toBe("Routes");
+
+      commits.length = 0;
+      rerender(
+        <Host
+          list={[
+            { value: "floors", label: "Floors" },
+            { value: "zones", label: "Zones" },
+            { value: "pins", label: "Pins" },
+          ]}
+        />,
+      );
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Floors");
+    });
+
+    it("names no option while every option is disabled, and the first when they are enabled again", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      const Host = ({ off }: { off: boolean }) => (
+        <React.Profiler
+          id="field"
+          onRender={() => commits.push(activeOptionNow())}
+        >
+          <MultiSelect
+            label="Tools"
+            options={options.map((option) => ({ ...option, disabled: off }))}
+          />
+        </React.Profiler>
+      );
+      const { rerender } = render(<Host off={false} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      commits.length = 0;
+      rerender(<Host off />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBeNull();
+
+      commits.length = 0;
+      rerender(<Host off={false} />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Filters");
+    });
+
+    it("moves on from an option that maxSelected disables, to the next it can choose", async () => {
+      const user = userEvent.setup();
+      const commits: (string | null)[] = [];
+      function Host({ value }: { value: string[] }) {
+        return (
+          <React.Profiler
+            id="field"
+            onRender={() => commits.push(activeOptionNow())}
+          >
+            <MultiSelect
+              label="Tools"
+              maxSelected={2}
+              options={options}
+              value={value}
+            />
+          </React.Profiler>
+        );
+      }
+      const { rerender } = render(<Host value={["filters"]} />, { wrapper });
+      await user.click(screen.getByRole("combobox", { name: "Tools" }));
+      await user.keyboard("{ArrowDown}");
+      expect(activeOptionNow()).toBe("Layers");
+
+      // The product's second choice reaches the limit: Layers can no longer
+      // be chosen, and the next option on from it, Routes, is active.
+      commits.length = 0;
+      rerender(<Host value={["filters", "routes"]} />);
+      expect(commits.length).toBeGreaterThan(0);
+      for (const commit of commits) expect(commit).toBe("Routes");
+    });
+  });
+});
+
 describe("MultiSelect", () => {
   it("selects and removes multiple options", async () => {
     const user = userEvent.setup();
