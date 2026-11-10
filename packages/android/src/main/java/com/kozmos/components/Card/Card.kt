@@ -1,11 +1,15 @@
 package com.kozmos.components.card
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +33,7 @@ import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.VerticalAlignmentLine
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
@@ -37,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import kotlin.math.max
@@ -355,6 +361,45 @@ fun KozmosCardHeader(
         modifier = modifier.padding(LocalKozmosCardPadding.current.length)
     ) {
         content()
+    }
+}
+
+/**
+ * A header with what acts on the card at its end (GAP-169): an edit
+ * KozmosIconButton beside the site's name, a menu. The title and description
+ * keep the room before it, 16 from the actions, which are 8 apart and centred
+ * on the title's line whatever their size, so a 44 icon button makes the header
+ * no taller. Right to left, the actions are at the left. TalkBack reads them
+ * after the title and description.
+ */
+@Composable
+fun KozmosCardHeader(
+    actions: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    // The title's line, as React's 24px box is its 24px title's: the title's
+    // own line height, which grows with the font scale.
+    val titleLine = with(LocalDensity.current) {
+        MaterialTheme.typography.titleLarge.lineHeight
+            .takeIf { it.isSpecified }?.toDp() ?: KozmosDimensions.primitivesLayoutSpacing300
+    }
+    Row(
+        modifier = modifier.padding(LocalKozmosCardPadding.current.length),
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing200),
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(modifier = Modifier.weight(1f), content = content)
+        Box(modifier = Modifier.height(titleLine), contentAlignment = Alignment.Center) {
+            // A taller action spills past the line evenly: the header grows no
+            // taller for it.
+            Row(
+                modifier = Modifier.wrapContentHeight(unbounded = true),
+                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions
+            )
+        }
     }
 }
 

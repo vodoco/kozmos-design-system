@@ -484,6 +484,31 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(actual, value, "callbacks", file: file, line: line)
     }
 
+    /// An external menu item in the system's own menu (decision 152): UIKit
+    /// draws the menu from what SwiftUI gave it, so the hint and the new-tab
+    /// image must survive that, not only Kozmos's rows. XCUI reads no hints:
+    /// the app reports what VoiceOver is given for the open menu's items.
+    func testAnExternalMenuItemKeepsItsHintAndIconInTheSystemMenu() {
+        for scenario in ["menu-external", "context-menu-external"] {
+            launch(scenario)
+            if scenario == "menu-external" {
+                app.buttons["Help"].tap()
+            } else {
+                app.staticTexts["Gate A12"].press(forDuration: 1.2)
+            }
+            let item = app.buttons["Help centre"]
+            XCTAssertTrue(item.waitForExistence(timeout: 5), "\(scenario): the menu opened")
+            let report = app.staticTexts["control-accessibility-report"]
+            let expected = "Help centre=Opens in your browser=image|Keyboard shortcuts=no hint=no image"
+            let settled = NSPredicate(format: "label == %@", expected)
+            _ = XCTWaiter().wait(for: [expectation(for: settled, evaluatedWith: report)], timeout: 3)
+            XCTAssertEqual(report.label, expected, scenario)
+            item.tap()
+            received("Help centre")
+            app.terminate()
+        }
+    }
+
     func testMapControlRegionsHaveNamesAndKeepChildActions() {
         launch("map-control-regions")
         for name in ["Map controls", "Map corner controls"] {

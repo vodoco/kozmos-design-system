@@ -67,7 +67,10 @@ const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 100 KB on 2026-10-28 (decision 126) for 0.15.0's approved APIs (decision 119):
 // after 0.14.0's tour family and fixes, Everything measures about 93.9 KB, leaving no room for
 // them. A trim pass runs alongside, reported before 0.15.0.
-const MAX_TOTAL_GZIP_KB = 100;
+// Olcay approved 112 KB on 2026-11-09 (decision 175) for 0.16.0, which carries every item the register
+// promises for it (decision 174): more than 40, among them new parts (ContextMenu, Kbd, the Cloud
+// modules) and Tree's range selection. Main measured 96.53 KB on CI before them.
+const MAX_TOTAL_GZIP_KB = 112;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
@@ -76,7 +79,10 @@ const MAX_TOTAL_GZIP_KB = 100;
 // duplication: the SDK's markers in owned CSS (about 1 KB gzip alone) and the density rules.
 // The room above them is for the next density groups (chips, tags, rows, tabs, the table, the
 // tree). CI reads the stylesheet the same as a Mac.
-const MAX_CSS_GZIP_KB = 32;
+// 36 KB on 2026-11-09 (decision 175, Olcay's): main measured 31.79 KB on CI, and Button's subtle tier with
+// CardHeader's tone and CardTitle's size (#515) alone take it to 32.20 KB, before the rest of 0.16.0
+// (decision 174).
+const MAX_CSS_GZIP_KB = 36;
 const MIN_ESM_MODULES = 50;
 // @kozmos-ds/vue (Vue 3 Phase 0, P0.5), measured as React is: an app's
 // production build of every export at once, its dependencies (vue, reka-ui,

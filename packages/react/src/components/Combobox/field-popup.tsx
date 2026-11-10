@@ -44,6 +44,33 @@ export const FieldPopupContent = React.forwardRef<
 ));
 FieldPopupContent.displayName = "FieldPopupContent";
 
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+/**
+ * Says when a field's popup list is in the page: true as it mounts, false as
+ * it goes, in the commit that draws or removes it. Internal. A field names an
+ * active option only while its list is drawn, and its portal draws the list a
+ * commit after the field opens (GAP-231).
+ *
+ * A layout effect of its own, not a callback ref: under `asChild` Radix's
+ * Slot gives the list's ref a new identity every render, so React calls it
+ * with null and the node in every commit, and a ref that set state looped on
+ * React 18 ("Maximum update depth exceeded", #513). This runs only when the
+ * list mounts and unmounts.
+ */
+export function FieldPopupDrawn({
+  onDrawn,
+}: {
+  onDrawn: (drawn: boolean) => void;
+}) {
+  useIsomorphicLayoutEffect(() => {
+    onDrawn(true);
+    return () => onDrawn(false);
+  }, [onDrawn]);
+  return null;
+}
+
 /**
  * What a field's popup says aloud: its empty text when typing empties the
  * list, and nothing otherwise. Internal.

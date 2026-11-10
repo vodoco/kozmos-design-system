@@ -1,21 +1,29 @@
 import SwiftUI
 import Figma
 
-// NavigationAlign=Center only: SwiftUI centres the navigation and has no
-// navigationAlign yet (GAP-196 is web and Figma first), so a Start or End
-// instance shows no SwiftUI snippet rather than a centred one.
-
 struct KozmosNavbarBasicConnect: FigmaConnect {
     let component = KozmosNavbar.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
-    var variant = ["Content": "Basic", "NavigationAlign": "Center"]
+    var variant = ["Content": "Basic"]
 
     @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
     var logoInset: Bool = false
 
+    // GAP-196: where the navigation sits, Center by default.
+    @FigmaEnum(
+        "NavigationAlign",
+        mapping: [
+            "Start": KozmosNavbarNavigationAlign.start,
+            "Center": KozmosNavbarNavigationAlign.center,
+            "End": KozmosNavbarNavigationAlign.end
+        ]
+    )
+    var navigationAlign: KozmosNavbarNavigationAlign = .center
+
     var body: some View {
         KozmosNavbar(
             logoInset: self.logoInset,
+            navigationAlign: self.navigationAlign,
             logo: {
                 Text("Logo")
             },
@@ -44,14 +52,26 @@ struct KozmosNavbarBasicConnect: FigmaConnect {
 struct KozmosNavbarActionsConnect: FigmaConnect {
     let component = KozmosNavbar.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
-    var variant = ["Content": "Actions", "NavigationAlign": "Center"]
+    var variant = ["Content": "Actions"]
 
     @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
     var logoInset: Bool = false
 
+    // GAP-196: where the navigation sits, Center by default.
+    @FigmaEnum(
+        "NavigationAlign",
+        mapping: [
+            "Start": KozmosNavbarNavigationAlign.start,
+            "Center": KozmosNavbarNavigationAlign.center,
+            "End": KozmosNavbarNavigationAlign.end
+        ]
+    )
+    var navigationAlign: KozmosNavbarNavigationAlign = .center
+
     var body: some View {
         KozmosNavbar(
             logoInset: self.logoInset,
+            navigationAlign: self.navigationAlign,
             logo: {
                 Text("Logo")
             },
@@ -80,14 +100,26 @@ struct KozmosNavbarActionsConnect: FigmaConnect {
 struct KozmosNavbarContextualConnect: FigmaConnect {
     let component = KozmosNavbar.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=752-6765"
-    var variant = ["Content": "Contextual", "NavigationAlign": "Center"]
+    var variant = ["Content": "Contextual"]
 
     @FigmaEnum("LogoInset", mapping: ["False": false, "True": true])
     var logoInset: Bool = false
 
+    // GAP-196: where the navigation sits, Center by default.
+    @FigmaEnum(
+        "NavigationAlign",
+        mapping: [
+            "Start": KozmosNavbarNavigationAlign.start,
+            "Center": KozmosNavbarNavigationAlign.center,
+            "End": KozmosNavbarNavigationAlign.end
+        ]
+    )
+    var navigationAlign: KozmosNavbarNavigationAlign = .center
+
     var body: some View {
         KozmosNavbar(
             logoInset: self.logoInset,
+            navigationAlign: self.navigationAlign,
             logo: {
                 Text("Logo")
             },

@@ -73,7 +73,7 @@ After code merges, regenerate the manifest, update the Figma component, then upd
 - Import foundations from `docs/figma-foundations-payload.json`
 - Create foundation pages
 - Create local variables and modes
-- Build/update the canonical Core component sets with unsuffixed names (`CORE_UPDATE_SEQUENCE`, 74 today) and the Product / SDK and platform sets (`PRODUCT_SDK_UPDATE_SEQUENCE`, 28)
+- Build/update the canonical Core component sets with unsuffixed names (`CORE_UPDATE_SEQUENCE`, 77 today) and the Product / SDK and platform sets (`PRODUCT_SDK_UPDATE_SEQUENCE`, 29)
 - Update existing component sets in place while preserving Code Connect node IDs
 - Apply shared text styles/token bindings
 - Reorganize the Components page without changing component set IDs
