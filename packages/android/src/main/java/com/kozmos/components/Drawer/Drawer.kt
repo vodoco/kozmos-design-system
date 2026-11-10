@@ -442,25 +442,27 @@ private fun androidx.compose.foundation.layout.BoxScope.closeButtonModifier(side
         .padding(KozmosDimensions.primitivesLayoutSpacing200)
         .size(44.dp)
 
-private fun drawerShape(side: KozmosDrawerSide): RoundedCornerShape =
+// A container's corner, 20, on the two corners that face the page, as React's
+// rounded-*-container (decision 156).
+internal fun drawerShape(side: KozmosDrawerSide): RoundedCornerShape =
     when (side) {
         KozmosDrawerSide.Left -> RoundedCornerShape(
-            topEnd = KozmosDimensions.semanticsRadiusControl,
-            bottomEnd = KozmosDimensions.semanticsRadiusControl
+            topEnd = KozmosDimensions.semanticsRadiusContainer,
+            bottomEnd = KozmosDimensions.semanticsRadiusContainer
         )
 
         KozmosDrawerSide.Right -> RoundedCornerShape(
-            topStart = KozmosDimensions.semanticsRadiusControl,
-            bottomStart = KozmosDimensions.semanticsRadiusControl
+            topStart = KozmosDimensions.semanticsRadiusContainer,
+            bottomStart = KozmosDimensions.semanticsRadiusContainer
         )
 
         KozmosDrawerSide.Top -> RoundedCornerShape(
-            bottomStart = KozmosDimensions.semanticsRadiusControl,
-            bottomEnd = KozmosDimensions.semanticsRadiusControl
+            bottomStart = KozmosDimensions.semanticsRadiusContainer,
+            bottomEnd = KozmosDimensions.semanticsRadiusContainer
         )
 
         KozmosDrawerSide.Bottom -> RoundedCornerShape(
-            topStart = KozmosDimensions.semanticsRadiusControl,
-            topEnd = KozmosDimensions.semanticsRadiusControl
+            topStart = KozmosDimensions.semanticsRadiusContainer,
+            topEnd = KozmosDimensions.semanticsRadiusContainer
         )
     }

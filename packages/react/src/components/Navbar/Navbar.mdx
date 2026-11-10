@@ -35,6 +35,10 @@ are drawn changes.
 A Home tile belongs in the `logo` slot, as an icon-only top `NavigationItem`, not in `actions`, which
 sits in the group at the bar's end.
 
+SwiftUI's and Compose's `KozmosNavbar` take it too, as `navigationAlign: .start`, `.center` or `.end`
+(`KozmosNavbarNavigationAlign`) and `navigationAlign = KozmosNavbarNavigationAlign.End`, `.center` by
+default, with the same room and the same mirroring right to left.
+
 <Canvas of={NavbarStories.NavigationAlign} />
 
 ## Over a rail

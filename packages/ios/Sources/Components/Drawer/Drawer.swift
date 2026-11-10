@@ -150,9 +150,9 @@ public struct KozmosDrawer<Content: View>: View {
     static var inlineEdge: CGFloat { KozmosDimensions.primitivesLayoutSpacing200 }
 
     private var inlineSurface: some View {
-        let radius = side.horizontal
-            ? KozmosDimensions.semanticsRadiusContainer
-            : KozmosDimensions.semanticsRadiusControl
+        // A container's corner, 20, on every side, as the fixed drawer's
+        // (decision 156).
+        let radius = KozmosDimensions.semanticsRadiusContainer
         // As tall as its content, and scrolling only past the region: the
         // first child that fits is drawn, so content that fits never scrolls.
         let surface = ViewThatFits(in: .vertical) {
@@ -245,9 +245,10 @@ public struct KozmosDrawer<Content: View>: View {
             alignment: .topLeading
         )
         .background(KozmosColors.semanticsSurface0)
-        .cornerRadius(KozmosDimensions.semanticsRadiusControl)
+        // A container's corner, 20, as React's rounded-container (decision 156).
+        .cornerRadius(KozmosDimensions.semanticsRadiusContainer)
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer)
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
         .kozmosElevation(KozmosShadows.semanticsElevationOverlay)
