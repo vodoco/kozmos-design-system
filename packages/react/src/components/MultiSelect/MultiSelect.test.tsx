@@ -761,3 +761,278 @@ describe("MultiSelect", () => {
     });
   });
 });
+
+/**
+ * GAP-225: reaching `maxSelected` disables the remaining options, and a
+ * screen reader is told so, once, in the product's words. The limit has a
+ * region of its own, in the field from its first render and empty, beside the
+ * empty text's; only its words change.
+ */
+describe("MultiSelect's limit is said when the selection reaches it", () => {
+  // The empty text's status comes first, the limit's after it.
+  function limitStatus() {
+    const statuses = screen.getAllByRole("status");
+    expect(statuses).toHaveLength(2);
+    return statuses[1]!;
+  }
+
+  // Every change a screen reader could read in the region: one record per
+  // change of its words.
+  function watch(node: HTMLElement) {
+    const said: string[] = [];
+    const observer = new MutationObserver(() => {
+      said.push(node.textContent ?? "");
+    });
+    observer.observe(node, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    return {
+      said: async () => {
+        await Promise.resolve();
+        return said.filter(Boolean);
+      },
+      stop: () => observer.disconnect(),
+    };
+  }
+
+  it("says the limit once on reaching it, and not on unrelated re-renders", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <MultiSelect label="Tools" options={options} maxSelected={2} />,
+    );
+    const status = limitStatus();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toBeEmptyDOMElement();
+    const region = watch(status);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.click(screen.getByRole("option", { name: "Filters" }));
+    expect(status).toBeEmptyDOMElement();
+    await user.click(screen.getByRole("option", { name: "Layers" }));
+    // The same node, now with the words.
+    expect(limitStatus()).toBe(status);
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    expect(screen.getByRole("option", { name: "Routes" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    // Typing, an empty list and its own status, closing, opening and a host
+    // re-render change nothing in the limit's region.
+    await user.type(input, "zz");
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(
+      "No results found",
+    );
+    await user.clear(input);
+    await user.keyboard("{Escape}");
+    await user.click(input);
+    rerender(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        maxSelected={2}
+        helperText="Choose two"
+      />,
+    );
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    expect(await region.said()).toEqual(["Limit of 2 reached"]);
+    region.stop();
+  });
+
+  it("says it again only after the selection drops below and reaches it again", async () => {
+    const user = userEvent.setup();
+    render(<MultiSelect label="Tools" options={options} maxSelected={2} />);
+    const status = limitStatus();
+    const region = watch(status);
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Filters" }));
+    await user.click(screen.getByRole("option", { name: "Layers" }));
+    expect(status).toHaveTextContent("Limit of 2 reached");
+
+    // Below the limit: the words go.
+    await user.click(screen.getByRole("button", { name: "Remove Layers" }));
+    expect(status).toBeEmptyDOMElement();
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Routes" }));
+    expect(limitStatus()).toBe(status);
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    expect(await region.said()).toEqual([
+      "Limit of 2 reached",
+      "Limit of 2 reached",
+    ]);
+    region.stop();
+  });
+
+  it("says the product's own words", async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelect
+        label="Araçlar"
+        options={options}
+        maxSelected={1}
+        maxSelectedLabel={(max) => `En fazla ${max} seçenek seçilebilir`}
+      />,
+    );
+    const status = limitStatus();
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Routes" }));
+    expect(status).toHaveTextContent("En fazla 1 seçenek seçilebilir");
+    expect(screen.queryByText("Limit of 1 reached")).toBeNull();
+  });
+
+  it("says the limit reached with the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<MultiSelect label="Tools" options={options} maxSelected={2} />);
+    const status = limitStatus();
+    await user.click(screen.getByRole("combobox"));
+    // Filters, then the arrow on to Layers.
+    await user.keyboard("{Enter}");
+    expect(status).toBeEmptyDOMElement();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "aria-activedescendant",
+      screen.getByRole("option", { name: "Layers" }).id,
+    );
+    await user.keyboard("{Enter}");
+    expect(
+      screen
+        .getAllByRole("button", { name: /^Remove / })
+        .map((b) => b.getAttribute("aria-label")),
+    ).toEqual(["Remove Filters", "Remove Layers"]);
+    expect(status).toHaveTextContent("Limit of 2 reached");
+  });
+
+  it("says a limit that a value the host sets reaches", () => {
+    const { rerender } = render(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        maxSelected={2}
+        value={["filters"]}
+      />,
+    );
+    const status = limitStatus();
+    rerender(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        maxSelected={2}
+        value={["filters", "layers"]}
+      />,
+    );
+    expect(limitStatus()).toBe(status);
+    expect(status).toHaveTextContent("Limit of 2 reached");
+  });
+
+  it("says a value over the limit, once, and not again as it comes down to it", async () => {
+    const user = userEvent.setup();
+    const props = { label: "Tools", options, maxSelected: 2 };
+    const { rerender } = render(<MultiSelect {...props} value={[]} />);
+    const status = limitStatus();
+    const region = watch(status);
+    // Below to over in one step: the others are disabled, so it is said.
+    rerender(
+      <MultiSelect {...props} value={["filters", "layers", "routes"]} />,
+    );
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    // Over to at: still at the limit, nothing new to say.
+    rerender(<MultiSelect {...props} value={["filters", "layers"]} />);
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    await user.click(screen.getByRole("combobox"));
+    expect(screen.getByRole("option", { name: "Routes" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(await region.said()).toEqual(["Limit of 2 reached"]);
+    region.stop();
+  });
+
+  it("says new words at the limit when the limit or its label changes", () => {
+    const value = ["filters", "layers"];
+    const { rerender } = render(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        value={[]}
+        maxSelected={2}
+      />,
+    );
+    const status = limitStatus();
+    rerender(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        value={value}
+        maxSelected={2}
+      />,
+    );
+    expect(status).toHaveTextContent("Limit of 2 reached");
+    // Another language, at the same limit: its words replace the old ones.
+    rerender(
+      <MultiSelect
+        label="Araçlar"
+        options={options}
+        value={value}
+        maxSelected={2}
+        maxSelectedLabel={(max) => `En fazla ${max} seçenek`}
+      />,
+    );
+    expect(limitStatus()).toBe(status);
+    expect(status).toHaveTextContent("En fazla 2 seçenek");
+  });
+
+  it("says nothing for a limit given in the render that mounts its region", () => {
+    const value = ["filters", "layers"];
+    const { rerender } = render(
+      <MultiSelect label="Tools" options={options} value={value} />,
+    );
+    // No limit, no region of its own.
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    rerender(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        value={value}
+        maxSelected={2}
+      />,
+    );
+    expect(limitStatus()).toBeEmptyDOMElement();
+  });
+
+  it("takes its region away with the limit, and says nothing when the limit comes back already met", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <MultiSelect label="Tools" options={options} maxSelected={2} />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Filters" }));
+    await user.click(screen.getByRole("option", { name: "Layers" }));
+    expect(limitStatus()).toHaveTextContent("Limit of 2 reached");
+
+    rerender(<MultiSelect label="Tools" options={options} />);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.queryByText("Limit of 2 reached")).toBeNull();
+    expect(screen.getByRole("option", { name: "Routes" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
+
+    rerender(<MultiSelect label="Tools" options={options} maxSelected={2} />);
+    expect(limitStatus()).toBeEmptyDOMElement();
+  });
+
+  it("says nothing for a selection that was already at the limit when it mounted", () => {
+    render(
+      <MultiSelect
+        label="Tools"
+        options={options}
+        maxSelected={2}
+        defaultValue={["filters", "layers"]}
+      />,
+    );
+    expect(limitStatus()).toBeEmptyDOMElement();
+  });
+});
