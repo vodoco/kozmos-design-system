@@ -1061,6 +1061,7 @@
               <optgroup label="Typography">
                 <option value="link">Link</option>
                 <option value="separator">Separator</option>
+                <option value="kbd">Kbd</option>
               </optgroup>
               <optgroup label="Actions">
                 <option value="button">Button</option>
@@ -1117,6 +1118,7 @@
                 <option value="dialog">Dialog</option>
                 <option value="drawer">Drawer</option>
                 <option value="menu">Menu</option>
+                <option value="contextMenu">ContextMenu</option>
                 <option value="popover">Popover</option>
                 <option value="tooltip">Tooltip</option>
                 <option value="tourStep">TourStep</option>
@@ -1757,6 +1759,13 @@
           rebuild: "rebuild-separator",
           hint: "Build creates Separator with Horizontal and Vertical orientation variants. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
+        kbd: {
+          label: "Kbd",
+          build: "build-kbd",
+          update: "update-kbd",
+          rebuild: "rebuild-kbd",
+          hint: "Build creates Kbd (GAP-156), a keyboard key as a cap, with Single and Combination Keys variants: one cap, or two caps with a plus between. Key Text and Modifier Text are editable. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         skeleton: {
           label: "Skeleton",
           build: "build-skeleton",
@@ -2042,7 +2051,14 @@
           build: "build-menu",
           update: "update-menu",
           rebuild: "rebuild-menu",
-          hint: "Build creates Menu with Basic, Checkbox, Radio, and Submenu content variants plus editable labels/items. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+          hint: "Build creates Menu with Basic, Checkbox, Radio, and Submenu content variants plus editable labels/items, and an External boolean that shows the new-tab icon on Basic's and Submenu's second item. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        contextMenu: {
+          label: "ContextMenu",
+          build: "build-context-menu",
+          update: "update-context-menu",
+          rebuild: "rebuild-context-menu",
+          hint: "Build creates ContextMenu (GAP-155), the menu a right click, a long press or the context-menu key opens: Menu's panel, painted by Menu's own code, with the same Content variants, texts and External boolean. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         checkbox: {
           label: "Checkbox",
