@@ -38,6 +38,20 @@ async function frames(page: Page) {
   );
 }
 
+/**
+ * The React this run draws with, recorded, and held to the project's: the
+ * chromium-react18 project (playwright.react18.config.ts) must draw with
+ * React 18, or its run proves nothing about React 18 (an alias that stopped
+ * applying, or apps/docs moved to 19, would leave it on the package's 19).
+ */
+async function expectReact(page: Page) {
+  const version =
+    (await page.locator("[data-react]").getAttribute("data-react")) ?? "";
+  test.info().annotations.push({ type: "react", description: version });
+  if (test.info().project.name === "chromium-react18")
+    expect(version, "React in the chromium-react18 project").toMatch(/^18\./);
+}
+
 for (const part of ["MultiSelect", "Combobox"] as const) {
   for (const how of ["pointer", "ArrowDown"] as const) {
     test(`${part} opened with ${how} draws its list, and names a drawn option or none in every frame`, async ({
@@ -45,6 +59,7 @@ for (const part of ["MultiSelect", "Combobox"] as const) {
       page,
     }) => {
       const component = await mount(<FieldPopupOpenFixture part={part} />);
+      await expectReact(page);
       const field = component.getByRole("combobox", { name: "Tools" });
       if (how === "ArrowDown") {
         await field.focus();
@@ -80,13 +95,7 @@ for (const part of ["MultiSelect", "Combobox"] as const) {
       if (message.type() === "error") errors.push(message.text());
     });
     const component = await mount(<FieldPopupOpenFixture part={part} />);
-    // The React this run draws with: 19 here, 18 under
-    // playwright.react18.config.ts.
-    test.info().annotations.push({
-      type: "react",
-      description:
-        (await page.locator("[data-react]").getAttribute("data-react")) ?? "",
-    });
+    await expectReact(page);
     const field = component.getByRole("combobox", { name: "Tools" });
     await recordFrames(page);
     await field.click();
