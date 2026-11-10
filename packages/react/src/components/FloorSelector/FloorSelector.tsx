@@ -207,6 +207,9 @@ function UserLevelDot() {
  */
 const COLUMN_INSET = 4;
 
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
 interface CollapsibleFloorSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
   options: FloorPresentation[];
   selectedFloor: string;
@@ -300,14 +303,88 @@ const CollapsibleFloorSelector = React.forwardRef<
     const currentRef = React.useRef<HTMLButtonElement>(null);
     const [content, setContent] = React.useState<HTMLDivElement | null>(null);
     const [popup, setPopup] = React.useState<HTMLDivElement | null>(null);
-    const [scrollable, setScrollable] = React.useState(false);
-    React.useEffect(() => {
+    // Whether the open column's list overflows, and so scrolls: it draws
+    // `data-scrollable` and the scrollbar. Held with the list element it was
+    // measured on, so that it belongs to one opening: a column that opens
+    // again draws a new list, which starts out not scrollable, and a column
+    // that closes keeps it through its exit animation, where the list is
+    // still drawn (GAP-233).
+    const [measured, setMeasured] = React.useState<{
+      list: HTMLDivElement | null;
+      scrollable: boolean;
+    }>({ list: null, scrollable: false });
+    const scrollable =
+      content !== null && measured.list === content && measured.scrollable;
+    // How many times Radix has placed the column. Until it is placed the
+    // column has no available height, so nothing overflows; the commit that
+    // places it gives it one, and its layout effect calls `onPlaced`. What
+    // matters is that the measure below runs again then: that commit is
+    // floating-ui's `flushSync`, so the state the measure sets is drawn
+    // before the placed column is painted, and no painted frame of an
+    // opening shows a list spilling out of its column, or the scroll
+    // affordance of another opening (GAP-233). The measure is a layout
+    // effect only as belt and braces, for a placement that is not
+    // synchronous; as a plain effect it passes the same tests today.
+    const [placements, setPlacements] = React.useState(0);
+    // Popover's types leave out `onPlaced`, but its content passes it on to
+    // Radix's Popper, which calls it.
+    const placedProps = {
+      onPlaced: () => setPlacements((count) => count + 1),
+    } as object;
+    // Where focus goes as the column opens: the current level, where a
+    // visitor who opened the column to look around already is, rather than
+    // the top floor. With no current level, the first that can be chosen, as
+    // Radix would.
+    const openingFocusTarget = () => {
+      const current = currentRef.current;
+      return current && !current.disabled
+        ? current
+        : content?.querySelector<HTMLButtonElement>("button:not(:disabled)");
+    };
+    // Where focus goes back to as the column closes with it inside: the
+    // tile, or, with no room for the column any more, wherever the map's
+    // region says.
+    const returnFocus = () => {
+      if (canExpand) moveFocus(tileRef.current);
+      else popupRegion?.focusFallback();
+    };
+    // A closing column is going away: inert, so assistive technology neither
+    // reads nor acts on it and the keyboard cannot reach it, through its exit
+    // animation. Set in a layout effect, before the closing frame is painted.
+    // Inert would blur a level that has focus and leave it on the page for
+    // the exit, so focus inside goes back first, where `onCloseAutoFocus`
+    // would put it once the column is gone. Opened again before it is gone,
+    // the column is no longer inert, and focus outside it goes where an
+    // opening puts it (GAP-233).
+    useIsomorphicLayoutEffect(() => {
+      if (!popup) return;
+      const active = popup.ownerDocument.activeElement;
+      const focusInside = active !== null && popup.contains(active);
+      if (!open) {
+        if (popup.hasAttribute("inert")) return;
+        if (focusInside) returnFocus();
+        popup.setAttribute("inert", "");
+      } else if (popup.hasAttribute("inert")) {
+        popup.removeAttribute("inert");
+        if (!focusInside) {
+          const target = openingFocusTarget();
+          if (target) moveFocus(target, { preventScroll: true });
+        }
+      }
+      // Only as the column opens or closes; the helpers read refs and the
+      // render's own values.
+    }, [open, popup]);
+    useIsomorphicLayoutEffect(() => {
       if (!open || typeof ResizeObserver === "undefined") return;
       if (!content) return;
       const revealCurrent = () => {
         const current = currentRef.current;
         const overflows = content.scrollHeight > content.clientHeight;
-        setScrollable(overflows);
+        setMeasured((previous) =>
+          previous.list === content && previous.scrollable === overflows
+            ? previous
+            : { list: content, scrollable: overflows },
+        );
         if (!current || content.clientHeight <= 0 || !overflows) return;
         // Positioning supplies the scroll viewport after autofocus. Scroll
         // this list only; never move the embedding page to reveal the floor.
@@ -324,7 +401,7 @@ const CollapsibleFloorSelector = React.forwardRef<
       observer.observe(content);
       revealCurrent();
       return () => observer.disconnect();
-    }, [open, content, scrollable, selectedFloor, options.length]);
+    }, [open, content, placements, scrollable, selectedFloor, options.length]);
 
     const setOpenState = (next: boolean) => {
       if (next && !canExpand) return;
@@ -438,7 +515,14 @@ const CollapsibleFloorSelector = React.forwardRef<
                 collisionPadding={0}
                 updatePositionStrategy="always"
                 ref={setPopup}
+                {...placedProps}
                 data-scrollable={scrollable ? "true" : undefined}
+                // A closing column plays its exit animation where it was, but
+                // a level in it can no longer be chosen: it takes no pointer
+                // (GAP-233). A tap there lands on the column's positioning
+                // box, which does nothing, rather than falling through to the
+                // tile under it and opening the column again.
+                style={open ? undefined : { pointerEvents: "none" }}
                 align="end"
                 alignOffset={-COLUMN_INSET}
                 aria-label={label}
@@ -454,23 +538,12 @@ const CollapsibleFloorSelector = React.forwardRef<
                   // pressed outside.
                   event.preventDefault();
                   const active = tileRef.current?.ownerDocument.activeElement;
-                  if (!active || active === active.ownerDocument.body) {
-                    if (canExpand) moveFocus(tileRef.current);
-                    else popupRegion?.focusFallback();
-                  }
+                  if (!active || active === active.ownerDocument.body)
+                    returnFocus();
                 }}
                 onOpenAutoFocus={(event) => {
-                  // The current level, where a visitor who opened the column to
-                  // look around already is, rather than the top floor. With no
-                  // current level, the first that can be chosen, as Radix would,
-                  // but moved here so that it opens no hint either.
-                  const current = currentRef.current;
-                  const target =
-                    current && !current.disabled
-                      ? current
-                      : content?.querySelector<HTMLButtonElement>(
-                          "button:not(:disabled)",
-                        );
+                  // Moved here rather than by Radix, so that it opens no hint.
+                  const target = openingFocusTarget();
                   if (target) {
                     event.preventDefault();
                     moveFocus(target, { preventScroll: true });
@@ -519,6 +592,11 @@ const CollapsibleFloorSelector = React.forwardRef<
                               )}
                               disabled={floor.disabled}
                               onClick={() => {
+                                // Closing, the column chooses nothing: not
+                                // by a tap that lands as it starts to close,
+                                // nor by Enter or Space on the level that
+                                // keeps focus until it is gone (GAP-233).
+                                if (!open) return;
                                 onChoose(floor.id);
                                 setOpen(false);
                               }}

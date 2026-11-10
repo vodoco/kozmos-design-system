@@ -35,6 +35,12 @@ reads the count from a visually hidden line instead. Between the name and the co
 `counterSeparator`, ", " by default, so a screen reader pauses there; a product that translates
 passes its own ("、" in Japanese). Pass `undefined`, not 0, to hide the counter.
 
+SwiftUI's and Compose's `KozmosIconButton` take `counter` and `counterLabel` too, drawn the same way
+and in the same place. Pass `nil` or `null` to hide it. VoiceOver reads the count as the button's
+value, after the name you give with `accessibilityLabel`, so SwiftUI takes no separator: VoiceOver
+pauses there itself. TalkBack reads it in the button's `contentDescription`, "Help, 3", after
+`counterSeparator`, as the web does.
+
 <Canvas of={IconButtonStories.Counter} />
 
 ## Implementation

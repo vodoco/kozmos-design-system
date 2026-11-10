@@ -38,6 +38,10 @@ their own spacing, and the actions are centred on the title's line, whatever the
 extra height for an icon button at either density. In right to left the actions are at the left. They come after the
 title in the reading and tab order. Without `actions`, the header is drawn as it was.
 
+SwiftUI's `KozmosCardHeader { … } actions: { … }` and Compose's `KozmosCardHeader(actions = { … })`
+draw them the same way, centred on the line of the title's size, which grows with the text size
+there, and in the subtle strip on its 28 line, centred with the title; both take `tone`.
+
 <Canvas of={CardStories.HeaderActions} />
 
 ## Subtle header
@@ -62,7 +66,9 @@ default, the title as it always was; `md` is 18, for a compact card on a phone o
 section card; `sm` is 14, the subtle strip's title, as `sm` is 14 on `Text`. The weight, the tight tracking and the one-line leading stay at every size, and the
 heading level stays `as`'s. With `actions`, they are centred on the smaller title's line. SwiftUI
 and Compose draw the platform's own steps: `.title3`, `.headline` and `.subheadline` on SwiftUI,
-and `titleLarge`, `titleMedium` and `titleSmall` on Compose.
+and `titleLarge`, `titleMedium` and `titleSmall` on Compose, and their actions are centred on
+that style's own line: 24, 20 and 18 at the default text size on SwiftUI, Material's 28, 24 and 20
+on Compose.
 
 <Canvas of={CardStories.TitleSize} />
 

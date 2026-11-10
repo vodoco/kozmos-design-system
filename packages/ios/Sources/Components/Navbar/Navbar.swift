@@ -1,7 +1,20 @@
 import SwiftUI
 
+/// Where `KozmosNavbar`'s navigation sits in the room between the leading
+/// slots (logo, context, primary action) and the trailing ones (actions,
+/// utilities, account), as React's `navigationAlign` (GAP-196).
+public enum KozmosNavbarNavigationAlign: Sendable, Hashable, CaseIterable {
+    /// Right after the leading slots.
+    case start
+    /// Centred in the room, as the bar has always drawn it: the default.
+    case center
+    /// Beside the trailing slots, as Pointr Cloud draws its main sections.
+    case end
+}
+
 public struct KozmosNavbar: View {
     let logoInset: Bool
+    let navigationAlign: KozmosNavbarNavigationAlign
     let logo: AnyView?
     let context: AnyView?
     let navigation: AnyView?
@@ -16,6 +29,7 @@ public struct KozmosNavbar: View {
         @ViewBuilder trailing: () -> T
     ) {
         self.logoInset = false
+        self.navigationAlign = .center
         self.logo = AnyView(Text(title).font(KozmosTypography.headline))
         self.context = AnyView(leading())
         self.navigation = nil
@@ -27,6 +41,7 @@ public struct KozmosNavbar: View {
 
     public init(title: String) {
         self.logoInset = false
+        self.navigationAlign = .center
         self.logo = AnyView(Text(title).font(KozmosTypography.headline))
         self.context = nil
         self.navigation = nil
@@ -40,6 +55,13 @@ public struct KozmosNavbar: View {
     ///   rail, from the bar's edge (GAP-208), over a rail at the screen's
     ///   leading edge: the logo centred over the rail's items, and what follows
     ///   past the rail. Right to left, the column mirrors.
+    /// - Parameter navigationAlign: Where `navigation` sits in the room between
+    ///   the leading slots and the trailing ones (GAP-196): `.center`, the
+    ///   default, centres it; `.start` sets it right after the logo, context and
+    ///   primary action; `.end` beside the actions, utilities and account.
+    ///   Leading and trailing follow the layout direction, so `.end` is the
+    ///   left right to left. VoiceOver's order is unchanged: only where the
+    ///   items are drawn moves.
     public init<
         Logo: View,
         Context: View,
@@ -50,6 +72,7 @@ public struct KozmosNavbar: View {
         Account: View
     >(
         logoInset: Bool = false,
+        navigationAlign: KozmosNavbarNavigationAlign = .center,
         @ViewBuilder logo: () -> Logo,
         @ViewBuilder context: () -> Context,
         @ViewBuilder navigation: () -> Navigation,
@@ -59,6 +82,7 @@ public struct KozmosNavbar: View {
         @ViewBuilder account: () -> Account
     ) {
         self.logoInset = logoInset
+        self.navigationAlign = navigationAlign
         self.logo = AnyView(logo())
         self.context = AnyView(context())
         self.navigation = AnyView(navigation())
@@ -89,7 +113,7 @@ public struct KozmosNavbar: View {
             }
             if let navigation = navigation {
                 navigation
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: navigationAlignment)
             } else {
                 Spacer(minLength: KozmosDimensions.primitivesLayoutSpacing200)
             }
@@ -119,5 +143,15 @@ public struct KozmosNavbar: View {
                 .foregroundColor(KozmosColors.primitivesColorsBackground300),
             alignment: .bottom
         )
+    }
+
+    /// The room the navigation fills, from its leading edge, its middle or to
+    /// its trailing edge: SwiftUI mirrors leading and trailing right to left.
+    private var navigationAlignment: Alignment {
+        switch navigationAlign {
+        case .start: return .leading
+        case .center: return .center
+        case .end: return .trailing
+        }
     }
 }

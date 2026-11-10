@@ -9,8 +9,19 @@ public enum KozmosSidebarVariant {
     case rail
 }
 
+/// The room above `KozmosSidebar`'s first slot, as React's `inset` (GAP-199).
+public enum KozmosSidebarInset: Sendable, Hashable, CaseIterable {
+    /// The top padded as the bottom is: 24.
+    case `default`
+    /// No room above the first slot, so it starts at the sidebar's top edge:
+    /// a rail's first item flush under a fixed header, as Pointr Cloud draws
+    /// its side menu. The bottom keeps its 24.
+    case flush
+}
+
 public struct KozmosSidebar<Content: View>: View {
     let variant: KozmosSidebarVariant
+    let inset: KozmosSidebarInset
     let header: AnyView?
     let content: Content
     let tools: AnyView?
@@ -18,9 +29,11 @@ public struct KozmosSidebar<Content: View>: View {
 
     public init(
         variant: KozmosSidebarVariant = .expanded,
+        inset: KozmosSidebarInset = .default,
         @ViewBuilder content: () -> Content
     ) {
         self.variant = variant
+        self.inset = inset
         self.header = nil
         self.content = content()
         self.tools = nil
@@ -29,12 +42,14 @@ public struct KozmosSidebar<Content: View>: View {
 
     public init<Header: View, Tools: View, Footer: View>(
         variant: KozmosSidebarVariant = .expanded,
+        inset: KozmosSidebarInset = .default,
         @ViewBuilder header: () -> Header,
         @ViewBuilder navigation: () -> Content,
         @ViewBuilder tools: () -> Tools,
         @ViewBuilder footer: () -> Footer
     ) {
         self.variant = variant
+        self.inset = inset
         self.header = AnyView(header())
         self.content = navigation()
         self.tools = AnyView(tools())
@@ -66,7 +81,11 @@ public struct KozmosSidebar<Content: View>: View {
                 }
             }
             .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing300)
+            // Flush, the first slot starts at the top edge (GAP-199). React
+            // drops its navigation's own 16 there too, on a rail with no
+            // header; this navigation has none, so the 24 is all there is.
+            .padding(.top, inset == .flush ? 0 : KozmosDimensions.primitivesLayoutSpacing300)
+            .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing300)
             // The edge is inside the width, as a CSS border is, so what the
             // sidebar holds ends where the edge begins.
             .padding(.trailing, 1)
