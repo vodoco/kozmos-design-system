@@ -87,8 +87,10 @@ fun KozmosSearch(
                 when {
                     event.key != Key.Escape -> false
                     // Escape in a field holding text clears it, and the press is the
-                    // field's, down and up: a Dialog or sheet around it never starts
-                    // tracking it, so it is not dismissed as well.
+                    // field's, down and up: a Dialog around it never starts tracking
+                    // it, and the release, which comes once the field is empty, is
+                    // not passed to a screen that closes on Escape's key-up
+                    // (KozmosSearchEscapeTest.escapeThatClearsIsNotReleasedToAScreenClosingOnKeyUp).
                     event.type == KeyEventType.KeyDown && canClear -> {
                         escapeClears[0] = true
                         clear()

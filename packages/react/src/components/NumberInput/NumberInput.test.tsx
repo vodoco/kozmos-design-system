@@ -178,5 +178,22 @@ describe("NumberInput", () => {
       );
       expect(html).toContain("--kozmos-number-unit-width:4ch");
     });
+
+    it("keeps two widths for each wide character of a CJK unit before it is measured", async () => {
+      const { renderToString } = await import("react-dom/server");
+      const html = renderToString(
+        <NumberInput label="面积" defaultValue={12} unit="平方米" />,
+      );
+      expect(html).toContain("--kozmos-number-unit-width:6ch");
+      // Fullwidth Latin and Hangul are wide too; ASCII stays one each.
+      const mixed = renderToString(
+        <NumberInput label="Area" defaultValue={12} unit="ｍ²" />,
+      );
+      expect(mixed).toContain("--kozmos-number-unit-width:3ch");
+      const hangul = renderToString(
+        <NumberInput label="넓이" defaultValue={12} unit="제곱미터" />,
+      );
+      expect(hangul).toContain("--kozmos-number-unit-width:8ch");
+    });
   });
 });

@@ -28,6 +28,31 @@ export interface NumberInputProps extends Omit<
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
+/**
+ * The unit's width in the font's "0" widths, before it is measured: a wide
+ * or fullwidth character (East Asian Width W or F, "平方米", "ｍ") counts two,
+ * any other one. The common ranges are enough for a reservation the measured
+ * width replaces on the first paint.
+ */
+function unitWidthInCh(unit: string) {
+  let width = 0;
+  for (const character of unit) {
+    const code = character.codePointAt(0) ?? 0;
+    const wide =
+      (code >= 0x1100 && code <= 0x115f) ||
+      (code >= 0x2e80 && code <= 0xa4cf && code !== 0x303f) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe30 && code <= 0xfe4f) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6) ||
+      (code >= 0x1f300 && code <= 0x1f64f) ||
+      (code >= 0x20000 && code <= 0x3fffd);
+    width += wide ? 2 : 1;
+  }
+  return width;
+}
+
 function numericValueFromInput(input: HTMLInputElement) {
   if (input.value === "") return null;
   return Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber;
@@ -186,12 +211,12 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
                 ? ({
                     // Before it is measured (a server render, the first
                     // paint), the room is the unit's length in the font's
-                    // "0" widths, so a long unit is not run under; then its
+                    // "0" widths, a wide character two, so a long unit is not run under; then its
                     // measured width.
                     "--kozmos-number-unit-width":
                       unitWidth !== null
                         ? `${unitWidth}px`
-                        : `${Array.from(unit ?? "").length}ch`,
+                        : `${unitWidthInCh(unit ?? "")}ch`,
                   } as React.CSSProperties)
                 : undefined
             }

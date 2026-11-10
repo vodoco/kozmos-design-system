@@ -61,6 +61,37 @@ class KozmosSearchEscapeTest {
     }
 
     /**
+     * A screen that closes on Escape's key-up, as a Compose surface listening
+     * for KeyUp does: the Escape that cleared the field is consumed whole, so
+     * the release, a frame later and with the field now empty, does not
+     * close it too.
+     */
+    @Test fun escapeThatClearsIsNotReleasedToAScreenClosingOnKeyUp() {
+        val query = mutableStateOf("Gate")
+        var released = 0
+        var clears = 0
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Box(Modifier.onKeyEvent { event ->
+                    if (event.key == Key.Escape && event.type == KeyEventType.KeyUp) released++
+                    false
+                }) {
+                    KozmosSearch(value = query.value, onValueChange = { query.value = it }, clearable = true, onClear = { clears++ })
+                }
+            }
+        }) {
+            focusField(); frames(2)
+            view.dispatchKeyEvent(escapeKey(KeyEvent.ACTION_DOWN))
+            frames(2)
+            assertEquals("", query.value)
+            view.dispatchKeyEvent(escapeKey(KeyEvent.ACTION_UP))
+            frames(2)
+            assertEquals(1, clears)
+            assertEquals("the release of the Escape that cleared reached the screen", 0, released)
+        }
+    }
+
+    /**
      * [surface] wraps a clearable Search; the press goes to the window the
      * Search is in, through the window's own dispatch, as a keyboard's does.
      */
