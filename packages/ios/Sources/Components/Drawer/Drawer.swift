@@ -119,9 +119,10 @@ public struct KozmosDrawer<Content: View>: View {
             alignment: .topLeading
         )
         .background(KozmosColors.semanticsSurface0)
-        .cornerRadius(KozmosDimensions.semanticsRadiusControl)
+        // A container's corner, 20, as React's rounded-container (decision 156).
+        .cornerRadius(KozmosDimensions.semanticsRadiusContainer)
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer)
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
         .kozmosElevation(KozmosShadows.semanticsElevationOverlay)

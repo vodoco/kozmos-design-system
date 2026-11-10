@@ -21,6 +21,20 @@ import com.kozmos.components.sidebar.KozmosRailWidth
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
+/**
+ * Where [KozmosNavbar]'s navigation sits in the room between the leading slots
+ * (logo, context, primary action) and the trailing ones (actions, utilities,
+ * account), as React's `navigationAlign` (GAP-196).
+ */
+enum class KozmosNavbarNavigationAlign {
+    /** Right after the leading slots. */
+    Start,
+    /** Centred in the room, as the bar has always drawn it: the default. */
+    Center,
+    /** Beside the trailing slots, as Pointr Cloud draws its main sections. */
+    End
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KozmosNavbar(
@@ -55,6 +69,56 @@ fun KozmosNavbar(
     utilities: @Composable RowScope.() -> Unit = {},
     account: @Composable RowScope.() -> Unit = {}
 ) {
+    KozmosNavbarLayout(
+        modifier, logoInset, KozmosNavbarNavigationAlign.Center,
+        logo, context, navigation, primaryAction, actions, utilities, account
+    )
+}
+
+/**
+ * The bar with its navigation placed (GAP-196). An overload of its own, with
+ * [navigationAlign] required, so every call the bar took before, by position
+ * or with a trailing lambda, still resolves to the one above.
+ *
+ * @param navigationAlign Where [navigation] sits in the room between the leading
+ * slots and the trailing ones: [KozmosNavbarNavigationAlign.Center] centres it,
+ * as the bar always has; Start sets it right after the logo, context and
+ * primary action; End beside the actions, utilities and account. Start and end
+ * follow the layout direction, so End is the left right to left. TalkBack's
+ * order is unchanged: only where the items are drawn moves.
+ */
+@Composable
+fun KozmosNavbar(
+    modifier: Modifier = Modifier,
+    logoInset: Boolean = false,
+    navigationAlign: KozmosNavbarNavigationAlign,
+    logo: @Composable RowScope.() -> Unit = {},
+    context: @Composable RowScope.() -> Unit = {},
+    navigation: @Composable RowScope.() -> Unit = {},
+    primaryAction: @Composable RowScope.() -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    utilities: @Composable RowScope.() -> Unit = {},
+    account: @Composable RowScope.() -> Unit = {}
+) {
+    KozmosNavbarLayout(
+        modifier, logoInset, navigationAlign,
+        logo, context, navigation, primaryAction, actions, utilities, account
+    )
+}
+
+@Composable
+private fun KozmosNavbarLayout(
+    modifier: Modifier,
+    logoInset: Boolean,
+    navigationAlign: KozmosNavbarNavigationAlign,
+    logo: @Composable RowScope.() -> Unit,
+    context: @Composable RowScope.() -> Unit,
+    navigation: @Composable RowScope.() -> Unit,
+    primaryAction: @Composable RowScope.() -> Unit,
+    actions: @Composable RowScope.() -> Unit,
+    utilities: @Composable RowScope.() -> Unit,
+    account: @Composable RowScope.() -> Unit
+) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -83,7 +147,13 @@ fun KozmosNavbar(
             primaryAction()
             Row(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Center,
+                // The room the navigation fills, from its start, its middle or
+                // to its end: Compose mirrors Start and End right to left.
+                horizontalArrangement = when (navigationAlign) {
+                    KozmosNavbarNavigationAlign.Start -> Arrangement.Start
+                    KozmosNavbarNavigationAlign.Center -> Arrangement.Center
+                    KozmosNavbarNavigationAlign.End -> Arrangement.End
+                },
                 verticalAlignment = Alignment.CenterVertically,
                 content = navigation
             )
