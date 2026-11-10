@@ -233,9 +233,20 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const [uncontrolledInputValue, setUncontrolledInputValue] = React.useState(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
-    // A new choice, or a new label for it, puts that label in the field's own
-    // text in the same render, so no commit shows the old one. Text the
-    // product holds (inputValue) is the product's to change.
+    // Who last wrote the field's own text: the field, with the chosen
+    // option's label (or the empty text of no choice), or the visitor, by
+    // typing into the field's own text (not text the product holds). A
+    // nonblank draft from defaultInputValue counts as the visitor's.
+    const [textByVisitor, setTextByVisitor] = React.useState(
+      defaultInputValue !== undefined && defaultInputValue !== "",
+    );
+    // A new choice puts its label in the field's own text in the same render,
+    // so no commit shows the old one. Anything else leaves text the visitor
+    // has typed as it is (GAP-232): while the field's text is its own, a new
+    // label for the same choice (a rename, or options that arrive after the
+    // value) replaces it, and a choice cleared to no option empties it; a
+    // choice whose option has left `options` (an async search) keeps it.
+    // Text the product holds (inputValue) is the product's to change.
     if (
       previousSelection.value !== selectedValue ||
       previousSelection.label !== selectedOption?.label
@@ -244,8 +255,17 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         value: selectedValue,
         label: selectedOption?.label,
       });
-      if (inputValue === undefined)
-        setUncontrolledInputValue(selectedOption?.label ?? "");
+      const choiceChanged = previousSelection.value !== selectedValue;
+      const nextLabel = selectedOption?.label;
+      if (
+        inputValue === undefined &&
+        (nextLabel === undefined
+          ? choiceChanged && !textByVisitor
+          : choiceChanged || !textByVisitor)
+      ) {
+        setUncontrolledInputValue(nextLabel ?? "");
+        setTextByVisitor(false);
+      }
     }
     const visibleInputValue = inputValue ?? uncontrolledInputValue;
     // In the order they are drawn: under their groups (GAP-192).
@@ -378,6 +398,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         setUncontrolledValue(option.value);
       }
       setInputValue(option.label);
+      setTextByVisitor(false);
       setOpen(false);
       trackEvent(
         "Combobox",
@@ -399,6 +420,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         setUncontrolledValue("");
       }
       setInputValue("");
+      setTextByVisitor(false);
       setOpen(false);
       trackEvent("Combobox", "selection_cleared", {});
       onValueChange?.("", undefined);
@@ -537,6 +559,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   }}
                   onChange={(event) => {
                     setInputValue(event.target.value);
+                    if (inputValue === undefined) setTextByVisitor(true);
                     if (!open) setOpen(true);
                   }}
                   onKeyDown={(event) => {
