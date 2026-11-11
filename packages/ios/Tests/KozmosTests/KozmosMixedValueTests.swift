@@ -171,6 +171,9 @@ final class KozmosMixedValueTests: XCTestCase {
                     try? await Task.sleep(nanoseconds: 100_000_000)
                     shown = true
                 } else {
+                    // Out of mixed by an edit, and back by a reset.
+                    mixed = false
+                    try? await Task.sleep(nanoseconds: 100_000_000)
                     mixed = true
                 }
             }
@@ -179,10 +182,12 @@ final class KozmosMixedValueTests: XCTestCase {
 
     @MainActor func testAComboboxEmptiesItsTextAsItTurnsMixed() async throws {
         let written = Written()
-        let window = host(Turning(written: written, startsMixed: false, text: "Gate B2", comesBack: false))
+        // Drawn mixed, then edited and reset: the text goes once, on the turn
+        // to mixed, never as the field appears.
+        let window = host(Turning(written: written, startsMixed: true, text: "Gate B2", comesBack: false))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 500_000_000)
-        XCTAssertEqual(written.texts, [""], "the choice's label goes as it turns mixed, as React's does")
+        try await Task.sleep(nanoseconds: 600_000_000)
+        XCTAssertEqual(written.texts, [""], "the text goes on the turn to mixed, and only then")
     }
 
     @MainActor func testAQueryTypedWhileMixedSurvivesTheFieldComingBack() async throws {
