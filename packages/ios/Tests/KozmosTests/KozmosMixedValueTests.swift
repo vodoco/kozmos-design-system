@@ -53,9 +53,11 @@ final class KozmosMixedValueTests: XCTestCase {
         let window = host(EditedName(edit: nil))
         defer { window.isHidden = true }
         try await Task.sleep(nanoseconds: 300_000_000)
-        let found = elements(in: window)
-        XCTAssertTrue(found.contains { $0.accessibilityValue == "Multiple values" }, describe(found))
-        XCTAssertFalse(found.contains { $0.accessibilityLabel == "Reset to multiple values" }, describe(found))
+        let field = try XCTUnwrap(textFields(in: window).first)
+        XCTAssertEqual(field.text, "")
+        XCTAssertEqual(field.placeholder, "Multiple values")
+        XCTAssertTrue(said(in: window, field: field).contains("Multiple values"), said(in: window, field: field).joined(separator: ", "))
+        XCTAssertFalse(elements(in: window).contains { $0.accessibilityLabel == "Reset to multiple values" })
     }
 
     @MainActor func testAnEditedInputOffersTheResetAndShowsItsValue() async throws {
@@ -64,8 +66,10 @@ final class KozmosMixedValueTests: XCTestCase {
         let window = host(EditedName(edit: "Gate B2"))
         defer { window.isHidden = true }
         try await Task.sleep(nanoseconds: 300_000_000)
+        let field = try XCTUnwrap(textFields(in: window).first)
+        XCTAssertEqual(field.text, "Gate B2")
+        XCTAssertFalse(said(in: window, field: field).contains("Multiple values"))
         let found = elements(in: window)
-        XCTAssertTrue(found.contains { $0.accessibilityValue == "Gate B2" }, describe(found))
         let reset = try XCTUnwrap(found.first { $0.accessibilityLabel == "Reset to multiple values" }, describe(found))
         XCTAssertTrue(reset.accessibilityTraits.contains(.button))
     }
@@ -79,18 +83,35 @@ final class KozmosMixedValueTests: XCTestCase {
                 value: .constant("a1"), options: [KozmosListboxOption(value: "a1", label: "Gate A1")],
                 label: "Gate", mixed: true
             )),
-            AnyView(KozmosSelect(value: "POI", placeholder: "Type", mixed: true) {
-                Text("POI")
-            }),
         ]
-        for field in fields {
-            let window = host(field)
+        for view in fields {
+            let window = host(view)
             defer { window.isHidden = true }
             try await Task.sleep(nanoseconds: 300_000_000)
-            let found = elements(in: window)
-            XCTAssertTrue(found.contains { $0.accessibilityValue == "Multiple values" }, describe(found))
-            XCTAssertFalse(found.contains { $0.accessibilityValue == "4" || $0.accessibilityValue == "POI" }, describe(found))
+            let field = try XCTUnwrap(textFields(in: window).first)
+            XCTAssertEqual(field.text, "")
+            XCTAssertEqual(field.placeholder, "Multiple values")
+            XCTAssertTrue(said(in: window, field: field).contains("Multiple values"), said(in: window, field: field).joined(separator: ", "))
         }
+        // Select's field is one element whose value is the mixed label.
+        let window = host(KozmosSelect(value: "POI", placeholder: "Type", mixed: true) { Text("POI") })
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let found = elements(in: window)
+        XCTAssertTrue(found.contains { ($0.accessibilityValue ?? "").contains("Multiple values") || ($0.accessibilityLabel ?? "").contains("Multiple values") }, describe(found))
+        XCTAssertFalse(found.contains { ($0.accessibilityValue ?? "") == "POI" || ($0.accessibilityLabel ?? "") == "POI" }, describe(found))
+    }
+
+    /// What VoiceOver is given for a text field: the UIKit field's own
+    /// value and placeholder, and the value of any SwiftUI element over it.
+    @MainActor private func said(in window: UIWindow, field: UITextField) -> [String] {
+        [field.accessibilityValue, field.placeholder].compactMap { $0 }
+            + elements(in: window).compactMap(\.accessibilityValue)
+    }
+
+    @MainActor private func textFields(in view: UIView) -> [UITextField] {
+        if let field = view as? UITextField { return [field] }
+        return view.subviews.flatMap { textFields(in: $0) }
     }
 
     @MainActor private func host<V: View>(_ view: V) -> UIWindow {
