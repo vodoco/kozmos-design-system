@@ -100,6 +100,11 @@ draws its buildings and levels, rather than a navigation tree.
 - **Composed trees:** rows put in a divided `Tree` as children are divided too. `TreeItemRow`,
   `TreeParentItemRow` and `TreeChildItemRow` also take `divided` of their own, which wins.
 
+SwiftUI's `KozmosTree` and Compose's `KozmosTree` and `TreeItem` take `divided` and `bleed` from
+0.16.0 (decision 134), with the same stroke, the same open row's surface and the same reach. A
+divided SwiftUI tree draws its own rows rather than a `List`'s, so the strokes are Kozmos's, not the
+list's separators, and an open parent says "Expanded" to VoiceOver.
+
 <Canvas>
   <Story of={TreeStories.Divided} />
 </Canvas>
