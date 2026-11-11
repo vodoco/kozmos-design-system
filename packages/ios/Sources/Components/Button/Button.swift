@@ -8,6 +8,10 @@ public enum KozmosButtonVariant {
     case ghost
     case link
     case glass
+    /// A pale fill of its own token tier, theme 0 under the theme's words
+    /// (GAP-200, decision 135); with `emotion: .danger`, the destructive
+    /// tone of Pointr Cloud's Delete Feature (decision 139).
+    case subtle
 }
 
 public enum KozmosButtonSize {
@@ -31,6 +35,7 @@ public enum KozmosButtonEmotion {
 enum KozmosButtonTier {
     case primary
     case secondary
+    case subtle
 }
 
 public struct KozmosButton: View {
@@ -125,7 +130,7 @@ public struct KozmosButton: View {
     /// Compose read them. Outline, ghost, link and glass keep SwiftUI's press.
     var fillEmotion: KozmosButtonEmotion? {
         switch variant {
-        case .default: return emotion ?? .themed
+        case .default, .subtle: return emotion ?? .themed
         case .destructive: return emotion ?? .danger
         case .secondary: return emotion ?? .neutral
         case .outline, .ghost, .link, .glass: return nil
@@ -137,6 +142,7 @@ public struct KozmosButton: View {
         switch variant {
         case .default, .secondary, .destructive: return .primary
         case .outline, .ghost, .link: return .secondary
+        case .subtle: return .subtle
         case .glass: return nil
         }
     }
@@ -155,6 +161,7 @@ public struct KozmosButton: View {
         case (.secondary, .danger): return KozmosColors.componentsSecondaryButtonsDangerButtonBackgroundIdle
         case (.secondary, .informative): return KozmosColors.componentsSecondaryButtonsInformativeButtonBackgroundIdle
         case (.secondary, .alert): return KozmosColors.componentsSecondaryButtonsAlertButtonBackgroundIdle
+        case (.subtle, _): return KozmosFillStates.subtleBackground(emotion, isPressed: false, isFocused: false)
         }
     }
 
@@ -172,6 +179,7 @@ public struct KozmosButton: View {
         case (.secondary, .danger): return KozmosColors.componentsSecondaryButtonsDangerButtonForegroundContentIdle
         case (.secondary, .informative): return KozmosColors.componentsSecondaryButtonsInformativeButtonForegroundContentIdle
         case (.secondary, .alert): return KozmosColors.componentsSecondaryButtonsAlertButtonForegroundContentIdle
+        case (.subtle, _): return KozmosFillStates.subtleForeground(emotion, isPressed: false, isFocused: false)
         }
     }
 
@@ -186,6 +194,9 @@ public struct KozmosButton: View {
     
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
         guard let fillEmotion else { return backgroundColor }
+        if variant == .subtle {
+            return KozmosFillStates.subtleBackground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
+        }
         return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
@@ -195,6 +206,9 @@ public struct KozmosButton: View {
     /// 2026-10-08). It drew foreground/100, #17191C and #E8E6E3.
     private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
         guard let fillEmotion else { return foregroundColor }
+        if variant == .subtle {
+            return KozmosFillStates.subtleForeground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
+        }
         return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
@@ -212,6 +226,7 @@ public struct KozmosButton: View {
         case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundIdle
         case .outline, .ghost: return Color.clear
         case .secondary: return KozmosColors.componentsPrimaryButtonsNeutralButtonBackgroundIdle
+        case .subtle: return KozmosColors.componentsSubtleButtonsThemedButtonBackgroundIdle
         case .link: return Color.clear
         // The glass variant is the glass surface; the fill is the surface's.
         case .glass: return Color.clear
@@ -229,6 +244,7 @@ public struct KozmosButton: View {
         case .outline, .ghost, .link: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
         // Decision 61: the neutral fill's own ink.
         case .secondary: return KozmosColors.componentsPrimaryButtonsNeutralButtonForegroundContentIdle
+        case .subtle: return KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentIdle
         case .glass: return KozmosColors.primitivesColorsForeground100
         }
     }

@@ -92,6 +92,7 @@ test("reads a recipe shared with Vue as the component's own (Button, Vue 3 Phase
     "ghost",
     "link",
     "glass",
+    "subtle",
   ]);
   assert.deepEqual(axes.size, ["default", "sm", "lg", "icon"]);
 });

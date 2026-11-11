@@ -68,6 +68,70 @@ enum KozmosFillStates {
             return KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle
         }
     }
+
+    /// The subtle Button's fill (GAP-200, decision 135): the Subtle Buttons
+    /// tokens of its emotion, theme 0 at rest, 100 focused and 200 pressed for
+    /// the theme, as React and Compose draw them. There is no hover here: a
+    /// pointer's hover on an iPad or a Mac is the system's hover effect.
+    static func subtleBackground(_ emotion: KozmosButtonEmotion, isPressed: Bool, isFocused: Bool) -> Color {
+        switch emotion {
+        case .themed:
+            if isPressed { return KozmosColors.componentsSubtleButtonsThemedButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsThemedButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsThemedButtonBackgroundIdle
+        case .neutral:
+            if isPressed { return KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsNeutralButtonBackgroundIdle
+        case .success:
+            if isPressed { return KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsSuccessButtonBackgroundIdle
+        case .danger:
+            if isPressed { return KozmosColors.componentsSubtleButtonsDangerButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsDangerButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsDangerButtonBackgroundIdle
+        case .informative:
+            if isPressed { return KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsInformativeButtonBackgroundIdle
+        case .alert:
+            if isPressed { return KozmosColors.componentsSubtleButtonsAlertButtonBackgroundPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsAlertButtonBackgroundFocus }
+            return KozmosColors.componentsSubtleButtonsAlertButtonBackgroundIdle
+        }
+    }
+
+    /// The subtle Button's words, which step with its fill: theme 600 on
+    /// theme 0, 700 focused and 800 pressed, as 600 on 100 reads 4.41:1.
+    static func subtleForeground(_ emotion: KozmosButtonEmotion, isPressed: Bool, isFocused: Bool) -> Color {
+        switch emotion {
+        case .themed:
+            if isPressed { return KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsThemedButtonForegroundContentIdle
+        case .neutral:
+            if isPressed { return KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsNeutralButtonForegroundContentIdle
+        case .success:
+            if isPressed { return KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsSuccessButtonForegroundContentIdle
+        case .danger:
+            if isPressed { return KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsDangerButtonForegroundContentIdle
+        case .informative:
+            if isPressed { return KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsInformativeButtonForegroundContentIdle
+        case .alert:
+            if isPressed { return KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentPressed }
+            if isFocused { return KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentFocus }
+            return KozmosColors.componentsSubtleButtonsAlertButtonForegroundContentIdle
+        }
+    }
 }
 
 private struct KozmosButtonIsPressedKey: EnvironmentKey {

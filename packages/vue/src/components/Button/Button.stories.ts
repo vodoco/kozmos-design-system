@@ -22,6 +22,7 @@ const meta: Meta<typeof KozmosButton> = {
         "ghost",
         "link",
         "glass",
+        "subtle",
       ],
     },
     size: { control: "select", options: ["default", "sm", "lg", "icon"] },
@@ -73,6 +74,17 @@ export const Secondary = story({ variant: "secondary", label: "Secondary" });
 export const Ghost = story({ variant: "ghost", label: "Ghost" });
 export const Link = story({ variant: "link", label: "Link" });
 export const Glass = story({ variant: "glass", label: "Glass" });
+/** The subtle variant (GAP-200): a pale theme fill under the theme's words. */
+export const Subtle = story({
+  variant: "subtle",
+  label: "+ Add additional field",
+});
+/** The subtle Button in a destructive tone (decision 139). */
+export const SubtleDestructive = story({
+  variant: "subtle",
+  emotion: "danger",
+  label: "Delete feature",
+});
 export const Loading = story({ isLoading: true, label: "Please wait" });
 export const Disabled = story({ disabled: true, label: "Disabled" });
 

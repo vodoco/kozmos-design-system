@@ -106,6 +106,10 @@ function Inks({ id }: { id: (part: string) => string }) {
       <Button data-testid={id("link")} variant="link">
         Terms
       </Button>
+      {/* GAP-200: the subtle Button, a fill and words both on the ramp. */}
+      <Button data-testid={id("subtle")} variant="subtle">
+        + Add additional field
+      </Button>
     </div>
   );
 }
