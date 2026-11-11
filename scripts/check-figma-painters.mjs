@@ -13077,6 +13077,423 @@ section("Figma draws React's values (the 4 Nov triage)");
   );
 }
 
+// The component float tokens, resolved through their aliases, and the names a
+// node's field is bound to: shared by the two sections below.
+const menusTokens = payloadVariables(
+  plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+    ...variableByName.keys(),
+  ]),
+);
+const menusFloats = new Map(
+  plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+);
+const menusValueOf = (name) => {
+  for (let hops = 0; name && hops < 8; hops += 1) {
+    const token = menusFloats.get(name);
+    if (!token) return undefined;
+    if (!token.alias || !menusFloats.has(token.alias)) return token.value;
+    name = token.alias;
+  }
+  return undefined;
+};
+const menusBound = (node, field) => {
+  const alias = node && node.boundVariables && node.boundVariables[field];
+  return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+};
+
+section("GAP-156: Kbd draws a key cap, one key or a combination");
+{
+  // React's Kbd: a cap h-5 (20) min-w-5 (20) px-1 (4), rounded-marker (4), a 1
+  // border in the border colour (Border/Subtle) on bg-muted (background/100),
+  // its key text-xs font-medium (12/16) in the foreground; a combination's
+  // caps gap-1 (4) apart with a "+" in the muted foreground (foreground/400).
+  // The edge is laid inside the cap, as CSS's border-box draws it.
+  const kbdPainted =
+    typeof plugin.updateKbdVariant === "function" &&
+    typeof plugin.configureKbdProperties === "function";
+  ok(kbdPainted, "Kbd's painter and properties are reachable");
+  const draw = async (value, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updateKbdVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  ok(
+    JSON.stringify(plugin.KBD_KEYS) ===
+      JSON.stringify(["Single", "Combination"]) &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Kbd")) ===
+        JSON.stringify({ Keys: ["Single", "Combination"] }),
+    `Kbd's one axis is Keys: Single, Combination (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Kbd"))})`,
+  );
+  const layers = {
+    Single: ["Key"],
+    Combination: ["Modifier Key", "Plus", "Key"],
+  };
+  const words = { "Modifier Key": "Modifier Text", Key: "Key Text" };
+  const painted = {};
+  for (const value of kbdPainted ? plugin.KBD_KEYS : []) {
+    const component = await draw(value);
+    painted[value] = component;
+    const order = component.children.map((child) => child.name);
+    ok(
+      component.name === `Keys=${value}` &&
+        plugin.parseKbdVariantName(component.name).value === value,
+      `${value}: named Keys=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(order) === JSON.stringify(layers[value]),
+      `${value}: ${layers[value].join(", ")} (${order.join(", ")})`,
+    );
+    ok(
+      component.itemSpacing === 4 &&
+        menusBound(component, "itemSpacing") === "Kbd/gap" &&
+        menusValueOf("Kbd/gap") === 4 &&
+        component.fills.length === 0 &&
+        component.strokes.length === 0 &&
+        component.height === 20,
+      `${value}: an unpainted row 20 tall, its caps 4 apart, Kbd/gap (${component.itemSpacing}, ${menusBound(component, "itemSpacing")}, ${component.height})`,
+    );
+    for (const cap of component.children.filter(
+      (child) => child.type === "FRAME",
+    )) {
+      const at = `${value} / ${cap.name}`;
+      ok(
+        cap.height === 20 &&
+          menusBound(cap, "height") === "Kbd/height" &&
+          menusValueOf("Kbd/height") === 20 &&
+          cap.minWidth === 20 &&
+          menusBound(cap, "minWidth") === "Kbd/min-width" &&
+          menusValueOf("Kbd/min-width") === 20,
+        `${at}: 20 tall and at least 20 wide, Kbd/height and Kbd/min-width (${cap.height}, ${cap.minWidth})`,
+      );
+      ok(
+        cap.paddingLeft === 4 &&
+          cap.paddingRight === 4 &&
+          menusBound(cap, "paddingLeft") === "Kbd/padding/x" &&
+          menusBound(cap, "paddingRight") === "Kbd/padding/x" &&
+          menusValueOf("Kbd/padding/x") === 4,
+        `${at}: 4 each side, Kbd/padding/x (${cap.paddingLeft}, ${cap.paddingRight})`,
+      );
+      ok(
+        cap.cornerRadius === 4 &&
+          menusBound(cap, "cornerRadius") === "Kbd/radius" &&
+          menusValueOf("Kbd/radius") === plugin.KOZMOS_RADIUS.marker,
+        `${at}: the marker radius, 4, Kbd/radius (${cap.cornerRadius})`,
+      );
+      ok(
+        cap.strokeWeight === 1 &&
+          menusBound(cap, "strokeWeight") === "Kbd/stroke/width" &&
+          cap.strokeAlign === "INSIDE" &&
+          cap.strokesIncludedInLayout === true &&
+          cap.strokes.length === 1 &&
+          boundVariableName(cap.strokes[0]) === "Border/Subtle",
+        `${at}: a 1 edge in Border/Subtle, inside and laid out (${cap.strokeWeight}, ${cap.strokeAlign}, ${cap.strokesIncludedInLayout}, ${boundVariableName(cap.strokes[0])})`,
+      );
+      ok(
+        cap.fills.length === 1 &&
+          boundVariableName(cap.fills[0]) === "Colors/background/100",
+        `${at}: on the muted fill, background/100 (${boundVariableName(cap.fills[0])})`,
+      );
+      const texts = cap.children.filter((child) => child.type === "TEXT");
+      const text = texts[0];
+      ok(
+        texts.length === 1 && text.name === words[cap.name],
+        `${at}: one text, ${words[cap.name]} (${texts.map((t) => t.name)})`,
+      );
+      if (!text) continue;
+      ok(
+        text.fontName.style === "Medium" &&
+          text.fontSize === 12 &&
+          text.lineHeight.value === 16 &&
+          menusBound(text, "fontSize") === "Kbd/font-size" &&
+          menusBound(text, "lineHeight") === "Kbd/line-height" &&
+          boundVariableName(text.fills[0]) === "Colors/foreground/0",
+        `${at}: 12/16 medium in the foreground (${text.fontName.style}, ${text.fontSize}/${text.lineHeight.value}, ${boundVariableName(text.fills[0])})`,
+      );
+      ok(
+        Math.abs(cap.width - (text.width + 2 * 4 + 2 * 1)) < 0.01,
+        `${at}: the cap hugs its key, 4 and the 1 edge each side (${cap.width} for ${text.width})`,
+      );
+    }
+    // An Update redraws the same layers, once.
+    await draw(value, component);
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(layers[value]),
+      `${value}: an Update keeps ${layers[value].join(", ")} once`,
+    );
+  }
+  const plus = painted.Combination && named(painted.Combination, "Plus");
+  ok(
+    plus &&
+      plus.type === "TEXT" &&
+      plus.characters === "+" &&
+      boundVariableName(plus.fills[0]) === "Colors/foreground/400" &&
+      plus.fontSize === 12 &&
+      menusBound(plus, "fontSize") === "Kbd/font-size",
+    `Combination: a "+" between the caps, 12 in the muted foreground (${plus && plus.characters}, ${plus && boundVariableName(plus.fills[0])})`,
+  );
+  ok(
+    plus &&
+      !isTypedGlyph(plus) &&
+      isTypedGlyph({ type: "TEXT", name: "Label", characters: "+" }) &&
+      isTypedGlyph({ type: "TEXT", name: "Plus", characters: "×" }),
+    "Kbd's Plus is punctuation to the glyph rule; a plus elsewhere, or another glyph in Plus, still counts",
+  );
+
+  // The set's texts: Key Text in both variants, Modifier Text in the chord's.
+  const variants = [];
+  for (const value of kbdPainted ? plugin.KBD_KEYS : [])
+    variants.push(await draw(value));
+  const set = kbdPainted
+    ? figma.combineAsVariants(variants, figma.currentPage)
+    : figma.createComponent();
+  set.name = "Kbd";
+  if (kbdPainted) plugin.configureKbdProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions || {};
+  const keyOf = (name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const keyText = keyOf("Key Text", "TEXT");
+  const modifierText = keyOf("Modifier Text", "TEXT");
+  ok(
+    keyText && modifierText,
+    `Kbd: Key Text and Modifier Text properties (${Object.keys(definitions).join(", ")})`,
+  );
+  const boundTo = (variant, layer) => {
+    const node = named(variant, layer);
+    return (
+      node &&
+      node.componentPropertyReferences &&
+      node.componentPropertyReferences.characters
+    );
+  };
+  ok(
+    variants.length === 2 &&
+      variants.every((variant) => boundTo(variant, "Key Text") === keyText) &&
+      boundTo(variants[1], "Modifier Text") === modifierText,
+    "Kbd: Key Text drives each variant's key, Modifier Text the chord's first",
+  );
+  const textInSet = variants[0] && named(variants[0], "Key Text");
+  ok(
+    textInSet &&
+      plugin.inferTextStyleKeyForComponentText(textInSet, set) ===
+        plugin.textStyleKeyForText("XS", "Medium"),
+    `Kbd: the audit expects Text / XS / Medium on its keys (${textInSet && plugin.inferTextStyleKeyForComponentText(textInSet, set)})`,
+  );
+  set.remove();
+
+  // Registered everywhere a set is: the Core sequence, the actions the UI
+  // sends, the Components page's layout and the audit's axes.
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  const handlers = plugin.additionalComponentActionHandlers();
+  const { names, axes } = expectations();
+  for (const [name, slug] of [
+    ["Kbd", "kbd"],
+    ["ContextMenu", "context-menu"],
+  ]) {
+    ok(
+      core.includes(name) &&
+        ["build", "update", "rebuild"].every(
+          (verb) => typeof handlers[`${verb}-${slug}`] === "function",
+        ) &&
+        names.includes(name) &&
+        axes[name],
+      `${name} is in the Core sequence, the UI's actions, the page's layout and the audit's axes`,
+    );
+  }
+  ok(
+    core.indexOf("ContextMenu") === core.indexOf("Menu") + 1,
+    "ContextMenu updates right after Menu, whose painter it shares",
+  );
+}
+
+section("Decision 152: Menu's and ContextMenu's items take External");
+{
+  // A plain item that opens a page draws Link's new-tab icon at its end, as
+  // React's MenuItem and ContextMenuItem `external` do: the menu's glyph size,
+  // 16 (Menu/icon/size, React's h-4 w-4), stroked 2 × 16 / 24 in the item's
+  // colour (foreground/0, currentColor), after the words, which take the rest
+  // of the row. Basic's and Submenu's second item carry it, hidden until the
+  // set's External boolean, off by default; checkbox and radio items take no
+  // `external`, so those variants carry none. ContextMenu is Menu's panel,
+  // painted by the same painter.
+  ok(
+    typeof plugin.updateContextMenuVariant === "function",
+    "ContextMenu's painter is reachable",
+  );
+  const painters = { Menu: plugin.updateMenuVariant };
+  if (typeof plugin.updateContextMenuVariant === "function")
+    painters.ContextMenu = plugin.updateContextMenuVariant;
+  const draw = async (setName, value, component = figma.createComponent()) => {
+    await painters[setName](component, {
+      value,
+      variableByName: menusTokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const carriers = {
+    Basic: true,
+    Submenu: true,
+    Checkbox: false,
+    Radio: false,
+  };
+  const icons = (component) =>
+    component.findAll((node) => node.name === "External Icon");
+  for (const setName of Object.keys(painters)) {
+    for (const value of plugin.MENU_CONTENT) {
+      const at = `${setName} / ${value}`;
+      const component = await draw(setName, value);
+      const found = icons(component);
+      if (!carriers[value]) {
+        ok(found.length === 0, `${at}: no new-tab icon (${found.length})`);
+        continue;
+      }
+      ok(found.length === 1, `${at}: one new-tab icon (${found.length})`);
+      const icon = found[0];
+      if (!icon) continue;
+      const row = icon.parent;
+      const order = row.children.map((child) => child.name);
+      ok(
+        row.name === "Menu Item 2" &&
+          order[order.length - 1] === "External Icon" &&
+          order.indexOf("Item 2 Text") === order.length - 2,
+        `${at}: at the end of the second item, after its words (${row.name}: ${order.join(", ")})`,
+      );
+      const label = named(row, "Item 2 Text");
+      ok(
+        label && label.layoutGrow === 1,
+        `${at}: the words take the rest of the row, so the icon sits at its end`,
+      );
+      ok(icon.visible === false, `${at}: hidden until External`);
+      ok(
+        icon.width === 16 &&
+          icon.height === 16 &&
+          menusBound(icon, "width") === "Menu/icon/size" &&
+          menusBound(icon, "height") === "Menu/icon/size" &&
+          menusValueOf("Menu/icon/size") === 16,
+        `${at}: 16 square, Menu/icon/size (${icon.width}x${icon.height}, ${menusBound(icon, "width")})`,
+      );
+      const vectors = icon.findAll((node) => node.type === "VECTOR");
+      ok(
+        vectors.length === 1 &&
+          vectors.every(
+            (vector) =>
+              (vector.fills || []).length === 0 &&
+              boundVariableName(vector.strokes[0]) === "Colors/foreground/0" &&
+              Math.abs(vector.strokeWeight - (2 * 16) / 24) < 0.001 &&
+              vector.strokeCap === "ROUND" &&
+              vector.strokeJoin === "ROUND",
+          ),
+        `${at}: one outline stroked 2 × 16 / 24, round, in the item's foreground/0 (${vectors.map((v) => `${boundVariableName(v.strokes[0])} ${v.strokeWeight}`)})`,
+      );
+      ok(
+        icon.getSharedPluginData(plugin.RUN_NAMESPACE, "decorative") ===
+          "label-names-it" &&
+          icon.getSharedPluginData(plugin.RUN_NAMESPACE, "kind") ===
+            "menu-external-icon",
+        `${at}: decorative, a menu's new-tab icon`,
+      );
+      await draw(setName, value, component);
+      ok(
+        icons(component).length === 1,
+        `${at}: an Update keeps one icon (${icons(component).length})`,
+      );
+    }
+  }
+
+  // The panel ContextMenu paints is Menu's, layer for layer.
+  const shape = (node) => ({
+    type: node.type,
+    name: node.name,
+    size: [node.width, node.height],
+    visible: node.visible,
+    characters: node.characters,
+    bound: Object.entries(node.boundVariables || {})
+      .filter(([, alias]) => alias && !Array.isArray(alias))
+      .map(([field, alias]) => `${field}=${alias.id}`)
+      .sort(),
+    fills: (node.fills || []).map(boundVariableName),
+    strokes: (node.strokes || []).map(boundVariableName),
+    children: (node.children || []).map(shape),
+  });
+  for (const value of painters.ContextMenu ? plugin.MENU_CONTENT : []) {
+    const menu = await draw("Menu", value);
+    const context = await draw("ContextMenu", value);
+    ok(
+      JSON.stringify(shape(menu)) === JSON.stringify(shape(context)) &&
+        context.name === `Content=${value}` &&
+        context.getSharedPluginData(plugin.RUN_NAMESPACE, "component") ===
+          "ContextMenu" &&
+        menu.getSharedPluginData(plugin.RUN_NAMESPACE, "component") === "Menu",
+      `ContextMenu / ${value}: Menu's panel, layer for layer, marked as ContextMenu's`,
+    );
+  }
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("ContextMenu"),
+    ) === JSON.stringify({ Content: plugin.MENU_CONTENT }),
+    "ContextMenu's axis is Menu's Content",
+  );
+
+  // The set's External boolean, off by default, shows the icon in Basic and
+  // Submenu; Menu's texts are kept. One configuration serves both sets.
+  for (const setName of Object.keys(painters)) {
+    const variants = [];
+    for (const value of plugin.MENU_CONTENT)
+      variants.push(await draw(setName, value));
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    plugin.configureMenuProperties(set, freshStats());
+    const definitions = set.componentPropertyDefinitions;
+    const external = Object.keys(definitions).find(
+      (key) =>
+        key.split("#")[0] === "External" && definitions[key].type === "BOOLEAN",
+    );
+    ok(
+      external && definitions[external].defaultValue === false,
+      `${setName}: an External boolean, off by default`,
+    );
+    const shown = variants.flatMap(icons);
+    ok(
+      shown.length === 2 &&
+        shown.every(
+          (icon) =>
+            icon.componentPropertyReferences &&
+            icon.componentPropertyReferences.visible === external,
+        ),
+      `${setName}: External shows the icon in Basic and Submenu (${shown.length})`,
+    );
+    const texts = [
+      "Label Text",
+      "Item 1 Text",
+      "Item 2 Text",
+      "Item 3 Text",
+      "Shortcut Text",
+    ];
+    ok(
+      texts.every((name) =>
+        Object.keys(definitions).some(
+          (key) =>
+            key.split("#")[0] === name && definitions[key].type === "TEXT",
+        ),
+      ),
+      `${setName}: its texts are kept (${Object.keys(definitions)
+        .map((key) => key.split("#")[0])
+        .join(", ")})`,
+    );
+    set.remove();
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

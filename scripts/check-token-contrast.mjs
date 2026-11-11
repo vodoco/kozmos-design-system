@@ -296,6 +296,115 @@ for (const alias of contract.runtimeAliases ?? []) {
   }
 }
 
+// Where the hover fill must be drawn (GAP-228, decision 173): a source holds
+// the rule, read with its whitespace folded. A part that moves back to muted
+// fails here, not only in a browser.
+const folded = (text) => text.replace(/\s+/g, " ");
+const sourceHolds = (file, contains) =>
+  folded(fs.readFileSync(path.join(root, file), "utf8")).includes(
+    folded(contains),
+  );
+for (const use of contract.hoverFillUses ?? []) {
+  checked += 1;
+  if (!sourceHolds(use.file, use.contains))
+    failures.push(
+      `${use.name}: ${use.file} no longer holds ${JSON.stringify(use.contains)}`,
+    );
+}
+// No hover or press falls back to the muted step (GAP-228, decision 173): a
+// class such as hover:bg-muted, hover:bg-muted/50 or active:bg-muted, or the
+// background/50 or /100 primitive behind a hover variant, anywhere in React's
+// or the stylesheet's sources outside the counts allowed below, and no owned
+// :hover rule that paints background/50 or /100. Tests are fixtures.
+{
+  const { execFileSync } = await import("node:child_process");
+  const postcss = createRequire(path.join(root, "packages/react/package.json"))(
+    "postcss",
+  );
+  const files = execFileSync(
+    "git",
+    ["ls-files", "packages/react/src", "packages/styles/src"],
+    { cwd: root, encoding: "utf8" },
+  )
+    .split("\n")
+    .filter(
+      (file) =>
+        /\.(tsx?|css)$/.test(file) && !/\.(test|spec)\.[jt]sx?$/.test(file),
+    );
+  const muted =
+    /(?<![\w-])(?:[\w[\]=&-]+:)*(?:hover|active):(?:[\w[\]=&-]+:)*bg-(?:muted|surface-(?:50|100)|\[var\(--primitives-colors-background-(?:50|100)\)\])(?:\/[\w.[\]]+)?(?![\w-])/g;
+  const allowed = Object.fromEntries(
+    (contract.mutedHoverAllowed ?? []).map((entry) => [entry.file, entry]),
+  );
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(root, file), "utf8");
+    const found = text.match(muted) ?? [];
+    const allowance = allowed[file]?.count ?? 0;
+    checked += 1;
+    if (found.length !== allowance)
+      failures.push(
+        `${file}: ${found.length} hover or press class(es) on the muted step (${found.join(", ") || "none"}); ${allowance} allowed${
+          allowed[file] ? ` (${allowed[file].name})` : ""
+        }. A hover takes bg-hover-fill (decision 173)`,
+      );
+    if (!file.endsWith(".css")) continue;
+    postcss.parse(text).walkRules((rule) => {
+      if (!/:hover|\[data-highlighted\]|\[data-active/.test(rule.selector))
+        return;
+      rule.walkDecls(/^background(-color)?$/, (decl) => {
+        if (/--primitives-colors-background-(50|100)\b/.test(decl.value))
+          failures.push(
+            `${file}: ${rule.selector.replace(/\s+/g, " ")} paints ${decl.value} under the pointer; a hover takes var(--semantics-hover-fill) (decision 173)`,
+          );
+      });
+    });
+  }
+}
+
+// The named exceptions: parts that keep the muted step under the pointer or
+// when selected, because an ink they draw falls under its minimum on the
+// hover fill. Each must still be drawn as it says, its inks must pass on the
+// surface it keeps, and they must fail on the hover fill in some theme, or
+// the exception is no longer needed and is taken out.
+const exceptionVariables = Object.fromEntries(
+  modes.map((mode) => [mode, readCssVariables(mode)]),
+);
+for (const exception of contract.hoverFillExceptions ?? []) {
+  for (const { file, contains } of exception.sources) {
+    checked += 1;
+    if (!sourceHolds(file, contains))
+      failures.push(
+        `${exception.name}: ${file} no longer holds ${JSON.stringify(contains)}`,
+      );
+  }
+  let needed = false;
+  for (const mode of modes) {
+    const variables = exceptionVariables[mode];
+    const kept = colorFor(variables, exception.keeps, mode, exception.name);
+    const fill = colorFor(
+      variables,
+      "semantics-hover-fill",
+      mode,
+      exception.name,
+    );
+    for (const ink of exception.inks) {
+      const colour = colorFor(variables, ink, mode, exception.name);
+      checked += 1;
+      const onKept = contrastRatio(kept, colour);
+      if (onKept < exception.minimum)
+        failures.push(
+          `${mode} ${exception.name}: --${ink} ${colour} on the kept ${kept} = ${onKept.toFixed(2)}; expected >= ${exception.minimum}`,
+        );
+      if (contrastRatio(fill, colour) < exception.minimum) needed = true;
+    }
+  }
+  checked += 1;
+  if (!needed)
+    failures.push(
+      `${exception.name}: every ink reaches ${exception.minimum}:1 on the hover fill in both themes; the exception is no longer needed`,
+    );
+}
+
 for (const mode of modes) {
   const variables = readCssVariables(mode);
 
@@ -321,8 +430,11 @@ for (const mode of modes) {
   // Pins a contrast ratio cannot express: a token that must be another
   // token's colour, or one colour, in this mode. Decision 59's theme fill is
   // theme 500 in both themes and its foreground white in both; a ratio alone
-  // passed the old light-blue fill with black on it.
+  // passed the old light-blue fill with black on it. A pin that names its
+  // modes holds in those alone: the hover fill is one step in light and
+  // another in dark (GAP-228).
   for (const pin of contract.pins ?? []) {
+    if (pin.modes && !pin.modes.includes(mode)) continue;
     const actual = colorFor(variables, pin.token, mode, pin.name).toLowerCase();
     const expected = (
       pin.sameAs ? colorFor(variables, pin.sameAs, mode, pin.name) : pin.value

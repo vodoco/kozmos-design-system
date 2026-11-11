@@ -4,6 +4,7 @@ import {
   FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
   FieldPopupContent,
+  FieldPopupDrawn,
   FieldPopupRoot,
   FieldPopupStatus,
   keepFieldFocus,
@@ -204,6 +205,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     // The overlay popup is in a portal, outside the root: a press or focus
     // inside it is still inside the field.
     const popupRef = React.useRef<HTMLDivElement>(null);
+    // The popup's list is drawn a commit after the popup opens (its portal
+    // mounts then): the field names an active option only once the list is
+    // in the page, so no commit names an option still to be drawn (GAP-231).
+    const [listboxDrawn, setListboxDrawn] = React.useState(false);
     const presentation = React.useContext(MapShellPresentationContext);
     const defaultInputId = React.useId();
     const errorId = React.useId();
@@ -351,7 +356,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
           : undefined;
     const activeOption = activeIndex >= 0 ? entries[activeIndex] : null;
     const activeOptionId =
-      open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
+      open && listboxDrawn && activeOption
+        ? `${inputId}-option-${activeIndex}`
+        : undefined;
     const listboxOpen = open && entries.length > 0;
     // The popup shows its empty text: no option matches (commands may stay).
     const showsEmptyText =
@@ -666,6 +673,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       }
                       aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     >
+                      <FieldPopupDrawn onDrawn={setListboxDrawn} />
                       {entries.length === 0
                         ? showEmptyText && (
                             <div className="px-3 py-2 text-sm text-muted-foreground">

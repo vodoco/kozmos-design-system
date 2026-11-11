@@ -98,13 +98,17 @@
   .kozmos-calendar-nav-button:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
-  .kozmos-calendar-day[data-today],
+  /* Today is marked with muted at rest; a day under the pointer takes the
+     hover fill, one step further in dark (GAP-228, decision 173). */
+  .kozmos-calendar-day[data-today] {
+    background-color: var(--primitives-colors-background-100);
+  }
   .kozmos-calendar-day[tabindex]:not(
       [aria-disabled],
       [data-selected],
       [data-in-range]
     ):hover {
-    background-color: var(--primitives-colors-background-100);
+    background-color: var(--semantics-hover-fill);
   }
   .kozmos-calendar-day[data-in-range] {
     background-color: var(--primitives-colors-theme-100);

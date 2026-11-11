@@ -9,7 +9,8 @@ export const chipVariants = cva(
   {
     variants: {
       variant: {
-        neutral: "border-input bg-background text-foreground hover:bg-muted",
+        neutral:
+          "border-input bg-background text-foreground hover:bg-hover-fill",
         brand:
           "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
         destructive:

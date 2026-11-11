@@ -73,6 +73,11 @@ const semanticGroups = [
     lead: "The thin thumb of a scroll region beside the map, and under the pointer: 3:1 on the page. A phone presentation draws no lasting scrollbar (decision 75).",
   },
   {
+    prefix: "--semantics-hover",
+    title: "Hover",
+    lead: "The fill under the pointer, a highlighted option and a selected Tree or Table row: background/100 in light, background/200 in dark, where background/100 is 1.19:1 on the black page (decision 173).",
+  },
+  {
     prefix: "--semantics-category",
     title: "Category",
     lead: "The taxonomy’s eight quick-access colours: an accent, a fill, and the ink that reads on the fill at 4.5:1.",

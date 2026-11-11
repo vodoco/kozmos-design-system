@@ -1498,6 +1498,11 @@
   .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
     background-color: var(--kz-button-bg);
   }
+  /* A named exception (decision 173, ruling c; contrast-contract.json's
+     hoverFillExceptions): the outline and text treatments keep the muted
+     hover in both themes. On the hover fill's dark step (GAP-228) the themed
+     and danger hover inks, #5887F3 and #E95A77, read 3.83:1 and 3.84:1, under
+     AA; on background/100 they pass. */
   .kozmos-button-emotion-outline {
     @apply border-[var(--kz-button-fg)] text-[var(--kz-button-fg)] hover:bg-muted hover:border-[var(--kz-button-fg-hover)] hover:text-[var(--kz-button-fg-hover)];
   }
@@ -1742,7 +1747,7 @@
       var(--primitives-typography-font-size-paragraph-small) * 1rem / 16
     );
     line-height: calc(var(--primitives-typography-line-height-100) * 1rem / 16);
-    @apply flex w-full cursor-pointer items-center gap-2 rounded-control border bg-background px-2 py-0.5 text-start font-normal text-foreground ring-offset-background hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
+    @apply flex w-full cursor-pointer items-center gap-2 rounded-control border bg-background px-2 py-0.5 text-start font-normal text-foreground ring-offset-background hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
   }
   .kozmos-accordion-trigger[data-state="open"]:enabled {
     border-color: transparent;

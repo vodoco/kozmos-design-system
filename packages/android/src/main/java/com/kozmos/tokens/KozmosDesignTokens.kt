@@ -40,6 +40,7 @@ object KozmosDesignTokens {
   val semanticsAccentOnfill = Color(0xff000000)
   val semanticsScrollbarThumb = Color(0xff747b8b)
   val semanticsScrollbarThumbhover = Color(0xff5d626f)
+  val semanticsHoverFill = Color(0xffe3e4e8)
   val semanticsDiffNew = Color(0xff2fbf71)
   val semanticsDiffUpdated = Color(0xff3b82f6)
   val semanticsDiffDeleted = Color(0xffef4444)

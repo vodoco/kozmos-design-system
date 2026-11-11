@@ -255,8 +255,11 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
                         // prototype's listening microphone, from tokens.
                         cn(EMOTION_FILLED_CLASSES, "border-primary")
                       : voiceState === "error"
-                        ? cn(EMOTION_OUTLINE_CLASSES, "bg-card hover:bg-muted")
-                        : "border-border bg-card text-foreground hover:bg-muted",
+                        ? cn(
+                            EMOTION_OUTLINE_CLASSES,
+                            "bg-card hover:bg-hover-fill",
+                          )
+                        : "border-border bg-card text-foreground hover:bg-hover-fill",
                 )}
                 onClick={() => {
                   if (unavailable) return;

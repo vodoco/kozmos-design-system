@@ -267,7 +267,7 @@ const DrawerContent = React.forwardRef<
         {showClose ? (
           // The icon button's size, its centre where touch's 44 puts it, on
           // the title (decision 82): 16 from the top at 44, 22 at 32.
-          <DialogPrimitive.Close className="absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+          <DialogPrimitive.Close className="absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
             <X aria-hidden="true" className="h-4 w-4" />
             <span className="sr-only">{closeLabel}</span>
           </DialogPrimitive.Close>

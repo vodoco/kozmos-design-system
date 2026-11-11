@@ -540,6 +540,15 @@ jobs:
           pnpm test:link-external
           ADAPTIVE_BROWSER=webkit pnpm test:link-external
           ADAPTIVE_BROWSER=firefox pnpm test:link-external
+      # GAP-156 and GAP-155: a hint with Kbd is named by its keys' names and
+      # copied as it is drawn, on one line; its caps are 20 tall; and the
+      # context-menu key opens ContextMenu at the focused row, whose own
+      # contextmenu event is cancelled (scripts/check-kbd.mjs).
+      - name: Verify Kbd and ContextMenu keyboard
+        run: |
+          pnpm test:kbd
+          ADAPTIVE_BROWSER=webkit pnpm test:kbd
+          ADAPTIVE_BROWSER=firefox pnpm test:kbd
 
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),
@@ -852,7 +861,7 @@ jobs:
           # How the stories look is the Visual Review workflow's job (visual.yml); this step checks behaviour and accessibility.
           pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "SB,TEST" \
             "pnpm --filter @kozmos-ds/docs storybook:react --ci --host 127.0.0.1" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 2; done; pnpm --filter @kozmos-ds/react exec playwright test && pnpm -w exec tsx scripts/skills/check-a11y.ts && pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-regressions'"
+            "bash -lc 'until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 2; done; pnpm --filter @kozmos-ds/react exec playwright test && pnpm --filter @kozmos-ds/react exec playwright test -c playwright.react18.config.ts && pnpm -w exec tsx scripts/skills/check-a11y.ts && pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-regressions'"
 
       - name: Verify SDK POI Reference Examples
         # Package-built gallery checks are separate from source-backed Storybook.

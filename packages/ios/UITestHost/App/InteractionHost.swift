@@ -114,6 +114,59 @@ private struct InteractionFixture: View {
         }
     }
 
+    /// What VoiceOver is given for the external menu fixture's items once
+    /// the system menu is open (decision 152): each item's name, its hint and
+    /// whether the row shows an image, read every 100ms while the fixture is
+    /// up. XCUI reads no hints; the menu is UIKit's, drawn from what SwiftUI
+    /// gave it, so this reads the open menu itself, not Kozmos's rows. While
+    /// the menu opens, UIKit holds a second copy of each row for a moment,
+    /// so each change is reported, and the poll stops once each item is
+    /// there once, after 30 seconds, or when the fixture goes (its `.task`
+    /// is cancelled).
+    @MainActor private func reportMenuItems() async {
+        let names = ["Help centre", "Keyboard shortcuts"]
+        var last = ""
+        for _ in 0..<300 {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            if Task.isCancelled { return }
+            let found = Self.elements().filter { names.contains($0.accessibilityLabel ?? "") }
+            guard Set(found.compactMap(\.accessibilityLabel)) == Set(names) else { continue }
+            let report = found.map { node -> String in
+                let image = (node as? UIView).map { Self.showsImage($0) } ?? false
+                return "\(node.accessibilityLabel ?? "")=\(node.accessibilityHint ?? "no hint")=\(image ? "image" : "no image")"
+            }.sorted().joined(separator: "|")
+            if report != last {
+                last = report
+                controlAccessibilityReport = report
+            }
+            if found.count == names.count { return }
+        }
+    }
+
+    /// The elements VoiceOver lands on in every window, in its order: a walk
+    /// that stops at an element, as VoiceOver does, so a row's own label
+    /// inside it is not counted again.
+    private static func elements() -> [NSObject] {
+        func visit(_ node: NSObject) -> [NSObject] {
+            if node.accessibilityElementsHidden { return [] }
+            if let view = node as? UIView, view.isHidden || view.alpha == 0 { return [] }
+            if node.isAccessibilityElement { return [node] }
+            if let items = node.accessibilityElements as? [NSObject], !items.isEmpty { return items.flatMap(visit) }
+            if case let count = node.accessibilityElementCount(), count != NSNotFound, count > 0 {
+                return (0..<count).compactMap { node.accessibilityElement(at: $0) as? NSObject }.flatMap(visit)
+            }
+            return ((node as? UIView)?.subviews ?? []).flatMap(visit)
+        }
+        return UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).flatMap { visit($0) }
+    }
+
+    /// Whether a view draws an image anywhere inside it.
+    private static func showsImage(_ view: UIView) -> Bool {
+        if let imageView = view as? UIImageView, imageView.image != nil, !imageView.isHidden { return true }
+        return view.subviews.contains { showsImage($0) }
+    }
+
     private func accessibleNodes() -> [NSObject] {
         var seen: Set<ObjectIdentifier> = []
         func visit(_ node: NSObject) -> [NSObject] {
@@ -681,6 +734,23 @@ private struct InteractionFixture: View {
             KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true,
                 disabled: scenario == "color-format-disabled", readOnly: scenario == "color-format-readonly")
                 .frame(width: 320)
+        case "menu-external", "context-menu-external":
+            // An item that leaves the app beside one that stays, in the
+            // system's menu: SwiftUI's Menu, or a long press's context menu.
+            let content = KozmosMenuContent(items: [
+                KozmosMenuItem(text: "Keyboard shortcuts"),
+                KozmosMenuItem(text: "Help centre", external: true),
+            ])
+            if scenario == "menu-external" {
+                KozmosMenu(title: "Help", content: content, onItemSelect: { events.append($0.text) })
+            } else {
+                Text("Gate A12")
+                    .padding(24)
+                    .kozmosContextMenu(content, onItemSelect: { events.append($0.text) })
+            }
+            Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
+                // One poll per appearance, cancelled when the fixture goes.
+                .task { await reportMenuItems() }
         default:
             Text("Unknown fixture: \(scenario)")
         }

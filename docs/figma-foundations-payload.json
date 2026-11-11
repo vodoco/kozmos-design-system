@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T20:02:47.027Z",
+  "generatedAt": "2026-11-11T06:30:45.135Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 744,
-    "variableTokens": 693,
+    "totalTokens": 745,
+    "variableTokens": 694,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 524,
+      "color": 525,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -7759,6 +7759,30 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/foreground/400"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Hover/fill",
+      "figmaName": "Hover/fill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-hover-fill",
+      "syntax": {
+        "web": "var(--semantics-hover-fill)",
+        "ios": "semanticsHoverFill",
+        "android": "semanticsHoverFill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
         }
       }
     },
