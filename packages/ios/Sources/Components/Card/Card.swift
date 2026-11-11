@@ -21,6 +21,44 @@ public enum KozmosCardPadding: Sendable, Hashable, CaseIterable {
     }
 }
 
+/// How a card's header is drawn.
+///
+/// `default` is the header on the card's own surface, as it always was.
+/// `subtle` is Pointr Cloud's form side panel header (CLOUD-UI-001; decisions
+/// 135 and 139): a pale theme strip, theme 0, full-bleed to the card's edges
+/// and inside its top corners, at least 52 tall, with a title of the strip's
+/// size unless the title says otherwise. React's `CardHeader tone="subtle"`.
+public enum KozmosCardHeaderTone: Sendable, Hashable, CaseIterable {
+    case `default`
+    case subtle
+
+    /// The strip's least height: decision 139's compact 52 strip.
+    static let subtleMinHeight: CGFloat = 52
+}
+
+/// How large a card's title is drawn (GAP-035, decision 132; the owner's
+/// ruling of 9 Nov): `lg` is the title as it always was and the default,
+/// `md` a compact card's or a dashboard section card's (React's 18), and `sm`
+/// the subtle strip's (React's 14). Each is the platform's own text style, so
+/// it follows Dynamic Type: `.title3`, `.headline` and `.subheadline`.
+public enum KozmosCardTitleSize: Sendable, Hashable, CaseIterable {
+    case lg
+    case md
+    case sm
+
+    var font: Font {
+        switch self {
+        case .lg: return KozmosTypography.title3
+        case .md: return KozmosTypography.headline
+        case .sm: return KozmosTypography.subheadline
+        }
+    }
+}
+
+private struct KozmosCardHeaderToneKey: EnvironmentKey {
+    static let defaultValue: KozmosCardHeaderTone = .default
+}
+
 private struct KozmosCardPaddingKey: EnvironmentKey {
     static let defaultValue: KozmosCardPadding = .default
 }
@@ -29,6 +67,12 @@ extension EnvironmentValues {
     var kozmosCardPadding: KozmosCardPadding {
         get { self[KozmosCardPaddingKey.self] }
         set { self[KozmosCardPaddingKey.self] = newValue }
+    }
+
+    /// The tone of the header a title is in, for the title's size.
+    var kozmosCardHeaderTone: KozmosCardHeaderTone {
+        get { self[KozmosCardHeaderToneKey.self] }
+        set { self[KozmosCardHeaderToneKey.self] = newValue }
     }
 }
 
@@ -201,14 +245,22 @@ struct KozmosCardColumn: Layout {
 
 public struct KozmosCardHeader<Content: View>: View {
     @Environment(\.kozmosCardPadding) private var padding
-    /// The title's line: 24 at the default text size, as React's 24px title
-    /// sits on a 24px line, and growing with the title as Dynamic Type grows
-    /// it.
+    /// The title's line when the header holds no `KozmosCardTitle`: an `.lg`
+    /// title's, 24 at the default text size, as React's 24px title sits on a
+    /// 24px line, and growing as Dynamic Type grows it.
     @ScaledMetric(relativeTo: .title3) private var titleLine: CGFloat = 24
+    /// The subtle strip's line, 28, as React's: its actions are centred on
+    /// it, so a 44 icon button spills into the 12 above and below and a lone
+    /// title's strip stays 52.
+    @ScaledMetric(relativeTo: .subheadline) private var stripLine: CGFloat = 28
+    let tone: KozmosCardHeaderTone
     let content: Content
     let actions: AnyView?
 
-    public init(@ViewBuilder content: () -> Content) {
+    /// `tone: .subtle` draws the header as the pale theme strip of
+    /// CLOUD-UI-001 (decisions 135 and 139).
+    public init(tone: KozmosCardHeaderTone = .default, @ViewBuilder content: () -> Content) {
+        self.tone = tone
         self.content = content()
         self.actions = nil
     }
@@ -217,36 +269,79 @@ public struct KozmosCardHeader<Content: View>: View {
     /// edit `KozmosIconButton` beside the site's name, a menu. The title and
     /// description keep the room before it, 16 from the actions, which are 8
     /// apart and centred on the title's line whatever their size, so a 44
-    /// icon button makes the header no taller. Right to left, the actions are
-    /// at the left. VoiceOver reads them after the title and description.
+    /// icon button makes the header no taller: the line of the title's size
+    /// (`KozmosCardTitleSize`), or, in a `tone: .subtle` strip, the strip's
+    /// 28 line, centred in the strip with the title. Right to left, the
+    /// actions are at the left. VoiceOver reads them after the title and
+    /// description.
     public init<Actions: View>(
+        tone: KozmosCardHeaderTone = .default,
         @ViewBuilder content: () -> Content,
         @ViewBuilder actions: () -> Actions
     ) {
+        self.tone = tone
         self.content = content()
         self.actions = AnyView(actions())
     }
 
     public var body: some View {
-        Group {
-            if let actions {
-                HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
+        switch tone {
+        case .default:
+            row
+                .padding(padding.length)
+        case .subtle:
+            // The strip: the card's padding at its sides, 12 above and below
+            // the words, at least 52 tall, and as wide as the card, whose
+            // corner clips the tint into its own. Below the tint it keeps
+            // the card's padding, as the default header's own bottom does,
+            // so content under it starts where it starts under any header.
+            row
+                .padding(.horizontal, padding.length)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing150)
+                .frame(maxWidth: .infinity, minHeight: KozmosCardHeaderTone.subtleMinHeight, alignment: .leading)
+                .background(KozmosColors.primitivesColorsTheme0)
+                .padding(.bottom, padding.length)
+                .environment(\.kozmosCardHeaderTone, .subtle)
+        }
+    }
+
+    @ViewBuilder private var row: some View {
+        if let actions {
+            let actionsRow = HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                actions
+            }
+            .fixedSize()
+            switch tone {
+            case .default:
+                // The actions' centre on the title's line, the line of the
+                // title's own size, which the title gives as
+                // `kozmosCardTitleLine`. They take no height of their own, so
+                // a taller action spills past the line evenly, as past
+                // React's line box: the header grows no taller for it.
+                HStack(alignment: .kozmosCardTitleLine, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
+                    text
+                        .alignmentGuide(.kozmosCardTitleLine) { dimensions in
+                            dimensions[explicit: .kozmosCardTitleLine] ?? titleLine / 2
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    actionsRow
+                        .frame(height: 0)
+                        .alignmentGuide(.kozmosCardTitleLine) { dimensions in
+                            dimensions[VerticalAlignment.center]
+                        }
+                }
+            case .subtle:
+                // The strip centres its words and its actions' 28 line.
+                HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
                     text
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                        actions
-                    }
-                    .fixedSize()
-                    // The title's line, which a taller action spills past
-                    // evenly, as React's 24px box: the header grows no taller
-                    // for it.
-                    .frame(height: titleLine)
+                    actionsRow
+                        .frame(height: stripLine)
                 }
-            } else {
-                text
             }
+        } else {
+            text
         }
-        .padding(padding.length)
     }
 
     private var text: some View {
@@ -256,24 +351,63 @@ public struct KozmosCardHeader<Content: View>: View {
     }
 }
 
+extension VerticalAlignment {
+    /// The centre of a card title's first line, which a header's actions are
+    /// centred on (GAP-169, GAP-035).
+    private enum KozmosCardTitleLine: AlignmentID {
+        static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
+            dimensions[VerticalAlignment.center]
+        }
+    }
+
+    static let kozmosCardTitleLine = VerticalAlignment(KozmosCardTitleLine.self)
+}
+
 /// The card's title, and a heading: VoiceOver says "heading" after it, and
 /// its headings rotor stops on it, as a screen reader stops on React's
 /// `CardTitle`, an `h3` (GAP-205). It was plain text, so a visitor could not
 /// move from card to card by its title. SwiftUI's header trait has no level:
 /// React's `as` sets one on the web.
 public struct KozmosCardTitle: View {
+    @Environment(\.kozmosCardHeaderTone) private var tone
+    // Each size's line, the height its text style draws one line at the
+    // default text size (`.title3` 24, `.headline` 20, `.subheadline` 18),
+    // growing with Dynamic Type: a header's actions are centred on it, as
+    // React centres them on its 24, 18 and 14 lines.
+    @ScaledMetric(relativeTo: .title3) private var lgLine: CGFloat = 24
+    @ScaledMetric(relativeTo: .headline) private var mdLine: CGFloat = 20
+    @ScaledMetric(relativeTo: .subheadline) private var smLine: CGFloat = 18
     let title: String
-    
-    public init(_ title: String) {
+    let size: KozmosCardTitleSize?
+
+    /// `size` is how large the title is drawn (GAP-035). Unset, it is `.lg`,
+    /// and `.sm` in a `tone: .subtle` header, the strip's title.
+    public init(_ title: String, size: KozmosCardTitleSize? = nil) {
         self.title = title
+        self.size = size
     }
-    
+
+    /// The size the title is drawn at, in the header it is in.
+    var drawnSize: KozmosCardTitleSize {
+        size ?? (tone == .subtle ? .sm : .lg)
+    }
+
     public var body: some View {
         Text(title)
-            .font(KozmosTypography.title3)
+            .font(drawnSize.font)
             .fontWeight(.semibold)
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
             .accessibilityAddTraits(.isHeader)
+            .alignmentGuide(.kozmosCardTitleLine) { _ in line / 2 }
+    }
+
+    /// The line of the size the title is drawn at.
+    var line: CGFloat {
+        switch drawnSize {
+        case .lg: return lgLine
+        case .md: return mdLine
+        case .sm: return smLine
+        }
     }
 }
 

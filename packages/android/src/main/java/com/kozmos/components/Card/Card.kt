@@ -1,7 +1,10 @@
 package com.kozmos.components.card
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -22,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -33,6 +37,7 @@ import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.VerticalAlignmentLine
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -73,6 +78,47 @@ enum class KozmosCardPadding {
 }
 
 private val LocalKozmosCardPadding = compositionLocalOf { KozmosCardPadding.Default }
+
+/**
+ * How a card's header is drawn.
+ *
+ * [Default] is the header on the card's own surface, as it always was.
+ * [Subtle] is Pointr Cloud's form side panel header (CLOUD-UI-001; decisions
+ * 135 and 139): a pale theme strip, theme 0, full-bleed to the card's edges and
+ * inside its top corners, at least 52 tall, with a title of the strip's size
+ * unless the title says otherwise. React's `CardHeader tone="subtle"`.
+ */
+enum class KozmosCardHeaderTone {
+    Default,
+    Subtle;
+
+    internal companion object {
+        /** The strip's least height: decision 139's compact 52 strip. */
+        val SubtleMinHeight: Dp = 52.dp
+
+        /**
+         * The strip's line, 28, as React's: its actions are centred on it, so
+         * a 44 icon button spills into the 12 above and below and a lone
+         * title's strip stays 52.
+         */
+        val SubtleLine: Dp = 28.dp
+    }
+}
+
+/**
+ * How large a card's title is drawn (GAP-035, decision 132; the owner's ruling
+ * of 9 Nov): [Lg] is the title as it always was and the default, [Md] a
+ * compact card's or a dashboard section card's (React's 18), and [Sm] the
+ * subtle strip's (React's 14). Each is Material's own title style:
+ * `titleLarge`, `titleMedium` and `titleSmall`.
+ */
+enum class KozmosCardTitleSize {
+    Lg,
+    Md,
+    Sm
+}
+
+private val LocalKozmosCardHeaderTone = compositionLocalOf { KozmosCardHeaderTone.Default }
 
 @Composable
 fun KozmosCard(
@@ -355,12 +401,36 @@ private class KozmosCardColumnPolicy(private val lead: Dp) : MeasurePolicy {
 @Composable
 fun KozmosCardHeader(
     modifier: Modifier = Modifier,
+    tone: KozmosCardHeaderTone = KozmosCardHeaderTone.Default,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        modifier = modifier.padding(LocalKozmosCardPadding.current.length)
-    ) {
-        content()
+    val padding = LocalKozmosCardPadding.current.length
+    when (tone) {
+        KozmosCardHeaderTone.Default -> Column(
+            modifier = modifier.padding(padding)
+        ) {
+            content()
+        }
+        // The strip: the card's padding at its sides, 12 above and below the
+        // words, at least 52 tall, and as wide as the card, whose shape clips
+        // the tint into its corners. Below the tint it keeps the card's
+        // padding, as the default header's own bottom does, so content under
+        // it starts where it starts under any header.
+        KozmosCardHeaderTone.Subtle -> CompositionLocalProvider(
+            LocalKozmosCardHeaderTone provides KozmosCardHeaderTone.Subtle
+        ) {
+            Column(
+                modifier = modifier
+                    .padding(bottom = padding)
+                    .fillMaxWidth()
+                    .heightIn(min = KozmosCardHeaderTone.SubtleMinHeight)
+                    .background(KozmosThemeTokens.primitivesColorsTheme0)
+                    .padding(horizontal = padding, vertical = KozmosDimensions.primitivesLayoutSpacing150),
+                verticalArrangement = Arrangement.Center
+            ) {
+                content()
+            }
+        }
     }
 }
 
@@ -369,37 +439,100 @@ fun KozmosCardHeader(
  * KozmosIconButton beside the site's name, a menu. The title and description
  * keep the room before it, 16 from the actions, which are 8 apart and centred
  * on the title's line whatever their size, so a 44 icon button makes the header
- * no taller. Right to left, the actions are at the left. TalkBack reads them
- * after the title and description.
+ * no taller: the line of the title's size ([KozmosCardTitleSize]), or, in a
+ * [KozmosCardHeaderTone.Subtle] strip, the strip's 28 line, centred in the
+ * strip with the title. Right to left, the actions are at the left. TalkBack
+ * reads them after the title and description.
  */
 @Composable
 fun KozmosCardHeader(
     actions: @Composable RowScope.() -> Unit,
     modifier: Modifier = Modifier,
+    tone: KozmosCardHeaderTone = KozmosCardHeaderTone.Default,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    // The title's line, as React's 24px box is its 24px title's: the title's
-    // own line height, which grows with the font scale.
-    val titleLine = with(LocalDensity.current) {
-        MaterialTheme.typography.titleLarge.lineHeight
-            .takeIf { it.isSpecified }?.toDp() ?: KozmosDimensions.primitivesLayoutSpacing300
+    val padding = LocalKozmosCardPadding.current.length
+    // A taller action spills past its line evenly: the header grows no
+    // taller for it.
+    val actionsRow: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier.wrapContentHeight(unbounded = true),
+            horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+            verticalAlignment = Alignment.CenterVertically,
+            content = actions
+        )
     }
-    Row(
-        modifier = modifier.padding(LocalKozmosCardPadding.current.length),
-        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing200),
-        verticalAlignment = Alignment.Top
-    ) {
-        Column(modifier = Modifier.weight(1f), content = content)
-        Box(modifier = Modifier.height(titleLine), contentAlignment = Alignment.Center) {
-            // A taller action spills past the line evenly: the header grows no
-            // taller for it.
+    when (tone) {
+        KozmosCardHeaderTone.Default -> {
+            // With no KozmosCardTitle, the line is an Lg title's, as React's
+            // 24px box is its 24px title's: titleLarge's line height, which
+            // grows with the font scale.
+            val titleLine = with(LocalDensity.current) {
+                MaterialTheme.typography.titleLarge.lineHeight
+                    .takeIf { it.isSpecified }?.toDp() ?: KozmosDimensions.primitivesLayoutSpacing300
+            }
             Row(
-                modifier = Modifier.wrapContentHeight(unbounded = true),
-                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
-                verticalAlignment = Alignment.CenterVertically,
-                content = actions
-            )
+                modifier = modifier.padding(padding),
+                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing200)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .kozmosCardTitleLineOr(titleLine)
+                        .alignBy(KozmosCardTitleLine),
+                    content = content
+                )
+                // The actions' centre on the title's line, the line of the
+                // title's own size, which the title gives as
+                // KozmosCardTitleLine. They take no height of their own.
+                Box(
+                    modifier = Modifier.height(0.dp).alignBy { 0 },
+                    contentAlignment = Alignment.Center
+                ) {
+                    actionsRow()
+                }
+            }
         }
+        // The strip, as the header without actions draws it, centring its
+        // words and its actions' 28 line.
+        KozmosCardHeaderTone.Subtle -> CompositionLocalProvider(
+            LocalKozmosCardHeaderTone provides KozmosCardHeaderTone.Subtle
+        ) {
+            Row(
+                modifier = modifier
+                    .padding(bottom = padding)
+                    .fillMaxWidth()
+                    .heightIn(min = KozmosCardHeaderTone.SubtleMinHeight)
+                    .background(KozmosThemeTokens.primitivesColorsTheme0)
+                    .padding(horizontal = padding, vertical = KozmosDimensions.primitivesLayoutSpacing150),
+                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing200),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f), content = content)
+                Box(
+                    modifier = Modifier.height(KozmosCardHeaderTone.SubtleLine),
+                    contentAlignment = Alignment.Center
+                ) {
+                    actionsRow()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The centre of a card title's first line, which a header's actions are
+ * centred on (GAP-169, GAP-035): the topmost title's, where there are several.
+ */
+internal val KozmosCardTitleLine = HorizontalAlignmentLine { a, b -> min(a, b) }
+
+/** Gives [KozmosCardTitleLine] at half of [line] when no title inside gives it. */
+private fun Modifier.kozmosCardTitleLineOr(line: Dp): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val given = placeable[KozmosCardTitleLine]
+    val centre = if (given != AlignmentLine.Unspecified) given else line.roundToPx() / 2
+    layout(placeable.width, placeable.height, mapOf(KozmosCardTitleLine to centre)) {
+        placeable.place(0, 0)
     }
 }
 
@@ -413,14 +546,38 @@ fun KozmosCardHeader(
 @Composable
 fun KozmosCardTitle(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // How large the title is drawn (GAP-035). Unset, Lg, and Sm in a Subtle
+    // header, the strip's title.
+    size: KozmosCardTitleSize? = null
 ) {
+    val drawn = size ?: if (LocalKozmosCardHeaderTone.current == KozmosCardHeaderTone.Subtle) {
+        KozmosCardTitleSize.Sm
+    } else {
+        KozmosCardTitleSize.Lg
+    }
+    val style = when (drawn) {
+        KozmosCardTitleSize.Lg -> MaterialTheme.typography.titleLarge
+        KozmosCardTitleSize.Md -> MaterialTheme.typography.titleMedium
+        KozmosCardTitleSize.Sm -> MaterialTheme.typography.titleSmall
+    }
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
+        style = style,
         fontWeight = FontWeight.SemiBold,
         color = KozmosThemeTokens.primitivesColorsForeground100,
-        modifier = modifier.semantics { heading() }
+        modifier = modifier
+            .semantics { heading() }
+            // The centre of its first line, its style's line height, which
+            // grows with the font scale: a header's actions are centred on
+            // it, as React centres them on its 24, 18 and 14 lines.
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val line = if (style.lineHeight.isSpecified) style.lineHeight.roundToPx() else placeable.height
+                layout(placeable.width, placeable.height, mapOf(KozmosCardTitleLine to line / 2)) {
+                    placeable.place(0, 0)
+                }
+            }
     )
 }
 

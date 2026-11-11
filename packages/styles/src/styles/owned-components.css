@@ -1440,10 +1440,42 @@
   .kozmos-button-size-icon {
     @apply h-icon-control w-icon-control;
   }
+  /* The subtle variant (GAP-200, decision 135) is its tier's themed emotion
+     until an emotion's own properties, set inline, replace these: its pale
+     fill under its words, which step with the fill, as theme 600 on theme
+     100 reads 4.41:1. So buttonVariants alone draws it, on a link too. */
+  .kozmos-button-subtle {
+    --kz-button-bg: var(
+      --components-subtle-buttons-themed-button-background-idle
+    );
+    --kz-button-bg-hover: var(
+      --components-subtle-buttons-themed-button-background-hover
+    );
+    --kz-button-bg-focus: var(
+      --components-subtle-buttons-themed-button-background-focus
+    );
+    --kz-button-bg-pressed: var(
+      --components-subtle-buttons-themed-button-background-pressed
+    );
+    --kz-button-fg: var(
+      --components-subtle-buttons-themed-button-foreground-content-idle
+    );
+    --kz-button-fg-hover: var(
+      --components-subtle-buttons-themed-button-foreground-content-hover
+    );
+    --kz-button-fg-focus: var(
+      --components-subtle-buttons-themed-button-foreground-content-focus
+    );
+    --kz-button-fg-pressed: var(
+      --components-subtle-buttons-themed-button-foreground-content-pressed
+    );
+  }
   /* An emotion's filled Button takes the same four states, from its own
-     tokens, and outweighs the default's by order in each of them. */
+     tokens, and outweighs the default's by order in each of them; the
+     subtle variant draws through the same rules. */
+  .kozmos-button-subtle,
   .kozmos-button-emotion-filled {
-    @apply bg-[var(--kz-button-bg)] text-[var(--kz-button-fg)] hover:bg-[var(--kz-button-bg-hover)] focus-visible:bg-[var(--kz-button-bg-focus)] active:bg-[var(--kz-button-bg-pressed)];
+    @apply bg-[var(--kz-button-bg)] text-[var(--kz-button-fg)] hover:bg-[var(--kz-button-bg-hover)] hover:text-[var(--kz-button-fg-hover)] focus-visible:bg-[var(--kz-button-bg-focus)] focus-visible:text-[var(--kz-button-fg-focus)] active:bg-[var(--kz-button-bg-pressed)] active:text-[var(--kz-button-fg-pressed)];
   }
   /* A press shows at once instead of fading in over the colour transition,
      so a quick tap still darkens the fill (a map control's 300ms included);
@@ -1451,6 +1483,7 @@
   .kozmos-button-default:active,
   .kozmos-button-destructive:active,
   .kozmos-button-secondary:active,
+  .kozmos-button-subtle:active,
   .kozmos-button-emotion-filled:active {
     transition-duration: 0s;
   }
@@ -1471,6 +1504,13 @@
     background-color: var(
       --components-primary-buttons-neutral-button-background-idle
     );
+  }
+  /* The subtle tier's words step with its fill, so an unavailable one keeps
+     its rest words too. */
+  .kozmos-button-subtle[aria-disabled="true"]:is(:hover, :active),
+  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
+    color: var(--kz-button-fg);
+    background-color: var(--kz-button-bg);
   }
   .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
     background-color: var(--kz-button-bg);
@@ -1522,6 +1562,48 @@
     /* The title's line: an action of any size is centred on it and spills
        past it evenly, so the header grows no taller. */
     block-size: 1.5rem;
+  }
+  /* A smaller title (GAP-035) has a shorter line, and its actions are
+     centred on that one: 18 for `md`, 14 for `sm`. The subtle strip
+     centres its own, below. */
+  .kozmos-card-header:not(.kozmos-card-header-subtle):has(
+      > .kozmos-card-header-text > [data-size="md"]
+    )
+    > .kozmos-card-header-actions {
+    block-size: 1.125rem;
+  }
+  .kozmos-card-header:not(.kozmos-card-header-subtle):has(
+      > .kozmos-card-header-text > [data-size="sm"]
+    )
+    > .kozmos-card-header-actions {
+    block-size: 0.875rem;
+  }
+  /* CardHeader's subtle tone (CLOUD-UI-001; decisions 135 and 139): the
+     form panel's header, a pale theme strip at least 52 tall. It is
+     full-bleed: the header already spans the card, and, first in it, its
+     top corners are the card's, less the card's 1px edge, so the tint meets
+     the edge with no gap. Its title and actions are centred in the strip; the actions
+     keep a 28 line, so a 44 IconButton spills into the 12 above and below
+     and a lone title's strip stays 52. */
+  .kozmos-card-header-subtle {
+    justify-content: center;
+    min-block-size: 3.25rem;
+    background-color: var(--primitives-colors-theme-0);
+  }
+  /* Its corners are the card's only where it is the card's top. */
+  .kozmos-card > .kozmos-card-header-subtle:first-child {
+    border-start-start-radius: calc(
+      var(--semantics-radius-container) * 1px - 1px
+    );
+    border-start-end-radius: calc(
+      var(--semantics-radius-container) * 1px - 1px
+    );
+  }
+  .kozmos-card-header.kozmos-card-header-subtle {
+    align-items: center;
+  }
+  .kozmos-card-header-subtle > .kozmos-card-header-actions {
+    block-size: 1.75rem;
   }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
      bottom edge on the button's centre line and its start edge 2px past it,

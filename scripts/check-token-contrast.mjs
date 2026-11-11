@@ -39,7 +39,35 @@ for (const emotion of [
         foreground: `components-secondary-buttons-${emotion}-button-foreground-content-${state}`,
         minimum: 4.5,
       });
+    // The subtle Button (GAP-200, decision 135): a pale fill of the emotion's
+    // own ramp under its words, in every state. Its words step with the fill,
+    // as theme 600 on theme 100 reads 4.41:1 in light.
+    contract.pairs.push({
+      name: `subtle button ${emotion} ${state}`,
+      background: `components-subtle-buttons-${emotion}-button-background-${state}`,
+      foreground: `components-subtle-buttons-${emotion}-button-foreground-content-${state}`,
+      minimum: 4.5,
+    });
   }
+}
+
+// The subtle themed Button's steps on a brand ramp, not only on Pointr's own:
+// theme 600 on 0, 700 on 100 and 800 on 200, as the tier names them, on the
+// theme ramp and on brand variant 1, the other ramp the contract holds
+// (decisions 63 and 69). A client who sets the ramp gets the steps; these say
+// the steps still read 4.5:1 on a ramp other than the one they were drawn on.
+for (const ramp of ["theme", "theme-variant-1"]) {
+  for (const [fill, ink] of [
+    [0, 600],
+    [100, 700],
+    [200, 800],
+  ])
+    contract.pairs.push({
+      name: `subtle button steps on the ${ramp} ramp: ${ink} on ${fill}`,
+      background: `primitives-colors-${ramp}-${fill}`,
+      foreground: `primitives-colors-${ramp}-${ink}`,
+      minimum: 4.5,
+    });
 }
 
 // An emotion's Text role is the emotion as text or a glyph on the page itself,
@@ -62,6 +90,28 @@ for (const emotion of [
       minimum: 4.5,
     });
 }
+
+// CardHeader's subtle strip (CLOUD-UI-001; decisions 135 and 139) is theme
+// 0, and what it holds reads on it: the title, the description's muted words,
+// and a ghost IconButton's ink at rest and hovered (a close or help action).
+for (const [what, foreground] of [
+  ["title", "primitives-colors-foreground-0"],
+  ["description", "primitives-colors-foreground-400"],
+  [
+    "ghost action",
+    "components-secondary-buttons-themed-button-foreground-content-idle",
+  ],
+  [
+    "ghost action hovered",
+    "components-secondary-buttons-themed-button-foreground-content-hover",
+  ],
+])
+  contract.pairs.push({
+    name: `subtle card header ${what} on theme 0`,
+    background: "primitives-colors-theme-0",
+    foreground,
+    minimum: 4.5,
+  });
 
 function readCss(mode) {
   return fs.readFileSync(

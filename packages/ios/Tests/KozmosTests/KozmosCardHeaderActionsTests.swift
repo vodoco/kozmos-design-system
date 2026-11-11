@@ -57,4 +57,68 @@ final class KozmosCardHeaderActionsTests: XCTestCase {
         XCTAssertEqual(action.minX, 24, accuracy: 0.5)
         XCTAssertEqual(text.minX, action.maxX + 16, accuracy: 0.5)
     }
+
+    // GAP-035, CLOUD-UI-001: the line follows the title's size, and the
+    // subtle strip's own 28 line, as React's CSS does.
+
+    /// A card whose header holds a title of `size`, in `tone`, with a 44
+    /// action or none.
+    private func titled(_ size: KozmosCardTitleSize?, tone: KozmosCardHeaderTone = .default, actions: Bool = true,
+                        description: Bool = false) -> some View {
+        KozmosCard {
+            if actions {
+                KozmosCardHeader(tone: tone) {
+                    KozmosCardTitle("Site", size: size)
+                    if description { KozmosCardDescription("Edit the site's details") }
+                } actions: {
+                    Color(red: 1, green: 0, blue: 0).frame(width: 44, height: 44)
+                }
+            } else {
+                KozmosCardHeader(tone: tone) {
+                    KozmosCardTitle("Site", size: size)
+                    if description { KozmosCardDescription("Edit the site's details") }
+                }
+            }
+            KozmosCardContent { Color.clear.frame(height: 40) }
+        }
+        .frame(width: 360)
+    }
+
+    @MainActor func testTheActionsAreCentredOnTheLineOfTheTitlesSize() throws {
+        // Each size's text style's line at the default text size: .title3
+        // 24, .headline 20, .subheadline 18, below the card's 24 padding.
+        for (size, line) in [(KozmosCardTitleSize?.none, CGFloat(24)), (.lg, 24), (.md, 20), (.sm, 18)] {
+            let drawn = try DrawnPixels.draw(titled(size), scale: 1)
+            let action = try XCTUnwrap(drawn.boundingBox(where: isRed), "\(String(describing: size)): no action drawn")
+            XCTAssertEqual(action.midY, 24 + line / 2, accuracy: 0.5, "\(String(describing: size)): centred on its \(line) line")
+            XCTAssertEqual(drawn.size.height, try DrawnPixels.draw(titled(size, actions: false), scale: 1).size.height,
+                           accuracy: 0.5, "\(String(describing: size)): the action made the header taller")
+        }
+    }
+
+    @MainActor func testTheSubtleStripCentresItsActionsOnItsTwentyEightLine() throws {
+        // The strip is 12 + 28 + 12: a 44 action spills into the 12 above
+        // and below, centred in the strip, which stays 52, as a lone title's.
+        // With a description the strip grows, and the action stays centred
+        // in it with the words, as React's strip centres both.
+        for description in [false, true] {
+            for size in [KozmosCardTitleSize?.none, .lg, .md, .sm] {
+                let name = "\(String(describing: size))\(description ? " with a description" : "")"
+                let drawn = try DrawnPixels.draw(titled(size, tone: .subtle, description: description), scale: 1)
+                let action = try XCTUnwrap(drawn.boundingBox(where: isRed), "\(name): no action drawn")
+                let alone = try DrawnPixels.draw(titled(size, tone: .subtle, actions: false, description: description), scale: 1)
+                XCTAssertEqual(drawn.size.height, alone.size.height, accuracy: 0.5, "\(name): the action made the strip taller")
+                // Below the strip: its own 24, the content's 40 and its 24.
+                let strip = drawn.size.height - 24 - 40 - 24
+                if !description && (size == nil || size == .sm) {
+                    XCTAssertEqual(strip, 52, accuracy: 0.5, "\(name): the strip is 52")
+                }
+                if description {
+                    XCTAssertGreaterThan(strip, 52, "\(name): the strip grows with its words")
+                }
+                XCTAssertEqual(action.midY, strip / 2, accuracy: 0.5, "\(name): centred in the strip")
+                XCTAssertEqual(action.maxX, 360 - 24, accuracy: 0.5, "\(name): at the strip's end")
+            }
+        }
+    }
 }

@@ -252,7 +252,9 @@
         "Glass",
         "Loading",
         "Disabled",
-        "Emotions"
+        "Emotions",
+        "Subtle",
+        "SubtleEmotions"
       ]
     },
     {
@@ -265,7 +267,9 @@
         "TitleLevel",
         "Padding",
         "WithoutHeader",
-        "HeaderActions"
+        "HeaderActions",
+        "SubtleHeader",
+        "TitleSize"
       ]
     },
     {

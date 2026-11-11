@@ -10,7 +10,8 @@ export type KozmosButtonVariant =
   | "secondary"
   | "ghost"
   | "link"
-  | "glass";
+  | "glass"
+  | "subtle";
 
 export type KozmosButtonSize = "default" | "sm" | "lg" | "icon";
 

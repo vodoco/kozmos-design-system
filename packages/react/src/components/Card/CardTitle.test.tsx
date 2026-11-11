@@ -90,4 +90,43 @@ describe("CardTitle", () => {
     const title = <CardTitle as="h1">Settings</CardTitle>;
     expect(title).toBeTruthy();
   });
+
+  // GAP-035 (decision 132): a size, 18 for a compact or dashboard card and
+  // 14 for the subtle strip's title, with the weight and leading kept.
+  it.each([
+    ["md", "text-lg"],
+    ["sm", "text-sm"],
+  ] as const)("is drawn at size %s with %s", (size, sizeClass) => {
+    render(<CardTitle size={size}>Landmark directions</CardTitle>);
+    const title = screen.getByRole("heading", {
+      level: 3,
+      name: "Landmark directions",
+    });
+    expect(title).toHaveAttribute("data-size", size);
+    expect(title).toHaveClass(
+      sizeClass,
+      "font-semibold",
+      "leading-none",
+      "tracking-tight",
+    );
+    expect(title).not.toHaveClass("text-2xl");
+  });
+
+  it("keeps its heading level whatever its size", () => {
+    render(
+      <CardTitle as="h2" size="md">
+        Suggestions
+      </CardTitle>,
+    );
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Suggestions" }),
+    ).toHaveClass("text-lg");
+  });
+
+  it("is 24 at size lg, as unset", () => {
+    render(<CardTitle size="lg">Client details</CardTitle>);
+    const title = screen.getByRole("heading", { name: "Client details" });
+    expect(title).toHaveClass("text-2xl");
+    expect(title).not.toHaveAttribute("data-size");
+  });
 });

@@ -31,7 +31,8 @@ export type ButtonVariant =
   | "secondary"
   | "ghost"
   | "link"
-  | "glass";
+  | "glass"
+  | "subtle";
 
 export type ButtonSize = "default" | "sm" | "lg" | "icon";
 
@@ -41,12 +42,18 @@ export type ButtonSize = "default" | "sm" | "lg" | "icon";
  * Primary is filled, Secondary is bordered, Tertiary is text — so a variant
  * maps to a tier and a treatment, and the emotion picks the colour within it.
  *
+ * `subtle` is a fill of its own tier (GAP-200, decision 135): the emotion's
+ * palest step under its words, theme 0 under theme 600 unset, and the
+ * destructive tone's rose under red with `emotion="danger"` (decision 139).
+ *
  * `glass` is an effect rather than a weight and takes no emotion.
  */
+export type ButtonTier = "primary" | "secondary" | "subtle";
+
 export const VARIANT_TOKENS: Record<
   ButtonVariant,
   {
-    tier: "primary" | "secondary";
+    tier: ButtonTier;
     treatment: "filled" | "outline" | "text";
   } | null
 > = {
@@ -56,6 +63,7 @@ export const VARIANT_TOKENS: Record<
   outline: { tier: "secondary", treatment: "outline" },
   ghost: { tier: "secondary", treatment: "text" },
   link: { tier: "secondary", treatment: "text" },
+  subtle: { tier: "subtle", treatment: "filled" },
   glass: null,
 };
 
@@ -70,20 +78,24 @@ export const TREATMENT_CLASSES = {
   text: "kozmos-button-emotion-text",
 } as const;
 
-/** The custom properties an emotion sets on a button, in the order it sets them. */
+/**
+ * The custom properties an emotion sets on a button: its tier's fill and
+ * words in each state. The subtle tier's words step with its fill (GAP-200);
+ * the Primary tier's are one colour in every state.
+ */
 export function emotionCustomProperties(
-  tier: "primary" | "secondary",
+  tier: ButtonTier,
   emotion: ButtonEmotion,
 ): Record<`--${string}`, string> {
-  const prefix = `--components-${tier}-buttons-${emotion}`;
-  return {
-    "--kz-button-bg": `var(${prefix}-button-background-idle)`,
-    "--kz-button-bg-hover": `var(${prefix}-button-background-hover)`,
-    "--kz-button-bg-focus": `var(${prefix}-button-background-focus)`,
-    "--kz-button-bg-pressed": `var(${prefix}-button-background-pressed)`,
-    "--kz-button-fg": `var(${prefix}-button-foreground-content-idle)`,
-    "--kz-button-fg-hover": `var(${prefix}-button-foreground-content-hover)`,
-  };
+  const properties: Record<`--${string}`, string> = {};
+  for (const state of ["", "-hover", "-focus", "-pressed"])
+    for (const [short, part] of [
+      ["bg", "background"],
+      ["fg", "foreground-content"],
+    ])
+      properties[`--kz-button-${short}${state}`] =
+        `var(--components-${tier}-buttons-${emotion}-button-${part}${state || "-idle"})`;
+  return properties;
 }
 
 /**
@@ -108,6 +120,7 @@ export const buttonVariants = cva("kozmos-reset kozmos-button", {
       ghost: "kozmos-button-ghost",
       link: "kozmos-button-link",
       glass: "kozmos-button-glass",
+      subtle: "kozmos-button-subtle",
     },
     size: {
       default: "kozmos-button-size-default",
