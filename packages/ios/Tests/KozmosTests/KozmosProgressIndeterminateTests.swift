@@ -16,6 +16,17 @@ final class KozmosProgressIndeterminateTests: XCTestCase {
 
     /// A quarter of the track, from wholly before the start to wholly past
     /// the end every 2 s, linear: Pointr Cloud's loading bar.
+    /// The segment takes the track's corners, as React's does: a capsule
+    /// on the rounded bar, square at the top. Until #522's goldens it was a
+    /// rectangle everywhere, square-ended in the middle of a pill track.
+    func testTheSegmentTakesTheTracksCorners() {
+        let rect = CGRect(x: 0, y: 0, width: 40, height: 8)
+        XCTAssertEqual(KozmosIndeterminateBar.segmentShape(.inline).path(in: rect),
+                       Capsule().path(in: rect))
+        XCTAssertEqual(KozmosIndeterminateBar.segmentShape(.top).path(in: rect),
+                       Rectangle().path(in: rect))
+    }
+
     func testTheSegmentSweepsAQuarterOfTheTrackEveryTwoSeconds() {
         XCTAssertEqual(Sweep.width, 0.25)
         XCTAssertEqual(Sweep.period, 2)

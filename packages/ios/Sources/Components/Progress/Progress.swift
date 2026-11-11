@@ -524,12 +524,22 @@ struct KozmosIndeterminateBar: View {
         .frame(height: placement.height)
     }
 
+    /// The segment's outline: the track's own, a capsule in the flow and a
+    /// rectangle at the top.
+    static func segmentShape(_ placement: KozmosProgressPlacement) -> KozmosProgressBarShape {
+        KozmosProgressBarShape(placement: placement)
+    }
+
     private func drawing(start: Double) -> some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             ZStack(alignment: .topLeading) {
                 Rectangle().fill(KozmosColors.primitivesColorsBackground200)
-                Rectangle()
+                // The segment takes the track's corners, as React's does
+                // (border-radius: inherit): a capsule on the rounded bar,
+                // square at the top. The track's clip only rounds the bar's
+                // ends, so a segment in the middle drew square ends.
+                Self.segmentShape(placement)
                     .fill(KozmosColors.primitivesColorsTheme600)
                     .frame(width: width * CGFloat(KozmosProgressSweep.width), height: geometry.size.height)
                     .offset(x: KozmosProgressSweep.x(start: start, trackWidth: width, direction: direction))

@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
@@ -417,13 +418,26 @@ fun KozmosProgress(
     ) {
         drawRect(track)
         val segment = kozmosProgressSegment(phase.floatValue, animationsOn, rtl)
-        drawRect(
+        // The segment takes the track's corners, as React's does
+        // (border-radius: inherit): a pill on the rounded bar, square at
+        // the top. The track's clip only rounds the bar's two ends, so a
+        // segment in the middle drew square ends until #522's goldens.
+        drawRoundRect(
             fill,
             topLeft = Offset(segment.start * size.width, 0f),
-            size = Size(KozmosProgressSegment * size.width, size.height)
+            size = Size(KozmosProgressSegment * size.width, size.height),
+            cornerRadius = CornerRadius(kozmosProgressSegmentCorner(placement, size.height))
         )
     }
 }
+
+/**
+ * The radius of the indeterminate segment's corners, in px, for a bar
+ * `height` px tall: half its height on the rounded inline bar, so the
+ * segment is a pill like the track; none on the square Top bar.
+ */
+internal fun kozmosProgressSegmentCorner(placement: KozmosProgressPlacement, height: Float): Float =
+    if (placement == KozmosProgressPlacement.Top) 0f else height / 2f
 
 /** A new value sweeps round over the standard duration; with animations off it is drawn there at once. */
 internal fun kozmosProgressSweep(animationsOn: Boolean): AnimationSpec<Float> =

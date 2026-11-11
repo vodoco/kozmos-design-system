@@ -55,6 +55,15 @@ class KozmosProgressIndeterminateTest {
     private fun close(expected: Float, actual: Float) =
         assertEquals(expected.toDouble(), actual.toDouble(), 1e-5)
 
+    // The segment takes the track's corners, as React's does: a pill on
+    // the rounded bar, square at the top. Until #522's goldens it was a
+    // rectangle, square-ended in the middle of a pill track.
+    @Test
+    fun theSegmentTakesTheTracksCorners() {
+        assertEquals(4f, kozmosProgressSegmentCorner(KozmosProgressPlacement.Inline, 8f))
+        assertEquals(0f, kozmosProgressSegmentCorner(KozmosProgressPlacement.Top, 4f))
+    }
+
     @Test fun theSegmentIsAQuarterOfTheTrackSweepingFromTheInlineStart() {
         assertEquals(0.25f, KozmosProgressSegment)
         assertEquals(2000, KozmosProgressSweepMillis)
