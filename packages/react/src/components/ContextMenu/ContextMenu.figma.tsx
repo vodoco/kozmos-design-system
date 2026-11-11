@@ -39,9 +39,7 @@ figma.connect(ContextMenuContent, contextMenuUrl, {
   example: ({ external, item1, item2, item3, label, shortcut }) => (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div tabIndex={0} aria-label="Map feature">
-          Right click, or long press, here
-        </div>
+        <div tabIndex={0}>Map feature</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel>{label}</ContextMenuLabel>
@@ -68,9 +66,7 @@ figma.connect(ContextMenuContent, contextMenuUrl, {
   example: ({ item1, item2, item3, label }) => (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div tabIndex={0} aria-label="Map">
-          Right click, or long press, here
-        </div>
+        <div tabIndex={0}>Map</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel>{label}</ContextMenuLabel>
@@ -94,9 +90,7 @@ figma.connect(ContextMenuContent, contextMenuUrl, {
   example: ({ item1, item2, item3, label }) => (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div tabIndex={0} aria-label="Route">
-          Right click, or long press, here
-        </div>
+        <div tabIndex={0}>Route</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel>{label}</ContextMenuLabel>
@@ -128,9 +122,7 @@ figma.connect(ContextMenuContent, contextMenuUrl, {
   example: ({ external, item1, item2, item3, label }) => (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div tabIndex={0} aria-label="Map feature">
-          Right click, or long press, here
-        </div>
+        <div tabIndex={0}>Map feature</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel>{label}</ContextMenuLabel>
