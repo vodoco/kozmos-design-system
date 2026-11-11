@@ -232,6 +232,30 @@ class KozmosThemeFillPixelsTest {
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }
 
+    /**
+     * A control's label is full ink, foreground/0, as React's text-foreground
+     * label is: white in the dark. Checkbox's and Switch's were Material's
+     * onSurface, foreground/100 (#E8E6E3), which draws no pure white.
+     */
+    @Test
+    fun aControlsLabelIsFullInk() {
+        val wrong = mutableListOf<String>()
+        val labelled = listOf<Pair<String, @Composable () -> Unit>>(
+            "Checkbox" to { com.kozmos.components.checkbox.KozmosCheckbox(checked = false, onCheckedChange = {}, label = "MMMM WWWW") },
+            "Switch" to { com.kozmos.components.switch.KozmosSwitch(checked = false, onCheckedChange = {}, label = "MMMM WWWW") },
+            "Radio" to {
+                com.kozmos.components.radio.KozmosRadioGroupItem(value = "a", selectedValue = "b", onOptionSelected = {}, label = "MMMM WWWW")
+            }
+        )
+        for ((name, part) in labelled) {
+            val drawn = draw(dark = true, host = null, part)
+            val ink = drawn.count(white, 2)
+            println("Control label ink, dark: $name: $ink pure white pixels")
+            if (ink < 50) wrong += "$name's label draws only $ink pixels of foreground/0 (#FFFFFF) in the dark"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
     /** A selected Radio: its dot is the fill; its ring is a border, theme 600. */
     @Test
     fun aRadiosDotIsTheThemeFillAndItsRingTheme600() {

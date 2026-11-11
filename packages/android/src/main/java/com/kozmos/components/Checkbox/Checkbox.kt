@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +43,9 @@ fun KozmosCheckbox(
     val labelColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
-        MaterialTheme.colorScheme.onSurface
+        // Full ink, foreground/0, as React's text-foreground label is: every
+        // control's label is the same colour on every platform.
+        KozmosThemeTokens.primitivesColorsForeground0
     }
 
     // Disabled, the checkbox keeps its own colours, checked the theme fill

@@ -75,7 +75,9 @@ fun KozmosSwitch(
     val labelColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
-        MaterialTheme.colorScheme.onSurface
+        // Full ink, foreground/0, as React's text-foreground label is: every
+        // control's label is the same colour on every platform.
+        KozmosThemeTokens.primitivesColorsForeground0
     }
 
     // With a description the track sits on the label's first line; the row

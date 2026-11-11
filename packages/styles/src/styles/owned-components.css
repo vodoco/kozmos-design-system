@@ -884,6 +884,15 @@
   .kozmos-radio-card[data-state="checked"][data-error] {
     --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
   }
+  /* Forced colours draw no box-shadow, so there the chosen box's heavier
+     edge is a 2px outline inside it in Highlight: the choice still shows
+     by weight, as well as by the dot or the check. */
+  @media (forced-colors: active) {
+    .kozmos-radio-card[data-state="checked"] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its
      padding edge. With no padding, that edge sat on the map chrome itself and

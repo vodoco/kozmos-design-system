@@ -105,6 +105,32 @@ final class KozmosThemeFillTests: XCTestCase {
         }
     }
 
+    /// A control's label is full ink, foreground/0, as React's
+    /// text-foreground label is (the owner's decision, 11 Nov): white in the
+    /// dark. Checkbox's, Switch's and the radios' were foreground/100
+    /// (#E8E6E3), which draws no pure white.
+    @MainActor func testAControlsLabelIsFullInkInTheDark() throws {
+        let off = Binding.constant(false)
+        let none = Binding.constant("")
+        let parts: [(String, AnyView)] = [
+            ("Checkbox", AnyView(KozmosCheckbox(checked: off, label: "MMMM WWWW"))),
+            ("Switch", AnyView(KozmosSwitch(checked: off, label: "MMMM WWWW"))),
+            ("Radio", AnyView(KozmosRadioGroupItem(value: "a", label: "MMMM WWWW", selection: none))),
+            ("Radio card", AnyView(KozmosRadioGroupItem(value: "a", label: "MMMM WWWW", variant: .card, selection: none).frame(width: 240))),
+        ]
+        for (name, part) in parts {
+            let drawn = try draw(part, in: .dark)
+            var white = 0
+            for y in 0..<drawn.height {
+                for x in 0..<drawn.width {
+                    let p = drawn.pixel(at: CGPoint(x: CGFloat(x) / drawn.scale, y: CGFloat(y) / drawn.scale))
+                    if p.r == 255, p.g == 255, p.b == 255, p.a > 240 { white += 1 }
+                }
+            }
+            XCTAssertGreaterThan(white, 50, "\(name)'s label draws only \(white) pixels of foreground/0 (#FFFFFF) in the dark")
+        }
+    }
+
     @MainActor func testACheckedCheckboxIsTheThemeFillWithAWhiteCheckInLightAndDark() throws {
         try assertThemeFillWithWhiteMark("checked checkbox", KozmosCheckbox(checked: .constant(true)))
     }

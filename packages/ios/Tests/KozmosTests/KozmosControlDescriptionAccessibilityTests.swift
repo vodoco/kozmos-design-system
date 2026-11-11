@@ -119,6 +119,21 @@ final class KozmosControlDescriptionAccessibilityTests: XCTestCase {
         }
     }
 
+    /// A checked checkbox with no description is named by its label alone:
+    /// its drawn checkmark is no part of the name ("Checkmark, Accept terms"),
+    /// and its state is its value.
+    @MainActor func testACheckedCheckboxIsNamedByItsLabelAlone() async throws {
+        struct Ticked: View {
+            @State var accepted = true
+            var body: some View { KozmosCheckbox(checked: $accepted, label: "Accept terms") }
+        }
+        try await inspect(Ticked()) { window in
+            XCTAssertFalse(self.labels(window).contains { $0.localizedCaseInsensitiveContains("checkmark") }, "the checkmark is read; the tree:\n\(self.describe(window))")
+            let checkbox = try self.named(["Accept terms"], in: window)[0]
+            XCTAssertEqual(checkbox.accessibilityValue, "Checked")
+        }
+    }
+
     /// The caller's words for the states.
     @MainActor func testTheStateWordsAreTheCallers() async throws {
         struct French: View {

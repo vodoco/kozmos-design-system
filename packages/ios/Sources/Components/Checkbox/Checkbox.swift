@@ -44,10 +44,12 @@ public struct KozmosCheckbox: View {
                         .cornerRadius(KozmosDimensions.semanticsRadiusMarker)
                     
                     if checked {
+                        // Drawn, never read: the state is the checkbox's value.
                         Image(systemName: "checkmark")
                             .font(KozmosTypography.caption)
                             .bold()
                             .foregroundColor(markColor)
+                            .accessibilityHidden(true)
                     }
                 }
                 
@@ -89,6 +91,8 @@ public struct KozmosCheckbox: View {
 
     private var labelColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100
+        // Full ink, foreground/0, as React's text-foreground label is: every
+        // control's label is the same colour on every platform (11 Nov).
+        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
 }

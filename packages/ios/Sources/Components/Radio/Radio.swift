@@ -209,11 +209,11 @@ public struct KozmosRadioGroupItem<Media: View>: View {
 
     private var iconColor: Color {
         if disabled { return KozmosColors.primitivesColorsForeground500 }
-        return isSelected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100
+        return isSelected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground0
     }
 
     private var titleColor: Color {
-        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100
+        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
 
     private var isSelected: Bool {
@@ -235,7 +235,9 @@ public struct KozmosRadioGroupItem<Media: View>: View {
 
     private var labelColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100
+        // Full ink, foreground/0, as React's text-foreground label is: every
+        // control's label is the same colour on every platform (11 Nov).
+        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
 }
 
