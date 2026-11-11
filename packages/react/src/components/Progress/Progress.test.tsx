@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Progress } from "./Progress";
 import { describe, it, expect } from "vitest";
 
@@ -417,6 +418,88 @@ describe("Progress", () => {
       expect(progress).not.toHaveAttribute("tone");
       expect(progress).not.toHaveAttribute("labelplacement");
       expect(progress.firstElementChild).toHaveStyle({ width: "50%" });
+    });
+  });
+
+  // GAP-159: the bar with no value moves, stops under reduced motion (the
+  // stylesheet's), is said once, and can be the page's top loading bar.
+  describe("indeterminate", () => {
+    it("draws a sweeping segment, not an empty track", () => {
+      render(<Progress />);
+      const progress = screen.getByRole("progressbar", { name: "Loading" });
+      expect(progress).toHaveAttribute("data-state", "indeterminate");
+      expect(progress).not.toHaveAttribute("aria-valuenow");
+      const segment = progress.firstElementChild!;
+      expect(segment).toHaveClass("kozmos-progress-sweep");
+      // No width of a value: the stylesheet draws a quarter of the track.
+      expect(segment.getAttribute("style") ?? "").not.toMatch(/width/);
+    });
+
+    it("says its words once, in a status mounted before them", () => {
+      // The first markup holds the status empty, so the words arriving in
+      // it are a change a screen reader announces (GAP-226).
+      const html = renderToStaticMarkup(<Progress />);
+      expect(html).toMatch(
+        /<span[^>]*role="status"[^>]*aria-live="polite"[^>]*><\/span>/,
+      );
+      const { rerender } = render(<Progress />);
+      const status = screen.getByRole("status");
+      expect(status).toHaveTextContent(/^Loading$/);
+      const words = status.firstChild;
+      // Re-rendering while the wait lasts does not say it again.
+      rerender(<Progress />);
+      expect(screen.getByRole("status").firstChild).toBe(words);
+      // A value ends the wait, and the status goes.
+      rerender(<Progress value={40} aria-label="Upload" />);
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(
+        screen.getByRole("progressbar", { name: "Upload" }).firstElementChild,
+      ).toHaveStyle({ width: "40%" });
+    });
+
+    it("takes its words from label, and keeps a name it is given", () => {
+      const { rerender } = render(<Progress label="Loading the map" />);
+      expect(
+        screen.getByRole("progressbar", { name: "Loading the map" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent("Loading the map");
+      rerender(<Progress aria-label="Map" label="Loading the map" />);
+      expect(
+        screen.getByRole("progressbar", { name: "Map" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent("Loading the map");
+    });
+
+    it("sits at the top of the page with placement top", () => {
+      const { rerender } = render(<Progress placement="top" />);
+      const progress = screen.getByRole("progressbar");
+      expect(progress).toHaveAttribute("data-placement", "top");
+      expect(progress).toHaveClass("kozmos-progress-top");
+      expect(progress).not.toHaveClass("h-2");
+      expect(progress).not.toHaveClass("rounded-pill");
+      rerender(<Progress />);
+      expect(screen.getByRole("progressbar")).toHaveAttribute(
+        "data-placement",
+        "inline",
+      );
+      expect(screen.getByRole("progressbar")).toHaveClass(
+        "h-2",
+        "rounded-pill",
+      );
+    });
+
+    it("places a ring nowhere but in the flow", () => {
+      render(
+        <Progress
+          shape="circular"
+          placement="top"
+          value={5}
+          aria-label="Ring"
+        />,
+      );
+      const progress = screen.getByRole("progressbar", { name: "Ring" });
+      expect(progress).not.toHaveClass("kozmos-progress-top");
+      expect(progress).not.toHaveAttribute("placement");
     });
   });
 });

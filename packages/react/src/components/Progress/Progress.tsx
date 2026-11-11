@@ -22,8 +22,12 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * What a ring shows: "11 Levels Added in total", or a percentage. It
    * names the progress bar, or describes it when `aria-label` or
    * `aria-labelledby` already names it, and the drawn copy is hidden from
-   * assistive technology, so it is heard once. A bar draws none. An `sm`
-   * ring that is complete and has no label draws a check in its hole.
+   * assistive technology, so it is heard once. An `sm` ring that is
+   * complete and has no label draws a check in its hole.
+   *
+   * A bar draws none. While a bar's value is unknown its label, "Loading"
+   * unless one is given, names it and is said once as the wait starts
+   * (GAP-159); a bar with a value takes its name from `aria-label`.
    */
   label?: React.ReactNode;
   /**
@@ -38,7 +42,20 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * `"themed"`, the default, is the bar's own fill, theme 600.
    */
   tone?: Emotion;
+  /**
+   * Where a bar sits (GAP-159). `"inline"`, the default, is the 8 tall
+   * rounded bar in the flow. `"top"` is the page's loading bar: fixed to the
+   * top of the window, edge to edge, 4 tall and square, over the page's
+   * content. A ring has one placement.
+   */
+  placement?: "inline" | "top";
 }
+
+/**
+ * What an indeterminate bar is called, and says once when it appears, when
+ * the product gives no `label` or name of its own.
+ */
+const LOADING = "Loading";
 
 /**
  * A ring's diameter and stroke width, in px, by size: the layout spacing
@@ -46,6 +63,106 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
  * its size from the same tokens in the stylesheet; these draw inside it.
  */
 const RING = { sm: [48, 4], md: [96, 8], lg: [128, 12] } as const;
+
+interface LinearProgressProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
+  "value"
+> {
+  value: number | null | undefined;
+  known: boolean;
+  percentage: number;
+  placement: "inline" | "top";
+  label?: React.ReactNode;
+}
+
+/**
+ * The bar. With a value it fills from the inline start, as far as the value
+ * is of the total. With none it is indeterminate (GAP-159): a segment a
+ * quarter of the track wide sweeps from the inline start to the inline end
+ * every 2 s, linear, for as long as the wait lasts, and stands still in the
+ * middle of the track under reduced motion, the system's or
+ * DesignConfigProvider's.
+ *
+ * An indeterminate bar is said once. Its words, `label` or "Loading", name
+ * the bar and are put into a polite status beside it after the status is in
+ * the page, so a screen reader hears them when the wait starts (a region
+ * mounted with its words may go unheard, GAP-226). The sweep changes
+ * nothing a screen reader reads, so nothing more is said while it moves;
+ * when the bar gets a value the status empties, ready for the next wait.
+ */
+const LinearProgress = React.forwardRef<
+  React.ElementRef<typeof ProgressPrimitive.Root>,
+  LinearProgressProps
+>(
+  (
+    {
+      className,
+      value,
+      max,
+      known,
+      percentage,
+      placement,
+      label,
+      style,
+      "aria-labelledby": labelledBy,
+      ...props
+    },
+    ref,
+  ) => {
+    const statusId = React.useId();
+    const indeterminate = !known;
+    const named = props["aria-label"] != null || labelledBy != null;
+    const words =
+      label != null && label !== false && label !== "" ? label : LOADING;
+    // Mounted empty, then given its words: the change is what is said.
+    const [said, setSaid] = React.useState(false);
+    React.useEffect(() => {
+      setSaid(indeterminate);
+    }, [indeterminate]);
+    const top = placement === "top";
+    return (
+      <>
+        <ProgressPrimitive.Root
+          ref={ref}
+          value={value}
+          max={max}
+          data-placement={placement}
+          className={cn(
+            top ? "kozmos-progress-top" : "relative h-2 w-full rounded-pill",
+            "overflow-hidden bg-secondary",
+            className,
+          )}
+          aria-labelledby={indeterminate && !named ? statusId : labelledBy}
+          style={style}
+          {...props}
+        >
+          {indeterminate ? (
+            <ProgressPrimitive.Indicator className="kozmos-progress-sweep" />
+          ) : (
+            // As wide as the value, from the inline start: right to left it
+            // fills from the right, as SwiftUI's and Compose's bars do.
+            <ProgressPrimitive.Indicator
+              className="h-full bg-primary transition-all"
+              style={{ width: `${percentage}%` }}
+            />
+          )}
+        </ProgressPrimitive.Root>
+        {indeterminate && (
+          <span
+            id={statusId}
+            role="status"
+            aria-live="polite"
+            className="sr-only"
+            data-kozmos-progress-status=""
+          >
+            {said ? words : null}
+          </span>
+        )}
+      </>
+    );
+  },
+);
+LinearProgress.displayName = "LinearProgress";
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
@@ -61,6 +178,7 @@ const Progress = React.forwardRef<
       label,
       labelPlacement = "center",
       tone = "themed",
+      placement = "inline",
       style,
       "aria-labelledby": labelledBy,
       "aria-describedby": describedBy,
@@ -141,7 +259,7 @@ const Progress = React.forwardRef<
               starts at 12 o'clock and runs clockwise, and a progress ring
               does not mirror right to left: SVG is drawn in the page's own
               coordinates whatever the direction. With no value the track is
-              drawn alone (the indeterminate ring is GAP-159's). */}
+              drawn alone: a turning ring is Spinner. */}
           <div className="kozmos-progress-ring-dial">
             <svg
               aria-hidden="true"
@@ -184,26 +302,20 @@ const Progress = React.forwardRef<
       );
     }
     return (
-      <ProgressPrimitive.Root
+      <LinearProgress
         ref={ref}
         value={drawnValue}
         max={max}
-        className={cn(
-          "relative h-2 w-full overflow-hidden rounded-pill bg-secondary",
-          className,
-        )}
+        known={known}
+        percentage={percentage}
+        placement={placement === "top" ? "top" : "inline"}
+        label={label}
+        className={className}
+        style={style}
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
-        style={style}
         {...props}
-      >
-        {/* As wide as the value, from the inline start: right to left it fills
-          from the right, as SwiftUI's and Compose's bars do. */}
-        <ProgressPrimitive.Indicator
-          className="h-full bg-primary transition-all"
-          style={{ width: `${percentage}%` }}
-        />
-      </ProgressPrimitive.Root>
+      />
     );
   },
 );

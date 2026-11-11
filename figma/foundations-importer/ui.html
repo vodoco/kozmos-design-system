@@ -1151,6 +1151,7 @@
               </optgroup>
               <optgroup label="Feedback">
                 <option value="alert">Alert</option>
+                <option value="notice">Notice</option>
                 <option value="emptyState">EmptyState</option>
                 <option value="progress">Progress</option>
                 <option value="skeleton">Skeleton</option>
@@ -2248,6 +2249,13 @@
           update: "update-alert",
           rebuild: "rebuild-alert",
           hint: "Build creates Alert with Variant axis plus editable Title and Description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        notice: {
+          label: "Notice",
+          build: "build-notice",
+          update: "update-notice",
+          rebuild: "rebuild-notice",
+          hint: "Build creates Notice (GAP-160) with Tone (Warning, Info, Critical, Success) and Status (None, Progress, Done) axes, editable Summary and Detail, and Show Icon, Show Detail and Show Action. Build Button first: the action is a live Button. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         emptyState: {
           label: "EmptyState",

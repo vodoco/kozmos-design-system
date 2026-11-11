@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   AlertTriangle,
+  Check,
   InfoCircle,
   Stars01,
 } from "@kozmos-ds/icons";
@@ -37,6 +38,7 @@ describe("Notice", () => {
     ["warning", AlertTriangle],
     ["info", InfoCircle],
     ["critical", AlertCircle],
+    ["success", Check],
   ] as const)("draws the %s tone's own mark by default", (tone, Mark) => {
     // Every tone drew the warning triangle until 2 Nov 2026, so an info notice
     // read as a warning. The marks are Toast's, for the same three tones.
@@ -167,5 +169,83 @@ describe("Notice icon (GAP-118)", () => {
     const icon = container.querySelector('span[aria-hidden="true"]');
     expect(icon?.parentElement).toHaveClass("items-start");
     expect(icon).toHaveClass("mt-0.5");
+  });
+
+  // GAP-160: the success tone, and the progress and done states.
+  describe("success, progress and done", () => {
+    it("draws the success tone in the success colours", () => {
+      render(<Notice summary="Geometry is set" tone="success" />);
+      const notice = screen.getByRole("status");
+      expect(notice).toHaveAttribute("data-tone", "success");
+      expect(notice).toHaveClass(
+        "border-success/50",
+        "bg-success/5",
+        "text-success-text",
+      );
+    });
+
+    it("turns the loading arc where the mark is, and is busy, in progress", () => {
+      const { container } = render(
+        <Notice
+          icon={<Stars01 data-testid="own" />}
+          status="progress"
+          summary="Saving the geometry"
+          tone="info"
+        />,
+      );
+      const notice = screen.getByRole("status");
+      expect(notice).toHaveAttribute("aria-busy", "true");
+      expect(notice).toHaveAttribute("data-status", "progress");
+      expect(container.querySelector(".kozmos-spinner-arc")).not.toBeNull();
+      expect(screen.queryByTestId("own")).toBeNull();
+      expect(container.querySelector("[data-kozmos-notice-done]")).toBeNull();
+    });
+
+    it("ends the summary in a check when done, with no mark at its start", () => {
+      const { container } = render(
+        <Notice status="done" summary="Geometry is set" tone="success" />,
+      );
+      const notice = screen.getByRole("status");
+      expect(notice).not.toHaveAttribute("aria-busy");
+      const svgs = container.querySelectorAll("svg");
+      expect(svgs).toHaveLength(1);
+      const check = svgs[0];
+      expect(check).toHaveAttribute("data-kozmos-notice-done");
+      expect(check).toHaveAttribute("aria-hidden", "true");
+      // At the inline end: after the summary in the row.
+      const summary = screen.getByText("Geometry is set");
+      expect(summary.nextElementSibling).toBe(check);
+      const { container: own } = render(<Check />);
+      expect(check.innerHTML).toBe(own.querySelector("svg")!.innerHTML);
+    });
+
+    it("keeps a caller's icon at the start when done", () => {
+      render(
+        <Notice
+          icon={<Stars01 data-testid="own" />}
+          status="done"
+          summary="Geometry is set"
+          tone="success"
+        />,
+      );
+      expect(screen.getByTestId("own")).toBeInTheDocument();
+    });
+
+    it("keeps its action under the text in every state", () => {
+      for (const status of [undefined, "progress", "done"] as const) {
+        const { unmount } = render(
+          <Notice
+            action={<button type="button">Set Building Boundary</button>}
+            status={status}
+            summary="Set Geometry"
+            tone="warning"
+          />,
+        );
+        expect(
+          screen.getByRole("button", { name: "Set Building Boundary" }),
+        ).toBeInTheDocument();
+        unmount();
+      }
+    });
   });
 });

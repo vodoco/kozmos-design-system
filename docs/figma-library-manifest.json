@@ -11,16 +11,16 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "ready",
+    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 99 Core React component-set mappings",
+    "linkedPublishStatus": "blocked: 1 Core React linked mapping(s) still contain node-id=TBD",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 99 Core SwiftUI and 99 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "blocked: 1 Core SwiftUI linked mapping(s) still contain node-id=TBD; blocked: 1 Core Compose linked mapping(s) still contain node-id=TBD"
   },
   "tokens": {
     "summary": {
@@ -14566,8 +14566,8 @@
       "stories": 124,
       "tests": 124,
       "exported": 124,
-      "codeConnectFiles": 98,
-      "codeConnectScaffolds": 0,
+      "codeConnectFiles": 99,
+      "codeConnectScaffolds": 1,
       "codeConnectLinked": 98
     },
     "firstBatch": [
@@ -14624,6 +14624,7 @@
       "MultiSelect",
       "Navbar",
       "NavigationItem",
+      "Notice",
       "NumberInput",
       "OTPInput",
       "Pagination",
@@ -17404,14 +17405,21 @@
         "test": "packages/react/src/components/Notice/Notice.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
+          "file": "packages/react/src/components/Notice/Notice.figma.tsx",
           "linked": false,
-          "figmaUrl": null,
-          "needsNodeId": false,
-          "status": "missing",
-          "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+          "needsNodeId": true,
+          "status": "scaffold",
+          "issues": ["node-id=TBD"],
+          "connectedComponents": ["Notice"],
+          "mappedProps": [
+            "action",
+            "defaultExpanded",
+            "icon",
+            "status",
+            "summary",
+            "tone"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -17429,6 +17437,7 @@
           "id",
           "live",
           "role",
+          "status",
           "summary",
           "tabIndex",
           "title",
@@ -17945,6 +17954,7 @@
           "mappedProps": [
             "label",
             "labelPlacement",
+            "placement",
             "shape",
             "size",
             "tone",
@@ -17962,6 +17972,7 @@
           "label",
           "labelPlacement",
           "max",
+          "placement",
           "role",
           "shape",
           "size",

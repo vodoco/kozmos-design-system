@@ -4719,7 +4719,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const PROGRESS_VALUES = ["0", "25", "50", "75", "100"]',
+  'const PROGRESS_VALUES = ["0", "25", "50", "75", "100", "Indeterminate"]',
   "Progress value axis",
 );
 assertContains(

@@ -51,6 +51,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.progressBarRangeInfo
 
 data class KozmosProgressRange(val start: Float, val end: Float) {
     val isValid: Boolean get() = start.isFinite() && end.isFinite() && start >= 0f && end <= 1f && start < end
@@ -152,6 +158,15 @@ enum class KozmosProgressSize(val diameter: Dp, val stroke: Dp) {
 enum class KozmosProgressLabelPlacement { Center, End }
 
 /**
+ * Where a bar sits, React's `placement` (GAP-159). [Inline], the default, is
+ * the bar in the flow. [Top] is the screen's loading bar: edge to edge, 4
+ * tall (spacing 50) and square. Putting it at the top of the screen is the
+ * caller's, in a `Box` with `Modifier.align(Alignment.TopCenter)` over the
+ * content. A ring has one placement.
+ */
+enum class KozmosProgressPlacement { Inline, Top }
+
+/**
  * How far something has got: a bar, or with [shape] Circular a ring of
  * [size] whose arc is [tone]'s colour, Tag's and Button's emotions (Themed,
  * the bar's own theme 600, by default), with [label] in its centre or, with
@@ -159,7 +174,8 @@ enum class KozmosProgressLabelPlacement { Center, End }
  * says otherwise. [progress] is a fraction of 1, clamped, so over the total
  * is a full ring; one that is not a finite number is none done. A bar draws
  * no label. An Sm ring that is whole and has no label draws a check in its
- * hole.
+ * hole. [placement] Top makes a bar the screen's loading bar; a ring ignores
+ * it.
  */
 @Composable
 fun KozmosProgress(
@@ -169,10 +185,31 @@ fun KozmosProgress(
     size: KozmosProgressSize = KozmosProgressSize.Md,
     tone: KozmosEmotion = KozmosEmotion.Themed,
     labelPlacement: KozmosProgressLabelPlacement = KozmosProgressLabelPlacement.Center,
+    placement: KozmosProgressPlacement = KozmosProgressPlacement.Inline,
     label: (@Composable () -> Unit)? = null
 ) {
     if (shape == KozmosProgressShape.Circular) {
         KozmosProgressRing(progress, modifier, size, tone, labelPlacement, label)
+        return
+    }
+    if (placement == KozmosProgressPlacement.Top) {
+        // The top bar: the same colours, from the inline start, 4 tall and
+        // square.
+        val fraction = if (progress.isFinite()) progress.coerceIn(0f, 1f) else 0f
+        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val track = KozmosThemeTokens.primitivesColorsBackground200
+        val fill = KozmosThemeTokens.primitivesColorsTheme600
+        Canvas(
+            modifier
+                .fillMaxWidth()
+                .height(kozmosProgressBarHeight(KozmosProgressPlacement.Top))
+                .progressSemantics(fraction)
+        ) {
+            drawRect(track)
+            val bounds = this.size
+            val width = bounds.width * fraction
+            drawRect(fill, topLeft = Offset(if (rtl) bounds.width - width else 0f, 0f), size = Size(width, bounds.height))
+        }
         return
     }
     // React's colours: bg-primary (theme 600) on bg-secondary (background
@@ -184,6 +221,113 @@ fun KozmosProgress(
         color = KozmosThemeTokens.primitivesColorsTheme600,
         trackColor = KozmosThemeTokens.primitivesColorsBackground200,
     )
+}
+
+/** The bar's height by placement: spacing 100 (8) in the flow, spacing 50 (4) at the top. */
+internal fun kozmosProgressBarHeight(placement: KozmosProgressPlacement): Dp =
+    if (placement == KozmosProgressPlacement.Top) KozmosDimensions.primitivesLayoutSpacing50
+    else KozmosDimensions.primitivesLayoutSpacing100
+
+/** A quarter of the track: the indeterminate segment's width, as React's 25%. */
+internal const val KozmosProgressSegment = 0.25f
+
+/** One sweep, as React's `kozmos-progress-sweep` and Pointr Cloud's loading bar: 2 s, linear. */
+internal const val KozmosProgressSweepMillis = 2000
+
+/**
+ * Where the indeterminate segment is, as fractions of the track from its
+ * left edge, at [phase] (0 to 1) of a sweep. It enters wholly before the
+ * inline start and leaves wholly past the inline end; right to left it runs
+ * from the right. With animations off it stands still in the middle of the
+ * track, 37.5% to 62.5%, where it reads as a wait and not as a value.
+ */
+internal fun kozmosProgressSegment(phase: Float, animationsOn: Boolean, rtl: Boolean): ClosedFloatingPointRange<Float> {
+    val start = if (animationsOn) -KozmosProgressSegment + (1f + KozmosProgressSegment) * phase.coerceIn(0f, 1f)
+    else (1f - KozmosProgressSegment) / 2f
+    val left = if (rtl) 1f - start - KozmosProgressSegment else start
+    return left..(left + KozmosProgressSegment)
+}
+
+/**
+ * The sweep's clock, 0 to 1 every [KozmosProgressSweepMillis], scaled by the
+ * system's animator scale, and paused while the screen is not resumed, as
+ * the track's flow is. A state read where the segment is drawn, so the clock
+ * redraws the bar without recomposing it.
+ */
+@Composable
+private fun progressSweepPhase(enabled: Boolean): FloatState {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var resumed by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
+    val scale = rememberKozmosAnimatorScale()
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, _ -> resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    val phase = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(enabled, resumed, scale) {
+        phase.floatValue = 0f
+        if (enabled && resumed && scale > 0 && scale.isFinite()) {
+            var start = -1L
+            val period = KozmosProgressSweepMillis / 1000.0
+            while (true) withInfiniteAnimationFrameNanos {
+                if (start < 0) start = it
+                phase.floatValue = (((it - start) / 1_000_000_000.0 / scale / period) % 1.0).toFloat()
+            }
+        }
+    }
+    return phase
+}
+
+/**
+ * An indeterminate bar (GAP-159): React's `<Progress />` with no value. A
+ * segment a quarter of the track wide, theme 600 on background 200, sweeps
+ * from the inline start to the inline end every 2 s, linear, for as long as
+ * the bar is shown; with the system's animations off it stands still in the
+ * middle of the track. [placement] Inline is 8 tall with round ends; Top is
+ * the screen's loading bar, 4 tall and square.
+ *
+ * TalkBack meets one node: an indeterminate progress bar named [label],
+ * "Loading" unless the product says otherwise. The name is said once, as
+ * the wait starts: the node is a polite live region composed with no name,
+ * and given [label] once it is on screen, so the change is announced (a
+ * region that arrives with its words may go unheard, GAP-226). The sweep
+ * changes nothing TalkBack reads, so nothing more is said while it moves.
+ */
+@Composable
+fun KozmosProgress(
+    modifier: Modifier = Modifier,
+    placement: KozmosProgressPlacement = KozmosProgressPlacement.Inline,
+    label: String = "Loading"
+) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val animationsOn = rememberKozmosAnimationsOn()
+    val phase = progressSweepPhase(animationsOn)
+    val track = KozmosThemeTokens.primitivesColorsBackground200
+    val fill = KozmosThemeTokens.primitivesColorsTheme600
+    var said by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { said = true }
+    val shape = if (placement == KozmosProgressPlacement.Top) RoundedCornerShape(KozmosDimensions.semanticsRadiusNone)
+    else RoundedCornerShape(percent = 50)
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(kozmosProgressBarHeight(placement))
+            .clip(shape)
+            .semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = if (said) label else ""
+            }
+    ) {
+        drawRect(track)
+        val segment = kozmosProgressSegment(phase.floatValue, animationsOn, rtl)
+        drawRect(
+            fill,
+            topLeft = Offset(segment.start * size.width, 0f),
+            size = Size(KozmosProgressSegment * size.width, size.height)
+        )
+    }
 }
 
 /** A new value sweeps round over the standard duration; with animations off it is drawn there at once. */

@@ -2066,9 +2066,10 @@ section("Progress's ring (decision 131, GAP-038)");
           Shape: ["Linear", "Circular"],
           Size: ["Small", "Medium", "Large"],
           Tone: TONES,
-          Value: ["0", "25", "50", "75", "100"],
-        }) && plugin.PROGRESS_FORMS.length === 19,
-      `the set's axes are Shape, Size, Tone and Value, a bar and 18 rings a value (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
+          Value: ["0", "25", "50", "75", "100", "Indeterminate"],
+          Placement: ["Inline", "Top"],
+        }) && plugin.PROGRESS_FORMS.length === 20,
+      `the set's axes are Shape, Size, Tone, Value and Placement (GAP-159): two bars, Inline and Top, and 18 rings (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
     );
     const parsed = [
       "Value=50",
@@ -2083,9 +2084,9 @@ section("Progress's ring (decision 131, GAP-038)");
     ok(
       JSON.stringify(parsed) ===
         JSON.stringify([
-          { value: "50", second: "Linear/Medium/Themed" },
-          { value: "25", second: "Circular/Large/Themed" },
-          { value: "25", second: "Circular/Large/Success" },
+          { value: "50", second: "Linear/Medium/Themed/Inline" },
+          { value: "25", second: "Circular/Large/Themed/Inline" },
+          { value: "25", second: "Circular/Large/Success/Inline" },
           null,
           null,
           null,
@@ -2120,7 +2121,7 @@ section("Progress's ring (decision 131, GAP-038)");
       const inner = 1 - (2 * stroke) / diameter;
       ok(
         variant.name ===
-          `Shape=Circular, Size=${size}, Tone=Themed, Value=25` &&
+          `Shape=Circular, Size=${size}, Tone=Themed, Value=25, Placement=Inline` &&
           variant.layoutMode === "HORIZONTAL" &&
           variant.itemSpacing === 12 &&
           variant.counterAxisAlignItems === "CENTER" &&
@@ -2189,7 +2190,7 @@ section("Progress's ring (decision 131, GAP-038)");
       const arc = named(named(variant, "Dial"), "Ring Arc");
       ok(
         variant.name ===
-          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75` &&
+          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75, Placement=Inline` &&
           arc &&
           boundVariableName(arc.fills[0]) ===
             `Emotion/${tone.toLowerCase()}/text`,
@@ -2301,23 +2302,25 @@ section("Progress's ring (decision 131, GAP-038)");
     }
     const bar = await plugin.createProgressVariant({
       value: "50",
-      second: "Linear/Medium/Themed",
+      second: "Linear/Medium/Themed/Inline",
       variableByName: tokens.variableByName,
       fonts: FONTS,
       stats: freshStats(),
     });
     ok(
-      bar.name === "Shape=Linear, Size=Medium, Tone=Themed, Value=50" &&
+      bar.name ===
+        "Shape=Linear, Size=Medium, Tone=Themed, Value=50, Placement=Inline" &&
         named(bar, "Progress Track") &&
         !named(bar, "Dial") &&
         !named(bar, "Label"),
       `the bar is drawn as before, named with its Shape, Size and Tone (${bar.name})`,
     );
 
-    // Update over the set as it is in the file today: five bars, named
+    // Update over the set as it was before decision 131: five bars, named
     // before the axes. Each keeps its node id and is renamed the Linear,
-    // Medium, Themed bar; the 90 rings are created beside them, and the
-    // label's properties bind every ring's two labels and nothing else.
+    // Medium, Themed, Inline bar; the 90 rings, the Indeterminate bar and the
+    // six Top bars (GAP-159) are created beside them, and the label's
+    // properties bind every ring's two labels and nothing else.
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Progress");
     const oldNames = ["0", "25", "50", "75", "100"].map((v) => `Value=${v}`);
@@ -2348,21 +2351,22 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated.updated === true &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 5 &&
-        updated.variantsCreated === 90 &&
-        liveSet.children.length === 95 &&
-        new Set(names).size === 95,
-      `Update keeps the set and its 5 bars, and adds 90 rings: 95 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 97 &&
+        liveSet.children.length === 102 &&
+        new Set(names).size === 102,
+      `Update keeps the set and its 5 bars, and adds 90 rings, the Indeterminate bar and 6 Top bars: 102 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
     );
     ok(
       oldNames.every((name) => {
         const variant = byId.get(oldIds[name]);
         return (
           variant &&
-          variant.name === `Shape=Linear, Size=Medium, Tone=Themed, ${name}` &&
+          variant.name ===
+            `Shape=Linear, Size=Medium, Tone=Themed, ${name}, Placement=Inline` &&
           named(variant, "Progress Track")
         );
       }),
-      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed, Placement=Inline and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
     );
     const texts = (name) =>
       liveSet.findAll((node) => node.type === "TEXT" && node.name === name);
@@ -2422,6 +2426,552 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       overlaps.length === 0,
       `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
+// --- Progress's indeterminate bar and top placement (GAP-159) ---------------------
+
+// React's Progress with no value sweeps a segment a quarter of the track wide,
+// and `placement="top"` is the page's loading bar, 4 tall and square. The set
+// is sparse: Indeterminate and Top are a bar's alone, so it holds 12 bars
+// (Inline and Top, six values each) and 90 rings, 102 variants. A variant
+// from before Placement reads as Inline and is renamed in place.
+section("Progress's indeterminate bar and top placement (GAP-159)");
+{
+  const ready =
+    Array.isArray(plugin.PROGRESS_PLACEMENTS) &&
+    typeof plugin.progressHasCombination === "function";
+  ok(ready, "Progress has a Placement axis and a sparse matrix");
+  if (ready) {
+    const tokens = payloadVariables(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+        ...variableByName.keys(),
+      ]),
+    );
+    const floats = new Map(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+    );
+    const bound = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+    };
+    const combos = plugin.generatedVariantCombinations({
+      values: plugin.PROGRESS_VALUES,
+      axis2Values: plugin.PROGRESS_FORMS,
+      hasCombination: plugin.progressHasCombination,
+    });
+    const keys = combos.map((c) => `${c.second}/${c.value}`);
+    ok(
+      combos.length === 102 &&
+        keys.filter((k) => k.indexOf("Linear/Medium/Themed/Top/") === 0)
+          .length === 6 &&
+        keys.indexOf("Linear/Medium/Themed/Inline/Indeterminate") !== -1 &&
+        keys.indexOf("Linear/Medium/Themed/Top/Indeterminate") !== -1 &&
+        !keys.some(
+          (k) =>
+            k.indexOf("Circular/") === 0 && /\/(Top|Indeterminate)/.test(k),
+        ),
+      `the set draws 102: 6 Inline and 6 Top bars, Indeterminate among them, and 90 rings, none Top or Indeterminate (${combos.length})`,
+    );
+    const top = floats.get("Progress/height/top");
+    ok(
+      top &&
+        top.value === 4 &&
+        top.alias === "Layout/spacing/50" &&
+        JSON.stringify(top.scopes) === JSON.stringify(["WIDTH_HEIGHT"]),
+      `Progress/height/top is 4, spacing 50 (${JSON.stringify(top)})`,
+    );
+    const parsed = [
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=25, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate",
+      "Shape=Circular, Size=Small, Tone=Themed, Value=Indeterminate, Placement=Inline",
+      "Shape=Circular, Size=Small, Tone=Themed, Value=25, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=25, Placement=Middle",
+    ].map((name) => plugin.parseProgressVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "Indeterminate", second: "Linear/Medium/Themed/Top" },
+          { value: "25", second: "Linear/Medium/Themed/Top" },
+          { value: "Indeterminate", second: "Linear/Medium/Themed/Inline" },
+          null,
+          null,
+          null,
+        ]),
+      `a Top or Indeterminate bar parses, one from before Placement as Inline; an indeterminate or Top ring and an unknown Placement do not (${JSON.stringify(parsed)})`,
+    );
+    const bar = async (value, placement) =>
+      withAutoLayout(() =>
+        plugin.createProgressVariant({
+          value,
+          second: `Linear/Medium/Themed/${placement}`,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+    for (const placement of ["Inline", "Top"]) {
+      const height = placement === "Top" ? 4 : 8;
+      const variant = await bar("Indeterminate", placement);
+      const track = named(variant, "Progress Track");
+      const range = track && named(track, "Progress Range");
+      ok(
+        variant.name ===
+          `Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate, Placement=${placement}` &&
+          range &&
+          range.visible !== false &&
+          range.width === 80 &&
+          range.x === 0 &&
+          range.height === height &&
+          boundVariableName(range.fills[0]) === "Colors/theme/600" &&
+          boundVariableName(track.fills[0]) === "Colors/background/200",
+        `${placement} Indeterminate: a theme 600 segment a quarter of the 320 track, 80 wide, at the inline start, on background 200 (${variant.name}; ${range && [range.width, range.x, range.height, boundVariableName(range.fills[0])].join(", ")})`,
+      );
+    }
+    for (const value of ["0", "50", "Indeterminate"]) {
+      const variant = await bar(value, "Top");
+      const track = named(variant, "Progress Track");
+      const range = track && named(track, "Progress Range");
+      ok(
+        variant.height === 4 &&
+          track.height === 4 &&
+          range.height === 4 &&
+          track.cornerRadius === 0 &&
+          range.cornerRadius === 0 &&
+          track.strokes.length === 0 &&
+          bound(variant, "height") === "Progress/height/top" &&
+          bound(track, "height") === "Progress/height/top" &&
+          bound(range, "height") === "Progress/height/top" &&
+          !bound(track, "cornerRadius") &&
+          !bound(range, "cornerRadius") &&
+          bound(track, "width") === "Progress/width/default",
+        `Top at ${value}: 4 tall on Progress/height/top, square and edgeless, its corners unbound (${[variant.height, track.height, range.height, track.cornerRadius, range.cornerRadius, track.strokes.length, bound(track, "height"), bound(track, "cornerRadius")].join(", ")})`,
+      );
+    }
+    {
+      const variant = await bar("50", "Inline");
+      const track = named(variant, "Progress Track");
+      const range = named(track, "Progress Range");
+      ok(
+        variant.height === 8 &&
+          range.width === 160 &&
+          bound(track, "height") === "Progress/height/default" &&
+          bound(track, "cornerRadius") === "Progress/radius" &&
+          track.strokes.length === 1,
+        `Inline at 50 is the bar as before: 8 tall, the pill, its edge, half filled (${variant.height}, ${range.width}, ${bound(track, "cornerRadius")})`,
+      );
+      // An Update over a Top bar from an Inline one rebinds its height.
+      await withAutoLayout(() =>
+        plugin.updateProgressVariant(variant, {
+          value: "50",
+          second: "Linear/Medium/Themed/Top",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        variant.height === 4 &&
+          bound(track, "height") === "Progress/height/top" &&
+          !bound(track, "cornerRadius") &&
+          track.cornerRadius === 0,
+        `an Update from Inline to Top unbinds the pill radius and binds the top height (${variant.height}, ${bound(track, "cornerRadius")}, ${track.cornerRadius})`,
+      );
+    }
+
+    // Update over the set as it is after decision 131: the 95 variants named
+    // with Shape, Size, Tone and Value. Each keeps its node id and gains
+    // Placement=Inline; the Indeterminate bar and the six Top bars are added.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Progress");
+    const ids = {};
+    for (const form of ["Linear/Medium/Themed"].concat(
+      plugin.PROGRESS_FORMS.filter((f) => f.indexOf("Circular/") === 0).map(
+        (f) => f.split("/").slice(0, 3).join("/"),
+      ),
+    )) {
+      const [shape, size, tone] = form.split("/");
+      for (const value of ["0", "25", "50", "75", "100"]) {
+        const name = `Shape=${shape}, Size=${size}, Tone=${tone}, Value=${value}`;
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        ids[name] = variant.id;
+      }
+    }
+    livePage.appendChild(liveSet);
+    const liveIcons = new MockNode("PAGE", "Icons");
+    liveIcons.appendChild(mockIconComponent("check"));
+    const livePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [livePage, liveIcons] }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await livePlugin.updateProgressComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.variantsUpdated === 95 &&
+        updated.variantsCreated === 7 &&
+        liveSet.children.length === 102 &&
+        new Set(names).size === 102 &&
+        names.every((name) => /, Placement=(Inline|Top)$/.test(name)),
+      `Update over the 95 of decision 131 keeps them and adds the Indeterminate bar and 6 Top bars: 102, each named with its Placement (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length})`,
+    );
+    ok(
+      Object.keys(ids).every((name) => {
+        const variant = byId.get(ids[name]);
+        return variant && variant.name === `${name}, Placement=Inline`;
+      }),
+      "each of the 95 keeps its node id and is renamed with Placement=Inline",
+    );
+    ok(
+      Object.keys(ids).length === 95 &&
+        JSON.stringify(
+          livePlugin.expectedVariantAxesForComponentSetName("Progress")
+            .Placement,
+        ) === JSON.stringify(["Inline", "Top"]),
+      "Progress's expected axes name Placement: Inline, Top",
+    );
+  }
+}
+
+// --- Notice (GAP-160, decision 132) ------------------------------------------------
+
+// React's Notice, which had no set: Tone (Warning, Info, Critical, Success)
+// by Status (None, Progress, Done), 12 variants. 344 wide, 12 by 8 inside
+// the container corner, its tone's fill at 5 % and edge at 50 % (critical
+// 60 %) as layers of their own; a 16 mark in the tone's text role 2 down
+// beside the 14 summary, 8 apart; the detail 6 under it and the action, a
+// live outline Small Button, 12 under the text, both past the mark. Progress
+// turns the loading arc where the mark is; Done ends the summary in a check
+// and draws no mark at its start. Summary and Detail are text properties;
+// Show Icon (on), Show Detail and Show Action (off) booleans.
+section("Notice (GAP-160, decision 132)");
+{
+  const ready =
+    Array.isArray(plugin.NOTICE_TONES) &&
+    typeof plugin.updateNoticeVariant === "function" &&
+    typeof plugin.buildNoticeComponent === "function";
+  ok(ready, "Notice's painter, its axes and its Build are reachable");
+  if (ready) {
+    const tokens = payloadVariables(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+        ...variableByName.keys(),
+      ]),
+    );
+    const bound = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+    };
+    ok(
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("Notice"),
+      ) ===
+        JSON.stringify({
+          Tone: ["Warning", "Info", "Critical", "Success"],
+          Status: ["None", "Progress", "Done"],
+        }),
+      `Notice's axes are Tone and Status (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Notice"))})`,
+    );
+    const page = new MockNode("PAGE", "Components");
+    page.appendChild(
+      mockComponentSet("Button", [
+        {
+          properties: { Variant: "Outline", Size: "Small", State: "Default" },
+          build: (variant) => variant.resize(80, 32),
+        },
+      ]),
+    );
+    const icons = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "alert-triangle",
+      "info-circle",
+      "alert-circle",
+      "check",
+    ])
+      icons.appendChild(mockIconComponent(name));
+    const noticeFigma = createFigmaMock({ pages: [page, icons] });
+    const noticePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: noticeFigma,
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const draw = async (tone, status) => {
+      const component = noticeFigma.createComponent();
+      await withAutoLayout(() =>
+        noticePlugin.updateNoticeVariant(component, {
+          value: tone,
+          second: status,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return component;
+    };
+    const SPEC = {
+      Warning: [
+        "Colors/emotional/alert/800",
+        0.5,
+        "Emotion/alert/text",
+        "alert-triangle",
+      ],
+      Info: [
+        "Colors/emotional/info/700",
+        0.5,
+        "Emotion/informative/text",
+        "info-circle",
+      ],
+      Critical: [
+        "Colors/emotional/danger/600",
+        0.6,
+        "Emotion/danger/text",
+        "alert-circle",
+      ],
+      Success: [
+        "Colors/emotional/success/800",
+        0.5,
+        "Emotion/success/text",
+        "check",
+      ],
+    };
+    const EDGE = { Success: "Colors/emotional/success/900" };
+    for (const tone of plugin.NOTICE_TONES) {
+      const [fill, edge, ink, icon] = SPEC[tone];
+      for (const status of ["None", "Progress", "Done"]) {
+        const at = `${tone}/${status}`;
+        const c = await draw(tone, status);
+        const row = named(c, "Summary Row");
+        const order = row ? row.children.map((n) => n.name) : [];
+        ok(
+          c.name === `Tone=${tone}, Status=${status}` &&
+            JSON.stringify(noticePlugin.parseNoticeVariantName(c.name)) ===
+              JSON.stringify({ value: tone, second: status }),
+          `${at}: named Tone=${tone}, Status=${status}, and reads back as itself (${c.name})`,
+        );
+        ok(
+          c.width === 344 &&
+            c.layoutMode === "VERTICAL" &&
+            c.paddingLeft === 12 &&
+            c.paddingRight === 12 &&
+            c.paddingTop === 8 &&
+            c.paddingBottom === 8 &&
+            c.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+            bound(c, "width") === "Notice/width/default" &&
+            bound(c, "paddingLeft") === "Notice/padding/x" &&
+            bound(c, "paddingTop") === "Notice/padding/y" &&
+            bound(c, "cornerRadius") === "Notice/radius" &&
+            c.fills.length === 0 &&
+            c.strokes.length === 0,
+          `${at}: 344 wide, 12 by 8 inside the container corner, each bound, unpainted itself (${[c.width, c.paddingLeft, c.paddingTop, c.cornerRadius, bound(c, "paddingLeft")].join(", ")})`,
+        );
+        ok(
+          isWash(c, "Notice Fill", fill, 0.05, c.width, c.height),
+          `${at}: its fill is ${fill} at 5 %, a layer of its own the notice's size`,
+        );
+        const edgeLayer = named(c, "Notice Edge");
+        ok(
+          edgeLayer &&
+            edgeLayer.fills.length === 0 &&
+            edgeLayer.strokes.length === 1 &&
+            boundVariableName(edgeLayer.strokes[0]) === (EDGE[tone] || fill) &&
+            Math.abs(edgeLayer.opacity - edge) < 1e-9 &&
+            edgeLayer.strokeWeight === 1 &&
+            edgeLayer.strokeAlign === "INSIDE" &&
+            edgeLayer.layoutPositioning === "ABSOLUTE" &&
+            edgeLayer.width === c.width &&
+            edgeLayer.height === c.height,
+          `${at}: its edge is ${EDGE[tone] || fill} at ${edge * 100} %, 1 inside (${edgeLayer && [boundVariableName(edgeLayer.strokes[0]), edgeLayer.opacity, edgeLayer.width, edgeLayer.height].join(", ")})`,
+        );
+        const expected =
+          status === "Progress"
+            ? ["Progress Mark", "Summary"]
+            : status === "Done"
+              ? ["Summary", "Done"]
+              : ["Icon", "Summary"];
+        ok(
+          row &&
+            JSON.stringify(order) === JSON.stringify(expected) &&
+            row.itemSpacing === 8 &&
+            bound(row, "itemSpacing") === "Notice/gap",
+          `${at}: the summary's row is ${expected.join(", ")}, 8 apart (${order.join(", ")})`,
+        );
+        const summary = row && named(row, "Summary");
+        ok(
+          summary &&
+            summary.type === "TEXT" &&
+            summary.fontSize === 14 &&
+            summary.fontName.style === "Medium" &&
+            boundVariableName(summary.fills[0]) === ink,
+          `${at}: the summary is 14 medium in ${ink} (${summary && [summary.fontSize, summary.fontName.style, boundVariableName(summary.fills[0])].join(", ")})`,
+        );
+        if (status === "None") {
+          const mark = named(row, "Mark");
+          const vector = mark && mark.findOne((n) => n.type === "VECTOR");
+          ok(
+            mark &&
+              mark.type === "INSTANCE" &&
+              mark.mainComponent.name === `Icon / ${icon}` &&
+              mark.width === 16 &&
+              named(row, "Icon").paddingTop === 2 &&
+              vector &&
+              boundVariableName(vector.strokes[0]) === ink,
+            `${at}: the mark is ${icon} at 16, 2 down, in ${ink} (${mark && mark.mainComponent.name}, ${vector && boundVariableName(vector.strokes[0])})`,
+          );
+        }
+        if (status === "Progress") {
+          const arc = named(row, "Progress Arc");
+          ok(
+            arc &&
+              arc.type === "ELLIPSE" &&
+              Math.abs(arc.arcData.startingAngle + Math.PI / 2) < 1e-9 &&
+              Math.abs(arc.arcData.endingAngle - Math.PI) < 1e-9 &&
+              Math.abs(arc.arcData.innerRadius - 0.8) < 1e-9 &&
+              boundVariableName(arc.fills[0]) === ink &&
+              !named(row, "Icon") &&
+              !named(c, "Done Check"),
+            `${at}: the loading arc, three quarters from 12 o'clock, in ${ink}, where the mark was; no mark, no check (${arc && JSON.stringify(arc.arcData)})`,
+          );
+        }
+        if (status === "Done") {
+          const check = named(row, "Done Check");
+          const vector = check && check.findOne((n) => n.type === "VECTOR");
+          ok(
+            check &&
+              check.mainComponent.name === "Icon / check" &&
+              check.width === 16 &&
+              vector &&
+              boundVariableName(vector.strokes[0]) === ink &&
+              order[order.length - 1] === "Done" &&
+              !named(row, "Icon") &&
+              !named(row, "Progress Mark"),
+            `${at}: a 16 check in ${ink} ends the summary's row, and no mark starts it (${order.join(", ")})`,
+          );
+        }
+        const detailRow = named(c, "Detail Row");
+        const detail = detailRow && named(detailRow, "Detail");
+        const actionRow = named(c, "Action Row");
+        const action = actionRow && named(actionRow, "Action");
+        const indent = status === "Done" ? 0 : 24;
+        ok(
+          detailRow &&
+            detailRow.paddingTop === 6 &&
+            detailRow.paddingLeft === indent &&
+            detail &&
+            detail.fontSize === 14 &&
+            detail.fontName.style === "Regular" &&
+            boundVariableName(detail.fills[0]) === ink &&
+            actionRow &&
+            actionRow.paddingTop === 12 &&
+            actionRow.paddingLeft === indent &&
+            action &&
+            action.type === "INSTANCE" &&
+            action.mainComponent.name ===
+              "Variant=Outline, Size=Small, State=Default" &&
+            detailRow.visible === false &&
+            actionRow.visible === false &&
+            c.height === 8 + 20 + 8,
+          `${at}: the detail 6 under, the action an outline Small Button 12 under, both ${indent} in, both hidden until shown, so the notice is its 20 summary and 8 above and below, 36 (${c.height}; ${detailRow && [detailRow.paddingTop, detailRow.paddingLeft, detailRow.visible, actionRow.visible].join(", ")}; ${action && action.type}, ${action && action.mainComponent && action.mainComponent.name})`,
+        );
+      }
+    }
+    // An Update redraws the same layers, once.
+    {
+      const c = await draw("Info", "Done");
+      await withAutoLayout(() =>
+        noticePlugin.updateNoticeVariant(c, {
+          value: "Info",
+          second: "Done",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        JSON.stringify(c.children.map((n) => n.name)) ===
+          JSON.stringify([
+            "Notice Fill",
+            "Notice Edge",
+            "Summary Row",
+            "Detail Row",
+            "Action Row",
+          ]),
+        `an Update keeps one fill, edge and row of each (${c.children.map((n) => n.name).join(", ")})`,
+      );
+    }
+    // Build: the set of 12 and its properties.
+    const built = await noticePlugin.buildNoticeComponent();
+    const set = page.children.find(
+      (n) => n.type === "COMPONENT_SET" && n.name === "Notice",
+    );
+    const variantNames = set ? set.children.map((n) => n.name).sort() : [];
+    const expectedNames = [];
+    for (const tone of ["Warning", "Info", "Critical", "Success"])
+      for (const status of ["None", "Progress", "Done"])
+        expectedNames.push(`Tone=${tone}, Status=${status}`);
+    ok(
+      built.created === true &&
+        set &&
+        JSON.stringify(variantNames) === JSON.stringify(expectedNames.sort()),
+      `Build makes Notice of 12 variants, Tone by Status (${variantNames.length}: ${variantNames.slice(0, 3).join("; ")}…)`,
+    );
+    const definitions = (set && set.componentPropertyDefinitions) || {};
+    const prop = (base, type) => {
+      const key = Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === type,
+      );
+      return key ? Object.assign({ key }, definitions[key]) : null;
+    };
+    const summaryProp = prop("Summary", "TEXT");
+    const detailProp = prop("Detail", "TEXT");
+    const showIcon = prop("Show Icon", "BOOLEAN");
+    const showDetail = prop("Show Detail", "BOOLEAN");
+    const showAction = prop("Show Action", "BOOLEAN");
+    ok(
+      summaryProp &&
+        summaryProp.defaultValue === "Check allergens with the venue." &&
+        detailProp &&
+        showIcon &&
+        showIcon.defaultValue === true &&
+        showDetail &&
+        showDetail.defaultValue === false &&
+        showAction &&
+        showAction.defaultValue === false,
+      `the properties are Summary, Detail, Show Icon (on), Show Detail and Show Action (off) (${Object.keys(definitions).join(", ")})`,
+    );
+    const refs = (name, field) =>
+      set
+        ? set
+            .findAll((n) => n.name === name)
+            .map((n) => (n.componentPropertyReferences || {})[field] || null)
+        : [];
+    const all = (list, key) =>
+      list.length > 0 && list.every((value) => value === key);
+    ok(
+      set &&
+        refs("Summary", "characters").length === 12 &&
+        all(refs("Summary", "characters"), summaryProp && summaryProp.key) &&
+        all(refs("Detail", "characters"), detailProp && detailProp.key) &&
+        refs("Icon", "visible").length === 4 &&
+        all(refs("Icon", "visible"), showIcon && showIcon.key) &&
+        refs("Detail Row", "visible").length === 12 &&
+        all(refs("Detail Row", "visible"), showDetail && showDetail.key) &&
+        refs("Action Row", "visible").length === 12 &&
+        all(refs("Action Row", "visible"), showAction && showAction.key) &&
+        all(
+          refs("Progress Mark", "visible").map((v) => v || "none"),
+          "none",
+        ),
+      `each property binds its layers: Summary and Detail 12 each, Show Icon the 4 marks, Show Detail and Show Action 12 rows; the loading arc is bound to none (${refs("Icon", "visible").length} marks)`,
     );
   }
 }
@@ -12463,7 +13013,13 @@ section("Figma draws React's values (the 4 Nov triage)");
   components.appendChild(
     mockComponentSet("Progress", [
       look(
-        { Shape: "Linear", Size: "Medium", Tone: "Themed", Value: "50" },
+        {
+          Shape: "Linear",
+          Size: "Medium",
+          Tone: "Themed",
+          Value: "50",
+          Placement: "Inline",
+        },
         320,
         8,
         "NONE",

@@ -1,11 +1,21 @@
 import SwiftUI
 import Figma
 
-// The bar: the set's Shape=Linear variants.
+// The bar: the set's Shape=Linear variants with a value, in the flow or at
+// the top (GAP-159's Placement).
 struct KozmosProgressConnect: FigmaConnect {
     let component = KozmosProgress.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
     var variant = ["Shape": "Linear"]
+
+    @FigmaEnum(
+        "Placement",
+        mapping: [
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
+        ]
+    )
+    var placement: KozmosProgressPlacement = .inline
 
     @FigmaEnum(
         "Value",
@@ -20,11 +30,32 @@ struct KozmosProgressConnect: FigmaConnect {
     var value: String = "0"
 
     var body: some View {
-        KozmosProgress(value: self.progressValue)
+        KozmosProgress(value: self.progressValue, placement: self.placement)
     }
 
     private var progressValue: Double {
         (Double(self.value) ?? 0) / 100
+    }
+}
+
+// The indeterminate bar (GAP-159): Value=Indeterminate, in the flow or at
+// the top. It says "Loading" once when it appears.
+struct KozmosProgressIndeterminateConnect: FigmaConnect {
+    let component = KozmosProgress.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
+    var variant = ["Shape": "Linear", "Value": "Indeterminate"]
+
+    @FigmaEnum(
+        "Placement",
+        mapping: [
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
+        ]
+    )
+    var placement: KozmosProgressPlacement = .inline
+
+    var body: some View {
+        KozmosProgress(placement: self.placement)
     }
 }
 

@@ -2,7 +2,7 @@
 
 # Progress
 
-Communicates progress with an accessible name. React's `value` is measured against `max` (100 by default), and the visual fill and announced value use the same scale. Use `null` or omit `value` when progress is indeterminate.
+Communicates progress with an accessible name. React's `value` is measured against `max` (100 by default), and the visual fill and announced value use the same scale. Use `null` or omit `value` when progress is indeterminate: the bar then sweeps, and is said once (see "At the top of the page").
 
 - **Import:** `import { Progress, ProgressTrack } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -45,8 +45,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which ex
   What a ring shows: "11 Levels Added in total", or a percentage. It
   names the progress bar, or describes it when `aria-label` or
   `aria-labelledby` already names it, and the drawn copy is hidden from
-  assistive technology, so it is heard once. A bar draws none. An `sm`
-  ring that is complete and has no label draws a check in its hole.
+  assistive technology, so it is heard once. An `sm` ring that is
+  complete and has no label draws a check in its hole.
+
+  A bar draws none. While a bar's value is unknown its label, "Loading"
+  unless one is given, names it and is said once as the wait starts
+  (GAP-159); a bar with a value takes its name from `aria-label`.
 
 - `labelPlacement`: `"center" | "end"`, optional, default `"center"`.
 
@@ -59,6 +63,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which ex
   What a ring's completion means, in Tag's and Button's emotions: its arc
   is the emotion's text colour, 3:1 or more on the track in both themes.
   `"themed"`, the default, is the bar's own fill, theme 600.
+
+- `placement`: `"inline" | "top"`, optional, default `"inline"`.
+
+  Where a bar sits (GAP-159). `"inline"`, the default, is the 8 tall
+  rounded bar in the flow. `"top"` is the page's loading bar: fixed to the
+  top of the window, edge to edge, 4 tall and square, over the page's
+  content. A ring has one placement.
 
 - `asChild`: `boolean`, optional.
 - `value`: `number | null`, optional.

@@ -6,7 +6,7 @@ A short notice that opens for the long version.
 
 - **Import:** `import { Notice } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-notice--docs>
 
 ## Example
@@ -63,11 +63,25 @@ It forwards its ref to `HTMLDivElement`. Its props are `NoticeProps`, which exte
   The full wording, revealed on tap.
 
 - `tone`: `NoticeTone`, optional, default `"warning"`.
+- `status`: `NoticeStatus`, optional.
+
+  Where the work the notice reports on has got (GAP-160): `"progress"`
+  while it runs, `"done"` when it has finished, as "Geometry is set" ends
+  in a check. Left out, the notice reports no work.
+
+  `progress` draws the system's loading arc, Spinner's, in the icon's
+  column (still under reduced motion) and sets `aria-busy`. `done` draws a
+  check at the summary's inline end and no mark at its start unless `icon`
+  gives one. The summary's words say what happened; the marks are hidden
+  from assistive technology.
+
 - `icon`: `React.ReactNode`, optional.
 
   Replaces the tone's own mark: a triangle for `warning`, an info circle for
-  `info`, an alert circle for `critical`. `null` or `false` draws none, and
-  leaves no empty column before the summary (GAP-118).
+  `info`, an alert circle for `critical`, a check for `success`. `null` or
+  `false` draws none, and leaves no empty column before the summary
+  (GAP-118). While `status` is `"progress"` the loading arc takes its
+  place.
 
 - `iconAlign`: `"start" | "center"`, optional, default `"start"`.
 
@@ -119,7 +133,21 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 From `@kozmos-ds/react`.
 
 ```ts
-type NoticeTone = "warning" | "info" | "critical";
+type NoticeTone = "warning" | "info" | "critical" | "success";
+```
+
+### NoticeStatus
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * Where the work the notice reports on has got (GAP-160). `progress` turns
+ * the system's loading arc where the tone's mark is, and marks the notice
+ * busy; `done` draws a check at the summary's inline end, in the tone's
+ * colour, in place of the mark at its start.
+ */
+type NoticeStatus = "progress" | "done";
 ```
 
 ### NoticeLiveness

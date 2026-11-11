@@ -88,6 +88,8 @@
       "src/components/Rating/Rating.tsx",
       "src/components/Progress/Progress.figma.tsx",
       "src/components/Progress/Progress.tsx",
+      "src/components/Notice/Notice.figma.tsx",
+      "src/components/Notice/Notice.tsx",
       "src/components/Spinner/Spinner.figma.tsx",
       "src/components/Spinner/Spinner.tsx",
       "src/components/Avatar/Avatar.figma.tsx",

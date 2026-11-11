@@ -1,6 +1,7 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
 import * as Stories from "./Notice.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
 
 <Meta of={Stories} />
 
@@ -22,7 +23,7 @@ it stays hidden when the stylesheet does not and stays out of the accessibility
 tree either way.
 
 Each tone draws its own mark: a triangle for `warning`, an info circle for `info`, an alert circle
-for `critical`. `icon` replaces the tone's mark; `icon={null}` draws none and leaves no empty column, so the
+for `critical`, a check for `success`. `icon` replaces the tone's mark; `icon={null}` draws none and leaves no empty column, so the
 summary, the detail and the action start at the notice's edge. `iconAlign="center"` centres the
 icon on a one-line summary that holds a control, as MAP-474's Search with AI suggestion does
 (GAP-118); the default `start` keeps it on the first line of a summary that wraps.
@@ -41,4 +42,128 @@ storage it is allowed.
 <Canvas of={Stories.Expanded} />
 <Canvas of={Stories.Emergency} />
 <Canvas of={Stories.SingleLine} />
+
+## Success, progress and done
+
+`tone="success"` is the fourth tone (GAP-160), in the success colours: a 50% edge and a 5%
+fill of success 800, its words and mark in the success text colour, Toast's check.
+
+`status` says where the work the notice reports on has got. `"progress"` turns the system's
+loading arc, Spinner's, where the mark is, still under reduced motion, and marks the notice
+`aria-busy`. `"done"` draws a check at the summary's inline end, as "Geometry is set" ends,
+and no mark at its start unless `icon` gives one. The marks are hidden from assistive
+technology: the summary's words say what happened, and a polite notice says them as they
+change.
+
+`action` is the control under the words (GAP-033; MAP-587's "Alert action"), in every tone
+and state: "Set Building Boundary" under "Set Geometry". SwiftUI's `KozmosNotice` takes it as
+its trailing view builder and Compose's as `action`, with the same tones, `status`, `icon`,
+`iconAlign`, `collapsible`, `expandLabel` and `live` as React. In Figma, Notice is a set of
+Tone by Status, with Summary, Show Icon, Show Detail and Detail, and Show Action.
+
+<Canvas of={Stories.SuccessProgressAndDone} />
+<Canvas of={Stories.Success} />
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { Button, Notice } from "@kozmos-ds/react";
+export function GeometryNotices({ saving, saved, onSetBoundary }: {
+  saving: boolean;
+  saved: boolean;
+  onSetBoundary: () => void;
+}) {
+  if (saved) return <Notice tone="success" status="done" summary="Geometry is set" />;
+  if (saving) return <Notice tone="info" status="progress" summary="Saving the geometry" />;
+  return (
+    <Notice
+      tone="warning"
+      summary="Set Geometry"
+      collapsible={false}
+      action={
+        <Button size="sm" variant="outline" onClick={onSetBoundary}>
+          Set Building Boundary
+        </Button>
+      }
+    >
+      Draw the building's outline on the map.
+    </Notice>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosNotice } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosNotice tone="success" status="done" summary="Geometry is set" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The building editor's geometry notices: a warning with its action under
+// the words, the save in progress, then done, which ends in a check.
+struct GeometryNotices: View {
+    let saving: Bool
+    let saved: Bool
+    let setBoundary: () -> Void
+
+    var body: some View {
+        if saved {
+            KozmosNotice("Geometry is set", tone: .success, status: .done)
+        } else if saving {
+            KozmosNotice("Saving the geometry", tone: .info, status: .progress)
+        } else {
+            KozmosNotice("Set Geometry", detail: "Draw the building's outline on the map.", tone: .warning, collapsible: false) {
+                KozmosButton("Set Building Boundary", variant: .outline, size: .sm, action: setBoundary)
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.notice.KozmosNotice
+import com.kozmos.components.notice.KozmosNoticeStatus
+import com.kozmos.components.notice.KozmosNoticeTone
+import com.kozmos.tokens.KozmosDimensions
+
+// The geometry notices: a warning with its action under the words, the
+// arc turning while the geometry saves, and a success that ends in a check.
+@Composable
+fun GeometryNotices(onSetBoundary: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
+        KozmosNotice(
+            summary = "Set Geometry",
+            action = {
+                KozmosButton(onClick = onSetBoundary, variant = KozmosButtonVariant.Outline) {
+                    Text("Set Building Boundary")
+                }
+            }
+        )
+        KozmosNotice(
+            summary = "Saving the geometry",
+            tone = KozmosNoticeTone.Info,
+            status = KozmosNoticeStatus.Progress
+        )
+        KozmosNotice(
+            summary = "Geometry is set",
+            tone = KozmosNoticeTone.Success,
+            status = KozmosNoticeStatus.Done
+        )
+    }
+}
+`}
+
+/>
+
 <Controls />

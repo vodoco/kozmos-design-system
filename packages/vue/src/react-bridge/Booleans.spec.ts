@@ -420,6 +420,7 @@ describe("a model whose React prop is a boolean", () => {
 
   it("the declared ones, each bound with its listener: React is given the model's value", async () => {
     expect(booleanModels()).toEqual([
+      "KozmosNotice expanded → expanded",
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
       "KozmosCheckbox modelValue → checked",
@@ -427,6 +428,7 @@ describe("a model whose React prop is a boolean", () => {
       "KozmosPasswordInput visible → visible",
     ]);
     for (const [name, model] of [
+      ["KozmosNotice", "expanded"],
       ["KozmosToggleButton", "pressed"],
       ["KozmosMapControlsGroup", "stepFree"],
       ["KozmosCheckbox", "modelValue"],
@@ -460,6 +462,16 @@ describe("a model whose React prop is a boolean", () => {
     template: (attribute: string) => string;
     drawn?: () => boolean;
   }[] = [
+    {
+      name: "KozmosNotice",
+      part: KozmosReact.Notice,
+      attribute: "expanded",
+      prop: "expanded",
+      template: (a) =>
+        `<KozmosNotice summary="Check allergens." children="The full wording." ${a} />`,
+      drawn: () =>
+        $("button[aria-expanded]")!.getAttribute("aria-expanded") === "true",
+    },
     {
       name: "KozmosToggleButton",
       part: KozmosReact.ToggleButton,
