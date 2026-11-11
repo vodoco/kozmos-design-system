@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 696,
-      "dark": 696
+      "light": 697,
+      "dark": 697
     },
     "light": [
       {
@@ -3320,6 +3320,18 @@
         "name": "Semantics/Scrollbar/thumbHover",
         "type": "color",
         "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Hover/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -10574,6 +10586,18 @@
         "name": "Semantics/Scrollbar/thumbHover",
         "type": "color",
         "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Hover/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.200}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",

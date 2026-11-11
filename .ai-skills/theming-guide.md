@@ -139,6 +139,19 @@ state follows it. The dark neutral is the one exception: it keeps darkening, bec
 3.72:1 on its lighter step. The themed Button keeps decision 59's fixed hover `#1051E8` and pressed
 `#0D44C2`. Read a state from its token; never lighten or darken a fill yourself.
 
+**The hover fill (decision 173, GAP-228).** `--semantics-hover-fill` (`bg-hover-fill`,
+`SemanticsHoverFill` in TypeScript, `semanticsHoverFill` in Swift and Kotlin) is the fill under
+the pointer: background/100 in light and background/200 (#2E3138) in dark, 1.61:1 on the black page
+where background/100 is 1.19:1. A hover, a press, a highlighted option (Listbox, Combobox,
+MultiSelect, Select) and a selected Tree or Table row take it, the selection at full strength and a
+hover at its own step (`/50`, `/70`). `muted` stays for fills at rest: a placeholder, a track,
+today in a calendar, a disabled field. Two named exceptions keep `muted`, listed in
+`packages/tokens/src/contrast-contract.json` under `hoverFillExceptions`: Button's emotion outline
+and text treatments hovered (their themed and danger hover inks read 3.83:1 and 3.84:1 on the dark
+step), and a selected NavigationItem or BottomNavigation item (its theme 600 label reads 3.83:1
+there; the owner's ruling of 9 Nov). Menu keeps its own highlight, theme 600 (`accent`), in both
+themes. `pnpm tokens:contrast:check` holds all of it.
+
 **The accent (decision 68).** Beside the theme colour, a client sets an accent in the Pointr Cloud
 Dashboard. Kozmos carries it as `--primitives-colors-accent-0` to `-1000`, with 500 as the base,
 `#FAB735` (amber) in both themes by default. Parts draw `--semantics-accent-fill` (accent 500)
@@ -335,7 +348,9 @@ this section held, from the original scope, is kept as a proposal in
    stays the same in the dark theme.
 2. **Read `KozmosThemeTokens` in Compose,** not `KozmosColors` or `KozmosColorsDark`, which hold one
    theme each.
-3. **Check both themes:** the visual review draws every story in light and dark, and the story
+3. **Hover with the hover fill:** `bg-hover-fill`, not `bg-muted`, under the pointer, so a hover
+   reads on the black page (§3, decision 173).
+4. **Check both themes:** the visual review draws every story in light and dark, and the story
    audit runs axe in both.
 
 ---

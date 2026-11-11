@@ -583,11 +583,14 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         className={cn(
           "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-start outline-none transition-colors",
           density === "compact" ? "min-h-8 py-1" : "min-h-10 py-1.5",
-          "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           // Divided, the ring is drawn inside the row: outside it, the next
           // row's surface covered it, and a panel's edge could cut it.
           divided && "focus-visible:ring-inset focus-visible:ring-offset-0",
-          selected && "bg-muted text-foreground",
+          // Selected, the hover fill at full strength, under the pointer
+          // too; the hover's half step is for the rows not selected
+          // (decision 173).
+          selected ? "bg-hover-fill text-foreground" : "hover:bg-hover-fill/50",
           focusVisible &&
             (divided
               ? "ring-2 ring-inset ring-ring"

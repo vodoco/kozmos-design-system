@@ -59,7 +59,7 @@ const RouteOptionCard = React.forwardRef<
             "kozmos-route-option flex min-h-24 w-full min-w-52 flex-col justify-between rounded-container border p-3 text-left text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             option.selected
               ? "border-primary ring-1 ring-primary/20"
-              : "border-border hover:bg-muted/60",
+              : "border-border hover:bg-hover-fill/60",
             className,
           )}
           data-route-id={option.id}
