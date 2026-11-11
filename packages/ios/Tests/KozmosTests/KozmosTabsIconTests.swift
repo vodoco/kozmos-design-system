@@ -246,6 +246,30 @@ final class KozmosTabsIconTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
+    /// Only a tab in a `KozmosTabsList` fills its row. A tab standing alone,
+    /// offered 200pt, keeps its own 44: its 36pt segment, 4pt in from its
+    /// top and bottom, as before tabs took an icon.
+    @MainActor func testATabStandingAloneKeepsItsOwnHeightInATallFrame() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let pixels = try DrawnPixels.draw(
+                KozmosTabsTrigger(value: "hours", title: "Hours", selection: .constant("hours"))
+                    .frame(width: 200, height: 200)
+                    .padding(24)
+                    .background(Color(.sRGB, red: 0.5, green: 0.5, blue: 0.5, opacity: 1))
+                    .environment(\.colorScheme, scheme),
+                scale: 3
+            )
+            let background0 = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            let segment = try XCTUnwrap(
+                pixels.boundingBox(in: CGRect(origin: .zero, size: pixels.size), where: DrawnPixels.matches(background0, tolerance: 4)),
+                "\(scheme): no background/0 segment"
+            )
+            XCTAssertEqual(segment.height, 36, accuracy: 0.7, "\(scheme): the standing tab's segment, offered 200")
+            // Centred in the 200 it is offered, as a 44pt tab is.
+            XCTAssertEqual(segment.midY, 24 + 100, accuracy: 1, "\(scheme): the segment's centre")
+        }
+    }
+
     /// A tab with no icon is drawn as before: one line in a 44pt track.
     @MainActor func testATabWithNoIconKeepsTheFortyFourPointTrack() throws {
         for scheme in [ColorScheme.light, .dark] {

@@ -30,7 +30,7 @@ Every platform draws the same tabs: a muted track (background/100), and the sele
   <Story of={TabsStories.IconOverLabelRightToLeft} />
 </Canvas>
 
-SwiftUI's `KozmosTabsTrigger(value:title:selection:icon:)` and Compose's `KozmosTabsTrigger(..., icon = { ... })` draw the same stack, and there too every tab in a list with an icon takes the stacked height.
+SwiftUI's `KozmosTabsTrigger(value:title:selection:icon:)` and Compose's `KozmosTabsTrigger(..., icon = { ... })` draw the same stack, and there too every tab in a list with an icon takes the stacked height. Only tabs inside the list do: a SwiftUI trigger standing alone keeps its own height. Compose's `KozmosTabsList` sizes its tabs by their intrinsic height, so put only `KozmosTabsTrigger`s in it: a composable placed straight in the list that cannot be measured that way, a `SubcomposeLayout` such as `BoxWithConstraints`, a lazy list or `SubcomposeAsyncImage`, throws there. A trigger's `icon` may be any of these, because it is drawn in a fixed 20dp box.
 
 ## Implementation
 

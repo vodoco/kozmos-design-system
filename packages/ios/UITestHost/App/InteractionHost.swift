@@ -159,7 +159,8 @@ private struct InteractionFixture: View {
     /// once, so neither an opening animation nor UIKit's passing second copy
     /// of a row is read; polled every 100ms while the fixture is up.
     @MainActor private func reportMenuWords() async {
-        let words = ["Gates", "12", "Cafes", 1234.formatted(), "Toilets"]
+        // Each count as KozmosSelectItem writes it, in this locale's format.
+        let words = ["Gates", 12.formatted(), "Cafes", 1234.formatted(), "Toilets"]
         var opening = 0, open = false, last = "", still = 0
         while !Task.isCancelled {
             try? await Task.sleep(nanoseconds: 100_000_000)

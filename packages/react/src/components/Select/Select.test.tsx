@@ -9,7 +9,10 @@ import {
 import { describe, it, expect, afterEach } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  document.documentElement.lang = "";
+});
 
 describe("Select", () => {
   it("merges consumer descriptions without allowing an error to be hidden", () => {
@@ -65,7 +68,8 @@ describe("Select", () => {
 
   // GAP-164: a count in an option.
   it('reads an option\'s count with its words, "POI, 96", outside the item text', () => {
-    const thousands = new Intl.NumberFormat().format(1234);
+    document.documentElement.lang = "en";
+    const thousands = "1,234";
     render(
       <Select open defaultValue="everything">
         <SelectTrigger aria-label="Content">
@@ -102,7 +106,7 @@ describe("Select", () => {
     expect(virtual.querySelector('[data-slot="counter"]')).toBeNull();
   });
 
-  it("names an option whose words are not plain text by its words, then its count", () => {
+  it('names an option whose words are not plain text "words, count" too', () => {
     render(
       <Select open>
         <SelectTrigger aria-label="Content">
@@ -115,9 +119,34 @@ describe("Select", () => {
         </SelectContent>
       </Select>,
     );
-    const poi = screen.getByRole("option", { name: "POI 96" });
-    const [text] = (poi.getAttribute("aria-labelledby") ?? "").split(" ");
-    expect(document.getElementById(text)).toHaveTextContent(/^POI$/);
+    // The same "words, count" as plain words, read from what they draw.
+    expect(screen.getByRole("option", { name: "POI, 96" })).not.toHaveAttribute(
+      "aria-labelledby",
+    );
+  });
+
+  it("writes a count in the app's language, the document's lang", () => {
+    document.documentElement.lang = "de";
+    try {
+      render(
+        <Select open>
+          <SelectTrigger aria-label="Inhalt">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" count={1234}>
+              Alles
+            </SelectItem>
+          </SelectContent>
+        </Select>,
+      );
+      const option = screen.getByRole("option", { name: "Alles, 1.234" });
+      expect(option.querySelector('[data-slot="counter"]')).toHaveTextContent(
+        /^1\.234$/,
+      );
+    } finally {
+      document.documentElement.lang = "";
+    }
   });
 
   it("lets a caller's aria-label name the option, with a count or without", () => {

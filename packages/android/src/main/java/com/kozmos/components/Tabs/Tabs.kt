@@ -187,6 +187,9 @@ fun RowScope.KozmosTabsTrigger(
                 verticalArrangement = Arrangement.spacedBy(TabsIconGap)
             ) {
                 // Decorative, so a described icon cannot add to the title.
+                // The fixed size also answers the list's intrinsic-height
+                // query, so an icon built from a SubcomposeLayout (an async
+                // image, BoxWithConstraints) is never asked and cannot throw.
                 Box(
                     modifier = Modifier.size(TabsIconSize).clearAndSetSemantics {},
                     contentAlignment = Alignment.Center

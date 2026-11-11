@@ -1100,7 +1100,8 @@
         "WithScroll",
         "Disabled",
         "WithError",
-        "OptionCounts"
+        "OptionCounts",
+        "OptionCountsOpen"
       ]
     },
     {

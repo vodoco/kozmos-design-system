@@ -151,8 +151,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `SelectItemProps`, which 
   A count beside the option's words (GAP-164), as a neutral Counter at the
   row's end, before the check's place. It sits outside the item text, so
   the closed select shows the words alone. A number is written in the
-  reader's grouping ("1,234"), and the option is named by its words, then
-  its count: "POI, 96". A caller's own `aria-label` wins.
+  app's grouping (the document's `lang`, as Calendar reads it: "1,234",
+  "1.234" in German), and the option is named by its words, then its
+  count: "POI, 96". A caller's own `aria-label` wins.
 
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional.

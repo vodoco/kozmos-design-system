@@ -51,6 +51,9 @@ public struct KozmosTabsList<Content: View>: View {
         // (decision 3): once one tab has an icon, every tab takes the
         // stacked height, so the raised segment fills the track whichever
         // tab is chosen. With no icon anywhere the tallest is 44, as before.
+        // Only a tab in a list fills its row; one standing alone keeps its
+        // own height, as Compose's `LocalTabsFillTrack`.
+        .environment(\.kozmosTabsFillTrack, true)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, KozmosTabsMetrics.inset)
         .background(
@@ -59,6 +62,19 @@ public struct KozmosTabsList<Content: View>: View {
         )
         .accessibilityElement(children: .contain)
         .modifier(KozmosTabBarTrait())
+    }
+}
+
+private struct KozmosTabsFillTrackKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether a tab is in a `KozmosTabsList`, whose row it fills: false
+    /// outside one.
+    fileprivate var kozmosTabsFillTrack: Bool {
+        get { self[KozmosTabsFillTrackKey.self] }
+        set { self[KozmosTabsFillTrackKey.self] = newValue }
     }
 }
 
@@ -97,6 +113,7 @@ public struct KozmosTabsTrigger: View {
     @Binding var selection: String
     private let icon: AnyView?
     @Environment(\.kozmosAnalytics) var trackEvent
+    @Environment(\.kozmosTabsFillTrack) private var fillsTrack
     
     public init(value: String, title: String, selection: Binding<String>) {
         self.value = value
@@ -148,10 +165,15 @@ public struct KozmosTabsTrigger: View {
                 .environment(\.kozmosIconHostInk, ink)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
-                // `maxHeight` fills the list's row, whose height is its
-                // tallest tab's: a tab with only words centres its title in
-                // the height an icon tab beside it needs.
-                .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight, maxHeight: .infinity)
+                // In a list, `maxHeight` fills the list's row, whose height
+                // is its tallest tab's: a tab with only words centres its
+                // title in the height an icon tab beside it needs. A tab
+                // standing alone keeps its own height in any frame.
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: KozmosTabsMetrics.segmentMinHeight,
+                    maxHeight: fillsTrack ? .infinity : nil
+                )
                 .background {
                     if isSelected {
                         RoundedRectangle(cornerRadius: KozmosTabsMetrics.segmentRadius)
