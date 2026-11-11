@@ -117,9 +117,11 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
 - **Sections:** an item with `section: true` is a heading, its name in the theme's colour with its `count`, over its
   `children`, which are drawn at the section's own depth. A section is always open and is never focused or selected:
   the keyboard and a range pass over it. Its items are a set of their own (`aria-setsize`, `aria-posinset`) in a
-  `role="group"` named by the section and its count, "POI, 3,257": a number count is written in the Tree's `locale`
-  (the page's `lang` by default), a string as it is, and a count given as a slot is read for what it returns. The
-  heading itself is for the eye. Give `textValue` where `name` is not plain
+  `role="group"` named by the section and its count, "POI, 3,257": a number count is written in the Tree's `locale`,
+  a string as it is, and a count given as a slot is read for what it returns. Without `locale`, the page's `lang` is
+  read once the tree has mounted; on a server render and the first client render the count is written as en-US, so
+  the two agree and hydration finds no difference. A server-rendered product in another language passes `locale` to
+  have it right from the first paint. The heading itself is for the eye. Give `textValue` where `name` is not plain
   text. To compose one, `TreeSectionRow` is the heading.
 - **A set of rows:** `selectionMode="multiple"` with `selectedIds` (or `defaultSelectedIds`) and
   `onSelectedIdsChange`. A click selects one row; Ctrl or Cmd with a click adds or takes away a row; Shift with a click
@@ -136,6 +138,10 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
   letter again moves on to the next row that starts with it. It runs after a `onKeyDown` of yours on the Tree, and not
   when yours called `preventDefault()`; it takes no key with Ctrl, Cmd or Alt, never `+`, `-` or `*`, and leaves a key
   that finds no row alone.
+- **A Space inside a word is the word's.** A Space pressed within 500 ms of a typed letter is part of what is being
+  typed ("gate a"), as WAI-ARIA's type-ahead has it, so it neither selects nor toggles a row; React keeps it from
+  scrolling the page, and SwiftUI and Compose treat it the same. To select with Space, pause after typing (half a
+  second) or press Space on its own.
 - **More keys:** `*` opens every row beside the focused one that has rows of its own; PageDown and PageUp move focus by
   a page of rows, the rows that fit the view less one at the density's row height (with Shift, in a multiple tree, the
   range goes with it).
@@ -144,6 +150,8 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
   `data`, so a screen reader hears "3 of 9,000" and the keyboard, Home, End and type-ahead reach rows out of view.
   A row's height is measured once drawn; until then it is estimated from the density, `divided` and `metaPlacement`.
   Composed children are never virtualised.
+- **Its scroller:** `ref` is the tree itself, as it is when not virtualised; the box that scrolls is inside it. Pass
+  `scrollerRef` to read or set the scroll position (`scrollerRef.current.scrollTop`).
 - **Give it a height.** A virtualised tree with no height of its own is as tall as its rows and draws every one. Give
   it one (`style={{ height: 480 }}` or a class), or, in a flex column, `flex: 1` with `min-height: 0` (`min-h-0`), so it
   scrolls itself. In development it warns once in the console when it has none.

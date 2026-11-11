@@ -19462,6 +19462,7 @@
           "renderIcon",
           "renderMeta",
           "role",
+          "scrollerRef",
           "selected",
           "selectedId",
           "selectedIds",

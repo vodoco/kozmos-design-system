@@ -123,7 +123,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
 - `locale`: `string`, optional.
 
   The locale a section's count is written in for a screen reader ("POI,
-  3,257"): the page's `lang` by default.
+  3,257"). Without it, the page's `lang`, read once the tree has mounted;
+  until then, and on a server render, en-US, so a server and its client
+  write the same words and hydration never disagrees.
+
+- `scrollerRef`: `React.Ref<HTMLDivElement>`, optional.
+
+  The element that scrolls a `virtualized` tree: a box inside the tree,
+  which `ref` is not. Use it to read or set the scroll position. Without
+  `virtualized` the tree does not scroll itself, and this stays null.
 
 - `defaultExpandedIds`: `string[]`, optional, default `[]`.
 - `expandedIds`: `string[]`, optional.

@@ -120,9 +120,17 @@ export interface TreeProps extends Omit<
   onItemContextMenu?: (item: TreeItem, event: React.MouseEvent) => void;
   /**
    * The locale a section's count is written in for a screen reader ("POI,
-   * 3,257"): the page's `lang` by default.
+   * 3,257"). Without it, the page's `lang`, read once the tree has mounted;
+   * until then, and on a server render, en-US, so a server and its client
+   * write the same words and hydration never disagrees.
    */
   locale?: string;
+  /**
+   * The element that scrolls a `virtualized` tree: a box inside the tree,
+   * which `ref` is not. Use it to read or set the scroll position. Without
+   * `virtualized` the tree does not scroll itself, and this stays null.
+   */
+  scrollerRef?: React.Ref<HTMLDivElement>;
   defaultExpandedIds?: string[];
   expandedIds?: string[];
   onExpandedChange?: (ids: string[]) => void;
@@ -267,6 +275,9 @@ const documentLocale = () =>
   (typeof document !== "undefined" && document.documentElement.lang) ||
   undefined;
 
+/** The locale a server render and the first client render share. */
+const RENDER_LOCALE = "en-US";
+
 const isEnabledRow = (visible: VisibleTreeItem) =>
   !visible.section && !visible.item.disabled;
 
@@ -297,6 +308,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       overscan = 8,
       onItemContextMenu,
       locale,
+      scrollerRef: scrollerRefProp,
       renderIcon,
       renderMeta,
       renderActions,
@@ -345,6 +357,24 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     const typeahead = React.useRef({ text: "", timer: 0 });
     const pendingFocusId = React.useRef<string | undefined>();
     const scrollerRef = React.useRef<HTMLDivElement | null>(null);
+    // The page's language, read after mount: a server has none to read, so
+    // its render and the client's first are both en-US.
+    const [pageLocale, setPageLocale] = React.useState(RENDER_LOCALE);
+    React.useEffect(() => {
+      const lang = documentLocale();
+      if (lang) setPageLocale(lang);
+    }, []);
+    const setScrollerRef = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        scrollerRef.current = node;
+        if (typeof scrollerRefProp === "function") scrollerRefProp(node);
+        else if (scrollerRefProp)
+          (
+            scrollerRefProp as React.MutableRefObject<HTMLDivElement | null>
+          ).current = node;
+      },
+      [scrollerRefProp],
+    );
 
     const setExpandedSet = React.useCallback(
       (next: Set<string>) => {
@@ -889,7 +919,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
     const nodeProps: TreeNodeSharedProps = {
       density,
-      locale: locale ?? documentLocale(),
+      locale: locale ?? pageLocale,
       divided,
       expandedSet,
       focusedId,
@@ -989,7 +1019,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
                 // rows in place inside its padding, where each stroke meets
                 // its edges with no sideways scroll.
                 <div
-                  ref={scrollerRef}
+                  ref={setScrollerRef}
                   data-tree-scroller=""
                   className="relative min-h-0 flex-auto overflow-y-auto"
                   style={

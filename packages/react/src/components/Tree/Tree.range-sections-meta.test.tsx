@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import * as React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   Tree,
@@ -871,5 +872,60 @@ describe("Tree second review fixes (#524)", () => {
     expect(screen.getByRole("group", { name: "Virtual, 1" })).toContainElement(
       row("Zone"),
     );
+  });
+});
+
+describe("Tree third review (#524)", () => {
+  const sections: TreeItem[] = [
+    {
+      id: "poi",
+      name: "POI",
+      section: true,
+      count: 3257,
+      children: [{ id: "cafe", name: "Café" }],
+    },
+  ];
+
+  it("writes a section's count as a server would until it mounts, then in the page's language", () => {
+    const html = document.documentElement;
+    const before = html.lang;
+    html.lang = "de-DE";
+    try {
+      // A server render, and so the client's first: en-US, whatever the
+      // page's language, so hydration finds the same words.
+      expect(renderToString(<Tree data={sections} />)).toContain(
+        'aria-label="POI, 3,257"',
+      );
+      // Mounted, the page's language.
+      render(<Tree data={sections} />);
+      expect(
+        screen.getByRole("group", { name: "POI, 3.257" }),
+      ).toBeInTheDocument();
+    } finally {
+      html.lang = before;
+    }
+  });
+
+  it("hands a virtualized tree's scroller to scrollerRef, and scrolling it moves the rows", () => {
+    const many: TreeItem[] = Array.from({ length: 500 }, (_, index) => ({
+      id: `r${index + 1}`,
+      name: `Row ${index + 1}`,
+    }));
+    const scroller = React.createRef<HTMLDivElement>();
+    const tree = React.createRef<HTMLDivElement>();
+    render(<Tree data={many} virtualized ref={tree} scrollerRef={scroller} />);
+    // ref stays the tree; scrollerRef is the box that scrolls.
+    expect(tree.current).toHaveAttribute("role", "tree");
+    expect(scroller.current).toHaveAttribute("data-tree-scroller");
+    expect(tree.current).toContainElement(scroller.current);
+    expect(row("Row 1")).toBeInTheDocument();
+    act(() => {
+      scroller.current!.scrollTop = 8000;
+      fireEvent.scroll(scroller.current!);
+    });
+    expect(row("Row 200")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("treeitem", { name: /^Row 2$/ }),
+    ).not.toBeInTheDocument();
   });
 });
