@@ -152,6 +152,11 @@ public struct KozmosInput: View {
 
     // MARK: - Action (GAP-154)
 
+    private var isCopy: Bool {
+        if case .copy = action { return true }
+        return false
+    }
+
     /// As tall as the field, 44 square, its target; what it draws is inside
     /// it, 4 in from its edges. Only `disabled` disables it: a read-only
     /// field's value is still there to copy.
@@ -168,7 +173,9 @@ public struct KozmosInput: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(disabled)
+            // Mixed (GAP-153), there is no value of its own to copy: the copy
+            // is disabled, never "Copied" over nothing.
+            .disabled(disabled || mixed)
             .foregroundColor(actionColor(pressed: false))
             .accessibilityLabel(label)
         case .toggle(let label, let icon, let isPressed):
@@ -199,9 +206,8 @@ public struct KozmosInput: View {
     }
 
     private func copy(announcing copiedLabel: String, onCopy: ((String) -> Void)?) {
-        // Mixed (GAP-153), the field shows no value of its own: there is
-        // none to copy, as React's copies the empty field.
-        let value = mixed ? "" : text
+        guard !mixed else { return }
+        let value = text
         #if canImport(UIKit) && !os(watchOS)
         UIPasteboard.general.string = value
         UIAccessibility.post(notification: .announcement, argument: copiedLabel)
@@ -221,7 +227,7 @@ public struct KozmosInput: View {
     /// foreground on the pressed fill; dimmed when disabled.
     private func actionColor(pressed: Bool) -> Color {
         if pressed { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
-        if disabled { return KozmosColors.primitivesColorsForeground500 }
+        if disabled || (mixed && isCopy) { return KozmosColors.primitivesColorsForeground500 }
         return KozmosColors.primitivesColorsForeground400
     }
 

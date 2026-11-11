@@ -116,7 +116,7 @@ describe("mixed value (GAP-153)", () => {
       ).toBeNull();
     });
 
-    it("keeps its action while mixed, and copies no hidden value", async () => {
+    it("keeps its action while mixed, its copy disabled: nothing is copied or said copied", async () => {
       const user = userEvent.setup();
       const writeText = vi.fn().mockResolvedValue(undefined);
       Object.defineProperty(navigator, "clipboard", {
@@ -137,9 +137,12 @@ describe("mixed value (GAP-153)", () => {
       expect(field).toHaveValue("");
       expect(field).toHaveAttribute("placeholder", "Multiple values");
       expect(field).toHaveClass("kozmos-input-with-action");
-      await user.click(screen.getByRole("button", { name: "Copy" }));
-      expect(writeText).not.toHaveBeenCalledWith("FID-1");
-      expect(onCopy).not.toHaveBeenCalledWith("FID-1");
+      const copy = screen.getByRole("button", { name: "Copy" });
+      expect(copy).toBeDisabled();
+      await user.click(copy);
+      expect(writeText).not.toHaveBeenCalled();
+      expect(onCopy).not.toHaveBeenCalled();
+      expect(screen.queryByText("Copied")).toBeNull();
     });
 
     it("names the reset in the product's words", () => {
@@ -273,10 +276,12 @@ describe("mixed value (GAP-153)", () => {
       expect(field).not.toHaveAttribute("aria-describedby");
 
       await user.type(field, "4");
-      // The same field, a spinbutton again once it holds a number.
+      expect(field).toHaveValue("4");
+      expect(field).not.toHaveAttribute("data-mixed");
+      // The same field, a spinbutton again once it is left holding a number.
+      await user.tab();
       expect(screen.getByRole("spinbutton", { name: "Height" })).toBe(field);
       expect(field).toHaveValue(4);
-      expect(field).not.toHaveAttribute("data-mixed");
 
       await user.click(
         screen.getByRole("button", { name: "Reset to multiple values" }),
@@ -355,6 +360,38 @@ describe("mixed value (GAP-153)", () => {
       expect(
         screen.getByRole("button", { name: "Increase value" }),
       ).toBeDisabled();
+    });
+
+    it("reports nothing for a sign or a point alone, and keeps a typed negative", async () => {
+      const user = userEvent.setup();
+      const reported: (number | null)[] = [];
+      function Editor() {
+        const [edit, setEdit] = React.useState<number | null | undefined>(
+          undefined,
+        );
+        return (
+          <NumberInput
+            label="Offset"
+            mixed={edit === undefined}
+            value={edit ?? ""}
+            onValueChange={(value) => {
+              reported.push(value);
+              setEdit(value);
+            }}
+          />
+        );
+      }
+      render(<Editor />);
+      const field = screen.getByLabelText("Offset");
+      await user.type(field, "-");
+      expect(reported).toEqual([]);
+      expect(field).toHaveValue("-");
+      await user.type(field, "0.5");
+      expect(field).toHaveValue("-0.5");
+      expect(reported.at(-1)).toBe(-0.5);
+      expect(reported).not.toContain(null);
+      await user.tab();
+      expect(field).toHaveValue(-0.5);
     });
 
     it("hides a controlled value while mixed", () => {

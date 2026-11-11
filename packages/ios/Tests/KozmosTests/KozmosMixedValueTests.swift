@@ -30,6 +30,14 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertEqual(KozmosNumberInput(value: .constant(4), unit: "m", unitLabel: "metres").spokenValue, "4 metres")
     }
 
+    func testAMixedNumberInputReportsOnlyNumbers() {
+        XCTAssertEqual(KozmosNumberInput.draftValue("-", mixed: true, drafting: false), .some(nil))
+        XCTAssertEqual(KozmosNumberInput.draftValue("-.", mixed: true, drafting: false), .some(nil))
+        XCTAssertEqual(KozmosNumberInput.draftValue("-5", mixed: true, drafting: false), .some(-5))
+        XCTAssertEqual(KozmosNumberInput.draftValue("-0.5", mixed: false, drafting: true), .some(-0.5))
+        XCTAssertEqual(KozmosNumberInput.draftValue("-5", mixed: false, drafting: false), nil)
+    }
+
     func testTheSelectFieldShowsTheMixedLabelInPlaceOfAChoice() {
         let mixed = KozmosSelectField(value: "POI", placeholder: "Type", mixed: true)
         XCTAssertEqual(mixed.shownText, "Multiple values")
@@ -96,8 +104,9 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertNotEqual(field.accessibilityLabel, "", describe(found))
     }
 
-    // GAP-153 with GAP-154: the copy stays, and copies no hidden value.
-    @MainActor func testAMixedInputsCopyCopiesNoHiddenValue() async throws {
+    // GAP-153 with GAP-154: the copy stays, disabled while mixed: nothing is
+    // copied, and "Copied" is never said over nothing.
+    @MainActor func testAMixedInputsCopyIsDisabled() async throws {
         let old = try XCTUnwrap(setAutomation(1))
         defer { _ = setAutomation(old) }
         let written = Written()
@@ -109,9 +118,41 @@ final class KozmosMixedValueTests: XCTestCase {
         try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(try XCTUnwrap(textFields(in: window).first).text, "")
         let copy = try XCTUnwrap(elements(in: window).first { $0.accessibilityLabel == "Copy" }, describe(elements(in: window)))
-        XCTAssertTrue(copy.accessibilityActivate())
+        XCTAssertTrue(copy.accessibilityTraits.contains(.notEnabled), "the copy is disabled while mixed")
+        _ = copy.accessibilityActivate()
         try await Task.sleep(nanoseconds: 200_000_000)
-        XCTAssertFalse(written.texts.contains("FID-1"), "\(written.texts)")
+        XCTAssertEqual(written.texts, [], "nothing is copied")
+    }
+
+    /// A NumberInput across a multi-selection: mixed until a number is typed.
+    private struct EditedHeight: View {
+        let written: Written
+        @State private var edit: Double??
+        var body: some View {
+            KozmosNumberInput(
+                value: Binding(get: { edit ?? nil }, set: { edit = .some($0); written.texts.append($0.map { "\($0)" } ?? "nil") }),
+                label: "Height",
+                mixed: edit == nil
+            )
+        }
+    }
+
+    // Focused, UIKit writes the field's empty text back: a mixed field took
+    // that for an edit and wrote nil, which a product writes over every
+    // feature, before a key was pressed. Typed text ("-5", "-0.5") is
+    // reported only once it is a number: testAMixedNumberInputReportsOnlyNumbers.
+    // A hosted SwiftUI TextField takes no typing from a test, so the typing
+    // itself is not driven here.
+    @MainActor func testFocusingAMixedNumberInputWritesNothing() async throws {
+        let written = Written()
+        let window = host(EditedHeight(written: written))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let field = try XCTUnwrap(textFields(in: window).first)
+        XCTAssertTrue(field.becomeFirstResponder())
+        try await Task.sleep(nanoseconds: 400_000_000)
+        XCTAssertEqual(written.texts, [], "nothing is written over the several values")
+        XCTAssertEqual(field.placeholder, "Multiple values")
     }
 
     @MainActor func testTheSelectFieldSaysItsNameThenItsValue() async throws {

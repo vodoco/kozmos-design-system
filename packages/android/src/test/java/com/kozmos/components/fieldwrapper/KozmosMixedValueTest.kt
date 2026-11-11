@@ -141,7 +141,9 @@ class KozmosMixedValueTest {
             field().setText!!.invoke("4")
             frames(3)
             assertEquals("4", field().editableText)
-            assertTrue(read().merged.filter { it.description == "Increase value" }.all { it.enabled })
+            // Still the visitor's typed text until the field loses focus:
+            // the steppers wait for that too.
+            assertTrue(read().merged.filter { it.description == "Increase value" }.none { it.enabled })
             checkNotNull(reset()).click!!.invoke()
             frames(3)
             assertEquals("", field().editableText)
@@ -353,8 +355,9 @@ class KozmosMixedValueTest {
         assertTrue(tree.merged.filter { it.description == "Increase value" }.none { it.enabled })
     }
 
-    // GAP-153 with GAP-154: the copy action stays, and copies no hidden value.
-    @Test fun aMixedInputsCopyCopiesNoHiddenValue() {
+    // GAP-153 with GAP-154: the copy stays, disabled while mixed: nothing is
+    // copied, and "Copied" is never said over nothing.
+    @Test fun aMixedInputsCopyIsDisabled() {
         val copied = mutableListOf<String>()
         paparazzi.live(content = {
             KozmosMaterialTheme {
@@ -366,9 +369,39 @@ class KozmosMixedValueTest {
         }) {
             frames(2)
             assertEquals("", field().editableText)
-            read().merged.single { it.description == "Copy" }.click!!.invoke()
+            // Read, not pressed: Compose's test click runs a disabled node's
+            // action, which TalkBack never would.
+            val copy = read().merged.single { it.description == "Copy" }
+            assertTrue("the copy is disabled while mixed", !copy.enabled)
+        }
+    }
+
+    // A minus first: "-" is no number, and must neither be reported (as null,
+    // which a product writes over every feature) nor lost as the field stops
+    // being mixed ("-5" became 5).
+    @Test fun aMixedNumberInputKeepsATypedNegative() {
+        val reported = mutableListOf<Double?>()
+        paparazzi.live(content = {
+            var edit by remember { mutableStateOf<Double?>(null) }
+            var edited by remember { mutableStateOf(false) }
+            KozmosMaterialTheme {
+                KozmosNumberInput(
+                    value = edit,
+                    onValueChange = { reported += it; edit = it; edited = true },
+                    label = "Offset",
+                    mixed = !edited
+                )
+            }
+        }) {
             frames(2)
-            assertTrue("copied $copied", copied.none { it == "FID-1" })
+            field().setText!!.invoke("-")
+            frames(3)
+            assertEquals("-", field().editableText)
+            assertEquals(emptyList<Double?>(), reported)
+            field().setText!!.invoke("-0.5")
+            frames(3)
+            assertEquals("-0.5", field().editableText)
+            assertEquals(listOf<Double?>(-0.5), reported)
         }
     }
 

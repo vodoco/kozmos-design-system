@@ -21,6 +21,11 @@ public struct KozmosNumberInput: View {
     let onResetMixed: (() -> Void)?
     let resetMixedLabel: String
     @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
+    @FocusState private var fieldFocused: Bool
+    /// What the visitor types into a mixed field, kept as typed until the
+    /// field loses focus (GAP-153): formatted from the product's first value,
+    /// a "-" or a "-0." still being typed would be dropped ("-5" became 5).
+    @State private var draft: String?
     /// A unit drawn inside the field after the value ("m"), never part of the
     /// value (GAP-098).
     let unit: String?
@@ -94,10 +99,26 @@ public struct KozmosNumberInput: View {
                         text: Binding(
                             // Mixed, it shows none of its own (GAP-153); the
                             // unit stays, to say what to type.
-                            get: { mixed ? "" : formatValue(value) },
-                            set: { nextValue in value = parseValue(nextValue) }
+                            get: { draft ?? (mixed ? "" : formatValue(value)) },
+                            set: { nextValue in
+                                if let typed = Self.draftValue(nextValue, mixed: mixed, drafting: draft != nil) {
+                                    draft = nextValue
+                                    // A number, reported; "-", "." or "-." report nothing.
+                                    if let number = typed { value = clamp(number) }
+                                } else {
+                                    value = parseValue(nextValue)
+                                }
+                            }
                         )
                     )
+                    .focused($fieldFocused)
+                    .onChange(of: fieldFocused) { focused in
+                        if !focused { draft = nil }
+                    }
+                    .onChange(of: mixed) { nowMixed in
+                        // Back to mixed (a reset): the typed text is gone.
+                        if nowMixed { draft = nil }
+                    }
                     .accessibilityFocused($fieldAccessibilityFocused)
                     .disabled(disabled || readOnly)
                     .multilineTextAlignment(showSteppers ? .center : .leading)
@@ -168,7 +189,18 @@ public struct KozmosNumberInput: View {
 
     /// Mixed (GAP-153), a step would start from nothing and write that number
     /// over every selected feature's own: the steppers wait for a typed edit.
-    var steppersDisabled: Bool { disabled || readOnly || mixed }
+    var steppersDisabled: Bool { disabled || readOnly || mixed || draft != nil }
+
+    /// While mixed, or while the text typed out of mixed is kept: `.some` of
+    /// the number the text is, or `.some(nil)` for text that is no number
+    /// yet (reported as nothing). `nil` when the field is not drafting.
+    static func draftValue(_ text: String, mixed: Bool, drafting: Bool) -> Double??
+    {
+        guard mixed || drafting else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let number = Double(trimmed), number.isFinite else { return .some(nil) }
+        return .some(number)
+    }
 
     private func applyStep(_ delta: Double) {
         guard !steppersDisabled else { return }

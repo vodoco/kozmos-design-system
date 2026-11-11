@@ -135,7 +135,19 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           : undefined;
     // Mixed, a step would start from nothing and write that number over
     // every selected feature's own: the steppers wait for a typed edit.
-    const stepperDisabled = disabled || readOnly || mixed;
+    // What the visitor types into a mixed field, kept as typed until the
+    // field loses focus (GAP-153). The field stays a text field meanwhile:
+    // turned into a number field by the product's first value, it would
+    // drop a "-" or a "-0." the visitor is still typing ("-5" became 5).
+    const [draft, setDraft] = React.useState<string | null>(null);
+    const [wasMixed, setWasMixed] = React.useState(mixed);
+    if (wasMixed !== mixed) {
+      setWasMixed(mixed);
+      // Back to mixed (a reset): the typed text is gone.
+      if (mixed) setDraft(null);
+    }
+    const asText = mixed || draft !== null;
+    const stepperDisabled = disabled || readOnly || asText;
     const mixedField = useMixedField(mixed, props.value);
     const stepperToneClass = {
       default: "",
@@ -159,6 +171,19 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange?.(event);
+      if (asText) {
+        // A mixed field reports a value only once the text is a number:
+        // "-", "." or "-." report nothing, so the product keeps every
+        // feature's own value until there is one to write over it.
+        const text = event.currentTarget.value;
+        setDraft(text);
+        const typed =
+          text.trim() === ""
+            ? null
+            : numericValueFromInput(event.currentTarget);
+        if (typed !== null) onValueChange?.(typed);
+        return;
+      }
       onValueChange?.(numericValueFromInput(event.currentTarget));
     };
 
@@ -252,8 +277,8 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
               // and write that number over every selected feature's own.
               // Typing a number is the edit; the product then clears
               // `mixed`. The unit stays drawn: it says what to type.
-              type={mixed ? "text" : "number"}
-              inputMode={mixed ? "decimal" : undefined}
+              type={asText ? "text" : "number"}
+              inputMode={asText ? "decimal" : undefined}
               id={inputId}
               className={cn(
                 inputVariants({ status: resolvedStatus }),
@@ -277,6 +302,13 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
               onChange={handleChange}
               {...props}
               {...mixedFieldValue(mixed, mixedLabel, props)}
+              {...(draft !== null && props.value !== undefined
+                ? { value: draft }
+                : null)}
+              onBlur={(event) => {
+                setDraft(null);
+                props.onBlur?.(event);
+              }}
             />
             {hasUnit ? (
               <>

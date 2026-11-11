@@ -49,7 +49,6 @@ import com.kozmos.components.fieldwrapper.KozmosMixedReset
 import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import kotlinx.coroutines.delay
-
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -214,8 +213,13 @@ fun KozmosInput(
                     if (action != null) {
                         // Only `enabled` disables it: a read-only field's
                         // value is still there to copy.
-                        // Mixed (GAP-153), there is no value of its own to copy.
-                        KozmosInputActionButton(action, shownValue, enabled)
+                        // Mixed (GAP-153), there is no value of its own to copy:
+                        // the copy is disabled, never "Copied" over nothing.
+                        KozmosInputActionButton(
+                            action,
+                            shownValue,
+                            enabled && !(mixed && action is KozmosInputAction.Copy)
+                        )
                     }
                 }
             }

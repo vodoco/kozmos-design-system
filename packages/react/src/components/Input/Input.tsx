@@ -237,7 +237,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         >
           {field}
           {action ? (
-            <FieldAction action={action} disabled={props.disabled} />
+            <FieldAction
+              action={action}
+              // Mixed (GAP-153), there is no value of its own to copy: the
+              // copy is disabled, never "Copied" over nothing.
+              disabled={props.disabled || (mixed && action.kind === "copy")}
+            />
           ) : null}
         </div>
       </FieldWrapper>
