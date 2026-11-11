@@ -18,6 +18,10 @@ public enum KozmosTreeDensity {
         }
     }
 
+    /// A row's height: 44 at either density, the least a touch target is;
+    /// compact takes its padding in, not its height.
+    var rowHeight: CGFloat { 44 }
+
     /// A section heading's least height: 32, 24 compact.
     var sectionMinHeight: CGFloat {
         switch self {
@@ -346,22 +350,33 @@ public struct KozmosTree: View {
         setSelection(next)
     }
 
-    /// Opens or closes `row`; closing it, its now hidden descendants leave
-    /// the selection, which is returned for the caller to write once.
+    /// Opens or closes `row`. Closing it in a multiple tree, its now hidden
+    /// descendants leave the selection, which is returned for the caller to
+    /// write once; a single tree keeps its one row, hidden or not.
     private func toggle(_ row: Row, selection: Set<String>) -> Set<String> {
         if expanded.contains(row.path) {
             expanded.remove(row.path)
+            guard selectionMode == .multiple else { return selection }
             return KozmosTreeSelection.hiding(row.node, from: selection)
         }
         expanded.insert(row.path)
         return selection
     }
 
-    /// How many rows a page is: as many as the tree shows at once.
-    private var pageSize: Int {
-        let rowHeight: CGFloat = 44 + (divided ? 1 : 0)
-        return max(1, Int(viewHeight / rowHeight))
+    /// The arrows' open and close: the selection written at most once.
+    func toggleOpen(_ row: Row) {
+        setSelection(toggle(row, selection: currentSelection))
     }
+
+    /// How many rows Page Up and Page Down move: those that fit in the tree,
+    /// less one, so the row left behind is still in view; at least one. The
+    /// same rule as React's and Compose's.
+    static func pageSize(viewHeight: CGFloat, density: KozmosTreeDensity, divided: Bool) -> Int {
+        let rowHeight = density.rowHeight + (divided ? 1 : 0)
+        return max(1, Int((viewHeight / rowHeight).rounded(.down)) - 1)
+    }
+
+    private var pageSize: Int { Self.pageSize(viewHeight: viewHeight, density: density, divided: divided) }
 
     // MARK: - Keyboard
 
@@ -369,11 +384,16 @@ public struct KozmosTree: View {
         let focused = focusedID.flatMap { id in rows.first { $0.node.id == id } }
             ?? rows.first { $0.isSelectable }
         guard let focused else { return false }
+        // A Space in the middle of a word is typed, not a selection.
+        if key == .space, KozmosTreeSelection.spaceTypes(typed: typed, since: Date().timeIntervalSince(typedAt)) {
+            _ = typeAhead(" ", rows: rows, proxy: proxy)
+            return true
+        }
         switch key {
         case .expand, .collapse:
             let opening = (key == .expand) == (layoutDirection == .leftToRight)
             if focused.isParent, expanded.contains(focused.path) != opening {
-                setSelection(toggle(focused, selection: currentSelection))
+                toggleOpen(focused)
             } else if opening, focused.isParent {
                 return handle(.down, modifiers: [], rows: rows, proxy: proxy)
             } else if !opening, let parent = Self.parentRow(of: focused, in: rows), parent.isSelectable {
@@ -531,6 +551,13 @@ enum KozmosTreeSelection {
             if row.node.value.range(of: search, options: [.caseInsensitive, .anchored]) != nil { return row.node.id }
         }
         return nil
+    }
+
+    /// Whether a Space types, as part of a type-ahead word: when a letter
+    /// was typed within the last 500 ms, as React's does. Otherwise Space
+    /// selects.
+    static func spaceTypes(typed: String, since: TimeInterval) -> Bool {
+        !typed.isEmpty && since <= 0.5
     }
 
     /// Whether a key types: never `+`, `-` or `*`, nor a key with Command,
@@ -713,7 +740,7 @@ struct KozmosTreeDividedRow: View {
             .padding(.leading, CGFloat(depth) * kozmosTreeIndent)
             .padding(.vertical, density.verticalPadding)
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
-            .frame(minHeight: 44)
+            .frame(minHeight: density.rowHeight)
             .background(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
                     .fill(selected ? KozmosColors.semanticsHoverFill : Color.clear)

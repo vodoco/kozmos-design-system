@@ -120,6 +120,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
   and, if it is not selected, the selection, then this runs. Wrap the Tree
   in a `ContextMenuTrigger` for the menu itself (GAP-155).
 
+- `locale`: `string`, optional.
+
+  The locale a section's count is written in for a screen reader ("POI,
+  3,257"): the page's `lang` by default.
+
 - `defaultExpandedIds`: `string[]`, optional, default `[]`.
 - `expandedIds`: `string[]`, optional.
 - `onExpandedChange`: `(ids: string[]) => void`, optional.

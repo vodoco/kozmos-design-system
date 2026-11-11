@@ -117,23 +117,28 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
 - **Sections:** an item with `section: true` is a heading, its name in the theme's colour with its `count`, over its
   `children`, which are drawn at the section's own depth. A section is always open and is never focused or selected:
   the keyboard and a range pass over it. Its items are a set of their own (`aria-setsize`, `aria-posinset`) in a
-  `role="group"` named by the section and its count, "POI, 3,257" (a number count is formatted for the reader's
-  locale); the heading itself is for the eye. Give `textValue` where `name` is not plain
+  `role="group"` named by the section and its count, "POI, 3,257": a number count is written in the Tree's `locale`
+  (the page's `lang` by default), a string as it is, and a count given as a slot is read for what it returns. The
+  heading itself is for the eye. Give `textValue` where `name` is not plain
   text. To compose one, `TreeSectionRow` is the heading.
 - **A set of rows:** `selectionMode="multiple"` with `selectedIds` (or `defaultSelectedIds`) and
   `onSelectedIdsChange`. A click selects one row; Ctrl or Cmd with a click adds or takes away a row; Shift with a click
   selects the rows from the last one chosen, and Ctrl or Cmd with Shift adds them. By keyboard, Shift with the arrows,
   Home and End selects as focus moves, Space adds or takes away the focused row, Shift+Space selects to it and Ctrl or
   Cmd+A selects every row in view: the enabled rows, not those inside a closed parent. Ranges pass over disabled rows
-  and headings. Closing a parent lets go of the rows it hides, in one `onSelectedIdsChange`, so a selection never
-  holds a row nobody can see. The tree is `aria-multiselectable`.
+  and headings. The tree is `aria-multiselectable`.
   `"single"`, the default, is `selectedId` as before.
+- **Closing a parent:** in a multiple tree, once a collapse takes effect (a controlled `expandedIds` that keeps the row
+  open keeps its rows), the rows it hides leave the selection, in one `onSelectedIdsChange`, so a set never holds a row
+  nobody can see. A single tree keeps its one selected row, hidden or not: it is what a product's editor shows. The
+  same on SwiftUI and Compose.
 - **Type-ahead:** typing moves focus to the next row whose words start with what was typed, in every tree; the same
   letter again moves on to the next row that starts with it. It runs after a `onKeyDown` of yours on the Tree, and not
   when yours called `preventDefault()`; it takes no key with Ctrl, Cmd or Alt, never `+`, `-` or `*`, and leaves a key
   that finds no row alone.
 - **More keys:** `*` opens every row beside the focused one that has rows of its own; PageDown and PageUp move focus by
-  a page of rows (with Shift, in a multiple tree, the range goes with it).
+  a page of rows, the rows that fit the view less one at the density's row height (with Shift, in a multiple tree, the
+  range goes with it).
 - **Only the rows in view:** `virtualized` draws the rows in view, a few more each side (`overscan`, 8), and the focused
   row wherever it is. The tree scrolls itself, so give it a height. Each row's level and place in its set come from
   `data`, so a screen reader hears "3 of 9,000" and the keyboard, Home, End and type-ahead reach rows out of view.
@@ -142,9 +147,9 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
 - **Give it a height.** A virtualised tree with no height of its own is as tall as its rows and draws every one. Give
   it one (`style={{ height: 480 }}` or a class), or, in a flex column, `flex: 1` with `min-height: 0` (`min-h-0`), so it
   scrolls itself. In development it warns once in the console when it has none.
-- **Divided and bled:** a virtualised tree that is `divided` with a `bleed` reaches the bleed itself, so its strokes
+- **Divided and bled:** a virtualised tree that is `divided` with a `bleed` scrolls in a box inside the tree that reaches the bleed, so its strokes
   meet the panel's edges with no sideways scroll; a virtualised tree draws its focus ring inside the row, where its own
-  edge cannot cut it.
+  edge cannot cut it. The tree keeps the width, margin and height you give it, by class or style.
 - **A menu on a row:** wrap the Tree in Kozmos's `ContextMenu` (`ContextMenuTrigger asChild`) and pass
   `onItemContextMenu`. A right click, a long press, or the menu key or Shift+F10 at the focused row, focuses the row
   and, if it is not selected, selects it alone, then calls `onItemContextMenu` with it, so the menu acts on the
@@ -173,8 +178,9 @@ Command key; with a pointer and keyboard, Shift selects a range and Command (Ctr
 **Migrating a SwiftUI tree (0.16.0):** `KozmosTree` no longer draws a `List`. Divided or not, a tree is Kozmos's own
 lazy rows, with no list separators, inset grouping or grouped background, so an undivided tree looks as React's does
 rather than as a system list. `Node.id` is a `String` (a UUID string when none is given), not a `UUID`: read it as a
-string. SwiftUI and Compose ship from the repository's source, so this changes at the commit an app pins. Closing a
-parent lets go of the rows it hides on every platform, and a section is heard with its count, "POI, 3,257".
+string. SwiftUI and Compose ship from the repository's source, so this changes at the commit an app pins. On every
+platform, closing a parent in a multiple tree lets go of the rows it hides (a single tree keeps its row), a page is the
+rows that fit the view less one, and a section is heard with its count, "POI, 3,257".
 
 <PlatformSnippets
     react={`

@@ -23,7 +23,15 @@ const data: TreeItem[] = [
 
 // Map Content's panel: 16 of inline padding, the tree's strokes reaching the
 // panel's edges through `bleed`, and only the rows in view drawn.
-export function TreeVirtualizedFixture({ divided }: { divided: boolean }) {
+export function TreeVirtualizedFixture({
+  divided,
+  className,
+  width,
+}: {
+  divided: boolean;
+  className?: string;
+  width?: string;
+}) {
   return (
     <ThemeProvider theme="light">
       <div data-panel="" style={{ width: 300, paddingInline: 16 }}>
@@ -34,7 +42,8 @@ export function TreeVirtualizedFixture({ divided }: { divided: boolean }) {
           virtualized
           divided={divided}
           bleed={divided ? 16 : undefined}
-          style={{ height: 300 }}
+          className={className}
+          style={{ height: 300, width }}
         />
       </div>
     </ThemeProvider>

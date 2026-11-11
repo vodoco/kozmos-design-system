@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -59,12 +64,16 @@ class KozmosTreeSelectionTest {
         menuState: KozmosContextMenuState = KozmosContextMenuState(),
         expanded: Set<String> = setOf("b1"),
         list: LazyListState? = null,
-        height: Int = 500
+        height: Int = 500,
+        density: KozmosTreeDensity = KozmosTreeDensity.Default
     ): @androidx.compose.runtime.Composable () -> Unit = {
         KozmosMaterialTheme {
-            Box(Modifier.size(300.dp, height.dp)) {
+            // A Box lets the tree's own be its size: the window's root
+            // would stretch it to its own.
+            Box { Box(Modifier.size(300.dp, height.dp)) {
                 KozmosTree(
                     data,
+                    density = density,
                     selectionMode = mode,
                     selectedIds = selected,
                     onSelectedIdsChange = { selected = it; changes++ },
@@ -73,7 +82,7 @@ class KozmosTreeSelectionTest {
                     expandedIds = expanded,
                     menuState = menuState
                 )
-            }
+            } }
         }
     }
 
@@ -323,25 +332,81 @@ class KozmosTreeSelectionTest {
         }
     }
 
-    @Test fun pageDownMovesFocusByThePageTheListShows() {
+    /**
+     * A page is the rows of the density's height that fit the list, less
+     * one, on every platform: 300 high, a default row is 32 (24 and 4 above
+     * and below), so 9 fit and a page is 8.
+     */
+    @Test fun pageKeysMoveByAPageOfDefaultRows() = pages(KozmosTreeDensity.Default, page = 8)
+
+    /** A compact row is 28 (24 and 2 above and below): 10 fit, a page is 9. */
+    @Test fun pageKeysMoveByAPageOfCompactRows() = pages(KozmosTreeDensity.Compact, page = 9)
+
+    private fun pages(density: KozmosTreeDensity, page: Int) {
         selected = emptySet()
         val data = List(100) { TreeNode("r$it", "Row $it") }
-        val list = LazyListState()
-        paparazzi.live(content = tree(data = data, expanded = emptySet(), list = list, height = 300)) {
+        paparazzi.live(content = tree(data = data, expanded = emptySet(), height = 300, density = density)) {
             frames(2)
-            val page = list.layoutInfo.visibleItemsInfo.size
-            assertTrue("the page is the whole list: $page", page in 2..50)
             row("Row 0").requestFocus!!.invoke()
             frames(2)
             key(KeyEvent.KEYCODE_PAGE_DOWN)
             frames(3)
-            assertEquals("PageDown did not move a page", true, row("Row $page").focused)
+            val focused = read().merged.single { it.focused == true }.texts.first()
+            assertEquals("$density: PageDown did not move a page", "Row $page", focused)
             key(KeyEvent.KEYCODE_PAGE_DOWN, KeyEvent.META_SHIFT_ON)
             frames(3)
-            assertEquals("Shift+PageDown did not select the page", (page..2 * page).map { "r$it" }.toSet(), selected)
+            assertEquals("$density: Shift+PageDown did not select the page", (page..2 * page).map { "r$it" }.toSet(), selected)
             key(KeyEvent.KEYCODE_PAGE_UP)
             frames(3)
-            assertEquals("PageUp did not move a page back", true, row("Row $page").focused)
+            assertEquals("$density: PageUp did not move a page back", true, row("Row $page").focused)
+        }
+    }
+
+    @Test fun singleModeClosingAParentKeepsTheSelection() {
+        selected = setOf("l1")
+        paparazzi.live(content = tree(mode = KozmosTreeSelectionMode.Single)) {
+            frames(2)
+            changes = 0
+            row("B1").collapse!!.invoke()
+            frames(3)
+            assertEquals("single: closing B1 deselected its row", setOf("l1"), selected)
+            assertEquals("single: closing B1 handed on a selection", 0, changes)
+        }
+    }
+
+    @Test fun aKeyThatMatchesNoRowGoesOnToTheHost() {
+        selected = emptySet()
+        val reached = mutableListOf<Key>()
+        val data = listOf("Alpha", "Pine").map { TreeNode(it.lowercase(), it) }
+        val inner = tree(data = data, expanded = emptySet())
+        paparazzi.live(content = {
+            Box(Modifier.onKeyEvent { if (it.type == KeyEventType.KeyDown) reached += it.key; false }) { inner() }
+        }) {
+            frames(2)
+            row("Alpha").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_P)
+            assertEquals("p matched Pine", true, row("Pine").focused)
+            assertTrue("a matched key went on to the host: $reached", Key.P !in reached)
+            Thread.sleep(600)
+            key(KeyEvent.KEYCODE_Z)
+            assertEquals("z moved focus", true, row("Pine").focused)
+            assertTrue("a key that matches nothing did not reach the host: $reached", Key.Z in reached)
+        }
+    }
+
+    @Test fun leftToTheParentMovesTheRangesStartThere() {
+        selected = emptySet()
+        paparazzi.live(content = tree()) {
+            frames(2)
+            click(row("L2").bounds.center)
+            assertEquals(setOf("l2"), selected)
+            row("L2").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_DPAD_LEFT)
+            assertEquals("Left did not move to the parent", true, row("B1").focused)
+            key(KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.META_SHIFT_ON)
+            assertEquals("Shift+Down did not range from the parent", setOf("b1", "l0"), selected)
         }
     }
 

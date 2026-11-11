@@ -118,6 +118,11 @@ export interface TreeProps extends Omit<
    * in a `ContextMenuTrigger` for the menu itself (GAP-155).
    */
   onItemContextMenu?: (item: TreeItem, event: React.MouseEvent) => void;
+  /**
+   * The locale a section's count is written in for a screen reader ("POI,
+   * 3,257"): the page's `lang` by default.
+   */
+  locale?: string;
   defaultExpandedIds?: string[];
   expandedIds?: string[];
   onExpandedChange?: (ids: string[]) => void;
@@ -218,16 +223,49 @@ const treeItemText = (item: TreeItem) =>
  * A section's group name: its words and its count, "POI, 3,257", so a
  * screen reader hears the count the heading shows.
  */
-const treeSectionLabel = (item: TreeItem) => {
+const treeSectionLabel = (
+  item: TreeItem,
+  depth: number,
+  locale: string | undefined,
+) => {
   const text = treeItemText(item);
-  const count =
-    typeof item.count === "number"
-      ? item.count.toLocaleString()
-      : typeof item.count === "string"
-        ? item.count
-        : "";
+  // A count given as a slot is read for what it returns; a number is
+  // written in the tree's locale, a string as it is, anything else not read.
+  const given =
+    typeof item.count === "function"
+      ? item.count(sectionContext(item, depth))
+      : item.count;
+  let count = "";
+  if (typeof given === "number") {
+    try {
+      count = given.toLocaleString(locale);
+    } catch {
+      count = given.toLocaleString();
+    }
+  } else if (typeof given === "string") count = given;
   return [text, count].filter(Boolean).join(", ") || undefined;
 };
+
+/** What a section's slots are given: it is open, and never selected. */
+const sectionContext = (
+  item: TreeItem,
+  depth: number,
+): TreeItemRenderContext => ({
+  item,
+  depth,
+  hasChildren: Boolean(item.children?.length),
+  expanded: true,
+  selected: false,
+  focused: false,
+  disabled: Boolean(item.disabled),
+  toggle: () => undefined,
+  select: () => undefined,
+});
+
+/** The page's language, for a tree given no `locale`. */
+const documentLocale = () =>
+  (typeof document !== "undefined" && document.documentElement.lang) ||
+  undefined;
 
 const isEnabledRow = (visible: VisibleTreeItem) =>
   !visible.section && !visible.item.disabled;
@@ -258,6 +296,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       virtualized = false,
       overscan = 8,
       onItemContextMenu,
+      locale,
       renderIcon,
       renderMeta,
       renderActions,
@@ -345,24 +384,39 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         }
 
         setExpandedSet(next);
-
-        // Collapsed, a multiple tree lets go of the rows it hides, in one
-        // change: a selection never holds a row nobody can see.
-        if (!shouldExpand && multiple) {
-          const hidden = new Set<string>();
-          collectDescendantIds(item, hidden);
-          const current = latestSelected.current;
-          if (Array.from(current).some((id) => hidden.has(id))) {
-            setSelectedSet(
-              new Set(Array.from(current).filter((id) => !hidden.has(id))),
-            );
-          }
-          if (anchorId.current && hidden.has(anchorId.current))
-            anchorId.current = item.id;
-        }
       },
-      [expandedSet, multiple, setExpandedSet, setSelectedSet],
+      [expandedSet, setExpandedSet],
     );
+
+    // A multiple tree lets go of the rows a collapse hides, in one change,
+    // once the collapse has taken effect: from the expanded set the tree
+    // draws, so a controlled `expandedIds` that keeps a row open keeps its
+    // rows selected. A single tree keeps its one row, which a product's
+    // editor shows, wherever it is.
+    const drawnExpanded = React.useRef(expandedSet);
+    React.useEffect(() => {
+      const before = drawnExpanded.current;
+      drawnExpanded.current = expandedSet;
+      if (!multiple || before === expandedSet) return;
+      const closed = Array.from(before).filter((id) => !expandedSet.has(id));
+      if (closed.length === 0) return;
+      const hidden = new Set<string>();
+      for (const id of closed) {
+        const item = findTreeItem(data, id);
+        if (item) collectDescendantIds(item, hidden);
+      }
+      // A row still drawn (under another open path) is not hidden.
+      for (const id of visibleById.keys()) hidden.delete(id);
+      const current = latestSelected.current;
+      if (Array.from(current).some((id) => hidden.has(id))) {
+        setSelectedSet(
+          new Set(Array.from(current).filter((id) => !hidden.has(id))),
+        );
+      }
+      if (anchorId.current && hidden.has(anchorId.current))
+        anchorId.current = undefined;
+      // Runs when the drawn expanded set changes, and only then.
+    }, [expandedSet]);
 
     const selectItem = React.useCallback(
       (item: TreeItem) => {
@@ -656,10 +710,11 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
             : typeof window === "undefined"
               ? 400
               : window.innerHeight;
-          const page = Math.max(
-            1,
-            Math.floor(view / (density === "compact" ? 32 : 40)) - 1,
-          );
+          // One rule on every platform: the rows that fit the view, less
+          // one, at the density's row height and a divided row's stroke.
+          const rowHeight =
+            (density === "compact" ? 32 : 40) + (divided ? 1 : 0);
+          const page = Math.max(1, Math.floor(view / rowHeight) - 1);
           const target =
             event.key === "PageDown"
               ? Math.min(enabledItems.length - 1, currentEnabledIndex + page)
@@ -736,6 +791,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       [
         activateItem,
         density,
+        divided,
         expandedSet,
         focusItem,
         multiple,
@@ -825,7 +881,6 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
     const setRefs = React.useCallback(
       (node: HTMLDivElement | null) => {
-        scrollerRef.current = node;
         if (typeof ref === "function") ref(node);
         else if (ref) ref.current = node;
       },
@@ -834,6 +889,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
     const nodeProps: TreeNodeSharedProps = {
       density,
+      locale: locale ?? documentLocale(),
       divided,
       expandedSet,
       focusedId,
@@ -883,7 +939,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         data-virtualized={virtualized || undefined}
         className={cn(
           "w-full text-sm",
-          virtualized && "relative overflow-y-auto",
+          virtualized && "relative flex flex-col",
           className,
         )}
         {...props}
@@ -906,29 +962,18 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
             (event.key === " " && typeahead.current.text === "")
           )
             return;
-          if (typeAhead(visible.item, event.key)) event.preventDefault();
+          // A Space inside a word is always the word's, so the page under
+          // it never scrolls, whether or not focus moves.
+          if (typeAhead(visible.item, event.key) || event.key === " ")
+            event.preventDefault();
         }}
-        onScroll={(event) => {
-          if (virtualized) setScrollTop(event.currentTarget.scrollTop);
-          props.onScroll?.(event);
-        }}
+        onScroll={virtualized ? undefined : props.onScroll}
         style={
           bleed === undefined
             ? props.style
             : ({
                 "--kozmos-tree-bleed":
                   typeof bleed === "number" ? `${bleed}px` : bleed,
-                // A tree that scrolls itself clips what reaches past it, and
-                // scrolls sideways to show it: virtualised and divided, the
-                // scroller itself reaches the bleed, and the rows keep their
-                // place inside its padding, where each stroke meets its edges.
-                ...(virtualized && divided
-                  ? {
-                      marginInline: "calc(var(--kozmos-tree-bleed) * -1)",
-                      paddingInline: "var(--kozmos-tree-bleed)",
-                      width: "calc(100% + var(--kozmos-tree-bleed) * 2)",
-                    }
-                  : null),
                 ...props.style,
               } as React.CSSProperties)
         }
@@ -936,7 +981,35 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         <TreeDividedContext.Provider value={!!divided}>
           <TreeMetaPlacementContext.Provider value={metaPlacement}>
             <TreeScrollerContext.Provider value={virtualized}>
-              {content}
+              {virtualized ? (
+                // The scroller is inside the tree, so the product's width,
+                // margin and height classes stay the tree's own. A scroller
+                // clips what reaches past it: divided with a bleed, this one
+                // reaches the bleed past the tree on each side, and keeps the
+                // rows in place inside its padding, where each stroke meets
+                // its edges with no sideways scroll.
+                <div
+                  ref={scrollerRef}
+                  data-tree-scroller=""
+                  className="relative min-h-0 flex-auto overflow-y-auto"
+                  style={
+                    divided && bleed !== undefined
+                      ? {
+                          marginInline: "calc(var(--kozmos-tree-bleed) * -1)",
+                          paddingInline: "var(--kozmos-tree-bleed)",
+                        }
+                      : undefined
+                  }
+                  onScroll={(event) => {
+                    setScrollTop(event.currentTarget.scrollTop);
+                    props.onScroll?.(event);
+                  }}
+                >
+                  {content}
+                </div>
+              ) : (
+                content
+              )}
             </TreeScrollerContext.Provider>
           </TreeMetaPlacementContext.Provider>
         </TreeDividedContext.Provider>
@@ -948,6 +1021,8 @@ Tree.displayName = "Tree";
 
 interface TreeNodeSharedProps {
   density: TreeDensity;
+  /** The locale a section's count is written in, for its group's name. */
+  locale?: string;
   divided?: boolean;
   expandedSet: Set<string>;
   focusedId?: string;
@@ -982,17 +1057,7 @@ const TreeSectionHeading = ({
   density,
   indent,
 }: Pick<TreeNodeProps, "item" | "depth" | "density" | "indent">) => {
-  const context: TreeItemRenderContext = {
-    item,
-    depth,
-    hasChildren: Boolean(item.children?.length),
-    expanded: true,
-    selected: false,
-    focused: false,
-    disabled: Boolean(item.disabled),
-    toggle: () => undefined,
-    select: () => undefined,
-  };
+  const context = sectionContext(item, depth);
   return (
     <TreeSectionRow
       name={item.name}
@@ -1129,7 +1194,10 @@ const TreeNode = (props: TreeNodeProps) => {
       <>
         <TreeSectionHeading {...props} />
         {Boolean(item.children?.length) && (
-          <div role="group" aria-label={treeSectionLabel(item)}>
+          <div
+            role="group"
+            aria-label={treeSectionLabel(item, depth, props.locale)}
+          >
             {item.children?.map((child) => (
               <TreeNode key={child.id} {...props} item={child} depth={depth} />
             ))}
@@ -1223,7 +1291,10 @@ const renderVirtualRows = ({
       <div
         key={`group-${sectionId}-${occurrence}`}
         role="group"
-        aria-label={section && treeSectionLabel(section.item)}
+        aria-label={
+          section &&
+          treeSectionLabel(section.item, section.depth, nodeProps.locale)
+        }
       >
         {block}
       </div>,
@@ -1620,6 +1691,16 @@ const flattenTreeItems = (
       );
   }
   return out;
+};
+
+/** The item with `id`, anywhere in `items`. */
+const findTreeItem = (items: TreeItem[], id: string): TreeItem | undefined => {
+  for (const item of items) {
+    if (item.id === id) return item;
+    const found = item.children ? findTreeItem(item.children, id) : undefined;
+    if (found) return found;
+  }
+  return undefined;
 };
 
 /** Every id under `item`, open or not. */

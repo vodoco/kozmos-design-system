@@ -74,6 +74,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
@@ -234,6 +235,7 @@ internal fun KozmosTree(
     tree.onSelectedIdsChange = onSelectedIdsChange
     tree.rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     tree.menuState = if (contextMenu != null) menuState else null
+    tree.rowHeightPx = with(LocalDensity.current) { kozmosTreeRowHeight(density, divided).toPx() }
     val rows = remember(data, tree.expanded) { flattenTree(data, tree.expanded) }
     tree.rows = rows
     val itemRows = remember(rows) { rows.count { !it.section } }
@@ -315,6 +317,20 @@ internal fun KozmosTree(
     }
 }
 
+/**
+ * A row's height for [density]: the chevron's 24 and the row's padding above
+ * and below, and the 1dp stroke under it when [divided]. A page of PageUp and
+ * PageDown is the rows of this height that fit the list, less one.
+ */
+internal fun kozmosTreeRowHeight(density: KozmosTreeDensity, divided: Boolean): Dp {
+    val padding = if (density == KozmosTreeDensity.Compact) {
+        KozmosDimensions.primitivesLayoutSpacing25
+    } else {
+        KozmosDimensions.primitivesLayoutSpacing50
+    }
+    return KozmosDimensions.primitivesLayoutSizing300 + padding * 2 + if (divided) 1.dp else 0.dp
+}
+
 /** Saves a tree's open ids, so a rotation or a configuration change keeps them open. */
 internal val KozmosTreeExpandedSaver: Saver<Set<String>, ArrayList<String>> = Saver(
     save = { ArrayList(it) },
@@ -388,6 +404,8 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
     var contextId by mutableStateOf<String?>(null)
     var menuState: KozmosContextMenuState? = null
     var area: LayoutCoordinates? = null
+    /** A row's height for the tree's density, with its stroke when divided: what a page counts. */
+    var rowHeightPx = 0f
     private var typed = ""
     private var typedAt = 0L
 
@@ -409,7 +427,9 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
             rows.firstOrNull { it.node.id == id }?.node?.let(::collect)
             expanded = expanded - id
             val base = selection ?: selectedIds
-            val trimmed = base - hidden
+            // Multiple, the hidden rows leave the selection; single, the one
+            // selected row stays selected out of sight.
+            val trimmed = if (mode == KozmosTreeSelectionMode.Multiple) base - hidden else base
             if (selection != null || trimmed.size != base.size) select(trimmed)
             if (anchorId in hidden) anchorId = id
         } else {
@@ -488,8 +508,10 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
             if (id != row.id) focus(id)
             return true
         }
-        /** A page: the rows the list shows now. */
-        val page = (list?.layoutInfo?.visibleItemsInfo?.size ?: 1).coerceAtLeast(1)
+        // A page, as on every platform: the rows of this density (and its
+        // stroke, divided) that fit the list's height, less one.
+        val viewport = list?.layoutInfo?.let { it.viewportEndOffset - it.viewportStartOffset } ?: 0
+        val page = if (rowHeightPx > 0f) maxOf(1, (viewport / rowHeightPx).toInt() - 1) else 1
         val open = if (rtl) Key.DirectionLeft else Key.DirectionRight
         val close = if (rtl) Key.DirectionRight else Key.DirectionLeft
         if (event.typedChar() == '*' || event.key == Key.NumPadMultiply) {
@@ -517,7 +539,11 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
                 if (row.children.isNotEmpty() && row.id in expanded) {
                     setExpanded(row.id, false)
                 } else {
-                    rows.firstOrNull { it.node.id == row.id }?.parentId?.let { focus(it) }
+                    rows.firstOrNull { it.node.id == row.id }?.parentId?.let { parent ->
+                        // The range starts again from the parent, as on React and SwiftUI.
+                        anchorId = parent
+                        focus(parent)
+                    }
                 }
                 true
             }
@@ -566,17 +592,17 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
         typedAt = now
         typed += char.lowercaseChar()
         val visible = enabledRows
-        if (visible.isEmpty()) return true
+        if (visible.isEmpty()) return false
         val at = visible.indexOfFirst { it.node.id == row.id }
         val repeated = typed.all { it == typed[0] }
         val search = if (repeated) typed.substring(0, 1) else typed
         val start = if (repeated) at + 1 else at
         val found = visible.indices.map { visible[(start + it).mod(visible.size)] }
             .firstOrNull { it.node.name.lowercase().startsWith(search) }
-        found?.let {
-            anchorId = it.node.id
-            if (it.node.id != row.id) focus(it.node.id)
-        }
+        // Nothing matches: the key is not the tree's, and goes on to the host.
+        found ?: return false
+        anchorId = found.node.id
+        if (found.node.id != row.id) focus(found.node.id)
         return true
     }
 

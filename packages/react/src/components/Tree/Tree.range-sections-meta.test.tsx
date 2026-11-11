@@ -334,6 +334,10 @@ describe("Tree virtualized (GAP-151)", () => {
     },
   ];
   const drawnRows = () => screen.getAllByRole("treeitem");
+  const scroller = () =>
+    screen
+      .getByRole("tree")
+      .querySelector<HTMLElement>("[data-tree-scroller]")!;
 
   afterEach(() => {
     vi.useRealTimers();
@@ -350,7 +354,9 @@ describe("Tree virtualized (GAP-151)", () => {
     );
     const tree = screen.getByRole("tree");
     expect(tree).toHaveAttribute("data-virtualized", "true");
-    expect(tree).toHaveClass("overflow-y-auto");
+    // It scrolls itself, in a scroller inside the tree, so the product's
+    // own width and margin classes stay on the tree.
+    expect(scroller()).toHaveClass("overflow-y-auto");
     const rows = drawnRows();
     expect(rows.length).toBeGreaterThan(5);
     expect(rows.length).toBeLessThan(40);
@@ -411,11 +417,10 @@ describe("Tree virtualized (GAP-151)", () => {
     );
     const focused = row("POI 12");
     act(() => focused.focus());
-    const tree = screen.getByRole("tree");
     for (const top of [200, 1000, 6000, 0]) {
       act(() => {
-        tree.scrollTop = top;
-        fireEvent.scroll(tree);
+        scroller().scrollTop = top;
+        fireEvent.scroll(scroller());
       });
       expect(row("POI 12")).toBe(focused);
       expect(focused).toHaveFocus();
@@ -435,10 +440,9 @@ describe("Tree virtualized (GAP-151)", () => {
       />,
     );
     fireEvent.click(row("POI 1"));
-    const tree = screen.getByRole("tree");
     act(() => {
-      tree.scrollTop = 4000;
-      fireEvent.scroll(tree);
+      scroller().scrollTop = 4000;
+      fireEvent.scroll(scroller());
     });
     // 4000 down, at 40 a row, POI 100 is in view and POI 2 is not.
     expect(row("POI 100")).toBeInTheDocument();
@@ -743,5 +747,129 @@ describe("Tree review fixes (#524)", () => {
         ),
       ).toBe(false);
     });
+  });
+});
+
+describe("Tree second review fixes (#524)", () => {
+  const nested: TreeItem[] = [
+    {
+      id: "terminal",
+      name: "Terminal",
+      children: [
+        { id: "gate-1", name: "Gate 1" },
+        { id: "gate-2", name: "Gate 2" },
+      ],
+    },
+    { id: "apron", name: "Apron" },
+  ];
+
+  it("keeps the selection when a controlled tree refuses the collapse, and lets go once it takes effect", () => {
+    const onSelectedIdsChange = vi.fn();
+    const props = {
+      data: nested,
+      selectionMode: "multiple" as const,
+      defaultSelectedIds: ["gate-1", "apron"],
+      onSelectedIdsChange,
+    };
+    const { rerender } = render(
+      <Tree
+        {...props}
+        expandedIds={["terminal"]}
+        onExpandedChange={() => {}}
+      />,
+    );
+    const terminal = row("Terminal");
+    terminal.focus();
+    fireEvent.keyDown(terminal, { key: "ArrowLeft" });
+    // Refused: the rows are still drawn, and still selected.
+    expect(row("Gate 1")).toHaveAttribute("aria-selected", "true");
+    expect(onSelectedIdsChange).not.toHaveBeenCalled();
+    // Applied by the product: now they go, in one change.
+    rerender(<Tree {...props} expandedIds={[]} onExpandedChange={() => {}} />);
+    expect(onSelectedIdsChange).toHaveBeenCalledTimes(1);
+    expect(onSelectedIdsChange).toHaveBeenLastCalledWith(["apron"]);
+  });
+
+  it("keeps a single tree's selected row when its parent closes", () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <Tree
+        data={nested}
+        defaultExpandedIds={["terminal"]}
+        defaultSelectedId="gate-1"
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    const terminal = row("Terminal");
+    terminal.focus();
+    fireEvent.keyDown(terminal, { key: "ArrowLeft" });
+    fireEvent.keyDown(terminal, { key: "ArrowRight" });
+    expect(row("Gate 1")).toHaveAttribute("aria-selected", "true");
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it("takes a Space typed inside a word, even when focus stays where it is", () => {
+    render(
+      <Tree
+        data={[
+          { id: "a", name: "Gate A" },
+          { id: "h", name: "Hall" },
+        ]}
+      />,
+    );
+    const gate = row("Gate A");
+    gate.focus();
+    for (const key of ["g", "a", "t", "e"]) fireEvent.keyDown(gate, { key });
+    expect(gate).toHaveFocus();
+    expect(fireEvent.keyDown(gate, { key: " " })).toBe(false);
+    expect(gate).toHaveFocus();
+  });
+
+  it("pages by the rows that fit, less one, at the row's height with a divided stroke", () => {
+    const many: TreeItem[] = Array.from({ length: 60 }, (_, index) => ({
+      id: `r${index + 1}`,
+      name: `Row ${index + 1}`,
+    }));
+    const { unmount } = render(<Tree data={many} virtualized divided />);
+    // A view of 400: 41 a divided row, nine rows, a page of eight.
+    row("Row 1").focus();
+    fireEvent.keyDown(row("Row 1"), { key: "PageDown" });
+    expect(row("Row 9")).toHaveFocus();
+    unmount();
+    // Compact: 32 a row, twelve, a page of eleven.
+    render(<Tree data={many} virtualized density="compact" />);
+    row("Row 1").focus();
+    fireEvent.keyDown(row("Row 1"), { key: "PageDown" });
+    expect(row("Row 12")).toHaveFocus();
+  });
+
+  it("writes a section's count in the tree's locale, and reads a count given as a slot", () => {
+    render(
+      <Tree
+        locale="de-DE"
+        data={[
+          {
+            id: "poi",
+            name: "POI",
+            section: true,
+            count: 3257,
+            children: [{ id: "cafe", name: "Café" }],
+          },
+          {
+            id: "virtual",
+            name: "Virtual",
+            section: true,
+            count: ({ item }) => item.children?.length ?? 0,
+            children: [{ id: "zone", name: "Zone" }],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "POI, 3.257" })).toContainElement(
+      row("Café"),
+    );
+    expect(screen.getByRole("group", { name: "Virtual, 1" })).toContainElement(
+      row("Zone"),
+    );
   });
 });

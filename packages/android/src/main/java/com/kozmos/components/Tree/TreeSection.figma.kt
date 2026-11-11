@@ -38,7 +38,8 @@ class KozmosTreeSectionConnect {
     fun ComponentExample() {
         TreeSectionRow(
             name = name,
-            count = if (showCount) countText.toInt() else null,
+            // "3,257" reads as 3257; words that are no number draw no count.
+            count = if (showCount) countText.filterNot { it in ",. '\u00A0\u202F" }.toIntOrNull() else null,
             depth = depth,
             density = density
         )

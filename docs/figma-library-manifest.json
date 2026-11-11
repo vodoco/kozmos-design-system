@@ -19445,6 +19445,7 @@
           "icon",
           "id",
           "indent",
+          "locale",
           "meta",
           "metaPlacement",
           "name",
