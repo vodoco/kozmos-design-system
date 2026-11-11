@@ -1244,11 +1244,13 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
-        "Default",
-        "WithRowActions",
         "Composed",
+        "Default",
+        "Divided",
         "RowPrimitive",
-        "Divided"
+        "SectionsAndRanges",
+        "Virtualized",
+        "WithRowActions"
       ]
     },
     {
