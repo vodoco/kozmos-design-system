@@ -26,7 +26,18 @@ export interface SliderProps extends React.ComponentPropsWithoutRef<
    * close enough to look intentional and wrong enough to be useless.
    */
   showValueTooltip?: boolean;
-  /** Render the value — e.g. `(v) => `${v}%``. Defaults to the number. */
+  /**
+   * Show the current value as a readout at the slider's end, at rest as well
+   * as while it moves (GAP-163). A range shows its two ends, "20 – 80". The
+   * readout is drawn for the eye only: the thumb says the value, as
+   * `formatValue` words it when that returns text.
+   */
+  showValue?: boolean;
+  /**
+   * Render the value: `(v) => v + "%"` shows a percentage. Defaults to the
+   * number. When it returns a string or a number, the thumb says that to a
+   * screen reader in place of the bare number (`aria-valuetext`).
+   */
   formatValue?: (value: number) => React.ReactNode;
 }
 
@@ -43,6 +54,7 @@ const Slider = React.forwardRef<
       thumbLabels,
       wrapperClassName,
       showValueTooltip = false,
+      showValue = false,
       formatValue,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
@@ -116,6 +128,44 @@ const Slider = React.forwardRef<
         asArray(props.defaultValue) ?? asArray(fallbackDefaultValue) ?? [min],
     );
     const liveValue = asArray(props.value) ?? uncontrolledValue;
+    const shown = (index: number) => {
+      const value = liveValue[index] ?? min;
+      return formatValue ? formatValue(value) : value;
+    };
+    // What the thumb says: the words the readout and the bubble show, when
+    // they are words. A node cannot be said, so the bare number stays.
+    const spoken = (index: number) => {
+      if (!formatValue) return undefined;
+      const text = formatValue(liveValue[index] ?? min);
+      return typeof text === "string" || typeof text === "number"
+        ? String(text)
+        : undefined;
+    };
+
+    // The readout lies beside the track, at the row's end, so the thumbs keep
+    // their places on the track: inside the slider it would shorten the
+    // range the thumbs are placed against. Hidden from screen readers, which
+    // hear the value from the thumb, so it is not said twice.
+    const wrapWithReadout = (slider: React.ReactElement) =>
+      showValue ? (
+        <div className={cn("kozmos-reset kozmos-slider-row", className)}>
+          {slider}
+          <span
+            aria-hidden="true"
+            className="kozmos-reset kozmos-slider-readout"
+            data-disabled={props.disabled ? "" : undefined}
+          >
+            {thumbs.map((_, index) => (
+              <React.Fragment key={index}>
+                {index > 0 ? " \u2013 " : null}
+                {shown(index)}
+              </React.Fragment>
+            ))}
+          </span>
+        </div>
+      ) : (
+        slider
+      );
 
     return (
       <FieldWrapper
@@ -125,83 +175,86 @@ const Slider = React.forwardRef<
         inputId={inputId}
         className={wrapperClassName}
       >
-        <SliderPrimitive.Root
-          ref={ref}
-          id={inputId}
-          aria-invalid={hasError}
-          aria-describedby={hasError && isStringError ? errorId : undefined}
-          className={cn(
-            "relative flex w-full touch-none select-none items-center",
-            hasError && "ring-1 ring-destructive rounded-pill",
-            className,
-          )}
-          {...props}
-          defaultValue={props.defaultValue ?? fallbackDefaultValue}
-          onValueChange={(value) => {
-            setUncontrolledValue(value);
-            props.onValueChange?.(value);
-          }}
-          onValueCommit={(value) => {
-            trackEvent("Slider", "slider_value_changed", { value });
-            props.onValueCommit?.(value);
-          }}
-        >
-          <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-pill border border-input bg-secondary">
-            <SliderPrimitive.Range
-              className={cn(
-                "absolute h-full bg-primary",
-                hasError && "bg-destructive",
-              )}
-            />
-          </SliderPrimitive.Track>
-          {thumbs.map((_, index) => (
-            <SliderPrimitive.Thumb
-              key={index}
-              aria-labelledby={
-                thumbLabels?.[index] ? undefined : ariaLabelledBy
-              }
-              aria-describedby={mergeAriaIds(
-                ariaDescribedBy,
-                hasError && isStringError ? errorId : undefined,
-              )}
-              aria-invalid={hasError || ariaInvalid}
-              aria-label={
-                thumbLabels?.[index] ??
-                (inferredThumbCount > 1
-                  ? index === 0
-                    ? "Minimum value"
-                    : index === inferredThumbCount - 1
-                      ? "Maximum value"
-                      : `Value ${index + 1}`
-                  : (ariaLabel ?? label))
-              }
-              className={cn(
-                "relative block h-5 w-5 rounded-pill border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                hasError && "border-destructive",
-              )}
-              onBlur={() => setHoveredThumb(null)}
-              onFocus={() => setHoveredThumb(index)}
-              onPointerDown={() => setDraggingThumb(index)}
-              onPointerEnter={() => setHoveredThumb(index)}
-              onPointerLeave={() => setHoveredThumb(null)}
-            >
-              {showValueTooltip &&
-              (hoveredThumb === index || draggingThumb === index) ? (
-                <span
-                  // pointer-events-none matters: the bubble sits directly above
-                  // the knob, and a bubble that eats the pointer ends the drag
-                  // the moment it appears.
-                  className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-control border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-overlay"
-                  role="tooltip"
-                >
-                  {formatValue
-                    ? formatValue(liveValue[index] ?? min)
-                    : (liveValue[index] ?? min)}
-                </span>
-              ) : null}
-            </SliderPrimitive.Thumb>
-          ))}
-        </SliderPrimitive.Root>
+        {wrapWithReadout(
+          <SliderPrimitive.Root
+            ref={ref}
+            id={inputId}
+            aria-invalid={hasError}
+            aria-describedby={hasError && isStringError ? errorId : undefined}
+            className={cn(
+              "relative flex w-full touch-none select-none items-center",
+              hasError && "ring-1 ring-destructive rounded-pill",
+              // With a readout, the caller's class sizes the row, and the
+              // slider takes what the readout leaves.
+              showValue ? "min-w-0 flex-1" : className,
+            )}
+            {...props}
+            defaultValue={props.defaultValue ?? fallbackDefaultValue}
+            onValueChange={(value) => {
+              setUncontrolledValue(value);
+              props.onValueChange?.(value);
+            }}
+            onValueCommit={(value) => {
+              trackEvent("Slider", "slider_value_changed", { value });
+              props.onValueCommit?.(value);
+            }}
+          >
+            <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-pill border border-input bg-secondary">
+              <SliderPrimitive.Range
+                className={cn(
+                  "absolute h-full bg-primary",
+                  hasError && "bg-destructive",
+                )}
+              />
+            </SliderPrimitive.Track>
+            {thumbs.map((_, index) => (
+              <SliderPrimitive.Thumb
+                key={index}
+                aria-labelledby={
+                  thumbLabels?.[index] ? undefined : ariaLabelledBy
+                }
+                aria-describedby={mergeAriaIds(
+                  ariaDescribedBy,
+                  hasError && isStringError ? errorId : undefined,
+                )}
+                aria-invalid={hasError || ariaInvalid}
+                aria-valuetext={spoken(index)}
+                aria-label={
+                  thumbLabels?.[index] ??
+                  (inferredThumbCount > 1
+                    ? index === 0
+                      ? "Minimum value"
+                      : index === inferredThumbCount - 1
+                        ? "Maximum value"
+                        : `Value ${index + 1}`
+                    : (ariaLabel ?? label))
+                }
+                className={cn(
+                  "relative block h-5 w-5 rounded-pill border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                  hasError && "border-destructive",
+                )}
+                onBlur={() => setHoveredThumb(null)}
+                onFocus={() => setHoveredThumb(index)}
+                onPointerDown={() => setDraggingThumb(index)}
+                onPointerEnter={() => setHoveredThumb(index)}
+                onPointerLeave={() => setHoveredThumb(null)}
+              >
+                {showValueTooltip &&
+                (hoveredThumb === index || draggingThumb === index) ? (
+                  <span
+                    // pointer-events-none matters: the bubble sits directly above
+                    // the knob, and a bubble that eats the pointer ends the drag
+                    // the moment it appears.
+                    className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-control border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-overlay"
+                    role="tooltip"
+                  >
+                    {shown(index)}
+                  </span>
+                ) : null}
+              </SliderPrimitive.Thumb>
+            ))}
+          </SliderPrimitive.Root>,
+        )}
       </FieldWrapper>
     );
   },

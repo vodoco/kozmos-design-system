@@ -54,9 +54,18 @@ It forwards its ref to `HTMLSpanElement`. Its props are `SliderProps`, which ext
   track instead, so the bubble sits still while the knob moves under it —
   close enough to look intentional and wrong enough to be useless.
 
+- `showValue`: `boolean`, optional, default `false`.
+
+  Show the current value as a readout at the slider's end, at rest as well
+  as while it moves (GAP-163). A range shows its two ends, "20 – 80". The
+  readout is drawn for the eye only: the thumb says the value, as
+  `formatValue` words it when that returns text.
+
 - `formatValue`: `(value: number) => React.ReactNode`, optional.
 
-  Render the value — e.g. `(v) => `${v}%``. Defaults to the number.
+  Render the value: `(v) => v + "%"` shows a percentage. Defaults to the
+  number. When it returns a string or a number, the thumb says that to a
+  screen reader in place of the bare number (`aria-valuetext`).
 
 - `form`: `string`, optional.
 - `defaultValue`: `number[]`, optional.
