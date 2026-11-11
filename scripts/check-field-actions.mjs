@@ -16,8 +16,9 @@
  *   Tailwind's ease), a cut under the design config's reduced motion. The
  *   button itself fills nothing; at rest, disabled, and in forced colours
  *   there is no fill; the button stays as tall as the field. Read from
- *   computed styles, and as pixels: hovered, the fill's middle is
- *   background-100, while the 4px band round it and the fill's corner
+ *   computed styles, and as pixels: hovered, the fill's middle is the
+ *   hover fill (background-100 in light, background-200 in dark: GAP-228,
+ *   decision 173), while the 4px band round it and the fill's corner
  *   pixels draw as at rest.
  * - Hovering a button leaves the field's top, bottom and end edges drawn as
  *   at rest, in normal and in forced colours (Windows' high contrast), where
@@ -396,7 +397,7 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
   }
   const muted = mode.forced
     ? null
-    : await resolve(page, "--primitives-colors-background-100");
+    : await resolve(page, "--semantics-hover-fill");
   for (let index = 0; index < count; index += 1) {
     await page.mouse.move(1, 1);
     await settleLayout(page);
@@ -479,7 +480,7 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
         );
       if (fill.background !== muted)
         problems.push(
-          `${step}: hovered, ${name}'s fill is ${fill.background}, not background-100 (${muted})`,
+          `${step}: hovered, ${name}'s fill is ${fill.background}, not the hover fill (${muted})`,
         );
       // On each side where the button lies on the field's edge, the fill
       // stands 4 in from the field's outer edge: its 1px edge and a 3 gap.
@@ -528,14 +529,14 @@ async function hoverFill(page, part, mode, density, step, problems, fills) {
       problems.push(
         `${step}: hovered, ${name}'s fill transitions ${now.fading.join(", ")}, not its background colour alone`,
       );
-    // As drawn: the fill's middle is background-100; the band round it, where
+    // As drawn: the fill's middle is the hover fill; the band round it, where
     // the field's edge is, and the fill's own corners stay as at rest.
     reads += 1;
     const want = rgb(muted);
     for (const pixel of nowPixels.middle)
       if (distance(pixel, want) > 3)
         problems.push(
-          `${step}: hovered, ${name}'s middle draws rgb(${pixel.slice(0, 3)}), not background-100 rgb(${want})`,
+          `${step}: hovered, ${name}'s middle draws rgb(${pixel.slice(0, 3)}), not the hover fill rgb(${want})`,
         );
     const where = {
       band: ["left", "right", "top", "bottom"].map(
@@ -614,7 +615,7 @@ async function fillsInsideButtons(page, step, problems) {
  * NumberInput's steps are segments with an edge of their own, which they
  * fill whole on hover (owned-native-fields.css): decision 164 is not
  * theirs. They draw no ::before, their hover fills their own box with
- * background-100, and a click at the middle of the field, of "−" and of
+ * the hover fill, and a click at the middle of the field, of "−" and of
  * "+" lands on that element.
  */
 async function numberSteps(page, mode, step, problems) {
@@ -673,7 +674,7 @@ async function numberSteps(page, mode, step, problems) {
     );
   await page.evaluate(() => document.activeElement?.blur());
   if (mode.forced) return;
-  const muted = await resolve(page, "--primitives-colors-background-100");
+  const muted = await resolve(page, "--semantics-hover-fill");
   for (const [index, name] of rest.steps.map((s) => s.name).entries()) {
     const box = await page.locator(`${host} button`).nth(index).boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -684,7 +685,7 @@ async function numberSteps(page, mode, step, problems) {
       problems.push(`${step}: NumberInput's ${name} did not take the hover`);
     else if (now.own !== muted)
       problems.push(
-        `${step}: hovered, NumberInput's ${name} fills its own box with ${now.own}, not background-100 (${muted})`,
+        `${step}: hovered, NumberInput's ${name} fills its own box with ${now.own}, not the hover fill (${muted})`,
       );
   }
   await page.mouse.move(1, 1);
@@ -1011,5 +1012,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nPASS field actions: ${reads} reads; hovered, Combobox's and MultiSelect's clear and open, Input's action, Search's clear, PasswordInput's reveal${ownDatePicker ? "" : ", DatePicker's"} and TimePicker's trigger each draw background-100 inside themselves, 4 in, corners the field's less 4 (${[...fills].sort().join("; ")}), nothing at rest, disabled or in forced colours, each as tall as the field${ownDatePicker ? " (DatePicker keeps the browser's own picker in this engine: no button to read)" : ""}; hovering leaves the field's top, bottom and end edges drawn, in normal and forced colours; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; MultiSelect's input draws no box of its own inside the field, at rest or focused, and Combobox's paints no outline at rest${noForcedPalette ? " (forced colours repaint nothing in this engine: there the input's box was read from computed styles only)" : ""}; light and dark, touch and compact, both directions`,
+  `\nPASS field actions: ${reads} reads; hovered, Combobox's and MultiSelect's clear and open, Input's action, Search's clear, PasswordInput's reveal${ownDatePicker ? "" : ", DatePicker's"} and TimePicker's trigger each draw the hover fill inside themselves, 4 in, corners the field's less 4 (${[...fills].sort().join("; ")}), nothing at rest, disabled or in forced colours, each as tall as the field${ownDatePicker ? " (DatePicker keeps the browser's own picker in this engine: no button to read)" : ""}; hovering leaves the field's top, bottom and end edges drawn, in normal and forced colours; a focused button rings alone, on MultiSelect as on Combobox, and the field rings for its input; MultiSelect's input draws no box of its own inside the field, at rest or focused, and Combobox's paints no outline at rest${noForcedPalette ? " (forced colours repaint nothing in this engine: there the input's box was read from computed styles only)" : ""}; light and dark, touch and compact, both directions`,
 );

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c688b08713f0";
+const PLUGIN_BUILD = "af4bbafd3169";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -727,6 +727,10 @@ const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
 const DRAWER_PLACEMENTS = ["Fixed", "Inline"];
 const POPOVER_SIDES = ["Top", "Right", "Bottom", "Left"];
 const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
+// GAP-156: React's Kbd draws one key, `<Kbd>Esc</Kbd>`, or a combination,
+// `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
+// first, so the set's default is the plain cap.
+const KBD_KEYS = ["Single", "Combination"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -1102,6 +1106,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_FOOTPRINT_HEIGHT = 260;
 const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
+  Kbd: 260,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1167,6 +1172,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Dialog: 760,
   Drawer: 420,
   Menu: 420,
+  ContextMenu: 420,
   Popover: 360,
   Tooltip: 360,
   Checkbox: 260,
@@ -1201,7 +1207,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Avatar: 260,
 };
 const COMPONENT_PAGE_LAYOUT_SECTIONS = [
-  { title: "Typography", components: ["Link", "Separator"] },
+  { title: "Typography", components: ["Link", "Separator", "Kbd"] },
   {
     title: "Actions",
     components: [
@@ -1293,6 +1299,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Dialog",
       "Drawer",
       "Menu",
+      "ContextMenu",
       "Popover",
       "Tooltip",
       "TourStep",
@@ -2313,6 +2320,29 @@ const COMPONENT_DOCS = [
       "Separator uses a foreground boundary token with non-text contrast headroom.",
       "Product code should mark purely visual separators as decorative.",
       "Separator is non-interactive.",
+    ],
+  },
+  {
+    componentName: "Kbd",
+    componentSetName: "Kbd",
+    category: "Typography",
+    summary:
+      "Kbd draws a keyboard key as a cap: one key, or a combination of caps joined by a plus (GAP-156).",
+    usage: [
+      "Use in a hint or a menu's shortcut to show the key to press: Esc, or Ctrl + C.",
+      "Write the key as the product shows it; Kbd maps no platform glyphs (Cmd or Ctrl is the caller's).",
+      "Use Combination for a chord; a longer chord repeats the cap and the plus.",
+    ],
+    api: [
+      "Keys maps to the form: Single is <Kbd>{key}</Kbd>, Combination is <Kbd keys={[modifier, key]} />.",
+      "Key Text maps to the key (the children, or the last of keys); Modifier Text to the first of keys.",
+      "label replaces what a screen reader says and is not drawn.",
+    ],
+    properties: ["Keys: Single, Combination", "Key Text, Modifier Text"],
+    accessibility: [
+      "In code the drawn glyph is hidden and the key's name is read instead: Esc reads Escape, Ctrl reads Control.",
+      "The plus is decoration; a combination reads its names joined by a plus.",
+      "Kbd is non-interactive.",
     ],
   },
   {
@@ -3521,15 +3551,45 @@ const COMPONENT_DOCS = [
       "Label Text maps to MenuLabel children.",
       "Item text properties map to MenuItem, MenuCheckboxItem, or MenuRadioItem children.",
       "Shortcut Text maps to MenuShortcut children.",
+      "External maps to MenuItem.external: the new-tab icon at the item's end.",
     ],
     properties: [
       "Content: Basic, Checkbox, Radio, Submenu",
-      "Label Text, Item 1 Text, Item 2 Text, Item 3 Text, Shortcut Text",
+      "Label Text, Item 1 Text, Item 2 Text, Item 3 Text, Shortcut Text, External",
     ],
     accessibility: [
       "Menu items keep a 32px visual row inside a trigger-owned interaction model.",
       "Text, checked marks, and boundaries pass in Light and Dark modes.",
       "Product code must provide roving focus and dismiss behavior through Radix.",
+      "External's icon is decoration: the code says \"opens in a new tab\" after the item's name.",
+    ],
+  },
+  {
+    componentName: "ContextMenu",
+    componentSetName: "ContextMenu",
+    category: "Overlay",
+    summary:
+      "ContextMenu is the menu a right click, a long press or the context-menu key opens at the pointer or at the item (GAP-155). Its panel is Menu's.",
+    usage: [
+      "Use for the actions on a thing under the pointer: a map feature, a tree row.",
+      "Its panel, items and properties are Menu's, painted by the same code; only the way it opens differs.",
+      "Use Menu instead when a visible button opens the list.",
+    ],
+    api: [
+      "Content maps to composed ContextMenuContent examples in Code Connect.",
+      "Label Text maps to ContextMenuLabel children.",
+      "Item text properties map to ContextMenuItem, ContextMenuCheckboxItem, or ContextMenuRadioItem children.",
+      "Shortcut Text maps to ContextMenuShortcut children.",
+      "External maps to ContextMenuItem.external: the new-tab icon at the item's end.",
+    ],
+    properties: [
+      "Content: Basic, Checkbox, Radio, Submenu",
+      "Label Text, Item 1 Text, Item 2 Text, Item 3 Text, Shortcut Text, External",
+    ],
+    accessibility: [
+      "In code a right click, a long press on touch, and the context-menu key or Shift+F10 open it.",
+      "Text, checked marks, and boundaries pass in Light and Dark modes.",
+      "External's icon is decoration: the code says \"opens in a new tab\" after the item's name.",
     ],
   },
   {
@@ -7371,6 +7431,31 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Menu/shortcut/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Menu/shortcut/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-156: React's Kbd cap, h-5 min-w-5 px-1 rounded-marker border
+  // text-xs font-medium, its caps gap-1 apart in a combination.
+  { name: "Kbd/height", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Kbd/min-width", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Kbd/padding/x",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "Kbd/gap", value: 4, alias: "Layout/spacing/50", scopes: ["GAP"] },
+  {
+    name: "Kbd/radius",
+    value: KOZMOS_RADIUS.marker,
+    alias: "Radius/sm",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Kbd/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
+  { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -10845,6 +10930,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Link", updateLinkComponent],
   ["Label", updateLabelComponent],
   ["Separator", updateSeparatorComponent],
+  ["Kbd", updateKbdComponent],
   ["MetaStrip", updateMetaStripComponent],
   ["Skeleton", updateSkeletonComponent],
   ["Box", updateBoxComponent],
@@ -10872,6 +10958,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Drawer", updateDrawerComponent],
   ["Popover", updatePopoverComponent],
   ["Menu", updateMenuComponent],
+  ["ContextMenu", updateContextMenuComponent],
   ["Checkbox", updateCheckboxComponent],
   ["Radio", updateRadioComponent],
   ["Switch", updateSwitchComponent],
@@ -11131,6 +11218,12 @@ async function updateAllCoreComponents() {
 
 function additionalComponentActionHandlers() {
   return {
+    "build-kbd": buildKbdComponent,
+    "update-kbd": updateKbdComponent,
+    "rebuild-kbd": rebuildKbdComponent,
+    "build-context-menu": buildContextMenuComponent,
+    "update-context-menu": updateContextMenuComponent,
+    "rebuild-context-menu": rebuildContextMenuComponent,
     "build-tour-step": buildTourStepComponent,
     "update-tour-step": updateTourStepComponent,
     "rebuild-tour-step": rebuildTourStepComponent,
@@ -17634,6 +17727,7 @@ function shouldAuditLayoutBindings(name) {
     [
       "Link",
       "Separator",
+      "Kbd",
       "Skeleton",
       "Box",
       "Stack",
@@ -17665,6 +17759,7 @@ function shouldAuditLayoutBindings(name) {
       "Dialog",
       "Popover",
       "Menu",
+      "ContextMenu",
       "Toast",
       "Checkbox",
       "Radio",
@@ -18313,6 +18408,18 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Menu") {
     return {
       Content: MENU_CONTENT,
+    };
+  }
+
+  if (canonicalName === "ContextMenu") {
+    return {
+      Content: MENU_CONTENT,
+    };
+  }
+
+  if (canonicalName === "Kbd") {
+    return {
+      Keys: KBD_KEYS,
     };
   }
 
@@ -25042,7 +25149,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     if (textName === "Title Text") return "popoverTitle";
     return "popoverDescription";
   }
-  if (setName === "Menu") {
+  if (setName === "Kbd") return textStyleKeyForText("XS", "Medium");
+  if (setName === "Menu" || setName === "ContextMenu") {
     if (textName === "Shortcut Text") return "menuShortcut";
     if (textName === "Label Text") return "menuItemStrong";
     return "menuItem";
@@ -34152,6 +34260,7 @@ async function buildMenuComponent() {
       "Content maps to composed MenuContent examples.",
       "Label Text maps to MenuLabel children.",
       "Item text properties map to Menu item children.",
+      "External shows the new-tab icon, MenuItem.external.",
     ],
   });
 }
@@ -34172,6 +34281,94 @@ async function updateMenuComponent() {
       "Content maps to composed MenuContent examples.",
       "Label Text maps to MenuLabel children.",
       "Item text properties map to Menu item children.",
+      "External shows the new-tab icon, MenuItem.external.",
+      "Updated in place to preserve the Code Connect node ID.",
+    ],
+  });
+}
+
+// GAP-155: a context menu's panel is Menu's. React's ContextMenu parts share
+// Menu's item classes, so this set is painted by Menu's own painter
+// (updateMenuVariant), with Menu's Content axis and properties, and differs
+// only in its name and the code it maps to. Its own set gives Code Connect a
+// node for ContextMenuContent and designers a name to find; one painter keeps
+// the two panels from drifting apart.
+const CONTEXT_MENU_DESCRIPTION = [
+  "Kozmos ContextMenu component set generated from React ContextMenuContent API.",
+  "Its panel is Menu's, painted by the same code: a right click, a long press or the context-menu key opens it.",
+  "Content maps to composed ContextMenuContent examples.",
+  "Label Text maps to ContextMenuLabel children.",
+  "Item text properties map to ContextMenu item children.",
+  "External shows the new-tab icon, ContextMenuItem.external.",
+];
+
+async function buildContextMenuComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ContextMenu",
+    componentSetName: "ContextMenu",
+    axisName: "Content",
+    values: MENU_CONTENT,
+    x: 80,
+    y: 6680,
+    xStep: 240,
+    createVariant: createContextMenuVariant,
+    configureProperties: configureMenuProperties,
+    description: CONTEXT_MENU_DESCRIPTION,
+  });
+}
+
+async function updateContextMenuComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ContextMenu",
+    componentSetName: "ContextMenu",
+    axisName: "Content",
+    values: MENU_CONTENT,
+    xStep: 240,
+    createVariant: createContextMenuVariant,
+    updateVariant: updateContextMenuVariant,
+    parseVariantName: parseMenuVariantName,
+    configureProperties: configureMenuProperties,
+    description: CONTEXT_MENU_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+// GAP-156: Kbd, a key cap. Keys is one key or a combination.
+async function buildKbdComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Kbd",
+    componentSetName: "Kbd",
+    axisName: "Keys",
+    values: KBD_KEYS,
+    x: 80,
+    y: 7160,
+    xStep: 160,
+    createVariant: createKbdVariant,
+    configureProperties: configureKbdProperties,
+    description: [
+      "Kozmos Kbd component set generated from React Kbd API.",
+      "Keys maps to one key (children) or a combination (keys).",
+      "Key Text maps to the key; Modifier Text to the first of keys.",
+    ],
+  });
+}
+
+async function updateKbdComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Kbd",
+    componentSetName: "Kbd",
+    axisName: "Keys",
+    values: KBD_KEYS,
+    xStep: 160,
+    createVariant: createKbdVariant,
+    updateVariant: updateKbdVariant,
+    parseVariantName: parseKbdVariantName,
+    configureProperties: configureKbdProperties,
+    description: [
+      "Kozmos Kbd component set generated from React Kbd API.",
+      "Keys maps to one key (children) or a combination (keys).",
+      "Key Text maps to the key; Modifier Text to the first of keys.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -54998,6 +55195,33 @@ function configureMenuProperties(componentSet, stats) {
     "Cmd K",
     stats,
   );
+  // Decision 152: External shows the new-tab icon at a plain item's end
+  // (syncMenuItemRow), off by default, so a menu draws as it did. Shared by
+  // Menu and ContextMenu, whose items are one.
+  configureNamedBooleanProperty(
+    componentSet,
+    LINK_EXTERNAL_ICON_NAME,
+    "External",
+    false,
+    stats,
+  );
+}
+
+function configureKbdProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Key Text",
+    "Key Text",
+    "Esc",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Modifier Text",
+    "Modifier Text",
+    "Ctrl",
+    stats,
+  );
 }
 
 function configureToastProperties(componentSet, stats) {
@@ -55093,6 +55317,22 @@ async function rebuildMenuComponent() {
     componentName: "Menu",
     componentSetName: "Menu",
     build: buildMenuComponent,
+  });
+}
+
+async function rebuildContextMenuComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ContextMenu",
+    componentSetName: "ContextMenu",
+    build: buildContextMenuComponent,
+  });
+}
+
+async function rebuildKbdComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "Kbd",
+    componentSetName: "Kbd",
+    build: buildKbdComponent,
   });
 }
 
@@ -57039,22 +57279,50 @@ const LINK_EXTERNAL_ICON_PATH =
  * shows it (configureLinkProperties).
  */
 function syncLinkExternalIcon(component, config, variableByName, stats) {
-  const size = 14;
   const existing = directChildNamed(component, LINK_EXTERNAL_ICON_NAME);
   if (existing) existing.remove();
+  const icon = createExternalIcon({
+    owner: "Link",
+    kind: "link-external-icon",
+    size: 14,
+    sizeToken: "Link/icon/size",
+    foreground: config.foreground,
+    foregroundFallback: config.foregroundFallback,
+    variableByName,
+    stats,
+  });
+  component.appendChild(icon);
+  icon.visible = false;
+  return icon;
+}
+
+/**
+ * Pointr's link-external-01, drawn from its path at `size`, stroked
+ * 2 × size / 24 with round caps and joins in `foreground`, its side bound to
+ * `sizeToken`, and marked decorative: the code reads the new tab in words.
+ * Link draws it after its words (syncLinkExternalIcon), and Menu's and
+ * ContextMenu's items at their end (syncMenuItemRow, decision 152). The caller
+ * places it and hides it until its set's External boolean.
+ */
+function createExternalIcon({
+  owner,
+  kind,
+  size,
+  sizeToken,
+  foreground,
+  foregroundFallback,
+  variableByName,
+  stats,
+}) {
   const icon = figma.createNodeFromSvg(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="${LINK_EXTERNAL_ICON_PATH}" stroke="${config.foregroundFallback}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="${LINK_EXTERNAL_ICON_PATH}" stroke="${foregroundFallback}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   );
   icon.name = LINK_EXTERNAL_ICON_NAME;
   icon.fills = [];
   icon.strokes = [];
   icon.clipsContent = false;
-  icon.setSharedPluginData(RUN_NAMESPACE, "kind", "link-external-icon");
-  icon.setSharedPluginData(
-    RUN_NAMESPACE,
-    "foreground-token",
-    config.foreground,
-  );
+  icon.setSharedPluginData(RUN_NAMESPACE, "kind", kind);
+  icon.setSharedPluginData(RUN_NAMESPACE, "foreground-token", foreground);
   markDecorativeIcon(icon);
   // Drawn on its 24 grid and resized with its shapes, as the wayfinding
   // glyphs are placed (placeIconSource); the stroke is set below.
@@ -57069,12 +57337,12 @@ function syncLinkExternalIcon(component, config, variableByName, stats) {
     icon.resize(size, size);
   } catch (error) {
     stats.warnings.push(
-      `Link: could not size the new-tab icon to ${size} (${messageFor(error)}).`,
+      `${owner}: could not size the new-tab icon to ${size} (${messageFor(error)}).`,
     );
   }
   const paint = paintFromVariable(
-    config.foreground,
-    config.foregroundFallback,
+    foreground,
+    foregroundFallback,
     variableByName,
     stats,
   );
@@ -57085,15 +57353,7 @@ function syncLinkExternalIcon(component, config, variableByName, stats) {
     shape.strokeJoin = "ROUND";
   }
   scaleIconStrokes(icon, size);
-  bindSizeVariables(
-    icon,
-    "Link/icon/size",
-    "Link/icon/size",
-    variableByName,
-    stats,
-  );
-  component.appendChild(icon);
-  icon.visible = false;
+  bindSizeVariables(icon, sizeToken, sizeToken, variableByName, stats);
   return icon;
 }
 
@@ -61368,7 +61628,7 @@ function parseMenuVariantName(name) {
 
 async function updateMenuVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, variableByName, fonts, stats, componentName },
 ) {
   component.name = `Content=${value}`;
   component.layoutMode = "VERTICAL";
@@ -61393,7 +61653,11 @@ async function updateMenuVariant(
   component.strokeWeight = 1;
   component.effects = [elevationEffect("overlay")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
-  component.setSharedPluginData(RUN_NAMESPACE, "component", "Menu");
+  component.setSharedPluginData(
+    RUN_NAMESPACE,
+    "component",
+    componentName || "Menu",
+  );
 
   await syncMenuVariantChildren({
     component,
@@ -61402,6 +61666,233 @@ async function updateMenuVariant(
     fonts,
     stats,
   });
+}
+
+// GAP-155: ContextMenu's variants are Menu's panel, painted by Menu's painter.
+async function createContextMenuVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateContextMenuVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+async function updateContextMenuVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  await updateMenuVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+    componentName: "ContextMenu",
+  });
+}
+
+// --- Kbd ----------------------------------------------------------------------
+
+// GAP-156: React's Kbd, a key cap: h-5 (20) min-w-5 (20) px-1 (4),
+// rounded-marker (4), a 1 border in the border colour (Border/Subtle) on the
+// muted fill (background/100), its key 12/16 medium (text-xs font-medium) in
+// the foreground. A combination is its caps gap-1 (4) apart with a "+" between
+// in the muted foreground (foreground/400). The edge is laid inside the cap,
+// as CSS's border-box draws it, so a cap is 20 tall and its key 5 from each
+// side. Each variant is a row of caps that hugs them; nothing is themed by
+// hand: Light and Dark come from the variables.
+const KBD_PLUS_NAME = "Plus";
+
+async function createKbdVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateKbdVariant(component, { value, variableByName, fonts, stats });
+  return component;
+}
+
+function parseKbdVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (KBD_KEYS.indexOf(values.Keys) === -1) return null;
+  return { value: values.Keys };
+}
+
+async function updateKbdVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  component.name = `Keys=${value}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 4;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Kbd");
+  bindFloatVariable(component, "itemSpacing", "Kbd/gap", variableByName, stats);
+
+  // Redrawn whole on every Update: the caps hold no instance and nothing a
+  // designer overrides but the texts, which the properties carry.
+  removeDirectChildren(component);
+  if (value === "Combination") {
+    component.appendChild(
+      await createKbdCap({
+        name: "Modifier Key",
+        textName: "Modifier Text",
+        characters: "Ctrl",
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+    const plus = figma.createText();
+    plus.name = KBD_PLUS_NAME;
+    await applyKbdTypography(plus, fonts, variableByName, stats);
+    plus.characters = "+";
+    plus.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+    plus.setSharedPluginData(RUN_NAMESPACE, "kind", "kbd-plus");
+    component.appendChild(plus);
+    setHugChildSizing(plus);
+    component.appendChild(
+      await createKbdCap({
+        name: "Key",
+        textName: "Key Text",
+        characters: "C",
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  } else {
+    component.appendChild(
+      await createKbdCap({
+        name: "Key",
+        textName: "Key Text",
+        characters: "Esc",
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+}
+
+async function createKbdCap({
+  name,
+  textName,
+  characters,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const cap = figma.createFrame();
+  cap.name = name;
+  cap.layoutMode = "HORIZONTAL";
+  cap.primaryAxisSizingMode = "AUTO";
+  cap.counterAxisSizingMode = "FIXED";
+  cap.primaryAxisAlignItems = "CENTER";
+  cap.counterAxisAlignItems = "CENTER";
+  cap.itemSpacing = 0;
+  // Padding before the stroke: a frame takes both in, and stays grown.
+  cap.paddingLeft = 4;
+  cap.paddingRight = 4;
+  cap.paddingTop = 0;
+  cap.paddingBottom = 0;
+  cap.resizeWithoutConstraints(20, 20);
+  setNodePropertyIfSupported(cap, "minWidth", 20);
+  cap.cornerRadius = KOZMOS_RADIUS.marker;
+  cap.clipsContent = false;
+  cap.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  setNodePropertyIfSupported(cap, "strokesIncludedInLayout", true);
+  cap.strokeWeight = 1;
+  cap.strokeAlign = "INSIDE";
+  cap.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  cap.setSharedPluginData(RUN_NAMESPACE, "kind", "kbd-cap");
+  bindFloatVariable(cap, "height", "Kbd/height", variableByName, stats);
+  bindFloatVariable(cap, "minWidth", "Kbd/min-width", variableByName, stats);
+  bindFloatVariable(cap, "paddingLeft", "Kbd/padding/x", variableByName, stats);
+  bindFloatVariable(
+    cap,
+    "paddingRight",
+    "Kbd/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(cap, "cornerRadius", "Kbd/radius", variableByName, stats);
+  bindFloatVariable(
+    cap,
+    "strokeWeight",
+    "Kbd/stroke/width",
+    variableByName,
+    stats,
+  );
+
+  const text = figma.createText();
+  text.name = textName;
+  await applyKbdTypography(text, fonts, variableByName, stats);
+  text.characters = characters;
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  text.textAlignHorizontal = "CENTER";
+  text.textAlignVertical = "CENTER";
+  cap.appendChild(text);
+  setHugChildSizing(text);
+  return cap;
+}
+
+async function applyKbdTypography(text, fonts, variableByName, stats) {
+  text.fontName = fonts.medium;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  text.textAutoResize = "WIDTH_AND_HEIGHT";
+  await applyTextStyleToNodeAsync(
+    text,
+    textStyleKeyForText("XS", "Medium"),
+    stats,
+  );
+  bindFloatVariable(text, "fontSize", "Kbd/font-size", variableByName, stats);
+  bindFloatVariable(
+    text,
+    "lineHeight",
+    "Kbd/line-height",
+    variableByName,
+    stats,
+  );
 }
 
 async function createCheckboxVariant({
@@ -68635,6 +69126,7 @@ async function syncMenuVariantChildren({
         name: "Menu Item 2",
         textName: "Item 2 Text",
         text: "Billing",
+        external: true,
         variableByName,
         fonts,
         stats,
@@ -68671,6 +69163,7 @@ async function syncMenuVariantChildren({
         name: "Menu Item 2",
         textName: "Item 2 Text",
         text: "Billing",
+        external: true,
         variableByName,
         fonts,
         stats,
@@ -68707,6 +69200,7 @@ async function syncMenuItemRow({
   radio,
   submenu,
   shortcut,
+  external,
   variableByName,
   fonts,
   stats,
@@ -68800,6 +69294,27 @@ async function syncMenuItemRow({
     );
     iconNode.name = "Submenu Icon";
     row.appendChild(iconNode);
+  }
+
+  // Decision 152 (GAP-202): a plain item that opens a page draws Link's
+  // new-tab icon at its end, as React's MenuItem `external` does: the menu's
+  // glyph size, 16 (Menu/icon/size, React's h-4 w-4), in the item's colour
+  // (currentColor), 8 after the words (the row's gap). Hidden until the set's
+  // External boolean (configureMenuProperties); the words take the rest of
+  // the row, so it sits at the end.
+  if (external) {
+    const externalIcon = createExternalIcon({
+      owner: component.name || "Menu",
+      kind: "menu-external-icon",
+      size: 16,
+      sizeToken: "Menu/icon/size",
+      foreground: "Colors/foreground/0",
+      foregroundFallback: "#000000",
+      variableByName,
+      stats,
+    });
+    row.appendChild(externalIcon);
+    externalIcon.visible = false;
   }
 
   component.appendChild(row);

@@ -17,6 +17,7 @@ import {
   FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
   FieldPopupContent,
+  FieldPopupDrawn,
   FieldPopupRoot,
   FieldPopupStatus,
   keepFieldFocus,
@@ -140,6 +141,10 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     // The popup is in a portal, outside the root: a press or focus inside
     // it is still inside the field.
     const popupRef = React.useRef<HTMLDivElement>(null);
+    // The popup's list is drawn a commit after the popup opens (its portal
+    // mounts then): the field names an active option only once the list is
+    // in the page, so no commit names an option still to be drawn (GAP-231).
+    const [listboxDrawn, setListboxDrawn] = React.useState(false);
     const presentation = React.useContext(MapShellPresentationContext);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const defaultInputId = React.useId();
@@ -187,7 +192,9 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           : undefined;
     const activeOption = activeIndex >= 0 ? filteredOptions[activeIndex] : null;
     const activeOptionId =
-      open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
+      open && listboxDrawn && activeOption
+        ? `${inputId}-option-${activeIndex}`
+        : undefined;
     const listboxOpen = open && filteredOptions.length > 0;
 
     React.useEffect(() => {
@@ -240,13 +247,49 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
     // New options, or new typed text, make the first enabled option active in
     // the render that brings them, so no commit names a stale one (GAP-231).
-    const [activeFor, setActiveFor] = React.useState<
-      typeof navigableOptions | null
-    >(null);
-    if (activeFor !== navigableOptions) {
-      setActiveFor(navigableOptions);
-      setActiveIndex(firstEnabledIndex(navigableOptions));
+    // The list is known by what it draws, not by identity: a choice, or a
+    // host that passes an equal options array anew, leaves the active option
+    // where the visitor put it.
+    const drawnList = React.useMemo(
+      () =>
+        JSON.stringify([
+          visibleSearchValue,
+          filteredOptions.map((option) => option.value),
+        ]),
+      [filteredOptions, visibleSearchValue],
+    );
+    const [activeFor, setActiveFor] = React.useState<string | null>(null);
+    // A choice made while text is typed clears the text: the option just
+    // chosen stays active in the full list that comes back, so the visitor
+    // keeps their place. Read once, in the render the choice brings.
+    const [keptValue, setKeptValue] = React.useState<string | null>(null);
+    if (activeFor !== drawnList) {
+      setActiveFor(drawnList);
+      // The option just chosen, or, if the product has disabled it, the next
+      // enabled one on from it; with no choice, the first enabled one.
+      const kept =
+        keptValue === null
+          ? -1
+          : navigableOptions.findIndex((option) => option.value === keptValue);
+      setActiveIndex(
+        kept < 0
+          ? firstEnabledIndex(navigableOptions)
+          : navigableOptions[kept].disabled
+            ? enabledIndex(navigableOptions, kept, 1)
+            : kept,
+      );
+    } else if (navigableOptions[activeIndex]?.disabled !== false) {
+      // The active option can no longer be chosen (the choice reached
+      // maxSelected, or the product disabled it): the next enabled one, on
+      // from it, takes over. At maxSelected only chosen options are enabled,
+      // so it lands on one the visitor can un-choose.
+      const next =
+        activeIndex >= 0
+          ? enabledIndex(navigableOptions, activeIndex, 1)
+          : firstEnabledIndex(navigableOptions);
+      if (next !== activeIndex) setActiveIndex(next);
     }
+    if (keptValue !== null) setKeptValue(null);
 
     React.useEffect(() => {
       if (!open) return undefined;
@@ -299,6 +342,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         : [...selectedValues, option.value];
 
       commitValue(nextValues);
+      if (visibleSearchValue) setKeptValue(option.value);
       setSearch("");
       setOpen(true);
       trackEvent("MultiSelect", exists ? "option_removed" : "option_selected", {
@@ -544,6 +588,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
                     style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
+                    <FieldPopupDrawn onDrawn={setListboxDrawn} />
                     {filteredOptions.length === 0 ? (
                       <div className="px-3 py-2 text-sm text-muted-foreground">
                         {emptyText}

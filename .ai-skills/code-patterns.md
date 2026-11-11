@@ -69,6 +69,14 @@ Banner.displayName = "Banner";
   theme 500 under white in both themes, for a checked, selected or filled part. `primary` is theme
   600, the theme as text, an icon, a border or a ring on a surface; `primary-foreground` turns black
   in the dark, so it is never ink on a fill. `pnpm test:theme-fill` reads both in a real browser.
+- **Under the pointer, the hover fill (decision 173):** a hover, a press, a highlighted option
+  and a selected Tree or Table row take `bg-hover-fill` (`hover:bg-hover-fill`,
+  `hover:bg-hover-fill/50`), `var(--semantics-hover-fill)` in owned CSS: background/100 in light and
+  background/200 in dark, where `muted` (background/100, #17191C) is 1.19:1 on the black page and a
+  hover is barely seen. `bg-muted` is for a fill at rest: a placeholder, a track, a disabled field.
+  Two named exceptions keep `muted`: Button's emotion outline and text hover, and a selected
+  NavigationItem or BottomNavigation item, whose inks fall under AA on the dark step.
+  `pnpm tokens:contrast:check` fails on any `hover:bg-muted` outside them.
 - **Everything is exported from the package root:** `pnpm new-component` adds
   `export * from "./components/<Name>/<Name>"` to `packages/react/src/index.ts`.
 

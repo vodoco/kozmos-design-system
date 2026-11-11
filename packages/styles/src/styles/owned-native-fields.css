@@ -88,7 +88,7 @@
   .kozmos-password-toggle:enabled:hover::before,
   .kozmos-date-picker-trigger:enabled:hover::before,
   .kozmos-combobox-action:enabled:hover::before {
-    background-color: var(--primitives-colors-background-100);
+    background-color: var(--semantics-hover-fill);
   }
   /* Input's toggle action (GAP-154): the product's icon at the copy icon's
      16. Pressed, the fill above is the theme fill under the icon, in the
@@ -175,7 +175,7 @@
     @apply rounded-none text-center;
   }
   .kozmos-number-step {
-    @apply border border-input bg-background text-foreground hover:bg-muted disabled:bg-muted disabled:text-muted-foreground;
+    @apply border border-input bg-background text-foreground hover:bg-hover-fill disabled:bg-muted disabled:text-muted-foreground;
   }
   .kozmos-number-decrement {
     @apply rounded-s-control border-e-0;

@@ -2266,6 +2266,19 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsHoverFill: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#2E3138") : UIColor(hex: "#E3E4E8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#2E3138") : NSColor(hex: "#E3E4E8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsDiffNew: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

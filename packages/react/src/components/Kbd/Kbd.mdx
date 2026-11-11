@@ -1,0 +1,107 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as KbdStories from "./Kbd.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={KbdStories} />
+
+# Kbd
+
+A key drawn as a key, in a hint or a list of shortcuts: "Press <kbd>Esc</kbd> to clear" (GAP-156). It is drawn as
+written and read by the key's name, so a screen reader reads that hint "Press Escape to clear".
+
+<Canvas>
+  <Story of={KbdStories.Default} />
+</Canvas>
+
+<Controls />
+
+## One key or a combination
+
+`children` is one key; `keys` is a combination, drawn as keys joined by "+" and read by each key's name:
+`<Kbd keys={["Ctrl", "C"]} />` is read "Control+C". HTML writes a combination as a `<kbd>` of `<kbd>`s, and so does
+Kbd.
+
+<Canvas>
+  <Story of={KbdStories.Combination} />
+</Canvas>
+
+<Canvas>
+  <Story of={KbdStories.InAHint} />
+</Canvas>
+
+## What it is read as
+
+Kbd knows the names of the keys hints abbreviate or draw as symbols: Esc is read "Escape", Ctrl "Control", ⌘ "Command",
+⌥ "Option", ⇧ "Shift", ↵ "Enter", ⌫ "Backspace", Del "Delete", the arrows "Up arrow" and so on. Any other key is read as
+written. The names are English: pass `label`, the product's own words, to replace what is read for the whole part.
+
+Kbd draws the key you write. It doesn't swap ⌘ for Ctrl by platform: write the key the reader presses.
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { Kbd, Text } from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <Text size="sm" color="muted">
+      Press <Kbd>Esc</Kbd> to clear, or <Kbd keys={["Ctrl", "K"]} /> to search.
+    </Text>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosKbd } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <p>Press <KozmosKbd :keys="['Esc']" /> to clear</p>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A key is drawn as you write it and read by its name: VoiceOver reads this
+// Esc as "Escape". KozmosKbd(keys: ["Ctrl", "K"]) draws a combination, read
+// "Control+K"; label replaces what is read.
+struct ClearSearchHint: View {
+    var body: some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+            KozmosText("Press")
+            KozmosKbd("Esc")
+            KozmosText("to clear")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import com.kozmos.components.kbd.KozmosKbd
+import com.kozmos.components.text.KozmosText
+import com.kozmos.tokens.KozmosDimensions
+
+// A key is drawn as you write it and read by its name: TalkBack reads this
+// Esc as "Escape". keys = listOf("Ctrl", "K") draws a combination, read
+// "Control+K"; label replaces what is read.
+@Composable
+fun ClearSearchHint() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        KozmosText(text = "Press")
+        KozmosKbd(key = "Esc")
+        KozmosText(text = "to clear")
+    }
+}
+`}
+
+/>

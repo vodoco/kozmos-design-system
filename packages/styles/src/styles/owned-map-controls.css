@@ -56,7 +56,7 @@
     color: var(--primitives-colors-foreground-0);
   }
   .kozmos-map-control.kozmos-button-ghost:hover {
-    background-color: var(--primitives-colors-background-100);
+    background-color: var(--semantics-hover-fill);
   }
 
   /* A toggle's state is its tone, as the SDK's is: off, the words and the

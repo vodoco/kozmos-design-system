@@ -234,7 +234,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             aria-invalid={resolvedStatus === "error" || undefined}
             className={cn(
               "flex min-h-36 w-full cursor-pointer flex-col items-center justify-center rounded-container border border-dashed bg-background px-4 py-6 text-center ring-offset-background transition-colors",
-              "border-input hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "border-input hover:bg-hover-fill/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               dragActive && "border-primary bg-primary/5",
               disabled &&
                 "cursor-not-allowed bg-muted text-muted-foreground opacity-80 hover:bg-muted",

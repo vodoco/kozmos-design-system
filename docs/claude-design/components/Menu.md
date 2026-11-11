@@ -77,15 +77,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
   Used to force mounting when more control is needed. Useful when
   controlling animation with React animation libraries.
 
-- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
-- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
-- `onFocusOutside`: `DismissableLayerProps['onFocusOutside']`, optional.
-- `onInteractOutside`: `DismissableLayerProps['onInteractOutside']`, optional.
-- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on close.
-  Can be prevented.
-
 - `side`: `Side`, optional.
 - `sideOffset`: `number`, optional, default `4`.
 - `align`: `Align`, optional.
@@ -97,17 +88,42 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `sticky`: `'partial' | 'always'`, optional.
 - `hideWhenDetached`: `boolean`, optional.
 - `updatePositionStrategy`: `'optimized' | 'always'`, optional.
+- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on close.
+  Can be prevented.
+
 - `loop`: `RovingFocusGroupProps['loop']`, optional, default `false`.
 
   Whether keyboard navigation should loop around
 
+- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
+- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
+- `onFocusOutside`: `DismissableLayerProps['onFocusOutside']`, optional.
+- `onInteractOutside`: `DismissableLayerProps['onInteractOutside']`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuItem
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimitive.DropdownMenuItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & { inset?: boolean }`.
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimitive.DropdownMenuItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & MenuItemExternalProps & { inset?: boolean }`.
+
+- `external`: `boolean`, optional.
+
+  The item opens a page in a new tab, as Link's `external` (GAP-202,
+  decision 152): the new-tab icon at the item's inline end, and
+  `externalLabel` read after its name. With `asChild` around an `<a>`, the
+  link gets `target="_blank"` and `rel="noopener noreferrer"`, its own
+  `target` and `rel` still winning; a `target` that keeps it in this tab
+  (`_self`, `_parent`, `_top`) opens no new tab, so it adds none of these.
+  Without `asChild`, opening the page is `onSelect`'s.
+
+- `externalLabel`: `string`, optional.
+
+  What a screen reader hears after the item's name when `external`:
+  "Documentation opens in a new tab". English by default; pass the
+  product's own words. Empty, it says nothing more.
 
 - `inset`: `boolean`, optional.
 - `onSelect`: `(event: Event) => void`, optional.
@@ -208,10 +224,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
   Used to force mounting when more control is needed. Useful when
   controlling animation with React animation libraries.
 
-- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
-- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
-- `onFocusOutside`: `DismissableLayerProps['onFocusOutside']`, optional.
-- `onInteractOutside`: `DismissableLayerProps['onInteractOutside']`, optional.
 - `sideOffset`: `number`, optional.
 - `alignOffset`: `number`, optional.
 - `arrowPadding`: `number`, optional.
@@ -225,6 +237,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 
   Whether keyboard navigation should loop around
 
+- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
+- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
+- `onFocusOutside`: `DismissableLayerProps['onFocusOutside']`, optional.
+- `onInteractOutside`: `DismissableLayerProps['onInteractOutside']`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

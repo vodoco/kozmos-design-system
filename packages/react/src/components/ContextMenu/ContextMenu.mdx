@@ -1,0 +1,152 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as ContextMenuStories from "./ContextMenu.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={ContextMenuStories} />
+
+# ContextMenu
+
+Menu's panel and items, opened where they are asked for: the map's right-click menu, and a tree row's (GAP-155). A right
+click opens it at the pointer; a long press opens it on touch; the keyboard's context-menu key, or Shift+F10, opens it
+at the item that has focus. Its parts are Menu's, named `ContextMenu…`, and draw exactly as Menu's do; an item takes
+`external` as Menu's does.
+
+<Canvas>
+  <Story of={ContextMenuStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Every platform
+
+- **Web**: Radix's context menu. Wrap the area in `ContextMenuTrigger`; anything in it that takes focus opens the
+  menu from the keyboard.
+- **SwiftUI**: `.kozmosContextMenu(_:onItemSelect:)` is the system's context menu, with KozmosMenu's rows: a long press
+  opens it on touch, a secondary click with a pointer, and VoiceOver offers it as the element's menu. The system draws
+  it, as it draws KozmosMenu.
+- **Compose**: `KozmosContextMenuArea` opens KozmosMenu's items where the area is pressed: a long press on touch, a
+  right click with a mouse, and the Menu key or Shift+F10 at what has focus. Its content keeps its own focus stops: mark
+  each element TalkBack stops on with `Modifier.kozmosContextMenuTarget()`, which offers "Show menu" as that
+  element's action and opens the menu at it. With nothing marked, the area is one stop named by its `label` ("More
+  options" by default; pass the product's words) that offers the menu.
+
+Touch has no right click, so a long press is the context menu everywhere: don't give a long press another meaning in
+the same place.
+
+## The browser's own menu
+
+An open ContextMenu cancels the browser's own context menu inside it, so a right click in the open menu, or the menu
+key's release on Windows, never opens the browser's menu over Kozmos's. That includes a field you put in the menu: it
+loses the browser's menu (Paste, spell check) while the menu is open. Keep fields out of a context menu.
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  Text,
+} from "@kozmos-ds/react";
+export function Example() {
+  const [picked, setPicked] = useState("Nothing yet");
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div tabIndex={0}>
+            <Text>Gate A12</Text>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={() => setPicked("Copy gate")}>
+            Copy gate
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => setPicked("Share")}>
+            Share
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      <output>Picked: {picked}</output>
+    </>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosContextMenu } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosContextMenu />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The system's context menu with KozmosMenu's rows: a long press opens it,
+// a secondary click on iPad and Mac, and VoiceOver offers it as the
+// element's menu. Picking an item hands it to you and closes the menu.
+struct GateContextMenu: View {
+    @State private var picked = "Nothing yet"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            KozmosText("Gate A12")
+                .kozmosContextMenu(
+                    KozmosMenuContent(items: [
+                        KozmosMenuItem(text: "Copy gate"),
+                        KozmosMenuItem(text: "Share"),
+                    ]),
+                    onItemSelect: { picked = $0.text }
+                )
+            KozmosText("Picked: \\(picked)")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.kozmos.components.contextmenu.KozmosContextMenuArea
+import com.kozmos.components.contextmenu.kozmosContextMenuTarget
+import com.kozmos.components.menu.KozmosMenuContent
+import com.kozmos.components.menu.KozmosMenuItem
+import com.kozmos.components.text.KozmosText
+import com.kozmos.tokens.KozmosDimensions
+
+// The area opens KozmosMenu's items where it is pressed: a long press or a
+// right click, or the Menu key (Shift+F10) at what has focus. Mark what
+// TalkBack stops on with kozmosContextMenuTarget(): it offers "Show menu" as
+// that element's action. Picking an item hands it to you and closes the menu.
+@Composable
+fun GateContextMenu() {
+    var picked by remember { mutableStateOf("Nothing yet") }
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
+        KozmosContextMenuArea(
+            menu = KozmosMenuContent(
+                items = listOf(KozmosMenuItem(text = "Copy gate"), KozmosMenuItem(text = "Share"))
+            ),
+            onItemClick = { picked = it.text }
+        ) {
+            KozmosText(text = "Gate A12", modifier = Modifier.kozmosContextMenuTarget())
+        }
+        KozmosText(text = "Picked: $picked")
+    }
+}
+`}
+
+/>

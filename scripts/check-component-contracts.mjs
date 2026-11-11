@@ -231,7 +231,8 @@ const files = {
   reactMultiSelectFigma:
     "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
   reactListbox: "packages/react/src/components/Listbox/Listbox.tsx",
-  reactMenu: "packages/react/src/components/Menu/Menu.tsx",
+  // Menu's classes, which ContextMenu shares (GAP-155).
+  reactMenu: "packages/react/src/components/Menu/menu-parts.tsx",
   reactMapControlButton:
     "packages/react/src/components/MapControlButton/MapControlButton.tsx",
   reactMapControlButtonFigma:
@@ -399,6 +400,10 @@ const files = {
     "packages/ios/Sources/Components/NavigationItem/NavigationItem.figma.swift",
   iosNavbar: "packages/ios/Sources/Components/Navbar/Navbar.swift",
   iosNavbarFigma: "packages/ios/Sources/Components/Navbar/Navbar.figma.swift",
+  iosIconButtonFigma:
+    "packages/ios/Sources/Components/IconButton/IconButton.figma.swift",
+  androidIconButtonFigma:
+    "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.figma.kt",
   iosSidebar: "packages/ios/Sources/Components/Sidebar/Sidebar.swift",
   iosSidebarFigma:
     "packages/ios/Sources/Components/Sidebar/Sidebar.figma.swift",
@@ -6511,8 +6516,8 @@ assertNotContains(
 assertContains(
   files.iosNavbarFigma,
   source.iosNavbarFigma,
-  /var variant = \["Content": "Basic", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Actions", "NavigationAlign": "Center"\][\s\S]*?var variant = \["Content": "Contextual", "NavigationAlign": "Center"\]/,
-  "iOS Navbar Code Connect maps static content variants at the default NavigationAlign",
+  /var variant = \["Content": "Basic"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign[\s\S]*?var variant = \["Content": "Actions"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign[\s\S]*?var variant = \["Content": "Contextual"\][\s\S]*?@FigmaEnum\(\s*"NavigationAlign"[\s\S]*?navigationAlign: self\.navigationAlign/,
+  "iOS Navbar Code Connect maps static content variants and NavigationAlign (GAP-196)",
 );
 assertContains(
   files.iosNavbarFigma,
@@ -6547,8 +6552,8 @@ assertContains(
 assertContains(
   files.iosSidebarFigma,
   source.iosSidebarFigma,
-  /var variant = \["Content": "Basic", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Sections", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Tools", "Inset": "Default"\][\s\S]*?var variant = \["Content": "Rail", "Inset": "Default"\]/,
-  "iOS Sidebar Code Connect maps static content variants at the default Inset",
+  /var variant = \["Content": "Basic"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Sections"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Tools"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset[\s\S]*?var variant = \["Content": "Rail"\][\s\S]*?@FigmaEnum\("Inset"[\s\S]*?inset: self\.inset/,
+  "iOS Sidebar Code Connect maps static content variants and Inset (GAP-199)",
 );
 assertNotContains(
   files.iosSidebarFigma,
@@ -6568,6 +6573,18 @@ assertContains(
   /KozmosNavbar\([\s\S]*?logo =[\s\S]*?context =[\s\S]*?navigation =[\s\S]*?primaryAction =[\s\S]*?actions =[\s\S]*?utilities =[\s\S]*?account =/,
   "Android Navbar Code Connect uses the named shell slot API",
 );
+assertContains(
+  files.androidNavbarFigma,
+  source.androidNavbarFigma,
+  /@FigmaProperty\(FigmaType\.Enum, "NavigationAlign"\)[\s\S]*?navigationAlign = navigationAlign/,
+  "Android Navbar Code Connect maps NavigationAlign (GAP-196)",
+);
+assertNotContains(
+  files.androidNavbarFigma,
+  source.androidNavbarFigma,
+  /@FigmaVariant\("NavigationAlign"/,
+  "Android Navbar Code Connect restricted to one NavigationAlign",
+);
 assertNotContains(
   files.androidNavbarFigma,
   source.androidNavbarFigma,
@@ -6585,6 +6602,39 @@ assertContains(
   source.androidSidebarFigma,
   /KozmosSidebar\([\s\S]*?variant =[\s\S]*?header =[\s\S]*?navigation =[\s\S]*?tools =[\s\S]*?footer =/,
   "Android Sidebar Code Connect uses the named shell slot API",
+);
+assertContains(
+  files.androidSidebarFigma,
+  source.androidSidebarFigma,
+  /@FigmaProperty\(FigmaType\.Enum, "Inset"\)[\s\S]*?inset = inset/,
+  "Android Sidebar Code Connect maps Inset (GAP-199)",
+);
+assertNotContains(
+  files.androidSidebarFigma,
+  source.androidSidebarFigma,
+  /@FigmaVariant\("Inset"/,
+  "Android Sidebar Code Connect restricted to one Inset",
+);
+// GAP-197: the counter is a mapped property, never a ternary over a raw
+// boolean, which Code Connect prints as code that names an undefined
+// `showCounter`; State's flags are mapped the same way.
+assertContains(
+  files.iosIconButtonFigma,
+  source.iosIconButtonFigma,
+  /@FigmaBoolean\("Counter", mapping: \[true: 3, false: nil\]\)\s*var counter: Int\? = nil[\s\S]*?counter: self\.counter,/,
+  "iOS IconButton Code Connect maps Counter to the count",
+);
+assertNotContains(
+  files.iosIconButtonFigma,
+  source.iosIconButtonFigma,
+  /self\.\w+ \?|self\.state ==/,
+  "iOS IconButton Code Connect expression over a raw property",
+);
+assertContains(
+  files.androidIconButtonFigma,
+  source.androidIconButtonFigma,
+  /@FigmaProperty\(FigmaType\.Boolean, "Counter"\)\s*val counter: Int\? = Figma\.mapping\([\s\S]*?counter = counter/,
+  "Android IconButton Code Connect maps Counter to the count",
 );
 assertContains(
   files.figma,
@@ -10037,7 +10087,13 @@ assertAllVariants(
 assertContains(
   files.iosIconButton,
   source.iosIconButton,
-  ".frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)",
+  ".frame(width: side, height: side)",
+  "iOS IconButton frame at its side",
+);
+assertContains(
+  files.iosIconButton,
+  source.iosIconButton,
+  "private var side: CGFloat { size == .lg ? 48 : 44 }",
   "iOS IconButton 44px frame, 48 for the large size",
 );
 assertContains(
@@ -11586,6 +11642,63 @@ for (const [key, needle, label] of [
     source[key],
     needle,
     `${label} pads its popover to the concentric inset (12)`,
+  );
+}
+// Menu's classes live in menu-parts.tsx, read above, and Menu and
+// ContextMenu (GAP-155) draw with them: a part that spelled its own classes
+// again would drift from both the check above and the other menu.
+for (const [file, from] of [
+  ["packages/react/src/components/Menu/Menu.tsx", "./menu-parts"],
+  [
+    "packages/react/src/components/ContextMenu/ContextMenu.tsx",
+    "../Menu/menu-parts",
+  ],
+]) {
+  const content = read(file);
+  assertContains(
+    file,
+    content,
+    new RegExp(`from "${from.replace(/[./]/g, "\\$&")}";`),
+    "Menu's shared classes, imported from menu-parts",
+  );
+  // Every class a part draws is exactly menu-parts' and the caller's: no
+  // class added beside the shared one, and each part checked on its own
+  // (two indicator items, two content panels), in Menu's and ContextMenu's
+  // order alike.
+  const drawn = [...content.matchAll(/\bcn\(([^)]*)\)/g)]
+    .map((match) => match[1].replace(/\s+/g, " ").trim())
+    .sort();
+  const expected = [
+    "menuContentClass, className",
+    "menuContentClass, className",
+    "menuIndicatorItemClass, className",
+    "menuIndicatorItemClass, className",
+    'menuItemClass, inset && "ps-8", className',
+    'menuLabelClass, inset && "ps-8", className',
+    "menuSeparatorClass, className",
+    "menuShortcutClass, className",
+    'menuSubTriggerClass, inset && "ps-8", className',
+  ];
+  if (JSON.stringify(drawn) !== JSON.stringify(expected))
+    fail(
+      `${file}: its parts draw ${JSON.stringify(drawn)}, not exactly menu-parts' classes and the caller's ${JSON.stringify(expected)}`,
+    );
+  for (const [needle, count] of [
+    ["className={menuIndicatorClass}", 2],
+    ["className={menuSubIconClass}", 1],
+  ])
+    assertOccurrenceCount(
+      file,
+      content,
+      new RegExp(needle.replace(/[{}]/g, "\\$&"), "g"),
+      count,
+      needle,
+    );
+  assertNotContains(
+    file,
+    content,
+    /bg-popover|rounded-marker px-2|ps-8 pe-2|h-px bg-border/,
+    "a menu class spelled in the part instead of menu-parts",
   );
 }
 const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";

@@ -47,8 +47,9 @@ fun KozmosAlert(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-                .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                // A container's corner, 20, as React's rounded-container (decision 156).
+                .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
+                .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
                 .padding(KozmosDimensions.primitivesLayoutSpacing200),
             verticalAlignment = Alignment.Top
         ) {
