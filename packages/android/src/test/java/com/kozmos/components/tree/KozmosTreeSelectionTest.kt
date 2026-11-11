@@ -7,6 +7,9 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,22 +49,28 @@ class KozmosTreeSelectionTest {
     )
 
     private var selected by mutableStateOf(emptySet<String>())
+    /** How many times the tree handed on a selection. */
+    private var changes = 0
 
     private fun tree(
         data: List<TreeNode> = this.data,
         mode: KozmosTreeSelectionMode = KozmosTreeSelectionMode.Multiple,
         menu: ((TreeNode) -> KozmosMenuContent)? = null,
-        menuState: KozmosContextMenuState = KozmosContextMenuState()
+        menuState: KozmosContextMenuState = KozmosContextMenuState(),
+        expanded: Set<String> = setOf("b1"),
+        list: LazyListState? = null,
+        height: Int = 500
     ): @androidx.compose.runtime.Composable () -> Unit = {
         KozmosMaterialTheme {
-            Box(Modifier.size(300.dp, 500.dp)) {
+            Box(Modifier.size(300.dp, height.dp)) {
                 KozmosTree(
                     data,
                     selectionMode = mode,
                     selectedIds = selected,
-                    onSelectedIdsChange = { selected = it },
+                    onSelectedIdsChange = { selected = it; changes++ },
                     contextMenu = menu,
-                    expandedIds = setOf("b1"),
+                    state = list ?: rememberLazyListState(),
+                    expandedIds = expanded,
                     menuState = menuState
                 )
             }
@@ -139,7 +148,7 @@ class KozmosTreeSelectionTest {
             assertEquals("the range has no headings", setOf("cafe", "gate", "wall"), selected)
             key(KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON)
             assertEquals(setOf("cafe", "gate", "wall"), selected)
-            val heading = read().merged.single { "POI" in it.texts }
+            val heading = read().merged.single { it.heading && it.description!!.startsWith("POI") }
             assertNull("a heading is pressed", heading.click)
         }
     }
@@ -192,6 +201,191 @@ class KozmosTreeSelectionTest {
         }
     }
 
+    @Test fun aDisabledRowTakesNoPressAndFocusAndRangesPassOverIt() {
+        selected = emptySet()
+        val data = listOf(
+            TreeNode("b1", "B1", listOf(TreeNode("l0", "L0"), TreeNode("l1", "L1", disabled = true), TreeNode("l2", "L2"))),
+            TreeNode("p", "P")
+        )
+        paparazzi.live(content = tree(data = data)) {
+            frames(2)
+            assertEquals("TalkBack does not read it as disabled", false, row("L1").enabled)
+            click(row("L1").bounds.center)
+            assertEquals("a disabled row was selected", emptySet<String>(), selected)
+            click(row("L0").bounds.center)
+            click(row("L2").bounds.center, KeyEvent.META_SHIFT_ON)
+            assertEquals("the range took the disabled row", setOf("l0", "l2"), selected)
+            row("L0").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_DPAD_DOWN)
+            assertEquals("Down did not pass over the disabled row", true, row("L2").focused)
+            key(KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON)
+            assertEquals("Ctrl+A took the disabled row", setOf("b1", "l0", "l2", "p"), selected)
+        }
+    }
+
+    @Test fun aDisabledRowOpensNoMenuFromAnyPath() {
+        selected = setOf("p")
+        val asked = mutableListOf<String>()
+        val state = KozmosContextMenuState()
+        var shownOpen = false
+        val data = listOf(
+            TreeNode("b1", "B1", listOf(TreeNode("l0", "L0"), TreeNode("l1", "L1", disabled = true))),
+            TreeNode("p", "P")
+        )
+        val menu = { node: TreeNode ->
+            asked += node.id
+            KozmosMenuContent(items = listOf(KozmosMenuItem(text = "Rename")))
+        }
+        val content = tree(data = data, menu = menu, menuState = state)
+        paparazzi.live(durationMillis = 8000, content = {
+            content()
+            // A frame drawn with the menu open, however briefly.
+            SideEffect { if (state.openAt != null) shownOpen = true }
+        }) {
+            frames(2)
+            assertNull("TalkBack offers a disabled row's menu", row("L1").longClick)
+            val at = row("L1").bounds.center
+            mouse(MotionEvent.ACTION_DOWN, at, MotionEvent.BUTTON_SECONDARY)
+            assertNull("a right click opened a disabled row's menu", state.openAt)
+            frames(2)
+            mouse(MotionEvent.ACTION_UP, at, 0)
+            frames(3)
+            assertNull("a right click opened a disabled row's menu", state.openAt)
+            touch(MotionEvent.ACTION_DOWN, at)
+            frames(30) // a second of frames, past the long-press timeout
+            assertNull("a long press opened a disabled row's menu", state.openAt)
+            touch(MotionEvent.ACTION_UP, at)
+            frames(3)
+            assertEquals("a frame was drawn with the menu open", false, shownOpen)
+            assertEquals("the selection changed", setOf("p"), selected)
+            assertTrue("a disabled row's menu was asked for: $asked", "l1" !in asked)
+            // The same long press on an enabled row opens its menu: the press above was one.
+            val l0 = row("L0").bounds.center
+            touch(MotionEvent.ACTION_DOWN, l0)
+            frames(30)
+            assertNotNull("the long press opened no menu on an enabled row", state.openAt)
+            touch(MotionEvent.ACTION_UP, l0)
+            frames(3)
+        }
+    }
+
+    @Test fun closingAParentDeselectsItsHiddenRowsInOneChange() {
+        selected = setOf("l0", "l2", "p")
+        paparazzi.live(content = tree()) {
+            frames(2)
+            changes = 0
+            row("B1").collapse!!.invoke()
+            frames(3)
+            assertEquals("the hidden rows are still selected", setOf("p"), selected)
+            assertEquals("the trimmed set was not handed on once", 1, changes)
+            row("B1").expand!!.invoke()
+            frames(3)
+            click(row("L1").bounds.center, KeyEvent.META_CTRL_ON)
+            assertEquals(setOf("p", "l1"), selected)
+            changes = 0
+            click(row("B1").bounds.center)
+            assertEquals("a click on an open parent selects it alone and closes it", setOf("b1"), selected)
+            assertEquals("the click handed on more than one selection", 1, changes)
+        }
+    }
+
+    @Test fun ctrlASelectsOnlyTheVisibleEnabledRows() {
+        selected = emptySet()
+        val data = listOf(
+            TreeNode("b1", "B1", listOf(TreeNode("l0", "L0"))),
+            TreeNode("p", "P", disabled = true),
+            TreeNode("q", "Q")
+        )
+        paparazzi.live(content = tree(data = data, expanded = emptySet())) {
+            frames(2)
+            row("Q").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON)
+            assertEquals("Ctrl+A took a hidden or disabled row", setOf("b1", "q"), selected)
+        }
+    }
+
+    @Test fun starOpensEverySiblingThatHasChildren() {
+        selected = emptySet()
+        val data = listOf(
+            TreeNode("a", "A", listOf(TreeNode("a0", "A0"))),
+            TreeNode("b", "B", listOf(TreeNode("b0", "B0"))),
+            TreeNode("c", "C")
+        )
+        paparazzi.live(content = tree(data = data, expanded = emptySet())) {
+            frames(2)
+            row("C").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_STAR)
+            val names = read().merged.flatMap { it.texts }
+            assertTrue("* did not open A and B: $names", "A0" in names && "B0" in names)
+        }
+    }
+
+    @Test fun pageDownMovesFocusByThePageTheListShows() {
+        selected = emptySet()
+        val data = List(100) { TreeNode("r$it", "Row $it") }
+        val list = LazyListState()
+        paparazzi.live(content = tree(data = data, expanded = emptySet(), list = list, height = 300)) {
+            frames(2)
+            val page = list.layoutInfo.visibleItemsInfo.size
+            assertTrue("the page is the whole list: $page", page in 2..50)
+            row("Row 0").requestFocus!!.invoke()
+            frames(2)
+            key(KeyEvent.KEYCODE_PAGE_DOWN)
+            frames(3)
+            assertEquals("PageDown did not move a page", true, row("Row $page").focused)
+            key(KeyEvent.KEYCODE_PAGE_DOWN, KeyEvent.META_SHIFT_ON)
+            frames(3)
+            assertEquals("Shift+PageDown did not select the page", (page..2 * page).map { "r$it" }.toSet(), selected)
+            key(KeyEvent.KEYCODE_PAGE_UP)
+            frames(3)
+            assertEquals("PageUp did not move a page back", true, row("Row $page").focused)
+        }
+    }
+
+    @Test fun typingTheSameLetterAgainCyclesThroughTheMatches() {
+        selected = emptySet()
+        val data = listOf("Alpha", "Pine", "Park", "Plaza", "Quay").map { TreeNode(it.lowercase(), it) }
+        paparazzi.live(content = tree(data = data, expanded = emptySet())) {
+            frames(2)
+            row("Alpha").requestFocus!!.invoke()
+            frames(2)
+            val seen = mutableListOf<String>()
+            repeat(4) {
+                key(KeyEvent.KEYCODE_P)
+                seen += read().merged.single { it.focused == true }.texts.first()
+            }
+            assertEquals("p, p, p, p", listOf("Pine", "Park", "Plaza", "Pine"), seen)
+            Thread.sleep(600)
+            key(KeyEvent.KEYCODE_P)
+            key(KeyEvent.KEYCODE_A)
+            assertEquals("pa keeps to the row that still matches", true, row("Park").focused)
+        }
+    }
+
+    @Test fun typeAheadNeverTakesPlusMinusStarOrACommandKey() {
+        selected = emptySet()
+        val data = listOf("Alpha", "-Minus", "+Plus", "Pine").map { TreeNode(it.lowercase(), it) }
+        paparazzi.live(content = tree(data = data, expanded = emptySet())) {
+            frames(2)
+            row("Alpha").requestFocus!!.invoke()
+            frames(2)
+            for ((name, code, meta) in listOf(
+                Triple("-", KeyEvent.KEYCODE_MINUS, 0),
+                Triple("+", KeyEvent.KEYCODE_PLUS, 0),
+                Triple("Ctrl+P", KeyEvent.KEYCODE_P, KeyEvent.META_CTRL_ON),
+                Triple("Meta+P", KeyEvent.KEYCODE_P, KeyEvent.META_META_ON),
+                Triple("Alt+P", KeyEvent.KEYCODE_P, KeyEvent.META_ALT_ON)
+            )) {
+                key(code, meta)
+                Thread.sleep(600)
+                assertEquals("$name moved focus", true, row("Alpha").focused)
+            }
+        }
+    }
+
     private fun LiveSemantics.software() {
         // As Taps.press: a ripple on layoutlib's hardware renderer takes it down.
         view.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
@@ -217,6 +411,21 @@ class KozmosTreeSelectionTest {
     }
 
     private var downAt = 0L
+
+    /** A finger held on the touchscreen, at [at] in the view's pixels. */
+    private fun LiveSemantics.touch(action: Int, at: Offset) {
+        software()
+        val now = SystemClock.uptimeMillis()
+        if (action == MotionEvent.ACTION_DOWN) downAt = now
+        val event = MotionEvent.obtain(
+            downAt, now, action, 1,
+            arrayOf(MotionEvent.PointerProperties().apply { id = 0; toolType = MotionEvent.TOOL_TYPE_FINGER }),
+            arrayOf(MotionEvent.PointerCoords().apply { x = at.x; y = at.y; pressure = 1f; size = 1f }),
+            0, 0, 1f, 1f, 0, 0, InputDevice.SOURCE_TOUCHSCREEN, 0
+        )
+        view.dispatchTouchEvent(event)
+        event.recycle()
+    }
 
     /** A mouse with [buttons] held, at [at] in the view's pixels. */
     private fun LiveSemantics.mouse(action: Int, at: Offset, buttons: Int) {

@@ -1,11 +1,5 @@
 import figma from "@figma/code-connect";
-import {
-  Tree,
-  TreeChildItemRow,
-  TreeItemRow,
-  TreeParentItemRow,
-  TreeSectionRow,
-} from "./Tree";
+import { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow } from "./Tree";
 
 const treeUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=662-5094";
@@ -201,28 +195,5 @@ figma.connect(TreeItemRow, itemUrl, {
       selected={selected}
       divided={divided}
     />
-  ),
-});
-
-// GAP-151: a section's heading. The set is new: its node id is filled in
-// after the plugin's Update builds it.
-const sectionUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TREE-SECTION-NODE-ID";
-
-figma.connect(TreeSectionRow, sectionUrl, {
-  props: {
-    name: figma.string("Label Text"),
-    count: figma.boolean("Show Count", {
-      true: figma.string("Count Text"),
-      false: undefined,
-    }),
-    depth: figma.enum("Depth", { "0": 0, "1": 1, "2": 2 }),
-    density: figma.enum("Density", {
-      Default: undefined,
-      Compact: "compact",
-    }),
-  },
-  example: ({ count, density, depth, name }) => (
-    <TreeSectionRow name={name} count={count} depth={depth} density={density} />
   ),
 });

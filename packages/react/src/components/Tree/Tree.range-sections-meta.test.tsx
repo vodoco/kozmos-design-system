@@ -172,11 +172,12 @@ describe("Tree sections (GAP-151)", () => {
       expect(heading).toHaveClass("text-[11px]", "text-primary");
       expect(heading).not.toHaveAttribute("role", "treeitem");
     }
-    const poi = screen.getByRole("group", { name: "POI" });
+    // The group's name is the section's words and its count (review 8).
+    const poi = screen.getByRole("group", { name: "POI, 2" });
     expect(within(poi).getAllByRole("treeitem")).toHaveLength(2);
-    expect(screen.getByRole("group", { name: "Structural" })).toContainElement(
-      row("North wall"),
-    );
+    expect(
+      screen.getByRole("group", { name: "Structural, 1" }),
+    ).toContainElement(row("North wall"));
     // Its items are level 2, under Level 1, each set its own.
     expect(row("Bean & Leaf Café")).toHaveAttribute("aria-level", "2");
     expect(row("Bean & Leaf Café")).toHaveAttribute("aria-setsize", "2");
@@ -356,7 +357,7 @@ describe("Tree virtualized (GAP-151)", () => {
     expect(row("POI 1")).toHaveAttribute("aria-setsize", "9000");
     expect(row("POI 1")).toHaveAttribute("aria-posinset", "1");
     expect(row("POI 1")).toHaveAttribute("aria-level", "2");
-    expect(screen.getByRole("group", { name: "POI" })).toContainElement(
+    expect(screen.getByRole("group", { name: "POI, 9,000" })).toContainElement(
       row("POI 1"),
     );
     // The spacer after the rows drawn holds the rest of the tree's height.
@@ -382,7 +383,7 @@ describe("Tree virtualized (GAP-151)", () => {
     expect(last).toHaveAttribute("tabindex", "0");
     expect(last).toHaveAttribute("aria-posinset", "31");
     expect(last).toHaveAttribute("aria-setsize", "31");
-    expect(screen.getByRole("group", { name: "Virtual" })).toContainElement(
+    expect(screen.getByRole("group", { name: "Virtual, 31" })).toContainElement(
       last,
     );
     expect(drawnRows().length).toBeLessThan(40);
@@ -510,5 +511,237 @@ describe("Tree onItemContextMenu (GAP-151, GAP-155)", () => {
     expect(
       screen.getByText("Delta").closest('[role="treeitem"]'),
     ).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+describe("Tree review fixes (#524)", () => {
+  const nested: TreeItem[] = [
+    {
+      id: "terminal",
+      name: "Terminal",
+      children: [
+        { id: "gate-1", name: "Gate 1" },
+        { id: "gate-2", name: "Gate 2" },
+      ],
+    },
+    {
+      id: "car-park",
+      name: "Car park",
+      children: [{ id: "bay", name: "Bay" }],
+    },
+    { id: "apron", name: "Apron" },
+  ];
+
+  it("names a section's group by its words and its count, formatted", () => {
+    render(
+      <Tree
+        data={[
+          {
+            id: "poi",
+            name: "POI",
+            section: true,
+            count: 3257,
+            children: [{ id: "cafe", name: "Café" }],
+          },
+          {
+            id: "virtual",
+            name: "Virtual",
+            section: true,
+            children: [{ id: "zone", name: "Zone" }],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "POI, 3,257" })).toContainElement(
+      row("Café"),
+    );
+    expect(screen.getByRole("group", { name: "Virtual" })).toContainElement(
+      row("Zone"),
+    );
+  });
+
+  it("lets go of the rows a collapse hides, in one change", () => {
+    const onSelectedIdsChange = vi.fn();
+    render(
+      <Tree
+        data={nested}
+        selectionMode="multiple"
+        defaultExpandedIds={["terminal"]}
+        defaultSelectedIds={["gate-1", "gate-2", "apron"]}
+        onSelectedIdsChange={onSelectedIdsChange}
+      />,
+    );
+    const terminal = row("Terminal");
+    terminal.focus();
+    fireEvent.keyDown(terminal, { key: "ArrowLeft" });
+    expect(onSelectedIdsChange).toHaveBeenCalledTimes(1);
+    expect(onSelectedIdsChange).toHaveBeenLastCalledWith(["apron"]);
+    expect(selectedNames()).toEqual(["Apron"]);
+    // Ctrl+A takes the rows in view and enabled only.
+    fireEvent.keyDown(terminal, { key: "a", ctrlKey: true });
+    expect(onSelectedIdsChange).toHaveBeenLastCalledWith([
+      "terminal",
+      "car-park",
+      "apron",
+    ]);
+  });
+
+  it("lets a click that selects and closes a parent keep the parent selected", () => {
+    const onSelectedIdsChange = vi.fn();
+    render(
+      <Tree
+        data={nested}
+        selectionMode="multiple"
+        defaultExpandedIds={["terminal"]}
+        defaultSelectedIds={["gate-1"]}
+        onSelectedIdsChange={onSelectedIdsChange}
+      />,
+    );
+    fireEvent.click(row("Terminal"));
+    expect(row("Terminal")).toHaveAttribute("aria-expanded", "false");
+    expect(onSelectedIdsChange).toHaveBeenLastCalledWith(["terminal"]);
+    expect(selectedNames()).toEqual(["Terminal"]);
+  });
+
+  it("opens every row beside the focused one with *", () => {
+    render(<Tree data={nested} />);
+    const apron = row("Apron");
+    apron.focus();
+    fireEvent.keyDown(apron, { key: "*" });
+    expect(row("Terminal")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Car park")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Apron")).toHaveFocus();
+  });
+
+  it("moves by a page of rows with PageDown and PageUp, and Shift takes the range", () => {
+    const many: TreeItem[] = Array.from({ length: 60 }, (_, index) => ({
+      id: `r${index + 1}`,
+      name: `Row ${index + 1}`,
+    }));
+    const onSelectedIdsChange = vi.fn();
+    render(
+      <Tree
+        data={many}
+        virtualized
+        selectionMode="multiple"
+        onSelectedIdsChange={onSelectedIdsChange}
+      />,
+    );
+    const first = row("Row 1");
+    first.focus();
+    // No layout here: a view of 400, ten rows of 40, a page of nine.
+    fireEvent.keyDown(first, { key: "PageDown" });
+    expect(row("Row 10")).toHaveFocus();
+    fireEvent.keyDown(row("Row 10"), { key: "PageDown", shiftKey: true });
+    expect(row("Row 19")).toHaveFocus();
+    expect(onSelectedIdsChange).toHaveBeenLastCalledWith(
+      Array.from({ length: 10 }, (_, index) => `r${index + 10}`),
+    );
+    fireEvent.keyDown(row("Row 19"), { key: "PageUp" });
+    expect(row("Row 10")).toHaveFocus();
+  });
+
+  it("types ahead only after the product's own onKeyDown, and takes no key it does not use", () => {
+    const own = vi.fn((event: React.KeyboardEvent) => {
+      if (event.key === "c") event.preventDefault();
+    });
+    render(<Tree data={nested} onKeyDown={own} />);
+    const terminal = row("Terminal");
+    terminal.focus();
+    // The product's handler took "c": the tree does nothing with it.
+    fireEvent.keyDown(terminal, { key: "c" });
+    expect(own).toHaveBeenCalledTimes(1);
+    expect(terminal).toHaveFocus();
+    // Ctrl or Cmd with a letter, and + and -, are not type-ahead.
+    for (const init of [
+      { key: "a", ctrlKey: true },
+      { key: "a", metaKey: true },
+      { key: "+" },
+      { key: "-" },
+    ]) {
+      const event = fireEvent.keyDown(terminal, init);
+      expect(event).toBe(true);
+      expect(terminal).toHaveFocus();
+    }
+    // A key that moves focus is the tree's; one that then finds no row
+    // ("az") is left alone.
+    expect(fireEvent.keyDown(terminal, { key: "a" })).toBe(false);
+    expect(row("Apron")).toHaveFocus();
+    expect(fireEvent.keyDown(row("Apron"), { key: "z" })).toBe(true);
+    expect(row("Apron")).toHaveFocus();
+  });
+
+  it("cycles through the rows that start with a letter typed again", () => {
+    vi.useFakeTimers();
+    try {
+      const gates: TreeItem[] = [
+        { id: "g1", name: "Gate 1" },
+        { id: "x", name: "Exit" },
+        { id: "g2", name: "Gate 2" },
+        { id: "g3", name: "Gate 3" },
+      ];
+      render(<Tree data={gates} />);
+      const exit = row("Exit");
+      exit.focus();
+      fireEvent.keyDown(exit, { key: "g" });
+      expect(row("Gate 2")).toHaveFocus();
+      fireEvent.keyDown(row("Gate 2"), { key: "g" });
+      expect(row("Gate 3")).toHaveFocus();
+      fireEvent.keyDown(row("Gate 3"), { key: "g" });
+      expect(row("Gate 1")).toHaveFocus();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  describe("a virtualized tree with no height of its own", () => {
+    const stubs: (() => void)[] = [];
+    const stub = (property: "clientHeight" | "scrollHeight", value: number) => {
+      const own =
+        Object.getOwnPropertyDescriptor(HTMLElement.prototype, property) ??
+        Object.getOwnPropertyDescriptor(Element.prototype, property)!;
+      Object.defineProperty(HTMLElement.prototype, property, {
+        configurable: true,
+        get: () => value,
+      });
+      stubs.push(() =>
+        Object.defineProperty(HTMLElement.prototype, property, own),
+      );
+    };
+    afterEach(() => {
+      while (stubs.length) stubs.pop()!();
+      vi.restoreAllMocks();
+    });
+    const many: TreeItem[] = Array.from({ length: 500 }, (_, index) => ({
+      id: `r${index}`,
+      name: `Row ${index}`,
+    }));
+
+    it("warns once, saying how to give it one", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      stub("clientHeight", 20000);
+      stub("scrollHeight", 20000);
+      const { rerender } = render(<Tree data={many} virtualized />);
+      rerender(<Tree data={many} virtualized overscan={4} />);
+      const mine = warn.mock.calls.filter(([message]) =>
+        String(message).startsWith("Tree: a virtualized tree"),
+      );
+      expect(mine).toHaveLength(1);
+      expect(mine[0][0]).toMatch(/500 rows/);
+      expect(mine[0][0]).toMatch(/height/);
+      expect(mine[0][0]).toMatch(/min-h-0/);
+    });
+
+    it("says nothing when it scrolls itself", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      stub("clientHeight", 400);
+      stub("scrollHeight", 20000);
+      render(<Tree data={many} virtualized />);
+      expect(
+        warn.mock.calls.some(([message]) =>
+          String(message).startsWith("Tree: a virtualized tree"),
+        ),
+      ).toBe(false);
+    });
   });
 });

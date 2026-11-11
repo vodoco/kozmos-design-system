@@ -19402,8 +19402,7 @@
             "Tree",
             "TreeChildItemRow",
             "TreeItemRow",
-            "TreeParentItemRow",
-            "TreeSectionRow"
+            "TreeParentItemRow"
           ],
           "mappedProps": [
             "ariaLabel",

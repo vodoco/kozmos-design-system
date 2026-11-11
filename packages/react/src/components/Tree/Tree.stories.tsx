@@ -419,3 +419,28 @@ export const Virtualized: Story = {
     </div>
   ),
 };
+
+// Map Content's own setup: in a panel with 16 of inline padding, divided,
+// the strokes bled to the panel's edges, and only the rows in view drawn.
+// The tree scrolls itself, with no sideways scroll, and its focus ring is
+// drawn inside the row.
+export const VirtualizedInPanel: Story = {
+  render: () => (
+    <div
+      className="border bg-background"
+      style={{ width: 400, paddingInline: 16 }}
+    >
+      <Tree
+        ariaLabel="Map content"
+        data={mapContentLarge}
+        defaultExpandedIds={["level-1"]}
+        divided
+        bleed={16}
+        selectionMode="multiple"
+        metaPlacement="below"
+        virtualized
+        style={{ height: 480 }}
+      />
+    </div>
+  ),
+};

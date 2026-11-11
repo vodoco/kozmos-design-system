@@ -103,11 +103,11 @@ final class KozmosTreeSelectionTests: XCTestCase {
 
     /// Typing moves to the next row whose name starts with what was typed.
     func testTypingMovesToTheNextMatchingRow() {
-        XCTAssertEqual(KozmosTreeSelection.typeAhead("h", rows: Self.rows, after: "cafe"), "desk")
-        XCTAssertEqual(KozmosTreeSelection.typeAhead("d", rows: Self.rows, after: "desk"), "door")
-        XCTAssertEqual(KozmosTreeSelection.typeAhead("l", rows: Self.rows, after: "door"), "level", "it did not wrap")
-        XCTAssertEqual(KozmosTreeSelection.typeAhead("be", rows: Self.rows, after: "cafe"), "cafe", "a longer prefix moved on")
-        XCTAssertNil(KozmosTreeSelection.typeAhead("gate", rows: Self.rows, after: nil), "type-ahead landed on a disabled row")
+        XCTAssertEqual(KozmosTreeSelection.typeAhead("h", rows: Self.rows, from: "cafe"), "desk")
+        XCTAssertEqual(KozmosTreeSelection.typeAhead("d", rows: Self.rows, from: "desk"), "door")
+        XCTAssertEqual(KozmosTreeSelection.typeAhead("l", rows: Self.rows, from: "door"), "level", "it did not wrap")
+        XCTAssertEqual(KozmosTreeSelection.typeAhead("be", rows: Self.rows, from: "cafe"), "cafe", "a longer prefix moved on")
+        XCTAssertNil(KozmosTreeSelection.typeAhead("gate", rows: Self.rows, from: nil), "type-ahead landed on a disabled row")
     }
 }
 

@@ -18,7 +18,7 @@ class KozmosTreeDocSnippetTest {
 
     @Test fun theSnippetDrawsItsSectionsAsHeadingsAndItsRowsAsSelectable() {
         val tree = paparazzi.readSettledSemantics { KozmosMaterialTheme { MapContentTree() } }
-        assertEquals(listOf("POI", "Structural"), tree.merged.filter { it.heading }.map { it.texts.first() })
+        assertEquals(listOf("POI, 2", "Structural, 1"), tree.merged.filter { it.heading }.map { it.description })
         val cafe = tree.merged.single { "Bean & Leaf Café" in it.texts && it.click != null }
         assertEquals(false, cafe.selected)
         assertEquals("Show menu", cafe.longClickLabel)

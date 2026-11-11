@@ -116,6 +116,8 @@ public struct KozmosTree: View {
     @State private var focusedID: String?
     @State private var typed = ""
     @State private var typedAt = Date.distantPast
+    /// The tree's height, for a page of rows.
+    @State private var viewHeight: CGFloat = 0
     @FocusState private var treeFocused: Bool
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.kozmosTreeRowRealised) private var rowRealised
@@ -193,6 +195,11 @@ public struct KozmosTree: View {
                     }
                 }
             }
+            .background(GeometryReader { geometry in
+                Color.clear
+                    .onAppear { viewHeight = geometry.size.height }
+                    .onChange(of: geometry.size.height) { viewHeight = $0 }
+            })
             .modifier(KozmosTreeKeyboard(focused: $treeFocused) { key, modifiers in
                 handle(key, modifiers: modifiers, rows: rows, proxy: proxy)
             } onType: { text in
@@ -239,6 +246,52 @@ public struct KozmosTree: View {
         }
     }
 
+    /// The row a row is under, past any section between them: where the
+    /// left arrow goes, as React's and Compose's parentId does.
+    static func parentRow(of row: Row, in rows: [Row]) -> Row? {
+        var path = row.path
+        while path.count > 1 {
+            path.removeLast()
+            guard let ancestor = rows.first(where: { $0.path == path }) else { return nil }
+            if !ancestor.node.isSection { return ancestor }
+        }
+        return nil
+    }
+
+    /// The paths of every parent beside `row`: its siblings under the same
+    /// parent, a section's items counted with the sections beside them (`*`,
+    /// as the APG tree pattern has it).
+    static func siblingParents(of row: Row, in nodes: [Node]) -> [[Int]] {
+        // The path of the parent the siblings hang from, past any sections.
+        var parentPath = row.path
+        parentPath.removeLast()
+        func node(at path: [Int]) -> Node? {
+            var level = nodes
+            var found: Node?
+            for index in path {
+                guard level.indices.contains(index) else { return nil }
+                found = level[index]
+                level = found?.children ?? []
+            }
+            return found
+        }
+        while let section = node(at: parentPath), section.isSection { parentPath.removeLast() }
+        let siblings = parentPath.isEmpty ? nodes : (node(at: parentPath)?.children ?? [])
+        var paths: [[Int]] = []
+        func collect(_ level: [Node], prefix: [Int]) {
+            for (index, sibling) in level.enumerated() {
+                let path = prefix + [index]
+                if sibling.isSection {
+                    collect(sibling.children ?? [], prefix: path)
+                } else if !(sibling.children ?? []).isEmpty, !sibling.isDisabled {
+                    paths.append(path)
+                }
+            }
+        }
+        collect(siblings, prefix: parentPath)
+        return paths
+    }
+
     /// The rows a divided tree draws (GAP-201): the same rows as any tree's.
     static func dividedRows(_ nodes: [Node], expanded: Set<[Int]>) -> [Row] {
         visibleRows(nodes, expanded: expanded)
@@ -277,20 +330,37 @@ public struct KozmosTree: View {
     }
 
     /// A tap, or Return: a parent opens or closes, unless Shift or Command
-    /// is held, and the row is picked.
-    private func activate(_ row: Row, rows: [Row], modifiers: EventModifiers) {
+    /// is held, and the row is picked. The selection is written once, with
+    /// what a closing parent hid taken out of it.
+    func activate(_ row: Row, rows: [Row], modifiers: EventModifiers) {
         guard row.isSelectable else { return }
         focusedID = row.node.id
-        if row.isParent, modifiers.isDisjoint(with: [.shift, .command]) { toggle(row.path) }
-        guard selectionShown else { return }
-        let result = KozmosTreeSelection.pick(row.node.id, rows: rows, mode: selectionMode, modifiers: modifiers,
-                                              selection: currentSelection, anchor: anchor)
-        anchor = result.anchor
-        setSelection(result.selection)
+        var next = currentSelection
+        if row.isParent, modifiers.isDisjoint(with: [.shift, .command]) { next = toggle(row, selection: next) }
+        if selectionShown {
+            let result = KozmosTreeSelection.pick(row.node.id, rows: rows, mode: selectionMode, modifiers: modifiers,
+                                                  selection: next, anchor: anchor)
+            anchor = result.anchor
+            next = result.selection
+        }
+        setSelection(next)
     }
 
-    private func toggle(_ path: [Int]) {
-        if expanded.contains(path) { expanded.remove(path) } else { expanded.insert(path) }
+    /// Opens or closes `row`; closing it, its now hidden descendants leave
+    /// the selection, which is returned for the caller to write once.
+    private func toggle(_ row: Row, selection: Set<String>) -> Set<String> {
+        if expanded.contains(row.path) {
+            expanded.remove(row.path)
+            return KozmosTreeSelection.hiding(row.node, from: selection)
+        }
+        expanded.insert(row.path)
+        return selection
+    }
+
+    /// How many rows a page is: as many as the tree shows at once.
+    private var pageSize: Int {
+        let rowHeight: CGFloat = 44 + (divided ? 1 : 0)
+        return max(1, Int(viewHeight / rowHeight))
     }
 
     // MARK: - Keyboard
@@ -303,20 +373,25 @@ public struct KozmosTree: View {
         case .expand, .collapse:
             let opening = (key == .expand) == (layoutDirection == .leftToRight)
             if focused.isParent, expanded.contains(focused.path) != opening {
-                toggle(focused.path)
+                setSelection(toggle(focused, selection: currentSelection))
             } else if opening, focused.isParent {
                 return handle(.down, modifiers: [], rows: rows, proxy: proxy)
-            } else if !opening, let parent = rows.first(where: { $0.path == Array(focused.path.dropLast()) && $0.isSelectable }) {
+            } else if !opening, let parent = Self.parentRow(of: focused, in: rows), parent.isSelectable {
+                anchor = parent.node.id
                 move(to: parent.node.id, proxy: proxy, rows: rows)
             }
+            return true
+        case .expandSiblings:
+            expanded.formUnion(Self.siblingParents(of: focused, in: nodes))
             return true
         case .activate:
             activate(focused, rows: rows, modifiers: [])
             return true
         default:
-            guard selectionShown || [.up, .down, .home, .end].contains(key) else { return false }
+            guard selectionShown || KozmosTreeKey.moves.contains(key) else { return false }
             let result = KozmosTreeSelection.key(key, rows: rows, mode: selectionMode, modifiers: modifiers,
-                                                 focused: focused.node.id, selection: currentSelection, anchor: anchor)
+                                                 focused: focused.node.id, selection: currentSelection, anchor: anchor,
+                                                 page: pageSize)
             anchor = result.anchor
             if selectionShown { setSelection(result.selection) }
             move(to: result.focused, proxy: proxy, rows: rows)
@@ -330,7 +405,8 @@ public struct KozmosTree: View {
         let now = Date()
         typed = now.timeIntervalSince(typedAt) > 0.5 ? text : typed + text
         typedAt = now
-        guard let target = KozmosTreeSelection.typeAhead(typed, rows: rows, after: focusedID) else { return false }
+        guard let target = KozmosTreeSelection.typeAhead(typed, rows: rows, from: focusedID) else { return false }
+        anchor = target
         move(to: target, proxy: proxy, rows: rows)
         return true
     }
@@ -345,7 +421,10 @@ public struct KozmosTree: View {
 
 /// The keys a tree answers on a hardware keyboard.
 enum KozmosTreeKey: Equatable {
-    case up, down, home, end, space, selectAll, expand, collapse, activate
+    case up, down, home, end, pageUp, pageDown, space, selectAll, expand, collapse, activate, expandSiblings
+
+    /// The keys that move the focus.
+    static let moves: [KozmosTreeKey] = [.up, .down, .home, .end, .pageUp, .pageDown]
 }
 
 /// A tree's selection rules, apart from its drawing (GAP-151): the same as
@@ -373,6 +452,19 @@ enum KozmosTreeSelection {
         return Array(ids[min(start, end)...max(start, end)])
     }
 
+    /// `selection` without `node`'s descendants: what closing it hides.
+    static func hiding(_ node: Node, from selection: Set<String>) -> Set<String> {
+        var next = selection
+        func remove(_ nodes: [Node]) {
+            for child in nodes {
+                next.remove(child.id)
+                remove(child.children ?? [])
+            }
+        }
+        remove(node.children ?? [])
+        return next
+    }
+
     /// A tap on the row `id`, with these keys held.
     static func pick(_ id: String, rows: [KozmosTree.Row], mode: KozmosTreeSelectionMode, modifiers: EventModifiers,
                      selection: Set<String>, anchor: String?) -> Result {
@@ -386,23 +478,27 @@ enum KozmosTreeSelection {
         return Result(selection: next, anchor: id, focused: id)
     }
 
-    /// A key on the row `focused`.
+    /// A key on the row `focused`; `page` rows to a Page Up or Page Down.
+    /// A move without Shift takes the anchor with it, as React's does.
     static func key(_ key: KozmosTreeKey, rows: [KozmosTree.Row], mode: KozmosTreeSelectionMode, modifiers: EventModifiers,
-                    focused: String, selection: Set<String>, anchor: String?) -> Result {
+                    focused: String, selection: Set<String>, anchor: String?, page: Int = 1) -> Result {
         let ids = selectableIDs(rows)
         guard !ids.isEmpty else { return Result(selection: selection, anchor: anchor, focused: focused) }
         let index = ids.firstIndex(of: focused)
         switch key {
-        case .up, .down, .home, .end:
+        case .up, .down, .home, .end, .pageUp, .pageDown:
             let target: String
+            let step = max(1, page)
             switch key {
             case .up: target = ids[max(0, (index ?? 0) - 1)]
             case .down: target = ids[min(ids.count - 1, index.map { $0 + 1 } ?? 0)]
+            case .pageUp: target = ids[max(0, (index ?? 0) - step)]
+            case .pageDown: target = ids[min(ids.count - 1, index.map { $0 + step } ?? 0)]
             case .home: target = ids[0]
             default: target = ids[ids.count - 1]
             }
             guard mode == .multiple, modifiers.contains(.shift) else {
-                return Result(selection: selection, anchor: anchor, focused: target)
+                return Result(selection: selection, anchor: target, focused: target)
             }
             let start = anchor ?? focused
             let span = Set(range(rows, from: start, to: target))
@@ -418,19 +514,30 @@ enum KozmosTreeSelection {
         }
     }
 
-    /// The next row after `focused`, wrapping, whose name starts with
-    /// `typed`, ignoring case.
-    static func typeAhead(_ typed: String, rows: [KozmosTree.Row], after focused: String?) -> String? {
+    /// The row type-ahead goes to from `focused`, wrapping, ignoring case,
+    /// as React's does (the APG tree pattern): one letter, or the same
+    /// letter again, moves on to the next row starting with it, so "p", "p"
+    /// is the second row starting with p; more letters keep to the focused
+    /// row while it still matches.
+    static func typeAhead(_ typed: String, rows: [KozmosTree.Row], from focused: String?) -> String? {
         let candidates = rows.filter(\.isSelectable)
-        guard !typed.isEmpty, !candidates.isEmpty else { return nil }
-        let start = focused.flatMap { id in candidates.firstIndex { $0.node.id == id } } ?? -1
-        // One letter again moves on; more letters stay while they still match.
-        let from = typed.count > 1 ? max(start, 0) : start + 1
+        guard let first = typed.first, !candidates.isEmpty else { return nil }
+        let repeated = typed.allSatisfy { $0 == first }
+        let search = repeated ? String(first) : typed
+        let current = focused.flatMap { id in candidates.firstIndex { $0.node.id == id } } ?? -1
+        let start = repeated ? current + 1 : max(current, 0)
         for offset in 0..<candidates.count {
-            let row = candidates[(from + offset) % candidates.count]
-            if row.node.value.range(of: typed, options: [.caseInsensitive, .anchored]) != nil { return row.node.id }
+            let row = candidates[(start + offset) % candidates.count]
+            if row.node.value.range(of: search, options: [.caseInsensitive, .anchored]) != nil { return row.node.id }
         }
         return nil
+    }
+
+    /// Whether a key types: never `+`, `-` or `*`, nor a key with Command,
+    /// Control or Option held.
+    static func types(_ characters: String, modifiers: EventModifiers) -> Bool {
+        guard !characters.isEmpty, modifiers.isDisjoint(with: [.command, .control, .option]) else { return false }
+        return !characters.contains { "+-*".contains($0) }
     }
 }
 
@@ -478,7 +585,7 @@ private struct KozmosTreeKeys: ViewModifier {
 
     private static let keys: [KeyEquivalent: KozmosTreeKey] = [
         .upArrow: .up, .downArrow: .down, .home: .home, .end: .end, .space: .space,
-        .rightArrow: .expand, .leftArrow: .collapse, .return: .activate,
+        .rightArrow: .expand, .leftArrow: .collapse, .return: .activate, .pageUp: .pageUp, .pageDown: .pageDown,
     ]
 
     func body(content: Content) -> some View {
@@ -489,11 +596,15 @@ private struct KozmosTreeKeys: ViewModifier {
                 guard let key = Self.keys[press.key] else { return .ignored }
                 return onKey(key, press.modifiers) ? .handled : .ignored
             }
-            .onKeyPress(characters: .alphanumerics.union(.punctuationCharacters)) { press in
-                if press.modifiers.contains(.command) {
-                    guard press.characters.lowercased() == "a" else { return .ignored }
+            .onKeyPress(characters: .alphanumerics.union(.punctuationCharacters).union(.symbols)) { press in
+                if press.modifiers.contains(.command), press.modifiers.isDisjoint(with: [.control, .option]),
+                   press.characters.lowercased() == "a" {
                     return onKey(.selectAll, press.modifiers) ? .handled : .ignored
                 }
+                if press.characters == "*", press.modifiers.isDisjoint(with: [.command, .control, .option]) {
+                    return onKey(.expandSiblings, press.modifiers) ? .handled : .ignored
+                }
+                guard KozmosTreeSelection.types(press.characters, modifiers: press.modifiers) else { return .ignored }
                 return onType(press.characters) ? .handled : .ignored
             }
     }
@@ -677,6 +788,19 @@ struct KozmosTreeSectionRow: View {
     let depth: Int
     let density: KozmosTreeDensity
     let bleed: CGFloat
+    @Environment(\.locale) private var locale
+
+    /// What VoiceOver reads: the name, and the count as the locale writes a
+    /// number, "POI, 3,257".
+    static func spokenName(_ node: Node, locale: Locale) -> String {
+        guard let count = node.count else { return node.value }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = locale
+        let spoken = Int(count.trimmingCharacters(in: .whitespaces))
+            .flatMap { formatter.string(from: NSNumber(value: $0)) } ?? count
+        return "\(node.value), \(spoken)"
+    }
 
     var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing75) {
@@ -690,7 +814,8 @@ struct KozmosTreeSectionRow: View {
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
         .frame(minHeight: density.sectionMinHeight)
         .padding(.horizontal, bleed)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.spokenName(node, locale: locale))
         .accessibilityAddTraits(.isHeader)
     }
 }

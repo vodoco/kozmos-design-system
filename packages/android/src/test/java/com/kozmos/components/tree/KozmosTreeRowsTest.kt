@@ -1,6 +1,15 @@
 package com.kozmos.components.tree
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.runtime.saveable.SaveableStateRegistry
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import java.util.Locale
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,9 +86,8 @@ class KozmosTreeRowsTest {
         val tree = paparazzi.readSettledSemantics {
             KozmosMaterialTheme { Box(Modifier.size(300.dp, 300.dp)) { KozmosTree(data, expandedIds = emptySet()) } }
         }
-        val heading = tree.merged.single { "POI" in it.texts }
-        assertTrue("the section is no heading", heading.heading)
-        assertTrue("the section's count is not read with it: ${heading.texts}", "120" in heading.texts)
+        val heading = tree.merged.single { it.heading }
+        assertEquals("the section's name and count", "POI, 120", heading.description)
         assertNull("a section is pressed", heading.click)
         val cafe = tree.unmerged.single { it.texts == listOf("Café") }
         val loose = tree.unmerged.single { it.texts == listOf("Loose") }
@@ -134,6 +142,47 @@ class KozmosTreeRowsTest {
                 node.config.getOrNull(SemanticsProperties.Text)?.firstOrNull()?.text?.let { it to info.rowIndex }
             }.toMap()
             assertEquals(mapOf("B1" to 0, "L0" to 1, "B2" to 2, "Wall" to 3), places)
+        }
+    }
+
+    @Test fun aSectionReadsItsNameAndItsCountAsTheLocaleWritesIt() {
+        val data = listOf(
+            TreeNode("poi", "POI", listOf(TreeNode("cafe", "Café")), count = 3257, section = true),
+            TreeNode("virtual", "Virtual", listOf(TreeNode("zone", "Zone")), section = true)
+        )
+        val tree = paparazzi.readSettledSemantics {
+            val config = Configuration(LocalConfiguration.current).apply { setLocale(Locale.US) }
+            CompositionLocalProvider(LocalConfiguration provides config) {
+                KozmosMaterialTheme { Box(Modifier.size(300.dp, 300.dp)) { KozmosTree(data, expandedIds = emptySet()) } }
+            }
+        }
+        val headings = tree.merged.filter { it.heading }
+        assertEquals(listOf("POI, 3,257", "Virtual"), headings.map { it.description })
+    }
+
+    /** As a rotation does: the screen's saved state, then a new composition from it. */
+    @Test fun openRowsSurviveARotation() {
+        val data = listOf(TreeNode("b1", "B1", listOf(TreeNode("l0", "L0"))), TreeNode("p", "P"))
+        var shown by mutableStateOf(true)
+        var registry by mutableStateOf(SaveableStateRegistry(null) { true })
+        paparazzi.live(content = {
+            if (shown) {
+                CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
+                    KozmosMaterialTheme { Box(Modifier.size(300.dp, 300.dp)) { KozmosTree(data) } }
+                }
+            }
+        }) {
+            frames(2)
+            read().merged.single { "B1" in it.texts && it.click != null }.click!!.invoke()
+            frames(3)
+            assertTrue("B1 did not open", read().merged.any { "L0" in it.texts })
+            val saved = registry.performSave()
+            shown = false
+            frames(3)
+            registry = SaveableStateRegistry(saved) { true }
+            shown = true
+            frames(3)
+            assertTrue("B1 closed across the rotation", read().merged.any { "L0" in it.texts })
         }
     }
 }

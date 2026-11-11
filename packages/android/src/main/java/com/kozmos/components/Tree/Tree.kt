@@ -6,7 +6,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
@@ -61,15 +67,19 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.expand
@@ -94,6 +104,8 @@ import com.kozmos.components.menu.KozmosMenuContent
 import com.kozmos.components.menu.KozmosMenuItem
 import com.kozmos.tokens.KozmosThemeTokens
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.Locale
 
 /**
  * One item of a tree, by a stable [id].
@@ -106,6 +118,9 @@ import kotlinx.coroutines.launch
  *   heading, and [children] the section's items, drawn at the section's own
  *   depth. A section is always open, and never focused, selected or
  *   expanded; TalkBack reads it as a heading.
+ * @param disabled The row takes no press and no selection, and focus,
+ *   ranges, Ctrl+A and type-ahead pass over it; TalkBack reads it as
+ *   disabled.
  */
 data class TreeNode(
     val id: String,
@@ -113,7 +128,8 @@ data class TreeNode(
     val children: List<TreeNode> = emptyList(),
     val meta: String? = null,
     val count: Int? = null,
-    val section: Boolean = false
+    val section: Boolean = false,
+    val disabled: Boolean = false
 )
 
 enum class KozmosTreeDensity {
@@ -209,7 +225,8 @@ internal fun KozmosTree(
     menuState: KozmosContextMenuState = remember { KozmosContextMenuState() }
 ) {
     val reach = if (divided) bleed.coerceAtLeast(0.dp) else 0.dp
-    val tree = remember { KozmosTreeController(expandedIds) }
+    val open = rememberSaveable(stateSaver = KozmosTreeExpandedSaver) { mutableStateOf(expandedIds) }
+    val tree = remember(open) { KozmosTreeController(open) }
     tree.scope = rememberCoroutineScope()
     tree.list = state
     tree.mode = selectionMode
@@ -226,7 +243,12 @@ internal fun KozmosTree(
     if (contextMenu != null) {
         LaunchedEffect(menuState) {
             snapshotFlow { menuState.openAt != null }.collect { open ->
-                if (open) tree.contextId?.let { tree.chooseForMenu(it) }
+                if (!open) return@collect
+                val id = tree.contextId
+                val row = id?.let { tree.rows.firstOrNull { it.node.id == id } }
+                // Asked where no enabled row is, a disabled row or none, the
+                // menu closes before a frame draws it.
+                if (row == null || row.node.disabled) menuState.openAt = null else tree.chooseForMenu(row.node.id)
             }
         }
     }
@@ -238,6 +260,15 @@ internal fun KozmosTree(
             state = state,
             modifier = listModifier
                 .kozmosTreeBleed(reach)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            // Each press starts with no row; the row under it says which.
+                            if (event.type == PointerEventType.Press) tree.contextId = null
+                        }
+                    }
+                }
                 .semantics { collectionInfo = CollectionInfo(rowCount = itemRows, columnCount = 1) }
         ) {
             items(rows, key = { it.node.id }, contentType = { if (it.section) 1 else 0 }) { row ->
@@ -284,6 +315,12 @@ internal fun KozmosTree(
     }
 }
 
+/** Saves a tree's open ids, so a rotation or a configuration change keeps them open. */
+internal val KozmosTreeExpandedSaver: Saver<Set<String>, ArrayList<String>> = Saver(
+    save = { ArrayList(it) },
+    restore = { it.toSet() }
+)
+
 /** One visible row of a flattened tree. */
 internal data class KozmosTreeRow(
     val node: TreeNode,
@@ -329,8 +366,13 @@ internal fun treeRange(order: List<String>, from: String, to: String): Set<Strin
 }
 
 /** What a tree's rows share: which are open, the selection's anchor, focus, the menu's row. */
-internal class KozmosTreeController(initiallyExpanded: Set<String>) {
-    var expanded by mutableStateOf(initiallyExpanded)
+internal class KozmosTreeController(private val open: MutableState<Set<String>>) {
+    constructor(initiallyExpanded: Set<String>) : this(mutableStateOf(initiallyExpanded))
+
+    /** The open nodes, by id: saved with the screen, so a rotation keeps them. */
+    var expanded: Set<String>
+        get() = open.value
+        set(value) { open.value = value }
     var rows: List<KozmosTreeRow> = emptyList()
     var mode = KozmosTreeSelectionMode.Single
     var selectedIds: Set<String> = emptySet()
@@ -349,18 +391,47 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
     private var typed = ""
     private var typedAt = 0L
 
-    private val order: List<String> get() = rows.filter { !it.section }.map { it.node.id }
+    /** The rows focus, ranges, Ctrl+A and type-ahead reach: visible, not headings, not disabled. */
+    private val enabledRows: List<KozmosTreeRow> get() = rows.filter { !it.section && !it.node.disabled }
+    private val order: List<String> get() = enabledRows.map { it.node.id }
 
-    fun toggleExpanded(id: String) {
-        expanded = if (id in expanded) expanded - id else expanded + id
+    fun toggleExpanded(id: String) = setExpanded(id, id !in expanded)
+
+    /**
+     * Opens or closes [id]. Closing it takes its descendants, now hidden, out
+     * of the selection: [selection], or the current one, trimmed, is handed
+     * on once.
+     */
+    fun setExpanded(id: String, open: Boolean, selection: Set<String>? = null) {
+        if (!open) {
+            val hidden = HashSet<String>()
+            fun collect(node: TreeNode) = node.children.forEach { hidden += it.id; collectAll(it, hidden) }
+            rows.firstOrNull { it.node.id == id }?.node?.let(::collect)
+            expanded = expanded - id
+            val base = selection ?: selectedIds
+            val trimmed = base - hidden
+            if (selection != null || trimmed.size != base.size) select(trimmed)
+            if (anchorId in hidden) anchorId = id
+        } else {
+            expanded = expanded + id
+            selection?.let(::select)
+        }
+    }
+
+    private fun collectAll(node: TreeNode, into: MutableSet<String>) {
+        node.children.forEach { into += it.id; collectAll(it, into) }
     }
 
     private fun select(ids: Set<String>) {
-        onSelectedIdsChange?.invoke(ids)
+        val change = onSelectedIdsChange ?: return
+        // Kept here too, so keys pressed before the caller recomposes build on it.
+        selectedIds = ids
+        change(ids)
     }
 
     /** A press, with the keyboard modifiers held. */
     fun click(row: TreeNode, shift: Boolean, toggle: Boolean) {
+        if (row.disabled) return
         val id = row.id
         if (mode == KozmosTreeSelectionMode.Multiple && (shift || toggle)) {
             if (shift) {
@@ -372,13 +443,13 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
             }
             return
         }
-        select(setOf(id))
         anchorId = id
-        if (row.children.isNotEmpty()) toggleExpanded(id)
+        if (row.children.isNotEmpty()) setExpanded(id, id !in expanded, setOf(id)) else select(setOf(id))
     }
 
     /** The row a menu was opened on: focused, and selected if it is not. */
     fun chooseForMenu(id: String) {
+        if (rows.firstOrNull { it.node.id == id }?.node?.disabled == true) return
         if (id !in selectedIds) {
             select(setOf(id))
             anchorId = id
@@ -405,8 +476,7 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
         val multiple = mode == KozmosTreeSelectionMode.Multiple
         val command = event.isCtrlPressed || event.isMetaPressed
         fun moveTo(target: Int): Boolean {
-            if (target !in ids.indices) return true
-            val id = ids[target]
+            val id = ids.getOrNull(target.coerceIn(0, ids.lastIndex)) ?: return true
             if (event.isShiftPressed && multiple) {
                 // The range runs from where it started, and grows or shrinks from there.
                 val anchor = anchorId ?: row.id
@@ -415,25 +485,37 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
             } else {
                 anchorId = id
             }
-            focus(id)
+            if (id != row.id) focus(id)
             return true
         }
+        /** A page: the rows the list shows now. */
+        val page = (list?.layoutInfo?.visibleItemsInfo?.size ?: 1).coerceAtLeast(1)
         val open = if (rtl) Key.DirectionLeft else Key.DirectionRight
         val close = if (rtl) Key.DirectionRight else Key.DirectionLeft
+        if (event.typedChar() == '*' || event.key == Key.NumPadMultiply) {
+            if (command || event.isAltPressed) return false
+            // Every sibling of the focused row that has children opens (APG).
+            val here = rows.firstOrNull { it.node.id == row.id } ?: return true
+            val siblings = rows.filter { !it.section && it.parentId == here.parentId && it.depth == here.depth }
+            expanded = expanded + siblings.filter { it.node.children.isNotEmpty() && !it.node.disabled }.map { it.node.id }
+            return true
+        }
         return when (event.key) {
             Key.DirectionDown -> moveTo(at + 1)
             Key.DirectionUp -> moveTo(at - 1)
+            Key.PageDown -> moveTo(at + page)
+            Key.PageUp -> moveTo(at - page)
             Key.MoveHome -> moveTo(0)
             Key.MoveEnd -> moveTo(ids.lastIndex)
             open -> {
                 if (row.children.isNotEmpty()) {
-                    if (row.id !in expanded) toggleExpanded(row.id) else moveTo(at + 1)
+                    if (row.id !in expanded) setExpanded(row.id, true) else moveTo(at + 1)
                 }
                 true
             }
             close -> {
                 if (row.children.isNotEmpty() && row.id in expanded) {
-                    toggleExpanded(row.id)
+                    setExpanded(row.id, false)
                 } else {
                     rows.firstOrNull { it.node.id == row.id }?.parentId?.let { focus(it) }
                 }
@@ -441,6 +523,8 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
             }
             Key.Spacebar -> {
                 when {
+                    // A space inside a typed name is typed (APG).
+                    typed.isNotEmpty() && System.currentTimeMillis() - typedAt <= 500 -> typeAhead(row, event)
                     !multiple -> click(row, shift = false, toggle = false)
                     event.isShiftPressed -> select(treeRange(ids, anchorId ?: row.id, row.id))
                     else -> click(row, shift = false, toggle = true)
@@ -464,23 +548,44 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
         }
     }
 
-    /** Printable keys move focus to the next row whose name starts with what was typed. */
+    /**
+     * Printable keys move focus to the next row whose name starts with what
+     * was typed, as React's Tree does (APG): one letter, or the same letter
+     * again, moves on from the focused row, so "p" then "p" reaches the
+     * second row starting with p; more letters keep to the focused row while
+     * it still matches. Never with Ctrl, Meta or Alt, and never `+`, `-` or
+     * `*`.
+     */
     private fun typeAhead(row: TreeNode, event: KeyEvent): Boolean {
-        if (event.isCtrlPressed || event.isMetaPressed) return false
-        val code = event.utf16CodePoint
-        if (code <= ' '.code) return false
+        if (event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return false
+        val char = event.typedChar() ?: return false
+        if (char < ' ' || char in "+-*") return false
+        if (char == ' ' && typed.isEmpty()) return false
         val now = System.currentTimeMillis()
-        typed = if (now - typedAt > 500) "" else typed
+        if (now - typedAt > 500) typed = ""
         typedAt = now
-        typed += code.toChar()
-        val visible = rows.filter { !it.section }
+        typed += char.lowercaseChar()
+        val visible = enabledRows
+        if (visible.isEmpty()) return true
         val at = visible.indexOfFirst { it.node.id == row.id }
-        // A first key looks past the focused row; more keys go on matching it.
-        val start = if (typed.length == 1) at + 1 else at
-        val found = (visible.indices).map { visible[(start + it).mod(visible.size)] }
-            .firstOrNull { it.node.name.startsWith(typed, ignoreCase = true) }
-        found?.let { focus(it.node.id) }
+        val repeated = typed.all { it == typed[0] }
+        val search = if (repeated) typed.substring(0, 1) else typed
+        val start = if (repeated) at + 1 else at
+        val found = visible.indices.map { visible[(start + it).mod(visible.size)] }
+            .firstOrNull { it.node.name.lowercase().startsWith(search) }
+        found?.let {
+            anchorId = it.node.id
+            if (it.node.id != row.id) focus(it.node.id)
+        }
         return true
+    }
+
+    /** [at], in a row's pixels, in the menu's area: where a long press opens it. */
+    fun pointIn(coordinates: LayoutCoordinates, at: Offset): IntOffset {
+        val area = area ?: return IntOffset.Zero
+        if (!area.isAttached || !coordinates.isAttached) return IntOffset.Zero
+        val point = area.localPositionOf(coordinates, at)
+        return IntOffset(point.x.toInt(), point.y.toInt())
     }
 
     /** Where a row starts in the menu's area, for TalkBack's long press on it. */
@@ -490,6 +595,30 @@ internal class KozmosTreeController(initiallyExpanded: Set<String>) {
         val at = area.localPositionOf(coordinates, Offset.Zero)
         return IntOffset((at.x + if (rtl) coordinates.size.width else 0).toInt(), at.y.toInt())
     }
+}
+
+/**
+ * The character a key types, or null for none. Where the device has no key
+ * character map (a host without one, as layoutlib), read from the key code.
+ */
+private fun KeyEvent.typedChar(): Char? {
+    val code = try {
+        utf16CodePoint
+    } catch (unavailable: RuntimeException) {
+        val key = nativeKeyEvent.keyCode
+        when (key) {
+            in android.view.KeyEvent.KEYCODE_A..android.view.KeyEvent.KEYCODE_Z ->
+                'a'.code + key - android.view.KeyEvent.KEYCODE_A
+            in android.view.KeyEvent.KEYCODE_0..android.view.KeyEvent.KEYCODE_9 ->
+                '0'.code + key - android.view.KeyEvent.KEYCODE_0
+            android.view.KeyEvent.KEYCODE_SPACE -> ' '.code
+            android.view.KeyEvent.KEYCODE_STAR, android.view.KeyEvent.KEYCODE_NUMPAD_MULTIPLY -> '*'.code
+            android.view.KeyEvent.KEYCODE_PLUS, android.view.KeyEvent.KEYCODE_NUMPAD_ADD -> '+'.code
+            android.view.KeyEvent.KEYCODE_MINUS, android.view.KeyEvent.KEYCODE_NUMPAD_SUBTRACT -> '-'.code
+            else -> 0
+        }
+    }
+    return if (code == 0) null else code.toChar()
 }
 
 /** Lays the tree out [bleed] wider on each side than its slot, centred on it. */
@@ -578,12 +707,18 @@ fun TreeSectionRow(
     depth: Int = 0,
     density: KozmosTreeDensity = KozmosTreeDensity.Default
 ) {
+    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    // TalkBack reads the name and the count as the locale writes it: "POI, 3,257".
+    val label = if (count == null) name else "$name, ${NumberFormat.getIntegerInstance(locale).format(count)}"
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = if (density == KozmosTreeDensity.Compact) 24.dp else 32.dp)
-            .semantics(mergeDescendants = true) { heading() }
+            .clearAndSetSemantics {
+                heading()
+                contentDescription = label
+            }
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing100)
     ) {
         Spacer(modifier = Modifier.width((depth * 16).dp))
@@ -628,8 +763,11 @@ private class TreePress {
     var shift = false
     var toggle = false
     var coordinates: LayoutCoordinates? = null
+    /** Where the last press went down, in the row's pixels. */
+    var at: Offset = Offset.Zero
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TreeRow(
     node: TreeNode,
@@ -692,14 +830,27 @@ private fun TreeRow(
             .then(if (tree != null) treeRowInput(node, tree, press, focus, itemIndex) else Modifier)
             .semantics {
                 if (selectable) this.selected = selected
-                if (hasChildren) {
+                if (hasChildren && !node.disabled) {
                     val state = if (expanded) "Expanded" else "Collapsed"
                     stateDescription = if (selectable && selected) "Selected, $state" else state
                     if (expanded) collapse { tree?.toggleExpanded(node.id) ?: onToggle(); true }
                     else expand { tree?.toggleExpanded(node.id) ?: onToggle(); true }
                 }
             }
-            .clickable {
+            // Disabled, it takes no press, no focus and no selection, and
+            // TalkBack reads it as disabled.
+            // A long press opens the row's menu here: the menu area's own long
+            // press never sees one over a pressable row, whose press detector
+            // takes the press first.
+            .combinedClickable(
+                enabled = !node.disabled,
+                onLongClick = tree?.menuState?.takeUnless { node.disabled }?.let { menu ->
+                    {
+                        tree.contextId = currentNode.id
+                        menu.openAt = press.coordinates?.let { tree.pointIn(it, press.at) } ?: IntOffset.Zero
+                    }
+                }
+            ) {
                 if (tree != null) {
                     tree.click(currentNode, press.shift, press.toggle)
                     press.shift = false
@@ -782,7 +933,7 @@ private fun treeRowInput(
         // long press opens this row's menu, not the area's.
         .semantics {
             collectionItemInfo = CollectionItemInfo(itemIndex, 1, 0, 1)
-            if (menu != null) {
+            if (menu != null && !currentNode.disabled) {
                 onLongClick(label = "Show menu") {
                     tree.contextId = currentNode.id
                     menu.openAt = press.coordinates?.let(tree::startOf) ?: IntOffset.Zero
@@ -790,7 +941,8 @@ private fun treeRowInput(
                 }
             }
         }
-        .then(if (menu != null) Modifier.kozmosContextMenuTarget() else Modifier)
+        // A disabled row is no target: TalkBack offers no menu on it.
+        .then(if (menu != null && !node.disabled) Modifier.kozmosContextMenuTarget() else Modifier)
         .pointerInput(Unit) {
             awaitPointerEventScope {
                 while (true) {
@@ -799,7 +951,11 @@ private fun treeRowInput(
                         press.shift = event.keyboardModifiers.isShiftPressed
                         press.toggle = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
                         // Any press may become a menu's: a right click, a long press.
-                        tree.contextId = currentNode.id
+                        tree.contextId = currentNode.id.takeUnless { currentNode.disabled }
+                        event.changes.firstOrNull()?.let { press.at = it.position }
+                        // The area opened its menu on this same event, before
+                        // this row saw it: a disabled row closes it at once.
+                        if (currentNode.disabled && event.buttons.isSecondaryPressed) menu?.openAt = null
                     }
                 }
             }
