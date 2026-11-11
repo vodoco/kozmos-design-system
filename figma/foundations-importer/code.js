@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "e7b952b9294c";
+const PLUGIN_BUILD = "8d26fcd404ac";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -3826,17 +3826,19 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Steppers maps to NumberInput.showSteppers.",
       "Label Text, Value Text, Placeholder Text, Helper Text, and Show Helper Text map to NumberInput props.",
+      "Show Unit and Unit Text map to NumberInput.unit, drawn inside the field after the value (GAP-098).",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Steppers: True, False",
-      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Unit Text, Show Unit, Focus Visible",
     ],
     accessibility: [
       "Field and stepper controls meet the 44px minimum target.",
       "Text, icons, helper copy, and field boundaries pass contrast in both modes.",
       "Product code preserves native spinbutton semantics and labelled stepper controls.",
+      "The unit is never part of the value; it is read once after it, by its spoken name (unitLabel).",
     ],
   },
   {
@@ -4148,16 +4150,18 @@ const COMPONENT_DOCS = [
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable: React draws the clear only while the field holds text (GAP-161).",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error",
-      "Label Text, Placeholder Text, Focus Visible",
+      "Label Text, Placeholder Text, Show Clear, Focus Visible",
     ],
     accessibility: [
       "Field height meets the 44px minimum target.",
       "The search icon and field boundary pass non-text contrast checks.",
       "Focus Visible controls the generated focus ring.",
+      "The clear is as tall as the field, named by clearLabel in the page's language, and returns focus to the field.",
     ],
   },
   {
@@ -4233,18 +4237,21 @@ const COMPONENT_DOCS = [
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value maps to Slider.showValue, the readout at the track's end that stays at rest; Value Text is formatValue's words (GAP-163).",
+      "Code draws the readout in tabular figures; Figma draws it in the font's own, because the Plugin API cannot set OpenType features.",
       "Focus follows the React focus-visible ring on the thumb.",
     ],
     properties: [
       "State: Default, Focus, Disabled",
       "Status: Default, Error",
       "Type: Single, Range",
-      "Label Text, Focus Visible",
+      "Label Text, Value Text, Show Value, Focus Visible",
     ],
     accessibility: [
       "Overall control height meets the 44px interaction target.",
       "Track and thumb boundaries pass the 3:1 non-text guidance.",
       "Focus Visible controls the generated thumb focus ring.",
+      "The readout is hidden from assistive tech: the thumb announces the same formatted value.",
     ],
   },
   {
@@ -30695,10 +30702,14 @@ function bindSliderGeometryVariables(
     stats,
   );
 
+  // The control's and the track's widths are not bound (GAP-163): the
+  // control fills the row the readout shares, and the track stretches with
+  // the control. A bound width is fixed and would hold them at 320.
   if (root) {
-    bindSizeVariables(
+    clearBoundVariable(root, "width", stats);
+    bindFloatVariable(
       root,
-      "Slider/width/default",
+      "height",
       "Slider/height/default",
       variableByName,
       stats,
@@ -30706,13 +30717,7 @@ function bindSliderGeometryVariables(
   }
 
   if (track) {
-    bindFloatVariable(
-      track,
-      "width",
-      "Slider/width/default",
-      variableByName,
-      stats,
-    );
+    clearBoundVariable(track, "width", stats);
     bindFloatVariable(
       track,
       "height",
@@ -35813,6 +35818,7 @@ async function buildNumberInputComponent() {
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
     "Helper Text maps to NumberInput.helperText.",
+    "Show Unit and Unit Text map to NumberInput.unit (GAP-098).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35870,6 +35876,7 @@ async function updateNumberInputComponent() {
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
     "Helper Text maps to NumberInput.helperText.",
+    "Show Unit and Unit Text map to NumberInput.unit (GAP-098).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -37867,6 +37874,7 @@ async function buildSearchComponent() {
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable (GAP-161).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -37890,6 +37898,7 @@ async function updateSearchComponent() {
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable (GAP-161).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -37960,6 +37969,7 @@ async function buildSliderComponent() {
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value and Value Text map to Slider.showValue and formatValue (GAP-163).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -37984,6 +37994,7 @@ async function updateSliderComponent() {
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value and Value Text map to Slider.showValue and formatValue (GAP-163).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -44597,6 +44608,14 @@ function configureTextareaProperties(componentSet, stats) {
 function configureSearchProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Search", stats);
   configurePlaceholderTextProperty(componentSet, "Search", stats);
+  // GAP-161: Search.clearable, the clear at the field's end.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Clear Button",
+    "Show Clear",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -44637,6 +44656,21 @@ function configureNumberInputProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "0", stats);
   configureHelperTextProperty(componentSet, "Use a whole number.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  // GAP-098: NumberInput.unit, drawn after the value.
+  configureNamedTextProperty(
+    componentSet,
+    "Unit Text",
+    "Unit Text",
+    "m",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Unit Text",
+    "Show Unit",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -45077,6 +45111,22 @@ function configureColorPickerProperties(componentSet, stats) {
 
 function configureSliderProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Slider", stats);
+  // GAP-163: Slider.showValue, the readout that stays, and its words
+  // (Slider.formatValue's output).
+  configureNamedTextProperty(
+    componentSet,
+    "Value Text",
+    "Value Text",
+    "50%",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Value Text",
+    "Show Value",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -71901,6 +71951,7 @@ async function syncNumberInputVariantChildren({
     "Label Text",
     "Value Text",
     "Placeholder Text",
+    "Unit Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -72046,6 +72097,34 @@ async function syncNumberInputVariantChildren({
   setTextAutoResize(placeholder, "TRUNCATE");
   valueSlot.appendChild(valueText);
   valueSlot.appendChild(placeholder);
+
+  // GAP-098: the unit, inside the field after the value and before the
+  // increment stepper, as React's .kozmos-number-unit draws it: the field's
+  // muted foreground, never part of the value. Hidden until Show Unit is on
+  // (configureNumberInputProperties), so the set draws as it did.
+  const unit = figma.createText();
+  unit.name = "Unit Text";
+  await applyFieldTextTypography(
+    unit,
+    fonts,
+    "NumberInput",
+    variableByName,
+    stats,
+  );
+  unit.characters = preservedText["Unit Text"] || "m";
+  unit.fills = [
+    paintFromVariable(
+      config.placeholder,
+      config.placeholderFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  unit.textAlignVertical = "CENTER";
+  unit.visible = false;
+  valueSlot.itemSpacing = 4;
+  valueSlot.appendChild(unit);
+  setHugChildSizing(unit);
   field.appendChild(valueSlot);
   setHorizontalStackFillChildSizing(valueSlot);
 
@@ -77202,11 +77281,82 @@ async function syncSearchVariantChildren({
   });
 
   bindSearchGeometryVariables(component, field, icon, variableByName, stats);
+  await syncSearchClearButton(field, { config, variableByName, stats });
 
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
   normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Search's clear (GAP-161), drawn as React's .kozmos-input-action places it
+ * and as Input's action is painted: a transparent square at the field's end,
+ * inside its border, as tall as the field (bound to its height, 44 in
+ * touch) and out of its line, the 16 x-close centred in the field's muted
+ * foreground. No fill at rest (decision 164); its hover is the open part of
+ * GAP-227 and has no variant here. Hidden until Show Clear is on
+ * (configureSearchProperties), as React draws it only while the field holds
+ * text and `clearable` is set.
+ */
+async function syncSearchClearButton(field, { config, variableByName, stats }) {
+  let button = directChildNamed(field, "Clear Button");
+  if (button) {
+    button.remove();
+    button = null;
+  }
+  button = figma.createFrame();
+  button.name = "Clear Button";
+  button.layoutMode = "HORIZONTAL";
+  button.primaryAxisSizingMode = "FIXED";
+  button.counterAxisSizingMode = "FIXED";
+  button.primaryAxisAlignItems = "CENTER";
+  button.counterAxisAlignItems = "CENTER";
+  button.itemSpacing = 0;
+  button.paddingLeft = 0;
+  button.paddingRight = 0;
+  button.paddingTop = 0;
+  button.paddingBottom = 0;
+  button.resizeWithoutConstraints(FIELD_ACTION_SIZE, FIELD_ACTION_SIZE);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  button.fills = [];
+  button.strokes = [];
+  button.clipsContent = false;
+  button.setSharedPluginData(RUN_NAMESPACE, "kind", "field-action");
+  button.setSharedPluginData(RUN_NAMESPACE, "aria-label", "Clear search");
+  bindFloatVariable(
+    button,
+    "width",
+    "Search/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    button,
+    "height",
+    "Search/field/height",
+    variableByName,
+    stats,
+  );
+  const icon = await createFixedIconInstance(
+    "x-close",
+    config.placeholder,
+    config.placeholderFallback,
+    variableByName,
+    stats,
+    16,
+    "Search/icon/size",
+  );
+  icon.name = "Clear Icon";
+  button.appendChild(icon);
+
+  field.appendChild(button);
+  button.layoutPositioning = "ABSOLUTE";
+  button.x = field.width - FIELD_ACTION_SIZE;
+  button.y = Math.max(0, (field.height - FIELD_ACTION_SIZE) / 2);
+  button.constraints = { horizontal: "MAX", vertical: "CENTER" };
+  button.visible = false;
+  return button;
 }
 
 async function syncSelectVariantChildren({
@@ -77344,7 +77494,38 @@ async function syncSliderVariantChildren({
     stats,
   });
 
-  let root = directChildNamed(component, "Slider Control");
+  // GAP-163: the control and its readout share a row, the readout at the
+  // end, as React draws `showValue` beside the track. A set drawn before the
+  // row had the control as the component's own child: it is found there and
+  // moved into the row, so an Update keeps its node.
+  let row = directChildNamed(component, "Slider Row");
+  if (row && row.type !== "FRAME") {
+    row.remove();
+    row = null;
+  }
+  if (!row) {
+    row = figma.createFrame();
+    row.name = "Slider Row";
+  }
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "FIXED";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 12;
+  row.paddingLeft = 0;
+  row.paddingRight = 0;
+  row.paddingTop = 0;
+  row.paddingBottom = 0;
+  row.resizeWithoutConstraints(320, 44);
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "slider-row");
+
+  let root =
+    directChildNamed(row, "Slider Control") ||
+    directChildNamed(component, "Slider Control");
   if (root && root.type !== "FRAME") {
     root.remove();
     root = null;
@@ -77579,13 +77760,78 @@ async function syncSliderVariantChildren({
     stats,
   );
 
+  // The readout (GAP-163): the value at the row's end, visible at rest, in
+  // the field's muted foreground and 14/20 text, as React's `showValue`
+  // draws it. Hidden until Show Value is on (configureSliderProperties), so
+  // the set draws as it did. One Value Text for every Type: a range's
+  // words, "20 – 80", are typed into it.
+  let readout = directChildNamed(row, "Value Text");
+  const readoutText =
+    readout && readout.type === "TEXT" ? readout.characters : null;
+  if (readout) {
+    readout.remove();
+    readout = null;
+  }
+  readout = figma.createText();
+  readout.name = "Value Text";
+  await applyFieldTextTypography(
+    readout,
+    fonts,
+    "Input",
+    variableByName,
+    stats,
+  );
+  readout.characters = readoutText || "50%";
+  const readoutColor =
+    state === "Disabled"
+      ? { token: config.label, fallback: config.labelFallback }
+      : { token: "Colors/foreground/400", fallback: "#5D626F" };
+  readout.fills = [
+    paintFromVariable(
+      readoutColor.token,
+      readoutColor.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  readout.textAlignVertical = "CENTER";
+  readout.visible = false;
+
+  row.appendChild(root);
+  row.appendChild(readout);
   component.appendChild(label);
-  component.appendChild(root);
-  // The control fills the Slider's width, so a resized instance stretches
-  // it. FILL needs the control inside the component's auto layout, so it is
-  // set after the append: before it, Figma refused it for a new control.
-  setVerticalFixedFillChildSizing(root);
+  component.appendChild(row);
+  // The row fills the Slider's width, so a resized instance stretches it,
+  // and the control fills what the readout leaves. FILL needs each inside an
+  // auto layout, so it is set after the appends: before them, Figma refused
+  // it for a new control.
+  setVerticalFixedFillChildSizing(row);
   normalizeInputFamilyChildSizing(component);
+  setSliderControlRowSizing(root);
+  setHugChildSizing(readout);
+}
+
+/**
+ * The control in its row: as wide as the row leaves it (FILL along the row,
+ * so a shown readout takes its room from the track), and its own 44 high.
+ * Its width is not bound: a bound width is fixed, and would push the readout
+ * out of the row.
+ */
+function setSliderControlRowSizing(root) {
+  if (!root) return;
+  clearBoundVariable(root, "width", null);
+  setLayoutSizingHorizontal(root, "FILL");
+  setLayoutSizingVertical(root, "FIXED");
+  try {
+    root.layoutGrow = 1;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
+  }
+  try {
+    root.layoutAlign = "INHERIT";
+  } catch (_error) {
+    // layoutAlign is unavailable on older plugin runtimes.
+  }
 }
 
 async function syncProgressVariantChildren({
@@ -78645,6 +78891,7 @@ const INPUT_FAMILY_VERTICAL_FIXED_FILL_KINDS = new Set([
   "file-upload-file-row",
   "colorpicker-color-area",
   "slider-control",
+  "slider-row",
 ]);
 
 const INPUT_FAMILY_VERTICAL_HUG_FILL_KINDS = new Set([

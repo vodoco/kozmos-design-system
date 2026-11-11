@@ -150,8 +150,12 @@ the answer comes through `onBuildingChange`. That package's README has the code.
 
 <Canvas of={Stories.ExitBuilding} />
 
-SwiftUI and Compose do not have these three slots yet; on those platforms, place a status or an
-Exit button in your own overlay.
+SwiftUI and Compose have the three slots too, from 0.16.0 (decision 134): `status`,
+`controlsTopStart` and `controlsTopEnd`, with `topControlsLabel`, placed as they are here. They
+report collision insets, not occlusions: the status never changes them, and the top corners pad the
+camera's top only with `controlsPadCamera`, as here. SwiftUI's `controls` column pads the camera
+whatever that says, and Compose's never does, as before on each. A status with no
+room is not drawn and stays in the accessibility tree, so `KozmosMapStatusPill` still announces it.
 
 <Canvas of={Stories.SheetPanelHeader} />
 <Canvas of={Stories.SheetWithPlaceDetails} />

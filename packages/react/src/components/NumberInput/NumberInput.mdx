@@ -119,6 +119,89 @@ fun OrderScreen() {
   `}
 />
 
+## A unit
+
+`unit` draws a unit inside the field after the value, "15 m", so the label stays plain. It is
+never part of the value: `onValueChange` still sends a number. A screen reader hears it once,
+after the value, as `unitLabel` when you give one ("metres") and as written when you do not.
+It lies at the field's end, so it is on the left in a right-to-left page, and the text keeps
+clear of it at any length.
+
+<Canvas>
+  <Story of={NumberInputStories.WithUnit} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { NumberInput } from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <NumberInput
+      label="Width"
+      defaultValue={15}
+      min={0}
+      unit="m"
+      unitLabel="metres"
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosNumberInput } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosNumberInput
+    label="Width"
+    :default-value="15"
+    :min="0"
+    unit="m"
+    unit-label="metres"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The unit is drawn after the value and never typed: the value stays a
+// number. VoiceOver hears the value, then the unit's spoken name.
+struct WidthField: View {
+    @Binding var width: Double?
+
+    var body: some View {
+        KozmosNumberInput(
+            value: $width,
+            label: "Width",
+            min: 0,
+            unit: "m",
+            unitLabel: "metres"
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.numberinput.KozmosNumberInput
+
+// The unit is drawn after the value and never typed: the value stays a
+// number. TalkBack hears the value, then the unit's spoken name.
+@Composable
+fun WidthField(width: Double?, onWidthChange: (Double?) -> Unit) {
+    KozmosNumberInput(
+        value = width,
+        onValueChange = onWidthChange,
+        label = "Width",
+        min = 0.0,
+        unit = "m",
+        unitLabel = "metres"
+    )
+}
+`}
+
+/>
+
 ## Accessibility
 
 - Steppers are real buttons with accessible names, reachable by keyboard.

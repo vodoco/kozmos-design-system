@@ -32,6 +32,21 @@ It forwards its ref to `HTMLInputElement`. Its props are `SearchProps`, which ex
 - `label`: `string`, optional.
 - `error`: `boolean | string`, optional.
 - `wrapperClassName`: `string`, optional.
+- `clearable`: `boolean`, optional, default `false`.
+
+  Draw a clear button at the field's end while it holds text (GAP-161).
+  Pressing it, or Escape in the field, empties the field through its own
+  `onChange`, calls `onClear` and puts the focus back in the field. Off
+  unless asked for.
+
+- `clearLabel`: `string`, optional, default `"Clear search"`.
+
+  The clear button's name, in the page's language. Default "Clear search".
+
+- `onClear`: `() => void`, optional.
+
+  Called once the field is cleared, after its `onChange`.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
