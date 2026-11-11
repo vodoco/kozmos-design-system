@@ -129,7 +129,7 @@ public struct KozmosNumberInput: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(width: 44, height: 44)
         }
-        .disabled(disabled || readOnly)
+        .disabled(steppersDisabled)
         .background(fieldBackgroundColor)
         .foregroundColor(stepperColor)
         .overlay(
@@ -139,9 +139,13 @@ public struct KozmosNumberInput: View {
         .accessibilityLabel(accessibilityLabel)
     }
 
+    /// Mixed (GAP-153), a step would start from nothing and write that number
+    /// over every selected feature's own: the steppers wait for a typed edit.
+    var steppersDisabled: Bool { disabled || readOnly || mixed }
+
     private func applyStep(_ delta: Double) {
-        // Mixed, a step starts from nothing, as an empty field's does.
-        let base = mixed ? 0 : (value ?? 0)
+        guard !steppersDisabled else { return }
+        let base = value ?? 0
         value = clamp(base + delta)
     }
 
@@ -231,7 +235,7 @@ public struct KozmosNumberInput: View {
     }
 
     private var stepperColor: Color {
-        if disabled || readOnly { return KozmosColors.primitivesColorsForeground500 }
+        if steppersDisabled { return KozmosColors.primitivesColorsForeground500 }
         switch effectiveStatus {
         case .error:
             return KozmosColors.primitivesColorsEmotionalDanger600

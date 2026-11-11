@@ -14,6 +14,13 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertFalse(KozmosMixedValue.showsReset(mixed: false, onReset: {}, disabled: false, readOnly: true))
     }
 
+    // Decision of 11 Nov: a step from a mixed field would write one number
+    // over every selected feature's own.
+    func testANumberInputsSteppersAreDisabledWhileMixed() {
+        XCTAssertTrue(KozmosNumberInput(value: .constant(4), mixed: true).steppersDisabled)
+        XCTAssertFalse(KozmosNumberInput(value: .constant(4)).steppersDisabled)
+    }
+
     func testTheSelectFieldShowsTheMixedLabelInPlaceOfAChoice() {
         let mixed = KozmosSelectField(value: "POI", placeholder: "Type", mixed: true)
         XCTAssertEqual(mixed.shownText, "Multiple values")
@@ -52,6 +59,21 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertEqual(field.text, "")
         XCTAssertEqual(field.placeholder, "Multiple values")
         XCTAssertFalse(elements(in: window).contains { $0.accessibilityLabel == "Reset to multiple values" })
+    }
+
+    @MainActor func testAMixedNumberInputsSteppersAreReadAsDimmed() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        for mixed in [true, false] {
+            let window = host(KozmosNumberInput(value: .constant(4), label: "Height", mixed: mixed))
+            defer { window.isHidden = true }
+            try await Task.sleep(nanoseconds: 300_000_000)
+            let steppers = elements(in: window).filter {
+                $0.accessibilityLabel == "Increase value" || $0.accessibilityLabel == "Decrease value"
+            }
+            XCTAssertEqual(steppers.count, 2, describe(elements(in: window)))
+            XCTAssertEqual(steppers.allSatisfy { $0.accessibilityTraits.contains(.notEnabled) }, mixed, "mixed=\(mixed)")
+        }
     }
 
     @MainActor func testTheSelectFieldSaysItsNameThenItsValue() async throws {
