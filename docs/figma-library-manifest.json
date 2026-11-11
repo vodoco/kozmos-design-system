@@ -18612,7 +18612,8 @@
             "placeholder",
             "readOnly",
             "showSteppers",
-            "status"
+            "status",
+            "unit"
           ],
           "unmappedProps": []
         },
@@ -18637,6 +18638,8 @@
           "status",
           "tabIndex",
           "title",
+          "unit",
+          "unitLabel",
           "value",
           "wrapperClassName"
         ],
@@ -19576,6 +19579,7 @@
           "connectedComponents": ["Search"],
           "mappedProps": [
             "autoFocus",
+            "clearable",
             "disabled",
             "error",
             "label",
@@ -19590,6 +19594,8 @@
           "aria-label",
           "autoFocus",
           "children",
+          "clearable",
+          "clearLabel",
           "defaultValue",
           "disabled",
           "error",
@@ -19857,6 +19863,7 @@
             "disabled",
             "error",
             "label",
+            "showValue",
             "thumbCount"
           ],
           "unmappedProps": []
@@ -19879,6 +19886,7 @@
           "name",
           "orientation",
           "role",
+          "showValue",
           "showValueTooltip",
           "step",
           "tabIndex",

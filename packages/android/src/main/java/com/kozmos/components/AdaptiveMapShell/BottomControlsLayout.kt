@@ -21,15 +21,58 @@ import com.kozmos.tokens.KozmosDimensions
 
 internal data class BottomControlsGeometry(val height: Int, val start: IntOffset, val end: IntOffset)
 
-/** Logical coordinates; Compose mirrors placeRelative without reordering children. */
-internal fun bottomControlsGeometry(width: Int, start: IntSize, end: IntSize, gap: Int): BottomControlsGeometry {
+/**
+ * Logical coordinates; Compose mirrors placeRelative without reordering
+ * children. The top corners (GAP-123) take [alignsTop]: sharing a row their
+ * tops line up, under the top bar; wrapped, the start sits above the end
+ * either way.
+ */
+internal fun bottomControlsGeometry(width: Int, start: IntSize, end: IntSize, gap: Int, alignsTop: Boolean = false): BottomControlsGeometry {
     val wraps = start.width > 0 && end.width > 0 && start.width + gap + end.width > width
     val height = if (wraps) start.height + gap + end.height else maxOf(start.height, end.height)
     return BottomControlsGeometry(
         height,
-        IntOffset(0, if (wraps) 0 else height - start.height),
-        IntOffset(maxOf(0, width - end.width), height - end.height)
+        IntOffset(0, if (wraps || alignsTop) 0 else height - start.height),
+        IntOffset(maxOf(0, width - end.width), if (alignsTop && !wraps) 0 else height - end.height)
     )
+}
+
+/**
+ * The logical top corners (GAP-123) in one named container: measured always,
+ * so the shell knows their height, and placed only while [shown], so corners
+ * with no room keep their state but take no touches and no semantics.
+ */
+@Composable
+internal fun TopControlsLayout(
+    start: (@Composable () -> Unit)?,
+    end: (@Composable () -> Unit)?,
+    shown: Boolean,
+    label: String,
+    modifier: Modifier = Modifier,
+    onHeight: (Int) -> Unit = {}
+) {
+    Layout(modifier = modifier.then(if (shown) Modifier.semantics {
+        contentDescription = label
+        isTraversalGroup = true
+    } else Modifier.clearAndSetSemantics {}), content = {
+        Box { start?.invoke() }
+        Box { end?.invoke() }
+    }) { measurables, constraints ->
+        val loose = Constraints(maxWidth = constraints.maxWidth)
+        val first = measurables[0].measure(loose)
+        val second = measurables[1].measure(loose)
+        val geometry = bottomControlsGeometry(
+            constraints.maxWidth, IntSize(first.width, first.height), IntSize(second.width, second.height),
+            KozmosDimensions.primitivesLayoutSpacing200.roundToPx(), alignsTop = true
+        )
+        onHeight(geometry.height)
+        layout(constraints.maxWidth, if (shown) geometry.height else 0) {
+            if (shown) {
+                first.placeRelative(geometry.start)
+                second.placeRelative(geometry.end)
+            }
+        }
+    }
 }
 
 @Composable

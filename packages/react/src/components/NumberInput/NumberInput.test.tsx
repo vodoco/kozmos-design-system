@@ -105,4 +105,95 @@ describe("NumberInput", () => {
       "kozmos-number-input",
     );
   });
+
+  describe("unit (GAP-098)", () => {
+    it("draws the unit inside the field after the value, hidden from the reader", () => {
+      const { container } = render(
+        <NumberInput label="Width" defaultValue={15} unit="m" />,
+      );
+      const input = screen.getByRole("spinbutton", { name: "Width" });
+      const unit = container.querySelector(".kozmos-number-unit");
+      expect(unit).toHaveTextContent("m");
+      expect(unit).toHaveAttribute("aria-hidden", "true");
+      // In the input's own box, after it, so it lies at the field's end.
+      expect(unit?.parentElement).toBe(input.parentElement);
+      expect(input.compareDocumentPosition(unit!)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(input).toHaveClass("kozmos-number-with-unit");
+    });
+
+    it("is never part of the value", () => {
+      const onValueChange = vi.fn();
+      render(
+        <NumberInput
+          defaultValue={15}
+          unit="m"
+          onValueChange={onValueChange}
+        />,
+      );
+      expect(screen.getByRole("spinbutton")).toHaveValue(15);
+      fireEvent.click(screen.getByRole("button", { name: /increase value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(16);
+    });
+
+    it("is read once, after the value, by its spoken name", () => {
+      render(
+        <NumberInput
+          label="Width"
+          defaultValue={15}
+          unit="m"
+          unitLabel="metres"
+          helperText="Up to 20"
+        />,
+      );
+      expect(screen.getByRole("spinbutton")).toHaveAccessibleDescription(
+        "metres Up to 20",
+      );
+    });
+
+    it("is read as written without a spoken name", () => {
+      render(<NumberInput label="Share" defaultValue={40} unit="%" />);
+      expect(screen.getByRole("spinbutton")).toHaveAccessibleDescription("%");
+    });
+
+    it("keeps the input, its focus and its value as a unit comes and goes", () => {
+      const { rerender } = render(<NumberInput label="Width" />);
+      const input = screen.getByRole("spinbutton");
+      input.focus();
+      fireEvent.change(input, { target: { value: "7" } });
+      rerender(<NumberInput label="Width" unit="m" />);
+      expect(screen.getByRole("spinbutton")).toBe(input);
+      expect(input).toHaveFocus();
+      expect(input).toHaveValue(7);
+      rerender(<NumberInput label="Width" />);
+      expect(screen.getByRole("spinbutton")).toBe(input);
+      expect(input).not.toHaveAccessibleDescription();
+    });
+
+    it("keeps room for a long unit before it is measured, as a server render draws it", async () => {
+      const { renderToString } = await import("react-dom/server");
+      const html = renderToString(
+        <NumberInput label="Speed" defaultValue={12} unit="km/h" />,
+      );
+      expect(html).toContain("--kozmos-number-unit-width:4ch");
+    });
+
+    it("keeps two widths for each wide character of a CJK unit before it is measured", async () => {
+      const { renderToString } = await import("react-dom/server");
+      const html = renderToString(
+        <NumberInput label="面积" defaultValue={12} unit="平方米" />,
+      );
+      expect(html).toContain("--kozmos-number-unit-width:6ch");
+      // Fullwidth Latin and Hangul are wide too; ASCII stays one each.
+      const mixed = renderToString(
+        <NumberInput label="Area" defaultValue={12} unit="ｍ²" />,
+      );
+      expect(mixed).toContain("--kozmos-number-unit-width:3ch");
+      const hangul = renderToString(
+        <NumberInput label="넓이" defaultValue={12} unit="제곱미터" />,
+      );
+      expect(hangul).toContain("--kozmos-number-unit-width:8ch");
+    });
+  });
 });
