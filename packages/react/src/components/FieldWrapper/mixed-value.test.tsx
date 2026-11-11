@@ -164,6 +164,43 @@ describe("mixed value (GAP-153)", () => {
       expect(field).toHaveAttribute("placeholder", "Multiple values");
     });
 
+    it("empties its character count with the text as it turns mixed", () => {
+      const { rerender } = render(
+        <Input
+          label="Code"
+          defaultValue="ABCDEFGH"
+          count={{ limit: 5 }}
+          mixed={false}
+        />,
+      );
+      const field = screen.getByRole("textbox", { name: "Code" });
+      expect(field).toHaveAttribute("aria-invalid", "true");
+      rerender(
+        <Input
+          label="Code"
+          defaultValue="ABCDEFGH"
+          count={{ limit: 5 }}
+          mixed
+        />,
+      );
+      expect(field).toHaveValue("");
+      expect(field).not.toHaveAttribute("aria-invalid");
+      expect(screen.getByText("0/5")).toBeInTheDocument();
+      expect(screen.queryByText(/limit exceeded/i)).toBeNull();
+    });
+
+    it("empties its own field, not another with the same id", () => {
+      render(
+        <>
+          <input id="name" defaultValue="Other form" aria-label="Other" />
+          <Input id="name" label="Name" defaultValue="Gate A1" mixed />
+        </>,
+      );
+      expect(screen.getByRole("textbox", { name: "Other" })).toHaveValue(
+        "Other form",
+      );
+    });
+
     it("empties an uncontrolled field's typed text on reset", () => {
       function Uncontrolled() {
         const [mixed, setMixed] = React.useState(false);
@@ -204,19 +241,21 @@ describe("mixed value (GAP-153)", () => {
         );
       }
       render(<Edited />);
-      const field = screen.getByRole("spinbutton", { name: "Height" });
-      expect(field).toHaveValue(null);
+      const field = screen.getByLabelText("Height");
+      expect(field).toHaveValue("");
       expect(field).toHaveAttribute("placeholder", "Multiple values");
       expect(field).not.toHaveAttribute("aria-describedby");
 
       await user.type(field, "4");
+      // The same field, a spinbutton again once it holds a number.
+      expect(screen.getByRole("spinbutton", { name: "Height" })).toBe(field);
       expect(field).toHaveValue(4);
       expect(field).not.toHaveAttribute("data-mixed");
 
       await user.click(
         screen.getByRole("button", { name: "Reset to multiple values" }),
       );
-      expect(field).toHaveValue(null);
+      expect(field).toHaveValue("");
       expect(field).toHaveAttribute("placeholder", "Multiple values");
       expect(field).toHaveFocus();
     });
@@ -245,6 +284,20 @@ describe("mixed value (GAP-153)", () => {
       expect(less).toBeEnabled();
     });
 
+    it("is no spinbutton while mixed: nothing can step it from nothing", () => {
+      const { rerender } = render(
+        <NumberInput label="Height" mixed value="" onValueChange={() => {}} />,
+      );
+      expect(screen.queryByRole("spinbutton")).toBeNull();
+      const field = screen.getByRole("textbox", { name: "Height" });
+      expect(field).toHaveAttribute("type", "text");
+      expect(field).toHaveAttribute("inputmode", "decimal");
+      rerender(
+        <NumberInput label="Height" value={4} onValueChange={() => {}} />,
+      );
+      expect(screen.getByRole("spinbutton", { name: "Height" })).toBe(field);
+    });
+
     it("empties an uncontrolled field as it turns mixed", () => {
       const { rerender } = render(
         <NumberInput label="Height" defaultValue={4} mixed={false} />,
@@ -252,16 +305,14 @@ describe("mixed value (GAP-153)", () => {
       const field = screen.getByRole("spinbutton", { name: "Height" });
       expect(field).toHaveValue(4);
       rerender(<NumberInput label="Height" defaultValue={4} mixed />);
-      expect(field).toHaveValue(null);
+      expect(field).toHaveValue("");
     });
 
     it("hides a controlled value while mixed", () => {
       render(
         <NumberInput label="Height" mixed value={4} onChange={() => {}} />,
       );
-      expect(screen.getByRole("spinbutton", { name: "Height" })).toHaveValue(
-        null,
-      );
+      expect(screen.getByLabelText("Height")).toHaveValue("");
     });
   });
 

@@ -4,9 +4,9 @@ import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import {
-  clearUncontrolled,
   mixedFieldValue,
-  useClearWhenMixed,
+  useFieldRef,
+  useMixedField,
 } from "../FieldWrapper/mixedValue";
 import {
   resolveCharacterCount,
@@ -175,7 +175,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const defaultInputId = React.useId();
     const inputId = props.id || defaultInputId;
-    useClearWhenMixed(mixed, inputId, props.value);
+    const mixedField = useMixedField(mixed, props.value, mirror.clear);
+    const fieldRef = useFieldRef(mixedField.field, ref);
     const field = (
       <input
         type={type}
@@ -188,7 +189,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "kozmos-input-with-action pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
           className,
         )}
-        ref={ref}
+        ref={fieldRef}
         aria-invalid={isInvalid ? true : callerInvalid}
         aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
         {...props}
@@ -216,7 +217,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         onResetMixed={
           onResetMixed && !props.disabled && !props.readOnly
             ? () => {
-                clearUncontrolled(inputId, props.value);
+                mixedField.clear();
                 onResetMixed();
               }
             : undefined

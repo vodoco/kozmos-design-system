@@ -215,6 +215,51 @@ class KozmosMixedValueTest {
         }
     }
 
+    @Test fun aComboboxEmptiesItsTextOnlyAsItTurnsMixed() {
+        var mixed by mutableStateOf(false)
+        var text by mutableStateOf("Gate B2")
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                KozmosCombobox(
+                    value = "b2", onValueChange = { _, _ -> },
+                    inputValue = text, onInputValueChange = { text = it },
+                    options = options, label = "Gate", mixed = mixed
+                )
+            }
+        }) {
+            frames(2)
+            assertEquals("Gate B2", field().editableText)
+            mixed = true
+            frames(3)
+            assertEquals("the choice's label goes as it turns mixed", "", text)
+        }
+    }
+
+    @Test fun aQueryTypedWhileMixedSurvivesTheFieldComingBack() {
+        var shown by mutableStateOf(true)
+        var text by mutableStateOf("")
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                if (shown) KozmosCombobox(
+                    value = "", onValueChange = { _, _ -> },
+                    inputValue = text, onInputValueChange = { text = it },
+                    options = options, label = "Gate", mixed = true
+                )
+            }
+        }) {
+            frames(2)
+            field().setText!!.invoke("B")
+            frames(3)
+            // Scrolled away and back, or a tab left and returned to.
+            shown = false
+            frames(2)
+            shown = true
+            frames(3)
+            assertEquals("B", text)
+            assertEquals("B", field().editableText)
+        }
+    }
+
     @Test fun aSelectTriggerSaysTheMixedLabelOnceAndOffersTheReset() {
         fun tree(mixed: Boolean, enabled: Boolean = true) = paparazzi.readSemantics {
             KozmosMaterialTheme {

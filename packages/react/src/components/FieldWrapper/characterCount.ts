@@ -86,5 +86,8 @@ export function useUncontrolledValue(
       ? undefined
       : (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) =>
           setMirrored(event.currentTarget.value),
+
+    /** Empties the mirror: the field was emptied outside an input event. */
+    clear: () => setMirrored(""),
   };
 }

@@ -128,6 +128,16 @@ public struct KozmosSelectField: View {
     var showsPlaceholder: Bool { mixed || value == nil }
 
     public var body: some View {
+        // Named only when given a label: an empty name hides nothing VoiceOver
+        // would say, but it is no name either.
+        if let label {
+            column.accessibilityLabel(label)
+        } else {
+            column
+        }
+    }
+
+    private var column: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
             if let label {
                 Text(label)
@@ -139,7 +149,6 @@ public struct KozmosSelectField: View {
             field
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label ?? "")
         .accessibilityValue(shownText)
     }
 

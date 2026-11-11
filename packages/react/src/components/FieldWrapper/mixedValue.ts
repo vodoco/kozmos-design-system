@@ -35,30 +35,45 @@ const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 /**
- * An uncontrolled field that turns mixed after it is drawn shows its text
- * in the page, not in React: it is emptied as it turns mixed, so the mixed
- * label shows. A controlled field is given "" instead (mixedFieldValue).
+ * An uncontrolled field's text is in the page, not in React. It is emptied
+ * as the field turns mixed (and on mount, mixed), so the mixed label shows,
+ * and on reset. The field is the one `field` is attached to, never one found
+ * by id (ids repeat; a shadow root hides them), and `onCleared` empties
+ * what React mirrors of it, a character count among them, without an input
+ * event the product would read as an edit. A controlled field is given ""
+ * instead (mixedFieldValue), and is left alone here.
  */
-export function useClearWhenMixed(
+export function useMixedField(
   mixed: boolean,
-  inputId: string,
   value: unknown,
+  onCleared?: () => void,
 ) {
-  // Only as it turns mixed: the visitor's typing after that is theirs. The
-  // latest id and value are read from a ref, so `mixed` alone runs it.
-  const latest = React.useRef({ inputId, value });
-  latest.current = { inputId, value };
+  const field = React.useRef<HTMLInputElement | null>(null);
+  const latest = React.useRef({ value, onCleared });
+  latest.current = { value, onCleared };
+  const clear = React.useCallback(() => {
+    if (latest.current.value !== undefined) return;
+    if (field.current) field.current.value = "";
+    latest.current.onCleared?.();
+  }, []);
+  // Only as it turns mixed: the visitor's typing after that is theirs.
   useIsomorphicLayoutEffect(() => {
-    if (mixed) clearUncontrolled(latest.current.inputId, latest.current.value);
-  }, [mixed]);
+    if (mixed) clear();
+  }, [mixed, clear]);
+  return { field, clear };
 }
 
-/**
- * Reset, an uncontrolled field's text is the visitor's, in the page and not
- * in React: it is emptied, so the field shows its several values again.
- */
-export function clearUncontrolled(inputId: string, value: unknown) {
-  if (value !== undefined || typeof document === "undefined") return;
-  const field = document.getElementById(inputId);
-  if (field instanceof HTMLInputElement) field.value = "";
+/** One ref for the field: the component's own and the caller's. */
+export function useFieldRef<T>(
+  own: React.MutableRefObject<T | null>,
+  forwarded: React.ForwardedRef<T>,
+) {
+  return React.useCallback(
+    (node: T | null) => {
+      own.current = node;
+      if (typeof forwarded === "function") forwarded(node);
+      else if (forwarded) forwarded.current = node;
+    },
+    [own, forwarded],
+  );
 }

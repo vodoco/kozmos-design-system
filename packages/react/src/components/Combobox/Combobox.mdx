@@ -315,6 +315,12 @@ it reports no empty choice, which a product would read as an edit emptying the p
 selection. `onResetMixed` offers "Reset to multiple values" once chosen, which empties the text with
 the choice. Input's page has the whole of it (GAP-153).
 
+Turning mixed empties the field's text, on every platform, but whose text it is differs. On React
+the field empties its own text as its choice goes; a product that holds `inputValue` itself keeps
+it, and empties it as it sets `mixed`. On SwiftUI and Compose the text is always the product's
+binding (`inputValue`), and the field writes "" to it as it turns mixed, only on that turn: a query
+typed while mixed survives the field leaving and coming back.
+
 <Canvas of={ComboboxStories.MixedValue} />
 
 ## Stories

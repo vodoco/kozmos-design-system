@@ -76,6 +76,17 @@ final class KozmosMixedValueTests: XCTestCase {
         }
     }
 
+    @MainActor func testAnUnlabelledSelectFieldSetsNoEmptyName() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let window = host(KozmosSelectField(value: nil, placeholder: "Choose", mixed: true))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let found = elements(in: window)
+        let field = try XCTUnwrap(found.first { ($0.accessibilityValue ?? "").contains("Multiple values") }, describe(found))
+        XCTAssertNotEqual(field.accessibilityLabel, "", describe(found))
+    }
+
     @MainActor func testTheSelectFieldSaysItsNameThenItsValue() async throws {
         let old = try XCTUnwrap(setAutomation(1))
         defer { _ = setAutomation(old) }
@@ -126,17 +137,62 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertEqual(written.values, [], "no empty choice is reported while mixed")
     }
 
-    @MainActor func testAComboboxEmptiesItsTextAsItIsMixed() async throws {
+    /// A Combobox whose field turns mixed, or leaves and comes back, once drawn.
+    private struct Turning: View {
+        let written: Written
+        let startsMixed: Bool
+        let comesBack: Bool
+        @State private var mixed: Bool
+        @State private var shown = true
+        @State private var text: String
+        init(written: Written, startsMixed: Bool, text: String, comesBack: Bool) {
+            self.written = written
+            self.startsMixed = startsMixed
+            self.comesBack = comesBack
+            _mixed = State(initialValue: startsMixed)
+            _text = State(initialValue: text)
+        }
+        var body: some View {
+            VStack {
+                if shown {
+                    KozmosCombobox(
+                        value: .constant("b2"),
+                        inputValue: Binding(get: { text }, set: { text = $0; written.texts.append($0) }),
+                        options: [KozmosListboxOption(value: "b2", label: "Gate B2")],
+                        label: "Gate", mixed: mixed
+                    )
+                }
+            }
+            .task {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                if comesBack {
+                    // Scrolled away and back, or a tab left and returned to.
+                    shown = false
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    shown = true
+                } else {
+                    mixed = true
+                }
+            }
+        }
+    }
+
+    @MainActor func testAComboboxEmptiesItsTextAsItTurnsMixed() async throws {
         let written = Written()
-        let window = host(KozmosCombobox(
-            value: .constant("b2"),
-            inputValue: Binding(get: { "Gate B2" }, set: { written.texts.append($0) }),
-            options: [KozmosListboxOption(value: "b2", label: "Gate B2")],
-            label: "Gate", mixed: true
-        ))
+        let window = host(Turning(written: written, startsMixed: false, text: "Gate B2", comesBack: false))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        XCTAssertEqual(written.texts, [""], "the choice's label is emptied, as React's is")
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(written.texts, [""], "the choice's label goes as it turns mixed, as React's does")
+    }
+
+    @MainActor func testAQueryTypedWhileMixedSurvivesTheFieldComingBack() async throws {
+        let written = Written()
+        let window = host(Turning(written: written, startsMixed: true, text: "B", comesBack: true))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 600_000_000)
+        XCTAssertEqual(written.texts, [], "nothing empties the visitor's query")
+        let field = try XCTUnwrap(textFields(in: window).first)
+        XCTAssertEqual(field.text, "B")
     }
 
     @MainActor func testAnEditedInputOffersTheResetAndShowsItsValue() async throws {

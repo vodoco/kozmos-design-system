@@ -204,13 +204,10 @@ public struct KozmosCombobox: View {
         // read-only with `defaultOpen`, or was made so while open, showed its
         // list again by itself. A host's `expanded` is the host's: hidden
         // while the field cannot be used, never written here.
-        .onAppear {
-            if disabled || readOnly { internalOpen = false }
-            // Mixed, the field shows none of its own text, as React's does: a
-            // choice's label the host still holds is emptied. A query typed
-            // while mixed is the visitor's and stays.
-            if mixed { inputValue = "" }
-        }
+        .onAppear { if disabled || readOnly { internalOpen = false } }
+        // Turning mixed (GAP-153), the field's text goes with its choice, as
+        // React's does. Only on the turn: appearing again (a rotation, a list
+        // scrolled back, a tab returned to) leaves a query typed while mixed.
         .onChange(of: mixed) { nowMixed in
             if nowMixed { inputValue = "" }
         }

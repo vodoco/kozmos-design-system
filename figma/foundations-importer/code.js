@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "e70c85b6da5d";
+const PLUGIN_BUILD = "b34efe176188";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -78085,8 +78085,11 @@ async function syncMixedFieldText(
  * field as React's FieldWrapper draws it: a text button at the field's
  * start, Colors/theme/600 at the label's size and weight. Hidden: the Reset
  * Mixed boolean shows it, for a field edited out of Mixed; its words are
- * Reset Mixed Text. Drawn into `text`, an existing layer kept so an
- * instance's overrides of it survive an Update, or a new one.
+ * Reset Mixed Text. Drawn into `text`, the variant's existing layer or a new
+ * one. Kept for Input and Select, whose painters reuse their children, so an
+ * instance's overrides of it survive an Update there; NumberInput's and
+ * Combobox's painters remove every child first and draw it anew, as they
+ * always have, so there it (and Mixed Text) gets a new id on each Update.
  */
 async function drawResetMixedText(text, { fonts, variableByName, stats }) {
   text.name = RESET_MIXED_LAYER;

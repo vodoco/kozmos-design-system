@@ -2,11 +2,7 @@ import React from "react";
 import { Minus, Plus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
-import {
-  clearUncontrolled,
-  mixedFieldValue,
-  useClearWhenMixed,
-} from "../FieldWrapper/mixedValue";
+import { mixedFieldValue, useMixedField } from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 export interface NumberInputProps
@@ -23,7 +19,12 @@ export interface NumberInputProps
 }
 
 function numericValueFromInput(input: HTMLInputElement) {
-  if (input.value === "") return null;
+  if (input.value.trim() === "") return null;
+  // A mixed field is a text field (below): its typed number is read here.
+  if (input.type !== "number") {
+    const typed = Number(input.value.trim().replace(",", "."));
+    return Number.isFinite(typed) ? typed : null;
+  }
   return Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber;
 }
 
@@ -81,7 +82,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     // Mixed, a step would start from nothing and write that number over
     // every selected feature's own: the steppers wait for a typed edit.
     const stepperDisabled = disabled || readOnly || mixed;
-    useClearWhenMixed(mixed, inputId, props.value);
+    const mixedField = useMixedField(mixed, props.value);
     const stepperToneClass = {
       default: "",
       error: "kozmos-number-step-error",
@@ -92,13 +93,14 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const setRefs = React.useCallback(
       (node: HTMLInputElement | null) => {
         internalRef.current = node;
+        mixedField.field.current = node;
         if (typeof ref === "function") {
           ref(node);
         } else if (ref) {
           ref.current = node;
         }
       },
-      [ref],
+      [ref, mixedField.field],
     );
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +141,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         onResetMixed={
           onResetMixed && !disabled && !readOnly
             ? () => {
-                clearUncontrolled(inputId, props.value);
+                mixedField.clear();
                 onResetMixed();
               }
             : undefined
@@ -165,7 +167,13 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             </button>
           )}
           <input
-            type="number"
+            // Mixed (GAP-153), a text field with the numeric keyboard, not a
+            // spinbutton: the arrow keys, Page Up and Down, the wheel and a
+            // screen reader's increment would each step it from nothing and
+            // write that number over every selected feature's own. Typing a
+            // number is the edit; the product then clears `mixed`.
+            type={mixed ? "text" : "number"}
+            inputMode={mixed ? "decimal" : undefined}
             id={inputId}
             className={cn(
               inputVariants({ status: resolvedStatus }),

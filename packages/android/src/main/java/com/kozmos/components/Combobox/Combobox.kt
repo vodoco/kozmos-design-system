@@ -189,8 +189,14 @@ fun KozmosCombobox(
         onExpandedChange?.invoke(next)
     }
     // Turning mixed (GAP-153), the field's text goes with its choice, as on
-    // the web; a query typed while mixed is the visitor's and stays.
-    LaunchedEffect(mixed) { if (mixed && inputValue.isNotEmpty()) onInputValueChange("") }
+    // the web; a query typed while mixed is the visitor's and stays. Only on
+    // the turn, never as the field enters composition again (a rotation, a
+    // list scrolled back, a tab returned to), which would wipe that query.
+    var wasMixed by remember { mutableStateOf(mixed) }
+    LaunchedEffect(mixed) {
+        if (mixed && !wasMixed && inputValue.isNotEmpty()) onInputValueChange("")
+        wasMixed = mixed
+    }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val filteredOptions = filteredComboboxOptions(options, inputValue, filterLocally)
