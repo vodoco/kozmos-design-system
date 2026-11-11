@@ -200,8 +200,11 @@ With no `value` the bar is indeterminate (GAP-159): a segment a quarter of the t
 theme 600 on the bar's track, sweeps from the inline start to the inline end every 2 s,
 linear, for as long as the wait lasts, so right to left it runs from the right. Under reduced
 motion, the system's or `DesignConfigProvider`'s, it stands still in the middle of the track,
-where it reads as a wait and not as a value. Visual Review runs with reduced motion, so it
-draws the segment there, still, in the middle.
+where it reads as a wait and not as a value; a browser test proves it in Chromium and WebKit,
+both reading directions. Visual Review draws the segment at the inline start instead: it
+stops every animation with its own stylesheet, and its `reducedMotion` setting does not reach
+the page (Playwright 1.58's `use.reducedMotion`), so its baselines show where the sweep begins,
+not the reduced-motion still.
 
 Only `undefined` or `null` is a wait: a value that is not a number, or below 0, is an empty
 bar, as it always was.
