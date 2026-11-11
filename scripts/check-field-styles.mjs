@@ -109,11 +109,14 @@ const CALLER_PARTS = new Set([
   "input-error",
   "textarea",
   "search",
+  "search-clearable",
   "combobox",
   "combobox-plain",
   "password-input",
   "number-input",
   "number-input-plain",
+  "number-input-unit",
+  "number-input-unit-plain",
   "color-picker #1",
   "date-picker",
   "time-picker",
@@ -189,6 +192,25 @@ const PROMISES = [
   { part: "textarea", field: 0, paddingStart: 12, paddingEnd: 12 },
   // The text clears the magnifier, and the date fields' icon, at the start.
   { part: "search", field: 0, paddingStart: 36, paddingEnd: 12 },
+  // Holding text, a clearable Search keeps room for its clear at the end, as
+  // tall as the field (GAP-161); disabled, the clear goes, and its room.
+  {
+    part: "search-clearable",
+    field: 0,
+    enabled: true,
+    paddingStart: 36,
+    paddingEnd: [48, 44],
+  },
+  { part: "search-clearable", field: 0, paddingStart: 36 },
+  // NumberInput's unit (GAP-098) lies inside the field, 12 in from its end,
+  // and the text stops 4 short of it, whatever the unit's width.
+  { part: "number-input-unit", field: 0, unitInset: 12, unitClearance: 4 },
+  {
+    part: "number-input-unit-plain",
+    field: 0,
+    unitInset: 12,
+    unitClearance: 4,
+  },
   { part: "date-picker", field: 0, paddingStart: 36 },
   // DatePicker's button, where it replaces the browser's (decision 105), has
   // the room PasswordInput's toggle has; where the browser's own cannot be
@@ -354,6 +376,26 @@ async function measure(browser, stylesheet) {
         };
         for (const name of [...LENGTHS.slice(2), ...COLOURS, ...EXACT])
           read[name] = style[name];
+        // NumberInput's unit: from the field's end edge to the unit's end,
+        // and from the end of the field's text room to the unit's start,
+        // left or right as the field reads.
+        const unit = field.parentElement?.querySelector(".kozmos-number-unit");
+        if (unit) {
+          const u = unit.getBoundingClientRect();
+          const rtl = style.direction === "rtl";
+          const pad = Number.parseFloat(
+            rtl ? style.paddingLeft : style.paddingRight,
+          );
+          const border = Number.parseFloat(
+            rtl ? style.borderLeftWidth : style.borderRightWidth,
+          );
+          read.unitInset = `${rtl ? u.left - box.left : box.right - u.right}px`;
+          read.unitClearance = `${
+            rtl
+              ? box.left + border + pad - u.right
+              : u.left - (box.right - border - pad)
+          }px`;
+        }
         if (field.tagName !== "TEXTAREA") delete read.resize;
         rest[key] = read;
       }
@@ -511,6 +553,16 @@ try {
         if (engine === "webkit") continue;
       }
       if (ownPadding && PADDINGS.includes(name)) expected = ownPadding[name];
+      // NumberInput's unit room is the unit's measured width (GAP-098), and
+      // each engine measures its own font: the end padding follows the glyphs,
+      // not Chromium's. What it promises, the unit 12 in from the end and the
+      // text 4 short of it, is read in this engine below (unitInset,
+      // unitClearance).
+      if (
+        /\| number-input-unit(-plain)? #/.test(key) &&
+        name === (board.includes(" rtl") ? "paddingLeft" : "paddingRight")
+      )
+        continue;
       // DatePicker keeps the browser's field where the browser's own picker
       // button cannot be hidden (Firefox 146): no button, so no room for one
       // at the end. Its end is then Input's, the same field recipe under the
@@ -693,5 +745,5 @@ if (failures.size) {
   process.exit(1);
 }
 console.log(
-  `PASS field styles in ${engine}: ${reads} reads; ${drawn.fields} fields of ${drawn.parts} parts in ${drawn.boards} boards compute as in Chromium, at rest and focused, in light and dark, left to right and right to left, touch and compact, and disabled; owned CSS carries every placeholder's colour and opacity; OTPInput's cells, ColorPicker's swatch room, Search's and the date fields' icon room, Combobox's and PasswordInput's button room, AIInputBar's bare field and the SDK route fields hold; ${engine === "webkit" ? "a caller's px-4 and pl-12 cannot reach a field in this WebKit, as in Safari 26.0 to 26.3 (GAP-174), and each field keeps its own padding" : "a caller's px-4 and pl-12 win over every field's own"}`,
+  `PASS field styles in ${engine}: ${reads} reads; ${drawn.fields} fields of ${drawn.parts} parts in ${drawn.boards} boards compute as in Chromium, at rest and focused, in light and dark, left to right and right to left, touch and compact, and disabled; owned CSS carries every placeholder's colour and opacity; OTPInput's cells, ColorPicker's swatch room, Search's and the date fields' icon room, Search's clear room, NumberInput's unit inset and clearance, Combobox's and PasswordInput's button room, AIInputBar's bare field and the SDK route fields hold; ${engine === "webkit" ? "a caller's px-4 and pl-12 cannot reach a field in this WebKit, as in Safari 26.0 to 26.3 (GAP-174), and each field keeps its own padding" : "a caller's px-4 and pl-12 win over every field's own"}`,
 );

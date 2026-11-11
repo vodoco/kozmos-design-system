@@ -20,6 +20,12 @@ struct KozmosNumberInputConnect: FigmaConnect {
     @FigmaBoolean("Show Helper Text")
     var showHelperText: Bool = true
 
+    @FigmaString("Unit Text")
+    var unitText: String = "m"
+
+    @FigmaBoolean("Show Unit")
+    var showUnit: Bool = false
+
     @FigmaEnum(
         "State",
         mapping: [
@@ -60,7 +66,8 @@ struct KozmosNumberInputConnect: FigmaConnect {
             readOnly: self.state == "readonly",
             status: self.status,
             helperText: self.showHelperText ? self.helperText : nil,
-            showSteppers: self.showSteppers
+            showSteppers: self.showSteppers,
+            unit: self.showUnit ? self.unitText : nil
         )
     }
 }

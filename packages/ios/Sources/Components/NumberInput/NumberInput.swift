@@ -14,6 +14,12 @@ public struct KozmosNumberInput: View {
     let min: Double?
     let max: Double?
     let showSteppers: Bool
+    /// A unit drawn inside the field after the value ("m"), never part of the
+    /// value (GAP-098).
+    let unit: String?
+    /// The unit's spoken name ("metres"), in the product's language; `unit`
+    /// when left out. VoiceOver hears it after the value, once.
+    let unitLabel: String?
 
     public init(
         value: Binding<Double?>,
@@ -28,7 +34,9 @@ public struct KozmosNumberInput: View {
         step: Double = 1,
         min: Double? = nil,
         max: Double? = nil,
-        showSteppers: Bool = true
+        showSteppers: Bool = true,
+        unit: String? = nil,
+        unitLabel: String? = nil
     ) {
         self._value = value
         self.label = label
@@ -43,6 +51,8 @@ public struct KozmosNumberInput: View {
         self.min = min
         self.max = max
         self.showSteppers = showSteppers
+        self.unit = unit
+        self.unitLabel = unitLabel
     }
 
     public var body: some View {
@@ -60,15 +70,32 @@ public struct KozmosNumberInput: View {
                     }
                 }
 
-                TextField(
-                    placeholder,
-                    text: Binding(
-                        get: { formatValue(value) },
-                        set: { nextValue in value = parseValue(nextValue) }
+                // The unit sits inside the field's box, at its trailing end,
+                // after the value: the text keeps clear of it at any length,
+                // and it mirrors with the layout in right-to-left.
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                    TextField(
+                        placeholder,
+                        text: Binding(
+                            get: { formatValue(value) },
+                            set: { nextValue in value = parseValue(nextValue) }
+                        )
                     )
-                )
-                .disabled(disabled || readOnly)
-                .multilineTextAlignment(showSteppers ? .center : .leading)
+                    .disabled(disabled || readOnly)
+                    .multilineTextAlignment(showSteppers ? .center : .leading)
+                    .foregroundColor(textColor)
+                    .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))
+
+                    if hasUnit, let unit {
+                        Text(unit)
+                            .foregroundColor(unitColor)
+                            .lineLimit(1)
+                            .fixedSize()
+                            // Heard with the value, on the field: said here
+                            // too, it is said twice.
+                            .accessibilityHidden(true)
+                    }
+                }
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(height: 44, alignment: .center)
                 .background(fieldBackgroundColor)
@@ -77,7 +104,6 @@ public struct KozmosNumberInput: View {
                         .stroke(fieldBorderColor, lineWidth: 1)
                 )
                 .font(KozmosTypography.subheadline)
-                .foregroundColor(textColor)
 
                 if showSteppers {
                     stepButton(systemName: "plus", accessibilityLabel: "Increase value") {
@@ -145,6 +171,19 @@ public struct KozmosNumberInput: View {
             return String(Int(currentValue))
         }
         return String(currentValue)
+    }
+
+    /// What VoiceOver hears as the field's value: the value, then the unit's
+    /// spoken name. Nil keeps the field's own value (none, or no unit).
+    var spokenValue: String? {
+        guard hasUnit, let unit, let value else { return nil }
+        return "\(formatValue(value)) \(unitLabel ?? unit)"
+    }
+
+    private var hasUnit: Bool { !(unit ?? "").isEmpty }
+
+    private var unitColor: Color {
+        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400
     }
 
     private var effectiveStatus: KozmosInputStatus {
@@ -216,6 +255,22 @@ public struct KozmosNumberInput: View {
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
             return KozmosColors.primitivesColorsForeground0
+        }
+    }
+}
+
+/// The field's spoken value with its unit. Keyed on the unit, which a
+/// product sets once, never on the value: a branch that changed as the
+/// visitor typed would make the field a new view and drop its focus.
+private struct KozmosSpokenValue: ViewModifier {
+    let hasUnit: Bool
+    let value: String
+
+    func body(content: Content) -> some View {
+        if hasUnit {
+            content.accessibilityValue(Text(value))
+        } else {
+            content
         }
     }
 }
