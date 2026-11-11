@@ -553,6 +553,16 @@ try {
         if (engine === "webkit") continue;
       }
       if (ownPadding && PADDINGS.includes(name)) expected = ownPadding[name];
+      // NumberInput's unit room is the unit's measured width (GAP-098), and
+      // each engine measures its own font: the end padding follows the glyphs,
+      // not Chromium's. What it promises, the unit 12 in from the end and the
+      // text 4 short of it, is read in this engine below (unitInset,
+      // unitClearance).
+      if (
+        /\| number-input-unit(-plain)? #/.test(key) &&
+        name === (board.includes(" rtl") ? "paddingLeft" : "paddingRight")
+      )
+        continue;
       // DatePicker keeps the browser's field where the browser's own picker
       // button cannot be hidden (Firefox 146): no button, so no room for one
       // at the end. Its end is then Input's, the same field recipe under the
