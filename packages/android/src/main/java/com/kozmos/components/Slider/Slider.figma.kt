@@ -11,6 +11,9 @@ class KozmosSliderConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Value"
 
+    @FigmaProperty(FigmaType.Boolean, "Show Value")
+    val showValue: Boolean = false
+
     @FigmaProperty(FigmaType.Enum, "State")
     val state: String = Figma.mapping(
         "Default" to "default",
@@ -23,7 +26,8 @@ class KozmosSliderConnect {
         KozmosSlider(
             value = 0.5f,
             onValueChange = {},
-            enabled = state != "disabled"
+            enabled = state != "disabled",
+            showValue = showValue
         )
     }
 }

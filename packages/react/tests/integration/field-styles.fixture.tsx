@@ -87,6 +87,16 @@ function Parts({
           disabled={disabled}
         />
       </div>
+      {/* GAP-161: holding text, so its clear shows and takes its room. */}
+      <div data-part="search-clearable">
+        <Search
+          aria-label="Place"
+          defaultValue="Gate"
+          clearable
+          className={caller}
+          disabled={disabled}
+        />
+      </div>
       <div data-part="combobox">
         <Combobox
           label="View"
@@ -137,6 +147,26 @@ function Parts({
           label="Floors"
           placeholder="Floors"
           showSteppers={false}
+          className={caller}
+          disabled={disabled}
+        />
+      </div>
+      {/* GAP-098: a unit inside the field, between the steppers and without. */}
+      <div data-part="number-input-unit">
+        <NumberInput
+          label="Width"
+          defaultValue={15}
+          unit="m"
+          className={caller}
+          disabled={disabled}
+        />
+      </div>
+      <div data-part="number-input-unit-plain">
+        <NumberInput
+          label="Speed"
+          defaultValue={1234567}
+          showSteppers={false}
+          unit="km/h"
           className={caller}
           disabled={disabled}
         />

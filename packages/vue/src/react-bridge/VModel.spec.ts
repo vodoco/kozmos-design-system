@@ -1286,6 +1286,31 @@ describe("each model's other changes", () => {
     expect(input.value).toBe("ADAL");
   });
 
+  it("KozmosSearch's clear empties v-model, emits clear and hands the focus back (GAP-161)", async () => {
+    const value = ref("Gate");
+    const cleared = vi.fn();
+    mount(() =>
+      h(Bridge.KozmosSearch, {
+        "aria-label": "Place",
+        clearable: "",
+        clearLabel: "Aramayı temizle",
+        modelValue: value.value,
+        "onUpdate:modelValue": (next: string) => (value.value = next),
+        onClear: cleared,
+      }),
+    );
+    const input = await until(() => $<HTMLInputElement>("input[type=search]"));
+    (await until(() =>
+      $<HTMLButtonElement>("button[aria-label='Aramayı temizle']"),
+    ))!.click();
+    await settle();
+    expect(value.value).toBe("");
+    expect(input.value).toBe("");
+    expect(cleared).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(input);
+    expect($("button[aria-label='Aramayı temizle']")).toBeNull();
+  });
+
   it("KozmosNumberInput's steppers emit a number, and a cleared field null", async () => {
     const { emitted } = mountPart(PARTS_BY.KozmosNumberInput, {
       vModel: true,
