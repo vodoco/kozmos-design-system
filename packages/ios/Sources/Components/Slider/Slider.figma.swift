@@ -8,6 +8,9 @@ struct KozmosSliderConnect: FigmaConnect {
     @FigmaString("Label Text")
     var label: String = "Value"
 
+    @FigmaBoolean("Show Value")
+    var showValue: Bool = false
+
     @FigmaEnum(
         "State",
         mapping: [
@@ -21,7 +24,7 @@ struct KozmosSliderConnect: FigmaConnect {
     var body: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Text(self.label)
-            KozmosSlider(value: .constant(0.5))
+            KozmosSlider(value: .constant(0.5), showValue: self.showValue)
                 .disabled(self.state == "disabled")
         }
     }

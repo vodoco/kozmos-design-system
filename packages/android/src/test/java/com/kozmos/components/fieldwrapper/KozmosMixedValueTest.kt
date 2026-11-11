@@ -332,6 +332,46 @@ class KozmosMixedValueTest {
         }
     }
 
+    // GAP-153 with GAP-098: the unit stays drawn and is said after the mixed
+    // label; the value it would follow is hidden.
+    @Test fun aMixedNumberInputWithAUnitSaysTheLabelThenTheUnit() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosNumberInput(
+                    value = 4.0, onValueChange = {}, label = "Height",
+                    mixed = true, unit = "m", unitLabel = "metres"
+                )
+            }
+        }
+        val field = tree.merged.single { it.setText != null }
+        assertEquals("", field.editableText)
+        assertEquals("Multiple values, metres", field.stateDescription)
+        // Said once, with the unit: the drawn label and unit are not said again.
+        assertEquals(0, tree.mixedSaid())
+        assertEquals(1, tree.merged.count { "Multiple values" in (it.stateDescription ?: "") })
+        assertTrue(tree.merged.none { "m" in it.texts })
+        assertTrue(tree.merged.filter { it.description == "Increase value" }.none { it.enabled })
+    }
+
+    // GAP-153 with GAP-154: the copy action stays, and copies no hidden value.
+    @Test fun aMixedInputsCopyCopiesNoHiddenValue() {
+        val copied = mutableListOf<String>()
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                KozmosInput(
+                    value = "FID-1", onValueChange = {}, label = "Feature ID",
+                    mixed = true, action = com.kozmos.components.input.KozmosInputAction.Copy(onCopy = { copied += it })
+                )
+            }
+        }) {
+            frames(2)
+            assertEquals("", field().editableText)
+            read().merged.single { it.description == "Copy" }.click!!.invoke()
+            frames(2)
+            assertTrue("copied $copied", copied.none { it == "FID-1" })
+        }
+    }
+
     @Test fun theResetIsOfferedOnlyWhenGivenAndNotMixed() {
         assertTrue(KozmosMixedValue.showsReset(mixed = false, onReset = {}, enabled = true))
         assertTrue(!KozmosMixedValue.showsReset(mixed = true, onReset = {}, enabled = true))

@@ -8,6 +8,7 @@ import {
   MultiSelect,
   NumberInput,
   PasswordInput,
+  Search,
   ThemeProvider,
   TimePicker,
 } from "@kozmos-ds/react";
@@ -17,7 +18,7 @@ import {
  * scripts/check-field-actions.mjs: a Combobox with a choice, a MultiSelect
  * with one chip on one line, and a narrow MultiSelect whose three chips
  * wrap; Input's toggle action, PasswordInput's reveal, DatePicker's and
- * TimePicker's trigger; a disabled Combobox and PasswordInput; a
+ * TimePicker's trigger; Search's clear (GAP-161); a disabled Combobox and PasswordInput; a
  * PasswordInput under the design config's reduced motion; and NumberInput,
  * whose steps carry kozmos-field-action and keep their own hover, in a
  * provider of the given theme, density and direction.
@@ -74,6 +75,9 @@ function mount({ theme, density, dir }: Mount) {
               onPressedChange: () => {},
             }}
           />
+        </div>
+        <div data-part="search">
+          <Search label="Place" defaultValue="Gate" clearable />
         </div>
         <div data-part="password">
           <PasswordInput label="Password" defaultValue="kozmos" />

@@ -4,19 +4,24 @@ import SwiftUI
 /// same tree when wrapping so focus and local state survive a resize.
 /// Exactly two subviews, start then end: wrap each corner in a container,
 /// because an empty corner is otherwise no subview at all.
+///
+/// The top corners (GAP-123) use it too, with `alignsTop`: sharing a row their
+/// tops line up, under the top bar, where the bottom corners line up their
+/// bottoms; wrapped, the start sits above the end either way.
 struct KozmosBottomControlsLayout: Layout {
     var gap: CGFloat = KozmosDimensions.primitivesLayoutSpacing200
+    var alignsTop = false
 
-    static func frames(width: CGFloat, start: CGSize, end: CGSize, gap: CGFloat, rtl: Bool) -> [CGRect] {
+    static func frames(width: CGFloat, start: CGSize, end: CGSize, gap: CGFloat, rtl: Bool, alignsTop: Bool = false) -> [CGRect] {
         let width = max(0, width)
         let both = start.width > 0 && end.width > 0
         let wraps = both && start.width + gap + end.width > width
         let height = wraps ? start.height + gap + end.height : max(start.height, end.height)
         let a = CGRect(x: rtl ? width - start.width : 0,
-                       y: wraps ? 0 : height - start.height,
+                       y: wraps || alignsTop ? 0 : height - start.height,
                        width: start.width, height: start.height)
         let b = CGRect(x: rtl ? 0 : width - end.width,
-                       y: height - end.height, width: end.width, height: end.height)
+                       y: alignsTop && !wraps ? 0 : height - end.height, width: end.width, height: end.height)
         return [a, b]
     }
 
@@ -25,7 +30,7 @@ struct KozmosBottomControlsLayout: Layout {
         let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
         // SwiftUI mirrors Layout placement coordinates in RTL. Keep the
         // algorithm logical here; mirroring twice would restore LTR.
-        return Self.frames(width: width, start: sizes[0], end: sizes[1], gap: gap, rtl: false)
+        return Self.frames(width: width, start: sizes[0], end: sizes[1], gap: gap, rtl: false, alignsTop: alignsTop)
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -61,5 +66,20 @@ struct KozmosBottomCornerWidthsKey: PreferenceKey {
     static var defaultValue: [Int: CGFloat] = [:]
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+/// The top corners' height, whether or not they are shown (GAP-123).
+struct KozmosTopControlsHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+/// The map status's size as drawn, whether or not it is shown (GAP-123).
+struct KozmosMapShellStatusSizeKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        let next = nextValue()
+        value = CGSize(width: max(value.width, next.width), height: max(value.height, next.height))
     }
 }

@@ -9449,8 +9449,15 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "setVerticalFixedFillChildSizing(root)",
-  "Figma Slider control fills resized parent instances",
+  "setVerticalFixedFillChildSizing(row)",
+  "Figma Slider row fills resized parent instances",
+);
+// The control fills what the readout leaves in its row (GAP-163).
+assertContains(
+  files.figma,
+  source.figma,
+  "setSliderControlRowSizing(root)",
+  "Figma Slider control fills its row beside the readout",
 );
 assertContains(
   files.figma,

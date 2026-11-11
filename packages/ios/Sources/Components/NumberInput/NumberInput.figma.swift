@@ -20,6 +20,12 @@ struct KozmosNumberInputConnect: FigmaConnect {
     @FigmaBoolean("Show Helper Text")
     var showHelperText: Bool = true
 
+    @FigmaString("Unit Text")
+    var unitText: String = "m"
+
+    @FigmaBoolean("Show Unit")
+    var showUnit: Bool = false
+
     @FigmaEnum(
         "State",
         mapping: [
@@ -75,7 +81,8 @@ struct KozmosNumberInputConnect: FigmaConnect {
             mixed: self.state == "mixed",
             mixedLabel: self.mixedLabel,
             onResetMixed: self.resetMixed ? {} : nil,
-            resetMixedLabel: self.resetMixedLabel
+            resetMixedLabel: self.resetMixedLabel,
+            unit: self.showUnit ? self.unitText : nil
         )
     }
 }

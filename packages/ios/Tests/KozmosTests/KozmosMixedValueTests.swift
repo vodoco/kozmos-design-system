@@ -21,6 +21,15 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertFalse(KozmosNumberInput(value: .constant(4)).steppersDisabled)
     }
 
+    // GAP-153 with GAP-098: the unit stays, said after the mixed label,
+    // never after the hidden value.
+    func testAMixedNumberInputWithAUnitSaysTheLabelThenTheUnit() {
+        let mixed = KozmosNumberInput(value: .constant(4), mixed: true, unit: "m", unitLabel: "metres")
+        XCTAssertEqual(mixed.spokenValue, "Multiple values, metres")
+        XCTAssertTrue(mixed.steppersDisabled)
+        XCTAssertEqual(KozmosNumberInput(value: .constant(4), unit: "m", unitLabel: "metres").spokenValue, "4 metres")
+    }
+
     func testTheSelectFieldShowsTheMixedLabelInPlaceOfAChoice() {
         let mixed = KozmosSelectField(value: "POI", placeholder: "Type", mixed: true)
         XCTAssertEqual(mixed.shownText, "Multiple values")
@@ -85,6 +94,24 @@ final class KozmosMixedValueTests: XCTestCase {
         let found = elements(in: window)
         let field = try XCTUnwrap(found.first { ($0.accessibilityValue ?? "").contains("Multiple values") }, describe(found))
         XCTAssertNotEqual(field.accessibilityLabel, "", describe(found))
+    }
+
+    // GAP-153 with GAP-154: the copy stays, and copies no hidden value.
+    @MainActor func testAMixedInputsCopyCopiesNoHiddenValue() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let written = Written()
+        let window = host(KozmosInput(
+            text: .constant("FID-1"), label: "Feature ID", action: .copy(onCopy: { written.texts.append($0) }),
+            mixed: true
+        ))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(try XCTUnwrap(textFields(in: window).first).text, "")
+        let copy = try XCTUnwrap(elements(in: window).first { $0.accessibilityLabel == "Copy" }, describe(elements(in: window)))
+        XCTAssertTrue(copy.accessibilityActivate())
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertFalse(written.texts.contains("FID-1"), "\(written.texts)")
     }
 
     @MainActor func testTheSelectFieldSaysItsNameThenItsValue() async throws {
@@ -173,7 +200,7 @@ final class KozmosMixedValueTests: XCTestCase {
                 } else {
                     // Out of mixed by an edit, and back by a reset.
                     mixed = false
-                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    try? await Task.sleep(nanoseconds: 300_000_000)
                     mixed = true
                 }
             }
@@ -186,7 +213,7 @@ final class KozmosMixedValueTests: XCTestCase {
         // to mixed, never as the field appears.
         let window = host(Turning(written: written, startsMixed: true, text: "Gate B2", comesBack: false))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 600_000_000)
+        try await Task.sleep(nanoseconds: 1_200_000_000)
         XCTAssertEqual(written.texts, [""], "the text goes on the turn to mixed, and only then")
     }
 

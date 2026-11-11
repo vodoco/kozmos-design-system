@@ -132,6 +132,15 @@ none at rest, disabled or in forced colours. It is disabled with the field.
 Giving a field an action, or taking it away, keeps the same input, its focus and a value typed
 into it.
 
+SwiftUI's and Compose's `KozmosInput` take `action` from 0.16.0 (decision 134):
+`KozmosInputAction.copy()` and `.toggle(label:icon:isPressed:)` on SwiftUI,
+`KozmosInputAction.Copy()` and `KozmosInputAction.Toggle(label, icon, pressed, onPressedChange)` on
+Compose. The button is the field's 44 end, the pressed fill 36 across inside it with the control
+radius less 4, and only a disabled field disables it. A copy puts the value on the pasteboard or the
+clipboard and says "Copied": a VoiceOver announcement, a polite live region on Compose. A toggle's
+`icon` is the product's image (`Image(systemName:)`, an `ImageVector`); pressed, it is selected to
+VoiceOver and on to TalkBack. Neither platform has a pointer hover to draw.
+
 <Canvas of={InputStories.Actions} />
 
 ## A mixed value

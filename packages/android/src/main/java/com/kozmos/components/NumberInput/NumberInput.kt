@@ -26,6 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,7 +64,14 @@ fun KozmosNumberInput(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /**
+     * A unit drawn inside the field after the value, "m" (GAP-098): never part
+     * of the value, and at the field's end, left in a right-to-left layout.
+     */
+    unit: String? = null,
+    /** The unit's spoken name, "metres" for "m", read after the value; [unit] when unset. */
+    unitLabel: String? = null
 ) {
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
@@ -96,10 +106,11 @@ fun KozmosNumberInput(
     // every selected feature's own: the steppers wait for a typed edit.
     val stepperEnabled = enabled && !readOnly && !mixed
     val fieldFocus = remember { FocusRequester() }
-    // Mixed (GAP-153), the field shows none of its own, and a step starts
-    // from nothing, as an empty field's does.
+    // Mixed (GAP-153), the field shows none of its own value; the unit stays,
+    // to say what to type.
     val shownValue = if (mixed) null else value
     val textValue = formatNumberInputValue(shownValue)
+    val spokenUnit = (unitLabel ?: unit)?.takeIf { it.isNotBlank() }
 
     fun clampValue(nextValue: Double): Double {
         var clampedValue = nextValue
@@ -174,24 +185,50 @@ fun KozmosNumberInput(
                     .weight(1f)
                     .fillMaxHeight()
                     .focusRequester(fieldFocus)
-                    .semantics { if (mixed) stateDescription = mixedLabel },
+                    .semantics {
+                        // Mixed, the field says the mixed label as its state,
+                        // then the unit: "Multiple values, metres". Else the
+                        // unit is read once, after the value the field already
+                        // says as its text: "15, metres".
+                        val said = listOfNotNull(mixedLabel.takeIf { mixed }, spokenUnit)
+                        if (said.isNotEmpty()) stateDescription = said.joinToString(", ")
+                    },
                 decorationBox = { innerTextField ->
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
                             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
-                        contentAlignment = if (showSteppers) Alignment.Center else Alignment.CenterStart
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (textValue.isEmpty()) {
+                        // The value keeps clear of the unit: the unit takes its width, the value the rest.
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = if (showSteppers) Alignment.Center else Alignment.CenterStart
+                        ) {
+                            if (textValue.isEmpty()) {
+                                Text(
+                                    text = if (mixed) mixedLabel else placeholder,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = placeholderColor,
+                                    // Mixed, the field says it as its state.
+                                    modifier = Modifier.kozmosUnsaidWhen(mixed)
+                                )
+                            }
+                            innerTextField()
+                        }
+                        if (!unit.isNullOrBlank()) {
                             Text(
-                                text = if (mixed) mixedLabel else placeholder,
+                                text = unit,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = placeholderColor,
-                                modifier = Modifier.kozmosUnsaidWhen(mixed)
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .padding(start = KozmosDimensions.primitivesLayoutSpacing50)
+                                    // Heard with the value, through the field's state, not again here.
+                                    .clearAndSetSemantics { }
                             )
                         }
-                        innerTextField()
                     }
                 }
             )

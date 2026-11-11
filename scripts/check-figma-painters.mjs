@@ -13630,6 +13630,338 @@ section("Decision 152: Menu's and ContextMenu's items take External");
   }
 }
 
+// --- Decision 132's fields: Search's clear, NumberInput's unit, Slider's readout ---
+
+section(
+  "Search clears, NumberInput takes a unit, Slider's readout stays (GAP-161, GAP-098, GAP-163)",
+);
+{
+  const tokens = payloadVariables(
+    (plugin.COMPONENT_FLOAT_TOKENS || [])
+      .map((token) => token.name)
+      .concat([...variableByName.keys()]),
+  );
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await plugin[fn](
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const child = (node, name) =>
+    (node && node.children ? node.children : []).find(
+      (each) => each.name === name,
+    ) || null;
+  const boundFloat = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const propertyNamed = (set, base, type) =>
+    Object.keys(set.componentPropertyDefinitions || {}).find(
+      (key) =>
+        key.split("#")[0] === base &&
+        set.componentPropertyDefinitions[key].type === type,
+    ) || null;
+  const drivenBy = (set, property, field) =>
+    set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] === property,
+    );
+  const combine = async (name, variants, configure) => {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = name;
+    await plugin[configure](set, freshStats());
+    return set;
+  };
+
+  // Search (GAP-161) ---------------------------------------------------------
+  const searches = [];
+  for (const state of plugin.SEARCH_STATES)
+    searches.push(
+      await draw("updateSearchVariant", { state, status: "Default" }),
+    );
+  const field = child(searches[0], "Search Field");
+  const clear = child(field, "Clear Button");
+  const clearIcon = child(clear, "Clear Icon");
+  ok(
+    clear &&
+      clear.type === "FRAME" &&
+      clear.width === 44 &&
+      clear.height === 44 &&
+      clear.layoutPositioning === "ABSOLUTE" &&
+      clear.x === field.width - 44 &&
+      clear.constraints.horizontal === "MAX" &&
+      clear.fills.length === 0 &&
+      clear.strokes.length === 0 &&
+      clear.visible === false &&
+      boundFloat(clear, "width") === "Search/field/height" &&
+      boundFloat(clear, "height") === "Search/field/height",
+    `Search: a Clear Button at the field's end, 44 square and bound to the field's height, absolute and held to the end, no fill at rest (decision 164), hidden until Show Clear (${clear && `${clear.width}x${clear.height} at x ${clear.x} of ${field.width}, ${clear.layoutPositioning}, fills ${clear.fills.length}, visible ${clear.visible}, ${boundFloat(clear, "width")}`})`,
+  );
+  ok(
+    clearIcon &&
+      clearIcon.type === "INSTANCE" &&
+      /x-close/.test(
+        clearIcon.mainComponent ? clearIcon.mainComponent.name : "",
+      ) &&
+      clearIcon.width === 16,
+    `Search: the clear is the 16 x-close (${clearIcon && clearIcon.mainComponent && clearIcon.mainComponent.name}, ${clearIcon && clearIcon.width})`,
+  );
+  const again = await draw("updateSearchVariant", {
+    state: "Default",
+    status: "Default",
+  });
+  await plugin.updateSearchVariant(again, {
+    state: "Default",
+    status: "Default",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  ok(
+    child(again, "Search Field").children.filter(
+      (each) => each.name === "Clear Button",
+    ).length === 1,
+    "Search: an Update draws one Clear Button, never a second",
+  );
+  again.remove();
+  const searchSet = await combine(
+    "Search",
+    searches,
+    "configureSearchProperties",
+  );
+  const showClear = propertyNamed(searchSet, "Show Clear", "BOOLEAN");
+  const clears = showClear ? drivenBy(searchSet, showClear, "visible") : [];
+  ok(
+    showClear &&
+      searchSet.componentPropertyDefinitions[showClear].defaultValue ===
+        false &&
+      clears.length === searches.length &&
+      clears.every((node) => node.name === "Clear Button"),
+    `Search: a Show Clear boolean, off by default, shows each variant's Clear Button and nothing else (${showClear}, ${clears.length} of ${searches.length})`,
+  );
+  searchSet.remove();
+
+  // NumberInput (GAP-098) ------------------------------------------------------
+  const numbers = [];
+  for (const steppers of plugin.NUMBER_INPUT_STEPPERS)
+    numbers.push(
+      await draw("updateNumberInputVariant", {
+        state: "Default",
+        status: "Default",
+        steppers,
+      }),
+    );
+  const unitFacts = numbers.map((variant) => {
+    const field = child(variant, "NumberInput Field");
+    const slot = child(field, "NumberInput Value Slot");
+    const names = slot ? slot.children.map((each) => each.name) : [];
+    const unit = child(slot, "Unit Text");
+    return { field, slot, names, unit };
+  });
+  ok(
+    unitFacts.every(
+      ({ names, unit }) =>
+        unit &&
+        unit.type === "TEXT" &&
+        unit.characters === "m" &&
+        unit.visible === false &&
+        names.indexOf("Unit Text") === names.length - 1 &&
+        names.indexOf("Value Text") < names.indexOf("Unit Text") &&
+        unit.layoutSizingHorizontal === "HUG" &&
+        boundVariableName(unit.fills[0]) === "Colors/foreground/400",
+    ),
+    `NumberInput: a Unit Text "m" in the value slot after the value, before the increment stepper, hugging its words in the field's muted foreground (foreground/400), hidden until Show Unit (${unitFacts
+      .map(
+        ({ names, unit }) =>
+          `${names.join(" > ")}: ${unit && `"${unit.characters}" ${unit.layoutSizingHorizontal} ${boundVariableName(unit.fills[0])} visible ${unit.visible}`}`,
+      )
+      .join("; ")})`,
+  );
+  ok(
+    unitFacts.every(({ field, slot }) => {
+      const order = field.children.map((each) => each.name);
+      return (
+        order.indexOf("NumberInput Value Slot") <
+          (order.indexOf("Increment Stepper") === -1
+            ? Infinity
+            : order.indexOf("Increment Stepper")) && slot.itemSpacing === 4
+      );
+    }),
+    "NumberInput: the slot, and the unit in it, come before the increment stepper, 4 after the value",
+  );
+  {
+    const kept = numbers[0];
+    const unit = child(
+      child(child(kept, "NumberInput Field"), "NumberInput Value Slot"),
+      "Unit Text",
+    );
+    if (unit) unit.characters = "km";
+    await plugin.updateNumberInputVariant(kept, {
+      state: "Default",
+      status: "Default",
+      steppers: "True",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const redrawn = child(
+      child(child(kept, "NumberInput Field"), "NumberInput Value Slot"),
+      "Unit Text",
+    );
+    ok(
+      redrawn && redrawn.characters === "km",
+      `NumberInput: an Update keeps the unit's words (${redrawn && redrawn.characters})`,
+    );
+  }
+  const numberSet = await combine(
+    "NumberInput",
+    numbers,
+    "configureNumberInputProperties",
+  );
+  const showUnit = propertyNamed(numberSet, "Show Unit", "BOOLEAN");
+  const unitText = propertyNamed(numberSet, "Unit Text", "TEXT");
+  const shownUnits = showUnit ? drivenBy(numberSet, showUnit, "visible") : [];
+  const wordedUnits = unitText
+    ? drivenBy(numberSet, unitText, "characters")
+    : [];
+  ok(
+    showUnit &&
+      numberSet.componentPropertyDefinitions[showUnit].defaultValue === false &&
+      unitText &&
+      numberSet.componentPropertyDefinitions[unitText].defaultValue === "m" &&
+      shownUnits.length === numbers.length &&
+      wordedUnits.length === numbers.length &&
+      shownUnits.concat(wordedUnits).every((node) => node.name === "Unit Text"),
+    `NumberInput: Show Unit (off) and Unit Text ("m") drive each variant's Unit Text and nothing else (${showUnit}, ${unitText}; ${shownUnits.length} and ${wordedUnits.length} of ${numbers.length})`,
+  );
+  numberSet.remove();
+
+  // Slider (GAP-163) -------------------------------------------------------------
+  const sliders = [];
+  for (const type of plugin.SLIDER_TYPES)
+    sliders.push(
+      await draw("updateSliderVariant", {
+        state: "Default",
+        status: "Default",
+        type,
+      }),
+    );
+  const sliderFacts = sliders.map((variant) => {
+    const row = child(variant, "Slider Row");
+    const names = row ? row.children.map((each) => each.name) : [];
+    return {
+      variant,
+      row,
+      names,
+      control: child(row, "Slider Control"),
+      readout: child(row, "Value Text"),
+    };
+  });
+  ok(
+    sliderFacts.every(
+      ({ variant, row, names, control }) =>
+        row &&
+        row.layoutMode === "HORIZONTAL" &&
+        row.counterAxisAlignItems === "CENTER" &&
+        row.height === 44 &&
+        row.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(names) ===
+          JSON.stringify(["Slider Control", "Value Text"]) &&
+        !child(variant, "Slider Control") &&
+        control.layoutSizingHorizontal === "FILL" &&
+        control.layoutGrow === 1 &&
+        control.height === 44 &&
+        boundFloat(control, "width") === null &&
+        boundFloat(child(control, "Slider Track"), "width") === null,
+    ),
+    `Slider: a Slider Row across the set's width, the control filling what the readout leaves (unbound width, grow 1) and the readout at its end (${sliderFacts
+      .map(
+        ({ row, names, control }) =>
+          `${names.join(" > ")} ${row && row.layoutSizingHorizontal}; control ${control && `${control.layoutSizingHorizontal} grow ${control.layoutGrow} w-bound ${boundFloat(control, "width")}`}`,
+      )
+      .join("; ")})`,
+  );
+  ok(
+    sliderFacts.every(
+      ({ readout }) =>
+        readout &&
+        readout.type === "TEXT" &&
+        readout.characters === "50%" &&
+        readout.visible === false &&
+        readout.layoutSizingHorizontal === "HUG" &&
+        readout.fontSize === 14 &&
+        boundVariableName(readout.fills[0]) === "Colors/foreground/400",
+    ),
+    `Slider: the readout, "50%" at 14 in the muted foreground (foreground/400), hugging its words, hidden until Show Value (${sliderFacts
+      .map(
+        ({ readout }) =>
+          readout &&
+          `"${readout.characters}" ${readout.fontSize} ${boundVariableName(readout.fills[0])} ${readout.layoutSizingHorizontal} visible ${readout.visible}`,
+      )
+      .join("; ")})`,
+  );
+  {
+    // A Slider drawn before the row: its control is the component's own
+    // child. Update moves that node into the row, so it keeps its id.
+    const legacy = sliders[0];
+    const row = child(legacy, "Slider Row");
+    const control =
+      child(row, "Slider Control") || child(legacy, "Slider Control");
+    legacy.appendChild(control);
+    if (row) row.remove();
+    await plugin.updateSliderVariant(legacy, {
+      state: "Default",
+      status: "Default",
+      type: "Single",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const moved = child(child(legacy, "Slider Row"), "Slider Control");
+    ok(
+      moved === control &&
+        !child(legacy, "Slider Control") &&
+        legacy.findAll((node) => node.name === "Slider Control").length === 1,
+      "Slider: an Update over a set drawn before the row moves its control into the row, the same node, and draws no second",
+    );
+  }
+  const sliderSet = await combine(
+    "Slider",
+    sliders,
+    "configureSliderProperties",
+  );
+  const showValue = propertyNamed(sliderSet, "Show Value", "BOOLEAN");
+  const valueText = propertyNamed(sliderSet, "Value Text", "TEXT");
+  const shownValues = showValue
+    ? drivenBy(sliderSet, showValue, "visible")
+    : [];
+  const wordedValues = valueText
+    ? drivenBy(sliderSet, valueText, "characters")
+    : [];
+  ok(
+    showValue &&
+      sliderSet.componentPropertyDefinitions[showValue].defaultValue ===
+        false &&
+      valueText &&
+      sliderSet.componentPropertyDefinitions[valueText].defaultValue ===
+        "50%" &&
+      shownValues.length === sliders.length &&
+      wordedValues.length === sliders.length &&
+      shownValues
+        .concat(wordedValues)
+        .every((node) => node.name === "Value Text"),
+    `Slider: Show Value (off) and Value Text ("50%") drive each variant's readout and nothing else (${showValue}, ${valueText}; ${shownValues.length} and ${wordedValues.length} of ${sliders.length})`,
+  );
+  sliderSet.remove();
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

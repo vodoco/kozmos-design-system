@@ -21,6 +21,12 @@ public struct KozmosNumberInput: View {
     let onResetMixed: (() -> Void)?
     let resetMixedLabel: String
     @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
+    /// A unit drawn inside the field after the value ("m"), never part of the
+    /// value (GAP-098).
+    let unit: String?
+    /// The unit's spoken name ("metres"), in the product's language; `unit`
+    /// when left out. VoiceOver hears it after the value, once.
+    let unitLabel: String?
 
     public init(
         value: Binding<Double?>,
@@ -39,7 +45,9 @@ public struct KozmosNumberInput: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        unit: String? = nil,
+        unitLabel: String? = nil
     ) {
         self._value = value
         self.label = label
@@ -58,6 +66,8 @@ public struct KozmosNumberInput: View {
         self.mixedLabel = mixedLabel
         self.onResetMixed = onResetMixed
         self.resetMixedLabel = resetMixedLabel
+        self.unit = unit
+        self.unitLabel = unitLabel
     }
 
     public var body: some View {
@@ -75,17 +85,35 @@ public struct KozmosNumberInput: View {
                     }
                 }
 
-                TextField(
-                    mixed ? mixedLabel : placeholder,
-                    text: Binding(
-                        // Mixed, it shows none of its own (GAP-153).
-                        get: { mixed ? "" : formatValue(value) },
-                        set: { nextValue in value = parseValue(nextValue) }
+                // The unit sits inside the field's box, at its trailing end,
+                // after the value: the text keeps clear of it at any length,
+                // and it mirrors with the layout in right-to-left.
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                    TextField(
+                        mixed ? mixedLabel : placeholder,
+                        text: Binding(
+                            // Mixed, it shows none of its own (GAP-153); the
+                            // unit stays, to say what to type.
+                            get: { mixed ? "" : formatValue(value) },
+                            set: { nextValue in value = parseValue(nextValue) }
+                        )
                     )
-                )
-                .accessibilityFocused($fieldAccessibilityFocused)
-                .disabled(disabled || readOnly)
-                .multilineTextAlignment(showSteppers ? .center : .leading)
+                    .accessibilityFocused($fieldAccessibilityFocused)
+                    .disabled(disabled || readOnly)
+                    .multilineTextAlignment(showSteppers ? .center : .leading)
+                    .foregroundColor(textColor)
+                    .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))
+
+                    if hasUnit, let unit {
+                        Text(unit)
+                            .foregroundColor(unitColor)
+                            .lineLimit(1)
+                            .fixedSize()
+                            // Heard with the value, on the field: said here
+                            // too, it is said twice.
+                            .accessibilityHidden(true)
+                    }
+                }
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(height: 44, alignment: .center)
                 .background(fieldBackgroundColor)
@@ -94,7 +122,6 @@ public struct KozmosNumberInput: View {
                         .stroke(fieldBorderColor, lineWidth: 1)
                 )
                 .font(KozmosTypography.subheadline)
-                .foregroundColor(textColor)
 
                 if showSteppers {
                     stepButton(systemName: "plus", accessibilityLabel: "Increase value") {
@@ -176,6 +203,23 @@ public struct KozmosNumberInput: View {
         return String(currentValue)
     }
 
+    /// What VoiceOver hears as the field's value: the value, then the unit's
+    /// spoken name. Nil keeps the field's own value (none, or no unit).
+    var spokenValue: String? {
+        guard hasUnit, let unit else { return nil }
+        // Mixed, the value said over the field is the mixed label, then the
+        // unit: never the hidden value, and never empty over the placeholder.
+        if mixed { return "\(mixedLabel), \(unitLabel ?? unit)" }
+        guard let value else { return nil }
+        return "\(formatValue(value)) \(unitLabel ?? unit)"
+    }
+
+    private var hasUnit: Bool { !(unit ?? "").isEmpty }
+
+    private var unitColor: Color {
+        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400
+    }
+
     private var effectiveStatus: KozmosInputStatus {
         error ? .error : status
     }
@@ -245,6 +289,22 @@ public struct KozmosNumberInput: View {
             return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default:
             return KozmosColors.primitivesColorsForeground0
+        }
+    }
+}
+
+/// The field's spoken value with its unit. Keyed on the unit, which a
+/// product sets once, never on the value: a branch that changed as the
+/// visitor typed would make the field a new view and drop its focus.
+private struct KozmosSpokenValue: ViewModifier {
+    let hasUnit: Bool
+    let value: String
+
+    func body(content: Content) -> some View {
+        if hasUnit {
+            content.accessibilityValue(Text(value))
+        } else {
+            content
         }
     }
 }

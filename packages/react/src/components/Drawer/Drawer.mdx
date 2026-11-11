@@ -64,6 +64,13 @@ not the header.
 window, and modal unless `modal={false}`. BottomSheet is a Drawer, so it takes `placement` too: an
 inline sheet rises from the bottom of its region.
 
+SwiftUI and Compose take `placement: .inline` and `KozmosDrawerPlacement.Inline` from 0.16.0
+(decision 134): the same float in the region the parent gives the drawer, with no scrim, so the
+page beside it keeps its touches and nothing outside closes it. There it is a panel named by its
+title: a contained element on SwiftUI, whose escape gesture closes it from inside, and a pane on
+Compose, `label` naming it where no title does. As a fixed drawer's sides are on those platforms,
+`left` and `right` are the leading and trailing sides there, and mirror right to left.
+
 The close sits at the inline end and the header's room for it with it, so they mirror right to left,
 whichever `side` the drawer is on. `closeLabel` names the close, "Close drawer" by default, as
 Dialog's does.

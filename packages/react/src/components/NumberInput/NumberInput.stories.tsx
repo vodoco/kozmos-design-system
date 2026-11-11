@@ -95,6 +95,51 @@ export const WithoutSteppers: Story = {
   ),
 };
 
+// A unit inside the field after the value (GAP-098): never part of the
+// value, and read after it by its spoken name.
+export const WithUnit: Story = {
+  render: () => (
+    <div className="grid w-80 gap-4">
+      <NumberInput
+        defaultValue={15}
+        label="Width"
+        min={0}
+        unit="m"
+        unitLabel="metres"
+      />
+      <NumberInput
+        defaultValue={20}
+        label="Height"
+        min={0}
+        showSteppers={false}
+        unit="m"
+        unitLabel="metres"
+      />
+    </div>
+  ),
+};
+
+export const WithUnitRightToLeft: Story = {
+  render: function WithUnitRightToLeftStory(_args, { globals }) {
+    return (
+      <ThemeProvider
+        dir="rtl"
+        theme={globals.theme === "dark" ? "dark" : "light"}
+      >
+        <div className="grid gap-4" style={{ width: 220 }}>
+          <NumberInput label="Width" defaultValue={15} unit="m" />
+          <NumberInput
+            label="Height"
+            defaultValue={20}
+            showSteppers={false}
+            unit="m"
+          />
+        </div>
+      </ThemeProvider>
+    );
+  },
+};
+
 export const RightToLeft: Story = {
   render: function RightToLeftStory(_args, { globals }) {
     return (

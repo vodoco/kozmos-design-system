@@ -38,6 +38,16 @@ It forwards its ref to `HTMLInputElement`. Its props are `NumberInputProps`, whi
 - `showSteppers`: `boolean`, optional, default `true`.
 - `status`: `InputStatus`, optional, default `"default"`.
 - `wrapperClassName`: `string`, optional.
+- `unit`: `string`, optional.
+
+  A unit drawn inside the field after the value, "m" or "%" (GAP-098). It
+  is never part of the value, and it is read after the value, as
+  `unitLabel` when one is given.
+
+- `unitLabel`: `string`, optional.
+
+  The unit's spoken name, in the page's language: "metres" for "m".
+
 - `mixed`: `boolean`, optional, default `false`.
 
   The field stands for several values that differ, and shows none.

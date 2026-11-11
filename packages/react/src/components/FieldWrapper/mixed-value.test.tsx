@@ -116,6 +116,32 @@ describe("mixed value (GAP-153)", () => {
       ).toBeNull();
     });
 
+    it("keeps its action while mixed, and copies no hidden value", async () => {
+      const user = userEvent.setup();
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+      const onCopy = vi.fn();
+      render(
+        <Input
+          label="Feature ID"
+          mixed
+          value="FID-1"
+          onChange={() => {}}
+          action={{ kind: "copy", onCopy }}
+        />,
+      );
+      const field = screen.getByRole("textbox", { name: "Feature ID" });
+      expect(field).toHaveValue("");
+      expect(field).toHaveAttribute("placeholder", "Multiple values");
+      expect(field).toHaveClass("kozmos-input-with-action");
+      await user.click(screen.getByRole("button", { name: "Copy" }));
+      expect(writeText).not.toHaveBeenCalledWith("FID-1");
+      expect(onCopy).not.toHaveBeenCalledWith("FID-1");
+    });
+
     it("names the reset in the product's words", () => {
       render(
         <Input
@@ -306,6 +332,29 @@ describe("mixed value (GAP-153)", () => {
       expect(field).toHaveValue(4);
       rerender(<NumberInput label="Height" defaultValue={4} mixed />);
       expect(field).toHaveValue("");
+    });
+
+    it("keeps its unit drawn and said while mixed, in the unit's room", () => {
+      render(
+        <NumberInput
+          label="Height"
+          unit="m"
+          unitLabel="metres"
+          mixed
+          value={4}
+          onValueChange={() => {}}
+        />,
+      );
+      const field = screen.getByRole("textbox", { name: "Height" });
+      expect(field).toHaveValue("");
+      expect(field).toHaveAttribute("type", "text");
+      expect(field).toHaveAttribute("placeholder", "Multiple values");
+      expect(field).toHaveClass("kozmos-number-with-unit");
+      expect(field).toHaveAccessibleDescription("metres");
+      expect(screen.getByText("m")).toHaveClass("kozmos-number-unit");
+      expect(
+        screen.getByRole("button", { name: "Increase value" }),
+      ).toBeDisabled();
     });
 
     it("hides a controlled value while mixed", () => {

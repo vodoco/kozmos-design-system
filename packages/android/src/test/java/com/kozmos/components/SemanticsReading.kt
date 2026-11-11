@@ -149,6 +149,8 @@ data class ReadNode(
     val longClickLabel: String? = null,
     /** A text's layout as it was drawn: its lines and its inline content's places. */
     val textLayout: TextLayoutResult? = null,
+    /** A toggle's state, on or off, as TalkBack reads it. */
+    val toggleableState: androidx.compose.ui.state.ToggleableState? = null,
     /** The weight a text lays its words out in, where it says one. */
     val fontWeight: FontWeight? = null
 ) {
@@ -375,6 +377,7 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     setSelection = node.config.getOrNull(SemanticsActions.SetSelection)?.action
         ?.let { select -> { start: Int, end: Int -> select(start, end, true) } },
     paneTitle = node.config.getOrNull(SemanticsProperties.PaneTitle),
+    toggleableState = node.config.getOrNull(SemanticsProperties.ToggleableState),
     heading = node.config.contains(SemanticsProperties.Heading),
     traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,
     traversalIndex = node.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f,

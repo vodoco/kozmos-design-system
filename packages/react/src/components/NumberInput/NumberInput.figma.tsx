@@ -53,6 +53,10 @@ figma.connect(
         true: figma.string("Helper Text"),
         false: undefined,
       }),
+      unit: figma.boolean("Show Unit", {
+        true: figma.string("Unit Text"),
+        false: undefined,
+      }),
     },
     example: ({
       autoFocus,
@@ -67,6 +71,7 @@ figma.connect(
       readOnly,
       showSteppers,
       status,
+      unit,
       valueText,
     }) => {
       const defaultValue = Number(valueText);
@@ -88,6 +93,7 @@ figma.connect(
           readOnly={readOnly}
           showSteppers={showSteppers}
           status={status}
+          unit={unit}
         />
       );
     },

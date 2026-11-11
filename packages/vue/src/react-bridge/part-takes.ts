@@ -132,6 +132,7 @@ import type { Booleans, Takes } from "./react-adapter";
 const D: Takes = { dom: true, own: [] };
 const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
 const checkboxTakes: Takes = { dom: true, own: ["onCheckedChange"] };
+const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
 const datePickerTakes: Takes = { dom: true, own: ["onOpenChange"] };
@@ -166,8 +167,8 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Switch, checkboxTakes],
   [Card, D],
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
-  [Search, D],
-  [SearchBar, { dom: true, own: ["onClear"] }],
+  [Search, searchTakes],
+  [SearchBar, searchTakes],
   [
     Select,
     { dom: false, own: ["onOpenChange", "onResetMixed", "onValueChange"] },
@@ -616,7 +617,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Slider,
     html(
-      ["asChild", "disabled", "inverted", "showValueTooltip"],
+      ["asChild", "disabled", "inverted", "showValue", "showValueTooltip"],
       [],
       ["error"],
     ),
@@ -626,6 +627,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     html(
       [
         "checked",
+        "clearable",
         "disabled",
         "formNoValidate",
         "multiple",
