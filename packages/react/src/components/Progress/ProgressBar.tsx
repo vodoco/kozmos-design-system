@@ -3,10 +3,12 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "../../utils";
 
 /**
- * How many bars are waiting on the page. Only the first to start says its
- * words: five uploads starting together are one "Loading", not five.
+ * When the latest group of waits started. Bars that start waiting within
+ * 500 ms of a group's first are that group, and only its first says its
+ * words: five uploads starting together are one "Loading", not five. A wait
+ * that starts later speaks, even while an earlier, long wait still runs.
  */
-let waits = 0;
+let groupStart = -Infinity;
 
 export interface ProgressBarProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -32,8 +34,9 @@ export interface ProgressBarProps extends React.ComponentPropsWithoutRef<
  * A wait is said once, by a polite status beside the bar, mounted empty and
  * given its words after (GAP-226): the label, else the product's own name
  * for the bar, else "Loading". The words are read when the wait starts and
- * kept, so a label that changes while it waits is not said again, and only
- * the first bar to start waiting speaks. The sweep changes nothing a screen
+ * kept, so a label that changes while it waits is not said again. Bars that
+ * start waiting together (within 500 ms) share one announcement, the
+ * first's; a wait that starts later speaks. The sweep changes nothing a screen
  * reader reads. `placement="top"` is the page's loading bar.
  */
 export const ProgressBar = React.forwardRef<
@@ -60,10 +63,15 @@ export const ProgressBar = React.forwardRef<
     ]);
     words.current = [label || ariaLabel, labelledBy];
     const [said, setSaid] = React.useState<React.ReactNode>(null);
+    // The group this bar opened, so an effect run again for the same wait
+    // (React's strict mode) still speaks.
+    const opened = React.useRef<number>();
     React.useEffect(() => {
       if (!waiting) return;
       const [own, by] = words.current;
-      if (waits++ === 0)
+      const now = Date.now();
+      if (opened.current === groupStart || now - groupStart > 500) {
+        if (opened.current !== groupStart) groupStart = opened.current = now;
         setSaid(
           own ||
             by
@@ -73,10 +81,8 @@ export const ProgressBar = React.forwardRef<
               .trim() ||
             "Loading",
         );
-      return () => {
-        waits--;
-        setSaid(null);
-      };
+      }
+      return () => setSaid(null);
     }, [waiting]);
     return (
       <>

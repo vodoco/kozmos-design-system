@@ -201,41 +201,56 @@ enum KozmosProgressSweep {
 /// comes back while it still waits (a row scrolled out of a List or a
 /// LazyVStack and back, a tab switched away and back) is not said again,
 /// and its label, read once as the wait starts, is not said again when it
-/// changes. Only the first bar to start waiting while no other waits on
-/// screen speaks: five uploads starting together are one "Loading", not
-/// five. A value ends the wait; the next wait is said again.
+/// changes. Only bars that start together share one announcement: waits
+/// starting within `window` of a group's first are that group, and only
+/// its first speaks, so five uploads starting together are one "Loading".
+/// A wait that starts later speaks, even while an earlier, long wait still
+/// runs. A value ends the wait; the next wait is said again.
 struct KozmosProgressWaits: Equatable {
-    /// Waits whose bars are on screen now.
-    private(set) var open: Set<UUID> = []
-    /// Waits that have been said, or kept quiet because another spoke.
+    /// How close together waits start to be one group: 500 ms, React's.
+    static let window: TimeInterval = 0.5
+    /// Waits that have started and not ended: said, or kept quiet because
+    /// their group's first spoke. A wait leaves when it ends or its bar
+    /// goes for good, so this holds only the bars that still exist.
     private(set) var settled: Set<UUID> = []
+    /// When the latest group's first wait started.
+    private(set) var groupStart: TimeInterval?
 
-    /// A waiting bar is on screen. Returns its words if it is to say them.
-    mutating func appear(_ wait: UUID, label: String) -> String? {
-        let others = !open.subtracting([wait]).isEmpty
-        open.insert(wait)
+    /// A waiting bar is on screen at `now`. Returns its words if it is to
+    /// say them: once per wait, and only for the first of a group.
+    mutating func appear(_ wait: UUID, label: String, at now: TimeInterval) -> String? {
         guard !settled.contains(wait) else { return nil }
         settled.insert(wait)
-        guard !others, !label.isEmpty else { return nil }
-        return label
-    }
-
-    /// A waiting bar left the screen; its wait goes on and is not said again.
-    mutating func disappear(_ wait: UUID) {
-        open.remove(wait)
+        if let start = groupStart, now - start <= Self.window { return nil }
+        groupStart = now
+        return label.isEmpty ? nil : label
     }
 
     /// A wait ended: the bar got a value, or went for good.
     mutating func end(_ wait: UUID) {
-        open.remove(wait)
         settled.remove(wait)
     }
 }
 
-/// The app's waits, shared by every bar on screen.
+/// The app's waits, shared by every bar on screen, and the clock a wait's
+/// start is read from (replaced in tests).
 @MainActor
 enum KozmosProgressWaitRegistry {
     static var waits = KozmosProgressWaits()
+    static var now: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+}
+
+/// A bar's wait, owned by the bar for as long as SwiftUI keeps the bar: it
+/// outlives the bar leaving the screen and coming back, and when the bar
+/// goes for good its wait leaves the registry, so the registry never grows
+/// past the bars that exist.
+final class KozmosProgressWaitToken: ObservableObject {
+    var wait: UUID?
+
+    deinit {
+        guard let wait else { return }
+        Task { @MainActor in KozmosProgressWaitRegistry.waits.end(wait) }
+    }
 }
 
 public struct KozmosProgress: View {
@@ -252,8 +267,9 @@ public struct KozmosProgress: View {
     let accessibilityName: String
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// This bar's wait, while it is indeterminate: kept in the bar's own
-    /// state, so it outlives the bar leaving the screen and coming back.
-    @State private var wait: UUID?
+    /// state object, so it outlives the bar leaving the screen and coming
+    /// back, and leaves the registry when the bar goes for good.
+    @StateObject private var token = KozmosProgressWaitToken()
 
     /// The indeterminate bar (GAP-159): a segment sweeping from the inline
     /// start to the inline end every 2 s, theme 600 on the bar's track, for
@@ -371,10 +387,13 @@ public struct KozmosProgress: View {
             ring
         } else if indeterminate {
             KozmosIndeterminateBar(placement: resolvedPlacement)
-                .accessibilityElement()
-                .accessibilityLabel(spokenLabel)
+                // To VoiceOver it is the system's indeterminate progress
+                // indicator, named by its words, as React's is a progressbar
+                // with no value and Compose's an Indeterminate range.
+                .accessibilityRepresentation {
+                    ProgressView { Text(spokenLabel) }
+                }
                 .onAppear { appear() }
-                .onDisappear { if let wait { KozmosProgressWaitRegistry.waits.disappear(wait) } }
         } else if resolvedPlacement == .top {
             KozmosTopBar(fraction: fraction, accessibilityName: accessibilityName)
                 .onAppear { endWait() }
@@ -457,9 +476,10 @@ extension KozmosProgress {
     /// A waiting bar is on screen: it starts its wait, or goes on with the
     /// one it has, and says the words if the wait is to be said.
     fileprivate func appear() {
-        let wait = self.wait ?? UUID()
-        if self.wait == nil { self.wait = wait }
-        guard let message = KozmosProgressWaitRegistry.waits.appear(wait, label: spokenLabel) else { return }
+        let wait = token.wait ?? UUID()
+        if token.wait == nil { token.wait = wait }
+        guard let message = KozmosProgressWaitRegistry.waits.appear(
+            wait, label: spokenLabel, at: KozmosProgressWaitRegistry.now()) else { return }
         #if canImport(UIKit)
         UIAccessibility.post(
             notification: .announcement,
@@ -473,9 +493,9 @@ extension KozmosProgress {
 
     /// The bar has a value: its wait, if it had one, is over.
     fileprivate func endWait() {
-        guard let wait else { return }
+        guard let wait = token.wait else { return }
         KozmosProgressWaitRegistry.waits.end(wait)
-        self.wait = nil
+        token.wait = nil
     }
 }
 

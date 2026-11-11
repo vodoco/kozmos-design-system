@@ -62,6 +62,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.runtime.withFrameNanos
+import android.os.SystemClock
 import androidx.compose.ui.semantics.progressBarRangeInfo
 
 data class KozmosProgressRange(val start: Float, val end: Float) {
@@ -181,7 +184,8 @@ enum class KozmosProgressPlacement { Inline, Top }
  * is a full ring; one that is not a finite number is none done. A bar draws
  * no label. An Sm ring that is whole and has no label draws a check in its
  * hole. [placement] Top makes a bar the screen's loading bar; a ring ignores
- * it.
+ * it. A Top bar is named [accessibilityName] for TalkBack, "Progress" unless
+ * the product says otherwise; an Inline bar takes the name its caller gives.
  */
 @Composable
 fun KozmosProgress(
@@ -192,6 +196,7 @@ fun KozmosProgress(
     tone: KozmosEmotion = KozmosEmotion.Themed,
     labelPlacement: KozmosProgressLabelPlacement = KozmosProgressLabelPlacement.Center,
     placement: KozmosProgressPlacement = KozmosProgressPlacement.Inline,
+    accessibilityName: String = "Progress",
     label: (@Composable () -> Unit)? = null
 ) {
     if (shape == KozmosProgressShape.Circular) {
@@ -211,6 +216,9 @@ fun KozmosProgress(
                 .fillMaxWidth()
                 .height(kozmosProgressBarHeight(KozmosProgressPlacement.Top))
                 .progressSemantics(fraction)
+                // Named, as SwiftUI's top bar is: a screen's loading bar has
+                // no caller's semantics wrapped round it.
+                .semantics { contentDescription = accessibilityName }
         ) {
             drawRect(track)
             val bounds = this.size
@@ -247,19 +255,37 @@ internal fun Modifier.kozmosProgressTopInsets(placement: KozmosProgressPlacement
     else this
 
 /**
- * How many indeterminate bars are waiting on screen. Only the first to start
- * says its words: five uploads starting together are one "Loading", not
- * five, as React's are. Counted on the main thread, where composition runs.
+ * Which waits share one announcement (decision of #522's second review):
+ * only bars that start together. A wait that starts within
+ * [KozmosProgressWaitWindowMillis] of its group's first joins the group and
+ * is silent; one that starts later opens a group of its own and speaks, even
+ * while an earlier, longer wait still runs. Five uploads starting together
+ * are one "Loading"; a later "Uploading plan" beside a running "Sync" is
+ * said. A wait starts when its bar is first placed on screen, not when it is
+ * composed: a lazy list composes rows it prefetches off screen, and such a
+ * row must not take the turn of the bar the visitor sees. Main thread only,
+ * where layout runs.
  */
-internal var kozmosProgressWaits = 0
+internal object KozmosProgressWaitGroups {
+    /** The clock waits are timed by; a test sets its own. */
+    var clock: () -> Long = { SystemClock.uptimeMillis() }
+    private var groupStartedAt: Long? = null
 
-/** One bar's turn: whether it was the first waiting when it started; given back when it goes. */
-internal class KozmosProgressWaitTurn : RememberObserver {
-    val first = kozmosProgressWaits++ == 0
-    override fun onRemembered() = Unit
-    override fun onForgotten() { kozmosProgressWaits-- }
-    override fun onAbandoned() { kozmosProgressWaits-- }
+    /** Whether a wait starting now opens a group, and so speaks. */
+    fun start(): Boolean {
+        val now = clock()
+        val started = groupStartedAt
+        if (started != null && now - started <= KozmosProgressWaitWindowMillis) return false
+        groupStartedAt = now
+        return true
+    }
+
+    /** Forgets the open group: for tests. */
+    fun reset() { groupStartedAt = null }
 }
+
+/** How far apart waits may start and still be one announcement: half a second. */
+internal const val KozmosProgressWaitWindowMillis = 500L
 
 /** A quarter of the track: the indeterminate segment's width, as React's 25%. */
 internal const val KozmosProgressSegment = 0.25f
@@ -322,12 +348,14 @@ private fun progressSweepPhase(enabled: Boolean): FloatState {
  *
  * TalkBack meets one node: an indeterminate progress bar named [label],
  * "Loading" unless the product says otherwise. The name is said once per
- * wait: the first bar to start waiting on screen is a polite live region
- * composed with no name and given [label] once it is on screen, so the
- * change is announced (a region that arrives with its words may go unheard,
- * GAP-226), and it keeps those words while it waits, so a label that changes
- * is not said again. Any other bar waiting with it, or one that has spoken
- * and comes back into a lazy list, is named by [label] and says nothing.
+ * wait. A wait starts when the bar is first placed on screen; the first of
+ * the bars that start within half a second of each other becomes a polite
+ * live region, empty for a frame and then given [label], so the change is
+ * announced (a region that arrives with its words may go unheard, GAP-226),
+ * and it keeps those words while it waits, so a label that changes is not
+ * said again. A wait that starts later speaks too, even while an earlier one
+ * still runs. Any other bar of the group, or one that has spoken and comes
+ * back into a lazy list, is named by [label] and says nothing.
  * The sweep changes nothing TalkBack reads. Top sits under the status bar
  * (the top safe drawing insets).
  */
@@ -342,16 +370,21 @@ fun KozmosProgress(
     val phase = progressSweepPhase(animationsOn)
     val track = KozmosThemeTokens.primitivesColorsBackground200
     val fill = KozmosThemeTokens.primitivesColorsTheme600
-    // Once per wait. Only the first bar to start waiting speaks; one that
-    // has spoken and comes back (scrolled back into a lazy list) does not
-    // speak again; and its words are the ones read when the wait started.
-    val turn = remember { KozmosProgressWaitTurn() }
+    // Once per wait. The wait starts when the bar is first placed (not
+    // when a lazy list composes it off screen); only the first of the bars
+    // that start together speaks; one that has spoken and comes back
+    // (scrolled back into a lazy list) does not speak again; and its words
+    // are the ones read when the wait started.
     var spoken by rememberSaveable { mutableStateOf(false) }
-    val speaks = remember { turn.first && !spoken }
+    var placed by remember { mutableStateOf(false) }
+    var speaks by remember { mutableStateOf(false) }
     var words by remember { mutableStateOf<String?>(null) }
     val latest by rememberUpdatedState(label)
-    LaunchedEffect(Unit) {
+    LaunchedEffect(speaks) {
         if (speaks) {
+            // The region is in the tree, empty, for a frame before its
+            // words arrive, so the change is announced (GAP-226).
+            withFrameNanos { }
             words = latest
             spoken = true
         }
@@ -364,6 +397,12 @@ fun KozmosProgress(
             .fillMaxWidth()
             .height(kozmosProgressBarHeight(placement))
             .clip(shape)
+            .onPlaced {
+                if (!placed) {
+                    placed = true
+                    if (!spoken) speaks = KozmosProgressWaitGroups.start()
+                }
+            }
             .semantics {
                 progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
                 if (speaks) {

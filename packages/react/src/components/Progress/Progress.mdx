@@ -200,7 +200,8 @@ With no `value` the bar is indeterminate (GAP-159): a segment a quarter of the t
 theme 600 on the bar's track, sweeps from the inline start to the inline end every 2 s,
 linear, for as long as the wait lasts, so right to left it runs from the right. Under reduced
 motion, the system's or `DesignConfigProvider`'s, it stands still in the middle of the track,
-where it reads as a wait and not as a value. Visual Review draws it still at the start.
+where it reads as a wait and not as a value. Visual Review runs with reduced motion, so it
+draws the segment there, still, in the middle.
 
 Only `undefined` or `null` is a wait: a value that is not a number, or below 0, is an empty
 bar, as it always was.
@@ -209,9 +210,11 @@ It is said once. Its words are put into a polite status beside it after the stat
 page, so a screen reader hears them when the wait starts and nothing more while the segment
 moves: `label`, else the product's own `aria-label` (or the text its `aria-labelledby` names),
 else "Loading". They are read when the wait starts and kept, so a label that changes while
-it waits is not said again. Only the first bar to start waiting speaks: five uploads starting
-together are one announcement, each bar still named for whoever moves to it. When the bar gets
-a value the status goes, ready for the next wait.
+it waits is not said again. Bars that start waiting together, within 500 ms, share one
+announcement, the first's: five uploads starting together are one announcement, each bar still
+named for whoever moves to it. A wait that starts later is said, even while an earlier, long
+wait still runs. When the bar gets a value the status goes, ready for the next wait. SwiftUI
+and Compose group their waits the same way.
 
 `placement="top"` is the page's loading bar: fixed to the top of the window, below the
 notch or status bar's safe area, edge to edge, 4 tall (spacing 50) and square, over the page's

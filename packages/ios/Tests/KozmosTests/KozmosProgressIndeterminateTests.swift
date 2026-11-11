@@ -1,5 +1,9 @@
 import XCTest
 import SwiftUI
+#if os(iOS)
+import UIKit
+import Darwin
+#endif
 @testable import Kozmos
 
 /// GAP-159: the bar with no value moves, stands still under Reduce Motion,
@@ -75,11 +79,9 @@ final class KozmosProgressIndeterminateTests: XCTestCase {
     func testAWaitIsSaidOnceThoughItsBarComesBack() {
         var waits = KozmosProgressWaits()
         let wait = UUID()
-        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
-        waits.disappear(wait)
-        XCTAssertNil(waits.appear(wait, label: "Loading"))
-        waits.disappear(wait)
-        XCTAssertNil(waits.appear(wait, label: "Loading"))
+        XCTAssertEqual(waits.appear(wait, label: "Loading", at: 0), "Loading")
+        XCTAssertNil(waits.appear(wait, label: "Loading", at: 5))
+        XCTAssertNil(waits.appear(wait, label: "Loading", at: 60))
     }
 
     /// Review of #522: a label that changes while the bar waits is not
@@ -87,22 +89,39 @@ final class KozmosProgressIndeterminateTests: XCTestCase {
     func testALabelThatChangesWhileItWaitsIsNotSaidAgain() {
         var waits = KozmosProgressWaits()
         let wait = UUID()
-        XCTAssertEqual(waits.appear(wait, label: "Loading the map"), "Loading the map")
-        XCTAssertNil(waits.appear(wait, label: "Loading the map, 50 tiles"))
+        XCTAssertEqual(waits.appear(wait, label: "Loading the map", at: 0), "Loading the map")
+        XCTAssertNil(waits.appear(wait, label: "Loading the map, 50 tiles", at: 2))
     }
 
-    /// Review of #522: five uploads waiting at once are one "Loading": the
-    /// first bar speaks, the rest keep quiet, also when they come back.
-    func testOnlyTheFirstOfSeveralWaitingBarsSpeaks() {
+    /// Second review of #522: bars that start together share one
+    /// announcement. Five uploads within 500 ms are one "Upload 1", also
+    /// when one comes back.
+    func testFiveStartingTogetherSpeakOnce() {
         var waits = KozmosProgressWaits()
         let bars = (1...5).map { _ in UUID() }
-        let said = bars.enumerated().map { waits.appear($1, label: "Upload \($0 + 1)") }
+        let said = bars.enumerated().map { waits.appear($1, label: "Upload \($0 + 1)", at: 10 + Double($0) * 0.1) }
         XCTAssertEqual(said, ["Upload 1", nil, nil, nil, nil])
-        waits.disappear(bars[3])
-        XCTAssertNil(waits.appear(bars[3], label: "Upload 4"))
-        // All done; a new wait on its own is said.
-        bars.forEach { waits.end($0) }
-        XCTAssertEqual(waits.appear(UUID(), label: "Upload 6"), "Upload 6")
+        XCTAssertNil(waits.appear(bars[3], label: "Upload 4", at: 12))
+    }
+
+    /// Second review of #522: a later, unrelated wait speaks even while an
+    /// earlier long wait still runs: "Sync" goes on, "Uploading plan"
+    /// starts two seconds later and is said.
+    func testALaterWaitSpeaksWhileALongOneRuns() {
+        var waits = KozmosProgressWaits()
+        XCTAssertEqual(waits.appear(UUID(), label: "Sync", at: 100), "Sync")
+        XCTAssertEqual(waits.appear(UUID(), label: "Uploading plan", at: 102), "Uploading plan")
+    }
+
+    /// Second review of #522: A ends while B still waits; C, starting
+    /// afterwards, speaks.
+    func testWhenOneEndsAndAnotherWaitsALaterOneSpeaks() {
+        var waits = KozmosProgressWaits()
+        let a = UUID(), b = UUID(), c = UUID()
+        XCTAssertEqual(waits.appear(a, label: "A", at: 0), "A")
+        XCTAssertNil(waits.appear(b, label: "B", at: 0.2))
+        waits.end(a)
+        XCTAssertEqual(waits.appear(c, label: "C", at: 3), "C")
     }
 
     /// A value ends the wait; the bar's next wait is said again. No words,
@@ -110,12 +129,79 @@ final class KozmosProgressIndeterminateTests: XCTestCase {
     func testAValueEndsTheWait() {
         var waits = KozmosProgressWaits()
         let wait = UUID()
-        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
+        XCTAssertEqual(waits.appear(wait, label: "Loading", at: 0), "Loading")
         waits.end(wait)
-        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
+        XCTAssertTrue(waits.settled.isEmpty)
+        XCTAssertEqual(waits.appear(wait, label: "Loading", at: 4), "Loading")
         var silent = KozmosProgressWaits()
-        XCTAssertNil(silent.appear(UUID(), label: ""))
+        XCTAssertNil(silent.appear(UUID(), label: "", at: 0))
     }
+
+    #if os(iOS)
+    /// Second review of #522: a bar that goes for good takes its wait out
+    /// of the registry, so the registry holds only the bars that exist.
+    @MainActor
+    func testTheRegistryEmptiesWhenBarsGo() async throws {
+        KozmosProgressWaitRegistry.waits = KozmosProgressWaits()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        var host: UIHostingController<AnyView>? = UIHostingController(rootView: AnyView(
+            VStack { ForEach(0..<3) { n in KozmosProgress(label: "Upload \(n)") } }))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(KozmosProgressWaitRegistry.waits.settled.count, 3)
+        host?.rootView = AnyView(Text("Done"))
+        try await Task.sleep(nanoseconds: 300_000_000)
+        window.rootViewController = nil
+        host = nil
+        window.isHidden = true
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(KozmosProgressWaitRegistry.waits.settled.isEmpty,
+                      "waits left behind: \(KozmosProgressWaitRegistry.waits.settled.count)")
+    }
+
+    /// Second review of #522: VoiceOver meets the indeterminate bar as the
+    /// system's indeterminate progress indicator, named by its words, as
+    /// React's is a progressbar and Compose's an Indeterminate range.
+    @MainActor
+    func testTheIndeterminateBarIsTheSystemsProgressIndicator() async throws {
+        let bar = try await axElements(KozmosProgress(label: "Loading the map"))
+        let system = try await axElements(ProgressView { Text("Loading the map") })
+        XCTAssertEqual(bar.count, 1, "the bar is one element: \(bar)")
+        XCTAssertEqual(bar, system)
+    }
+
+    /// Each element VoiceOver walks: its name, value and traits.
+    @MainActor
+    private func axElements<V: View>(_ view: V) async throws -> [String] {
+        typealias Get = @convention(c) () -> Int32
+        typealias Set = @convention(c) (Int32) -> Void
+        let library = try XCTUnwrap(dlopen("/usr/lib/libAccessibility.dylib", RTLD_NOW))
+        let get = unsafeBitCast(try XCTUnwrap(dlsym(library, "_AXSAutomationEnabled")), to: Get.self)
+        let set = unsafeBitCast(try XCTUnwrap(dlsym(library, "_AXSSetAutomationEnabled")), to: Set.self)
+        let old = get(); set(1); defer { set(old) }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = UIHostingController(rootView: view.frame(width: 300))
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        func elements(_ node: NSObject) -> [NSObject] {
+            if node.accessibilityElementsHidden { return [] }
+            if let view = node as? UIView, view.isHidden || view.alpha == 0 { return [] }
+            if node.isAccessibilityElement { return [node] }
+            if let values = node.accessibilityElements as? [NSObject], !values.isEmpty {
+                return values.flatMap(elements)
+            }
+            if case let count = node.accessibilityElementCount(), count != NSNotFound, count > 0 {
+                return (0..<count).compactMap { node.accessibilityElement(at: $0) as? NSObject }.flatMap(elements)
+            }
+            return ((node as? UIView)?.subviews ?? []).flatMap(elements)
+        }
+        return elements(window).map {
+            "\($0.accessibilityLabel ?? "-") | \($0.accessibilityValue ?? "-") | \($0.accessibilityTraits.rawValue)"
+        }
+    }
+    #endif
 
     /// Review of #522: the determinate top bar is named for VoiceOver,
     /// "Progress" unless given, as the inline bar's ProgressView is.

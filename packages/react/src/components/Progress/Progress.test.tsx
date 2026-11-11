@@ -1,7 +1,16 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Progress } from "./Progress";
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+
+// Waits that start within 500 ms are one announcement (GAP-159): each test
+// starts well clear of the last, on a clock it moves itself.
+let clock = 0;
+beforeEach(() => {
+  clock += 60_000;
+  vi.spyOn(Date, "now").mockImplementation(() => clock);
+});
 
 describe("Progress", () => {
   it("exposes the same normalized value visually and to assistive technology", () => {
@@ -484,6 +493,7 @@ describe("Progress", () => {
         /^Uploading plan.pdf$/,
       );
       unmount();
+      clock += 1_000;
       render(
         <>
           <span id="what">Loading the floor plan</span>
@@ -498,22 +508,62 @@ describe("Progress", () => {
       );
     });
 
-    it("is said by the first of several bars waiting at once", () => {
-      const { rerender } = render(
+    it("is said once by five bars that start together", () => {
+      render(
         <>
           {[1, 2, 3, 4, 5].map((n) => (
             <Progress key={n} aria-label={`Upload ${n}`} />
           ))}
         </>,
       );
-      const spoken = screen
-        .getAllByRole("status")
-        .map((status) => status.textContent);
-      expect(spoken).toEqual(["Upload 1", "", "", "", ""]);
-      // All five done, then one new wait: it is said.
-      rerender(<></>);
-      rerender(<Progress aria-label="Upload 6" />);
-      expect(screen.getByRole("status")).toHaveTextContent(/^Upload 6$/);
+      expect(
+        screen.getAllByRole("status").map((status) => status.textContent),
+      ).toEqual(["Upload 1", "", "", "", ""]);
+    });
+
+    it("says a later wait while an earlier, long one still runs", () => {
+      const { rerender } = render(<Progress key="sync" aria-label="Sync" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Sync$/);
+      clock += 2_000;
+      rerender(
+        <>
+          <Progress key="sync" aria-label="Sync" />
+          <Progress key="plan" aria-label="Uploading plan" />
+        </>,
+      );
+      expect(
+        screen.getAllByRole("status").map((status) => status.textContent),
+      ).toEqual(["Sync", "Uploading plan"]);
+    });
+
+    it("says a new wait that starts after one ended while another waits", () => {
+      const { rerender } = render(
+        <>
+          <Progress key="a" aria-label="A" />
+          <Progress key="b" aria-label="B" />
+        </>,
+      );
+      clock += 1_000;
+      rerender(<Progress key="b" aria-label="B" />);
+      clock += 1_000;
+      rerender(
+        <>
+          <Progress key="b" aria-label="B" />
+          <Progress key="c" aria-label="C" />
+        </>,
+      );
+      expect(
+        screen.getAllByRole("status").map((status) => status.textContent),
+      ).toEqual(["", "C"]);
+    });
+
+    it("still speaks when strict mode runs its effect twice", () => {
+      render(
+        <React.StrictMode>
+          <Progress aria-label="Loading the map" />
+        </React.StrictMode>,
+      );
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading the map$/);
     });
 
     it.each([-5, -0.5, Number.NaN])(

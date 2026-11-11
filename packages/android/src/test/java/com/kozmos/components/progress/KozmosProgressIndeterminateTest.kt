@@ -19,8 +19,15 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosDimensions
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.dp
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -31,6 +38,19 @@ import org.junit.Test
  */
 class KozmosProgressIndeterminateTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    /** The waits' clock, in milliseconds, which each test moves itself. */
+    private var now = 0L
+
+    @Before fun ownTheWaitClock() {
+        KozmosProgressWaitGroups.reset()
+        KozmosProgressWaitGroups.clock = { now }
+    }
+
+    @After fun giveTheWaitClockBack() {
+        KozmosProgressWaitGroups.reset()
+        KozmosProgressWaitGroups.clock = { android.os.SystemClock.uptimeMillis() }
+    }
 
     private fun close(expected: Float, actual: Float) =
         assertEquals(expected.toDouble(), actual.toDouble(), 1e-5)
@@ -78,43 +98,30 @@ class KozmosProgressIndeterminateTest {
     }
 
     @Test fun itIsOneIndeterminateBarNamedLoadingAndSaidOnce() {
-        var firstName: String? = "unread"
-        var firstLive: LiveRegionMode? = null
-        paparazzi.live(content = {
-            KozmosMaterialTheme {
-                val view: View = LocalView.current
-                KozmosProgress()
-                // Read as the composition is first applied, before any effect
-                // has run: the region is there, without its words.
-                SideEffect {
-                    if (firstName == "unread") {
-                        val node = (view as ViewRootForTest).semanticsOwner.unmergedRootSemanticsNode
-                        val bar = generateSequence(listOf(node)) { level -> level.flatMap { it.children }.ifEmpty { null } }
-                            .flatten()
-                            .first { it.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo) != null }
-                        firstName = bar.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString()
-                        firstLive = bar.config.getOrNull(SemanticsProperties.LiveRegion)
-                    }
-                }
+        paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress() } }) {
+            // What TalkBack is told, frame by frame: the region is there,
+            // empty, for a frame before its words arrive (GAP-226).
+            val seen = mutableListOf<Pair<LiveRegionMode?, String?>>()
+            repeat(8) {
+                frames(1)
+                read().merged.singleOrNull { it.progressRange != null }?.let { seen += it.liveRegion to it.description }
             }
-        }) {
-            assertEquals("the bar was composed with its words", "", firstName)
-            assertEquals(LiveRegionMode.Polite, firstLive)
-            val bars = read().merged.filter { it.progressRange != null }
-            assertEquals(1, bars.size)
-            val bar = bars.single()
+            val firstLive = seen.indexOfFirst { it.first == LiveRegionMode.Polite }
+            assertTrue("never a live region: $seen", firstLive >= 0)
+            assertEquals("the region arrived with its words: $seen", "", seen[firstLive].second)
+            val bar = read().merged.single { it.progressRange != null }
             assertEquals(ProgressBarRangeInfo.Indeterminate, bar.progressRange)
             assertEquals("Loading", bar.description)
             assertEquals(LiveRegionMode.Polite, bar.liveRegion)
             // The sweep changes nothing TalkBack reads: the words stay put.
             frames(30)
-            val later = read().merged.single { it.progressRange != null }
-            assertEquals("Loading", later.description)
+            assertEquals("Loading", read().merged.single { it.progressRange != null }.description)
         }
     }
 
     @Test fun itTakesTheProductsWords() {
         paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress(label = "Loading the map") } }) {
+            frames(6)
             assertEquals("Loading the map", read().merged.single { it.progressRange != null }.description)
         }
     }
@@ -147,7 +154,7 @@ class KozmosProgressIndeterminateTest {
                 Column { for (n in 1..5) KozmosProgress(label = "Upload $n") }
             }
         }) {
-            frames(2)
+            frames(6)
             val bars = read().merged.filter { it.progressRange != null }
             assertEquals(5, bars.size)
             assertEquals(listOf("Upload 1", "Upload 2", "Upload 3", "Upload 4", "Upload 5"), bars.map { it.description })
@@ -156,9 +163,10 @@ class KozmosProgressIndeterminateTest {
                 bars.map { it.liveRegion }
             )
         }
-        // All five gone, then one new wait: it speaks.
+        // All five gone, then one new wait, later: it speaks.
+        now += 2_000
         paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress(label = "Upload 6") } }) {
-            frames(2)
+            frames(6)
             val bar = read().merged.single { it.progressRange != null }
             assertEquals("Upload 6", bar.description)
             assertEquals(LiveRegionMode.Polite, bar.liveRegion)
@@ -170,13 +178,106 @@ class KozmosProgressIndeterminateTest {
     @Test fun aLabelThatChangesWhileItWaitsIsNotSaidAgain() {
         var label by mutableStateOf("Loading the map")
         paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress(label = label) } }) {
-            frames(2)
+            frames(6)
             assertEquals("Loading the map", read().merged.single { it.progressRange != null }.description)
             label = "Loading the map, 50 tiles"
-            frames(3)
+            frames(6)
             val bar = read().merged.single { it.progressRange != null }
             assertEquals(LiveRegionMode.Polite, bar.liveRegion)
             assertEquals("Loading the map", bar.description)
         }
+    }
+
+    // Second review of #522: only bars that START TOGETHER share one
+    // announcement. A later, unrelated wait speaks while an earlier, long
+    // one still runs.
+    @Test fun aLaterWaitSpeaksWhileAnEarlierOneStillRuns() {
+        var uploading by mutableStateOf(false)
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Column {
+                    KozmosProgress(label = "Sync")
+                    if (uploading) KozmosProgress(label = "Uploading plan")
+                }
+            }
+        }) {
+            frames(6)
+            now += 2_000
+            uploading = true
+            frames(6)
+            val bars = read().merged.filter { it.progressRange != null }
+            assertEquals(listOf("Sync", "Uploading plan"), bars.map { it.description })
+            assertEquals(listOf(LiveRegionMode.Polite, LiveRegionMode.Polite), bars.map { it.liveRegion })
+        }
+    }
+
+    // A and B start together (B silent); A ends while B waits; C starts
+    // later and speaks.
+    @Test fun whenOneEndsAndAnotherWaitsANewWaitStillSpeaks() {
+        var a by mutableStateOf(true)
+        var c by mutableStateOf(false)
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Column {
+                    if (a) KozmosProgress(label = "A")
+                    KozmosProgress(label = "B")
+                    if (c) KozmosProgress(label = "C")
+                }
+            }
+        }) {
+            frames(6)
+            assertEquals(
+                listOf(LiveRegionMode.Polite, null),
+                read().merged.filter { it.progressRange != null }.map { it.liveRegion }
+            )
+            a = false
+            frames(2)
+            now += 2_000
+            c = true
+            frames(6)
+            val bars = read().merged.filter { it.progressRange != null }
+            assertEquals(listOf("B", "C"), bars.map { it.description })
+            assertEquals(listOf(null, LiveRegionMode.Polite), bars.map { it.liveRegion })
+        }
+    }
+
+    // A lazy list composes and measures a row it prefetches off screen, and
+    // does not place it. Such a bar must not take the turn of the one the
+    // visitor sees: a wait starts when its bar is placed. Modelled here by a
+    // layout that composes and measures both and places only the second, as
+    // a prefetch does (Compose 1.6 has no public way to drive a LazyColumn's
+    // prefetch in a test).
+    @Test fun aBarComposedButNotPlacedDoesNotTakeTheTurn() {
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Layout(content = {
+                    Box(Modifier.width(200.dp)) { KozmosProgress(label = "Prefetched") }
+                    Box(Modifier.width(200.dp)) { KozmosProgress(label = "On screen") }
+                }) { measurables, constraints ->
+                    val placeables = measurables.map { it.measure(constraints) }
+                    layout(constraints.maxWidth, placeables[1].height) { placeables[1].place(0, 0) }
+                }
+            }
+        }) {
+            frames(6)
+            val bar = read().merged.single { it.progressRange != null && it.description == "On screen" }
+            assertEquals(LiveRegionMode.Polite, bar.liveRegion)
+        }
+    }
+
+    // Second review of #522: the determinate Top bar is named, "Progress"
+    // unless the product says otherwise, as SwiftUI's is.
+    @Test fun theDeterminateTopBarIsNamed() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                Column {
+                    KozmosProgress(progress = 0.4f, placement = KozmosProgressPlacement.Top)
+                    KozmosProgress(progress = 0.7f, placement = KozmosProgressPlacement.Top, accessibilityName = "Uploading plan")
+                }
+            }
+        }
+        val bars = tree.merged.filter { it.progressRange != null }
+        assertEquals(listOf("Progress", "Uploading plan"), bars.map { it.description })
+        assertEquals(listOf(0.4f, 0.7f), bars.map { it.progressRange!!.current })
     }
 }
