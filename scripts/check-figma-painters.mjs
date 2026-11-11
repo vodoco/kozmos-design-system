@@ -7014,12 +7014,44 @@ section("Typography inference");
     ["ColorPicker", "Value Text", "fieldMeta", "ColorPicker Hex Field"],
     ["ColorPicker", "Value Text", "fieldText", "ColorPicker Field"],
     ["FormField", "Description Text", "fieldText"],
+    // GAP-162: a control's description and Switch's state words are regular,
+    // React's text-sm text-muted-foreground; GAP-158: a tile's description
+    // is 12/16. Guessed Medium, the audit called them stale and Apply Text
+    // Styles restyled them as labels.
+    ["Checkbox", "Label Text", "controlLabel"],
+    ["Checkbox", "Description Text", "fieldText", "Description Row"],
+    ["Switch", "Description Text", "fieldText", "Description Row"],
+    ["Switch", "State Label", "fieldText", "Label Row"],
+    ["Radio", "Description Text", "fieldText", "Description Row"],
+    [
+      "Radio",
+      "Description Text",
+      "fieldText",
+      "Text",
+      "Checked=Checked, State=Default, Variant=Card",
+    ],
+    [
+      "Radio",
+      "Description Text",
+      "fieldMeta",
+      undefined,
+      "Checked=Checked, State=Default, Variant=Tile",
+    ],
+    [
+      "Radio",
+      "Label Text",
+      "controlLabel",
+      undefined,
+      "Checked=Checked, State=Default, Variant=Tile",
+    ],
   ];
   const ready = typeof plugin.inferTextStyleKeyForComponentText === "function";
   ok(ready, "the audit's style guess is reachable");
-  for (const [setName, textName, expected, parentName] of ready ? cases : []) {
+  for (const [setName, textName, expected, parentName, variantName] of ready
+    ? cases
+    : []) {
     const set = new MockNode("COMPONENT_SET", setName);
-    const component = new MockNode("COMPONENT", "State=Default");
+    const component = new MockNode("COMPONENT", variantName || "State=Default");
     const text = new MockNode("TEXT", textName);
     if (parentName) {
       const parent = new MockNode("FRAME", parentName);
@@ -7032,7 +7064,7 @@ section("Typography inference");
     const key = plugin.inferTextStyleKeyForComponentText(text, set);
     ok(
       key === expected,
-      `${setName} · ${textName}${parentName ? ` in ${parentName}` : ""} is ${expected} (got ${key})`,
+      `${setName}${variantName ? ` (${variantName})` : ""} · ${textName}${parentName ? ` in ${parentName}` : ""} is ${expected} (got ${key})`,
     );
   }
   const source = fs.readFileSync(PLUGIN, "utf8");
@@ -12858,8 +12890,11 @@ section("Figma draws React's values (the 4 Nov triage)");
   );
   const routeSwitch = find(kiosk, "Accessible Route Switch");
   ok(
-    routeSwitch && routeSwitch.height === 44,
-    `Kiosk: the route switch is React's min-h-11 row, 44 (${routeSwitch && routeSwitch.height})`,
+    routeSwitch &&
+      routeSwitch.height === 44 &&
+      routeSwitch.width === 220 &&
+      routeSwitch.layoutSizingVertical === "HUG",
+    `Kiosk: the route switch is React's min-h-11 row, 44, and hugs its height, so Show Description grows it rather than clipping it (GAP-162) (${routeSwitch && routeSwitch.height}, ${routeSwitch && routeSwitch.layoutSizingVertical})`,
   );
   const findRoute = find(kiosk, "Kiosk Find Route Button");
   ok(

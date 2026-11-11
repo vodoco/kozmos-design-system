@@ -4,9 +4,9 @@
 import SwiftUI
 import Kozmos
 
-// The description is the switch's hint. The state label draws the state in
-// words beside the track; VoiceOver hears the switch's own state, not the
-// words. Pass onLabel and offLabel in your app's language.
+// VoiceOver reads the description after the switch's name. The state label
+// draws the state in words beside the track; VoiceOver hears the same words
+// once, as the switch's value. Pass onLabel and offLabel in your app's language.
 struct GateAlerts: View {
     @Binding var isOn: Bool
 

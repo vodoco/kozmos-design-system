@@ -4,8 +4,8 @@
 import SwiftUI
 import Kozmos
 
-// Each card or tile is one radio, named by its title, with its description
-// as the hint; the image or icon is decoration. A chosen card shows its dot,
+// Each card or tile is one radio, named by its title, its description read
+// after it; the image or icon is decoration. A chosen card shows its dot,
 // a chosen tile its check, and both a heavier edge: never colour alone.
 struct MapStyleChoice: View {
     @State private var style = "vector"

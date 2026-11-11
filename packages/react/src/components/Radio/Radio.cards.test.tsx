@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { RadioGroup, RadioGroupItem } from "./Radio";
 import "@testing-library/jest-dom/vitest";
 
@@ -172,5 +172,31 @@ describe("RadioGroupItem description (default)", () => {
     );
     // Media is a card's or a tile's: the default ring draws none.
     expect(screen.queryByText("Picture")).toBeNull();
+  });
+});
+
+describe("an untitled card or tile (GAP-158)", () => {
+  it("is never named by its description, warns once in development, and takes aria-label", async () => {
+    vi.resetModules();
+    const { RadioGroup: Group, RadioGroupItem: Item } = await import("./Radio");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <Group aria-label="Geometry">
+        <Item value="auto" variant="card" description="Traced for you" />
+        <Item value="manual" variant="tile" description="Drawn by hand" />
+        <Item value="fade" variant="tile" aria-label="Fade" media={<svg />} />
+      </Group>,
+    );
+    const [card, tile, iconOnly] = screen.getAllByRole("radio");
+    // An icon-only tile is named by its aria-label.
+    expect(iconOnly).toHaveAccessibleName("Fade");
+    expect(card).toHaveAccessibleName("");
+    expect(tile).toHaveAccessibleName("");
+    expect(card).toHaveAccessibleDescription("Traced for you");
+    const untitled = warn.mock.calls.filter((call) =>
+      String(call[0]).includes("has no label and no aria-label"),
+    );
+    expect(untitled).toHaveLength(1);
+    warn.mockRestore();
   });
 });

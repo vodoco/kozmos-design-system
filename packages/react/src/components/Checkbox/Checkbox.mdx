@@ -91,9 +91,11 @@ fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
 
 ## A description
 
-A `description` is drawn under the label and read as the checkbox's description (`aria-describedby`), after its name and never as part of it (GAP-162). The label still toggles the checkbox; the description is words, not a target. SwiftUI reads it as the control's accessibility hint; Compose reads it after the label, in the one node the row is.
+A `description` is drawn under the label and read as the checkbox's description (`aria-describedby`), after its name and never as part of it (GAP-162). The label still toggles the checkbox; the description is words, not a target. SwiftUI reads it after the control's name; Compose reads it after the label, in the one node the row is.
 
 <Canvas of={CheckboxStories.WithDescription} />
+
+On SwiftUI the description is read after the name as the control's custom content, at high importance, spoken whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. The control says its state as its value, in `checkedLabel` and `uncheckedLabel` ("Checked", "Unchecked"; SwiftUI's checkbox takes a Bool, so it has no mixed state), and from iOS 17 it is a toggle. Compose reads the description after the label in the one node, and the checkbox says its state with its Checkbox role.
 
 <PlatformSnippets
     react={`
@@ -128,8 +130,8 @@ const updates = ref(false)
 import SwiftUI
 import Kozmos
 
-// The description is drawn under the label, and VoiceOver reads it as the
-// checkbox's hint, after its name.
+// The description is drawn under the label, and VoiceOver reads it after
+// the checkbox's name; its value says checked or unchecked.
 struct RouteUpdates: View {
     @Binding var isOn: Bool
 

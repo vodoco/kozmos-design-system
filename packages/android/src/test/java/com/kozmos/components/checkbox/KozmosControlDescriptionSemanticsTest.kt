@@ -6,6 +6,11 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.switch.KozmosSwitch
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.state.ToggleableState
+import com.kozmos.components.live
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -74,5 +79,27 @@ class KozmosControlDescriptionSemanticsTest {
             assertTrue("\"$state\" is read: $everyWord", state !in everyWord)
         }
         assertNotNull(switches[0].click)
+    }
+
+    /**
+     * A checkbox to TalkBack: one node with the Checkbox role and its state,
+     * which a double tap turns. It was a bare clickable row, heard as its
+     * words and nothing of checked.
+     */
+    @Test
+    fun aCheckboxIsACheckboxThatSaysItsState() {
+        var checked by mutableStateOf(false)
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                KozmosCheckbox(checked = checked, onCheckedChange = { checked = it }, label = "Route updates")
+            }
+        }) {
+            val before = read().merged.single { "Route updates" in it.texts }
+            assertEquals(Role.Checkbox, before.role)
+            assertEquals(ToggleableState.Off, before.toggleState)
+            assertTrue(checkNotNull(before.click)())
+            frames(3)
+            assertEquals(ToggleableState.On, read().merged.single { "Route updates" in it.texts }.toggleState)
+        }
     }
 }

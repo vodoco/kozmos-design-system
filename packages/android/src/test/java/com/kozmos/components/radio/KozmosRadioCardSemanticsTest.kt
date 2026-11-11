@@ -15,6 +15,8 @@ import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -115,5 +117,35 @@ class KozmosRadioCardSemanticsTest {
             assertEquals(listOf(false, true), read().radios().map { it.selected })
             assertNull(read().radios()[0].description)
         }
+    }
+
+    /** A tile fills its cell, as a card does and as React's and SwiftUI's do. */
+    @Test
+    fun aTileFillsTheWidthItIsGiven() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(300.dp)) {
+                    KozmosRadioGroupItem(
+                        value = "fade",
+                        selectedValue = "fade",
+                        onOptionSelected = {},
+                        label = "Fade",
+                        variant = KozmosRadioGroupItemVariant.Tile
+                    )
+                }
+            }
+        }
+        val tile = tree.radios().single()
+        val density = paparazzi.context.resources.displayMetrics.density
+        assertEquals(300f * density, tile.frame.width, 1f)
+    }
+
+    /** GAP-158: an untitled card or tile is told about in a debug build. */
+    @Test
+    fun anUntitledCardOrTileIsWarnedAbout() {
+        assertNotNull(kozmosUntitledOptionWarning(KozmosRadioGroupItemVariant.Card, null))
+        assertNotNull(kozmosUntitledOptionWarning(KozmosRadioGroupItemVariant.Tile, ""))
+        assertNull(kozmosUntitledOptionWarning(KozmosRadioGroupItemVariant.Tile, "Fade"))
+        assertNull(kozmosUntitledOptionWarning(KozmosRadioGroupItemVariant.Default, null))
     }
 }

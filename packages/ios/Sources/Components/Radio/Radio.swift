@@ -36,7 +36,7 @@ public struct KozmosRadioGroupItem<Media: View>: View {
 
     /// A card or tile with media: an image (a card's, drawn across its top)
     /// or an icon (a tile's, drawn over its title). The media is decoration:
-    /// VoiceOver hears the title, and the description as the hint.
+    /// VoiceOver hears the title, then the description.
     public init(
         value: String,
         label: String? = nil,
@@ -73,10 +73,14 @@ public struct KozmosRadioGroupItem<Media: View>: View {
         // heard only the name, and the state only the dot showed.
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         // A card or tile is one radio with one name, its title, whatever
-        // its media and description say; the description is its hint, as
-        // React's is its `aria-describedby`.
+        // its media and description say; the description is read after it
+        // as custom content, as React's is its `aria-describedby`. With no
+        // title it has no name: an icon-only tile takes the caller's
+        // .accessibilityLabel(_:).
         .kozmosControlDescription(label: label, description: description, nameFromLabel: variant != .default)
         .disabled(disabled)
+        // An untitled card or tile says so once in a debug build (GAP-158).
+        .onAppear { KozmosUntitledOption.log(variant: variant, label: label) }
     }
 
     private var defaultBody: some View {

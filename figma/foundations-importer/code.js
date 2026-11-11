@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "71ae7e94827f";
+const PLUGIN_BUILD = "e7b952b9294c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -12181,7 +12181,8 @@ async function buildSettingsExampleTemplate({
         "Label Text": "Enable indoor positioning",
       },
       width: 260,
-      height: 44,
+      // At least 44 (React's min-h-11), taller with a description.
+      hugHeight: true,
       fonts,
       variableByName,
       stats,
@@ -13086,8 +13087,8 @@ async function buildKioskHandoffExampleTemplate({
       name: "Accessible Route Switch",
       textProperties: { "Label Text": "Step-free route" },
       width: 220,
-      // React's min-h-11 row.
-      height: 44,
+      // React's min-h-11 row at least, taller with a description.
+      hugHeight: true,
       fonts,
       variableByName,
       stats,
@@ -13524,6 +13525,25 @@ function applyExampleChildSizing(node, sizingMode) {
     setFixedChildSizing(node);
   } else if (sizingMode === "hug") {
     setHugChildSizing(node);
+  } else if (sizingMode === "fixed-width-hug") {
+    setFixedWidthHugChildSizing(node);
+  }
+}
+
+// A control as wide as asked and as tall as it draws: a Switch or Checkbox
+// whose Show Description grows it past 44 (GAP-162) is never clipped.
+function setFixedWidthHugChildSizing(node) {
+  setLayoutSizingHorizontal(node, "FIXED");
+  setLayoutSizingVertical(node, "HUG");
+  try {
+    node.layoutAlign = "INHERIT";
+  } catch (_error) {
+    // layoutAlign is unavailable on older plugin runtimes.
+  }
+  try {
+    node.layoutGrow = 0;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
   }
 }
 
@@ -13540,6 +13560,9 @@ async function createExampleInstance({
   // that holds its own height (Navbar, a Button, a bar) hugs to its content.
   fixedHeight,
   growHorizontal,
+  // With width: that wide, and as tall as the part draws (a control whose
+  // description shows grows; GAP-162).
+  hugHeight,
   fonts,
   variableByName,
   stats,
@@ -13604,6 +13627,12 @@ async function createExampleInstance({
   }
 
   if (width && height) resizeNodeWithoutConstraints(instance, width, height);
+  if (hugHeight && width) {
+    resizeNodeWithoutConstraints(instance, width, instance.height || 44);
+    setExampleChildSizing(instance, "fixed-width-hug");
+    stats.instancesCreated += 1;
+    return instance;
+  }
   if (growHorizontal) {
     if (height) {
       setExampleChildSizing(instance, "horizontal-fill-fixed");
@@ -25171,6 +25200,18 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "toastTitle";
   }
   if (setName === "Checkbox" || setName === "Radio" || setName === "Switch") {
+    // GAP-162: a description and Switch's state words are regular, 14/20;
+    // a tile's description is 12/16 (GAP-158). The label stays medium.
+    if (textName === "Description Text") {
+      const radioProps =
+        setName === "Radio" && component
+          ? parseRadioVariantName(component.name)
+          : null;
+      return radioProps && radioProps.variant === "Tile"
+        ? "fieldMeta"
+        : "fieldText";
+    }
+    if (textName === "State Label") return "fieldText";
     return "controlLabel";
   }
   if (

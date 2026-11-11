@@ -3,15 +3,18 @@ import SwiftUI
 #if os(iOS)
 import UIKit
 import Darwin
+import Accessibility
 #endif
 @testable import Kozmos
 
 /// GAP-158 and GAP-162 (decision 132): a Checkbox's, a Switch's and a
-/// radio's description is the control's hint, VoiceOver's counterpart of
-/// React's `aria-describedby`, read after the name and never part of it; a
-/// Switch's state words are drawn for the eye and not read again; a radio
-/// card or tile is one radio, named by its title alone, its media and
-/// description no part of the name, selected only when chosen.
+/// radio's description is the control's custom content, spoken by default
+/// after the name (VoiceOver's counterpart of React's `aria-describedby`)
+/// and never part of the name; a Switch and a Checkbox say their state as
+/// their value, in the caller's words, and from iOS 17 are toggles; a
+/// Switch's drawn state words are not read a second time; a radio card or
+/// tile is one radio, named by its title alone, its media and description no
+/// part of the name, selected only when chosen.
 ///
 /// The tree is read with accessibility automation on, as
 /// KozmosRadioToggleAccessibilityTests reads it.
@@ -55,18 +58,18 @@ final class KozmosControlDescriptionAccessibilityTests: XCTestCase {
         }
     }
 
-    @MainActor func testACheckboxDescriptionIsItsHintNotItsName() async throws {
+    @MainActor func testACheckboxDescriptionIsReadNotItsName() async throws {
         try await inspect(Controls()) { window in
             let checkbox = try self.named(["Route updates"], in: window)[0]
-            XCTAssertEqual(checkbox.accessibilityHint, "Tell me when a faster route opens", "the tree:\n\(self.describe(window))")
+            XCTAssertEqual(self.description(of: checkbox), "Tell me when a faster route opens", "\(type(of: checkbox)) protocol=\(checkbox is AXCustomContentProvider) property=\(checkbox.responds(to: NSSelectorFromString("accessibilityCustomContent"))) block=\(checkbox.responds(to: NSSelectorFromString("accessibilityCustomContentBlock"))); the tree:\n\(self.describe(window))")
             XCTAssertFalse(self.labels(window).contains { $0.contains("faster route") }, "the description is read as a name too; the tree:\n\(self.describe(window))")
         }
     }
 
-    @MainActor func testASwitchDescriptionIsItsHintAndItsStateWordsAreNotRead() async throws {
+    @MainActor func testASwitchDescriptionIsReadAndItsStateWordsAreNotReadTwice() async throws {
         try await inspect(Controls()) { window in
             let toggle = try self.named(["Gate alerts"], in: window)[0]
-            XCTAssertEqual(toggle.accessibilityHint, "A notification when your gate changes", "the tree:\n\(self.describe(window))")
+            XCTAssertEqual(self.description(of: toggle), "A notification when your gate changes", "the tree:\n\(self.describe(window))")
             let labels = self.labels(window)
             XCTAssertFalse(labels.contains { $0.contains("gate changes") }, "the description is read as a name too; the tree:\n\(self.describe(window))")
             XCTAssertFalse(labels.contains { $0 == "On" || $0 == "Off" || $0.contains("On,") || $0.hasSuffix(" On") }, "the state words are read; the tree:\n\(self.describe(window))")
@@ -79,7 +82,7 @@ final class KozmosControlDescriptionAccessibilityTests: XCTestCase {
             let radios = try self.named(titles, in: window)
             XCTAssertEqual(radios.map { $0.accessibilityTraits.contains(.selected) }, [false, true, true, false],
                            "the selected trait; the tree:\n\(self.describe(window))")
-            XCTAssertEqual(radios.map { $0.accessibilityHint ?? "" }, ["Drawn from map data", "Aerial imagery", "Cross-fades the floors", ""])
+            XCTAssertEqual(radios.map { self.description(of: $0) ?? "" }, ["Drawn from map data", "Aerial imagery", "Cross-fades the floors", ""])
             XCTAssertTrue(radios.allSatisfy { $0.accessibilityTraits.contains(.button) }, "a radio is no longer a button")
             // The media and the descriptions are no element and no name of their own.
             XCTAssertEqual(self.elements(window).count, titles.count, "more elements than radios; the tree:\n\(self.describe(window))")
@@ -93,6 +96,115 @@ final class KozmosControlDescriptionAccessibilityTests: XCTestCase {
             try await Task.sleep(nanoseconds: 300_000_000)
             XCTAssertEqual(try self.named(["Vector", "Satellite"], in: window).map { $0.accessibilityTraits.contains(.selected) }, [true, false])
         }
+    }
+
+    /// A Switch and a Checkbox say their state: the caller's words as their
+    /// value, and from iOS 17 the toggle trait. VoiceOver heard a name and
+    /// nothing of on, off or checked.
+    @MainActor func testASwitchAndACheckboxSayTheirState() async throws {
+        try await inspect(Controls()) { window in
+            let checkbox = try self.named(["Route updates"], in: window)[0]
+            let toggle = try self.named(["Gate alerts"], in: window)[0]
+            XCTAssertEqual(checkbox.accessibilityValue, "Unchecked", "the tree:\n\(self.describe(window))")
+            XCTAssertEqual(toggle.accessibilityValue, "On", "the tree:\n\(self.describe(window))")
+            if #available(iOS 17, *) {
+                XCTAssertTrue(checkbox.accessibilityTraits.contains(.toggleButton), "the checkbox is no toggle")
+                XCTAssertTrue(toggle.accessibilityTraits.contains(.toggleButton), "the switch is no toggle")
+            }
+            XCTAssertTrue(checkbox.accessibilityActivate())
+            XCTAssertTrue(toggle.accessibilityActivate())
+            try await Task.sleep(nanoseconds: 300_000_000)
+            XCTAssertEqual(try self.named(["Route updates"], in: window)[0].accessibilityValue, "Checked")
+            XCTAssertEqual(try self.named(["Gate alerts"], in: window)[0].accessibilityValue, "Off")
+        }
+    }
+
+    /// The caller's words for the states.
+    @MainActor func testTheStateWordsAreTheCallers() async throws {
+        struct French: View {
+            @State var on = true
+            @State var ticked = false
+            var body: some View {
+                VStack {
+                    KozmosSwitch(checked: $on, label: "Alertes", onLabel: "Activé", offLabel: "Désactivé")
+                    KozmosCheckbox(checked: $ticked, label: "Mises à jour", checkedLabel: "Coché", uncheckedLabel: "Non coché")
+                }
+            }
+        }
+        try await inspect(French()) { window in
+            XCTAssertEqual(try self.named(["Alertes", "Mises à jour"], in: window).map { $0.accessibilityValue ?? "" }, ["Activé", "Non coché"])
+        }
+    }
+
+    /// GAP-158: a card with no title is never named by its description;
+    /// a debug build is told, and an icon-only tile takes the caller's
+    /// accessibilityLabel.
+    @MainActor func testAnUntitledCardIsNotNamedByItsDescription() async throws {
+        struct Untitled: View {
+            @State var choice = "auto"
+            var body: some View {
+                KozmosRadioGroup {
+                    KozmosRadioGroupItem(value: "auto", description: "Traced for you", variant: .card, selection: $choice)
+                    KozmosRadioGroupItem(value: "fade", variant: .tile, selection: $choice) {
+                        Image(systemName: "circle.lefthalf.filled")
+                    }
+                    .accessibilityLabel("Fade")
+                }
+            }
+        }
+        try await inspect(Untitled()) { window in
+            let labels = self.labels(window)
+            XCTAssertFalse(labels.contains { $0.contains("Traced") }, "named by its description; the tree:\n\(self.describe(window))")
+            XCTAssertEqual(try self.named(["Fade"], in: window).count, 1)
+        }
+        XCTAssertNotNil(KozmosUntitledOption.warning(variant: .card, label: nil))
+        XCTAssertNotNil(KozmosUntitledOption.warning(variant: .tile, label: ""))
+        XCTAssertNil(KozmosUntitledOption.warning(variant: .tile, label: "Fade"))
+        XCTAssertNil(KozmosUntitledOption.warning(variant: .default, label: nil))
+    }
+
+    /// GAP-158's layout: a tile is at least 96 tall, as React's min-h-24 and
+    /// Figma's tile; a card fills the width it is offered, its media across
+    /// the top adding the media's height and the 12 gap.
+    @MainActor func testATileIsAtLeast96TallAndACardFillsItsWidth() throws {
+        let selection = Binding.constant("vector")
+        func size<V: View>(_ view: V, width: CGFloat) -> CGSize {
+            UIHostingController(rootView: view).sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude))
+        }
+        let tile = size(KozmosRadioGroupItem(value: "fade", label: "Fade", variant: .tile, selection: selection), width: 120)
+        XCTAssertGreaterThanOrEqual(tile.height, 96)
+        XCTAssertEqual(tile.width, 120, accuracy: 0.5, "a tile fills its cell")
+        let bare = size(KozmosRadioGroupItem(value: "vector", label: "Vector", variant: .card, selection: selection), width: 300)
+        let pictured = size(KozmosRadioGroupItem(value: "vector", label: "Vector", variant: .card, selection: selection) {
+            Color.clear.frame(height: 80)
+        }, width: 300)
+        XCTAssertEqual(bare.width, 300, accuracy: 0.5, "a card fills its width")
+        XCTAssertEqual(pictured.height - bare.height, 80 + 12, accuracy: 0.5, "the media sits above the ring, 12 apart")
+    }
+
+    /// The description VoiceOver reads after the name: high-importance
+    /// custom content named "Description".
+    @MainActor private func description(of element: NSObject) -> String? {
+        customContent(of: element).first { $0.label == "Description" && $0.importance == .high }?.value
+    }
+
+    /// The element's custom content however it offers it: the protocol, the
+    /// property by name, or iOS 17's block, which SwiftUI's elements use.
+    @MainActor private func customContent(of element: NSObject) -> [AXCustomContent] {
+        if let provider = element as? AXCustomContentProvider, let content = provider.accessibilityCustomContent {
+            return content
+        }
+        if element.responds(to: NSSelectorFromString("accessibilityCustomContent")),
+           let content = element.value(forKey: "accessibilityCustomContent") as? [AXCustomContent] {
+            return content
+        }
+        if element.responds(to: NSSelectorFromString("accessibilityCustomContentBlock")),
+           let block = element.value(forKey: "accessibilityCustomContentBlock") {
+            typealias Block = @convention(block) () -> NSArray?
+            let call = unsafeBitCast(block as AnyObject, to: Block.self)
+            return (call() as? [AXCustomContent]) ?? []
+        }
+        return []
     }
 
     @MainActor private func labels(_ window: UIWindow) -> [String] {

@@ -1,5 +1,8 @@
 package com.kozmos.components.radio
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
@@ -73,6 +76,10 @@ class KozmosRadioCardConnect {
     @FigmaProperty(FigmaType.Text, "Description Text")
     val description: String = "Drawn from the building's plans"
 
+    // GAP-158: the card's image or the tile's icon, shown or not.
+    @FigmaProperty(FigmaType.Boolean, "Show Media")
+    val showMedia: Boolean = true
+
     @Composable
     fun ComponentExample() {
         KozmosRadioGroup {
@@ -84,7 +91,12 @@ class KozmosRadioCardConnect {
                 enabled = state != "disabled",
                 error = state == "error",
                 description = if (showDescription) description else null,
-                variant = KozmosRadioGroupItemVariant.Card
+                variant = KozmosRadioGroupItemVariant.Card,
+                media = if (showMedia) {
+                    { Icon(Icons.Default.Map, contentDescription = null) }
+                } else {
+                    null
+                }
             )
         }
     }
@@ -115,6 +127,10 @@ class KozmosRadioTileConnect {
     @FigmaProperty(FigmaType.Text, "Description Text")
     val description: String = "Eases in"
 
+    // GAP-158: the card's image or the tile's icon, shown or not.
+    @FigmaProperty(FigmaType.Boolean, "Show Media")
+    val showMedia: Boolean = true
+
     @Composable
     fun ComponentExample() {
         KozmosRadioGroup {
@@ -126,7 +142,12 @@ class KozmosRadioTileConnect {
                 enabled = state != "disabled",
                 error = state == "error",
                 description = if (showDescription) description else null,
-                variant = KozmosRadioGroupItemVariant.Tile
+                variant = KozmosRadioGroupItemVariant.Tile,
+                media = if (showMedia) {
+                    { Icon(Icons.Default.Map, contentDescription = null) }
+                } else {
+                    null
+                }
             )
         }
     }

@@ -55,7 +55,9 @@ It forwards its ref to `HTMLButtonElement`. Its props are `RadioGroupItemProps`,
 
 - `label`: `string`, optional.
 
-  The option's name; a card's or a tile's title.
+  The option's name; a card's or a tile's title. An icon-only tile, or a
+  card without a title, needs `aria-label` instead: its description is
+  never its name (GAP-158).
 
 - `description`: `string`, optional.
 

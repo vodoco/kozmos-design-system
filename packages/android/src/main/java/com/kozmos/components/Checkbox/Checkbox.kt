@@ -4,7 +4,8 @@ import com.kozmos.components.KozmosControlText
 import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,10 +59,17 @@ fun KozmosCheckbox(
         modifier = modifier
             .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
-            .clickable(enabled = enabled) { 
-                trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to (!checked).toString())))
-                onCheckedChange(!checked) 
-            }
+            // A checkbox to TalkBack, checked or not: a bare clickable row
+            // was heard as its words and nothing of its state.
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Checkbox,
+                onValueChange = {
+                    trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to it.toString())))
+                    onCheckedChange(it)
+                }
+            )
             .padding(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
         Checkbox(

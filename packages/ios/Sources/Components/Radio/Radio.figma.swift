@@ -54,7 +54,7 @@ struct KozmosRadioConnect: FigmaConnect {
 }
 
 struct KozmosRadioCardConnect: FigmaConnect {
-    let component = KozmosRadioGroupItem<Image>.self
+    let component = KozmosRadioGroupItem<Image?>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436"
     var variant = ["Variant": "Card"]
 
@@ -87,6 +87,10 @@ struct KozmosRadioCardConnect: FigmaConnect {
     @FigmaString("Description Text")
     var descriptionText: String = "Aerial imagery under the map"
 
+    // GAP-158: the card's image or the tile's icon, shown or not.
+    @FigmaBoolean("Show Media")
+    var showMedia: Bool = true
+
     var body: some View {
         KozmosRadioGroup {
             KozmosRadioGroupItem(
@@ -98,14 +102,16 @@ struct KozmosRadioCardConnect: FigmaConnect {
                 disabled: self.state == "disabled",
                 error: self.state == "error"
             ) {
-                Image(systemName: "globe")
+                if self.showMedia {
+                    Image(systemName: "globe")
+                }
             }
         }
     }
 }
 
 struct KozmosRadioTileConnect: FigmaConnect {
-    let component = KozmosRadioGroupItem<Image>.self
+    let component = KozmosRadioGroupItem<Image?>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436"
     var variant = ["Variant": "Tile"]
 
@@ -138,6 +144,10 @@ struct KozmosRadioTileConnect: FigmaConnect {
     @FigmaString("Description Text")
     var descriptionText: String = "Description"
 
+    // GAP-158: the card's image or the tile's icon, shown or not.
+    @FigmaBoolean("Show Media")
+    var showMedia: Bool = true
+
     var body: some View {
         KozmosRadioGroup {
             KozmosRadioGroupItem(
@@ -149,7 +159,9 @@ struct KozmosRadioTileConnect: FigmaConnect {
                 disabled: self.state == "disabled",
                 error: self.state == "error"
             ) {
-                Image(systemName: "circle.lefthalf.filled")
+                if self.showMedia {
+                    Image(systemName: "circle.lefthalf.filled")
+                }
             }
         }
     }

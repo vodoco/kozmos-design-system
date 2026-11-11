@@ -54,8 +54,15 @@ figma.connect(RadioGroupItem, RADIO_URL, {
 
 figma.connect(RadioGroupItem, RADIO_URL, {
   variant: { Variant: "Card" },
-  props: shared,
-  example: ({ defaultValue, disabled, error, label, description }) => (
+  props: {
+    ...shared,
+    // GAP-158: the card's image, shown or not.
+    media: figma.boolean("Show Media", {
+      true: <img src="/map-style.png" alt="" />,
+      false: undefined,
+    }),
+  },
+  example: ({ defaultValue, disabled, error, label, description, media }) => (
     <RadioGroup defaultValue={defaultValue}>
       <RadioGroupItem
         value="option"
@@ -64,7 +71,7 @@ figma.connect(RadioGroupItem, RADIO_URL, {
         error={error}
         label={label}
         description={description}
-        media={<img src="/map-style.png" alt="" />}
+        media={media}
       />
     </RadioGroup>
   ),
@@ -72,8 +79,15 @@ figma.connect(RadioGroupItem, RADIO_URL, {
 
 figma.connect(RadioGroupItem, RADIO_URL, {
   variant: { Variant: "Tile" },
-  props: shared,
-  example: ({ defaultValue, disabled, error, label, description }) => (
+  props: {
+    ...shared,
+    // GAP-158: the tile's icon, shown or not.
+    media: figma.boolean("Show Media", {
+      true: <Icon icon={Map01} size="lg" />,
+      false: undefined,
+    }),
+  },
+  example: ({ defaultValue, disabled, error, label, description, media }) => (
     <RadioGroup defaultValue={defaultValue}>
       <RadioGroupItem
         value="option"
@@ -82,7 +96,7 @@ figma.connect(RadioGroupItem, RADIO_URL, {
         error={error}
         label={label}
         description={description}
-        media={<Icon icon={Map01} size="lg" />}
+        media={media}
       />
     </RadioGroup>
   ),

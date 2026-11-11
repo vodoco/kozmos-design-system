@@ -871,14 +871,18 @@
   /* A radio card or tile (GAP-158): chosen, its 1px edge turns theme 600 and
      a second pixel inside it draws it heavier, so the choice is told by
      weight and by the ring's dot or the tile's check, never by colour alone.
-     An outline, not a wider border, so nothing in the box moves, and not a
-     shadow, which the focus ring's utilities own. */
+     The second pixel is an inset shadow held in --tw-shadow, the slot the
+     ring utilities compose their box-shadow with: focused, the ring is drawn
+     around it and the heavier edge stays. An outline did not survive focus,
+     as the scoped focus-visible:outline-none outweighs this rule. */
   .kozmos-radio-card[data-state="checked"] {
-    outline: 1px solid var(--primitives-colors-theme-600);
-    outline-offset: -2px;
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
+    box-shadow:
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--tw-shadow);
   }
   .kozmos-radio-card[data-state="checked"][data-error] {
-    outline-color: var(--primitives-colors-emotional-danger-600);
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
   }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its

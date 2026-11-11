@@ -6,6 +6,8 @@ public struct KozmosCheckbox: View {
     let description: String?
     let disabled: Bool
     let error: Bool
+    let checkedLabel: String
+    let uncheckedLabel: String
     @Environment(\.kozmosAnalytics) var trackEvent
     
     public init(
@@ -13,8 +15,12 @@ public struct KozmosCheckbox: View {
         label: String? = nil,
         description: String? = nil,
         disabled: Bool = false,
-        error: Bool = false
+        error: Bool = false,
+        checkedLabel: String = "Checked",
+        uncheckedLabel: String = "Unchecked"
     ) {
+        self.checkedLabel = checkedLabel
+        self.uncheckedLabel = uncheckedLabel
         self._checked = checked
         self.label = label
         self.description = description
@@ -57,6 +63,10 @@ public struct KozmosCheckbox: View {
         }
         .buttonStyle(PlainButtonStyle())
         .kozmosControlDescription(label: label, description: description)
+        // Its state, read by VoiceOver in the caller's words: it was a plain
+        // button, heard as a name and nothing of checked. SwiftUI's checkbox
+        // takes a Bool, so it has no mixed state to say.
+        .kozmosToggleState(checked ? checkedLabel : uncheckedLabel)
         .disabled(disabled)
     }
 

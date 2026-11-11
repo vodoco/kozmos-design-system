@@ -56,9 +56,8 @@ public struct KozmosSwitch: View {
 
                 // The state in words, after the track (GAP-162): drawn for
                 // the eye only and kept out of the name, as React's are
-                // aria-hidden. The switch's state belongs to the control
-                // itself, which today carries no toggle trait or value on
-                // SwiftUI (reported separately, not this change's scope).
+                // aria-hidden. VoiceOver reads the same words as the
+                // switch's value (kozmosToggleState), once.
                 if showStateLabel {
                     Text(checked ? onLabel : offLabel)
                         .font(KozmosTypography.subheadline)
@@ -80,6 +79,9 @@ public struct KozmosSwitch: View {
         }
         .buttonStyle(PlainButtonStyle())
         .kozmosControlDescription(label: label, description: description, nameFromLabel: showStateLabel)
+        // Its state, read by VoiceOver in the caller's words (GAP-162): it
+        // was a plain button, heard as a name and nothing of on or off.
+        .kozmosToggleState(checked ? onLabel : offLabel)
         .disabled(disabled)
     }
 

@@ -56,10 +56,17 @@ RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
  */
 export type RadioGroupItemVariant = "default" | "card" | "tile";
 
+// Once a page: a card or tile with no title and no name of its own.
+let warnedUntitledBox = false;
+
 export interface RadioGroupItemProps extends React.ComponentPropsWithoutRef<
   typeof RadioGroupPrimitive.Item
 > {
-  /** The option's name; a card's or a tile's title. */
+  /**
+   * The option's name; a card's or a tile's title. An icon-only tile, or a
+   * card without a title, needs `aria-label` instead: its description is
+   * never its name (GAP-158).
+   */
   label?: string;
   /**
    * A line under the label, read as the option's description
@@ -104,12 +111,33 @@ const RadioGroupItem = React.forwardRef<
       description ? descriptionId : undefined,
     );
 
-    if (variant === "card" || variant === "tile") {
+    const boxed = variant === "card" || variant === "tile";
+    const named = Boolean(
+      label || props["aria-label"] || props["aria-labelledby"],
+    );
+    React.useEffect(() => {
+      if (
+        process.env.NODE_ENV === "production" ||
+        !boxed ||
+        named ||
+        warnedUntitledBox
+      )
+        return;
+      warnedUntitledBox = true;
+      console.warn(
+        `RadioGroupItem: a ${variant} has no label and no aria-label, so nothing names it to a screen reader; its description is never its name. Pass label, or aria-label for an icon-only tile.`,
+      );
+    }, [boxed, named, variant]);
+
+    if (boxed) {
       const tile = variant === "tile";
       // The whole box is the one radio: Radix's button, role="radio", in
       // the group's roving focus (one Tab stop, the arrows move and choose).
       // Its name is the title alone and its description the line under it;
-      // the image or icon is hidden, so the box reads as one option.
+      // the image or icon is hidden, so the box reads as one option. The
+      // words are hidden too and reached only by their ids, so a box with
+      // no title is never named by its description or its media: it has
+      // no name at all, and says so in development.
       return (
         <RadioGroupPrimitive.Item
           ref={ref}
@@ -121,8 +149,9 @@ const RadioGroupItem = React.forwardRef<
           aria-describedby={describedBy}
           className={cn(
             // The edge, theme 600 when chosen, is drawn a second pixel
-            // heavier by owned CSS (kozmos-radio-card), and the ring's dot or
-            // the tile's check shows: the choice is never colour alone.
+            // heavier by owned CSS (kozmos-radio-card, an inset shadow that
+            // the focus ring adds to), and the ring's dot or the tile's
+            // check shows: the choice is never colour alone.
             "kozmos-radio-card group relative flex w-full min-w-0 rounded-container border border-border p-3 text-foreground transition-colors hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary",
             tile
               ? "min-h-24 flex-col items-center justify-center gap-1 text-center"
@@ -150,13 +179,18 @@ const RadioGroupItem = React.forwardRef<
           {tile ? (
             <>
               {label && (
-                <span id={titleId} className="text-sm font-medium leading-5">
+                <span
+                  id={titleId}
+                  aria-hidden="true"
+                  className="text-sm font-medium leading-5"
+                >
                   {label}
                 </span>
               )}
               {description && (
                 <span
                   id={descriptionId}
+                  aria-hidden="true"
                   className="text-xs leading-4 text-muted-foreground"
                 >
                   {description}
@@ -188,7 +222,10 @@ const RadioGroupItem = React.forwardRef<
                   <Circle className="h-2.5 w-2.5 fill-current text-current" />
                 </RadioGroupPrimitive.Indicator>
               </span>
-              <span className="flex min-w-0 flex-col gap-0.5">
+              <span
+                aria-hidden="true"
+                className="flex min-w-0 flex-col gap-0.5"
+              >
                 {label && (
                   <span id={titleId} className="text-sm font-medium leading-5">
                     {label}

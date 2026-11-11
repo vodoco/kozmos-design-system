@@ -150,7 +150,9 @@ data class ReadNode(
     /** A text's layout as it was drawn: its lines and its inline content's places. */
     val textLayout: TextLayoutResult? = null,
     /** The weight a text lays its words out in, where it says one. */
-    val fontWeight: FontWeight? = null
+    val fontWeight: FontWeight? = null,
+    /** A toggle's state, which TalkBack says as checked or not (On, Off, Indeterminate). */
+    val toggleState: androidx.compose.ui.state.ToggleableState? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -351,6 +353,7 @@ private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     texts = node.config.getOrNull(SemanticsProperties.Text)?.map { it.text }.orEmpty(),
     selected = node.config.getOrNull(SemanticsProperties.Selected),
     stateDescription = node.config.getOrNull(SemanticsProperties.StateDescription),
+    toggleState = node.config.getOrNull(SemanticsProperties.ToggleableState),
     enabled = !node.config.contains(SemanticsProperties.Disabled),
     role = node.config.getOrNull(SemanticsProperties.Role),
     bounds = node.boundsInRoot,

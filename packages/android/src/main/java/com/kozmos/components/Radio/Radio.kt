@@ -94,7 +94,9 @@ fun KozmosRadioGroupItem(
     val labelColor = when {
         error -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
         !enabled -> disabledColor
-        else -> MaterialTheme.colorScheme.onSurface
+        // Full ink from the theme's tokens, as a card's title is, not
+        // Material's onSurface.
+        else -> KozmosThemeTokens.primitivesColorsForeground0
     }
 
     val onClick = {
@@ -109,6 +111,7 @@ fun KozmosRadioGroupItem(
     val dot = if (enabled) dotColor else disabledColor
 
     if (variant != KozmosRadioGroupItemVariant.Default) {
+        KozmosLogUntitledOption(variant, label)
         KozmosRadioBox(
             variant = variant,
             selected = selected,
@@ -199,7 +202,9 @@ private fun KozmosRadioBox(
     Box(
         modifier = modifier
             .alpha(if (enabled) 1f else KozmosInertAlpha)
-            .then(if (variant == KozmosRadioGroupItemVariant.Card) Modifier.fillMaxWidth() else Modifier)
+            // A card and a tile both fill the width they are given, a grid
+            // cell or a weighted slot, as React's w-full and SwiftUI's do.
+            .fillMaxWidth()
             .heightIn(min = if (variant == KozmosRadioGroupItemVariant.Tile) 96.dp else 44.dp)
             .clip(shape)
             .border(edgeWidth, edge, shape)
@@ -294,5 +299,31 @@ private fun KozmosRadioMark(selected: Boolean, ring: Color, dot: Color) {
         val stroke = 2.dp.toPx()
         drawCircle(ringColor, radius = 10.dp.toPx() - stroke / 2, style = Stroke(stroke))
         if (dotRadius > 0.dp) drawCircle(dotColor, radius = dotRadius.toPx() - stroke / 2)
+    }
+}
+
+/**
+ * GAP-158: a card or tile with no title is named by nothing but its words.
+ * The message for one drawn as [variant] with [label], or null.
+ */
+internal fun kozmosUntitledOptionWarning(variant: KozmosRadioGroupItemVariant, label: String?): String? {
+    if (variant == KozmosRadioGroupItemVariant.Default || !label.isNullOrEmpty()) return null
+    val kind = if (variant == KozmosRadioGroupItemVariant.Card) "card" else "tile"
+    return "KozmosRadioGroupItem: a $kind has no label, so TalkBack names it by its description or by nothing. " +
+        "Pass label, or Modifier.semantics { contentDescription = ... } for an icon-only tile."
+}
+
+private val kozmosUntitledOptionLogged = java.util.concurrent.atomic.AtomicBoolean(false)
+
+/** Logs [kozmosUntitledOptionWarning] once, only in a debuggable app. */
+@Composable
+private fun KozmosLogUntitledOption(variant: KozmosRadioGroupItemVariant, label: String?) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(variant, label) {
+        val debuggable = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        val message = kozmosUntitledOptionWarning(variant, label) ?: return@LaunchedEffect
+        if (debuggable && kozmosUntitledOptionLogged.compareAndSet(false, true)) {
+            android.util.Log.w("Kozmos", message)
+        }
     }
 }

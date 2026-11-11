@@ -83,6 +83,8 @@ A `description` is drawn under the label and read as the switch's description (`
 
 <Canvas of={SwitchStories.StateLabel} />
 
+On SwiftUI the description is read after the name as the control's custom content, at high importance, spoken whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. The control says its state as its value, in `onLabel` and `offLabel`, the same words the state label draws, and from iOS 17 it is a toggle. Compose reads the description after the label in the one node, and the switch says its state with its Switch role.
+
 <PlatformSnippets
     react={`
 import { Switch } from "@kozmos-ds/react";
@@ -118,9 +120,9 @@ const alerts = ref(true)
 import SwiftUI
 import Kozmos
 
-// The description is the switch's hint. The state label draws the state in
-// words beside the track; VoiceOver hears the switch's own state, not the
-// words. Pass onLabel and offLabel in your app's language.
+// VoiceOver reads the description after the switch's name. The state label
+// draws the state in words beside the track; VoiceOver hears the same words
+// once, as the switch's value. Pass onLabel and offLabel in your app's language.
 struct GateAlerts: View {
     @Binding var isOn: Bool
 

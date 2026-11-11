@@ -4,8 +4,8 @@
 import SwiftUI
 import Kozmos
 
-// The description is drawn under the label, and VoiceOver reads it as the
-// checkbox's hint, after its name.
+// The description is drawn under the label, and VoiceOver reads it after
+// the checkbox's name; its value says checked or unchecked.
 struct RouteUpdates: View {
     @Binding var isOn: Bool
 
