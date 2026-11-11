@@ -24,6 +24,12 @@ class KozmosNumberInputConnect {
     @FigmaProperty(FigmaType.Boolean, "Show Helper Text")
     val showHelperText: Boolean = true
 
+    @FigmaProperty(FigmaType.Boolean, "Show Unit")
+    val showUnit: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Unit Text")
+    val unitText: String = "m"
+
     @FigmaProperty(FigmaType.Enum, "State")
     val state: String = Figma.mapping(
         "Default" to "default",
@@ -57,7 +63,8 @@ class KozmosNumberInputConnect {
             readOnly = state == "readonly",
             status = status,
             helperText = if (showHelperText) helperText else null,
-            showSteppers = showSteppers
+            showSteppers = showSteppers,
+            unit = if (showUnit) unitText else null
         )
     }
 }

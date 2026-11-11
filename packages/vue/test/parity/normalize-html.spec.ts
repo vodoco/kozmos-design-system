@@ -92,6 +92,8 @@ describe("readStoryArgs reads a stories file's own args", () => {
       isLoading: true,
       children: "Please wait",
     });
-    expect(rendered).toEqual(["Emotions"]);
+    // Subtle draws its Button the width of a form; SubtleEmotions and
+    // Emotions lay a row of Buttons out (GAP-200).
+    expect(rendered).toEqual(["Subtle", "SubtleEmotions", "Emotions"]);
   });
 });

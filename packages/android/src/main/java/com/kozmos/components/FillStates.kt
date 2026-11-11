@@ -171,6 +171,82 @@ internal data class KozmosFillStates(
                 KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentPressed,
                 KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentFocus
             )
+
+        // The subtle Button's tier (GAP-200, decision 135): each emotion's
+        // pale fill under its words, which step with the fill, as theme 600
+        // on theme 100 reads 4.41:1. subtleThemed is theme 0 under theme 600;
+        // subtleDanger is decision 139's destructive tone.
+        val subtleThemed: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsThemedButtonForegroundContentFocus
+            )
+
+        val subtleNeutral: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsNeutralButtonForegroundContentFocus
+            )
+
+        val subtleSuccess: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsSuccessButtonForegroundContentFocus
+            )
+
+        val subtleDanger: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsDangerButtonForegroundContentFocus
+            )
+
+        val subtleInformative: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsInformativeButtonForegroundContentFocus
+            )
+
+        val subtleAlert: KozmosFillStates
+            @Composable get() = KozmosFillStates(
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonBackgroundIdle,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonBackgroundHover,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonBackgroundPressed,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonBackgroundFocus,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonForegroundContentIdle,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonForegroundContentHover,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonForegroundContentPressed,
+                KozmosThemeTokens.componentsSubtleButtonsAlertButtonForegroundContentFocus
+            )
     }
 }
 

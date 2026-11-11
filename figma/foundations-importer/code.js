@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0bab88311d45";
+const PLUGIN_BUILD = "863c1f466c95";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -199,6 +199,19 @@ const THEME_FILL_FOREGROUND = {
   fallback: "#FFFFFF",
 };
 const BUTTON_VARIANTS = [
+  "Default",
+  "Destructive",
+  "Outline",
+  "Secondary",
+  "Ghost",
+  "Link",
+  "Glass",
+  "Subtle",
+];
+// IconButton keeps the seven it had: the subtle variant (GAP-200) is the
+// labelled Button's, Pointr Cloud's "+ Add additional field" and Delete
+// Feature, and no board draws an icon-only one.
+const ICON_BUTTON_VARIANTS = [
   "Default",
   "Destructive",
   "Outline",
@@ -445,6 +458,89 @@ function cardPaddingToken(padding) {
   return padding === "Compact"
     ? "Card/padding/compact"
     : "Card/padding/default";
+}
+// CardHeader's tone (CLOUD-UI-001; decisions 135 and 139): Subtle is the form
+// side panel's header, a pale theme strip, theme 0, full-bleed inside the
+// card's top corners, 12 above and below its words and the card's padding at
+// its sides and below it, with a 14 title. Default is the header as it was.
+const CARD_HEADER_TONES = ["Default", "Subtle"];
+// CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov):
+// Large 24, the default; Medium 18 for a compact or dashboard card; Small 14,
+// the subtle strip's. The strip is drawn at Small alone, as React's unset
+// size is `sm` there.
+const CARD_TITLE_SIZES = ["Large", "Medium", "Small"];
+const CARD_SUBTLE_HEADER_PADDING_Y = 12;
+// The actions' line in the strip: React's 1.75rem, so a 44 IconButton spills
+// 8 into the 12 above and below it.
+const CARD_SUBTLE_HEADER_ACTIONS_LINE = 28;
+/**
+ * The second axis the set is laid out by: Padding, HeaderTone and TitleSize
+ * together, one row each, as `Padding|HeaderTone|TitleSize`. A variant drawn
+ * before the HeaderTone and TitleSize axes is Default in its tone and Large
+ * in its title, the card as it was.
+ */
+function cardSecond(padding, tone, size) {
+  return `${padding}|${tone}|${size}`;
+}
+/** A title size a variant names, or the size its tone draws when none. */
+function cardTitleSizeOf(tone, size) {
+  if (size && size !== "Default") return size;
+  return tone === "Subtle" ? "Small" : "Large";
+}
+function cardSecondParts(second) {
+  const [padding, tone, size] = String(second || "").split("|");
+  return {
+    padding: padding || "Default",
+    tone: tone || "Default",
+    size: cardTitleSizeOf(tone || "Default", size),
+  };
+}
+function cardSecondValues() {
+  const out = [];
+  for (const padding of CARD_PADDINGS)
+    for (const tone of CARD_HEADER_TONES)
+      for (const size of CARD_TITLE_SIZES)
+        // The strip is drawn at its own title size alone: no empty row.
+        if (tone !== "Subtle" || size === "Small")
+          out.push(cardSecond(padding, tone, size));
+  return out;
+}
+const CARD_SECONDS = cardSecondValues();
+/** A card with no header has no tone or title; the strip's title is its own. */
+function cardHasCombination(content, second) {
+  const { tone, size } = cardSecondParts(second);
+  if (content === "Basic") return tone === "Default" && size === "Large";
+  if (tone === "Subtle") return size === "Small";
+  return true;
+}
+/** The size a title is drawn at in its header. */
+function cardTitleDrawnSize(tone, size) {
+  return cardTitleSizeOf(tone, size);
+}
+function cardTitleMetrics(drawnSize) {
+  if (drawnSize === "Medium")
+    return {
+      fontSize: 18,
+      lineHeight: 18,
+      fontSizeToken: "Card/title/md/font-size",
+      lineHeightToken: "Card/title/md/line-height",
+      styleKey: "cardTitleMedium",
+    };
+  if (drawnSize === "Small")
+    return {
+      fontSize: 14,
+      lineHeight: 14,
+      fontSizeToken: "Card/title/sm/font-size",
+      lineHeightToken: "Card/title/sm/line-height",
+      styleKey: "cardTitleSmall",
+    };
+  return {
+    fontSize: 24,
+    lineHeight: 24,
+    fontSizeToken: "Card/title/font-size",
+    lineHeightToken: "Card/title/line-height",
+    styleKey: "cardTitle",
+  };
 }
 // CardHeader's actions (GAP-169): a slot at the header's end, after the title
 // and description, which keep the room before it, 16 away. It is as tall as
@@ -3809,17 +3905,19 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Steppers maps to NumberInput.showSteppers.",
       "Label Text, Value Text, Placeholder Text, Helper Text, and Show Helper Text map to NumberInput props.",
+      "Show Unit and Unit Text map to NumberInput.unit, drawn inside the field after the value (GAP-098).",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error, Warning, Success",
       "Steppers: True, False",
-      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Unit Text, Show Unit, Focus Visible",
     ],
     accessibility: [
       "Field and stepper controls meet the 44px minimum target.",
       "Text, icons, helper copy, and field boundaries pass contrast in both modes.",
       "Product code preserves native spinbutton semantics and labelled stepper controls.",
+      "The unit is never part of the value; it is read once after it, by its spoken name (unitLabel).",
     ],
   },
   {
@@ -4131,16 +4229,18 @@ const COMPONENT_DOCS = [
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable: React draws the clear only while the field holds text (GAP-161).",
     ],
     properties: [
       "State: Default, Focus, Disabled, Readonly",
       "Status: Default, Error",
-      "Label Text, Placeholder Text, Focus Visible",
+      "Label Text, Placeholder Text, Show Clear, Focus Visible",
     ],
     accessibility: [
       "Field height meets the 44px minimum target.",
       "The search icon and field boundary pass non-text contrast checks.",
       "Focus Visible controls the generated focus ring.",
+      "The clear is as tall as the field, named by clearLabel in the page's language, and returns focus to the field.",
     ],
   },
   {
@@ -4216,18 +4316,21 @@ const COMPONENT_DOCS = [
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value maps to Slider.showValue, the readout at the track's end that stays at rest; Value Text is formatValue's words (GAP-163).",
+      "Code draws the readout in tabular figures; Figma draws it in the font's own, because the Plugin API cannot set OpenType features.",
       "Focus follows the React focus-visible ring on the thumb.",
     ],
     properties: [
       "State: Default, Focus, Disabled",
       "Status: Default, Error",
       "Type: Single, Range",
-      "Label Text, Focus Visible",
+      "Label Text, Value Text, Show Value, Focus Visible",
     ],
     accessibility: [
       "Overall control height meets the 44px interaction target.",
       "Track and thumb boundaries pass the 3:1 non-text guidance.",
       "Focus Visible controls the generated thumb focus ring.",
+      "The readout is hidden from assistive tech: the thumb announces the same formatted value.",
     ],
   },
   {
@@ -5816,6 +5919,24 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Card/title/font-size", value: 24, scopes: ["FONT_SIZE"] },
   { name: "Card/title/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
+  // CardTitle's sizes (GAP-035): md 18 and sm 14, on one line as React draws
+  // them.
+  { name: "Card/title/md/font-size", value: 18, scopes: ["FONT_SIZE"] },
+  { name: "Card/title/md/line-height", value: 18, scopes: ["LINE_HEIGHT"] },
+  {
+    name: "Card/title/sm/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  { name: "Card/title/sm/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
+  // CardHeader's subtle strip: 12 above and below its words (CLOUD-UI-001).
+  {
+    name: "Card/header/subtle/padding-y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
   {
     name: "Card/description/font-size",
     value: 14,
@@ -18185,7 +18306,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "IconButton") {
     return {
-      Variant: BUTTON_VARIANTS,
+      Variant: ICON_BUTTON_VARIANTS,
       Size: ICON_BUTTON_SIZES,
       State: BUTTON_STATES,
     };
@@ -18257,6 +18378,8 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: CARD_CONTENT,
       Padding: CARD_PADDINGS,
+      HeaderTone: CARD_HEADER_TONES,
+      TitleSize: CARD_TITLE_SIZES,
     };
   }
 
@@ -24404,6 +24527,24 @@ function addComponentTextStyleSpecs(specs, fonts) {
     "Typography contract for the current manoeuvre's instruction: 20/25 semibold.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
+  // CardTitle's sizes (GAP-035): Medium for a compact or dashboard card,
+  // Small the subtle strip's.
+  addTextStyleSpec(
+    specs,
+    "cardTitleMedium",
+    "Card / Title Medium",
+    fonts.medium,
+    18,
+    18,
+  );
+  addTextStyleSpec(
+    specs,
+    "cardTitleSmall",
+    "Card / Title Small",
+    fonts.medium,
+    14,
+    14,
+  );
   addTextStyleSpec(
     specs,
     "cardDescription",
@@ -25106,7 +25247,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       : "emptyStateDescription";
   }
   if (setName === "Card") {
-    if (textName === "Title Text") return "cardTitle";
+    if (textName === "Title Text") {
+      const cardProps = component ? parseCardVariantName(component.name) : null;
+      if (!cardProps) return "cardTitle";
+      const { tone, size } = cardSecondParts(cardProps.second);
+      return cardTitleMetrics(cardTitleDrawnSize(tone, size)).styleKey;
+    }
     if (textName === "Description Text") return "cardDescription";
     return "cardBody";
   }
@@ -25414,24 +25560,32 @@ async function applyCounterTypography(
   );
 }
 
-async function applyCardTitleTypography(text, fonts, variableByName, stats) {
+async function applyCardTitleTypography(
+  text,
+  fonts,
+  variableByName,
+  stats,
+  metrics = cardTitleMetrics("Default"),
+) {
+  // The size is the title's own style and tokens (GAP-035): a style's field
+  // written over detaches the style, so each size is a style of its own.
   text.fontName = fonts.medium;
-  text.fontSize = 24;
-  text.lineHeight = { unit: "PIXELS", value: 24 };
+  text.fontSize = metrics.fontSize;
+  text.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
   text.textAutoResize = "HEIGHT";
-  await applyTextStyleToNodeAsync(text, "cardTitle", stats);
+  await applyTextStyleToNodeAsync(text, metrics.styleKey, stats);
 
   bindFloatVariable(
     text,
     "fontSize",
-    "Card/title/font-size",
+    metrics.fontSizeToken,
     variableByName,
     stats,
   );
   bindFloatVariable(
     text,
     "lineHeight",
-    "Card/title/line-height",
+    metrics.lineHeightToken,
     variableByName,
     stats,
   );
@@ -27220,6 +27374,7 @@ function bindCardGeometryVariables(
   stats,
   headerText,
   padding,
+  subtle = false,
 ) {
   const paddingToken = cardPaddingToken(padding);
   bindFloatVariable(
@@ -27260,6 +27415,7 @@ function bindCardGeometryVariables(
       variableByName,
       stats,
     );
+    if (section === header && subtle) continue;
     bindFloatVariable(
       section,
       "paddingBottom",
@@ -27269,7 +27425,21 @@ function bindCardGeometryVariables(
     );
   }
 
-  if (header) {
+  if (header && subtle) {
+    // The strip's 12 above and below its words (CLOUD-UI-001), and its top
+    // corners the card's.
+    for (const side of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        header,
+        side,
+        "Card/header/subtle/padding-y",
+        variableByName,
+        stats,
+      );
+    for (const corner of ["topLeftRadius", "topRightRadius"])
+      bindFloatVariable(header, corner, "Card/radius", variableByName, stats);
+  }
+  if (header && !subtle) {
     bindFloatVariable(
       header,
       "paddingTop",
@@ -30636,10 +30806,14 @@ function bindSliderGeometryVariables(
     stats,
   );
 
+  // The control's and the track's widths are not bound (GAP-163): the
+  // control fills the row the readout shares, and the track stretches with
+  // the control. A bound width is fixed and would hold them at 320.
   if (root) {
-    bindSizeVariables(
+    clearBoundVariable(root, "width", stats);
+    bindFloatVariable(
       root,
-      "Slider/width/default",
+      "height",
       "Slider/height/default",
       variableByName,
       stats,
@@ -30647,13 +30821,7 @@ function bindSliderGeometryVariables(
   }
 
   if (track) {
-    bindFloatVariable(
-      track,
-      "width",
-      "Slider/width/default",
-      variableByName,
-      stats,
-    );
+    clearBoundVariable(track, "width", stats);
     bindFloatVariable(
       track,
       "height",
@@ -30990,6 +31158,7 @@ async function updateButtonComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
+    variantsCreated: 0,
     variantsMissing: 0,
     iconSlotsBound: 0,
     warnings: [],
@@ -31049,17 +31218,35 @@ async function updateButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // A variant the set does not have yet is drawn and added where Build would
+  // have put it, so Update grows the set (the subtle variant, GAP-200) and
+  // the variants already there keep their node ids.
+  let index = 0;
   for (const variant of BUTTON_VARIANTS) {
     for (const size of BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
         if (!seenKeys[key]) {
-          stats.variantsMissing += 1;
-          stats.warnings.push(`Missing Button variant ${key}.`);
+          const component = await createButtonVariant({
+            variant,
+            size,
+            state,
+            variableByName,
+            fonts,
+            textStyle,
+            stats,
+          });
+          component.x = (index % 12) * 180;
+          component.y = Math.floor(index / 12) * 96;
+          existing.appendChild(component);
+          seenKeys[key] = true;
+          stats.variantsCreated += 1;
         }
+        index += 1;
       }
     }
   }
+  if (stats.variantsCreated > 0) resizeComponentSetToContainChildren(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -31114,7 +31301,7 @@ async function buildIconButtonComponent() {
 
   const components = [];
   let index = 0;
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const component = await createIconButtonVariant({
@@ -31242,7 +31429,7 @@ async function updateIconButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
@@ -33766,7 +33953,8 @@ async function buildCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     x: 80,
     y: 4300,
     xStep: 420,
@@ -33790,7 +33978,8 @@ async function updateCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     xStep: 420,
     yStep: 220,
     createVariant: createCardVariant,
@@ -35744,6 +35933,7 @@ async function buildNumberInputComponent() {
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
     "Helper Text maps to NumberInput.helperText.",
+    "Show Unit and Unit Text map to NumberInput.unit (GAP-098).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35801,6 +35991,7 @@ async function updateNumberInputComponent() {
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
     "Helper Text maps to NumberInput.helperText.",
+    "Show Unit and Unit Text map to NumberInput.unit (GAP-098).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -37798,6 +37989,7 @@ async function buildSearchComponent() {
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable (GAP-161).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -37821,6 +38013,7 @@ async function updateSearchComponent() {
       "Status maps to Search.error in Code Connect.",
       "Label Text maps to Search.label.",
       "Placeholder Text maps to Search.placeholder.",
+      "Show Clear maps to Search.clearable (GAP-161).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -37891,6 +38084,7 @@ async function buildSliderComponent() {
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value and Value Text map to Slider.showValue and formatValue (GAP-163).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -37915,6 +38109,7 @@ async function updateSliderComponent() {
       "Status maps to Slider.error in Code Connect.",
       "Type maps to Slider.defaultValue and thumbCount in Code Connect.",
       "Label Text maps to Slider.label.",
+      "Show Value and Value Text map to Slider.showValue and formatValue (GAP-163).",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -44528,6 +44723,14 @@ function configureTextareaProperties(componentSet, stats) {
 function configureSearchProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Search", stats);
   configurePlaceholderTextProperty(componentSet, "Search", stats);
+  // GAP-161: Search.clearable, the clear at the field's end.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Clear Button",
+    "Show Clear",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -44568,6 +44771,21 @@ function configureNumberInputProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "0", stats);
   configureHelperTextProperty(componentSet, "Use a whole number.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  // GAP-098: NumberInput.unit, drawn after the value.
+  configureNamedTextProperty(
+    componentSet,
+    "Unit Text",
+    "Unit Text",
+    "m",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Unit Text",
+    "Show Unit",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -45008,6 +45226,22 @@ function configureColorPickerProperties(componentSet, stats) {
 
 function configureSliderProperties(componentSet, stats) {
   configureLabelTextProperty(componentSet, "Slider", stats);
+  // GAP-163: Slider.showValue, the readout that stays, and its words
+  // (Slider.formatValue's output).
+  configureNamedTextProperty(
+    componentSet,
+    "Value Text",
+    "Value Text",
+    "50%",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Value Text",
+    "Show Value",
+    false,
+    stats,
+  );
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -55984,7 +56218,7 @@ function parseIconButtonVariantName(name) {
   }
 
   if (
-    BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
+    ICON_BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
     ICON_BUTTON_SIZES.indexOf(values.Size) === -1 ||
     BUTTON_STATES.indexOf(values.State) === -1
   ) {
@@ -59823,11 +60057,20 @@ function parseCardVariantName(name) {
 
   // A variant drawn before the Padding axis carries no Padding, and is the
   // card as it was: 24. Reading it as Default is what lets Update rename it
-  // instead of replacing it, so its node id survives.
-  const second = values.Padding || "Default";
-  if (CARD_PADDINGS.indexOf(second) === -1) {
+  // instead of replacing it, so its node id survives. The HeaderTone and
+  // TitleSize axes (CLOUD-UI-001, GAP-035) read the same way.
+  const padding = values.Padding || "Default";
+  const tone = values.HeaderTone || "Default";
+  const size = cardTitleSizeOf(tone, values.TitleSize);
+  if (
+    CARD_PADDINGS.indexOf(padding) === -1 ||
+    CARD_HEADER_TONES.indexOf(tone) === -1 ||
+    CARD_TITLE_SIZES.indexOf(size) === -1
+  ) {
     return null;
   }
+  const second = cardSecond(padding, tone, size);
+  if (!cardHasCombination(values.Content, second)) return null;
 
   return {
     value: values.Content,
@@ -59839,8 +60082,16 @@ async function updateCardVariant(
   component,
   { value, second, variableByName, fonts, stats },
 ) {
-  const padding = CARD_PADDINGS.indexOf(second) === -1 ? "Default" : second;
-  component.name = `Content=${value}, Padding=${padding}`;
+  const parts = cardSecondParts(second);
+  const padding =
+    CARD_PADDINGS.indexOf(parts.padding) === -1 ? "Default" : parts.padding;
+  const tone =
+    CARD_HEADER_TONES.indexOf(parts.tone) === -1 ? "Default" : parts.tone;
+  const size =
+    CARD_TITLE_SIZES.indexOf(parts.size) === -1
+      ? cardTitleSizeOf(tone)
+      : parts.size;
+  component.name = `Content=${value}, Padding=${padding}, HeaderTone=${tone}, TitleSize=${size}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -59870,6 +60121,8 @@ async function updateCardVariant(
     component,
     value,
     padding,
+    tone,
+    size,
     variableByName,
     fonts,
     stats,
@@ -65685,6 +65938,8 @@ async function syncCardVariantChildren({
   component,
   value,
   padding,
+  tone = "Default",
+  size = "Large",
   variableByName,
   fonts,
   stats,
@@ -65692,6 +65947,8 @@ async function syncCardVariantChildren({
   const pad = cardPaddingLength(padding);
   const hasHeader = value === "Header" || value === "Full";
   const hasFooter = value === "Full";
+  const subtle = hasHeader && tone === "Subtle";
+  const titleMetrics = cardTitleMetrics(cardTitleDrawnSize(tone, size));
 
   let header = directChildNamed(component, "Card Header");
   if (header && header.type !== "FRAME") {
@@ -65714,17 +65971,27 @@ async function syncCardVariantChildren({
     header.primaryAxisSizingMode = "FIXED";
     header.counterAxisSizingMode = "AUTO";
     header.primaryAxisAlignItems = "MIN";
-    header.counterAxisAlignItems = "MIN";
+    // The strip centres its words and its actions in it.
+    header.counterAxisAlignItems = subtle ? "CENTER" : "MIN";
     // The 6 between title and description is the column's now; the header's
     // own gap is the 16 before the actions, which no token names.
     clearBoundVariable(header, "itemSpacing", stats);
     header.itemSpacing = CARD_HEADER_ACTIONS_GAP;
     header.paddingLeft = pad;
     header.paddingRight = pad;
-    header.paddingTop = pad;
-    header.paddingBottom = pad;
+    header.paddingTop = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
+    header.paddingBottom = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
     header.resizeWithoutConstraints(360, 80);
-    header.fills = [];
+    // The strip is theme 0, full-bleed: the card does not clip, so the tint
+    // takes the card's top corners itself, under the card's own edge.
+    header.fills = subtle
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+    const headerTop = subtle ? KOZMOS_RADIUS.container : KOZMOS_RADIUS.none;
+    setNodePropertyIfSupported(header, "topLeftRadius", headerTop);
+    setNodePropertyIfSupported(header, "topRightRadius", headerTop);
+    setNodePropertyIfSupported(header, "bottomLeftRadius", KOZMOS_RADIUS.none);
+    setNodePropertyIfSupported(header, "bottomRightRadius", KOZMOS_RADIUS.none);
     header.strokes = [];
     header.clipsContent = false;
     setLayoutSizingHorizontal(header, "FILL");
@@ -65767,7 +66034,13 @@ async function syncCardVariantChildren({
       title = figma.createText();
       title.name = "Title Text";
     }
-    await applyCardTitleTypography(title, fonts, variableByName, stats);
+    await applyCardTitleTypography(
+      title,
+      fonts,
+      variableByName,
+      stats,
+      titleMetrics,
+    );
     title.characters = cardTitleText(value);
     title.fills = [
       paintFromVariable(
@@ -65821,6 +66094,10 @@ async function syncCardVariantChildren({
       header,
       variableByName,
       stats,
+      // Centred on the title's line, or in the strip on its own 28.
+      lineHeight: subtle
+        ? CARD_SUBTLE_HEADER_ACTIONS_LINE
+        : titleMetrics.lineHeight,
     });
     appendWithSizing(component, header, "FILL", "HUG");
   } else if (header) {
@@ -65846,7 +66123,10 @@ async function syncCardVariantChildren({
   body.itemSpacing = 12;
   body.paddingLeft = pad;
   body.paddingRight = pad;
-  body.paddingTop = hasHeader ? 0 : 24;
+  // Under the strip the content keeps the card's padding above it, as React's
+  // strip keeps it below its tint; under any other header, none; with no
+  // header, the card's padding, as the token bound to it says.
+  body.paddingTop = subtle || !hasHeader ? pad : 0;
   body.paddingBottom = pad;
   body.resizeWithoutConstraints(360, 92);
   body.fills = [];
@@ -65931,7 +66211,17 @@ async function syncCardVariantChildren({
     stats,
     headerText,
     padding,
+    subtle,
   );
+  if (body && subtle) {
+    bindFloatVariable(
+      body,
+      "paddingTop",
+      cardPaddingToken(padding),
+      variableByName,
+      stats,
+    );
+  }
   if (body && value === "Basic") {
     bindFloatVariable(
       body,
@@ -65957,6 +66247,7 @@ async function syncCardHeaderActions({
   header,
   variableByName,
   stats,
+  lineHeight = CARD_TITLE_LINE_HEIGHT,
 }) {
   let actions = directChildNamed(header, CARD_HEADER_ACTIONS_PROPERTY);
   if (actions && actions.type !== "FRAME") {
@@ -65977,7 +66268,7 @@ async function syncCardHeaderActions({
   actions.paddingRight = 0;
   actions.paddingTop = 0;
   actions.paddingBottom = 0;
-  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, CARD_TITLE_LINE_HEIGHT);
+  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, lineHeight);
   actions.fills = [];
   actions.strokes = [];
   actions.clipsContent = false;
@@ -71221,6 +71512,7 @@ async function syncNumberInputVariantChildren({
     "Label Text",
     "Value Text",
     "Placeholder Text",
+    "Unit Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -71366,6 +71658,34 @@ async function syncNumberInputVariantChildren({
   setTextAutoResize(placeholder, "TRUNCATE");
   valueSlot.appendChild(valueText);
   valueSlot.appendChild(placeholder);
+
+  // GAP-098: the unit, inside the field after the value and before the
+  // increment stepper, as React's .kozmos-number-unit draws it: the field's
+  // muted foreground, never part of the value. Hidden until Show Unit is on
+  // (configureNumberInputProperties), so the set draws as it did.
+  const unit = figma.createText();
+  unit.name = "Unit Text";
+  await applyFieldTextTypography(
+    unit,
+    fonts,
+    "NumberInput",
+    variableByName,
+    stats,
+  );
+  unit.characters = preservedText["Unit Text"] || "m";
+  unit.fills = [
+    paintFromVariable(
+      config.placeholder,
+      config.placeholderFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  unit.textAlignVertical = "CENTER";
+  unit.visible = false;
+  valueSlot.itemSpacing = 4;
+  valueSlot.appendChild(unit);
+  setHugChildSizing(unit);
   field.appendChild(valueSlot);
   setHorizontalStackFillChildSizing(valueSlot);
 
@@ -76522,11 +76842,82 @@ async function syncSearchVariantChildren({
   });
 
   bindSearchGeometryVariables(component, field, icon, variableByName, stats);
+  await syncSearchClearButton(field, { config, variableByName, stats });
 
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
   normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Search's clear (GAP-161), drawn as React's .kozmos-input-action places it
+ * and as Input's action is painted: a transparent square at the field's end,
+ * inside its border, as tall as the field (bound to its height, 44 in
+ * touch) and out of its line, the 16 x-close centred in the field's muted
+ * foreground. No fill at rest (decision 164); its hover is the open part of
+ * GAP-227 and has no variant here. Hidden until Show Clear is on
+ * (configureSearchProperties), as React draws it only while the field holds
+ * text and `clearable` is set.
+ */
+async function syncSearchClearButton(field, { config, variableByName, stats }) {
+  let button = directChildNamed(field, "Clear Button");
+  if (button) {
+    button.remove();
+    button = null;
+  }
+  button = figma.createFrame();
+  button.name = "Clear Button";
+  button.layoutMode = "HORIZONTAL";
+  button.primaryAxisSizingMode = "FIXED";
+  button.counterAxisSizingMode = "FIXED";
+  button.primaryAxisAlignItems = "CENTER";
+  button.counterAxisAlignItems = "CENTER";
+  button.itemSpacing = 0;
+  button.paddingLeft = 0;
+  button.paddingRight = 0;
+  button.paddingTop = 0;
+  button.paddingBottom = 0;
+  button.resizeWithoutConstraints(FIELD_ACTION_SIZE, FIELD_ACTION_SIZE);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  button.fills = [];
+  button.strokes = [];
+  button.clipsContent = false;
+  button.setSharedPluginData(RUN_NAMESPACE, "kind", "field-action");
+  button.setSharedPluginData(RUN_NAMESPACE, "aria-label", "Clear search");
+  bindFloatVariable(
+    button,
+    "width",
+    "Search/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    button,
+    "height",
+    "Search/field/height",
+    variableByName,
+    stats,
+  );
+  const icon = await createFixedIconInstance(
+    "x-close",
+    config.placeholder,
+    config.placeholderFallback,
+    variableByName,
+    stats,
+    16,
+    "Search/icon/size",
+  );
+  icon.name = "Clear Icon";
+  button.appendChild(icon);
+
+  field.appendChild(button);
+  button.layoutPositioning = "ABSOLUTE";
+  button.x = field.width - FIELD_ACTION_SIZE;
+  button.y = Math.max(0, (field.height - FIELD_ACTION_SIZE) / 2);
+  button.constraints = { horizontal: "MAX", vertical: "CENTER" };
+  button.visible = false;
+  return button;
 }
 
 async function syncSelectVariantChildren({
@@ -76664,7 +77055,38 @@ async function syncSliderVariantChildren({
     stats,
   });
 
-  let root = directChildNamed(component, "Slider Control");
+  // GAP-163: the control and its readout share a row, the readout at the
+  // end, as React draws `showValue` beside the track. A set drawn before the
+  // row had the control as the component's own child: it is found there and
+  // moved into the row, so an Update keeps its node.
+  let row = directChildNamed(component, "Slider Row");
+  if (row && row.type !== "FRAME") {
+    row.remove();
+    row = null;
+  }
+  if (!row) {
+    row = figma.createFrame();
+    row.name = "Slider Row";
+  }
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "FIXED";
+  row.counterAxisSizingMode = "FIXED";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 12;
+  row.paddingLeft = 0;
+  row.paddingRight = 0;
+  row.paddingTop = 0;
+  row.paddingBottom = 0;
+  row.resizeWithoutConstraints(320, 44);
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "slider-row");
+
+  let root =
+    directChildNamed(row, "Slider Control") ||
+    directChildNamed(component, "Slider Control");
   if (root && root.type !== "FRAME") {
     root.remove();
     root = null;
@@ -76899,13 +77321,78 @@ async function syncSliderVariantChildren({
     stats,
   );
 
+  // The readout (GAP-163): the value at the row's end, visible at rest, in
+  // the field's muted foreground and 14/20 text, as React's `showValue`
+  // draws it. Hidden until Show Value is on (configureSliderProperties), so
+  // the set draws as it did. One Value Text for every Type: a range's
+  // words, "20 – 80", are typed into it.
+  let readout = directChildNamed(row, "Value Text");
+  const readoutText =
+    readout && readout.type === "TEXT" ? readout.characters : null;
+  if (readout) {
+    readout.remove();
+    readout = null;
+  }
+  readout = figma.createText();
+  readout.name = "Value Text";
+  await applyFieldTextTypography(
+    readout,
+    fonts,
+    "Input",
+    variableByName,
+    stats,
+  );
+  readout.characters = readoutText || "50%";
+  const readoutColor =
+    state === "Disabled"
+      ? { token: config.label, fallback: config.labelFallback }
+      : { token: "Colors/foreground/400", fallback: "#5D626F" };
+  readout.fills = [
+    paintFromVariable(
+      readoutColor.token,
+      readoutColor.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  readout.textAlignVertical = "CENTER";
+  readout.visible = false;
+
+  row.appendChild(root);
+  row.appendChild(readout);
   component.appendChild(label);
-  component.appendChild(root);
-  // The control fills the Slider's width, so a resized instance stretches
-  // it. FILL needs the control inside the component's auto layout, so it is
-  // set after the append: before it, Figma refused it for a new control.
-  setVerticalFixedFillChildSizing(root);
+  component.appendChild(row);
+  // The row fills the Slider's width, so a resized instance stretches it,
+  // and the control fills what the readout leaves. FILL needs each inside an
+  // auto layout, so it is set after the appends: before them, Figma refused
+  // it for a new control.
+  setVerticalFixedFillChildSizing(row);
   normalizeInputFamilyChildSizing(component);
+  setSliderControlRowSizing(root);
+  setHugChildSizing(readout);
+}
+
+/**
+ * The control in its row: as wide as the row leaves it (FILL along the row,
+ * so a shown readout takes its room from the track), and its own 44 high.
+ * Its width is not bound: a bound width is fixed, and would push the readout
+ * out of the row.
+ */
+function setSliderControlRowSizing(root) {
+  if (!root) return;
+  clearBoundVariable(root, "width", null);
+  setLayoutSizingHorizontal(root, "FILL");
+  setLayoutSizingVertical(root, "FIXED");
+  try {
+    root.layoutGrow = 1;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
+  }
+  try {
+    root.layoutAlign = "INHERIT";
+  } catch (_error) {
+    // layoutAlign is unavailable on older plugin runtimes.
+  }
 }
 
 async function syncProgressVariantChildren({
@@ -77965,6 +78452,7 @@ const INPUT_FAMILY_VERTICAL_FIXED_FILL_KINDS = new Set([
   "file-upload-file-row",
   "colorpicker-color-area",
   "slider-control",
+  "slider-row",
 ]);
 
 const INPUT_FAMILY_VERTICAL_HUG_FILL_KINDS = new Set([
@@ -81040,6 +81528,25 @@ function buttonConfig(variant, state) {
       foregroundFallback: "#000000",
       strokeFallback: "#FFFFFF80",
     },
+    // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
+    // theme 600, the theme as text (decision 59). Disabled, it is the
+    // filled Buttons' disabled pair, the same in every tier, which the
+    // subtle tier does not repeat.
+    Subtle:
+      state === "Disabled"
+        ? {
+            background: "Primary Buttons/themed/button/background/disabled",
+            foreground:
+              "Primary Buttons/themed/button/foreground/content/disabled",
+            backgroundFallback: "#2E3138",
+            foregroundFallback: "#464A53",
+          }
+        : {
+            background: "Subtle Buttons/themed/button/background/idle",
+            foreground: "Subtle Buttons/themed/button/foreground/content/idle",
+            backgroundFallback: "#F1F5FE",
+            foregroundFallback: "#1051E8",
+          },
   };
 
   return configs[variant] || configs.Default;

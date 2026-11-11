@@ -114,7 +114,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `MapControlButtonProps
   that is off, drawn grey, and `true` one that is on.
 
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional.
-- `variant`: `"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | "glass" | null`, optional.
+- `variant`: `"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | "glass" | "subtle" | null`, optional.
 - `isLoading`: `boolean`, optional.
 - `emotion`: `ButtonEmotion`, optional.
 
@@ -122,6 +122,11 @@ It forwards its ref to `HTMLButtonElement`. Its props are `MapControlButtonProps
   colours: `secondary` draws the `neutral` Primary Buttons tokens and
   `destructive` the `danger` ones, in every state (decision 61). Set it
   and the emotion decides the colour, whatever the variant.
+
+  `subtle` (GAP-200) is a pale fill of its own tier, theme 0 under the
+  theme's words unset; with an emotion it is that emotion's pale fill
+  under its words, and `emotion="danger"` is the destructive tone of
+  Pointr Cloud's Delete Feature (decision 139).
 
   `glass` takes no emotion.
 
