@@ -135,8 +135,6 @@
       "Sources/Components/Progress/Progress.swift",
       "Sources/Components/Spinner/Spinner.figma.swift",
       "Sources/Components/Spinner/Spinner.swift",
-      "Sources/Components/Notice/Notice.figma.swift",
-      "Sources/Components/Notice/Notice.swift",
       "Sources/Components/Alert/Alert.figma.swift",
       "Sources/Components/Alert/Alert.swift",
       "Sources/Components/EmptyState/EmptyState.figma.swift",

@@ -14,9 +14,9 @@ export type NoticeTone = "warning" | "info" | "critical" | "success";
 
 /**
  * Where the work the notice reports on has got (GAP-160). `progress` turns
- * the system's loading arc where the tone's mark is, and marks the notice
- * busy; `done` draws a check at the summary's inline end, in the tone's
- * colour, in place of the mark at its start.
+ * the system's loading arc where the tone's mark is; `done` draws a check
+ * at the summary's inline end, in the tone's colour, in place of the mark
+ * at its start.
  */
 export type NoticeStatus = "progress" | "done";
 
@@ -59,7 +59,9 @@ export interface NoticeProps extends Omit<
    * in a check. Left out, the notice reports no work.
    *
    * `progress` draws the system's loading arc, Spinner's, in the icon's
-   * column (still under reduced motion) and sets `aria-busy`. `done` draws a
+   * column (still under reduced motion). The notice is not marked busy: on
+   * its own live region `aria-busy` would hold back the words that say what
+   * is running ("Saving the geometry"). `done` draws a
    * check at the summary's inline end and no mark at its start unless `icon`
    * gives one. The summary's words say what happened; the marks are hidden
    * from assistive technology.
@@ -200,7 +202,6 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
         )}
         data-tone={resolvedTone}
         data-status={status}
-        aria-busy={working || undefined}
         ref={ref}
         // Fixed at `status` until row 54: a notice could be read politely or
         // not at all, and an emergency had no way to interrupt. A caller's own
@@ -230,9 +231,12 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
               )}
             </span>
           )}
-          <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
+          {/* Boxes, not paragraphs: a summary or detail may hold a control or
+              a framework's wrapper (Vue's bridge draws a slot in a div), which
+              a <p> may not hold. */}
+          <div className="min-w-0 flex-1 text-sm font-semibold leading-snug">
             {summary}
-          </p>
+          </div>
           {done && (
             <Check
               aria-hidden="true"
@@ -280,7 +284,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
             hidden={!detailVisible}
             id={detailId}
           >
-            <p className="text-sm leading-snug">{children}</p>
+            <div className="text-sm leading-snug">{children}</div>
           </div>
         )}
         {action && (

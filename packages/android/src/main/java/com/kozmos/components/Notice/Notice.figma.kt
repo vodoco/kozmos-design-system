@@ -57,7 +57,8 @@ class KozmosNoticeConnect {
     fun ComponentExample() {
         KozmosNotice(
             summary = summary,
-            detail = detail,
+            // The detail only when the variant shows it.
+            detail = if (expanded) detail else null,
             tone = tone,
             status = status,
             icon = icon,

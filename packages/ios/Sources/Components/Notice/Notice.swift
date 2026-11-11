@@ -53,8 +53,9 @@ public enum KozmosNoticeTone: String, CaseIterable, Sendable {
 /// Where the work the notice reports on has got, React's `NoticeStatus`
 /// (GAP-160). Left out (`nil`), the notice reports no work.
 public enum KozmosNoticeStatus: String, CaseIterable, Sendable {
-    /// The system's loading arc turns where the mark is, and the notice is
-    /// busy. It rests under Reduce Motion.
+    /// The system's loading arc turns where the mark is. It rests under
+    /// Reduce Motion. The notice is not marked busy: that would hold back
+    /// the words that say what is running ("Saving the geometry").
     case progress
     /// A check at the summary's inline end, in the tone's colour, in place of
     /// the mark at its start: "Geometry is set".
@@ -96,30 +97,28 @@ struct KozmosNoticeAppearance: Equatable {
 
     let lead: Lead
     let trailingCheck: Bool
-    let busy: Bool
 
-    init(lead: Lead, trailingCheck: Bool, busy: Bool) {
+    init(lead: Lead, trailingCheck: Bool) {
         self.lead = lead
         self.trailingCheck = trailingCheck
-        self.busy = busy
     }
 
     init(tone: KozmosNoticeTone, status: KozmosNoticeStatus?, icon: KozmosNoticeIcon) {
         switch status {
         case .progress:
-            self.init(lead: .spinner, trailingCheck: false, busy: true)
+            self.init(lead: .spinner, trailingCheck: false)
         case .done:
             // The check moves to the end; a mark of the product's stays.
             if case .named(let name) = icon {
-                self.init(lead: .named(name), trailingCheck: true, busy: false)
+                self.init(lead: .named(name), trailingCheck: true)
             } else {
-                self.init(lead: .none, trailingCheck: true, busy: false)
+                self.init(lead: .none, trailingCheck: true)
             }
         case nil:
             switch icon {
-            case .tone: self.init(lead: .toneMark(tone.markName), trailingCheck: false, busy: false)
-            case .none: self.init(lead: .none, trailingCheck: false, busy: false)
-            case .named(let name): self.init(lead: .named(name), trailingCheck: false, busy: false)
+            case .tone: self.init(lead: .toneMark(tone.markName), trailingCheck: false)
+            case .none: self.init(lead: .none, trailingCheck: false)
+            case .named(let name): self.init(lead: .named(name), trailingCheck: false)
             }
         }
     }
@@ -127,6 +126,19 @@ struct KozmosNoticeAppearance: Equatable {
     /// Whether a column is kept for the mark, so the detail and the action
     /// line up under the summary.
     var drawsLead: Bool { lead != .none }
+
+    /// What follows the summary on its row, in order: the done check, then
+    /// "More" when there is detail to open, as React draws them.
+    enum Trailing: Hashable { case check, more }
+
+    func trailing(hasMore: Bool) -> [Trailing] {
+        (trailingCheck ? [.check] : []) + (hasMore ? [.more] : [])
+    }
+
+    /// The traits the notice adds: none in any state. `.updatesFrequently`
+    /// (React's aria-busy, which it no longer sets) would let VoiceOver hold
+    /// back the words of a notice in progress.
+    var traits: AccessibilityTraits { [] }
 }
 
 /// What VoiceOver is told when the notice appears or its words change.
@@ -148,10 +160,17 @@ struct KozmosNoticeAnnouncement: Equatable {
 /// Boundary" (GAP-033, MAP-587's Alert action).
 ///
 /// VoiceOver reads the summary, then the detail when it shows; the marks are
-/// hidden, as the words say what happened. It is announced politely when it
-/// appears and when its summary changes, unless `live` says otherwise.
+/// hidden, as the words say what happened. It is announced politely when its
+/// summary changes while it is on screen, unless `live` says otherwise; a
+/// notice that appears already holding its words is read where it is, not
+/// announced, as React's and Compose's live regions are (GAP-226).
+///
+/// The summary is words, or a view for a summary that holds a control on its
+/// line ("Not finding it? [Search with AI]", GAP-118), with `spokenSummary`
+/// as the words announced when it changes.
 public struct KozmosNotice<Action: View>: View {
     private let summary: String
+    private let summaryView: AnyView?
     private let detail: String?
     private let tone: KozmosNoticeTone
     private let status: KozmosNoticeStatus?
@@ -159,10 +178,13 @@ public struct KozmosNotice<Action: View>: View {
     private let iconAlign: KozmosNoticeIconAlign
     private let collapsible: Bool
     private let expandLabel: String
+    private let expandedLabel: String
+    private let collapsedLabel: String
     private let live: KozmosNoticeLive
     private let isExpanded: Binding<Bool>?
     private let action: Action?
     @State private var uncontrolled: Bool
+    @State private var heard: String?
 
     /// - Parameters:
     ///   - summary: The one line that is always visible, informative alone.
@@ -176,6 +198,8 @@ public struct KozmosNotice<Action: View>: View {
     ///   - defaultExpanded: The starting state when `isExpanded` is nil.
     ///   - isExpanded: Controlled state, for a product that remembers it.
     ///   - expandLabel: The disclosure's words, "More" by default.
+    ///   - expandedLabel: The disclosure's state when open, "Expanded".
+    ///   - collapsedLabel: The disclosure's state when closed, "Collapsed".
     ///   - live: How loudly it announces itself.
     ///   - action: A control under the text.
     public init(
@@ -189,10 +213,67 @@ public struct KozmosNotice<Action: View>: View {
         defaultExpanded: Bool = false,
         isExpanded: Binding<Bool>? = nil,
         expandLabel: String = "More",
+        expandedLabel: String = "Expanded",
+        collapsedLabel: String = "Collapsed",
         live: KozmosNoticeLive = .polite,
         @ViewBuilder action: () -> Action
     ) {
+        self.init(
+            spokenSummary: summary, summaryView: nil, detail: detail, tone: tone, status: status,
+            icon: icon, iconAlign: iconAlign, collapsible: collapsible, defaultExpanded: defaultExpanded,
+            isExpanded: isExpanded, expandLabel: expandLabel, expandedLabel: expandedLabel,
+            collapsedLabel: collapsedLabel, live: live, action: action()
+        )
+    }
+
+    /// A notice whose summary is a view: a line that holds a control, as
+    /// "Not finding it? [Search with AI]" does (GAP-118), with `iconAlign:
+    /// .center` to centre the mark on it. `spokenSummary` is what is
+    /// announced when it changes; VoiceOver reads the view itself in place.
+    public init<Summary: View>(
+        spokenSummary: String = "",
+        detail: String? = nil,
+        tone: KozmosNoticeTone = .warning,
+        status: KozmosNoticeStatus? = nil,
+        icon: KozmosNoticeIcon = .tone,
+        iconAlign: KozmosNoticeIconAlign = .start,
+        collapsible: Bool = true,
+        defaultExpanded: Bool = false,
+        isExpanded: Binding<Bool>? = nil,
+        expandLabel: String = "More",
+        expandedLabel: String = "Expanded",
+        collapsedLabel: String = "Collapsed",
+        live: KozmosNoticeLive = .polite,
+        @ViewBuilder summary: () -> Summary,
+        @ViewBuilder action: () -> Action
+    ) {
+        self.init(
+            spokenSummary: spokenSummary, summaryView: AnyView(summary()), detail: detail, tone: tone,
+            status: status, icon: icon, iconAlign: iconAlign, collapsible: collapsible,
+            defaultExpanded: defaultExpanded, isExpanded: isExpanded, expandLabel: expandLabel,
+            expandedLabel: expandedLabel, collapsedLabel: collapsedLabel, live: live, action: action()
+        )
+    }
+
+    private init(
+        spokenSummary summary: String,
+        summaryView: AnyView?,
+        detail: String?,
+        tone: KozmosNoticeTone,
+        status: KozmosNoticeStatus?,
+        icon: KozmosNoticeIcon,
+        iconAlign: KozmosNoticeIconAlign,
+        collapsible: Bool,
+        defaultExpanded: Bool,
+        isExpanded: Binding<Bool>?,
+        expandLabel: String,
+        expandedLabel: String,
+        collapsedLabel: String,
+        live: KozmosNoticeLive,
+        action: Action
+    ) {
         self.summary = summary
+        self.summaryView = summaryView
         self.detail = detail
         self.tone = tone
         self.status = status
@@ -200,15 +281,21 @@ public struct KozmosNotice<Action: View>: View {
         self.iconAlign = iconAlign
         self.collapsible = collapsible
         self.expandLabel = expandLabel
+        self.expandedLabel = expandedLabel
+        self.collapsedLabel = collapsedLabel
         self.live = live
         self.isExpanded = isExpanded
-        self.action = action()
+        self.action = action
         self._uncontrolled = State(initialValue: defaultExpanded)
     }
 
-    static func announcement(_ summary: String, live: KozmosNoticeLive) -> KozmosNoticeAnnouncement? {
-        guard !summary.isEmpty, live != .off else { return nil }
-        return KozmosNoticeAnnouncement(message: summary, queued: live == .polite)
+    /// What to announce when the summary goes from `old` to `new`. A notice
+    /// that appears (`old` nil) says nothing: it mounts holding its words,
+    /// which VoiceOver reads in place (GAP-226). A change of words while it
+    /// is on screen is announced, unless `live` is off.
+    static func announcement(from old: String?, to new: String, live: KozmosNoticeLive) -> KozmosNoticeAnnouncement? {
+        guard let old, old != new, !new.isEmpty, live != .off else { return nil }
+        return KozmosNoticeAnnouncement(message: new, queued: live == .polite)
     }
 
     var appearance: KozmosNoticeAppearance {
@@ -259,34 +346,46 @@ public struct KozmosNotice<Action: View>: View {
                     .environment(\.kozmosIconHostInk, tone.ink)
                     .accessibilityHidden(true)
             }
-            Text(summary)
+            summaryContent
                 .font(KozmosTypography.subheadline.weight(.semibold))
                 .foregroundColor(tone.ink)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if hasDetail && collapsible {
-                Button(action: toggle) {
-                    HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                        Text(expandLabel)
-                            .font(KozmosTypography.caption.weight(.semibold))
-                        KozmosIcon("chevron-down", size: .xs)
-                            .rotationEffect(.degrees(open ? 180 : 0))
+            // Summary, then the done check, then More: React's order.
+            ForEach(appearance.trailing(hasMore: hasDetail && collapsible), id: \.self) { part in
+                switch part {
+                case .check:
+                    KozmosIcon("check", size: .sm)
+                        .padding(.top, iconAlign == .start ? Self.firstLineInset : 0)
+                        .environment(\.kozmosIconHostInk, tone.ink)
+                        .foregroundColor(tone.ink)
+                        .accessibilityHidden(true)
+                case .more:
+                    Button(action: toggle) {
+                        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                            Text(expandLabel)
+                                .font(KozmosTypography.caption.weight(.semibold))
+                            KozmosIcon("chevron-down", size: .xs)
+                                .rotationEffect(.degrees(open ? 180 : 0))
+                        }
+                        .foregroundColor(tone.ink)
+                        .environment(\.kozmosIconHostInk, tone.ink)
                     }
-                    .foregroundColor(tone.ink)
-                    .environment(\.kozmosIconHostInk, tone.ink)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(expandLabel)
+                    .accessibilityValue(open ? expandedLabel : collapsedLabel)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(expandLabel)
-                .accessibilityValue(open ? "Expanded" : "Collapsed")
             }
-            if appearance.trailingCheck {
-                KozmosIcon("check", size: .sm)
-                    .padding(.top, iconAlign == .start ? Self.firstLineInset : 0)
-                    .environment(\.kozmosIconHostInk, tone.ink)
-                    .foregroundColor(tone.ink)
-                    .accessibilityHidden(true)
-            }
+        }
+    }
+
+    @ViewBuilder
+    private var summaryContent: some View {
+        if let summaryView {
+            summaryView
+        } else {
+            Text(summary)
         }
     }
 
@@ -316,9 +415,14 @@ public struct KozmosNotice<Action: View>: View {
         .background(tone.fill.opacity(KozmosNoticeTone.washOpacity), in: shape)
         .overlay(shape.strokeBorder(tone.fill.opacity(tone.edgeOpacity), lineWidth: 1))
         .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(appearance.busy ? .updatesFrequently : [])
-        .onAppear { post(Self.announcement(summary, live: live)) }
-        .onChange(of: summary) { post(Self.announcement($0, live: live)) }
+        .accessibilityAddTraits(appearance.traits)
+        // Its words as they were when it appeared, or last changed: it
+        // appears saying nothing, and a change after that is announced.
+        .onAppear { if heard == nil { heard = summary } }
+        .onChange(of: summary) { new in
+            post(Self.announcement(from: heard, to: new, live: live))
+            heard = new
+        }
     }
 
     private func post(_ announcement: KozmosNoticeAnnouncement?) {
@@ -348,12 +452,40 @@ extension KozmosNotice where Action == EmptyView {
         defaultExpanded: Bool = false,
         isExpanded: Binding<Bool>? = nil,
         expandLabel: String = "More",
+        expandedLabel: String = "Expanded",
+        collapsedLabel: String = "Collapsed",
         live: KozmosNoticeLive = .polite
     ) {
         self.init(
             summary, detail: detail, tone: tone, status: status, icon: icon,
             iconAlign: iconAlign, collapsible: collapsible, defaultExpanded: defaultExpanded,
-            isExpanded: isExpanded, expandLabel: expandLabel, live: live
+            isExpanded: isExpanded, expandLabel: expandLabel, expandedLabel: expandedLabel,
+            collapsedLabel: collapsedLabel, live: live
+        ) { EmptyView() }
+    }
+
+    /// A notice whose summary is a view, with no control under its text.
+    public init<Summary: View>(
+        spokenSummary: String = "",
+        detail: String? = nil,
+        tone: KozmosNoticeTone = .warning,
+        status: KozmosNoticeStatus? = nil,
+        icon: KozmosNoticeIcon = .tone,
+        iconAlign: KozmosNoticeIconAlign = .start,
+        collapsible: Bool = true,
+        defaultExpanded: Bool = false,
+        isExpanded: Binding<Bool>? = nil,
+        expandLabel: String = "More",
+        expandedLabel: String = "Expanded",
+        collapsedLabel: String = "Collapsed",
+        live: KozmosNoticeLive = .polite,
+        @ViewBuilder summary: () -> Summary
+    ) {
+        self.init(
+            spokenSummary: spokenSummary, detail: detail, tone: tone, status: status, icon: icon,
+            iconAlign: iconAlign, collapsible: collapsible, defaultExpanded: defaultExpanded,
+            isExpanded: isExpanded, expandLabel: expandLabel, expandedLabel: expandedLabel,
+            collapsedLabel: collapsedLabel, live: live, summary: summary
         ) { EmptyView() }
     }
 }

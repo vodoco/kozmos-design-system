@@ -3,6 +3,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { EMOTIONS, type Emotion } from "../../utils/emotion";
+import { ProgressBar } from "./ProgressBar";
 
 export interface ProgressProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -25,9 +26,12 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * assistive technology, so it is heard once. An `sm` ring that is
    * complete and has no label draws a check in its hole.
    *
-   * A bar draws none. While a bar's value is unknown its label, "Loading"
-   * unless one is given, names it and is said once as the wait starts
-   * (GAP-159); a bar with a value takes its name from `aria-label`.
+   * A bar draws none. While a bar has no value (`undefined` or `null`) it
+   * waits (GAP-159): its label, else its `aria-label` or the text its
+   * `aria-labelledby` names, else "Loading", is said once as the wait
+   * starts, by the first bar waiting on the page only. A string label also
+   * names an unnamed waiting bar; a bar with a value takes its name from
+   * `aria-label`.
    */
   label?: React.ReactNode;
   /**
@@ -52,117 +56,11 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
 }
 
 /**
- * What an indeterminate bar is called, and says once when it appears, when
- * the product gives no `label` or name of its own.
- */
-const LOADING = "Loading";
-
-/**
  * A ring's diameter and stroke width, in px, by size: the layout spacing
  * tokens 600, 900 and 1000 across, and 50, 100 and 150 thick. The box takes
  * its size from the same tokens in the stylesheet; these draw inside it.
  */
 const RING = { sm: [48, 4], md: [96, 8], lg: [128, 12] } as const;
-
-interface LinearProgressProps extends Omit<
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
-  "value"
-> {
-  value: number | null | undefined;
-  known: boolean;
-  percentage: number;
-  placement: "inline" | "top";
-  label?: React.ReactNode;
-}
-
-/**
- * The bar. With a value it fills from the inline start, as far as the value
- * is of the total. With none it is indeterminate (GAP-159): a segment a
- * quarter of the track wide sweeps from the inline start to the inline end
- * every 2 s, linear, for as long as the wait lasts, and stands still in the
- * middle of the track under reduced motion, the system's or
- * DesignConfigProvider's.
- *
- * An indeterminate bar is said once. Its words, `label` or "Loading", name
- * the bar and are put into a polite status beside it after the status is in
- * the page, so a screen reader hears them when the wait starts (a region
- * mounted with its words may go unheard, GAP-226). The sweep changes
- * nothing a screen reader reads, so nothing more is said while it moves;
- * when the bar gets a value the status empties, ready for the next wait.
- */
-const LinearProgress = React.forwardRef<
-  React.ElementRef<typeof ProgressPrimitive.Root>,
-  LinearProgressProps
->(
-  (
-    {
-      className,
-      value,
-      max,
-      known,
-      percentage,
-      placement,
-      label,
-      style,
-      "aria-labelledby": labelledBy,
-      ...props
-    },
-    ref,
-  ) => {
-    const statusId = React.useId();
-    const indeterminate = !known;
-    const named = props["aria-label"] != null || labelledBy != null;
-    const words =
-      label != null && label !== false && label !== "" ? label : LOADING;
-    // Mounted empty, then given its words: the change is what is said.
-    const [said, setSaid] = React.useState(false);
-    React.useEffect(() => {
-      setSaid(indeterminate);
-    }, [indeterminate]);
-    const top = placement === "top";
-    return (
-      <>
-        <ProgressPrimitive.Root
-          ref={ref}
-          value={value}
-          max={max}
-          data-placement={placement}
-          className={cn(
-            top ? "kozmos-progress-top" : "relative h-2 w-full rounded-pill",
-            "overflow-hidden bg-secondary",
-            className,
-          )}
-          aria-labelledby={indeterminate && !named ? statusId : labelledBy}
-          style={style}
-          {...props}
-        >
-          {indeterminate ? (
-            <ProgressPrimitive.Indicator className="kozmos-progress-sweep" />
-          ) : (
-            // As wide as the value, from the inline start: right to left it
-            // fills from the right, as SwiftUI's and Compose's bars do.
-            <ProgressPrimitive.Indicator
-              className="h-full bg-primary transition-all"
-              style={{ width: `${percentage}%` }}
-            />
-          )}
-        </ProgressPrimitive.Root>
-        {indeterminate && (
-          <span
-            id={statusId}
-            role="status"
-            aria-live="polite"
-            className="sr-only"
-            data-kozmos-progress-status=""
-          >
-            {said ? words : null}
-          </span>
-        )}
-      </>
-    );
-  },
-);
-LinearProgress.displayName = "LinearProgress";
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
@@ -301,14 +199,15 @@ const Progress = React.forwardRef<
         </ProgressPrimitive.Root>
       );
     }
+    // The bar, in a module of its own so a part that draws only a bar
+    // (TourStep) does not carry the ring.
     return (
-      <LinearProgress
+      <ProgressBar
         ref={ref}
         value={drawnValue}
         max={max}
-        known={known}
         percentage={percentage}
-        placement={placement === "top" ? "top" : "inline"}
+        placement={placement}
         label={label}
         className={className}
         style={style}

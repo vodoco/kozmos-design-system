@@ -4,6 +4,9 @@ import android.view.View
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -133,5 +136,47 @@ class KozmosProgressIndeterminateTest {
     @Test fun theSweepRunsWithAnimationsOnAndHoldsStillWithThemOff() {
         assertTrue("with animations on the sweep asks for no frames", waitsOnFrames(1f))
         assertTrue("with animations off the sweep still asks for frames", !waitsOnFrames(0f))
+    }
+
+    // Review of #522: once per wait. Five uploads starting together are one
+    // announcement: only the first bar is a live region; the others are
+    // named by their words and silent.
+    @Test fun onlyTheFirstOfSeveralWaitingBarsSpeaks() {
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Column { for (n in 1..5) KozmosProgress(label = "Upload $n") }
+            }
+        }) {
+            frames(2)
+            val bars = read().merged.filter { it.progressRange != null }
+            assertEquals(5, bars.size)
+            assertEquals(listOf("Upload 1", "Upload 2", "Upload 3", "Upload 4", "Upload 5"), bars.map { it.description })
+            assertEquals(
+                listOf(LiveRegionMode.Polite, null, null, null, null),
+                bars.map { it.liveRegion }
+            )
+        }
+        // All five gone, then one new wait: it speaks.
+        paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress(label = "Upload 6") } }) {
+            frames(2)
+            val bar = read().merged.single { it.progressRange != null }
+            assertEquals("Upload 6", bar.description)
+            assertEquals(LiveRegionMode.Polite, bar.liveRegion)
+        }
+    }
+
+    // Review of #522: a label that changes while the bar waits is not said
+    // again: the live region keeps the words read when the wait started.
+    @Test fun aLabelThatChangesWhileItWaitsIsNotSaidAgain() {
+        var label by mutableStateOf("Loading the map")
+        paparazzi.live(content = { KozmosMaterialTheme { KozmosProgress(label = label) } }) {
+            frames(2)
+            assertEquals("Loading the map", read().merged.single { it.progressRange != null }.description)
+            label = "Loading the map, 50 tiles"
+            frames(3)
+            val bar = read().merged.single { it.progressRange != null }
+            assertEquals(LiveRegionMode.Polite, bar.liveRegion)
+            assertEquals("Loading the map", bar.description)
+        }
     }
 }

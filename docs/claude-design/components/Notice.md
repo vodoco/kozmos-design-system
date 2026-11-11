@@ -70,7 +70,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `NoticeProps`, which exte
   in a check. Left out, the notice reports no work.
 
   `progress` draws the system's loading arc, Spinner's, in the icon's
-  column (still under reduced motion) and sets `aria-busy`. `done` draws a
+  column (still under reduced motion). The notice is not marked busy: on
+  its own live region `aria-busy` would hold back the words that say what
+  is running ("Saving the geometry"). `done` draws a
   check at the summary's inline end and no mark at its start unless `icon`
   gives one. The summary's words say what happened; the marks are hidden
   from assistive technology.
@@ -143,9 +145,9 @@ From `@kozmos-ds/react`.
 ```ts
 /**
  * Where the work the notice reports on has got (GAP-160). `progress` turns
- * the system's loading arc where the tone's mark is, and marks the notice
- * busy; `done` draws a check at the summary's inline end, in the tone's
- * colour, in place of the mark at its start.
+ * the system's loading arc where the tone's mark is; `done` draws a check
+ * at the summary's inline end, in the tone's colour, in place of the mark
+ * at its start.
  */
 type NoticeStatus = "progress" | "done";
 ```

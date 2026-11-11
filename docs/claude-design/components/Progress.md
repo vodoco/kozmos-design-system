@@ -48,9 +48,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `ProgressProps`, which ex
   assistive technology, so it is heard once. An `sm` ring that is
   complete and has no label draws a check in its hole.
 
-  A bar draws none. While a bar's value is unknown its label, "Loading"
-  unless one is given, names it and is said once as the wait starts
-  (GAP-159); a bar with a value takes its name from `aria-label`.
+  A bar draws none. While a bar has no value (`undefined` or `null`) it
+  waits (GAP-159): its label, else its `aria-label` or the text its
+  `aria-labelledby` names, else "Loading", is said once as the wait
+  starts, by the first bar waiting on the page only. A string label also
+  names an unnamed waiting bar; a bar with a value takes its name from
+  `aria-label`.
 
 - `labelPlacement`: `"center" | "end"`, optional, default `"center"`.
 

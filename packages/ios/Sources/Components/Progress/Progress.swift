@@ -195,22 +195,47 @@ enum KozmosProgressSweep {
     }
 }
 
-/// When an indeterminate bar speaks (GAP-159): once, as the wait starts.
-/// The sweep changes nothing VoiceOver reads, so nothing more is said while
-/// it moves; a value ends the wait, and the next wait is said again.
-struct KozmosProgressAnnouncer: Equatable {
-    private(set) var said = false
+/// When indeterminate bars speak (GAP-159): once per wait, as React's
+/// `Progress` does. A wait is the time a bar is indeterminate. It keeps its
+/// identity in the bar's own state, so a bar that leaves the screen and
+/// comes back while it still waits (a row scrolled out of a List or a
+/// LazyVStack and back, a tab switched away and back) is not said again,
+/// and its label, read once as the wait starts, is not said again when it
+/// changes. Only the first bar to start waiting while no other waits on
+/// screen speaks: five uploads starting together are one "Loading", not
+/// five. A value ends the wait; the next wait is said again.
+struct KozmosProgressWaits: Equatable {
+    /// Waits whose bars are on screen now.
+    private(set) var open: Set<UUID> = []
+    /// Waits that have been said, or kept quiet because another spoke.
+    private(set) var settled: Set<UUID> = []
 
-    /// What to announce now that the bar is, or is not, indeterminate.
-    mutating func next(indeterminate: Bool, label: String) -> String? {
-        guard indeterminate else {
-            said = false
-            return nil
-        }
-        guard !said, !label.isEmpty else { return nil }
-        said = true
+    /// A waiting bar is on screen. Returns its words if it is to say them.
+    mutating func appear(_ wait: UUID, label: String) -> String? {
+        let others = !open.subtracting([wait]).isEmpty
+        open.insert(wait)
+        guard !settled.contains(wait) else { return nil }
+        settled.insert(wait)
+        guard !others, !label.isEmpty else { return nil }
         return label
     }
+
+    /// A waiting bar left the screen; its wait goes on and is not said again.
+    mutating func disappear(_ wait: UUID) {
+        open.remove(wait)
+    }
+
+    /// A wait ended: the bar got a value, or went for good.
+    mutating func end(_ wait: UUID) {
+        open.remove(wait)
+        settled.remove(wait)
+    }
+}
+
+/// The app's waits, shared by every bar on screen.
+@MainActor
+enum KozmosProgressWaitRegistry {
+    static var waits = KozmosProgressWaits()
 }
 
 public struct KozmosProgress: View {
@@ -224,8 +249,11 @@ public struct KozmosProgress: View {
     let placement: KozmosProgressPlacement
     let indeterminate: Bool
     let spokenLabel: String
+    let accessibilityName: String
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var announcer = KozmosProgressAnnouncer()
+    /// This bar's wait, while it is indeterminate: kept in the bar's own
+    /// state, so it outlives the bar leaving the screen and coming back.
+    @State private var wait: UUID?
 
     /// The indeterminate bar (GAP-159): a segment sweeping from the inline
     /// start to the inline end every 2 s, theme 600 on the bar's track, for
@@ -233,7 +261,14 @@ public struct KozmosProgress: View {
     /// `placement: .top` is the screen's 4 tall loading bar.
     ///
     /// VoiceOver reads it as `label`, with no value, and it is announced
-    /// once, politely, when it appears.
+    /// once per wait, politely, as the wait starts: not again when the bar
+    /// comes back on screen while it still waits, nor when the label
+    /// changes, and only by the first of several bars waiting at once.
+    ///
+    /// At the top, put it in an overlay of the screen's content,
+    /// `.overlay(alignment: .top)`: an overlay is laid out in the content's
+    /// frame, inside the safe area, so the bar sits under the status bar,
+    /// the notch or the navigation bar, never behind them.
     public init(placement: KozmosProgressPlacement = .inline, label: String = "Loading") {
         self.value = 0
         self.total = 1.0
@@ -245,20 +280,24 @@ public struct KozmosProgress: View {
         self.placement = placement
         self.indeterminate = true
         self.spokenLabel = label
+        self.accessibilityName = label
     }
 
     /// A bar, or with `shape: .circular` a ring of `size` whose arc is
     /// `tone`'s colour: Tag's and Button's emotions, `.themed` (the bar's
     /// own theme 600) by default.
     /// A bar takes `placement: .top` to be the screen's 4 tall loading bar
-    /// (GAP-159); a ring ignores it.
+    /// (GAP-159); a ring ignores it. The top bar is a progress bar to
+    /// VoiceOver, as the inline one is: named `accessibilityName`
+    /// ("Progress" unless given), with its value as a percentage.
     public init(
         value: Double,
         total: Double = 1.0,
         shape: KozmosProgressShape = .linear,
         size: KozmosProgressSize = .md,
         tone: KozmosEmotion = .themed,
-        placement: KozmosProgressPlacement = .inline
+        placement: KozmosProgressPlacement = .inline,
+        accessibilityName: String = "Progress"
     ) {
         self.value = value
         self.total = total
@@ -270,6 +309,7 @@ public struct KozmosProgress: View {
         self.placement = placement
         self.indeterminate = false
         self.spokenLabel = ""
+        self.accessibilityName = accessibilityName
     }
 
     /// A ring with `label` in its centre, or beside it with
@@ -297,6 +337,7 @@ public struct KozmosProgress: View {
         self.placement = .inline
         self.indeterminate = false
         self.spokenLabel = ""
+        self.accessibilityName = ""
     }
 
     /// How much of the turn is done, from 0 to 1, as `ProgressView` clamps
@@ -332,12 +373,11 @@ public struct KozmosProgress: View {
             KozmosIndeterminateBar(placement: resolvedPlacement)
                 .accessibilityElement()
                 .accessibilityLabel(spokenLabel)
-                .onAppear { say(indeterminate: true) }
-                .onDisappear { announcer = KozmosProgressAnnouncer() }
+                .onAppear { appear() }
+                .onDisappear { if let wait { KozmosProgressWaitRegistry.waits.disappear(wait) } }
         } else if resolvedPlacement == .top {
-            KozmosTopBar(fraction: fraction)
-                .accessibilityElement()
-                .accessibilityValue(spokenValue)
+            KozmosTopBar(fraction: fraction, accessibilityName: accessibilityName)
+                .onAppear { endWait() }
         } else {
             ProgressView(value: value, total: total)
                 // The theme's primary, as React's bg-primary (theme 600, light and
@@ -346,6 +386,7 @@ public struct KozmosProgress: View {
                 // is deprecated.
                 .progressViewStyle(.linear)
                 .tint(KozmosColors.primitivesColorsTheme600)
+                .onAppear { endWait() }
         }
     }
 
@@ -413,10 +454,12 @@ public struct KozmosProgress: View {
 }
 
 extension KozmosProgress {
-    /// Posts the bar's words once per wait, politely, queued behind what
-    /// VoiceOver is already saying, as React's `role="status"` is.
-    fileprivate func say(indeterminate: Bool) {
-        guard let message = announcer.next(indeterminate: indeterminate, label: spokenLabel) else { return }
+    /// A waiting bar is on screen: it starts its wait, or goes on with the
+    /// one it has, and says the words if the wait is to be said.
+    fileprivate func appear() {
+        let wait = self.wait ?? UUID()
+        if self.wait == nil { self.wait = wait }
+        guard let message = KozmosProgressWaitRegistry.waits.appear(wait, label: spokenLabel) else { return }
         #if canImport(UIKit)
         UIAccessibility.post(
             notification: .announcement,
@@ -426,6 +469,13 @@ extension KozmosProgress {
             )
         )
         #endif
+    }
+
+    /// The bar has a value: its wait, if it had one, is over.
+    fileprivate func endWait() {
+        guard let wait else { return }
+        KozmosProgressWaitRegistry.waits.end(wait)
+        self.wait = nil
     }
 }
 
@@ -472,9 +522,12 @@ struct KozmosIndeterminateBar: View {
 }
 
 /// A determinate bar at the top (GAP-159): 4 tall and square, filled from
-/// the inline start as far as the value, theme 600 on background 200.
+/// the inline start as far as the value, theme 600 on background 200. To
+/// VoiceOver it is the system's progress bar, as the inline bar is: named,
+/// with its value as a percentage.
 struct KozmosTopBar: View {
     let fraction: Double
+    var accessibilityName: String = "Progress"
 
     var body: some View {
         GeometryReader { geometry in
@@ -487,6 +540,9 @@ struct KozmosTopBar: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: KozmosProgressPlacement.top.height)
+        .accessibilityRepresentation {
+            ProgressView(value: fraction) { Text(accessibilityName) }
+        }
     }
 }
 

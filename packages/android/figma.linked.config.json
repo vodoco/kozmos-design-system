@@ -129,8 +129,6 @@
       "src/main/java/com/kozmos/components/Rating/Rating.kt",
       "src/main/java/com/kozmos/components/Progress/Progress.figma.kt",
       "src/main/java/com/kozmos/components/Progress/Progress.kt",
-      "src/main/java/com/kozmos/components/Notice/Notice.figma.kt",
-      "src/main/java/com/kozmos/components/Notice/Notice.kt",
       "src/main/java/com/kozmos/components/Spinner/Spinner.figma.kt",
       "src/main/java/com/kozmos/components/Spinner/Spinner.kt",
       "src/main/java/com/kozmos/components/Alert/Alert.figma.kt",

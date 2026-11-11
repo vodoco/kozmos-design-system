@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -35,10 +34,12 @@ import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.kozmos.components.text.KozmosTextStyle
 import com.kozmos.components.icon.resolveIconVector
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
@@ -90,18 +91,23 @@ sealed interface KozmosNoticeIcon {
     class Custom(val content: @Composable () -> Unit) : KozmosNoticeIcon
 }
 
-/** What a notice resolves to before any colour is chosen, so it can be tested without drawing. */
-internal data class KozmosNoticeAppearance(val mark: Mark, val busy: Boolean, val trailingCheck: Boolean) {
+/**
+ * What a notice resolves to before any colour is chosen, so it can be tested
+ * without drawing. Progress marks nothing busy: on the notice's own live
+ * region that would hold back the words that say what is running, as
+ * `aria-busy` did on React's until #522's review.
+ */
+internal data class KozmosNoticeAppearance(val mark: Mark, val trailingCheck: Boolean) {
     enum class Mark { None, Spinner, Tone, Custom }
 
     companion object {
         fun of(status: KozmosNoticeStatus?, icon: KozmosNoticeIcon): KozmosNoticeAppearance = when {
-            status == KozmosNoticeStatus.Progress -> KozmosNoticeAppearance(Mark.Spinner, busy = true, trailingCheck = false)
+            status == KozmosNoticeStatus.Progress -> KozmosNoticeAppearance(Mark.Spinner, trailingCheck = false)
             icon is KozmosNoticeIcon.Custom ->
-                KozmosNoticeAppearance(Mark.Custom, busy = false, trailingCheck = status == KozmosNoticeStatus.Done)
+                KozmosNoticeAppearance(Mark.Custom, trailingCheck = status == KozmosNoticeStatus.Done)
             icon is KozmosNoticeIcon.None || status == KozmosNoticeStatus.Done ->
-                KozmosNoticeAppearance(Mark.None, busy = false, trailingCheck = status == KozmosNoticeStatus.Done)
-            else -> KozmosNoticeAppearance(Mark.Tone, busy = false, trailingCheck = false)
+                KozmosNoticeAppearance(Mark.None, trailingCheck = status == KozmosNoticeStatus.Done)
+            else -> KozmosNoticeAppearance(Mark.Tone, trailingCheck = false)
         }
     }
 }
@@ -137,11 +143,26 @@ internal fun kozmosNoticeHue(tone: KozmosNoticeTone): Color = when (tone) {
     KozmosNoticeTone.Success -> KozmosThemeTokens.primitivesColorsEmotionalSuccess800
 }
 
-/** The edge's strength: React's `/50`, and `/60` for critical. */
+/**
+ * The edge's strength: React's `/50`, and `/60` for critical. Compose has no
+ * opacity tokens, so the shares are written here, as Alert's are.
+ */
 internal fun kozmosNoticeEdgeAlpha(tone: KozmosNoticeTone): Float = if (tone == KozmosNoticeTone.Critical) 0.6f else 0.5f
 
-/** React's `h-3.5` chevron on "More": the icon scale has no 14, as on the web. */
+/**
+ * React's `h-3.5` chevron on "More". No Kozmos size token is 14 (sizing
+ * runs 8, 16, 24), on the web either, so it stays a literal.
+ */
 private val NoticeChevronSize = 14.dp
+
+/**
+ * The edge's width, React's `border` (1px). Kozmos has no border-width
+ * token on Compose; Alert and Card draw their 1.dp edges the same way.
+ */
+private val NoticeEdgeWidth = 1.dp
+
+/** The tag on the done check, so a test can find a mark that says nothing. */
+internal const val KozmosNoticeDoneTag = "kozmos-notice-done"
 
 /** The fill's strength, React's `/5`. */
 internal const val KozmosNoticeFillAlpha = 0.05f
@@ -165,7 +186,10 @@ internal const val KozmosNoticeFillAlpha = 0.05f
  * The marks say nothing to TalkBack: the summary's words say it.
  *
  * Expansion is uncontrolled from [defaultExpanded], or controlled with
- * [expanded] and [onExpandedChange]. The whole notice is a live region,
+ * [expanded] and [onExpandedChange]. "More" ([expandLabel]) says its state
+ * as [expandedStateLabel] or [collapsedStateLabel], English by default:
+ * pass the product's own words to localise them. On the summary's row the
+ * done check comes after the summary and before "More", as React's does. The whole notice is a live region,
  * polite unless [live] says otherwise.
  */
 @Composable
@@ -182,6 +206,8 @@ fun KozmosNotice(
     expanded: Boolean? = null,
     onExpandedChange: ((Boolean) -> Unit)? = null,
     expandLabel: String = "More",
+    expandedStateLabel: String = "Expanded",
+    collapsedStateLabel: String = "Collapsed",
     live: KozmosNoticeLive = KozmosNoticeLive.Polite,
     action: (@Composable () -> Unit)? = null
 ) = KozmosNotice(
@@ -197,6 +223,8 @@ fun KozmosNotice(
     expanded = expanded,
     onExpandedChange = onExpandedChange,
     expandLabel = expandLabel,
+    expandedStateLabel = expandedStateLabel,
+    collapsedStateLabel = collapsedStateLabel,
     live = live,
     action = action
 )
@@ -220,6 +248,8 @@ fun KozmosNotice(
     expanded: Boolean? = null,
     onExpandedChange: ((Boolean) -> Unit)? = null,
     expandLabel: String = "More",
+    expandedStateLabel: String = "Expanded",
+    collapsedStateLabel: String = "Collapsed",
     live: KozmosNoticeLive = KozmosNoticeLive.Polite,
     action: (@Composable () -> Unit)? = null
 ) {
@@ -241,7 +271,10 @@ fun KozmosNotice(
     val markSize = KozmosDimensions.primitivesLayoutSizing200
     // The detail and the action start where the summary does.
     val indent = if (drawsMark) markSize + markGap else KozmosDimensions.primitivesLayoutSpacing0
-    val body = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 19.sp)
+    // The type ramp's steps, as Toast's and Alert's: Subheadline, 14 on 20,
+    // for the summary and the detail, and Caption, 12 on 16, for "More".
+    val body = KozmosTextStyle.Subheadline.textStyle
+    val caption = KozmosTextStyle.Caption.textStyle
 
     CompositionLocalProvider(LocalContentColor provides ink, LocalTextStyle provides body) {
         Column(
@@ -255,7 +288,7 @@ fun KozmosNotice(
                     }
                 }
                 .background(hue.copy(alpha = KozmosNoticeFillAlpha), shape)
-                .border(1.dp, hue.copy(alpha = kozmosNoticeEdgeAlpha(tone)), shape)
+                .border(NoticeEdgeWidth, hue.copy(alpha = kozmosNoticeEdgeAlpha(tone)), shape)
                 .padding(
                     horizontal = KozmosDimensions.primitivesLayoutSpacing150,
                     vertical = KozmosDimensions.primitivesLayoutSpacing100
@@ -286,26 +319,6 @@ fun KozmosNotice(
                         summary()
                     }
                 }
-                if (hasDetail && collapsible) {
-                    Row(
-                        Modifier
-                            .minimumInteractiveComponentSize()
-                            .clickable(role = Role.Button, onClickLabel = expandLabel, onClick = toggle)
-                            .semantics(mergeDescendants = true) {
-                                if (open) collapse { toggle(); true } else expand { toggle(); true }
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
-                    ) {
-                        Text(expandLabel, style = body.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold))
-                        Icon(
-                            resolveIconVector("chevron-down"),
-                            contentDescription = null,
-                            tint = ink,
-                            modifier = Modifier.size(NoticeChevronSize).rotate(if (open) 180f else 0f)
-                        )
-                    }
-                }
                 if (appearance.trailingCheck) {
                     Icon(
                         resolveIconVector("check"),
@@ -314,8 +327,29 @@ fun KozmosNotice(
                         modifier = Modifier
                             .then(if (iconAlign == KozmosNoticeIconAlign.Start) Modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing25) else Modifier)
                             .size(markSize)
-                            .clearAndSetSemantics {}
+                            .clearAndSetSemantics { testTag = KozmosNoticeDoneTag }
                     )
+                }
+                if (hasDetail && collapsible) {
+                    Row(
+                        Modifier
+                            .minimumInteractiveComponentSize()
+                            .clickable(role = Role.Button, onClickLabel = expandLabel, onClick = toggle)
+                            .semantics(mergeDescendants = true) {
+                                stateDescription = if (open) expandedStateLabel else collapsedStateLabel
+                                if (open) collapse { toggle(); true } else expand { toggle(); true }
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+                    ) {
+                        Text(expandLabel, style = caption.copy(fontWeight = FontWeight.SemiBold))
+                        Icon(
+                            resolveIconVector("chevron-down"),
+                            contentDescription = null,
+                            tint = ink,
+                            modifier = Modifier.size(NoticeChevronSize).rotate(if (open) 180f else 0f)
+                        )
+                    }
                 }
             }
             if (detailShown) {

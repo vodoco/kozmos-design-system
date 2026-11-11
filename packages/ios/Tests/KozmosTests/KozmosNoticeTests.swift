@@ -50,46 +50,79 @@ final class KozmosNoticeTests: XCTestCase {
 
     func testWithNoStatusTheMarkIsTheTonesTheCallersOrNone() {
         XCTAssertEqual(A(tone: .success, status: nil, icon: .tone),
-                       A(lead: .toneMark("check"), trailingCheck: false, busy: false))
+                       A(lead: .toneMark("check"), trailingCheck: false))
         XCTAssertEqual(A(tone: .info, status: nil, icon: .named("stars-01")),
-                       A(lead: .named("stars-01"), trailingCheck: false, busy: false))
+                       A(lead: .named("stars-01"), trailingCheck: false))
         let none = A(tone: .info, status: nil, icon: .none)
-        XCTAssertEqual(none, A(lead: .none, trailingCheck: false, busy: false))
+        XCTAssertEqual(none, A(lead: .none, trailingCheck: false))
         // No mark, no column.
         XCTAssertFalse(none.drawsLead)
     }
 
     /// In progress the loading arc turns where the mark is, whatever the
-    /// icon, and the notice is busy.
-    func testInProgressTheArcTakesTheMarksPlaceAndItIsBusy() {
+    /// icon.
+    func testInProgressTheArcTakesTheMarksPlace() {
         for icon in [KozmosNoticeIcon.tone, .none, .named("stars-01")] {
             let a = A(tone: .info, status: .progress, icon: icon)
-            XCTAssertEqual(a, A(lead: .spinner, trailingCheck: false, busy: true))
+            XCTAssertEqual(a, A(lead: .spinner, trailingCheck: false))
             XCTAssertTrue(a.drawsLead)
         }
+    }
+
+    /// Review of #522: a notice in progress is not marked busy in any
+    /// state. `.updatesFrequently`, as React's aria-busy on its own live
+    /// region, would let VoiceOver hold back "Saving the geometry".
+    func testInProgressItIsNotBusySoItsWordsAreSaid() {
+        for status in [nil, KozmosNoticeStatus.progress, .done] {
+            let a = A(tone: .info, status: status, icon: .tone)
+            XCTAssertFalse(a.traits.contains(.updatesFrequently), "\(String(describing: status))")
+            XCTAssertEqual(a.traits, [])
+        }
+    }
+
+    /// Review of #522: summary, then the done check, then More, as React.
+    func testTheDoneCheckComesBeforeMore() {
+        let done = A(tone: .success, status: .done, icon: .tone)
+        XCTAssertEqual(done.trailing(hasMore: true), [.check, .more])
+        XCTAssertEqual(done.trailing(hasMore: false), [.check])
+        XCTAssertEqual(A(tone: .info, status: nil, icon: .tone).trailing(hasMore: true), [.more])
+        XCTAssertEqual(A(tone: .info, status: .progress, icon: .tone).trailing(hasMore: false), [])
     }
 
     /// Done ends the summary in a check, with no mark at its start unless the
     /// product gave one: "Geometry is set".
     func testDoneEndsInACheckAndKeepsOnlyACallersMark() {
         XCTAssertEqual(A(tone: .success, status: .done, icon: .tone),
-                       A(lead: .none, trailingCheck: true, busy: false))
+                       A(lead: .none, trailingCheck: true))
         XCTAssertEqual(A(tone: .success, status: .done, icon: .none),
-                       A(lead: .none, trailingCheck: true, busy: false))
+                       A(lead: .none, trailingCheck: true))
         XCTAssertEqual(A(tone: .success, status: .done, icon: .named("map-01")),
-                       A(lead: .named("map-01"), trailingCheck: true, busy: false))
+                       A(lead: .named("map-01"), trailingCheck: true))
     }
 
     // MARK: Announced
 
-    func testItIsAnnouncedPolitelyUnlessAsked() {
+    /// A change of words while it is on screen is announced, politely
+    /// unless asked; nothing when live is off.
+    func testAChangeIsAnnouncedPolitelyUnlessAsked() {
         typealias N = KozmosNotice<EmptyView>
-        XCTAssertEqual(N.announcement("Geometry is set", live: .polite),
+        XCTAssertEqual(N.announcement(from: "Saving the geometry", to: "Geometry is set", live: .polite),
                        KozmosNoticeAnnouncement(message: "Geometry is set", queued: true))
-        XCTAssertEqual(N.announcement("Call 112", live: .assertive),
+        XCTAssertEqual(N.announcement(from: "", to: "Call 112", live: .assertive),
                        KozmosNoticeAnnouncement(message: "Call 112", queued: false))
-        XCTAssertNil(N.announcement("Geometry is set", live: .off))
-        XCTAssertNil(N.announcement("", live: .polite))
+        XCTAssertNil(N.announcement(from: "Saving", to: "Geometry is set", live: .off))
+        XCTAssertNil(N.announcement(from: "Saving", to: "", live: .polite))
+        XCTAssertNil(N.announcement(from: "Geometry is set", to: "Geometry is set", live: .polite))
+    }
+
+    /// Review of #522, GAP-226: a notice that appears already holding its
+    /// words is not announced (it is read in place), as React's and
+    /// Compose's live regions are.
+    func testItAppearsHoldingItsWordsAndSaysNothing() {
+        typealias N = KozmosNotice<EmptyView>
+        for live in KozmosNoticeLive.allCases {
+            XCTAssertNil(N.announcement(from: nil, to: "Geometry is set", live: live), "\(live)")
+        }
     }
 
     // MARK: Drawn
@@ -137,5 +170,24 @@ final class KozmosNoticeTests: XCTestCase {
             XCTAssertGreaterThan(drawn.count(in: end, where: DrawnPixels.matches(ink, tolerance: 40)), 0,
                                  "no check at the inline end, \(direction)")
         }
+    }
+
+    /// Review of #522, GAP-118: the summary takes a view, a line holding a
+    /// control, after the mark's column, centred on it with iconAlign center.
+    @MainActor
+    func testTheSummaryTakesAView() throws {
+        let drawn = try draw(KozmosNotice(spokenSummary: "Not finding it?", tone: .info, iconAlign: .center) {
+            HStack {
+                Text("Not finding it?")
+                Rectangle().fill(Color(red: 1, green: 0, blue: 1)).frame(width: 60, height: 28)
+            }
+        })
+        let magenta = DrawnPixels.matches((255, 0, 255, 255), tolerance: 10)
+        let control = try XCTUnwrap(drawn.boundingBox(where: magenta))
+        XCTAssertEqual(control.height, 28, accuracy: 1)
+        XCTAssertGreaterThan(control.minX, 12 + 16 + 8)
+        // The words stay the convenience: a String summary still draws.
+        XCTAssertNotNil(try draw(KozmosNotice("Geometry is set", tone: .success)).boundingBox(
+            where: DrawnPixels.matches(try DrawnPixels.resolved(KozmosColors.semanticsEmotionSuccessText, in: .light), tolerance: 40)))
     }
 }

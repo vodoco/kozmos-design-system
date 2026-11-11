@@ -14,13 +14,13 @@
     "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "blocked: 1 Core React linked mapping(s) still contain node-id=TBD",
+    "linkedPublishStatus": "ready for the current 99 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "blocked: 1 Core SwiftUI linked mapping(s) still contain node-id=TBD; blocked: 1 Core Compose linked mapping(s) still contain node-id=TBD"
+    "nativeLinkedPublishStatus": "ready for the current 99 Core SwiftUI and 99 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {

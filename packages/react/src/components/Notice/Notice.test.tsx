@@ -184,7 +184,7 @@ describe("Notice icon (GAP-118)", () => {
       );
     });
 
-    it("turns the loading arc where the mark is, and is busy, in progress", () => {
+    it("turns the loading arc where the mark is in progress, and its words are still said", () => {
       const { container } = render(
         <Notice
           icon={<Stars01 data-testid="own" />}
@@ -194,8 +194,11 @@ describe("Notice icon (GAP-118)", () => {
         />,
       );
       const notice = screen.getByRole("status");
-      expect(notice).toHaveAttribute("aria-busy", "true");
+      // aria-busy on a live region holds its words back: "Saving the
+      // geometry" must be said while it saves.
+      expect(notice).not.toHaveAttribute("aria-busy");
       expect(notice).toHaveAttribute("data-status", "progress");
+      expect(notice).toHaveTextContent("Saving the geometry");
       expect(container.querySelector(".kozmos-spinner-arc")).not.toBeNull();
       expect(screen.queryByTestId("own")).toBeNull();
       expect(container.querySelector("[data-kozmos-notice-done]")).toBeNull();
@@ -247,5 +250,20 @@ describe("Notice icon (GAP-118)", () => {
         unmount();
       }
     });
+  });
+
+  it("holds a framework's box in its summary and detail without breaking the markup", () => {
+    // Vue's bridge draws a slot in a <div>; a <p> may not hold one.
+    const { container } = render(
+      <Notice
+        defaultExpanded
+        summary={<div data-testid="summary-box">Not finding it?</div>}
+      >
+        <div data-testid="detail-box">The full wording.</div>
+      </Notice>,
+    );
+    for (const id of ["summary-box", "detail-box"])
+      expect(screen.getByTestId(id).closest("p")).toBeNull();
+    expect(container.querySelector("p")).toBeNull();
   });
 });

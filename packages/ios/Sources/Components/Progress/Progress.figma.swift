@@ -2,11 +2,13 @@ import SwiftUI
 import Figma
 
 // The bar: the set's Shape=Linear variants with a value, in the flow or at
-// the top (GAP-159's Placement).
-struct KozmosProgressConnect: FigmaConnect {
+// the top (GAP-159's Placement). One connect per Value, so Value=
+// Indeterminate matches only the indeterminate bar's connect below and its
+// snippet is never the determinate one's.
+struct KozmosProgressZeroConnect: FigmaConnect {
     let component = KozmosProgress.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
-    var variant = ["Shape": "Linear"]
+    var variant = ["Shape": "Linear", "Value": "0"]
 
     @FigmaEnum(
         "Placement",
@@ -17,24 +19,84 @@ struct KozmosProgressConnect: FigmaConnect {
     )
     var placement: KozmosProgressPlacement = .inline
 
+    var body: some View {
+        KozmosProgress(value: 0, placement: self.placement)
+    }
+}
+
+struct KozmosProgressQuarterConnect: FigmaConnect {
+    let component = KozmosProgress.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
+    var variant = ["Shape": "Linear", "Value": "25"]
+
     @FigmaEnum(
-        "Value",
+        "Placement",
         mapping: [
-            "0": "0",
-            "25": "25",
-            "50": "50",
-            "75": "75",
-            "100": "100"
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
         ]
     )
-    var value: String = "0"
+    var placement: KozmosProgressPlacement = .inline
 
     var body: some View {
-        KozmosProgress(value: self.progressValue, placement: self.placement)
+        KozmosProgress(value: 0.25, placement: self.placement)
     }
+}
 
-    private var progressValue: Double {
-        (Double(self.value) ?? 0) / 100
+struct KozmosProgressHalfConnect: FigmaConnect {
+    let component = KozmosProgress.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
+    var variant = ["Shape": "Linear", "Value": "50"]
+
+    @FigmaEnum(
+        "Placement",
+        mapping: [
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
+        ]
+    )
+    var placement: KozmosProgressPlacement = .inline
+
+    var body: some View {
+        KozmosProgress(value: 0.5, placement: self.placement)
+    }
+}
+
+struct KozmosProgressThreeQuartersConnect: FigmaConnect {
+    let component = KozmosProgress.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
+    var variant = ["Shape": "Linear", "Value": "75"]
+
+    @FigmaEnum(
+        "Placement",
+        mapping: [
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
+        ]
+    )
+    var placement: KozmosProgressPlacement = .inline
+
+    var body: some View {
+        KozmosProgress(value: 0.75, placement: self.placement)
+    }
+}
+
+struct KozmosProgressFullConnect: FigmaConnect {
+    let component = KozmosProgress.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252"
+    var variant = ["Shape": "Linear", "Value": "100"]
+
+    @FigmaEnum(
+        "Placement",
+        mapping: [
+            "Inline": KozmosProgressPlacement.inline,
+            "Top": KozmosProgressPlacement.top
+        ]
+    )
+    var placement: KozmosProgressPlacement = .inline
+
+    var body: some View {
+        KozmosProgress(value: 1, placement: self.placement)
     }
 }
 

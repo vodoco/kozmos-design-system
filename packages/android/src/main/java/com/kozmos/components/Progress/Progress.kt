@@ -44,6 +44,12 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.motion.rememberKozmosAnimatorScale
 import com.kozmos.tokens.KozmosThemeTokens
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -201,6 +207,7 @@ fun KozmosProgress(
         val fill = KozmosThemeTokens.primitivesColorsTheme600
         Canvas(
             modifier
+                .kozmosProgressTopInsets(KozmosProgressPlacement.Top)
                 .fillMaxWidth()
                 .height(kozmosProgressBarHeight(KozmosProgressPlacement.Top))
                 .progressSemantics(fraction)
@@ -227,6 +234,32 @@ fun KozmosProgress(
 internal fun kozmosProgressBarHeight(placement: KozmosProgressPlacement): Dp =
     if (placement == KozmosProgressPlacement.Top) KozmosDimensions.primitivesLayoutSpacing50
     else KozmosDimensions.primitivesLayoutSpacing100
+
+/**
+ * The top bar sits under the status bar and a display cutout, as React's
+ * does under `env(safe-area-inset-top)`: the top of the safe drawing
+ * insets, which a screen that has already consumed them (a Scaffold's
+ * content) does not add again.
+ */
+@Composable
+internal fun Modifier.kozmosProgressTopInsets(placement: KozmosProgressPlacement): Modifier =
+    if (placement == KozmosProgressPlacement.Top) windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+    else this
+
+/**
+ * How many indeterminate bars are waiting on screen. Only the first to start
+ * says its words: five uploads starting together are one "Loading", not
+ * five, as React's are. Counted on the main thread, where composition runs.
+ */
+internal var kozmosProgressWaits = 0
+
+/** One bar's turn: whether it was the first waiting when it started; given back when it goes. */
+internal class KozmosProgressWaitTurn : RememberObserver {
+    val first = kozmosProgressWaits++ == 0
+    override fun onRemembered() = Unit
+    override fun onForgotten() { kozmosProgressWaits-- }
+    override fun onAbandoned() { kozmosProgressWaits-- }
+}
 
 /** A quarter of the track: the indeterminate segment's width, as React's 25%. */
 internal const val KozmosProgressSegment = 0.25f
@@ -288,11 +321,15 @@ private fun progressSweepPhase(enabled: Boolean): FloatState {
  * the screen's loading bar, 4 tall and square.
  *
  * TalkBack meets one node: an indeterminate progress bar named [label],
- * "Loading" unless the product says otherwise. The name is said once, as
- * the wait starts: the node is a polite live region composed with no name,
- * and given [label] once it is on screen, so the change is announced (a
- * region that arrives with its words may go unheard, GAP-226). The sweep
- * changes nothing TalkBack reads, so nothing more is said while it moves.
+ * "Loading" unless the product says otherwise. The name is said once per
+ * wait: the first bar to start waiting on screen is a polite live region
+ * composed with no name and given [label] once it is on screen, so the
+ * change is announced (a region that arrives with its words may go unheard,
+ * GAP-226), and it keeps those words while it waits, so a label that changes
+ * is not said again. Any other bar waiting with it, or one that has spoken
+ * and comes back into a lazy list, is named by [label] and says nothing.
+ * The sweep changes nothing TalkBack reads. Top sits under the status bar
+ * (the top safe drawing insets).
  */
 @Composable
 fun KozmosProgress(
@@ -305,19 +342,38 @@ fun KozmosProgress(
     val phase = progressSweepPhase(animationsOn)
     val track = KozmosThemeTokens.primitivesColorsBackground200
     val fill = KozmosThemeTokens.primitivesColorsTheme600
-    var said by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { said = true }
+    // Once per wait. Only the first bar to start waiting speaks; one that
+    // has spoken and comes back (scrolled back into a lazy list) does not
+    // speak again; and its words are the ones read when the wait started.
+    val turn = remember { KozmosProgressWaitTurn() }
+    var spoken by rememberSaveable { mutableStateOf(false) }
+    val speaks = remember { turn.first && !spoken }
+    var words by remember { mutableStateOf<String?>(null) }
+    val latest by rememberUpdatedState(label)
+    LaunchedEffect(Unit) {
+        if (speaks) {
+            words = latest
+            spoken = true
+        }
+    }
     val shape = if (placement == KozmosProgressPlacement.Top) RoundedCornerShape(KozmosDimensions.semanticsRadiusNone)
     else RoundedCornerShape(percent = 50)
     Canvas(
         modifier
+            .kozmosProgressTopInsets(placement)
             .fillMaxWidth()
             .height(kozmosProgressBarHeight(placement))
             .clip(shape)
             .semantics {
                 progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
-                liveRegion = LiveRegionMode.Polite
-                contentDescription = if (said) label else ""
+                if (speaks) {
+                    // Composed with no name, then given the words, so the
+                    // change is announced (GAP-226).
+                    liveRegion = LiveRegionMode.Polite
+                    contentDescription = words ?: ""
+                } else {
+                    contentDescription = label
+                }
             }
     ) {
         drawRect(track)

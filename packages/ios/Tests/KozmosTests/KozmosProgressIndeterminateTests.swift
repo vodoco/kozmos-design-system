@@ -67,21 +67,93 @@ final class KozmosProgressIndeterminateTests: XCTestCase {
         XCTAssertFalse(KozmosProgress(value: 0.4).indeterminate)
     }
 
-    // MARK: Said once
+    // MARK: Said once per wait
 
-    func testItIsSaidOncePerWait() {
-        var announcer = KozmosProgressAnnouncer()
-        XCTAssertEqual(announcer.next(indeterminate: true, label: "Loading"), "Loading")
-        // Redrawn while the wait lasts: nothing more.
-        XCTAssertNil(announcer.next(indeterminate: true, label: "Loading"))
-        XCTAssertNil(announcer.next(indeterminate: true, label: "Loading"))
-        // A value ends the wait; the next wait is said again.
-        XCTAssertNil(announcer.next(indeterminate: false, label: "Loading"))
-        XCTAssertEqual(announcer.next(indeterminate: true, label: "Loading"), "Loading")
-        // No words, nothing said.
-        var silent = KozmosProgressAnnouncer()
-        XCTAssertNil(silent.next(indeterminate: true, label: ""))
+    /// Review of #522: a bar that leaves the screen and comes back while it
+    /// still waits (a row scrolled out of a List and back, a tab switched
+    /// away and back) is not said again.
+    func testAWaitIsSaidOnceThoughItsBarComesBack() {
+        var waits = KozmosProgressWaits()
+        let wait = UUID()
+        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
+        waits.disappear(wait)
+        XCTAssertNil(waits.appear(wait, label: "Loading"))
+        waits.disappear(wait)
+        XCTAssertNil(waits.appear(wait, label: "Loading"))
     }
+
+    /// Review of #522: a label that changes while the bar waits is not
+    /// said again.
+    func testALabelThatChangesWhileItWaitsIsNotSaidAgain() {
+        var waits = KozmosProgressWaits()
+        let wait = UUID()
+        XCTAssertEqual(waits.appear(wait, label: "Loading the map"), "Loading the map")
+        XCTAssertNil(waits.appear(wait, label: "Loading the map, 50 tiles"))
+    }
+
+    /// Review of #522: five uploads waiting at once are one "Loading": the
+    /// first bar speaks, the rest keep quiet, also when they come back.
+    func testOnlyTheFirstOfSeveralWaitingBarsSpeaks() {
+        var waits = KozmosProgressWaits()
+        let bars = (1...5).map { _ in UUID() }
+        let said = bars.enumerated().map { waits.appear($1, label: "Upload \($0 + 1)") }
+        XCTAssertEqual(said, ["Upload 1", nil, nil, nil, nil])
+        waits.disappear(bars[3])
+        XCTAssertNil(waits.appear(bars[3], label: "Upload 4"))
+        // All done; a new wait on its own is said.
+        bars.forEach { waits.end($0) }
+        XCTAssertEqual(waits.appear(UUID(), label: "Upload 6"), "Upload 6")
+    }
+
+    /// A value ends the wait; the bar's next wait is said again. No words,
+    /// nothing said.
+    func testAValueEndsTheWait() {
+        var waits = KozmosProgressWaits()
+        let wait = UUID()
+        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
+        waits.end(wait)
+        XCTAssertEqual(waits.appear(wait, label: "Loading"), "Loading")
+        var silent = KozmosProgressWaits()
+        XCTAssertNil(silent.appear(UUID(), label: ""))
+    }
+
+    /// Review of #522: the determinate top bar is named for VoiceOver,
+    /// "Progress" unless given, as the inline bar's ProgressView is.
+    func testTheTopBarIsNamed() {
+        XCTAssertEqual(KozmosProgress(value: 0.4, placement: .top).accessibilityName, "Progress")
+        XCTAssertEqual(KozmosProgress(value: 0.4, placement: .top, accessibilityName: "Upload").accessibilityName, "Upload")
+        XCTAssertEqual(KozmosTopBar(fraction: 0.4, accessibilityName: "Upload").accessibilityName, "Upload")
+    }
+
+    #if os(iOS)
+    /// Review of #522: in an overlay at the top of the screen's content the
+    /// bar sits under the status bar or notch, inside the safe area.
+    @MainActor
+    func testAtTheTopItSitsInsideTheSafeArea() throws {
+        final class Box { var frame: CGRect = .null }
+        let box = Box()
+        let view = Color.clear
+            .overlay(alignment: .top) {
+                KozmosProgress(placement: .top)
+                    .background(GeometryReader { g in
+                        Color.clear.onAppear { box.frame = g.frame(in: .global) }
+                    })
+            }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let host = UIHostingController(rootView: view)
+        host.additionalSafeAreaInsets = UIEdgeInsets(top: 47, left: 0, bottom: 34, right: 0)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        let top = host.view.safeAreaInsets.top
+        XCTAssertGreaterThanOrEqual(top, 47)
+        XCTAssertEqual(box.frame.minY, top, accuracy: 0.5)
+        XCTAssertEqual(box.frame.height, 4, accuracy: 0.5)
+        XCTAssertEqual(box.frame.width, 390, accuracy: 0.5)
+        window.isHidden = true
+    }
+    #endif
 
     // MARK: Drawn
 

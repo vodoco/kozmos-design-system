@@ -470,17 +470,74 @@ describe("Progress", () => {
       expect(screen.getByRole("status")).toHaveTextContent("Loading the map");
     });
 
+    it("does not say a label again that changes while it waits", () => {
+      const { rerender } = render(<Progress label="Loading the map" />);
+      const status = screen.getByRole("status");
+      expect(status).toHaveTextContent(/^Loading the map$/);
+      rerender(<Progress label="Loading the map, 50 tiles" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading the map$/);
+    });
+
+    it("says the product's own name for the bar instead of Loading", () => {
+      const { unmount } = render(<Progress aria-label="Uploading plan.pdf" />);
+      expect(screen.getByRole("status")).toHaveTextContent(
+        /^Uploading plan.pdf$/,
+      );
+      unmount();
+      render(
+        <>
+          <span id="what">Loading the floor plan</span>
+          <Progress aria-labelledby="what" />
+        </>,
+      );
+      expect(
+        screen.getByRole("progressbar", { name: "Loading the floor plan" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        /^Loading the floor plan$/,
+      );
+    });
+
+    it("is said by the first of several bars waiting at once", () => {
+      const { rerender } = render(
+        <>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Progress key={n} aria-label={`Upload ${n}`} />
+          ))}
+        </>,
+      );
+      const spoken = screen
+        .getAllByRole("status")
+        .map((status) => status.textContent);
+      expect(spoken).toEqual(["Upload 1", "", "", "", ""]);
+      // All five done, then one new wait: it is said.
+      rerender(<></>);
+      rerender(<Progress aria-label="Upload 6" />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Upload 6$/);
+    });
+
+    it.each([-5, -0.5, Number.NaN])(
+      "draws %s as an empty bar, as it always did, not a wait",
+      (value) => {
+        render(<Progress value={value} aria-label="Upload" />);
+        const progress = screen.getByRole("progressbar", { name: "Upload" });
+        expect(progress.firstElementChild).not.toHaveClass(
+          "kozmos-progress-sweep",
+        );
+        expect(progress.firstElementChild).toHaveStyle({ width: "0%" });
+        expect(screen.queryByRole("status")).toBeNull();
+      },
+    );
+
     it("sits at the top of the page with placement top", () => {
       const { rerender } = render(<Progress placement="top" />);
       const progress = screen.getByRole("progressbar");
-      expect(progress).toHaveAttribute("data-placement", "top");
       expect(progress).toHaveClass("kozmos-progress-top");
       expect(progress).not.toHaveClass("h-2");
       expect(progress).not.toHaveClass("rounded-pill");
       rerender(<Progress />);
-      expect(screen.getByRole("progressbar")).toHaveAttribute(
-        "data-placement",
-        "inline",
+      expect(screen.getByRole("progressbar")).not.toHaveClass(
+        "kozmos-progress-top",
       );
       expect(screen.getByRole("progressbar")).toHaveClass(
         "h-2",

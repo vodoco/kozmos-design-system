@@ -41,14 +41,8 @@ struct KozmosNoticeConnect: FigmaConnect {
     )
     var icon: KozmosNoticeIcon = .tone
 
-    @FigmaBoolean(
-        "Show Detail",
-        mapping: [
-            true: true,
-            false: false
-        ]
-    )
-    var defaultExpanded: Bool = false
+    @FigmaBoolean("Show Detail")
+    var showDetail: Bool = false
 
     @FigmaString("Detail")
     var detail: String = "Draw the building's outline on the map."
@@ -56,22 +50,40 @@ struct KozmosNoticeConnect: FigmaConnect {
     @FigmaBoolean("Show Action")
     var showAction: Bool = false
 
+    // The detail is passed only when Show Detail is on, shown open.
     var body: some View {
-        KozmosNotice(
-            self.summary,
-            detail: self.detail,
-            tone: self.tone,
-            status: self.status,
-            icon: self.icon,
-            defaultExpanded: self.defaultExpanded
-        ) {
-            AnyView(
-                Group {
-                    if self.showAction {
-                        KozmosButton("Set Building Boundary", variant: .outline, size: .sm) {}
-                    }
+        Group {
+            if self.showDetail {
+                KozmosNotice(
+                    self.summary,
+                    detail: self.detail,
+                    tone: self.tone,
+                    status: self.status,
+                    icon: self.icon,
+                    defaultExpanded: true
+                ) {
+                    self.action
                 }
-            )
+            } else {
+                KozmosNotice(
+                    self.summary,
+                    tone: self.tone,
+                    status: self.status,
+                    icon: self.icon
+                ) {
+                    self.action
+                }
+            }
         }
+    }
+
+    private var action: AnyView {
+        AnyView(
+            Group {
+                if self.showAction {
+                    KozmosButton("Set Building Boundary", variant: .outline, size: .sm) {}
+                }
+            }
+        )
     }
 }
