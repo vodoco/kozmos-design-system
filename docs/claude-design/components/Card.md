@@ -70,6 +70,14 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 It forwards its ref to `HTMLDivElement`. Its props are `CardHeaderProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
+- `tone`: `CardHeaderTone`, optional, default `"default"`.
+
+  `subtle` draws the header as a pale theme strip, theme 0, full-bleed
+  inside the card's top corners, at least 52 tall, with its title 14
+  (CLOUD-UI-001; decisions 135 and 139): the form side panel's header.
+  Its sides follow the card's `padding`. `default`, the header on the
+  card's own surface, without it.
+
 - `actions`: `React.ReactNode`, optional.
 
   What acts on the card, at the header's inline end (GAP-169): an edit
@@ -100,6 +108,13 @@ It forwards its ref to `HTMLHeadingElement`. Its props are `CardTitleProps`, whi
   titled with an `h1`, a card's title is `h2`, or a screen reader's list of
   headings skips a level. It changes what a screen reader hears, not how
   the title looks. There is no `h1`: that is the page's own title.
+
+- `size`: `CardTitleSize`, optional.
+
+  How large the title is drawn (GAP-035): `lg` 24, `md` 18 for a
+  compact or dashboard card, `sm` 14. Unset, it is `lg`, and `sm` in a
+  `tone="subtle"` header, the strip's title (decision 139). It changes
+  how the title looks, not its heading level, which is `as`.
 
 - `children`: `ReactNode`, optional.
 
@@ -143,4 +158,35 @@ From `@kozmos-ds/react`.
  * different amounts — which is the bug, not the fix.
  */
 type CardPadding = "default" | "compact";
+```
+
+### CardHeaderTone
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How a CardHeader is drawn. `default` is the header as it always was, on
+ * the card's own surface. `subtle` is Pointr Cloud's form panel header
+ * (CLOUD-UI-001, GAP-169; decisions 135 and 139): a pale theme strip, theme
+ * 0, full-bleed to the card's edges and inside its top corners, at least 52
+ * tall, and its title 14 unless the title says otherwise.
+ */
+type CardHeaderTone = "default" | "subtle";
+```
+
+### CardTitleSize
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov).
+ * `lg` is 24, the default, the card's title as it always was; `md` is 18,
+ * for a compact card on a phone or a dashboard's section card; `sm` is 14,
+ * the subtle header strip's title (decision 139), as `sm` is 14 on Text.
+ * The weight, the tight tracking and the one-line leading stay at every
+ * size.
+ */
+type CardTitleSize = "lg" | "md" | "sm";
 ```

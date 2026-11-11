@@ -4872,12 +4872,28 @@ section("Variants keep their own room, and kept defaults are drawn again");
       variant.resizeWithoutConstraints(360, height);
       set.appendChild(variant);
     }
+    // The layout helper's rows, read by Padding alone: Card's own second
+    // axis is Padding, HeaderTone and TitleSize together (CLOUD-UI-001,
+    // GAP-035), and these six are its Default tone and title.
     plugin.layoutSingleAxisVariants(set, {
       values: ["Basic", "Header", "Full"],
       axis2Values: ["Default", "Compact"],
       xStep: 420,
       yStep,
-      parseVariantName: plugin.parseCardVariantName,
+      parseVariantName: (name) => {
+        const props = plugin.parseCardVariantName(name);
+        return (
+          props && {
+            value: props.value,
+            // Guarded: a painter before these axes has no cardSecondParts
+            // and its second is the padding itself.
+            second:
+              typeof plugin.cardSecondParts === "function"
+                ? plugin.cardSecondParts(props.second).padding
+                : props.second,
+          }
+        );
+      },
     });
     for (const variant of set.children) {
       variant.absoluteBoundingBox = box(variant);
@@ -8510,8 +8526,9 @@ section("Card");
 
   const full = await card("Full", "Default");
   ok(
-    full.name === "Content=Full, Padding=Default",
-    `a variant carries both axes (got "${full.name}")`,
+    full.name ===
+      "Content=Full, Padding=Default, HeaderTone=Default, TitleSize=Large",
+    `a variant carries every axis, a bare padding its Default tone and title (got "${full.name}")`,
   );
 
   const compact = await card("Full", "Compact");
@@ -8535,8 +8552,8 @@ section("Card");
 
   ok(
     JSON.stringify(plugin.parseCardVariantName("Content=Full")) ===
-      JSON.stringify({ value: "Full", second: "Default" }),
-    "a variant with no Padding reads as Default, so Update renames rather than replaces",
+      JSON.stringify({ value: "Full", second: "Default|Default|Large" }),
+    "a variant with no Padding, HeaderTone or TitleSize reads as Default, Default and Large, so Update renames rather than replaces",
   );
   ok(
     plugin.parseCardVariantName("Content=Full, Padding=Roomy") === null,
@@ -8564,6 +8581,180 @@ section("Card");
       plugin.generatedVariantCombinations({ values: ["a"] })[0].second === null,
     "and a set with one axis is untouched",
   );
+}
+
+// --- GAP-200, CLOUD-UI-001, GAP-035: Button's subtle variant, CardHeader's subtle
+// tone and CardTitle's size ---------------------------------------------------------
+
+// Decision 135 (28 Oct): Button gets a subtle variant with a token tier of its
+// own, and the form panel's tinted header is CardHeader's subtle tone, a 52
+// strip with a 14 title (decision 139); CardTitle gets a size (decision 132).
+// Each painter binds the new tier, draws the strip in theme 0 inside the
+// card's corners, and sets each title size in its own style and tokens.
+// Guarded, so a run against the old painter fails here and goes on.
+section("Button subtle, CardHeader subtle and CardTitle size");
+{
+  const SUBTLE = "Subtle Buttons/themed/button";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+
+  const buttonAxes = plugin.expectedVariantAxesForComponentSetName("Button");
+  const iconAxes = plugin.expectedVariantAxesForComponentSetName("IconButton");
+  ok(
+    buttonAxes?.Variant?.includes("Subtle") &&
+      !iconAxes?.Variant?.includes("Subtle"),
+    `Button's Variant has Subtle; IconButton's does not (${JSON.stringify(buttonAxes?.Variant)}; ${JSON.stringify(iconAxes?.Variant)})`,
+  );
+  for (const state of ["Default", "Loading"]) {
+    const config = plugin.buttonConfig("Subtle", state);
+    ok(
+      config.background === `${SUBTLE}/background/idle` &&
+        config.foreground === `${SUBTLE}/foreground/content/idle` &&
+        !config.stroke,
+      `Button, Subtle, ${state}: the Subtle Buttons idle tokens (${config.background}, ${config.foreground})`,
+    );
+  }
+  // Disabled is the filled Buttons' disabled pair, the same in every tier.
+  const disabled = plugin.buttonConfig("Subtle", "Disabled");
+  ok(
+    disabled.background ===
+      "Primary Buttons/themed/button/background/disabled" &&
+      disabled.foreground ===
+        "Primary Buttons/themed/button/foreground/content/disabled",
+    `Button, Subtle, Disabled: the filled Buttons' disabled pair (${disabled.background}, ${disabled.foreground})`,
+  );
+  let subtle = null;
+  try {
+    subtle = await plugin.createButtonVariant({
+      variant: "Subtle",
+      size: "Default",
+      state: "Default",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      textStyle: null,
+      stats: freshStats(),
+    });
+  } catch {
+    // An old painter has no Subtle and may throw: the asserts below say so.
+    subtle = null;
+  }
+  const subtleLabel = subtle && named(subtle, "Label Text");
+  ok(
+    subtle &&
+      reads(subtle.fills[0]) === `${SUBTLE}/background/idle #F1F5FE/#051C4F`,
+    `Button, Subtle: theme 0, #F1F5FE in Light and #051C4F in Dark (${subtle && reads(subtle.fills[0])})`,
+  );
+  ok(
+    subtleLabel &&
+      reads(subtleLabel.fills[0]) ===
+        `${SUBTLE}/foreground/content/idle #1051E8/#5887F3`,
+    `Button, Subtle: its words theme 600, #1051E8 in Light and #5887F3 in Dark (${subtleLabel && reads(subtleLabel.fills[0])})`,
+  );
+
+  // Card: the axes, the strip and the title sizes.
+  const cardAxes = plugin.expectedVariantAxesForComponentSetName("Card");
+  ok(
+    JSON.stringify(cardAxes?.HeaderTone) ===
+      JSON.stringify(["Default", "Subtle"]) &&
+      JSON.stringify(cardAxes?.TitleSize) ===
+        JSON.stringify(["Large", "Medium", "Small"]),
+    `Card expects a HeaderTone and a TitleSize (${JSON.stringify(cardAxes?.HeaderTone)}; ${JSON.stringify(cardAxes?.TitleSize)})`,
+  );
+  const combos =
+    typeof plugin.generatedVariantCombinations === "function" &&
+    typeof plugin.cardHasCombination === "function"
+      ? plugin.generatedVariantCombinations({
+          values: plugin.CARD_CONTENT,
+          axis2Values: plugin.CARD_SECONDS,
+          hasCombination: plugin.cardHasCombination,
+        })
+      : [];
+  ok(
+    combos.length === 18,
+    `the set is 18 cards: Basic in each padding, and Header and Full in each padding with the three title sizes and the strip (${combos.length})`,
+  );
+  const paintCard = async (value, second) => {
+    const component = figma.createComponent();
+    try {
+      await plugin.updateCardVariant(component, {
+        value,
+        second,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    } catch {
+      return null;
+    }
+    return component;
+  };
+  const strip = await paintCard("Header", "Compact|Subtle|Small");
+  const stripHeader = strip && named(strip, "Card Header");
+  const stripTitle = strip && named(strip, "Title Text");
+  const stripBody = strip && named(strip, "Card Content");
+  ok(
+    strip?.name ===
+      "Content=Header, Padding=Compact, HeaderTone=Subtle, TitleSize=Small",
+    `the strip's variant is named for its axes (${strip?.name})`,
+  );
+  ok(
+    stripHeader &&
+      reads(stripHeader.fills[0]) === "Colors/theme/0 #F1F5FE/#051C4F",
+    `the strip is theme 0, #F1F5FE in Light and #051C4F in Dark (${stripHeader && reads(stripHeader.fills[0])})`,
+  );
+  ok(
+    stripHeader &&
+      stripHeader.paddingTop === 12 &&
+      stripHeader.paddingBottom === 12 &&
+      stripHeader.paddingLeft === 16 &&
+      stripHeader.topLeftRadius === 20 &&
+      stripHeader.topRightRadius === 20 &&
+      stripHeader.counterAxisAlignItems === "CENTER",
+    `12 above and below its words, the card's 16 at its sides, the card's 20 at its top corners, centred (${stripHeader && [stripHeader.paddingTop, stripHeader.paddingBottom, stripHeader.paddingLeft, stripHeader.topLeftRadius, stripHeader.topRightRadius, stripHeader.counterAxisAlignItems].join(", ")})`,
+  );
+  ok(
+    stripBody && stripBody.paddingTop === 16,
+    `the content under the strip keeps the card's padding above it (${stripBody?.paddingTop})`,
+  );
+  ok(
+    stripTitle && stripTitle.fontSize === 14,
+    `the strip's title is 14, its Small size (${stripTitle?.fontSize})`,
+  );
+  for (const [size, want] of [
+    ["Large", 24],
+    ["Medium", 18],
+    ["Small", 14],
+  ]) {
+    const sized = await paintCard("Header", `Default|Default|${size}`);
+    const title = sized && named(sized, "Title Text");
+    const header = sized && named(sized, "Card Header");
+    const actions = header && named(header, "Header Actions");
+    ok(
+      title?.fontSize === want &&
+        title?.lineHeight?.value === want &&
+        actions?.height === want &&
+        header?.fills?.length === 0,
+      `TitleSize=${size}: a ${want} title on a ${want} line, its actions centred on it, on the card's own surface (${title?.fontSize}/${title?.lineHeight?.value}, actions ${actions?.height})`,
+    );
+  }
 }
 
 // --- EmptyState's size, Container's inset, POIResultCard's appearance ----------------
@@ -11464,13 +11655,20 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       const text = column && named(column, textName);
       return text && text.id === id;
     });
+    // The six are renamed with the Default tone and title, and Update adds
+    // the twelve the HeaderTone and TitleSize axes bring (CLOUD-UI-001,
+    // GAP-035): the strip, and the Medium and Small titles, on Header and
+    // Full in both paddings.
     ok(
       updated &&
         updated.updated === true &&
         updated.variantsUpdated === 6 &&
-        updated.variantsCreated === 0 &&
+        updated.variantsCreated === 12 &&
         [...ids].every(
-          ([name, id]) => byId.get(id) && byId.get(id).name === name,
+          ([name, id]) =>
+            byId.get(id) &&
+            byId.get(id).name ===
+              `${name}, HeaderTone=Default, TitleSize=Large`,
         ) &&
         textsKept &&
         propertyNamed(liveSet, "Header Actions", "BOOLEAN") &&
