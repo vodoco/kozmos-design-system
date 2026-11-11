@@ -9,6 +9,10 @@ import { cn } from "../../utils";
 
 export type TreeDensity = "default" | "compact";
 export type TreeActivationMode = "select" | "toggle" | "select-toggle";
+/** One selected row, or a set of them with ranges (GAP-151). */
+export type TreeSelectionMode = "single" | "multiple";
+/** Where a row's meta goes: after the name, or on a line under it (GAP-107). */
+export type TreeMetaPlacement = "inline" | "below";
 
 export interface TreeItemRenderContext {
   item: TreeItem;
@@ -31,6 +35,18 @@ export interface TreeItem {
   name: React.ReactNode;
   children?: TreeItem[];
   disabled?: boolean;
+  /**
+   * A section heading (GAP-151): its name and count drawn as a heading over
+   * its `children`, which are the section's items, at the section's own depth.
+   * A section is always open, and is never focused, selected or counted as a
+   * row; its items are a set of their own, in a group named by it.
+   */
+  section?: boolean;
+  /**
+   * The item's words, for type-ahead and a section's group name, where
+   * `name` is not plain text.
+   */
+  textValue?: string;
   icon?: TreeItemSlot;
   count?: TreeItemSlot;
   meta?: TreeItemSlot;
@@ -66,6 +82,42 @@ export interface TreeProps extends Omit<
   bleed?: number | string;
   indent?: number;
   activationMode?: TreeActivationMode;
+  /**
+   * `"multiple"` holds a set of rows (GAP-151): a click selects one row,
+   * Ctrl or Cmd with a click adds or takes away a row, and Shift with a click
+   * selects the rows from the last one chosen; Shift with the arrows, Home
+   * and End selects as focus moves, Space adds or takes away the focused row
+   * and Ctrl or Cmd+A selects every row. Ranges pass over disabled rows and
+   * section headings. `"single"`, the default, is one `selectedId`.
+   */
+  selectionMode?: TreeSelectionMode;
+  /** The selected rows of a `"multiple"` tree, controlled. */
+  selectedIds?: string[];
+  /** The rows a `"multiple"` tree starts with selected. */
+  defaultSelectedIds?: string[];
+  /** Every change to a `"multiple"` tree's selected rows. */
+  onSelectedIdsChange?: (ids: string[]) => void;
+  /**
+   * Where each row's meta goes: `"inline"`, after the name (the default), or
+   * `"below"`, on a line of its own under it, so the name keeps the row's
+   * width (GAP-107). Rows composed as children take it from here too.
+   */
+  metaPlacement?: TreeMetaPlacement;
+  /**
+   * Draws only the rows in view (GAP-151), for a tree of thousands: the Tree
+   * scrolls itself, so give it a height. The focused row is always drawn, and
+   * every row's level, place in its set and type-ahead come from `data`, so
+   * the keyboard and a screen reader reach rows out of view.
+   */
+  virtualized?: boolean;
+  /** Rows drawn past each edge of the view when `virtualized`: 8 by default. */
+  overscan?: number;
+  /**
+   * A right click, or the keyboard's menu key, on a row: the row takes focus
+   * and, if it is not selected, the selection, then this runs. Wrap the Tree
+   * in a `ContextMenuTrigger` for the menu itself (GAP-155).
+   */
+  onItemContextMenu?: (item: TreeItem, event: React.MouseEvent) => void;
   defaultExpandedIds?: string[];
   expandedIds?: string[];
   onExpandedChange?: (ids: string[]) => void;
@@ -95,6 +147,11 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   divided?: boolean;
   /** Whether a row with children shows them: its `aria-expanded`. */
   expanded?: boolean;
+  /**
+   * As Tree's `metaPlacement`: `"below"` draws `meta` on a line under the
+   * name (GAP-107). Defaults to the Tree's, else `"inline"`.
+   */
+  metaPlacement?: TreeMetaPlacement;
   focusVisible?: boolean;
   /** Draws the disclosure, and gives the row `aria-expanded`. */
   hasChildren?: boolean;
@@ -106,14 +163,51 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   selected?: boolean;
 }
 
+export interface TreeSectionRowProps extends React.HTMLAttributes<HTMLDivElement> {
+  name: React.ReactNode;
+  count?: React.ReactNode;
+  density?: TreeDensity;
+  /** The depth of the items it heads: its indent. */
+  depth?: number;
+  indent?: number;
+}
+
 interface VisibleTreeItem {
   item: TreeItem;
   depth: number;
+  /** The nearest row above it, past any section. */
   parentId?: string;
+  /** The innermost section it is in. */
+  sectionId?: string;
+  section: boolean;
+  /** Its place in its set of rows, from 1, and the set's size. */
+  posInSet: number;
+  setSize: number;
 }
+
+// A layout effect in the browser, an effect on a server render.
+const useTreeLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 /** A Tree's `divided`, for the rows composed in it as children. */
 const TreeDividedContext = React.createContext(false);
+/** A Tree's `metaPlacement`, for the rows composed in it as children. */
+const TreeMetaPlacementContext = React.createContext<
+  TreeMetaPlacement | undefined
+>(undefined);
+
+const countPillClass =
+  "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-pill border border-border bg-muted px-1.5 text-xs font-medium leading-none text-foreground";
+
+/** A row's words, for type-ahead and a section's group name. */
+const treeItemText = (item: TreeItem) =>
+  item.textValue ??
+  (typeof item.name === "string" || typeof item.name === "number"
+    ? String(item.name)
+    : "");
+
+const isEnabledRow = (visible: VisibleTreeItem) =>
+  !visible.section && !visible.item.disabled;
 
 const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
   (
@@ -133,6 +227,14 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       defaultSelectedId,
       selectedId,
       onSelectionChange,
+      selectionMode = "single",
+      selectedIds,
+      defaultSelectedIds,
+      onSelectedIdsChange,
+      metaPlacement,
+      virtualized = false,
+      overscan = 8,
+      onItemContextMenu,
       renderIcon,
       renderMeta,
       renderActions,
@@ -140,13 +242,19 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     },
     ref,
   ) => {
+    const multiple = selectionMode === "multiple";
     const [internalExpandedIds, setInternalExpandedIds] = React.useState(
       () => new Set(defaultExpandedIds),
     );
     const [internalSelectedId, setInternalSelectedId] =
       React.useState(defaultSelectedId);
+    const [internalSelectedIds, setInternalSelectedIds] = React.useState(
+      () => new Set(defaultSelectedIds),
+    );
     const [focusedId, setFocusedId] = React.useState(
-      () => defaultSelectedId ?? findFirstEnabledTreeItemId(data),
+      () =>
+        (multiple ? defaultSelectedIds?.[0] : defaultSelectedId) ??
+        findFirstEnabledTreeItemId(data),
     );
     const itemRefs = React.useRef(new Map<string, HTMLDivElement>());
     const expandedSet = React.useMemo(
@@ -154,10 +262,27 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       [expandedIds, internalExpandedIds],
     );
     const currentSelectedId = selectedId ?? internalSelectedId;
+    const selectedSet = React.useMemo(
+      () =>
+        multiple
+          ? new Set(selectedIds ?? Array.from(internalSelectedIds))
+          : new Set(currentSelectedId === undefined ? [] : [currentSelectedId]),
+      [multiple, selectedIds, internalSelectedIds, currentSelectedId],
+    );
     const visibleItems = React.useMemo(
       () => flattenTreeItems(data, expandedSet),
       [data, expandedSet],
     );
+    const visibleById = React.useMemo(
+      () => new Map(visibleItems.map((visible) => [visible.item.id, visible])),
+      [visibleItems],
+    );
+    // Where a range starts: the row last chosen, or moved to without Shift.
+    const anchorId = React.useRef<string | undefined>(focusedId);
+    // What has been typed for type-ahead, and when it is forgotten.
+    const typeahead = React.useRef({ text: "", timer: 0 });
+    const pendingFocusId = React.useRef<string | undefined>();
+    const scrollerRef = React.useRef<HTMLDivElement | null>(null);
 
     const setExpandedSet = React.useCallback(
       (next: Set<string>) => {
@@ -171,7 +296,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
     const toggleExpanded = React.useCallback(
       (item: TreeItem, force?: boolean) => {
-        if (!item.children?.length || item.disabled) return;
+        if (!item.children?.length || item.disabled || item.section) return;
 
         const next = new Set(expandedSet);
         const shouldExpand = force ?? !next.has(item.id);
@@ -187,26 +312,173 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       [expandedSet, setExpandedSet],
     );
 
+    const setSelectedSet = React.useCallback(
+      (next: Set<string>) => {
+        if (selectedIds === undefined) setInternalSelectedIds(next);
+        onSelectedIdsChange?.(Array.from(next));
+      },
+      [onSelectedIdsChange, selectedIds],
+    );
+
     const selectItem = React.useCallback(
       (item: TreeItem) => {
-        if (item.disabled) return;
+        if (item.disabled || item.section) return;
 
-        if (selectedId === undefined) {
+        anchorId.current = item.id;
+        if (multiple) {
+          setSelectedSet(new Set([item.id]));
+        } else if (selectedId === undefined) {
           setInternalSelectedId(item.id);
         }
         onSelectionChange?.(item);
       },
-      [onSelectionChange, selectedId],
+      [multiple, onSelectionChange, selectedId, setSelectedSet],
     );
 
-    const focusItem = React.useCallback((id: string) => {
-      setFocusedId(id);
-      itemRefs.current.get(id)?.focus();
-    }, []);
+    /** The enabled rows from the anchor to `toId`, in the order drawn. */
+    const rangeIds = React.useCallback(
+      (toId: string) => {
+        const from = visibleItems.findIndex(
+          (visible) => visible.item.id === (anchorId.current ?? toId),
+        );
+        const to = visibleItems.findIndex(
+          (visible) => visible.item.id === toId,
+        );
+        if (to < 0) return [];
+        const [start, end] =
+          from < 0 ? [to, to] : from < to ? [from, to] : [to, from];
+        return visibleItems
+          .slice(start, end + 1)
+          .filter(isEnabledRow)
+          .map((visible) => visible.item.id);
+      },
+      [visibleItems],
+    );
+
+    const selectRange = React.useCallback(
+      (toId: string, add = false) => {
+        const next = new Set(add ? selectedSet : []);
+        for (const id of rangeIds(toId)) next.add(id);
+        setSelectedSet(next);
+      },
+      [rangeIds, selectedSet, setSelectedSet],
+    );
+
+    const toggleSelected = React.useCallback(
+      (item: TreeItem) => {
+        anchorId.current = item.id;
+        const next = new Set(selectedSet);
+        if (next.has(item.id)) next.delete(item.id);
+        else next.add(item.id);
+        setSelectedSet(next);
+      },
+      [selectedSet, setSelectedSet],
+    );
+
+    // ---- Virtualisation (GAP-151) ----------------------------------------
+    // Each row's height: measured once drawn, else estimated from what it
+    // shows. The offsets are their running sum, so a row out of view still
+    // has its place.
+    const measuredHeights = React.useRef(new Map<string, number>());
+    const [measureVersion, bumpMeasureVersion] = React.useReducer(
+      (version: number) => version + 1,
+      0,
+    );
+    const [scrollTop, setScrollTop] = React.useState(0);
+    const [viewportHeight, setViewportHeight] = React.useState(0);
+    const offsets = React.useMemo(() => {
+      if (!virtualized) return [];
+      const rowHeight = density === "compact" ? 32 : 40;
+      const sums = new Array<number>(visibleItems.length + 1);
+      sums[0] = 0;
+      visibleItems.forEach((visible, index) => {
+        const measured = measuredHeights.current.get(visible.item.id);
+        let height = measured;
+        if (height === undefined) {
+          if (visible.section) {
+            height = density === "compact" ? 24 : 32;
+          } else {
+            const hasMeta =
+              visible.item.meta !== undefined || renderMeta !== undefined;
+            height =
+              (metaPlacement === "below" && hasMeta
+                ? rowHeight + (density === "compact" ? 12 : 8)
+                : rowHeight) + (divided ? 1 : 0);
+          }
+        }
+        sums[index + 1] = sums[index] + height;
+      });
+      return sums;
+      // measureVersion: a new measurement moves the offsets.
+    }, [
+      virtualized,
+      visibleItems,
+      density,
+      divided,
+      metaPlacement,
+      renderMeta,
+      measureVersion,
+    ]);
+
+    const scrollRowIntoView = React.useCallback(
+      (id: string) => {
+        const scroller = scrollerRef.current;
+        if (!virtualized || !scroller) return;
+        const index = visibleItems.findIndex(
+          (visible) => visible.item.id === id,
+        );
+        if (index < 0) return;
+        const top = offsets[index];
+        const bottom = offsets[index + 1];
+        const view = scroller.clientHeight || viewportHeight;
+        let next = scroller.scrollTop;
+        if (top < next) next = top;
+        else if (bottom > next + view) next = bottom - view;
+        if (next !== scroller.scrollTop) {
+          scroller.scrollTop = next;
+          setScrollTop(next);
+        }
+      },
+      [offsets, viewportHeight, virtualized, visibleItems],
+    );
+
+    const focusItem = React.useCallback(
+      (id: string) => {
+        setFocusedId(id);
+        scrollRowIntoView(id);
+        const node = itemRefs.current.get(id);
+        if (node) node.focus();
+        // Out of view, the row is drawn in the next commit: focus it then.
+        else pendingFocusId.current = id;
+      },
+      [scrollRowIntoView],
+    );
+
+    useTreeLayoutEffect(() => {
+      const id = pendingFocusId.current;
+      if (id === undefined) return;
+      const node = itemRefs.current.get(id);
+      if (node) {
+        pendingFocusId.current = undefined;
+        node.focus();
+      }
+    });
 
     const activateItem = React.useCallback(
-      (item: TreeItem) => {
-        if (item.disabled) return;
+      (item: TreeItem, event?: React.MouseEvent) => {
+        if (item.disabled || item.section) return;
+
+        if (
+          multiple &&
+          event &&
+          (event.shiftKey || event.ctrlKey || event.metaKey)
+        ) {
+          setFocusedId(item.id);
+          if (event.shiftKey)
+            selectRange(item.id, event.ctrlKey || event.metaKey);
+          else toggleSelected(item);
+          return;
+        }
 
         if (activationMode === "select" || activationMode === "select-toggle") {
           selectItem(item);
@@ -219,7 +491,56 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
           toggleExpanded(item);
         }
       },
-      [activationMode, selectItem, toggleExpanded],
+      [
+        activationMode,
+        multiple,
+        selectItem,
+        selectRange,
+        toggleExpanded,
+        toggleSelected,
+      ],
+    );
+
+    const handleItemContextMenu = React.useCallback(
+      (item: TreeItem, event: React.MouseEvent) => {
+        if (!onItemContextMenu || item.disabled || item.section) return;
+        if (!selectedSet.has(item.id)) selectItem(item);
+        setFocusedId(item.id);
+        onItemContextMenu(item, event);
+      },
+      [onItemContextMenu, selectItem, selectedSet],
+    );
+
+    /** Type-ahead: the next row whose words start with what was typed. */
+    const typeAhead = React.useCallback(
+      (item: TreeItem, key: string) => {
+        const state = typeahead.current;
+        window.clearTimeout(state.timer);
+        state.text += key.toLowerCase();
+        state.timer = window.setTimeout(() => {
+          state.text = "";
+        }, 500);
+        const rows = visibleItems.filter(isEnabledRow);
+        const current = rows.findIndex(
+          (visible) => visible.item.id === item.id,
+        );
+        // One letter, or the same letter again, moves on from this row;
+        // more letters keep to it while it still matches.
+        const repeated = Array.from(state.text).every(
+          (letter) => letter === state.text[0],
+        );
+        const search = repeated ? state.text[0] : state.text;
+        const start = repeated ? current + 1 : current;
+        for (let step = 0; step < rows.length; step += 1) {
+          const candidate = rows[(start + step + rows.length) % rows.length];
+          if (treeItemText(candidate.item).toLowerCase().startsWith(search)) {
+            focusItem(candidate.item.id);
+            anchorId.current = candidate.item.id;
+            return;
+          }
+        }
+      },
+      [focusItem, visibleItems],
     );
 
     const handleItemKeyDown = React.useCallback(
@@ -229,14 +550,53 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         const currentIndex = visibleItems.findIndex(
           (visible) => visible.item.id === item.id,
         );
-        const enabledItems = visibleItems.filter(
-          (visible) => !visible.item.disabled,
-        );
+        const enabledItems = visibleItems.filter(isEnabledRow);
         const currentEnabledIndex = enabledItems.findIndex(
           (visible) => visible.item.id === item.id,
         );
         const hasChildren = Boolean(item.children?.length);
         const isOpen = expandedSet.has(item.id);
+        const command = event.ctrlKey || event.metaKey;
+        const extend = multiple && event.shiftKey;
+        // Focus moves to `id`: with Shift in a multiple tree, the range from
+        // the anchor goes with it; without, the anchor does.
+        const moveTo = (id: string | undefined) => {
+          if (!id) return;
+          focusItem(id);
+          if (extend) selectRange(id);
+          else anchorId.current = id;
+        };
+
+        if (
+          multiple &&
+          command &&
+          !event.altKey &&
+          event.key.toLowerCase() === "a"
+        ) {
+          event.preventDefault();
+          setSelectedSet(
+            new Set(enabledItems.map((visible) => visible.item.id)),
+          );
+          return;
+        }
+
+        if (
+          event.key.length === 1 &&
+          !command &&
+          !event.altKey &&
+          (event.key !== " " || typeahead.current.text !== "")
+        ) {
+          event.preventDefault();
+          typeAhead(item, event.key);
+          return;
+        }
+
+        if (event.key === " " && multiple) {
+          event.preventDefault();
+          if (event.shiftKey) selectRange(item.id);
+          else toggleSelected(item);
+          return;
+        }
 
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -246,29 +606,25 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
         if (event.key === "ArrowDown") {
           event.preventDefault();
-          const next = enabledItems[currentEnabledIndex + 1];
-          if (next) focusItem(next.item.id);
+          moveTo(enabledItems[currentEnabledIndex + 1]?.item.id);
           return;
         }
 
         if (event.key === "ArrowUp") {
           event.preventDefault();
-          const previous = enabledItems[currentEnabledIndex - 1];
-          if (previous) focusItem(previous.item.id);
+          moveTo(enabledItems[currentEnabledIndex - 1]?.item.id);
           return;
         }
 
         if (event.key === "Home") {
           event.preventDefault();
-          const first = enabledItems[0];
-          if (first) focusItem(first.item.id);
+          moveTo(enabledItems[0]?.item.id);
           return;
         }
 
         if (event.key === "End") {
           event.preventDefault();
-          const last = enabledItems[enabledItems.length - 1];
-          if (last) focusItem(last.item.id);
+          moveTo(enabledItems[enabledItems.length - 1]?.item.id);
           return;
         }
 
@@ -277,12 +633,13 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
           if (!isOpen) {
             toggleExpanded(item, true);
           } else {
-            const nextVisible = visibleItems[currentIndex + 1];
-            if (
-              nextVisible &&
-              nextVisible.depth > visibleItems[currentIndex].depth
-            ) {
-              focusItem(nextVisible.item.id);
+            // Its first child: past a section's heading, if it opens with one.
+            const depth = visibleItems[currentIndex].depth;
+            for (const next of visibleItems.slice(currentIndex + 1)) {
+              if (next.depth <= depth && !next.section) break;
+              if (next.section) continue;
+              if (next.depth > depth) moveTo(next.item.id);
+              break;
             }
           }
           return;
@@ -296,35 +653,148 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
           }
 
           const parentId = visibleItems[currentIndex]?.parentId;
-          if (parentId) focusItem(parentId);
+          if (parentId) moveTo(parentId);
         }
       },
-      [activateItem, expandedSet, focusItem, toggleExpanded, visibleItems],
+      [
+        activateItem,
+        expandedSet,
+        focusItem,
+        multiple,
+        selectRange,
+        setSelectedSet,
+        toggleExpanded,
+        toggleSelected,
+        typeAhead,
+        visibleItems,
+      ],
     );
+
+    React.useEffect(() => {
+      const state = typeahead.current;
+      return () => window.clearTimeout(state.timer);
+    }, []);
 
     // The tab stop moves off an item that is no longer drawn, or can no
     // longer be used, in the render that says so, so every commit has one
     // (GAP-231): to the chosen item if it is drawn and enabled, else the
     // first enabled one.
     const isTabStop = (id: string | undefined) =>
-      Boolean(id) &&
-      visibleItems.some(
-        (visible) => visible.item.id === id && !visible.item.disabled,
-      );
+      id !== undefined &&
+      Boolean(visibleById.get(id) && isEnabledRow(visibleById.get(id)!));
     if (!isTabStop(focusedId)) {
-      const nextFocusedId = isTabStop(currentSelectedId)
-        ? currentSelectedId
-        : visibleItems.find((visible) => !visible.item.disabled)?.item.id;
+      const chosen = multiple
+        ? visibleItems.find(
+            (visible) =>
+              isEnabledRow(visible) && selectedSet.has(visible.item.id),
+          )?.item.id
+        : currentSelectedId;
+      const nextFocusedId = isTabStop(chosen)
+        ? chosen
+        : visibleItems.find(isEnabledRow)?.item.id;
       if (nextFocusedId !== focusedId) setFocusedId(nextFocusedId);
+    }
+
+    // Virtualised, the rows in view, measured after each commit, and the
+    // view's own height.
+    const rowBoxes = React.useRef(new Map<string, HTMLElement>());
+    useTreeLayoutEffect(() => {
+      if (!virtualized) return;
+      const scroller = scrollerRef.current;
+      if (scroller && scroller.clientHeight !== viewportHeight) {
+        setViewportHeight(scroller.clientHeight);
+      }
+      let changed = false;
+      rowBoxes.current.forEach((box, id) => {
+        const height = box.offsetHeight;
+        // 0 is a box with no layout (hidden, or a test's DOM): keep the
+        // estimate.
+        if (height > 0 && measuredHeights.current.get(id) !== height) {
+          measuredHeights.current.set(id, height);
+          changed = true;
+        }
+      });
+      if (changed) bumpMeasureVersion();
+    });
+    React.useEffect(() => {
+      const scroller = scrollerRef.current;
+      if (!virtualized || !scroller || typeof ResizeObserver === "undefined")
+        return;
+      const observer = new ResizeObserver(() =>
+        setViewportHeight(scroller.clientHeight),
+      );
+      observer.observe(scroller);
+      return () => observer.disconnect();
+    }, [virtualized]);
+
+    const setRefs = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        scrollerRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+
+    const nodeProps: TreeNodeSharedProps = {
+      density,
+      divided,
+      expandedSet,
+      focusedId,
+      indent,
+      itemRefs,
+      metaPlacement,
+      selectedSet,
+      visibleById,
+      onActivate: activateItem,
+      onContextMenu: onItemContextMenu ? handleItemContextMenu : undefined,
+      onFocusItem: setFocusedId,
+      onKeyDown: handleItemKeyDown,
+      onSelect: selectItem,
+      onToggle: toggleExpanded,
+      renderActions,
+      renderIcon,
+      renderMeta,
+    };
+
+    let content: React.ReactNode;
+    if (children !== undefined && children !== null) {
+      content = children;
+    } else if (virtualized) {
+      content = renderVirtualRows({
+        visibleItems,
+        visibleById,
+        offsets,
+        scrollTop,
+        viewportHeight,
+        overscan,
+        focusedId,
+        rowBoxes,
+        nodeProps,
+      });
+    } else {
+      content = data.map((item) => (
+        <TreeNode key={item.id} item={item} depth={0} {...nodeProps} />
+      ));
     }
 
     return (
       <div
-        ref={ref}
+        ref={setRefs}
         role="tree"
         aria-label={ariaLabel}
-        className={cn("w-full text-sm", className)}
+        aria-multiselectable={multiple || undefined}
+        data-virtualized={virtualized || undefined}
+        className={cn(
+          "w-full text-sm",
+          virtualized && "relative overflow-y-auto",
+          className,
+        )}
         {...props}
+        onScroll={(event) => {
+          if (virtualized) setScrollTop(event.currentTarget.scrollTop);
+          props.onScroll?.(event);
+        }}
         style={
           bleed === undefined
             ? props.style
@@ -336,29 +806,9 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         }
       >
         <TreeDividedContext.Provider value={!!divided}>
-          {children ??
-            data.map((item) => (
-              <TreeNode
-                key={item.id}
-                item={item}
-                depth={0}
-                density={density}
-                divided={divided}
-                expandedSet={expandedSet}
-                focusedId={focusedId}
-                indent={indent}
-                itemRefs={itemRefs}
-                selectedId={currentSelectedId}
-                onActivate={activateItem}
-                onFocusItem={setFocusedId}
-                onKeyDown={handleItemKeyDown}
-                onSelect={selectItem}
-                onToggle={toggleExpanded}
-                renderActions={renderActions}
-                renderIcon={renderIcon}
-                renderMeta={renderMeta}
-              />
-            ))}
+          <TreeMetaPlacementContext.Provider value={metaPlacement}>
+            {content}
+          </TreeMetaPlacementContext.Provider>
         </TreeDividedContext.Provider>
       </div>
     );
@@ -366,17 +816,18 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 );
 Tree.displayName = "Tree";
 
-interface TreeNodeProps {
-  item: TreeItem;
-  depth: number;
+interface TreeNodeSharedProps {
   density: TreeDensity;
   divided?: boolean;
   expandedSet: Set<string>;
   focusedId?: string;
   indent: number;
   itemRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
-  selectedId?: string;
-  onActivate: (item: TreeItem) => void;
+  metaPlacement?: TreeMetaPlacement;
+  selectedSet: Set<string>;
+  visibleById: Map<string, VisibleTreeItem>;
+  onActivate: (item: TreeItem, event?: React.MouseEvent) => void;
+  onContextMenu?: (item: TreeItem, event: React.MouseEvent) => void;
   onFocusItem: (id: string) => void;
   onKeyDown: (
     item: TreeItem,
@@ -389,7 +840,43 @@ interface TreeNodeProps {
   renderActions?: (context: TreeItemRenderContext) => React.ReactNode;
 }
 
-const TreeNode = ({
+interface TreeNodeProps extends TreeNodeSharedProps {
+  item: TreeItem;
+  depth: number;
+}
+
+/** A section's heading, drawn by Tree from `data`. */
+const TreeSectionHeading = ({
+  item,
+  depth,
+  density,
+  indent,
+}: Pick<TreeNodeProps, "item" | "depth" | "density" | "indent">) => {
+  const context: TreeItemRenderContext = {
+    item,
+    depth,
+    hasChildren: Boolean(item.children?.length),
+    expanded: true,
+    selected: false,
+    focused: false,
+    disabled: Boolean(item.disabled),
+    toggle: () => undefined,
+    select: () => undefined,
+  };
+  return (
+    <TreeSectionRow
+      name={item.name}
+      count={resolveTreeSlot(item.count, context)}
+      depth={depth}
+      density={density}
+      indent={indent}
+      className={item.className}
+    />
+  );
+};
+
+/** One row of a tree drawn from `data`, without its children. */
+const TreeNodeRow = ({
   item,
   depth,
   density,
@@ -398,8 +885,11 @@ const TreeNode = ({
   focusedId,
   indent,
   itemRefs,
-  selectedId,
+  metaPlacement,
+  selectedSet,
+  visibleById,
   onActivate,
+  onContextMenu,
   onFocusItem,
   onKeyDown,
   onSelect,
@@ -410,9 +900,10 @@ const TreeNode = ({
 }: TreeNodeProps) => {
   const hasChildren = Boolean(item.children?.length);
   const isOpen = expandedSet.has(item.id);
-  const isSelected = selectedId === item.id;
+  const isSelected = selectedSet.has(item.id);
   const isFocused = focusedId === item.id;
   const isDisabled = Boolean(item.disabled);
+  const visible = visibleById.get(item.id);
 
   const select = () => {
     onSelect(item);
@@ -458,63 +949,225 @@ const TreeNode = ({
   };
 
   return (
+    // The row is the treeitem: its level and state come from the props
+    // below, as a composed row's do; its place in its set from the data, so
+    // it is right when the rows round it are not drawn.
+    <TreeItemRow
+      ref={registerItem}
+      tabIndex={isDisabled ? -1 : isFocused ? 0 : -1}
+      aria-setsize={visible?.setSize}
+      aria-posinset={visible?.posInSet}
+      data-tree-id={item.id}
+      actions={actions}
+      count={count}
+      density={density}
+      depth={depth}
+      disabled={isDisabled}
+      divided={divided}
+      expanded={isOpen}
+      hasChildren={hasChildren}
+      icon={icon}
+      indent={indent}
+      meta={meta}
+      metaPlacement={metaPlacement}
+      name={item.name}
+      selected={isSelected}
+      className={item.className}
+      onClick={(event) => onActivate(item, event)}
+      onContextMenu={
+        onContextMenu ? (event) => onContextMenu(item, event) : undefined
+      }
+      onDisclosureClick={(event) => {
+        if (!hasChildren) return;
+        event.stopPropagation();
+        onToggle(item);
+      }}
+      onFocus={() => onFocusItem(item.id)}
+      onKeyDown={(event) => onKeyDown(item, event)}
+    />
+  );
+};
+
+const TreeNode = (props: TreeNodeProps) => {
+  const { item, depth, expandedSet } = props;
+
+  // A section: its heading, then its items in a group named by it, at its
+  // own depth. The heading is for the eye; the group's name is what a screen
+  // reader hears.
+  if (item.section) {
+    return (
+      <>
+        <TreeSectionHeading {...props} />
+        {Boolean(item.children?.length) && (
+          <div role="group" aria-label={treeItemText(item) || undefined}>
+            {item.children?.map((child) => (
+              <TreeNode key={child.id} {...props} item={child} depth={depth} />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  const isOpen = expandedSet.has(item.id);
+  return (
     <>
-      {/* The row is the treeitem: its level and state come from the props
-          below, as a composed row's do. */}
-      <TreeItemRow
-        ref={registerItem}
-        tabIndex={isDisabled ? -1 : isFocused ? 0 : -1}
-        actions={actions}
-        count={count}
-        density={density}
-        depth={depth}
-        disabled={isDisabled}
-        divided={divided}
-        expanded={isOpen}
-        hasChildren={hasChildren}
-        icon={icon}
-        indent={indent}
-        meta={meta}
-        name={item.name}
-        selected={isSelected}
-        className={item.className}
-        onClick={() => onActivate(item)}
-        onDisclosureClick={(event) => {
-          if (!hasChildren) return;
-          event.stopPropagation();
-          onToggle(item);
-        }}
-        onFocus={() => onFocusItem(item.id)}
-        onKeyDown={(event) => onKeyDown(item, event)}
-      />
-      {isOpen && hasChildren && (
+      <TreeNodeRow {...props} />
+      {isOpen && Boolean(item.children?.length) && (
         <div role="group">
           {item.children?.map((child) => (
             <TreeNode
               key={child.id}
+              {...props}
               item={child}
               depth={depth + 1}
-              density={density}
-              divided={divided}
-              expandedSet={expandedSet}
-              focusedId={focusedId}
-              indent={indent}
-              itemRefs={itemRefs}
-              selectedId={selectedId}
-              onActivate={onActivate}
-              onFocusItem={onFocusItem}
-              onKeyDown={onKeyDown}
-              onSelect={onSelect}
-              onToggle={onToggle}
-              renderActions={renderActions}
-              renderIcon={renderIcon}
-              renderMeta={renderMeta}
             />
           ))}
         </div>
       )}
     </>
   );
+};
+
+/**
+ * The rows of a virtualised tree in view, and the focused row wherever it
+ * is, with spacers for the rows between them (GAP-151). A section's items
+ * drawn together are in a group named by it.
+ */
+const renderVirtualRows = ({
+  visibleItems,
+  visibleById,
+  offsets,
+  scrollTop,
+  viewportHeight,
+  overscan,
+  focusedId,
+  rowBoxes,
+  nodeProps,
+}: {
+  visibleItems: VisibleTreeItem[];
+  visibleById: Map<string, VisibleTreeItem>;
+  offsets: number[];
+  scrollTop: number;
+  viewportHeight: number;
+  overscan: number;
+  focusedId?: string;
+  rowBoxes: React.MutableRefObject<Map<string, HTMLElement>>;
+  nodeProps: TreeNodeSharedProps;
+}) => {
+  const count = visibleItems.length;
+  if (count === 0) return null;
+  // With no layout to read yet, a view of 400.
+  const view = viewportHeight > 0 ? viewportHeight : 400;
+  const first = Math.max(0, findOffsetIndex(offsets, scrollTop) - overscan);
+  const last = Math.min(
+    count - 1,
+    findOffsetIndex(offsets, scrollTop + view) + overscan,
+  );
+  const indices: number[] = [];
+  const focused =
+    focusedId === undefined ? undefined : visibleById.get(focusedId);
+  const focusedIndex = focused ? visibleItems.indexOf(focused) : -1;
+  if (focusedIndex >= 0 && focusedIndex < first) indices.push(focusedIndex);
+  for (let index = first; index <= last; index += 1) indices.push(index);
+  if (focusedIndex > last) indices.push(focusedIndex);
+
+  // Rows go in their section's group, keyed by the section, so a row keeps
+  // its element (and its focus) as the view moves; a section drawn again
+  // after a section inside it gets a second group.
+  const out: React.ReactNode[] = [];
+  let block: React.ReactNode[] = out;
+  let blockSection: string | undefined;
+  const seen = new Map<string, number>();
+  const openBlock = (sectionId: string | undefined) => {
+    blockSection = sectionId;
+    if (sectionId === undefined) {
+      block = out;
+      return;
+    }
+    const occurrence = seen.get(sectionId) ?? 0;
+    seen.set(sectionId, occurrence + 1);
+    const section = visibleById.get(sectionId);
+    block = [];
+    out.push(
+      <div
+        key={`group-${sectionId}-${occurrence}`}
+        role="group"
+        aria-label={(section && treeItemText(section.item)) || undefined}
+      >
+        {block}
+      </div>,
+    );
+  };
+  let previous = -1;
+  for (const index of indices) {
+    const visible = visibleItems[index];
+    if (previous === -1 || visible.sectionId !== blockSection) {
+      openBlock(visible.sectionId);
+    }
+    const gap = offsets[index] - offsets[previous + 1];
+    if (gap > 0) {
+      block.push(
+        <div
+          key={`gap-${visible.item.id}`}
+          aria-hidden="true"
+          data-tree-spacer=""
+          style={{ height: gap }}
+        />,
+      );
+    }
+    const id = visible.item.id;
+    block.push(
+      <div
+        key={id}
+        data-tree-row-box=""
+        ref={(node) => {
+          if (node) rowBoxes.current.set(id, node);
+          else rowBoxes.current.delete(id);
+        }}
+      >
+        {visible.section ? (
+          <TreeSectionHeading
+            item={visible.item}
+            depth={visible.depth}
+            density={nodeProps.density}
+            indent={nodeProps.indent}
+          />
+        ) : (
+          <TreeNodeRow
+            {...nodeProps}
+            item={visible.item}
+            depth={visible.depth}
+          />
+        )}
+      </div>,
+    );
+    previous = index;
+  }
+  const rest = offsets[count] - offsets[previous + 1];
+  if (rest > 0) {
+    out.push(
+      <div
+        key="gap-end"
+        aria-hidden="true"
+        data-tree-spacer=""
+        style={{ height: rest }}
+      />,
+    );
+  }
+  return out;
+};
+
+/** The row at `offset`: the last whose top is at or above it. */
+const findOffsetIndex = (offsets: number[], offset: number) => {
+  let low = 0;
+  let high = offsets.length - 2;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (offsets[middle] <= offset) low = middle;
+    else high = middle - 1;
+  }
+  return Math.max(0, low);
 };
 
 /**
@@ -548,6 +1201,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
       icon,
       indent = 20,
       meta,
+      metaPlacement: metaPlacementProp,
       name,
       onDisclosureClick,
       role = "treeitem",
@@ -562,6 +1216,15 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     };
     const treeDivided = React.useContext(TreeDividedContext);
     const divided = dividedProp ?? treeDivided;
+    const treeMetaPlacement = React.useContext(TreeMetaPlacementContext);
+    const hasMeta = meta !== undefined && meta !== null;
+    // GAP-107: below, the meta has a line of its own, so the name keeps the
+    // row's width.
+    const metaBelow =
+      hasMeta && (metaPlacementProp ?? treeMetaPlacement) === "below";
+    const countPill = count !== undefined && count !== null && (
+      <span className={countPillClass}>{count}</span>
+    );
     // GAP-204: the row is a treeitem whose level and state are the props it
     // already takes. A caller's own role or aria-* wins; with another role,
     // the row adds no tree state to it.
@@ -622,16 +1285,31 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
             {icon}
           </span>
         )}
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="min-w-0 truncate">{name}</span>
-          {count !== undefined && count !== null && (
-            <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-pill border border-border bg-muted px-1.5 text-xs font-medium leading-none text-foreground">
-              {count}
+        {metaBelow ? (
+          <span
+            data-tree-meta-placement="below"
+            className="flex min-w-0 flex-1 flex-col"
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="min-w-0 truncate">{name}</span>
+              {countPill}
             </span>
-          )}
-        </span>
-        {meta !== undefined && meta !== null && (
-          <span className="shrink-0 text-xs text-muted-foreground">{meta}</span>
+            <span className="min-w-0 truncate text-xs text-muted-foreground">
+              {meta}
+            </span>
+          </span>
+        ) : (
+          <>
+            <span className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="min-w-0 truncate">{name}</span>
+              {countPill}
+            </span>
+            {hasMeta && (
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {meta}
+              </span>
+            )}
+          </>
         )}
         {actions !== undefined && actions !== null && (
           <span
@@ -706,23 +1384,120 @@ const TreeChildItemRow = React.forwardRef<
 ));
 TreeChildItemRow.displayName = "TreeChildItemRow";
 
+/**
+ * A section's heading (GAP-151): its name in the theme's colour, with a
+ * count, over the items it heads. It is for the eye, and hidden from a
+ * screen reader: put the section's items in a `<div role="group">` named by
+ * `aria-label`, as Tree does from `data`.
+ */
+const TreeSectionRow = React.forwardRef<HTMLDivElement, TreeSectionRowProps>(
+  (
+    {
+      className,
+      count,
+      density = "default",
+      depth = 0,
+      indent = 20,
+      name,
+      style,
+      ...props
+    },
+    ref,
+  ) => (
+    <div
+      ref={ref}
+      aria-hidden="true"
+      data-tree-section=""
+      className={cn(
+        "flex w-full items-center gap-1.5 px-2 text-[11px] font-medium leading-[14px] text-primary",
+        density === "compact" ? "min-h-6" : "min-h-8",
+        className,
+      )}
+      style={{ paddingInlineStart: depth * indent + 8, ...style }}
+      {...props}
+    >
+      <span className="min-w-0 truncate">{name}</span>
+      {count !== undefined && count !== null && (
+        <span className={countPillClass}>{count}</span>
+      )}
+    </div>
+  ),
+);
+TreeSectionRow.displayName = "TreeSectionRow";
+
+/**
+ * The rows drawn, in order: every root, the children of each open row, and
+ * every section's items, at the section's own depth. Each row's set is the
+ * rows beside it, apart from sections, or a section's items.
+ */
 const flattenTreeItems = (
   items: TreeItem[],
   expandedSet: Set<string>,
   depth = 0,
   parentId?: string,
-): VisibleTreeItem[] =>
-  items.flatMap((item) => {
-    const current = { item, depth, parentId };
-    if (!item.children?.length || !expandedSet.has(item.id)) return [current];
-    return [
-      current,
-      ...flattenTreeItems(item.children, expandedSet, depth + 1, item.id),
-    ];
-  });
+  sectionId?: string,
+  out: VisibleTreeItem[] = [],
+): VisibleTreeItem[] => {
+  const setSize = items.reduce(
+    (size, item) => (item.section ? size : size + 1),
+    0,
+  );
+  let posInSet = 0;
+  for (const item of items) {
+    if (item.section) {
+      out.push({
+        item,
+        depth,
+        parentId,
+        sectionId,
+        section: true,
+        posInSet: 0,
+        setSize: 0,
+      });
+      if (item.children?.length)
+        flattenTreeItems(
+          item.children,
+          expandedSet,
+          depth,
+          parentId,
+          item.id,
+          out,
+        );
+      continue;
+    }
+    posInSet += 1;
+    out.push({
+      item,
+      depth,
+      parentId,
+      sectionId,
+      section: false,
+      posInSet,
+      setSize,
+    });
+    if (item.children?.length && expandedSet.has(item.id))
+      flattenTreeItems(
+        item.children,
+        expandedSet,
+        depth + 1,
+        item.id,
+        sectionId,
+        out,
+      );
+  }
+  return out;
+};
 
 const findFirstEnabledTreeItemId = (items: TreeItem[]): string | undefined => {
   for (const item of items) {
+    // A section is never a row: its items are, at its own place.
+    if (item.section) {
+      const id = item.children
+        ? findFirstEnabledTreeItemId(item.children)
+        : undefined;
+      if (id) return id;
+      continue;
+    }
     if (!item.disabled) return item.id;
     const childId = item.children
       ? findFirstEnabledTreeItemId(item.children)
@@ -740,5 +1515,11 @@ const resolveTreeSlot = (
   return typeof slot === "function" ? slot(context) : slot;
 };
 
-export { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow };
+export {
+  Tree,
+  TreeChildItemRow,
+  TreeItemRow,
+  TreeParentItemRow,
+  TreeSectionRow,
+};
 export type { TreeChildItemRowProps, TreeParentItemRowProps };

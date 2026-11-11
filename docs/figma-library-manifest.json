@@ -19402,7 +19402,8 @@
             "Tree",
             "TreeChildItemRow",
             "TreeItemRow",
-            "TreeParentItemRow"
+            "TreeParentItemRow",
+            "TreeSectionRow"
           ],
           "mappedProps": [
             "ariaLabel",
@@ -19412,6 +19413,8 @@
             "divided",
             "expanded",
             "hasChildren",
+            "meta",
+            "metaPlacement",
             "name",
             "selected"
           ],
@@ -19431,6 +19434,7 @@
           "data",
           "defaultExpandedIds",
           "defaultSelectedId",
+          "defaultSelectedIds",
           "density",
           "depth",
           "disabled",
@@ -19443,15 +19447,20 @@
           "id",
           "indent",
           "meta",
+          "metaPlacement",
           "name",
+          "overscan",
           "renderActions",
           "renderIcon",
           "renderMeta",
           "role",
           "selected",
           "selectedId",
+          "selectedIds",
+          "selectionMode",
           "tabIndex",
-          "title"
+          "title",
+          "virtualized"
         ],
         "variants": {}
       },

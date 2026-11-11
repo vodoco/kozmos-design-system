@@ -1,5 +1,11 @@
 import figma from "@figma/code-connect";
-import { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow } from "./Tree";
+import {
+  Tree,
+  TreeChildItemRow,
+  TreeItemRow,
+  TreeParentItemRow,
+  TreeSectionRow,
+} from "./Tree";
 
 const treeUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=662-5094";
@@ -50,12 +56,33 @@ figma.connect(TreeParentItemRow, parentUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
   },
-  example: ({ count, density, depth, divided, expanded, name, selected }) => (
+  example: ({
+    count,
+    density,
+    depth,
+    divided,
+    expanded,
+    meta,
+    metaPlacement,
+    name,
+    selected,
+  }) => (
     <TreeParentItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       expanded={expanded}
@@ -85,11 +112,31 @@ figma.connect(TreeChildItemRow, childUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
   },
-  example: ({ count, density, depth, divided, name, selected }) => (
+  example: ({
+    count,
+    density,
+    depth,
+    divided,
+    meta,
+    metaPlacement,
+    name,
+    selected,
+  }) => (
     <TreeChildItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       selected={selected}
@@ -118,6 +165,15 @@ figma.connect(TreeItemRow, itemUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
     hasChildren: figma.enum("Type", { Parent: true, Child: undefined }),
   },
@@ -128,12 +184,16 @@ figma.connect(TreeItemRow, itemUrl, {
     divided,
     expanded,
     hasChildren,
+    meta,
+    metaPlacement,
     name,
     selected,
   }) => (
     <TreeItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       hasChildren={hasChildren}
@@ -141,5 +201,28 @@ figma.connect(TreeItemRow, itemUrl, {
       selected={selected}
       divided={divided}
     />
+  ),
+});
+
+// GAP-151: a section's heading. The set is new: its node id is filled in
+// after the plugin's Update builds it.
+const sectionUrl =
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TREE-SECTION-NODE-ID";
+
+figma.connect(TreeSectionRow, sectionUrl, {
+  props: {
+    name: figma.string("Label Text"),
+    count: figma.boolean("Show Count", {
+      true: figma.string("Count Text"),
+      false: undefined,
+    }),
+    depth: figma.enum("Depth", { "0": 0, "1": 1, "2": 2 }),
+    density: figma.enum("Density", {
+      Default: undefined,
+      Compact: "compact",
+    }),
+  },
+  example: ({ count, density, depth, name }) => (
+    <TreeSectionRow name={name} count={count} depth={depth} density={density} />
   ),
 });

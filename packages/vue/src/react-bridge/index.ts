@@ -371,7 +371,8 @@ export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
 export const KozmosTable = createVueWrapper(Table);
-// Its selection is reported as the item; the model is the item's id.
+// Its selection is reported as the item; the model is the item's id. A
+// multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {
   expandedIds: { prop: "expandedIds", callback: "onExpandedChange", empty: [] },
   selectedId: {
@@ -379,6 +380,11 @@ export const KozmosTree = createVueWrapper(Tree, {
     callback: "onSelectionChange",
     read: (item) => item.id,
     empty: "",
+  },
+  selectedIds: {
+    prop: "selectedIds",
+    callback: "onSelectedIdsChange",
+    empty: [],
   },
 });
 export const KozmosTimeline = createVueWrapper(Timeline);

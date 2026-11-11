@@ -58,8 +58,21 @@ struct KozmosTreeParentItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name, children: [])], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, children: [], meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -82,8 +95,21 @@ struct KozmosTreeChildItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -106,7 +132,54 @@ struct KozmosTreeItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
+    }
+}
+
+// A section heading (GAP-151): its label and count over the section's items,
+// which are drawn at the section's own depth. SwiftUI draws a section only
+// inside KozmosTree, from a section node, so the heading reads as a one-section
+// tree; its depth is where the section sits in the nodes, not a property.
+struct KozmosTreeSectionConnect: FigmaConnect {
+    let component = KozmosTree.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TREE-SECTION-NODE-ID"
+
+    @FigmaString("Label Text")
+    var name: String = "POI"
+
+    @FigmaBoolean("Show Count")
+    var showCount: Bool = true
+
+    @FigmaString("Count Text")
+    var countText: String = "120"
+
+    @FigmaEnum(
+        "Density",
+        mapping: [
+            "Default": KozmosTreeDensity.default,
+            "Compact": KozmosTreeDensity.compact
+        ]
+    )
+    var density: KozmosTreeDensity = .default
+
+    var body: some View {
+        KozmosTree(
+            nodes: [Node.section(self.name, count: self.showCount ? self.countText : nil, children: [])],
+            density: self.density
+        )
     }
 }
