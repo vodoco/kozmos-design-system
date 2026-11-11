@@ -496,4 +496,9 @@ struct KozmosProgressBarShape: Shape {
     func path(in rect: CGRect) -> Path {
         placement == .top ? Rectangle().path(in: rect) : Capsule().path(in: rect)
     }
+
+    /// Symmetric either way, so nothing to mirror: fixed, as the track's
+    /// line is, so no deployment target mirrors it differently.
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
