@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
 import { NumberInput } from "./NumberInput";
 import { ThemeProvider } from "../ThemeProvider";
 
@@ -116,4 +117,33 @@ export const RightToLeft: Story = {
 
 export const ReadOnly: Story = {
   args: { label: "Floors", value: 3, readOnly: true },
+};
+
+/**
+ * GAP-153: a value the selected features do not share. Mixed, the field is
+ * empty with "Multiple values"; a step or a typed number edits it, and
+ * "Reset to multiple values" takes it back.
+ */
+export const MixedValue: Story = {
+  render: () => {
+    function Field({ label, edited }: { label: string; edited?: number }) {
+      const [edit, setEdit] = useState<number | null | undefined>(edited);
+      return (
+        <NumberInput
+          label={label}
+          min={0}
+          mixed={edit === undefined}
+          value={edit ?? ""}
+          onValueChange={setEdit}
+          onResetMixed={() => setEdit(undefined)}
+        />
+      );
+    }
+    return (
+      <div className="grid w-80 gap-4">
+        <Field label="Height (m)" />
+        <Field label="Capacity" edited={12} />
+      </div>
+    );
+  },
 };

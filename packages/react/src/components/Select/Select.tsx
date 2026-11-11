@@ -5,32 +5,73 @@ import { Check, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 
 import { cn, mergeAriaIds } from "../../utils";
 
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
 import { useInputModality } from "../../utils/input-modality";
 
 const SelectPortal = createThemePortal(SelectPrimitive.Portal);
 
-const Select: React.FC<
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
-> = ({ onValueChange, ...props }) => {
+/**
+ * A mixed Select (GAP-153), from the root to its trigger and value, which
+ * draw it: the root holds the value, the trigger is the field.
+ */
+const SelectMixedContext = React.createContext<
+  (Required<Pick<MixedValueProps, "mixedLabel">> & MixedValueProps) | null
+>(null);
+
+export type SelectProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Root
+> &
+  MixedValueProps;
+
+const Select: React.FC<SelectProps> = ({
+  onValueChange,
+  mixed = false,
+  mixedLabel = "Multiple values",
+  onResetMixed,
+  resetMixedLabel,
+  ...props
+}) => {
   const { trackEvent } = useKozmosAnalytics();
+  const mixedState = React.useMemo(
+    () => ({ mixed, mixedLabel, onResetMixed, resetMixedLabel }),
+    [mixed, mixedLabel, onResetMixed, resetMixedLabel],
+  );
   return (
-    <SelectPrimitive.Root
-      onValueChange={(value) => {
-        trackEvent("Select", "select_value_changed", { value });
-        onValueChange?.(value);
-      }}
-      {...props}
-    />
+    <SelectMixedContext.Provider value={mixedState}>
+      <SelectPrimitive.Root
+        onValueChange={(value) => {
+          trackEvent("Select", "select_value_changed", { value });
+          onValueChange?.(value);
+        }}
+        {...props}
+        // Mixed, no option is the value: the placeholder shows, and no row
+        // is checked. A mixed Select is controlled, as its value is the
+        // product's once the visitor chooses.
+        {...(mixed ? { value: "" } : null)}
+      />
+    </SelectMixedContext.Provider>
   );
 };
 Select.displayName = "Select";
 
 const SelectGroup = SelectPrimitive.Group;
 
-const SelectValue = SelectPrimitive.Value;
+const SelectValue = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Value>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>
+>(({ placeholder, ...props }, ref) => {
+  const mixedState = React.useContext(SelectMixedContext);
+  return (
+    <SelectPrimitive.Value
+      ref={ref}
+      placeholder={mixedState?.mixed ? mixedState.mixedLabel : placeholder}
+      {...props}
+    />
+  );
+});
+SelectValue.displayName = SelectPrimitive.Value.displayName;
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
@@ -45,6 +86,7 @@ const SelectTrigger = React.forwardRef<
       children,
       error,
       wrapperClassName,
+      id,
       "aria-describedby": ariaDescribedBy,
       "aria-invalid": ariaInvalid,
       ...props
@@ -52,6 +94,11 @@ const SelectTrigger = React.forwardRef<
     ref,
   ) => {
     const errorId = React.useId();
+    const mixedId = React.useId();
+    const defaultTriggerId = React.useId();
+    const triggerId = id ?? defaultTriggerId;
+    const mixedState = React.useContext(SelectMixedContext);
+    const mixed = mixedState?.mixed ?? false;
     const hasError = !!error;
     const isStringError = typeof error === "string";
     // Listening before the list opens: the key that opens it comes first.
@@ -62,13 +109,22 @@ const SelectTrigger = React.forwardRef<
         error={error}
         errorId={errorId}
         className={wrapperClassName}
+        inputId={triggerId}
+        mixed={mixed}
+        mixedLabel={mixedState?.mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={props.disabled ? undefined : mixedState?.onResetMixed}
+        resetMixedLabel={mixedState?.resetMixedLabel}
       >
         <SelectPrimitive.Trigger
           ref={ref}
+          id={triggerId}
+          data-mixed={mixed ? "" : undefined}
           aria-invalid={hasError || ariaInvalid}
           aria-describedby={mergeAriaIds(
             ariaDescribedBy,
             hasError && isStringError ? errorId : undefined,
+            mixed ? mixedId : undefined,
           )}
           className={cn(
             "flex h-field w-full items-center justify-between rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",

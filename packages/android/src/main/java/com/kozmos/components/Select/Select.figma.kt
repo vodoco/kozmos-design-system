@@ -16,8 +16,13 @@ class KozmosSelectConnect {
     val state: String = Figma.mapping(
         "Default" to "default",
         "Focus" to "focus",
-        "Disabled" to "disabled"
+        "Disabled" to "disabled",
+        "Mixed" to "mixed"
     )
+
+    // GAP-153: its way back to the several values, once chosen.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val error: Boolean = Figma.mapping(
@@ -36,7 +41,9 @@ class KozmosSelectConnect {
                     value = null,
                     placeholder = placeholder,
                     enabled = state != "disabled",
-                    error = error
+                    error = error,
+                    mixed = state == "mixed",
+                    onResetMixed = if (resetMixed) ({}) else null
                 )
             }
         ) {

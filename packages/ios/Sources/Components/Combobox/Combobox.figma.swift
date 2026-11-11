@@ -23,10 +23,15 @@ struct KozmosComboboxConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Readonly": "readonly"
+            "Readonly": "readonly",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // GAP-153: its way back to the several values, once edited.
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
 
     @FigmaEnum(
         "Status",
@@ -72,7 +77,9 @@ struct KozmosComboboxConnect: FigmaConnect {
             readOnly: self.state == "readonly",
             status: self.status,
             helperText: self.showHelperText ? self.helperText : nil,
-            defaultOpen: self.defaultOpen
+            defaultOpen: self.defaultOpen,
+            mixed: self.state == "mixed",
+            onResetMixed: self.resetMixed ? {} : nil
         )
     }
 }

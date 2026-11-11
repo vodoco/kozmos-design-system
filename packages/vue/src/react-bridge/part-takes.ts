@@ -130,6 +130,7 @@ import type { Booleans, Takes } from "./react-adapter";
 
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = { dom: true, own: [] };
+const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
 const checkboxTakes: Takes = { dom: true, own: ["onCheckedChange"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
@@ -159,7 +160,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Counter, D],
   [Badge, D],
   [Label, D],
-  [Input, D],
+  [Input, inputTakes],
   [Textarea, D],
   [Checkbox, checkboxTakes],
   [Switch, checkboxTakes],
@@ -167,7 +168,10 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
   [Search, D],
   [SearchBar, { dom: true, own: ["onClear"] }],
-  [Select, { dom: false, own: ["onOpenChange", "onValueChange"] }],
+  [
+    Select,
+    { dom: false, own: ["onOpenChange", "onResetMixed", "onValueChange"] },
+  ],
   [BottomNavigation, D],
   [Navbar, D],
   [Sidebar, D],
@@ -294,7 +298,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   ],
   [EmptyState, D],
   [FeedbackCard, { dom: true, own: ["onSubmitFeedback"] }],
-  [FieldWrapper, D],
+  [FieldWrapper, inputTakes],
   [
     MapControlsGroup,
     {
@@ -346,7 +350,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onChange"],
-      own: ["onInputValueChange", "onValueChange"],
+      own: ["onInputValueChange", "onResetMixed", "onValueChange"],
     },
   ],
   [
@@ -368,7 +372,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationItem, D],
-  [NumberInput, accordionTakes],
+  [NumberInput, { dom: true, own: ["onResetMixed", "onValueChange"] }],
   [
     POIDetailPanel,
     {
@@ -470,11 +474,6 @@ const html = (
 const H = html();
 const boxBooleans = html(["asChild"]);
 const textBooleans = html(["asChild", "truncate"]);
-const inputBooleans = html(
-  ["checked", "disabled", "formNoValidate", "multiple", "readOnly", "required"],
-  ["capture"],
-  ["error"],
-);
 const menuBooleans = {
   flags: ["defaultOpen", "modal", "open"],
   unions: [],
@@ -547,7 +546,22 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Counter, H],
   [Badge, html(["asChild", "showCounter"])],
   [Label, boxBooleans],
-  [Input, inputBooleans],
+  [
+    Input,
+    html(
+      [
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "mixed",
+        "multiple",
+        "readOnly",
+        "required",
+      ],
+      ["capture"],
+      ["error"],
+    ),
+  ],
   [Textarea, html(["disabled", "readOnly", "required"], [], ["error"])],
   [
     Checkbox,
@@ -607,7 +621,21 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [Search, inputBooleans],
+  [
+    Search,
+    html(
+      [
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "multiple",
+        "readOnly",
+        "required",
+      ],
+      ["capture"],
+      ["error"],
+    ),
+  ],
   [
     SearchBar,
     html(
@@ -625,7 +653,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Select,
     {
-      flags: ["defaultOpen", "disabled", "open", "required"],
+      flags: ["defaultOpen", "disabled", "mixed", "open", "required"],
       unions: [],
       texts: [],
     },
@@ -733,7 +761,10 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [EmptyState, H],
   [FeedbackCard, html(["isSubmitting"])],
-  [FieldWrapper, html(["group", "hideLabel", "required"], [], ["error"])],
+  [
+    FieldWrapper,
+    html(["group", "hideLabel", "mixed", "required"], [], ["error"]),
+  ],
   [MapControlsGroup, html(["locationRevealOnChange", "stepFree"])],
   [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
   [
@@ -787,6 +818,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "disabled",
         "formNoValidate",
         "includeValueInAnalytics",
+        "mixed",
         "multiple",
         "readOnly",
         "required",
@@ -834,6 +866,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "checked",
         "disabled",
         "formNoValidate",
+        "mixed",
         "multiple",
         "readOnly",
         "required",

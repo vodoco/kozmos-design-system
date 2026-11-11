@@ -17,6 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -39,8 +43,15 @@ fun KozmosInput(
     status: KozmosInputStatus = KozmosInputStatus.Default,
     error: Boolean = false,
     helperText: String? = null,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
+    // Mixed (GAP-153), the field shows none of its own text; the visitor's
+    // typing still reaches the product, which clears `mixed`.
+    val shownValue = if (mixed) "" else value
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
@@ -84,14 +95,18 @@ fun KozmosInput(
         }
 
         BasicTextField(
-            value = value,
+            value = shownValue,
             onValueChange = onValueChange,
             enabled = enabled,
             readOnly = readOnly,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = textColor),
             cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
-            modifier = Modifier.fillMaxWidth(),
+            // Said as its state while mixed, set in one semantics block so the
+            // field is the same node as it stops being mixed and keeps focus.
+            modifier = Modifier.fillMaxWidth().semantics {
+                if (mixed) stateDescription = mixedLabel
+            },
             decorationBox = { innerTextField ->
                 Box(
                     modifier = Modifier
@@ -102,9 +117,9 @@ fun KozmosInput(
                         .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (value.isEmpty()) {
+                    if (shownValue.isEmpty()) {
                         Text(
-                            text = placeholder,
+                            text = if (mixed) mixedLabel else placeholder,
                             style = MaterialTheme.typography.bodyMedium,
                             color = placeholderColor
                         )
@@ -113,6 +128,10 @@ fun KozmosInput(
                 }
             }
         )
+
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = { onResetMixed?.invoke() })
+        }
 
         if (!supportingText.isNullOrBlank()) {
             Text(

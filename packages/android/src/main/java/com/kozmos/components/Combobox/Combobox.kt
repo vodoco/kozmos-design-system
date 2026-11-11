@@ -40,6 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
@@ -79,10 +82,15 @@ fun KozmosCombobox(
     clearable: Boolean = true,
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
-    onExpandedChange: ((Boolean) -> Unit)? = null
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     KozmosComboboxLabels(), modifier, label, placeholder, enabled, readOnly, status, error,
-    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
 
 @Composable
 fun KozmosCombobox(
@@ -105,10 +113,15 @@ fun KozmosCombobox(
     clearable: Boolean = true,
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
-    onExpandedChange: ((Boolean) -> Unit)? = null
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     controlLabels, true, modifier, label, placeholder, enabled, readOnly, status, error,
-    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
 
 /** Explicit host filtering without changing either existing positional/trailing-lambda overload. */
 @Composable
@@ -133,10 +146,15 @@ fun KozmosCombobox(
     clearable: Boolean = true,
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
-    onExpandedChange: ((Boolean) -> Unit)? = null
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     controlLabels, filterLocally, emptyList(), modifier, label, placeholder, enabled, readOnly, status, error,
-    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
 
 /** Commands are unfiltered, do not change query/selection, and request dismissal before activation. */
 @Composable
@@ -150,7 +168,13 @@ fun KozmosCombobox(
     status: KozmosInputStatus = KozmosInputStatus.Default, error: Boolean = false,
     helperText: String? = null, errorMessage: String? = null, emptyText: String = "No results found",
     clearable: Boolean = true, expanded: Boolean? = null, defaultExpanded: Boolean = false,
-    onExpandedChange: ((Boolean) -> Unit)? = null
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    // GAP-153: the field stands for several values that differ. No option is
+    // the choice, though the visitor may type a query. KozmosMixedValue has it.
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
@@ -208,7 +232,11 @@ fun KozmosCombobox(
                         inputFocused = it.isFocused
                         if (it.isFocused && isExpanded) restoresInputFocus = true
                     }
-                    .semantics { contentDescription = label ?: placeholder }
+                    .semantics {
+                        contentDescription = label ?: placeholder
+                        // Mixed with nothing typed, said as its state.
+                        if (mixed && inputValue.isEmpty()) stateDescription = mixedLabel
+                    }
                     .weight(1f)
                     .fillMaxHeight(),
                 decorationBox = { innerTextField ->
@@ -221,7 +249,7 @@ fun KozmosCombobox(
                     ) {
                         if (inputValue.isEmpty()) {
                             Text(
-                                text = placeholder,
+                                text = if (mixed) mixedLabel else placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = colors.placeholder
                             )
@@ -279,7 +307,8 @@ fun KozmosCombobox(
             } else {
                 KozmosListbox(
                     options = filteredOptions,
-                    selectedValues = if (value.isEmpty()) emptyList() else listOf(value),
+                    // Mixed, no option is the choice: none is checked.
+                    selectedValues = if (mixed || value.isEmpty()) emptyList() else listOf(value),
                     onSelectionChange = { nextValues, option ->
                         if (enabled && !readOnly && !option.disabled) {
                             setExpanded(false)
@@ -301,6 +330,18 @@ fun KozmosCombobox(
                     }) }
                 )
             }
+        }
+
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(
+                label = resetMixedLabel,
+                onClick = {
+                    // The text goes with the choice, typed or not.
+                    onInputValueChange("")
+                    setExpanded(false)
+                    onResetMixed?.invoke()
+                }
+            )
         }
 
         if (!supportingText.isNullOrBlank()) {

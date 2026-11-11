@@ -14,6 +14,13 @@ public struct KozmosNumberInput: View {
     let min: Double?
     let max: Double?
     let showSteppers: Bool
+    /// The field stands for several values that differ, and shows none
+    /// (GAP-153): `KozmosMixedValue` has the whole of it.
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
 
     public init(
         value: Binding<Double?>,
@@ -28,7 +35,11 @@ public struct KozmosNumberInput: View {
         step: Double = 1,
         min: Double? = nil,
         max: Double? = nil,
-        showSteppers: Bool = true
+        showSteppers: Bool = true,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._value = value
         self.label = label
@@ -43,6 +54,10 @@ public struct KozmosNumberInput: View {
         self.min = min
         self.max = max
         self.showSteppers = showSteppers
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
@@ -61,12 +76,15 @@ public struct KozmosNumberInput: View {
                 }
 
                 TextField(
-                    placeholder,
+                    mixed ? mixedLabel : placeholder,
                     text: Binding(
-                        get: { formatValue(value) },
+                        // Mixed, it shows none of its own (GAP-153).
+                        get: { mixed ? "" : formatValue(value) },
                         set: { nextValue in value = parseValue(nextValue) }
                     )
                 )
+                .accessibilityFocused($fieldAccessibilityFocused)
+                .accessibilityValue(KozmosMixedValue.spokenValue(mixed: mixed, label: mixedLabel, text: formatValue(value)))
                 .disabled(disabled || readOnly)
                 .multilineTextAlignment(showSteppers ? .center : .leading)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
@@ -86,6 +104,13 @@ public struct KozmosNumberInput: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
+            }
 
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
@@ -116,7 +141,8 @@ public struct KozmosNumberInput: View {
     }
 
     private func applyStep(_ delta: Double) {
-        let base = value ?? 0
+        // Mixed, a step starts from nothing, as an empty field's does.
+        let base = mixed ? 0 : (value ?? 0)
         value = clamp(base + delta)
     }
 

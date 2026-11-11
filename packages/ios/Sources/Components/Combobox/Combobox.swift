@@ -20,6 +20,13 @@ public struct KozmosCombobox: View {
     /// Disable only when the host already filtered/ranked the supplied options.
     public let filterLocally: Bool
     public let popupActions: [KozmosPickerAction]
+    /// The field stands for several values that differ (GAP-153): no option
+    /// is the choice, though the visitor may type a query. `KozmosMixedValue`
+    /// has the whole of it.
+    public let mixed: Bool
+    public let mixedLabel: String
+    public let onResetMixed: (() -> Void)?
+    public let resetMixedLabel: String
     private let expanded: Binding<Bool>?
 
     @State private var internalOpen: Bool
@@ -53,7 +60,11 @@ public struct KozmosCombobox: View {
         closeLabel: String = "Close options",
         filterLocally: Bool = true,
         popupActions: [KozmosPickerAction] = [],
-        expanded: Binding<Bool>? = nil
+        expanded: Binding<Bool>? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._value = value
         self._inputValue = inputValue
@@ -72,6 +83,8 @@ public struct KozmosCombobox: View {
         self._internalOpen = State(initialValue: defaultOpen)
         self.filterLocally = filterLocally
         self.popupActions = popupActions; self.expanded = expanded
+        self.mixed = mixed; self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed; self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
@@ -85,10 +98,14 @@ public struct KozmosCombobox: View {
             }
 
             HStack(spacing: 0) {
-                TextField(placeholder, text: editableInput)
+                TextField(mixed ? mixedLabel : placeholder, text: editableInput)
                     .focused($inputFocused)
                     .accessibilityFocused($inputAccessibilityFocused)
                     .accessibilityLabel(label ?? placeholder)
+                    // Mixed with nothing typed, its value is the mixed label.
+                    .accessibilityValue(KozmosMixedValue.spokenValue(
+                        mixed: mixed && inputValue.isEmpty, label: mixedLabel, text: inputValue
+                    ))
                     .disabled(disabled || readOnly)
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(textColor)
@@ -172,6 +189,10 @@ public struct KozmosCombobox: View {
                 }
             }
 
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel, action: resetMixed)
+            }
+
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
@@ -222,7 +243,8 @@ public struct KozmosCombobox: View {
     }
 
     private var listboxSelection: Binding<[String]> {
-        Binding(get: { value.isEmpty ? [] : [value] }, set: {
+        // Mixed, no option is the choice: none is checked.
+        Binding(get: { mixed || value.isEmpty ? [] : [value] }, set: {
             guard !disabled, !readOnly else { return }
             setOpen(false)
             value = $0.first ?? ""
@@ -232,6 +254,15 @@ public struct KozmosCombobox: View {
     private func toggleOpen() {
         guard !disabled, !readOnly else { return }
         setOpen(!isOpen)
+    }
+
+    /// Back to the several values: the text goes with the choice, typed or
+    /// not, and VoiceOver goes to the field.
+    private func resetMixed() {
+        inputValue = ""
+        setOpen(false)
+        inputAccessibilityFocused = true
+        onResetMixed?()
     }
 
     private func clearSelection() {

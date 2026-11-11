@@ -2,7 +2,8 @@ import React from "react";
 import { type VariantProps } from "class-variance-authority";
 import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import { clearUncontrolled, mixedFieldValue } from "../FieldWrapper/mixedValue";
 import {
   resolveCharacterCount,
   useUncontrolledValue,
@@ -45,7 +46,8 @@ export type InputAction =
 export interface InputProps
   extends
     React.InputHTMLAttributes<HTMLInputElement>,
-    Omit<VariantProps<typeof inputVariants>, "error" | "status"> {
+    Omit<VariantProps<typeof inputVariants>, "error" | "status">,
+    MixedValueProps {
   error?: boolean | string;
   helperText?: string;
   label?: string;
@@ -138,6 +140,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       wrapperClassName,
       count,
       action,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel,
       "aria-describedby": callerDescribedBy,
       "aria-invalid": callerInvalid,
       ...props
@@ -147,6 +153,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const errorId = React.useId();
     const helperId = React.useId();
     const countId = React.useId();
+    const mixedId = React.useId();
     const mirror = useUncontrolledValue(props.value, props.defaultValue);
     const counted = resolveCharacterCount(count, mirror.value);
     // A caller's own error wins: it knows something the count does not.
@@ -179,8 +186,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         ref={ref}
         aria-invalid={isInvalid ? true : callerInvalid}
-        aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
+        aria-describedby={mergeAriaIds(
+          callerDescribedBy,
+          describedBy,
+          mixed ? mixedId : undefined,
+        )}
         {...props}
+        {...mixedFieldValue(mixed, mixedLabel, props)}
         onInput={(event) => {
           mirror.onInput?.(event);
           props.onInput?.(event);
@@ -200,6 +212,18 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         inputId={inputId}
         status={resolvedStatus}
         className={wrapperClassName}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={
+          onResetMixed && !props.disabled && !props.readOnly
+            ? () => {
+                clearUncontrolled(inputId, props.value);
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         {/* One wrapper, with an action or without, so the input keeps its
             place in the tree as an action comes and goes: a new parent made

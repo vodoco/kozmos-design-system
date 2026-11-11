@@ -27,8 +27,13 @@ class KozmosComboboxConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-153: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -71,7 +76,9 @@ class KozmosComboboxConnect {
             readOnly = state == "readonly",
             status = status,
             helperText = if (showHelperText) helperText else null,
-            defaultExpanded = defaultExpanded
+            defaultExpanded = defaultExpanded,
+            mixed = state == "mixed",
+            onResetMixed = if (resetMixed) ({}) else null
         )
     }
 }

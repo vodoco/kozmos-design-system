@@ -452,6 +452,23 @@
   .kozmos-field-optional {
     @apply shrink-0 text-xs leading-5 text-muted-foreground;
   }
+  /* EmptyState's list (GAP-165): bulleted, the bullets inside the 280
+     column at its start, 4 between items. Owned, as the reset clears a
+     list's style and its padding. */
+  .kozmos-empty-state-list {
+    list-style: disc;
+    padding-inline-start: 1.25rem;
+  }
+  .kozmos-empty-state-list > li + li {
+    margin-top: 0.25rem;
+  }
+  /* A mixed field's way back to its several values (GAP-153): a text
+     button under the field, at its start, in Link's colour and weight. */
+  .kozmos-field-reset {
+    @apply self-start rounded-marker text-sm font-medium leading-5 text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    background-color: transparent;
+    cursor: pointer;
+  }
   .kozmos-field-message {
     @apply text-sm leading-5;
   }

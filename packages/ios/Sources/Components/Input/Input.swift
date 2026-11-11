@@ -17,6 +17,13 @@ public struct KozmosInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// The field stands for several values that differ, and shows none
+    /// (GAP-153): `KozmosMixedValue` has the whole of it.
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
     
     public init(
         text: Binding<String>,
@@ -27,7 +34,11 @@ public struct KozmosInput: View {
         status: KozmosInputStatus = .default,
         error: Bool = false,
         helperText: String? = nil,
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._text = text
         self.label = label
@@ -38,6 +49,10 @@ public struct KozmosInput: View {
         self.error = error
         self.helperText = helperText
         self.errorMessage = errorMessage
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
     
     public var body: some View {
@@ -48,7 +63,9 @@ public struct KozmosInput: View {
                     .foregroundColor(labelColor)
             }
 
-            TextField(placeholder, text: $text)
+            TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                .accessibilityFocused($fieldAccessibilityFocused)
+                .accessibilityValue(KozmosMixedValue.spokenValue(mixed: mixed, label: mixedLabel, text: text))
                 .disabled(disabled || readOnly)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(height: 44, alignment: .center)
@@ -61,12 +78,27 @@ public struct KozmosInput: View {
                 .font(KozmosTypography.subheadline)
                 .foregroundColor(textColor)
 
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    // The reset goes as the field turns mixed again: VoiceOver
+                    // goes to the field, which says its several values.
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
+            }
+
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(supportingTextColor)
             }
         }
+    }
+
+    /// Mixed, the field shows none of its own text; the visitor's typing
+    /// still reaches the product, which clears `mixed`.
+    private var shownText: Binding<String> {
+        Binding(get: { mixed ? "" : text }, set: { text = $0 })
     }
 
     private var effectiveStatus: KozmosInputStatus {

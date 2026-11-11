@@ -1,13 +1,14 @@
 import React from "react";
 import { Minus, Plus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import { clearUncontrolled, mixedFieldValue } from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
-export interface NumberInputProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> {
+export interface NumberInputProps
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">,
+    MixedValueProps {
   error?: boolean | string;
   helperText?: string;
   label?: string;
@@ -49,6 +50,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       showSteppers = true,
       status = "default",
       wrapperClassName,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel,
       "aria-describedby": callerDescribedBy,
       "aria-invalid": callerInvalid,
       ...props
@@ -56,6 +61,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     ref,
   ) => {
     const internalRef = React.useRef<HTMLInputElement | null>(null);
+    const mixedId = React.useId();
     const errorId = React.useId();
     const helperId = React.useId();
     const defaultInputId = React.useId();
@@ -123,6 +129,18 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         inputId={inputId}
         status={resolvedStatus}
         className={wrapperClassName}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={
+          onResetMixed && !stepperDisabled
+            ? () => {
+                clearUncontrolled(inputId, props.value);
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         <div className="kozmos-reset kozmos-number-field">
           {showSteppers && (
@@ -155,9 +173,14 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             disabled={disabled}
             readOnly={readOnly}
             aria-invalid={isInvalid ? true : callerInvalid}
-            aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
+            aria-describedby={mergeAriaIds(
+              callerDescribedBy,
+              describedBy,
+              mixed ? mixedId : undefined,
+            )}
             onChange={handleChange}
             {...props}
+            {...mixedFieldValue(mixed, mixedLabel, props)}
           />
           {showSteppers && (
             <button

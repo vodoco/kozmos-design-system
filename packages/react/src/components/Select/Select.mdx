@@ -126,6 +126,48 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
 `}
 />
 
+## A mixed value
+
+The selected features have different values (GAP-153). On React the root, which holds the value,
+takes `mixed`: it is given no value, so `SelectValue` shows "Multiple values" and no option is
+checked, and `SelectTrigger` is described with it. A choice is the edit, and `onResetMixed` offers
+"Reset to multiple values" under the trigger once chosen. A mixed Select is controlled. SwiftUI's
+`KozmosSelect(value:placeholder:…)` draws the closed field itself (`KozmosSelectField`) and takes the
+same props; Compose's `KozmosSelectTrigger` takes them. Input's page has the whole of it.
+
+<Canvas of={SelectStories.MixedValue} />
+
+```tsx
+<Select mixed={edit === undefined} value={edit} onValueChange={setEdit} onResetMixed={() => setEdit(undefined)}>
+  <SelectTrigger aria-label="Type">
+    <SelectValue placeholder="Choose a type" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="poi">POI</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+```swift
+import SwiftUI
+import Kozmos
+
+struct TypeAcrossSelection: View {
+    @State private var edit: String?
+
+    var body: some View {
+        KozmosSelect(
+            value: edit,
+            placeholder: "Choose a type",
+            mixed: edit == nil,
+            onResetMixed: { edit = nil }
+        ) {
+            KozmosSelectItem(value: "POI", label: "POI", selection: Binding(get: { edit ?? "" }, set: { edit = $0 }))
+        }
+    }
+}
+```
+
 ## Stories
 
 ### Default

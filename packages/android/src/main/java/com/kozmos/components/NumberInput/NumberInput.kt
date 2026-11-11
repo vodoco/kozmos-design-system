@@ -29,6 +29,10 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -49,7 +53,11 @@ fun KozmosNumberInput(
     step: Double = 1.0,
     min: Double? = null,
     max: Double? = null,
-    showSteppers: Boolean = true
+    showSteppers: Boolean = true,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
@@ -81,7 +89,10 @@ fun KozmosNumberInput(
         else -> KozmosThemeTokens.primitivesColorsForeground400
     }
     val stepperEnabled = enabled && !readOnly
-    val textValue = formatNumberInputValue(value)
+    // Mixed (GAP-153), the field shows none of its own, and a step starts
+    // from nothing, as an empty field's does.
+    val shownValue = if (mixed) null else value
+    val textValue = formatNumberInputValue(shownValue)
 
     fun clampValue(nextValue: Double): Double {
         var clampedValue = nextValue
@@ -124,7 +135,7 @@ fun KozmosNumberInput(
         ) {
             if (showSteppers) {
                 IconButton(
-                    onClick = { onValueChange(clampValue((value ?: 0.0) - step)) },
+                    onClick = { onValueChange(clampValue((shownValue ?: 0.0) - step)) },
                     enabled = stepperEnabled,
                     modifier = Modifier.size(44.dp),
                     colors = IconButtonDefaults.iconButtonColors(
@@ -154,7 +165,8 @@ fun KozmosNumberInput(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .semantics { if (mixed) stateDescription = mixedLabel },
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier
@@ -165,7 +177,7 @@ fun KozmosNumberInput(
                     ) {
                         if (textValue.isEmpty()) {
                             Text(
-                                text = placeholder,
+                                text = if (mixed) mixedLabel else placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = placeholderColor
                             )
@@ -177,7 +189,7 @@ fun KozmosNumberInput(
 
             if (showSteppers) {
                 IconButton(
-                    onClick = { onValueChange(clampValue((value ?: 0.0) + step)) },
+                    onClick = { onValueChange(clampValue((shownValue ?: 0.0) + step)) },
                     enabled = stepperEnabled,
                     modifier = Modifier.size(44.dp),
                     colors = IconButtonDefaults.iconButtonColors(
@@ -192,6 +204,10 @@ fun KozmosNumberInput(
                     )
                 }
             }
+        }
+
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = { onResetMixed?.invoke() })
         }
 
         if (!supportingText.isNullOrBlank()) {

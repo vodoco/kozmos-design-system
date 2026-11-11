@@ -4,6 +4,35 @@ import { Label } from "../Label";
 
 export type FieldStatus = "default" | "error" | "warning" | "success";
 
+/**
+ * A field that stands for several values at once (GAP-153): a property of a
+ * multi-selection whose features differ. Input, NumberInput, Select and
+ * Combobox take it.
+ *
+ * It is controlled, as the selection is the product's: `mixed` says the
+ * field still stands for the several values, and the field shows none of
+ * its own, `mixedLabel` in its place, and is announced with it. The visitor's
+ * first edit comes through the field's own change callback, and the product
+ * then clears `mixed`, so the field keeps its mixed state until it is edited.
+ * `onResetMixed`, given for a field whose values differ, offers
+ * `resetMixedLabel` once the field is no longer mixed; pressed, it calls
+ * back for the product to drop the edit and set `mixed` again, and focus
+ * returns to the field.
+ */
+export interface MixedValueProps {
+  /** The field stands for several values that differ, and shows none. */
+  mixed?: boolean;
+  /** Shown in the empty field, and said with it. Default "Multiple values". */
+  mixedLabel?: string;
+  /**
+   * Offer to go back to the several values: drawn under the field while it
+   * is not `mixed`, and never while it is disabled or read-only.
+   */
+  onResetMixed?: () => void;
+  /** The reset's words. Default "Reset to multiple values". */
+  resetMixedLabel?: string;
+}
+
 export interface FieldWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: React.ReactNode;
   descriptionId?: string;
@@ -34,6 +63,19 @@ export interface FieldWrapperProps extends React.HTMLAttributes<HTMLDivElement> 
    */
   count?: React.ReactNode;
   countId?: string;
+  /**
+   * The field is mixed (GAP-153): `mixedLabel` is kept, hidden, under
+   * `mixedId`, for the field's aria-describedby.
+   */
+  mixed?: boolean;
+  mixedLabel?: string;
+  mixedId?: string;
+  /**
+   * Draw the reset under the field while it is not mixed. Pressed, focus
+   * goes to the element `inputId` names, then this is called.
+   */
+  onResetMixed?: () => void;
+  resetMixedLabel?: string;
   children: React.ReactNode;
 }
 
@@ -67,6 +109,11 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
       status = "default",
       count,
       countId,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      mixedId,
+      onResetMixed,
+      resetMixedLabel = "Reset to multiple values",
       children,
       ...props
     },
@@ -128,6 +175,32 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
           </p>
         )}
         {children}
+        {/* Hidden, and still the field's description: aria-describedby
+          reads a hidden element. Seen, the words are the placeholder. */}
+        {mixed && mixedId ? (
+          <span id={mixedId} hidden>
+            {mixedLabel}
+          </span>
+        ) : null}
+        {!mixed && onResetMixed ? (
+          <button
+            type="button"
+            className="kozmos-reset kozmos-field-reset"
+            data-slot="reset-mixed"
+            onClick={(event) => {
+              // The button goes as the field turns mixed again: focus goes
+              // to the field first, which is then read with its several
+              // values, not lost to the page.
+              if (inputId)
+                event.currentTarget.ownerDocument
+                  .getElementById(inputId)
+                  ?.focus();
+              onResetMixed();
+            }}
+          >
+            {resetMixedLabel}
+          </button>
+        ) : null}
         {message ? (
           <p
             id={messageId}
