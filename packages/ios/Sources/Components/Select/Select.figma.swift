@@ -3,10 +3,11 @@ import Figma
 
 // Content is the set's closed and open drawings. SwiftUI writes one call for
 // both: the system menu opens it. Each option's count (GAP-164) is its
-// Option N Count while Show Counts is on. Code Connect writes a text
-// property as a string and a count is an Int, so Show Counts writes the
-// set's own counts, 128, 96 and 32, as numbers: an instance with other
-// counts shows these.
+// Option N Count while Show Counts is on. The Figma `Option N Count` text
+// is not carried to the native snippet: Code Connect gives Swift a text
+// property as a String, and `count` is an Int, so Show Counts writes the
+// set's own counts, 128, 96 and 32, as literal numbers. An instance with
+// other counts still shows these.
 struct KozmosSelectConnect: FigmaConnect {
     let component = KozmosSelect<Text, KozmosSelectItem>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=80-432"
@@ -24,6 +25,8 @@ struct KozmosSelectConnect: FigmaConnect {
     @FigmaString("Option 3 Text")
     var option3Text: String = "Interior asset"
 
+    // Literal counts: `Option N Count` is a text property, a String in
+    // Swift, so it is not carried; `count` is an Int.
     @FigmaBoolean("Show Counts", mapping: [true: 128, false: nil])
     var option1Count: Int? = 128
 
@@ -76,6 +79,8 @@ struct KozmosSelectOpenConnect: FigmaConnect {
     @FigmaString("Option 3 Text")
     var option3Text: String = "Interior asset"
 
+    // Literal counts: `Option N Count` is a text property, a String in
+    // Swift, so it is not carried; `count` is an Int.
     @FigmaBoolean("Show Counts", mapping: [true: 128, false: nil])
     var option1Count: Int? = 128
 

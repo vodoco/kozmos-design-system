@@ -133,8 +133,8 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
 
 ### Option counts
 
-`SelectItem` takes a `count`, drawn as a neutral Counter at the option's end, before its check (GAP-164). It sits outside the item text, so the closed select shows the option's words alone, and the option is read as its words then its count ("POI 96"). Open the select to see the counts.
+`SelectItem` takes a `count`, drawn as a neutral Counter at the option's end, before the check's place, which every row keeps, so the counts form one column that a new choice never moves (GAP-164). It sits outside the item text, so the closed select shows the option's words alone. A number is written in the reader's grouping ("1,234"), and the option is named by its words, then its count: "POI, 96". An `aria-label` you give the item wins. Open the select to see the counts.
 
 <Canvas of={SelectStories.OptionCounts} />
 
-SwiftUI's `KozmosSelectItem(value:label:count:selection:)` shows the count as the menu item's subtitle and is read "POI, 96"; Compose's `KozmosSelectItem(..., count = 96)` draws a neutral `KozmosCounter` at the row's end. On every platform the closed select shows the label alone.
+SwiftUI's `KozmosSelectItem(value:label:count:selection:)` shows the count, grouped, as the system menu item's subtitle, and VoiceOver reads "POI, 96"; Compose's `KozmosSelectItem(..., count = 96)` draws a neutral `KozmosCounter` at the row's end and TalkBack reads "POI, 96". On every platform the closed select shows the label alone. In Figma, Select's open list shows `Option N Count` under `Show Counts`; the SwiftUI and Compose Code Connect snippets write fixed counts (128, 96, 32), because Figma's count text is not carried into a native snippet, whose `count` is a number.

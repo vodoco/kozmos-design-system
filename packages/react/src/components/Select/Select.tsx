@@ -204,10 +204,19 @@ export interface SelectItemProps extends React.ComponentPropsWithoutRef<
 > {
   /**
    * A count beside the option's words (GAP-164), as a neutral Counter at the
-   * row's end. It sits outside the item text, so the closed select shows the
-   * words alone, and the option is read as its words then its count.
+   * row's end, before the check's place. It sits outside the item text, so
+   * the closed select shows the words alone. A number is written in the
+   * reader's grouping ("1,234"), and the option is named by its words, then
+   * its count: "POI, 96". A caller's own `aria-label` wins.
    */
   count?: React.ReactNode;
+}
+
+/** A number in the reader's grouping, as SwiftUI and Compose write it. */
+function formatSelectCount(count: React.ReactNode) {
+  return typeof count === "number"
+    ? new Intl.NumberFormat().format(count)
+    : count;
 }
 
 const SelectItem = React.forwardRef<
@@ -217,19 +226,40 @@ const SelectItem = React.forwardRef<
   const textId = React.useId();
   const countId = React.useId();
   const hasCount = count !== undefined && count !== null && count !== false;
+  const countText = hasCount ? formatSelectCount(count) : null;
+  const callerLabel = props["aria-label"];
+  const callerLabelledBy = props["aria-labelledby"];
+  const plain = (node: React.ReactNode) =>
+    typeof node === "string" || typeof node === "number";
+  // Radix names the option by its item text alone, through
+  // aria-labelledby, which would beat a caller's aria-label: that label
+  // wins. With a count, the name is the words then the count, "POI, 96";
+  // words that are not plain text are named by their nodes, then the count.
+  let naming: Record<string, string | undefined> | null = null;
+  if (callerLabel !== undefined && callerLabelledBy === undefined) {
+    naming = { "aria-labelledby": undefined };
+  } else if (hasCount && callerLabelledBy === undefined) {
+    naming =
+      plain(children) && plain(countText)
+        ? {
+            "aria-label": `${children}, ${countText}`,
+            "aria-labelledby": undefined,
+          }
+        : { "aria-labelledby": `${textId} ${countId}` };
+  }
   return (
     // Combobox's row (owned-selection.css): the words, then the check at the
-    // end, a light row under the pointer or the keyboard.
+    // end, a light row under the pointer or the keyboard. The check's place
+    // is kept on every row, so counts form one column that a new choice
+    // never moves (decision 1).
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
         "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
         className,
       )}
-      // Radix names the option by its item text alone; with a count the
-      // name is the text, then the count.
-      {...(hasCount ? { "aria-labelledby": `${textId} ${countId}` } : null)}
       {...props}
+      {...naming}
     >
       <span className="kozmos-reset kozmos-option-content">
         <SelectPrimitive.ItemText {...(hasCount ? { id: textId } : null)}>
@@ -238,15 +268,20 @@ const SelectItem = React.forwardRef<
       </span>
       {hasCount ? (
         <Counter id={countId} className="shrink-0">
-          {count}
+          {countText}
         </Counter>
       ) : null}
-      <SelectPrimitive.ItemIndicator asChild>
-        <Check
-          aria-hidden="true"
-          className="kozmos-reset kozmos-option-check"
-        />
-      </SelectPrimitive.ItemIndicator>
+      <span
+        data-slot="select-item-check"
+        className="flex h-4 w-4 shrink-0 items-center justify-center"
+      >
+        <SelectPrimitive.ItemIndicator asChild>
+          <Check
+            aria-hidden="true"
+            className="kozmos-reset kozmos-option-check"
+          />
+        </SelectPrimitive.ItemIndicator>
+      </span>
     </SelectPrimitive.Item>
   );
 });

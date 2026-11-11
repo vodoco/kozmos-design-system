@@ -8790,8 +8790,11 @@ section("Decision 65: Tabs draw React's raised segment");
 // the trigger with SelectContent under it, three rows of Combobox's, each
 // `[words] [count] [check]` with the count the neutral Counter, the counts
 // and words editable (Option N Text, Option N Count) and shown by Show
-// Counts. Both reach the file through Update: today's variants are renamed in
-// place, their node ids kept, and the new ones created beside them.
+// Counts. Every row keeps the check's 16 at its end, so the counts form one
+// column, and Open is drawn at State=Default only (#525 review): an open list
+// is neither disabled nor the trigger's focus ring. Both reach the file
+// through Update: today's variants are renamed in place, their node ids
+// kept, and the new ones created beside them.
 section("Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132)");
 {
   const ready =
@@ -9033,10 +9036,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           order ===
             (n === 1
               ? `Option ${n} Text > Option ${n} Counter > Icon`
-              : `Option ${n} Text > Option ${n} Counter`) &&
+              : `Option ${n} Text > Option ${n} Counter > Check Slot`) &&
           row.itemSpacing === 8 &&
           row.height === 44,
-        `row ${n} is [words] [count]${n === 1 ? " [check]" : ""}, 8 apart, 44 tall (${order}; ${row && row.itemSpacing}, ${row && row.height})`,
+        `row ${n} is [words] [count] ${n === 1 ? "[check]" : "[the check's empty slot]"}, 8 apart, 44 tall (${order}; ${row && row.itemSpacing}, ${row && row.height})`,
       );
       ok(
         pill &&
@@ -9053,6 +9056,43 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         `row ${n}'s count reads ${digits && digits.characters} in the neutral Counter's 20 pill, 6 at the sides, background/200 under foreground/0 12px (${pill && pill.height}, ${pill && pill.paddingLeft}, ${pill && boundVariableName(pill.fills[0])}, ${digits && boundVariableName(digits.fills[0])}, ${digits && digits.fontSize})`,
       );
     }
+
+    // Decision 1 (#525 review): the counts form one column. Every row keeps
+    // the check's 16 at its end, the chosen row's check, the others an empty
+    // Check Slot bound to the same size, so each count ends where the others
+    // do, laid out as Figma would.
+    await withAutoLayout(async () => {
+      for (const status of ["Default", "Error"]) {
+        const laid = await paintSelect({
+          state: "Default",
+          status,
+          type: "Open",
+        });
+        const rows = named(laid, "Select Listbox").children;
+        const ends = rows.map((row, i) => {
+          const pill = named(row, `Option ${i + 1} Counter`);
+          return pill ? pill.x + pill.width : null;
+        });
+        const slots = rows.map((row) => row.children[row.children.length - 1]);
+        ok(
+          ends.length === 3 &&
+            ends.every((end) => end !== null && end === ends[0]) &&
+            ends[0] === rows[0].width - 12 - 16 - 8 &&
+            slots.every(
+              (slot, i) =>
+                slot.width === 16 &&
+                slot.height === 16 &&
+                (i === 0
+                  ? slot.type === "INSTANCE"
+                  : slot.name === "Check Slot" &&
+                    slot.type === "FRAME" &&
+                    slot.fills.length === 0 &&
+                    boundTo(slot, "width") === "Select/icon/size"),
+            ),
+          `Status=${status}, Open: the three counts end at one x, 16 + 8 inside the row's 12, each row closed by the check or its empty 16 slot (ends ${ends.join(", ")}; ${slots.map((slot) => `${slot.name} ${slot.width}`).join(", ")})`,
+        );
+      }
+    });
 
     // Combobox's row is unchanged with no count.
     const comboRow = await painter.plugin.createComboboxOption({
@@ -9073,6 +9113,22 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         boundVariableName(named(comboRow, "Option 1 Text").fills[0]) ===
           "Colors/foreground/0",
       `with no count, Combobox's row is as it was (${comboRow.name}: ${comboRow.children.map((c) => c.name).join(", ")})`,
+    );
+    const comboPlain = await painter.plugin.createComboboxOption({
+      index: 1,
+      text: "Gate A12",
+      selected: false,
+      active: true,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboPlain.name === "Combobox Option 2" &&
+        comboPlain.children.map((c) => c.name).join(",") === "Option 2 Text",
+      `with no count, an unchosen Combobox row keeps no check slot (${comboPlain.children.map((c) => c.name).join(", ")})`,
     );
 
     // Update over the sets as the file has them today.
@@ -9196,9 +9252,20 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         updated.updated === true &&
           updated.componentSetId === setId &&
           updated.variantsUpdated === 6 &&
-          updated.variantsCreated === 6 &&
-          liveSet.children.length === 12,
-        `Select Update keeps the set and its 6 variants and creates the 6 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+          updated.variantsCreated === 2 &&
+          liveSet.children.length === 8,
+        `Select Update keeps the set and its 6 variants and creates the 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      // #525 review: an open list is neither disabled nor the trigger's focus
+      // ring, so Open is drawn at State=Default only.
+      const openNames = liveSet.children
+        .map((child) => child.name)
+        .filter((name) => /Content=Open/.test(name))
+        .sort();
+      ok(
+        openNames.join(" | ") ===
+          "State=Default, Status=Default, Content=Open | State=Default, Status=Error, Content=Open",
+        `the Open variants are State=Default's two Statuses alone (${openNames.join(" | ")})`,
       );
       ok(
         oldNames.every(
@@ -9238,19 +9305,19 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         (key) => key.split("#")[0] === "Show Counts",
       );
       ok(
-        pills.length === 6 * 3 &&
+        pills.length === 2 * 3 &&
           pills.every(
             (pill) =>
               pill.componentPropertyReferences &&
               pill.componentPropertyReferences.visible === showKey,
           ),
-        `Show Counts shows each of the 18 counts (${pills.length} counts)`,
+        `Show Counts shows each of the 6 counts (${pills.length} counts)`,
       );
       const countTexts = liveSet.findAll(
         (node) => node.type === "TEXT" && /^Option \d Count$/.test(node.name),
       );
       ok(
-        countTexts.length === 18 &&
+        countTexts.length === 6 &&
           countTexts.every(
             (text) =>
               text.componentPropertyReferences &&
@@ -9264,6 +9331,66 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       ok(
         selectOverlaps.length === 0,
         `the updated Select set has no two variants overlapping (${selectOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    // A Build draws the same 8: 6 Closed, 2 Open.
+    {
+      const buildPage = new MockNode("PAGE", "Components");
+      const file = own([buildPage, iconsPage()]);
+      const built = await file.plugin.buildSelectComponent();
+      const set = buildPage.children.find(
+        (node) => node.type === "COMPONENT_SET" && node.name === "Select",
+      );
+      const names = set ? set.children.map((child) => child.name).sort() : [];
+      const want = [];
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          want.push(`State=${state}, Status=${status}, Content=Closed`);
+      for (const status of ["Default", "Error"])
+        want.push(`State=Default, Status=${status}, Content=Open`);
+      want.sort();
+      ok(
+        built.created === true &&
+          built.variants === 8 &&
+          names.join(" | ") === want.join(" | "),
+        `Select Build draws 6 Closed and State=Default's 2 Open variants (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
+      );
+    }
+
+    // A set an earlier run gave all six Open variants keeps them: removing a
+    // variant would break the instances that use it.
+    {
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const ids = {};
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          for (const content of ["Closed", "Open"]) {
+            const name = `State=${state}, Status=${status}, Content=${content}`;
+            const variant = new MockNode("COMPONENT", name);
+            liveSet.appendChild(variant);
+            ids[name] = variant.id;
+          }
+      livePage.appendChild(liveSet);
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const kept = Object.entries(ids).filter(([name, id]) =>
+        liveSet.children.some(
+          (child) => child.id === id && child.name === name,
+        ),
+      );
+      const warned = (updated.warnings || []).filter((w) =>
+        /no longer generated/.test(w),
+      );
+      ok(
+        updated.variantsUpdated === 12 &&
+          updated.variantsCreated === 0 &&
+          liveSet.children.length === 12 &&
+          kept.length === 12 &&
+          updated.variantsNotGenerated === 4 &&
+          warned.length === 4,
+        `Update keeps an earlier run's Focus and Disabled Open variants, ids and all, and warns of each (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${kept.length} kept, ${warned.length} warnings)`,
       );
     }
   }

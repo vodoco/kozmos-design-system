@@ -64,14 +64,15 @@ describe("Select", () => {
   });
 
   // GAP-164: a count in an option.
-  it("reads an option's count with its words, outside the item text", () => {
+  it('reads an option\'s count with its words, "POI, 96", outside the item text', () => {
+    const thousands = new Intl.NumberFormat().format(1234);
     render(
       <Select open defaultValue="everything">
         <SelectTrigger aria-label="Content">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="everything" count={128}>
+          <SelectItem value="everything" count={1234}>
             Everything
           </SelectItem>
           <SelectItem value="poi" count="96">
@@ -81,20 +82,94 @@ describe("Select", () => {
         </SelectContent>
       </Select>,
     );
-    const poi = screen.getByRole("option", { name: "POI 96" });
-    const count = poi.querySelector('[data-slot="counter"]');
-    expect(count).toHaveTextContent("96");
-    // The item text, the words the closed select repeats, holds no count.
-    const text = document.getElementById(
-      (poi.getAttribute("aria-labelledby") ?? "").split(" ")[0],
+    const poi = screen.getByRole("option", { name: "POI, 96" });
+    expect(poi.querySelector('[data-slot="counter"]')).toHaveTextContent(
+      /^96$/,
     );
-    expect(text).toHaveTextContent(/^POI$/);
-    expect(
-      screen.getByRole("option", { name: "Everything 128" }),
-    ).toBeInTheDocument();
+    // The item text, the words the closed select repeats, holds no count.
+    expect(poi.querySelector(".kozmos-option-content")?.textContent).toBe(
+      "POI",
+    );
+    // A number is written and read in the reader's grouping.
+    const everything = screen.getByRole("option", {
+      name: `Everything, ${thousands}`,
+    });
+    expect(everything.querySelector('[data-slot="counter"]')).toHaveTextContent(
+      thousands,
+    );
     // An option with no count is named by its words, as before.
     const virtual = screen.getByRole("option", { name: "Virtual" });
     expect(virtual.querySelector('[data-slot="counter"]')).toBeNull();
+  });
+
+  it("names an option whose words are not plain text by its words, then its count", () => {
+    render(
+      <Select open>
+        <SelectTrigger aria-label="Content">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="poi" count={96}>
+            <span>POI</span>
+          </SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    const poi = screen.getByRole("option", { name: "POI 96" });
+    const [text] = (poi.getAttribute("aria-labelledby") ?? "").split(" ");
+    expect(document.getElementById(text)).toHaveTextContent(/^POI$/);
+  });
+
+  it("lets a caller's aria-label name the option, with a count or without", () => {
+    render(
+      <Select open>
+        <SelectTrigger aria-label="Content">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            value="poi"
+            count={96}
+            aria-label="Points of interest: 96"
+          >
+            POI
+          </SelectItem>
+          <SelectItem value="virtual" aria-label="Virtual content">
+            Virtual
+          </SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    expect(
+      screen.getByRole("option", { name: "Points of interest: 96" }),
+    ).not.toHaveAttribute("aria-labelledby");
+    expect(
+      screen.getByRole("option", { name: "Virtual content" }),
+    ).not.toHaveAttribute("aria-labelledby");
+  });
+
+  it("keeps the check's place on every row, chosen or not", () => {
+    render(
+      <Select open defaultValue="poi">
+        <SelectTrigger aria-label="Content">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="poi" count={96}>
+            POI
+          </SelectItem>
+          <SelectItem value="virtual" count={4}>
+            Virtual
+          </SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    for (const option of screen.getAllByRole("option")) {
+      const slot = option.lastElementChild as HTMLElement;
+      expect(slot).toHaveAttribute("data-slot", "select-item-check");
+      expect(slot.className).toMatch(/\bh-4\b/);
+      expect(slot.className).toMatch(/\bw-4\b/);
+    }
   });
 
   it("shows the chosen option's words alone in the closed select", () => {

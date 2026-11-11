@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "ce82f244bab9";
+const PLUGIN_BUILD = "87c7a912a308";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -360,6 +360,11 @@ const SELECT_STATUSES = ["Default", "Error"];
 // GAP-164 (decision 132): Open draws the trigger with its list under it, so a
 // row's count is visible in Figma. A variant drawn before the axis is Closed.
 const SELECT_CONTENT = ["Closed", "Open"];
+// An open list is neither disabled nor the trigger's focus-ring state, so
+// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+function selectVariantIsGenerated(state, _status, content) {
+  return content !== "Open" || state === "Default";
+}
 const SLIDER_STATES = ["Default", "Focus", "Disabled"];
 const SLIDER_STATUSES = ["Default", "Error"];
 const SLIDER_TYPES = ["Single", "Range"];
@@ -4196,10 +4201,10 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
-      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it (GAP-164).",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option 1 Text through Option 3 Text map to SelectItem children.",
-      "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them.",
+      "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
@@ -38060,6 +38065,7 @@ async function buildSelectComponent() {
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
     types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
     xStep: 360,
@@ -38071,7 +38077,7 @@ async function buildSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
-      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it (GAP-164).",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -38086,6 +38092,7 @@ async function updateSelectComponent() {
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
     types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
     layoutVariants: layoutSelectVariants,
@@ -38097,7 +38104,7 @@ async function updateSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
-      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it (GAP-164).",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -38204,6 +38211,11 @@ async function buildStateStatusComponent(config) {
       const status = config.statuses[statusIndex];
       for (let typeIndex = 0; typeIndex < types.length; typeIndex += 1) {
         const type = types[typeIndex];
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
         const component = await config.createVariant({
           state,
           status,
@@ -38318,6 +38330,18 @@ async function updateStateStatusComponent(config) {
 
     const type = props.type || null;
     seenKeys[stateStatusComponentKey(props.state, props.status, type)] = true;
+    if (
+      config.includeVariant &&
+      !config.includeVariant(props.state, props.status, type)
+    ) {
+      // A combination the set no longer generates, drawn by an earlier run.
+      // Kept and redrawn, never removed: instances and Code Connect may pin
+      // it. Delete it by hand once nothing uses it.
+      stats.variantsNotGenerated = (stats.variantsNotGenerated || 0) + 1;
+      stats.warnings.push(
+        `${config.componentName} variant "${child.name}" is no longer generated; kept and updated. Delete it by hand once no instance uses it.`,
+      );
+    }
     await config.updateVariant(child, {
       state: props.state,
       status: props.status,
@@ -38334,6 +38358,11 @@ async function updateStateStatusComponent(config) {
       for (const type of types) {
         const key = stateStatusComponentKey(state, status, type);
         if (seenKeys[key]) continue;
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
 
         const component = await config.createVariant({
           state,
@@ -72734,6 +72763,13 @@ async function createComboboxOption({
 
   // SelectItem's count, between the words and the check.
   if (typeof count === "string") {
+    // The words take the row's slack, so the count sits against the check's
+    // 16 rather than floating between SPACE_BETWEEN's ends. FILL set before
+    // the append has no auto-layout parent and may not hold; set it again.
+    // SPACE_BETWEEN with a filling child lays no gap, so the row packs from
+    // the start and its 8 (Select/option/gap) parts words, count and check.
+    setLayoutSizingHorizontal(label, "FILL");
+    option.primaryAxisAlignItems = "MIN";
     option.appendChild(
       await createOptionCount({
         index,
@@ -72757,6 +72793,26 @@ async function createComboboxOption({
       `${prefix}/icon/size`,
     );
     option.appendChild(icon);
+  } else if (typeof count === "string") {
+    // Decision 1 (#525 review): with counts, every row keeps the check's 16 at
+    // its end, so the counts form one column whichever row is chosen. Rows
+    // with no count (Combobox, MultiSelect, Listbox) draw as they always have.
+    const slot = figma.createFrame();
+    slot.name = "Check Slot";
+    slot.fills = [];
+    slot.strokes = [];
+    slot.clipsContent = false;
+    slot.resizeWithoutConstraints(16, 16);
+    slot.setSharedPluginData(RUN_NAMESPACE, "kind", "option-check-slot");
+    bindSizeVariables(
+      slot,
+      `${prefix}/icon/size`,
+      `${prefix}/icon/size`,
+      variableByName,
+      stats,
+    );
+    option.appendChild(slot);
+    setFixedChildSizing(slot);
   }
 
   return option;

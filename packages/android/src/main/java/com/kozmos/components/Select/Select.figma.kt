@@ -41,8 +41,11 @@ class KozmosSelectConnect {
     @FigmaProperty(FigmaType.Text, "Option 3 Text")
     val option3Text: String = "Shops"
 
-    // Figma's counts are text; the snippet shows them as the Ints the item
-    // takes, one per option, shown or not with Show Counts.
+    // Figma's `Option N Count` texts are not carried to this snippet: a
+    // text property reaches Kotlin as a String, and the item's count is an
+    // Int. So the snippet writes the set's own sample counts, 128, 96 and
+    // 32, as Ints, shown or not with Show Counts; an instance whose counts
+    // were edited still shows these.
     @FigmaProperty(FigmaType.Boolean, "Show Counts")
     val option1Count: Int? = Figma.mapping(true to 128, false to null)
 

@@ -1676,4 +1676,53 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(paste.exists, "no Paste in the field's edit menu")
         paste.tap()
     }
+
+    /// A Select option with a count, in the system's own menu (GAP-164):
+    /// the menu draws the count as the item's subtitle and, alone, would
+    /// name the item by its title. Kozmos names it with its count, in the
+    /// reader's own grouped format, "Cafes, 1,234"; an option without one
+    /// keeps its label, "Toilets". The count is the item's subtitle whether
+    /// it is chosen or not, so choosing another option moves no count
+    /// (decision 1): the fixture reports where the open menu draws each word.
+    func testASelectOptionsCountIsReadWithItsLabelInTheSystemMenu() {
+        launch("select-counts")
+        let thousands = 1234.formatted()
+        XCTAssertNotEqual(thousands, "1234", "this locale groups thousands")
+        let report = app.staticTexts["control-accessibility-report"]
+        /// The open menu's words, once the fixture has read its `opening`.
+        func openMenu(_ opening: Int, chosen: String) -> [String: String] {
+            app.buttons["Category"].tap()
+            let gates = app.buttons["Gates, 12"]
+            XCTAssertTrue(gates.waitForExistence(timeout: 5), "the menu opened, or Gates is not named with its count:\n\(app.debugDescription)")
+            XCTAssertTrue(app.buttons["Cafes, \(thousands)"].exists, "Cafes is not named with its grouped count")
+            XCTAssertTrue(app.buttons["Toilets"].exists, "an option with no count is not named by its label")
+            XCTAssertFalse(app.buttons["Gates"].exists, "Gates is named by its title alone")
+            let prefix = "open \(opening); chosen \(chosen); "
+            let read = NSPredicate(format: "label BEGINSWITH %@", prefix)
+            _ = XCTWaiter().wait(for: [expectation(for: read, evaluatedWith: report)], timeout: 5)
+            XCTAssertTrue(report.label.hasPrefix(prefix), "the menu's words: \(report.label)")
+            var words: [String: String] = [:]
+            for entry in report.label.dropFirst(prefix.count).components(separatedBy: "|") {
+                guard let space = entry.firstIndex(of: " ") else { continue }
+                words[String(entry[..<space])] = String(entry[entry.index(after: space)...])
+            }
+            return words
+        }
+        let first = openMenu(1, chosen: "gates")
+        XCTAssertTrue(app.buttons["Gates, 12"].isSelected, "the chosen option is selected")
+        app.buttons["Cafes, \(thousands)"].tap()
+        received("cafes")
+        let second = openMenu(2, chosen: "cafes")
+        XCTAssertTrue(app.buttons["Cafes, \(thousands)"].isSelected, "the chosen option is selected")
+        for (count, label) in [("12", "Gates"), (thousands, "Cafes")] {
+            // The same box, the same width of words, the same alignment: the
+            // count's ends do not move when the choice does.
+            XCTAssertEqual(first[count], second[count], "\(count) moved when the choice moved from Gates to Cafes")
+            // A subtitle starts where its title starts, drawn from the leading edge.
+            let start = { (entry: String?) in entry?.components(separatedBy: "-").first }
+            XCTAssertEqual(start(second[count]), start(second[label]), "\(count) does not start where \(label) does")
+            XCTAssertTrue(["natural", "left"].contains(second[count]?.components(separatedBy: " ").last ?? ""),
+                          "\(count) is not drawn from its leading edge: \(second[count] ?? "missing")")
+        }
+    }
 }

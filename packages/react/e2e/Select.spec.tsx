@@ -57,7 +57,7 @@ test.describe("Select Behavioral CT", () => {
     const trigger = component.locator('button[role="combobox"]');
     await expect(trigger).toHaveText("POI");
     await trigger.click();
-    const option = page.getByRole("option", { name: "POI 96" });
+    const option = page.getByRole("option", { name: "POI, 96" });
     await expect(option).toBeVisible();
     // The list zooms in as it opens: measure it at rest.
     await page.evaluate(() =>
@@ -73,7 +73,62 @@ test.describe("Select Behavioral CT", () => {
     expect(count.height).toBe(20);
     expect(count.x).toBeGreaterThanOrEqual(words.x + words.width);
     expect(check.x).toBeGreaterThanOrEqual(count.x + count.width);
-    await page.getByRole("option", { name: "Everything 128" }).click();
+    await page.getByRole("option", { name: "Everything, 128" }).click();
     await expect(trigger).toHaveText("Everything");
   });
+
+  // Decision 1: the counts form one column. Every row keeps the check's
+  // place, so each count ends at the same edge, and a new choice moves none.
+  for (const dir of ["ltr", "rtl"] as const) {
+    test(`the counts form one column that a new choice does not move, ${dir}`, async ({
+      mount,
+      page,
+    }) => {
+      const component = await mount(
+        <ThemeProvider theme="light">
+          <div dir={dir}>
+            <Select defaultValue="poi" dir={dir}>
+              <SelectTrigger aria-label="Content" className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" count={1234}>
+                  Everything
+                </SelectItem>
+                <SelectItem value="poi" count={96}>
+                  POI
+                </SelectItem>
+                <SelectItem value="virtual" count={4}>
+                  Virtual
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </ThemeProvider>,
+      );
+      const trigger = component.locator('button[role="combobox"]');
+      const ends = async () => {
+        await trigger.click();
+        await expect(page.getByRole("option").first()).toBeVisible();
+        await page.evaluate(() =>
+          Promise.all(document.getAnimations().map((a) => a.finished)),
+        );
+        const edges: number[] = [];
+        for (const option of await page.getByRole("option").all()) {
+          const box = (await option
+            .locator('[data-slot="counter"]')
+            .boundingBox())!;
+          // The count's end: its right edge, or its left right to left.
+          edges.push(dir === "ltr" ? box.x + box.width : box.x);
+        }
+        return edges;
+      };
+      const before = await ends();
+      expect(new Set(before).size).toBe(1);
+      await page.getByRole("option", { name: /^Virtual/ }).click();
+      await expect(trigger).toHaveText("Virtual");
+      const after = await ends();
+      expect(after).toEqual(before);
+    });
+  }
 });

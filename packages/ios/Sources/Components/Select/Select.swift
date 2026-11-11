@@ -25,6 +25,15 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
 /// title. The count is never part of `label`, so a trigger that shows the
 /// chosen option's `label` does not repeat it. Unset, the option is drawn
 /// and read as it always was.
+///
+/// The count is written once, in the reader's own number format, grouped
+/// ("1,234" in English, "1.234" in German), and the drawn subtitle and the
+/// spoken name both take that one string, as React and Compose do.
+///
+/// Chosen or not, an option with a count is the same item, a title and a
+/// subtitle; only the checkmark, the item's image, comes and goes. The menu
+/// starts the subtitle where it starts the title, so a count never moves
+/// when the choice does.
 public struct KozmosSelectItem: View {
     let value: String
     let label: String
@@ -38,18 +47,21 @@ public struct KozmosSelectItem: View {
         self.count = count
         self._selection = selection
     }
+
+    /// The count as it is drawn and read: locale-grouped.
+    var countText: String? { count.map { $0.formatted() } }
     
     public var body: some View {
         Button(action: {
             trackEvent(KozmosAnalyticsEvent(eventName: "select_value_changed", component: "Select", properties: ["value": value]))
             selection = value
         }) {
-            if let count {
+            if let countText {
                 // Not in an HStack: a menu keeps a stack's first Text and
                 // drops the rest, where it draws a second Text as the
                 // subtitle.
                 Text(label)
-                Text(count.formatted())
+                Text(countText)
                 if selection == value {
                     Image(systemName: "checkmark")
                 }
@@ -62,19 +74,19 @@ public struct KozmosSelectItem: View {
                 }
             }
         }
-        .modifier(KozmosSelectItemCountLabel(label: label, count: count))
+        .modifier(KozmosSelectItemCountLabel(label: label, countText: countText))
     }
 }
 
-/// The label and count as one name, only where there is a count: an option
-/// without one keeps the name the menu gives it.
+/// The label and count as one name, "Gates, 12", only where there is a
+/// count: an option without one keeps the name the menu gives it.
 private struct KozmosSelectItemCountLabel: ViewModifier {
     let label: String
-    let count: Int?
+    let countText: String?
 
     func body(content: Content) -> some View {
-        if let count {
-            content.accessibilityLabel("\(label), \(count.formatted())")
+        if let countText {
+            content.accessibilityLabel("\(label), \(countText)")
         } else {
             content
         }

@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +57,12 @@ private val TabsSegmentMinHeight = 36.dp
 private val TabsIconSize = KozmosIconSize.Md.dp
 private val TabsIconGap = KozmosDimensions.primitivesLayoutSpacing50
 
+/**
+ * True inside a [KozmosTabsList]: its tabs fill the list's height, which is
+ * its tallest tab's (decision 3). A trigger in some other row keeps its own.
+ */
+private val LocalTabsFillTrack = staticCompositionLocalOf { false }
+
 @Composable
 fun KozmosTabs(
     modifier: Modifier = Modifier,
@@ -70,6 +80,12 @@ fun KozmosTabs(
  *
  * TalkBack reads it as React's `tablist`: a selectable group, so TalkBack
  * is given the tabs as one collection, and each tab's place in it.
+ *
+ * Every tab is as tall as the tallest (decision 3): the list is its tallest
+ * tab's height, and each tab fills it. When one tab has an icon, a tab of
+ * words alone takes the same stacked height, its words centred down it, so
+ * the raised segment fills the track whichever tab is selected. With no
+ * icons every tab is the same 44dp as before.
  */
 @Composable
 fun KozmosTabsList(
@@ -84,10 +100,13 @@ fun KozmosTabsList(
                 KozmosThemeTokens.primitivesColorsBackground100,
                 RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
             )
-            .padding(horizontal = TabsInset),
+            .padding(horizontal = TabsInset)
+            .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        content()
+        CompositionLocalProvider(LocalTabsFillTrack provides true) {
+            content()
+        }
     }
 }
 
@@ -109,7 +128,8 @@ fun KozmosTabsList(
  *
  * [icon], when given, is drawn 20dp over the title, 4dp above it and centred
  * with it (GAP-152); the segment keeps its padding, and the track grows to
- * hold it. It takes the title's colour through [LocalContentColor] and is
+ * hold it; in a [KozmosTabsList] the list's other tabs grow with it. It
+ * takes the title's colour through [LocalContentColor] and is
  * decorative: TalkBack reads the tab by its title alone.
  */
 @Composable
@@ -129,6 +149,7 @@ fun RowScope.KozmosTabsTrigger(
     Box(
         modifier = modifier
             .weight(1f)
+            .then(if (LocalTabsFillTrack.current) Modifier.fillMaxHeight() else Modifier)
             .selectable(
                 selected = isSelected,
                 interactionSource = interactionSource,

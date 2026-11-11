@@ -93,6 +93,66 @@ class KozmosTabsIconTest {
         return Drawn(tree, icons, inks, px, tokens)
     }
 
+    /**
+     * Hours with words alone, Access with an icon, [selected] the selected
+     * one; with [anIcon] false, both words alone.
+     */
+    private fun drawMixed(selected: String, rtl: Boolean, anIcon: Boolean = true): Drawn {
+        var px = 0f
+        val tree = paparazzi.readSemantics {
+            px = LocalDensity.current.density
+            CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+                KozmosMaterialTheme {
+                    KozmosTabs {
+                        KozmosTabsList {
+                            KozmosTabsTrigger(value = "hours", title = "Hours", selectedValue = selected, onValueChange = {})
+                            KozmosTabsTrigger(
+                                value = "access",
+                                title = "Access",
+                                selectedValue = selected,
+                                onValueChange = {},
+                                icon = if (anIcon) { { Box(Modifier.fillMaxSize()) } } else null
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return Drawn(tree, emptyMap(), emptyMap(), px, Color.Unspecified to Color.Unspecified)
+    }
+
+    /**
+     * Decision 3: when one tab in a list has an icon, every tab takes the
+     * stacked height, so the raised segment, 4dp inside the tab, fills the
+     * track whichever tab is selected; a tab of words alone centres its
+     * title down it. Read with the word tab selected, the case that showed a
+     * 36dp segment floating in a taller track, and with the icon tab
+     * selected, both ways round. A list with no icon keeps its 44dp tabs.
+     */
+    @Test
+    fun aWordTabBesideAnIconTabTakesTheStackedHeightWithItsTitleCentred() {
+        for (rtl in listOf(false, true)) {
+            val way = if (rtl) "right to left" else "left to right"
+            for (selected in listOf("hours", "access")) {
+                val drawn = drawMixed(selected = selected, rtl = rtl)
+                val words = drawn.tree.saying("Hours").bounds
+                val iconed = drawn.tree.saying("Access").bounds
+                val where = "$selected selected, $way"
+                assertTrue("the icon tab is not stacked, $where: ${iconed.height}", iconed.height > 44 * drawn.px + 1)
+                assertNear("the word tab's height against the icon tab's, $where", iconed.height, words.height)
+                assertNear("the word tab's top against the icon tab's, $where", iconed.top, words.top)
+                assertNear("the word tab's title, centred down it, $where", words.center.y, drawn.tree.titleBox("Hours").center.y)
+                assertNear("the word tab's title, centred across it, $where", words.center.x, drawn.tree.titleBox("Hours").center.x)
+            }
+            val plain = drawMixed(selected = "hours", rtl = rtl, anIcon = false)
+            for (title in titles) {
+                val tab = plain.tree.saying(title).bounds
+                assertNear("$title's height in a list with no icon, $way", 44 * plain.px, tab.height)
+                assertNear("$title's title, centred down it with no icon, $way", tab.center.y, plain.tree.titleBox(title).center.y)
+            }
+        }
+    }
+
     /** The laid-out box of [title]'s own words. */
     private fun ReadSemantics.titleBox(title: String): Rect = unmerged.single { it.texts == listOf(title) }.bounds
 

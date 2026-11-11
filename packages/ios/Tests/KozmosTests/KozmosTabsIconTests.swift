@@ -187,12 +187,75 @@ final class KozmosTabsIconTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
+    /// A list where one tab has an icon and the other has only words, the
+    /// given one selected.
+    @MainActor private func drawMixed(_ scheme: ColorScheme, selected: String) throws -> DrawnPixels {
+        try DrawnPixels.draw(
+            KozmosTabsList {
+                KozmosTabsTrigger(value: "hours", title: "Hours", selection: .constant(selected)) { Rectangle() }
+                KozmosTabsTrigger(value: "access", title: "Access", selection: .constant(selected))
+            }
+            .frame(width: 280)
+            .padding(24)
+            .background(Color(.sRGB, red: 0.5, green: 0.5, blue: 0.5, opacity: 1))
+            .environment(\.colorScheme, scheme),
+            scale: 3
+        )
+    }
+
+    /// Decision 3: once one tab in a list has an icon, every tab in it takes
+    /// the stacked height, so the raised segment fills the track whichever
+    /// tab is chosen. A tab with only words centres its title in that
+    /// height. Chosen, the word tab's segment is as tall as the icon tab's,
+    /// 4pt inside the track top and bottom, and its title's line sits on the
+    /// segment's centre.
+    @MainActor func testEveryTabInAListWithAnIconTakesTheStackedHeight() throws {
+        var problems: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let iconChosen = try drawMixed(scheme, selected: "hours")
+            let wordChosen = try drawMixed(scheme, selected: "access")
+            let background0 = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            guard let iconTrack = try Self.track(in: iconChosen, scheme),
+                  let wordTrack = try Self.track(in: wordChosen, scheme),
+                  let iconSegment = iconChosen.boundingBox(in: iconTrack, where: DrawnPixels.matches(background0, tolerance: 4)),
+                  let wordSegment = wordChosen.boundingBox(in: wordTrack, where: DrawnPixels.matches(background0, tolerance: 4)) else {
+                problems.append("\(scheme): no track or no background/0 segment in it")
+                continue
+            }
+            if abs(wordTrack.height - iconTrack.height) > 0.7 {
+                problems.append("\(scheme): the track is \(wordTrack.height) with the word tab chosen and \(iconTrack.height) with the icon tab")
+            }
+            if abs(wordSegment.height - iconSegment.height) > 0.7 {
+                problems.append("\(scheme): the word tab's segment is \(wordSegment.height) tall, the icon tab's \(iconSegment.height)")
+            }
+            let above = wordSegment.minY - wordTrack.minY, below = wordTrack.maxY - wordSegment.maxY
+            if abs(above - 4) > 1 || abs(below - 4) > 1 {
+                problems.append("\(scheme): the word tab's segment is \(above) under the track's top and \(below) over its bottom, not 4")
+            }
+            // The chosen word tab's title, foreground/0, centred in its segment.
+            let ink = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground0, in: scheme)
+            if let title = wordChosen.boundingBox(in: wordSegment, where: DrawnPixels.matches(ink, tolerance: 8)) {
+                // Cap height over the baseline sits a little high of the line's centre.
+                if abs(title.midY - wordSegment.midY) > 1.5 {
+                    problems.append("\(scheme): the word tab's title is centred at \(title.midY), its segment at \(wordSegment.midY)")
+                }
+            } else {
+                problems.append("\(scheme): the chosen word tab draws no foreground/0 title in its segment")
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
+    }
+
     /// A tab with no icon is drawn as before: one line in a 44pt track.
     @MainActor func testATabWithNoIconKeepsTheFortyFourPointTrack() throws {
         for scheme in [ColorScheme.light, .dark] {
             let pixels = try drawPlain(scheme)
             let track = try XCTUnwrap(try Self.track(in: pixels, scheme), "\(scheme): no track")
             XCTAssertEqual(track.height, 44, accuracy: 0.7, "\(scheme): the track")
+            let background0 = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            let segment = try XCTUnwrap(pixels.boundingBox(in: track, where: DrawnPixels.matches(background0, tolerance: 4)),
+                                        "\(scheme): no segment")
+            XCTAssertEqual(segment.height, 36, accuracy: 0.7, "\(scheme): the segment")
             let ink = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground400, in: scheme)
             let other = Self.tabs(in: track).right
             XCTAssertEqual(pixels.cropped(to: other).bands(where: DrawnPixels.matches(ink, tolerance: 8)).count, 1,

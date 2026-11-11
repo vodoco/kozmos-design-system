@@ -47,6 +47,11 @@ public struct KozmosTabsList<Content: View>: View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing0) {
             content
         }
+        // The row is as tall as its tallest tab, and each tab fills it
+        // (decision 3): once one tab has an icon, every tab takes the
+        // stacked height, so the raised segment fills the track whichever
+        // tab is chosen. With no icon anywhere the tallest is 44, as before.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, KozmosTabsMetrics.inset)
         .background(
             RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius)
@@ -82,7 +87,9 @@ private struct KozmosTabBarTrait: ViewModifier {
 ///
 /// With an `icon` (GAP-152), the icon sits 20pt square, 4pt over the title,
 /// both centred, in the title's colour, and the track grows to hold the
-/// taller segment. The tab is still named by its title alone: the icon is
+/// taller segment. Every tab in that list takes the same height (decision
+/// 3), so a tab with only words centres its title and its segment still
+/// fills the track. The tab is still named by its title alone: the icon is
 /// hidden from VoiceOver.
 public struct KozmosTabsTrigger: View {
     let value: String
@@ -141,7 +148,10 @@ public struct KozmosTabsTrigger: View {
                 .environment(\.kozmosIconHostInk, ink)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
-                .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight)
+                // `maxHeight` fills the list's row, whose height is its
+                // tallest tab's: a tab with only words centres its title in
+                // the height an icon tab beside it needs.
+                .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight, maxHeight: .infinity)
                 .background {
                     if isSelected {
                         RoundedRectangle(cornerRadius: KozmosTabsMetrics.segmentRadius)

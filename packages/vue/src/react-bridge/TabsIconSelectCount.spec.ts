@@ -88,7 +88,7 @@ describe("Tabs' icon and Select's count through the bridge", () => {
     const option = await until(() =>
       $$("[role=option]").find((node) => node.textContent?.startsWith("POI")),
     );
-    expect(labelledBy(option!)).toBe("POI 96");
+    expect(option!.getAttribute("aria-label")).toBe("POI, 96");
     const virtual = $$("[role=option]").find(
       (node) => node.textContent === "Virtual",
     )!;

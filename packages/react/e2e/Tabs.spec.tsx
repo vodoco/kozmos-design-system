@@ -123,4 +123,130 @@ test.describe("Tabs Behavioral CT", () => {
       expect(shadow).not.toBe("none");
     });
   }
+
+  // Decision 3: once one tab has an icon, every tab in the list is the
+  // stacked height, so the raised segment fills the track whichever tab is
+  // active, and a tab of words alone centres them.
+  for (const dir of ["ltr", "rtl"] as const) {
+    test(`a tab of words beside an icon tab takes the stacked height, ${dir}`, async ({
+      mount,
+    }) => {
+      const component = await mount(
+        <ThemeProvider theme="light">
+          <div dir={dir}>
+            <Tabs defaultValue="all" dir={dir}>
+              <TabsList data-testid="mixed">
+                <TabsTrigger value="all">Everything</TabsTrigger>
+                <TabsTrigger
+                  value="poi"
+                  icon={
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  }
+                >
+                  POI
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </ThemeProvider>,
+      );
+      const list = (await component.getByTestId("mixed").boundingBox())!;
+      const words = component.getByRole("tab", { name: "Everything" });
+      const box = (await words.boundingBox())!;
+      // The active tab is the word tab: its segment fills the 64 track.
+      expect(list.height).toBe(64);
+      expect(box.height).toBe(56);
+      expect(box.y - list.y).toBe(4);
+      const text = await words.evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const r = range.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom };
+      });
+      // Its words sit in the middle of it.
+      expect(
+        Math.abs((text.top + text.bottom) / 2 - (box.y + box.height / 2)),
+      ).toBeLessThanOrEqual(1);
+    });
+  }
+
+  // A caller's own height class still sizes the list, with or without an
+  // icon in it.
+  test("a caller's height class wins over the list's own", async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <ThemeProvider theme="light">
+        <div>
+          <Tabs defaultValue="a">
+            <TabsList data-testid="words" className="h-12">
+              <TabsTrigger value="a">Account</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Tabs defaultValue="poi">
+            <TabsList data-testid="stacked" className="h-20">
+              <TabsTrigger
+                value="poi"
+                icon={
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                }
+              >
+                POI
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </ThemeProvider>,
+    );
+    expect((await component.getByTestId("words").boundingBox())!.height).toBe(
+      48,
+    );
+    expect((await component.getByTestId("stacked").boundingBox())!.height).toBe(
+      80,
+    );
+  });
+
+  // An asChild tab with an icon is still the caller's element, a tab the
+  // arrow keys reach and choose.
+  test("an asChild tab with an icon stays the caller's element and a tab", async ({
+    mount,
+    page,
+  }) => {
+    const component = await mount(
+      <ThemeProvider theme="light">
+        <Tabs defaultValue="a">
+          <TabsList>
+            <TabsTrigger value="a">Account</TabsTrigger>
+            <TabsTrigger
+              value="b"
+              asChild
+              icon={
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              }
+            >
+              <a href="#b">Billing</a>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="a">Panel A</TabsContent>
+          <TabsContent value="b">Panel B</TabsContent>
+        </Tabs>
+      </ThemeProvider>,
+    );
+    const billing = component.getByRole("tab", { name: "Billing" });
+    expect(await billing.evaluate((el) => el.tagName)).toBe("A");
+    await expect(
+      billing.locator('[data-slot="tabs-trigger-icon"]'),
+    ).toHaveCount(1);
+    await component.getByRole("tab", { name: "Account" }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(billing).toBeFocused();
+    await expect(billing).toHaveAttribute("aria-selected", "true");
+    await expect(component.getByText("Panel B")).toBeVisible();
+  });
 });

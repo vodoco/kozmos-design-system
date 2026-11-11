@@ -42,9 +42,10 @@ describe("Tabs", () => {
     // The raised active tab is kept (decision 65).
     expect(tab).toHaveAttribute("data-state", "active");
     expect(tab.className).toContain("data-[state=active]:shadow-raised");
-    // The list grows to hold the stack.
+    // The list's height (measured in e2e/Tabs.spec.tsx) comes from rules a
+    // caller's own height class beats.
     expect(screen.getByRole("tablist").className).toContain(
-      "has-[[data-slot=tabs-trigger-icon]]:h-auto",
+      "[:where(&:not(:has([data-slot=tabs-trigger-icon])))]:h-10",
     );
   });
 
@@ -63,5 +64,26 @@ describe("Tabs", () => {
     expect(tab.className).not.toMatch(/\bflex-col\b/);
     expect(tab.querySelector('[data-slot="tabs-trigger-icon"]')).toBeNull();
     expect(screen.getByRole("tab", { name: "Billing" }).tagName).toBe("A");
+  });
+
+  it("keeps an asChild tab the caller's element, with the icon inside it", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList>
+          <TabsTrigger value="a">Account</TabsTrigger>
+          <TabsTrigger value="b" asChild icon={<svg data-testid="card" />}>
+            <a href="#b">Billing</a>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const tab = screen.getByRole("tab", { name: "Billing" });
+    expect(tab.tagName).toBe("A");
+    expect(tab).toHaveAttribute("href", "#b");
+    expect(tab).toHaveAttribute("aria-selected", "false");
+    const icon = screen.getByTestId("card").parentElement as HTMLElement;
+    expect(icon.parentElement).toBe(tab);
+    expect(tab.firstElementChild).toBe(icon);
+    expect(tab.className).toMatch(/\bflex-col\b/);
   });
 });

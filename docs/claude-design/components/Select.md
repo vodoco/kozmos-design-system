@@ -149,8 +149,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `SelectItemProps`, which 
 - `count`: `React.ReactNode`, optional.
 
   A count beside the option's words (GAP-164), as a neutral Counter at the
-  row's end. It sits outside the item text, so the closed select shows the
-  words alone, and the option is read as its words then its count.
+  row's end, before the check's place. It sits outside the item text, so
+  the closed select shows the words alone. A number is written in the
+  reader's grouping ("1,234"), and the option is named by its words, then
+  its count: "POI, 96". A caller's own `aria-label` wins.
 
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional.
