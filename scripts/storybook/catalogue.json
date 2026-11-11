@@ -1089,7 +1089,13 @@
       "id": "components-select",
       "title": "Core/Inputs/Select",
       "component": "Select",
-      "exports": ["Default", "WithScroll", "Disabled", "WithError"]
+      "exports": [
+        "Default",
+        "WithScroll",
+        "Disabled",
+        "WithError",
+        "OptionCounts"
+      ]
     },
     {
       "file": "packages/react/src/components/Separator/Separator.stories.tsx",
@@ -1173,7 +1179,7 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default"]
+      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
