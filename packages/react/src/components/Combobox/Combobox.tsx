@@ -220,7 +220,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const defaultInputId = React.useId();
     const errorId = React.useId();
     const helperId = React.useId();
-    const mixedId = React.useId();
     const listboxId = React.useId();
     const inputId = id || defaultInputId;
     const [open, setOpen] = React.useState(false);
@@ -433,6 +432,15 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     };
 
     const clearSelection = () => {
+      // Mixed, there is no choice to clear, only the visitor's query: an
+      // empty choice reported here would read as an edit that empties the
+      // property across the whole selection (GAP-153).
+      if (mixed) {
+        setInputValue("");
+        setTextByVisitor(false);
+        setOpen(false);
+        return;
+      }
       if (value === undefined) {
         setUncontrolledValue("");
       }
@@ -508,8 +516,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         required={required}
         status={resolvedStatus}
         mixed={mixed}
-        mixedLabel={mixedLabel}
-        mixedId={mixedId}
         onResetMixed={
           onResetMixed && !disabled && !readOnly
             ? () => {
@@ -563,7 +569,6 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   aria-describedby={mergeAriaIds(
                     callerDescribedBy,
                     describedBy,
-                    mixed ? mixedId : undefined,
                   )}
                   aria-invalid={
                     resolvedStatus === "error" ? true : callerInvalid

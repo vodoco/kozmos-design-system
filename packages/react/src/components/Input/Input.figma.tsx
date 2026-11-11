@@ -43,6 +43,8 @@ const inputProps = {
     true: () => {},
     false: undefined,
   }),
+  mixedLabel: figma.string("Mixed Text"),
+  resetMixedLabel: figma.string("Reset Mixed Text"),
   status: figma.enum("Status", {
     Default: "default",
     Error: "error",
@@ -66,7 +68,9 @@ figma.connect(Input, inputUrl, {
     helperText,
     label,
     mixed,
+    mixedLabel,
     onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -78,6 +82,8 @@ figma.connect(Input, inputUrl, {
       label={label}
       mixed={mixed}
       onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -96,7 +102,9 @@ figma.connect(Input, inputUrl, {
     helperText,
     label,
     mixed,
+    mixedLabel,
     onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -108,6 +116,8 @@ figma.connect(Input, inputUrl, {
       label={label}
       mixed={mixed}
       onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -127,7 +137,9 @@ figma.connect(Input, inputUrl, {
     helperText,
     label,
     mixed,
+    mixedLabel,
     onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -139,6 +151,8 @@ figma.connect(Input, inputUrl, {
       label={label}
       mixed={mixed}
       onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -163,7 +177,9 @@ figma.connect(Input, inputUrl, {
     helperText,
     label,
     mixed,
+    mixedLabel,
     onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -175,6 +191,8 @@ figma.connect(Input, inputUrl, {
       label={label}
       mixed={mixed}
       onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}

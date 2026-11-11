@@ -32,6 +32,12 @@ struct KozmosSelectConnect: FigmaConnect {
     @FigmaBoolean("Reset Mixed")
     var resetMixed: Bool = false
 
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
+
     var body: some View {
         KozmosSelect(
             value: nil,
@@ -39,7 +45,9 @@ struct KozmosSelectConnect: FigmaConnect {
             disabled: self.state == "disabled",
             error: self.error,
             mixed: self.state == "mixed",
-            onResetMixed: self.resetMixed ? {} : nil
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         ) {
             KozmosSelectItem(
                 value: "option",

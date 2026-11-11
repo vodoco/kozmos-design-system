@@ -25,6 +25,8 @@ figma.connect(
         true: () => {},
         false: undefined,
       }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       error: figma.enum("Status", {
         Default: false,
         Error: true,
@@ -36,10 +38,17 @@ figma.connect(
       disabled,
       error,
       mixed,
+      mixedLabel,
       onResetMixed,
+      resetMixedLabel,
       placeholder,
     }) => (
-      <Select mixed={mixed} onResetMixed={onResetMixed}>
+      <Select
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        onResetMixed={onResetMixed}
+        resetMixedLabel={resetMixedLabel}
+      >
         <SelectTrigger autoFocus={autoFocus} disabled={disabled} error={error}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

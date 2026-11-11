@@ -10,6 +10,7 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
     let disabled: Bool
     let onResetMixed: (() -> Void)?
     let resetMixedLabel: String
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
 
     public init(
         mixed: Bool = false,
@@ -35,9 +36,15 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
                 trigger
             }
             .disabled(disabled)
+            .accessibilityFocused($fieldAccessibilityFocused)
 
             if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled) {
-                KozmosMixedReset(label: resetMixedLabel) { onResetMixed?() }
+                KozmosMixedReset(label: resetMixedLabel) {
+                    // The reset goes as the field turns mixed again: VoiceOver
+                    // goes to the field, which says its several values.
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
             }
         }
     }
@@ -50,6 +57,7 @@ public extension KozmosSelect where Trigger == KozmosSelectField {
     init(
         value: String?,
         placeholder: String,
+        label: String? = nil,
         disabled: Bool = false,
         error: Bool = false,
         mixed: Bool = false,
@@ -65,8 +73,8 @@ public extension KozmosSelect where Trigger == KozmosSelectField {
             resetMixedLabel: resetMixedLabel,
             trigger: {
                 KozmosSelectField(
-                    value: value, placeholder: placeholder, disabled: disabled,
-                    error: error, mixed: mixed, mixedLabel: mixedLabel
+                    value: value, placeholder: placeholder, label: label,
+                    disabled: disabled, error: error, mixed: mixed, mixedLabel: mixedLabel
                 )
             },
             content: content
@@ -80,11 +88,13 @@ public extension KozmosSelect where Trigger == KozmosSelectField {
 /// words, or the placeholder in foreground/400 until there is one, or, mixed
 /// (GAP-153), the mixed label in the placeholder's colour; a chevron at the
 /// end. In error it is edged in danger/600; disabled, it is background/100
-/// with foreground/500 words. VoiceOver reads it as one element whose value
-/// is the choice, the placeholder or the mixed label.
+/// with foreground/500 words. `label`, as KozmosInput's, is drawn over the
+/// field and names it: VoiceOver reads one element, the property's name, then
+/// its value, the choice, the placeholder or the mixed label.
 public struct KozmosSelectField: View {
     let value: String?
     let placeholder: String
+    let label: String?
     let disabled: Bool
     let error: Bool
     let mixed: Bool
@@ -93,6 +103,7 @@ public struct KozmosSelectField: View {
     public init(
         value: String?,
         placeholder: String,
+        label: String? = nil,
         disabled: Bool = false,
         error: Bool = false,
         mixed: Bool = false,
@@ -100,6 +111,7 @@ public struct KozmosSelectField: View {
     ) {
         self.value = value
         self.placeholder = placeholder
+        self.label = label
         self.disabled = disabled
         self.error = error
         self.mixed = mixed
@@ -116,6 +128,22 @@ public struct KozmosSelectField: View {
     var showsPlaceholder: Bool { mixed || value == nil }
 
     public var body: some View {
+        VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
+            if let label {
+                Text(label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(
+                        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100
+                    )
+            }
+            field
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label ?? "")
+        .accessibilityValue(shownText)
+    }
+
+    private var field: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Text(shownText)
                 .font(KozmosTypography.subheadline)
@@ -140,8 +168,6 @@ public struct KozmosSelectField: View {
                     lineWidth: 1
                 )
         )
-        .accessibilityElement(children: .ignore)
-        .accessibilityValue(shownText)
     }
 
     private var placeholderColor: Color {

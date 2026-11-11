@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import com.kozmos.components.fieldwrapper.KozmosMixedReset
 import com.kozmos.components.fieldwrapper.KozmosMixedValue
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
@@ -187,6 +188,9 @@ fun KozmosCombobox(
         if (expanded == null) internalExpanded = next
         onExpandedChange?.invoke(next)
     }
+    // Turning mixed (GAP-153), the field's text goes with its choice, as on
+    // the web; a query typed while mixed is the visitor's and stays.
+    LaunchedEffect(mixed) { if (mixed && inputValue.isNotEmpty()) onInputValueChange("") }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val filteredOptions = filteredComboboxOptions(options, inputValue, filterLocally)
@@ -251,7 +255,8 @@ fun KozmosCombobox(
                             Text(
                                 text = if (mixed) mixedLabel else placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = colors.placeholder
+                                color = colors.placeholder,
+                                modifier = Modifier.kozmosUnsaidWhen(mixed)
                             )
                         }
                         innerTextField()
@@ -262,7 +267,10 @@ fun KozmosCombobox(
             if (clearable && inputValue.isNotEmpty() && enabled && !readOnly) {
                 IconButton(
                     onClick = {
-                        onValueChange("", null)
+                        // Mixed, there is no choice to clear, only the query:
+                        // an empty choice would read as an edit that empties
+                        // the property across the selection (GAP-153).
+                        if (!mixed) onValueChange("", null)
                         onInputValueChange("")
                         setExpanded(false)
                     },
@@ -336,9 +344,11 @@ fun KozmosCombobox(
             KozmosMixedReset(
                 label = resetMixedLabel,
                 onClick = {
-                    // The text goes with the choice, typed or not.
+                    // The text goes with the choice, typed or not, and focus
+                    // goes back to the field, as on the web.
                     onInputValueChange("")
                     setExpanded(false)
+                    inputFocus.requestFocus()
                     onResetMixed?.invoke()
                 }
             )

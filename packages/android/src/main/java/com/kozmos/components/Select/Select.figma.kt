@@ -24,6 +24,12 @@ class KozmosSelectConnect {
     @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
     val resetMixed: Boolean = false
 
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
+
     @FigmaProperty(FigmaType.Enum, "Status")
     val error: Boolean = Figma.mapping(
         "Default" to false,
@@ -43,7 +49,9 @@ class KozmosSelectConnect {
                     enabled = state != "disabled",
                     error = error,
                     mixed = state == "mixed",
-                    onResetMixed = if (resetMixed) ({}) else null
+                    mixedLabel = mixedLabel,
+                    onResetMixed = if (resetMixed) ({}) else null,
+                    resetMixedLabel = resetMixedLabel
                 )
             }
         ) {

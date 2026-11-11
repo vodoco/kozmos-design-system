@@ -84,7 +84,6 @@ public struct KozmosNumberInput: View {
                     )
                 )
                 .accessibilityFocused($fieldAccessibilityFocused)
-                .accessibilityValue(KozmosMixedValue.spokenValue(mixed: mixed, label: mixedLabel, text: formatValue(value)))
                 .disabled(disabled || readOnly)
                 .multilineTextAlignment(showSteppers ? .center : .leading)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)

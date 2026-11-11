@@ -11,6 +11,7 @@ struct TypeAcrossSelection: View {
         KozmosSelect(
             value: edit,
             placeholder: "Choose a type",
+            label: "Type",
             mixed: edit == nil,
             onResetMixed: { edit = nil }
         ) {

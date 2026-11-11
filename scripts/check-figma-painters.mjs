@@ -11727,11 +11727,39 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         layer.componentPropertyReferences.visible === reset
       );
     });
+    const mixedRows = liveSet.children.filter((variant) =>
+      variant.name.startsWith("State=Mixed"),
+    );
+    const resetWords = propertyNamed(liveSet, "Reset Mixed Text", "TEXT");
+    const mixedWords = propertyNamed(liveSet, "Mixed Text", "TEXT");
+    const wordsBound = (layerName, key) =>
+      liveSet.children
+        .map((variant) => named(variant, layerName))
+        .filter(Boolean)
+        .every(
+          (layer) =>
+            layer.componentPropertyReferences &&
+            layer.componentPropertyReferences.characters === key,
+        );
     ok(
       reset &&
         liveSet.componentPropertyDefinitions[reset].defaultValue === false &&
-        resetBound.length === 80,
-      `Reset Mixed is a boolean, off, showing every variant's Reset Mixed layer (GAP-153) (${reset}, ${resetBound.length} bound)`,
+        resetBound.length === 64 &&
+        mixedRows.length === 16 &&
+        mixedRows.every((variant) => !named(variant, "Reset Mixed")),
+      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 16 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
+    );
+    ok(
+      resetWords &&
+        mixedWords &&
+        liveSet.componentPropertyDefinitions[resetWords].defaultValue ===
+          "Reset to multiple values" &&
+        liveSet.componentPropertyDefinitions[mixedWords].defaultValue ===
+          "Multiple values" &&
+        wordsBound("Reset Mixed", resetWords) &&
+        wordsBound("Mixed Text", mixedWords) &&
+        mixedRows.every((variant) => named(variant, "Mixed Text")),
+      `Reset Mixed Text and Mixed Text are text properties a product localises, bound to every reset and every Mixed variant's words (${resetWords}, ${mixedWords})`,
     );
   }
 
@@ -11821,7 +11849,11 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           named(plain, hidden[0]).visible !== false,
         `${setName}: Mixed draws Multiple values after the placeholder, in its colour (${text && boundVariableName((text.fills || [])[0])}), and hides ${hidden.join(" and ")}; Default draws none`,
       );
-      for (const node of [mixed, plain]) {
+      ok(
+        !named(mixed, "Reset Mixed"),
+        `${setName}: State=Mixed draws no Reset Mixed layer`,
+      );
+      for (const node of [plain]) {
         const reset = named(node, "Reset Mixed");
         const field = reset && node.children[node.children.indexOf(reset) - 1];
         ok(
@@ -11836,6 +11868,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           `${setName} ${node.name}: Reset Mixed, hidden, Reset to multiple values in theme 600, right under the field (${reset ? `${reset.characters}, after ${field && field.name}` : "none"})`,
         );
       }
+    }
+    {
+      // Updated again, the reset is the same layer, so an instance's
+      // override of it survives an Update.
+      const node = await paint("updateInputVariant", {
+        state: "Default",
+        status: "Default",
+        action: "None",
+      });
+      const before = named(node, "Reset Mixed");
+      await attempt(() =>
+        controls.updateInputVariant(node, {
+          state: "Default",
+          status: "Default",
+          action: "None",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      const after = named(node, "Reset Mixed");
+      ok(
+        before && after && before.id === after.id,
+        `an Update keeps Input's Reset Mixed layer, id for id (${before && before.id} → ${after && after.id})`,
+      );
+    }
+    {
+      // Decision of 11 Nov: Mixed's steppers are disabled, drawn as Disabled's.
+      const mixed = await paint("updateNumberInputVariant", {
+        state: "Mixed",
+        status: "Default",
+        steppers: "True",
+      });
+      const plain = await paint("updateNumberInputVariant", {
+        state: "Default",
+        status: "Default",
+        steppers: "True",
+      });
+      const tint = (node) =>
+        node
+          .findAll((child) => /Stepper$/.test(child.name))
+          .flatMap((stepper) =>
+            stepper.findAll((child) => (child.strokes || []).length > 0),
+          )
+          .map((child) => boundVariableName(child.strokes[0]));
+      ok(
+        tint(mixed).length > 0 &&
+          tint(mixed).every((name) => name === "Colors/foreground/500") &&
+          tint(plain).every((name) => name === "Colors/foreground/0"),
+        `NumberInput Mixed draws its steppers disabled, in foreground 500 (${[...new Set(tint(mixed))].join(" ")}; Default ${[...new Set(tint(plain))].join(" ")})`,
+      );
     }
     {
       const open = await paint("updateComboboxVariant", {
@@ -11867,13 +11950,14 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       const key = propertyNamed(set, "Reset Mixed", "BOOLEAN");
       ok(
         key &&
-          set.children.every(
-            (variant) =>
-              named(variant, "Reset Mixed").componentPropertyReferences
-                .visible === key,
-          ) &&
+          set.children.every((variant) => {
+            const layer = named(variant, "Reset Mixed");
+            return variant.name.startsWith("State=Mixed")
+              ? !layer
+              : layer.componentPropertyReferences.visible === key;
+          }) &&
           set.children.every((variant) => variant.itemSpacing === 6),
-        `Select: Reset Mixed is bound on every variant, 6 under the trigger as React's field gap (${key})`,
+        `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
       );
     }
   }

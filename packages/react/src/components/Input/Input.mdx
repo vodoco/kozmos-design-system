@@ -138,10 +138,10 @@ into it.
 
 With several features selected, a property whose values differ is one field for all of them
 (GAP-153, decision 132). `mixed` says the field stands for those values: it shows none of its own,
-"Multiple values" (`mixedLabel`) in its place as the placeholder, and is described with it, so a
-screen reader says it with the field; SwiftUI gives VoiceOver the words as the field's value, Compose
-gives TalkBack them as its state. Input, NumberInput, Select and Combobox take it, with the same
-names on every platform.
+"Multiple values" (`mixedLabel`) in its place as the placeholder, and a screen reader says it once
+with the field: the empty field's placeholder on the web and on SwiftUI, the field's state on
+Compose, where the drawn words are not said again. Input, NumberInput, Select and Combobox take it,
+with the same names on every platform.
 
 It is controlled, as the selection is the product's. The visitor's first edit comes through the
 field's own change callback, and the product clears `mixed`, so the field keeps its mixed state
@@ -164,7 +164,13 @@ const differs = values.some((value) => value !== values[0]);
 />;
 ```
 
-An uncontrolled field drops its default value while mixed, and its typed text is emptied on reset.
+An uncontrolled field drops its default value while mixed, is emptied as it turns mixed, and its
+typed text is emptied on reset.
+
+In Figma, Mixed is a value of the fields' State axis, so a mixed field that is also disabled, read
+only or in focus cannot be drawn: pick the one that matters on the board. A Mixed variant has no
+Reset Mixed layer, so the reset cannot be drawn with it. Mixed Text and Reset Mixed Text hold the
+words, for a board in another language.
 
 ```kotlin
 import androidx.compose.runtime.Composable

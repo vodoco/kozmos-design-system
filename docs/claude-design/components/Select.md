@@ -52,7 +52,7 @@ export function SelectExample() {
 
 Its props are `SelectProps`, which is `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & MixedValueProps`.
 
-- `mixed`: `boolean`, optional, default `false`.
+- `mixed`: `boolean`, optional.
 
   The field stands for several values that differ, and shows none.
 

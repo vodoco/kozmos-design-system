@@ -35,6 +35,12 @@ class KozmosComboboxConnect {
     @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
     val resetMixed: Boolean = false
 
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
+
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
         "Default" to KozmosInputStatus.Default,
@@ -78,7 +84,9 @@ class KozmosComboboxConnect {
             helperText = if (showHelperText) helperText else null,
             defaultExpanded = defaultExpanded,
             mixed = state == "mixed",
-            onResetMixed = if (resetMixed) ({}) else null
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel
         )
     }
 }

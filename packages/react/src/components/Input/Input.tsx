@@ -3,7 +3,11 @@ import { type VariantProps } from "class-variance-authority";
 import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
-import { clearUncontrolled, mixedFieldValue } from "../FieldWrapper/mixedValue";
+import {
+  clearUncontrolled,
+  mixedFieldValue,
+  useClearWhenMixed,
+} from "../FieldWrapper/mixedValue";
 import {
   resolveCharacterCount,
   useUncontrolledValue,
@@ -153,7 +157,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const errorId = React.useId();
     const helperId = React.useId();
     const countId = React.useId();
-    const mixedId = React.useId();
     const mirror = useUncontrolledValue(props.value, props.defaultValue);
     const counted = resolveCharacterCount(count, mirror.value);
     // A caller's own error wins: it knows something the count does not.
@@ -172,6 +175,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const defaultInputId = React.useId();
     const inputId = props.id || defaultInputId;
+    useClearWhenMixed(mixed, inputId, props.value);
     const field = (
       <input
         type={type}
@@ -186,11 +190,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         ref={ref}
         aria-invalid={isInvalid ? true : callerInvalid}
-        aria-describedby={mergeAriaIds(
-          callerDescribedBy,
-          describedBy,
-          mixed ? mixedId : undefined,
-        )}
+        aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
         {...props}
         {...mixedFieldValue(mixed, mixedLabel, props)}
         onInput={(event) => {
@@ -213,8 +213,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         status={resolvedStatus}
         className={wrapperClassName}
         mixed={mixed}
-        mixedLabel={mixedLabel}
-        mixedId={mixedId}
         onResetMixed={
           onResetMixed && !props.disabled && !props.readOnly
             ? () => {

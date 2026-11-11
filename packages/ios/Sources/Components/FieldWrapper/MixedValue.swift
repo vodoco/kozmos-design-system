@@ -6,7 +6,9 @@ import SwiftUI
 ///
 /// It is the product's state, as the selection is: `mixed` says the field
 /// still stands for the several values, and the field shows none of its own,
-/// `mixedLabel` in its place, which VoiceOver says as its value. The
+/// `mixedLabel` in its place as its placeholder, which VoiceOver reads with
+/// the empty field, once: no value of Kozmos's is set over the field's own,
+/// so an empty field that is not mixed keeps its placeholder too. The
 /// visitor's first edit comes through the field's binding, and the product
 /// then clears `mixed`, so the field keeps its mixed state until it is
 /// edited. `onResetMixed`, given for a field whose values differ, offers
@@ -17,14 +19,6 @@ public enum KozmosMixedValue {
     public static let label = "Multiple values"
     /// The reset's words: "Reset to multiple values".
     public static let resetLabel = "Reset to multiple values"
-
-    /// What VoiceOver says as a field's value: the mixed label while it is
-    /// mixed, else the field's own text. Always set, never a modifier added
-    /// and removed: a field that changed its view as it stopped being mixed
-    /// would lose its focus on the visitor's first keystroke.
-    static func spokenValue(mixed: Bool, label: String, text: String) -> String {
-        mixed ? label : text
-    }
 
     /// Whether the reset is drawn: given, the field no longer mixed, and the
     /// field usable.

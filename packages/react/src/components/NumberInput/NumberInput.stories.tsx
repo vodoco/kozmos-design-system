@@ -121,7 +121,7 @@ export const ReadOnly: Story = {
 
 /**
  * GAP-153: a value the selected features do not share. Mixed, the field is
- * empty with "Multiple values"; a step or a typed number edits it, and
+ * empty with "Multiple values" and its steppers disabled; a typed number edits it, and
  * "Reset to multiple values" takes it back.
  */
 export const MixedValue: Story = {

@@ -34,6 +34,8 @@ figma.connect(
         true: () => {},
         false: undefined,
       }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -58,7 +60,9 @@ figma.connect(
       helperText,
       label,
       mixed,
+      mixedLabel,
       onResetMixed,
+      resetMixedLabel,
       placeholder,
       readOnly,
       showSteppers,
@@ -78,6 +82,8 @@ figma.connect(
           label={label}
           mixed={mixed}
           onResetMixed={onResetMixed}
+          mixedLabel={mixedLabel}
+          resetMixedLabel={resetMixedLabel}
           placeholder={placeholder}
           readOnly={readOnly}
           showSteppers={showSteppers}

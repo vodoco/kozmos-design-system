@@ -28,6 +28,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.semantics
 import com.kozmos.components.fieldwrapper.KozmosMixedReset
 import com.kozmos.components.fieldwrapper.KozmosMixedValue
@@ -117,14 +119,13 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
 
     val shown = if (mixed) null else value
     val showsReset = KozmosMixedValue.showsReset(mixed, onResetMixed, enabled)
-    // The caller's modifier sizes the field and its reset together; the
-    // field fills the width it is given, as it did on its own.
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75)
-    ) {
+    val fieldFocus = remember { FocusRequester() }
+    // The caller's modifier is the field's, as it always was: its
+    // description, tag and size land on the one TalkBack stop. The column
+    // only stacks the reset under it.
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75)) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             // Disabled, it is no anchor: Material's would still open on a tap.
             .then(if (enabled) Modifier.menuAnchor() else Modifier)
             .fillMaxWidth()
@@ -141,6 +142,7 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
                 if (opens) toggle?.invoke()
                 opens
             }
+            .focusRequester(fieldFocus)
             .focusable(enabled = enabled, interactionSource = interaction)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
         verticalAlignment = Alignment.CenterVertically,
@@ -162,7 +164,11 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
         )
     }
     if (showsReset) {
-        KozmosMixedReset(label = resetMixedLabel, onClick = { onResetMixed?.invoke() })
+        KozmosMixedReset(label = resetMixedLabel, onClick = {
+            // Focus goes back to the field, as on the web.
+            fieldFocus.requestFocus()
+            onResetMixed?.invoke()
+        })
     }
     }
 }

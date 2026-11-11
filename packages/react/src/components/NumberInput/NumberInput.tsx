@@ -2,7 +2,11 @@ import React from "react";
 import { Minus, Plus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
-import { clearUncontrolled, mixedFieldValue } from "../FieldWrapper/mixedValue";
+import {
+  clearUncontrolled,
+  mixedFieldValue,
+  useClearWhenMixed,
+} from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 export interface NumberInputProps
@@ -61,7 +65,6 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     ref,
   ) => {
     const internalRef = React.useRef<HTMLInputElement | null>(null);
-    const mixedId = React.useId();
     const errorId = React.useId();
     const helperId = React.useId();
     const defaultInputId = React.useId();
@@ -75,7 +78,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         : helperText
           ? helperId
           : undefined;
-    const stepperDisabled = disabled || readOnly;
+    // Mixed, a step would start from nothing and write that number over
+    // every selected feature's own: the steppers wait for a typed edit.
+    const stepperDisabled = disabled || readOnly || mixed;
+    useClearWhenMixed(mixed, inputId, props.value);
     const stepperToneClass = {
       default: "",
       error: "kozmos-number-step-error",
@@ -130,10 +136,8 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         status={resolvedStatus}
         className={wrapperClassName}
         mixed={mixed}
-        mixedLabel={mixedLabel}
-        mixedId={mixedId}
         onResetMixed={
-          onResetMixed && !stepperDisabled
+          onResetMixed && !disabled && !readOnly
             ? () => {
                 clearUncontrolled(inputId, props.value);
                 onResetMixed();
@@ -173,11 +177,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             disabled={disabled}
             readOnly={readOnly}
             aria-invalid={isInvalid ? true : callerInvalid}
-            aria-describedby={mergeAriaIds(
-              callerDescribedBy,
-              describedBy,
-              mixed ? mixedId : undefined,
-            )}
+            aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
             onChange={handleChange}
             {...props}
             {...mixedFieldValue(mixed, mixedLabel, props)}

@@ -3,7 +3,7 @@ import XCTest
 @testable import Kozmos
 
 /// GAP-153: a field of a multi-selection whose values differ shows "Multiple
-/// values", is said with it, keeps it until edited, and offers "Reset to
+/// values", is said with it once, keeps it until edited, and offers "Reset to
 /// multiple values" once edited. As React's and Compose's fields do.
 final class KozmosMixedValueTests: XCTestCase {
     func testTheResetIsOfferedOnlyWhenGivenAndNotMixed() {
@@ -12,11 +12,6 @@ final class KozmosMixedValueTests: XCTestCase {
         XCTAssertFalse(KozmosMixedValue.showsReset(mixed: false, onReset: nil, disabled: false))
         XCTAssertFalse(KozmosMixedValue.showsReset(mixed: false, onReset: {}, disabled: true))
         XCTAssertFalse(KozmosMixedValue.showsReset(mixed: false, onReset: {}, disabled: false, readOnly: true))
-    }
-
-    func testTheSpokenValueIsTheMixedLabelWhileMixed() {
-        XCTAssertEqual(KozmosMixedValue.spokenValue(mixed: true, label: "Multiple values", text: "Gate A1"), "Multiple values")
-        XCTAssertEqual(KozmosMixedValue.spokenValue(mixed: false, label: "Multiple values", text: "Gate A1"), "Gate A1")
     }
 
     func testTheSelectFieldShowsTheMixedLabelInPlaceOfAChoice() {
@@ -56,8 +51,70 @@ final class KozmosMixedValueTests: XCTestCase {
         let field = try XCTUnwrap(textFields(in: window).first)
         XCTAssertEqual(field.text, "")
         XCTAssertEqual(field.placeholder, "Multiple values")
-        XCTAssertTrue(said(in: window, field: field).contains("Multiple values"), said(in: window, field: field).joined(separator: ", "))
         XCTAssertFalse(elements(in: window).contains { $0.accessibilityLabel == "Reset to multiple values" })
+    }
+
+    @MainActor func testTheSelectFieldSaysItsNameThenItsValue() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let window = host(KozmosSelect(value: "POI", placeholder: "Choose", label: "Type", mixed: true) { Text("POI") })
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let found = elements(in: window)
+        let field = try XCTUnwrap(found.first { ($0.accessibilityValue ?? "").contains("Multiple values") }, describe(found))
+        XCTAssertEqual(field.accessibilityLabel, "Type")
+        XCTAssertEqual(found.filter { ($0.accessibilityLabel ?? "") == "Type" }.count, 1, describe(found))
+    }
+
+    /// A Combobox's bindings, kept to read what the field wrote.
+    private final class Written {
+        var values: [String] = []
+        var texts: [String] = []
+    }
+
+    /// A mixed Combobox the visitor types a query into once it is drawn.
+    private struct TypedQuery: View {
+        let written: Written
+        @State private var text = ""
+        var body: some View {
+            KozmosCombobox(
+                value: Binding(get: { "" }, set: { written.values.append($0) }),
+                inputValue: Binding(get: { text }, set: { text = $0; written.texts.append($0) }),
+                options: [KozmosListboxOption(value: "b2", label: "Gate B2")],
+                label: "Gate", mixed: true
+            )
+            .task {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                text = "B"
+            }
+        }
+    }
+
+    @MainActor func testAMixedComboboxsClearEmptiesOnlyTheQuery() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        let written = Written()
+        let window = host(TypedQuery(written: written))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let clear = try XCTUnwrap(elements(in: window).first { $0.accessibilityLabel == "Clear selection" }, describe(elements(in: window)))
+        XCTAssertTrue(clear.accessibilityActivate())
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(written.texts.last, "")
+        XCTAssertEqual(written.values, [], "no empty choice is reported while mixed")
+    }
+
+    @MainActor func testAComboboxEmptiesItsTextAsItIsMixed() async throws {
+        let written = Written()
+        let window = host(KozmosCombobox(
+            value: .constant("b2"),
+            inputValue: Binding(get: { "Gate B2" }, set: { written.texts.append($0) }),
+            options: [KozmosListboxOption(value: "b2", label: "Gate B2")],
+            label: "Gate", mixed: true
+        ))
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(written.texts, [""], "the choice's label is emptied, as React's is")
     }
 
     @MainActor func testAnEditedInputOffersTheResetAndShowsItsValue() async throws {
@@ -68,7 +125,6 @@ final class KozmosMixedValueTests: XCTestCase {
         try await Task.sleep(nanoseconds: 300_000_000)
         let field = try XCTUnwrap(textFields(in: window).first)
         XCTAssertEqual(field.text, "Gate B2")
-        XCTAssertFalse(said(in: window, field: field).contains("Multiple values"))
         let found = elements(in: window)
         let reset = try XCTUnwrap(found.first { $0.accessibilityLabel == "Reset to multiple values" }, describe(found))
         XCTAssertTrue(reset.accessibilityTraits.contains(.button))
@@ -91,7 +147,6 @@ final class KozmosMixedValueTests: XCTestCase {
             let field = try XCTUnwrap(textFields(in: window).first)
             XCTAssertEqual(field.text, "")
             XCTAssertEqual(field.placeholder, "Multiple values")
-            XCTAssertTrue(said(in: window, field: field).contains("Multiple values"), said(in: window, field: field).joined(separator: ", "))
         }
         // Select's field is one element whose value is the mixed label.
         let window = host(KozmosSelect(value: "POI", placeholder: "Type", mixed: true) { Text("POI") })
@@ -100,13 +155,6 @@ final class KozmosMixedValueTests: XCTestCase {
         let found = elements(in: window)
         XCTAssertTrue(found.contains { ($0.accessibilityValue ?? "").contains("Multiple values") || ($0.accessibilityLabel ?? "").contains("Multiple values") }, describe(found))
         XCTAssertFalse(found.contains { ($0.accessibilityValue ?? "") == "POI" || ($0.accessibilityLabel ?? "") == "POI" }, describe(found))
-    }
-
-    /// What VoiceOver is given for a text field: the UIKit field's own
-    /// value and placeholder, and the value of any SwiftUI element over it.
-    @MainActor private func said(in window: UIWindow, field: UITextField) -> [String] {
-        [field.accessibilityValue, field.placeholder].compactMap { $0 }
-            + elements(in: window).compactMap(\.accessibilityValue)
     }
 
     @MainActor private func textFields(in view: UIView) -> [UITextField] {

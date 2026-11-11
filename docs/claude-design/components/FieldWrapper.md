@@ -158,15 +158,22 @@ type FieldStatus = "default" | "error" | "warning" | "success";
    * multi-selection whose features differ. Input, NumberInput, Select and
    * Combobox take it.
    *
-   * It is controlled, as the selection is the product's: `mixed` says the
-   * field still stands for the several values, and the field shows none of
-   * its own, `mixedLabel` in its place, and is announced with it. The visitor's
-   * first edit comes through the field's own change callback, and the product
-   * then clears `mixed`, so the field keeps its mixed state until it is edited.
+   * It is the product's state, as the selection is: `mixed` says the field
+   * still stands for the several values, and the field shows none of its own,
+   * `mixedLabel` in its place, said once with the field (a text field's
+   * placeholder; Select's trigger's description). The visitor's first edit
+   * comes through the field's own change callback, and the product then
+   * clears `mixed`, so the field keeps its mixed state until it is edited.
    * `onResetMixed`, given for a field whose values differ, offers
    * `resetMixedLabel` once the field is no longer mixed; pressed, it calls
    * back for the product to drop the edit and set `mixed` again, and focus
    * returns to the field.
+   *
+   * Controlled or not: an uncontrolled Input or NumberInput is emptied as it
+   * turns mixed and on reset; a Select given `mixed` always gives Radix a
+   * value, holding the visitor's choice itself without the product's `value`.
+   * NumberInput's steppers are disabled while it is mixed: a step would start
+   * from nothing and write that number over every feature's own.
    */
   interface MixedValueProps {
     /** The field stands for several values that differ, and shows none. */

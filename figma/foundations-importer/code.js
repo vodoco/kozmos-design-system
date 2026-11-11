@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "beb98079c071";
+const PLUGIN_BUILD = "e70c85b6da5d";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -301,6 +301,9 @@ const MIXED_FIELD_TEXT = "Multiple values";
 const RESET_MIXED_PROPERTY = "Reset Mixed";
 const RESET_MIXED_LAYER = "Reset Mixed";
 const RESET_MIXED_TEXT = "Reset to multiple values";
+const RESET_MIXED_TEXT_PROPERTY = "Reset Mixed Text";
+const MIXED_TEXT_LAYER = "Mixed Text";
+const MIXED_TEXT_PROPERTY = "Mixed Text";
 const COMBOBOX_STATES = [
   "Default",
   "Focus",
@@ -3747,7 +3750,7 @@ const COMPONENT_DOCS = [
       "Action maps to Input.action: None, a copy button (Copy), or a toggle at rest or pressed (Toggle, TogglePressed), at the field's end.",
       "Action Icon is the toggle's icon, the Featured star by default.",
       "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own, for a multi-selection whose values differ.",
-      "Reset Mixed shows Reset to multiple values under the field, Input.onResetMixed, for a field edited out of Mixed.",
+      "Reset Mixed shows Reset to multiple values under the field, Input.onResetMixed, for a field edited out of Mixed; State=Mixed has no reset to show. Reset Mixed Text and Mixed Text are the words, Input.resetMixedLabel and Input.mixedLabel.",
       "Label Text, Placeholder Text, Helper Text, and Show Helper Text map to Input props.",
       "Focus follows the React focus-visible ring.",
     ],
@@ -3755,7 +3758,7 @@ const COMPONENT_DOCS = [
       "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Action: None, Copy, Toggle, TogglePressed",
-      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Action Icon, Focus Visible",
+      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Action Icon, Focus Visible",
     ],
     accessibility: [
       "Field height meets the 44px minimum target.",
@@ -3843,7 +3846,7 @@ const COMPONENT_DOCS = [
       "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Steppers: True, False",
-      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Focus Visible",
+      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field and stepper controls meet the 44px minimum target.",
@@ -3903,7 +3906,7 @@ const COMPONENT_DOCS = [
       "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Reset Mixed, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field height and listbox options meet the 44px minimum target.",
@@ -4223,7 +4226,7 @@ const COMPONENT_DOCS = [
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
-      "Placeholder Text, Reset Mixed, Focus Visible",
+      "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Trigger height meets the 44px minimum target.",
@@ -70626,7 +70629,12 @@ async function syncInputVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
-  await syncResetMixedText(component, field, { fonts, variableByName, stats });
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
@@ -71523,7 +71531,12 @@ async function syncNumberInputVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
-  await syncResetMixedText(component, field, { fonts, variableByName, stats });
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
   normalizeNumberInputSizing(component, field, valueSlot, stepperNodes);
@@ -72103,7 +72116,12 @@ async function syncComboboxVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
-  await syncResetMixedText(component, field, { fonts, variableByName, stats });
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
@@ -76315,8 +76333,13 @@ async function createColorPickerSlider({
 }
 
 function numberInputValueColorConfig(state, config) {
+  // Mixed, the steppers are disabled (11 Nov): a step would write one number
+  // over every selected feature's own. Drawn as Disabled's, in its colour.
   if (state === "Disabled") {
     return { token: config.placeholder, fallback: config.placeholderFallback };
+  }
+  if (state === MIXED_FIELD_STATE) {
+    return { token: "Colors/foreground/500", fallback: "#747B8B" };
   }
 
   return { token: "Colors/foreground/0", fallback: "#000000" };
@@ -76757,6 +76780,7 @@ async function syncSelectVariantChildren({
   component.appendChild(trigger);
   setLayoutSizingHorizontal(trigger, "FILL");
   await syncResetMixedText(component, trigger, {
+    mixed: state === MIXED_FIELD_STATE,
     fonts,
     variableByName,
     stats,
@@ -78060,11 +78084,11 @@ async function syncMixedFieldText(
  * GAP-153: a mixed field's way back, "Reset to multiple values", under the
  * field as React's FieldWrapper draws it: a text button at the field's
  * start, Colors/theme/600 at the label's size and weight. Hidden: the Reset
- * Mixed boolean shows it, on any State, for a field edited out of Mixed.
- * Returned for the caller to place after the field.
+ * Mixed boolean shows it, for a field edited out of Mixed; its words are
+ * Reset Mixed Text. Drawn into `text`, an existing layer kept so an
+ * instance's overrides of it survive an Update, or a new one.
  */
-async function createResetMixedText({ fonts, variableByName, stats }) {
-  const text = figma.createText();
+async function drawResetMixedText(text, { fonts, variableByName, stats }) {
   text.name = RESET_MIXED_LAYER;
   await applyInputLabelTypography(text, fonts, variableByName, stats);
   text.characters = RESET_MIXED_TEXT;
@@ -78076,11 +78100,24 @@ async function createResetMixedText({ fonts, variableByName, stats }) {
   return text;
 }
 
-/** Replaces a variant's Reset Mixed layer, placed right after `field`. */
+/**
+ * A variant's Reset Mixed layer, right after `field`: the layer it has, kept
+ * in place, or a new one. State=Mixed draws none, so its Reset Mixed
+ * boolean shows nothing: Figma cannot hide a boolean per variant, but the
+ * impossible pair, mixed and offering to go back to mixed, cannot be drawn.
+ */
 async function syncResetMixedText(component, field, options) {
-  const old = directChildNamed(component, RESET_MIXED_LAYER);
-  if (old) old.remove();
-  const text = await createResetMixedText(options);
+  let text = directChildNamed(component, RESET_MIXED_LAYER);
+  if (options.mixed) {
+    if (text) text.remove();
+    return null;
+  }
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) text = figma.createText();
+  await drawResetMixedText(text, options);
   component.insertChild(component.children.indexOf(field) + 1, text);
   setTextAutoResize(text, "WIDTH_AND_HEIGHT");
   return text;
@@ -78092,6 +78129,22 @@ function configureResetMixedProperty(componentSet, stats) {
     RESET_MIXED_LAYER,
     RESET_MIXED_PROPERTY,
     false,
+    stats,
+  );
+  // The words, for a product to localise: Reset Mixed Text on the reset,
+  // Mixed Text on the Mixed variants' "Multiple values".
+  configureNamedTextProperty(
+    componentSet,
+    RESET_MIXED_LAYER,
+    RESET_MIXED_TEXT_PROPERTY,
+    RESET_MIXED_TEXT,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    MIXED_TEXT_LAYER,
+    MIXED_TEXT_PROPERTY,
+    MIXED_FIELD_TEXT,
     stats,
   );
 }

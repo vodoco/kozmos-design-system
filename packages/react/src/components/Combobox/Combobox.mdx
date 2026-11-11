@@ -310,8 +310,10 @@ Fields in Safari has the detail.
 ## A mixed value
 
 Mixed (`mixed`), the field shows "Multiple values", checks no option and shows no choice; a typed query
-keeps it mixed, and a choice is the edit. `onResetMixed` offers "Reset to multiple values" once
-chosen, which empties the text with the choice. Input's page has the whole of it (GAP-153).
+keeps it mixed, and a choice is the edit. The clear button empties only that query while it is mixed:
+it reports no empty choice, which a product would read as an edit emptying the property across the
+selection. `onResetMixed` offers "Reset to multiple values" once chosen, which empties the text with
+the choice. Input's page has the whole of it (GAP-153).
 
 <Canvas of={ComboboxStories.MixedValue} />
 

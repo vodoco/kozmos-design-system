@@ -17,7 +17,9 @@ const SelectPortal = createThemePortal(SelectPrimitive.Portal);
  * draw it: the root holds the value, the trigger is the field.
  */
 const SelectMixedContext = React.createContext<
-  (Required<Pick<MixedValueProps, "mixedLabel">> & MixedValueProps) | null
+  | (Required<Pick<MixedValueProps, "mixedLabel">> &
+      MixedValueProps & { disabled?: boolean })
+  | null
 >(null);
 
 export type SelectProps = React.ComponentPropsWithoutRef<
@@ -27,29 +29,50 @@ export type SelectProps = React.ComponentPropsWithoutRef<
 
 const Select: React.FC<SelectProps> = ({
   onValueChange,
-  mixed = false,
+  mixed,
   mixedLabel = "Multiple values",
   onResetMixed,
   resetMixedLabel,
+  value,
+  defaultValue,
   ...props
 }) => {
   const { trackEvent } = useKozmosAnalytics();
+  // A Select given `mixed` at all, true or false, is the field of a
+  // multi-selection: Radix is given a value from the first render to the
+  // last, so it never switches between holding the value and being given
+  // it. Without the product's `value` the Select holds the choice itself:
+  // `defaultValue` while the field is not mixed, none while it is, and the
+  // visitor's choice after. A value it held before turning mixed is
+  // dropped, never shown again when it stops being mixed.
+  const takesMixed = mixed !== undefined;
+  const isMixed = mixed === true;
+  const [held, setHeld] = React.useState(isMixed ? "" : (defaultValue ?? ""));
+  if (takesMixed && isMixed && held !== "") setHeld("");
   const mixedState = React.useMemo(
-    () => ({ mixed, mixedLabel, onResetMixed, resetMixedLabel }),
-    [mixed, mixedLabel, onResetMixed, resetMixedLabel],
+    () => ({
+      mixed: isMixed,
+      mixedLabel,
+      onResetMixed,
+      resetMixedLabel,
+      disabled: props.disabled,
+    }),
+    [isMixed, mixedLabel, onResetMixed, resetMixedLabel, props.disabled],
   );
   return (
     <SelectMixedContext.Provider value={mixedState}>
       <SelectPrimitive.Root
-        onValueChange={(value) => {
-          trackEvent("Select", "select_value_changed", { value });
-          onValueChange?.(value);
+        onValueChange={(next) => {
+          if (takesMixed) setHeld(next);
+          trackEvent("Select", "select_value_changed", { value: next });
+          onValueChange?.(next);
         }}
         {...props}
         // Mixed, no option is the value: the placeholder shows, and no row
-        // is checked. A mixed Select is controlled, as its value is the
-        // product's once the visitor chooses.
-        {...(mixed ? { value: "" } : null)}
+        // is checked.
+        {...(takesMixed
+          ? { value: isMixed ? "" : (value ?? held) }
+          : { value, defaultValue })}
       />
     </SelectMixedContext.Provider>
   );
@@ -63,10 +86,14 @@ const SelectValue = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>
 >(({ placeholder, ...props }, ref) => {
   const mixedState = React.useContext(SelectMixedContext);
+  const mixed = mixedState?.mixed ?? false;
   return (
     <SelectPrimitive.Value
       ref={ref}
-      placeholder={mixedState?.mixed ? mixedState.mixedLabel : placeholder}
+      placeholder={mixed ? mixedState!.mixedLabel : placeholder}
+      // Mixed, the trigger is described with the mixed label: the words
+      // drawn here are kept from screen readers so it is said once.
+      aria-hidden={mixed ? true : undefined}
       {...props}
     />
   );
@@ -113,7 +140,12 @@ const SelectTrigger = React.forwardRef<
         mixed={mixed}
         mixedLabel={mixedState?.mixedLabel}
         mixedId={mixedId}
-        onResetMixed={props.disabled ? undefined : mixedState?.onResetMixed}
+        // Disabled on the trigger or on the root, as Radix disables it.
+        onResetMixed={
+          props.disabled || mixedState?.disabled
+            ? undefined
+            : mixedState?.onResetMixed
+        }
         resetMixedLabel={mixedState?.resetMixedLabel}
       >
         <SelectPrimitive.Trigger

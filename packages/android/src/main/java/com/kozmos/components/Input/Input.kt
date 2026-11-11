@@ -17,7 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import androidx.compose.ui.semantics.stateDescription
 import com.kozmos.components.fieldwrapper.KozmosMixedReset
 import com.kozmos.components.fieldwrapper.KozmosMixedValue
@@ -52,6 +56,7 @@ fun KozmosInput(
     // Mixed (GAP-153), the field shows none of its own text; the visitor's
     // typing still reaches the product, which clears `mixed`.
     val shownValue = if (mixed) "" else value
+    val fieldFocus = remember { FocusRequester() }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
@@ -104,7 +109,7 @@ fun KozmosInput(
             cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
             // Said as its state while mixed, set in one semantics block so the
             // field is the same node as it stops being mixed and keeps focus.
-            modifier = Modifier.fillMaxWidth().semantics {
+            modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus).semantics {
                 if (mixed) stateDescription = mixedLabel
             },
             decorationBox = { innerTextField ->
@@ -121,7 +126,10 @@ fun KozmosInput(
                         Text(
                             text = if (mixed) mixedLabel else placeholder,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = placeholderColor
+                            color = placeholderColor,
+                            // Mixed, the field says it as its state: the drawn
+                            // words are not said again.
+                            modifier = Modifier.kozmosUnsaidWhen(mixed)
                         )
                     }
                     innerTextField()
@@ -130,7 +138,12 @@ fun KozmosInput(
         )
 
         if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
-            KozmosMixedReset(label = resetMixedLabel, onClick = { onResetMixed?.invoke() })
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // The reset goes as the field turns mixed again: focus goes
+                // back to the field, as on the web.
+                fieldFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
         }
 
         if (!supportingText.isNullOrBlank()) {

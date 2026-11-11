@@ -65,7 +65,6 @@ public struct KozmosInput: View {
 
             TextField(mixed ? mixedLabel : placeholder, text: shownText)
                 .accessibilityFocused($fieldAccessibilityFocused)
-                .accessibilityValue(KozmosMixedValue.spokenValue(mixed: mixed, label: mixedLabel, text: text))
                 .disabled(disabled || readOnly)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(height: 44, alignment: .center)

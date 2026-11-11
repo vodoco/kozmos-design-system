@@ -35,6 +35,8 @@ figma.connect(
         true: () => {},
         false: undefined,
       }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -62,7 +64,9 @@ figma.connect(
       helperText,
       label,
       mixed,
+      mixedLabel,
       onResetMixed,
+      resetMixedLabel,
       option1,
       option2,
       option3,
@@ -78,6 +82,8 @@ figma.connect(
         label={label}
         mixed={mixed}
         onResetMixed={onResetMixed}
+        mixedLabel={mixedLabel}
+        resetMixedLabel={resetMixedLabel}
         options={[
           { label: option1, value: "metro-station" },
           { label: option2, value: "bus-stop" },
@@ -128,6 +134,8 @@ figma.connect(
         true: () => {},
         false: undefined,
       }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -159,7 +167,9 @@ figma.connect(
       helperText,
       label,
       mixed,
+      mixedLabel,
       onResetMixed,
+      resetMixedLabel,
       option1,
       option2,
       option3,
@@ -175,6 +185,8 @@ figma.connect(
         label={label}
         mixed={mixed}
         onResetMixed={onResetMixed}
+        mixedLabel={mixedLabel}
+        resetMixedLabel={resetMixedLabel}
         options={[
           { group: group1, label: option1, value: "metro-station" },
           { group: group1, label: option2, value: "bus-stop" },

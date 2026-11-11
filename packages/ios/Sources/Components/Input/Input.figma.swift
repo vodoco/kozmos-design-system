@@ -37,6 +37,12 @@ struct KozmosInputConnect: FigmaConnect {
     @FigmaBoolean("Reset Mixed")
     var resetMixed: Bool = false
 
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
+
     @FigmaEnum(
         "Status",
         mapping: [
@@ -58,7 +64,9 @@ struct KozmosInputConnect: FigmaConnect {
             status: self.status,
             helperText: self.showHelperText ? self.helperText : nil,
             mixed: self.state == "mixed",
-            onResetMixed: self.resetMixed ? {} : nil
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         )
     }
 }

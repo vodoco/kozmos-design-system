@@ -29,7 +29,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import androidx.compose.ui.semantics.stateDescription
 import com.kozmos.components.fieldwrapper.KozmosMixedReset
 import com.kozmos.components.fieldwrapper.KozmosMixedValue
@@ -88,7 +92,10 @@ fun KozmosNumberInput(
         statusColor != null -> statusColor
         else -> KozmosThemeTokens.primitivesColorsForeground400
     }
-    val stepperEnabled = enabled && !readOnly
+    // Mixed, a step would start from nothing and write that number over
+    // every selected feature's own: the steppers wait for a typed edit.
+    val stepperEnabled = enabled && !readOnly && !mixed
+    val fieldFocus = remember { FocusRequester() }
     // Mixed (GAP-153), the field shows none of its own, and a step starts
     // from nothing, as an empty field's does.
     val shownValue = if (mixed) null else value
@@ -166,6 +173,7 @@ fun KozmosNumberInput(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
+                    .focusRequester(fieldFocus)
                     .semantics { if (mixed) stateDescription = mixedLabel },
                 decorationBox = { innerTextField ->
                     Box(
@@ -179,7 +187,8 @@ fun KozmosNumberInput(
                             Text(
                                 text = if (mixed) mixedLabel else placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = placeholderColor
+                                color = placeholderColor,
+                                modifier = Modifier.kozmosUnsaidWhen(mixed)
                             )
                         }
                         innerTextField()
@@ -207,7 +216,10 @@ fun KozmosNumberInput(
         }
 
         if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
-            KozmosMixedReset(label = resetMixedLabel, onClick = { onResetMixed?.invoke() })
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                fieldFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
         }
 
         if (!supportingText.isNullOrBlank()) {

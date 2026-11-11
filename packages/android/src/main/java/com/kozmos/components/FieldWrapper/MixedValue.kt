@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -54,3 +55,10 @@ internal fun KozmosMixedReset(label: String, onClick: () -> Unit, modifier: Modi
         modifier = modifier.clickable(role = Role.Button, onClick = onClick)
     )
 }
+
+/**
+ * A mixed field's drawn placeholder, kept from TalkBack while the field says
+ * the mixed label as its state, so it is said once.
+ */
+internal fun Modifier.kozmosUnsaidWhen(unsaid: Boolean): Modifier =
+    if (unsaid) clearAndSetSemantics { } else this

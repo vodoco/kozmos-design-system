@@ -15708,9 +15708,11 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "options",
             "placeholder",
             "readOnly",
+            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -16546,8 +16548,10 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "placeholder",
             "readOnly",
+            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -17471,8 +17475,10 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "placeholder",
             "readOnly",
+            "resetMixedLabel",
             "showSteppers",
             "status"
           ],
@@ -18570,7 +18576,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Select", "SelectTrigger"],
-          "mappedProps": ["autoFocus", "disabled", "error", "mixed"],
+          "mappedProps": [
+            "autoFocus",
+            "disabled",
+            "error",
+            "mixed",
+            "mixedLabel",
+            "resetMixedLabel"
+          ],
           "unmappedProps": []
         },
         "props": [

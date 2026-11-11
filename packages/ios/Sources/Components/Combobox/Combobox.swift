@@ -102,10 +102,6 @@ public struct KozmosCombobox: View {
                     .focused($inputFocused)
                     .accessibilityFocused($inputAccessibilityFocused)
                     .accessibilityLabel(label ?? placeholder)
-                    // Mixed with nothing typed, its value is the mixed label.
-                    .accessibilityValue(KozmosMixedValue.spokenValue(
-                        mixed: mixed && inputValue.isEmpty, label: mixedLabel, text: inputValue
-                    ))
                     .disabled(disabled || readOnly)
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(textColor)
@@ -208,7 +204,16 @@ public struct KozmosCombobox: View {
         // read-only with `defaultOpen`, or was made so while open, showed its
         // list again by itself. A host's `expanded` is the host's: hidden
         // while the field cannot be used, never written here.
-        .onAppear { if disabled || readOnly { internalOpen = false } }
+        .onAppear {
+            if disabled || readOnly { internalOpen = false }
+            // Mixed, the field shows none of its own text, as React's does: a
+            // choice's label the host still holds is emptied. A query typed
+            // while mixed is the visitor's and stays.
+            if mixed { inputValue = "" }
+        }
+        .onChange(of: mixed) { nowMixed in
+            if nowMixed { inputValue = "" }
+        }
         .onChange(of: disabled || readOnly) { locked in
             if locked { internalOpen = false }
         }
@@ -267,7 +272,10 @@ public struct KozmosCombobox: View {
 
     private func clearSelection() {
         guard !disabled, !readOnly else { return }
-        value = ""
+        // Mixed, there is no choice to clear, only the query: an empty choice
+        // would read as an edit that empties the property across the
+        // selection (GAP-153).
+        if !mixed { value = "" }
         inputValue = ""
         setOpen(false)
     }

@@ -5,8 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.kozmos.components.LiveSemantics
+import com.kozmos.components.ReadSemantics
 import com.kozmos.components.combobox.KozmosCombobox
 import com.kozmos.components.input.KozmosInput
 import com.kozmos.components.listbox.KozmosListboxOption
@@ -26,17 +31,25 @@ import org.junit.Test
 
 /**
  * GAP-153: a field of a multi-selection whose values differ shows "Multiple
- * values", is said with it, keeps it until edited, and offers "Reset to
- * multiple values" once edited, which takes it back. As React's fields do.
+ * values", is said with it once, keeps it until edited, and offers "Reset to
+ * multiple values" once edited, which takes it back and hands focus to the
+ * field. As React's fields do.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class KozmosMixedValueTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
 
+    private val options = listOf(KozmosListboxOption("a1", "Gate A1"), KozmosListboxOption("b2", "Gate B2"))
+
     private fun LiveSemantics.reset() = read().merged.singleOrNull { "Reset to multiple values" in it.texts }
 
     /** The text field: the node TalkBack edits. */
     private fun LiveSemantics.field() = read().merged.single { it.setText != null }
+
+    /** How many times TalkBack is given the mixed label, across the merged tree. */
+    private fun ReadSemantics.mixedSaid() = merged.sumOf { node ->
+        (node.texts + listOfNotNull(node.stateDescription, node.description)).count { it == "Multiple values" }
+    }
 
     @Test fun anInputIsMixedUntilEditedAndResetsToIt() {
         paparazzi.live(content = {
@@ -54,7 +67,7 @@ class KozmosMixedValueTest {
         }) {
             frames(2)
             assertEquals("Multiple values", field().stateDescription)
-            assertTrue("the field shows the mixed label", read().unmerged.any { "Multiple values" in it.texts })
+            assertEquals("said once, as the field's state", 1, read().mixedSaid())
             assertNull("no reset while mixed", reset())
 
             field().setText!!.invoke("B2")
@@ -68,19 +81,21 @@ class KozmosMixedValueTest {
             frames(3)
             assertEquals("", field().editableText)
             assertEquals("Multiple values", field().stateDescription)
+            assertEquals("focus is back on the field", true, field().focused)
             assertNull(reset())
         }
     }
 
-    @Test fun aMixedInputShowsNoneOfItsValue() {
+    @Test fun aMixedInputShowsNoneOfItsValueAndSaysTheLabelOnce() {
         val tree = paparazzi.readSemantics {
             KozmosMaterialTheme {
-                KozmosInput(value = "Gate A1", onValueChange = {}, label = "Name", mixed = true, mixedLabel = "Mehrere Werte")
+                KozmosInput(value = "Gate A1", onValueChange = {}, label = "Name", mixed = true, mixedLabel = "Multiple values")
             }
         }
         val field = tree.merged.single { it.setText != null }
         assertEquals("", field.editableText)
-        assertEquals("Mehrere Werte", field.stateDescription)
+        assertEquals("Multiple values", field.stateDescription)
+        assertEquals("said once, as the field's state", 1, tree.mixedSaid())
     }
 
     @Test fun noResetWhileDisabledOrReadOnly() {
@@ -98,7 +113,9 @@ class KozmosMixedValueTest {
         }
     }
 
-    @Test fun aNumberInputIsMixedUntilStepped() {
+    // Decision of 11 Nov: a step from a mixed field would start from nothing
+    // and write that number over every selected feature's own.
+    @Test fun aNumberInputsSteppersWaitForATypedEdit() {
         paparazzi.live(content = {
             var edit by remember { mutableStateOf<Double?>(null) }
             var edited by remember { mutableStateOf(false) }
@@ -115,21 +132,25 @@ class KozmosMixedValueTest {
             frames(2)
             assertEquals("", field().editableText)
             assertEquals("Multiple values", field().stateDescription)
+            assertEquals(1, read().mixedSaid())
             assertNull(reset())
+            val steppers = read().merged.filter { it.description == "Increase value" || it.description == "Decrease value" }
+            assertEquals(2, steppers.size)
+            assertTrue("steppers are disabled while mixed", steppers.none { it.enabled })
 
-            // A step starts from nothing, not from the value it hides.
-            read().merged.single { it.description == "Increase value" }.click!!.invoke()
+            field().setText!!.invoke("4")
             frames(3)
-            assertEquals("1", field().editableText)
+            assertEquals("4", field().editableText)
+            assertTrue(read().merged.filter { it.description == "Increase value" }.all { it.enabled })
             checkNotNull(reset()).click!!.invoke()
             frames(3)
             assertEquals("", field().editableText)
             assertEquals("Multiple values", field().stateDescription)
+            assertEquals(true, field().focused)
         }
     }
 
     @Test fun aComboboxIsMixedUntilAChoice() {
-        val options = listOf(KozmosListboxOption("a1", "Gate A1"), KozmosListboxOption("b2", "Gate B2"))
         paparazzi.live(content = {
             var edit by remember { mutableStateOf<String?>(null) }
             var text by remember { mutableStateOf("") }
@@ -149,6 +170,7 @@ class KozmosMixedValueTest {
         }) {
             frames(2)
             assertEquals("Multiple values", field().stateDescription)
+            assertEquals(1, read().mixedSaid())
             assertTrue("no option is checked", read().merged.none { it.selected == true })
             assertNull(reset())
 
@@ -161,10 +183,39 @@ class KozmosMixedValueTest {
             frames(3)
             assertEquals("", field().editableText)
             assertEquals("Multiple values", field().stateDescription)
+            assertEquals(true, field().focused)
         }
     }
 
-    @Test fun aSelectTriggerSaysTheMixedLabelAndOffersTheReset() {
+    @Test fun aMixedComboboxsClearEmptiesOnlyTheQuery() {
+        val chosen = mutableListOf<String>()
+        paparazzi.live(content = {
+            var text by remember { mutableStateOf("") }
+            KozmosMaterialTheme {
+                KozmosCombobox(
+                    value = "",
+                    onValueChange = { value, _ -> chosen += value },
+                    inputValue = text,
+                    onInputValueChange = { text = it },
+                    options = options,
+                    label = "Gate",
+                    mixed = true,
+                    onResetMixed = {}
+                )
+            }
+        }) {
+            frames(2)
+            field().setText!!.invoke("B")
+            frames(3)
+            assertEquals("B", field().editableText)
+            read().merged.single { it.description == "Clear selection" }.click!!.invoke()
+            frames(3)
+            assertEquals("", field().editableText)
+            assertEquals("no empty choice is reported while mixed", emptyList<String>(), chosen)
+        }
+    }
+
+    @Test fun aSelectTriggerSaysTheMixedLabelOnceAndOffersTheReset() {
         fun tree(mixed: Boolean, enabled: Boolean = true) = paparazzi.readSemantics {
             KozmosMaterialTheme {
                 KozmosSelect(expanded = false, onExpandedChange = {}, trigger = {
@@ -180,6 +231,7 @@ class KozmosMixedValueTest {
         val mixed = tree(mixed = true)
         val trigger = mixed.merged.single { it.role == Role.DropdownList }
         assertEquals(listOf("Multiple values"), trigger.texts)
+        assertEquals(1, mixed.mixedSaid())
         assertTrue(mixed.merged.none { "Reset to multiple values" in it.texts })
 
         val edited = tree(mixed = false)
@@ -187,6 +239,52 @@ class KozmosMixedValueTest {
         assertEquals(Role.Button, edited.merged.single { "Reset to multiple values" in it.texts }.role)
 
         assertTrue(tree(mixed = false, enabled = false).merged.none { "Reset to multiple values" in it.texts })
+    }
+
+    // The caller's modifier is the field's, as before the reset was added:
+    // its description and tag land on the one TalkBack stop.
+    @Test fun aSelectTriggersModifierIsTheFields() {
+        val tree = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosSelect(expanded = false, onExpandedChange = {}, trigger = {
+                    KozmosSelectTrigger(
+                        value = "POI", placeholder = "Type",
+                        modifier = Modifier.testTag("type-field").semantics { contentDescription = "Type" },
+                        onResetMixed = {}
+                    )
+                }) {
+                    KozmosSelectItem(value = "poi", label = "POI", onValueChange = {}, onDismissRequest = {})
+                }
+            }
+        }
+        val stops = tree.merged.filter { it.role == Role.DropdownList }
+        assertEquals("one stop for the field", 1, stops.size)
+        assertEquals("type-field", stops[0].tag)
+        assertTrue("its description: ${stops[0].description}", stops[0].description?.contains("Type") == true)
+        assertTrue("the reset is a stop of its own", tree.merged.any { "Reset to multiple values" in it.texts && it.tag == null })
+    }
+
+    @Test fun aSelectTriggersResetHandsFocusBack() {
+        paparazzi.live(content = {
+            var mixed by remember { mutableStateOf(false) }
+            KozmosMaterialTheme {
+                KozmosSelect(expanded = false, onExpandedChange = {}, trigger = {
+                    KozmosSelectTrigger(
+                        value = "POI", placeholder = "Type",
+                        mixed = mixed, onResetMixed = { mixed = true }
+                    )
+                }) {
+                    KozmosSelectItem(value = "poi", label = "POI", onValueChange = {}, onDismissRequest = {})
+                }
+            }
+        }) {
+            frames(2)
+            checkNotNull(reset()).click!!.invoke()
+            frames(3)
+            val trigger = read().merged.single { it.role == Role.DropdownList }
+            assertEquals(listOf("Multiple values"), trigger.texts)
+            assertEquals(true, trigger.focused)
+        }
     }
 
     @Test fun theResetIsOfferedOnlyWhenGivenAndNotMixed() {
