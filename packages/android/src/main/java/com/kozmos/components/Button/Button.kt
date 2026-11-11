@@ -44,7 +44,11 @@ enum class KozmosButtonVariant {
     Secondary,
     Ghost,
     Link,
-    Glass
+    Glass,
+    // A pale fill of its own token tier, theme 0 under the theme's words
+    // (GAP-200, decision 135); with KozmosButtonEmotion.Danger, the
+    // destructive tone of Pointr Cloud's Delete Feature (decision 139).
+    Subtle
 }
 
 enum class KozmosButtonEmotion {
@@ -75,6 +79,16 @@ private fun emotionPrimaryFill(e: KozmosButtonEmotion): KozmosFillStates = when 
     KozmosButtonEmotion.Danger -> KozmosFillStates.danger
     KozmosButtonEmotion.Informative -> KozmosFillStates.informative
     KozmosButtonEmotion.Alert -> KozmosFillStates.alert
+}
+
+@Composable
+private fun emotionSubtleFill(e: KozmosButtonEmotion): KozmosFillStates = when (e) {
+    KozmosButtonEmotion.Themed -> KozmosFillStates.subtleThemed
+    KozmosButtonEmotion.Neutral -> KozmosFillStates.subtleNeutral
+    KozmosButtonEmotion.Success -> KozmosFillStates.subtleSuccess
+    KozmosButtonEmotion.Danger -> KozmosFillStates.subtleDanger
+    KozmosButtonEmotion.Informative -> KozmosFillStates.subtleInformative
+    KozmosButtonEmotion.Alert -> KozmosFillStates.subtleAlert
 }
 
 @Composable
@@ -168,10 +182,12 @@ fun KozmosButton(
             }
         }
         else -> {
-            // Default, Destructive, Secondary, Glass. Every one but Glass is a
-            // fill with its own pressed, focus and hover tokens.
+            // Default, Destructive, Secondary, Subtle, Glass. Every one but
+            // Glass is a fill with its own pressed, focus and hover tokens;
+            // Subtle's are its own tier's.
             val fill: KozmosFillStates? = when {
                 variant == KozmosButtonVariant.Glass -> null
+                variant == KozmosButtonVariant.Subtle -> emotionSubtleFill(emotion ?: KozmosButtonEmotion.Themed)
                 emotion != null -> emotionPrimaryFill(emotion)
                 variant == KozmosButtonVariant.Destructive -> KozmosFillStates.danger
                 variant == KozmosButtonVariant.Secondary -> KozmosFillStates.neutral

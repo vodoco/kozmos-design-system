@@ -74,6 +74,93 @@ fun SearchPlaces(query: String, onQueryChange: (String) -> Unit) {
 
 />
 
+## A clear button
+
+`clearable` draws a clear at the field's end while it holds text, and not while the field
+is disabled or read-only. Pressing it, or Escape in the field, empties the field through its
+own `onChange`, calls `onClear`, sends the `search_cleared` analytics event (never the query)
+and puts the focus back in the field. Escape in an empty field is left to what holds it, so a
+dialog still closes. `clearLabel` names the button in the page's language; it is "Clear
+search" unless you pass one. The browser's own clear stays hidden: it emptied the field
+behind the product's back. SwiftUI and Compose take the same `clearable`, `clearLabel` and
+`onClear`.
+
+<Canvas>
+  <Story of={SearchStories.Clearable} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Search } from "@kozmos-ds/react";
+export function Example() {
+  const [query, setQuery] = useState("Gate B12");
+  return (
+    <Search
+      label="Find a place"
+      clearable
+      clearLabel="Clear search"
+      value={query}
+      onChange={(event) => setQuery(event.target.value)}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosSearch } from "@kozmos-ds/vue/react-bridge"
+const query = ref("Gate B12")
+</script>
+
+<template>
+  <KozmosSearch
+    label="Find a place"
+    clearable
+    clear-label="Clear search"
+    v-model="query"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The clear shows while the field holds text. It empties the binding, calls
+// onClear and puts the focus back in the field; its name is the product's.
+struct ClearableSearch: View {
+    @Binding var query: String
+
+    var body: some View {
+        KozmosSearch(
+            text: $query,
+            placeholder: "Find a place",
+            clearable: true,
+            clearLabel: "Clear search"
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.search.KozmosSearch
+
+// The clear shows while the field holds text. It calls onValueChange with ""
+// and onClear, and puts the focus back in the field; its name is the product's.
+@Composable
+fun ClearableSearch(query: String, onQueryChange: (String) -> Unit) {
+    KozmosSearch(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = "Find a place",
+        clearable = true,
+        clearLabel = "Clear search"
+    )
+}
+`}
+
+/>
+
 ## In Safari
 
 `className` lands on the field. A utility class passed there styles it in Chrome, Edge,

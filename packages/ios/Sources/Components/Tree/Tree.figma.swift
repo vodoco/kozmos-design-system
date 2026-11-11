@@ -37,9 +37,8 @@ struct KozmosTreeConnect: FigmaConnect {
 }
 
 // The rows a designer puts in Tree's Content Slot. SwiftUI draws rows only
-// inside KozmosTree, from nodes, so each row reads as a one-node tree; it
-// has no divided rows yet (GAP-201 is web and Figma first), so Divided
-// changes nothing here.
+// inside KozmosTree, from nodes, so each row reads as a one-node tree, and a
+// Divided row as a one-node divided tree (GAP-201).
 struct KozmosTreeParentItemConnect: FigmaConnect {
     let component = KozmosTree.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=684-6080"
@@ -56,8 +55,11 @@ struct KozmosTreeParentItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name, children: [])], density: self.density)
+        KozmosTree(nodes: [Node(value: self.name, children: [])], density: self.density, divided: self.divided)
     }
 }
 
@@ -77,8 +79,11 @@ struct KozmosTreeChildItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density)
+        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
     }
 }
 
@@ -98,7 +103,10 @@ struct KozmosTreeItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density)
+        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
     }
 }

@@ -50,9 +50,16 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
         <WithoutGenericClick>
           {/* The seam tints the inline-end side alone: a colour on all four
               sides outranked the outline variant's own, and its outline
-              drew white at a fifth over white (site GAP-73). */}
+              drew white at a fifth over white (site GAP-73). On the subtle
+              variant's pale fill white does not show: the seam is the
+              fill's pressed step, which an emotion sets too (GAP-200). */}
           <Button
-            className="rounded-e-none border-e border-e-theme-fill-foreground/20 focus:z-10"
+            className={cn(
+              "rounded-e-none border-e focus:z-10",
+              variant === "subtle"
+                ? "border-e-[var(--kz-button-bg-pressed)]"
+                : "border-e-theme-fill-foreground/20",
+            )}
             onClick={(e) => {
               trackEvent("SplitButton", "split_button_main_clicked");
               onMainClick?.(e);

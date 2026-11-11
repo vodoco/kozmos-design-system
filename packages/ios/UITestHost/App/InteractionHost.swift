@@ -53,6 +53,10 @@ private struct InteractionFixture: View {
     @State private var otpSubmitted: [String] = []
     /// The Select scenario's chosen option.
     @State private var selectCategory = "gates"
+    // Decision 132's field ends: Search's clear, NumberInput's unit, Slider's readout.
+    @State private var searchQuery = "Gate 12"
+    @State private var widthMetres: Double? = 15
+    @State private var floorPlanOpacity = 0.6
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -535,6 +539,38 @@ private struct InteractionFixture: View {
             Text(otpCode.isEmpty ? "empty" : otpCode).accessibilityIdentifier("otp-code")
             Text(otpSubmitted.isEmpty ? "nothing submitted" : otpSubmitted.joined(separator: ","))
                 .accessibilityIdentifier("otp-submitted")
+        case "search-clear":
+            KozmosSearch(text: $searchQuery, placeholder: "Search places", clearable: true,
+                         onClear: { events.append("clear") })
+                .environment(\.kozmosAnalytics) { event in
+                    if event.component == "Search" { events.append(event.eventName) }
+                }
+            Text(searchQuery.isEmpty ? "empty" : searchQuery).accessibilityIdentifier("search-query")
+        case "search-escape", "search-escape-sheet", "search-escape-popover":
+            SearchEscapeFixture(mode: scenario) { events.append($0) }
+        case "number-unit-empty":
+            KozmosNumberInput(value: .constant(nil), label: "Width", unit: "m", unitLabel: "metres")
+            Button("Inspect field accessibility") {
+                fieldAccessibilityReport = accessibleLabels().filter { $0 != "Inspect field accessibility" }
+                    .joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
+        case "number-unit":
+            KozmosNumberInput(value: $widthMetres, label: "Width", unit: "m", unitLabel: "metres")
+            Button("Inspect field accessibility") {
+                fieldAccessibilityReport = accessibleLabels().filter { $0 != "Inspect field accessibility" }
+                    .joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
+        case "slider-readout":
+            KozmosSlider(value: $floorPlanOpacity, showValue: true,
+                         formatValue: { "\(Int(($0 * 100).rounded())) %" })
+                .accessibilityLabel("Floor-plan opacity")
+            Button("Inspect field accessibility") {
+                fieldAccessibilityReport = accessibleLabels().filter { $0 != "Inspect field accessibility" }
+                    .joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})
@@ -810,6 +846,70 @@ private struct InteractionFixture: View {
                 .task { await reportMenuItems() }
         default:
             Text("Unknown fixture: \(scenario)")
+        }
+    }
+}
+
+/// Escape in a clearable Search (GAP-161), on the screen, in a sheet and in a
+/// popover. A field that holds text is cleared; an empty one leaves the key to
+/// what holds it. Each logs its clears, and the sheet and popover their
+/// dismissal.
+private struct SearchEscapeFixture: View {
+    let mode: String
+    let event: (String) -> Void
+    @State private var full = "Gate 12"
+    @State private var empty = ""
+    @State private var presented = false
+    @State private var log: [String] = []
+
+    private func note(_ name: String) {
+        log.append(name)
+        event(name)
+    }
+
+    private var logText: String { log.isEmpty ? "none" : log.joined(separator: "|") }
+
+    private var fields: some View {
+        VStack(spacing: 12) {
+            KozmosSearch(text: $full, placeholder: "Full search", clearable: true,
+                         onClear: { note("clear full") })
+            KozmosSearch(text: $empty, placeholder: "Empty search", clearable: true,
+                         onClear: { note("clear empty") })
+            Text(full.isEmpty ? "empty" : full).accessibilityIdentifier("search-query")
+            Text(logText).accessibilityIdentifier("escape-events")
+        }
+        .padding(16)
+        .frame(width: 320)
+    }
+
+    var body: some View {
+        switch mode {
+        case "search-escape-sheet":
+            VStack {
+                Button("Open") { presented = true }
+                Text(logText).accessibilityIdentifier("presenter-events")
+            }
+            .sheet(isPresented: $presented, onDismiss: { note("dismissed") }) { fields }
+        case "search-escape-popover":
+            VStack {
+                Button("Open") { presented = true }
+                Text(logText).accessibilityIdentifier("presenter-events")
+            }
+            .popover(isPresented: $presented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) { fields.compactPopover() }
+            .onChange(of: presented) { if !$0 { note("dismissed") } }
+        default:
+            fields
+        }
+    }
+}
+
+private extension View {
+    /// A popover on a phone too, not the sheet it adapts to.
+    @ViewBuilder func compactPopover() -> some View {
+        if #available(iOS 16.4, *) {
+            presentationCompactAdaptation(.popover)
+        } else {
+            self
         }
     }
 }

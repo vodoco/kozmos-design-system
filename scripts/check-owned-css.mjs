@@ -187,6 +187,11 @@ try {
       .flex {display:block} .rounded-control {border-radius:3px}
       .host-slot-button {background:orange;border:3px solid purple;border-radius:3px}
     </style></head><body><button id="host">Host</button><div id="fixture"></div></body></html>`);
+    // A NumberInput's own box: the nearest ancestor of its input that holds
+    // its steppers. The input sits in a wrapper of its own (GAP-098's unit),
+    // so its parent is not the box the steppers share.
+    const numberControl = (input) =>
+      input.locator("xpath=ancestor::*[.//button][1]");
     const measure = (locator) =>
       locator.evaluate((node) => {
         const s = getComputedStyle(node);
@@ -709,9 +714,9 @@ try {
       await toggle.click();
       assert.equal(await password.getAttribute("type"), "password");
       const number = page.getByTestId(`${id}-number`);
-      const stepper = number
-        .locator("..")
-        .getByRole("button", { name: "Increase value" });
+      const stepper = numberControl(number).getByRole("button", {
+        name: "Increase value",
+      });
       assert.equal(
         (await measure(stepper)).width,
         "44px",
@@ -747,10 +752,12 @@ try {
       );
       for (const state of ["readonly", "disabled"]) {
         const unavailable = page.getByTestId(`${id}-number-${state}`);
-        for (const action of await unavailable
-          .locator("..")
+        const actions = await numberControl(unavailable)
           .getByRole("button")
-          .all()) {
+          .all();
+        // Both steppers, or the loop below reads nothing and passes.
+        assert.equal(actions.length, 2, `${state} NumberInput's two steppers`);
+        for (const action of actions) {
           assert.equal(await action.isDisabled(), true);
           assert.equal((await measure(action)).height, "44px");
           await action.evaluate((node) => node.click());
@@ -782,7 +789,7 @@ try {
             "--primitives-colors-foreground-0",
           ),
         );
-        const action = control.locator("..").getByRole("button").first();
+        const action = numberControl(control).getByRole("button").first();
         assert.equal((await measure(action)).borderTopColor, tone);
         assert.equal(
           (await measure(action)).color,
@@ -1957,14 +1964,14 @@ try {
     );
     const narrowNumber = page.getByTestId("outer-number");
     assert.equal(
-      await narrowNumber
-        .locator("..")
-        .evaluate((node) => node.scrollWidth <= node.clientWidth),
+      await numberControl(narrowNumber).evaluate(
+        (node) => node.scrollWidth <= node.clientWidth,
+      ),
       true,
     );
-    const narrowIncrement = narrowNumber
-      .locator("..")
-      .getByRole("button", { name: "Increase value" });
+    const narrowIncrement = numberControl(narrowNumber).getByRole("button", {
+      name: "Increase value",
+    });
     const narrowNumberBox = await narrowNumber.boundingBox();
     assert.equal(
       (await narrowIncrement.boundingBox()).x,

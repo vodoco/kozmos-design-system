@@ -8,10 +8,14 @@ struct KozmosSearchConnect: FigmaConnect {
     @FigmaString("Placeholder Text")
     var placeholder: String = "Search"
 
+    @FigmaBoolean("Show Clear")
+    var clearable: Bool = false
+
     var body: some View {
         KozmosSearch(
             text: .constant(""),
-            placeholder: self.placeholder
+            placeholder: self.placeholder,
+            clearable: self.clearable
         )
     }
 }

@@ -1403,6 +1403,122 @@ final class InteractionTests: XCTestCase {
         element.frame.midX > app.frame.midX ? 1 : -1
     }
 
+    // MARK: Decision 132: Search's clear, NumberInput's unit, Slider's readout
+
+    /// GAP-161: the clear empties the field through its binding, tells the
+    /// product, sends `search_cleared`, and the field has the keyboard again.
+    func testSearchClearEmptiesTheFieldAndKeepsTheKeyboardInIt() {
+        launch("search-clear")
+        let clear = app.buttons["Clear search"]
+        XCTAssertTrue(clear.exists)
+        XCTAssertGreaterThanOrEqual(clear.frame.height, 44)
+        clear.tap()
+        received("clear|search_cleared")
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertFalse(app.buttons["Clear search"].exists, "the clear is drawn on an empty field")
+        let field = app.textFields.firstMatch
+        XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true, "the field lost the focus")
+    }
+
+    /// GAP-161: Escape from a hardware keyboard clears a clearable Search
+    /// that holds text, as its clear does, and keeps the key; in an empty one
+    /// it is left to what holds the field.
+    func testEscapeClearsAClearableSearchAndLeavesAnEmptyOneAlone() {
+        launch("search-escape")
+        // In the empty field first: nothing clears, the full field included,
+        // so Escape is no shortcut of the screen's.
+        app.textFields["Empty search"].tap()
+        escape()
+        XCTAssertEqual(app.staticTexts["search-query"].label, "Gate 12")
+        XCTAssertEqual(app.staticTexts["escape-events"].label, "none")
+        app.textFields["Full search"].tap()
+        escape()
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertEqual(app.staticTexts["escape-events"].label, "clear full")
+        XCTAssertEqual(app.textFields["Full search"].value(forKey: "hasKeyboardFocus") as? Bool, true,
+                       "the field lost the focus")
+    }
+
+    /// The Escape key, as UIKit gives it to an app. XCUITest's
+    /// `XCUIKeyboardKey.escape` never reaches the app on the iOS simulator
+    /// (measured on 26.5: no press arrives, where every letter does); its
+    /// Command-period does, as `UIKeyCommand.inputEscape`, the input the
+    /// hardware Escape key sends and the one `onKeyPress(.escape)` hears. The
+    /// first hardware key after the on-screen keyboard came up only puts it
+    /// away, and no key command hears it (measured in a sheet, where even a
+    /// visible `.cancelAction` button did not fire): a press of the End key,
+    /// which edits nothing, goes first, as a visitor's typing would.
+    private func escape() {
+        app.typeKey(XCUIKeyboardKey.end, modifierFlags: [])
+        app.typeKey(".", modifierFlags: [.command])
+    }
+
+    /// In a sheet, Escape in a Search that holds text clears it and the
+    /// sheet stays up; Escape in the emptied field then dismisses the sheet.
+    func testEscapeInASheetsSearchClearsItAndKeepsTheSheet() {
+        escapeInPresentation("search-escape-sheet")
+    }
+
+    /// In a popover, the same: cleared and kept, then dismissed.
+    func testEscapeInAPopoversSearchClearsItAndKeepsThePopover() {
+        escapeInPresentation("search-escape-popover")
+    }
+
+    private func escapeInPresentation(_ scenario: String, file: StaticString = #filePath, line: UInt = #line) {
+        launch(scenario)
+        app.buttons["Open"].tap()
+        let field = app.textFields["Full search"]
+        XCTAssertTrue(field.waitForExistence(timeout: 3), "nothing presented", file: file, line: line)
+        field.tap()
+        escape()
+        let events = app.staticTexts["escape-events"]
+        let shown = events.waitForExistence(timeout: 1)
+        let report = shown ? events.label : "gone; presenter: " + app.staticTexts["presenter-events"].label
+        XCTAssertEqual(report, "clear full", "after Escape", file: file, line: line)
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty", file: file, line: line)
+        XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true,
+                       "the field lost the focus", file: file, line: line)
+        // A second Escape, the field now empty, is the presentation's: it
+        // dismisses the sheet or the popover, as it does with no Search in it.
+        escape()
+        XCTAssertFalse(app.staticTexts["escape-events"].waitForExistence(timeout: 1),
+                       "Escape in the empty field did not reach the presentation", file: file, line: line)
+        XCTAssertEqual(app.staticTexts["presenter-events"].label, "clear full|dismissed", file: file, line: line)
+    }
+
+    /// GAP-098: an empty field with a unit says nothing of the unit: no
+    /// "metres" with no value, on the field or beside it.
+    func testAnEmptyNumberInputSaysNothingOfItsUnit() {
+        launch("number-unit-empty")
+        let value = app.textFields.firstMatch.value as? String ?? ""
+        XCTAssertFalse(value.contains("metres"), "the empty field says \(value)")
+        app.buttons["Inspect field accessibility"].tap()
+        let said = app.staticTexts["field-accessibility-report"].label.components(separatedBy: "|")
+        XCTAssertFalse(said.contains { $0.contains("metres") || $0 == "m" }, "the unit is heard: \(said)")
+    }
+
+    /// GAP-098: VoiceOver hears the unit after the value, by its spoken name,
+    /// once: the drawn "m" is no element of its own.
+    func testNumberInputsUnitIsHeardAfterTheValue() {
+        launch("number-unit")
+        XCTAssertEqual(app.textFields.firstMatch.value as? String, "15 metres")
+        // XCUI's `exists` counts accessibility-hidden views: the app reads the tree VoiceOver walks.
+        app.buttons["Inspect field accessibility"].tap()
+        let said = app.staticTexts["field-accessibility-report"].label.components(separatedBy: "|")
+        XCTAssertFalse(said.contains("m"), "the drawn unit is heard on its own: \(said)")
+    }
+
+    /// GAP-163: the slider says the formatted value; the readout beside it,
+    /// drawn the same, is not said again.
+    func testSliderReadoutIsHeardOnceFromTheSlider() {
+        launch("slider-readout")
+        XCTAssertEqual(app.sliders["Floor-plan opacity"].value as? String, "60 %")
+        app.buttons["Inspect field accessibility"].tap()
+        let said = app.staticTexts["field-accessibility-report"].label.components(separatedBy: "|")
+        XCTAssertFalse(said.contains("60 %"), "the readout is heard on its own: \(said)")
+        XCTAssertEqual(said.filter { $0 == "Floor-plan opacity" }.count, 1, "the slider's name is heard \(said)")
+    }
+
     // MARK: OTPInput, one field (React's `otp_code_completed` and the field itself)
     //
     // SwiftUI's OTPInput is one text field that holds the code, with the cells

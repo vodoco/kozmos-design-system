@@ -180,3 +180,78 @@ emotion = KozmosButtonEmotion.Danger
 ) { Text("Delete") }
 `}
 />
+
+## Subtle
+
+`variant="subtle"` is a pale theme fill under the theme's words, with a token tier of its own,
+`Components.Subtle Buttons` (GAP-200, decision 135): theme 0 under theme 600, the theme as text
+(decision 59), 5.72:1 in light and 4.80:1 in dark. Hovered and focused it is theme 100 under
+theme 700, and pressed theme 200 under theme 800: the words step with the fill, because theme 600
+on theme 100 reads only 4.41:1. Every state is a step of the theme ramp, so a client's ramp
+carries it. Pointr Cloud's "+ Add additional field" is one subtle Button, the width of its form.
+
+Set `emotion` and the subtle Button is that emotion's pale fill under its words. Pointr Cloud's
+Delete Feature and Delete Beacon are the destructive tone, `emotion="danger"` (decision 139):
+danger 0, a rose fill, under the danger text, danger 700. In dark a pressed `alert` keeps its
+hover's fill, as no step of the dark alert ramp reads 4.5:1 on its 200.
+
+<Canvas>
+  <Story of={ButtonStories.Subtle} />
+  <Story of={ButtonStories.SubtleEmotions} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Button } from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <>
+      <Button variant="subtle" className="w-full">
+        + Add additional field
+      </Button>
+      <Button variant="subtle" emotion="danger" className="w-full">
+        Delete feature
+      </Button>
+    </>
+  );
+}
+    `}
+    vue={`
+<script setup lang="ts">
+import { KozmosButton } from '@kozmos-ds/vue';
+</script>
+
+<template>
+  <KozmosButton variant="subtle" class="w-full">+ Add additional field</KozmosButton>
+  <KozmosButton variant="subtle" emotion="danger" class="w-full">Delete feature</KozmosButton>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+KozmosButton("+ Add additional field", variant: .subtle, fillsWidth: true) {}
+KozmosButton("Delete feature", variant: .subtle, emotion: .danger, fillsWidth: true) {}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonEmotion
+import com.kozmos.components.button.KozmosButtonVariant
+
+KozmosButton(
+onClick = {},
+modifier = Modifier.fillMaxWidth(),
+variant = KozmosButtonVariant.Subtle
+) { Text("+ Add additional field") }
+
+KozmosButton(
+onClick = {},
+modifier = Modifier.fillMaxWidth(),
+variant = KozmosButtonVariant.Subtle,
+emotion = KozmosButtonEmotion.Danger
+) { Text("Delete feature") }
+`}
+/>

@@ -34,10 +34,20 @@ figma.connect(
       }),
       label: figma.string("Label Text"),
       placeholder: figma.string("Placeholder Text"),
+      clearable: figma.boolean("Show Clear"),
     },
-    example: ({ autoFocus, disabled, error, label, placeholder, readOnly }) => (
+    example: ({
+      autoFocus,
+      clearable,
+      disabled,
+      error,
+      label,
+      placeholder,
+      readOnly,
+    }) => (
       <Search
         autoFocus={autoFocus}
+        clearable={clearable}
         disabled={disabled}
         error={error}
         label={label}
