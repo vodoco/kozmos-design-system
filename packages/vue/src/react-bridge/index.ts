@@ -43,6 +43,8 @@ import {
   Navbar,
   Sidebar,
   Menu,
+  ContextMenu,
+  Kbd,
   Drawer,
   Toast,
   Breadcrumb,
@@ -344,6 +346,8 @@ export const KozmosBottomNavigation = createVueWrapper(BottomNavigation);
 export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
+export const KozmosContextMenu = createVueWrapper(ContextMenu);
+export const KozmosKbd = createVueWrapper(Kbd);
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);

@@ -1281,11 +1281,8 @@ try {
         await page.mouse.move(0, 0);
         assert.equal(
           hovered,
-          await value(
-            `${id}-map-surface`,
-            "--primitives-colors-background-100",
-          ),
-          `${where}: a hovered map control is not the muted step`,
+          await value(`${id}-map-surface`, "--semantics-hover-fill"),
+          `${where}: a hovered map control is not the hover fill`,
         );
         // Tabbed to, a zoom button draws its ring inside itself, where the
         // pair's clip cannot cut it.

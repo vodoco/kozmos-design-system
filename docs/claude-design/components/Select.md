@@ -102,21 +102,6 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Portal>["container"]`, optional.
 - `asChild`: `boolean`, optional.
-- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
-
-  Event handler called when the escape key is down.
-  Can be prevented.
-
-- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
-
-  Event handler called when the a `pointerdown` event happens outside of the `DismissableLayer`.
-  Can be prevented.
-
-- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
-
-  Event handler called when auto-focusing on close.
-  Can be prevented.
-
 - `side`: `Side`, optional.
 - `sideOffset`: `number`, optional.
 - `align`: `Align`, optional.
@@ -128,6 +113,21 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `sticky`: `'partial' | 'always'`, optional.
 - `hideWhenDetached`: `boolean`, optional.
 - `updatePositionStrategy`: `'optimized' | 'always'`, optional.
+- `onCloseAutoFocus`: `FocusScopeProps['onUnmountAutoFocus']`, optional.
+
+  Event handler called when auto-focusing on close.
+  Can be prevented.
+
+- `onEscapeKeyDown`: `DismissableLayerProps['onEscapeKeyDown']`, optional.
+
+  Event handler called when the escape key is down.
+  Can be prevented.
+
+- `onPointerDownOutside`: `DismissableLayerProps['onPointerDownOutside']`, optional.
+
+  Event handler called when the a `pointerdown` event happens outside of the `DismissableLayer`.
+  Can be prevented.
+
 - `position`: `'item-aligned' | 'popper'`, optional, default `"popper"`.
 - `children`: `ReactNode`, optional.
 

@@ -173,7 +173,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
             <button
               aria-controls={listId}
               aria-expanded={open}
-              className="w-full border-t border-border bg-muted px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              className="w-full border-t border-border bg-muted px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-hover-fill/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               onClick={toggle}
               type="button"
             >

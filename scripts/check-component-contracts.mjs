@@ -231,7 +231,8 @@ const files = {
   reactMultiSelectFigma:
     "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
   reactListbox: "packages/react/src/components/Listbox/Listbox.tsx",
-  reactMenu: "packages/react/src/components/Menu/Menu.tsx",
+  // Menu's classes, which ContextMenu shares (GAP-155).
+  reactMenu: "packages/react/src/components/Menu/menu-parts.tsx",
   reactMapControlButton:
     "packages/react/src/components/MapControlButton/MapControlButton.tsx",
   reactMapControlButtonFigma:
@@ -11634,6 +11635,63 @@ for (const [key, needle, label] of [
     source[key],
     needle,
     `${label} pads its popover to the concentric inset (12)`,
+  );
+}
+// Menu's classes live in menu-parts.tsx, read above, and Menu and
+// ContextMenu (GAP-155) draw with them: a part that spelled its own classes
+// again would drift from both the check above and the other menu.
+for (const [file, from] of [
+  ["packages/react/src/components/Menu/Menu.tsx", "./menu-parts"],
+  [
+    "packages/react/src/components/ContextMenu/ContextMenu.tsx",
+    "../Menu/menu-parts",
+  ],
+]) {
+  const content = read(file);
+  assertContains(
+    file,
+    content,
+    new RegExp(`from "${from.replace(/[./]/g, "\\$&")}";`),
+    "Menu's shared classes, imported from menu-parts",
+  );
+  // Every class a part draws is exactly menu-parts' and the caller's: no
+  // class added beside the shared one, and each part checked on its own
+  // (two indicator items, two content panels), in Menu's and ContextMenu's
+  // order alike.
+  const drawn = [...content.matchAll(/\bcn\(([^)]*)\)/g)]
+    .map((match) => match[1].replace(/\s+/g, " ").trim())
+    .sort();
+  const expected = [
+    "menuContentClass, className",
+    "menuContentClass, className",
+    "menuIndicatorItemClass, className",
+    "menuIndicatorItemClass, className",
+    'menuItemClass, inset && "ps-8", className',
+    'menuLabelClass, inset && "ps-8", className',
+    "menuSeparatorClass, className",
+    "menuShortcutClass, className",
+    'menuSubTriggerClass, inset && "ps-8", className',
+  ];
+  if (JSON.stringify(drawn) !== JSON.stringify(expected))
+    fail(
+      `${file}: its parts draw ${JSON.stringify(drawn)}, not exactly menu-parts' classes and the caller's ${JSON.stringify(expected)}`,
+    );
+  for (const [needle, count] of [
+    ["className={menuIndicatorClass}", 2],
+    ["className={menuSubIconClass}", 1],
+  ])
+    assertOccurrenceCount(
+      file,
+      content,
+      new RegExp(needle.replace(/[{}]/g, "\\$&"), "g"),
+      count,
+      needle,
+    );
+  assertNotContains(
+    file,
+    content,
+    /bg-popover|rounded-marker px-2|ps-8 pe-2|h-px bg-border/,
+    "a menu class spelled in the part instead of menu-parts",
   );
 }
 const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";

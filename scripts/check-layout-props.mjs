@@ -1141,12 +1141,13 @@ const rows = (page) =>
     const probe = document.createElement("div");
     probe.style.color = "var(--semantics-border-subtle)";
     probe.style.backgroundColor = "var(--primitives-colors-background-50)";
-    probe.style.outlineColor = "var(--primitives-colors-background-100)";
+    // A selected row draws the hover fill at full strength (decision 173).
+    probe.style.outlineColor = "var(--semantics-hover-fill)";
     document.getElementById("tree").append(probe);
     const tokens = {
       border: getComputedStyle(probe).color,
       surface: getComputedStyle(probe).backgroundColor,
-      muted: getComputedStyle(probe).outlineColor,
+      selected: getComputedStyle(probe).outlineColor,
     };
     probe.remove();
     return {
@@ -1307,7 +1308,7 @@ for (const m of MATRIX) {
         async () => {
           assert.equal(
             open.background,
-            state.tokens.muted,
+            state.tokens.selected,
             "the selected fill",
           );
           assert.equal(open.radius, "16px", "rounded");
@@ -1323,7 +1324,7 @@ for (const m of MATRIX) {
             [open.box.left + 1, open.box.top + 1],
           ]);
           assert.ok(
-            distance(fill, rgb(state.tokens.muted)) <= 2,
+            distance(fill, rgb(state.tokens.selected)) <= 2,
             `fill rgb(${fill.slice(0, 3)})`,
           );
           for (const p of [edge, corner])
@@ -1331,6 +1332,27 @@ for (const m of MATRIX) {
               distance(p, rgb(state.tokens.surface)) <= 2,
               `the surface round it: rgb(${p.slice(0, 3)})`,
             );
+        },
+      );
+      // Under the pointer, a selected row keeps its full fill: the hover's
+      // half step is for the rows that are not selected (decision 173).
+      await read(
+        "tree divided: a selected row keeps its full fill under the pointer",
+        async () => {
+          await page.mouse.move(
+            (open.box.left + open.box.right) / 2,
+            open.box.top + open.box.height / 2,
+          );
+          await settleLayout(page);
+          const hovered = (await rows(page)).rows.find((r) =>
+            r.name.startsWith("Terminal A"),
+          );
+          await page.mouse.move(0, 0);
+          assert.equal(
+            hovered.background,
+            state.tokens.selected,
+            "the selected fill under the pointer",
+          );
         },
       );
     },

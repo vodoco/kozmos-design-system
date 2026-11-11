@@ -9,8 +9,9 @@
  *   so 40 at compact density (decision 82); 12 at the sides; the Marker
  *   corner, 4; 2 between rows (Combobox/listbox/gap), and the standalone
  *   Listbox's own 4 (Listbox/gap); the words 14/20 regular in full ink.
- * - The active row, under the pointer or the keyboard, on background/50
- *   with the words in full ink: a light row, not a filled one.
+ * - The active row, under the pointer or the keyboard, on the hover fill
+ *   with the words in full ink: background/100 in light, background/200 in
+ *   dark (GAP-228, decision 173; it was background/50).
  * - The chosen row on background/100, its check at the end in theme 600.
  * - Reached by the keyboard, the active row also draws a 2px inset ring in
  *   theme 600 (decision 26, 21 Oct), at 3:1 or more against the row; under
@@ -96,7 +97,7 @@ const read = (page) =>
     return {
       rows: rows.map(style),
       tokens: {
-        active: token("--primitives-colors-background-50"),
+        active: token("--semantics-hover-fill"),
         chosen: token("--primitives-colors-background-100"),
         ink: token("--primitives-colors-foreground-0"),
         check: token("--primitives-colors-theme-600"),
@@ -215,7 +216,7 @@ for (const part of [
         assert.equal(
           porto.bg,
           tokens.active,
-          `${name}: the active row is background/50`,
+          `${name}: the active row is the hover fill`,
         );
         assert.equal(porto.color, tokens.ink, `${name}: in full ink`);
         assert.equal(
