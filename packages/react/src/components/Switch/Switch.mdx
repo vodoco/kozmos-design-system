@@ -74,3 +74,81 @@ fun AirplaneMode(isOn: Boolean, onChange: (Boolean) -> Unit) {
 }
 `}
 />
+
+## A description and a state label
+
+A `description` is drawn under the label and read as the switch's description (`aria-describedby`), never as part of its name. `showStateLabel` draws the state in words beside the track, `onLabel` ("On") or `offLabel` ("Off"); pass them in your product's language (GAP-162). The words are not read: the switch's role already says on or off, in the reader's own language, and reading both would say it twice.
+
+<Canvas of={SwitchStories.WithDescription} />
+
+<Canvas of={SwitchStories.StateLabel} />
+
+<PlatformSnippets
+    react={`
+import { Switch } from "@kozmos-ds/react";
+
+export function GateAlerts() {
+  return (
+    <Switch
+      label="Gate alerts"
+      description="Sends a push when your gate changes"
+      showStateLabel
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+
+const alerts = ref(true)
+</script>
+
+<template>
+  <KozmosSwitch
+    v-model:checked="alerts"
+    label="Gate alerts"
+    description="Sends a push when your gate changes"
+    show-state-label
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The description is the switch's hint. The state label draws the state in
+// words beside the track; VoiceOver hears the switch's own state, not the
+// words. Pass onLabel and offLabel in your app's language.
+struct GateAlerts: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        KozmosSwitch(
+            checked: $isOn,
+            label: "Gate alerts",
+            description: "A notification when your gate changes",
+            showStateLabel: true
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.switch.KozmosSwitch
+
+// The state words are drawn beside the track and not read: TalkBack already
+// says on or off. The description is read after the label.
+@Composable
+fun GateAlerts(isOn: Boolean, onChange: (Boolean) -> Unit) {
+    KozmosSwitch(
+        checked = isOn,
+        onCheckedChange = onChange,
+        label = "Gate alerts",
+        description = "Sends a push when your gate changes",
+        showStateLabel = true
+    )
+}
+`}
+/>

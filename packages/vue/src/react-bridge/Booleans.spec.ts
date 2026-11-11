@@ -206,6 +206,16 @@ const CASES: Case[] = [
     byDefault: false,
   },
   {
+    // GAP-162: the state in words beside the track, off unless asked.
+    name: "KozmosSwitch",
+    part: KozmosReact.Switch,
+    prop: "showStateLabel",
+    attribute: "show-state-label",
+    template: (a) => `<KozmosSwitch label="Gate alerts" ${a} />`,
+    drawn: () => $("[data-slot=state-label]") !== null,
+    byDefault: false,
+  },
+  {
     // Its toggle is drawn unless told otherwise.
     name: "KozmosPasswordInput",
     part: KozmosReact.PasswordInput,

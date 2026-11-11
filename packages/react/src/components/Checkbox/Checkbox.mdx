@@ -89,6 +89,77 @@ fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
 `}
 />
 
+## A description
+
+A `description` is drawn under the label and read as the checkbox's description (`aria-describedby`), after its name and never as part of it (GAP-162). The label still toggles the checkbox; the description is words, not a target. SwiftUI reads it as the control's accessibility hint; Compose reads it after the label, in the one node the row is.
+
+<Canvas of={CheckboxStories.WithDescription} />
+
+<PlatformSnippets
+    react={`
+import { Checkbox } from "@kozmos-ds/react";
+
+export function RouteUpdates() {
+  return (
+    <Checkbox
+      label="Route updates"
+      description="Tell me when a faster route opens"
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosCheckbox } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+
+const updates = ref(false)
+</script>
+
+<template>
+  <KozmosCheckbox
+    v-model:checked="updates"
+    label="Route updates"
+    description="Tell me when a faster route opens"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The description is drawn under the label, and VoiceOver reads it as the
+// checkbox's hint, after its name.
+struct RouteUpdates: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        KozmosCheckbox(
+            checked: $isOn,
+            label: "Route updates",
+            description: "Tell me when a faster route opens"
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.checkbox.KozmosCheckbox
+
+// The description is drawn under the label and read after it: the row is
+// one checkbox, the label its name.
+@Composable
+fun DeskBookingTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
+    KozmosCheckbox(
+        checked = accepted,
+        onCheckedChange = onAcceptedChange,
+        label = "Share my desk booking",
+        description = "Colleagues on your floor see where you sit"
+    )
+}
+`}
+/>
+
 ## Stories
 
 ### Default

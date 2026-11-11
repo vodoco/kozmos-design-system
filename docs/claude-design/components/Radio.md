@@ -54,6 +54,23 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 It forwards its ref to `HTMLButtonElement`. Its props are `RadioGroupItemProps`, which extends `React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>`.
 
 - `label`: `string`, optional.
+
+  The option's name; a card's or a tile's title.
+
+- `description`: `string`, optional.
+
+  A line under the label, read as the option's description
+  (`aria-describedby`), never as part of its name.
+
+- `variant`: `RadioGroupItemVariant`, optional, default `"default"`.
+
+  `card` and `tile` draw the option as a box (GAP-158).
+
+- `media`: `React.ReactNode`, optional.
+
+  A card's image or a tile's icon. It is decoration: hidden from assistive
+  technology, as the title names the option. Not drawn by `default`.
+
 - `error`: `boolean`, optional, default `false`.
 - `asChild`: `boolean`, optional.
 - `value`: `string`, **required**.
@@ -62,3 +79,19 @@ It forwards its ref to `HTMLButtonElement`. Its props are `RadioGroupItemProps`,
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### RadioGroupItemVariant
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How an option is drawn (GAP-158). `default` is the ring and its label;
+ * `card` a bordered box with an image or icon over the ring, the title and
+ * the description; `tile` a smaller box of an icon over the title, for a grid
+ * of short choices.
+ */
+type RadioGroupItemVariant = "default" | "card" | "tile";
+```

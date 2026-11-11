@@ -3,6 +3,7 @@ import SwiftUI
 public struct KozmosCheckbox: View {
     @Binding var checked: Bool
     let label: String?
+    let description: String?
     let disabled: Bool
     let error: Bool
     @Environment(\.kozmosAnalytics) var trackEvent
@@ -10,11 +11,13 @@ public struct KozmosCheckbox: View {
     public init(
         checked: Binding<Bool>,
         label: String? = nil,
+        description: String? = nil,
         disabled: Bool = false,
         error: Bool = false
     ) {
         self._checked = checked
         self.label = label
+        self.description = description
         self.disabled = disabled
         self.error = error
     }
@@ -24,7 +27,9 @@ public struct KozmosCheckbox: View {
             trackEvent(KozmosAnalyticsEvent(eventName: "checkbox_toggled", component: "Checkbox", properties: ["checked": !checked]))
             checked.toggle()
         }) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            // With a description the box sits on the label's first line, as
+            // React's `items-start` puts it; without one it is centred.
+            HStack(alignment: description == nil ? .center : .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 ZStack {
                     RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
                         .stroke(borderColor, lineWidth: 1)
@@ -40,11 +45,7 @@ public struct KozmosCheckbox: View {
                     }
                 }
                 
-                if let label = label {
-                    Text(label)
-                        .font(KozmosTypography.subheadline)
-                        .foregroundColor(labelColor)
-                }
+                KozmosControlText(label: label, description: description, labelColor: labelColor, disabled: disabled)
             }
             // A 44pt target, all of it hittable, with a label or without
             // one: a plain button's frame adds nothing without a content
@@ -55,6 +56,7 @@ public struct KozmosCheckbox: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .kozmosControlDescription(label: label, description: description)
         .disabled(disabled)
     }
 

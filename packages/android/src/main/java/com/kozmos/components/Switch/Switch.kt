@@ -20,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.KozmosControlText
 import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -32,7 +34,11 @@ fun KozmosSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     label: String? = null,
-    error: Boolean = false
+    error: Boolean = false,
+    description: String? = null,
+    showStateLabel: Boolean = false,
+    onLabel: String = "On",
+    offLabel: String = "Off"
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     // Checked, the track is the theme fill and the thumb on it a mark in the
@@ -72,8 +78,11 @@ fun KozmosSwitch(
         MaterialTheme.colorScheme.onSurface
     }
 
+    // With a description the track sits on the label's first line; the row
+    // is still one node, its label read first and the description after it
+    // (GAP-162).
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (description != null) Alignment.Top else Alignment.CenterVertically,
         modifier = modifier
             .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
@@ -103,13 +112,23 @@ fun KozmosSwitch(
                     .background(thumbColor, CircleShape)
             )
         }
-        if (label != null) {
+        if (showStateLabel) {
+            // The state in words, after the track (GAP-162). Drawn, never
+            // read: the Switch role already says on or off, in the visitor's
+            // language, and the words would say it twice.
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
-                text = label,
+                text = if (checked) onLabel else offLabel,
                 style = MaterialTheme.typography.bodyMedium,
-                color = labelColor
+                color = KozmosThemeTokens.primitivesColorsForeground400,
+                modifier = Modifier
+                    .padding(top = if (description != null) KozmosDimensions.primitivesLayoutSpacing25 else 0.dp)
+                    .clearAndSetSemantics {}
             )
+        }
+        if (label != null || description != null) {
+            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
+            KozmosControlText(label = label, labelColor = labelColor, description = description)
         }
     }
 }

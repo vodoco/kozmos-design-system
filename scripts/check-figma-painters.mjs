@@ -13296,6 +13296,375 @@ section("Decision 152: Menu's and ContextMenu's items take External");
   }
 }
 
+// GAP-158 (decision 132): Radio gains a Variant axis, Default, Card and Tile,
+// React's RadioGroupItem `variant`. A card is a box 240 wide, 12 in: the
+// Media over the ring and a column of the title and the description; a tile
+// a box 112 wide, at least 96 tall, its Media, title and description centred,
+// and, chosen, a check badge 8 in from its top-end corner. Chosen, the edge is
+// theme 600 and 2 wide (React's 1px border and its 1px outline inside), and
+// the ring's dot or the tile's check shows: never colour alone. A variant
+// from before the axis parses as Default, so Update renames it in place.
+section("GAP-158: Radio draws cards and tiles");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const axes = plugin.expectedVariantAxesForComponentSetName("Radio") || {};
+  ok(
+    JSON.stringify(axes.Variant) ===
+      JSON.stringify(["Default", "Card", "Tile"]) &&
+      JSON.stringify(axes.Checked) ===
+        JSON.stringify(["Unchecked", "Checked"]) &&
+      JSON.stringify(axes.State) ===
+        JSON.stringify(["Default", "Disabled", "Error"]),
+    `Radio declares Checked, State and Variant, Default first (${JSON.stringify(axes)})`,
+  );
+  const combinations =
+    typeof plugin.radioVariantCombinations === "function"
+      ? plugin.radioVariantCombinations()
+      : [];
+  ok(
+    combinations.length === 18 &&
+      new Set(combinations.map((c) => plugin.radioVariantKey(c))).size === 18,
+    `each Variant at each Checked and State: 18 variants (${combinations.length})`,
+  );
+  const parsed = [
+    "Checked=Checked, State=Default",
+    "Checked=Unchecked, State=Error, Variant=Tile",
+    "Checked=Checked, State=Default, Variant=Chip",
+  ].map((name) => plugin.parseRadioVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { variant: "Default", checked: "Checked", state: "Default" },
+        { variant: "Tile", checked: "Unchecked", state: "Error" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default; an unknown one as none (${JSON.stringify(parsed)})`,
+  );
+
+  const drawRadio = async (variant, checked, state) =>
+    withAutoLayout(async () => {
+      const component = figma.createComponent();
+      await plugin.updateRadioVariant(component, {
+        variant,
+        checked,
+        state,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      return component;
+    });
+
+  for (const variant of ["Card", "Tile"]) {
+    const chosen = await drawRadio(variant, "Checked", "Default");
+    const open = await drawRadio(variant, "Unchecked", "Default");
+    const wrong = await drawRadio(variant, "Checked", "Error");
+    const off = await drawRadio(variant, "Unchecked", "Disabled");
+    const tile = variant === "Tile";
+    ok(
+      chosen.name === `Checked=Checked, State=Default, Variant=${variant}` &&
+        chosen.width === (tile ? 112 : 240) &&
+        chosen.paddingLeft === 12 &&
+        chosen.paddingTop === 12 &&
+        chosen.cornerRadius === 20 &&
+        (!tile || chosen.height >= 96) &&
+        boundVariableName(chosen.fills[0]) === "Colors/background/0",
+      `${variant}: a box ${tile ? 112 : 240} wide, 12 in, the container corner, on background/0 (${chosen.name}, ${chosen.width}x${chosen.height}, pad ${chosen.paddingLeft}, r${chosen.cornerRadius})`,
+    );
+    ok(
+      boundVariableName(chosen.strokes[0]) === "Colors/theme/600" &&
+        chosen.strokeWeight === 2 &&
+        chosen.strokeAlign === "INSIDE" &&
+        boundVariableName(open.strokes[0]) === "Border/Subtle" &&
+        open.strokeWeight === 1 &&
+        boundVariableName(wrong.strokes[0]) === "Colors/emotional/danger/600",
+      `${variant}: the edge is Border/Subtle at 1, theme 600 at 2 inside when chosen, danger 600 on error (${boundVariableName(open.strokes[0])} ${open.strokeWeight}; ${boundVariableName(chosen.strokes[0])} ${chosen.strokeWeight} ${chosen.strokeAlign}; ${boundVariableName(wrong.strokes[0])})`,
+    );
+    ok(
+      off.opacity === 0.5 && chosen.opacity === 1,
+      `${variant}: disabled, the whole box is at half (${off.opacity})`,
+    );
+    const title = named(chosen, "Label Text");
+    const description = named(chosen, "Description Text");
+    const media = named(chosen, "Media");
+    ok(
+      title &&
+        title.type === "TEXT" &&
+        description &&
+        description.type === "TEXT" &&
+        description.visible === false &&
+        media &&
+        chosen.children[0] === media,
+      `${variant}: the Media first, then the title and a hidden description (${chosen.children.map((c) => c.name).join(", ")})`,
+    );
+    if (tile) {
+      const badge = named(chosen, "Check Badge");
+      ok(
+        badge &&
+          badge.layoutPositioning === "ABSOLUTE" &&
+          badge.width === 20 &&
+          badge.x === 112 - 8 - 20 &&
+          badge.y === 8 &&
+          boundVariableName(badge.fills[0]) === plugin.THEME_FILL.name &&
+          !named(open, "Check Badge"),
+        `Tile: chosen, a 20 check badge 8 in from the top-end corner, out of the flow, on the theme fill; none unchosen (${badge && `${badge.x},${badge.y} ${badge.width} ${badge.layoutPositioning} ${boundVariableName(badge.fills[0])}`})`,
+      );
+      ok(
+        chosen.primaryAxisAlignItems === "CENTER" &&
+          chosen.counterAxisAlignItems === "CENTER" &&
+          !named(chosen, "Radio Control"),
+        `Tile: everything centred, and no ring (${chosen.counterAxisAlignItems})`,
+      );
+    } else {
+      const body = named(chosen, "Body");
+      const ring = body && named(body, "Radio Control");
+      ok(
+        body &&
+          ring &&
+          body.children[0] === ring &&
+          named(ring, "Radio Dot") &&
+          !named(named(open, "Body"), "Radio Dot") &&
+          body.itemSpacing === 8 &&
+          title.parent &&
+          title.parent.name === "Text",
+        `Card: the Body is the ring, its dot when chosen, and the title's column, 8 apart (${body && body.children.map((c) => c.name).join(", ")})`,
+      );
+    }
+  }
+
+  const oldNames = [];
+  for (const checked of ["Unchecked", "Checked"]) {
+    for (const state of ["Default", "Disabled", "Error"]) {
+      oldNames.push(`Checked=${checked}, State=${state}`);
+    }
+  }
+  const replay = await withAutoLayout(() =>
+    replayUpdate("Radio", oldNames, "updateRadioComponent"),
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 6 &&
+      replay.result.variantsCreated === 12 &&
+      replay.liveSet.children.length === 18 &&
+      new Set(replay.names).size === 18,
+    `Update keeps the set and its 6 variants, and adds the 12 cards and tiles (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.liveSet.children.length} in all)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, Variant=Default`,
+    ),
+    `each of the 6 keeps its node id and is renamed Variant=Default (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const radioOverlaps = overlapsIn(replay.liveSet);
+  ok(
+    radioOverlaps.length === 0 &&
+      topLeftOf(replay.liveSet).name ===
+        "Checked=Unchecked, State=Default, Variant=Default",
+    `the laid-out set has no two variants overlapping, its top-left the default (${topLeftOf(replay.liveSet).name}; ${radioOverlaps.slice(0, 2).join("; ")})`,
+  );
+  const definitions = replay.liveSet.componentPropertyDefinitions;
+  const propertyNamed = (name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const media = propertyNamed("Show Media", "BOOLEAN");
+  const shown = propertyNamed("Show Description", "BOOLEAN");
+  const words = propertyNamed("Description Text", "TEXT");
+  const drivenBy = (key, field) =>
+    replay.liveSet.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] === key,
+    );
+  ok(
+    media &&
+      definitions[media].defaultValue === true &&
+      drivenBy(media, "visible").length === 12 &&
+      drivenBy(media, "visible").every((node) => node.name === "Media"),
+    `Show Media, on by default, shows each card's and tile's Media (${media}: ${drivenBy(media, "visible").length})`,
+  );
+  ok(
+    shown &&
+      words &&
+      definitions[shown].defaultValue === false &&
+      drivenBy(words, "characters").length === 18 &&
+      drivenBy(shown, "visible").length === 24,
+    `Description Text writes all 18 descriptions, and Show Description, off, shows them: the 6 Default rows with their texts and the 12 boxes' texts (${drivenBy(words, "characters").length} texts, ${drivenBy(shown, "visible").length} layers)`,
+  );
+  ok(
+    propertyNamed("Label Text", "TEXT") &&
+      propertyNamed("Focus Visible", "BOOLEAN"),
+    `Label Text and Focus Visible are kept (${Object.keys(definitions)
+      .map((key) => key.split("#")[0])
+      .join(", ")})`,
+  );
+}
+
+// GAP-162 (decision 132): Checkbox, Switch and a Default radio draw their
+// label row and, under it, a description; Switch can say On or Off beside
+// its track. Each is a column at least 44 tall (X/height/default, its
+// minimum now): the Label Row, the control, the State Label (Switch) and the
+// label, 8 apart (X/gap); then the Description Row, indented to start under
+// the label. Hidden, as their booleans are off by default, the control draws
+// as it did: 176 by 44, centred.
+section("GAP-162: the controls draw a description, and Switch its state");
+{
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    ...["Checkbox", "Radio", "Switch"].flatMap((kind) => [
+      `${kind}/height/default`,
+      `${kind}/gap`,
+    ]),
+  ]);
+  const drawControl = async (fn, props) =>
+    withAutoLayout(async () => {
+      const component = figma.createComponent();
+      await plugin[fn](
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    });
+  const kinds = [
+    ["Checkbox", "updateCheckboxVariant", "Checkbox Control", 28],
+    ["Radio", "updateRadioVariant", "Radio Control", 28],
+    ["Switch", "updateSwitchVariant", "Switch Track", 52],
+  ];
+  for (const [kind, fn, controlName, indent] of kinds) {
+    const component = await drawControl(fn, {
+      checked: "Checked",
+      state: "Default",
+    });
+    const row = named(component, "Label Row");
+    const descriptionRow = named(component, "Description Row");
+    const description =
+      descriptionRow && named(descriptionRow, "Description Text");
+    ok(
+      component.layoutMode === "VERTICAL" &&
+        component.width === 176 &&
+        component.height === 44 &&
+        component.minHeight === 44 &&
+        menusBound(component, "minHeight") === `${kind}/height/default` &&
+        menusBound(component, "height") === null &&
+        component.primaryAxisAlignItems === "CENTER",
+      `${kind}: a column 176 wide, at least 44 (${kind}/height/default) and 44 with its description hidden, centred (${component.layoutMode} ${component.width}x${component.height}, min ${menusBound(component, "minHeight")}, height ${menusBound(component, "height")})`,
+    );
+    ok(
+      row &&
+        row.children[0] &&
+        row.children[0].name === controlName &&
+        row.children[row.children.length - 1].name === "Label Text" &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === `${kind}/gap` &&
+        row.counterAxisAlignItems === "CENTER",
+      `${kind}: the Label Row is the control then the label, 8 apart (${kind}/gap), centred on each other (${row && row.children.map((c) => c.name).join(", ")})`,
+    );
+    ok(
+      descriptionRow &&
+        component.children[1] === descriptionRow &&
+        descriptionRow.paddingLeft === indent &&
+        descriptionRow.visible === false &&
+        description &&
+        description.type === "TEXT" &&
+        description.textAutoResize === "HEIGHT" &&
+        boundVariableName(description.fills[0]) === "Colors/foreground/400" &&
+        description.fontSize === 14,
+      `${kind}: the Description Row starts ${indent} in, under the label; its text 14/20 in foreground/400, wrapping; hidden until shown (${descriptionRow && descriptionRow.paddingLeft}, ${description && boundVariableName(description.fills[0])})`,
+    );
+  }
+
+  const on = await drawControl("updateSwitchVariant", {
+    checked: "Checked",
+    state: "Default",
+  });
+  const offSwitch = await drawControl("updateSwitchVariant", {
+    checked: "Unchecked",
+    state: "Default",
+  });
+  const stateOf = (component) => {
+    const row = named(component, "Label Row");
+    return row ? named(row, "State Label") : null;
+  };
+  ok(
+    stateOf(on) &&
+      stateOf(on).characters === "On" &&
+      stateOf(offSwitch).characters === "Off" &&
+      named(on, "Label Row") &&
+      named(on, "Label Row").children[1] === stateOf(on) &&
+      stateOf(on).visible === false &&
+      boundVariableName(stateOf(on).fills[0]) === "Colors/foreground/400" &&
+      on.itemSpacing === 0,
+    `Switch: the State Label sits between the track and the label, On or Off by Checked, muted, hidden until shown; the column has no gap (${stateOf(on) && stateOf(on).characters}/${stateOf(offSwitch) && stateOf(offSwitch).characters}, gap ${on.itemSpacing})`,
+  );
+
+  for (const [kind, update] of [
+    ["Checkbox", "updateCheckboxComponent"],
+    ["Switch", "updateSwitchComponent"],
+  ]) {
+    const names = [];
+    for (const checked of ["Unchecked", "Checked"]) {
+      for (const state of ["Default", "Disabled", "Error"]) {
+        names.push(`Checked=${checked}, State=${state}`);
+      }
+    }
+    const replay = await withAutoLayout(() =>
+      replayUpdate(kind, names, update),
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions;
+    const propertyNamed = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const shown = propertyNamed("Show Description", "BOOLEAN");
+    const words = propertyNamed("Description Text", "TEXT");
+    const state = propertyNamed("Show State Label", "BOOLEAN");
+    const drivenBy = (key, field) =>
+      key
+        ? replay.liveSet.findAll(
+            (node) =>
+              node.componentPropertyReferences &&
+              node.componentPropertyReferences[field] === key,
+          )
+        : [];
+    ok(
+      replay.kept.every((variant, i) => variant && variant.name === names[i]) &&
+        replay.liveSet.children.length === 6,
+      `${kind}: Update keeps its 6 variants, ids and names (${replay.names.join("; ")})`,
+    );
+    ok(
+      shown &&
+        words &&
+        definitions[shown].defaultValue === false &&
+        drivenBy(shown, "visible").length === 6 &&
+        drivenBy(shown, "visible").every(
+          (node) => node.name === "Description Row",
+        ) &&
+        drivenBy(words, "characters").length === 6,
+      `${kind}: Show Description, off, shows each variant's Description Row, and Description Text writes it (${drivenBy(shown, "visible").length} rows, ${drivenBy(words, "characters").length} texts)`,
+    );
+    ok(
+      kind === "Switch"
+        ? state &&
+            definitions[state].defaultValue === false &&
+            drivenBy(state, "visible").length === 6 &&
+            drivenBy(state, "visible").every(
+              (node) => node.name === "State Label",
+            )
+        : !state,
+      `${kind}: ${kind === "Switch" ? "Show State Label, off, shows each variant's State Label" : "no Show State Label"} (${state || "none"}: ${drivenBy(state, "visible").length})`,
+    );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

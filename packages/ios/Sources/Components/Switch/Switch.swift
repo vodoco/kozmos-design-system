@@ -3,18 +3,30 @@ import SwiftUI
 public struct KozmosSwitch: View {
     @Binding var checked: Bool
     let label: String?
+    let description: String?
     let disabled: Bool
+    let showStateLabel: Bool
+    let onLabel: String
+    let offLabel: String
     let error: Bool
     @Environment(\.kozmosAnalytics) var trackEvent
     
     public init(
         checked: Binding<Bool>,
         label: String? = nil,
+        description: String? = nil,
         disabled: Bool = false,
-        error: Bool = false
+        error: Bool = false,
+        showStateLabel: Bool = false,
+        onLabel: String = "On",
+        offLabel: String = "Off"
     ) {
         self._checked = checked
         self.label = label
+        self.description = description
+        self.showStateLabel = showStateLabel
+        self.onLabel = onLabel
+        self.offLabel = offLabel
         self.disabled = disabled
         self.error = error
     }
@@ -25,7 +37,9 @@ public struct KozmosSwitch: View {
             trackEvent(KozmosAnalyticsEvent(eventName: "switch_toggled", component: "Switch", properties: ["checked": nextValue]))
             checked = nextValue
         }) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            // With a description the track sits on the label's first line;
+            // without one it is centred.
+            HStack(alignment: description == nil ? .center : .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 ZStack {
                     Capsule()
                         .fill(trackColor)
@@ -40,11 +54,21 @@ public struct KozmosSwitch: View {
                         .offset(x: checked ? 10 : -10)
                 }
 
-                if let label = label {
-                    Text(label)
+                // The state in words, after the track (GAP-162): drawn for
+                // the eye only and kept out of the name, as React's are
+                // aria-hidden. The switch's state belongs to the control
+                // itself, which today carries no toggle trait or value on
+                // SwiftUI (reported separately, not this change's scope).
+                if showStateLabel {
+                    Text(checked ? onLabel : offLabel)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(labelColor)
+                        .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
+                        .frame(minHeight: 24)
+                        .accessibilityHidden(true)
                 }
+
+                KozmosControlText(label: label, description: description, labelColor: labelColor, disabled: disabled)
+                    .padding(.top, description == nil ? 0 : 2)
             }
             // A 44pt target, all of it hittable, with a label or without
             // one: a plain button's frame adds nothing without a content
@@ -55,6 +79,7 @@ public struct KozmosSwitch: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .kozmosControlDescription(label: label, description: description, nameFromLabel: showStateLabel)
         .disabled(disabled)
     }
 

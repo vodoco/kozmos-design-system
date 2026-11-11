@@ -4,6 +4,24 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.kozmos.components.KozmosControlText
+import com.kozmos.components.KozmosInertAlpha
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.heightIn
@@ -47,7 +65,10 @@ fun KozmosRadioGroupItem(
     modifier: Modifier = Modifier,
     label: String? = null,
     enabled: Boolean = true,
-    error: Boolean = false
+    error: Boolean = false,
+    description: String? = null,
+    variant: KozmosRadioGroupItemVariant = KozmosRadioGroupItemVariant.Default,
+    media: (@Composable () -> Unit)? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     val selected = value == selectedValue
@@ -76,6 +97,35 @@ fun KozmosRadioGroupItem(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
+    val onClick = {
+        trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "RadioGroup", eventName = "radio_selection_changed", properties = mapOf("value" to value.toString())))
+        onOptionSelected(value)
+    }
+    val ring = when {
+        !enabled -> disabledColor
+        selected -> selectedColor
+        else -> unselectedColor
+    }
+    val dot = if (enabled) dotColor else disabledColor
+
+    if (variant != KozmosRadioGroupItemVariant.Default) {
+        KozmosRadioBox(
+            variant = variant,
+            selected = selected,
+            enabled = enabled,
+            error = error,
+            label = label,
+            description = description,
+            media = media,
+            // Disabled, a card keeps its colours and is drawn at half.
+            ring = if (selected) selectedColor else unselectedColor,
+            dot = dotColor,
+            onClick = onClick,
+            modifier = modifier
+        )
+        return
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -83,31 +133,147 @@ fun KozmosRadioGroupItem(
             .selectable(
                 selected = selected,
                 enabled = enabled,
-                onClick = { 
-                    trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "RadioGroup", eventName = "radio_selection_changed", properties = mapOf("value" to value.toString())))
-                    onOptionSelected(value) 
-                },
+                onClick = onClick,
                 role = Role.RadioButton
             )
             .padding(vertical = KozmosDimensions.primitivesLayoutSpacing100),
-        verticalAlignment = Alignment.CenterVertically
+        // With a description the mark sits on the label's first line; the
+        // row is one node, its label read first, the description after it.
+        verticalAlignment = if (description != null) Alignment.Top else Alignment.CenterVertically
     ) {
-        KozmosRadioMark(
-            selected = selected,
-            ring = when {
-                !enabled -> disabledColor
-                selected -> selectedColor
-                else -> unselectedColor
-            },
-            dot = if (enabled) dotColor else disabledColor
-        )
-        if (label != null) {
+        KozmosRadioMark(selected = selected, ring = ring, dot = dot)
+        if (label != null || description != null) {
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = labelColor
+            KozmosControlText(
+                label = label,
+                labelColor = labelColor,
+                description = description,
+                labelStyle = MaterialTheme.typography.bodyLarge,
+                topInset = 0.dp
             )
+        }
+    }
+}
+
+/** How a radio option is drawn (GAP-158). */
+enum class KozmosRadioGroupItemVariant {
+    /** A ring and its label, in a row. */
+    Default,
+
+    /** A bordered card: media on top, then the ring beside a title and a description. */
+    Card,
+
+    /** A bordered tile, its media, title and description centred; chosen, a check in its top-end corner. */
+    Tile
+}
+
+/**
+ * A radio card or tile (GAP-158): one radio, named by its title, its
+ * description read after it, its media drawn and never read. Chosen, its
+ * edge is theme 600 at 2dp, drawn inside the box so nothing moves, and it
+ * shows the dot (a card) or a check (a tile): never the colour alone.
+ */
+@Composable
+private fun KozmosRadioBox(
+    variant: KozmosRadioGroupItemVariant,
+    selected: Boolean,
+    enabled: Boolean,
+    error: Boolean,
+    label: String?,
+    description: String?,
+    media: (@Composable () -> Unit)?,
+    ring: Color,
+    dot: Color,
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
+    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)
+    val edge = when {
+        error -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
+        selected -> KozmosThemeTokens.primitivesColorsTheme600
+        else -> KozmosThemeTokens.semanticsBorderSubtle
+    }
+    val edgeWidth = if (selected) 2.dp else 1.dp
+    val titleColor = KozmosThemeTokens.primitivesColorsForeground0
+    val mutedColor = KozmosThemeTokens.primitivesColorsForeground400
+    Box(
+        modifier = modifier
+            .alpha(if (enabled) 1f else KozmosInertAlpha)
+            .then(if (variant == KozmosRadioGroupItemVariant.Card) Modifier.fillMaxWidth() else Modifier)
+            .heightIn(min = if (variant == KozmosRadioGroupItemVariant.Tile) 96.dp else 44.dp)
+            .clip(shape)
+            .border(edgeWidth, edge, shape)
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                onClick = onClick,
+                role = Role.RadioButton
+            )
+            .padding(KozmosDimensions.primitivesLayoutSpacing150)
+    ) {
+        if (variant == KozmosRadioGroupItemVariant.Card) {
+            Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)) {
+                if (media != null) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                            .clearAndSetSemantics {}
+                    ) { media() }
+                }
+                Row(verticalAlignment = Alignment.Top) {
+                    KozmosRadioMark(selected = selected, ring = ring, dot = dot)
+                    Spacer(Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
+                    Column(
+                        modifier = Modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing25),
+                        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+                    ) {
+                        if (label != null) {
+                            Text(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = titleColor)
+                        }
+                        if (description != null) {
+                            Text(text = description, style = MaterialTheme.typography.bodySmall, color = mutedColor)
+                        }
+                    }
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+            ) {
+                if (media != null) {
+                    Box(Modifier.clearAndSetSemantics {}) { media() }
+                }
+                if (label != null) {
+                    Text(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = titleColor, textAlign = TextAlign.Center)
+                }
+                if (description != null) {
+                    Text(text = description, style = MaterialTheme.typography.labelSmall, color = mutedColor, textAlign = TextAlign.Center)
+                }
+            }
+            if (selected) {
+                // The check is the chosen tile's mark beside its edge: drawn,
+                // never read, as the node already says it is selected. The
+                // box's 12dp pad less 4 puts it 8dp in from the corner.
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = KozmosDimensions.primitivesLayoutSpacing50, y = -KozmosDimensions.primitivesLayoutSpacing50)
+                        .size(20.dp)
+                        .background(if (error) KozmosThemeTokens.primitivesColorsEmotionalDanger600 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, CircleShape)
+                        .clearAndSetSemantics {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
         }
     }
 }

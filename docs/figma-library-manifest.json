@@ -15524,7 +15524,13 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Checkbox"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -15534,6 +15540,7 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
@@ -17986,7 +17993,15 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Radio", "RadioGroupItem"],
-          "mappedProps": ["disabled", "error", "label", "value"],
+          "mappedProps": [
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "media",
+            "value",
+            "variant"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -17995,15 +18010,18 @@
           "aria-label",
           "checked",
           "children",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "media",
           "required",
           "role",
           "tabIndex",
           "title",
-          "value"
+          "value",
+          "variant"
         ],
         "variants": {}
       },
@@ -18914,7 +18932,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Switch"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "showStateLabel"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -18924,12 +18949,15 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "offLabel",
           "required",
           "role",
+          "showStateLabel",
           "tabIndex",
           "title",
           "value",

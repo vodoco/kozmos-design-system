@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0bab88311d45";
+const PLUGIN_BUILD = "71ae7e94827f";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -260,6 +260,16 @@ const CHECKBOX_CHECKED = ["Unchecked", "Checked"];
 const CHECKBOX_STATES = ["Default", "Disabled", "Error"];
 const RADIO_CHECKED = ["Unchecked", "Checked"];
 const RADIO_STATES = ["Default", "Disabled", "Error"];
+// GAP-158: how an option is drawn, React's RadioGroupItem `variant`. Default
+// first, so a variant built before the axis existed parses as Default and
+// Update renames it in place, keeping the node id Code Connect pins.
+const RADIO_VARIANTS = ["Default", "Card", "Tile"];
+// React's card is a column 240 wide here (it fills its grid cell in code), the
+// tile 112: three of them and two 8 gaps make the transition editor's row.
+const RADIO_CARD_WIDTH = 240;
+const RADIO_TILE_WIDTH = 112;
+// min-h-24: a tile is at least 96 tall.
+const RADIO_TILE_MIN_HEIGHT = 96;
 const SWITCH_CHECKED = ["Unchecked", "Checked"];
 const SWITCH_STATES = ["Default", "Disabled", "Error"];
 const INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
@@ -1497,7 +1507,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
         },
         {
           componentSetName: "Radio",
-          variantName: "Checked=Checked, State=Default",
+          variantName: "Checked=Checked, State=Default, Variant=Default",
           text: { "Label Text": "Fastest" },
         },
         {
@@ -3636,12 +3646,13 @@ const COMPONENT_DOCS = [
       "Checked maps to Checkbox.checked.",
       "State maps to disabled and error props in Code Connect.",
       "Label Text maps to Checkbox.label.",
+      "Description Text and Show Description map to Checkbox.description (GAP-162).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Label Text, Description Text, Show Description, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -3663,13 +3674,17 @@ const COMPONENT_DOCS = [
     api: [
       "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
       "State maps to disabled and error props in Code Connect.",
-      "Label Text maps to RadioGroupItem.label.",
+      "Variant maps to RadioGroupItem.variant: Default, Card and Tile (GAP-158).",
+      "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+      "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+      "Show Media shows a card's image or a tile's icon (RadioGroupItem.media).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Variant: Default, Card, Tile",
+      "Label Text, Description Text, Show Description, Show Media, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -3691,12 +3706,14 @@ const COMPONENT_DOCS = [
       "Checked maps to Switch.checked.",
       "State maps to disabled and error props in Code Connect.",
       "Label Text maps to Switch.label.",
+      "Description Text and Show Description map to Switch.description (GAP-162).",
+      "Show State Label maps to Switch.showStateLabel (On or Off beside the track).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Label Text, Description Text, Show Description, Show State Label, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -18434,6 +18451,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Checked: RADIO_CHECKED,
       State: RADIO_STATES,
+      Variant: RADIO_VARIANTS,
     };
   }
 
@@ -34429,6 +34447,7 @@ async function buildCheckboxComponent() {
     "Checked maps to Checkbox.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
+    "Description Text and Show Description map to Checkbox.description (GAP-162).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -34444,6 +34463,7 @@ async function buildCheckboxComponent() {
   );
   configureLabelTextProperty(componentSet, "Checkbox", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -34482,6 +34502,7 @@ async function updateCheckboxComponent() {
     "Checked maps to Checkbox.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
+    "Description Text and Show Description map to Checkbox.description (GAP-162).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34528,6 +34549,7 @@ async function updateCheckboxComponent() {
   );
   configureLabelTextProperty(existing, "Checkbox", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -34561,26 +34583,17 @@ async function buildRadioComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  let index = 0;
-  for (const checked of RADIO_CHECKED) {
-    for (const state of RADIO_STATES) {
-      const component = await createRadioVariant({
-        checked,
-        state,
-        variableByName,
-        fonts,
-        stats,
-      });
-      component.x = (index % 3) * 220;
-      component.y = Math.floor(index / 3) * 88;
-      page.appendChild(component);
-      components.push(component);
-      index += 1;
-    }
+  for (const props of radioVariantCombinations()) {
+    const component = await createRadioVariant(
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
   componentSet.name = "Radio";
+  layoutRadioVariants(componentSet);
   componentSet.x = 80;
   componentSet.y = 1900;
   componentSet.setSharedPluginData(RUN_NAMESPACE, "kind", "component-set");
@@ -34588,9 +34601,12 @@ async function buildRadioComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
   applyComponentSetDescription(componentSet, "Radio", false, [
     "Kozmos Radio component set generated from React RadioGroupItem API.",
+    "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
     "State maps to disabled/error props in Code Connect.",
-    "Label Text maps to RadioGroupItem.label.",
+    "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+    "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+    "Show Media shows a card's image or a tile's icon, RadioGroupItem.media.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -34606,6 +34622,7 @@ async function buildRadioComponent() {
   );
   configureLabelTextProperty(componentSet, "Radio", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -34623,6 +34640,7 @@ async function updateRadioComponent() {
   await figma.setCurrentPageAsync(page);
   await page.loadAsync();
 
+  stats.variantsCreated = 0;
   removeStaleGeneratedComponentArtifacts(page, "Radio", stats);
 
   const existing = findComponentSetOnPage(page, "Radio");
@@ -34641,9 +34659,12 @@ async function updateRadioComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
   applyComponentSetDescription(existing, "Radio", true, [
     "Kozmos Radio component set generated from React RadioGroupItem API.",
+    "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
     "State maps to disabled/error props in Code Connect.",
-    "Label Text maps to RadioGroupItem.label.",
+    "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+    "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+    "Show Media shows a card's image or a tile's icon, RadioGroupItem.media.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34659,26 +34680,26 @@ async function updateRadioComponent() {
       continue;
     }
 
-    seenKeys[`${props.checked}/${props.state}`] = true;
-    await updateRadioVariant(child, {
-      checked: props.checked,
-      state: props.state,
-      variableByName,
-      fonts,
-      stats,
-    });
+    seenKeys[radioVariantKey(props)] = true;
+    await updateRadioVariant(
+      child,
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
     stats.variantsUpdated += 1;
   }
 
-  for (const checked of RADIO_CHECKED) {
-    for (const state of RADIO_STATES) {
-      const key = `${checked}/${state}`;
-      if (!seenKeys[key]) {
-        stats.variantsMissing += 1;
-        stats.warnings.push(`Missing Radio variant ${key}.`);
-      }
-    }
+  // The cards and tiles (GAP-158) a set from before the Variant axis lacks.
+  for (const props of radioVariantCombinations()) {
+    const key = radioVariantKey(props);
+    if (seenKeys[key]) continue;
+    const component = await createRadioVariant(
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
+  layoutRadioVariants(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -34690,6 +34711,7 @@ async function updateRadioComponent() {
   );
   configureLabelTextProperty(existing, "Radio", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -34753,6 +34775,8 @@ async function buildSwitchComponent() {
     "Checked maps to Switch.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
+    "Description Text and Show Description map to Switch.description (GAP-162).",
+    "Show State Label maps to Switch.showStateLabel: On or Off beside the track.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -34768,6 +34792,7 @@ async function buildSwitchComponent() {
   );
   configureLabelTextProperty(componentSet, "Switch", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -34806,6 +34831,8 @@ async function updateSwitchComponent() {
     "Checked maps to Switch.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
+    "Description Text and Show Description map to Switch.description (GAP-162).",
+    "Show State Label maps to Switch.showStateLabel: On or Off beside the track.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34852,6 +34879,7 @@ async function updateSwitchComponent() {
   );
   configureLabelTextProperty(existing, "Switch", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -61895,21 +61923,7 @@ async function updateCheckboxVariant(
   const config = checkboxConfig(checked, state);
 
   component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  setControlRowFrame(component, "Checkbox");
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Checkbox");
 
@@ -61925,6 +61939,7 @@ async function updateCheckboxVariant(
 }
 
 async function createRadioVariant({
+  variant = "Default",
   checked,
   state,
   variableByName,
@@ -61933,6 +61948,7 @@ async function createRadioVariant({
 }) {
   const component = figma.createComponent();
   await updateRadioVariant(component, {
+    variant,
     checked,
     state,
     variableByName,
@@ -61940,6 +61956,55 @@ async function createRadioVariant({
     stats,
   });
   return component;
+}
+
+function radioVariantCombinations() {
+  const combinations = [];
+  for (const variant of RADIO_VARIANTS) {
+    for (const checked of RADIO_CHECKED) {
+      for (const state of RADIO_STATES) {
+        combinations.push({ variant, checked, state });
+      }
+    }
+  }
+  return combinations;
+}
+
+function radioVariantKey(props) {
+  return `${props.variant}/${props.checked}/${props.state}`;
+}
+
+// The Default variants in a row of six, then the cards, then the tiles, each
+// row as tall as its tallest variant and 40 apart: the set's top-left, its
+// default, stays Checked=Unchecked, State=Default, Variant=Default.
+function layoutRadioVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  let y = 0;
+  for (const variant of RADIO_VARIANTS) {
+    let x = 0;
+    let rowHeight = 0;
+    for (const checked of RADIO_CHECKED) {
+      for (const state of RADIO_STATES) {
+        const child = componentSet.children.find((node) => {
+          if (node.type !== "COMPONENT") return false;
+          const props = parseRadioVariantName(node.name);
+          return (
+            props &&
+            props.variant === variant &&
+            props.checked === checked &&
+            props.state === state
+          );
+        });
+        if (!child) continue;
+        child.x = x;
+        child.y = y;
+        x += child.width + 40;
+        rowHeight = Math.max(rowHeight, child.height);
+      }
+    }
+    if (rowHeight > 0) y += rowHeight + 40;
+  }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 function parseRadioVariantName(name) {
@@ -61954,14 +62019,18 @@ function parseRadioVariantName(name) {
     values[key] = value;
   }
 
+  // A variant from before the Variant axis (GAP-158) is a Default one.
+  const variant = values.Variant || "Default";
   if (
     RADIO_CHECKED.indexOf(values.Checked) === -1 ||
-    RADIO_STATES.indexOf(values.State) === -1
+    RADIO_STATES.indexOf(values.State) === -1 ||
+    RADIO_VARIANTS.indexOf(variant) === -1
   ) {
     return null;
   }
 
   return {
+    variant,
     checked: values.Checked,
     state: values.State,
   };
@@ -61969,28 +62038,29 @@ function parseRadioVariantName(name) {
 
 async function updateRadioVariant(
   component,
-  { checked, state, variableByName, fonts, stats },
+  { variant = "Default", checked, state, variableByName, fonts, stats },
 ) {
   const config = radioConfig(checked, state);
 
-  component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  component.name = `Checked=${checked}, State=${state}, Variant=${variant}`;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
+
+  if (variant === "Card" || variant === "Tile") {
+    await syncRadioBoxVariantChildren({
+      component,
+      variant,
+      checked,
+      state,
+      config,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
+  setControlRowFrame(component, "Radio");
 
   await syncRadioVariantChildren({
     component,
@@ -62053,21 +62123,7 @@ async function updateSwitchVariant(
   const config = switchConfig(checked, state);
 
   component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  setControlRowFrame(component, "Switch");
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
 
@@ -70005,7 +70061,7 @@ async function syncCheckboxVariantChildren({
   fonts,
   stats,
 }) {
-  let control = directChildNamed(component, "Checkbox Control");
+  let control = findControlRowPart(component, "Checkbox Control");
   if (control && control.type !== "FRAME") {
     control.remove();
     control = null;
@@ -70061,7 +70117,7 @@ async function syncCheckboxVariantChildren({
     stats,
   });
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -70084,8 +70140,17 @@ async function syncCheckboxVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(control);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Checkbox",
+    control: control,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
 }
 
 async function syncCheckboxMark(control, config, variableByName, stats) {
@@ -70190,7 +70255,7 @@ async function syncRadioVariantChildren({
   fonts,
   stats,
 }) {
-  let control = directChildNamed(component, "Radio Control");
+  let control = findControlRowPart(component, "Radio Control");
   if (control && control.type !== "FRAME") {
     control.remove();
     control = null;
@@ -70254,7 +70319,7 @@ async function syncRadioVariantChildren({
 
   bindRadioGeometryVariables(component, control, dot, variableByName, stats);
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -70277,8 +70342,17 @@ async function syncRadioVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(control);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Radio",
+    control: control,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
 }
 
 async function syncSwitchVariantChildren({
@@ -70290,7 +70364,7 @@ async function syncSwitchVariantChildren({
   fonts,
   stats,
 }) {
-  let track = directChildNamed(component, "Switch Track");
+  let track = findControlRowPart(component, "Switch Track");
   if (track && track.type !== "FRAME") {
     track.remove();
     track = null;
@@ -70363,7 +70437,7 @@ async function syncSwitchVariantChildren({
 
   bindSwitchGeometryVariables(component, track, thumb, variableByName, stats);
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -70386,8 +70460,573 @@ async function syncSwitchVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(track);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Switch",
+    control: track,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
+}
+
+// GAP-162: Checkbox, Switch and a Default radio draw a label row and, under
+// it, a description; Switch can say its state in words beside its track. The
+// component is a column: the Label Row (the control, Switch's State Label and
+// the label) and the Description Row, indented to start under the label. The
+// column is at least 44 tall (the X/height/default token, now its minimum)
+// and centred in it, so without a description the row draws as it did, and
+// with one the control stays beside the label's line, as React's items-start
+// row draws it. Switch's column has no gap: the track is 24 and the label 20,
+// so the description starts 24 down, as React's does.
+function setControlRowFrame(component, kind) {
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "CENTER";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = kind === "Switch" ? 0 : 2;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(176, 44);
+  component.minHeight = 44;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.opacity = 1;
+}
+
+// A part of a control's row: in its Label Row now, or, in a variant drawn
+// before GAP-162, a direct child of the component. Found either way, it is
+// moved into the row rather than drawn again, so its node id survives.
+function findControlRowPart(component, name) {
+  const direct = directChildNamed(component, name);
+  if (direct) return direct;
+  const row = directChildNamed(component, "Label Row");
+  return row ? directChildNamed(row, name) : null;
+}
+
+function ensureControlRowFrame(parent, name) {
+  let frame = directChildNamed(parent, name);
+  if (frame && frame.type !== "FRAME") {
+    frame.remove();
+    frame = null;
+  }
+  if (!frame) {
+    frame = figma.createFrame();
+    frame.name = name;
+  }
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  frame.cornerRadius = KOZMOS_RADIUS.none;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  return frame;
+}
+
+function ensureControlRowText(parent, name) {
+  let text = directChildNamed(parent, name);
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = name;
+  }
+  return text;
+}
+
+// The muted words a control carries beside its label: React's text-sm
+// leading-5 text-muted-foreground, 14/20 regular, foreground/400.
+async function applyControlMutedTypography(
+  text,
+  fonts,
+  state,
+  variableByName,
+  stats,
+) {
+  text.fontName = fonts.regular;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  await applyTextStyleToNodeAsync(text, "fieldText", stats);
+  text.fills = [
+    paintFromVariable(
+      state === "Disabled" ? "Colors/foreground/500" : "Colors/foreground/400",
+      state === "Disabled" ? "#747B8B" : "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+}
+
+async function syncControlTextRows({
+  component,
+  kind,
+  control,
+  label,
+  checked,
+  state,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const row = ensureControlRowFrame(component, "Label Row");
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 8;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "control-label-row");
+  row.appendChild(control);
+
+  if (kind === "Switch") {
+    const words = ensureControlRowText(row, "State Label");
+    await applyControlMutedTypography(
+      words,
+      fonts,
+      state,
+      variableByName,
+      stats,
+    );
+    words.textAutoResize = "WIDTH_AND_HEIGHT";
+    words.characters = checked === "Checked" ? "On" : "Off";
+    words.textAlignVertical = "CENTER";
+    words.visible = false;
+    words.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-state-label");
+    row.appendChild(words);
+  }
+  row.appendChild(label);
+  component.appendChild(row);
+
+  // The description starts under the label: the control's width and the
+  // row's gap in from the edge.
+  const indent = (kind === "Switch" ? 44 : 20) + 8;
+  const descriptionRow = ensureControlRowFrame(component, "Description Row");
+  descriptionRow.layoutMode = "HORIZONTAL";
+  descriptionRow.primaryAxisSizingMode = "FIXED";
+  descriptionRow.counterAxisSizingMode = "AUTO";
+  descriptionRow.primaryAxisAlignItems = "MIN";
+  descriptionRow.counterAxisAlignItems = "MIN";
+  descriptionRow.itemSpacing = 0;
+  descriptionRow.paddingLeft = indent;
+  descriptionRow.layoutAlign = "STRETCH";
+  descriptionRow.visible = false;
+  descriptionRow.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "control-description-row",
+  );
+  const description = ensureControlRowText(descriptionRow, "Description Text");
+  await applyControlMutedTypography(
+    description,
+    fonts,
+    state,
+    variableByName,
+    stats,
+  );
+  description.characters = "Description";
+  description.layoutGrow = 1;
+  description.textAutoResize = "HEIGHT";
+  descriptionRow.appendChild(description);
+  component.appendChild(descriptionRow);
+
+  // X/height/default is the column's minimum now, not its height, and the
+  // label row carries X/gap: the column's own gap is the 2 (or 0) above.
+  clearBoundVariable(component, "height", stats);
+  clearBoundVariable(component, "itemSpacing", stats);
+  component.itemSpacing = kind === "Switch" ? 0 : 2;
+  bindFloatVariable(
+    component,
+    "minHeight",
+    `${kind}/height/default`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(row, "itemSpacing", `${kind}/gap`, variableByName, stats);
+}
+
+// Description Text and Show Description on Checkbox, Radio and Switch
+// (GAP-162); Show State Label on Switch; Show Media on Radio's cards and
+// tiles (GAP-158). Each boolean is off by default but Show Media, so a placed
+// control draws as it did.
+function configureControlDescriptionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Description",
+    stats,
+  );
+  const name = canonicalComponentSetName(componentSet.name);
+  // A Default variant's description is a row, indented under the label; a
+  // card's and a tile's is the text itself.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Row",
+    "Show Description",
+    false,
+    stats,
+  );
+  if (name === "Radio") {
+    // A card's or a tile's description is the text itself, in no row; the
+    // Default variants' text binds too, inside its row, to the same effect.
+    configureNamedBooleanProperty(
+      componentSet,
+      "Description Text",
+      "Show Description",
+      false,
+      stats,
+    );
+    configureNamedBooleanProperty(
+      componentSet,
+      "Media",
+      "Show Media",
+      true,
+      stats,
+    );
+  }
+  if (name === "Switch") {
+    configureNamedBooleanProperty(
+      componentSet,
+      "State Label",
+      "Show State Label",
+      false,
+      stats,
+    );
+  }
+}
+
+// GAP-158: a radio drawn as a box. Card: a column 240 wide, 12 in, 12 apart:
+// the Media (an image's place, 80 tall, on muted) over the Body (the ring and
+// a column of the title and the description). Tile: a column 112 wide, at
+// least 96 tall, everything centred: the Media (an icon), the title and the
+// description, 12/16; chosen, a check badge 8 in from its top-end corner.
+// The edge is Border/Subtle, theme 600 and 2 wide when chosen (React's 1px
+// border and the 1px outline inside it), danger 600 on error; disabled, the
+// whole box is at half, as React's disabled:opacity-50 draws it.
+function radioBoxConfig(variant, checked, state) {
+  const isChecked = checked === "Checked";
+  const isError = state === "Error";
+  return {
+    edge: isError
+      ? "Colors/emotional/danger/600"
+      : isChecked
+        ? "Colors/theme/600"
+        : "Border/Subtle",
+    edgeFallback: isError ? "#D41C42" : isChecked ? "#1051E8" : "#C7CAD1",
+    edgeWidth: isChecked ? 2 : 1,
+    badge: isError ? "Colors/emotional/danger/600" : THEME_FILL.name,
+    badgeFallback: isError ? "#D41C42" : THEME_FILL.fallback,
+    opacity: state === "Disabled" ? 0.5 : 1,
+  };
+}
+
+async function syncRadioBoxVariantChildren({
+  component,
+  variant,
+  checked,
+  state,
+  config,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const tile = variant === "Tile";
+  const box = radioBoxConfig(variant, checked, state);
+
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = tile ? "CENTER" : "MIN";
+  component.counterAxisAlignItems = tile ? "CENTER" : "MIN";
+  component.itemSpacing = tile ? 4 : 12;
+  component.paddingLeft = 12;
+  component.paddingRight = 12;
+  component.paddingTop = 12;
+  component.paddingBottom = 12;
+  component.resizeWithoutConstraints(
+    tile ? RADIO_TILE_WIDTH : RADIO_CARD_WIDTH,
+    tile ? RADIO_TILE_MIN_HEIGHT : 160,
+  );
+  component.minHeight = tile ? RADIO_TILE_MIN_HEIGHT : null;
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.clipsContent = true;
+  component.opacity = box.opacity;
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [
+    paintFromVariable(box.edge, box.edgeFallback, variableByName, stats),
+  ];
+  component.strokeWeight = box.edgeWidth;
+  component.strokeAlign = "INSIDE";
+
+  // Media: a card's image place, a tile's icon. Map 01 stands in for either.
+  const media = ensureControlRowFrame(component, "Media");
+  media.layoutMode = "HORIZONTAL";
+  media.primaryAxisAlignItems = "CENTER";
+  media.counterAxisAlignItems = "CENTER";
+  media.itemSpacing = 0;
+  if (tile) {
+    media.primaryAxisSizingMode = "AUTO";
+    media.counterAxisSizingMode = "AUTO";
+    media.layoutAlign = "INHERIT";
+  } else {
+    media.primaryAxisSizingMode = "FIXED";
+    media.counterAxisSizingMode = "FIXED";
+    media.resizeWithoutConstraints(RADIO_CARD_WIDTH - 24, 80);
+    media.layoutAlign = "STRETCH";
+    media.cornerRadius = KOZMOS_RADIUS.control;
+    media.clipsContent = true;
+    media.fills = [
+      paintFromVariable(
+        "Colors/background/100",
+        "#F2F3F5",
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-media");
+  let glyph = directChildNamed(media, "Media Icon");
+  if (!glyph) {
+    const icon = await findKozmosIconSourceComponent("map-01");
+    if (icon) {
+      glyph = icon.createInstance();
+      glyph.name = "Media Icon";
+    }
+  }
+  if (glyph) {
+    const size = tile ? 24 : 32;
+    glyph.resize(size, size);
+    if (glyph.type === "INSTANCE") {
+      applyIconColorOverrides(
+        glyph,
+        tile ? "Colors/foreground/0" : "Colors/foreground/400",
+        tile ? "#000000" : "#5D626F",
+        variableByName,
+        stats,
+      );
+    }
+    media.appendChild(glyph);
+  }
+  component.appendChild(media);
+
+  // The title and the description: in the Body beside the ring on a card, in
+  // the box's own column on a tile.
+  let holder = component;
+  const staleBody = directChildNamed(component, "Body");
+  if (tile) {
+    if (staleBody) staleBody.remove();
+  } else {
+    const body = ensureControlRowFrame(component, "Body");
+    body.layoutMode = "HORIZONTAL";
+    body.primaryAxisSizingMode = "FIXED";
+    body.counterAxisSizingMode = "AUTO";
+    body.primaryAxisAlignItems = "MIN";
+    body.counterAxisAlignItems = "MIN";
+    body.itemSpacing = 8;
+    body.layoutAlign = "STRETCH";
+    body.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-card-body");
+    const ring = await syncRadioRing(body, {
+      checked,
+      state,
+      config,
+      variableByName,
+      stats,
+    });
+    body.appendChild(ring);
+    const column = ensureControlRowFrame(body, "Text");
+    column.layoutMode = "VERTICAL";
+    column.primaryAxisSizingMode = "AUTO";
+    column.counterAxisSizingMode = "FIXED";
+    column.itemSpacing = 2;
+    column.layoutGrow = 1;
+    body.appendChild(column);
+    component.appendChild(body);
+    holder = column;
+  }
+
+  const title = ensureControlRowText(holder, "Label Text");
+  await applyRadioLabelTypography(title, fonts, variableByName, stats);
+  title.characters = "Radio";
+  title.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  title.textAlignHorizontal = tile ? "CENTER" : "LEFT";
+  if (tile) {
+    title.textAutoResize = "WIDTH_AND_HEIGHT";
+    title.layoutAlign = "INHERIT";
+  } else {
+    title.layoutAlign = "STRETCH";
+    title.textAutoResize = "HEIGHT";
+  }
+  holder.appendChild(title);
+
+  const description = ensureControlRowText(holder, "Description Text");
+  if (tile) {
+    description.fontName = fonts.regular;
+    description.fontSize = 12;
+    description.lineHeight = { unit: "PIXELS", value: 16 };
+    await applyTextStyleToNodeAsync(description, "fieldMeta", stats);
+    description.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+    description.textAutoResize = "WIDTH_AND_HEIGHT";
+    description.textAlignHorizontal = "CENTER";
+    description.layoutAlign = "INHERIT";
+  } else {
+    await applyControlMutedTypography(
+      description,
+      fonts,
+      "Default",
+      variableByName,
+      stats,
+    );
+    description.layoutAlign = "STRETCH";
+    description.textAutoResize = "HEIGHT";
+    description.textAlignHorizontal = "LEFT";
+  }
+  description.characters = "Description";
+  // Show Description binds this text itself: a box has no Description Row.
+  description.visible = false;
+  description.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "radio-box-description",
+  );
+  holder.appendChild(description);
+
+  // The tile's check: drawn only when chosen, out of the column's flow.
+  let badge = directChildNamed(component, "Check Badge");
+  if (!tile || checked !== "Checked") {
+    if (badge) badge.remove();
+  } else {
+    if (badge && badge.type !== "FRAME") {
+      badge.remove();
+      badge = null;
+    }
+    if (!badge) {
+      badge = figma.createFrame();
+      badge.name = "Check Badge";
+    }
+    badge.layoutMode = "NONE";
+    badge.resizeWithoutConstraints(20, 20);
+    badge.cornerRadius = KOZMOS_RADIUS.pill;
+    badge.clipsContent = false;
+    badge.fills = [
+      paintFromVariable(box.badge, box.badgeFallback, variableByName, stats),
+    ];
+    badge.strokes = [];
+    badge.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-tile-check");
+    let mark = directChildNamed(badge, "Checkbox Mark");
+    if (!mark) {
+      const iconComponent = await findKozmosIconSourceComponent("check");
+      mark = iconComponent
+        ? iconComponent.createInstance()
+        : createFallbackCheckboxMark(
+            {
+              mark: THEME_FILL_FOREGROUND.name,
+              markFallback: THEME_FILL_FOREGROUND.fallback,
+            },
+            variableByName,
+            stats,
+          );
+      mark.name = "Checkbox Mark";
+    }
+    mark.resize(14, 14);
+    mark.x = 3;
+    mark.y = 3;
+    if (mark.type === "INSTANCE") {
+      applyIconColorOverrides(
+        mark,
+        THEME_FILL_FOREGROUND.name,
+        THEME_FILL_FOREGROUND.fallback,
+        variableByName,
+        stats,
+      );
+    }
+    badge.appendChild(mark);
+    component.appendChild(badge);
+    badge.layoutPositioning = "ABSOLUTE";
+    badge.x = RADIO_TILE_WIDTH - 8 - 20;
+    badge.y = 8;
+    try {
+      badge.constraints = { horizontal: "MAX", vertical: "MIN" };
+    } catch (_error) {
+      // Older runtimes can refuse constraints on a child of auto layout.
+    }
+  }
+}
+
+// The radio's ring and, chosen, its dot: the Default variant's Radio Control,
+// drawn in a card's Body.
+async function syncRadioRing(
+  parent,
+  { checked, state, config, variableByName, stats },
+) {
+  let control = directChildNamed(parent, "Radio Control");
+  if (control && control.type !== "FRAME") {
+    control.remove();
+    control = null;
+  }
+  if (!control) {
+    control = figma.createFrame();
+    control.name = "Radio Control";
+  }
+  control.layoutMode = "NONE";
+  control.resizeWithoutConstraints(20, 20);
+  control.cornerRadius = KOZMOS_RADIUS.pill;
+  control.clipsContent = false;
+  control.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-control");
+  control.fills = [];
+  control.strokes = [
+    paintFromVariable(
+      state === "Disabled" ? "Border/Input" : config.controlStroke,
+      state === "Disabled" ? "#747B8B" : config.controlStrokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  control.strokeWeight = 1;
+  removeGeneratedButtonChild(control, "Radio Dot", checked !== "Checked");
+  if (checked === "Checked") {
+    let dot = directChildNamed(control, "Radio Dot");
+    if (dot && dot.type !== "ELLIPSE") {
+      dot.remove();
+      dot = null;
+    }
+    if (!dot) {
+      dot = figma.createEllipse();
+      dot.name = "Radio Dot";
+    }
+    dot.resize(10, 10);
+    dot.x = 5;
+    dot.y = 5;
+    dot.fills = [
+      paintFromVariable(config.dot, config.dotFallback, variableByName, stats),
+    ];
+    dot.strokes = [];
+    dot.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-dot");
+    control.appendChild(dot);
+  }
+  return control;
 }
 
 async function syncInputVariantChildren({

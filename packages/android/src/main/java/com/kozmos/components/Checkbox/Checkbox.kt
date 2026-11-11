@@ -1,5 +1,6 @@
 package com.kozmos.components.checkbox
 
+import com.kozmos.components.KozmosControlText
 import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +27,8 @@ fun KozmosCheckbox(
     label: String? = null,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    error: Boolean = false
+    error: Boolean = false,
+    description: String? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     // Checked, the box is the theme fill and its check the theme foreground,
@@ -49,8 +50,11 @@ fun KozmosCheckbox(
     // and its check, and the whole of it, label too, is drawn at half, as
     // React's `disabled:opacity-50` draws it, not in Material's grey
     // (decision 59).
+    // With a description the box sits on the label's first line, not halfway
+    // down the two; the row is still one node, its label read first and the
+    // description after it (GAP-162).
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (description != null) Alignment.Top else Alignment.CenterVertically,
         modifier = modifier
             .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
@@ -74,13 +78,9 @@ fun KozmosCheckbox(
             )
         )
         
-        if (label != null) {
+        if (label != null || description != null) {
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = labelColor
-            )
+            KozmosControlText(label = label, labelColor = labelColor, description = description)
         }
     }
 }
