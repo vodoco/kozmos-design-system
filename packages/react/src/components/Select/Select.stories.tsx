@@ -148,3 +148,30 @@ export const WithError: Story = {
     </Select>
   ),
 };
+
+// GAP-164: a count in each option, at its end before the check. It is read
+// with the option's words, and the closed select shows the words alone.
+export const OptionCounts: Story = {
+  name: "Option counts",
+  render: () => (
+    <Select defaultValue="everything">
+      <SelectTrigger className="w-56" aria-label="Content">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="everything" count={128}>
+          All Content
+        </SelectItem>
+        <SelectItem value="poi" count={96}>
+          POI
+        </SelectItem>
+        <SelectItem value="featured" count={12}>
+          Featured POIs
+        </SelectItem>
+        <SelectItem value="interior" count={32}>
+          Interior asset
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  ),
+};

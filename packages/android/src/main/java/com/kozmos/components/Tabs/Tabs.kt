@@ -4,6 +4,7 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -12,21 +13,27 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.icon.KozmosIconSize
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosShadows
 import com.kozmos.tokens.KozmosThemeTokens
@@ -41,6 +48,10 @@ private val TabsInset = KozmosDimensions.primitivesLayoutSpacing50
 
 /** The segment's least height: 36, in a 44dp track. React's list is 40; Figma's is 44, as here. */
 private val TabsSegmentMinHeight = 36.dp
+
+/** A tab's icon (GAP-152): 20dp, 4dp over its label, as React's and SwiftUI's. */
+private val TabsIconSize = KozmosIconSize.Md.dp
+private val TabsIconGap = KozmosDimensions.primitivesLayoutSpacing50
 
 @Composable
 fun KozmosTabs(
@@ -95,6 +106,11 @@ fun KozmosTabsList(
  *
  * TalkBack reads it as React's `tab` with `aria-selected`: a tab, selected
  * or not selected.
+ *
+ * [icon], when given, is drawn 20dp over the title, 4dp above it and centred
+ * with it (GAP-152); the segment keeps its padding, and the track grows to
+ * hold it. It takes the title's colour through [LocalContentColor] and is
+ * decorative: TalkBack reads the tab by its title alone.
  */
 @Composable
 fun RowScope.KozmosTabsTrigger(
@@ -102,7 +118,8 @@ fun RowScope.KozmosTabsTrigger(
     title: String,
     selectedValue: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: (@Composable () -> Unit)? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     val isSelected = value == selectedValue
@@ -140,16 +157,38 @@ fun RowScope.KozmosTabsTrigger(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = title,
-            color = if (isSelected) KozmosThemeTokens.primitivesColorsForeground0 else KozmosThemeTokens.primitivesColorsForeground400,
-            style = MaterialTheme.typography.labelLarge,
-            textAlign = TextAlign.Center,
-            // One line, as React's `whitespace-nowrap`.
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        val ink = if (isSelected) KozmosThemeTokens.primitivesColorsForeground0 else KozmosThemeTokens.primitivesColorsForeground400
+        if (icon == null) {
+            TabTitle(title, ink)
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(TabsIconGap)
+            ) {
+                // Decorative, so a described icon cannot add to the title.
+                Box(
+                    modifier = Modifier.size(TabsIconSize).clearAndSetSemantics {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    CompositionLocalProvider(LocalContentColor provides ink) { icon() }
+                }
+                TabTitle(title, ink)
+            }
+        }
     }
+}
+
+@Composable
+private fun TabTitle(title: String, color: Color) {
+    Text(
+        text = title,
+        color = color,
+        style = MaterialTheme.typography.labelLarge,
+        textAlign = TextAlign.Center,
+        // One line, as React's `whitespace-nowrap`.
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
 }
 
 @Composable

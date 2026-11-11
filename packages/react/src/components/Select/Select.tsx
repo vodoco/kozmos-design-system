@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 
 import { cn, mergeAriaIds } from "../../utils";
 
+import { Counter } from "../Counter";
 import { FieldWrapper } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
@@ -198,28 +199,57 @@ const SelectLabel = React.forwardRef<
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
+export interface SelectItemProps extends React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Item
+> {
+  /**
+   * A count beside the option's words (GAP-164), as a neutral Counter at the
+   * row's end. It sits outside the item text, so the closed select shows the
+   * words alone, and the option is read as its words then its count.
+   */
+  count?: React.ReactNode;
+}
+
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  // Combobox's row (owned-selection.css): the words, then the check at the
-  // end, a light row under the pointer or the keyboard.
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
-      className,
-    )}
-    {...props}
-  >
-    <span className="kozmos-reset kozmos-option-content">
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </span>
-    <SelectPrimitive.ItemIndicator asChild>
-      <Check aria-hidden="true" className="kozmos-reset kozmos-option-check" />
-    </SelectPrimitive.ItemIndicator>
-  </SelectPrimitive.Item>
-));
+  SelectItemProps
+>(({ className, children, count, ...props }, ref) => {
+  const textId = React.useId();
+  const countId = React.useId();
+  const hasCount = count !== undefined && count !== null && count !== false;
+  return (
+    // Combobox's row (owned-selection.css): the words, then the check at the
+    // end, a light row under the pointer or the keyboard.
+    <SelectPrimitive.Item
+      ref={ref}
+      className={cn(
+        "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
+        className,
+      )}
+      // Radix names the option by its item text alone; with a count the
+      // name is the text, then the count.
+      {...(hasCount ? { "aria-labelledby": `${textId} ${countId}` } : null)}
+      {...props}
+    >
+      <span className="kozmos-reset kozmos-option-content">
+        <SelectPrimitive.ItemText {...(hasCount ? { id: textId } : null)}>
+          {children}
+        </SelectPrimitive.ItemText>
+      </span>
+      {hasCount ? (
+        <Counter id={countId} className="shrink-0">
+          {count}
+        </Counter>
+      ) : null}
+      <SelectPrimitive.ItemIndicator asChild>
+        <Check
+          aria-hidden="true"
+          className="kozmos-reset kozmos-option-check"
+        />
+      </SelectPrimitive.ItemIndicator>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<

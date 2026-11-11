@@ -1,19 +1,79 @@
-import { test, expect } from '@playwright/experimental-ct-react';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../src/components/Select';
-import React from 'react';
+import { test, expect } from "@playwright/experimental-ct-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "../src/components/Select";
+import { ThemeProvider } from "../src/components/ThemeProvider";
+import React from "react";
 
-test.describe('Select Behavioral CT', () => {
-    test('dropdown opens, item selection updates value, error prop sets aria-invalid', async ({ mount, page }) => {
-        const component = await mount(<Select>
-            <SelectTrigger error={true}><SelectValue placeholder="Choose" /></SelectTrigger>
-            <SelectContent>
-                <SelectItem value="1">Option 1</SelectItem>
-            </SelectContent>
-        </Select>);
-        const trigger = component.locator('button[role="combobox"]');
-        await expect(trigger).toHaveAttribute('aria-invalid', 'true');
-        await trigger.click();
-        await page.locator('text=Option 1').click();
-        await expect(trigger).toContainText('Option 1');
-    });
+test.describe("Select Behavioral CT", () => {
+  test("dropdown opens, item selection updates value, error prop sets aria-invalid", async ({
+    mount,
+    page,
+  }) => {
+    const component = await mount(
+      <Select>
+        <SelectTrigger error={true}>
+          <SelectValue placeholder="Choose" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="1">Option 1</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    const trigger = component.locator('button[role="combobox"]');
+    await expect(trigger).toHaveAttribute("aria-invalid", "true");
+    await trigger.click();
+    await page.locator("text=Option 1").click();
+    await expect(trigger).toContainText("Option 1");
+  });
+
+  // GAP-164: a count at the option's end, before its check, and never in
+  // the closed select.
+  test("an option shows its count at its end and the closed select its words alone", async ({
+    mount,
+    page,
+  }) => {
+    const component = await mount(
+      <ThemeProvider theme="light">
+        <Select defaultValue="poi">
+          <SelectTrigger aria-label="Content">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" count={128}>
+              Everything
+            </SelectItem>
+            <SelectItem value="poi" count={96}>
+              POI
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </ThemeProvider>,
+    );
+    const trigger = component.locator('button[role="combobox"]');
+    await expect(trigger).toHaveText("POI");
+    await trigger.click();
+    const option = page.getByRole("option", { name: "POI 96" });
+    await expect(option).toBeVisible();
+    // The list zooms in as it opens: measure it at rest.
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((a) => a.finished)),
+    );
+    const count = (await option
+      .locator('[data-slot="counter"]')
+      .boundingBox())!;
+    const check = (await option.locator(".kozmos-option-check").boundingBox())!;
+    const words = (await option
+      .locator(".kozmos-option-content")
+      .boundingBox())!;
+    expect(count.height).toBe(20);
+    expect(count.x).toBeGreaterThanOrEqual(words.x + words.width);
+    expect(check.x).toBeGreaterThanOrEqual(count.x + count.width);
+    await page.getByRole("option", { name: "Everything 128" }).click();
+    await expect(trigger).toHaveText("Everything");
+  });
 });

@@ -11,6 +11,13 @@ import {
 import { Label } from "../Label/Label";
 import { Input } from "../Input/Input";
 import { Button } from "../Button/Button";
+import {
+  Building01,
+  Cube01,
+  LayersThree01,
+  MarkerPin01,
+  Package,
+} from "@kozmos-ds/icons";
 
 const meta = {
   id: "components-tabs",
@@ -78,4 +85,41 @@ export const Default: Story = {
       </TabsContent>
     </Tabs>
   ),
+};
+
+// GAP-152: the type picker's family tabs, each an icon over its words. The
+// active tab stays the raised segment (decision 65); the track grows to hold
+// the stack.
+const typeFamilies = [
+  { value: "everything", label: "Everything", Icon: LayersThree01 },
+  { value: "poi", label: "POI", Icon: MarkerPin01 },
+  { value: "interior", label: "Interior asset", Icon: Package },
+  { value: "structural", label: "Structural", Icon: Building01 },
+  { value: "virtual", label: "Virtual", Icon: Cube01 },
+];
+
+function TypeFamilyTabs({ dir }: { dir?: "ltr" | "rtl" }) {
+  return (
+    <div dir={dir}>
+      <Tabs defaultValue="poi" dir={dir}>
+        <TabsList aria-label="Type family">
+          {typeFamilies.map(({ value, label, Icon }) => (
+            <TabsTrigger key={value} value={value} icon={<Icon />}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+    </div>
+  );
+}
+
+export const IconOverLabel: Story = {
+  name: "Icon over label",
+  render: () => <TypeFamilyTabs />,
+};
+
+export const IconOverLabelRightToLeft: Story = {
+  name: "Icon over label, right to left",
+  render: () => <TypeFamilyTabs dir="rtl" />,
 };

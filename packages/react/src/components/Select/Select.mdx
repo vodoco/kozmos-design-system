@@ -130,3 +130,11 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
 
 ### Default
 <Canvas of={SelectStories.Default} />
+
+### Option counts
+
+`SelectItem` takes a `count`, drawn as a neutral Counter at the option's end, before its check (GAP-164). It sits outside the item text, so the closed select shows the option's words alone, and the option is read as its words then its count ("POI 96"). Open the select to see the counts.
+
+<Canvas of={SelectStories.OptionCounts} />
+
+SwiftUI's `KozmosSelectItem(value:label:count:selection:)` shows the count as the menu item's subtitle and is read "POI, 96"; Compose's `KozmosSelectItem(..., count = 96)` draws a neutral `KozmosCounter` at the row's end. On every platform the closed select shows the label alone.

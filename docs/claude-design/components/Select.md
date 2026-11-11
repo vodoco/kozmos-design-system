@@ -144,7 +144,13 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## SelectItem
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.SelectItemProps & React.RefAttributes<HTMLDivElement>, "ref">`.
+It forwards its ref to `HTMLDivElement`. Its props are `SelectItemProps`, which extends `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>`.
+
+- `count`: `React.ReactNode`, optional.
+
+  A count beside the option's words (GAP-164), as a neutral Counter at the
+  row's end. It sits outside the item text, so the closed select shows the
+  words alone, and the option is read as its words then its count.
 
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional.

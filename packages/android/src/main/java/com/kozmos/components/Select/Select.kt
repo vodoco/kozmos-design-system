@@ -31,6 +31,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.combobox.selectionFieldColors
+import com.kozmos.components.counter.CounterTone
+import com.kozmos.components.counter.KozmosCounter
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -143,6 +145,15 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     }
 }
 
+/**
+ * One option in a [KozmosSelect]'s menu: its [label], and, with [count], the
+ * neutral Counter at the row's end, outside the label (GAP-164). The row is
+ * one TalkBack stop that reads the label with its count, "Café, 12".
+ *
+ * The count belongs to the open list only: pass [KozmosSelectTrigger] the
+ * label alone as its value, so the closed select never repeats it. Unset,
+ * the option is drawn as it always was.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KozmosSelectItem(
@@ -150,11 +161,15 @@ fun KozmosSelectItem(
     label: String,
     onValueChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    count: Int? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
     DropdownMenuItem(
         text = { Text(label) },
+        // The item merges its children, so TalkBack reads the counter's
+        // number after the label, in one stop.
+        trailingIcon = count?.let { { KozmosCounter(text = it.toString(), tone = CounterTone.Neutral) } },
         onClick = {
             trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Select", eventName = "select_value_changed", properties = mapOf("value" to value.toString())))
             onValueChange(value)

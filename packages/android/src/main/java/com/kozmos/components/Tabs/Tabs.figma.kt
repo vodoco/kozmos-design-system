@@ -29,6 +29,26 @@ class KozmosTabsConnect {
     @FigmaProperty(FigmaType.Text, "Tab 4 Text")
     val tab4Text: String = "Settings"
 
+    // GAP-152: an icon over each label. Each Tab N Icon is the library
+    // icon swapped in, so the snippet shows that icon inside the slot.
+    @FigmaProperty(FigmaType.Enum, "Content")
+    val iconOverLabel: Boolean = Figma.mapping(
+        "Label" to false,
+        "Icon Over Label" to true
+    )
+
+    @FigmaProperty(FigmaType.Instance, "Tab 1 Icon")
+    val tab1Icon: @Composable () -> Unit = {}
+
+    @FigmaProperty(FigmaType.Instance, "Tab 2 Icon")
+    val tab2Icon: @Composable () -> Unit = {}
+
+    @FigmaProperty(FigmaType.Instance, "Tab 3 Icon")
+    val tab3Icon: @Composable () -> Unit = {}
+
+    @FigmaProperty(FigmaType.Instance, "Tab 4 Icon")
+    val tab4Icon: @Composable () -> Unit = {}
+
     @Composable
     fun ComponentExample() {
         KozmosTabs {
@@ -37,25 +57,29 @@ class KozmosTabsConnect {
                     value = "one",
                     title = tab1Text,
                     selectedValue = activeValue,
-                    onValueChange = {}
+                    onValueChange = {},
+                    icon = if (iconOverLabel) { { tab1Icon } } else null
                 )
                 KozmosTabsTrigger(
                     value = "two",
                     title = tab2Text,
                     selectedValue = activeValue,
-                    onValueChange = {}
+                    onValueChange = {},
+                    icon = if (iconOverLabel) { { tab2Icon } } else null
                 )
                 KozmosTabsTrigger(
                     value = "three",
                     title = tab3Text,
                     selectedValue = activeValue,
-                    onValueChange = {}
+                    onValueChange = {},
+                    icon = if (iconOverLabel) { { tab3Icon } } else null
                 )
                 KozmosTabsTrigger(
                     value = "four",
                     title = tab4Text,
                     selectedValue = activeValue,
-                    onValueChange = {}
+                    onValueChange = {},
+                    icon = if (iconOverLabel) { { tab4Icon } } else null
                 )
             }
             KozmosTabsContent(

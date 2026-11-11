@@ -79,31 +79,66 @@ private struct KozmosTabBarTrait: ViewModifier {
 ///
 /// The whole 44pt height of the track is the tab's target, the segment's 4pt
 /// inset included.
+///
+/// With an `icon` (GAP-152), the icon sits 20pt square, 4pt over the title,
+/// both centred, in the title's colour, and the track grows to hold the
+/// taller segment. The tab is still named by its title alone: the icon is
+/// hidden from VoiceOver.
 public struct KozmosTabsTrigger: View {
     let value: String
     let title: String
     @Binding var selection: String
+    private let icon: AnyView?
     @Environment(\.kozmosAnalytics) var trackEvent
     
     public init(value: String, title: String, selection: Binding<String>) {
         self.value = value
         self.title = title
         self._selection = selection
+        self.icon = nil
+    }
+
+    public init<Icon: View>(
+        value: String,
+        title: String,
+        selection: Binding<String>,
+        @ViewBuilder icon: () -> Icon
+    ) {
+        self.value = value
+        self.title = title
+        self._selection = selection
+        self.icon = AnyView(icon())
     }
     
     private var isSelected: Bool { selection == value }
+
+    private var ink: Color {
+        isSelected ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400
+    }
 
     public var body: some View {
         Button(action: {
             trackEvent(KozmosAnalyticsEvent(eventName: "tab_switched", component: "Tabs", properties: ["value": value]))
             selection = value
         }) {
-            Text(title)
-                .font(KozmosTypography.subheadline)
-                .fontWeight(.medium)
-                // One line, as React's `whitespace-nowrap`.
-                .lineLimit(1)
-                .foregroundColor(isSelected ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
+            VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                if let icon {
+                    icon
+                        .frame(width: KozmosIconSize.md.pointSize, height: KozmosIconSize.md.pointSize)
+                        // The title names the tab; an icon's own name would
+                        // be read before it.
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+                    .font(KozmosTypography.subheadline)
+                    .fontWeight(.medium)
+                    // One line, as React's `whitespace-nowrap`.
+                    .lineLimit(1)
+            }
+                .foregroundColor(ink)
+                // A KozmosIcon at `.default` takes the title's colour, as
+                // React's icon is currentColor.
+                .environment(\.kozmosIconHostInk, ink)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
                 .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight)

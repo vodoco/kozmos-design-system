@@ -8781,6 +8781,494 @@ section("Decision 65: Tabs draw React's raised segment");
   );
 }
 
+// --- Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132) -------
+
+// Tabs gains a Content axis: Label, today's triggers, and Icon Over Label, a
+// 20 icon 4 above the words, so a trigger is 6 + 20 + 4 + 20 + 6 = 56 and the
+// list, inside 4 all round, 64; each icon is Tab N Icon, an instance swap, in
+// its words' colour. Select gains Content: Closed, today's trigger, and Open,
+// the trigger with SelectContent under it, three rows of Combobox's, each
+// `[words] [count] [check]` with the count the neutral Counter, the counts
+// and words editable (Option N Text, Option N Count) and shown by Show
+// Counts. Both reach the file through Update: today's variants are renamed in
+// place, their node ids kept, and the new ones created beside them.
+section("Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132)");
+{
+  const ready =
+    Array.isArray(plugin.TABS_CONTENT) &&
+    Array.isArray(plugin.SELECT_CONTENT) &&
+    typeof plugin.createOptionCount === "function";
+  ok(
+    ready,
+    "Tabs has a Content axis, Select a Content axis, and a row count painter",
+  );
+  // Not gated on `ready`: run over a plugin without the axes, every
+  // assertion below fails on what it paints, rather than being skipped.
+  {
+    ok(
+      ready &&
+        plugin.TABS_CONTENT.join(",") === "Label,Icon Over Label" &&
+        plugin.SELECT_CONTENT.join(",") === "Closed,Open",
+      `the axes' values, Label first and Closed first (${ready ? `${plugin.TABS_CONTENT.join(", ")}; ${plugin.SELECT_CONTENT.join(", ")}` : "none"})`,
+    );
+    const floats = new Map(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+    );
+    const tokens = payloadVariables(
+      [...floats.keys()].concat([...variableByName.keys()]),
+    );
+    const iconsPage = () => {
+      const page = new MockNode("PAGE", "Icons");
+      for (const name of [
+        "home-line",
+        "info-circle",
+        "activity",
+        "clock",
+        "check",
+        "chevron-down",
+        "search-md",
+      ])
+        page.appendChild(mockIconComponent(name));
+      return page;
+    };
+    const own = (pages) => {
+      const mock = createFigmaMock({ pages });
+      mock.__kozmosVariables = tokens.variableByName;
+      return {
+        mock,
+        plugin: loadPlugin({
+          pluginPath: PLUGIN,
+          figma: mock,
+          append: `
+ensureComponentRuntimeVariables = async () => figma.__kozmosVariables;
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+        }),
+      };
+    };
+    const boundTo = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias && alias.id
+        ? String(alias.id).replace(/^VariableID:/, "")
+        : null;
+    };
+    const value = (name) => {
+      let token = floats.get(name);
+      let depth = 0;
+      while (token && token.alias && floats.get(token.alias) && depth < 8) {
+        token = floats.get(token.alias);
+        depth += 1;
+      }
+      return token && token.value;
+    };
+    const painter = own([new MockNode("PAGE", "Components"), iconsPage()]);
+    const paintTabs = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateTabsVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+
+    // Label is today's: 40, 32 triggers, no icon.
+    const label = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Label",
+    });
+    const labelTrigger = named(label, "Tab 1 Trigger");
+    ok(
+      label.name === "Count=Three, Active=Two, State=Default, Content=Label" &&
+        label.height === 40 &&
+        boundTo(label, "height") === "Tabs/list/height" &&
+        labelTrigger.height === 32 &&
+        boundTo(labelTrigger, "height") === "Tabs/trigger/height" &&
+        labelTrigger.layoutMode === "HORIZONTAL" &&
+        !label.findOne((node) => /^Tab \d+ Icon$/.test(node.name)),
+      `Content=Label draws as before: a 40 list of 32 triggers with no icon (${label.name}; ${label.height}, ${labelTrigger.height}, ${labelTrigger.layoutMode})`,
+    );
+
+    // Icon Over Label: 64, 56, the icon 20 and 4 above the words.
+    const stacked = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Icon Over Label",
+    });
+    ok(
+      stacked.name ===
+        "Count=Three, Active=Two, State=Default, Content=Icon Over Label" &&
+        stacked.height === 64 &&
+        boundTo(stacked, "height") === "Tabs/list/height/stacked" &&
+        value("Tabs/list/height/stacked") === 64,
+      `Icon Over Label's list is 64, bound to Tabs/list/height/stacked (${stacked.name}; ${stacked.height} through ${boundTo(stacked, "height")})`,
+    );
+    for (let n = 1; n <= 3; n += 1) {
+      const trigger = named(stacked, `Tab ${n} Trigger`);
+      const icon = named(trigger, `Tab ${n} Icon`);
+      const words = named(trigger, `Tab ${n} Text`);
+      const kids = trigger.children.filter((c) => c.name !== "Focus Ring");
+      const wordsPaint = boundVariableName(words.fills[0]);
+      ok(
+        trigger.height === 56 &&
+          boundTo(trigger, "height") === "Tabs/trigger/height/stacked" &&
+          value("Tabs/trigger/height/stacked") === 56 &&
+          trigger.layoutMode === "VERTICAL" &&
+          trigger.primaryAxisAlignItems === "CENTER" &&
+          trigger.counterAxisAlignItems === "CENTER" &&
+          trigger.paddingTop === 6 &&
+          trigger.paddingBottom === 6 &&
+          boundTo(trigger, "paddingTop") === "Tabs/trigger/padding/y" &&
+          trigger.itemSpacing === 4 &&
+          boundTo(trigger, "itemSpacing") === "Tabs/trigger/icon/gap" &&
+          kids[0] === icon &&
+          kids[1] === words,
+        `tab ${n} is 56, VERTICAL and centred, 6 above and below, its icon 4 above its words (${trigger.height}, ${trigger.layoutMode}, ${trigger.paddingTop}/${trigger.itemSpacing}, ${kids.map((c) => c.name).join(" > ")})`,
+      );
+      ok(
+        icon &&
+          icon.type === "INSTANCE" &&
+          icon.width === 20 &&
+          icon.height === 20 &&
+          boundTo(icon, "width") === "Tabs/trigger/icon/size" &&
+          value("Tabs/trigger/icon/size") === 20 &&
+          icon.mainComponent &&
+          icon.mainComponent.name ===
+            `Icon / ${["home-line", "info-circle", "activity"][n - 1]}` &&
+          icon.getSharedPluginData("kozmos_ds_importer", "foreground-token") ===
+            wordsPaint,
+        `tab ${n}'s icon is a 20 instance of ${icon && icon.mainComponent && icon.mainComponent.name}, in its words' ${wordsPaint} (${icon && icon.getSharedPluginData("kozmos_ds_importer", "foreground-token")})`,
+      );
+    }
+    const activeTrigger = named(stacked, "Tab 2 Trigger");
+    ok(
+      boundVariableName(activeTrigger.fills[0]) === "Colors/background/0" &&
+        JSON.stringify(activeTrigger.effects) ===
+          JSON.stringify([painter.plugin.elevationEffect("raised")]) &&
+        boundVariableName(named(stacked, "Tab 2 Text").fills[0]) ===
+          "Colors/foreground/0" &&
+        boundVariableName(named(stacked, "Tab 1 Text").fills[0]) ===
+          "Colors/foreground/400",
+      "stacked, the active tab keeps decision 65's raised segment, the others' words foreground/400",
+    );
+    const focus = await paintTabs({
+      count: "Two",
+      active: "One",
+      state: "Focus",
+      content: "Icon Over Label",
+    });
+    const focusRing = named(named(focus, "Tab 1 Trigger"), "Focus Ring");
+    ok(
+      focusRing && focusRing.height === 56 + 4 * 2,
+      `a stacked tab's ring is 4 outside its 56 (${focusRing && focusRing.height})`,
+    );
+
+    // Select: Closed is today's trigger; Open adds the list with counts.
+    const paintSelect = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateSelectVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+    const closed = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Closed",
+    });
+    ok(
+      closed.name === "State=Default, Status=Default, Content=Closed" &&
+        closed.children.map((c) => c.name).join(",") === "Select Trigger" &&
+        closed.height === 44 &&
+        closed.itemSpacing === 0,
+      `Content=Closed is the trigger alone, 44 (${closed.name}; ${closed.children.map((c) => c.name).join(", ")}; ${closed.height})`,
+    );
+    const open = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Open",
+    });
+    const listbox = named(open, "Select Listbox");
+    ok(
+      open.name === "State=Default, Status=Default, Content=Open" &&
+        open.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Select Listbox" &&
+        open.itemSpacing === 4 &&
+        boundTo(open, "itemSpacing") === "Select/listbox/offset" &&
+        listbox.paddingTop === 12 &&
+        boundTo(listbox, "paddingTop") === "Select/listbox/padding" &&
+        listbox.itemSpacing === 2 &&
+        boundVariableName(listbox.fills[0]) === "Surface/0" &&
+        boundVariableName(listbox.strokes[0]) === "Border/Subtle" &&
+        listbox.cornerRadius === 16 &&
+        listbox.children.length === 3,
+      `Content=Open is the trigger and, 4 under it, SelectContent: Surface/0, Border/Subtle, 12 inside, 2 between 3 rows (${open.children.map((c) => c.name).join(", ")}; ${open.itemSpacing}, ${listbox && listbox.paddingTop}, ${listbox && listbox.children.length})`,
+    );
+    const counts = ["128", "96", "32"];
+    for (let n = 1; n <= 3; n += 1) {
+      const row = listbox && listbox.children[n - 1];
+      const pill = row && named(row, `Option ${n} Counter`);
+      const digits = pill && named(pill, `Option ${n} Count`);
+      const order = row ? row.children.map((c) => c.name).join(" > ") : "";
+      ok(
+        row &&
+          row.name === `Select Option ${n}` &&
+          order ===
+            (n === 1
+              ? `Option ${n} Text > Option ${n} Counter > Icon`
+              : `Option ${n} Text > Option ${n} Counter`) &&
+          row.itemSpacing === 8 &&
+          row.height === 44,
+        `row ${n} is [words] [count]${n === 1 ? " [check]" : ""}, 8 apart, 44 tall (${order}; ${row && row.itemSpacing}, ${row && row.height})`,
+      );
+      ok(
+        pill &&
+          digits &&
+          digits.characters === counts[n - 1] &&
+          pill.height === 20 &&
+          boundTo(pill, "height") === "Counter/height/default" &&
+          pill.paddingLeft === 6 &&
+          boundTo(pill, "minWidth") === "Counter/min-width/default" &&
+          pill.cornerRadius === 9999 &&
+          boundVariableName(pill.fills[0]) === "Colors/background/200" &&
+          boundVariableName(digits.fills[0]) === "Colors/foreground/0" &&
+          digits.fontSize === 12,
+        `row ${n}'s count reads ${digits && digits.characters} in the neutral Counter's 20 pill, 6 at the sides, background/200 under foreground/0 12px (${pill && pill.height}, ${pill && pill.paddingLeft}, ${pill && boundVariableName(pill.fills[0])}, ${digits && boundVariableName(digits.fills[0])}, ${digits && digits.fontSize})`,
+      );
+    }
+
+    // Combobox's row is unchanged with no count.
+    const comboRow = await painter.plugin.createComboboxOption({
+      index: 0,
+      text: "Metro Station",
+      selected: true,
+      active: false,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboRow.name === "Combobox Option 1" &&
+        comboRow.children.map((c) => c.name).join(",") ===
+          "Option 1 Text,Icon" &&
+        boundVariableName(named(comboRow, "Option 1 Text").fills[0]) ===
+          "Colors/foreground/0",
+      `with no count, Combobox's row is as it was (${comboRow.name}: ${comboRow.children.map((c) => c.name).join(", ")})`,
+    );
+
+    // Update over the sets as the file has them today.
+    const overlapsIn = (set) => {
+      const boxes = set.children.map((c) => [
+        c.x,
+        c.y,
+        c.x + c.width,
+        c.y + c.height,
+        c.name,
+      ]);
+      const found = [];
+      for (let i = 0; i < boxes.length; i += 1)
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const [a, b] = [boxes[i], boxes[j]];
+          if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+            found.push(`${a[4]} / ${b[4]}`);
+        }
+      return found;
+    };
+    const definitionsOf = (set) =>
+      Object.entries(set.componentPropertyDefinitions || {}).map(
+        ([key, definition]) => [key.split("#")[0], definition],
+      );
+
+    {
+      const oldNames = [];
+      for (const count of ["Two", "Three", "Four"]) {
+        const tabsN = { Two: 2, Three: 3, Four: 4 }[count];
+        for (const active of ["One", "Two", "Three", "Four"].slice(0, tabsN))
+          for (const state of ["Default", "Focus", "Disabled"])
+            oldNames.push(`Count=${count}, Active=${active}, State=${state}`);
+      }
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Tabs");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateTabsComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      const names = liveSet.children.map((child) => child.name);
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 27 &&
+          updated.variantsCreated === 27 &&
+          liveSet.children.length === 54 &&
+          new Set(names).size === 54 &&
+          !(updated.warnings || []).some((w) => /Missing Tabs/.test(w)),
+        `Tabs Update keeps the set and its 27 variants and creates the 27 Icon Over Label ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Label`,
+        ),
+        "each of the 27 keeps its node id and gains Content=Label",
+      );
+      const tabsDefs = definitionsOf(liveSet);
+      const swaps = tabsDefs
+        .filter(([, d]) => d.type === "INSTANCE_SWAP")
+        .map(([name]) => name)
+        .sort();
+      ok(
+        swaps.join(",") === "Tab 1 Icon,Tab 2 Icon,Tab 3 Icon,Tab 4 Icon" &&
+          ["Tab 1 Text", "Tab 2 Text", "Tab 3 Text", "Tab 4 Text"].every(
+            (name) =>
+              tabsDefs.some(([n, d]) => n === name && d.type === "TEXT"),
+          ),
+        `Tab 1 Icon to Tab 4 Icon are instance swaps beside the Tab N Text properties (${swaps.join(", ")})`,
+      );
+      const stackedIcons = liveSet.findAll(
+        (node) => node.type === "INSTANCE" && /^Tab \d Icon$/.test(node.name),
+      );
+      const unboundIcons = stackedIcons.filter(
+        (icon) =>
+          !icon.componentPropertyReferences ||
+          !String(icon.componentPropertyReferences.mainComponent || "")
+            .split("#")[0]
+            .startsWith(icon.name),
+      );
+      ok(
+        // Two tabs in 6 variants, three in 9, four in 12.
+        stackedIcons.length === 6 * 2 + 9 * 3 + 12 * 4 &&
+          unboundIcons.length === 0,
+        `every stacked trigger's icon is bound to its Tab N Icon (${stackedIcons.length} icons, ${unboundIcons.length} unbound)`,
+      );
+      const tabsOverlaps = overlapsIn(liveSet);
+      ok(
+        tabsOverlaps.length === 0,
+        `the updated Tabs set has no two variants overlapping (${tabsOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    {
+      const oldNames = [];
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          oldNames.push(`State=${state}, Status=${status}`);
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 6 &&
+          updated.variantsCreated === 6 &&
+          liveSet.children.length === 12,
+        `Select Update keeps the set and its 6 variants and creates the 6 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Closed`,
+        ),
+        "each of the 6 keeps its node id and gains Content=Closed",
+      );
+      const selectDefs = definitionsOf(liveSet);
+      const typeOf = (name) => {
+        const hit = selectDefs.find(([n]) => n === name);
+        return hit ? `${hit[1].type}:${hit[1].defaultValue}` : "missing";
+      };
+      const expected = {
+        "Option 1 Text": "TEXT:Everything",
+        "Option 2 Text": "TEXT:POI",
+        "Option 3 Text": "TEXT:Interior asset",
+        "Option 1 Count": "TEXT:128",
+        "Option 2 Count": "TEXT:96",
+        "Option 3 Count": "TEXT:32",
+        "Show Counts": "BOOLEAN:true",
+        "Placeholder Text": "TEXT:Select an option",
+      };
+      const drift = Object.entries(expected).filter(
+        ([name, want]) => typeOf(name) !== want,
+      );
+      ok(
+        drift.length === 0,
+        `Select's properties: Option N Text, Option N Count, Show Counts on, Placeholder Text kept (${drift.map(([n]) => `${n} ${typeOf(n)}`).join("; ")})`,
+      );
+      const pills = liveSet.findAll(
+        (node) =>
+          node.type === "FRAME" && /^Option \d Counter$/.test(node.name),
+      );
+      const showKey = Object.keys(liveSet.componentPropertyDefinitions).find(
+        (key) => key.split("#")[0] === "Show Counts",
+      );
+      ok(
+        pills.length === 6 * 3 &&
+          pills.every(
+            (pill) =>
+              pill.componentPropertyReferences &&
+              pill.componentPropertyReferences.visible === showKey,
+          ),
+        `Show Counts shows each of the 18 counts (${pills.length} counts)`,
+      );
+      const countTexts = liveSet.findAll(
+        (node) => node.type === "TEXT" && /^Option \d Count$/.test(node.name),
+      );
+      ok(
+        countTexts.length === 18 &&
+          countTexts.every(
+            (text) =>
+              text.componentPropertyReferences &&
+              String(text.componentPropertyReferences.characters || "").split(
+                "#",
+              )[0] === text.name,
+          ),
+        `each count's digits are bound to their Option N Count (${countTexts.length})`,
+      );
+      const selectOverlaps = overlapsIn(liveSet);
+      ok(
+        selectOverlaps.length === 0,
+        `the updated Select set has no two variants overlapping (${selectOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+  }
+}
+
 section("Decisions 115 and 26: the list rows draw React's rows");
 {
   // Figma comes from the developed components: Combobox's, MultiSelect's,

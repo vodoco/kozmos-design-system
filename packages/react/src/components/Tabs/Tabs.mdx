@@ -18,6 +18,20 @@ Every platform draws the same tabs: a muted track (background/100), and the sele
 
 <Controls />
 
+## An icon over the words
+
+`TabsTrigger` takes an `icon`: it is drawn 20px, 4px above the tab's words and in their colour, and the list grows to hold it (GAP-152). The icon is drawn only; the tab is named by its words. The active tab is still the raised segment. In right to left the stack is the same, and the tabs run from the right.
+
+<Canvas>
+  <Story of={TabsStories.IconOverLabel} />
+</Canvas>
+
+<Canvas>
+  <Story of={TabsStories.IconOverLabelRightToLeft} />
+</Canvas>
+
+SwiftUI's `KozmosTabsTrigger(value:title:selection:icon:)` and Compose's `KozmosTabsTrigger(..., icon = { ... })` draw the same stack.
+
 ## Implementation
 
 <div className="subheading">Code</div>

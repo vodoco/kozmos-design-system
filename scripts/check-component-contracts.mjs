@@ -5019,7 +5019,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "configureTabsProperties(componentSet, stats)",
+  "await configureTabsProperties(componentSet, stats, variableByName)",
   "Tabs text and focus component property binding",
 );
 assertContains(
