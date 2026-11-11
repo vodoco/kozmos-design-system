@@ -4701,8 +4701,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const SELECT_STATES = ["Default", "Focus", "Disabled"]',
-  "Select interaction state axis",
+  'const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"]',
+  "Select interaction state axis, with Mixed (GAP-153)",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  "const INPUT_FIELD_STATES = INPUT_STATES.concat([MIXED_FIELD_STATE]);",
+  "Input and NumberInput take Mixed beside Input's states (GAP-153)",
 );
 assertContains(
   files.figma,
