@@ -6,11 +6,9 @@ import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
 
-// The TreeSection set is new: its node id is TBD until the plugin builds it,
-// so this file stays out of figma.linked.config.json until then.
 // GAP-151: a section heading, as Compose's TreeSectionRow. Count Text is a
 // sample in the design; in code the count is the product's number.
-@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD")
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21301")
 class KozmosTreeSectionConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
     val name: String = "POI"

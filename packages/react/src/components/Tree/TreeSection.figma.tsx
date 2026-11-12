@@ -1,11 +1,9 @@
 import figma from "@figma/code-connect";
 import { TreeSectionRow } from "./Tree";
 
-// GAP-151: a section's heading. The TreeSection set is new: its node id is
-// TBD until the plugin builds it, so this file stays out of
-// figma.linked.config.json until then, and is never published or verified.
+// GAP-151: a section's heading, the TreeSection set (built 12 Nov).
 const sectionUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21301";
 
 figma.connect(TreeSectionRow, sectionUrl, {
   props: {
