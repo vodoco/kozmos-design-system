@@ -905,11 +905,8 @@
      less those 12, concentric with it (docs/nested-radius.md): 20 - 12 = 8. */
   .kozmos-radio-card-media {
     border-radius: calc(
-      (
-          var(--semantics-radius-container) -
-            var(--primitives-layout-spacing-150)
-        ) *
-        1px
+      var(--semantics-radius-container) * 1px -
+        var(--primitives-layout-spacing-150) * 1px
     );
   }
   /* Forced colours draw no box-shadow, so there the chosen box's heavier
