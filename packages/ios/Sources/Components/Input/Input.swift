@@ -59,6 +59,13 @@ public struct KozmosInput: View {
     let action: KozmosInputAction?
     /// The copy's check, while it shows: a count, so a second copy restarts it.
     @State private var copiedCount = 0
+    /// The field stands for several values that differ, and shows none
+    /// (GAP-153): `KozmosMixedValue` has the whole of it.
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
     
     public init(
         text: Binding<String>,
@@ -70,7 +77,11 @@ public struct KozmosInput: View {
         error: Bool = false,
         helperText: String? = nil,
         errorMessage: String? = nil,
-        action: KozmosInputAction? = nil
+        action: KozmosInputAction? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._text = text
         self.label = label
@@ -82,6 +93,10 @@ public struct KozmosInput: View {
         self.helperText = helperText
         self.errorMessage = errorMessage
         self.action = action
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
     
     public var body: some View {
@@ -93,7 +108,8 @@ public struct KozmosInput: View {
             }
 
             HStack(spacing: 0) {
-                TextField(placeholder, text: $text)
+                TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                    .accessibilityFocused($fieldAccessibilityFocused)
                     .disabled(disabled || readOnly)
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .padding(.trailing, action == nil ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
@@ -111,6 +127,15 @@ public struct KozmosInput: View {
                 .font(KozmosTypography.subheadline)
                 .foregroundColor(textColor)
 
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    // The reset goes as the field turns mixed again: VoiceOver
+                    // goes to the field, which says its several values.
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
+            }
+
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
@@ -119,7 +144,18 @@ public struct KozmosInput: View {
         }
     }
 
+    /// Mixed, the field shows none of its own text; the visitor's typing
+    /// still reaches the product, which clears `mixed`.
+    private var shownText: Binding<String> {
+        Binding(get: { mixed ? "" : text }, set: { text = $0 })
+    }
+
     // MARK: - Action (GAP-154)
+
+    private var isCopy: Bool {
+        if case .copy = action { return true }
+        return false
+    }
 
     /// As tall as the field, 44 square, its target; what it draws is inside
     /// it, 4 in from its edges. Only `disabled` disables it: a read-only
@@ -137,7 +173,9 @@ public struct KozmosInput: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(disabled)
+            // Mixed (GAP-153), there is no value of its own to copy: the copy
+            // is disabled, never "Copied" over nothing.
+            .disabled(disabled || mixed)
             .foregroundColor(actionColor(pressed: false))
             .accessibilityLabel(label)
         case .toggle(let label, let icon, let isPressed):
@@ -168,6 +206,7 @@ public struct KozmosInput: View {
     }
 
     private func copy(announcing copiedLabel: String, onCopy: ((String) -> Void)?) {
+        guard !mixed else { return }
         let value = text
         #if canImport(UIKit) && !os(watchOS)
         UIPasteboard.general.string = value
@@ -188,7 +227,7 @@ public struct KozmosInput: View {
     /// foreground on the pressed fill; dimmed when disabled.
     private func actionColor(pressed: Bool) -> Color {
         if pressed { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
-        if disabled { return KozmosColors.primitivesColorsForeground500 }
+        if disabled || (mixed && isCopy) { return KozmosColors.primitivesColorsForeground500 }
         return KozmosColors.primitivesColorsForeground400
     }
 

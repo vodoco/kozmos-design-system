@@ -1,13 +1,14 @@
 import React from "react";
 import { Minus, Plus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import { mixedFieldValue, useMixedField } from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
-export interface NumberInputProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> {
+export interface NumberInputProps
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">,
+    MixedValueProps {
   error?: boolean | string;
   helperText?: string;
   label?: string;
@@ -54,7 +55,12 @@ function unitWidthInCh(unit: string) {
 }
 
 function numericValueFromInput(input: HTMLInputElement) {
-  if (input.value === "") return null;
+  if (input.value.trim() === "") return null;
+  // A mixed field is a text field (below): its typed number is read here.
+  if (input.type !== "number") {
+    const typed = Number(input.value.trim().replace(",", "."));
+    return Number.isFinite(typed) ? typed : null;
+  }
   return Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber;
 }
 
@@ -85,6 +91,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       showSteppers = true,
       status = "default",
       wrapperClassName,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel,
       unit,
       unitLabel,
       "aria-describedby": callerDescribedBy,
@@ -123,7 +133,22 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         : helperText
           ? helperId
           : undefined;
-    const stepperDisabled = disabled || readOnly;
+    // Mixed, a step would start from nothing and write that number over
+    // every selected feature's own: the steppers wait for a typed edit.
+    // What the visitor types into a mixed field, kept as typed until the
+    // field loses focus (GAP-153). The field stays a text field meanwhile:
+    // turned into a number field by the product's first value, it would
+    // drop a "-" or a "-0." the visitor is still typing ("-5" became 5).
+    const [draft, setDraft] = React.useState<string | null>(null);
+    const [wasMixed, setWasMixed] = React.useState(mixed);
+    if (wasMixed !== mixed) {
+      setWasMixed(mixed);
+      // Back to mixed (a reset): the typed text is gone.
+      if (mixed) setDraft(null);
+    }
+    const asText = mixed || draft !== null;
+    const stepperDisabled = disabled || readOnly || asText;
+    const mixedField = useMixedField(mixed, props.value);
     const stepperToneClass = {
       default: "",
       error: "kozmos-number-step-error",
@@ -134,17 +159,31 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const setRefs = React.useCallback(
       (node: HTMLInputElement | null) => {
         internalRef.current = node;
+        mixedField.field.current = node;
         if (typeof ref === "function") {
           ref(node);
         } else if (ref) {
           ref.current = node;
         }
       },
-      [ref],
+      [ref, mixedField.field],
     );
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange?.(event);
+      if (asText) {
+        // A mixed field reports a value only once the text is a number:
+        // "-", "." or "-." report nothing, so the product keeps every
+        // feature's own value until there is one to write over it.
+        const text = event.currentTarget.value;
+        setDraft(text);
+        const typed =
+          text.trim() === ""
+            ? null
+            : numericValueFromInput(event.currentTarget);
+        if (typed !== null) onValueChange?.(typed);
+        return;
+      }
       onValueChange?.(numericValueFromInput(event.currentTarget));
     };
 
@@ -177,6 +216,16 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         inputId={inputId}
         status={resolvedStatus}
         className={wrapperClassName}
+        mixed={mixed}
+        onResetMixed={
+          onResetMixed && !disabled && !readOnly
+            ? () => {
+                mixedField.clear();
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         <div className="kozmos-reset kozmos-number-field">
           {showSteppers && (
@@ -222,7 +271,14 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             }
           >
             <input
-              type="number"
+              // Mixed (GAP-153), a text field with the numeric keyboard, not
+              // a spinbutton: the arrow keys, Page Up and Down, the wheel and
+              // a screen reader's increment would each step it from nothing
+              // and write that number over every selected feature's own.
+              // Typing a number is the edit; the product then clears
+              // `mixed`. The unit stays drawn: it says what to type.
+              type={asText ? "text" : "number"}
+              inputMode={asText ? "decimal" : undefined}
               id={inputId}
               className={cn(
                 inputVariants({ status: resolvedStatus }),
@@ -245,6 +301,14 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
               )}
               onChange={handleChange}
               {...props}
+              {...mixedFieldValue(mixed, mixedLabel, props)}
+              {...(draft !== null && props.value !== undefined
+                ? { value: draft }
+                : null)}
+              onBlur={(event) => {
+                setDraft(null);
+                props.onBlur?.(event);
+              }}
             />
             {hasUnit ? (
               <>

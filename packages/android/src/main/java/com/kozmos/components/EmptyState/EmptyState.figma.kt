@@ -21,11 +21,25 @@ class KozmosEmptyStateBasicConnect {
     @FigmaProperty(FigmaType.Text, "Description Text")
     val description: String = "Try adjusting your filters or search terms."
 
+    // GAP-165: what to try, under the description.
+    @FigmaProperty(FigmaType.Boolean, "List")
+    val showList: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "List Item 1 Text")
+    val item1: String = "Check the building and level"
+
+    @FigmaProperty(FigmaType.Text, "List Item 2 Text")
+    val item2: String = "Clear the type filters"
+
+    @FigmaProperty(FigmaType.Text, "List Item 3 Text")
+    val item3: String = "Search by another name or an ID"
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
-            description = description
+            description = description,
+            list = if (showList) listOf(item1, item2, item3) else emptyList()
         )
     }
 }
@@ -39,11 +53,25 @@ class KozmosEmptyStateIconConnect {
     @FigmaProperty(FigmaType.Text, "Description Text")
     val description: String = "Try adjusting your filters or search terms."
 
+    // GAP-165: what to try, under the description.
+    @FigmaProperty(FigmaType.Boolean, "List")
+    val showList: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "List Item 1 Text")
+    val item1: String = "Check the building and level"
+
+    @FigmaProperty(FigmaType.Text, "List Item 2 Text")
+    val item2: String = "Clear the type filters"
+
+    @FigmaProperty(FigmaType.Text, "List Item 3 Text")
+    val item3: String = "Search by another name or an ID"
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
             description = description,
+            list = if (showList) listOf(item1, item2, item3) else emptyList(),
             icon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             }
@@ -60,11 +88,25 @@ class KozmosEmptyStateActionConnect {
     @FigmaProperty(FigmaType.Text, "Description Text")
     val description: String = "Try adjusting your filters or search terms."
 
+    // GAP-165: what to try, under the description.
+    @FigmaProperty(FigmaType.Boolean, "List")
+    val showList: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "List Item 1 Text")
+    val item1: String = "Check the building and level"
+
+    @FigmaProperty(FigmaType.Text, "List Item 2 Text")
+    val item2: String = "Clear the type filters"
+
+    @FigmaProperty(FigmaType.Text, "List Item 3 Text")
+    val item3: String = "Search by another name or an ID"
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
             description = description,
+            list = if (showList) listOf(item1, item2, item3) else emptyList(),
             icon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },

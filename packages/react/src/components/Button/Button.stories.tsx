@@ -21,6 +21,7 @@ const meta: Meta<typeof Button> = {
         "ghost",
         "link",
         "glass",
+        "subtle",
       ],
     },
     size: {
@@ -87,6 +88,48 @@ export const Glass: Story = {
     variant: "glass",
     children: "Glass",
   },
+};
+
+/**
+ * The subtle variant (GAP-200, decision 135): a pale theme fill, theme 0,
+ * under the theme's words, theme 600, with its own token tier. Pointr
+ * Cloud's "+ Add additional field" is one, the width of its form through
+ * `className="w-full"`.
+ */
+export const Subtle: Story = {
+  parameters: { layout: "padded" },
+  args: {
+    variant: "subtle",
+    children: "+ Add additional field",
+  },
+  render: (args) => (
+    <div style={{ inlineSize: 360 }}>
+      <Button {...args} className="w-full" />
+    </div>
+  ),
+};
+
+/**
+ * The subtle Button in a destructive tone (decision 139): Pointr Cloud's
+ * Delete Feature and Delete Beacon, a rose fill under red words. Every
+ * emotion has its own pale fill in the subtle tier.
+ */
+export const SubtleEmotions: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex flex-col gap-4" style={{ inlineSize: 360 }}>
+      <Button variant="subtle" emotion="danger" className="w-full">
+        Delete feature
+      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {BUTTON_EMOTIONS.map((emotion) => (
+          <Button key={emotion} variant="subtle" emotion={emotion}>
+            {emotion}
+          </Button>
+        ))}
+      </div>
+    </div>
+  ),
 };
 
 export const Loading: Story = {

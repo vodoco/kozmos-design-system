@@ -2,7 +2,12 @@ import React from "react";
 import { type VariantProps } from "class-variance-authority";
 import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import {
+  mixedFieldValue,
+  useFieldRef,
+  useMixedField,
+} from "../FieldWrapper/mixedValue";
 import {
   resolveCharacterCount,
   useUncontrolledValue,
@@ -45,7 +50,8 @@ export type InputAction =
 export interface InputProps
   extends
     React.InputHTMLAttributes<HTMLInputElement>,
-    Omit<VariantProps<typeof inputVariants>, "error" | "status"> {
+    Omit<VariantProps<typeof inputVariants>, "error" | "status">,
+    MixedValueProps {
   error?: boolean | string;
   helperText?: string;
   label?: string;
@@ -138,6 +144,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       wrapperClassName,
       count,
       action,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel,
       "aria-describedby": callerDescribedBy,
       "aria-invalid": callerInvalid,
       ...props
@@ -165,6 +175,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const defaultInputId = React.useId();
     const inputId = props.id || defaultInputId;
+    const mixedField = useMixedField(mixed, props.value, mirror.clear);
+    const fieldRef = useFieldRef(mixedField.field, ref);
     const field = (
       <input
         type={type}
@@ -177,10 +189,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "kozmos-input-with-action pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
           className,
         )}
-        ref={ref}
+        ref={fieldRef}
         aria-invalid={isInvalid ? true : callerInvalid}
         aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
         {...props}
+        {...mixedFieldValue(mixed, mixedLabel, props)}
         onInput={(event) => {
           mirror.onInput?.(event);
           props.onInput?.(event);
@@ -200,6 +213,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         inputId={inputId}
         status={resolvedStatus}
         className={wrapperClassName}
+        mixed={mixed}
+        onResetMixed={
+          onResetMixed && !props.disabled && !props.readOnly
+            ? () => {
+                mixedField.clear();
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         {/* One wrapper, with an action or without, so the input keeps its
             place in the tree as an action comes and goes: a new parent made
@@ -214,7 +237,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         >
           {field}
           {action ? (
-            <FieldAction action={action} disabled={props.disabled} />
+            <FieldAction
+              action={action}
+              // Mixed (GAP-153), there is no value of its own to copy: the
+              // copy is disabled, never "Copied" over nothing.
+              disabled={props.disabled || (mixed && action.kind === "copy")}
+            />
           ) : null}
         </div>
       </FieldWrapper>

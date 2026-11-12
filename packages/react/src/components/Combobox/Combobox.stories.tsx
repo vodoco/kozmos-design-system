@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
 import { Combobox } from "./Combobox";
 
 const options = [
@@ -72,4 +73,33 @@ export const Grouped: Story = {
       <Combobox {...args} autoFocus={viewMode !== "docs"} />
     </div>
   ),
+};
+
+/**
+ * GAP-153: the selected features have different values. Mixed, the field
+ * shows "Multiple values" and no option is checked; a typed query keeps it
+ * mixed, a choice edits it, and "Reset to multiple values" takes it back.
+ */
+export const MixedValue: Story = {
+  render: () => {
+    function Field({ label, edited }: { label: string; edited?: string }) {
+      const [edit, setEdit] = useState<string | undefined>(edited);
+      return (
+        <Combobox
+          label={label}
+          options={contentTypes}
+          mixed={edit === undefined}
+          value={edit ?? ""}
+          onValueChange={(value) => setEdit(value)}
+          onResetMixed={() => setEdit(undefined)}
+        />
+      );
+    }
+    return (
+      <div className="grid w-80 gap-4">
+        <Field label="Content type" />
+        <Field label="Replaced by" edited="meeting-room" />
+      </div>
+    );
+  },
 };

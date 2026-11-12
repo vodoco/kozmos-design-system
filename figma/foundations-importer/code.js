@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "65fc7cd32e26";
+const PLUGIN_BUILD = "3a2555238f0a";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -230,6 +230,19 @@ const BUTTON_VARIANTS = [
   "Ghost",
   "Link",
   "Glass",
+  "Subtle",
+];
+// IconButton keeps the seven it had: the subtle variant (GAP-200) is the
+// labelled Button's, Pointr Cloud's "+ Add additional field" and Delete
+// Feature, and no board draws an icon-only one.
+const ICON_BUTTON_VARIANTS = [
+  "Default",
+  "Destructive",
+  "Outline",
+  "Secondary",
+  "Ghost",
+  "Link",
+  "Glass",
 ];
 const BUTTON_SIZES = ["Default", "Small", "Large", "Icon"];
 const BUTTON_STATES = ["Default", "Disabled", "Loading"];
@@ -314,7 +327,27 @@ const INPUT_ACTION_PRESSED_FILL_SIZE = 32;
 const PASSWORD_INPUT_VISIBILITY = ["Hidden", "Visible"];
 const NUMBER_INPUT_STEPPERS = ["True", "False"];
 const OTP_INPUT_LENGTHS = ["4", "6"];
-const COMBOBOX_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+// GAP-153: a field of a multi-selection whose values differ shows "Multiple
+// values" in place of its own, in the placeholder's colour: State=Mixed, on
+// Input, NumberInput, Combobox and Select only, so PasswordInput and OTPInput
+// (which share INPUT_STATES) gain no variants. Its way back, "Reset to
+// multiple values" under the field, is the Reset Mixed boolean.
+const MIXED_FIELD_STATE = "Mixed";
+const INPUT_FIELD_STATES = INPUT_STATES.concat([MIXED_FIELD_STATE]);
+const MIXED_FIELD_TEXT = "Multiple values";
+const RESET_MIXED_PROPERTY = "Reset Mixed";
+const RESET_MIXED_LAYER = "Reset Mixed";
+const RESET_MIXED_TEXT = "Reset to multiple values";
+const RESET_MIXED_TEXT_PROPERTY = "Reset Mixed Text";
+const MIXED_TEXT_LAYER = "Mixed Text";
+const MIXED_TEXT_PROPERTY = "Mixed Text";
+const COMBOBOX_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const COMBOBOX_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COMBOBOX_CONTENT = ["Closed", "Open"];
 const MULTI_SELECT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
@@ -379,7 +412,7 @@ const TEXTAREA_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const TEXTAREA_STATUSES = ["Default", "Error"];
 const SEARCH_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const SEARCH_STATUSES = ["Default", "Error"];
-const SELECT_STATES = ["Default", "Focus", "Disabled"];
+const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"];
 const SELECT_STATUSES = ["Default", "Error"];
 const SLIDER_STATES = ["Default", "Focus", "Disabled"];
 const SLIDER_STATUSES = ["Default", "Error"];
@@ -455,6 +488,15 @@ function emptyStateIconSize(size) {
   return size === "Compact" ? 40 : 64;
 }
 const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
+// GAP-165: a list under the description, what to try ("No Map Content
+// Found"). A layer in every variant, shown by the List boolean, its three
+// items' words List Item 1 Text to List Item 3 Text.
+const EMPTY_STATE_LIST_PROPERTY = "List";
+const EMPTY_STATE_LIST_ITEMS = [
+  "Check the building and level",
+  "Clear the type filters",
+  "Search by another name or an ID",
+];
 const CARD_CONTENT = ["Basic", "Header", "Full"];
 // How much room a card gives its content. Default is 24 on every side, the
 // card as the system has always drawn it; Compact is 16, for a card that is
@@ -469,6 +511,89 @@ function cardPaddingToken(padding) {
   return padding === "Compact"
     ? "Card/padding/compact"
     : "Card/padding/default";
+}
+// CardHeader's tone (CLOUD-UI-001; decisions 135 and 139): Subtle is the form
+// side panel's header, a pale theme strip, theme 0, full-bleed inside the
+// card's top corners, 12 above and below its words and the card's padding at
+// its sides and below it, with a 14 title. Default is the header as it was.
+const CARD_HEADER_TONES = ["Default", "Subtle"];
+// CardTitle's size (GAP-035, decision 132; the owner's ruling of 9 Nov):
+// Large 24, the default; Medium 18 for a compact or dashboard card; Small 14,
+// the subtle strip's. The strip is drawn at Small alone, as React's unset
+// size is `sm` there.
+const CARD_TITLE_SIZES = ["Large", "Medium", "Small"];
+const CARD_SUBTLE_HEADER_PADDING_Y = 12;
+// The actions' line in the strip: React's 1.75rem, so a 44 IconButton spills
+// 8 into the 12 above and below it.
+const CARD_SUBTLE_HEADER_ACTIONS_LINE = 28;
+/**
+ * The second axis the set is laid out by: Padding, HeaderTone and TitleSize
+ * together, one row each, as `Padding|HeaderTone|TitleSize`. A variant drawn
+ * before the HeaderTone and TitleSize axes is Default in its tone and Large
+ * in its title, the card as it was.
+ */
+function cardSecond(padding, tone, size) {
+  return `${padding}|${tone}|${size}`;
+}
+/** A title size a variant names, or the size its tone draws when none. */
+function cardTitleSizeOf(tone, size) {
+  if (size && size !== "Default") return size;
+  return tone === "Subtle" ? "Small" : "Large";
+}
+function cardSecondParts(second) {
+  const [padding, tone, size] = String(second || "").split("|");
+  return {
+    padding: padding || "Default",
+    tone: tone || "Default",
+    size: cardTitleSizeOf(tone || "Default", size),
+  };
+}
+function cardSecondValues() {
+  const out = [];
+  for (const padding of CARD_PADDINGS)
+    for (const tone of CARD_HEADER_TONES)
+      for (const size of CARD_TITLE_SIZES)
+        // The strip is drawn at its own title size alone: no empty row.
+        if (tone !== "Subtle" || size === "Small")
+          out.push(cardSecond(padding, tone, size));
+  return out;
+}
+const CARD_SECONDS = cardSecondValues();
+/** A card with no header has no tone or title; the strip's title is its own. */
+function cardHasCombination(content, second) {
+  const { tone, size } = cardSecondParts(second);
+  if (content === "Basic") return tone === "Default" && size === "Large";
+  if (tone === "Subtle") return size === "Small";
+  return true;
+}
+/** The size a title is drawn at in its header. */
+function cardTitleDrawnSize(tone, size) {
+  return cardTitleSizeOf(tone, size);
+}
+function cardTitleMetrics(drawnSize) {
+  if (drawnSize === "Medium")
+    return {
+      fontSize: 18,
+      lineHeight: 18,
+      fontSizeToken: "Card/title/md/font-size",
+      lineHeightToken: "Card/title/md/line-height",
+      styleKey: "cardTitleMedium",
+    };
+  if (drawnSize === "Small")
+    return {
+      fontSize: 14,
+      lineHeight: 14,
+      fontSizeToken: "Card/title/sm/font-size",
+      lineHeightToken: "Card/title/sm/line-height",
+      styleKey: "cardTitleSmall",
+    };
+  return {
+    fontSize: 24,
+    lineHeight: 24,
+    fontSizeToken: "Card/title/font-size",
+    lineHeightToken: "Card/title/line-height",
+    styleKey: "cardTitle",
+  };
 }
 // CardHeader's actions (GAP-169): a slot at the header's end, after the title
 // and description, which keep the room before it, 16 away. It is as tall as
@@ -3781,14 +3906,16 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Action maps to Input.action: None, a copy button (Copy), or a toggle at rest or pressed (Toggle, TogglePressed), at the field's end.",
       "Action Icon is the toggle's icon, the Featured star by default.",
+      "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own, for a multi-selection whose values differ.",
+      "Reset Mixed shows Reset to multiple values under the field, Input.onResetMixed, for a field edited out of Mixed; State=Mixed has no reset to show. Reset Mixed Text and Mixed Text are the words, Input.resetMixedLabel and Input.mixedLabel.",
       "Label Text, Placeholder Text, Helper Text, and Show Helper Text map to Input props.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Action: None, Copy, Toggle, TogglePressed",
-      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Action Icon, Focus Visible",
+      "Label Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Action Icon, Focus Visible",
     ],
     accessibility: [
       "Field height meets the 44px minimum target.",
@@ -3869,14 +3996,15 @@ const COMPONENT_DOCS = [
       "State maps to disabled and readOnly props in Code Connect.",
       "Status maps to default, error, warning, and success validation tones.",
       "Steppers maps to NumberInput.showSteppers.",
+      "State=Mixed maps to NumberInput.mixed (GAP-153); Reset Mixed shows Reset to multiple values, NumberInput.onResetMixed.",
       "Label Text, Value Text, Placeholder Text, Helper Text, and Show Helper Text map to NumberInput props.",
       "Show Unit and Unit Text map to NumberInput.unit, drawn inside the field after the value (GAP-098).",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Steppers: True, False",
-      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Unit Text, Show Unit, Focus Visible",
+      "Label Text, Value Text, Placeholder Text, Helper Text, Show Helper Text, Unit Text, Show Unit, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field and stepper controls meet the 44px minimum target.",
@@ -3931,12 +4059,13 @@ const COMPONENT_DOCS = [
       "Content maps to closed field and open listbox anatomy examples.",
       "Label Text, Placeholder Text, Helper Text, option text properties, and Show Helper Text map to Combobox props and children.",
       "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
+      "State=Mixed maps to Combobox.mixed (GAP-153): Multiple values, no option checked; Reset Mixed shows Reset to multiple values, Combobox.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field height and listbox options meet the 44px minimum target.",
@@ -4252,12 +4381,13 @@ const COMPONENT_DOCS = [
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
-      "State: Default, Focus, Disabled",
+      "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
-      "Placeholder Text, Focus Visible",
+      "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Trigger height meets the 44px minimum target.",
@@ -4446,10 +4576,11 @@ const COMPONENT_DOCS = [
       "Title Text maps to EmptyState.title.",
       "Description Text maps to EmptyState.description.",
       "Action content composes a live Button instance in the Figma example.",
+      "List maps to EmptyState.list (GAP-165): what to try, under the description, read in order; List Item 1 Text to List Item 3 Text are its items.",
     ],
     properties: [
       "Content: Basic, Icon, Action",
-      "Title Text, Description Text",
+      "Title Text, Description Text, List, List Item 1 Text, List Item 2 Text, List Item 3 Text",
     ],
     accessibility: [
       "EmptyState is static content unless action content is provided.",
@@ -5884,6 +6015,24 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Card/title/font-size", value: 24, scopes: ["FONT_SIZE"] },
   { name: "Card/title/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
+  // CardTitle's sizes (GAP-035): md 18 and sm 14, on one line as React draws
+  // them.
+  { name: "Card/title/md/font-size", value: 18, scopes: ["FONT_SIZE"] },
+  { name: "Card/title/md/line-height", value: 18, scopes: ["LINE_HEIGHT"] },
+  {
+    name: "Card/title/sm/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  { name: "Card/title/sm/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
+  // CardHeader's subtle strip: 12 above and below its words (CLOUD-UI-001).
+  {
+    name: "Card/header/subtle/padding-y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
   {
     name: "Card/description/font-size",
     value: 14,
@@ -18296,7 +18445,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "IconButton") {
     return {
-      Variant: BUTTON_VARIANTS,
+      Variant: ICON_BUTTON_VARIANTS,
       Size: ICON_BUTTON_SIZES,
       State: BUTTON_STATES,
     };
@@ -18368,6 +18517,8 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: CARD_CONTENT,
       Padding: CARD_PADDINGS,
+      HeaderTone: CARD_HEADER_TONES,
+      TitleSize: CARD_TITLE_SIZES,
     };
   }
 
@@ -18564,7 +18715,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "Input") {
     return {
-      State: INPUT_STATES,
+      State: INPUT_FIELD_STATES,
       Status: INPUT_STATUSES,
       Action: INPUT_ACTIONS,
     };
@@ -18588,7 +18739,7 @@ function expectedVariantAxesForComponentSetName(name) {
 
   if (canonicalName === "NumberInput") {
     return {
-      State: INPUT_STATES,
+      State: INPUT_FIELD_STATES,
       Status: INPUT_STATUSES,
       Steppers: NUMBER_INPUT_STEPPERS,
     };
@@ -24522,6 +24673,24 @@ function addComponentTextStyleSpecs(specs, fonts) {
     "Typography contract for the current manoeuvre's instruction: 20/25 semibold.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
+  // CardTitle's sizes (GAP-035): Medium for a compact or dashboard card,
+  // Small the subtle strip's.
+  addTextStyleSpec(
+    specs,
+    "cardTitleMedium",
+    "Card / Title Medium",
+    fonts.medium,
+    18,
+    18,
+  );
+  addTextStyleSpec(
+    specs,
+    "cardTitleSmall",
+    "Card / Title Small",
+    fonts.medium,
+    14,
+    14,
+  );
   addTextStyleSpec(
     specs,
     "cardDescription",
@@ -25233,7 +25402,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       : "emptyStateDescription";
   }
   if (setName === "Card") {
-    if (textName === "Title Text") return "cardTitle";
+    if (textName === "Title Text") {
+      const cardProps = component ? parseCardVariantName(component.name) : null;
+      if (!cardProps) return "cardTitle";
+      const { tone, size } = cardSecondParts(cardProps.second);
+      return cardTitleMetrics(cardTitleDrawnSize(tone, size)).styleKey;
+    }
     if (textName === "Description Text") return "cardDescription";
     return "cardBody";
   }
@@ -25546,24 +25720,32 @@ async function applyCounterTypography(
   );
 }
 
-async function applyCardTitleTypography(text, fonts, variableByName, stats) {
+async function applyCardTitleTypography(
+  text,
+  fonts,
+  variableByName,
+  stats,
+  metrics = cardTitleMetrics("Default"),
+) {
+  // The size is the title's own style and tokens (GAP-035): a style's field
+  // written over detaches the style, so each size is a style of its own.
   text.fontName = fonts.medium;
-  text.fontSize = 24;
-  text.lineHeight = { unit: "PIXELS", value: 24 };
+  text.fontSize = metrics.fontSize;
+  text.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
   text.textAutoResize = "HEIGHT";
-  await applyTextStyleToNodeAsync(text, "cardTitle", stats);
+  await applyTextStyleToNodeAsync(text, metrics.styleKey, stats);
 
   bindFloatVariable(
     text,
     "fontSize",
-    "Card/title/font-size",
+    metrics.fontSizeToken,
     variableByName,
     stats,
   );
   bindFloatVariable(
     text,
     "lineHeight",
-    "Card/title/line-height",
+    metrics.lineHeightToken,
     variableByName,
     stats,
   );
@@ -27352,6 +27534,7 @@ function bindCardGeometryVariables(
   stats,
   headerText,
   padding,
+  subtle = false,
 ) {
   const paddingToken = cardPaddingToken(padding);
   bindFloatVariable(
@@ -27392,6 +27575,7 @@ function bindCardGeometryVariables(
       variableByName,
       stats,
     );
+    if (section === header && subtle) continue;
     bindFloatVariable(
       section,
       "paddingBottom",
@@ -27401,7 +27585,21 @@ function bindCardGeometryVariables(
     );
   }
 
-  if (header) {
+  if (header && subtle) {
+    // The strip's 12 above and below its words (CLOUD-UI-001), and its top
+    // corners the card's.
+    for (const side of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        header,
+        side,
+        "Card/header/subtle/padding-y",
+        variableByName,
+        stats,
+      );
+    for (const corner of ["topLeftRadius", "topRightRadius"])
+      bindFloatVariable(header, corner, "Card/radius", variableByName, stats);
+  }
+  if (header && !subtle) {
     bindFloatVariable(
       header,
       "paddingTop",
@@ -31123,6 +31321,7 @@ async function updateButtonComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
+    variantsCreated: 0,
     variantsMissing: 0,
     iconSlotsBound: 0,
     warnings: [],
@@ -31182,17 +31381,35 @@ async function updateButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // A variant the set does not have yet is drawn and added where Build would
+  // have put it, so Update grows the set (the subtle variant, GAP-200) and
+  // the variants already there keep their node ids.
+  let index = 0;
   for (const variant of BUTTON_VARIANTS) {
     for (const size of BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
         if (!seenKeys[key]) {
-          stats.variantsMissing += 1;
-          stats.warnings.push(`Missing Button variant ${key}.`);
+          const component = await createButtonVariant({
+            variant,
+            size,
+            state,
+            variableByName,
+            fonts,
+            textStyle,
+            stats,
+          });
+          component.x = (index % 12) * 180;
+          component.y = Math.floor(index / 12) * 96;
+          existing.appendChild(component);
+          seenKeys[key] = true;
+          stats.variantsCreated += 1;
         }
+        index += 1;
       }
     }
   }
+  if (stats.variantsCreated > 0) resizeComponentSetToContainChildren(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -31247,7 +31464,7 @@ async function buildIconButtonComponent() {
 
   const components = [];
   let index = 0;
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const component = await createIconButtonVariant({
@@ -31375,7 +31592,7 @@ async function updateIconButtonComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const variant of BUTTON_VARIANTS) {
+  for (const variant of ICON_BUTTON_VARIANTS) {
     for (const size of ICON_BUTTON_SIZES) {
       for (const state of BUTTON_STATES) {
         const key = `${variant}/${size}/${state}`;
@@ -33899,7 +34116,8 @@ async function buildCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     x: 80,
     y: 4300,
     xStep: 420,
@@ -33923,7 +34141,8 @@ async function updateCardComponent() {
     axisName: "Content",
     values: CARD_CONTENT,
     axis2Name: "Padding",
-    axis2Values: CARD_PADDINGS,
+    axis2Values: CARD_SECONDS,
+    hasCombination: cardHasCombination,
     xStep: 420,
     yStep: 220,
     createVariant: createCardVariant,
@@ -35019,7 +35238,7 @@ async function buildInputComponent() {
   const components = [];
 
   for (const action of INPUT_ACTIONS) {
-    for (const state of INPUT_STATES) {
+    for (const state of INPUT_FIELD_STATES) {
       for (const status of INPUT_STATUSES) {
         const component = await createInputVariant({
           state,
@@ -35048,6 +35267,7 @@ async function buildInputComponent() {
     "State maps to focus, disabled, and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
     "Action maps to Input.action: a copy or toggle button at the field's end; Action Icon is the toggle's icon.",
+    "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own; Reset Mixed shows Reset to multiple values, Input.onResetMixed.",
     "Label Text maps to Input.label.",
     "Placeholder Text maps to Input.placeholder.",
     "Helper Text maps to Input.helperText.",
@@ -35068,6 +35288,7 @@ async function buildInputComponent() {
   configurePlaceholderTextProperty(componentSet, "Placeholder", stats);
   configureHelperTextProperty(componentSet, "Helper text", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
   await configureInputActionIconProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
   return stats;
@@ -35109,6 +35330,7 @@ async function updateInputComponent() {
     "State maps to focus, disabled, and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
     "Action maps to Input.action: a copy or toggle button at the field's end; Action Icon is the toggle's icon.",
+    "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own; Reset Mixed shows Reset to multiple values, Input.onResetMixed.",
     "Label Text maps to Input.label.",
     "Placeholder Text maps to Input.placeholder.",
     "Helper Text maps to Input.helperText.",
@@ -35143,7 +35365,7 @@ async function updateInputComponent() {
   }
 
   for (const action of INPUT_ACTIONS) {
-    for (const state of INPUT_STATES) {
+    for (const state of INPUT_FIELD_STATES) {
       for (const status of INPUT_STATUSES) {
         const key = `${state}/${status}/${action}`;
         if (seenKeys[key]) continue;
@@ -35177,6 +35399,7 @@ async function updateInputComponent() {
   configurePlaceholderTextProperty(existing, "Placeholder", stats);
   configureHelperTextProperty(existing, "Helper text", stats);
   configureHelperVisibilityProperty(existing, stats);
+  configureResetMixedProperty(existing, stats);
   await configureInputActionIconProperty(existing, stats);
   configureFocusVisibleProperty(existing, stats);
   return stats;
@@ -35831,8 +36054,12 @@ async function buildNumberInputComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  for (let stateIndex = 0; stateIndex < INPUT_STATES.length; stateIndex += 1) {
-    const state = INPUT_STATES[stateIndex];
+  for (
+    let stateIndex = 0;
+    stateIndex < INPUT_FIELD_STATES.length;
+    stateIndex += 1
+  ) {
+    const state = INPUT_FIELD_STATES[stateIndex];
     for (
       let statusIndex = 0;
       statusIndex < INPUT_STATUSES.length;
@@ -35873,6 +36100,7 @@ async function buildNumberInputComponent() {
     "State maps to disabled and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
     "Steppers maps to NumberInput.showSteppers.",
+    "State=Mixed maps to NumberInput.mixed (GAP-153); Reset Mixed shows Reset to multiple values, NumberInput.onResetMixed.",
     "Label Text maps to NumberInput.label.",
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
@@ -35931,6 +36159,7 @@ async function updateNumberInputComponent() {
     "State maps to disabled and readOnly props in Code Connect.",
     "Status maps to validation tone: default, error, warning, and success.",
     "Steppers maps to NumberInput.showSteppers.",
+    "State=Mixed maps to NumberInput.mixed (GAP-153); Reset Mixed shows Reset to multiple values, NumberInput.onResetMixed.",
     "Label Text maps to NumberInput.label.",
     "Value Text maps to NumberInput.defaultValue in Code Connect examples.",
     "Placeholder Text maps to NumberInput.placeholder.",
@@ -35964,7 +36193,7 @@ async function updateNumberInputComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const state of INPUT_STATES) {
+  for (const state of INPUT_FIELD_STATES) {
     for (const status of INPUT_STATUSES) {
       for (const steppers of NUMBER_INPUT_STEPPERS) {
         const key = `${state}/${status}/${steppers}`;
@@ -37980,6 +38209,7 @@ async function buildSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
@@ -37998,10 +38228,12 @@ async function updateSelectComponent() {
     updateVariant: updateSelectVariant,
     parseVariantName: parseSelectVariantName,
     configureProperties: configureSelectProperties,
+    fitSet: true,
     description: [
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
@@ -38291,6 +38523,9 @@ function layoutStateStatusVariants(componentSet, config) {
       (statusIndex * types.length + Math.max(0, typeIndex)) * config.xStep;
     child.y = stateIndex * config.yStep;
   }
+
+  // A set that gained a row holds it (Select's Mixed, GAP-153).
+  if (config.fitSet) resizeComponentSetToContainChildren(componentSet);
 }
 
 function stateStatusComponentKey(state, status, type) {
@@ -45131,6 +45366,7 @@ function configureSearchProperties(componentSet, stats) {
 
 function configureSelectProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "Select an option", stats);
+  configureResetMixedProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -45166,6 +45402,7 @@ function configureNumberInputProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "0", stats);
   configureHelperTextProperty(componentSet, "Use a whole number.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
   // GAP-098: NumberInput.unit, drawn after the value.
   configureNamedTextProperty(
     componentSet,
@@ -45307,6 +45544,7 @@ function configureComboboxProperties(componentSet, stats) {
   configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(componentSet, "Choose one option.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -46255,6 +46493,7 @@ async function buildEmptyStateComponent() {
       "Title Text maps to EmptyState.title.",
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
+      "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
     ],
   });
 }
@@ -46279,6 +46518,7 @@ async function updateEmptyStateComponent() {
       "Title Text maps to EmptyState.title.",
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
+      "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -55567,6 +55807,7 @@ function configureEmptyStateProperties(componentSet, stats) {
     "Try adjusting your filters or search terms.",
     stats,
   );
+  configureEmptyStateListProperties(componentSet, stats);
 }
 
 function configureCardProperties(componentSet, stats) {
@@ -56613,7 +56854,7 @@ function parseIconButtonVariantName(name) {
   }
 
   if (
-    BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
+    ICON_BUTTON_VARIANTS.indexOf(values.Variant) === -1 ||
     ICON_BUTTON_SIZES.indexOf(values.Size) === -1 ||
     BUTTON_STATES.indexOf(values.State) === -1
   ) {
@@ -60452,11 +60693,20 @@ function parseCardVariantName(name) {
 
   // A variant drawn before the Padding axis carries no Padding, and is the
   // card as it was: 24. Reading it as Default is what lets Update rename it
-  // instead of replacing it, so its node id survives.
-  const second = values.Padding || "Default";
-  if (CARD_PADDINGS.indexOf(second) === -1) {
+  // instead of replacing it, so its node id survives. The HeaderTone and
+  // TitleSize axes (CLOUD-UI-001, GAP-035) read the same way.
+  const padding = values.Padding || "Default";
+  const tone = values.HeaderTone || "Default";
+  const size = cardTitleSizeOf(tone, values.TitleSize);
+  if (
+    CARD_PADDINGS.indexOf(padding) === -1 ||
+    CARD_HEADER_TONES.indexOf(tone) === -1 ||
+    CARD_TITLE_SIZES.indexOf(size) === -1
+  ) {
     return null;
   }
+  const second = cardSecond(padding, tone, size);
+  if (!cardHasCombination(values.Content, second)) return null;
 
   return {
     value: values.Content,
@@ -60468,8 +60718,16 @@ async function updateCardVariant(
   component,
   { value, second, variableByName, fonts, stats },
 ) {
-  const padding = CARD_PADDINGS.indexOf(second) === -1 ? "Default" : second;
-  component.name = `Content=${value}, Padding=${padding}`;
+  const parts = cardSecondParts(second);
+  const padding =
+    CARD_PADDINGS.indexOf(parts.padding) === -1 ? "Default" : parts.padding;
+  const tone =
+    CARD_HEADER_TONES.indexOf(parts.tone) === -1 ? "Default" : parts.tone;
+  const size =
+    CARD_TITLE_SIZES.indexOf(parts.size) === -1
+      ? cardTitleSizeOf(tone)
+      : parts.size;
+  component.name = `Content=${value}, Padding=${padding}, HeaderTone=${tone}, TitleSize=${size}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -60499,6 +60757,8 @@ async function updateCardVariant(
     component,
     value,
     padding,
+    tone,
+    size,
     variableByName,
     fonts,
     stats,
@@ -62751,7 +63011,7 @@ function parseInputVariantName(name) {
     status = "Error";
   }
 
-  if (INPUT_STATES.indexOf(state) === -1) {
+  if (INPUT_FIELD_STATES.indexOf(state) === -1) {
     return null;
   }
 
@@ -62822,11 +63082,16 @@ function layoutInputVariants(componentSet) {
     const props = parseInputVariantName(child.name);
     if (!props) continue;
 
-    const stateIndex = INPUT_STATES.indexOf(props.state);
+    const stateIndex = INPUT_FIELD_STATES.indexOf(props.state);
     const statusIndex = INPUT_STATUSES.indexOf(props.status);
     const actionIndex = INPUT_ACTIONS.indexOf(props.action);
     child.x = statusIndex * 360;
-    child.y = (actionIndex * INPUT_STATES.length + stateIndex) * 126;
+    // The Mixed row (GAP-153) goes under every band, one row per Action, so
+    // no variant drawn before it moves.
+    child.y =
+      props.state === MIXED_FIELD_STATE
+        ? (INPUT_ACTIONS.length * INPUT_STATES.length + actionIndex) * 126
+        : (actionIndex * INPUT_STATES.length + stateIndex) * 126;
   }
 
   // The set holds the Action bands it gained.
@@ -63080,7 +63345,7 @@ function parseNumberInputVariantName(name) {
   const steppers = values.Steppers || "True";
 
   if (
-    INPUT_STATES.indexOf(state) === -1 ||
+    INPUT_FIELD_STATES.indexOf(state) === -1 ||
     INPUT_STATUSES.indexOf(status) === -1 ||
     NUMBER_INPUT_STEPPERS.indexOf(steppers) === -1
   ) {
@@ -63136,12 +63401,15 @@ function layoutNumberInputVariants(componentSet) {
     const props = parseNumberInputVariantName(child.name);
     if (!props) continue;
 
-    const stateIndex = INPUT_STATES.indexOf(props.state);
+    const stateIndex = INPUT_FIELD_STATES.indexOf(props.state);
     const statusIndex = INPUT_STATUSES.indexOf(props.status);
     const stepperIndex = NUMBER_INPUT_STEPPERS.indexOf(props.steppers);
     child.x = statusIndex * 720 + stepperIndex * 360;
     child.y = stateIndex * 126;
   }
+
+  // The set holds the Mixed row it gained (GAP-153).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createOTPInputVariant({
@@ -63345,6 +63613,9 @@ function layoutComboboxVariants(componentSet) {
     child.x = statusIndex * 760 + contentIndex * 380;
     child.y = stateIndex * 260;
   }
+
+  // The set holds the Mixed row it gained (GAP-153).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createMultiSelectVariant({
@@ -64227,7 +64498,9 @@ async function updateSelectVariant(
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
-  component.itemSpacing = 0;
+  // React's FieldWrapper gap, between the trigger and Reset Mixed when it
+  // shows (GAP-153); nothing else shares the column.
+  component.itemSpacing = 6;
   component.paddingLeft = 0;
   component.paddingRight = 0;
   component.paddingTop = 0;
@@ -66314,6 +66587,8 @@ async function syncCardVariantChildren({
   component,
   value,
   padding,
+  tone = "Default",
+  size = "Large",
   variableByName,
   fonts,
   stats,
@@ -66321,6 +66596,8 @@ async function syncCardVariantChildren({
   const pad = cardPaddingLength(padding);
   const hasHeader = value === "Header" || value === "Full";
   const hasFooter = value === "Full";
+  const subtle = hasHeader && tone === "Subtle";
+  const titleMetrics = cardTitleMetrics(cardTitleDrawnSize(tone, size));
 
   let header = directChildNamed(component, "Card Header");
   if (header && header.type !== "FRAME") {
@@ -66343,17 +66620,27 @@ async function syncCardVariantChildren({
     header.primaryAxisSizingMode = "FIXED";
     header.counterAxisSizingMode = "AUTO";
     header.primaryAxisAlignItems = "MIN";
-    header.counterAxisAlignItems = "MIN";
+    // The strip centres its words and its actions in it.
+    header.counterAxisAlignItems = subtle ? "CENTER" : "MIN";
     // The 6 between title and description is the column's now; the header's
     // own gap is the 16 before the actions, which no token names.
     clearBoundVariable(header, "itemSpacing", stats);
     header.itemSpacing = CARD_HEADER_ACTIONS_GAP;
     header.paddingLeft = pad;
     header.paddingRight = pad;
-    header.paddingTop = pad;
-    header.paddingBottom = pad;
+    header.paddingTop = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
+    header.paddingBottom = subtle ? CARD_SUBTLE_HEADER_PADDING_Y : pad;
     header.resizeWithoutConstraints(360, 80);
-    header.fills = [];
+    // The strip is theme 0, full-bleed: the card does not clip, so the tint
+    // takes the card's top corners itself, under the card's own edge.
+    header.fills = subtle
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+    const headerTop = subtle ? KOZMOS_RADIUS.container : KOZMOS_RADIUS.none;
+    setNodePropertyIfSupported(header, "topLeftRadius", headerTop);
+    setNodePropertyIfSupported(header, "topRightRadius", headerTop);
+    setNodePropertyIfSupported(header, "bottomLeftRadius", KOZMOS_RADIUS.none);
+    setNodePropertyIfSupported(header, "bottomRightRadius", KOZMOS_RADIUS.none);
     header.strokes = [];
     header.clipsContent = false;
     setLayoutSizingHorizontal(header, "FILL");
@@ -66396,7 +66683,13 @@ async function syncCardVariantChildren({
       title = figma.createText();
       title.name = "Title Text";
     }
-    await applyCardTitleTypography(title, fonts, variableByName, stats);
+    await applyCardTitleTypography(
+      title,
+      fonts,
+      variableByName,
+      stats,
+      titleMetrics,
+    );
     title.characters = cardTitleText(value);
     title.fills = [
       paintFromVariable(
@@ -66450,6 +66743,10 @@ async function syncCardVariantChildren({
       header,
       variableByName,
       stats,
+      // Centred on the title's line, or in the strip on its own 28.
+      lineHeight: subtle
+        ? CARD_SUBTLE_HEADER_ACTIONS_LINE
+        : titleMetrics.lineHeight,
     });
     appendWithSizing(component, header, "FILL", "HUG");
   } else if (header) {
@@ -66475,7 +66772,10 @@ async function syncCardVariantChildren({
   body.itemSpacing = 12;
   body.paddingLeft = pad;
   body.paddingRight = pad;
-  body.paddingTop = hasHeader ? 0 : 24;
+  // Under the strip the content keeps the card's padding above it, as React's
+  // strip keeps it below its tint; under any other header, none; with no
+  // header, the card's padding, as the token bound to it says.
+  body.paddingTop = subtle || !hasHeader ? pad : 0;
   body.paddingBottom = pad;
   body.resizeWithoutConstraints(360, 92);
   body.fills = [];
@@ -66560,7 +66860,17 @@ async function syncCardVariantChildren({
     stats,
     headerText,
     padding,
+    subtle,
   );
+  if (body && subtle) {
+    bindFloatVariable(
+      body,
+      "paddingTop",
+      cardPaddingToken(padding),
+      variableByName,
+      stats,
+    );
+  }
   if (body && value === "Basic") {
     bindFloatVariable(
       body,
@@ -66586,6 +66896,7 @@ async function syncCardHeaderActions({
   header,
   variableByName,
   stats,
+  lineHeight = CARD_TITLE_LINE_HEIGHT,
 }) {
   let actions = directChildNamed(header, CARD_HEADER_ACTIONS_PROPERTY);
   if (actions && actions.type !== "FRAME") {
@@ -66606,7 +66917,7 @@ async function syncCardHeaderActions({
   actions.paddingRight = 0;
   actions.paddingTop = 0;
   actions.paddingBottom = 0;
-  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, CARD_TITLE_LINE_HEIGHT);
+  actions.resizeWithoutConstraints(FIELD_ACTION_SIZE, lineHeight);
   actions.fills = [];
   actions.strokes = [];
   actions.clipsContent = false;
@@ -71120,7 +71431,16 @@ async function syncInputVariantChildren({
     ),
   ];
   placeholder.textAlignVertical = "CENTER";
+  placeholder.visible = true;
   field.appendChild(placeholder);
+  await syncMixedFieldText(placeholder, {
+    mixed: state === MIXED_FIELD_STATE,
+    hide: [placeholder],
+    typography: applyInputTextTypography,
+    fonts,
+    variableByName,
+    stats,
+  });
 
   await syncInputAction(field, {
     action,
@@ -71179,6 +71499,12 @@ async function syncInputVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
@@ -71996,6 +72322,21 @@ async function syncNumberInputVariantChildren({
   setTextAutoResize(placeholder, "TRUNCATE");
   valueSlot.appendChild(valueText);
   valueSlot.appendChild(placeholder);
+  await syncMixedFieldText(placeholder, {
+    mixed: state === MIXED_FIELD_STATE,
+    hide: [valueText, placeholder],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "NumberInput",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
 
   // GAP-098: the unit, inside the field after the value and before the
   // increment stepper, as React's .kozmos-number-unit draws it: the field's
@@ -72089,6 +72430,12 @@ async function syncNumberInputVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
   normalizeNumberInputSizing(component, field, valueSlot, stepperNodes);
@@ -72532,13 +72879,24 @@ async function syncComboboxVariantChildren({
   ];
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
+  const mixed = state === MIXED_FIELD_STATE;
+  await syncMixedFieldText(placeholder, {
+    mixed,
+    hide: [placeholder],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(text, fontSet, "Combobox", variables, runStats),
+    fonts,
+    variableByName,
+    stats,
+  });
 
   // The clear, as MultiSelect's: with a value (Open, as Code Connect's
   // defaultInputValue has it), and neither disabled nor read only.
   const actionIcons = await appendFieldActions(field, {
     tokenPrefix: "Combobox",
     sizeToken: "Combobox/field/height",
-    showClear: isOpen && !disabled && state !== "Readonly",
+    // Mixed, there is no value to clear (GAP-153).
+    showClear: isOpen && !disabled && state !== "Readonly" && !mixed,
     isOpen,
     config,
     variableByName,
@@ -72603,7 +72961,8 @@ async function syncComboboxVariantChildren({
       const option = await createComboboxOption({
         index,
         text: optionLabels[index],
-        selected: index === 0,
+        // Mixed, no option is the choice (GAP-153).
+        selected: index === 0 && !mixed,
         active: index === 1,
         focused: state === "Focus",
         disabled,
@@ -72656,6 +73015,12 @@ async function syncComboboxVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
@@ -76867,8 +77232,13 @@ async function createColorPickerSlider({
 }
 
 function numberInputValueColorConfig(state, config) {
+  // Mixed, the steppers are disabled (11 Nov): a step would write one number
+  // over every selected feature's own. Drawn as Disabled's, in its colour.
   if (state === "Disabled") {
     return { token: config.placeholder, fallback: config.placeholderFallback };
+  }
+  if (state === MIXED_FIELD_STATE) {
+    return { token: "Colors/foreground/500", fallback: "#747B8B" };
   }
 
   return { token: "Colors/foreground/0", fallback: "#000000" };
@@ -77340,7 +77710,17 @@ async function syncSelectVariantChildren({
     ),
   ];
   placeholder.textAlignVertical = "CENTER";
+  placeholder.visible = true;
   trigger.appendChild(placeholder);
+  await syncMixedFieldText(placeholder, {
+    mixed: state === MIXED_FIELD_STATE,
+    hide: [placeholder],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(text, fontSet, "Select", variables, runStats),
+    fonts,
+    variableByName,
+    stats,
+  });
 
   removeGeneratedButtonChild(trigger, "Icon", true);
   const icon = await createFixedIconInstance(
@@ -77369,6 +77749,12 @@ async function syncSelectVariantChildren({
 
   component.appendChild(trigger);
   setLayoutSizingHorizontal(trigger, "FILL");
+  await syncResetMixedText(component, trigger, {
+    mixed: state === MIXED_FIELD_STATE,
+    fonts,
+    variableByName,
+    stats,
+  });
   normalizeInputFamilyChildSizing(component);
 }
 
@@ -78177,6 +78563,13 @@ async function syncEmptyStateVariantChildren({
   component.appendChild(content);
   setLayoutSizingHorizontal(content, "FILL");
 
+  await appendEmptyStateList(component, {
+    size,
+    fonts,
+    variableByName,
+    stats,
+  });
+
   if (hasAction) {
     const action = await createEmptyStateActionButton(stats);
     component.appendChild(action);
@@ -78191,6 +78584,116 @@ async function syncEmptyStateVariantChildren({
     stats,
     size,
   );
+}
+
+/**
+ * EmptyState's list (GAP-165), as React draws it: under the description, a
+ * 280 column from the start, each item a bullet and its words in
+ * foreground/400 at the description's size, 4 between items. Hidden: the
+ * List boolean shows it.
+ */
+async function appendEmptyStateList(
+  component,
+  { fonts, variableByName, stats },
+) {
+  const list = figma.createFrame();
+  list.name = EMPTY_STATE_LIST_PROPERTY;
+  list.layoutMode = "VERTICAL";
+  list.primaryAxisSizingMode = "AUTO";
+  list.counterAxisSizingMode = "FIXED";
+  list.primaryAxisAlignItems = "MIN";
+  list.counterAxisAlignItems = "MIN";
+  list.itemSpacing = 4;
+  list.paddingLeft = 0;
+  list.paddingRight = 0;
+  list.paddingTop = 0;
+  list.paddingBottom = 0;
+  list.resizeWithoutConstraints(280, 68);
+  list.fills = [];
+  list.strokes = [];
+  list.clipsContent = false;
+
+  for (let index = 0; index < EMPTY_STATE_LIST_ITEMS.length; index += 1) {
+    const row = figma.createFrame();
+    row.name = `List Item ${index + 1}`;
+    row.layoutMode = "HORIZONTAL";
+    row.primaryAxisSizingMode = "FIXED";
+    row.counterAxisSizingMode = "AUTO";
+    row.primaryAxisAlignItems = "MIN";
+    row.counterAxisAlignItems = "MIN";
+    row.itemSpacing = 8;
+    row.paddingLeft = 0;
+    row.paddingRight = 0;
+    row.paddingTop = 0;
+    row.paddingBottom = 0;
+    row.fills = [];
+    row.strokes = [];
+    row.clipsContent = false;
+
+    const bullet = figma.createText();
+    bullet.name = "Bullet";
+    await applyEmptyStateDescriptionTypography(
+      bullet,
+      fonts,
+      variableByName,
+      stats,
+    );
+    bullet.characters = "\u2022";
+    setTextAutoResize(bullet, "WIDTH_AND_HEIGHT");
+
+    const words = figma.createText();
+    words.name = `List Item ${index + 1} Text`;
+    await applyEmptyStateDescriptionTypography(
+      words,
+      fonts,
+      variableByName,
+      stats,
+    );
+    words.characters = EMPTY_STATE_LIST_ITEMS[index];
+    words.textAlignHorizontal = "LEFT";
+
+    for (const text of [bullet, words]) {
+      text.fills = [
+        paintFromVariable(
+          "Colors/foreground/400",
+          "#5E6575",
+          variableByName,
+          stats,
+        ),
+      ];
+    }
+
+    row.appendChild(bullet);
+    row.appendChild(words);
+    setLayoutSizingHorizontal(words, "FILL");
+    setTextAutoResize(words, "HEIGHT");
+    list.appendChild(row);
+    setLayoutSizingHorizontal(row, "FILL");
+  }
+
+  list.visible = false;
+  component.appendChild(list);
+  return list;
+}
+
+function configureEmptyStateListProperties(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    EMPTY_STATE_LIST_PROPERTY,
+    EMPTY_STATE_LIST_PROPERTY,
+    false,
+    stats,
+  );
+  for (let index = 0; index < EMPTY_STATE_LIST_ITEMS.length; index += 1) {
+    const name = `List Item ${index + 1} Text`;
+    configureNamedTextProperty(
+      componentSet,
+      name,
+      name,
+      EMPTY_STATE_LIST_ITEMS[index],
+      stats,
+    );
+  }
 }
 
 async function createEmptyStateActionButton(stats) {
@@ -78603,6 +79106,116 @@ function resizeVerticalAutoLayoutFrameToVisibleChildren(node, widthFallback) {
   const height = Math.max(1, childrenHeight + spacing + padding);
 
   resizeNodeWithoutConstraints(node, width, height);
+}
+
+/**
+ * GAP-153: a field of a multi-selection whose values differ (State=Mixed)
+ * shows "Multiple values" in place of its own, as React's mixed field shows
+ * its mixed label as the placeholder: a "Mixed Text" layer after `anchor`
+ * (the field's placeholder), with the anchor's type, colour and sizing, and
+ * the layers it stands in for (`hide`) hidden. Outside Mixed it is removed.
+ * Not bound to Placeholder Text: that property's words stay the field's own.
+ */
+async function syncMixedFieldText(
+  anchor,
+  { mixed, hide, typography, fonts, variableByName, stats },
+) {
+  const parent = anchor.parent;
+  let text = parent ? directChildNamed(parent, "Mixed Text") : null;
+  if (!mixed) {
+    if (text) text.remove();
+    return null;
+  }
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = "Mixed Text";
+  }
+  await typography(text, fonts, variableByName, stats);
+  text.characters = MIXED_FIELD_TEXT;
+  text.fills = anchor.fills;
+  text.textAlignHorizontal = anchor.textAlignHorizontal;
+  text.textAlignVertical = "CENTER";
+  parent.insertChild(parent.children.indexOf(anchor) + 1, text);
+  setHorizontalFillTextSizing(text);
+  setTextAutoResize(text, "TRUNCATE");
+  for (const node of hide) node.visible = false;
+  return text;
+}
+
+/**
+ * GAP-153: a mixed field's way back, "Reset to multiple values", under the
+ * field as React's FieldWrapper draws it: a text button at the field's
+ * start, Colors/theme/600 at the label's size and weight. Hidden: the Reset
+ * Mixed boolean shows it, for a field edited out of Mixed; its words are
+ * Reset Mixed Text. Drawn into `text`, the variant's existing layer or a new
+ * one. Kept for Input and Select, whose painters reuse their children, so an
+ * instance's overrides of it survive an Update there; NumberInput's and
+ * Combobox's painters remove every child first and draw it anew, as they
+ * always have, so there it (and Mixed Text) gets a new id on each Update.
+ */
+async function drawResetMixedText(text, { fonts, variableByName, stats }) {
+  text.name = RESET_MIXED_LAYER;
+  await applyInputLabelTypography(text, fonts, variableByName, stats);
+  text.characters = RESET_MIXED_TEXT;
+  text.fills = [
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+  ];
+  text.textAlignVertical = "CENTER";
+  text.visible = false;
+  return text;
+}
+
+/**
+ * A variant's Reset Mixed layer, right after `field`: the layer it has, kept
+ * in place, or a new one. State=Mixed draws none, so its Reset Mixed
+ * boolean shows nothing: Figma cannot hide a boolean per variant, but the
+ * impossible pair, mixed and offering to go back to mixed, cannot be drawn.
+ */
+async function syncResetMixedText(component, field, options) {
+  let text = directChildNamed(component, RESET_MIXED_LAYER);
+  if (options.mixed) {
+    if (text) text.remove();
+    return null;
+  }
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) text = figma.createText();
+  await drawResetMixedText(text, options);
+  component.insertChild(component.children.indexOf(field) + 1, text);
+  setTextAutoResize(text, "WIDTH_AND_HEIGHT");
+  return text;
+}
+
+function configureResetMixedProperty(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    RESET_MIXED_LAYER,
+    RESET_MIXED_PROPERTY,
+    false,
+    stats,
+  );
+  // The words, for a product to localise: Reset Mixed Text on the reset,
+  // Mixed Text on the Mixed variants' "Multiple values".
+  configureNamedTextProperty(
+    componentSet,
+    RESET_MIXED_LAYER,
+    RESET_MIXED_TEXT_PROPERTY,
+    RESET_MIXED_TEXT,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    MIXED_TEXT_LAYER,
+    MIXED_TEXT_PROPERTY,
+    MIXED_FIELD_TEXT,
+    stats,
+  );
 }
 
 function resizeComponentSetToContainChildren(componentSet, padding = 0) {
@@ -81866,6 +82479,25 @@ function buttonConfig(variant, state) {
       foregroundFallback: "#000000",
       strokeFallback: "#FFFFFF80",
     },
+    // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
+    // theme 600, the theme as text (decision 59). Disabled, it is the
+    // filled Buttons' disabled pair, the same in every tier, which the
+    // subtle tier does not repeat.
+    Subtle:
+      state === "Disabled"
+        ? {
+            background: "Primary Buttons/themed/button/background/disabled",
+            foreground:
+              "Primary Buttons/themed/button/foreground/content/disabled",
+            backgroundFallback: "#2E3138",
+            foregroundFallback: "#464A53",
+          }
+        : {
+            background: "Subtle Buttons/themed/button/background/idle",
+            foreground: "Subtle Buttons/themed/button/foreground/content/idle",
+            backgroundFallback: "#F1F5FE",
+            foregroundFallback: "#1051E8",
+          },
   };
 
   return configs[variant] || configs.Default;

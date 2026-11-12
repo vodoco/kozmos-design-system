@@ -241,6 +241,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
     "Components/Secondary Buttons/themed/button/foreground/content/disabled",
     MARK,
   ],
+  // The subtle Button's words are its marks too (GAP-200): its icon's
+  // stroke and its loading ring.
+  ["Components/Subtle Buttons/themed/button/foreground/content/idle", MARK],
 ]);
 
 // The category tokens, all eight categories alike: an accent is the icon's

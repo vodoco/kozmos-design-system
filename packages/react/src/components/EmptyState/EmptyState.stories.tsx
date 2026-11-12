@@ -77,3 +77,26 @@ export const DownloadProgress: Story = {
     </div>
   ),
 };
+
+/**
+ * GAP-165: Map Content's "No Map Content Found" lists what to try under its
+ * description, read in order before the action.
+ */
+export const WithList: Story = {
+  render: () => (
+    <div className="w-[360px] h-[440px] border rounded-container bg-card flex">
+      <EmptyState
+        icon={<Search className="h-8 w-8 text-muted-foreground" />}
+        title="No Map Content Found"
+        description="Nothing on this level matches your search."
+        listLabel="What to try"
+        list={[
+          "Check the building and level",
+          "Clear the type filters",
+          "Search by another name or an ID",
+        ]}
+        action={<Button variant="outline">Clear filters</Button>}
+      />
+    </div>
+  ),
+};

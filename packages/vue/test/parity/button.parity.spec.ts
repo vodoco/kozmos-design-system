@@ -34,10 +34,18 @@ const button = ({ children, ...props }: Record<string, unknown>): Drawn => ({
 });
 
 describe("KozmosButton draws React's Button", () => {
-  // What the Emotions story draws: each variant it shows, in every emotion.
+  // What the Emotions story draws: each variant it shows, in every emotion;
+  // and the SubtleEmotions story's subtle variant in every emotion.
   // glass is in the recipe too, and takes no emotion; it is drawn here so a
   // change to that rule shows up in both.
-  for (const variant of ["default", "outline", "ghost", "glass"] as const) {
+  // subtle (GAP-200) is a fill of its own tier, in every emotion.
+  for (const variant of [
+    "default",
+    "outline",
+    "ghost",
+    "glass",
+    "subtle",
+  ] as const) {
     for (const emotion of KozmosReact.BUTTON_EMOTIONS) {
       it(`Emotions: ${variant}, ${emotion}`, async () => {
         const { react, vue } = await renderBoth(
@@ -68,6 +76,12 @@ describe("KozmosButton draws React's Button", () => {
       "native attributes",
       { type: "submit", name: "save", value: "1" },
       { type: "submit", name: "save", value: "1" },
+    ],
+    // The Subtle story: the subtle variant the width of its form (GAP-200).
+    [
+      "subtle, full width",
+      { variant: "subtle", className: "w-full" },
+      { variant: "subtle", class: "w-full" },
     ],
     [
       "an emotion with a caller's style",

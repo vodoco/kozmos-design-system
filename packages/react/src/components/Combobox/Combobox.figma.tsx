@@ -12,19 +12,31 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Readonly: false,
+        Mixed: false,
       }),
       readOnly: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Readonly: true,
+        Mixed: false,
       }),
       autoFocus: figma.enum("State", {
         Default: false,
         Focus: true,
         Disabled: false,
         Readonly: false,
+        Mixed: false,
       }),
+      // GAP-153: a field of a multi-selection whose values differ, and its
+      // way back once edited.
+      mixed: figma.enum("State", { Mixed: true }),
+      onResetMixed: figma.boolean("Reset Mixed", {
+        true: () => {},
+        false: undefined,
+      }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -51,6 +63,10 @@ figma.connect(
       disabled,
       helperText,
       label,
+      mixed,
+      mixedLabel,
+      onResetMixed,
+      resetMixedLabel,
       option1,
       option2,
       option3,
@@ -64,6 +80,10 @@ figma.connect(
         disabled={disabled}
         helperText={helperText}
         label={label}
+        mixed={mixed}
+        onResetMixed={onResetMixed}
+        mixedLabel={mixedLabel}
+        resetMixedLabel={resetMixedLabel}
         options={[
           { label: option1, value: "metro-station" },
           { label: option2, value: "bus-stop" },
@@ -91,19 +111,31 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Readonly: false,
+        Mixed: false,
       }),
       readOnly: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Readonly: true,
+        Mixed: false,
       }),
       autoFocus: figma.enum("State", {
         Default: false,
         Focus: true,
         Disabled: false,
         Readonly: false,
+        Mixed: false,
       }),
+      // GAP-153: a field of a multi-selection whose values differ, and its
+      // way back once edited.
+      mixed: figma.enum("State", { Mixed: true }),
+      onResetMixed: figma.boolean("Reset Mixed", {
+        true: () => {},
+        false: undefined,
+      }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -134,6 +166,10 @@ figma.connect(
       group2,
       helperText,
       label,
+      mixed,
+      mixedLabel,
+      onResetMixed,
+      resetMixedLabel,
       option1,
       option2,
       option3,
@@ -147,6 +183,10 @@ figma.connect(
         disabled={disabled}
         helperText={helperText}
         label={label}
+        mixed={mixed}
+        onResetMixed={onResetMixed}
+        mixedLabel={mixedLabel}
+        resetMixedLabel={resetMixedLabel}
         options={[
           { group: group1, label: option1, value: "metro-station" },
           { group: group1, label: option2, value: "bus-stop" },

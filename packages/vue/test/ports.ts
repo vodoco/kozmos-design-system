@@ -74,7 +74,11 @@ export const PORTS: Port[] = [
     vue: "KozmosButton",
     react: "Button",
     stories: "components/Button/Button.stories.tsx",
-    elsewhere: { Emotions: "parity/button.parity.spec.ts" },
+    elsewhere: {
+      Emotions: "parity/button.parity.spec.ts",
+      Subtle: "parity/button.parity.spec.ts",
+      SubtleEmotions: "parity/button.parity.spec.ts",
+    },
   },
 ];
 
