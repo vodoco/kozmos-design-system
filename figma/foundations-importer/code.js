@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "f35b5e8fde48";
+const PLUGIN_BUILD = "5ee604557bd6";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -71173,6 +71173,10 @@ async function syncRadioBoxVariantChildren({
   ];
   component.strokeWeight = box.edgeWidth;
   component.strokeAlign = "INSIDE";
+  // The edge takes no room: 1 or 2 wide, the content stays 12 in, as React's
+  // inset second pixel moves nothing. Laid out, it pushed the Media 13 or 14
+  // in, and the nested-radius check found it off by 9 or 10.
+  setNodePropertyIfSupported(component, "strokesIncludedInLayout", false);
 
   // Media: a card's image place, a tile's icon. Map 01 stands in for either.
   const media = ensureControlRowFrame(component, "Media");
@@ -71189,7 +71193,9 @@ async function syncRadioBoxVariantChildren({
     media.counterAxisSizingMode = "FIXED";
     media.resizeWithoutConstraints(RADIO_CARD_WIDTH - 24, 80);
     media.layoutAlign = "STRETCH";
-    media.cornerRadius = KOZMOS_RADIUS.control;
+    // Concentric with the card: its radius less the 12 inset, 20 - 12 = 8
+    // (docs/nested-radius.md), as React's, SwiftUI's and Compose's are.
+    media.cornerRadius = KOZMOS_RADIUS.container - 12;
     media.clipsContent = true;
     media.fills = [
       paintFromVariable(

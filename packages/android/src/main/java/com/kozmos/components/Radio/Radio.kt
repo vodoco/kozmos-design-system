@@ -224,7 +224,9 @@ private fun KozmosRadioBox(
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                            // Concentric with the card: its radius less its
+                            // 12dp inset (docs/nested-radius.md).
+                            .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer - KozmosDimensions.primitivesLayoutSpacing150))
                             .clearAndSetSemantics {}
                     ) {
                         // An icon given no tint of its own takes the theme's

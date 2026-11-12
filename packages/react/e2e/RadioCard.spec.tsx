@@ -47,3 +47,14 @@ test("a chosen card's heavier edge stays in forced colours", async ({
   await expect(chosen).toHaveCSS("outline-width", "2px");
   await expect(other).toHaveCSS("outline-style", "none");
 });
+
+// A card's image is concentric with the card (docs/nested-radius.md): the
+// card's 20 corner less its 12 inset, 8.
+test("a card's media is concentric with the card", async ({ mount }) => {
+  const component = await mount(<RadioCardFixture />);
+  const card = component.getByRole("radio", { name: "Vector" });
+  const media = card.locator('[data-slot="media"]');
+  await expect(card).toHaveCSS("border-top-left-radius", "20px");
+  await expect(card).toHaveCSS("padding-top", "12px");
+  await expect(media).toHaveCSS("border-top-left-radius", "8px");
+});

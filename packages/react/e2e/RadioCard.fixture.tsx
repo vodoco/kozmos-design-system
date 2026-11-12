@@ -8,7 +8,12 @@ export function RadioCardFixture() {
     <ThemeProvider theme="light">
       <div style={{ width: 480 }}>
         <RadioGroup aria-label="Map style" defaultValue="satellite">
-          <RadioGroupItem value="vector" variant="card" label="Vector" />
+          <RadioGroupItem
+            value="vector"
+            variant="card"
+            label="Vector"
+            media={<div style={{ height: 40 }} />}
+          />
           <RadioGroupItem value="satellite" variant="card" label="Satellite" />
         </RadioGroup>
       </div>

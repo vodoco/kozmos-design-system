@@ -119,8 +119,16 @@ public struct KozmosRadioGroupItem<Media: View>: View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             if let media = media {
                 media
+                    // An icon given no colour of its own takes the theme's
+                    // full ink, foreground/0, as a tile's and React's do.
+                    // Left to the platform it was the system label colour,
+                    // which on macOS is a translucent white, not Kozmos's.
+                    .foregroundColor(titleColor)
+                    .environment(\.kozmosIconHostInk, titleColor)
                     .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
+                    // Concentric with the card: its radius less its 12
+                    // inset (docs/nested-radius.md), 20 - 12 = 8.
+                    .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer - KozmosDimensions.primitivesLayoutSpacing150, style: .continuous))
                     .accessibilityHidden(true)
             }
             HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {

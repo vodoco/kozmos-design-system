@@ -172,7 +172,9 @@ const RadioGroupItem = React.forwardRef<
                 // Compose's do; a card's image keeps its own colours.
                 tile
                   ? "items-center justify-center text-foreground group-data-[state=checked]:text-primary"
-                  : "w-full overflow-hidden rounded-control text-foreground",
+                  : // Concentric with the card: its radius less the card's
+                    // 12 inset (docs/nested-radius.md), owned CSS.
+                    "kozmos-radio-card-media w-full overflow-hidden text-foreground",
               )}
             >
               {media}

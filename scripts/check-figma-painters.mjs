@@ -13951,6 +13951,21 @@ section("GAP-158: Radio draws cards and tiles");
       off.opacity === 0.5 && chosen.opacity === 1,
       `${variant}: disabled, the whole box is at half (${off.opacity})`,
     );
+    // The edge takes no room, so the content is 12 in whether it is 1 or 2
+    // wide, and a card's Media is concentric with the card: 20 - 12 = 8
+    // (docs/nested-radius.md; the strict check on the live file found the
+    // Media at r16 13 or 14 in).
+    const cardMedia = named(chosen, "Media");
+    ok(
+      chosen.strokesIncludedInLayout === false &&
+        open.strokesIncludedInLayout === false &&
+        (tile ||
+          (cardMedia &&
+            cardMedia.cornerRadius === 8 &&
+            cardMedia.cornerRadius + chosen.paddingLeft ===
+              chosen.cornerRadius)),
+      `${variant}: the edge is out of the layout, and ${tile ? "the tile's Media is unfilled" : "the card's Media is r8, the card's 20 less its 12"} (${chosen.strokesIncludedInLayout}/${open.strokesIncludedInLayout}, media r${cardMedia && cardMedia.cornerRadius})`,
+    );
     const title = named(chosen, "Label Text");
     const description = named(chosen, "Description Text");
     const media = named(chosen, "Media");
