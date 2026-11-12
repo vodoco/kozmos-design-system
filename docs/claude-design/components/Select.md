@@ -50,7 +50,24 @@ export function SelectExample() {
 
 ## Select
 
-Its props are `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>`.
+Its props are `SelectProps`, which is `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & MixedValueProps`.
+
+- `mixed`: `boolean`, optional.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 - `children`: `React.ReactNode`, optional.
 - `open`: `boolean`, optional.
@@ -77,10 +94,10 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## SelectValue
 
-It forwards its ref to `HTMLSpanElement`. Its props are `SelectPrimitive.SelectValueProps`.
+It forwards its ref to `HTMLSpanElement`. Its props are `Omit<SelectPrimitive.SelectValueProps & React.RefAttributes<HTMLSpanElement>, "ref">`.
 
-- `placeholder`: `React.ReactNode`, optional.
 - `asChild`: `boolean`, optional.
+- `placeholder`: `React.ReactNode`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

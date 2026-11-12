@@ -14,19 +14,37 @@ const inputProps = {
     Focus: false,
     Disabled: true,
     Readonly: false,
+    Mixed: false,
   }),
   readOnly: figma.enum("State", {
     Default: false,
     Focus: false,
     Disabled: false,
     Readonly: true,
+    Mixed: false,
   }),
   autoFocus: figma.enum("State", {
     Default: false,
     Focus: true,
     Disabled: false,
     Readonly: false,
+    Mixed: false,
   }),
+  // GAP-153: a field of a multi-selection whose values differ, and its way
+  // back once edited.
+  mixed: figma.enum("State", {
+    Default: false,
+    Focus: false,
+    Disabled: false,
+    Readonly: false,
+    Mixed: true,
+  }),
+  onResetMixed: figma.boolean("Reset Mixed", {
+    true: () => {},
+    false: undefined,
+  }),
+  mixedLabel: figma.string("Mixed Text"),
+  resetMixedLabel: figma.string("Reset Mixed Text"),
   status: figma.enum("Status", {
     Default: "default",
     Error: "error",
@@ -49,6 +67,10 @@ figma.connect(Input, inputUrl, {
     disabled,
     helperText,
     label,
+    mixed,
+    mixedLabel,
+    onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -58,6 +80,10 @@ figma.connect(Input, inputUrl, {
       disabled={disabled}
       helperText={helperText}
       label={label}
+      mixed={mixed}
+      onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -75,6 +101,10 @@ figma.connect(Input, inputUrl, {
     disabled,
     helperText,
     label,
+    mixed,
+    mixedLabel,
+    onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -84,6 +114,10 @@ figma.connect(Input, inputUrl, {
       disabled={disabled}
       helperText={helperText}
       label={label}
+      mixed={mixed}
+      onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -102,6 +136,10 @@ figma.connect(Input, inputUrl, {
     disabled,
     helperText,
     label,
+    mixed,
+    mixedLabel,
+    onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -111,6 +149,10 @@ figma.connect(Input, inputUrl, {
       disabled={disabled}
       helperText={helperText}
       label={label}
+      mixed={mixed}
+      onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}
@@ -134,6 +176,10 @@ figma.connect(Input, inputUrl, {
     disabled,
     helperText,
     label,
+    mixed,
+    mixedLabel,
+    onResetMixed,
+    resetMixedLabel,
     placeholder,
     readOnly,
     status,
@@ -143,6 +189,10 @@ figma.connect(Input, inputUrl, {
       disabled={disabled}
       helperText={helperText}
       label={label}
+      mixed={mixed}
+      onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
       placeholder={placeholder}
       readOnly={readOnly}
       status={status}

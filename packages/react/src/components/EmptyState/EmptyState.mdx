@@ -70,6 +70,59 @@ KozmosEmptyState(
 )
 ```
 
+## A list in its body
+
+`list` draws what to try, or what is to come, under the description (GAP-165): Map Content's "No Map
+Content Found" lists the level, the filters and another name. Each item is one line, drawn as a
+bulleted list from the leading edge of the 280 column, above any progress and the action, and read
+in order: a screen reader hears a list of so many items, and `listLabel` names it. On React an item
+may be the product's own inline content, such as a `Link`; SwiftUI and Compose take the items'
+words. An empty list draws nothing.
+
+<Canvas of={EmptyStateStories.WithList} />
+
+```tsx
+<EmptyState
+  icon={<SearchMd />}
+  title="No Map Content Found"
+  description="Nothing on this level matches your search."
+  listLabel="What to try"
+  list={["Check the building and level", "Clear the type filters", "Search by another name or an ID"]}
+  action={<Button variant="outline">Clear filters</Button>}
+/>
+```
+
+```kotlin
+import androidx.compose.runtime.Composable
+import com.kozmos.components.emptystate.KozmosEmptyState
+
+@Composable
+fun NoMapContent() {
+    KozmosEmptyState(
+        title = "No Map Content Found",
+        description = "Nothing on this level matches your search.",
+        list = listOf("Check the building and level", "Clear the type filters", "Search by another name or an ID"),
+        listLabel = "What to try"
+    )
+}
+```
+
+```swift
+import SwiftUI
+import Kozmos
+
+struct NoMapContent: View {
+    var body: some View {
+        KozmosEmptyState(
+            title: "No Map Content Found",
+            description: "Nothing on this level matches your search.",
+            list: ["Check the building and level", "Clear the type filters", "Search by another name or an ID"],
+            listLabel: "What to try"
+        )
+    }
+}
+```
+
 ## Android Jetpack Compose
 
 ```kotlin

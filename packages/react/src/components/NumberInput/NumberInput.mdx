@@ -218,6 +218,15 @@ utilities are scoped. Use the props, the provider's `tokens`, an inline `style` 
 own CSS, and `wrapperClassName` for the layout around it. Guides › Platform support ›
 Fields in Safari has the detail.
 
+## A mixed value
+
+A number the selected features do not share is shown as "Multiple values" with `mixed`, until a typed
+number edits it. The steppers are disabled while it is mixed, on every platform and in Figma: a step
+would start from nothing and write that number over every selected feature's own. `onResetMixed`
+offers "Reset to multiple values" once edited. Input's page has the whole of it (GAP-153).
+
+<Canvas of={NumberInputStories.MixedValue} />
+
 ## Stories
 
 ### Default

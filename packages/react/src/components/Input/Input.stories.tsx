@@ -131,3 +131,32 @@ function ActionsExample() {
 export const Actions: Story = {
   render: () => <ActionsExample />,
 };
+
+/**
+ * GAP-153: a property of a multi-selection whose features differ. The field
+ * shows "Multiple values" and is described with it until it is edited; then
+ * it offers "Reset to multiple values", which takes it back. Type in the
+ * first field to see the reset; the second has been edited already.
+ */
+export const MixedValue: Story = {
+  render: () => {
+    function Field({ label, edited }: { label: string; edited?: string }) {
+      const [edit, setEdit] = useState<string | undefined>(edited);
+      return (
+        <Input
+          label={label}
+          mixed={edit === undefined}
+          value={edit ?? ""}
+          onChange={(event) => setEdit(event.target.value)}
+          onResetMixed={() => setEdit(undefined)}
+        />
+      );
+    }
+    return (
+      <div className="grid w-80 gap-4">
+        <Field label="Name" />
+        <Field label="Description" edited="Gate seating" />
+      </div>
+    );
+  },
+};

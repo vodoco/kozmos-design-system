@@ -29,7 +29,7 @@ export function NumberInputExample() {
 
 ## NumberInput
 
-It forwards its ref to `HTMLInputElement`. Its props are `NumberInputProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">`.
+It forwards its ref to `HTMLInputElement`. Its props are `NumberInputProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">, MixedValueProps`.
 
 - `error`: `boolean | string`, optional.
 - `helperText`: `string`, optional.
@@ -47,6 +47,23 @@ It forwards its ref to `HTMLInputElement`. Its props are `NumberInputProps`, whi
 - `unitLabel`: `string`, optional.
 
   The unit's spoken name, in the page's language: "metres" for "m".
+
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 - `children`: `ReactNode`, optional.
 

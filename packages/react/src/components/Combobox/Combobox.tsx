@@ -29,7 +29,7 @@ import {
 } from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 
 export interface ComboboxOption {
@@ -68,10 +68,13 @@ function entryKey(entry: PopupEntry) {
     : `action:${entry.action.id}`;
 }
 
-export interface ComboboxProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "children" | "defaultValue" | "onChange" | "value"
-> {
+export interface ComboboxProps
+  extends
+    Omit<
+      React.InputHTMLAttributes<HTMLInputElement>,
+      "children" | "defaultValue" | "onChange" | "value"
+    >,
+    MixedValueProps {
   clearable?: boolean;
   clearLabel?: string;
   openLabel?: string;
@@ -189,6 +192,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       status = "default",
       value,
       wrapperClassName,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
       "aria-describedby": callerDescribedBy,
@@ -227,7 +234,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const [uncontrolledValue, setUncontrolledValue] = React.useState(
       defaultValue || "",
     );
-    const selectedValue = value ?? uncontrolledValue;
+    // Mixed (GAP-153), no option is the choice: none is checked and the
+    // field's own text is empty, though the visitor may type a query.
+    const selectedValue = mixed ? "" : (value ?? uncontrolledValue);
     const selectedOption = options.find(
       (option) => option.value === selectedValue,
     );
@@ -423,6 +432,15 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     };
 
     const clearSelection = () => {
+      // Mixed, there is no choice to clear, only the visitor's query: an
+      // empty choice reported here would read as an edit that empties the
+      // property across the whole selection (GAP-153).
+      if (mixed) {
+        setInputValue("");
+        setTextByVisitor(false);
+        setOpen(false);
+        return;
+      }
       if (value === undefined) {
         setUncontrolledValue("");
       }
@@ -497,6 +515,19 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         label={label}
         required={required}
         status={resolvedStatus}
+        mixed={mixed}
+        onResetMixed={
+          onResetMixed && !disabled && !readOnly
+            ? () => {
+                // The text goes with the choice, typed or not.
+                setInputValue("");
+                setTextByVisitor(false);
+                setOpen(false);
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         <FieldPopupRoot>
           <div
@@ -554,9 +585,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     className,
                   )}
                   data-clearable={canClear ? "" : undefined}
+                  data-mixed={mixed ? "" : undefined}
                   disabled={disabled}
                   readOnly={readOnly}
-                  placeholder={placeholder}
+                  placeholder={mixed ? mixedLabel : placeholder}
                   required={required}
                   value={visibleInputValue}
                   onBlur={onBlur}
