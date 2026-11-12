@@ -27,10 +27,21 @@ struct KozmosInputConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Readonly": "readonly"
+            "Readonly": "readonly",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // GAP-153: its way back to the several values, once edited.
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
+
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaEnum(
         "Status",
@@ -51,7 +62,11 @@ struct KozmosInputConnect: FigmaConnect {
             disabled: self.state == "disabled",
             readOnly: self.state == "readonly",
             status: self.status,
-            helperText: self.showHelperText ? self.helperText : nil
+            helperText: self.showHelperText ? self.helperText : nil,
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         )
     }
 }

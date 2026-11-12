@@ -47,7 +47,7 @@ export function ComboboxExample() {
 
 ## Combobox
 
-It forwards its ref to `HTMLInputElement`. Its props are `ComboboxProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "defaultValue" | "onChange" | "value">`.
+It forwards its ref to `HTMLInputElement`. Its props are `ComboboxProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "defaultValue" | "onChange" | "value">, MixedValueProps`.
 
 - `clearable`: `boolean`, optional, default `true`.
 - `clearLabel`: `string`, optional, default `"Clear selection"`.
@@ -79,6 +79,22 @@ It forwards its ref to `HTMLInputElement`. Its props are `ComboboxProps`, which 
 - `status`: `InputStatus`, optional, default `"default"`.
 - `value`: `string`, optional.
 - `wrapperClassName`: `string`, optional.
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 

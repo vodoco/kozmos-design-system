@@ -39,6 +39,15 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   /** A wait it explains, drawn under the description and above the action. */
   progress?: EmptyStateProgress;
   /**
+   * A list under the description (GAP-165): what to try, or what is to come,
+   * one item a line, drawn as a bulleted list and read in order, with its
+   * count. Each item is a line of text, or the product's own inline content,
+   * such as a Link. An empty list draws nothing.
+   */
+  list?: React.ReactNode[];
+  /** The list's name, said as a screen reader enters it. */
+  listLabel?: string;
+  /**
    * How much room it takes.
    *
    * `default` fills its region and pads itself by 32, which is right when the
@@ -64,7 +73,18 @@ function clampPercent(value: number): number {
 
 const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   (
-    { className, icon, title, description, action, progress, size, ...props },
+    {
+      className,
+      icon,
+      title,
+      description,
+      action,
+      progress,
+      list,
+      listLabel,
+      size,
+      ...props
+    },
     ref,
   ) => {
     const fromSlot = React.useContext(EmptyStateDensityContext);
@@ -120,6 +140,26 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           >
             {description}
           </Text>
+        )}
+        {/* Under the description, starting at the leading edge as the
+          progress label does: a list read centred is hard to follow. The
+          list's own role is kept where a list-style of none would drop it
+          (WebKit), so it is said as a list of so many items. */}
+        {list && list.length > 0 && (
+          <ul
+            role="list"
+            aria-label={listLabel}
+            data-empty-state-list=""
+            className={cn(
+              "kozmos-empty-state-list mb-4 w-full max-w-[280px] text-start text-sm text-muted-foreground",
+              !description && "mt-3",
+              compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
+            )}
+          >
+            {list.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
         )}
         {/* The natives leave their stack's gap above the bar, 16 or 8
           compact, from the description or, without one, from the title,

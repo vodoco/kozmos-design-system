@@ -14,6 +14,18 @@ public struct KozmosNumberInput: View {
     let min: Double?
     let max: Double?
     let showSteppers: Bool
+    /// The field stands for several values that differ, and shows none
+    /// (GAP-153): `KozmosMixedValue` has the whole of it.
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
+    @FocusState private var fieldFocused: Bool
+    /// What the visitor types into a mixed field, kept as typed until the
+    /// field loses focus (GAP-153): formatted from the product's first value,
+    /// a "-" or a "-0." still being typed would be dropped ("-5" became 5).
+    @State private var draft: String?
     /// A unit drawn inside the field after the value ("m"), never part of the
     /// value (GAP-098).
     let unit: String?
@@ -35,6 +47,10 @@ public struct KozmosNumberInput: View {
         min: Double? = nil,
         max: Double? = nil,
         showSteppers: Bool = true,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
         unit: String? = nil,
         unitLabel: String? = nil
     ) {
@@ -51,6 +67,10 @@ public struct KozmosNumberInput: View {
         self.min = min
         self.max = max
         self.showSteppers = showSteppers
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
         self.unit = unit
         self.unitLabel = unitLabel
     }
@@ -75,12 +95,31 @@ public struct KozmosNumberInput: View {
                 // and it mirrors with the layout in right-to-left.
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                     TextField(
-                        placeholder,
+                        mixed ? mixedLabel : placeholder,
                         text: Binding(
-                            get: { formatValue(value) },
-                            set: { nextValue in value = parseValue(nextValue) }
+                            // Mixed, it shows none of its own (GAP-153); the
+                            // unit stays, to say what to type.
+                            get: { draft ?? (mixed ? "" : formatValue(value)) },
+                            set: { nextValue in
+                                if let typed = Self.draftValue(nextValue, mixed: mixed, drafting: draft != nil) {
+                                    draft = nextValue
+                                    // A number, reported; "-", "." or "-." report nothing.
+                                    if let number = typed { value = clamp(number) }
+                                } else {
+                                    value = parseValue(nextValue)
+                                }
+                            }
                         )
                     )
+                    .focused($fieldFocused)
+                    .onChange(of: fieldFocused) { focused in
+                        if !focused { draft = nil }
+                    }
+                    .onChange(of: mixed) { nowMixed in
+                        // Back to mixed (a reset): the typed text is gone.
+                        if nowMixed { draft = nil }
+                    }
+                    .accessibilityFocused($fieldAccessibilityFocused)
                     .disabled(disabled || readOnly)
                     .multilineTextAlignment(showSteppers ? .center : .leading)
                     .foregroundColor(textColor)
@@ -113,6 +152,13 @@ public struct KozmosNumberInput: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
 
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
+            }
+
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
@@ -131,7 +177,7 @@ public struct KozmosNumberInput: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(width: 44, height: 44)
         }
-        .disabled(disabled || readOnly)
+        .disabled(steppersDisabled)
         .background(fieldBackgroundColor)
         .foregroundColor(stepperColor)
         .overlay(
@@ -141,7 +187,23 @@ public struct KozmosNumberInput: View {
         .accessibilityLabel(accessibilityLabel)
     }
 
+    /// Mixed (GAP-153), a step would start from nothing and write that number
+    /// over every selected feature's own: the steppers wait for a typed edit.
+    var steppersDisabled: Bool { disabled || readOnly || mixed || draft != nil }
+
+    /// While mixed, or while the text typed out of mixed is kept: `.some` of
+    /// the number the text is, or `.some(nil)` for text that is no number
+    /// yet (reported as nothing). `nil` when the field is not drafting.
+    static func draftValue(_ text: String, mixed: Bool, drafting: Bool) -> Double??
+    {
+        guard mixed || drafting else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let number = Double(trimmed), number.isFinite else { return .some(nil) }
+        return .some(number)
+    }
+
     private func applyStep(_ delta: Double) {
+        guard !steppersDisabled else { return }
         let base = value ?? 0
         value = clamp(base + delta)
     }
@@ -176,7 +238,11 @@ public struct KozmosNumberInput: View {
     /// What VoiceOver hears as the field's value: the value, then the unit's
     /// spoken name. Nil keeps the field's own value (none, or no unit).
     var spokenValue: String? {
-        guard hasUnit, let unit, let value else { return nil }
+        guard hasUnit, let unit else { return nil }
+        // Mixed, the value said over the field is the mixed label, then the
+        // unit: never the hidden value, and never empty over the placeholder.
+        if mixed { return "\(mixedLabel), \(unitLabel ?? unit)" }
+        guard let value else { return nil }
         return "\(formatValue(value)) \(unitLabel ?? unit)"
     }
 
@@ -245,7 +311,7 @@ public struct KozmosNumberInput: View {
     }
 
     private var stepperColor: Color {
-        if disabled || readOnly { return KozmosColors.primitivesColorsForeground500 }
+        if steppersDisabled { return KozmosColors.primitivesColorsForeground500 }
         switch effectiveStatus {
         case .error:
             return KozmosColors.primitivesColorsEmotionalDanger600
