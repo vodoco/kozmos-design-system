@@ -29,7 +29,7 @@ export function InputExample() {
 
 ## Input
 
-It forwards its ref to `HTMLInputElement`. Its props are `InputProps`, which extends `React.InputHTMLAttributes<HTMLInputElement>, Omit<VariantProps<typeof inputVariants>, "error" | "status">`.
+It forwards its ref to `HTMLInputElement`. Its props are `InputProps`, which extends `React.InputHTMLAttributes<HTMLInputElement>, Omit<VariantProps<typeof inputVariants>, "error" | "status">, MixedValueProps`.
 
 - `error`: `boolean | string`, optional.
 - `helperText`: `string`, optional.
@@ -46,6 +46,23 @@ It forwards its ref to `HTMLInputElement`. Its props are `InputProps`, which ext
 - `action`: `InputAction`, optional.
 
   A copy or toggle button inside the field's end (GAP-154).
+
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 - `children`: `ReactNode`, optional.
 

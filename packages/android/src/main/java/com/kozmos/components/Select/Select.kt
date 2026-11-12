@@ -6,6 +6,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +30,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.combobox.selectionFieldColors
@@ -87,6 +92,11 @@ fun KozmosSelect(
  * state. A tap, TalkBack's double tap, and Enter or Space from a keyboard
  * open the menu. It anchors the menu itself: call it in [KozmosSelect]'s
  * trigger, without `menuAnchor()`.
+ *
+ * [mixed] (GAP-153): the field stands for several values that differ, and
+ * shows [mixedLabel] in the placeholder's colour in place of a choice, which
+ * TalkBack reads as the field's words; [KozmosMixedValue] has the whole of it. [onResetMixed]
+ * offers [resetMixedLabel] under the field once it is no longer mixed.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +105,11 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     placeholder: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    error: Boolean = false
+    error: Boolean = false,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     val colors = selectionFieldColors(
         status = if (error) KozmosInputStatus.Error else KozmosInputStatus.Default,
@@ -108,6 +122,13 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
     val edge = if (focused && enabled && !error) KozmosThemeTokens.primitivesColorsTheme600 else colors.border
 
+    val shown = if (mixed) null else value
+    val showsReset = KozmosMixedValue.showsReset(mixed, onResetMixed, enabled)
+    val fieldFocus = remember { FocusRequester() }
+    // The caller's modifier is the field's, as it always was: its
+    // description, tag and size land on the one TalkBack stop. The column
+    // only stacks the reset under it.
+    Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75)) {
     Row(
         modifier = modifier
             // Disabled, it is no anchor: Material's would still open on a tap.
@@ -126,15 +147,16 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
                 if (opens) toggle?.invoke()
                 opens
             }
+            .focusRequester(fieldFocus)
             .focusable(enabled = enabled, interactionSource = interaction)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
         Text(
-            text = value ?: placeholder,
+            text = if (mixed) mixedLabel else shown ?: placeholder,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (value != null) colors.text else colors.placeholder,
+            color = if (shown != null) colors.text else colors.placeholder,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
@@ -145,6 +167,14 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
             tint = colors.placeholder,
             modifier = Modifier.size(16.dp)
         )
+    }
+    if (showsReset) {
+        KozmosMixedReset(label = resetMixedLabel, onClick = {
+            // Focus goes back to the field, as on the web.
+            fieldFocus.requestFocus()
+            onResetMixed?.invoke()
+        })
+    }
     }
 }
 

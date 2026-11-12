@@ -9,12 +9,42 @@ import Figma
 // set's own counts, 128, 96 and 32, as literal numbers. An instance with
 // other counts still shows these.
 struct KozmosSelectConnect: FigmaConnect {
-    let component = KozmosSelect<Text, KozmosSelectItem>.self
+    let component = KozmosSelect<KozmosSelectField, KozmosSelectItem>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=80-432"
     var variant = ["Content": "Closed"]
 
     @FigmaString("Placeholder Text")
     var placeholder: String = "Select option"
+
+    @FigmaEnum(
+        "State",
+        mapping: [
+            "Default": "default",
+            "Focus": "focus",
+            "Disabled": "disabled",
+            "Mixed": "mixed"
+        ]
+    )
+    var state: String = "default"
+
+    @FigmaEnum(
+        "Status",
+        mapping: [
+            "Default": false,
+            "Error": true
+        ]
+    )
+    var error: Bool = false
+
+    // GAP-153: its way back to the several values, once chosen.
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
+
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaString("Option 1 Text")
     var option1Text: String = "Everything"
@@ -37,9 +67,16 @@ struct KozmosSelectConnect: FigmaConnect {
     var option3Count: Int? = 32
 
     var body: some View {
-        KozmosSelect {
-            Text(self.placeholder)
-        } content: {
+        KozmosSelect(
+            value: nil,
+            placeholder: self.placeholder,
+            disabled: self.state == "disabled",
+            error: self.error,
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
+        ) {
             KozmosSelectItem(
                 value: "option-1",
                 label: self.option1Text,
@@ -63,7 +100,7 @@ struct KozmosSelectConnect: FigmaConnect {
 }
 
 struct KozmosSelectOpenConnect: FigmaConnect {
-    let component = KozmosSelect<Text, KozmosSelectItem>.self
+    let component = KozmosSelect<KozmosSelectField, KozmosSelectItem>.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=80-432"
     var variant = ["Content": "Open"]
 
@@ -90,10 +127,18 @@ struct KozmosSelectOpenConnect: FigmaConnect {
     @FigmaBoolean("Show Counts", mapping: [true: 32, false: nil])
     var option3Count: Int? = 32
 
+    @FigmaEnum(
+        "Status",
+        mapping: [
+            "Default": false,
+            "Error": true
+        ]
+    )
+    var error: Bool = false
+
+    // Open is drawn at State=Default only: no focus, disabled or mixed.
     var body: some View {
-        KozmosSelect {
-            Text(self.placeholder)
-        } content: {
+        KozmosSelect(value: nil, placeholder: self.placeholder, error: self.error) {
             KozmosSelectItem(
                 value: "option-1",
                 label: self.option1Text,

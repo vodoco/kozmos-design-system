@@ -126,6 +126,56 @@ fun ThemeSelect(theme: String, onThemeChange: (String) -> Unit) {
 `}
 />
 
+## A mixed value
+
+The selected features have different values (GAP-153). On React the root, which holds the value,
+takes `mixed`: it is given no value, so `SelectValue` shows "Multiple values" and no option is
+checked, and `SelectTrigger` is described with it, the drawn words kept from screen readers so it
+is said once. A choice is the edit, and `onResetMixed` offers "Reset to multiple values" under the
+trigger once chosen, never while the Select is disabled, at its root or on its trigger. A Select given
+`mixed` always gives Radix a value: with no `value` of yours it holds the choice itself, starts from
+`defaultValue` only while not mixed, and drops a value it held before it turned mixed. SwiftUI's
+`KozmosSelect(value:placeholder:label:…)` draws the closed field itself (`KozmosSelectField`), its
+`label` drawn over it and said first, then the value, and takes the same props; Compose's
+`KozmosSelectTrigger` takes them. Input's page has the whole of it.
+
+Vue cannot draw a mixed Select yet: `@kozmos-ds/vue` bridges only Select's root, and the trigger,
+which draws the mixed label and the reset, is not bridged (GAP-230).
+
+<Canvas of={SelectStories.MixedValue} />
+
+```tsx
+<Select mixed={edit === undefined} value={edit} onValueChange={setEdit} onResetMixed={() => setEdit(undefined)}>
+  <SelectTrigger aria-label="Type">
+    <SelectValue placeholder="Choose a type" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="poi">POI</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+```swift
+import SwiftUI
+import Kozmos
+
+struct TypeAcrossSelection: View {
+    @State private var edit: String?
+
+    var body: some View {
+        KozmosSelect(
+            value: edit,
+            placeholder: "Choose a type",
+            label: "Type",
+            mixed: edit == nil,
+            onResetMixed: { edit = nil }
+        ) {
+            KozmosSelectItem(value: "POI", label: "POI", selection: Binding(get: { edit ?? "" }, set: { edit = $0 }))
+        }
+    }
+}
+```
+
 ## Stories
 
 ### Default

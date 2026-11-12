@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
+import { Label } from "../Label";
 import {
   Select,
   SelectContent,
@@ -204,4 +206,43 @@ export const OptionCountsOpen: Story = {
       </Select>
     </div>
   ),
+};
+
+/**
+ * GAP-153: the selected features have different types. Mixed, the trigger
+ * shows "Multiple values" and no option is checked; once chosen, "Reset to
+ * multiple values" takes it back.
+ */
+export const MixedValue: Story = {
+  render: () => {
+    function Field({ label, edited }: { label: string; edited?: string }) {
+      const [edit, setEdit] = useState<string | undefined>(edited);
+      return (
+        <div className="grid gap-1.5">
+          <Label htmlFor={label}>{label}</Label>
+          <Select
+            mixed={edit === undefined}
+            value={edit}
+            onValueChange={setEdit}
+            onResetMixed={() => setEdit(undefined)}
+          >
+            <SelectTrigger id={label}>
+              <SelectValue placeholder="Choose a type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="poi">POI</SelectItem>
+              <SelectItem value="interior-asset">Interior asset</SelectItem>
+              <SelectItem value="structural">Structural</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    return (
+      <div className="grid w-80 gap-4">
+        <Field label="Type" />
+        <Field label="Category" edited="structural" />
+      </div>
+    );
+  },
 };

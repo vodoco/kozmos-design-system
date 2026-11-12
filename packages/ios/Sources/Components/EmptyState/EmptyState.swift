@@ -55,12 +55,20 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
     public let size: KozmosEmptyStateSize
     /// A wait it explains, drawn under the description and above the action.
     public let progress: KozmosEmptyStateProgress?
+    /// A list under the description (GAP-165): what to try, or what is to
+    /// come, one item a line, bulleted and read in order. Empty, it draws
+    /// nothing.
+    public let list: [String]
+    /// The list's name, said as VoiceOver enters it.
+    public let listLabel: String?
 
     public init(
         title: String,
         description: String? = nil,
         size: KozmosEmptyStateSize = .default,
         progress: KozmosEmptyStateProgress? = nil,
+        list: [String] = [],
+        listLabel: String? = nil,
         @ViewBuilder icon: () -> Icon,
         @ViewBuilder action: () -> Action
     ) {
@@ -68,6 +76,8 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
         self.description = description
         self.size = size
         self.progress = progress
+        self.list = list
+        self.listLabel = listLabel
         self.icon = icon()
         self.action = action()
     }
@@ -103,6 +113,10 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                 }
             }
             
+            if !list.isEmpty {
+                KozmosEmptyStateList(items: list, label: listLabel)
+            }
+
             if let progress {
                 VStack(spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -141,13 +155,49 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
 public extension KozmosEmptyState where Icon == EmptyView, Action == EmptyView {
     init(
         title: String, description: String? = nil, size: KozmosEmptyStateSize = .default,
-        progress: KozmosEmptyStateProgress? = nil
+        progress: KozmosEmptyStateProgress? = nil, list: [String] = [], listLabel: String? = nil
     ) {
         self.title = title
         self.description = description
         self.size = size
         self.progress = progress
+        self.list = list
+        self.listLabel = listLabel
         self.icon = nil
         self.action = nil
+    }
+}
+
+/// EmptyState's list (GAP-165), as React draws it: in the 280 column, from
+/// the leading edge, each item a bullet and its words in the muted
+/// foreground, 4 between items. The bullets are drawn, not said: VoiceOver
+/// reads the items in order, inside a container named by `label`.
+struct KozmosEmptyStateList: View {
+    let items: [String]
+    let label: String?
+
+    var body: some View {
+        if let label {
+            column.accessibilityElement(children: .contain).accessibilityLabel(label)
+        } else {
+            column.accessibilityElement(children: .contain)
+        }
+    }
+
+    private var column: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\u{2022}")
+                        .accessibilityHidden(true)
+                    Text(item)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .font(KozmosTypography.subheadline)
+        .foregroundColor(KozmosColors.primitivesColorsForeground400)
+        .frame(maxWidth: 280, alignment: .leading)
     }
 }

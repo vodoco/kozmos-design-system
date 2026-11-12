@@ -319,7 +319,7 @@
       "id": "components-combobox",
       "title": "Core/Inputs/Combobox",
       "component": "Combobox",
-      "exports": ["Default", "WithValidation", "Grouped"]
+      "exports": ["Default", "WithValidation", "Grouped", "MixedValue"]
     },
     {
       "file": "packages/react/src/components/Container/Container.stories.tsx",
@@ -411,7 +411,7 @@
       "id": "components-emptystate",
       "title": "Core/Feedback/EmptyState",
       "component": "EmptyState",
-      "exports": ["Default", "Compact", "DownloadProgress"]
+      "exports": ["Default", "Compact", "DownloadProgress", "WithList"]
     },
     {
       "file": "packages/react/src/components/FeedbackCard/FeedbackCard.stories.tsx",
@@ -500,7 +500,8 @@
         "WithHelperText",
         "WithError",
         "ValidationStates",
-        "Actions"
+        "Actions",
+        "MixedValue"
       ]
     },
     {
@@ -783,7 +784,8 @@
         "WithUnit",
         "WithUnitRightToLeft",
         "RightToLeft",
-        "ReadOnly"
+        "ReadOnly",
+        "MixedValue"
       ]
     },
     {
@@ -1101,7 +1103,8 @@
         "Disabled",
         "WithError",
         "OptionCounts",
-        "OptionCountsOpen"
+        "OptionCountsOpen",
+        "MixedValue"
       ]
     },
     {

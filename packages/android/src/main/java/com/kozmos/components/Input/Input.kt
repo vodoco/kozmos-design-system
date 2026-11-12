@@ -32,6 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -41,7 +43,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import kotlinx.coroutines.delay
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -109,8 +115,16 @@ fun KozmosInput(
     helperText: String? = null,
     errorMessage: String? = null,
     /** A copy or toggle button inside the field's end (GAP-154). */
-    action: KozmosInputAction? = null
+    action: KozmosInputAction? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
+    // Mixed (GAP-153), the field shows none of its own text; the visitor's
+    // typing still reaches the product, which clears `mixed`.
+    val shownValue = if (mixed) "" else value
+    val fieldFocus = remember { FocusRequester() }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
@@ -154,14 +168,18 @@ fun KozmosInput(
         }
 
         BasicTextField(
-            value = value,
+            value = shownValue,
             onValueChange = onValueChange,
             enabled = enabled,
             readOnly = readOnly,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = textColor),
             cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
-            modifier = Modifier.fillMaxWidth(),
+            // Said as its state while mixed, set in one semantics block so the
+            // field is the same node as it stops being mixed and keeps focus.
+            modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus).semantics {
+                if (mixed) stateDescription = mixedLabel
+            },
             decorationBox = { innerTextField ->
                 Row(
                     modifier = Modifier
@@ -180,11 +198,14 @@ fun KozmosInput(
                             ),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        if (value.isEmpty()) {
+                        if (shownValue.isEmpty()) {
                             Text(
-                                text = placeholder,
+                                text = if (mixed) mixedLabel else placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = placeholderColor
+                                color = placeholderColor,
+                                // Mixed, the field says it as its state: the
+                                // drawn words are not said again.
+                                modifier = Modifier.kozmosUnsaidWhen(mixed)
                             )
                         }
                         innerTextField()
@@ -192,11 +213,26 @@ fun KozmosInput(
                     if (action != null) {
                         // Only `enabled` disables it: a read-only field's
                         // value is still there to copy.
-                        KozmosInputActionButton(action, value, enabled)
+                        // Mixed (GAP-153), there is no value of its own to copy:
+                        // the copy is disabled, never "Copied" over nothing.
+                        KozmosInputActionButton(
+                            action,
+                            shownValue,
+                            enabled && !(mixed && action is KozmosInputAction.Copy)
+                        )
                     }
                 }
             }
         )
+
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // The reset goes as the field turns mixed again: focus goes
+                // back to the field, as on the web.
+                fieldFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
+        }
 
         if (!supportingText.isNullOrBlank()) {
             Text(

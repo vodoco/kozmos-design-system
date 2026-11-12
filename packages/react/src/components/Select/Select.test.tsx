@@ -177,6 +177,37 @@ describe("Select", () => {
     ).not.toHaveAttribute("aria-labelledby");
   });
 
+  it("keeps a mixed Select's counts and every check's place, and checks no row", () => {
+    render(
+      <Select open mixed onResetMixed={() => {}}>
+        <SelectTrigger aria-label="Type">
+          <SelectValue placeholder="Choose a type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="poi" count={96}>
+            POI
+          </SelectItem>
+          <SelectItem value="virtual" count={4}>
+            Virtual
+          </SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    for (const [name, count] of [
+      ["POI, 96", "96"],
+      ["Virtual, 4", "4"],
+    ]) {
+      const option = screen.getByRole("option", { name });
+      expect(option).toHaveAttribute("data-state", "unchecked");
+      expect(option.querySelector('[data-slot="counter"]')).toHaveTextContent(
+        count,
+      );
+      const slot = option.lastElementChild as HTMLElement;
+      expect(slot).toHaveAttribute("data-slot", "select-item-check");
+      expect(slot.querySelector(".kozmos-option-check")).toBeNull();
+    }
+  });
+
   it("keeps the check's place on every row, chosen or not", () => {
     render(
       <Select open defaultValue="poi">

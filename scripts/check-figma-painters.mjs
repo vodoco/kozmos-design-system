@@ -9189,9 +9189,11 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     });
     ok(
       closed.name === "State=Default, Status=Default, Content=Closed" &&
-        closed.children.map((c) => c.name).join(",") === "Select Trigger" &&
+        // #521's Reset Mixed, hidden until Reset Mixed is on, stays under it.
+        closed.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Reset Mixed" &&
         closed.height === 44 &&
-        closed.itemSpacing === 0,
+        closed.itemSpacing === 6,
       `Content=Closed is the trigger alone, 44 (${closed.name}; ${closed.children.map((c) => c.name).join(", ")}; ${closed.height})`,
     );
     const open = await paintSelect({
@@ -9203,7 +9205,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       open.name === "State=Default, Status=Default, Content=Open" &&
         open.children.map((c) => c.name).join(",") ===
-          "Select Trigger,Select Listbox" &&
+          "Select Trigger,Reset Mixed,Select Listbox" &&
         open.itemSpacing === 4 &&
         boundTo(open, "itemSpacing") === "Select/listbox/offset" &&
         listbox.paddingTop === 12 &&
@@ -9443,9 +9445,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         updated.updated === true &&
           updated.componentSetId === setId &&
           updated.variantsUpdated === 6 &&
-          updated.variantsCreated === 2 &&
-          liveSet.children.length === 8,
-        `Select Update keeps the set and its 6 variants and creates the 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+          // #521's two Mixed variants and the two Open ones.
+          updated.variantsCreated === 4 &&
+          liveSet.children.length === 10,
+        `Select Update keeps the set and its 6 variants and creates the 2 Mixed and 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
       );
       // #525 review: an open list is neither disabled nor the trigger's focus
       // ring, so Open is drawn at State=Default only.
@@ -9535,7 +9538,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       );
       const names = set ? set.children.map((child) => child.name).sort() : [];
       const want = [];
-      for (const state of ["Default", "Focus", "Disabled"])
+      for (const state of ["Default", "Focus", "Disabled", "Mixed"])
         for (const status of ["Default", "Error"])
           want.push(`State=${state}, Status=${status}, Content=Closed`);
       for (const status of ["Default", "Error"])
@@ -9543,9 +9546,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       want.sort();
       ok(
         built.created === true &&
-          built.variants === 8 &&
+          built.variants === 10 &&
           names.join(" | ") === want.join(" | "),
-        `Select Build draws 6 Closed and State=Default's 2 Open variants (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
+        `Select Build draws 8 Closed (Mixed among them) and State=Default's 2 Open variants, no Mixed Open (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
       );
     }
 
@@ -9576,8 +9579,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       );
       ok(
         updated.variantsUpdated === 12 &&
-          updated.variantsCreated === 0 &&
-          liveSet.children.length === 12 &&
+          // #521's two Mixed Closed variants; no Mixed Open.
+          updated.variantsCreated === 2 &&
+          liveSet.children.length === 14 &&
           kept.length === 12 &&
           updated.variantsNotGenerated === 4 &&
           warned.length === 4,
@@ -12299,10 +12303,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       JSON.stringify(axes.Action) ===
         JSON.stringify(["None", "Copy", "Toggle", "TogglePressed"]) &&
       JSON.stringify(axes.State) ===
-        JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]) &&
+        JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
       JSON.stringify(axes.Status) ===
         JSON.stringify(["Default", "Error", "Warning", "Success"]),
-    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State and Status: 64 variants (${JSON.stringify(axes && axes.Action)})`,
+    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State (with Mixed, GAP-153) and Status: 80 variants (${JSON.stringify(axes && axes.Action)})`,
   );
   ok(
     JSON.stringify(
@@ -12452,8 +12456,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     );
   }
   {
-    // Update over the 16 variants in the file today: each keeps its node id
-    // and is renamed Action=None, and the other 48 are created.
+    // Update over the 16 variants in the file before the Action axis: each
+    // keeps its node id and is renamed Action=None, and the other 64 are
+    // created: 48 Action bands, and the Mixed row of each (GAP-153).
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Input");
     const ids = new Map();
@@ -12483,10 +12488,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 16 &&
-        updated.variantsCreated === 48 &&
-        liveSet.children.length === 64 &&
-        new Set(names).size === 64,
-      `Update keeps the set and its 16 variants, and adds 48: 64 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 64 &&
+        liveSet.children.length === 80 &&
+        new Set(names).size === 80,
+      `Update keeps the set and its 16 variants, and adds 64: 80 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
     );
     ok(
       [...ids].every(([name, id]) => {
@@ -12510,14 +12515,347 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           JSON.stringify([0, 4 * 126]),
       `the 16 keep their places and the new bands lie under them (${JSON.stringify(at("State=Readonly, Status=Success, Action=None"))}, ${JSON.stringify(at("State=Default, Status=Default, Action=Copy"))})`,
     );
+    ok(
+      JSON.stringify(
+        at("State=Readonly, Status=Success, Action=TogglePressed"),
+      ) === JSON.stringify([3 * 360, 15 * 126]) &&
+        JSON.stringify(at("State=Mixed, Status=Default, Action=None")) ===
+          JSON.stringify([0, 16 * 126]) &&
+        JSON.stringify(
+          at("State=Mixed, Status=Success, Action=TogglePressed"),
+        ) === JSON.stringify([3 * 360, 19 * 126]),
+      `the Mixed rows lie under every band, so no variant drawn before them moves (GAP-153) (${JSON.stringify(at("State=Mixed, Status=Default, Action=None"))}, ${JSON.stringify(at("State=Mixed, Status=Success, Action=TogglePressed"))})`,
+    );
     const outside = liveSet.children.filter(
       (child) =>
         child.x + child.width > liveSet.width ||
         child.y + child.height > liveSet.height,
     );
     ok(
-      liveSet.children.length === 64 && outside.length === 0,
-      `and the set grows to hold all 64 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+      liveSet.children.length === 80 && outside.length === 0,
+      `and the set grows to hold all 80 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+    );
+    const reset = propertyNamed(liveSet, "Reset Mixed", "BOOLEAN");
+    const resetBound = liveSet.children.filter((variant) => {
+      const layer = named(variant, "Reset Mixed");
+      return (
+        layer &&
+        layer.componentPropertyReferences &&
+        layer.componentPropertyReferences.visible === reset
+      );
+    });
+    const mixedRows = liveSet.children.filter((variant) =>
+      variant.name.startsWith("State=Mixed"),
+    );
+    const resetWords = propertyNamed(liveSet, "Reset Mixed Text", "TEXT");
+    const mixedWords = propertyNamed(liveSet, "Mixed Text", "TEXT");
+    const wordsBound = (layerName, key) =>
+      liveSet.children
+        .map((variant) => named(variant, layerName))
+        .filter(Boolean)
+        .every(
+          (layer) =>
+            layer.componentPropertyReferences &&
+            layer.componentPropertyReferences.characters === key,
+        );
+    ok(
+      reset &&
+        liveSet.componentPropertyDefinitions[reset].defaultValue === false &&
+        resetBound.length === 64 &&
+        mixedRows.length === 16 &&
+        mixedRows.every((variant) => !named(variant, "Reset Mixed")),
+      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 16 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
+    );
+    ok(
+      resetWords &&
+        mixedWords &&
+        liveSet.componentPropertyDefinitions[resetWords].defaultValue ===
+          "Reset to multiple values" &&
+        liveSet.componentPropertyDefinitions[mixedWords].defaultValue ===
+          "Multiple values" &&
+        wordsBound("Reset Mixed", resetWords) &&
+        wordsBound("Mixed Text", mixedWords) &&
+        mixedRows.every((variant) => named(variant, "Mixed Text")),
+      `Reset Mixed Text and Mixed Text are text properties a product localises, bound to every reset and every Mixed variant's words (${resetWords}, ${mixedWords})`,
+    );
+  }
+
+  // GAP-153: a mixed field, State=Mixed, and its way back, Reset Mixed --------
+  {
+    const axesOf = (name) =>
+      JSON.stringify(
+        (controls.expectedVariantAxesForComponentSetName(name) || {}).State,
+      );
+    ok(
+      axesOf("NumberInput") ===
+        JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
+        axesOf("Combobox") ===
+          JSON.stringify([
+            "Default",
+            "Focus",
+            "Disabled",
+            "Readonly",
+            "Mixed",
+          ]) &&
+        axesOf("Select") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Mixed"]) &&
+        axesOf("PasswordInput") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]) &&
+        axesOf("OTPInput") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]),
+      `Input, NumberInput, Combobox and Select gain State=Mixed; PasswordInput and OTPInput, which share Input's states, do not (${axesOf("Select")}, ${axesOf("PasswordInput")})`,
+    );
+    const paint = async (update, args) => {
+      const node = new MockNode("COMPONENT", "Field");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls[update](
+          node,
+          Object.assign(
+            {
+              variableByName: tokens.variableByName,
+              fonts: FONTS,
+              stats: freshStats(),
+            },
+            args,
+          ),
+        ),
+      );
+      return node;
+    };
+    const cases = [
+      ["Input", "updateInputVariant", { action: "None" }, ["Placeholder Text"]],
+      [
+        "NumberInput",
+        "updateNumberInputVariant",
+        { steppers: "True" },
+        ["Value Text", "Placeholder Text"],
+      ],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        { content: "Closed" },
+        ["Placeholder Text"],
+      ],
+      ["Select", "updateSelectVariant", {}, ["Placeholder Text"]],
+    ];
+    for (const [setName, update, extra, hidden] of cases) {
+      const mixed = await paint(
+        update,
+        Object.assign({ state: "Mixed", status: "Default" }, extra),
+      );
+      const plain = await paint(
+        update,
+        Object.assign({ state: "Default", status: "Default" }, extra),
+      );
+      const text = named(mixed, "Mixed Text");
+      const placeholder = named(mixed, "Placeholder Text");
+      ok(
+        mixed.name.startsWith("State=Mixed, Status=Default") &&
+          text &&
+          text.characters === "Multiple values" &&
+          text.parent === placeholder.parent &&
+          text.parent.children.indexOf(text) ===
+            text.parent.children.indexOf(placeholder) + 1 &&
+          boundVariableName((text.fills || [])[0]) ===
+            boundVariableName((placeholder.fills || [])[0]) &&
+          hidden.every((name) => named(mixed, name).visible === false) &&
+          // Outside Mixed, none: the field shows its own (NumberInput its
+          // value, its placeholder hidden as before).
+          !named(plain, "Mixed Text") &&
+          named(plain, hidden[0]).visible !== false,
+        `${setName}: Mixed draws Multiple values after the placeholder, in its colour (${text && boundVariableName((text.fills || [])[0])}), and hides ${hidden.join(" and ")}; Default draws none`,
+      );
+      ok(
+        !named(mixed, "Reset Mixed"),
+        `${setName}: State=Mixed draws no Reset Mixed layer`,
+      );
+      for (const node of [plain]) {
+        const reset = named(node, "Reset Mixed");
+        const field = reset && node.children[node.children.indexOf(reset) - 1];
+        ok(
+          reset &&
+            reset.type === "TEXT" &&
+            reset.characters === "Reset to multiple values" &&
+            reset.visible === false &&
+            boundVariableName((reset.fills || [])[0]) === "Colors/theme/600" &&
+            field &&
+            field.getSharedPluginData(plugin.RUN_NAMESPACE, "kind") ===
+              "input-field",
+          `${setName} ${node.name}: Reset Mixed, hidden, Reset to multiple values in theme 600, right under the field (${reset ? `${reset.characters}, after ${field && field.name}` : "none"})`,
+        );
+      }
+    }
+    {
+      // Updated again, the reset is the same layer, so an instance's
+      // override of it survives an Update.
+      const node = await paint("updateInputVariant", {
+        state: "Default",
+        status: "Default",
+        action: "None",
+      });
+      const before = named(node, "Reset Mixed");
+      await attempt(() =>
+        controls.updateInputVariant(node, {
+          state: "Default",
+          status: "Default",
+          action: "None",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      const after = named(node, "Reset Mixed");
+      ok(
+        before && after && before.id === after.id,
+        `an Update keeps Input's Reset Mixed layer, id for id (${before && before.id} → ${after && after.id})`,
+      );
+    }
+    {
+      // Decision of 11 Nov: Mixed's steppers are disabled, drawn as Disabled's.
+      const mixed = await paint("updateNumberInputVariant", {
+        state: "Mixed",
+        status: "Default",
+        steppers: "True",
+      });
+      const plain = await paint("updateNumberInputVariant", {
+        state: "Default",
+        status: "Default",
+        steppers: "True",
+      });
+      const tint = (node) =>
+        node
+          .findAll((child) => /Stepper$/.test(child.name))
+          .flatMap((stepper) =>
+            stepper.findAll((child) => (child.strokes || []).length > 0),
+          )
+          .map((child) => boundVariableName(child.strokes[0]));
+      ok(
+        tint(mixed).length > 0 &&
+          tint(mixed).every((name) => name === "Colors/foreground/500") &&
+          tint(plain).every((name) => name === "Colors/foreground/0"),
+        `NumberInput Mixed draws its steppers disabled, in foreground 500 (${[...new Set(tint(mixed))].join(" ")}; Default ${[...new Set(tint(plain))].join(" ")})`,
+      );
+    }
+    {
+      const open = await paint("updateComboboxVariant", {
+        state: "Mixed",
+        status: "Default",
+        content: "Open",
+      });
+      const checks = open.findAll(
+        (child) =>
+          child.type === "INSTANCE" &&
+          /^Combobox Option/.test(child.parent && child.parent.name) &&
+          child.mainComponent &&
+          /check/.test(child.mainComponent.name),
+      );
+      ok(
+        named(open, "Combobox Listbox") && checks.length === 0,
+        `Combobox Mixed and Open checks no option (${checks.length})`,
+      );
+    }
+    {
+      const set = new MockNode("COMPONENT_SET", "Select");
+      for (const state of ["Default", "Mixed"]) {
+        set.appendChild(
+          await paint("updateSelectVariant", { state, status: "Default" }),
+        );
+      }
+      const stats = freshStats();
+      controls.configureSelectProperties(set, stats);
+      const key = propertyNamed(set, "Reset Mixed", "BOOLEAN");
+      ok(
+        key &&
+          set.children.every((variant) => {
+            const layer = named(variant, "Reset Mixed");
+            return variant.name.startsWith("State=Mixed")
+              ? !layer
+              : layer.componentPropertyReferences.visible === key;
+          }) &&
+          set.children.every((variant) => variant.itemSpacing === 6),
+        `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
+      );
+    }
+  }
+
+  // GAP-165: EmptyState's list ------------------------------------------------
+  {
+    const variant = async (value, second) => {
+      const node = new MockNode("COMPONENT", "EmptyState");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls.updateEmptyStateVariant(node, {
+          value,
+          second,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return node;
+    };
+    const set = new MockNode("COMPONENT_SET", "EmptyState");
+    for (const value of ["Basic", "Icon", "Action"]) {
+      for (const second of ["Default", "Compact"]) {
+        set.appendChild(await variant(value, second));
+      }
+    }
+    const lists = set.children.map((node) => named(node, "List"));
+    const order = set.children.map((node) =>
+      node.children.map((child) => child.name).join(" > "),
+    );
+    ok(
+      lists.every(
+        (list, index) =>
+          list &&
+          list.visible === false &&
+          list.width === 280 &&
+          list.itemSpacing === 4 &&
+          set.children[index].children.indexOf(list) ===
+            set.children[index].children.indexOf(
+              named(set.children[index], "Content"),
+            ) +
+              1,
+      ),
+      `every variant has a hidden List, 280 wide, 4 between items, right under the title and description (${order[4]})`,
+    );
+    const words = lists[0]
+      ? lists[0].findAll((child) => child.type === "TEXT")
+      : [];
+    ok(
+      lists[0] &&
+        JSON.stringify(
+          lists[0].children.map(
+            (row) => named(row, `${row.name} Text`).characters,
+          ),
+        ) ===
+          JSON.stringify([
+            "Check the building and level",
+            "Clear the type filters",
+            "Search by another name or an ID",
+          ]) &&
+        words.every(
+          (text) =>
+            boundVariableName((text.fills || [])[0]) ===
+            "Colors/foreground/400",
+        ),
+      `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    controls.configureEmptyStateProperties(set, freshStats());
+    const list = propertyNamed(set, "List", "BOOLEAN");
+    const texts = [1, 2, 3].map((index) =>
+      propertyNamed(set, `List Item ${index} Text`, "TEXT"),
+    );
+    ok(
+      list &&
+        set.componentPropertyDefinitions[list].defaultValue === false &&
+        lists.every(
+          (layer) =>
+            layer && layer.componentPropertyReferences.visible === list,
+        ) &&
+        texts.every(Boolean),
+      `List is a boolean, off, showing each variant's list; List Item 1 Text to List Item 3 Text are its words (${list}, ${texts.join(", ")})`,
     );
   }
 
