@@ -173,7 +173,7 @@ public struct KozmosSelectField: View {
         .overlay(
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                 .stroke(
-                    error ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.primitivesColorsForeground500,
+                    error ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.semanticsBorderInput,
                     lineWidth: 1
                 )
         )
