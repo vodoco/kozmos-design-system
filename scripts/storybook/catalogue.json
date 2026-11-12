@@ -252,7 +252,9 @@
         "Glass",
         "Loading",
         "Disabled",
-        "Emotions"
+        "Emotions",
+        "Subtle",
+        "SubtleEmotions"
       ]
     },
     {
@@ -265,7 +267,9 @@
         "TitleLevel",
         "Padding",
         "WithoutHeader",
-        "HeaderActions"
+        "HeaderActions",
+        "SubtleHeader",
+        "TitleSize"
       ]
     },
     {
@@ -315,7 +319,7 @@
       "id": "components-combobox",
       "title": "Core/Inputs/Combobox",
       "component": "Combobox",
-      "exports": ["Default", "WithValidation", "Grouped"]
+      "exports": ["Default", "WithValidation", "Grouped", "MixedValue"]
     },
     {
       "file": "packages/react/src/components/Container/Container.stories.tsx",
@@ -407,7 +411,7 @@
       "id": "components-emptystate",
       "title": "Core/Feedback/EmptyState",
       "component": "EmptyState",
-      "exports": ["Default", "Compact", "DownloadProgress"]
+      "exports": ["Default", "Compact", "DownloadProgress", "WithList"]
     },
     {
       "file": "packages/react/src/components/FeedbackCard/FeedbackCard.stories.tsx",
@@ -496,7 +500,8 @@
         "WithHelperText",
         "WithError",
         "ValidationStates",
-        "Actions"
+        "Actions",
+        "MixedValue"
       ]
     },
     {
@@ -778,8 +783,11 @@
         "WithHelperText",
         "ValidationStates",
         "WithoutSteppers",
+        "WithUnit",
+        "WithUnitRightToLeft",
         "RightToLeft",
-        "ReadOnly"
+        "ReadOnly",
+        "MixedValue"
       ]
     },
     {
@@ -1072,7 +1080,7 @@
       "id": "inputs-search",
       "title": "Core/Inputs/Search",
       "component": "Search",
-      "exports": ["Default"]
+      "exports": ["Default", "Clearable"]
     },
     {
       "file": "packages/react/src/components/SearchBar/SearchBar.stories.tsx",
@@ -1093,7 +1101,13 @@
       "id": "components-select",
       "title": "Core/Inputs/Select",
       "component": "Select",
-      "exports": ["Default", "WithScroll", "Disabled", "WithError"]
+      "exports": [
+        "Default",
+        "WithScroll",
+        "Disabled",
+        "WithError",
+        "MixedValue"
+      ]
     },
     {
       "file": "packages/react/src/components/Separator/Separator.stories.tsx",
@@ -1121,7 +1135,7 @@
       "id": "components-slider",
       "title": "Core/Inputs/Slider",
       "component": "Slider",
-      "exports": ["Default", "Range"]
+      "exports": ["Default", "Range", "WithReadout"]
     },
     {
       "file": "packages/react/src/components/Spinner/Spinner.stories.tsx",
@@ -1248,11 +1262,14 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
-        "Default",
-        "WithRowActions",
         "Composed",
+        "Default",
+        "Divided",
         "RowPrimitive",
-        "Divided"
+        "SectionsAndRanges",
+        "Virtualized",
+        "VirtualizedInPanel",
+        "WithRowActions"
       ]
     },
     {

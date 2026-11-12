@@ -3,6 +3,7 @@ import {
   isInaccessible,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -194,5 +195,64 @@ describe("EmptyState progress layout", () => {
     expect(isInaccessible(label)).toBe(true);
     expect(isInaccessible(screen.getByText("12 of 30 MB"))).toBe(true);
     expect(isInaccessible(bar)).toBe(false);
+  });
+});
+
+describe("EmptyState list (GAP-165)", () => {
+  it("draws a list under the description, its items in order", () => {
+    render(
+      <EmptyState
+        title="No Map Content Found"
+        description="Nothing on this level matches."
+        list={["Check the level", "Clear the filters", "Try another name"]}
+        listLabel="What to try"
+        action={<button type="button">Add content</button>}
+      />,
+    );
+    const list = screen.getByRole("list", { name: "What to try" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Check the level",
+      "Clear the filters",
+      "Try another name",
+    ]);
+    // Read in order: title, description, list, action.
+    const description = screen.getByText("Nothing on this level matches.");
+    const action = screen.getByRole("button", { name: "Add content" });
+    expect(
+      description.compareDocumentPosition(list) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      list.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("takes inline content in an item", () => {
+    render(
+      <EmptyState
+        title="No Map Content Found"
+        list={[
+          <a key="guide" href="#help">
+            Read the guide
+          </a>,
+          "Clear the filters",
+        ]}
+      />,
+    );
+    expect(
+      within(screen.getByRole("list")).getByRole("link", {
+        name: "Read the guide",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("draws nothing for an empty list", () => {
+    const { rerender } = render(
+      <EmptyState title="No Map Content Found" list={["Clear the filters"]} />,
+    );
+    expect(screen.getByRole("list")).toBeInTheDocument();
+    rerender(<EmptyState title="No Map Content Found" list={[]} />);
+    expect(screen.queryByRole("list")).toBeNull();
   });
 });

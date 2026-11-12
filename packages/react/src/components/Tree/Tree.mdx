@@ -100,9 +100,286 @@ draws its buildings and levels, rather than a navigation tree.
 - **Composed trees:** rows put in a divided `Tree` as children are divided too. `TreeItemRow`,
   `TreeParentItemRow` and `TreeChildItemRow` also take `divided` of their own, which wins.
 
+SwiftUI's `KozmosTree` and Compose's `KozmosTree` and `TreeItem` take `divided` and `bleed` from
+0.16.0 (decision 134), with the same stroke, the same open row's surface and the same reach. A
+divided SwiftUI tree draws its own rows rather than a `List`'s, so the strokes are Kozmos's, not the
+list's separators, and an open parent says "Expanded" to VoiceOver.
+
 <Canvas>
   <Story of={TreeStories.Divided} />
 </Canvas>
+
+## Sections, ranges and a menu
+
+Pointr Cloud's Map Content tree holds thousands of items under a level, in sections, and is selected by range
+(GAP-151, decision 132). Its real size is 13,031 items in one tree.
+
+- **Sections:** an item with `section: true` is a heading, its name in the theme's colour with its `count`, over its
+  `children`, which are drawn at the section's own depth. A section is always open and is never focused or selected:
+  the keyboard and a range pass over it. Its items are a set of their own (`aria-setsize`, `aria-posinset`) in a
+  `role="group"` named by the section and its count, "POI, 3,257": a number count is written in the Tree's `locale`,
+  a string as it is, and a count given as a slot is read for what it returns. Without `locale`, the page's `lang` is
+  read once the tree has mounted; on a server render and the first client render the count is written as en-US, so
+  the two agree and hydration finds no difference. A server-rendered product in another language passes `locale` to
+  have it right from the first paint. The heading itself is for the eye.
+- **Counts are grouped, on screen as when read:** a number `count`, on a row or a section, is drawn as the app's
+  language writes it, 13,031 in English and 13.031 in German, in the same locale as the group's name (and on SwiftUI
+  with `formatted()`, on Compose with the locale's `NumberFormat`). A count given as text or a node is drawn as given. Give `textValue` where `name` is not plain
+  text. To compose one, `TreeSectionRow` is the heading.
+- **A set of rows:** `selectionMode="multiple"` with `selectedIds` (or `defaultSelectedIds`) and
+  `onSelectedIdsChange`. A click selects one row; Ctrl or Cmd with a click adds or takes away a row; Shift with a click
+  selects the rows from the last one chosen, and Ctrl or Cmd with Shift adds them. By keyboard, Shift with the arrows,
+  Home and End selects as focus moves, Space adds or takes away the focused row, Shift+Space selects to it and Ctrl or
+  Cmd+A selects every row in view: the enabled rows, not those inside a closed parent. Ranges pass over disabled rows
+  and headings. The tree is `aria-multiselectable`.
+  `"single"`, the default, is `selectedId` as before.
+- **Closing a parent:** in a multiple tree, once a collapse takes effect (a controlled `expandedIds` that keeps the row
+  open keeps its rows), the rows it hides leave the selection, in one `onSelectedIdsChange`, so a set never holds a row
+  nobody can see. A single tree keeps its one selected row, hidden or not: it is what a product's editor shows. The
+  same on SwiftUI and Compose.
+- **Type-ahead:** typing moves focus to the next row whose words start with what was typed, in every tree; the same
+  letter again moves on to the next row that starts with it. It runs after a `onKeyDown` of yours on the Tree, and not
+  when yours called `preventDefault()`; it takes no key with Ctrl, Cmd or Alt, never `+`, `-` or `*`, and leaves a key
+  that finds no row alone.
+- **A Space inside a word is the word's.** A Space pressed within 500 ms of a typed letter is part of what is being
+  typed ("gate a"), as WAI-ARIA's type-ahead has it, so it neither selects nor toggles a row; React keeps it from
+  scrolling the page, and SwiftUI and Compose treat it the same. To select with Space, pause after typing (half a
+  second) or press Space on its own.
+- **More keys:** `*` opens every row beside the focused one that has rows of its own; PageDown and PageUp move focus by
+  a page of rows, the rows that fit the view less one at the density's row height (with Shift, in a multiple tree, the
+  range goes with it).
+- **Only the rows in view:** `virtualized` draws the rows in view, a few more each side (`overscan`, 8), and the focused
+  row wherever it is. The tree scrolls itself, so give it a height. Each row's level and place in its set come from
+  `data`, so a screen reader hears "3 of 9,000" and the keyboard, Home, End and type-ahead reach rows out of view.
+  A row's height is measured once drawn; until then it is estimated from the density, `divided` and `metaPlacement`.
+  Composed children are never virtualised.
+- **Its scroller:** `ref` is the tree itself, as it is when not virtualised; the box that scrolls is inside it. Pass
+  `scrollerRef` to read or set the scroll position (`scrollerRef.current.scrollTop`).
+- **Give it a height.** A virtualised tree with no height of its own is as tall as its rows and draws every one. Give
+  it one (`style={{ height: 480 }}` or a class), or, in a flex column, `flex: 1` with `min-height: 0` (`min-h-0`), so it
+  scrolls itself. In development it warns once in the console when it has none.
+- **Divided and bled:** a virtualised tree that is `divided` with a `bleed` scrolls in a box inside the tree that reaches the bleed, so its strokes
+  meet the panel's edges with no sideways scroll; a virtualised tree draws its focus ring inside the row, where its own
+  edge cannot cut it. The tree keeps the width, margin and height you give it, by class or style.
+- **A menu on a row:** wrap the Tree in Kozmos's `ContextMenu` (`ContextMenuTrigger asChild`) and pass
+  `onItemContextMenu`. A right click, a long press, or the menu key or Shift+F10 at the focused row, focuses the row
+  and, if it is not selected, selects it alone, then calls `onItemContextMenu` with it, so the menu acts on the
+  selection. With no `onItemContextMenu`, a right click leaves the selection alone.
+- **Meta below the name:** `metaPlacement="below"` (on Tree, or a row of its own) draws a row's `meta` on a line under
+  its name, so the name keeps the row's width: 'Bean & Leaf Café' whole, with 'Changes awaiting publish' under it
+  (GAP-107). `"inline"`, the default, keeps the meta after the name.
+
+<Canvas>
+  <Story of={TreeStories.SectionsAndRanges} />
+</Canvas>
+
+<Canvas>
+  <Story of={TreeStories.Virtualized} />
+</Canvas>
+
+<Canvas>
+  <Story of={TreeStories.VirtualizedInPanel} />
+</Canvas>
+
+SwiftUI's `KozmosTree` and Compose's `KozmosTree` take the same: sections (`Node.section` / `TreeNode(section = true)`),
+a selection mode and a set of selected ids, `metaPlacement`, and a menu per row through the platform's Kozmos context
+menu, over a lazy list of the rows in view. A tap in a multiple SwiftUI tree adds or takes away a row, as touch has no
+Command key; with a pointer and keyboard, Shift selects a range and Command (Ctrl on Android) one row more.
+
+**Migrating a SwiftUI tree (0.16.0):** `KozmosTree` no longer draws a `List`. Divided or not, a tree is Kozmos's own
+lazy rows, with no list separators, inset grouping or grouped background, so an undivided tree looks as React's does
+rather than as a system list. `Node.id` is a `String` (a UUID string when none is given), not a `UUID`: read it as a
+string. SwiftUI and Compose ship from the repository's source, so this changes at the commit an app pins. On every
+platform, closing a parent in a multiple tree lets go of the rows it hides (a single tree keeps its row), a page is the
+rows that fit the view less one, and a section is heard with its count, "POI, 3,257".
+
+<PlatformSnippets
+    react={`
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  Tree,
+} from "@kozmos-ds/react";
+import { useState } from "react";
+
+export function MapContentTree() {
+  const [selected, setSelected] = useState<string[]>([]);
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Tree
+          ariaLabel="Map content"
+          virtualized
+          style={{ height: 480 }}
+          selectionMode="multiple"
+          selectedIds={selected}
+          onSelectedIdsChange={setSelected}
+          metaPlacement="below"
+          onItemContextMenu={() => {}}
+          defaultExpandedIds={["level-1"]}
+          data={[
+            {
+              id: "level-1",
+              name: "Level 1",
+              children: [
+                {
+                  id: "poi",
+                  name: "POI",
+                  section: true,
+                  count: 2,
+                  children: [
+                    { id: "cafe", name: "Bean & Leaf Café", meta: "Changes awaiting publish" },
+                    { id: "gate", name: "Gate A12" },
+                  ],
+                },
+              ],
+            },
+          ]}
+        />
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem>Edit geometry</ContextMenuItem>
+        <ContextMenuItem>Delete</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosTree } from "@kozmos-ds/vue/react-bridge"
+
+const selected = ref([])
+const data = [
+  {
+    id: "poi",
+    name: "POI",
+    section: true,
+    count: 2,
+    children: [
+      { id: "cafe", name: "Bean & Leaf Café", meta: "Changes awaiting publish" },
+      { id: "gate", name: "Gate A12" },
+    ],
+  },
+]
+</script>
+
+<template>
+  <KozmosTree
+    v-model:selectedIds="selected"
+    aria-label="Map content"
+    :data="data"
+    selection-mode="multiple"
+    meta-placement="below"
+    virtualized
+    style="height: 480px"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A level's items in sections, each with its count. A tap adds a row to the
+// selection or takes it away; with a keyboard, Shift selects a range and
+// Command one row more. Only the rows in view are drawn, so thousands scroll
+// as ten do. A long press, or a secondary click, opens a row's menu.
+struct MapContentTree: View {
+    @State private var selected: Set<String> = []
+    @State private var picked = ""
+
+    var body: some View {
+        KozmosTree(
+            nodes: [
+                Node(id: "level-1", value: "Level 1", children: [
+                    .section("POI", count: "2", children: [
+                        Node(id: "cafe", value: "Bean & Leaf Café", meta: "Changes awaiting publish"),
+                        Node(id: "gate", value: "Gate A12"),
+                    ]),
+                    .section("Structural", count: "1", children: [
+                        Node(id: "wall", value: "Wall"),
+                    ]),
+                ]),
+            ],
+            divided: true,
+            bleed: KozmosDimensions.primitivesLayoutSpacing200,
+            selectionMode: .multiple,
+            selection: $selected,
+            metaPlacement: .below,
+            contextMenu: { _ in
+                KozmosMenuContent(items: [
+                    KozmosMenuItem(text: "Rename"),
+                    KozmosMenuItem(text: "Delete"),
+                ])
+            },
+            onContextMenuSelect: { node, item in
+                picked = item.text + " " + node.value
+            }
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.kozmos.components.menu.KozmosMenuContent
+import com.kozmos.components.menu.KozmosMenuItem
+import com.kozmos.components.tree.KozmosTree
+import com.kozmos.components.tree.KozmosTreeMetaPlacement
+import com.kozmos.components.tree.KozmosTreeSelectionMode
+import com.kozmos.components.tree.TreeNode
+
+// One lazy list over the visible rows: give the tree a height. Shift+click
+// or Shift+Down selects a range, Ctrl+click toggles a row, and a right click,
+// a long press or the Menu key opens that row's menu.
+@Composable
+fun MapContentTree() {
+    var selected by remember { mutableStateOf(emptySet<String>()) }
+    KozmosTree(
+        data = listOf(
+            TreeNode(
+                id = "poi",
+                name = "POI",
+                count = 2,
+                section = true,
+                children = listOf(
+                    TreeNode(id = "cafe", name = "Bean & Leaf Café", meta = "Changes awaiting publish"),
+                    TreeNode(id = "gate", name = "Gate A12")
+                )
+            ),
+            TreeNode(
+                id = "structural",
+                name = "Structural",
+                count = 1,
+                section = true,
+                children = listOf(TreeNode(id = "wall", name = "North wall"))
+            )
+        ),
+        modifier = Modifier.height(400.dp),
+        selectionMode = KozmosTreeSelectionMode.Multiple,
+        selectedIds = selected,
+        onSelectedIdsChange = { selected = it },
+        metaPlacement = KozmosTreeMetaPlacement.Below,
+        contextMenu = { node ->
+            KozmosMenuContent(
+                label = node.name,
+                items = listOf(KozmosMenuItem(text = "Rename"), KozmosMenuItem(text = "Delete"))
+            )
+        },
+        onContextMenuSelect = { node, item -> /* item.text on node.id */ }
+    )
+}
+`}
+/>
 
 ## Implementation
 

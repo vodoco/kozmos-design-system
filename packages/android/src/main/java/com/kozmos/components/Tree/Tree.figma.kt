@@ -39,9 +39,8 @@ class KozmosTreeConnect {
     }
 }
 
-// The rows a designer puts in Tree's Content Slot, as Compose's TreeItem.
-// Compose has no divided rows yet (GAP-201 is web and Figma first), so
-// Divided changes nothing here.
+// The rows a designer puts in Tree's Content Slot, as Compose's TreeItem,
+// Divided as a divided row (GAP-201).
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=684-6080")
 class KozmosTreeParentItemConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
@@ -60,12 +59,24 @@ class KozmosTreeParentItemConnect {
         "Compact" to KozmosTreeDensity.Compact
     )
 
+    @FigmaProperty(FigmaType.Boolean, "Divided")
+    val divided: Boolean = false
+
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
-            density = density
+            density = density,
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }
@@ -88,12 +99,24 @@ class KozmosTreeChildItemConnect {
         "Compact" to KozmosTreeDensity.Compact
     )
 
+    @FigmaProperty(FigmaType.Boolean, "Divided")
+    val divided: Boolean = false
+
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
-            density = density
+            density = density,
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }
@@ -116,12 +139,24 @@ class KozmosTreeItemConnect {
         "Compact" to KozmosTreeDensity.Compact
     )
 
+    @FigmaProperty(FigmaType.Boolean, "Divided")
+    val divided: Boolean = false
+
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
-            density = density
+            density = density,
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }

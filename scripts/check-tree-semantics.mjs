@@ -12,7 +12,9 @@
  * Stories: Composed (rows, with a parent's children in a role="group", as
  * the docs compose them), RowPrimitive (rows with actions, no groups), and
  * the data-driven Default, before and after a click opens and selects `src`,
- * and WithRowActions, before and after a click selects a leaf. In each:
+ * WithRowActions, before and after a click selects a leaf, and
+ * SectionsAndRanges (GAP-151), a multiple tree with sections, before and
+ * after a click selects one row. In each:
  *
  * - axe finds nothing in the story, and its tree rules ran on it:
  *   aria-required-children and aria-required-parent passed.
@@ -104,6 +106,34 @@ const SCENARIOS = [
       row("Fast Food", 4, { expanded: true }),
       row("Burger King", 5, { selected: true }),
       row("McDonald's", 5),
+    ],
+  },
+  {
+    // GAP-151: a level's items in sections, two selected of a multiple tree.
+    // Each section's items are in a group named by it, at the section's own
+    // level, so their aria-level is one less than the groups round them.
+    id: "data-display-tree--sections-and-ranges",
+    nested: false,
+    rows: [
+      row("Level 1", 1, { expanded: true }),
+      row("Bean & Leaf Café", 2, { selected: true }),
+      row("Gate A12", 2, { selected: true }),
+      row("Pharmacy", 2),
+      row("Information desk", 2),
+      row("Kiosk", 2, { disabled: true }),
+      row("North wall", 2),
+      row("Level 2", 1),
+    ],
+    click: "Pharmacy",
+    after: [
+      row("Level 1", 1, { expanded: true }),
+      row("Bean & Leaf Café", 2),
+      row("Gate A12", 2),
+      row("Pharmacy", 2, { selected: true }),
+      row("Information desk", 2),
+      row("Kiosk", 2, { disabled: true }),
+      row("North wall", 2),
+      row("Level 2", 1),
     ],
   },
 ];

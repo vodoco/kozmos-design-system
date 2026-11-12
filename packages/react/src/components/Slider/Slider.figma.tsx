@@ -28,10 +28,19 @@ figma.connect(
         Single: 1,
         Range: 2,
       }),
+      showValue: figma.boolean("Show Value"),
     },
-    example: ({ disabled, error, label, defaultValue, thumbCount }) => (
+    example: ({
+      disabled,
+      error,
+      label,
+      defaultValue,
+      showValue,
+      thumbCount,
+    }) => (
       <Slider
         defaultValue={defaultValue}
+        showValue={showValue}
         disabled={disabled}
         error={error}
         label={label}

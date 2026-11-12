@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T14:27:26.247Z",
+  "generatedAt": "2026-11-11T06:30:45.135Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 697,
-    "variableTokens": 646,
+    "totalTokens": 745,
+    "variableTokens": 694,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 477,
+      "color": 525,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -15391,6 +15391,1158 @@
         "dark": {
           "kind": "raw",
           "value": "#8b8474"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/background/idle",
+      "figmaName": "Subtle Buttons/themed/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-background-idle)",
+        "ios": "componentsSubtleButtonsThemedButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsThemedButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/background/hover",
+      "figmaName": "Subtle Buttons/themed/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-background-hover)",
+        "ios": "componentsSubtleButtonsThemedButtonBackgroundHover",
+        "android": "componentsSubtleButtonsThemedButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/background/pressed",
+      "figmaName": "Subtle Buttons/themed/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-background-pressed)",
+        "ios": "componentsSubtleButtonsThemedButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsThemedButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/background/focus",
+      "figmaName": "Subtle Buttons/themed/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-background-focus)",
+        "ios": "componentsSubtleButtonsThemedButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsThemedButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/themed/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsThemedButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsThemedButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/600"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/600"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/themed/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsThemedButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsThemedButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/700"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/700"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/themed/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsThemedButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsThemedButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/800"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/themed/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/themed/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-themed-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-themed-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsThemedButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsThemedButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/700"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/700"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/background/idle",
+      "figmaName": "Subtle Buttons/success/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-background-idle)",
+        "ios": "componentsSubtleButtonsSuccessButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsSuccessButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/background/hover",
+      "figmaName": "Subtle Buttons/success/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-background-hover)",
+        "ios": "componentsSubtleButtonsSuccessButtonBackgroundHover",
+        "android": "componentsSubtleButtonsSuccessButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/background/pressed",
+      "figmaName": "Subtle Buttons/success/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-background-pressed)",
+        "ios": "componentsSubtleButtonsSuccessButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsSuccessButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/background/focus",
+      "figmaName": "Subtle Buttons/success/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-background-focus)",
+        "ios": "componentsSubtleButtonsSuccessButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsSuccessButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/success/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsSuccessButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsSuccessButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/success/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsSuccessButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsSuccessButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/success/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsSuccessButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsSuccessButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/1000"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/success/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/success/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-success-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-success-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsSuccessButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsSuccessButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/background/idle",
+      "figmaName": "Subtle Buttons/alert/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-background-idle)",
+        "ios": "componentsSubtleButtonsAlertButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsAlertButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/background/hover",
+      "figmaName": "Subtle Buttons/alert/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-background-hover)",
+        "ios": "componentsSubtleButtonsAlertButtonBackgroundHover",
+        "android": "componentsSubtleButtonsAlertButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/background/pressed",
+      "figmaName": "Subtle Buttons/alert/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-background-pressed)",
+        "ios": "componentsSubtleButtonsAlertButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsAlertButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/background/focus",
+      "figmaName": "Subtle Buttons/alert/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-background-focus)",
+        "ios": "componentsSubtleButtonsAlertButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsAlertButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/alert/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsAlertButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsAlertButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/alert/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsAlertButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsAlertButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/alert/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsAlertButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsAlertButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/alert/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/alert/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-alert-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-alert-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsAlertButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsAlertButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/background/idle",
+      "figmaName": "Subtle Buttons/danger/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-background-idle)",
+        "ios": "componentsSubtleButtonsDangerButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsDangerButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/background/hover",
+      "figmaName": "Subtle Buttons/danger/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-background-hover)",
+        "ios": "componentsSubtleButtonsDangerButtonBackgroundHover",
+        "android": "componentsSubtleButtonsDangerButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/background/pressed",
+      "figmaName": "Subtle Buttons/danger/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-background-pressed)",
+        "ios": "componentsSubtleButtonsDangerButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsDangerButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/background/focus",
+      "figmaName": "Subtle Buttons/danger/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-background-focus)",
+        "ios": "componentsSubtleButtonsDangerButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsDangerButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/danger/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsDangerButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsDangerButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/danger/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsDangerButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsDangerButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/danger/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsDangerButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsDangerButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/danger/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/danger/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-danger-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-danger-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsDangerButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsDangerButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/background/idle",
+      "figmaName": "Subtle Buttons/informative/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-background-idle)",
+        "ios": "componentsSubtleButtonsInformativeButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsInformativeButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/background/hover",
+      "figmaName": "Subtle Buttons/informative/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-background-hover)",
+        "ios": "componentsSubtleButtonsInformativeButtonBackgroundHover",
+        "android": "componentsSubtleButtonsInformativeButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/background/pressed",
+      "figmaName": "Subtle Buttons/informative/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-background-pressed)",
+        "ios": "componentsSubtleButtonsInformativeButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsInformativeButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/background/focus",
+      "figmaName": "Subtle Buttons/informative/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-background-focus)",
+        "ios": "componentsSubtleButtonsInformativeButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsInformativeButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/informative/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsInformativeButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsInformativeButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/informative/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsInformativeButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsInformativeButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/informative/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsInformativeButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsInformativeButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/1000"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/1000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/informative/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/informative/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-informative-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-informative-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsInformativeButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsInformativeButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/900"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/background/idle",
+      "figmaName": "Subtle Buttons/neutral/button/background/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-background-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-background-idle)",
+        "ios": "componentsSubtleButtonsNeutralButtonBackgroundIdle",
+        "android": "componentsSubtleButtonsNeutralButtonBackgroundIdle"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/background/hover",
+      "figmaName": "Subtle Buttons/neutral/button/background/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-background-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-background-hover)",
+        "ios": "componentsSubtleButtonsNeutralButtonBackgroundHover",
+        "android": "componentsSubtleButtonsNeutralButtonBackgroundHover"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/background/pressed",
+      "figmaName": "Subtle Buttons/neutral/button/background/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-background-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-background-pressed)",
+        "ios": "componentsSubtleButtonsNeutralButtonBackgroundPressed",
+        "android": "componentsSubtleButtonsNeutralButtonBackgroundPressed"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/400"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/background/focus",
+      "figmaName": "Subtle Buttons/neutral/button/background/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-background-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-background-focus)",
+        "ios": "componentsSubtleButtonsNeutralButtonBackgroundFocus",
+        "android": "componentsSubtleButtonsNeutralButtonBackgroundFocus"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/foreground/content/idle",
+      "figmaName": "Subtle Buttons/neutral/button/foreground/content/idle",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-foreground-content-idle",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-foreground-content-idle)",
+        "ios": "componentsSubtleButtonsNeutralButtonForegroundContentIdle",
+        "android": "componentsSubtleButtonsNeutralButtonForegroundContentIdle"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/foreground/content/hover",
+      "figmaName": "Subtle Buttons/neutral/button/foreground/content/hover",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-foreground-content-hover",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-foreground-content-hover)",
+        "ios": "componentsSubtleButtonsNeutralButtonForegroundContentHover",
+        "android": "componentsSubtleButtonsNeutralButtonForegroundContentHover"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/foreground/content/pressed",
+      "figmaName": "Subtle Buttons/neutral/button/foreground/content/pressed",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-foreground-content-pressed",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-foreground-content-pressed)",
+        "ios": "componentsSubtleButtonsNeutralButtonForegroundContentPressed",
+        "android": "componentsSubtleButtonsNeutralButtonForegroundContentPressed"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Components/Subtle Buttons/neutral/button/foreground/content/focus",
+      "figmaName": "Subtle Buttons/neutral/button/foreground/content/focus",
+      "collection": "Kozmos Components",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--components-subtle-buttons-neutral-button-foreground-content-focus",
+      "syntax": {
+        "web": "var(--components-subtle-buttons-neutral-button-foreground-content-focus)",
+        "ios": "componentsSubtleButtonsNeutralButtonForegroundContentFocus",
+        "android": "componentsSubtleButtonsNeutralButtonForegroundContentFocus"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },

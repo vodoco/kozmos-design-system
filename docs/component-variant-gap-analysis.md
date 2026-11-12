@@ -91,9 +91,6 @@ Combobox
   - ios missing axes -> popupLayout (overlay, inline)
   - android missing axes -> popupLayout (overlay, inline)
   - figma missing axes -> popupLayout (overlay, inline)
-Drawer
-  - ios missing values -> placement [named "side" here]: fixed, inline
-  - android missing values -> placement [named "side" here]: fixed, inline
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)

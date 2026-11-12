@@ -170,6 +170,24 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// top their own bottom padding up to it too. The panel's surface is told too,
 /// `kozmosPanelSurface`: it is the one surface, and a part that fills its own
 /// box standing alone paints no fill on it (decision 43).
+/// `status` is the map's status (GAP-123, decision 119): a
+/// `KozmosMapStatusPill` saying "Route updated" or "Calculating step-free
+/// route", between the bottom corners and level with them, centred on the
+/// map as the credits are, with the credits directly above it. With no middle
+/// slot between the corners it rises above them, and the credits above it.
+/// With no room above the sheet it is not drawn, and the pill still announces.
+/// It never pads the camera, so a status coming and going does not move the
+/// map, and it moves only what it reaches: a side panel or a controls column
+/// clear of it and the credits keeps its height.
+///
+/// `controlsTopStart` and `controlsTopEnd` are the logical top corners, 16
+/// under the top bar and beside a side panel: Exit building at the start
+/// (SDK-UI-006), the map's information at the end. They share a row, or the
+/// start sits above the end when both do not fit, and a `controls` column
+/// starts 16 below them. They share one container, `topControlsLabel`. They
+/// pad the camera's top only with `controlsPadCamera`. With no room above
+/// the sheet they stay in the hierarchy but leave the screen's interaction
+/// and VoiceOver, as the bottom corners do.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start
@@ -197,6 +215,16 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let hasBottomControls: Bool
     private let bottomControlsPadCamera: Bool
     private let attribution: AnyView?
+    /// The map's status between the bottom corners (GAP-123), nil with none.
+    private let status: AnyView?
+    private let controlsTopStart: AnyView
+    private let controlsTopEnd: AnyView
+    private let hasTopControls: Bool
+    private let topControlsLabel: String
+    private let controlsPadCamera: Bool
+    /// The top corners' height, and the status's size, whether or not shown.
+    @State private var topControlsHeight: CGFloat = 0
+    @State private var statusSize: CGSize = .zero
     /// The attribution's height as drawn: without its brand when compact.
     @State private var attributionHeight: CGFloat = 0
     /// Its height with the brand: what the panel's sizing reserves, so the
@@ -264,7 +292,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// of what the row falls short of a 24-point target, 4.
     private static var grabberClearance: CGFloat { (minimumTargetSpacing - grabberRowHeight) / 2 }
 
-    public init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
+    public init<PanelHeader: View, BottomStart: View, BottomEnd: View, Status: View, TopStart: View, TopEnd: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -279,8 +307,13 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         attribution: AnyView? = nil,
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
+        topControlsLabel: String = "Map top corner controls",
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
+        @ViewBuilder status: () -> Status = { EmptyView() },
+        @ViewBuilder controlsTopStart: () -> TopStart = { EmptyView() },
+        @ViewBuilder controlsTopEnd: () -> TopEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
@@ -308,6 +341,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         self.controlsBottomStart = AnyView(controlsBottomStart())
         self.controlsBottomEnd = AnyView(controlsBottomEnd())
         self.hasBottomControls = BottomStart.self != EmptyView.self || BottomEnd.self != EmptyView.self
+        self.status = Status.self == EmptyView.self ? nil : AnyView(status())
+        self.controlsTopStart = AnyView(controlsTopStart())
+        self.controlsTopEnd = AnyView(controlsTopEnd())
+        self.hasTopControls = TopStart.self != EmptyView.self || TopEnd.self != EmptyView.self
+        self.topControlsLabel = topControlsLabel
+        self.controlsPadCamera = controlsPadCamera
         self.topBar = topBar()
         self.panel = panel()
         self.panelHeader = PanelHeader.self == EmptyView.self ? nil : AnyView(panelHeader())
@@ -529,7 +568,11 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         // The map runs under the safe areas; the camera keeps out of them.
         let safeLeft = layoutDirection == .leftToRight ? safeArea.leading : safeArea.trailing
         let safeRight = layoutDirection == .leftToRight ? safeArea.trailing : safeArea.leading
-        let top = max(collisionInsets.top, Double(topBarInset + safeArea.top))
+        // The top corners pad the camera's top only when asked; the status
+        // never pads it, so the map does not move as a status comes and goes.
+        let topCorners = controlsPadCamera && topControlsShown(in: size, safeArea: safeArea)
+            ? topControlsTop(safeArea: safeArea) + topControlsHeight : 0
+        let top = max(collisionInsets.top, Double(max(topBarInset + safeArea.top, topCorners)))
         let right = max(
             collisionInsets.right,
             Double((panelOnPhysicalRight ? sidePanelWidth : controlsColumn) + safeRight)
@@ -660,7 +703,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private func attributionBand(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
         let gap = KozmosDimensions.primitivesLayoutSpacing200
         let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
-        return max(0, size.height - bottom - topBarInset - safeArea.top - gap * 2 - (bottom > 0 ? 0 : safeArea.bottom))
+        return max(0, size.height - bottom - topBarInset - safeArea.top - gap * 2 - (bottom > 0 ? 0 : safeArea.bottom)
+            - topControlsInset(in: size, safeArea: safeArea))
     }
 
     /// Decision 58 gives way in order: the logo first, then the corners. With
@@ -669,7 +713,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private func cornersGiveWay(in size: CGSize, safeArea: EdgeInsets) -> Bool {
         guard attribution != nil, attributionCompact else { return false }
         let lift = attributionLiftOverCorners(in: size, safeArea: safeArea)
-        return lift > 0 && attributionHeight + lift > attributionBand(in: size, safeArea: safeArea)
+        return lift > 0 && attributionHeight + statusRaise(in: size, safeArea: safeArea) + lift
+            > attributionBand(in: size, safeArea: safeArea)
     }
 
     private func bottomBand(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
@@ -677,7 +722,101 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
         let legacy = hasControls ? controlsSize.height + gap * 2 : 0
         return max(0, size.height - bottom - topBarInset - safeArea.top
-            - (bottom > 0 ? 0 : safeArea.bottom) - legacy - gap * 2)
+            - (bottom > 0 ? 0 : safeArea.bottom) - legacy - gap * 2
+            - topControlsInset(in: size, safeArea: safeArea))
+    }
+
+    // MARK: - Status and top corners (GAP-123)
+
+    /// The bottom edge of the band the bottom chrome keeps, from the shell's
+    /// top: 16 above the docked sheet, or above the bottom safe area.
+    private func footerBottom(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+        return size.height - bottom - KozmosDimensions.primitivesLayoutSpacing200 - (bottom > 0 ? 0 : safeArea.bottom)
+    }
+
+    /// Where the top corners start, from the shell's top: 16 under the top
+    /// bar, or under the top safe area with none.
+    func topControlsTop(safeArea: EdgeInsets) -> CGFloat {
+        safeArea.top + topBarInset + KozmosDimensions.primitivesLayoutSpacing200
+    }
+
+    /// The credits' height and the gap above them: what the top corners and
+    /// the status leave the credits, which are never clipped.
+    private var creditsReserve: CGFloat {
+        attribution != nil && attributionHeight > 0 ? attributionHeight + KozmosDimensions.primitivesLayoutSpacing200 : 0
+    }
+
+    /// The top corners are drawn when they and the credits fit above the
+    /// sheet; otherwise they stay in the hierarchy and leave the screen.
+    func topControlsShown(in size: CGSize, safeArea: EdgeInsets) -> Bool {
+        hasTopControls && topControlsHeight > 0 &&
+            topControlsTop(safeArea: safeArea) + topControlsHeight + creditsReserve <= footerBottom(in: size, safeArea: safeArea)
+    }
+
+    /// How far down the top corners push the controls column and the band
+    /// the bottom chrome has: their height and a gap, while drawn.
+    private func topControlsInset(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        topControlsShown(in: size, safeArea: safeArea) ? topControlsHeight + KozmosDimensions.primitivesLayoutSpacing200 : 0
+    }
+
+    /// The status is drawn when it and the credits fit the band under the
+    /// top chrome; without room it is not drawn and the pill still announces.
+    func statusShown(in size: CGSize, safeArea: EdgeInsets) -> Bool {
+        status != nil && statusSize.height > 0 &&
+            statusSize.height + creditsReserve <= attributionBand(in: size, safeArea: safeArea)
+    }
+
+    /// How far a drawn status raises the credits: its height and a gap.
+    func statusRaise(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        statusShown(in: size, safeArea: safeArea) ? statusSize.height + KozmosDimensions.primitivesLayoutSpacing200 : 0
+    }
+
+    /// What a status costs a box at `x`, `width` across the shell: its raise
+    /// when the box reaches the status or the credits it raises, centred on
+    /// the map, and nothing when it is clear of them, so a side panel or a
+    /// controls column the status never touches keeps its height.
+    private func statusRaise(reaching x: CGFloat, width: CGFloat, in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let raise = statusRaise(in: size, safeArea: safeArea)
+        guard raise > 0 else { return 0 }
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let safeLeft = layoutDirection == .leftToRight ? safeArea.leading : safeArea.trailing
+        let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - gap * 2)
+        let centre = safeLeft + gap + innerWidth / 2
+        let raised = max(statusSize.width, attribution != nil && attributionHeight > 0 ? creditsSlotWidth(in: size, safeArea: safeArea) : 0)
+        return abs(x + width / 2 - centre) < (width + raised) / 2 + gap ? raise : 0
+    }
+
+    /// The credits' slot, which the status shares: between the bottom
+    /// corners, or the whole width when they leave no middle slot.
+    private func creditsSlotWidth(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let corners = visibleBottomControlsHeight(in: size, safeArea: safeArea)
+        let start = corners > 0 && (cornerWidths[0] ?? 0) > 0 ? (cornerWidths[0] ?? 0) + gap : 0
+        let end = corners > 0 && (cornerWidths[1] ?? 0) > 0 ? (cornerWidths[1] ?? 0) + gap : 0
+        let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - gap * 2)
+        let reserve = max(start, end)
+        return corners > 0 && innerWidth - reserve * 2 < 128 ? innerWidth : max(0, innerWidth - reserve * 2)
+    }
+
+    /// The controls column's physical x and width, for what a status reaches.
+    private func controlsColumnSpan(in size: CGSize, safeArea: EdgeInsets) -> (x: CGFloat, width: CGFloat) {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let safeLeft = layoutDirection == .leftToRight ? safeArea.leading : safeArea.trailing
+        let safeRight = layoutDirection == .leftToRight ? safeArea.trailing : safeArea.leading
+        if controlsPlacement == .bottom {
+            return (safeLeft + gap, max(0, size.width - safeArea.leading - safeArea.trailing - gap * 2))
+        }
+        let chromeOnLeft = (panelPlacement == .end) == (layoutDirection == .leftToRight)
+        return chromeOnLeft
+            ? (safeLeft + gap, controlsSize.width)
+            : (size.width - safeRight - gap - controlsSize.width, controlsSize.width)
+    }
+
+    /// What a status costs the controls column.
+    private func controlsStatusRaise(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let span = controlsColumnSpan(in: size, safeArea: safeArea)
+        return statusRaise(reaching: span.x, width: span.width, in: size, safeArea: safeArea)
     }
 
     // MARK: - Body
@@ -753,13 +892,19 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         .zIndex(3)
                 }
 
+                if hasTopControls {
+                    topControlsView(in: geometry, chromeWidth: chromeWidth, safeArea: safeArea)
+                }
+
                 if hasControls {
                     let gap = KozmosDimensions.primitivesLayoutSpacing200
                     let bottom = dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea)
                     let cornerHeight = visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea)
+                    let topCorners = topControlsInset(in: geometry.size, safeArea: safeArea)
+                    let statusCost = controlsStatusRaise(in: geometry.size, safeArea: safeArea)
                     let controlBand = max(0, geometry.size.height - bottom
-                        - attributionReserve(in: geometry.size, safeArea: safeArea)
-                        - topBarInset - safeArea.top - (bottom > 0 ? 0 : safeArea.bottom) - gap * 2
+                        - attributionReserve(in: geometry.size, safeArea: safeArea) - statusCost
+                        - topBarInset - topCorners - safeArea.top - (bottom > 0 ? 0 : safeArea.bottom) - gap * 2
                         - (controlsPlacement == .bottom && cornerHeight > 0 ? cornerHeight + gap : 0))
                     let controlsFit = attribution == nil || (controlBand > 0 && controlsSize.height <= controlBand)
                     controls
@@ -780,7 +925,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         // The top bar shares this edge, so the controls clear
                         // whatever it occupies rather than sitting under it;
                         // the status bar likewise.
-                        .padding(.top, topBarInset + safeArea.top)
+                        // Under the top corners too, 16 below them (GAP-123).
+                        .padding(.top, topBarInset + topCorners + safeArea.top)
                         .padding(.leading, safeArea.leading)
                         .padding(.trailing, safeArea.trailing)
                         .padding(.bottom, hasPanel && !isRegularWidth ? 0 : safeArea.bottom)
@@ -792,7 +938,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         .frame(
                             width: chromeWidth,
                             height: max(
-                                geometry.size.height - dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea) - attributionReserve(in: geometry.size, safeArea: safeArea)
+                                geometry.size.height - dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea) - attributionReserve(in: geometry.size, safeArea: safeArea) - statusCost
                                     - (controlsPlacement == .bottom ? visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea) + (visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea) > 0 ? KozmosDimensions.primitivesLayoutSpacing200 : 0) : 0),
                                 0
                             ),
@@ -876,7 +1022,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     // the credits keep their height and are never clipped.
                     let compact = attributionFullHeight > min(
                         attributionCap(in: geometry.size, safeArea: safeArea),
-                        max(0, footerBand - attributionLiftOverCorners(in: geometry.size, safeArea: safeArea)))
+                        max(0, footerBand - attributionLiftOverCorners(in: geometry.size, safeArea: safeArea)
+                            - statusRaise(in: geometry.size, safeArea: safeArea)))
                     attribution
                         .environment(\.kozmosMapAttributionCompact, attributionCompact)
                         .frame(maxWidth: .infinity)
@@ -908,9 +1055,15 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     .padding(.horizontal, gap)
                     .padding(.leading, safeArea.leading)
                     .padding(.trailing, safeArea.trailing)
-                    .padding(.bottom, bottom + gap + lift + (bottom > 0 ? 0 : safeArea.bottom))
+                    // A status sits where the credits rested, and they rise
+                    // directly above it.
+                    .padding(.bottom, bottom + gap + lift + statusRaise(in: geometry.size, safeArea: safeArea)
+                        + (bottom > 0 ? 0 : safeArea.bottom))
                     .frame(width: geometry.size.width, height: geometry.size.height, alignment: .bottom)
                     .zIndex(3)
+                }
+                if let status {
+                    statusView(status, in: geometry, safeArea: safeArea)
                 }
                 if hasPanel {
                     panelContainer(in: geometry, safeArea: safeArea)
@@ -925,6 +1078,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .onPreferenceChange(KozmosMapShellControlsSizeKey.self) { controlsSize = $0 }
             .onPreferenceChange(KozmosBottomControlsHeightKey.self) { bottomControlsHeight = $0 }
             .onPreferenceChange(KozmosBottomCornerWidthsKey.self) { cornerWidths = $0 }
+            .onPreferenceChange(KozmosTopControlsHeightKey.self) { topControlsHeight = $0 }
+            .onPreferenceChange(KozmosMapShellStatusSizeKey.self) { statusSize = $0 }
             .onPreferenceChange(KozmosSidePanelHeightKey.self) { sidePanelHeight = $0 }
             .onPreferenceChange(KozmosAttributionHeightKey.self) {
                 attributionHeight = $0
@@ -944,6 +1099,74 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         .clipped()
     }
 
+    // MARK: - Top corners and status (GAP-123)
+
+    /// The logical top corners, 16 under the top bar, in the map beside a
+    /// side panel: one row, or the start above the end, in one container.
+    @ViewBuilder
+    private func topControlsView(in geometry: GeometryProxy, chromeWidth: CGFloat, safeArea: EdgeInsets) -> some View {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let shown = topControlsShown(in: geometry.size, safeArea: safeArea)
+        KozmosBottomControlsLayout(alignsTop: true) {
+            // A stack per corner, as the bottom corners have: an empty corner
+            // is otherwise no subview at all.
+            ZStack { controlsTopStart }
+            ZStack { controlsTopEnd }
+        }
+        .frame(width: max(0, chromeWidth - safeArea.leading - safeArea.trailing - gap * 2))
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { proxy in
+            Color.clear.preference(key: KozmosTopControlsHeightKey.self, value: proxy.size.height)
+        })
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(topControlsLabel)
+        .opacity(shown ? 1 : 0)
+        .allowsHitTesting(shown)
+        .accessibilityHidden(!shown)
+        .padding(.horizontal, gap)
+        .padding(.leading, safeArea.leading)
+        .padding(.trailing, safeArea.trailing)
+        .padding(.top, topControlsTop(safeArea: safeArea))
+        .frame(width: geometry.size.width, height: geometry.size.height,
+               alignment: chromeSide == .leading ? .topLeading : .topTrailing)
+        .zIndex(3)
+    }
+
+    /// The status, level with the bottom corners, in the credits' slot and
+    /// centred on the map; above the corners when they leave no middle slot.
+    @ViewBuilder
+    private func statusView(_ status: AnyView, in geometry: GeometryProxy, safeArea: EdgeInsets) -> some View {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let size = geometry.size
+        let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+        let corners = visibleBottomControlsHeight(in: size, safeArea: safeArea)
+        let start = corners > 0 && (cornerWidths[0] ?? 0) > 0 ? (cornerWidths[0] ?? 0) + gap : 0
+        let end = corners > 0 && (cornerWidths[1] ?? 0) > 0 ? (cornerWidths[1] ?? 0) + gap : 0
+        let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - gap * 2)
+        let reserve = max(start, end)
+        let above = corners > 0 && innerWidth - reserve * 2 < 128
+        let lift = above ? corners + gap : 0
+        let shown = statusShown(in: size, safeArea: safeArea)
+        status
+            .fixedSize(horizontal: false, vertical: true)
+            .background(GeometryReader { proxy in
+                Color.clear.preference(key: KozmosMapShellStatusSizeKey.self, value: proxy.size)
+            })
+            .frame(width: max(0, innerWidth - (above ? 0 : reserve * 2)))
+            // Not drawn without room, and still in VoiceOver's tree, as the
+            // web's clipped status is: masked out, not made transparent, since
+            // SwiftUI drops a view at opacity 0 from the tree.
+            .mask { shown ? Color.black : Color.clear }
+            .allowsHitTesting(shown)
+            .padding(.horizontal, above ? 0 : reserve)
+            .padding(.horizontal, gap)
+            .padding(.leading, safeArea.leading)
+            .padding(.trailing, safeArea.trailing)
+            .padding(.bottom, bottom + gap + lift + (bottom > 0 ? 0 : safeArea.bottom))
+            .frame(width: size.width, height: size.height, alignment: .bottom)
+            .zIndex(3)
+    }
+
     // MARK: - Panel
 
     @ViewBuilder
@@ -955,8 +1178,16 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             let cornerReserve = corners > 0 ? ((cornerWidths.values.max() ?? 0) + gap) * 2 : 0
             let lift = corners > 0 && innerWidth - cornerReserve < 128 ? corners + gap : 0
             let credits = visibleAttributionHeight(in: geometry.size, safeArea: safeArea)
+            // A status raises the credits over the panel only where it reaches
+            // the panel: a panel clear of it keeps its height (GAP-123).
+            let panelWidth = min(416, geometry.size.width * 0.42)
+            let safeLeft = layoutDirection == .leftToRight ? safeArea.leading : safeArea.trailing
+            let safeRight = layoutDirection == .leftToRight ? safeArea.trailing : safeArea.leading
+            let panelOnLeft = (panelPlacement == .start) == (layoutDirection == .leftToRight)
+            let panelX = panelOnLeft ? safeLeft + gap : geometry.size.width - safeRight - gap - panelWidth
+            let raise = statusRaise(reaching: panelX, width: panelWidth, in: geometry.size, safeArea: safeArea)
             let cap = max(0, geometry.size.height - safeArea.top - safeArea.bottom - gap * 2
-                - max(corners > 0 ? corners + gap : 0, credits > 0 ? credits + lift + gap : 0))
+                - max(corners > 0 ? corners + gap : 0, credits > 0 ? credits + lift + gap + raise : raise))
             KozmosCappedHeightLayout(cap: cap) {
                 VStack(spacing: 0) {
                     if let panelHeader {
@@ -1290,7 +1521,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 }
 
 public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
-    init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
+    init<PanelHeader: View, BottomStart: View, BottomEnd: View, Status: View, TopStart: View, TopEnd: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -1305,8 +1536,13 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
         attribution: AnyView? = nil,
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
+        topControlsLabel: String = "Map top corner controls",
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
+        @ViewBuilder status: () -> Status = { EmptyView() },
+        @ViewBuilder controlsTopStart: () -> TopStart = { EmptyView() },
+        @ViewBuilder controlsTopEnd: () -> TopEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
@@ -1328,8 +1564,13 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
             attribution: attribution,
             controlsLabel: controlsLabel,
             bottomControlsLabel: bottomControlsLabel,
+            topControlsLabel: topControlsLabel,
+            controlsPadCamera: controlsPadCamera,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
+            status: status,
+            controlsTopStart: controlsTopStart,
+            controlsTopEnd: controlsTopEnd,
             map: map,
             mapStatusContent: mapStatusContent,
             controls: controls,
@@ -1342,7 +1583,7 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
 
 public extension KozmosAdaptiveMapShell
 where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView {
-    init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
+    init<PanelHeader: View, BottomStart: View, BottomEnd: View, Status: View, TopStart: View, TopEnd: View>(
         mapLabel: String = "Map",
         panelLabel: String = "Map details",
         panelPlacement: PanelPlacement = .end,
@@ -1356,8 +1597,13 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
         attribution: AnyView? = nil,
         controlsLabel: String = "Map controls",
         bottomControlsLabel: String = "Map corner controls",
+        topControlsLabel: String = "Map top corner controls",
+        controlsPadCamera: Bool = false,
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
+        @ViewBuilder status: () -> Status = { EmptyView() },
+        @ViewBuilder controlsTopStart: () -> TopStart = { EmptyView() },
+        @ViewBuilder controlsTopEnd: () -> TopEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder panel: () -> Panel,
         @ViewBuilder panelHeader: () -> PanelHeader = { EmptyView() }
@@ -1377,8 +1623,13 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
             attribution: attribution,
             controlsLabel: controlsLabel,
             bottomControlsLabel: bottomControlsLabel,
+            topControlsLabel: topControlsLabel,
+            controlsPadCamera: controlsPadCamera,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
+            status: status,
+            controlsTopStart: controlsTopStart,
+            controlsTopEnd: controlsTopEnd,
             map: map,
             mapStatusContent: { EmptyView() },
             controls: { EmptyView() },

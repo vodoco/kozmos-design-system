@@ -132,7 +132,96 @@ none at rest, disabled or in forced colours. It is disabled with the field.
 Giving a field an action, or taking it away, keeps the same input, its focus and a value typed
 into it.
 
+SwiftUI's and Compose's `KozmosInput` take `action` from 0.16.0 (decision 134):
+`KozmosInputAction.copy()` and `.toggle(label:icon:isPressed:)` on SwiftUI,
+`KozmosInputAction.Copy()` and `KozmosInputAction.Toggle(label, icon, pressed, onPressedChange)` on
+Compose. The button is the field's 44 end, the pressed fill 36 across inside it with the control
+radius less 4, and only a disabled field disables it. A copy puts the value on the pasteboard or the
+clipboard and says "Copied": a VoiceOver announcement, a polite live region on Compose. A toggle's
+`icon` is the product's image (`Image(systemName:)`, an `ImageVector`); pressed, it is selected to
+VoiceOver and on to TalkBack. Neither platform has a pointer hover to draw.
+
 <Canvas of={InputStories.Actions} />
+
+## A mixed value
+
+With several features selected, a property whose values differ is one field for all of them
+(GAP-153, decision 132). `mixed` says the field stands for those values: it shows none of its own,
+"Multiple values" (`mixedLabel`) in its place as the placeholder, and a screen reader says it once
+with the field: the empty field's placeholder on the web and on SwiftUI, the field's state on
+Compose, where the drawn words are not said again. Input, NumberInput, Select and Combobox take it,
+with the same names on every platform.
+
+It is controlled, as the selection is the product's. The visitor's first edit comes through the
+field's own change callback, and the product clears `mixed`, so the field keeps its mixed state
+until it is edited. Give `onResetMixed` for a field whose values differ: once the field is no longer
+mixed it draws "Reset to multiple values" (`resetMixedLabel`) under the field, a text button at its
+start, never while it is disabled or read-only. Pressed, focus goes back to the field, and the
+product drops the edit and sets `mixed` again. A multi-selection's editor holds one edit per field
+and derives both from it, so a new selection needs nothing reset:
+
+<Canvas of={InputStories.MixedValue} />
+
+```tsx
+const differs = values.some((value) => value !== values[0]);
+<Input
+  label="Name"
+  mixed={differs && edit === undefined}
+  value={edit ?? (differs ? "" : values[0])}
+  onChange={(event) => setEdit(event.target.value)}
+  onResetMixed={differs ? () => setEdit(undefined) : undefined}
+/>;
+```
+
+An uncontrolled field drops its default value while mixed, is emptied as it turns mixed, and its
+typed text is emptied on reset.
+
+In Figma, Mixed is a value of the fields' State axis, so a mixed field that is also disabled, read
+only or in focus cannot be drawn: pick the one that matters on the board. A Mixed variant has no
+Reset Mixed layer, so the reset cannot be drawn with it. Mixed Text and Reset Mixed Text hold the
+words, for a board in another language.
+
+```kotlin
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.input.KozmosInput
+
+@Composable
+fun NameAcrossSelection(names: List<String>) {
+    val differs = names.distinct().size > 1
+    var edit by remember(names) { mutableStateOf<String?>(null) }
+    KozmosInput(
+        value = edit ?: if (differs) "" else names.first(),
+        onValueChange = { edit = it },
+        label = "Name",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+```
+
+```swift
+import SwiftUI
+import Kozmos
+
+struct NameAcrossSelection: View {
+    let names: [String]
+    @State private var edit: String?
+
+    var body: some View {
+        let differs = Set(names).count > 1
+        KozmosInput(
+            text: Binding(get: { edit ?? (differs ? "" : names[0]) }, set: { edit = $0 }),
+            label: "Name",
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+```
 
 ## In Safari
 

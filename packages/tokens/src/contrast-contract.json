@@ -156,6 +156,56 @@
       "name": "the accent's default is #FAB735, the SDK's Featured amber, in both themes (decision 68)",
       "token": "primitives-colors-accent-500",
       "value": "#fab735"
+    },
+    {
+      "name": "the subtle Button's fill idle is theme 0, a step of the client's ramp, in both themes (GAP-200, decision 135)",
+      "token": "components-subtle-buttons-themed-button-background-idle",
+      "sameAs": "primitives-colors-theme-0"
+    },
+    {
+      "name": "the subtle Button's words idle are theme 600 in both themes (GAP-200; theme 600 is the theme as text, decision 59)",
+      "token": "components-subtle-buttons-themed-button-foreground-content-idle",
+      "sameAs": "primitives-colors-theme-600"
+    },
+    {
+      "name": "the subtle Button's fill hover is theme 100, a step of the client's ramp, in both themes (GAP-200, decision 135)",
+      "token": "components-subtle-buttons-themed-button-background-hover",
+      "sameAs": "primitives-colors-theme-100"
+    },
+    {
+      "name": "the subtle Button's words hover are theme 700 in both themes (GAP-200; theme 600 is the theme as text, decision 59)",
+      "token": "components-subtle-buttons-themed-button-foreground-content-hover",
+      "sameAs": "primitives-colors-theme-700"
+    },
+    {
+      "name": "the subtle Button's fill focus is theme 100, a step of the client's ramp, in both themes (GAP-200, decision 135)",
+      "token": "components-subtle-buttons-themed-button-background-focus",
+      "sameAs": "primitives-colors-theme-100"
+    },
+    {
+      "name": "the subtle Button's words focus are theme 700 in both themes (GAP-200; theme 600 is the theme as text, decision 59)",
+      "token": "components-subtle-buttons-themed-button-foreground-content-focus",
+      "sameAs": "primitives-colors-theme-700"
+    },
+    {
+      "name": "the subtle Button's fill pressed is theme 200, a step of the client's ramp, in both themes (GAP-200, decision 135)",
+      "token": "components-subtle-buttons-themed-button-background-pressed",
+      "sameAs": "primitives-colors-theme-200"
+    },
+    {
+      "name": "the subtle Button's words pressed are theme 800 in both themes (GAP-200; theme 600 is the theme as text, decision 59)",
+      "token": "components-subtle-buttons-themed-button-foreground-content-pressed",
+      "sameAs": "primitives-colors-theme-800"
+    },
+    {
+      "name": "the destructive subtle Button is a rose fill, danger 0, in both themes (decision 139)",
+      "token": "components-subtle-buttons-danger-button-background-idle",
+      "sameAs": "primitives-colors-emotional-danger-0"
+    },
+    {
+      "name": "the destructive subtle Button's words are the danger text role in both themes (decision 139)",
+      "token": "components-subtle-buttons-danger-button-foreground-content-idle",
+      "sameAs": "semantics-emotion-danger-text"
     }
   ],
   "stateSteps": {

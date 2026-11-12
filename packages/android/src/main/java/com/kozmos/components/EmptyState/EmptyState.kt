@@ -18,7 +18,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.CollectionInfo
+import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.collectionInfo
+import androidx.compose.ui.semantics.collectionItemInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -74,7 +79,9 @@ fun KozmosEmptyState(
     action: (@Composable () -> Unit)? = null,
     size: KozmosEmptyStateSize = KozmosEmptyStateSize.Default,
     modifier: Modifier = Modifier,
-    progress: KozmosEmptyStateProgress? = null
+    progress: KozmosEmptyStateProgress? = null,
+    list: List<String> = emptyList(),
+    listLabel: String? = null
 ) {
     Column(
         modifier = modifier
@@ -126,6 +133,11 @@ fun KozmosEmptyState(
             )
         }
         
+        if (list.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(size.gap))
+            KozmosEmptyStateList(items = list, label = listLabel)
+        }
+
         if (progress != null) {
             // NaN is none done, as on React: coerceIn keeps a NaN, which the
             // range info refuses and roundToInt throws on.
@@ -166,6 +178,50 @@ fun KozmosEmptyState(
         if (action != null) {
             Spacer(modifier = Modifier.height(size.gap))
             action()
+        }
+    }
+}
+
+/**
+ * EmptyState's list (GAP-165), as React draws it: in the 280 column, from
+ * the start, each item a bullet and its words in the muted foreground, 4
+ * between items. TalkBack hears a list of so many items, the items in order
+ * with their places, the bullets not said, and the list named by [label].
+ */
+@Composable
+internal fun KozmosEmptyStateList(items: List<String>, label: String?) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = 280.dp)
+            .fillMaxWidth()
+            .semantics {
+                collectionInfo = CollectionInfo(rowCount = items.size, columnCount = 1)
+                if (label != null) contentDescription = label
+            },
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        items.forEachIndexed { index, item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics(mergeDescendants = true) {
+                        collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
+                    },
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "\u2022",
+                    color = KozmosThemeTokens.primitivesColorsForeground400,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clearAndSetSemantics { }
+                )
+                Text(
+                    text = item,
+                    color = KozmosThemeTokens.primitivesColorsForeground400,
+                    fontSize = 14.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }

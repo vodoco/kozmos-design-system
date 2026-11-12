@@ -24,13 +24,30 @@ class KozmosNumberInputConnect {
     @FigmaProperty(FigmaType.Boolean, "Show Helper Text")
     val showHelperText: Boolean = true
 
+    @FigmaProperty(FigmaType.Boolean, "Show Unit")
+    val showUnit: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Unit Text")
+    val unitText: String = "m"
+
     @FigmaProperty(FigmaType.Enum, "State")
     val state: String = Figma.mapping(
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-153: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -57,7 +74,12 @@ class KozmosNumberInputConnect {
             readOnly = state == "readonly",
             status = status,
             helperText = if (showHelperText) helperText else null,
-            showSteppers = showSteppers
+            showSteppers = showSteppers,
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel,
+            unit = if (showUnit) unitText else null
         )
     }
 }

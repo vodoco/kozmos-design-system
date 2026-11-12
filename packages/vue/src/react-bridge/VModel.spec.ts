@@ -785,6 +785,27 @@ const PARTS: Part[] = [
     alone: ["b.ts"],
   },
   {
+    // A multiple tree's model is its selected ids (GAP-151): Cmd with a
+    // click adds a row to them.
+    name: "KozmosTree",
+    model: "selectedIds",
+    props: { data: tree, selectionMode: "multiple" },
+    start: ["1"],
+    before: ["src"],
+    field: () => byText("[role=treeitem]", "b.ts"),
+    change: (item) =>
+      item.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, metaKey: true }),
+      ),
+    next: ["1", "3"],
+    shown: () => texts("[role=treeitem][aria-selected=true]"),
+    shows: ["src", "b.ts"],
+    nothing: [],
+    fromNothing: { next: ["3"], shows: ["b.ts"] },
+    listener: "onSelectedIdsChange",
+    alone: ["b.ts"],
+  },
+  {
     // A phone-sized shell, so the sheet and its handle are drawn.
     name: "KozmosAdaptiveMapShell",
     model: "panelDetent",
@@ -1279,6 +1300,31 @@ describe("each model's other changes", () => {
     await settle();
     expect(value.value).toBe("ADAL");
     expect(input.value).toBe("ADAL");
+  });
+
+  it("KozmosSearch's clear empties v-model, emits clear and hands the focus back (GAP-161)", async () => {
+    const value = ref("Gate");
+    const cleared = vi.fn();
+    mount(() =>
+      h(Bridge.KozmosSearch, {
+        "aria-label": "Place",
+        clearable: "",
+        clearLabel: "Aramayı temizle",
+        modelValue: value.value,
+        "onUpdate:modelValue": (next: string) => (value.value = next),
+        onClear: cleared,
+      }),
+    );
+    const input = await until(() => $<HTMLInputElement>("input[type=search]"));
+    (await until(() =>
+      $<HTMLButtonElement>("button[aria-label='Aramayı temizle']"),
+    ))!.click();
+    await settle();
+    expect(value.value).toBe("");
+    expect(input.value).toBe("");
+    expect(cleared).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(input);
+    expect($("button[aria-label='Aramayı temizle']")).toBeNull();
   });
 
   it("KozmosNumberInput's steppers emit a number, and a cleared field null", async () => {

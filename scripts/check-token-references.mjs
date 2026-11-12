@@ -26,7 +26,7 @@
  * the ramp re-pointed, every component or semantic colour whose value is a
  * step of the ramp in that theme computes that step's override — the 28
  * themed button tokens the sources once held as copied hex among them — and
- * the outline, ghost and link Buttons draw it.
+ * the outline, ghost, link and subtle Buttons draw it.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-token-references.mjs
@@ -337,6 +337,30 @@ try {
         read.name ===
         "--components-secondary-buttons-themed-button-foreground-content-idle",
     );
+    // The subtle Button (GAP-200) draws a fill and words that are both
+    // steps of the ramp, theme 0 and theme 600: a client's ramp carries both.
+    const subtle = (name) =>
+      reads.find(
+        (read) =>
+          read.name ===
+          `--components-subtle-buttons-themed-button-${name}-idle`,
+      );
+    for (const [part, property, token] of [
+      ["subtle", "backgroundColor", subtle("background")],
+      ["subtle", "color", subtle("foreground-content")],
+    ]) {
+      const read = await page
+        .getByTestId(`${root}-${part}`)
+        .evaluate((node, property) => {
+          const value = getComputedStyle(node)[property];
+          return { value, colour: window.kozmosColourOf(value) };
+        }, property);
+      counts.inks += 1;
+      if (!token || read.colour !== token.want)
+        failures.push(
+          `${root} ${part} ${property}: ${read.value}; expected ${token?.step ?? "its step"}'s override`,
+        );
+    }
     for (const [part, property] of [
       ["outline", "color"],
       ["outline", "borderTopColor"],
@@ -404,5 +428,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost and link Buttons' ink; ${counts.hovers} hovered fills follow the hover token's step; ${counts.nested} nested providers apply their own theme's set`,
+  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost, link and subtle Buttons' fill and ink; ${counts.hovers} hovered fills follow the hover token's step; ${counts.nested} nested providers apply their own theme's set`,
 );

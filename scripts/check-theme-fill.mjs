@@ -62,6 +62,16 @@ const NEUTRAL_FILL = { light: [199, 202, 209], dark: [70, 74, 83] };
 const NEUTRAL_HOVER = { light: [171, 175, 186], dark: [46, 49, 56] };
 const NEUTRAL_PRESSED = { light: [144, 149, 162], dark: [23, 25, 28] };
 const NEUTRAL_INK = { light: [0, 0, 0], dark: [255, 255, 255] };
+// The subtle Button (GAP-200, decision 135): theme 0 under theme 600 at rest
+// (THEME_0 and THEME_600), theme 100 under 700 hovered and focused, theme 200
+// under 800 pressed; the ramp turns over in dark. Decision 139's destructive
+// tone is danger 0 under the danger text, danger 700.
+const THEME_100 = { light: [202, 217, 252], dark: [8, 41, 117] };
+const THEME_200 = { light: [164, 190, 249], dark: [11, 54, 156] };
+const THEME_700 = { light: [13, 68, 194], dark: [126, 162, 246] };
+const THEME_800 = { light: [11, 54, 156], dark: [164, 190, 249] };
+const DANGER_0 = { light: [252, 234, 238], dark: [67, 9, 21] };
+const DANGER_700 = { light: [176, 23, 54], dark: [238, 126, 149] };
 
 /**
  * What to read: a part, the element inside its test id that draws it (a CSS
@@ -173,6 +183,20 @@ const READS = [
     "color",
     "ink",
   ],
+  // The subtle Button (GAP-200): the theme's palest step under its words,
+  // and decision 139's destructive tone, danger 0 under the danger text.
+  ["button-subtle", "", "backgroundColor", "tint"],
+  ["button-subtle", "", "color", "600"],
+  ["button-subtle-danger", "", "backgroundColor", "danger-tint"],
+  ["button-subtle-danger", "", "color", "danger-text"],
+  // buttonVariants alone draws it, on a link too.
+  ["link-subtle", "", "backgroundColor", "tint"],
+  ["link-subtle", "", "color", "600"],
+  // A subtle SplitButton's seam is its fill's pressed step, theme 200: the
+  // filled variants' white at a fifth does not show on the pale fill.
+  ["split-button-subtle", "button", "borderRightColor", "subtle-pressed"],
+  // CardHeader's subtle strip (CLOUD-UI-001) is the theme's palest step.
+  ["card-header-subtle", "[data-tone]", "backgroundColor", "tint"],
   // The theme on a surface stays 600 (decision 59: text, icons, borders).
   ["link", "", "color", "600"],
   ["text", "", "color", "600"],
@@ -233,6 +257,20 @@ const STATE_READS = [
     [part, "", "focus", "color", "neutral-ink"],
     [part, "", "focus", "boxShadow", "ring-neutral"],
   ]),
+  // The subtle Button's words step with its fill (GAP-200).
+  ["button-subtle", "", "hover", "backgroundColor", "subtle-hover"],
+  ["button-subtle", "", "hover", "color", "subtle-hover-ink"],
+  ["button-subtle", "", "pressed", "backgroundColor", "subtle-pressed"],
+  ["button-subtle", "", "pressed", "color", "subtle-pressed-ink"],
+  ["button-subtle", "", "focus", "backgroundColor", "subtle-hover"],
+  ["button-subtle", "", "focus", "color", "subtle-hover-ink"],
+  ["link-subtle", "", "hover", "backgroundColor", "subtle-hover"],
+  ["link-subtle", "", "hover", "color", "subtle-hover-ink"],
+  // An unavailable subtle Button keeps its rest fill and words.
+  ["button-subtle-unavailable", "", "hover", "backgroundColor", "tint"],
+  ["button-subtle-unavailable", "", "hover", "color", "600"],
+  ["button-subtle-unavailable", "", "pressed", "backgroundColor", "tint"],
+  ["button-subtle-unavailable", "", "pressed", "color", "600"],
   // Hovered fills: the hover token, opaque, in both themes.
   ["chip", '[data-slot="chip"]', "hover", "backgroundColor", "hover"],
   ["tag", "", "hover", "backgroundColor", "hover"],
@@ -300,6 +338,12 @@ function expected(kind, theme) {
   if (kind === "neutral-hover" || kind === "neutral-focus")
     return NEUTRAL_HOVER[theme];
   if (kind === "neutral-pressed") return NEUTRAL_PRESSED[theme];
+  if (kind === "subtle-hover") return THEME_100[theme];
+  if (kind === "subtle-hover-ink") return THEME_700[theme];
+  if (kind === "subtle-pressed") return THEME_200[theme];
+  if (kind === "subtle-pressed-ink") return THEME_800[theme];
+  if (kind === "danger-tint") return DANGER_0[theme];
+  if (kind === "danger-text") return DANGER_700[theme];
   throw new Error(`unknown expectation ${kind}`);
 }
 
@@ -322,6 +366,12 @@ const NAMES = {
   "neutral-focus": "neutral emotion's focus token, its hover",
   "neutral-pressed":
     "neutral emotion's pressed token (#9095A2 light, #17191C dark)",
+  "subtle-hover": "subtle Button's hover and focus fill, theme 100",
+  "subtle-hover-ink": "subtle Button's hover and focus words, theme 700",
+  "subtle-pressed": "subtle Button's pressed fill, theme 200",
+  "subtle-pressed-ink": "subtle Button's pressed words, theme 800",
+  "danger-tint": "destructive subtle Button's fill, danger 0",
+  "danger-text": "destructive subtle Button's words, danger 700",
 };
 
 /** The WCAG contrast ratio of two opaque sRGB colours, 0–255 channels. */
@@ -770,6 +820,53 @@ try {
         );
     }
   }
+  // CardHeader's subtle strip (CLOUD-UI-001; decision 139): a lone title's
+  // strip is 52 tall; first in its card, its top corners are the card's less
+  // the card's 1 edge, so the tint meets the edge; under other content they
+  // are square.
+  for (const theme of ["light", "dark"]) {
+    const geometry = await page.evaluate((theme) => {
+      const read = (testId) => {
+        const card = document.querySelector(`[data-testid="${testId}"]`);
+        const header = card?.querySelector("[data-tone]");
+        if (!card || !header) return null;
+        const style = getComputedStyle(header);
+        return {
+          height: header.getBoundingClientRect().height,
+          start: parseFloat(style.borderStartStartRadius),
+          end: parseFloat(style.borderStartEndRadius),
+          card: parseFloat(getComputedStyle(card).borderTopLeftRadius),
+          edge: parseFloat(getComputedStyle(card).borderTopWidth),
+        };
+      };
+      return {
+        first: read(`${theme}-card-header-subtle`),
+        second: read(`${theme}-card-header-subtle-second`),
+      };
+    }, theme);
+    read += 3;
+    const { first, second } = geometry;
+    if (!first || !second) {
+      failures.push(`${theme} card-header-subtle: nothing matched`);
+      continue;
+    }
+    if (Math.abs(first.height - 52) > 0.5)
+      failures.push(
+        `${theme} card-header-subtle: a lone title's strip is ${first.height} tall; expected 52`,
+      );
+    const inner = first.card - first.edge;
+    if (
+      Math.abs(first.start - inner) > 0.5 ||
+      Math.abs(first.end - inner) > 0.5
+    )
+      failures.push(
+        `${theme} card-header-subtle: first in its card, its top corners are ${first.start} and ${first.end}; expected the card's ${first.card} less its ${first.edge} edge, ${inner}`,
+      );
+    if (second.start !== 0 || second.end !== 0)
+      failures.push(
+        `${theme} card-header-subtle-second: under content, its top corners are ${second.start} and ${second.end}; expected square`,
+      );
+  }
 } finally {
   await browser.close();
 }
@@ -785,5 +882,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, the secondary Button the neutral tokens in every state under the neutral ink (decision 61), hovered fills the hover token, the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
+  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, the secondary Button the neutral tokens in every state under the neutral ink (decision 61), the subtle Button theme 0 under 600 stepping to 100 under 700 and 200 under 800 and its destructive tone danger 0 under 700 (GAP-200), CardHeader's subtle strip theme 0, 52 tall and rounded only first in its card, buttonVariants' subtle link, the subtle SplitButton's seam, hovered fills the hover token, the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
 );

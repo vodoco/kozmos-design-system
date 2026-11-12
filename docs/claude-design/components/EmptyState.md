@@ -47,6 +47,17 @@ It forwards its ref to `HTMLDivElement`. Its props are `EmptyStateProps`, which 
 
   A wait it explains, drawn under the description and above the action.
 
+- `list`: `React.ReactNode[]`, optional.
+
+  A list under the description (GAP-165): what to try, or what is to come,
+  one item a line, drawn as a bulleted list and read in order, with its
+  count. Each item is a line of text, or the product's own inline content,
+  such as a Link. An empty list draws nothing.
+
+- `listLabel`: `string`, optional.
+
+  The list's name, said as a screen reader enters it.
+
 - `size`: `"default" | "compact"`, optional.
 
   How much room it takes.

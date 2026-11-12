@@ -69,6 +69,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `FieldWrapperProps`, whic
   the number back after each letter typed.
 
 - `countId`: `string`, optional.
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field is mixed (GAP-153): `mixedLabel` is kept, hidden, under
+  `mixedId`, for the field's aria-describedby.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+- `mixedId`: `string`, optional.
+- `onResetMixed`: `() => void`, optional.
+
+  Draw the reset under the field while it is not mixed. Pressed, focus
+  goes to the element `inputId` names, then this is called.
+
+- `resetMixedLabel`: `string`, optional, default `"Reset to multiple values"`.
 - `children`: `React.ReactNode`, **required**.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -108,6 +121,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `FieldWrapperProps`, whic
   the number back after each letter typed.
 
 - `countId`: `string`, optional.
+- `mixed`: `boolean`, optional.
+
+  The field is mixed (GAP-153): `mixedLabel` is kept, hidden, under
+  `mixedId`, for the field's aria-describedby.
+
+- `mixedLabel`: `string`, optional.
+- `mixedId`: `string`, optional.
+- `onResetMixed`: `() => void`, optional.
+
+  Draw the reset under the field while it is not mixed. Pressed, focus
+  goes to the element `inputId` names, then this is called.
+
+- `resetMixedLabel`: `string`, optional.
 - `children`: `React.ReactNode`, **required**.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -123,6 +149,46 @@ type FieldStatus = "default" | "error" | "warning" | "success";
 ```
 
 ## Also exported
+
+- `MixedValueProps` (interface). A field that stands for several values at once (GAP-153): a property of a multi-selection whose features differ.
+
+  ```ts
+  /**
+   * A field that stands for several values at once (GAP-153): a property of a
+   * multi-selection whose features differ. Input, NumberInput, Select and
+   * Combobox take it.
+   *
+   * It is the product's state, as the selection is: `mixed` says the field
+   * still stands for the several values, and the field shows none of its own,
+   * `mixedLabel` in its place, said once with the field (a text field's
+   * placeholder; Select's trigger's description). The visitor's first edit
+   * comes through the field's own change callback, and the product then
+   * clears `mixed`, so the field keeps its mixed state until it is edited.
+   * `onResetMixed`, given for a field whose values differ, offers
+   * `resetMixedLabel` once the field is no longer mixed; pressed, it calls
+   * back for the product to drop the edit and set `mixed` again, and focus
+   * returns to the field.
+   *
+   * Controlled or not: an uncontrolled Input or NumberInput is emptied as it
+   * turns mixed and on reset; a Select given `mixed` always gives Radix a
+   * value, holding the visitor's choice itself without the product's `value`.
+   * NumberInput's steppers are disabled while it is mixed: a step would start
+   * from nothing and write that number over every feature's own.
+   */
+  interface MixedValueProps {
+    /** The field stands for several values that differ, and shows none. */
+    mixed?: boolean;
+    /** Shown in the empty field, and said with it. Default "Multiple values". */
+    mixedLabel?: string;
+    /**
+     * Offer to go back to the several values: drawn under the field while it
+     * is not `mixed`, and never while it is disabled or read-only.
+     */
+    onResetMixed?: () => void;
+    /** The reset's words. Default "Reset to multiple values". */
+    resetMixedLabel?: string;
+  }
+  ```
 
 - `FormFieldProps` (type).
 

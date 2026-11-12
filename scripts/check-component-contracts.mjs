@@ -4701,8 +4701,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const SELECT_STATES = ["Default", "Focus", "Disabled"]',
-  "Select interaction state axis",
+  'const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"]',
+  "Select interaction state axis, with Mixed (GAP-153)",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  "const INPUT_FIELD_STATES = INPUT_STATES.concat([MIXED_FIELD_STATE]);",
+  "Input and NumberInput take Mixed beside Input's states (GAP-153)",
 );
 assertContains(
   files.figma,
@@ -9443,8 +9449,15 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "setVerticalFixedFillChildSizing(root)",
-  "Figma Slider control fills resized parent instances",
+  "setVerticalFixedFillChildSizing(row)",
+  "Figma Slider row fills resized parent instances",
+);
+// The control fills what the readout leaves in its row (GAP-163).
+assertContains(
+  files.figma,
+  source.figma,
+  "setSliderControlRowSizing(root)",
+  "Figma Slider control fills its row beside the readout",
 );
 assertContains(
   files.figma,

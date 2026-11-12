@@ -4821,7 +4821,15 @@ section("Every frame keeps the size it was drawn at");
   }
   const tokens = payloadVariables([...variableByName.keys()]);
   const jobsFor = async (name, update) => {
-    const captured = await update();
+    // An Update that builds a set the file lacks (TreeSection, GAP-151) needs
+    // the file's variables, which this scan has none of; its config is read
+    // below all the same.
+    let captured = null;
+    try {
+      captured = await update();
+    } catch {
+      captured = null;
+    }
     if (captured && captured.__singleAxis) {
       const config = captured.__singleAxis;
       return config.values.map((value) => [config.updateVariant, { value }]);
@@ -5422,12 +5430,28 @@ section("Variants keep their own room, and kept defaults are drawn again");
       variant.resizeWithoutConstraints(360, height);
       set.appendChild(variant);
     }
+    // The layout helper's rows, read by Padding alone: Card's own second
+    // axis is Padding, HeaderTone and TitleSize together (CLOUD-UI-001,
+    // GAP-035), and these six are its Default tone and title.
     plugin.layoutSingleAxisVariants(set, {
       values: ["Basic", "Header", "Full"],
       axis2Values: ["Default", "Compact"],
       xStep: 420,
       yStep,
-      parseVariantName: plugin.parseCardVariantName,
+      parseVariantName: (name) => {
+        const props = plugin.parseCardVariantName(name);
+        return (
+          props && {
+            value: props.value,
+            // Guarded: a painter before these axes has no cardSecondParts
+            // and its second is the padding itself.
+            second:
+              typeof plugin.cardSecondParts === "function"
+                ? plugin.cardSecondParts(props.second).padding
+                : props.second,
+          }
+        );
+      },
     });
     for (const variant of set.children) {
       variant.absoluteBoundingBox = box(variant);
@@ -9060,8 +9084,9 @@ section("Card");
 
   const full = await card("Full", "Default");
   ok(
-    full.name === "Content=Full, Padding=Default",
-    `a variant carries both axes (got "${full.name}")`,
+    full.name ===
+      "Content=Full, Padding=Default, HeaderTone=Default, TitleSize=Large",
+    `a variant carries every axis, a bare padding its Default tone and title (got "${full.name}")`,
   );
 
   const compact = await card("Full", "Compact");
@@ -9085,8 +9110,8 @@ section("Card");
 
   ok(
     JSON.stringify(plugin.parseCardVariantName("Content=Full")) ===
-      JSON.stringify({ value: "Full", second: "Default" }),
-    "a variant with no Padding reads as Default, so Update renames rather than replaces",
+      JSON.stringify({ value: "Full", second: "Default|Default|Large" }),
+    "a variant with no Padding, HeaderTone or TitleSize reads as Default, Default and Large, so Update renames rather than replaces",
   );
   ok(
     plugin.parseCardVariantName("Content=Full, Padding=Roomy") === null,
@@ -9114,6 +9139,180 @@ section("Card");
       plugin.generatedVariantCombinations({ values: ["a"] })[0].second === null,
     "and a set with one axis is untouched",
   );
+}
+
+// --- GAP-200, CLOUD-UI-001, GAP-035: Button's subtle variant, CardHeader's subtle
+// tone and CardTitle's size ---------------------------------------------------------
+
+// Decision 135 (28 Oct): Button gets a subtle variant with a token tier of its
+// own, and the form panel's tinted header is CardHeader's subtle tone, a 52
+// strip with a 14 title (decision 139); CardTitle gets a size (decision 132).
+// Each painter binds the new tier, draws the strip in theme 0 inside the
+// card's corners, and sets each title size in its own style and tokens.
+// Guarded, so a run against the old painter fails here and goes on.
+section("Button subtle, CardHeader subtle and CardTitle size");
+{
+  const SUBTLE = "Subtle Buttons/themed/button";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+
+  const buttonAxes = plugin.expectedVariantAxesForComponentSetName("Button");
+  const iconAxes = plugin.expectedVariantAxesForComponentSetName("IconButton");
+  ok(
+    buttonAxes?.Variant?.includes("Subtle") &&
+      !iconAxes?.Variant?.includes("Subtle"),
+    `Button's Variant has Subtle; IconButton's does not (${JSON.stringify(buttonAxes?.Variant)}; ${JSON.stringify(iconAxes?.Variant)})`,
+  );
+  for (const state of ["Default", "Loading"]) {
+    const config = plugin.buttonConfig("Subtle", state);
+    ok(
+      config.background === `${SUBTLE}/background/idle` &&
+        config.foreground === `${SUBTLE}/foreground/content/idle` &&
+        !config.stroke,
+      `Button, Subtle, ${state}: the Subtle Buttons idle tokens (${config.background}, ${config.foreground})`,
+    );
+  }
+  // Disabled is the filled Buttons' disabled pair, the same in every tier.
+  const disabled = plugin.buttonConfig("Subtle", "Disabled");
+  ok(
+    disabled.background ===
+      "Primary Buttons/themed/button/background/disabled" &&
+      disabled.foreground ===
+        "Primary Buttons/themed/button/foreground/content/disabled",
+    `Button, Subtle, Disabled: the filled Buttons' disabled pair (${disabled.background}, ${disabled.foreground})`,
+  );
+  let subtle = null;
+  try {
+    subtle = await plugin.createButtonVariant({
+      variant: "Subtle",
+      size: "Default",
+      state: "Default",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      textStyle: null,
+      stats: freshStats(),
+    });
+  } catch {
+    // An old painter has no Subtle and may throw: the asserts below say so.
+    subtle = null;
+  }
+  const subtleLabel = subtle && named(subtle, "Label Text");
+  ok(
+    subtle &&
+      reads(subtle.fills[0]) === `${SUBTLE}/background/idle #F1F5FE/#051C4F`,
+    `Button, Subtle: theme 0, #F1F5FE in Light and #051C4F in Dark (${subtle && reads(subtle.fills[0])})`,
+  );
+  ok(
+    subtleLabel &&
+      reads(subtleLabel.fills[0]) ===
+        `${SUBTLE}/foreground/content/idle #1051E8/#5887F3`,
+    `Button, Subtle: its words theme 600, #1051E8 in Light and #5887F3 in Dark (${subtleLabel && reads(subtleLabel.fills[0])})`,
+  );
+
+  // Card: the axes, the strip and the title sizes.
+  const cardAxes = plugin.expectedVariantAxesForComponentSetName("Card");
+  ok(
+    JSON.stringify(cardAxes?.HeaderTone) ===
+      JSON.stringify(["Default", "Subtle"]) &&
+      JSON.stringify(cardAxes?.TitleSize) ===
+        JSON.stringify(["Large", "Medium", "Small"]),
+    `Card expects a HeaderTone and a TitleSize (${JSON.stringify(cardAxes?.HeaderTone)}; ${JSON.stringify(cardAxes?.TitleSize)})`,
+  );
+  const combos =
+    typeof plugin.generatedVariantCombinations === "function" &&
+    typeof plugin.cardHasCombination === "function"
+      ? plugin.generatedVariantCombinations({
+          values: plugin.CARD_CONTENT,
+          axis2Values: plugin.CARD_SECONDS,
+          hasCombination: plugin.cardHasCombination,
+        })
+      : [];
+  ok(
+    combos.length === 18,
+    `the set is 18 cards: Basic in each padding, and Header and Full in each padding with the three title sizes and the strip (${combos.length})`,
+  );
+  const paintCard = async (value, second) => {
+    const component = figma.createComponent();
+    try {
+      await plugin.updateCardVariant(component, {
+        value,
+        second,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    } catch {
+      return null;
+    }
+    return component;
+  };
+  const strip = await paintCard("Header", "Compact|Subtle|Small");
+  const stripHeader = strip && named(strip, "Card Header");
+  const stripTitle = strip && named(strip, "Title Text");
+  const stripBody = strip && named(strip, "Card Content");
+  ok(
+    strip?.name ===
+      "Content=Header, Padding=Compact, HeaderTone=Subtle, TitleSize=Small",
+    `the strip's variant is named for its axes (${strip?.name})`,
+  );
+  ok(
+    stripHeader &&
+      reads(stripHeader.fills[0]) === "Colors/theme/0 #F1F5FE/#051C4F",
+    `the strip is theme 0, #F1F5FE in Light and #051C4F in Dark (${stripHeader && reads(stripHeader.fills[0])})`,
+  );
+  ok(
+    stripHeader &&
+      stripHeader.paddingTop === 12 &&
+      stripHeader.paddingBottom === 12 &&
+      stripHeader.paddingLeft === 16 &&
+      stripHeader.topLeftRadius === 20 &&
+      stripHeader.topRightRadius === 20 &&
+      stripHeader.counterAxisAlignItems === "CENTER",
+    `12 above and below its words, the card's 16 at its sides, the card's 20 at its top corners, centred (${stripHeader && [stripHeader.paddingTop, stripHeader.paddingBottom, stripHeader.paddingLeft, stripHeader.topLeftRadius, stripHeader.topRightRadius, stripHeader.counterAxisAlignItems].join(", ")})`,
+  );
+  ok(
+    stripBody && stripBody.paddingTop === 16,
+    `the content under the strip keeps the card's padding above it (${stripBody?.paddingTop})`,
+  );
+  ok(
+    stripTitle && stripTitle.fontSize === 14,
+    `the strip's title is 14, its Small size (${stripTitle?.fontSize})`,
+  );
+  for (const [size, want] of [
+    ["Large", 24],
+    ["Medium", 18],
+    ["Small", 14],
+  ]) {
+    const sized = await paintCard("Header", `Default|Default|${size}`);
+    const title = sized && named(sized, "Title Text");
+    const header = sized && named(sized, "Card Header");
+    const actions = header && named(header, "Header Actions");
+    ok(
+      title?.fontSize === want &&
+        title?.lineHeight?.value === want &&
+        actions?.height === want &&
+        header?.fills?.length === 0,
+      `TitleSize=${size}: a ${want} title on a ${want} line, its actions centred on it, on the card's own surface (${title?.fontSize}/${title?.lineHeight?.value}, actions ${actions?.height})`,
+    );
+  }
 }
 
 // --- EmptyState's size, Container's inset, POIResultCard's appearance ----------------
@@ -12014,13 +12213,20 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       const text = column && named(column, textName);
       return text && text.id === id;
     });
+    // The six are renamed with the Default tone and title, and Update adds
+    // the twelve the HeaderTone and TitleSize axes bring (CLOUD-UI-001,
+    // GAP-035): the strip, and the Medium and Small titles, on Header and
+    // Full in both paddings.
     ok(
       updated &&
         updated.updated === true &&
         updated.variantsUpdated === 6 &&
-        updated.variantsCreated === 0 &&
+        updated.variantsCreated === 12 &&
         [...ids].every(
-          ([name, id]) => byId.get(id) && byId.get(id).name === name,
+          ([name, id]) =>
+            byId.get(id) &&
+            byId.get(id).name ===
+              `${name}, HeaderTone=Default, TitleSize=Large`,
         ) &&
         textsKept &&
         propertyNamed(liveSet, "Header Actions", "BOOLEAN") &&
@@ -12036,10 +12242,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       JSON.stringify(axes.Action) ===
         JSON.stringify(["None", "Copy", "Toggle", "TogglePressed"]) &&
       JSON.stringify(axes.State) ===
-        JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]) &&
+        JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
       JSON.stringify(axes.Status) ===
         JSON.stringify(["Default", "Error", "Warning", "Success"]),
-    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State and Status: 64 variants (${JSON.stringify(axes && axes.Action)})`,
+    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State (with Mixed, GAP-153) and Status: 80 variants (${JSON.stringify(axes && axes.Action)})`,
   );
   ok(
     JSON.stringify(
@@ -12189,8 +12395,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     );
   }
   {
-    // Update over the 16 variants in the file today: each keeps its node id
-    // and is renamed Action=None, and the other 48 are created.
+    // Update over the 16 variants in the file before the Action axis: each
+    // keeps its node id and is renamed Action=None, and the other 64 are
+    // created: 48 Action bands, and the Mixed row of each (GAP-153).
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Input");
     const ids = new Map();
@@ -12220,10 +12427,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 16 &&
-        updated.variantsCreated === 48 &&
-        liveSet.children.length === 64 &&
-        new Set(names).size === 64,
-      `Update keeps the set and its 16 variants, and adds 48: 64 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 64 &&
+        liveSet.children.length === 80 &&
+        new Set(names).size === 80,
+      `Update keeps the set and its 16 variants, and adds 64: 80 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
     );
     ok(
       [...ids].every(([name, id]) => {
@@ -12247,14 +12454,347 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
           JSON.stringify([0, 4 * 126]),
       `the 16 keep their places and the new bands lie under them (${JSON.stringify(at("State=Readonly, Status=Success, Action=None"))}, ${JSON.stringify(at("State=Default, Status=Default, Action=Copy"))})`,
     );
+    ok(
+      JSON.stringify(
+        at("State=Readonly, Status=Success, Action=TogglePressed"),
+      ) === JSON.stringify([3 * 360, 15 * 126]) &&
+        JSON.stringify(at("State=Mixed, Status=Default, Action=None")) ===
+          JSON.stringify([0, 16 * 126]) &&
+        JSON.stringify(
+          at("State=Mixed, Status=Success, Action=TogglePressed"),
+        ) === JSON.stringify([3 * 360, 19 * 126]),
+      `the Mixed rows lie under every band, so no variant drawn before them moves (GAP-153) (${JSON.stringify(at("State=Mixed, Status=Default, Action=None"))}, ${JSON.stringify(at("State=Mixed, Status=Success, Action=TogglePressed"))})`,
+    );
     const outside = liveSet.children.filter(
       (child) =>
         child.x + child.width > liveSet.width ||
         child.y + child.height > liveSet.height,
     );
     ok(
-      liveSet.children.length === 64 && outside.length === 0,
-      `and the set grows to hold all 64 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+      liveSet.children.length === 80 && outside.length === 0,
+      `and the set grows to hold all 80 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+    );
+    const reset = propertyNamed(liveSet, "Reset Mixed", "BOOLEAN");
+    const resetBound = liveSet.children.filter((variant) => {
+      const layer = named(variant, "Reset Mixed");
+      return (
+        layer &&
+        layer.componentPropertyReferences &&
+        layer.componentPropertyReferences.visible === reset
+      );
+    });
+    const mixedRows = liveSet.children.filter((variant) =>
+      variant.name.startsWith("State=Mixed"),
+    );
+    const resetWords = propertyNamed(liveSet, "Reset Mixed Text", "TEXT");
+    const mixedWords = propertyNamed(liveSet, "Mixed Text", "TEXT");
+    const wordsBound = (layerName, key) =>
+      liveSet.children
+        .map((variant) => named(variant, layerName))
+        .filter(Boolean)
+        .every(
+          (layer) =>
+            layer.componentPropertyReferences &&
+            layer.componentPropertyReferences.characters === key,
+        );
+    ok(
+      reset &&
+        liveSet.componentPropertyDefinitions[reset].defaultValue === false &&
+        resetBound.length === 64 &&
+        mixedRows.length === 16 &&
+        mixedRows.every((variant) => !named(variant, "Reset Mixed")),
+      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 16 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
+    );
+    ok(
+      resetWords &&
+        mixedWords &&
+        liveSet.componentPropertyDefinitions[resetWords].defaultValue ===
+          "Reset to multiple values" &&
+        liveSet.componentPropertyDefinitions[mixedWords].defaultValue ===
+          "Multiple values" &&
+        wordsBound("Reset Mixed", resetWords) &&
+        wordsBound("Mixed Text", mixedWords) &&
+        mixedRows.every((variant) => named(variant, "Mixed Text")),
+      `Reset Mixed Text and Mixed Text are text properties a product localises, bound to every reset and every Mixed variant's words (${resetWords}, ${mixedWords})`,
+    );
+  }
+
+  // GAP-153: a mixed field, State=Mixed, and its way back, Reset Mixed --------
+  {
+    const axesOf = (name) =>
+      JSON.stringify(
+        (controls.expectedVariantAxesForComponentSetName(name) || {}).State,
+      );
+    ok(
+      axesOf("NumberInput") ===
+        JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
+        axesOf("Combobox") ===
+          JSON.stringify([
+            "Default",
+            "Focus",
+            "Disabled",
+            "Readonly",
+            "Mixed",
+          ]) &&
+        axesOf("Select") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Mixed"]) &&
+        axesOf("PasswordInput") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]) &&
+        axesOf("OTPInput") ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Readonly"]),
+      `Input, NumberInput, Combobox and Select gain State=Mixed; PasswordInput and OTPInput, which share Input's states, do not (${axesOf("Select")}, ${axesOf("PasswordInput")})`,
+    );
+    const paint = async (update, args) => {
+      const node = new MockNode("COMPONENT", "Field");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls[update](
+          node,
+          Object.assign(
+            {
+              variableByName: tokens.variableByName,
+              fonts: FONTS,
+              stats: freshStats(),
+            },
+            args,
+          ),
+        ),
+      );
+      return node;
+    };
+    const cases = [
+      ["Input", "updateInputVariant", { action: "None" }, ["Placeholder Text"]],
+      [
+        "NumberInput",
+        "updateNumberInputVariant",
+        { steppers: "True" },
+        ["Value Text", "Placeholder Text"],
+      ],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        { content: "Closed" },
+        ["Placeholder Text"],
+      ],
+      ["Select", "updateSelectVariant", {}, ["Placeholder Text"]],
+    ];
+    for (const [setName, update, extra, hidden] of cases) {
+      const mixed = await paint(
+        update,
+        Object.assign({ state: "Mixed", status: "Default" }, extra),
+      );
+      const plain = await paint(
+        update,
+        Object.assign({ state: "Default", status: "Default" }, extra),
+      );
+      const text = named(mixed, "Mixed Text");
+      const placeholder = named(mixed, "Placeholder Text");
+      ok(
+        mixed.name.startsWith("State=Mixed, Status=Default") &&
+          text &&
+          text.characters === "Multiple values" &&
+          text.parent === placeholder.parent &&
+          text.parent.children.indexOf(text) ===
+            text.parent.children.indexOf(placeholder) + 1 &&
+          boundVariableName((text.fills || [])[0]) ===
+            boundVariableName((placeholder.fills || [])[0]) &&
+          hidden.every((name) => named(mixed, name).visible === false) &&
+          // Outside Mixed, none: the field shows its own (NumberInput its
+          // value, its placeholder hidden as before).
+          !named(plain, "Mixed Text") &&
+          named(plain, hidden[0]).visible !== false,
+        `${setName}: Mixed draws Multiple values after the placeholder, in its colour (${text && boundVariableName((text.fills || [])[0])}), and hides ${hidden.join(" and ")}; Default draws none`,
+      );
+      ok(
+        !named(mixed, "Reset Mixed"),
+        `${setName}: State=Mixed draws no Reset Mixed layer`,
+      );
+      for (const node of [plain]) {
+        const reset = named(node, "Reset Mixed");
+        const field = reset && node.children[node.children.indexOf(reset) - 1];
+        ok(
+          reset &&
+            reset.type === "TEXT" &&
+            reset.characters === "Reset to multiple values" &&
+            reset.visible === false &&
+            boundVariableName((reset.fills || [])[0]) === "Colors/theme/600" &&
+            field &&
+            field.getSharedPluginData(plugin.RUN_NAMESPACE, "kind") ===
+              "input-field",
+          `${setName} ${node.name}: Reset Mixed, hidden, Reset to multiple values in theme 600, right under the field (${reset ? `${reset.characters}, after ${field && field.name}` : "none"})`,
+        );
+      }
+    }
+    {
+      // Updated again, the reset is the same layer, so an instance's
+      // override of it survives an Update.
+      const node = await paint("updateInputVariant", {
+        state: "Default",
+        status: "Default",
+        action: "None",
+      });
+      const before = named(node, "Reset Mixed");
+      await attempt(() =>
+        controls.updateInputVariant(node, {
+          state: "Default",
+          status: "Default",
+          action: "None",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      const after = named(node, "Reset Mixed");
+      ok(
+        before && after && before.id === after.id,
+        `an Update keeps Input's Reset Mixed layer, id for id (${before && before.id} → ${after && after.id})`,
+      );
+    }
+    {
+      // Decision of 11 Nov: Mixed's steppers are disabled, drawn as Disabled's.
+      const mixed = await paint("updateNumberInputVariant", {
+        state: "Mixed",
+        status: "Default",
+        steppers: "True",
+      });
+      const plain = await paint("updateNumberInputVariant", {
+        state: "Default",
+        status: "Default",
+        steppers: "True",
+      });
+      const tint = (node) =>
+        node
+          .findAll((child) => /Stepper$/.test(child.name))
+          .flatMap((stepper) =>
+            stepper.findAll((child) => (child.strokes || []).length > 0),
+          )
+          .map((child) => boundVariableName(child.strokes[0]));
+      ok(
+        tint(mixed).length > 0 &&
+          tint(mixed).every((name) => name === "Colors/foreground/500") &&
+          tint(plain).every((name) => name === "Colors/foreground/0"),
+        `NumberInput Mixed draws its steppers disabled, in foreground 500 (${[...new Set(tint(mixed))].join(" ")}; Default ${[...new Set(tint(plain))].join(" ")})`,
+      );
+    }
+    {
+      const open = await paint("updateComboboxVariant", {
+        state: "Mixed",
+        status: "Default",
+        content: "Open",
+      });
+      const checks = open.findAll(
+        (child) =>
+          child.type === "INSTANCE" &&
+          /^Combobox Option/.test(child.parent && child.parent.name) &&
+          child.mainComponent &&
+          /check/.test(child.mainComponent.name),
+      );
+      ok(
+        named(open, "Combobox Listbox") && checks.length === 0,
+        `Combobox Mixed and Open checks no option (${checks.length})`,
+      );
+    }
+    {
+      const set = new MockNode("COMPONENT_SET", "Select");
+      for (const state of ["Default", "Mixed"]) {
+        set.appendChild(
+          await paint("updateSelectVariant", { state, status: "Default" }),
+        );
+      }
+      const stats = freshStats();
+      controls.configureSelectProperties(set, stats);
+      const key = propertyNamed(set, "Reset Mixed", "BOOLEAN");
+      ok(
+        key &&
+          set.children.every((variant) => {
+            const layer = named(variant, "Reset Mixed");
+            return variant.name.startsWith("State=Mixed")
+              ? !layer
+              : layer.componentPropertyReferences.visible === key;
+          }) &&
+          set.children.every((variant) => variant.itemSpacing === 6),
+        `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
+      );
+    }
+  }
+
+  // GAP-165: EmptyState's list ------------------------------------------------
+  {
+    const variant = async (value, second) => {
+      const node = new MockNode("COMPONENT", "EmptyState");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls.updateEmptyStateVariant(node, {
+          value,
+          second,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return node;
+    };
+    const set = new MockNode("COMPONENT_SET", "EmptyState");
+    for (const value of ["Basic", "Icon", "Action"]) {
+      for (const second of ["Default", "Compact"]) {
+        set.appendChild(await variant(value, second));
+      }
+    }
+    const lists = set.children.map((node) => named(node, "List"));
+    const order = set.children.map((node) =>
+      node.children.map((child) => child.name).join(" > "),
+    );
+    ok(
+      lists.every(
+        (list, index) =>
+          list &&
+          list.visible === false &&
+          list.width === 280 &&
+          list.itemSpacing === 4 &&
+          set.children[index].children.indexOf(list) ===
+            set.children[index].children.indexOf(
+              named(set.children[index], "Content"),
+            ) +
+              1,
+      ),
+      `every variant has a hidden List, 280 wide, 4 between items, right under the title and description (${order[4]})`,
+    );
+    const words = lists[0]
+      ? lists[0].findAll((child) => child.type === "TEXT")
+      : [];
+    ok(
+      lists[0] &&
+        JSON.stringify(
+          lists[0].children.map(
+            (row) => named(row, `${row.name} Text`).characters,
+          ),
+        ) ===
+          JSON.stringify([
+            "Check the building and level",
+            "Clear the type filters",
+            "Search by another name or an ID",
+          ]) &&
+        words.every(
+          (text) =>
+            boundVariableName((text.fills || [])[0]) ===
+            "Colors/foreground/400",
+        ),
+      `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    controls.configureEmptyStateProperties(set, freshStats());
+    const list = propertyNamed(set, "List", "BOOLEAN");
+    const texts = [1, 2, 3].map((index) =>
+      propertyNamed(set, `List Item ${index} Text`, "TEXT"),
+    );
+    ok(
+      list &&
+        set.componentPropertyDefinitions[list].defaultValue === false &&
+        lists.every(
+          (layer) =>
+            layer && layer.componentPropertyReferences.visible === list,
+        ) &&
+        texts.every(Boolean),
+      `List is a boolean, off, showing each variant's list; List Item 1 Text to List Item 3 Text are its words (${list}, ${texts.join(", ")})`,
     );
   }
 
@@ -13849,6 +14389,894 @@ section("Decision 152: Menu's and ContextMenu's items take External");
         .join(", ")})`,
     );
     set.remove();
+  }
+}
+
+// --- Decision 132's fields: Search's clear, NumberInput's unit, Slider's readout ---
+
+section(
+  "Search clears, NumberInput takes a unit, Slider's readout stays (GAP-161, GAP-098, GAP-163)",
+);
+{
+  const tokens = payloadVariables(
+    (plugin.COMPONENT_FLOAT_TOKENS || [])
+      .map((token) => token.name)
+      .concat([...variableByName.keys()]),
+  );
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await plugin[fn](
+      component,
+      Object.assign({}, props, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const child = (node, name) =>
+    (node && node.children ? node.children : []).find(
+      (each) => each.name === name,
+    ) || null;
+  const boundFloat = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const propertyNamed = (set, base, type) =>
+    Object.keys(set.componentPropertyDefinitions || {}).find(
+      (key) =>
+        key.split("#")[0] === base &&
+        set.componentPropertyDefinitions[key].type === type,
+    ) || null;
+  const drivenBy = (set, property, field) =>
+    set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] === property,
+    );
+  const combine = async (name, variants, configure) => {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = name;
+    await plugin[configure](set, freshStats());
+    return set;
+  };
+
+  // Search (GAP-161) ---------------------------------------------------------
+  const searches = [];
+  for (const state of plugin.SEARCH_STATES)
+    searches.push(
+      await draw("updateSearchVariant", { state, status: "Default" }),
+    );
+  const field = child(searches[0], "Search Field");
+  const clear = child(field, "Clear Button");
+  const clearIcon = child(clear, "Clear Icon");
+  ok(
+    clear &&
+      clear.type === "FRAME" &&
+      clear.width === 44 &&
+      clear.height === 44 &&
+      clear.layoutPositioning === "ABSOLUTE" &&
+      clear.x === field.width - 44 &&
+      clear.constraints.horizontal === "MAX" &&
+      clear.fills.length === 0 &&
+      clear.strokes.length === 0 &&
+      clear.visible === false &&
+      boundFloat(clear, "width") === "Search/field/height" &&
+      boundFloat(clear, "height") === "Search/field/height",
+    `Search: a Clear Button at the field's end, 44 square and bound to the field's height, absolute and held to the end, no fill at rest (decision 164), hidden until Show Clear (${clear && `${clear.width}x${clear.height} at x ${clear.x} of ${field.width}, ${clear.layoutPositioning}, fills ${clear.fills.length}, visible ${clear.visible}, ${boundFloat(clear, "width")}`})`,
+  );
+  ok(
+    clearIcon &&
+      clearIcon.type === "INSTANCE" &&
+      /x-close/.test(
+        clearIcon.mainComponent ? clearIcon.mainComponent.name : "",
+      ) &&
+      clearIcon.width === 16,
+    `Search: the clear is the 16 x-close (${clearIcon && clearIcon.mainComponent && clearIcon.mainComponent.name}, ${clearIcon && clearIcon.width})`,
+  );
+  const again = await draw("updateSearchVariant", {
+    state: "Default",
+    status: "Default",
+  });
+  await plugin.updateSearchVariant(again, {
+    state: "Default",
+    status: "Default",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  ok(
+    child(again, "Search Field").children.filter(
+      (each) => each.name === "Clear Button",
+    ).length === 1,
+    "Search: an Update draws one Clear Button, never a second",
+  );
+  again.remove();
+  const searchSet = await combine(
+    "Search",
+    searches,
+    "configureSearchProperties",
+  );
+  const showClear = propertyNamed(searchSet, "Show Clear", "BOOLEAN");
+  const clears = showClear ? drivenBy(searchSet, showClear, "visible") : [];
+  ok(
+    showClear &&
+      searchSet.componentPropertyDefinitions[showClear].defaultValue ===
+        false &&
+      clears.length === searches.length &&
+      clears.every((node) => node.name === "Clear Button"),
+    `Search: a Show Clear boolean, off by default, shows each variant's Clear Button and nothing else (${showClear}, ${clears.length} of ${searches.length})`,
+  );
+  searchSet.remove();
+
+  // NumberInput (GAP-098) ------------------------------------------------------
+  const numbers = [];
+  for (const steppers of plugin.NUMBER_INPUT_STEPPERS)
+    numbers.push(
+      await draw("updateNumberInputVariant", {
+        state: "Default",
+        status: "Default",
+        steppers,
+      }),
+    );
+  const unitFacts = numbers.map((variant) => {
+    const field = child(variant, "NumberInput Field");
+    const slot = child(field, "NumberInput Value Slot");
+    const names = slot ? slot.children.map((each) => each.name) : [];
+    const unit = child(slot, "Unit Text");
+    return { field, slot, names, unit };
+  });
+  ok(
+    unitFacts.every(
+      ({ names, unit }) =>
+        unit &&
+        unit.type === "TEXT" &&
+        unit.characters === "m" &&
+        unit.visible === false &&
+        names.indexOf("Unit Text") === names.length - 1 &&
+        names.indexOf("Value Text") < names.indexOf("Unit Text") &&
+        unit.layoutSizingHorizontal === "HUG" &&
+        boundVariableName(unit.fills[0]) === "Colors/foreground/400",
+    ),
+    `NumberInput: a Unit Text "m" in the value slot after the value, before the increment stepper, hugging its words in the field's muted foreground (foreground/400), hidden until Show Unit (${unitFacts
+      .map(
+        ({ names, unit }) =>
+          `${names.join(" > ")}: ${unit && `"${unit.characters}" ${unit.layoutSizingHorizontal} ${boundVariableName(unit.fills[0])} visible ${unit.visible}`}`,
+      )
+      .join("; ")})`,
+  );
+  ok(
+    unitFacts.every(({ field, slot }) => {
+      const order = field.children.map((each) => each.name);
+      return (
+        order.indexOf("NumberInput Value Slot") <
+          (order.indexOf("Increment Stepper") === -1
+            ? Infinity
+            : order.indexOf("Increment Stepper")) && slot.itemSpacing === 4
+      );
+    }),
+    "NumberInput: the slot, and the unit in it, come before the increment stepper, 4 after the value",
+  );
+  {
+    const kept = numbers[0];
+    const unit = child(
+      child(child(kept, "NumberInput Field"), "NumberInput Value Slot"),
+      "Unit Text",
+    );
+    if (unit) unit.characters = "km";
+    await plugin.updateNumberInputVariant(kept, {
+      state: "Default",
+      status: "Default",
+      steppers: "True",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const redrawn = child(
+      child(child(kept, "NumberInput Field"), "NumberInput Value Slot"),
+      "Unit Text",
+    );
+    ok(
+      redrawn && redrawn.characters === "km",
+      `NumberInput: an Update keeps the unit's words (${redrawn && redrawn.characters})`,
+    );
+  }
+  const numberSet = await combine(
+    "NumberInput",
+    numbers,
+    "configureNumberInputProperties",
+  );
+  const showUnit = propertyNamed(numberSet, "Show Unit", "BOOLEAN");
+  const unitText = propertyNamed(numberSet, "Unit Text", "TEXT");
+  const shownUnits = showUnit ? drivenBy(numberSet, showUnit, "visible") : [];
+  const wordedUnits = unitText
+    ? drivenBy(numberSet, unitText, "characters")
+    : [];
+  ok(
+    showUnit &&
+      numberSet.componentPropertyDefinitions[showUnit].defaultValue === false &&
+      unitText &&
+      numberSet.componentPropertyDefinitions[unitText].defaultValue === "m" &&
+      shownUnits.length === numbers.length &&
+      wordedUnits.length === numbers.length &&
+      shownUnits.concat(wordedUnits).every((node) => node.name === "Unit Text"),
+    `NumberInput: Show Unit (off) and Unit Text ("m") drive each variant's Unit Text and nothing else (${showUnit}, ${unitText}; ${shownUnits.length} and ${wordedUnits.length} of ${numbers.length})`,
+  );
+  numberSet.remove();
+
+  // Slider (GAP-163) -------------------------------------------------------------
+  const sliders = [];
+  for (const type of plugin.SLIDER_TYPES)
+    sliders.push(
+      await draw("updateSliderVariant", {
+        state: "Default",
+        status: "Default",
+        type,
+      }),
+    );
+  const sliderFacts = sliders.map((variant) => {
+    const row = child(variant, "Slider Row");
+    const names = row ? row.children.map((each) => each.name) : [];
+    return {
+      variant,
+      row,
+      names,
+      control: child(row, "Slider Control"),
+      readout: child(row, "Value Text"),
+    };
+  });
+  ok(
+    sliderFacts.every(
+      ({ variant, row, names, control }) =>
+        row &&
+        row.layoutMode === "HORIZONTAL" &&
+        row.counterAxisAlignItems === "CENTER" &&
+        row.height === 44 &&
+        row.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(names) ===
+          JSON.stringify(["Slider Control", "Value Text"]) &&
+        !child(variant, "Slider Control") &&
+        control.layoutSizingHorizontal === "FILL" &&
+        control.layoutGrow === 1 &&
+        control.height === 44 &&
+        boundFloat(control, "width") === null &&
+        boundFloat(child(control, "Slider Track"), "width") === null,
+    ),
+    `Slider: a Slider Row across the set's width, the control filling what the readout leaves (unbound width, grow 1) and the readout at its end (${sliderFacts
+      .map(
+        ({ row, names, control }) =>
+          `${names.join(" > ")} ${row && row.layoutSizingHorizontal}; control ${control && `${control.layoutSizingHorizontal} grow ${control.layoutGrow} w-bound ${boundFloat(control, "width")}`}`,
+      )
+      .join("; ")})`,
+  );
+  ok(
+    sliderFacts.every(
+      ({ readout }) =>
+        readout &&
+        readout.type === "TEXT" &&
+        readout.characters === "50%" &&
+        readout.visible === false &&
+        readout.layoutSizingHorizontal === "HUG" &&
+        readout.fontSize === 14 &&
+        boundVariableName(readout.fills[0]) === "Colors/foreground/400",
+    ),
+    `Slider: the readout, "50%" at 14 in the muted foreground (foreground/400), hugging its words, hidden until Show Value (${sliderFacts
+      .map(
+        ({ readout }) =>
+          readout &&
+          `"${readout.characters}" ${readout.fontSize} ${boundVariableName(readout.fills[0])} ${readout.layoutSizingHorizontal} visible ${readout.visible}`,
+      )
+      .join("; ")})`,
+  );
+  {
+    // A Slider drawn before the row: its control is the component's own
+    // child. Update moves that node into the row, so it keeps its id.
+    const legacy = sliders[0];
+    const row = child(legacy, "Slider Row");
+    const control =
+      child(row, "Slider Control") || child(legacy, "Slider Control");
+    legacy.appendChild(control);
+    if (row) row.remove();
+    await plugin.updateSliderVariant(legacy, {
+      state: "Default",
+      status: "Default",
+      type: "Single",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const moved = child(child(legacy, "Slider Row"), "Slider Control");
+    ok(
+      moved === control &&
+        !child(legacy, "Slider Control") &&
+        legacy.findAll((node) => node.name === "Slider Control").length === 1,
+      "Slider: an Update over a set drawn before the row moves its control into the row, the same node, and draws no second",
+    );
+  }
+  const sliderSet = await combine(
+    "Slider",
+    sliders,
+    "configureSliderProperties",
+  );
+  const showValue = propertyNamed(sliderSet, "Show Value", "BOOLEAN");
+  const valueText = propertyNamed(sliderSet, "Value Text", "TEXT");
+  const shownValues = showValue
+    ? drivenBy(sliderSet, showValue, "visible")
+    : [];
+  const wordedValues = valueText
+    ? drivenBy(sliderSet, valueText, "characters")
+    : [];
+  ok(
+    showValue &&
+      sliderSet.componentPropertyDefinitions[showValue].defaultValue ===
+        false &&
+      valueText &&
+      sliderSet.componentPropertyDefinitions[valueText].defaultValue ===
+        "50%" &&
+      shownValues.length === sliders.length &&
+      wordedValues.length === sliders.length &&
+      shownValues
+        .concat(wordedValues)
+        .every((node) => node.name === "Value Text"),
+    `Slider: Show Value (off) and Value Text ("50%") drive each variant's readout and nothing else (${showValue}, ${valueText}; ${shownValues.length} and ${wordedValues.length} of ${sliders.length})`,
+  );
+  sliderSet.remove();
+}
+
+// GAP-107: the rows' meta below the name, as React's metaPlacement="below":
+// a Meta line under the label, text-xs in the muted foreground, and the row
+// grows to take it, py-1.5 (py-1 compact) round the two lines: 48, 44
+// compact. Booleans, as Divided: Meta Below (off) shows the Meta layer and
+// Meta Text is its words, so an instance with it off is as it was. The row's
+// height becomes a floor (Min H, bound to Tree/item/height/*) and the row
+// hugs. Laid out with withAutoLayout, as the file lays it out.
+section("GAP-107: the tree rows' Meta Below");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Count", expanded: "True", state: "Idle" },
+    ],
+    ["updateTreeChildItemVariant", { content: "Actions", state: "Selected" }],
+    [
+      "updateTreeItemVariant",
+      { type: "Child", content: "Basic", expanded: "False", state: "Focus" },
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const find = (root, name) =>
+    root.findOne ? root.findOne((node) => node.name === name) : null;
+  for (const [fn, base] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      for (const depth of ["0", "2"]) {
+        const at = `${fn} ${density} Depth=${depth}`;
+        const floor = density === "Compact" ? 32 : 40;
+        const grown = density === "Compact" ? 44 : 48;
+        const pad = density === "Compact" ? 4 : 6;
+        const row = await draw(fn, Object.assign({ density, depth }, base));
+        const column = row.children.find(
+          (child) => child.name === "Tree Item Text",
+        );
+        const meta = column && find(column, "Meta");
+        ok(
+          column &&
+            column.layoutMode === "VERTICAL" &&
+            JSON.stringify(column.children.map((child) => child.name)) ===
+              JSON.stringify(["Tree Item Label", "Meta"]) &&
+            column.paddingTop === pad &&
+            column.paddingBottom === pad &&
+            menusBound(column, "paddingTop") ===
+              `Tree/item/padding/y/${density.toLowerCase()}` &&
+            menusBound(column, "paddingBottom") ===
+              `Tree/item/padding/y/${density.toLowerCase()}` &&
+            menusValueOf(`Tree/item/padding/y/${density.toLowerCase()}`) ===
+              pad,
+          `${at}: the label's line and a Meta line share a column padded ${pad}, Tree/item/padding/y (${column && column.children.map((child) => child.name).join(", ")}; ${column && column.paddingTop})`,
+        );
+        ok(
+          meta &&
+            meta.type === "TEXT" &&
+            meta.characters === "Changes awaiting publish" &&
+            meta.visible === false &&
+            meta.fontSize === 12 &&
+            meta.lineHeight.value === 16 &&
+            menusBound(meta, "fontSize") === "Tree/meta/font-size" &&
+            menusBound(meta, "lineHeight") === "Tree/meta/line-height" &&
+            menusValueOf("Tree/meta/font-size") === 12 &&
+            menusValueOf("Tree/meta/line-height") === 16 &&
+            boundVariableName(meta.fills[0]) === "Colors/foreground/400" &&
+            meta.getSharedPluginData("kozmos_ds_importer", "kind") ===
+              "tree-meta",
+          `${at}: Meta is "Changes awaiting publish", 12/16 (Tree/meta/*), Colors/foreground/400, hidden (${meta && `${meta.characters}, ${meta.fontSize}/${meta.lineHeight && meta.lineHeight.value}, ${boundVariableName(meta.fills[0])}, visible ${meta.visible}`})`,
+        );
+        ok(
+          meta &&
+            meta.layoutSizingHorizontal === "FIXED" &&
+            meta.textAutoResize === "HEIGHT" &&
+            meta.textTruncation === "ENDING" &&
+            meta.maxLines === 1 &&
+            meta.width >= 120,
+          `${at}: Meta is one line, truncated at the room the row gives it (${meta && `${meta.textAutoResize}, ${meta.textTruncation}, ${meta.maxLines} line, ${meta.width} wide`})`,
+        );
+        ok(
+          row.layoutSizingVertical === "HUG" &&
+            row.minHeight === floor &&
+            menusBound(row, "minHeight") ===
+              `Tree/item/height/${density.toLowerCase()}` &&
+            !menusBound(row, "height") &&
+            row.height === floor,
+          `${at}: the row hugs above a floor of ${floor}, Tree/item/height on Min H and nothing on its height, and is ${floor} with Meta hidden (${row.layoutSizingVertical}, ${row.minHeight}, ${menusBound(row, "minHeight")}, ${menusBound(row, "height")}, ${row.height})`,
+        );
+        if (meta) {
+          await withAutoLayout(async () => {
+            meta.visible = true;
+            // A write the stand-in lays the row out again after.
+            row.resizeWithoutConstraints(row.width, row.height);
+          });
+        }
+        const divider = row.children.find((child) => child.name === "Divider");
+        ok(
+          meta &&
+            row.height === grown &&
+            meta.y === pad + 20 &&
+            divider &&
+            divider.y === grown - 1,
+          `${at}: Meta shown, the row grows to ${grown}, Meta under the label and the divider still on the row's bottom edge (${row.height}, Meta at ${meta && meta.y}, divider at ${divider && divider.y})`,
+        );
+      }
+    }
+  }
+
+  // A row an older build drew carries a bound height, which would hold it
+  // fixed; Update drops it and binds the floor instead.
+  if (reachable) {
+    const old = figma.createComponent();
+    old.setBoundVariable("height", { id: "Tree/item/height/default" });
+    await withAutoLayout(() =>
+      plugin.updateTreeChildItemVariant(old, {
+        props: {
+          content: "Basic",
+          depth: "0",
+          density: "Default",
+          state: "Idle",
+        },
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    ok(
+      !menusBound(old, "height") &&
+        menusBound(old, "minHeight") === "Tree/item/height/default" &&
+        old.layoutSizingVertical === "HUG",
+      `Update drops an older row's bound height for a bound floor, and the row hugs (${menusBound(old, "height")}, ${menusBound(old, "minHeight")}, ${old.layoutSizingVertical})`,
+    );
+  }
+
+  // The sets' properties: Meta Below, off, shows each row's Meta and
+  // nothing else; Meta Text, "Changes awaiting publish", is its words.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False", state: "Idle" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Actions", expanded: "True" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const below = keyOf("Meta Below", "BOOLEAN");
+    const words = keyOf("Meta Text", "TEXT");
+    const shown = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === below,
+    );
+    const worded = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.characters === words,
+    );
+    ok(
+      below &&
+        definitions[below].defaultValue === false &&
+        shown.length === 2 &&
+        shown.every((node) => node.name === "Meta"),
+      `${setName}: Meta Below, off by default, shows each row's Meta and nothing else (${below}, ${shown.map((node) => node.name).join(", ")})`,
+    );
+    ok(
+      words &&
+        definitions[words].defaultValue === "Changes awaiting publish" &&
+        worded.length === 2 &&
+        worded.every((node) => node.name === "Meta"),
+      `${setName}: Meta Text, "Changes awaiting publish", is each Meta's words (${words}, ${worded.length})`,
+    );
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains a hidden Meta, shown by
+  // Meta Below and worded by Meta Text.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const below = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Meta Below" && defs[k].type === "BOOLEAN",
+    );
+    const words = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Meta Text" && defs[k].type === "TEXT",
+    );
+    const metas = replay.liveSet.findAll((n) => n.name === "Meta");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        below &&
+        defs[below].defaultValue === false &&
+        words &&
+        defs[words].defaultValue === "Changes awaiting publish" &&
+        metas.length === total &&
+        metas.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences &&
+            n.componentPropertyReferences.visible === below &&
+            n.componentPropertyReferences.characters === words,
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Meta shown by Meta Below and worded by Meta Text (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${metas.length} Meta, ${below}, ${words})`,
+    );
+  }
+
+  // The audit expects the Meta's own style, Text / XS / Normal, not the row's.
+  const auditSet = new MockNode("COMPONENT_SET", "TreeChildItem");
+  const auditVariant = new MockNode("COMPONENT", "Content=Basic");
+  const auditMeta = new MockNode("TEXT", "Meta");
+  auditVariant.appendChild(auditMeta);
+  auditSet.appendChild(auditVariant);
+  ok(
+    plugin.inferTextStyleKeyForComponentText(auditMeta, auditSet) ===
+      plugin.textStyleKeyForText("XS", "Normal"),
+    `the audit expects Text / XS / Normal on a row's Meta (${plugin.inferTextStyleKeyForComponentText(auditMeta, auditSet)})`,
+  );
+}
+
+// GAP-151: React's TreeSectionRow, a section's heading: min-h-8 (min-h-6
+// compact), ps depth × 20 + 8, pe 8, its name 11px medium in text-primary
+// (theme 600) and the rows' count pill gap-1.5 after it; no surface, no
+// divider. Figma's TreeSection: Density and Depth axes, Label Text, Count
+// Text and Show Count (on). New in 0.16.0, so the owner's Update builds it.
+section("GAP-151: TreeSection draws a section's heading");
+{
+  const painted =
+    typeof plugin.updateTreeSectionVariant === "function" &&
+    typeof plugin.configureTreeSectionProperties === "function" &&
+    typeof plugin.buildTreeSectionComponent === "function" &&
+    typeof plugin.updateTreeSectionComponent === "function" &&
+    typeof plugin.rebuildTreeSectionComponent === "function";
+  ok(
+    painted,
+    "TreeSection's painter, properties, Build, Update and Rebuild are reachable",
+  );
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("TreeSection"),
+    ) ===
+      JSON.stringify({
+        Density: ["Default", "Compact"],
+        Depth: ["0", "1", "2"],
+      }),
+    `TreeSection's axes are Density (Default, Compact) and Depth (0, 1, 2) (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("TreeSection"))})`,
+  );
+  const sequence = (plugin.CORE_UPDATE_SEQUENCE || []).map(([name]) => name);
+  const dataDisplay = (plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (s) => s.title === "Data display",
+  );
+  ok(
+    sequence.indexOf("TreeSection") !== -1 &&
+      sequence.indexOf("TreeSection") < sequence.indexOf("Tree") &&
+      dataDisplay &&
+      dataDisplay.components.indexOf("TreeSection") ===
+        dataDisplay.components.indexOf("TreeItem") + 1 &&
+      (plugin.COMPONENT_DOCS || []).some(
+        (doc) => doc.componentSetName === "TreeSection",
+      ) &&
+      plugin.shouldAuditLayoutBindings("TreeSection"),
+    `TreeSection is in Update All Core before Tree, beside the row sets on the page, documented, and its layout bindings audited (sequence ${sequence.indexOf("TreeSection")}, page ${dataDisplay && dataDisplay.components.join(", ")})`,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  ok(
+    /<option value="treeSection">TreeSection<\/option>/.test(ui) &&
+      /build: "build-tree-section"/.test(ui) &&
+      /update: "update-tree-section"/.test(ui) &&
+      /rebuild: "rebuild-tree-section"/.test(ui),
+    "the panel lists TreeSection with its Build, Update and Rebuild",
+  );
+
+  // Without the painter, an empty component, so every assertion below runs,
+  // and fails, against a plugin that has none.
+  const draw = async (props) => {
+    const component = figma.createComponent();
+    if (typeof plugin.updateTreeSectionVariant !== "function") return component;
+    await withAutoLayout(() =>
+      plugin.updateTreeSectionVariant(component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const variants = [];
+  for (const density of ["Default", "Compact"]) {
+    for (const depth of ["0", "1", "2"]) {
+      const at = `${density} Depth=${depth}`;
+      const key = density.toLowerCase();
+      const height = density === "Compact" ? 24 : 32;
+      const section = await draw({ density, depth });
+      variants.push(section);
+      const parsed =
+        typeof plugin.parseTreeSectionVariantName === "function"
+          ? plugin.parseTreeSectionVariantName(section.name)
+          : null;
+      ok(
+        section.name === `Density=${density}, Depth=${depth}` &&
+          parsed &&
+          parsed.density === density &&
+          parsed.depth === depth,
+        `${at}: named Density=${density}, Depth=${depth}, and reads back as itself (${section.name})`,
+      );
+      ok(
+        JSON.stringify(section.children.map((child) => child.name)) ===
+          JSON.stringify(["Label Text", "Count"]) &&
+          section.fills.length === 0 &&
+          section.strokes.length === 0 &&
+          !section.findOne((node) => node.name === "Divider"),
+        `${at}: its name then the count pill, no fill, no edge, no divider (${section.children.map((child) => child.name).join(", ")})`,
+      );
+      ok(
+        section.layoutMode === "HORIZONTAL" &&
+          section.counterAxisAlignItems === "CENTER" &&
+          section.layoutSizingVertical === "HUG" &&
+          section.height === height &&
+          section.minHeight === height &&
+          menusBound(section, "minHeight") === `Tree/section/height/${key}` &&
+          menusValueOf(`Tree/section/height/${key}`) === height &&
+          section.width === 320 &&
+          menusBound(section, "width") === "Tree/width/default",
+        `${at}: 320 wide, hugging above a floor of ${height}, Tree/section/height/${key} (${section.width}x${section.height}, ${section.minHeight}, ${menusBound(section, "minHeight")})`,
+      );
+      ok(
+        section.paddingLeft === Number(depth) * 20 + 8 &&
+          section.paddingRight === 8 &&
+          menusBound(section, "paddingRight") === "Tree/item/padding/x" &&
+          section.itemSpacing === 6 &&
+          menusBound(section, "itemSpacing") === "Tree/section/gap" &&
+          menusValueOf("Tree/section/gap") === 6,
+        `${at}: inset ${Number(depth) * 20 + 8} at the start and 8 at the end, the pill 6 after the name, Tree/section/gap (${section.paddingLeft}, ${section.paddingRight}, ${section.itemSpacing})`,
+      );
+      const label = section.children[0];
+      ok(
+        label &&
+          label.type === "TEXT" &&
+          label.characters === "POI" &&
+          label.fontName &&
+          label.fontName.style === FONTS.medium.style &&
+          label.fontSize === 11 &&
+          label.lineHeight.value === 14 &&
+          menusBound(label, "fontSize") === "Tree/section/font-size" &&
+          menusBound(label, "lineHeight") === "Tree/section/line-height" &&
+          menusValueOf("Tree/section/font-size") === 11 &&
+          boundVariableName(label.fills[0]) === "Colors/theme/600",
+        `${at}: "POI" in 11/14 medium, Tree/section/*, in the theme's 600, text-primary (${label && label.type === "TEXT" && `${label.characters}, ${label.fontName && label.fontName.style} ${label.fontSize}/${label.lineHeight && label.lineHeight.value}, ${boundVariableName(label.fills[0])}`})`,
+      );
+      const count = section.children[1];
+      const countText = count && count.children && count.children[0];
+      ok(
+        count &&
+          count.getSharedPluginData("kozmos_ds_importer", "kind") ===
+            "tree-count" &&
+          boundVariableName(count.fills[0]) === "Colors/background/100" &&
+          boundVariableName(count.strokes[0]) === "Border/Subtle" &&
+          countText &&
+          countText.name === "Count Text" &&
+          countText.characters === "120",
+        `${at}: the rows' count pill, "120" (${count && count.getSharedPluginData("kozmos_ds_importer", "kind")}, ${countText && countText.characters})`,
+      );
+    }
+  }
+
+  if (variants.length === 6) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "TreeSection";
+    if (typeof plugin.configureTreeSectionProperties === "function")
+      plugin.configureTreeSectionProperties(set, freshStats());
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const showCount = keyOf("Show Count", "BOOLEAN");
+    const labelText = keyOf("Label Text", "TEXT");
+    const countText = keyOf("Count Text", "TEXT");
+    const refs = (field, key) =>
+      set.findAll(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences[field] === key,
+      );
+    ok(
+      showCount &&
+        definitions[showCount].defaultValue === true &&
+        refs("visible", showCount).length === 6 &&
+        refs("visible", showCount).every((node) => node.name === "Count"),
+      `Show Count, on by default, shows each variant's pill and nothing else (${showCount}, ${refs("visible", showCount).length})`,
+    );
+    ok(
+      labelText &&
+        definitions[labelText].defaultValue === "POI" &&
+        refs("characters", labelText).length === 6 &&
+        countText &&
+        definitions[countText].defaultValue === "120" &&
+        refs("characters", countText).length === 6,
+      `Label Text ("POI") and Count Text ("120") word every variant (${labelText}, ${countText})`,
+    );
+    const name = set.children[0].children[0];
+    const pill =
+      set.children[0].children[1] && set.children[0].children[1].children[0];
+    const expected = (node) =>
+      node ? plugin.inferTextStyleKeyForComponentText(node, set) : null;
+    ok(
+      expected(name) === "treeSection" && expected(pill) === "counterSmall",
+      `the audit expects Tree / Section on the name and Counter / Small in the pill (${expected(name)}, ${expected(pill)})`,
+    );
+    set.remove();
+  }
+
+  // Update on a file with no TreeSection builds it: six variants, reported
+  // updated so Update All Core stamps it done. A second Update keeps the set
+  // and every variant's id.
+  {
+    const components = new MockNode("PAGE", "Components");
+    const fileFigma = createFigmaMock({
+      pages: [components, new MockNode("PAGE", "Icons")],
+    });
+    const file = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: fileFigma,
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    let first = null;
+    let second = null;
+    let error = null;
+    try {
+      first = await file.updateTreeSectionComponent();
+    } catch (caught) {
+      error = caught;
+    }
+    const built = components.children.find(
+      (node) => node.type === "COMPONENT_SET" && node.name === "TreeSection",
+    );
+    const ids = built ? built.children.map((child) => child.id) : [];
+    ok(
+      !error &&
+        first &&
+        first.updated === true &&
+        built &&
+        built.children.length === 6 &&
+        first.componentSetId === built.id,
+      `Update builds TreeSection when the file has none, six variants, reported updated (${error ? error.message : first && `${first.updated}, ${built && built.children.length}`})`,
+    );
+    try {
+      second = await file.updateTreeSectionComponent();
+    } catch (caught) {
+      error = caught;
+    }
+    ok(
+      !error &&
+        second &&
+        second.updated === true &&
+        second.componentSetId === (built && built.id) &&
+        second.variantsUpdated === 6 &&
+        second.variantsCreated === 0 &&
+        second.variantsRemoved === 0 &&
+        built.children.map((child) => child.id).join() === ids.join(),
+      `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
+    );
   }
 }
 

@@ -20,6 +20,13 @@ public struct KozmosCombobox: View {
     /// Disable only when the host already filtered/ranked the supplied options.
     public let filterLocally: Bool
     public let popupActions: [KozmosPickerAction]
+    /// The field stands for several values that differ (GAP-153): no option
+    /// is the choice, though the visitor may type a query. `KozmosMixedValue`
+    /// has the whole of it.
+    public let mixed: Bool
+    public let mixedLabel: String
+    public let onResetMixed: (() -> Void)?
+    public let resetMixedLabel: String
     private let expanded: Binding<Bool>?
 
     @State private var internalOpen: Bool
@@ -53,7 +60,11 @@ public struct KozmosCombobox: View {
         closeLabel: String = "Close options",
         filterLocally: Bool = true,
         popupActions: [KozmosPickerAction] = [],
-        expanded: Binding<Bool>? = nil
+        expanded: Binding<Bool>? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._value = value
         self._inputValue = inputValue
@@ -72,6 +83,8 @@ public struct KozmosCombobox: View {
         self._internalOpen = State(initialValue: defaultOpen)
         self.filterLocally = filterLocally
         self.popupActions = popupActions; self.expanded = expanded
+        self.mixed = mixed; self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed; self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
@@ -85,7 +98,7 @@ public struct KozmosCombobox: View {
             }
 
             HStack(spacing: 0) {
-                TextField(placeholder, text: editableInput)
+                TextField(mixed ? mixedLabel : placeholder, text: editableInput)
                     .focused($inputFocused)
                     .accessibilityFocused($inputAccessibilityFocused)
                     .accessibilityLabel(label ?? placeholder)
@@ -172,6 +185,10 @@ public struct KozmosCombobox: View {
                 }
             }
 
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel, action: resetMixed)
+            }
+
             if let supportingText = supportingText, !supportingText.isEmpty {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
@@ -188,6 +205,12 @@ public struct KozmosCombobox: View {
         // list again by itself. A host's `expanded` is the host's: hidden
         // while the field cannot be used, never written here.
         .onAppear { if disabled || readOnly { internalOpen = false } }
+        // Turning mixed (GAP-153), the field's text goes with its choice, as
+        // React's does. Only on the turn: appearing again (a rotation, a list
+        // scrolled back, a tab returned to) leaves a query typed while mixed.
+        .onChange(of: mixed) { nowMixed in
+            if nowMixed { inputValue = "" }
+        }
         .onChange(of: disabled || readOnly) { locked in
             if locked { internalOpen = false }
         }
@@ -222,7 +245,8 @@ public struct KozmosCombobox: View {
     }
 
     private var listboxSelection: Binding<[String]> {
-        Binding(get: { value.isEmpty ? [] : [value] }, set: {
+        // Mixed, no option is the choice: none is checked.
+        Binding(get: { mixed || value.isEmpty ? [] : [value] }, set: {
             guard !disabled, !readOnly else { return }
             setOpen(false)
             value = $0.first ?? ""
@@ -234,9 +258,21 @@ public struct KozmosCombobox: View {
         setOpen(!isOpen)
     }
 
+    /// Back to the several values: the text goes with the choice, typed or
+    /// not, and VoiceOver goes to the field.
+    private func resetMixed() {
+        inputValue = ""
+        setOpen(false)
+        inputAccessibilityFocused = true
+        onResetMixed?()
+    }
+
     private func clearSelection() {
         guard !disabled, !readOnly else { return }
-        value = ""
+        // Mixed, there is no choice to clear, only the query: an empty choice
+        // would read as an edit that empties the property across the
+        // selection (GAP-153).
+        if !mixed { value = "" }
         inputValue = ""
         setOpen(false)
     }

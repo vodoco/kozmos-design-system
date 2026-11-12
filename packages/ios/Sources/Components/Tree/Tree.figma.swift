@@ -37,9 +37,8 @@ struct KozmosTreeConnect: FigmaConnect {
 }
 
 // The rows a designer puts in Tree's Content Slot. SwiftUI draws rows only
-// inside KozmosTree, from nodes, so each row reads as a one-node tree; it
-// has no divided rows yet (GAP-201 is web and Figma first), so Divided
-// changes nothing here.
+// inside KozmosTree, from nodes, so each row reads as a one-node tree, and a
+// Divided row as a one-node divided tree (GAP-201).
 struct KozmosTreeParentItemConnect: FigmaConnect {
     let component = KozmosTree.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=684-6080"
@@ -56,8 +55,24 @@ struct KozmosTreeParentItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name, children: [])], density: self.density)
+        KozmosTree(
+            nodes: [Node(value: self.name, children: [], meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -77,8 +92,24 @@ struct KozmosTreeChildItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -98,7 +129,23 @@ struct KozmosTreeItemConnect: FigmaConnect {
     )
     var density: KozmosTreeDensity = .default
 
+    @FigmaBoolean("Divided")
+    var divided: Bool = false
+
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
