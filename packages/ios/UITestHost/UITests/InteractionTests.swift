@@ -1145,15 +1145,25 @@ final class InteractionTests: XCTestCase {
             launch(scenario)
             let rtl = scenario == "selection-controls-large-rtl"
             for name in ["Ramp", "Stairs", "Step-free", "Bare checkbox", "Announce turns", "Bare switch"] {
-                assertTouchTarget(app.buttons[name])
+                assertTouchTarget(selectionControl(name))
             }
             for name in ["Stairs", "Bare checkbox"] {
-                app.buttons[name].coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
+                selectionControl(name).coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
                     .withOffset(CGVector(dx: rtl ? -36 : 36, dy: 0)).tap()
             }
             received("radio stairs|bare checkbox true")
             app.terminate()
         }
+    }
+
+    /// A radio, checkbox or switch by its name, whatever type XCUITest gives
+    /// it: a radio is a button, but from iOS 17 a checkbox or switch carries
+    /// the toggle trait (#523), so VoiceOver says it can be switched, and
+    /// XCUITest no longer lists it among the buttons.
+    private func selectionControl(_ name: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@ AND elementType != %d", name, XCUIElement.ElementType.staticText.rawValue))
+            .firstMatch
     }
 
     /// The trigger takes a tap across its row, between its title and its
