@@ -98,17 +98,27 @@ const typeFamilies = [
   { value: "virtual", label: "Virtual", Icon: Cube01 },
 ];
 
+// Each tab controls a panel, so every aria-controls names an element. Five
+// stacked tabs are wider than a phone: the list sits in a box that scrolls
+// sideways, as a narrow column would hold it, rather than widening the page.
 function TypeFamilyTabs({ dir }: { dir?: "ltr" | "rtl" }) {
   return (
     <div dir={dir}>
       <Tabs defaultValue="poi" dir={dir}>
-        <TabsList aria-label="Type family">
-          {typeFamilies.map(({ value, label, Icon }) => (
-            <TabsTrigger key={value} value={value} icon={<Icon />}>
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="max-w-full overflow-x-auto">
+          <TabsList aria-label="Type family">
+            {typeFamilies.map(({ value, label, Icon }) => (
+              <TabsTrigger key={value} value={value} icon={<Icon />}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+        {typeFamilies.map(({ value, label }) => (
+          <TabsContent key={value} value={value}>
+            Types in {label}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
