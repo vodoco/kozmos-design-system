@@ -733,9 +733,9 @@ fun TreeSectionRow(
     depth: Int = 0,
     density: KozmosTreeDensity = KozmosTreeDensity.Default
 ) {
-    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    val format = rememberTreeCountFormat()
     // TalkBack reads the name and the count as the locale writes it: "POI, 3,257".
-    val label = if (count == null) name else "$name, ${NumberFormat.getIntegerInstance(locale).format(count)}"
+    val label = if (count == null) name else "$name, ${format.format(count)}"
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -761,9 +761,21 @@ fun TreeSectionRow(
     }
 }
 
-/** A row's count, in a pill. */
+/** Counts as the app's language writes them: 13,031 in English, 13.031 in German. */
 @Composable
-private fun TreeCount(count: Int, modifier: Modifier = Modifier) {
+private fun rememberTreeCountFormat(): NumberFormat {
+    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    return remember(locale) { NumberFormat.getIntegerInstance(locale) }
+}
+
+/**
+ * A count, in a pill, grouped as the app's language writes it: a row's and a
+ * section heading's. Internal for the tests, which read what it draws (a
+ * heading's words are cleared for TalkBack, which reads its name).
+ */
+@Composable
+internal fun TreeCount(count: Int, modifier: Modifier = Modifier) {
+    val format = rememberTreeCountFormat()
     val shape = RoundedCornerShape(percent = 50)
     Box(
         contentAlignment = Alignment.Center,
@@ -775,7 +787,7 @@ private fun TreeCount(count: Int, modifier: Modifier = Modifier) {
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing75)
     ) {
         Text(
-            text = count.toString(),
+            text = format.format(count),
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = KozmosThemeTokens.primitivesColorsForeground500,

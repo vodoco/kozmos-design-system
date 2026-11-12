@@ -121,7 +121,10 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
   a string as it is, and a count given as a slot is read for what it returns. Without `locale`, the page's `lang` is
   read once the tree has mounted; on a server render and the first client render the count is written as en-US, so
   the two agree and hydration finds no difference. A server-rendered product in another language passes `locale` to
-  have it right from the first paint. The heading itself is for the eye. Give `textValue` where `name` is not plain
+  have it right from the first paint. The heading itself is for the eye.
+- **Counts are grouped, on screen as when read:** a number `count`, on a row or a section, is drawn as the app's
+  language writes it, 13,031 in English and 13.031 in German, in the same locale as the group's name (and on SwiftUI
+  with `formatted()`, on Compose with the locale's `NumberFormat`). A count given as text or a node is drawn as given. Give `textValue` where `name` is not plain
   text. To compose one, `TreeSectionRow` is the heading.
 - **A set of rows:** `selectionMode="multiple"` with `selectedIds` (or `defaultSelectedIds`) and
   `onSelectedIdsChange`. A click selects one row; Ctrl or Cmd with a click adds or takes away a row; Shift with a click
@@ -163,7 +166,7 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
   and, if it is not selected, selects it alone, then calls `onItemContextMenu` with it, so the menu acts on the
   selection. With no `onItemContextMenu`, a right click leaves the selection alone.
 - **Meta below the name:** `metaPlacement="below"` (on Tree, or a row of its own) draws a row's `meta` on a line under
-  its name, so the name keeps the row's width: 'Bean & Leaf Café' whole, with 'Changes Awaiting Publish' under it
+  its name, so the name keeps the row's width: 'Bean & Leaf Café' whole, with 'Changes awaiting publish' under it
   (GAP-107). `"inline"`, the default, keeps the meta after the name.
 
 <Canvas>
@@ -227,7 +230,7 @@ export function MapContentTree() {
                   section: true,
                   count: 2,
                   children: [
-                    { id: "cafe", name: "Bean & Leaf Café", meta: "Changes Awaiting Publish" },
+                    { id: "cafe", name: "Bean & Leaf Café", meta: "Changes awaiting publish" },
                     { id: "gate", name: "Gate A12" },
                   ],
                 },
@@ -257,7 +260,7 @@ const data = [
     section: true,
     count: 2,
     children: [
-      { id: "cafe", name: "Bean & Leaf Café", meta: "Changes Awaiting Publish" },
+      { id: "cafe", name: "Bean & Leaf Café", meta: "Changes awaiting publish" },
       { id: "gate", name: "Gate A12" },
     ],
   },

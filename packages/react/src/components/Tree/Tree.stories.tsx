@@ -307,7 +307,7 @@ const mapContentSections: TreeItem[] = [
           {
             id: "cafe",
             name: "Bean & Leaf Café",
-            meta: "Changes Awaiting Publish",
+            meta: "Changes awaiting publish",
           },
           { id: "gate", name: "Gate A12" },
           { id: "pharmacy", name: "Pharmacy" },

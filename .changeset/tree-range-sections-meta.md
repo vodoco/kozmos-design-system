@@ -11,6 +11,7 @@ Tree selects ranges, has sections, draws only the rows in view and puts a row's 
 - **Type-ahead:** typing moves focus to the next row whose words start with what was typed; the same letter again moves on to the next. It runs after the product's own `onKeyDown` and not when that called `preventDefault()`, takes no key with Ctrl, Cmd or Alt and never `+`, `-` or `*`, and leaves a key that finds no row alone. `*` opens every row beside the focused one; PageUp and PageDown move by a page of rows.
 - **Closing a parent** in a multiple tree, once the collapse takes effect, lets go of the rows it hides, in one `onSelectedIdsChange`; a single tree keeps its one selected row. Ctrl or Cmd+A selects the enabled rows in view. PageUp and PageDown move by the rows that fit the view less one.
 - **`locale`** writes a section's count for a screen reader ("POI, 3,257"). Without it, the page's `lang` is read after mount; a server render and the first client render write en-US, so hydration agrees.
+- **Counts are drawn grouped:** a number `count` on a row, a section or a composed row shows as the tree's locale writes it (13,031 in en-US); text is shown as given.
 - **`scrollerRef`** is the box a virtualized tree scrolls in; `ref` stays the tree.
 - **A Space within 500 ms of a typed letter** is part of the type-ahead word, as WAI-ARIA has it: it does not select. Pause, or press Space on its own, to select.
 - **A section's count is heard:** its group is named "POI, 3,257".

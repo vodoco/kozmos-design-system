@@ -208,6 +208,12 @@ const useTreeLayoutEffect =
 /** A Tree's `divided`, for the rows composed in it as children. */
 const TreeDividedContext = React.createContext(false);
 /**
+ * The locale a Tree writes its counts in: its `locale`, else the page's
+ * `lang` after mount; en-US on a server render, the first client render and
+ * a row outside a Tree.
+ */
+const TreeLocaleContext = React.createContext("en-US");
+/**
  * Whether the rows are in a virtualised Tree, which scrolls itself and so
  * clips whatever reaches past it: their focus ring is drawn inside them.
  */
@@ -244,14 +250,27 @@ const treeSectionLabel = (
       ? item.count(sectionContext(item, depth))
       : item.count;
   let count = "";
-  if (typeof given === "number") {
-    try {
-      count = given.toLocaleString(locale);
-    } catch {
-      count = given.toLocaleString();
-    }
-  } else if (typeof given === "string") count = given;
+  if (typeof given === "number") count = formatTreeCount(given, locale);
+  else if (typeof given === "string") count = given;
   return [text, count].filter(Boolean).join(", ") || undefined;
+};
+
+/**
+ * A number count as the app's language writes it, grouped: 13,031 in
+ * en-US, 13.031 in de-DE. The same on screen as a screen reader hears it.
+ */
+const formatTreeCount = (count: number, locale: string | undefined) => {
+  try {
+    return count.toLocaleString(locale);
+  } catch {
+    return count.toLocaleString(RENDER_LOCALE);
+  }
+};
+
+/** A count as drawn: a number grouped in the tree's locale, else as given. */
+const useTreeCount = (count: React.ReactNode) => {
+  const locale = React.useContext(TreeLocaleContext);
+  return typeof count === "number" ? formatTreeCount(count, locale) : count;
 };
 
 /** What a section's slots are given: it is open, and never selected. */
@@ -1011,35 +1030,37 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         <TreeDividedContext.Provider value={!!divided}>
           <TreeMetaPlacementContext.Provider value={metaPlacement}>
             <TreeScrollerContext.Provider value={virtualized}>
-              {virtualized ? (
-                // The scroller is inside the tree, so the product's width,
-                // margin and height classes stay the tree's own. A scroller
-                // clips what reaches past it: divided with a bleed, this one
-                // reaches the bleed past the tree on each side, and keeps the
-                // rows in place inside its padding, where each stroke meets
-                // its edges with no sideways scroll.
-                <div
-                  ref={setScrollerRef}
-                  data-tree-scroller=""
-                  className="relative min-h-0 flex-auto overflow-y-auto"
-                  style={
-                    divided && bleed !== undefined
-                      ? {
-                          marginInline: "calc(var(--kozmos-tree-bleed) * -1)",
-                          paddingInline: "var(--kozmos-tree-bleed)",
-                        }
-                      : undefined
-                  }
-                  onScroll={(event) => {
-                    setScrollTop(event.currentTarget.scrollTop);
-                    props.onScroll?.(event);
-                  }}
-                >
-                  {content}
-                </div>
-              ) : (
-                content
-              )}
+              <TreeLocaleContext.Provider value={locale ?? pageLocale}>
+                {virtualized ? (
+                  // The scroller is inside the tree, so the product's width,
+                  // margin and height classes stay the tree's own. A scroller
+                  // clips what reaches past it: divided with a bleed, this one
+                  // reaches the bleed past the tree on each side, and keeps the
+                  // rows in place inside its padding, where each stroke meets
+                  // its edges with no sideways scroll.
+                  <div
+                    ref={setScrollerRef}
+                    data-tree-scroller=""
+                    className="relative min-h-0 flex-auto overflow-y-auto"
+                    style={
+                      divided && bleed !== undefined
+                        ? {
+                            marginInline: "calc(var(--kozmos-tree-bleed) * -1)",
+                            paddingInline: "var(--kozmos-tree-bleed)",
+                          }
+                        : undefined
+                    }
+                    onScroll={(event) => {
+                      setScrollTop(event.currentTarget.scrollTop);
+                      props.onScroll?.(event);
+                    }}
+                  >
+                    {content}
+                  </div>
+                ) : (
+                  content
+                )}
+              </TreeLocaleContext.Provider>
             </TreeScrollerContext.Provider>
           </TreeMetaPlacementContext.Provider>
         </TreeDividedContext.Provider>
@@ -1457,8 +1478,9 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     // row's width.
     const metaBelow =
       hasMeta && (metaPlacementProp ?? treeMetaPlacement) === "below";
+    const shownCount = useTreeCount(count);
     const countPill = count !== undefined && count !== null && (
-      <span className={countPillClass}>{count}</span>
+      <span className={countPillClass}>{shownCount}</span>
     );
     // GAP-204: the row is a treeitem whose level and state are the props it
     // already takes. A caller's own role or aria-* wins; with another role,
@@ -1638,25 +1660,28 @@ const TreeSectionRow = React.forwardRef<HTMLDivElement, TreeSectionRowProps>(
       ...props
     },
     ref,
-  ) => (
-    <div
-      ref={ref}
-      aria-hidden="true"
-      data-tree-section=""
-      className={cn(
-        "flex w-full items-center gap-1.5 px-2 text-[11px] font-medium leading-[14px] text-primary",
-        density === "compact" ? "min-h-6" : "min-h-8",
-        className,
-      )}
-      style={{ paddingInlineStart: depth * indent + 8, ...style }}
-      {...props}
-    >
-      <span className="min-w-0 truncate">{name}</span>
-      {count !== undefined && count !== null && (
-        <span className={countPillClass}>{count}</span>
-      )}
-    </div>
-  ),
+  ) => {
+    const shownCount = useTreeCount(count);
+    return (
+      <div
+        ref={ref}
+        aria-hidden="true"
+        data-tree-section=""
+        className={cn(
+          "flex w-full items-center gap-1.5 px-2 text-[11px] font-medium leading-[14px] text-primary",
+          density === "compact" ? "min-h-6" : "min-h-8",
+          className,
+        )}
+        style={{ paddingInlineStart: depth * indent + 8, ...style }}
+        {...props}
+      >
+        <span className="min-w-0 truncate">{name}</span>
+        {count !== undefined && count !== null && (
+          <span className={countPillClass}>{shownCount}</span>
+        )}
+      </div>
+    );
+  },
 );
 TreeSectionRow.displayName = "TreeSectionRow";
 

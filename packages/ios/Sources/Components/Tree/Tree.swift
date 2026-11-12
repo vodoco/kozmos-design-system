@@ -63,8 +63,12 @@ public struct Node: Identifiable, Hashable {
     /// `metaPlacement: .below`: "Changes awaiting publish".
     public let meta: String?
     /// A number drawn after the name in a pill: how many items a parent or a
-    /// section holds.
+    /// section holds. Given as text, it is drawn as given; given as a number,
+    /// this is its digits and `countValue` the number.
     public let count: String?
+    /// The count given as a number: drawn grouped as the app's language
+    /// writes it, 13,031 in English and 13.031 in German.
+    public let countValue: Int?
     /// A section heading (GAP-151): its `value` and `count` drawn as a
     /// heading, and its `children` drawn under it at the section's own depth.
     /// Always open; never selected, focused or expanded.
@@ -86,14 +90,52 @@ public struct Node: Identifiable, Hashable {
         self.children = children
         self.meta = meta
         self.count = count
+        self.countValue = nil
         self.isSection = isSection
         self.isDisabled = isDisabled
+    }
+
+    /// A node whose count is a number, drawn grouped as the app's language
+    /// writes it: 13,031 in English, 13.031 in German.
+    public init(
+        id: String? = nil,
+        value: String,
+        children: [Node]? = nil,
+        meta: String? = nil,
+        count: Int,
+        isSection: Bool = false,
+        isDisabled: Bool = false
+    ) {
+        self.id = id ?? UUID().uuidString
+        self.value = value
+        self.children = children
+        self.meta = meta
+        self.count = String(count)
+        self.countValue = count
+        self.isSection = isSection
+        self.isDisabled = isDisabled
+    }
+
+    /// The count as drawn: a number grouped as `locale` writes it, text as
+    /// given; nil with no count.
+    func displayedCount(_ locale: Locale) -> String? {
+        guard let countValue else { return count }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = locale
+        return formatter.string(from: NSNumber(value: countValue)) ?? count
     }
 
     /// A section heading (GAP-151) over `children`, which are drawn at the
     /// section's own depth: Map Content's POI, Interior asset, Structural and
     /// Virtual under a level, each with its count.
     public static func section(_ value: String, id: String? = nil, count: String? = nil, children: [Node]) -> Node {
+        Node(id: id, value: value, children: children, count: count, isSection: true)
+    }
+
+    /// A section heading whose count is a number, drawn grouped as the app's
+    /// language writes it.
+    public static func section(_ value: String, id: String? = nil, count: Int, children: [Node]) -> Node {
         Node(id: id, value: value, children: children, count: count, isSection: true)
     }
 }
@@ -669,12 +711,14 @@ extension EnvironmentValues {
 /// The indent of a level.
 private let kozmosTreeIndent: CGFloat = 20
 
-/// A count, in a pill after the name.
+/// A count, in a pill after the name: a number grouped as the app's
+/// language writes it, text as given.
 struct KozmosTreeCount: View {
-    let text: String
+    let node: Node
+    @Environment(\.locale) private var locale
 
     var body: some View {
-        Text(text)
+        Text(node.displayedCount(locale) ?? "")
             .font(KozmosTypography.caption.weight(.medium))
             .monospacedDigit()
             .lineLimit(1)
@@ -784,7 +828,7 @@ struct KozmosTreeDividedRow: View {
             Text(node.value)
                 .foregroundColor(KozmosColors.primitivesColorsForeground100)
                 .lineLimit(node.meta != nil && metaPlacement == .inline ? 1 : nil)
-            if let count = node.count { KozmosTreeCount(text: count) }
+            if node.count != nil { KozmosTreeCount(node: node) }
         }
         if let meta = node.meta {
             let words = Text(meta)
@@ -817,16 +861,12 @@ struct KozmosTreeSectionRow: View {
     let bleed: CGFloat
     @Environment(\.locale) private var locale
 
-    /// What VoiceOver reads: the name, and the count as the locale writes a
-    /// number, "POI, 3,257".
+    /// What VoiceOver reads: the name and the count as the heading draws
+    /// it, "POI, 3,257" for the number 3257 in en_US; a count given as text,
+    /// as given, as React's is.
     static func spokenName(_ node: Node, locale: Locale) -> String {
-        guard let count = node.count else { return node.value }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.locale = locale
-        let spoken = Int(count.trimmingCharacters(in: .whitespaces))
-            .flatMap { formatter.string(from: NSNumber(value: $0)) } ?? count
-        return "\(node.value), \(spoken)"
+        guard let shown = node.displayedCount(locale) else { return node.value }
+        return "\(node.value), \(shown)"
     }
 
     var body: some View {
@@ -834,7 +874,7 @@ struct KozmosTreeSectionRow: View {
             Text(node.value)
                 .font(KozmosTypography.caption2.weight(.medium))
                 .foregroundColor(KozmosColors.primitivesColorsTheme600)
-            if let count = node.count { KozmosTreeCount(text: count) }
+            if node.count != nil { KozmosTreeCount(node: node) }
             Spacer(minLength: 0)
         }
         .padding(.leading, CGFloat(depth) * kozmosTreeIndent)

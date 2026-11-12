@@ -254,13 +254,13 @@ describe("Tree metaPlacement (GAP-107)", () => {
       id: "cafe",
       name: "Bean & Leaf Café",
       count: 3,
-      meta: "Changes Awaiting Publish",
+      meta: "Changes awaiting publish",
     },
   ];
 
   it("draws meta on a line of its own under the name with below", () => {
     const { rerender } = render(<Tree data={cafe} metaPlacement="below" />);
-    const meta = screen.getByText("Changes Awaiting Publish");
+    const meta = screen.getByText("Changes awaiting publish");
     const column = meta.parentElement as HTMLElement;
     expect(column).toHaveAttribute("data-tree-meta-placement", "below");
     expect(column).toHaveClass("flex-col", "flex-1", "min-w-0");
@@ -275,7 +275,7 @@ describe("Tree metaPlacement (GAP-107)", () => {
     // Inline, as before: the meta after the name's column, which it shares
     // the row with.
     rerender(<Tree data={cafe} />);
-    const inline = screen.getByText("Changes Awaiting Publish");
+    const inline = screen.getByText("Changes awaiting publish");
     expect(inline).toHaveClass("shrink-0");
     expect(
       screen.getByRole("treeitem").querySelector("[data-tree-meta-placement]"),
@@ -927,5 +927,47 @@ describe("Tree third review (#524)", () => {
     expect(
       screen.queryByRole("treeitem", { name: /^Row 2$/ }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("Tree counts on screen (#524 baselines)", () => {
+  const data: TreeItem[] = [
+    {
+      id: "level",
+      name: "Level 1",
+      count: 13031,
+      children: [
+        {
+          id: "poi",
+          name: "POI",
+          section: true,
+          count: 9000,
+          children: [{ id: "cafe", name: "Café", count: "1200 items" }],
+        },
+      ],
+    },
+  ];
+
+  it("draws a number count grouped in the tree's locale, on rows and headings, and a text count as given", () => {
+    const { container, rerender } = render(
+      <Tree data={data} defaultExpandedIds={["level"]} />,
+    );
+    expect(screen.getByText("13,031")).toHaveClass("rounded-pill");
+    expect(container.querySelector("[data-tree-section]")?.textContent).toBe(
+      "POI9,000",
+    );
+    expect(screen.getByText("1200 items")).toBeInTheDocument();
+    rerender(
+      <Tree data={data} defaultExpandedIds={["level"]} locale="de-DE" />,
+    );
+    expect(screen.getByText("13.031")).toHaveClass("rounded-pill");
+    expect(container.querySelector("[data-tree-section]")?.textContent).toBe(
+      "POI9.000",
+    );
+  });
+
+  it("groups a composed row's number count, en-US outside a Tree", () => {
+    render(<TreeChildItemRow name="Gate" count={4200} />);
+    expect(screen.getByText("4,200")).toHaveClass("rounded-pill");
   });
 });

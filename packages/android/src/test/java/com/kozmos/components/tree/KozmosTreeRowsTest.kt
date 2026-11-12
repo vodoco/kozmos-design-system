@@ -2,6 +2,9 @@ package com.kozmos.components.tree
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -184,5 +187,38 @@ class KozmosTreeRowsTest {
             frames(3)
             assertTrue("B1 closed across the rotation", read().merged.any { "L0" in it.texts })
         }
+    }
+
+    @Test fun countsAreDrawnGroupedInEnglish() = counts(Locale.US, "13,031")
+
+    @Test fun countsAreDrawnGroupedInGerman() = counts(Locale.GERMANY, "13.031")
+
+    /**
+     * A row's count pill as drawn, and a section heading's name. A heading's
+     * drawn words are cleared for TalkBack, so its count pill, the same
+     * TreeCount a row draws, is read drawn alone.
+     */
+    private fun counts(locale: Locale, drawn: String) {
+        val data = listOf(
+            TreeNode("poi", "POI", listOf(TreeNode("level", "Level 0", count = 13_031)), count = 13_031, section = true)
+        )
+        val tree = paparazzi.readSettledSemantics {
+            val config = Configuration(LocalConfiguration.current).apply { setLocale(locale) }
+            CompositionLocalProvider(LocalConfiguration provides config) {
+                KozmosMaterialTheme {
+                    Column {
+                        Box(Modifier.size(300.dp, 200.dp)) { KozmosTree(data, expandedIds = emptySet()) }
+                        Box(Modifier.testTag("pill").semantics(mergeDescendants = true) {}) { TreeCount(13_031) }
+                    }
+                }
+            }
+        }
+        val row = tree.merged.single { "Level 0" in it.texts }
+        assertTrue("$locale: the row's pill draws ${row.texts}", drawn in row.texts)
+        val pill = tree.merged.single { it.tag == "pill" }
+        assertEquals("$locale: a heading's pill draws", listOf(drawn), pill.texts)
+        val heading = tree.merged.single { it.heading }
+        assertEquals("$locale: the heading's name", "POI, $drawn", heading.description)
+        assertTrue("$locale: the heading's drawn words reach TalkBack: ${heading.texts}", heading.texts.isEmpty())
     }
 }
