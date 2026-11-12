@@ -8,7 +8,8 @@ import Kozmos
 // The list is a background/100 track. The selected tab is a background/0
 // segment 4pt inside it, raised by KozmosShadows.semanticsElevationRaised,
 // with foreground/0 words; the other tabs' words are foreground/400. No theme
-// colour, as on the web and in Compose (decision 65).
+// colour, as on the web and in Compose (decision 65). A list wider than its
+// space scrolls inside the track, the selected tab in view (decision 182).
 struct PlaceDetailsTabs: View {
     @State private var selection = "overview"
 

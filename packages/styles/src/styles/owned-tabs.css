@@ -1,0 +1,32 @@
+@kozmos-owned {
+  /* A Tabs list is never wider than the box it sits in, so it never widens
+     the page (GAP-254, decision 182). A list that fits is drawn as it always
+     was, its tabs centred. Owned, so it holds without @scope; a caller's own
+     utility class still wins over it. */
+  .kozmos-tabs-list {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    justify-content: center;
+  }
+  /* A list wider than its space (TabsList marks it data-scrollable, from
+     what it measures) scrolls sideways inside its own track: the track is
+     the scrollport and keeps the width of the space, and the tabs keep
+     their natural width, from the inline start. The track's 4px padding is
+     inside the scrollport, so the raised tab's segment and its focus ring
+     are drawn in it, and a tab brought into view keeps that 4px from the
+     track's edge (scroll-padding). Only a list that overflows scrolls: a
+     scrollport clips the faint tail of the raised shadow that falls past the
+     track's bottom edge, and a list that fits keeps it. No scroll bar on any
+     platform, as decision 75 hides a phone's: touch, a trackpad and a wheel
+     scroll it, and focus moving along the tabs brings each into view. */
+  .kozmos-tabs-list[data-scrollable] {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-padding-inline: 0.25rem;
+    justify-content: flex-start;
+  }
+  .kozmos-tabs-list[data-scrollable]::-webkit-scrollbar {
+    display: none;
+  }
+}
