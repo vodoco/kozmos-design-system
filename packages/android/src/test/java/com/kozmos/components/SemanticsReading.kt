@@ -154,7 +154,13 @@ data class ReadNode(
     /** The weight a text lays its words out in, where it says one. */
     val fontWeight: FontWeight? = null,
     /** A toggle's state, which TalkBack says as checked or not (On, Off, Indeterminate). */
-    val toggleState: androidx.compose.ui.state.ToggleableState? = null
+    val toggleState: androidx.compose.ui.state.ToggleableState? = null,
+    /**
+     * A text's laid-out lines, each as its left and right edge, and the
+     * width it was laid out in: where each line's words sit.
+     */
+    val textLines: List<Pair<Float, Float>>? = null,
+    val textWidth: Int? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -350,12 +356,20 @@ fun Paparazzi.readSettledSemantics(content: @Composable () -> Unit): ReadSemanti
 private fun SemanticsNode.flatten(): List<SemanticsNode> =
     listOf(this) + children.flatMap { it.flatten() }
 
+private fun layoutOf(node: SemanticsNode): androidx.compose.ui.text.TextLayoutResult? {
+    val get = node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action ?: return null
+    val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+    return if (get(results)) results.firstOrNull() else null
+}
+
 private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     description = node.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString(),
     texts = node.config.getOrNull(SemanticsProperties.Text)?.map { it.text }.orEmpty(),
     selected = node.config.getOrNull(SemanticsProperties.Selected),
     stateDescription = node.config.getOrNull(SemanticsProperties.StateDescription),
     toggleState = node.config.getOrNull(SemanticsProperties.ToggleableState),
+    textLines = layoutOf(node)?.let { layout -> (0 until layout.lineCount).map { layout.getLineLeft(it) to layout.getLineRight(it) } },
+    textWidth = layoutOf(node)?.size?.width,
     enabled = !node.config.contains(SemanticsProperties.Disabled),
     role = node.config.getOrNull(SemanticsProperties.Role),
     bounds = node.boundsInRoot,

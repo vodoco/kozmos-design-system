@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.state.ToggleableState
 import com.kozmos.components.live
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -100,6 +102,43 @@ class KozmosControlDescriptionSemanticsTest {
             assertTrue(checkNotNull(before.click)())
             frames(3)
             assertEquals(ToggleableState.On, read().merged.single { "Route updates" in it.texts }.toggleState)
+        }
+    }
+
+    /**
+     * Right to left, a description's lines start at the right, the layout's
+     * start, as a Checkbox's and a Switch's labels do: English words in a
+     * right-to-left screen still line up with the control they describe.
+     * Switch's wrapped description lined its lines up on the left.
+     */
+    @Test
+    fun aDescriptionsLinesStartAtTheRightInRightToLeft() {
+        val words = "Sends a push when your gate changes, and again when boarding starts at it"
+        val tree = paparazzi.readSemantics {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl
+            ) {
+                KozmosMaterialTheme {
+                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(260.dp)) {
+                        Column {
+                            KozmosSwitch(checked = true, onCheckedChange = {}, label = "Gate alerts", description = words, showStateLabel = true)
+                            KozmosCheckbox(checked = true, onCheckedChange = {}, label = "Route updates", description = words)
+                        }
+                    }
+                }
+            }
+        }
+        val texts = tree.unmerged.filter { it.texts == listOf(words) }
+        assertEquals(2, texts.size)
+        for ((i, text) in texts.withIndex()) {
+            val lines = checkNotNull(text.textLines) { "no layout for the description" }
+            val width = checkNotNull(text.textWidth).toFloat()
+            assertTrue("description ${i + 1} does not wrap: $lines", lines.size > 1)
+            val last = lines.last()
+            assertTrue(
+                "description ${i + 1}'s last line sits at ${last.first}..${last.second} of $width: not at the right",
+                last.second >= width - 1f && last.first > 1f
+            )
         }
     }
 }

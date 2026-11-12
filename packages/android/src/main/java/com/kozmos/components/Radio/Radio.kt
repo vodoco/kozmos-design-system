@@ -34,7 +34,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -224,7 +226,13 @@ private fun KozmosRadioBox(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
                             .clearAndSetSemantics {}
-                    ) { media() }
+                    ) {
+                        // An icon given no tint of its own takes the theme's
+                        // full ink, foreground/0, as React's text-foreground
+                        // does: Material's content colour was black on the
+                        // dark surface, and the icon vanished.
+                        CompositionLocalProvider(LocalContentColor provides titleColor) { media() }
+                    }
                 }
                 Row(verticalAlignment = Alignment.Top) {
                     KozmosRadioMark(selected = selected, ring = ring, dot = dot)
@@ -249,7 +257,12 @@ private fun KozmosRadioBox(
                 verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
             ) {
                 if (media != null) {
-                    Box(Modifier.clearAndSetSemantics {}) { media() }
+                    Box(Modifier.clearAndSetSemantics {}) {
+                        // A tile's icon: full ink, theme 600 when chosen, as
+                        // SwiftUI's and React's are.
+                        val ink = if (selected && enabled) KozmosThemeTokens.primitivesColorsTheme600 else titleColor
+                        CompositionLocalProvider(LocalContentColor provides ink) { media() }
+                    }
                 }
                 if (label != null) {
                     Text(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = titleColor, textAlign = TextAlign.Center)

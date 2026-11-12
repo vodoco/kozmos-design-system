@@ -2,6 +2,7 @@ package com.kozmos.components.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -252,6 +253,34 @@ class KozmosThemeFillPixelsTest {
             val ink = drawn.count(white, 2)
             println("Control label ink, dark: $name: $ink pure white pixels")
             if (ink < 50) wrong += "$name's label draws only $ink pixels of foreground/0 (#FFFFFF) in the dark"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * A card's or a tile's media is drawn in the theme's ink: an icon given no
+     * tint of its own is foreground/0, white in the dark, as React's
+     * text-foreground and SwiftUI's are. It took Material's content colour,
+     * black on the dark surface, and vanished.
+     */
+    @Test
+    fun aCardsAndATilesIconIsFullInkInTheDark() {
+        val wrong = mutableListOf<String>()
+        for (variant in listOf(com.kozmos.components.radio.KozmosRadioGroupItemVariant.Card, com.kozmos.components.radio.KozmosRadioGroupItemVariant.Tile)) {
+            val drawn = draw(dark = true, host = null) {
+                Box(Modifier.width(160.dp)) {
+                    com.kozmos.components.radio.KozmosRadioGroupItem(
+                        value = "a",
+                        selectedValue = "b",
+                        onOptionSelected = {},
+                        variant = variant,
+                        media = { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Map, contentDescription = null) }
+                    )
+                }
+            }
+            val ink = drawn.count(white, 2)
+            println("Media ink, dark: $variant: $ink pure white pixels")
+            if (ink < 50) wrong += "$variant's icon draws only $ink pixels of foreground/0 (#FFFFFF) in the dark"
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }

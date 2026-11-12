@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
 import com.kozmos.components.checkbox.KozmosCheckbox
@@ -37,7 +38,12 @@ import org.junit.Test
  */
 class KozmosRadioCardPaparazziTest {
     @get:Rule
-    val paparazzi = Paparazzi(maxPercentDifference = CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE)
+    val paparazzi = Paparazzi(
+        maxPercentDifference = CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE,
+        // Tall enough for the right-to-left frame at twice the text size,
+        // which ran off a phone's height and cut the switch's description.
+        deviceConfig = DeviceConfig.PIXEL_5.copy(screenHeight = 3000)
+    )
 
     @Test
     fun cardsTilesAndDescriptionsInLightMode() = snapshotIn(dark = false) { Everything() }

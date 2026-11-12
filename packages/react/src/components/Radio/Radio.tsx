@@ -168,9 +168,11 @@ const RadioGroupItem = React.forwardRef<
               data-slot="media"
               className={cn(
                 "flex",
+                // A tile's icon turns theme 600 when chosen, as SwiftUI's and
+                // Compose's do; a card's image keeps its own colours.
                 tile
-                  ? "items-center justify-center"
-                  : "w-full overflow-hidden rounded-control",
+                  ? "items-center justify-center text-foreground group-data-[state=checked]:text-primary"
+                  : "w-full overflow-hidden rounded-control text-foreground",
               )}
             >
               {media}
