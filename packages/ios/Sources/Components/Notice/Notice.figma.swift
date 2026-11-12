@@ -6,7 +6,7 @@ import Figma
 // Icon, Show Detail with Detail, and Show Action are its properties.
 struct KozmosNoticeConnect: FigmaConnect {
     let component = KozmosNotice<AnyView>.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502"
 
     @FigmaEnum(
         "Tone",

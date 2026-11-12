@@ -12,7 +12,7 @@ import androidx.compose.material3.Text
 // Notice (GAP-160): Tone and Status are variants; Summary, Detail and the
 // action are the set's own properties. The set is new: its node id is
 // filled in once the importer has built it.
-@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD")
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502")
 class KozmosNoticeConnect {
     @FigmaProperty(FigmaType.Enum, "Tone")
     val tone: KozmosNoticeTone = Figma.mapping(

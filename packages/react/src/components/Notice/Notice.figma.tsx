@@ -4,7 +4,7 @@ import { Notice } from "./Notice";
 
 /**
  * Figma Code Connect: Notice (GAP-160)
- * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD
+ * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502
  *
  * The set is new in 0.16.0: its node id is filled in after the importer's
  * Build. Tone is Notice.tone, Status its status (None names none), Show Icon
@@ -13,7 +13,7 @@ import { Notice } from "./Notice";
  */
 figma.connect(
   Notice,
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502",
   {
     props: {
       // Warning is the default, so it names no tone.
