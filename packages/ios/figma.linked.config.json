@@ -75,6 +75,7 @@
       "Sources/Components/Table/Table.swift",
       "Sources/Components/Tree/Tree.figma.swift",
       "Sources/Components/Tree/Tree.swift",
+      "Sources/Components/Tree/TreeSection.figma.swift",
       "Sources/Components/Timeline/Timeline.figma.swift",
       "Sources/Components/Timeline/Timeline.swift",
       "Sources/Components/Tabs/Tabs.figma.swift",

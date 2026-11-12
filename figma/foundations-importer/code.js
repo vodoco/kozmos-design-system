@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "2ec9f10fb928";
+const PLUGIN_BUILD = "3a2555238f0a";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -173,6 +173,30 @@ const TREE_DIVIDED_SURFACE = {
   token: "Colors/background/50",
   fallback: "#F1F2F4",
 };
+// Meta below (GAP-107, decision 132), as React's `metaPlacement="below"` on
+// Tree and its rows: the row's meta on a second line under the name, in
+// text-xs and the muted foreground, and the row grows to take it. Booleans, as
+// Divided, for the same reason: an axis would double the three row sets. The
+// Meta layer is hidden until Meta Below shows it, so an instance looks as it
+// did, and Meta Text is its words.
+const TREE_META_BELOW_PROPERTY_NAME = "Meta Below";
+const TREE_META_TEXT_PROPERTY_NAME = "Meta Text";
+const TREE_META = {
+  name: "Meta",
+  kind: "tree-meta",
+  text: "Changes awaiting publish",
+  token: "Colors/foreground/400",
+  fallback: "#5D626F",
+};
+// The column the name and its meta share. Its vertical padding is the row's
+// py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
+// in code, while a row without it stays at its minimum height.
+const TREE_ITEM_TEXT_COLUMN_NAME = "Tree Item Text";
+// TreeSectionRow (GAP-151, decision 132): a section's heading, its name in
+// 11px medium words in the theme's colour and the rows' count pill after it,
+// no surface and no divider. Depth indents it as a row; Density is its height.
+const TREE_SECTION_SAMPLE = { label: "POI", count: "120" };
+const TREE_SECTION_COLOR = { token: "Colors/theme/600", fallback: "#1051E8" };
 const TIMELINE_CONTENT = ["Basic", "Detailed"];
 const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
@@ -1282,6 +1306,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   TreeParentItem: 2500,
   TreeChildItem: 1900,
   TreeItem: 2600,
+  TreeSection: 260,
   Tree: 520,
   Timeline: 520,
   Breadcrumb: 260,
@@ -1358,6 +1383,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
+      "TreeSection",
       "Tree",
       "Timeline",
     ],
@@ -3282,6 +3308,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3292,6 +3319,7 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeParentItem rows should expose aria-expanded in product code.",
@@ -3316,6 +3344,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3325,6 +3354,7 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeChildItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -3351,6 +3381,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3362,11 +3393,41 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
       "Parent rows need an expanded/collapsed state in product code.",
       "Nested actions must preserve labels, focus states, and event handling.",
+    ],
+  },
+  {
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    category: "Data Display",
+    summary:
+      "TreeSection is a section's heading in a tree: its name and its count, over the rows the section holds (GAP-151).",
+    usage: [
+      "Use TreeSection to group a level's rows under named sections, as Map Content's POI, Interior asset, Structural and Virtual.",
+      "The section's rows sit at the section's own depth: a section adds no indent of its own.",
+      "Turn Show Count off when the section has no count.",
+    ],
+    api: [
+      "TreeSection maps to a TreeItem with section: true in Tree, and to TreeSectionRow in a composed tree.",
+      "Label Text maps to the item's name; Count Text to its count, drawn in the rows' count pill; Show Count off leaves count unset.",
+      "Depth maps to depth, indenting as a row does (depth × 20 + 8).",
+      "Density maps to density: at least 32 tall, 24 compact.",
+      "The heading is 11px medium words in Colors/theme/600 (text-primary), with no surface and no divider.",
+    ],
+    properties: [
+      "Density: Default, Compact",
+      "Depth: 0, 1, 2",
+      "Label Text, Count Text",
+      "Show Count",
+    ],
+    accessibility: [
+      "A section is never focusable, selectable or expandable.",
+      "In code the heading row is hidden from assistive technology and its rows are a group labelled with its name.",
     ],
   },
   {
@@ -6326,6 +6387,44 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-107: the name and its meta below share a column padded as React's
+  // row, py-1.5 (py-1 compact), and the meta is text-xs.
+  {
+    name: "Tree/item/padding/y/default",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tree/item/padding/y/compact",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tree/meta/font-size",
+    value: 12,
+    alias: "Text/font-size/xs",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Tree/meta/line-height",
+    value: 16,
+    alias: "Text/line-height/xs",
+    scopes: ["LINE_HEIGHT"],
+  },
+  // GAP-151: React's TreeSectionRow, min-h-8 (min-h-6 compact), its name
+  // 11px medium and the count pill gap-1.5 after it.
+  { name: "Tree/section/height/default", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Tree/section/height/compact", value: 24, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Tree/section/gap",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  { name: "Tree/section/font-size", value: 11, scopes: ["FONT_SIZE"] },
+  { name: "Tree/section/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
   { name: "NavigationItem/width/side", value: 248, scopes: ["WIDTH_HEIGHT"] },
   { name: "NavigationItem/width/rail", value: 72, scopes: ["WIDTH_HEIGHT"] },
   {
@@ -11149,6 +11248,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["TreeItem", updateTreeItemComponent],
   ["TreeChildItem", updateTreeChildItemComponent],
   ["TreeParentItem", updateTreeParentItemComponent],
+  ["TreeSection", updateTreeSectionComponent],
   ["Tree", updateTreeComponent],
   ["Timeline", updateTimelineComponent],
 ];
@@ -11419,6 +11519,9 @@ function additionalComponentActionHandlers() {
     "build-tree-item": buildTreeItemComponent,
     "update-tree-item": updateTreeItemComponent,
     "rebuild-tree-item": rebuildTreeItemComponent,
+    "build-tree-section": buildTreeSectionComponent,
+    "update-tree-section": updateTreeSectionComponent,
+    "rebuild-tree-section": rebuildTreeSectionComponent,
     "build-timeline": buildTimelineComponent,
     "update-timeline": updateTimelineComponent,
     "rebuild-timeline": rebuildTimelineComponent,
@@ -17898,6 +18001,7 @@ function shouldAuditLayoutBindings(name) {
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
+      "TreeSection",
       "Tree",
       "Table",
       "NavigationItem",
@@ -18452,6 +18556,13 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+    };
+  }
+
+  if (canonicalName === "TreeSection") {
+    return {
+      Density: TREE_DENSITIES,
+      Depth: TREE_ITEM_DEPTHS,
     };
   }
 
@@ -24611,6 +24722,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
   addTextStyleSpec(specs, "treeItem", "Tree / Item", fonts.regular, 14, 20);
   addTextStyleSpec(
     specs,
+    "treeSection",
+    "Tree / Section",
+    fonts.medium,
+    11,
+    14,
+    "Typography contract for a tree section's heading: 11/14 medium (GAP-151).",
+  );
+  addTextStyleSpec(
+    specs,
     "navigationItem",
     "NavigationItem / Label",
     fonts.medium,
@@ -25304,7 +25424,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     // them, and an Update could never clear it because the painter and the
     // expectation disagreed with each other.
     if (/Count Text$/.test(textName)) return "counterSmall";
+    if (textName === TREE_META.name) return textStyleKeyForText("XS", "Normal");
     return "treeItem";
+  }
+  if (setName === "TreeSection") {
+    if (/Count Text$/.test(textName)) return "counterSmall";
+    return "treeSection";
   }
   if (setName === "Table") {
     if (/^Header \d+ Text$/.test(textName)) return "tableHeader";
@@ -27601,9 +27726,12 @@ function bindTreeGeometryVariables(
   );
 
   for (const row of rows) {
+    // A floor, not a height (GAP-107): the row hugs, so it grows to take its
+    // meta below. The height binding an older build left would hold it fixed.
+    clearBoundVariable(row, "height", stats);
     bindFloatVariable(
       row,
-      "height",
+      "minHeight",
       `Tree/item/height/${key}`,
       variableByName,
       stats,
@@ -38927,6 +39055,39 @@ async function rebuildTreeItemComponent() {
   });
 }
 
+function buildTreeSectionComponent() {
+  return buildPlannedMatrixComponent(treeSectionComponentConfig());
+}
+
+/**
+ * Update, and Build when the file has no TreeSection yet (GAP-151): the set is
+ * new in 0.16.0, and the owner's Update (one set or Update All Core) is what
+ * puts it in the file. Built, it reports updated, so a bulk run stamps it done.
+ * Once it exists this is a plain Update, which keeps its node id.
+ */
+async function updateTreeSectionComponent() {
+  const config = treeSectionComponentConfig();
+  const page = await ensurePage("Components");
+  await figma.setCurrentPageAsync(page);
+  await page.loadAsync();
+  const existing = findComponentSetOnPage(page, config.componentSetName);
+  if (existing && existing.type === "COMPONENT_SET") {
+    return updatePlannedMatrixComponent(config);
+  }
+  const stats = await buildPlannedMatrixComponent(config);
+  stats.updated = Boolean(stats.created);
+  stats.variantsCreated = stats.variants || 0;
+  return stats;
+}
+
+async function rebuildTreeSectionComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    build: buildTreeSectionComponent,
+  });
+}
+
 async function updateRepairableTreeItemMatrixComponent({ config }) {
   // No preflight. Reading componentPropertyDefinitions is a synchronous getter,
   // and on TreeItem — 216 variants, the largest set in the library — it is where
@@ -39754,6 +39915,31 @@ function treeItemComponentConfig() {
   };
 }
 
+function treeSectionComponentConfig() {
+  return {
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    x: 80,
+    y: 17840,
+    combinations: treeSectionVariantCombinations,
+    keyForProps: treeSectionVariantKey,
+    parseVariantName: parseTreeSectionVariantName,
+    createVariant: createTreeSectionVariant,
+    updateVariant: updateTreeSectionVariant,
+    layoutVariants: layoutTreeSectionVariants,
+    configureProperties: configureTreeSectionProperties,
+    removeUnexpectedVariants: true,
+    removeDuplicateVariantKeys: true,
+    description: [
+      "Kozmos TreeSection component set generated from React TreeSectionRow anatomy (GAP-151).",
+      "TreeSection maps to a TreeItem with section: true, and to TreeSectionRow in a composed tree.",
+      "Density maps to density: at least 32 tall, 24 compact.",
+      "Depth maps to depth, indenting as a row does.",
+      "Label Text maps to name; Count Text to count; Show Count off leaves count unset.",
+    ],
+  };
+}
+
 function tagVariantCombinations() {
   const combinations = [];
   for (const variant of TAG_VARIANTS) {
@@ -40025,6 +40211,33 @@ function parseTreeVariantName(name) {
     return null;
   }
   return { density };
+}
+
+function treeSectionVariantCombinations() {
+  const combinations = [];
+  for (const density of TREE_DENSITIES) {
+    for (const depth of TREE_ITEM_DEPTHS) {
+      combinations.push({ density, depth });
+    }
+  }
+  return combinations;
+}
+
+function treeSectionVariantKey(props) {
+  return `${props.density}/${props.depth}`;
+}
+
+function parseTreeSectionVariantName(name) {
+  const values = parseVariantValueMap(name);
+  const density = values.Density || "Default";
+  const depth = values.Depth || "0";
+  if (
+    TREE_DENSITIES.indexOf(density) === -1 ||
+    TREE_ITEM_DEPTHS.indexOf(depth) === -1
+  ) {
+    return null;
+  }
+  return { density, depth };
 }
 
 function treeParentItemVariantCombinations() {
@@ -40590,6 +40803,12 @@ async function syncTreeRowNode(
   rowNode.paddingTop = 0;
   rowNode.paddingBottom = 0;
   rowNode.resizeWithoutConstraints(metrics.width, metrics.rowHeight);
+  // The row's height is a floor (GAP-107): React's min-h-10 (min-h-8
+  // compact). It hugs once its children are in, so a meta below grows it.
+  // A row an older build drew has its height bound, which would hold it
+  // fixed; the binding goes before the row is asked to hug.
+  clearBoundVariable(rowNode, "height", stats);
+  setNodePropertyIfSupported(rowNode, "minHeight", metrics.rowHeight);
   rowNode.cornerRadius = KOZMOS_RADIUS.control;
   rowNode.clipsContent = false;
   rowNode.fills = highlighted
@@ -40682,8 +40901,31 @@ async function syncTreeRowNode(
     setHugChildSizing(count);
   }
 
-  rowNode.appendChild(labelGroup);
+  // The name's line and the meta under it share a column (GAP-107), padded
+  // as React's row is, so the row is its minimum height without the meta and
+  // 48 (44 compact) with it.
+  const textColumn = createTreeItemTextColumn(props.density);
+  textColumn.appendChild(labelGroup);
   setHugChildSizing(labelGroup);
+  const meta = await createTreeMetaText(row, metrics, {
+    variableByName,
+    fonts,
+    stats,
+  });
+  textColumn.appendChild(meta);
+  setLayoutSizingHorizontal(meta, "FIXED");
+  setLayoutSizingVertical(meta, "HUG");
+  setNodePropertyIfSupported(meta, "maxLines", 1);
+  meta.visible = false;
+  bindTreeItemTextColumnPadding(
+    textColumn,
+    props.density,
+    variableByName,
+    stats,
+  );
+
+  rowNode.appendChild(textColumn);
+  setHugChildSizing(textColumn);
 
   const spacer = createTreeItemSpacer(metrics);
   rowNode.appendChild(spacer);
@@ -40700,6 +40942,8 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  setLayoutSizingVertical(rowNode, "HUG");
 
   if (asComponentVariant) {
     syncTreeDividedLayers(rowNode, { row, metrics, variableByName, stats });
@@ -40809,6 +41053,13 @@ function shouldShowTreeActions(row) {
 }
 
 function treeLabelTextWidth(row, metrics) {
+  const availableWidth = treeLabelAvailableWidth(row, metrics, true);
+  const naturalWidth = String(row.text).length * 7.25 + 2;
+
+  return Math.max(40, Math.min(Math.floor(availableWidth), naturalWidth));
+}
+
+function treeLabelAvailableWidth(row, metrics, withCount) {
   const rowPaddingLeft = metrics.paddingX + row.depth * metrics.indent;
   const rowPaddingRight = metrics.paddingX;
   const iconWidth = 16 + metrics.iconSize;
@@ -40830,12 +41081,13 @@ function treeLabelTextWidth(row, metrics) {
       : 0;
   const directChildGapCount = visibleActions.length > 0 ? 4 : 3;
   const countMetrics = counterMetrics("Small");
-  const countWidth = row.count
-    ? Math.max(
-        countMetrics.minWidth,
-        String(row.count).length * 7 + countMetrics.paddingX * 2,
-      ) + 6
-    : 0;
+  const countWidth =
+    withCount && row.count
+      ? Math.max(
+          countMetrics.minWidth,
+          String(row.count).length * 7 + countMetrics.paddingX * 2,
+        ) + 6
+      : 0;
   const availableWidth =
     metrics.width -
     rowPaddingLeft -
@@ -40844,9 +41096,107 @@ function treeLabelTextWidth(row, metrics) {
     actionsWidth -
     directChildGapCount * metrics.gap -
     countWidth;
-  const naturalWidth = String(row.text).length * 7.25 + 2;
+  return availableWidth;
+}
 
-  return Math.max(40, Math.min(Math.floor(availableWidth), naturalWidth));
+function treeItemPaddingY(density) {
+  return density === "Compact" ? 4 : 6;
+}
+
+function createTreeItemTextColumn(density) {
+  const paddingY = treeItemPaddingY(density);
+  const column = figma.createFrame();
+  column.name = TREE_ITEM_TEXT_COLUMN_NAME;
+  column.layoutMode = "VERTICAL";
+  column.primaryAxisSizingMode = "AUTO";
+  column.counterAxisSizingMode = "AUTO";
+  column.primaryAxisAlignItems = "MIN";
+  column.counterAxisAlignItems = "MIN";
+  column.itemSpacing = 0;
+  column.paddingLeft = 0;
+  column.paddingRight = 0;
+  column.paddingTop = paddingY;
+  column.paddingBottom = paddingY;
+  column.resizeWithoutConstraints(120, 20 + paddingY * 2);
+  column.cornerRadius = KOZMOS_RADIUS.none;
+  column.clipsContent = false;
+  column.fills = [];
+  column.strokes = [];
+  column.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-item-text");
+  return column;
+}
+
+function bindTreeItemTextColumnPadding(column, density, variableByName, stats) {
+  const key =
+    String(density).toLowerCase() === "compact" ? "compact" : "default";
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      column,
+      side,
+      `Tree/item/padding/y/${key}`,
+      variableByName,
+      stats,
+    );
+  }
+}
+
+/**
+ * The row's meta below its name (GAP-107): Text / XS in the muted foreground,
+ * one line, truncated at the room the row has for it. Hidden until Meta Below
+ * shows it.
+ */
+async function createTreeMetaText(
+  row,
+  metrics,
+  { variableByName, fonts, stats },
+) {
+  const text = figma.createText();
+  text.name = TREE_META.name;
+  text.fontName = fonts.regular;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(
+    text,
+    textStyleKeyForText("XS", "Normal"),
+    stats,
+  );
+  bindFloatVariable(
+    text,
+    "fontSize",
+    "Tree/meta/font-size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    text,
+    "lineHeight",
+    "Tree/meta/line-height",
+    variableByName,
+    stats,
+  );
+  text.characters = TREE_META.text;
+  text.fills = [
+    paintFromVariable(
+      TREE_META.token,
+      TREE_META.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  text.textAlignVertical = "CENTER";
+  setTextAutoResize(text, "TRUNCATE");
+  text.resizeWithoutConstraints(treeMetaTextWidth(row, metrics), 16);
+  text.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_META.kind);
+  return text;
+}
+
+/**
+ * The meta's width: the room the row leaves its name column, with no count
+ * beside it, as the label's would be. Shown, the column takes it and the
+ * spacer gives it up.
+ */
+function treeMetaTextWidth(row, metrics) {
+  return Math.max(40, Math.floor(treeLabelAvailableWidth(row, metrics, false)));
 }
 
 function createTreeItemSpacer(metrics) {
@@ -40999,6 +41349,199 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+// --- TreeSection ---------------------------------------------------------------
+// GAP-151: React's TreeSectionRow, a section's heading. min-h-8 (min-h-6
+// compact), ps depth × 20 + 8 and pe 8, its name 11px medium in text-primary
+// (theme 600) and the rows' count pill gap-1.5 after it; no surface, no
+// divider, no state of its own: a section is never focused or selected.
+async function createTreeSectionVariant({
+  props,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateTreeSectionVariant(component, {
+    props,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function treeSectionMetrics(props) {
+  const base = treeMetrics({ density: props.density, expanded: "False" });
+  const depth = Number(props.depth) || 0;
+  return {
+    width: base.width,
+    minHeight: props.density === "Compact" ? 24 : 32,
+    paddingStart: base.paddingX + depth * base.indent,
+    paddingEnd: base.paddingX,
+    gap: 6,
+  };
+}
+
+async function updateTreeSectionVariant(
+  component,
+  { props, variableByName, fonts, stats },
+) {
+  const metrics = treeSectionMetrics(props);
+  const key = props.density === "Compact" ? "compact" : "default";
+
+  component.name = `Density=${props.density}, Depth=${props.depth}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = metrics.gap;
+  component.paddingLeft = metrics.paddingStart;
+  component.paddingRight = metrics.paddingEnd;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(metrics.width, metrics.minHeight);
+  setNodePropertyIfSupported(component, "minHeight", metrics.minHeight);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "TreeSection");
+
+  removeDirectChildren(component);
+
+  const label = figma.createText();
+  label.name = "Label Text";
+  label.fontName = fonts.medium;
+  label.fontSize = 11;
+  label.lineHeight = { unit: "PIXELS", value: 14 };
+  await applyTextStyleToNodeAsync(label, "treeSection", stats);
+  bindFloatVariable(
+    label,
+    "fontSize",
+    "Tree/section/font-size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    label,
+    "lineHeight",
+    "Tree/section/line-height",
+    variableByName,
+    stats,
+  );
+  label.characters = TREE_SECTION_SAMPLE.label;
+  label.fills = [
+    paintFromVariable(
+      TREE_SECTION_COLOR.token,
+      TREE_SECTION_COLOR.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  label.textAlignVertical = "CENTER";
+  setTextAutoResize(label, "WIDTH_AND_HEIGHT");
+  component.appendChild(label);
+  setHugChildSizing(label);
+
+  const count = await createTreeCount({
+    name: "Count Text",
+    value: TREE_SECTION_SAMPLE.count,
+    variableByName,
+    fonts,
+    stats,
+  });
+  component.appendChild(count);
+  setHugChildSizing(count);
+
+  setLayoutSizingVertical(component, "HUG");
+
+  bindFloatVariable(
+    component,
+    "width",
+    "Tree/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "minHeight",
+    `Tree/section/height/${key}`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingRight",
+    "Tree/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Tree/section/gap",
+    variableByName,
+    stats,
+  );
+}
+
+function layoutTreeSectionVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const props = parseTreeSectionVariantName(child.name);
+    if (!props) continue;
+    child.x = TREE_DENSITIES.indexOf(props.density) * 380;
+    child.y = TREE_ITEM_DEPTHS.indexOf(props.depth) * 56;
+  }
+
+  resizeComponentSetToContainChildren(componentSet);
+}
+
+/**
+ * Label Text, Show Count (on by default) and Count Text. Show Count off is a
+ * section with no count.
+ */
+function configureTreeSectionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    TREE_SECTION_SAMPLE.label,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Count Text",
+    "Count Text",
+    TREE_SECTION_SAMPLE.count,
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    "Show Count",
+    true,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    if (generatedKind(node) === "tree-count") {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeSectionCountBindings = boundCount;
 }
 
 async function createTimelineVariant({ props, variableByName, fonts, stats }) {
@@ -43859,7 +44402,43 @@ async function configureTreeItemProperties(
   configureFocusVisibleProperty(componentSet, stats);
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
+  configureTreeMetaProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Meta Below, a boolean off by default, showing every row's Meta line under
+ * its label, and Meta Text, its words (GAP-107). Off, an instance draws as it
+ * did before either existed.
+ */
+function configureTreeMetaProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    TREE_META.name,
+    TREE_META_TEXT_PROPERTY_NAME,
+    TREE_META.text,
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    TREE_META_BELOW_PROPERTY_NAME,
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    if (generatedKind(node) === TREE_META.kind) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeMetaBelowBindings = boundCount;
 }
 
 /**

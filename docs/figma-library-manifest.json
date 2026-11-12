@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 101 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 102 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 101 Core SwiftUI and 101 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 102 Core SwiftUI and 102 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -20611,6 +20611,8 @@
             "divided",
             "expanded",
             "hasChildren",
+            "meta",
+            "metaPlacement",
             "name",
             "selected"
           ],
@@ -20630,6 +20632,7 @@
           "data",
           "defaultExpandedIds",
           "defaultSelectedId",
+          "defaultSelectedIds",
           "density",
           "depth",
           "disabled",
@@ -20641,16 +20644,23 @@
           "icon",
           "id",
           "indent",
+          "locale",
           "meta",
+          "metaPlacement",
           "name",
+          "overscan",
           "renderActions",
           "renderIcon",
           "renderMeta",
           "role",
+          "scrollerRef",
           "selected",
           "selectedId",
+          "selectedIds",
+          "selectionMode",
           "tabIndex",
-          "title"
+          "title",
+          "virtualized"
         ],
         "variants": {}
       },

@@ -50,12 +50,33 @@ figma.connect(TreeParentItemRow, parentUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
   },
-  example: ({ count, density, depth, divided, expanded, name, selected }) => (
+  example: ({
+    count,
+    density,
+    depth,
+    divided,
+    expanded,
+    meta,
+    metaPlacement,
+    name,
+    selected,
+  }) => (
     <TreeParentItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       expanded={expanded}
@@ -85,11 +106,31 @@ figma.connect(TreeChildItemRow, childUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
   },
-  example: ({ count, density, depth, divided, name, selected }) => (
+  example: ({
+    count,
+    density,
+    depth,
+    divided,
+    meta,
+    metaPlacement,
+    name,
+    selected,
+  }) => (
     <TreeChildItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       selected={selected}
@@ -118,6 +159,15 @@ figma.connect(TreeItemRow, itemUrl, {
       Focus: undefined,
     }),
     divided: figma.boolean("Divided"),
+    // GAP-107: Meta Below draws Meta Text on a line under the name.
+    meta: figma.boolean("Meta Below", {
+      true: figma.string("Meta Text"),
+      false: undefined,
+    }),
+    metaPlacement: figma.boolean("Meta Below", {
+      true: "below",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
     hasChildren: figma.enum("Type", { Parent: true, Child: undefined }),
   },
@@ -128,12 +178,16 @@ figma.connect(TreeItemRow, itemUrl, {
     divided,
     expanded,
     hasChildren,
+    meta,
+    metaPlacement,
     name,
     selected,
   }) => (
     <TreeItemRow
       name={name}
       count={count}
+      meta={meta}
+      metaPlacement={metaPlacement}
       depth={depth}
       density={density}
       hasChildren={hasChildren}

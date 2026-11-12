@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   EyeOff,
   Folder as FolderOpen,
@@ -13,6 +13,14 @@ import {
   TreeParentItemRow,
   type TreeItem,
 } from "./Tree";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "../ContextMenu/ContextMenu";
 
 const meta: Meta<typeof Tree> = {
   id: "data-display-tree",
@@ -276,6 +284,162 @@ export const Divided: Story = {
         defaultSelectedId="terminal-a-2"
         divided
         bleed={16}
+      />
+    </div>
+  ),
+};
+
+// GAP-151 and GAP-107: Map Content's tree, a level's items in sections, each
+// with its count; a set of selected rows, with Shift and Ctrl or Cmd ranges;
+// a right-click menu on a row; a row's meta on a line under its name.
+const mapContentSections: TreeItem[] = [
+  {
+    id: "level-1",
+    name: "Level 1",
+    count: 6,
+    children: [
+      {
+        id: "poi",
+        name: "POI",
+        section: true,
+        count: 3,
+        children: [
+          {
+            id: "cafe",
+            name: "Bean & Leaf Café",
+            meta: "Changes awaiting publish",
+          },
+          { id: "gate", name: "Gate A12" },
+          { id: "pharmacy", name: "Pharmacy" },
+        ],
+      },
+      {
+        id: "interior",
+        name: "Interior asset",
+        section: true,
+        count: 2,
+        children: [
+          { id: "desk", name: "Information desk" },
+          { id: "kiosk", name: "Kiosk", disabled: true },
+        ],
+      },
+      {
+        id: "structural",
+        name: "Structural",
+        section: true,
+        count: 1,
+        children: [{ id: "wall", name: "North wall" }],
+      },
+    ],
+  },
+  { id: "level-2", name: "Level 2", count: 0 },
+];
+
+const SectionsTree = () => {
+  const [selected, setSelected] = useState<string[]>(["cafe", "gate"]);
+  const [target, setTarget] = useState<string>();
+  return (
+    <div
+      className="border bg-background"
+      style={{ width: 400, paddingInline: 16 }}
+    >
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Tree
+            ariaLabel="Map content"
+            data={mapContentSections}
+            defaultExpandedIds={["level-1"]}
+            divided
+            bleed={16}
+            selectionMode="multiple"
+            selectedIds={selected}
+            onSelectedIdsChange={setSelected}
+            metaPlacement="below"
+            onItemContextMenu={(item) => setTarget(item.id)}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuLabel>
+            {selected.length > 1 && selected.includes(target ?? "")
+              ? `${selected.length} features`
+              : "Feature"}
+          </ContextMenuLabel>
+          <ContextMenuItem>Edit geometry</ContextMenuItem>
+          <ContextMenuItem>Copy</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem>Delete</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </div>
+  );
+};
+
+export const SectionsAndRanges: Story = {
+  render: () => <SectionsTree />,
+};
+
+// Map Content's real size: 13,031 items under one level, in four sections.
+// Only the rows in view are drawn.
+const MAP_CONTENT_SIZES: [string, number][] = [
+  ["POI", 9000],
+  ["Interior asset", 3000],
+  ["Structural", 1000],
+  ["Virtual", 31],
+];
+const mapContentLarge: TreeItem[] = [
+  {
+    id: "level-1",
+    name: "Level 1",
+    count: 13031,
+    children: MAP_CONTENT_SIZES.map(([section, size]) => ({
+      id: section,
+      name: section,
+      section: true,
+      count: size,
+      children: Array.from({ length: size }, (_, index) => ({
+        id: `${section}-${index + 1}`,
+        name: `${section} ${index + 1}`,
+      })),
+    })),
+  },
+];
+
+export const Virtualized: Story = {
+  render: () => (
+    <div className="border bg-background" style={{ width: 400 }}>
+      <Tree
+        ariaLabel="Map content"
+        data={mapContentLarge}
+        defaultExpandedIds={["level-1"]}
+        divided
+        selectionMode="multiple"
+        virtualized
+        style={{ height: 480 }}
+      />
+    </div>
+  ),
+};
+
+// Map Content's own setup: in a panel with 16 of inline padding, divided,
+// the strokes bled to the panel's edges, and only the rows in view drawn.
+// The tree scrolls itself, with no sideways scroll, and its focus ring is
+// drawn inside the row.
+export const VirtualizedInPanel: Story = {
+  render: () => (
+    <div
+      className="border bg-background"
+      style={{ width: 400, paddingInline: 16 }}
+    >
+      <Tree
+        ariaLabel="Map content"
+        data={mapContentLarge}
+        defaultExpandedIds={["level-1"]}
+        divided
+        bleed={16}
+        selectionMode="multiple"
+        metaPlacement="below"
+        virtualized
+        style={{ height: 480 }}
       />
     </div>
   ),

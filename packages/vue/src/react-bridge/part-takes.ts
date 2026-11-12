@@ -216,7 +216,12 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onSelect"],
-      own: ["onExpandedChange", "onSelectionChange"],
+      own: [
+        "onExpandedChange",
+        "onItemContextMenu",
+        "onSelectedIdsChange",
+        "onSelectionChange",
+      ],
     },
   ],
   [Timeline, D],
@@ -684,7 +689,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Tag, H],
   [List, H],
   [Table, H],
-  [Tree, html(["divided"])],
+  [Tree, html(["divided", "virtualized"])],
   [Timeline, H],
   [
     Tooltip,

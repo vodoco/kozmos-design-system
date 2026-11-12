@@ -71,6 +71,7 @@
       "src/main/java/com/kozmos/components/Table/Table.kt",
       "src/main/java/com/kozmos/components/Tree/Tree.figma.kt",
       "src/main/java/com/kozmos/components/Tree/Tree.kt",
+      "src/main/java/com/kozmos/components/Tree/TreeSection.figma.kt",
       "src/main/java/com/kozmos/components/Timeline/Timeline.figma.kt",
       "src/main/java/com/kozmos/components/Timeline/Timeline.kt",
       "src/main/java/com/kozmos/components/Tabs/Tabs.figma.kt",
