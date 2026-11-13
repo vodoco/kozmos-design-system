@@ -83,6 +83,58 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's indeterminate bar (GAP-159): a segment a quarter of the track
+     wide, theme 600 as the bar's fill is, sweeping from the inline start to
+     the inline end every 2 s, linear, for as long as the wait lasts (Pointr
+     Cloud's loading bar). It enters wholly before the start and leaves wholly
+     past the end; right to left it runs from the right. Under reduced
+     motion, the system's or DesignConfigProvider's, it stands still in the
+     middle of the track, where it reads as a wait and not as a value. */
+  .kozmos-progress-sweep {
+    --kozmos-progress-sweep-sign: calc(1 - 2 * var(--kozmos-rtl, 0));
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 25%;
+    border-radius: inherit;
+    background: var(--primitives-colors-theme-600);
+    animation: progress-sweep 2s linear infinite;
+  }
+  @keyframes progress-sweep {
+    from {
+      transform: translateX(calc(-100% * var(--kozmos-progress-sweep-sign)));
+    }
+    to {
+      transform: translateX(calc(400% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-sweep {
+      animation: none;
+      transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-sweep {
+    animation: none;
+    transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+  }
+  /* The page's loading bar (GAP-159): fixed to the top of the window, under
+     the notch or status bar's safe area, edge to edge, 4 tall (spacing 50)
+     and square, over the page's content. */
+  .kozmos-progress-top {
+    position: fixed;
+    inset-block-start: env(safe-area-inset-top, 0px);
+    inset-inline: 0;
+    z-index: var(--primitives-layer-50);
+    height: calc(var(--primitives-layout-spacing-50) * 1px);
+    border-radius: 0;
+  }
+  @media (forced-colors: active) {
+    .kozmos-progress-sweep {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+  }
   /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
      600, 900 and 1000), its label centred in the hole and kept inside the
      square the hole holds, or beside the dial at the inline end. The arc is
@@ -884,6 +936,39 @@
         calc(var(--primitives-opacity-5) * 100%),
       var(--primitives-colors-background-0)
     );
+  }
+  /* A radio card or tile (GAP-158): chosen, its 1px edge turns theme 600 and
+     a second pixel inside it draws it heavier, so the choice is told by
+     weight and by the ring's dot or the tile's check, never by colour alone.
+     The second pixel is an inset shadow held in --tw-shadow, the slot the
+     ring utilities compose their box-shadow with: focused, the ring is drawn
+     around it and the heavier edge stays. An outline did not survive focus,
+     as the scoped focus-visible:outline-none outweighs this rule. */
+  .kozmos-radio-card[data-state="checked"] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
+    box-shadow:
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--tw-shadow);
+  }
+  .kozmos-radio-card[data-state="checked"][data-error] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
+  }
+  /* A card's image sits 12 in from its edge, so its corners are the card's
+     less those 12, concentric with it (docs/nested-radius.md): 20 - 12 = 8. */
+  .kozmos-radio-card-media {
+    border-radius: calc(
+      var(--semantics-radius-container) * 1px -
+        var(--primitives-layout-spacing-150) * 1px
+    );
+  }
+  /* Forced colours draw no box-shadow, so there the chosen box's heavier
+     edge is a 2px outline inside it in Highlight: the choice still shows
+     by weight, as well as by the dot or the check. */
+  @media (forced-colors: active) {
+    .kozmos-radio-card[data-state="checked"] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
   }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its

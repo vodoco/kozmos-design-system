@@ -58,7 +58,7 @@ class KozmosTabsSegmentPixelsTest {
      * Two tabs, the first selected, at twice the density on the mid grey.
      * Short words, so each fits its half of the 164dp row on one line.
      */
-    private fun draw(dark: Boolean, rtl: Boolean): DrawnPixels =
+    private fun draw(dark: Boolean, rtl: Boolean, iconOnSecond: Boolean = false): DrawnPixels =
         paparazzi.drawn(frames) {
             val density = LocalDensity.current
             CompositionLocalProvider(
@@ -76,7 +76,13 @@ class KozmosTabsSegmentPixelsTest {
                         KozmosTabs {
                             KozmosTabsList {
                                 KozmosTabsTrigger(value = "hours", title = "Hours", selectedValue = "hours", onValueChange = {})
-                                KozmosTabsTrigger(value = "access", title = "Access", selectedValue = "hours", onValueChange = {})
+                                KozmosTabsTrigger(
+                                    value = "access",
+                                    title = "Access",
+                                    selectedValue = "hours",
+                                    onValueChange = {},
+                                    icon = if (iconOnSecond) { { Box(Modifier.fillMaxSize()) } } else null
+                                )
                             }
                         }
                     }
@@ -233,6 +239,46 @@ class KozmosTabsSegmentPixelsTest {
             }
             if (otherWords < 20) {
                 problems += "$where: the other tab draws $otherWords foreground/400 ${DrawnPixels.hex(foreground400(dark))} word pixels"
+            }
+        }
+        assertTrue(problems.joinToString("\n"), problems.isEmpty())
+    }
+
+    /**
+     * Decision 3: when another tab has an icon, the selected tab of words
+     * alone still fills the track: the track is the icon tab's stacked
+     * height, and the selected segment sits the same 4dp inside it, above and
+     * below, as in a list of words alone, rather than 36dp tall in the middle
+     * of a taller track. Measured against the words-only list, so the frame's
+     * scale cancels.
+     */
+    @Test
+    fun theSelectedWordTabsSegmentFillsATrackAnIconTabMadeTallerInLightAndDark() {
+        val problems = mutableListOf<String>()
+        for (dark in listOf(false, true)) for (rtl in listOf(false, true)) {
+            val where = "${mode(dark)}, ${direction(rtl)}"
+            val gaps = listOf(false, true).map { iconOnSecond ->
+                val drawn = draw(dark, rtl, iconOnSecond)
+                val track = drawn.trackOf(dark)
+                val segment = track?.let { (xs, ys) -> drawn.fillOf(background0(dark), xs, ys) }
+                if (track == null || segment == null) null else Triple(
+                    segment.second.first - track.second.first,
+                    track.second.last - segment.second.last,
+                    track.second.size
+                )
+            }
+            val (plain, mixed) = gaps
+            if (plain == null || mixed == null) {
+                problems += "$where: no segment in a track (words alone: $plain, with an icon tab: $mixed)"
+                continue
+            }
+            if (mixed.third <= plain.third) {
+                problems += "$where: the icon tab did not make the track taller (${mixed.third} against ${plain.third} pixels)"
+            }
+            if (kotlin.math.abs(mixed.first - plain.first) > 1 || kotlin.math.abs(mixed.second - plain.second) > 1) {
+                problems += "$where: in a ${mixed.third}-pixel track beside an icon tab the selected segment is " +
+                    "${mixed.first} below the track's top and ${mixed.second} above its bottom; " +
+                    "in a list of words alone, ${plain.first} and ${plain.second}"
             }
         }
         assertTrue(problems.joinToString("\n"), problems.isEmpty())
