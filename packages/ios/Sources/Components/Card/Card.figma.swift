@@ -34,12 +34,19 @@ struct KozmosCardHeaderConnect: FigmaConnect {
     @FigmaString("Body Text")
     var bodyText: String = "Use card body content for short supporting detail."
 
+    // CLOUD-UI-001 / GAP-169: the header's tone; GAP-035: the title's size.
+    @FigmaEnum("HeaderTone", mapping: ["Default": KozmosCardHeaderTone.`default`, "Subtle": KozmosCardHeaderTone.subtle])
+    var headerTone: KozmosCardHeaderTone = .default
+
+    @FigmaEnum("TitleSize", mapping: ["Large": KozmosCardTitleSize.lg, "Medium": KozmosCardTitleSize.md, "Small": KozmosCardTitleSize.sm])
+    var titleSize: KozmosCardTitleSize = .lg
+
     var body: some View {
         KozmosCard {
             AnyView(
                 VStack(alignment: .leading, spacing: 0) {
-                    KozmosCardHeader {
-                        KozmosCardTitle(self.title)
+                    KozmosCardHeader(tone: self.headerTone) {
+                        KozmosCardTitle(self.title, size: self.titleSize)
                         KozmosCardDescription(self.description)
                     }
                     KozmosCardContent {
@@ -65,12 +72,19 @@ struct KozmosCardFullConnect: FigmaConnect {
     @FigmaString("Body Text")
     var bodyText: String = "Use card body content for short supporting detail."
 
+    // CLOUD-UI-001 / GAP-169: the header's tone; GAP-035: the title's size.
+    @FigmaEnum("HeaderTone", mapping: ["Default": KozmosCardHeaderTone.`default`, "Subtle": KozmosCardHeaderTone.subtle])
+    var headerTone: KozmosCardHeaderTone = .default
+
+    @FigmaEnum("TitleSize", mapping: ["Large": KozmosCardTitleSize.lg, "Medium": KozmosCardTitleSize.md, "Small": KozmosCardTitleSize.sm])
+    var titleSize: KozmosCardTitleSize = .lg
+
     var body: some View {
         KozmosCard {
             AnyView(
                 VStack(alignment: .leading, spacing: 0) {
-                    KozmosCardHeader {
-                        KozmosCardTitle(self.title)
+                    KozmosCardHeader(tone: self.headerTone) {
+                        KozmosCardTitle(self.title, size: self.titleSize)
                         KozmosCardDescription(self.description)
                     }
                     KozmosCardContent {
