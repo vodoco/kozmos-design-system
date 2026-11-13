@@ -87,6 +87,69 @@ final class KozmosContainerInsetTests: XCTestCase {
         XCTAssertEqual(text.minX, 16, accuracy: 1.5)
     }
 
+    // MARK: - Block inset (GAP-116)
+
+    /// Each step is the layout spacing token React's `block` reads: 0, 16,
+    /// 24 and 32.
+    func testBlockStepsAreTheLayoutSpacingSteps() {
+        XCTAssertEqual(KozmosContainerBlockInset.none.length, 0)
+        XCTAssertEqual(KozmosContainerBlockInset.sm.length, 16)
+        XCTAssertEqual(KozmosContainerBlockInset.md.length, 24)
+        XCTAssertEqual(KozmosContainerBlockInset.lg.length, 32)
+        XCTAssertEqual(KozmosContainerBlock.none, KozmosContainerBlock(start: .none, end: .none))
+        XCTAssertEqual(KozmosContainerBlock.sm, KozmosContainerBlock(start: .sm, end: .sm))
+        XCTAssertEqual(KozmosContainerBlock.md, KozmosContainerBlock(start: .md, end: .md))
+        XCTAssertEqual(KozmosContainerBlock.lg, KozmosContainerBlock(start: .lg, end: .lg))
+    }
+
+    /// Each step adds its space above and below the content, at any inset,
+    /// and the content is drawn that far down; the sides are as before.
+    @MainActor func testBlockPadsAboveAndBelow() throws {
+        for (inset, block, top, bottom): (KozmosContainerInset, KozmosContainerBlock, CGFloat, CGFloat) in [
+            (.panel, .sm, 16, 16), (.panel, .md, 24, 24), (.window, .lg, 32, 32),
+            (.window, .init(start: .lg, end: .md), 32, 24), (.panel, .init(start: .sm), 16, 0),
+            (.panel, .init(end: .md), 0, 24),
+        ] {
+            let view = KozmosContainer(inset: inset, block: block) { Color.black.frame(height: 40) }.frame(width: 800)
+            let drawn = try DrawnPixels.draw(view, scale: 1)
+            let state = "\(inset), \(block)"
+            let box = try XCTUnwrap(drawn.boundingBox { _, _, _, a in a > 200 }, state)
+            XCTAssertEqual(drawn.size.height, top + 40 + bottom, accuracy: 0.5, state)
+            XCTAssertEqual(box.minY, top, accuracy: 0.5, state)
+            XCTAssertEqual(drawn.size.height - box.maxY, bottom, accuracy: 0.5, state)
+            XCTAssertEqual(box.minX, KozmosContainerInset.padding(inset, width: 800), accuracy: 0.5, state)
+        }
+    }
+
+    /// Left out, or `.none`, the container is its content's height, as before.
+    @MainActor func testNoBlockAddsNoSpace() throws {
+        for view in [
+            AnyView(KozmosContainer(inset: .window) { Color.black.frame(height: 40) }),
+            AnyView(KozmosContainer(inset: .window, block: .none) { Color.black.frame(height: 40) }),
+        ] {
+            let drawn = try DrawnPixels.draw(view.frame(width: 800), scale: 1)
+            let box = try XCTUnwrap(drawn.boundingBox { _, _, _, a in a > 200 })
+            XCTAssertEqual(drawn.size.height, 40, accuracy: 0.5)
+            XCTAssertEqual(box.minY, 0, accuracy: 0.5)
+        }
+    }
+
+    /// One measure includes the space: what a self-sizing cell asks.
+    @MainActor func testOneMeasureIncludesTheBlock() {
+        let view = KozmosContainer(inset: .panel, block: .init(start: .lg, end: .md)) { TallAsItIsWide { Color.clear } }
+        XCTAssertEqual(laidOut(view, width: 400).height, 400 - 32 + 32 + 24, accuracy: 0.5)
+    }
+
+    /// Container.mdx's block snippet (DocSnippets/MapContentColumn.swift),
+    /// drawn as well as compiled: its text starts 16 down and 16 in.
+    @MainActor func testTheBlockDocsSnippetPadsSixteenAbove() throws {
+        let drawn = try DrawnPixels.draw(MapContentColumn().frame(width: 400), scale: 2)
+        let text = try XCTUnwrap(drawn.boundingBox { _, _, _, a in a > 100 }, "no text drawn")
+        XCTAssertGreaterThanOrEqual(text.minY, 16)
+        XCTAssertLessThan(text.minY, 24)
+        XCTAssertGreaterThanOrEqual(drawn.size.height - text.maxY, 16)
+    }
+
     @MainActor private func laidOut<V: View>(_ view: V, width: CGFloat) -> CGSize {
         let offered = CGSize(width: width, height: 10_000)
         #if canImport(UIKit)

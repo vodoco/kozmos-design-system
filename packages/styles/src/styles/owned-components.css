@@ -1605,6 +1605,61 @@
   .kozmos-card-header-subtle > .kozmos-card-header-actions {
     block-size: 1.75rem;
   }
+  /* PageHeader (GAP-036, decision 135): a band across the page, its content
+     in a Container with the block inset (GAP-116) 32 above and 24 below. The
+     subtle tone is CardHeader's subtle strip's pale theme tint. */
+  .kozmos-page-header {
+    inline-size: 100%;
+  }
+  .kozmos-page-header-subtle {
+    background-color: var(--primitives-colors-theme-0);
+  }
+  .kozmos-page-header-breadcrumb {
+    margin-block-end: 0.5rem;
+  }
+  /* The text takes the line and the actions its end; where both don't fit
+     (a phone) the actions wrap under the text, at its start. */
+  .kozmos-page-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .kozmos-page-header-text {
+    display: flex;
+    flex: 1 1 16rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  /* A title that wraps keeps the info button on its first line. */
+  .kozmos-page-header-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-inline-size: 0;
+  }
+  .kozmos-page-header-title > :first-child {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  /* The info button and the actions are centred on the title's line, 32 for
+     md and 36 for lg, and spill past it evenly, so a 40 button makes the
+     header no taller. */
+  .kozmos-page-header-info,
+  .kozmos-page-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+  }
+  .kozmos-page-header-actions {
+    gap: 0.5rem;
+  }
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-info,
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-actions {
+    block-size: 2.25rem;
+  }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
      bottom edge on the button's centre line and its start edge 2px past it,
      so it covers the same corner of the icon at every size and density, and

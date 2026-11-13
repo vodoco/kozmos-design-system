@@ -44,7 +44,43 @@ It forwards its ref to `HTMLDivElement`. Its props are `ContainerProps`, which e
   window was taking the widest step, so the same content had 32px of
   padding each side on desktop and 16px on a phone.
 
+- `block`: `ContainerBlock`, optional.
+
+  The clear space above and below the content (GAP-116): `sm` 16, `md` 24,
+  `lg` 32, or `{ start, end }` for the top and the bottom apart. None by
+  default, so a Container pads its sides only, as it always has. It holds
+  whatever the window does: a page region's top and bottom space does not
+  step with the viewport as its sides do.
+
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### ContainerBlock
+
+From `@kozmos-ds/react`.
+
+```ts
+/** Both edges one step, or the top (`start`) and bottom (`end`) apart. */
+type ContainerBlock =
+  | ContainerBlockInset
+  | {
+      start?: ContainerBlockInset;
+      end?: ContainerBlockInset;
+    };
+```
+
+### ContainerBlockInset
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A step of Container's block (top and bottom) inset: `none` 0, `sm` 16,
+ * `md` 24 and `lg` 32, the layout spacing steps 200, 300 and 400.
+ */
+type ContainerBlockInset = "none" | "sm" | "md" | "lg";
+```

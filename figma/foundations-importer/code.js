@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3a2555238f0a";
+const PLUGIN_BUILD = "98d96ea2d4cc";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -86,6 +86,38 @@ function containerInsetToken(inset) {
     : "Container/padding/x/window";
 }
 const CONTAINER_CENTERED = ["True", "False"];
+// GAP-116 (decision 132): React's `block`, the clear space above and below the
+// content: none, 16, 24 or 32, the layout spacing steps 200, 300 and 400. It
+// holds whatever the window does. Figma draws one step on both edges; React's
+// `{ start, end }` sets them apart. None comes first: a variant drawn before
+// the axis is None, so Update renames it rather than replacing it.
+const CONTAINER_BLOCKS = ["None", "Small", "Medium", "Large"];
+function containerBlockPadding(block) {
+  if (block === "Small") return 16;
+  if (block === "Medium") return 24;
+  if (block === "Large") return 32;
+  return 0;
+}
+function containerBlockToken(block) {
+  if (block === "Small") return "Container/padding/y/small";
+  if (block === "Medium") return "Container/padding/y/medium";
+  if (block === "Large") return "Container/padding/y/large";
+  return null;
+}
+// The set's second axis is Inset and Block together, one row per pair: the
+// single-axis painter takes two axes, and this keeps the node ids of the
+// Centered x Inset variants the set had before Block.
+const CONTAINER_INSET_BLOCKS = [];
+for (const inset of CONTAINER_INSETS)
+  for (const block of CONTAINER_BLOCKS)
+    CONTAINER_INSET_BLOCKS.push(`${inset}/${block}`);
+function splitContainerInsetBlock(second) {
+  const [inset, block] = String(second || "").split("/");
+  return {
+    inset: CONTAINER_INSETS.indexOf(inset) === -1 ? "Window" : inset,
+    block: CONTAINER_BLOCKS.indexOf(block) === -1 ? "None" : block,
+  };
+}
 const SCROLL_AREA_ORIENTATIONS = ["Vertical", "Horizontal", "Both"];
 const SCROLL_AREA_SCROLLBARS = ["Hidden", "Visible"];
 const TREE_CONTENT = ["Basic", "Count", "Actions"];
@@ -880,6 +912,11 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-036 (decision 135): React's PageHeader `tone`, the tinted band or none,
+// and `size`, the title at Heading 3's 24 (md) or Heading 2's 30 (lg). The
+// band comes first, as React's default.
+const PAGE_HEADER_TONES = ["Subtle", "Default"];
+const PAGE_HEADER_SIZES = ["Medium", "Large"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -1256,6 +1293,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
   Kbd: 260,
+  PageHeader: 560,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1372,7 +1410,15 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
   { title: "Selection", components: ["Chip", "SegmentedControl"] },
   {
     title: "Layout",
-    components: ["Box", "Card", "Container", "Grid", "ScrollArea", "Stack"],
+    components: [
+      "Box",
+      "Card",
+      "Container",
+      "Grid",
+      "PageHeader",
+      "ScrollArea",
+      "Stack",
+    ],
   },
   {
     title: "Data display",
@@ -2632,17 +2678,55 @@ const COMPONENT_DOCS = [
       "Use Centered True for regular page sections and bounded reading layouts.",
       "Use Centered False when the layout should fill the available width.",
       "Keep Container focused on outer page structure; use Box or Card for local surfaces.",
+      "Use Block for a page region's own top and bottom space (GAP-116), rather than a Box around it.",
     ],
     api: [
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset: Window steps with the viewport, Panel holds 16.",
+      "Block maps to Container.block: None, Small 16, Medium 24, Large 32 above and below.",
       "Content Slot maps to Container children in Code Connect.",
       "Responsive breakpoints and max-width behavior remain runtime CSS concerns.",
     ],
-    properties: ["Centered: True, False", "Content Slot"],
+    properties: [
+      "Centered: True, False",
+      "Inset: Window, Panel",
+      "Block: None, Small, Medium, Large",
+      "Content Slot",
+    ],
     accessibility: [
       "Container is non-interactive unless composed around interactive children.",
       "Gutters and max-width should support readable line length without hiding content.",
       "Child controls must preserve their own semantic labels and focus states.",
+    ],
+  },
+  {
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    category: "Layout",
+    summary:
+      "PageHeader is the top of a page: a breadcrumb, the title with an info button, a description and the page's actions, on a tinted band (GAP-036, decision 135).",
+    usage: [
+      "Use one PageHeader at the top of every page: Home's band and a settings page's header are the same part.",
+      "Use Size Large for a landing page's title, Medium within a section.",
+      "Use Tone Default where the header sits on the page's own background.",
+    ],
+    api: [
+      "Tone maps to PageHeader.tone: Subtle is the theme 0 band, Default none.",
+      "Size maps to PageHeader.size: Medium is Heading 3 (24/32), Large Heading 2 (30/36).",
+      "Title Text maps to title; Description Text to description.",
+      "Breadcrumb, Info and Actions show the breadcrumb, info and actions React is given.",
+      "Its content takes Container's window inset and block inset, 32 above and 24 below (GAP-116).",
+    ],
+    properties: [
+      "Tone: Subtle, Default",
+      "Size: Medium, Large",
+      "Title Text, Description Text",
+      "Breadcrumb, Info, Description, Actions",
+    ],
+    accessibility: [
+      "In code the title is the page's one h1 at either size.",
+      "The info button names itself and is not part of the heading.",
+      "The actions follow the title and description in reading order.",
     ],
   },
   {
@@ -7704,6 +7788,33 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-036: PageHeader. Its padding is Container's (Container/padding/x/window
+  // and Container/padding/y/large and medium, GAP-116); these are its own.
+  { name: "PageHeader/width/default", value: 960, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PageHeader/breadcrumb/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/title/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/text/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -9480,6 +9591,25 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/200",
     scopes: ["GAP"],
   },
+  // GAP-116: the block inset's steps, React's pt-4/pt-6/pt-8 and pb-*.
+  {
+    name: "Container/padding/y/small",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/medium",
+    value: 24,
+    alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/large",
+    value: 32,
+    alias: "Layout/spacing/400",
+    scopes: ["GAP"],
+  },
   {
     name: "Container/content-width/centered",
     value: 320,
@@ -11093,7 +11223,8 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
-  IconButton: ["TourStep", "Card"],
+  // PageHeader's Info: info-circle (GAP-036).
+  IconButton: ["TourStep", "Card", "PageHeader"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -11198,6 +11329,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Chip", updateChipComponent],
   ["SegmentedControl", updateSegmentedControlComponent],
   ["Card", updateCardComponent],
+  ["PageHeader", updatePageHeaderComponent],
   ["List", updateListComponent],
   ["Table", updateTableComponent],
   ["Tabs", updateTabsComponent],
@@ -11470,6 +11602,9 @@ function additionalComponentActionHandlers() {
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
+    "build-page-header": buildPageHeaderComponent,
+    "update-page-header": updatePageHeaderComponent,
+    "rebuild-page-header": rebuildPageHeaderComponent,
     "build-context-menu": buildContextMenuComponent,
     "update-context-menu": updateContextMenuComponent,
     "rebuild-context-menu": rebuildContextMenuComponent,
@@ -17984,6 +18119,7 @@ function shouldAuditLayoutBindings(name) {
       "Box",
       "Stack",
       "Container",
+      "PageHeader",
       "Breadcrumb",
       "Pagination",
       "Accordion",
@@ -18405,6 +18541,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Centered: CONTAINER_CENTERED,
       Inset: CONTAINER_INSETS,
+      Block: CONTAINER_BLOCKS,
     };
   }
 
@@ -18682,6 +18819,13 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Kbd") {
     return {
       Keys: KBD_KEYS,
+    };
+  }
+
+  if (canonicalName === "PageHeader") {
+    return {
+      Tone: PAGE_HEADER_TONES,
+      Size: PAGE_HEADER_SIZES,
     };
   }
 
@@ -25449,6 +25593,14 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "popoverDescription";
   }
   if (setName === "Kbd") return textStyleKeyForText("XS", "Medium");
+  if (setName === "PageHeader") {
+    if (textName === "Description Text")
+      return textStyleKeyForText("Small", "Normal");
+    const props = component && parsePageHeaderVariantName(component.name);
+    return textStyleKeyForHeading(
+      pageHeaderTitleMetrics(props ? props.second : "Medium").level,
+    );
+  }
   if (setName === "Menu" || setName === "ContextMenu") {
     if (textName === "Shortcut Text") return "menuShortcut";
     if (textName === "Label Text") return "menuItemStrong";
@@ -33038,7 +33190,7 @@ async function buildContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     x: 80,
     y: 11380,
@@ -33048,6 +33200,7 @@ async function buildContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Responsive padding and max-width behavior remain runtime CSS concerns.",
     ],
@@ -33061,7 +33214,7 @@ async function updateContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     xStep: 560,
     createVariant: createContainerVariant,
@@ -33071,6 +33224,7 @@ async function updateContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -58844,13 +58998,16 @@ function parseContainerVariantName(name) {
   if (CONTAINER_CENTERED.indexOf(values.Centered) === -1) return null;
 
   // A variant drawn before the Inset axis carries none and is the page's,
-  // so Update renames it rather than replacing it.
-  const second = values.Inset || "Window";
-  if (CONTAINER_INSETS.indexOf(second) === -1) return null;
+  // and one drawn before the Block axis carries none and pads no top or
+  // bottom, so Update renames either rather than replacing it.
+  const inset = values.Inset || "Window";
+  if (CONTAINER_INSETS.indexOf(inset) === -1) return null;
+  const block = values.Block || "None";
+  if (CONTAINER_BLOCKS.indexOf(block) === -1) return null;
 
   return {
     value: values.Centered,
-    second,
+    second: `${inset}/${block}`,
     centered: values.Centered,
   };
 }
@@ -58860,8 +59017,11 @@ async function updateContainerVariant(
   { value, second, variableByName, stats },
 ) {
   const centered = value === "True";
-  const inset = CONTAINER_INSETS.indexOf(second) === -1 ? "Window" : second;
-  component.name = `Centered=${value}, Inset=${inset}`;
+  // `second` is "Inset/Block"; a bare inset, as an older caller passes it,
+  // is that inset with no block.
+  const { inset, block } = splitContainerInsetBlock(second);
+  const blockPadding = containerBlockPadding(block);
+  component.name = `Centered=${value}, Inset=${inset}, Block=${block}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -58870,9 +59030,14 @@ async function updateContainerVariant(
   component.itemSpacing = 0;
   component.paddingLeft = containerInsetPadding(inset);
   component.paddingRight = containerInsetPadding(inset);
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(480, 120);
+  component.paddingTop = blockPadding;
+  component.paddingBottom = blockPadding;
+  // With no block the example is 120 tall, as it was; with one it is the
+  // content and the space above and below it, so the step shows.
+  component.resizeWithoutConstraints(
+    480,
+    blockPadding === 0 ? 120 : 64 + 2 * blockPadding,
+  );
   component.fills = [];
   component.strokes = [];
   component.strokeWeight = 0;
@@ -58880,13 +59045,34 @@ async function updateContainerVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Container");
 
-  bindSizeVariables(
-    component,
-    "Container/width/default",
-    "Container/min-height/default",
-    variableByName,
-    stats,
-  );
+  if (blockPadding === 0) {
+    bindSizeVariables(
+      component,
+      "Container/width/default",
+      "Container/min-height/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "paddingTop", stats);
+    clearBoundVariable(component, "paddingBottom", stats);
+  } else {
+    bindFloatVariable(
+      component,
+      "width",
+      "Container/width/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "height", stats);
+    for (const field of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        component,
+        field,
+        containerBlockToken(block),
+        variableByName,
+        stats,
+      );
+  }
   bindFloatVariable(
     component,
     "paddingLeft",
@@ -62732,6 +62918,521 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// --- PageHeader ---------------------------------------------------------------
+
+// GAP-036 (decision 135): React's PageHeader, a band across the page. Its
+// content is a Container's: the window's widest side step, 24
+// (Container/padding/x/window), and GAP-116's block inset, 32 above
+// (Container/padding/y/large) and 24 below (Container/padding/y/medium). The
+// Subtle tone is the band in theme 0, CardHeader's subtle strip's tint; the
+// Default tone paints none. Top to bottom: the Breadcrumb, a live Breadcrumb
+// instance 8 above the title; then a row of the text column and the Actions,
+// 16 apart. The column is the title's line, the Title Text (Heading 3, 24/32,
+// at Medium; Heading 2, 30/36, at Large) with the Info button 8 after it, and
+// the Description Text 4 under it, 14/20 in foreground/400. Info is a live
+// IconButton (Ghost, Small) with info-circle, and Actions a live Button; each
+// sits in a frame as tall as the title's line and is centred on it, so a
+// taller button spills past the line evenly and the header grows no taller.
+// The Breadcrumb, Info, Description and Actions booleans show each, as
+// React draws each only when it is given.
+const PAGE_HEADER_ACTIONS_NAME = "Actions";
+const PAGE_HEADER_INFO_NAME = "Info";
+const PAGE_HEADER_BREADCRUMB_NAME = "Breadcrumb";
+
+function pageHeaderTitleMetrics(size) {
+  return size === "Large"
+    ? { level: "H2", fontSize: 30, lineHeight: 36, token: "3xl" }
+    : { level: "H3", fontSize: 24, lineHeight: 32, token: "2xl" };
+}
+
+async function createPageHeaderVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updatePageHeaderVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parsePageHeaderVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PAGE_HEADER_TONES.indexOf(values.Tone) === -1) return null;
+  const size = values.Size || "Medium";
+  if (PAGE_HEADER_SIZES.indexOf(size) === -1) return null;
+  return { value: values.Tone, second: size };
+}
+
+function pageHeaderFrame(name, kind, layoutMode) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = layoutMode;
+  frame.primaryAxisSizingMode = "AUTO";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", kind);
+  return frame;
+}
+
+async function updatePageHeaderVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const tone = PAGE_HEADER_TONES.indexOf(value) === -1 ? "Subtle" : value;
+  const size = PAGE_HEADER_SIZES.indexOf(second) === -1 ? "Medium" : second;
+  const metrics = pageHeaderTitleMetrics(size);
+  component.name = `Tone=${tone}, Size=${size}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 8;
+  component.paddingLeft = 24;
+  component.paddingRight = 24;
+  component.paddingTop = 32;
+  component.paddingBottom = 24;
+  component.resizeWithoutConstraints(960, 160);
+  component.fills =
+    tone === "Subtle"
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PageHeader");
+  bindFloatVariable(
+    component,
+    "width",
+    "PageHeader/width/default",
+    variableByName,
+    stats,
+  );
+  for (const field of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      field,
+      "Container/padding/x/window",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "Container/padding/y/large",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "Container/padding/y/medium",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PageHeader/breadcrumb/gap",
+    variableByName,
+    stats,
+  );
+
+  // Redrawn whole on every Update: the layers hold nothing a designer
+  // overrides but the texts and the booleans, which the properties carry.
+  removeDirectChildren(component);
+
+  const breadcrumb = await createPageHeaderInstance({
+    componentSetName: "Breadcrumb",
+    variantProperties: { Content: "Basic" },
+    name: PAGE_HEADER_BREADCRUMB_NAME,
+    role: "page-header-breadcrumb",
+    stats,
+  });
+  component.appendChild(breadcrumb);
+
+  const row = pageHeaderFrame("Header Row", "page-header-row", "HORIZONTAL");
+  row.itemSpacing = 16;
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "PageHeader/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
+
+  const text = pageHeaderFrame("Header Text", "page-header-text", "VERTICAL");
+  text.itemSpacing = 4;
+  bindFloatVariable(
+    text,
+    "itemSpacing",
+    "PageHeader/text/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(text);
+  setLayoutSizingHorizontal(text, "FILL");
+
+  const line = pageHeaderFrame("Title Row", "page-header-title", "HORIZONTAL");
+  line.itemSpacing = 8;
+  bindFloatVariable(
+    line,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  text.appendChild(line);
+
+  const title = figma.createText();
+  title.name = "Title Text";
+  title.fontName = fonts.bold || fonts.medium;
+  title.fontSize = metrics.fontSize;
+  title.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
+  title.textAutoResize = "WIDTH_AND_HEIGHT";
+  await applyTextStyleToNodeAsync(
+    title,
+    textStyleKeyForHeading(metrics.level),
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "fontSize",
+    `Text/font-size/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "lineHeight",
+    `Text/line-height/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  title.characters = "Settings";
+  title.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  line.appendChild(title);
+  setHugChildSizing(title);
+
+  const info = pageHeaderLine(PAGE_HEADER_INFO_NAME, metrics.lineHeight);
+  line.appendChild(info);
+  const infoButton = await createPageHeaderInfoButton({
+    variableByName,
+    stats,
+  });
+  if (infoButton) info.appendChild(infoButton);
+  // Off by default, as React draws no info button until it is given one.
+  info.visible = false;
+
+  const description = figma.createText();
+  description.name = "Description Text";
+  description.fontName = fonts.regular;
+  description.fontSize = 14;
+  description.lineHeight = { unit: "PIXELS", value: 20 };
+  await applyTextStyleToNodeAsync(
+    description,
+    textStyleKeyForText("Small", "Normal"),
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "fontSize",
+    "Text/font-size/sm",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "lineHeight",
+    "Text/line-height/sm",
+    variableByName,
+    stats,
+  );
+  description.characters =
+    "Manage the site's map, its levels and who can edit them.";
+  description.fills = [
+    paintFromVariable(
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  text.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+
+  const actions = pageHeaderLine(PAGE_HEADER_ACTIONS_NAME, metrics.lineHeight);
+  actions.itemSpacing = 8;
+  bindFloatVariable(
+    actions,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(actions);
+  const created = await createNestedComponentInstance({
+    componentSetName: "Button",
+    variantProperties: {
+      Variant: "Default",
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Primary Action",
+    role: "page-header-action",
+    stats,
+  });
+  if (created) {
+    setInstanceTextProperty(
+      created.instance,
+      created.componentSet,
+      "Label Text",
+      "Save changes",
+      stats,
+    );
+    actions.appendChild(created.instance);
+  } else {
+    actions.appendChild(
+      createMissingNestedComponentNode(
+        "Primary Action",
+        "Build Button before updating PageHeader.",
+        stats,
+      ),
+    );
+  }
+}
+
+/**
+ * A frame as tall as the title's line that hugs what it holds and centres
+ * it, so a taller button spills past the line evenly.
+ */
+function pageHeaderLine(name, lineHeight) {
+  const frame = pageHeaderFrame(name, "page-header-line", "HORIZONTAL");
+  frame.counterAxisSizingMode = "FIXED";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.resizeWithoutConstraints(44, lineHeight);
+  return frame;
+}
+
+async function createPageHeaderInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      name,
+      `Build ${componentSetName} before updating PageHeader.`,
+      stats,
+    );
+  return created.instance;
+}
+
+/**
+ * The info button: IconButton's Ghost at Small with info-circle. With no
+ * info-circle on the Icons page the frame is left empty and the run says so:
+ * the IconButton's own default icon would be the wrong glyph.
+ */
+async function createPageHeaderInfoButton({ variableByName, stats }) {
+  const glyph = await findImporterIconSource(
+    "info-circle",
+    "PageHeader",
+    stats,
+  );
+  if (!glyph) return null;
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Small", State: "Default" },
+    name: "Info Button",
+    role: "page-header-info",
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      "Info Button",
+      "Build IconButton before updating PageHeader.",
+      stats,
+    );
+  setInstanceSwapProperty(
+    created.instance,
+    created.componentSet,
+    BUTTON_ICON_PROPERTY,
+    glyph.id,
+    stats,
+  );
+  retintPageHeaderInfoIcon(created.instance, variableByName, stats);
+  return created.instance;
+}
+
+/**
+ * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
+ * info-circle would draw in its source's black in both themes: the tint the
+ * ghost button gives its icon is laid again on the swapped-in layers.
+ */
+function retintPageHeaderInfoIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  const icon = instance.findOne(
+    (node) =>
+      node.type === "INSTANCE" &&
+      (node.name === "Icon" ||
+        Boolean(
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent,
+        )),
+  );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "page-header-info-icon",
+      "PageHeader: the Info Button has no Icon layer to tint.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+}
+
+function configurePageHeaderProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Settings",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Manage the site's map, its levels and who can edit them.",
+    stats,
+  );
+  // As the native Code Connect reads them: a breadcrumb, a description and
+  // an action by default, no info button.
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_BREADCRUMB_NAME,
+    "Breadcrumb",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_INFO_NAME,
+    "Info",
+    false,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Description",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_ACTIONS_NAME,
+    "Actions",
+    true,
+    stats,
+  );
+}
+
+const PAGE_HEADER_DESCRIPTION = [
+  "Kozmos PageHeader component set generated from React PageHeader API (GAP-036).",
+  "Tone maps to PageHeader.tone; Size to PageHeader.size (Medium md, Large lg).",
+  "Title Text maps to title; Description Text to description.",
+  "Breadcrumb, Info, Description and Actions show what React draws when it is given each.",
+];
+
+async function buildPageHeaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    x: 80,
+    y: 12600,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION,
+  });
+}
+
+async function updatePageHeaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    updateVariant: updatePageHeaderVariant,
+    parseVariantName: parsePageHeaderVariantName,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPageHeaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    build: buildPageHeaderComponent,
+  });
 }
 
 async function createCheckboxVariant({

@@ -39,6 +39,49 @@ enum class KozmosContainerInset {
     }
 }
 
+/**
+ * A step of a container's block (top and bottom) inset, as React's `block`
+ * (GAP-116): [None] 0, [Sm] 16, [Md] 24, [Lg] 32, the layout spacing steps
+ * 200, 300 and 400.
+ */
+enum class KozmosContainerBlockInset {
+    None,
+    Sm,
+    Md,
+    Lg;
+
+    /** The space this step is. */
+    val length: Dp
+        get() = when (this) {
+            None -> 0.dp
+            Sm -> KozmosDimensions.primitivesLayoutSpacing200
+            Md -> KozmosDimensions.primitivesLayoutSpacing300
+            Lg -> KozmosDimensions.primitivesLayoutSpacing400
+        }
+}
+
+/**
+ * The clear space above ([start]) and below ([end]) a container's content
+ * (GAP-116), as React's `block`. It holds whatever the width: a region's top
+ * and bottom space does not step as its sides do. [None], the default, pads
+ * neither, as before.
+ */
+data class KozmosContainerBlock(
+    val start: KozmosContainerBlockInset = KozmosContainerBlockInset.None,
+    val end: KozmosContainerBlockInset = KozmosContainerBlockInset.None
+) {
+    companion object {
+        /** No space above or below. */
+        val None = KozmosContainerBlock()
+        /** 16 above and below. */
+        val Sm = KozmosContainerBlock(KozmosContainerBlockInset.Sm, KozmosContainerBlockInset.Sm)
+        /** 24 above and below. */
+        val Md = KozmosContainerBlock(KozmosContainerBlockInset.Md, KozmosContainerBlockInset.Md)
+        /** 32 above and below. */
+        val Lg = KozmosContainerBlock(KozmosContainerBlockInset.Lg, KozmosContainerBlockInset.Lg)
+    }
+}
+
 /** Pads all four sides by 16, as before [KozmosContainerInset]. */
 @Composable
 fun KozmosContainer(
@@ -55,15 +98,17 @@ fun KozmosContainer(
 /**
  * Fills the width and pads the sides only, as React's Container does:
  * [KozmosContainerInset.Panel] keeps 16, [KozmosContainerInset.Window] steps
- * with the width the container is given.
+ * with the width the container is given. [block] adds clear space above and
+ * below the content (GAP-116), none by default.
  */
 @Composable
 fun KozmosContainer(
     inset: KozmosContainerInset,
     modifier: Modifier = Modifier,
+    block: KozmosContainerBlock = KozmosContainerBlock.None,
     content: @Composable () -> Unit
 ) {
-    val measurePolicy = remember(inset) { InsetMeasurePolicy(inset) }
+    val measurePolicy = remember(inset, block) { InsetMeasurePolicy(inset, block) }
     Layout(
         content = { Box { content() } },
         modifier = modifier.fillMaxWidth(),
@@ -80,7 +125,18 @@ fun KozmosContainer(
  * Its one child is a Box holding the content, so the content stacks, starts
  * at the top start and gets loose constraints, as inside a padded Box.
  */
-private class InsetMeasurePolicy(private val inset: KozmosContainerInset) : MeasurePolicy {
+private class InsetMeasurePolicy(
+    private val inset: KozmosContainerInset,
+    private val block: KozmosContainerBlock = KozmosContainerBlock.None
+) : MeasurePolicy {
+    /** The space above and below the content, in px. */
+    private fun Density.top(): Int = block.start.length.roundToPx()
+    private fun Density.bottom(): Int = block.end.length.roundToPx()
+
+    /** The height the content may take inside a container at most [maxHeight] px tall. */
+    private fun Density.innerMaxHeight(maxHeight: Int): Int =
+        if (maxHeight == Constraints.Infinity) maxHeight else (maxHeight - top() - bottom()).coerceAtLeast(0)
+
     /** The side padding for a container [width] px wide. */
     private fun Density.side(width: Int): Int =
         inset.padding(if (width == Constraints.Infinity) Dp.Infinity else width.toDp()).roundToPx()
@@ -112,15 +168,19 @@ private class InsetMeasurePolicy(private val inset: KozmosContainerInset) : Meas
             val width = constraints.maxWidth
             val side = side(width)
             val inner = inner(width)
-            val placeable = content.measure(Constraints(minWidth = inner, maxWidth = inner, maxHeight = constraints.maxHeight))
-            return layout(width, constraints.constrainHeight(placeable.height)) { placeable.placeRelative(side, 0) }
+            val placeable = content.measure(
+                Constraints(minWidth = inner, maxWidth = inner, maxHeight = innerMaxHeight(constraints.maxHeight))
+            )
+            val height = constraints.constrainHeight(placeable.height + top() + bottom())
+            return layout(width, height) { placeable.placeRelative(side, top()) }
         }
         // Nothing bounds it, as in a horizontal scroll: it is its content's
         // width and the padding that width takes.
-        val placeable = content.measure(Constraints(maxHeight = constraints.maxHeight))
+        val placeable = content.measure(Constraints(maxHeight = innerMaxHeight(constraints.maxHeight)))
         val side = sideAround(placeable.width, constraints.minWidth)
         val width = constraints.constrainWidth(placeable.width + 2 * side)
-        return layout(width, constraints.constrainHeight(placeable.height)) { placeable.placeRelative(side, 0) }
+        val height = constraints.constrainHeight(placeable.height + top() + bottom())
+        return layout(width, height) { placeable.placeRelative(side, top()) }
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(measurables: List<IntrinsicMeasurable>, height: Int): Int {
@@ -134,8 +194,8 @@ private class InsetMeasurePolicy(private val inset: KozmosContainerInset) : Meas
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(measurables: List<IntrinsicMeasurable>, width: Int): Int =
-        measurables.single().minIntrinsicHeight(inner(width))
+        measurables.single().minIntrinsicHeight(inner(width)) + top() + bottom()
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(measurables: List<IntrinsicMeasurable>, width: Int): Int =
-        measurables.single().maxIntrinsicHeight(inner(width))
+        measurables.single().maxIntrinsicHeight(inner(width)) + top() + bottom()
 }
