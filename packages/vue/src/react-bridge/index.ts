@@ -45,6 +45,8 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  PersonaMark,
+  PersonaMarkGroup,
   Drawer,
   Toast,
   Breadcrumb,
@@ -348,6 +350,8 @@ export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosKbd = createVueWrapper(Kbd);
+export const KozmosPersonaMark = createVueWrapper(PersonaMark);
+export const KozmosPersonaMarkGroup = createVueWrapper(PersonaMarkGroup);
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);

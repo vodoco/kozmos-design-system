@@ -549,6 +549,15 @@ jobs:
           pnpm test:kbd
           ADAPTIVE_BROWSER=webkit pnpm test:kbd
           ADAPTIVE_BROWSER=firefox pnpm test:kbd
+      # GAP-106: a persona's mark beside its name is not read, alone it is an
+      # image named by the persona, a group one image read by its label and
+      # names; its diamonds are 12 in the persona's colour, and CanvasText in
+      # forced colours (scripts/check-persona-mark.mjs).
+      - name: Verify PersonaMark
+        run: |
+          pnpm test:persona-mark
+          ADAPTIVE_BROWSER=webkit pnpm test:persona-mark
+          ADAPTIVE_BROWSER=firefox pnpm test:persona-mark
 
       # What only a real browser proves, on the built package in each engine:
       # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs),

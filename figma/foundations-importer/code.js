@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3a2555238f0a";
+const PLUGIN_BUILD = "02abc8fc4172";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -880,6 +880,10 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-106: React's PersonaMark draws one persona's diamond, and
+// PersonaMarkGroup the diamonds of the personas a row is visible to. One
+// mark comes first, so the set's default is the plain diamond.
+const PERSONA_MARK_FORMS = ["Single", "Group"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -1256,6 +1260,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
   Kbd: 260,
+  PersonaMark: 260,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1386,6 +1391,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "TreeSection",
       "Tree",
       "Timeline",
+      "PersonaMark",
     ],
   },
   {
@@ -2494,6 +2500,29 @@ const COMPONENT_DOCS = [
       "In code the drawn glyph is hidden and the key's name is read instead: Esc reads Escape, Ctrl reads Control.",
       "The plus is decoration; a combination reads its names joined by a plus.",
       "Kbd is non-interactive.",
+    ],
+  },
+  {
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    category: "Data display",
+    summary:
+      "PersonaMark draws a persona's colour as a small diamond beside its name; a group draws the personas a row is visible to (GAP-106).",
+    usage: [
+      "Use beside a persona's name: in a persona visibility list's checkbox labels, a persona menu or a tree row.",
+      "The colour is the persona's, product data: override the diamond's fill with it; no token holds it.",
+      "Use Group for the personas a row is visible to, in the order the product gives them.",
+    ],
+    api: [
+      "Form maps to the part: Single is <PersonaMark color={persona.color} />, Group is <PersonaMarkGroup personas={personas} />.",
+      "name, on a mark that stands alone, names it; label, on a group, is read before the personas' names.",
+    ],
+    properties: ["Form: Single, Group"],
+    accessibility: [
+      "In code a mark beside its name is hidden from assistive technology, so the name is read once.",
+      "A mark standing alone is an image named by the persona; a group is one image, read as its label and every name.",
+      "In forced colours the diamond is drawn in the text colour: the shape stays, and the persona is said by its name.",
+      "PersonaMark is non-interactive.",
     ],
   },
   {
@@ -7704,6 +7733,15 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-106: React's PersonaMark, a 12 diamond, and a group's marks
+  // layout spacing 25 (2) apart.
+  { name: "PersonaMark/size", value: 12, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PersonaMark/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -11179,6 +11217,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Label", updateLabelComponent],
   ["Separator", updateSeparatorComponent],
   ["Kbd", updateKbdComponent],
+  ["PersonaMark", updatePersonaMarkComponent],
   ["MetaStrip", updateMetaStripComponent],
   ["Skeleton", updateSkeletonComponent],
   ["Box", updateBoxComponent],
@@ -11470,6 +11509,9 @@ function additionalComponentActionHandlers() {
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
+    "build-persona-mark": buildPersonaMarkComponent,
+    "update-persona-mark": updatePersonaMarkComponent,
+    "rebuild-persona-mark": rebuildPersonaMarkComponent,
     "build-context-menu": buildContextMenuComponent,
     "update-context-menu": updateContextMenuComponent,
     "rebuild-context-menu": rebuildContextMenuComponent,
@@ -17980,6 +18022,7 @@ function shouldAuditLayoutBindings(name) {
       "Link",
       "Separator",
       "Kbd",
+      "PersonaMark",
       "Skeleton",
       "Box",
       "Stack",
@@ -18682,6 +18725,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Kbd") {
     return {
       Keys: KBD_KEYS,
+    };
+  }
+
+  if (canonicalName === "PersonaMark") {
+    return {
+      Form: PERSONA_MARK_FORMS,
     };
   }
 
@@ -34718,6 +34767,46 @@ async function updateKbdComponent() {
       "Key Text maps to the key; Modifier Text to the first of keys.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
+  });
+}
+
+// GAP-106: PersonaMark, a persona's colour as a diamond. Form is one mark or
+// a group's row of them.
+const PERSONA_MARK_DESCRIPTION = [
+  "Kozmos PersonaMark component set generated from React PersonaMark API.",
+  "Form maps to one persona's mark (PersonaMark) or a group's (PersonaMarkGroup).",
+  "The diamond's fill is the persona's colour, product data: override it.",
+];
+
+async function buildPersonaMarkComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    x: 80,
+    y: 7260,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION,
+  });
+}
+
+async function updatePersonaMarkComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    updateVariant: updatePersonaMarkVariant,
+    parseVariantName: parsePersonaMarkVariantName,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
   });
 }
 
@@ -56044,6 +56133,10 @@ function configureKbdProperties(componentSet, stats) {
   );
 }
 
+// PersonaMark has no component property: the persona's name is never drawn,
+// and its colour is the diamond's fill, which a designer overrides.
+function configurePersonaMarkProperties() {}
+
 function configureToastProperties(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
@@ -56153,6 +56246,14 @@ async function rebuildKbdComponent() {
     componentName: "Kbd",
     componentSetName: "Kbd",
     build: buildKbdComponent,
+  });
+}
+
+async function rebuildPersonaMarkComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    build: buildPersonaMarkComponent,
   });
 }
 
@@ -62732,6 +62833,89 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// --- PersonaMark ------------------------------------------------------------
+
+// GAP-106: React's PersonaMark, a persona's colour as a diamond: 12 by 12
+// (PersonaMark/size), a square turned an eighth with its points on the box's
+// edges, drawn as a path so it lays out at its own size. Its fill is the
+// persona's colour, product data that no variable holds: an example persona's
+// here, which a designer overrides. A group is its marks 2 apart
+// (PersonaMark/gap, layout spacing 25) in a row that hugs them. Each variant is
+// redrawn whole on every Update: it holds no instance and no text.
+const PERSONA_MARK_PATH = "M 6 0 L 12 6 L 6 12 L 0 6 Z";
+// Example personas' colours, as Pointr Cloud's Customer, Visitor and Staff.
+const PERSONA_MARK_EXAMPLES = ["#FF9800", "#2196F3", "#4CAF50"];
+
+async function createPersonaMarkVariant({ value, variableByName, stats }) {
+  const component = figma.createComponent();
+  await updatePersonaMarkVariant(component, { value, variableByName, stats });
+  return component;
+}
+
+function parsePersonaMarkVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PERSONA_MARK_FORMS.indexOf(values.Form) === -1) return null;
+  return { value: values.Form };
+}
+
+async function updatePersonaMarkVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  component.name = `Form=${value}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 2;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PersonaMark");
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PersonaMark/gap",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const colours =
+    value === "Group"
+      ? PERSONA_MARK_EXAMPLES
+      : PERSONA_MARK_EXAMPLES.slice(0, 1);
+  colours.forEach((colour, index) => {
+    const mark = figma.createVector();
+    mark.name = value === "Group" ? `Mark ${index + 1}` : "Mark";
+    mark.vectorPaths = [{ windingRule: "NONZERO", data: PERSONA_MARK_PATH }];
+    mark.resizeWithoutConstraints(12, 12);
+    mark.fills = [paintFromHex(colour)];
+    mark.strokes = [];
+    mark.setSharedPluginData(RUN_NAMESPACE, "kind", "persona-mark");
+    component.appendChild(mark);
+    bindFloatVariable(mark, "width", "PersonaMark/size", variableByName, stats);
+    bindFloatVariable(
+      mark,
+      "height",
+      "PersonaMark/size",
+      variableByName,
+      stats,
+    );
+  });
 }
 
 async function createCheckboxVariant({

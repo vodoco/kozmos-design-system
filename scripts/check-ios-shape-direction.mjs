@@ -38,6 +38,8 @@ export const SYMMETRIC = {
     "a triangle pointing straight down",
   "Components/LocationPin/LocationPin.swift:Teardrop":
     "a circle coming to a point straight below it",
+  "Components/PersonaMark/PersonaMark.swift:KozmosDiamondShape":
+    "a square turned an eighth, alike about its vertical axis",
 };
 
 /**

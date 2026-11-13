@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 102 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 103 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 102 Core SwiftUI and 102 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 103 Core SwiftUI and 103 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15714,13 +15714,13 @@
   },
   "components": {
     "summary": {
-      "total": 124,
-      "stories": 124,
-      "tests": 124,
-      "exported": 124,
-      "codeConnectFiles": 100,
+      "total": 125,
+      "stories": 125,
+      "tests": 125,
+      "exported": 125,
+      "codeConnectFiles": 101,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 100
+      "codeConnectLinked": 101
     },
     "firstBatch": [
       "Accordion",
@@ -15782,6 +15782,7 @@
       "OTPInput",
       "Pagination",
       "PasswordInput",
+      "PersonaMark",
       "POICard",
       "POIDetailPanel",
       "POIMediaGallery",
@@ -18804,6 +18805,39 @@
           "value",
           "visible",
           "wrapperClassName"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "PersonaMark",
+        "source": "packages/react/src/components/PersonaMark/PersonaMark.tsx",
+        "story": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+        "test": "packages/react/src/components/PersonaMark/PersonaMark.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/PersonaMark/PersonaMark.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23172",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["PersonaMark", "PersonaMarkGroup"],
+          "mappedProps": ["color", "personas"],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "color",
+          "id",
+          "label",
+          "name",
+          "personas",
+          "role",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },

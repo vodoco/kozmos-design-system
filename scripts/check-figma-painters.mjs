@@ -13656,6 +13656,113 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
   );
 }
 
+section("GAP-106: PersonaMark draws a persona's diamond, one or a group");
+{
+  // React's PersonaMark: a 12 diamond (.kozmos-persona-mark-shape), its
+  // points on the box's edges, filled with the persona's colour, product data
+  // no variable holds; PersonaMarkGroup's marks layout spacing 25 (2) apart.
+  const painted =
+    typeof plugin.updatePersonaMarkVariant === "function" &&
+    typeof plugin.configurePersonaMarkProperties === "function";
+  ok(painted, "PersonaMark's painter and properties are reachable");
+  const draw = async (value, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updatePersonaMarkVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  ok(
+    JSON.stringify(plugin.PERSONA_MARK_FORMS) ===
+      JSON.stringify(["Single", "Group"]) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("PersonaMark"),
+      ) === JSON.stringify({ Form: ["Single", "Group"] }),
+    `PersonaMark's one axis is Form: Single, Group (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("PersonaMark"))})`,
+  );
+  const layers = { Single: ["Mark"], Group: ["Mark 1", "Mark 2", "Mark 3"] };
+  const fills = {
+    Single: ["#FF9800"],
+    Group: ["#FF9800", "#2196F3", "#4CAF50"],
+  };
+  for (const value of painted ? plugin.PERSONA_MARK_FORMS : []) {
+    const component = await draw(value);
+    const order = component.children.map((child) => child.name);
+    ok(
+      component.name === `Form=${value}` &&
+        plugin.parsePersonaMarkVariantName(component.name).value === value,
+      `${value}: named Form=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(order) === JSON.stringify(layers[value]),
+      `${value}: ${layers[value].join(", ")} (${order.join(", ")})`,
+    );
+    const marks = component.children;
+    ok(
+      component.itemSpacing === 2 &&
+        menusBound(component, "itemSpacing") === "PersonaMark/gap" &&
+        menusValueOf("PersonaMark/gap") === 2 &&
+        component.fills.length === 0 &&
+        component.strokes.length === 0 &&
+        component.height === 12 &&
+        Math.abs(
+          component.width - (12 * marks.length + 2 * (marks.length - 1)),
+        ) < 0.01,
+      `${value}: an unpainted row 12 tall, its marks 2 apart, PersonaMark/gap (${component.itemSpacing}, ${menusBound(component, "itemSpacing")}, ${component.width}x${component.height})`,
+    );
+    marks.forEach((mark, index) => {
+      const at = `${value} / ${mark.name}`;
+      ok(
+        mark.type === "VECTOR" &&
+          mark.vectorPaths.length === 1 &&
+          mark.vectorPaths[0].data === "M 6 0 L 12 6 L 6 12 L 0 6 Z",
+        `${at}: a diamond, its points on the box's edges (${mark.vectorPaths && mark.vectorPaths[0].data})`,
+      );
+      ok(
+        mark.width === 12 &&
+          mark.height === 12 &&
+          menusBound(mark, "width") === "PersonaMark/size" &&
+          menusBound(mark, "height") === "PersonaMark/size" &&
+          menusValueOf("PersonaMark/size") === 12,
+        `${at}: 12 by 12, PersonaMark/size (${mark.width}x${mark.height})`,
+      );
+      ok(
+        mark.fills.length === 1 &&
+          !mark.fills[0].boundVariables &&
+          hexOf(mark.fills[0]) === fills[value][index] &&
+          mark.strokes.length === 0,
+        `${at}: filled with an example persona's colour, ${fills[value][index]}, bound to no variable (${hexOf(mark.fills[0])})`,
+      );
+    });
+    // An Update redraws the same layers, once.
+    await draw(value, component);
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(layers[value]),
+      `${value}: an Update keeps ${layers[value].join(", ")} once`,
+    );
+  }
+
+  // Registered everywhere a set is: the Core sequence, the actions the UI
+  // sends, the Components page's layout and the audit's axes.
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  const handlers = plugin.additionalComponentActionHandlers();
+  const { names, axes } = expectations();
+  ok(
+    core.includes("PersonaMark") &&
+      ["build", "update", "rebuild"].every(
+        (verb) => typeof handlers[`${verb}-persona-mark`] === "function",
+      ) &&
+      names.includes("PersonaMark") &&
+      axes.PersonaMark,
+    "PersonaMark is in the Core sequence, the UI's actions, the page's layout and the audit's axes",
+  );
+}
+
 section("Decision 152: Menu's and ContextMenu's items take External");
 {
   // A plain item that opens a page draws Link's new-tab icon at its end, as

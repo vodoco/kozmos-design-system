@@ -1092,6 +1092,7 @@
               <optgroup label="Data display">
                 <option value="list">List</option>
                 <option value="metaStrip">MetaStrip</option>
+                <option value="personaMark">PersonaMark</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
                 <option value="tree">Tree</option>
@@ -1759,6 +1760,13 @@
           update: "update-separator",
           rebuild: "rebuild-separator",
           hint: "Build creates Separator with Horizontal and Vertical orientation variants. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        personaMark: {
+          label: "PersonaMark",
+          build: "build-persona-mark",
+          update: "update-persona-mark",
+          rebuild: "rebuild-persona-mark",
+          hint: "Build creates PersonaMark (GAP-106), a persona's colour as a 12 diamond, with Single and Group Form variants: one mark, or three marks 2 apart. The diamond's fill is the persona's colour, product data: override it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         kbd: {
           label: "Kbd",
