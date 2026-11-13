@@ -1193,7 +1193,13 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
+      "exports": [
+        "Default",
+        "IconOverLabel",
+        "IconOverLabelRightToLeft",
+        "ManyTabsNarrow",
+        "ManyTabsNarrowRightToLeft"
+      ]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
