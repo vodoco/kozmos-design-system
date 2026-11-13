@@ -28,7 +28,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
-| Dashboard              | 1          | 1/1   | 1/1       | 0/1     | 0/1   | 0/1     | 0/1     | 0/1         |
+| Dashboard              | 2          | 2/2   | 2/2       | 0/2     | 0/2   | 0/2     | 0/2     | 0/2         |
 
 ## Core
 
@@ -186,9 +186,10 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipped from @kozmos-ds/react/dashboard with dashboard.css (decision 183), with Figma and no SwiftUI or Compose counterpart.
 
-| Component   | Web (Comp) | Web (Story) | Web (Test) | Web (Code Connect File) | Web (Code Connect Linked) | Web (Barrel) | Web (Export) | iOS (Comp) | iOS (Code Connect File) | iOS (Code Connect Linked) | Android (Comp) | Android (Code Connect File) | Android (Code Connect Linked) |
-| ----------- | ---------- | ----------- | ---------- | ----------------------- | ------------------------- | ------------ | ------------ | ---------- | ----------------------- | ------------------------- | -------------- | --------------------------- | ----------------------------- |
-| BrandLoader | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| Component      | Web (Comp) | Web (Story) | Web (Test) | Web (Code Connect File) | Web (Code Connect Linked) | Web (Barrel) | Web (Export) | iOS (Comp) | iOS (Code Connect File) | iOS (Code Connect Linked) | Android (Comp) | Android (Code Connect File) | Android (Code Connect Linked) |
+| -------------- | ---------- | ----------- | ---------- | ----------------------- | ------------------------- | ------------ | ------------ | ---------- | ----------------------- | ------------------------- | -------------- | --------------------------- | ----------------------------- |
+| BrandLoader    | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyPicker | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 
 ## Code Connect Not Applicable
 
@@ -200,18 +201,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 125/125
-- Web stories: 125/125
-- Web tests: 125/125
-- Web Code Connect files: 102/120
-- Web Code Connect scaffolds: 1/120
-- Web Code Connect linked: 101/120
-- iOS components: 114/125
-- iOS Code Connect files: 101/120
-- iOS Code Connect scaffolds: 0/120
-- iOS Code Connect linked: 101/120
-- Android components: 115/125
-- Android Code Connect files: 101/120
-- Android Code Connect scaffolds: 0/120
-- Android Code Connect linked: 101/120
-- Code Connect not applicable: 5/125
+- Web components: 126/126
+- Web stories: 126/126
+- Web tests: 126/126
+- Web Code Connect files: 103/121
+- Web Code Connect scaffolds: 2/121
+- Web Code Connect linked: 101/121
+- iOS components: 114/126
+- iOS Code Connect files: 101/121
+- iOS Code Connect scaffolds: 0/121
+- iOS Code Connect linked: 101/121
+- Android components: 115/126
+- Android Code Connect files: 101/121
+- Android Code Connect scaffolds: 0/121
+- Android Code Connect linked: 101/121
+- Code Connect not applicable: 5/126
