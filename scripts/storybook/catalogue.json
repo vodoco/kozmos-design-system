@@ -768,7 +768,9 @@
         "Expanded",
         "Emergency",
         "SingleLine",
-        "SearchWithAi"
+        "SearchWithAi",
+        "SuccessProgressAndDone",
+        "Success"
       ]
     },
     {
@@ -948,7 +950,9 @@
         "Tones",
         "SelectedSection",
         "LivePosition",
-        "AnimatedUpdate"
+        "AnimatedUpdate",
+        "Indeterminate",
+        "TopOfPage"
       ]
     },
     {
