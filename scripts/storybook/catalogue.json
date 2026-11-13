@@ -967,7 +967,7 @@
       "id": "input-rating",
       "title": "Core/Inputs/Rating",
       "component": "Rating",
-      "exports": ["Default", "Thumbs", "ReadOnly"]
+      "exports": ["Default", "Thumbs", "ReadOnly", "ReadOnlyHalves"]
     },
     {
       "file": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
