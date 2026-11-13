@@ -41,28 +41,37 @@ async function platformFonts(page: Page, selector: string) {
   return fonts.map((font) => font.familyName).join(", ");
 }
 
-test("bold text draws differently from regular in the system stack", async ({
+test("each weight Kozmos uses draws as itself in the system stack", async ({
   page,
 }) => {
-  // A Heading's weight is part of what a baseline records. Measured on
-  // 2026-11-12: in this image a computed weight of 700 drew exactly like
-  // 400, so a story could lose its bold and still match.
+  // A weight is part of what a baseline records. Measured on 2026-11-13:
+  // the image resolved the stack to WenQuanYi Zen Hei, which drew 700
+  // exactly like 400 (and, on 16 Oct, 600 like 500), so a story could lose
+  // its bold and still match.
+  const weights = [400, 500, 600, 700];
   await page.setContent(`<!doctype html><style>
-    span { display: inline-block; width: 480px; font: 32px/40px ${systemStack}; color: #000; background: #fff; }
-  </style><span id="regular" style="font-weight: 400">Kozmos 0123 Heading</span>
-  <span id="bold" style="font-weight: 700">Kozmos 0123 Heading</span>`);
-  const regularFont = await platformFonts(page, "#regular");
-  const boldFont = await platformFonts(page, "#bold");
-  test.info().annotations.push({
-    type: "fonts",
-    description: `regular: ${regularFont}; bold: ${boldFont}`,
-  });
-  console.log(
-    `system stack draws regular in ${regularFont}, bold in ${boldFont}`,
-  );
-  const regular = await page.locator("#regular").screenshot();
-  const bold = await page.locator("#bold").screenshot();
-  expect(bold.equals(regular), `bold drew like regular in ${boldFont}`).toBe(
-    false,
-  );
+    span { display: block; width: 480px; font: 32px/40px ${systemStack}; color: #000; background: #fff; }
+  </style>${weights
+    .map(
+      (w) =>
+        `<span id="w${w}" style="font-weight: ${w}">Kozmos 0123 Heading</span>`,
+    )
+    .join("")}`);
+  const drawn = new Map<number, Buffer>();
+  for (const weight of weights) {
+    const font = await platformFonts(page, `#w${weight}`);
+    console.log(`system stack draws ${weight} in ${font}`);
+    // The review's own face (tests/visual/fonts), the one every baseline
+    // is drawn in.
+    expect(font, `weight ${weight}`).toBe("Roboto");
+    drawn.set(weight, await page.locator(`#w${weight}`).screenshot());
+  }
+  for (const [i, a] of weights.entries()) {
+    for (const b of weights.slice(i + 1)) {
+      expect(
+        drawn.get(a)!.equals(drawn.get(b)!),
+        `${b} drew exactly like ${a}`,
+      ).toBe(false);
+    }
+  }
 });

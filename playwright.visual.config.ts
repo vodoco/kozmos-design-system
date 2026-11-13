@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 // Kozmos's own visual review: every story, in both themes, compared with a
@@ -55,9 +56,20 @@ export default defineConfig({
     deviceScaleFactor: 1,
     locale: "en-GB",
     timezoneId: "UTC",
-    // Components that move rest under this preference (GAP-50), so what is
-    // drawn is their still state.
-    reducedMotion: "reduce",
+    contextOptions: {
+      // Components that move rest under this preference (GAP-50), so what
+      // is drawn is their still state. A context option: Playwright has no
+      // `use.reducedMotion`, and the one this file once set was ignored.
+      reducedMotion: "reduce",
+    },
+    launchOptions: {
+      // The review's own font (tests/visual/fonts): the image's system face
+      // has no bold, so a lost weight drew the same as a kept one.
+      env: {
+        ...process.env,
+        FONTCONFIG_FILE: path.join(__dirname, "tests/visual/fonts/fonts.conf"),
+      },
+    },
   },
   // React's Storybook, and Vue's (Vue 3 Phase 0, P0.5): the same capture
   // (tests/visual/capture.ts), each project reading its own build from its
