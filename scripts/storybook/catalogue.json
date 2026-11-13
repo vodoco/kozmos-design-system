@@ -1303,6 +1303,13 @@
       "exports": ["Default", "Still", "Overlay"]
     },
     {
+      "file": "packages/react/src/dashboard/PropertyPicker/PropertyPicker.stories.tsx",
+      "id": "dashboard-propertypicker",
+      "title": "Dashboard/PropertyPicker",
+      "component": "PropertyPicker",
+      "exports": ["Default", "Suggested", "Open", "InAForm"]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

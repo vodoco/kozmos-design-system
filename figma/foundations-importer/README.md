@@ -180,6 +180,14 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
   screen-reader text, never drawn, so the set has no text property. Run
   Curated Icons first.
+- **PropertyPicker** — Pointr Cloud's "+ Add additional field" (CLOUD-UI-003,
+  decision 133): the subtle Button (GAP-200) in Cloud's 368 column and, 4
+  below, the popup on Popover's surface, 12 in: the labelled search, the
+  Suggested and Others tabs, the property rows (name over type and
+  description, as Listbox draws an option's description) and the Custom field
+  ghost Button. `State` is Closed, Open, Suggested and Empty (a search that
+  finds nothing); `Label` is the button's words, React's `label`. The rows are
+  examples: in code they are data. Run Curated Icons first.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 
