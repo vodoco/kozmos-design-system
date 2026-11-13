@@ -20,7 +20,8 @@ class KozmosButtonConnect {
         "Secondary" to KozmosButtonVariant.Secondary,
         "Ghost" to KozmosButtonVariant.Ghost,
         "Link" to KozmosButtonVariant.Link,
-        "Glass" to KozmosButtonVariant.Glass
+        "Glass" to KozmosButtonVariant.Glass,
+        "Subtle" to KozmosButtonVariant.Subtle
     )
 
     @FigmaProperty(FigmaType.Enum, "Size")
