@@ -85,3 +85,52 @@ describe("Checkbox", () => {
     );
   });
 });
+
+describe("Checkbox description (GAP-162)", () => {
+  it("is read as the checkbox's description, not its name", () => {
+    render(
+      <Checkbox
+        label="Route updates"
+        description="Tell me when a faster route opens"
+      />,
+    );
+    const checkbox = screen.getByRole("checkbox");
+    expect(checkbox).toHaveAccessibleName("Route updates");
+    expect(checkbox).toHaveAccessibleDescription(
+      "Tell me when a faster route opens",
+    );
+  });
+
+  it("joins the caller's description, its own and the error, in that order", () => {
+    render(
+      <>
+        <p id="terms-hint">Read the terms first</p>
+        <Checkbox
+          label="Accept terms"
+          description="We email you a copy"
+          aria-describedby="terms-hint"
+          error="You must accept"
+        />
+      </>,
+    );
+    expect(screen.getByRole("checkbox")).toHaveAccessibleDescription(
+      "Read the terms first We email you a copy You must accept",
+    );
+  });
+
+  it("toggles when its label is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <Checkbox
+        label="Route updates"
+        description="Tell me when a faster route opens"
+      />,
+    );
+    // The label stays the checkbox's label with a description beside it.
+    expect(
+      screen.getByText("Tell me when a faster route opens"),
+    ).toBeInTheDocument();
+    await user.click(screen.getByText("Route updates"));
+    expect(screen.getByRole("checkbox")).toBeChecked();
+  });
+});

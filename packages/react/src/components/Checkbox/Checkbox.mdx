@@ -89,6 +89,79 @@ fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
 `}
 />
 
+## A description
+
+A `description` is drawn under the label and read as the checkbox's description (`aria-describedby`), after its name and never as part of it (GAP-162). The label still toggles the checkbox; the description is words, not a target. SwiftUI reads it after the control's name; Compose reads it after the label, in the one node the row is.
+
+<Canvas of={CheckboxStories.WithDescription} />
+
+On SwiftUI the description is read after the name as the control's custom content, at high importance, spoken whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. The control says its state as its value, in `checkedLabel` and `uncheckedLabel` ("Checked", "Unchecked"; SwiftUI's checkbox takes a Bool, so it has no mixed state), and from iOS 17 it is a toggle. Compose reads the description after the label in the one node, and the checkbox says its state with its Checkbox role.
+
+<PlatformSnippets
+    react={`
+import { Checkbox } from "@kozmos-ds/react";
+
+export function RouteUpdates() {
+  return (
+    <Checkbox
+      label="Route updates"
+      description="Tell me when a faster route opens"
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosCheckbox } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+
+const updates = ref(false)
+</script>
+
+<template>
+  <KozmosCheckbox
+    v-model:checked="updates"
+    label="Route updates"
+    description="Tell me when a faster route opens"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The description is drawn under the label, and VoiceOver reads it after
+// the checkbox's name; its value says checked or unchecked.
+struct RouteUpdates: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        KozmosCheckbox(
+            checked: $isOn,
+            label: "Route updates",
+            description: "Tell me when a faster route opens"
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.checkbox.KozmosCheckbox
+
+// The description is drawn under the label and read after it: the row is
+// one checkbox, the label its name.
+@Composable
+fun DeskBookingTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
+    KozmosCheckbox(
+        checked = accepted,
+        onCheckedChange = onAcceptedChange,
+        label = "Share my desk booking",
+        description = "Colleagues on your floor see where you sit"
+    )
+}
+`}
+/>
+
 ## Stories
 
 ### Default
