@@ -124,9 +124,13 @@ const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
 // follows raises them with its own measurement, as the bridge's did. On 13
 // Nov 2026, with the property editors (CLOUD-UI-004: PropertyField,
 // OpeningHoursEditor, RatingEditor, KeyValueList) beside BrandLoader, the
-// entry measured 4.00 KB and the sheet 1.07 KB, so 4.5 and 1.5.
-const MAX_DASHBOARD_GZIP_KB = 4.5;
-const MAX_DASHBOARD_CSS_GZIP_KB = 1.5;
+// entry measured 4.00 KB and the sheet 1.07 KB, so 4.5 and 1.5. With all of
+// decision 133's phase 1 together (BrandLoader, the property editors,
+// PropertyPicker, MapEditToolbar and ImageField: CLOUD-UI-003, 004, 005 and
+// 008), the entry measured 10.02 KB and the sheet 2.19 KB (13 Nov 2026), so
+// 11.5 and 2.5.
+const MAX_DASHBOARD_GZIP_KB = 11.5;
+const MAX_DASHBOARD_CSS_GZIP_KB = 2.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");
