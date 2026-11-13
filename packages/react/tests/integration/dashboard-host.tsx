@@ -4,6 +4,7 @@ import {
   BrandLoader,
   KeyValueList,
   MapEditToolbar,
+  OpeningHoursEditor,
   PropertyPicker,
   type KeyValueRow,
   type MapEditToolbarItem,
@@ -73,8 +74,8 @@ const ROWS: KeyValueRow[] = [
 /**
  * The other modules, drawn when the check sets `window.__dashboardModules`
  * (the loader's overlay above would make them inert): MapEditToolbar on maps
- * 640, 700 and 760 wide, a PropertyPicker, and a KeyValueList outside and
- * inside a <form>.
+ * 640, 700 and 760 wide, a PropertyPicker, a KeyValueList outside and
+ * inside a <form>, and an OpeningHoursEditor.
  */
 function Modules() {
   return (
@@ -96,6 +97,9 @@ function Modules() {
       <form data-testid="list-inside" style={{ width: 480 }}>
         <KeyValueList defaultValue={ROWS} />
       </form>
+      <div data-testid="hours" style={{ width: 640 }}>
+        <OpeningHoursEditor locale="en-GB" />
+      </div>
     </ThemeProvider>
   );
 }

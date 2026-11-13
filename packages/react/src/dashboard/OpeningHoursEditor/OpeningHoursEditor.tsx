@@ -47,6 +47,34 @@ export const DEFAULT_OPENING_HOURS: OpeningHours = {
   sunday: CLOSED,
 };
 
+/** A complete `HH:MM` (seconds allowed), not a cleared or partial field. */
+const complete = (time: string) =>
+  /^\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(time);
+
+const DAY = 24 * 60;
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * The time `step` minutes on or back from `time`, on the step's grid,
+ * carrying into the hour and round midnight: 08:00 back is 07:55, 08:03 on
+ * is 08:05, 23:55 on is 00:00. An empty field starts at midnight going on,
+ * at the last step going back.
+ */
+function stepTime(time: string, step: number, direction: 1 | -1) {
+  const match = /^(\d{2}):(\d{2})/.exec(time);
+  let minutes: number;
+  if (!match) minutes = direction === 1 ? 0 : DAY - step;
+  else {
+    const now = +match[1] * 60 + +match[2];
+    minutes =
+      direction === 1
+        ? (Math.floor(now / step) + 1) * step
+        : (Math.ceil(now / step) - 1) * step;
+  }
+  minutes = ((minutes % DAY) + DAY) % DAY;
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+}
+
 type Mode = "hours" | "closed" | "alwaysOpen";
 const modeOf = (day: OpeningHoursDay): Mode =>
   "closed" in day ? "closed" : "alwaysOpen" in day ? "alwaysOpen" : "hours";
@@ -66,8 +94,11 @@ export interface OpeningHoursEditorProps extends Omit<
   /** The day listed first. Default Monday, the value's own order. */
   weekStart?: Weekday;
   /**
-   * The minutes between the times the list of times offers, and the step
-   * its arrow keys take, carrying into the hour: 5 from 08:00 back is 07:55.
+   * The minutes between the times the list of times offers, and the step a
+   * time field's Up and Down Arrow keys take, whichever part of the time is
+   * focused, on that grid, carrying into the hour and round midnight: 5 from
+   * 08:00 back is 07:55, from 23:55 on is 00:00. The browser's own arrows
+   * step one part by one and never carry, so the editor takes them over.
    * Default 5, Cloud's.
    */
   stepMinutes?: number;
@@ -185,6 +216,32 @@ const OpeningHoursEditor = React.forwardRef<
           const reset = onResetMixed?.[day];
           const open = "open" in hours ? hours.open : "";
           const close = "close" in hours ? hours.close : "";
+          // Only two whole times compare: a cleared close is not overnight.
+          const overnight = complete(open) && complete(close) && close < open;
+          // Up and Down Arrow step the time by stepMinutes (Alt+Down Arrow
+          // still opens the list).
+          const arrows =
+            (edge: "open" | "close") =>
+            (event: React.KeyboardEvent<HTMLInputElement>) => {
+              if (
+                (event.key !== "ArrowUp" && event.key !== "ArrowDown") ||
+                event.altKey ||
+                event.ctrlKey ||
+                event.metaKey ||
+                event.currentTarget.readOnly
+              )
+                return;
+              event.preventDefault();
+              const next = stepTime(
+                edge === "open" ? open : close,
+                stepMinutes,
+                event.key === "ArrowUp" ? 1 : -1,
+              );
+              set(
+                day,
+                edge === "open" ? { open: next, close } : { open, close: next },
+              );
+            };
           return (
             // The day's choice is named by the day, and its times carry the
             // day in theirs: a group round them would say the day twice.
@@ -224,6 +281,7 @@ const OpeningHoursEditor = React.forwardRef<
                     step={stepMinutes * 60}
                     value={open}
                     disabled={disabled}
+                    onKeyDown={arrows("open")}
                     onChange={(event) =>
                       set(day, { open: event.target.value, close })
                     }
@@ -231,16 +289,17 @@ const OpeningHoursEditor = React.forwardRef<
                   <TimePicker
                     aria-label={timeLabel(name, "close")}
                     chooseTimeLabel={chooseTimeLabel(timeLabel(name, "close"))}
-                    aria-describedby={close < open ? nextDayId : undefined}
+                    aria-describedby={overnight ? nextDayId : undefined}
                     locale={locale}
                     step={stepMinutes * 60}
                     value={close}
                     disabled={disabled}
+                    onKeyDown={arrows("close")}
                     onChange={(event) =>
                       set(day, { open, close: event.target.value })
                     }
                   />
-                  {close < open ? (
+                  {overnight ? (
                     <Text id={nextDayId} as="span" size="xs" color="muted">
                       {nextDayLabel}
                     </Text>

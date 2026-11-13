@@ -16,6 +16,8 @@
  * (CLOUD-UI-003): its status region is in the page before it has words.
  * KeyValueList (CLOUD-UI-004): a row lays out the same inside a <form>,
  * where a Select adds a hidden native select to it, as outside one.
+ * OpeningHoursEditor (CLOUD-UI-004): a time field's arrows step its 5
+ * minutes, carrying into the hour, not the browser's one part by one.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -386,6 +388,24 @@ try {
         `${mode} list row ${index + 1}: delete at the end of the first line`,
       );
     }
+    // The hours: a time field's own Down Arrow steps the editor's 5
+    // minutes, carrying into the hour, whichever part of the time has focus
+    // (the browser's would make 07:00 or 08:59).
+    const opening = page.getByLabel("Monday opening time", { exact: true });
+    await opening.focus();
+    await page.keyboard.press("ArrowDown");
+    assert.equal(
+      await opening.inputValue(),
+      "07:55",
+      `${mode} hours: Down Arrow from 08:00`,
+    );
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+    assert.equal(
+      await opening.inputValue(),
+      "08:05",
+      `${mode} hours: Up Arrow twice from 07:55`,
+    );
     assert.deepEqual(errors, [], `${mode} modules: page errors`);
     passed.push(`${mode} modules`);
     await page.close();
@@ -394,5 +414,5 @@ try {
   await browser.close();
 }
 console.log(
-  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside (${passed.join("; ")})`,
+  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside; OpeningHoursEditor's arrows (${passed.join("; ")})`,
 );

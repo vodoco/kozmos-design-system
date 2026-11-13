@@ -128,6 +128,76 @@ describe("OpeningHoursEditor", () => {
     );
   });
 
+  it("steps the time fields' own arrows by the step, carrying and wrapping, not the browser's one", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <OpeningHoursEditor
+        locale="en-GB"
+        defaultValue={{
+          ...DEFAULT_OPENING_HOURS,
+          tuesday: { open: "08:03", close: "23:55" },
+        }}
+        onValueChange={onValueChange}
+      />,
+    );
+    const last = () => onValueChange.mock.lastCall;
+    // 08:00 back one step carries into the hour: 07:55.
+    await user.click(time("Monday opening time"));
+    await user.keyboard("{ArrowDown}");
+    expect(last()).toEqual([
+      expect.objectContaining({ monday: { open: "07:55", close: "22:00" } }),
+      "monday",
+    ]);
+    expect(time("Monday opening time")).toHaveValue("07:55");
+    await user.keyboard("{ArrowUp}{ArrowUp}");
+    expect(time("Monday opening time")).toHaveValue("08:05");
+    // Off the grid, a step lands on it: 08:03 up is 08:05, down 08:00.
+    await user.click(time("Tuesday opening time"));
+    await user.keyboard("{ArrowUp}");
+    expect(time("Tuesday opening time")).toHaveValue("08:05");
+    // Round midnight: 23:55 on is 00:00 (an overnight close, so "+1 day").
+    await user.click(time("Tuesday closing time"));
+    await user.keyboard("{ArrowUp}");
+    expect(last()).toEqual([
+      expect.objectContaining({ tuesday: { open: "08:05", close: "00:00" } }),
+      "tuesday",
+    ]);
+    expect(within(day("Tuesday")).getByText("+1 day")).toBeInTheDocument();
+    // The arrows are the editor's: the browser's default is prevented.
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    time("Wednesday opening time").dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    // Alt+Down Arrow still opens the list.
+    await user.click(time("Thursday opening time"));
+    await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+    expect(
+      await screen.findByRole("listbox", {
+        name: "Choose Thursday opening time",
+      }),
+    ).toBeInTheDocument();
+    expect(time("Thursday opening time")).toHaveValue("08:00");
+  });
+
+  it('does not say "+1 day" for a cleared or partial closing time', () => {
+    render(
+      <OpeningHoursEditor
+        locale="en-GB"
+        value={{
+          ...DEFAULT_OPENING_HOURS,
+          monday: { open: "08:00", close: "" },
+          tuesday: { open: "", close: "02:00" },
+        }}
+      />,
+    );
+    expect(screen.queryByText("+1 day")).toBeNull();
+    expect(time("Monday closing time")).not.toHaveAttribute("aria-describedby");
+  });
+
   it('allows overnight hours, and says "+1 day" beside the close, to the field too', () => {
     const { rerender } = render(
       <OpeningHoursEditor
