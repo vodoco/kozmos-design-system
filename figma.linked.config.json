@@ -115,6 +115,8 @@
       "src/components/ScrollArea/ScrollArea.tsx",
       "src/components/Container/Container.figma.tsx",
       "src/components/Container/Container.tsx",
+      "src/components/PageHeader/PageHeader.figma.tsx",
+      "src/components/PageHeader/PageHeader.tsx",
       "src/components/BottomNavigation/BottomNavigation.figma.tsx",
       "src/components/BottomNavigation/BottomNavigation.tsx",
       "src/components/NavigationItem/NavigationItem.figma.tsx",

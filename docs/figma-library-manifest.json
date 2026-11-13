@@ -11,16 +11,16 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
+    "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 102 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 103 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 102 Core SwiftUI and 102 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 103 Core SwiftUI and 103 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15719,8 +15719,8 @@
       "tests": 125,
       "exported": 125,
       "codeConnectFiles": 101,
-      "codeConnectScaffolds": 1,
-      "codeConnectLinked": 100
+      "codeConnectScaffolds": 0,
+      "codeConnectLinked": 101
     },
     "firstBatch": [
       "Accordion",
@@ -18731,11 +18731,11 @@
         "exported": true,
         "codeConnect": {
           "file": "packages/react/src/components/PageHeader/PageHeader.figma.tsx",
-          "linked": false,
-          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
-          "needsNodeId": true,
-          "status": "scaffold",
-          "issues": ["node-id=TBD"],
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
           "connectedComponents": ["PageHeader"],
           "mappedProps": [
             "actions",

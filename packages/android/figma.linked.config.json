@@ -22,6 +22,8 @@
       "src/main/java/com/kozmos/components/ScrollArea/ScrollArea.kt",
       "src/main/java/com/kozmos/components/Container/Container.figma.kt",
       "src/main/java/com/kozmos/components/Container/Container.kt",
+      "src/main/java/com/kozmos/components/PageHeader/PageHeader.figma.kt",
+      "src/main/java/com/kozmos/components/PageHeader/PageHeader.kt",
       "src/main/java/com/kozmos/components/BottomNavigation/BottomNavigation.figma.kt",
       "src/main/java/com/kozmos/components/BottomNavigation/BottomNavigation.kt",
       "src/main/java/com/kozmos/components/NavigationItem/NavigationItem.figma.kt",

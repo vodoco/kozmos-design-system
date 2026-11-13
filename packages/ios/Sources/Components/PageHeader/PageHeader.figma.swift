@@ -1,13 +1,13 @@
 import SwiftUI
 import Figma
 
-// GAP-036: the PageHeader set. Its node id is a placeholder until the set is
-// built in the live file, so this file stays out of figma.linked.config.json.
+// GAP-036: the PageHeader set. Its node id is the set built in the live file
+// (2446:23074).
 // Tone and Size are the variants; the booleans show the breadcrumb, the info
 // button, the description and the actions.
 struct KozmosPageHeaderConnect: FigmaConnect {
     let component = KozmosPageHeader<EmptyView, EmptyView, EmptyView>.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074"
 
     @FigmaEnum(
         "Tone",

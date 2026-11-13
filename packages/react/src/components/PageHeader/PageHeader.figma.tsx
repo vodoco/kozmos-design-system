@@ -12,11 +12,11 @@ import { Button } from "../Button/Button";
 import { IconButton } from "../IconButton/IconButton";
 import { PageHeader } from "./PageHeader";
 
-// GAP-036: the PageHeader set. Its node id is a placeholder until the set is
-// built in the live file, so this file stays out of figma.linked.config.json.
+// GAP-036: the PageHeader set. Its node id is the set built in the live file
+// (2446:23074).
 figma.connect(
   PageHeader,
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074",
   {
     props: {
       tone: figma.enum("Tone", {

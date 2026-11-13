@@ -12,9 +12,9 @@ import com.kozmos.components.breadcrumb.KozmosBreadcrumb
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 
-// GAP-036: the PageHeader set. Its node id is a placeholder until the set is
-// built in the live file, so this file stays out of figma.linked.config.json.
-@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD")
+// GAP-036: the PageHeader set. Its node id is the set built in the live file
+// (2446:23074).
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074")
 class KozmosPageHeaderConnect {
     @FigmaProperty(FigmaType.Enum, "Tone")
     val tone: KozmosPageHeaderTone = Figma.mapping(
