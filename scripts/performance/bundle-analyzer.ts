@@ -121,9 +121,11 @@ const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
 // on 13 Nov 2026, with BrandLoader alone (CLOUD-UI-008), the entry measured
 // 0.99 KB here and the sheet 0.71 KB, so 1.5 and 1. Main's lines did not
 // move: its built files are byte for byte what they were. A module that
-// follows raises them with its own measurement, as the bridge's did.
-const MAX_DASHBOARD_GZIP_KB = 1.5;
-const MAX_DASHBOARD_CSS_GZIP_KB = 1;
+// follows raises them with its own measurement, as the bridge's did. With
+// PropertyPicker (CLOUD-UI-003) beside it, the entry measured 2.18 KB and the
+// sheet 1.01 KB (13 Nov 2026), so 2.5 and 1.5.
+const MAX_DASHBOARD_GZIP_KB = 2.5;
+const MAX_DASHBOARD_CSS_GZIP_KB = 1.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");

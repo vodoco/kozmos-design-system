@@ -15,8 +15,9 @@
   .kozmos-property-picker .kozmos-property-picker-trigger {
     inline-size: 100%;
   }
-  /* Two classes: .kozmos-popover's w-72 and p-4 weigh one. */
-  .kozmos-popover.kozmos-property-picker-popup {
+  /* The class twice: Popover's own rule (w-72, p-4) weighs one, and a
+     sheet names no Core part's class (bundle-analyzer). */
+  .kozmos-property-picker-popup.kozmos-property-picker-popup {
     display: flex;
     flex-direction: column;
     gap: calc(var(--primitives-layout-spacing-100) * 1px);
@@ -49,9 +50,10 @@
   .kozmos-property-picker-tabs > .kozmos-property-picker-panel[hidden] {
     display: none;
   }
-  /* Three classes: the Listbox's own rule weighs one, and the scoped
-     preflight's border reset one, with proximity (GAP-52). */
-  .kozmos-property-picker-popup .kozmos-listbox.kozmos-property-picker-list {
+  /* Three classes: the Listbox's own rule weighs one, its focus ring two,
+     and the scoped preflight's border reset one, with proximity (GAP-52). */
+  .kozmos-property-picker-popup
+    .kozmos-property-picker-list.kozmos-property-picker-list {
     flex: 1 1 auto;
     min-block-size: 0;
     max-block-size: none;
@@ -62,7 +64,9 @@
   }
   /* Its drop shadow goes; its focus ring, a shadow too, stays. */
   .kozmos-property-picker-popup
-    .kozmos-listbox.kozmos-property-picker-list:not(:focus-visible) {
+    .kozmos-property-picker-list.kozmos-property-picker-list:not(
+      :focus-visible
+    ) {
     box-shadow: none;
   }
   .kozmos-property-picker-status:empty {
