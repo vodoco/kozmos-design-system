@@ -12,10 +12,8 @@ import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.tag.KozmosTag
 import com.kozmos.components.tag.KozmosTagVariant
 
-// GAP-195, decision 135: the ListItem set is a new Figma set. Its node id is
-// a placeholder until the plugin's Build gives it one; this file stays out of
-// figma.linked.config.json until then.
-@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD")
+// GAP-195, decision 135: the ListItem set, built by the plugin.
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23108")
 class KozmosListItemConnect {
     @FigmaProperty(FigmaType.Enum, "Selected")
     val selected: Boolean = Figma.mapping(

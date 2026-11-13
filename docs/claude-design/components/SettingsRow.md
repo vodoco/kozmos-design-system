@@ -6,7 +6,7 @@ One setting on a settings page (GAP-040, decision 135): its name and what it doe
 
 - **Import:** `import { SettingsRow } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-settingsrow--docs>
 
 ## Example

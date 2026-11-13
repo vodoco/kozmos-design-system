@@ -3,11 +3,9 @@ import { ListItem, ListItemStatus } from "./List";
 import { Button } from "../Button";
 import { Tag } from "../Tag";
 
-// GAP-195, decision 135: the ListItem set is a new Figma set. Its node id is
-// a placeholder until the plugin's Build gives it one; this file stays out of
-// figma.linked.config.json until then.
+// GAP-195, decision 135: the ListItem set, built by the plugin.
 const listItemUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23108";
 
 figma.connect(ListItem, listItemUrl, {
   props: {

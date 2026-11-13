@@ -2,11 +2,9 @@ import figma from "@figma/code-connect";
 import { SettingsRow } from "./SettingsRow";
 import { Switch } from "../Switch";
 
-// GAP-040, decision 135: the SettingsRow set is a new Figma set. Its node id
-// is a placeholder until the plugin's Build gives it one; this file stays
-// out of figma.linked.config.json until then.
+// GAP-040, decision 135: the SettingsRow set, built by the plugin.
 const settingsRowUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23163";
 
 figma.connect(SettingsRow, settingsRowUrl, {
   props: {

@@ -7,10 +7,8 @@ import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
 import com.kozmos.components.switch.KozmosSwitch
 
-// GAP-040, decision 135: the SettingsRow set is a new Figma set. Its node id
-// is a placeholder until the plugin's Build gives it one; this file stays
-// out of figma.linked.config.json until then.
-@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD")
+// GAP-040, decision 135: the SettingsRow set, built by the plugin.
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23163")
 class KozmosSettingsRowConnect {
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Show the banner"

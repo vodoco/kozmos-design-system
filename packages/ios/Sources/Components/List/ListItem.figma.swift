@@ -1,12 +1,10 @@
 import SwiftUI
 import Figma
 
-// GAP-195, decision 135: the ListItem set is a new Figma set. Its node id is
-// a placeholder until the plugin's Build gives it one; this file stays out of
-// figma.linked.config.json until then.
+// GAP-195, decision 135: the ListItem set, built by the plugin.
 struct KozmosListItemConnect: FigmaConnect {
     let component = KozmosListItem.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23108"
 
     @FigmaEnum("Selected", mapping: ["False": false, "True": true])
     var selected: Bool = false
